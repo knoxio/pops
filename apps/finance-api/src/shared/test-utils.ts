@@ -17,7 +17,8 @@ import {
 import { setMockNotionClient, clearMockNotionClient, getMockNotionClient } from "./test-globals.js";
 
 /**
- * Re-export Notion mock utilities for use in tests.
+ * Re-export Notion mock utilities for use in tests that still need them
+ * (e.g. imports module tests).
  */
 export {
   resetNotionMock,
@@ -25,6 +26,7 @@ export {
   setMockNotionClient,
   clearMockNotionClient,
   getMockNotionClient,
+  seedMockPage,
 };
 
 /**
@@ -49,8 +51,7 @@ export function createTestDb(): Database {
   // Create all tables that finance-api might query
   db.exec(`
     CREATE TABLE IF NOT EXISTS entities (
-      id                       TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-      notion_id                TEXT UNIQUE,
+      notion_id                TEXT PRIMARY KEY,
       name                     TEXT NOT NULL,
       type                     TEXT,
       abn                      TEXT,
@@ -63,8 +64,7 @@ export function createTestDb(): Database {
     CREATE INDEX IF NOT EXISTS idx_entities_name ON entities(name);
 
     CREATE TABLE IF NOT EXISTS transactions (
-      id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-      notion_id       TEXT UNIQUE,
+      notion_id       TEXT PRIMARY KEY,
       description     TEXT NOT NULL,
       account         TEXT NOT NULL,
       amount          REAL NOT NULL,
@@ -84,8 +84,7 @@ export function createTestDb(): Database {
     CREATE INDEX IF NOT EXISTS idx_transactions_entity ON transactions(entity_id);
 
     CREATE TABLE IF NOT EXISTS home_inventory (
-      id                     TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-      notion_id              TEXT UNIQUE,
+      notion_id              TEXT PRIMARY KEY,
       item_name              TEXT NOT NULL,
       brand                  TEXT,
       model                  TEXT,
@@ -107,8 +106,7 @@ export function createTestDb(): Database {
     );
 
     CREATE TABLE IF NOT EXISTS budgets (
-      id               TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-      notion_id        TEXT UNIQUE,
+      notion_id        TEXT PRIMARY KEY,
       category         TEXT NOT NULL,
       period           TEXT,
       amount           REAL,
@@ -119,8 +117,7 @@ export function createTestDb(): Database {
     CREATE INDEX IF NOT EXISTS idx_budgets_category ON budgets(category);
 
     CREATE TABLE IF NOT EXISTS wish_list (
-      id               TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
-      notion_id        TEXT UNIQUE,
+      notion_id        TEXT PRIMARY KEY,
       item             TEXT NOT NULL,
       target_amount    REAL,
       saved            REAL,
@@ -143,7 +140,7 @@ export function createTestDb(): Database {
       times_applied INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       last_used_at TEXT,
-      FOREIGN KEY (entity_id) REFERENCES entities(id) ON DELETE SET NULL
+      FOREIGN KEY (entity_id) REFERENCES entities(notion_id) ON DELETE SET NULL
     );
     CREATE INDEX IF NOT EXISTS idx_corrections_pattern ON transaction_corrections(description_pattern);
     CREATE INDEX IF NOT EXISTS idx_corrections_confidence ON transaction_corrections(confidence DESC);
@@ -155,13 +152,12 @@ export function createTestDb(): Database {
 
 /**
  * Seed a single entity row into the test DB.
- * Inserts into both SQLite and mock Notion to keep stores in sync.
- * Returns the id.
+ * Returns the notion_id.
  */
 export function seedEntity(
   db: Database,
   overrides: Partial<{
-    id: string;
+    notion_id: string;
     name: string;
     type: string | null;
     abn: string | null;
@@ -172,16 +168,15 @@ export function seedEntity(
     last_edited_time: string;
   }> = {}
 ): string {
-  const id = overrides.id ?? crypto.randomUUID();
+  const id = overrides.notion_id ?? crypto.randomUUID();
 
-  // Insert into SQLite
   db.prepare(
     `
-    INSERT INTO entities (id, name, type, abn, aliases, default_transaction_type, default_tags, notes, last_edited_time)
-    VALUES (@id, @name, @type, @abn, @aliases, @default_transaction_type, @default_tags, @notes, @last_edited_time)
+    INSERT INTO entities (notion_id, name, type, abn, aliases, default_transaction_type, default_tags, notes, last_edited_time)
+    VALUES (@notion_id, @name, @type, @abn, @aliases, @default_transaction_type, @default_tags, @notes, @last_edited_time)
   `
   ).run({
-    id,
+    notion_id: id,
     name: overrides.name ?? "Test Entity",
     type: overrides.type ?? null,
     abn: overrides.abn ?? null,
@@ -192,23 +187,17 @@ export function seedEntity(
     last_edited_time: overrides.last_edited_time ?? "2025-01-01T00:00:00.000Z",
   });
 
-  // Also seed into mock Notion
-  seedMockPage(id, {
-    Name: { title: [{ text: { content: overrides.name ?? "Test Entity" } }] },
-  });
-
   return id;
 }
 
 /**
  * Seed a single transaction row into the test DB.
- * Inserts into both SQLite and mock Notion to keep stores in sync.
- * Returns the id.
+ * Returns the notion_id.
  */
 export function seedTransaction(
   db: Database,
   overrides: Partial<{
-    id: string;
+    notion_id: string;
     description: string;
     account: string;
     amount: number;
@@ -224,24 +213,23 @@ export function seedTransaction(
     last_edited_time: string;
   }> = {}
 ): string {
-  const id = overrides.id ?? crypto.randomUUID();
+  const id = overrides.notion_id ?? crypto.randomUUID();
 
-  // Insert into SQLite
   db.prepare(
     `
     INSERT INTO transactions (
-      id, description, account, amount, date, type, tags,
+      notion_id, description, account, amount, date, type, tags,
       entity_id, entity_name, location, country,
       related_transaction_id, notes, last_edited_time
     )
     VALUES (
-      @id, @description, @account, @amount, @date, @type, @tags,
+      @notion_id, @description, @account, @amount, @date, @type, @tags,
       @entity_id, @entity_name, @location, @country,
       @related_transaction_id, @notes, @last_edited_time
     )
   `
   ).run({
-    id,
+    notion_id: id,
     description: overrides.description ?? "Test Transaction",
     account: overrides.account ?? "Test Account",
     amount: overrides.amount ?? 100.0,
@@ -257,23 +245,17 @@ export function seedTransaction(
     last_edited_time: overrides.last_edited_time ?? "2025-01-01T00:00:00.000Z",
   });
 
-  // Also seed into mock Notion
-  seedMockPage(id, {
-    Description: { title: [{ text: { content: overrides.description ?? "Test Transaction" } }] },
-  });
-
   return id;
 }
 
 /**
  * Seed a single inventory item row into the test DB.
- * Inserts into both SQLite and mock Notion to keep stores in sync.
- * Returns the id.
+ * Returns the notion_id.
  */
 export function seedInventoryItem(
   db: Database,
   overrides: Partial<{
-    id: string;
+    notion_id: string;
     item_name: string;
     brand: string | null;
     model: string | null;
@@ -294,24 +276,23 @@ export function seedInventoryItem(
     last_edited_time: string;
   }> = {}
 ): string {
-  const id = overrides.id ?? crypto.randomUUID();
+  const id = overrides.notion_id ?? crypto.randomUUID();
 
-  // Insert into SQLite
   db.prepare(
     `
     INSERT INTO home_inventory (
-      id, item_name, brand, model, item_id, room, location, type, condition,
+      notion_id, item_name, brand, model, item_id, room, location, type, condition,
       in_use, deductible, purchase_date, warranty_expires, replacement_value, resale_value,
       purchase_transaction_id, purchased_from_id, purchased_from_name, last_edited_time
     )
     VALUES (
-      @id, @item_name, @brand, @model, @item_id, @room, @location, @type, @condition,
+      @notion_id, @item_name, @brand, @model, @item_id, @room, @location, @type, @condition,
       @in_use, @deductible, @purchase_date, @warranty_expires, @replacement_value, @resale_value,
       @purchase_transaction_id, @purchased_from_id, @purchased_from_name, @last_edited_time
     )
   `
   ).run({
-    id,
+    notion_id: id,
     item_name: overrides.item_name ?? "Test Item",
     brand: overrides.brand ?? null,
     model: overrides.model ?? null,
@@ -332,23 +313,17 @@ export function seedInventoryItem(
     last_edited_time: overrides.last_edited_time ?? "2025-01-01T00:00:00.000Z",
   });
 
-  // Also seed into mock Notion
-  seedMockPage(id, {
-    "Item Name": { title: [{ text: { content: overrides.item_name ?? "Test Item" } }] },
-  });
-
   return id;
 }
 
 /**
  * Seed a single budget row into the test DB.
- * Inserts into both SQLite and mock Notion to keep stores in sync.
- * Returns the id.
+ * Returns the notion_id.
  */
 export function seedBudget(
   db: Database,
   overrides: Partial<{
-    id: string;
+    notion_id: string;
     category: string;
     period: string | null;
     amount: number | null;
@@ -357,16 +332,15 @@ export function seedBudget(
     last_edited_time: string;
   }> = {}
 ): string {
-  const id = overrides.id ?? crypto.randomUUID();
+  const id = overrides.notion_id ?? crypto.randomUUID();
 
-  // Insert into SQLite
   db.prepare(
     `
-    INSERT INTO budgets (id, category, period, amount, active, notes, last_edited_time)
-    VALUES (@id, @category, @period, @amount, @active, @notes, @last_edited_time)
+    INSERT INTO budgets (notion_id, category, period, amount, active, notes, last_edited_time)
+    VALUES (@notion_id, @category, @period, @amount, @active, @notes, @last_edited_time)
   `
   ).run({
-    id,
+    notion_id: id,
     category: overrides.category ?? "Test Category",
     period: overrides.period ?? null,
     amount: overrides.amount ?? null,
@@ -375,23 +349,17 @@ export function seedBudget(
     last_edited_time: overrides.last_edited_time ?? "2025-01-01T00:00:00.000Z",
   });
 
-  // Also seed into mock Notion
-  seedMockPage(id, {
-    Category: { title: [{ text: { content: overrides.category ?? "Test Category" } }] },
-  });
-
   return id;
 }
 
 /**
  * Seed a single wish list item row into the test DB.
- * Inserts into both SQLite and mock Notion to keep stores in sync.
- * Returns the id.
+ * Returns the notion_id.
  */
 export function seedWishListItem(
   db: Database,
   overrides: Partial<{
-    id: string;
+    notion_id: string;
     item: string;
     target_amount: number | null;
     saved: number | null;
@@ -401,16 +369,15 @@ export function seedWishListItem(
     last_edited_time: string;
   }> = {}
 ): string {
-  const id = overrides.id ?? crypto.randomUUID();
+  const id = overrides.notion_id ?? crypto.randomUUID();
 
-  // Insert into SQLite
   db.prepare(
     `
-    INSERT INTO wish_list (id, item, target_amount, saved, priority, url, notes, last_edited_time)
-    VALUES (@id, @item, @target_amount, @saved, @priority, @url, @notes, @last_edited_time)
+    INSERT INTO wish_list (notion_id, item, target_amount, saved, priority, url, notes, last_edited_time)
+    VALUES (@notion_id, @item, @target_amount, @saved, @priority, @url, @notes, @last_edited_time)
   `
   ).run({
-    id,
+    notion_id: id,
     item: overrides.item ?? "Test Wish List Item",
     target_amount: overrides.target_amount ?? null,
     saved: overrides.saved ?? null,
@@ -420,24 +387,21 @@ export function seedWishListItem(
     last_edited_time: overrides.last_edited_time ?? "2025-01-01T00:00:00.000Z",
   });
 
-  // Also seed into mock Notion
-  seedMockPage(id, {
-    Item: { title: [{ text: { content: overrides.item ?? "Test Wish List Item" } }] },
-  });
-
   return id;
 }
 
 /**
  * Setup helper for test suites. Call in beforeEach/afterEach.
  * Returns the test DB, a tRPC caller, and the mock Notion client.
+ * Note: Notion mocking is still initialized because the imports module
+ * still uses Notion (until tb-008 removes it).
  */
 export function setupTestContext() {
   let db: Database;
   let notionMock: Client;
 
   function setup(): { db: Database; caller: ReturnType<typeof createCaller>; notionMock: Client } {
-    // Set required env vars for tests
+    // Set required env vars for tests (still needed by imports module)
     process.env.NOTION_API_TOKEN = "test-token";
     process.env.NOTION_BALANCE_SHEET_ID = "test-balance-sheet-id";
     process.env.NOTION_ENTITIES_DB_ID = "test-entities-db-id";
@@ -448,7 +412,7 @@ export function setupTestContext() {
     db = createTestDb();
     setDb(db);
 
-    // Initialize Notion mock
+    // Initialize Notion mock (still needed by imports module)
     notionMock = createMockNotionClient();
     setMockNotionClient(notionMock);
     resetNotionMock();

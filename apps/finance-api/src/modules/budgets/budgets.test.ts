@@ -1,21 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import type { Database } from "better-sqlite3";
-import type { Client } from "@notionhq/client";
-import {
-  setupTestContext,
-  seedBudget,
-  createCaller,
-  getMockPages,
-} from "../../shared/test-utils.js";
+import { setupTestContext, seedBudget, createCaller } from "../../shared/test-utils.js";
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;
 let db: Database;
-let notionMock: Client;
 
 beforeEach(() => {
-  ({ caller, db, notionMock } = ctx.setup());
+  ({ caller, db } = ctx.setup());
 });
 
 afterEach(() => {
@@ -279,8 +272,8 @@ describe("budgets.create", () => {
     expect(row).toBeDefined();
   });
 
-  it("creates a page in Notion", async () => {
-    await caller.budgets.create({
+  it("stores all fields in SQLite", async () => {
+    const result = await caller.budgets.create({
       category: "Groceries",
       period: "2025-06",
       amount: 500,
@@ -288,17 +281,16 @@ describe("budgets.create", () => {
       notes: "Test notes",
     });
 
-    // Verify Notion mock received the create call
-    const mockPages = getMockPages();
-    expect(mockPages.size).toBe(1);
-
-    const page = Array.from(mockPages.values())[0];
-    expect(page).toBeDefined();
-    expect(page.properties).toHaveProperty("Category");
-    expect(page.properties).toHaveProperty("Period");
-    expect(page.properties).toHaveProperty("Amount");
-    expect(page.properties).toHaveProperty("Active");
-    expect(page.properties).toHaveProperty("Notes");
+    // Verify all fields persisted in SQLite
+    const row = db
+      .prepare("SELECT * FROM budgets WHERE notion_id = ?")
+      .get(result.data.notionId) as Record<string, unknown>;
+    expect(row).toBeDefined();
+    expect(row.category).toBe("Groceries");
+    expect(row.period).toBe("2025-06");
+    expect(row.amount).toBe(500);
+    expect(row.active).toBe(1);
+    expect(row.notes).toBe("Test notes");
   });
 });
 
@@ -385,21 +377,16 @@ describe("budgets.update", () => {
     });
   });
 
-  it("updates the page in Notion", async () => {
+  it("persists update to SQLite", async () => {
     const id = seedBudget(db, { category: "Groceries", amount: 500 });
-
-    // Create mock page for existing budget
-    await notionMock.pages.create({
-      parent: { database_id: "test-db" },
-      properties: { Category: { title: [{ text: { content: "Groceries" } }] } },
-    });
 
     await caller.budgets.update({ id, data: { amount: 600 } });
 
-    // Verify Notion mock received the update call
-    const mockPages = getMockPages();
-    const page = mockPages.get(id);
-    expect(page).toBeDefined();
+    // Verify SQLite was updated
+    const row = db.prepare("SELECT amount FROM budgets WHERE notion_id = ?").get(id) as {
+      amount: number;
+    };
+    expect(row.amount).toBe(600);
   });
 });
 
@@ -432,21 +419,13 @@ describe("budgets.delete", () => {
     });
   });
 
-  it("archives the page in Notion", async () => {
+  it("removes row from SQLite", async () => {
     const id = seedBudget(db, { category: "Groceries" });
-
-    // Create mock page for existing budget
-    await notionMock.pages.create({
-      parent: { database_id: "test-db" },
-      properties: { Category: { title: [{ text: { content: "Groceries" } }] } },
-    });
 
     await caller.budgets.delete({ id });
 
-    // Verify Notion mock received the archive call
-    const mockPages = getMockPages();
-    const page = mockPages.get(id);
-    expect(page).toBeDefined();
-    expect(page?.archived).toBe(true);
+    // Verify row is gone from SQLite
+    const row = db.prepare("SELECT * FROM budgets WHERE notion_id = ?").get(id);
+    expect(row).toBeUndefined();
   });
 });
