@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-POPS (Personal Operations System) is a self-hosted financial tracking and automation platform. Notion is the **source of truth** for all data. Self-hosted services on an N95 mini PC provide sync, analytics, dashboards, and AI-powered automation. Cloudflare Tunnel exposes services with zero port forwarding.
+POPS (Personal Operations System) is a self-hosted financial tracking and automation platform. SQLite is the **primary data store**. Self-hosted services on an N95 mini PC provide analytics, dashboards, and AI-powered automation. Cloudflare Tunnel exposes services with zero port forwarding.
 
 Phase 0 (data import) is complete. Phase 1 (Foundation) targets March 2026.
 
@@ -98,7 +98,7 @@ yarn entities:create --execute                              # Batch create entit
 yarn entities:lookup                                        # Rebuild entity lookup
 yarn audit                                                  # DB statistics
 ```
-Omit `--execute` for dry-run mode (no writes to Notion).
+Omit `--execute` for dry-run mode (no writes).
 
 ### Git Worktrees
 ```bash
@@ -220,9 +220,9 @@ Bank Feeds:
 - **Chat:** Moltbot (Telegram)
 - **Backup:** Backblaze B2 via rclone (encrypted)
 
-## Notion Databases
+## Notion Databases (Legacy Reference)
 
-**NOTE:** Database IDs are workspace-specific and loaded from environment variables (`.env` file locally, Ansible Vault in production). See `.env.example` for required variables.
+**NOTE:** Notion database IDs are still used by the import pipeline during migration. These will be removed once all import functionality moves to SQLite-only. Database IDs are loaded from environment variables (`.env` file locally, Ansible Vault in production).
 
 ### Balance Sheet
 - **Env Var:** `NOTION_BALANCE_SHEET_ID`
@@ -251,7 +251,7 @@ Bank Feeds:
 ## Import Tools
 
 Stubs in `tools/src/`. Original implementations in `~/Downloads/transactions/` need migration.
-Shared logic lives in `tools/src/lib/` — entity matcher, deduplicator, CSV parser, AI categorizer, Notion client.
+Shared logic lives in `tools/src/lib/` — entity matcher, deduplicator, CSV parser, AI categorizer.
 
 ### Entity Matching Strategy (tools/src/lib/entity-matcher.ts)
 1. Manual aliases — hardcoded map of bank descriptions to entity names (per-bank)
@@ -266,13 +266,13 @@ Hit rate: ~95-100% with aliases. AI fallback handles the rest and caches results
 
 - **Never read `.env` contents** — reference file paths only, never inline token values
 - **Never commit secrets** — `.env`, `*.csv`, `entity_lookup.json`, `.claude/`, `*.jsonl` must be in `.gitignore`
-- **Never hardcode Notion database IDs** — use environment variables (workspace-specific)
+- **Never hardcode database IDs or API tokens** — use environment variables
 - **Docker secrets** for all API tokens in production (not env vars in compose files)
 - **Parameterized queries only** — no string interpolation into SQL
 - **Cloudflare Access** in front of all exposed services (except Up webhook endpoint)
 - **Up webhook signature verification** — validate `X-Up-Authenticity-Signature`, then re-fetch transaction from Up API
 - **Moltbot user whitelist** — restrict to owner's Telegram user ID only
-- **Finance plugin is read-only** — no write/delete against SQLite or Notion
+- **Finance plugin is read-only** — no write/delete against SQLite
 - **Strip PII from AI prompts** — only send merchant descriptions to Claude API, no account/card numbers
 - **No sensitive data in PWA service worker cache** — cache static assets only
 
