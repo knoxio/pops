@@ -11,7 +11,7 @@ export interface ParsedTransaction {
   online?: boolean;
 }
 
-/** Entity lookup entry: name -> entity ID or URL */
+/** Entity lookup entry: name -> entity ID */
 export interface EntityLookup {
   [name: string]: string;
 }
@@ -19,7 +19,7 @@ export interface EntityLookup {
 /** Result from the entity matching pipeline */
 export interface EntityMatch {
   entityName: string;
-  entityUrl: string;
+  entityId: string;
   matchType: 'alias' | 'exact' | 'prefix' | 'contains' | 'ai';
 }
 

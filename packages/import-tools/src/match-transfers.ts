@@ -1,6 +1,6 @@
 /**
  * Match inter-account transfer pairs in the transactions table.
- * Links matching debit/credit transactions across accounts via Related Transaction relation.
+ * Links matching debit/credit transactions across accounts via related_transaction_id.
  *
  * Usage: yarn match:transfers [--execute]
  */

@@ -25,9 +25,9 @@ export function matchEntity(
   if (aliasKey) {
     const entityName = aliases[aliasKey];
     if (entityName === undefined) return null;
-    const entityUrl = findInLookup(entityName, entityLookup);
-    if (entityUrl) {
-      return { entityName, entityUrl, matchType: 'alias' };
+    const entityId = findInLookup(entityName, entityLookup);
+    if (entityId) {
+      return { entityName, entityId, matchType: 'alias' };
     }
   }
 
@@ -47,19 +47,19 @@ function tryMatch(normalized: string, entityLookup: EntityLookup): EntityMatch |
   const entries = Object.entries(entityLookup);
 
   // Stage 2: Exact match (case-insensitive)
-  for (const [name, url] of entries) {
+  for (const [name, id] of entries) {
     if (normalized === name.toUpperCase()) {
-      return { entityName: name, entityUrl: url, matchType: 'exact' };
+      return { entityName: name, entityId: id, matchType: 'exact' };
     }
   }
 
   // Stage 3: Prefix match (longest entity name wins)
   let bestPrefix: EntityMatch | null = null;
-  for (const [name, url] of entries) {
+  for (const [name, id] of entries) {
     const upper = name.toUpperCase();
     if (normalized.startsWith(upper)) {
       if (!bestPrefix || name.length > bestPrefix.entityName.length) {
-        bestPrefix = { entityName: name, entityUrl: url, matchType: 'prefix' };
+        bestPrefix = { entityName: name, entityId: id, matchType: 'prefix' };
       }
     }
   }
@@ -67,12 +67,12 @@ function tryMatch(normalized: string, entityLookup: EntityLookup): EntityMatch |
 
   // Stage 4: Contains match (min 4 chars, longest entity name wins)
   let bestContains: EntityMatch | null = null;
-  for (const [name, url] of entries) {
+  for (const [name, id] of entries) {
     if (name.length < 4) continue;
     const upper = name.toUpperCase();
     if (normalized.includes(upper)) {
       if (!bestContains || name.length > bestContains.entityName.length) {
-        bestContains = { entityName: name, entityUrl: url, matchType: 'contains' };
+        bestContains = { entityName: name, entityId: id, matchType: 'contains' };
       }
     }
   }
