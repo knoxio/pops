@@ -29,20 +29,8 @@ yarn install
 yarn dev
 """
 
-[tasks."dev:sync"]
-description = "Run notion-sync locally"
-dir = "apps/notion-sync"
-run = """
-yarn install
-yarn dev
-"""
-
 [tasks."dev"]
 description = "Run all dev servers (using turbo)"
-run = "turbo dev --filter=!@pops/notion-sync"
-
-[tasks."dev:full"]
-description = "Run all dev servers including notion-sync"
 run = "turbo dev"
 
 [tasks."dev:storybook"]
@@ -66,11 +54,6 @@ run = "yarn typecheck"
 [tasks."typecheck:pwa"]
 description = "Type check pops-pwa"
 dir = "apps/pops-pwa"
-run = "yarn typecheck"
-
-[tasks."typecheck:sync"]
-description = "Type check notion-sync"
-dir = "apps/notion-sync"
 run = "yarn typecheck"
 
 [tasks.test]
@@ -117,19 +100,6 @@ run = "yarn db:clear"
 description = "Clear and seed database with comprehensive test data"
 dir = "apps/finance-api"
 run = "yarn db:seed"
-
-[tasks."db:pull"]
-description = "Pull fresh data from Notion (full sync, clears local first)"
-run = """
-echo "🧹 Clearing local database..."
-cd apps/finance-api && yarn db:clear
-echo ""
-echo "📥 Pulling from Notion (source of truth)..."
-cd ../notion-sync
-export SQLITE_PATH=../finance-api/data/pops.db
-yarn install
-yarn dev
-"""
 
 # ============================================================================
 # Import Tools (run from packages/import-tools)

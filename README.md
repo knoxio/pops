@@ -45,7 +45,6 @@ See `docs/DEPLOYMENT_SETUP.md` for setup instructions.
 ┌────────────────────────┴────────────────────────────────┐
 │                 N95 MINI PC (Docker)                     │
 │                                                         │
-│  notion-sync ─── Notion → SQLite mirror (cron 15min)    │
 │  finance-api ─── Node.js REST over SQLite               │
 │  metabase ────── Dashboards & analytics                 │
 │  moltbot ─────── AI assistant (Telegram + finance)      │
@@ -56,12 +55,12 @@ See `docs/DEPLOYMENT_SETUP.md` for setup instructions.
 ┌────────────────────────┴────────────────────────────────┐
 │                      DATA LAYER                         │
 │                                                         │
-│  Notion (SoT)           │  Claude Haiku API             │
-│  ├─ Balance Sheet       │  (categorization, NL queries, │
-│  ├─ Entities            │   AI fallback) ~$1-5/month    │
-│  ├─ Home Inventory      │                               │
-│  ├─ Budget              │  SQLite mirror                │
-│  └─ Wish List           │  (fast queries, dashboards)   │
+│  SQLite (SoT)            │  Claude Haiku API             │
+│  ├─ Balance Sheet        │  (categorization, NL queries, │
+│  ├─ Entities             │   AI fallback) ~$1-5/month    │
+│  ├─ Home Inventory       │                               │
+│  ├─ Budget               │                               │
+│  └─ Wish List            │                               │
 └─────────────────────────────────────────────────────────┘
                          │
 ┌────────────────────────┴────────────────────────────────┐
@@ -110,7 +109,7 @@ See `docs/DEPLOYMENT_SETUP.md` for setup instructions.
 
 ### N95 Mini PC (POPS Server)
 - **OS:** Ubuntu 24.04 (Docker Compose, provisioned via Ansible)
-- **Services:** notion-sync, finance-api, metabase, moltbot, paperless-ngx, pops-pwa
+- **Services:** finance-api, metabase, moltbot, paperless-ngx, pops-pwa
 - **Exposure:** Cloudflare Tunnel (free, zero port forwarding)
 - **URLs:** `pops.jmiranda.dev` (PWA), `pops-api.jmiranda.dev` (API), `pops-metabase.jmiranda.dev`, `pops-paperless.jmiranda.dev`
 
@@ -211,7 +210,6 @@ mise tasks            # List all available tasks
 mise db:init          # Initialize empty database with schema
 mise db:clear         # Clear all data (preserves schema)
 mise db:seed          # Seed with comprehensive test data
-mise db:pull          # Pull fresh from Notion (full sync)
 ```
 
 See `mise.toml` for all available tasks and [CLAUDE.md](CLAUDE.md) for detailed command reference.

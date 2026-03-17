@@ -1,6 +1,6 @@
 /**
  * SQLite schema for budgets table (snake_case columns).
- * Used by both notion-sync (writes) and finance-api (reads).
+ * Used by finance-api for budget types.
  */
 import { z } from "zod/v4";
 

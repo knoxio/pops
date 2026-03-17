@@ -2,23 +2,6 @@
 # Paths reference /opt/pops/secrets/ written by the secrets role.
 
 services:
-  notion-sync:
-    build:
-      context: {{ docker_compose_dir }}/repo
-      dockerfile: apps/notion-sync/Dockerfile
-    container_name: pops-notion-sync
-    restart: "no"
-    networks:
-      - backend
-    volumes:
-      - sqlite-data:/data/sqlite
-    secrets:
-      - notion_api_token
-    environment:
-      NODE_ENV: production
-      SQLITE_PATH: /data/sqlite/pops.db
-      NOTION_TOKEN_FILE: /run/secrets/notion_api_token
-
   finance-api:
     build:
       context: {{ docker_compose_dir }}/repo

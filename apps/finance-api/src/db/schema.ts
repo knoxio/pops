@@ -120,11 +120,6 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       last_edited_time TEXT NOT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS sync_cursors (
-      database_id TEXT PRIMARY KEY,
-      last_edited_time TEXT NOT NULL
-    );
-
     CREATE TABLE IF NOT EXISTS ai_usage (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       description TEXT NOT NULL,

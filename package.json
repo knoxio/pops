@@ -7,8 +7,7 @@
     "apps/*"
   ],
   "scripts": {
-    "dev": "turbo dev --filter=!@pops/notion-sync",
-    "dev:full": "turbo dev",
+    "dev": "turbo dev",
     "build": "turbo build",
     "typecheck": "turbo typecheck",
     "test": "turbo test",

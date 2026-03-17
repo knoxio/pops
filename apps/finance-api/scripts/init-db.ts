@@ -19,6 +19,6 @@ db.pragma("busy_timeout = 5000");
 initializeSchema(db);
 
 console.log(`✅ Database initialized at ${DB_PATH}`);
-console.log("📝 Note: Database is empty. Run notion-sync to populate with real data.");
+console.log("📝 Note: Database is empty. Run 'mise db:seed' to populate with test data.");
 
 db.close();

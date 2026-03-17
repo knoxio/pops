@@ -16,8 +16,7 @@ POPS uses [mise](https://mise.jdx.dev/) for task running and tool version manage
 
 **Quick Start:**
 ```bash
-mise dev              # Run all dev servers (excludes notion-sync)
-mise dev:full         # Run all dev servers including notion-sync
+mise dev              # Run all dev servers
 mise dev:api          # Run finance-api only
 mise dev:pwa          # Run pops-pwa only
 mise dev:storybook    # Run Storybook
@@ -36,7 +35,6 @@ mise setup            # Initial project setup
 mise db:init          # Initialize empty database with schema
 mise db:clear         # Clear all data (preserves schema)
 mise db:seed          # Seed with comprehensive test data (44 records)
-mise db:pull          # Pull fresh from Notion (full sync, source of truth)
 ```
 
 **Import Tools:**
@@ -75,7 +73,6 @@ Run `mise tasks` for the full list. All tasks are defined in `mise.toml`.
 
 ### Services (each has its own package.json)
 ```bash
-cd apps/notion-sync && yarn install && yarn dev        # Run sync locally
 cd apps/finance-api && yarn install && yarn dev        # API with watch mode
 cd apps/pops-pwa && yarn install && yarn dev           # Vite dev server
 
@@ -148,7 +145,6 @@ ansible-vault encrypt inventory/group_vars/pops_servers/vault.yml
 
 ```
 apps/
-├── notion-sync/          # Backend: Notion → SQLite sync
 ├── finance-api/          # Backend: tRPC API
 ├── pops-pwa/            # Frontend: React PWA
 └── moltbot/             # Bot: Telegram assistant
@@ -162,7 +158,6 @@ infra/
 └── docker-compose.yml   # Compose configs
 ```
 
-- `apps/notion-sync/` — Notion → SQLite mirror (runs via systemd timer, not always-on)
 - `apps/finance-api/` — Express REST API over SQLite (bridges frontend/backend networks)
 - `apps/pops-pwa/` — React PWA served via nginx (Phase 4 stub)
 - `apps/moltbot/` — Config + custom finance skill for Moltbot (no Dockerfile, uses upstream image)
@@ -173,7 +168,7 @@ infra/
 
 ### Docker Networks
 - `pops-frontend` — cloudflared, pops-pwa, metabase, finance-api
-- `pops-backend` — finance-api, notion-sync, moltbot, tools (SQLite access)
+- `pops-backend` — finance-api, moltbot, tools (SQLite access)
 - `pops-documents` — cloudflared, paperless-ngx, paperless-redis (isolated)
 
 finance-api bridges frontend ↔ backend. cloudflared bridges frontend ↔ documents.
@@ -190,7 +185,6 @@ Interfaces: iPhone (PWA) | Telegram (Moltbot) | Web (Metabase)
     Cloudflare Tunnel + Cloudflare Access (Zero Trust)
     │
 N95 Mini PC (Docker Compose):
-    notion-sync ── Notion → SQLite mirror (cron 15min)
     finance-api ── Node.js REST over SQLite
     metabase ───── Dashboards & analytics
     moltbot ────── AI assistant (Telegram + finance plugin)
@@ -198,7 +192,7 @@ N95 Mini PC (Docker Compose):
     pops-pwa ───── React PWA
     │
 Data Layer:
-    Notion (SoT) ──sync──▶ SQLite mirror (fast queries)
+    SQLite (source of truth)
     Claude Haiku API (categorization, NL queries)
     │
 Bank Feeds:
@@ -211,14 +205,13 @@ Bank Feeds:
 1. Bank data arrives (Up webhook or CSV download)
 2. Import script parses, normalizes, cleans
 3. Entity matching: aliases → exact → prefix → contains → AI fallback (cached)
-4. Deduplication: date + amount count-based against existing Notion records
-5. Write to Notion Balance Sheet (3 concurrent, 400ms delay for rate limits)
-6. notion-sync mirrors Notion → SQLite every 15 minutes (incremental by `last_edited_time`)
+4. Deduplication: date + amount count-based against existing records
+5. Write to SQLite database
 
 ## Tech Stack
 
 - **Runtime:** Node.js
-- **Database:** SQLite (mirror), Notion (source of truth)
+- **Database:** SQLite (source of truth)
 - **Frontend:** React PWA
 - **Dashboards:** Metabase (self-hosted, Docker)
 - **AI:** Claude Haiku API (~$1-5/month)
@@ -314,11 +307,6 @@ mise db:init     # First time: Initialize empty database
 mise db:seed     # Seed with test data (44 records)
 mise dev:api     # Start API server
 mise dev:pwa     # Start PWA
-```
-
-**To Reset to Production State:**
-```bash
-mise db:pull     # Pull fresh data from Notion (source of truth)
 ```
 
 **For E2E Testing:**

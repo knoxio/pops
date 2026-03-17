@@ -15,7 +15,6 @@ metabase_data_dir: /opt/pops/data/metabase
 secrets_dir: /opt/pops/secrets
 
 # Schedules
-notion_sync_schedule: "*:0/15"    # systemd OnCalendar: every 15 minutes
 backup_schedule: "*-*-* 03:00:00" # systemd OnCalendar: 3am daily
 
 # SSH

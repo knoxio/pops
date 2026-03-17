@@ -1,6 +1,6 @@
 /**
  * Shared database types for POPS SQLite schema.
- * Used by both notion-sync (writes) and finance-api (reads) to ensure type consistency.
+ * Used by finance-api to ensure type consistency.
  */
 export { TransactionRowSchema, type TransactionRow } from "./transactions.js";
 export { EntityRowSchema, type EntityRow } from "./entities.js";

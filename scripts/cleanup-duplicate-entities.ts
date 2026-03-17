@@ -83,7 +83,7 @@ async function main() {
       .get(dup.keep);
     if (!kept) {
       console.log(`  ⚠ Warning: Kept entity ${dup.keep} not in local DB yet`);
-      console.log(`  → Run notion-sync to pull it from Notion`);
+      console.log(`  → Entity may need to be created via finance-api`);
     } else {
       console.log(`  ✓ Kept entity exists in local DB`);
     }
@@ -91,7 +91,7 @@ async function main() {
 
   console.log("\n✨ Cleanup complete!\n");
   console.log("Next steps:");
-  console.log("  1. Run 'cd apps/notion-sync && yarn dev' to sync remaining entities");
+  console.log("  1. Verify entities exist via finance-api");
   console.log("  2. Verify with: sqlite3 apps/finance-api/data/pops.db \"SELECT name, notion_id FROM entities WHERE LOWER(name) IN ('ampol', 'ikea')\"");
 
   db.close();

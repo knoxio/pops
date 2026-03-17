@@ -8,7 +8,7 @@ import BetterSqlite3 from 'better-sqlite3';
 import { Client } from '@notionhq/client';
 import * as path from 'path';
 
-// Import from notion-sync
+// Entity database IDs
 const NOTION_DB = {
   ENTITIES: process.env.NOTION_ENTITIES_DB_ID!,
 };

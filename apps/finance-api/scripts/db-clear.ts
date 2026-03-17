@@ -28,7 +28,6 @@ const clearTransaction = db.transaction(() => {
   db.exec(`DELETE FROM budgets`);
   db.exec(`DELETE FROM home_inventory`);
   db.exec(`DELETE FROM wish_list`);
-  db.exec(`DELETE FROM sync_cursors`);
   db.exec(`DELETE FROM transaction_corrections`);
 });
 
@@ -41,7 +40,6 @@ const counts = {
   budgets: db.prepare("SELECT COUNT(*) as count FROM budgets").get() as { count: number },
   home_inventory: db.prepare("SELECT COUNT(*) as count FROM home_inventory").get() as { count: number },
   wish_list: db.prepare("SELECT COUNT(*) as count FROM wish_list").get() as { count: number },
-  sync_cursors: db.prepare("SELECT COUNT(*) as count FROM sync_cursors").get() as { count: number },
   transaction_corrections: db.prepare("SELECT COUNT(*) as count FROM transaction_corrections").get() as { count: number },
 };
 
@@ -52,7 +50,6 @@ console.log(`  entities:               ${counts.entities.count}`);
 console.log(`  budgets:                ${counts.budgets.count}`);
 console.log(`  home_inventory:         ${counts.home_inventory.count}`);
 console.log(`  wish_list:              ${counts.wish_list.count}`);
-console.log(`  sync_cursors:           ${counts.sync_cursors.count}`);
 console.log(`  transaction_corrections:${counts.transaction_corrections.count}`);
 
 db.close();
