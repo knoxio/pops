@@ -54,56 +54,25 @@
   failed_when: false
   changed_when: false
 
-- name: Run initial Notion sync (first deploy only)
+- name: Fail if Docker is not available
+  ansible.builtin.fail:
+    msg: "Docker command failed unexpectedly (exit code {{ sqlite_db_check.rc }}): {{ sqlite_db_check.stderr }}"
+  when: sqlite_db_check.rc is defined and sqlite_db_check.rc > 1
+
+- name: Initialize database if it does not exist
   ansible.builtin.command:
-    cmd: docker compose run --rm notion-sync
+    cmd: >-
+      docker compose run --rm finance-api
+      node -e "const s=require('./dist/db/schema.js');const b=require('better-sqlite3');s.initializeSchema(b('/data/sqlite/pops.db'));console.log('Database initialized')"
     chdir: "{{ docker_compose_dir }}"
   become: true
   become_user: "{{ pops_user }}"
-  when: sqlite_db_check.rc != 0
-  async: 600
-  poll: 30
+  when: sqlite_db_check.rc == 1
+  register: db_init_result
+  async: 120
+  poll: 10
 
-- name: Create notion-sync systemd service
-  ansible.builtin.copy:
-    content: |
-      [Unit]
-      Description=POPS Notion Sync
-      Requires=docker.service
-      After=docker.service
-
-      [Service]
-      Type=oneshot
-      User={{ pops_user }}
-      ExecStart=/usr/bin/docker compose -f {{ docker_compose_dir }}/docker-compose.yml run --rm notion-sync
-      TimeoutStartSec=300
-    dest: /etc/systemd/system/pops-notion-sync.service
-    owner: root
-    group: root
-    mode: "0644"
-  notify: reload systemd
-
-- name: Create notion-sync systemd timer
-  ansible.builtin.copy:
-    content: |
-      [Unit]
-      Description=Run POPS Notion Sync every 15 minutes
-
-      [Timer]
-      OnCalendar={{ notion_sync_schedule }}
-      Persistent=true
-
-      [Install]
-      WantedBy=timers.target
-    dest: /etc/systemd/system/pops-notion-sync.timer
-    owner: root
-    group: root
-    mode: "0644"
-  notify: reload systemd
-
-- name: Enable and start notion-sync timer
-  ansible.builtin.systemd:
-    name: pops-notion-sync.timer
-    state: started
-    enabled: true
-    daemon_reload: true
+- name: Report database initialization failure
+  ansible.builtin.fail:
+    msg: "Database initialization failed: {{ db_init_result.stderr | default('unknown error') }}"
+  when: db_init_result is defined and db_init_result.rc is defined and db_init_result.rc != 0

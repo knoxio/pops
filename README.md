@@ -1,6 +1,6 @@
 # POPS — Personal Operations System
 
-A unified platform for financial tracking, asset management, budgeting, AI-powered automation, and reporting. Built on Notion as the source of truth, with self-hosted services for intelligence, dashboards, and proactive assistance.
+A unified platform for financial tracking, asset management, budgeting, AI-powered automation, and reporting. Self-hosted on an N95 mini PC with SQLite as the source of truth, AI-powered categorization, and Cloudflare Tunnel for secure access.
 
 ## Quick Deploy
 
@@ -45,7 +45,6 @@ See `docs/DEPLOYMENT_SETUP.md` for setup instructions.
 ┌────────────────────────┴────────────────────────────────┐
 │                 N95 MINI PC (Docker)                     │
 │                                                         │
-│  notion-sync ─── Notion → SQLite mirror (cron 15min)    │
 │  finance-api ─── Node.js REST over SQLite               │
 │  metabase ────── Dashboards & analytics                 │
 │  moltbot ─────── AI assistant (Telegram + finance)      │
@@ -56,12 +55,12 @@ See `docs/DEPLOYMENT_SETUP.md` for setup instructions.
 ┌────────────────────────┴────────────────────────────────┐
 │                      DATA LAYER                         │
 │                                                         │
-│  Notion (SoT)           │  Claude Haiku API             │
-│  ├─ Balance Sheet       │  (categorization, NL queries, │
-│  ├─ Entities            │   AI fallback) ~$1-5/month    │
-│  ├─ Home Inventory      │                               │
-│  ├─ Budget              │  SQLite mirror                │
-│  └─ Wish List           │  (fast queries, dashboards)   │
+│  SQLite (SoT)            │  Claude Haiku API             │
+│  ├─ Balance Sheet        │  (categorization, NL queries, │
+│  ├─ Entities             │   AI fallback) ~$1-5/month    │
+│  ├─ Home Inventory       │                               │
+│  ├─ Budget               │                               │
+│  └─ Wish List            │                               │
 └─────────────────────────────────────────────────────────┘
                          │
 ┌────────────────────────┴────────────────────────────────┐
@@ -76,8 +75,7 @@ See `docs/DEPLOYMENT_SETUP.md` for setup instructions.
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| Source of truth | Notion | Already embedded in life OS |
-| Analytics DB | SQLite mirror | Notion API too slow for aggregation |
+| Source of truth | SQLite | Fast local queries, full control, no API rate limits |
 | AI provider | Claude Haiku API | Cents/month for this workload |
 | Chat interface | Telegram (Moltbot) | Cross-platform, pragmatic |
 | Dashboards | Metabase (self-hosted) | Open-source, Docker, SQLite-compatible |
@@ -88,8 +86,8 @@ See `docs/DEPLOYMENT_SETUP.md` for setup instructions.
 
 | Phase | Target | Description | Status |
 |---|---|---|---|
-| 0 — Data Import | Feb 2026 | All bank accounts imported to Notion Balance Sheet | **Done** |
-| 1 — Foundation | Mar 2026 | Infrastructure, sync layer, AI imports, new Notion DBs | **In Progress** |
+| 0 — Data Import | Feb 2026 | All bank accounts imported to SQLite database | **Done** |
+| 1 — Foundation | Mar 2026 | Infrastructure, SQLite-only architecture, AI imports | **In Progress** |
 | 2 — Intelligence | Apr 2026 | Moltbot, dashboards, proactive alerts | Not Started |
 | 3 — Receipts & Inventory | May 2026 | Document management, receipt OCR, inventory linking | Not Started |
 | 4 — Mobile | Jun 2026 | PWA, quick-add, push notifications | Not Started |
@@ -97,7 +95,7 @@ See `docs/DEPLOYMENT_SETUP.md` for setup instructions.
 
 ## Goals
 
-1. **Automated data pipeline** — Bank transactions flow into Notion with minimal manual intervention. AI handles categorization, entity matching, and deduplication.
+1. **Automated data pipeline** — Bank transactions flow into SQLite with minimal manual intervention. AI handles categorization, entity matching, and deduplication.
 2. **Proactive financial assistant** — Moltbot monitors spending, sends alerts via Telegram, answers natural language queries.
 3. **Budgeting system** — Envelope-style budgets with real-time tracking per category.
 4. **Wish list & planned purchases** — Tiered purchase planning with saving progress tracking.
@@ -110,21 +108,20 @@ See `docs/DEPLOYMENT_SETUP.md` for setup instructions.
 
 ### N95 Mini PC (POPS Server)
 - **OS:** Ubuntu 24.04 (Docker Compose, provisioned via Ansible)
-- **Services:** notion-sync, finance-api, metabase, moltbot, paperless-ngx, pops-pwa
+- **Services:** finance-api, metabase, moltbot, paperless-ngx, pops-pwa
 - **Exposure:** Cloudflare Tunnel (free, zero port forwarding)
 - **URLs:** `pops.jmiranda.dev` (PWA), `pops-api.jmiranda.dev` (API), `pops-metabase.jmiranda.dev`, `pops-paperless.jmiranda.dev`
 
 ### External Services
 - **Cloudflare Tunnel** — Secure exposure, free
 - **Claude Haiku API** — Transaction categorization, NL queries (~$1-5/month)
-- **Notion** — Source of truth (existing plan)
 - **Up Bank API** — Real-time transaction webhooks (free)
 - **Telegram** — Moltbot messaging interface (free)
 
 ## Tech Stack
 
 - **Runtime:** Node.js
-- **Database:** SQLite (mirror), Notion (source of truth)
+- **Database:** SQLite (source of truth)
 - **Frontend:** React PWA
 - **Dashboards:** Metabase
 - **AI:** Claude Haiku API
@@ -211,7 +208,6 @@ mise tasks            # List all available tasks
 mise db:init          # Initialize empty database with schema
 mise db:clear         # Clear all data (preserves schema)
 mise db:seed          # Seed with comprehensive test data
-mise db:pull          # Pull fresh from Notion (full sync)
 ```
 
 See `mise.toml` for all available tasks and [CLAUDE.md](CLAUDE.md) for detailed command reference.

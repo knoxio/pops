@@ -228,7 +228,6 @@ if (cd infra/ansible && ansible-playbook playbooks/deploy.yml $ANSIBLE_ARGS); th
 Deployed services:
 - finance-api: $(cd apps/finance-api && git log -1 --pretty=format:'%h %s')
 - pops-pwa: $(cd apps/pops-pwa && git log -1 --pretty=format:'%h %s')
-- notion-sync: $(cd apps/notion-sync && git log -1 --pretty=format:'%h %s')
 
 Deployed at: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
 Deployed to: pops.local (N95)"

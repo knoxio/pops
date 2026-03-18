@@ -1,6 +1,6 @@
 /**
  * SQLite schema for wish_list table (snake_case columns).
- * Used by both notion-sync (writes) and finance-api (reads).
+ * Used by finance-api for wish list types.
  */
 import { z } from "zod/v4";
 

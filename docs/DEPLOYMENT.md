@@ -181,7 +181,7 @@ ssh -p 2222 pops@pops.local
 cd /opt/pops
 docker compose logs -f finance-api
 docker compose logs -f pops-pwa
-docker compose logs -f notion-sync
+docker compose logs -f metabase
 
 # Check service health
 docker compose ps
@@ -221,10 +221,6 @@ Each service builds separately:
    - Static assets optimized
    - Served via nginx
    - ~10MB final image
-
-3. **notion-sync**:
-   - TypeScript → JavaScript compilation
-   - Runs as systemd timer (every 15min)
 
 ## Health Checks
 

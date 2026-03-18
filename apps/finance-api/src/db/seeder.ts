@@ -22,7 +22,6 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
     db.exec(`DELETE FROM budgets`);
     db.exec(`DELETE FROM home_inventory`);
     db.exec(`DELETE FROM wish_list`);
-    db.exec(`DELETE FROM sync_cursors`);
     db.exec(`DELETE FROM ai_usage`);
 
     // -------------------------------------------------------------------------

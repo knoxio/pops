@@ -200,7 +200,7 @@ Deploy secret files from Ansible Vault to the target host.
 
 **Tasks:**
 - Create `/opt/pops/secrets/` directory
-- Deploy secret files (Notion API key, Cloudflare tokens, etc.)
+- Deploy secret files (API keys, Cloudflare tokens, etc.)
 - Set restrictive permissions (600, root:root)
 
 ### pops-deploy
