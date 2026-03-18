@@ -12,7 +12,7 @@ import type {
 
 /**
  * Unit tests for imports tRPC router.
- * Tests input validation and service function integration with mocked Notion API.
+ * Tests input validation and service function integration with SQLite-only writes.
  */
 
 // Mock AI categorizer with smart lookup-based responses
@@ -25,16 +25,14 @@ vi.mock("./lib/ai-categorizer.js", async (importOriginal) => {
   };
 });
 
-import type { Client } from "@notionhq/client";
 import { resetMockAi } from "./lib/ai-categorizer.mock.js";
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;
 let db: Database;
-let _notionMock: Client;
 
 /** Shape of a row returned from the entities SQLite table. */
-type EntityRow = { name: string; id: string; last_edited_time: string };
+type EntityRow = { name: string; id: string; notion_id: string | null; last_edited_time: string };
 
 /**
  * Helper to poll for import progress until completion
@@ -62,7 +60,7 @@ async function waitForCompletion<T extends ProcessImportOutput | ExecuteImportOu
 }
 
 beforeEach(() => {
-  ({ caller, db, notionMock: _notionMock } = ctx.setup());
+  ({ caller, db } = ctx.setup());
   resetMockAi();
   clearCache();
 });
@@ -72,8 +70,6 @@ afterEach(() => {
 });
 
 describe("imports.processImport", () => {
-  beforeEach(() => {});
-
   it("validates input schema (requires transactions array)", async () => {
     await expect(
       caller.imports.processImport({ account: "Amex" } as {
@@ -100,7 +96,7 @@ describe("imports.processImport", () => {
             account: "Amex",
             rawRow: "{}",
             checksum: "abc123",
-            // Missing date intentionally — tests runtime Zod validation
+            // Missing date intentionally -- tests runtime Zod validation
           } as ParsedTransaction,
         ],
         account: "Amex",
@@ -232,7 +228,7 @@ describe("imports.executeImport", () => {
             amount: -100,
             account: "Amex",
             rawRow: "{}",
-            // Missing checksum intentionally — tests runtime Zod validation
+            // Missing checksum intentionally -- tests runtime Zod validation
           } as ConfirmedTransaction,
         ],
       })
@@ -253,7 +249,6 @@ describe("imports.executeImport", () => {
           checksum: "abc123",
           entityId: "woolworths-id",
           entityName: "Woolworths",
-          entityUrl: "https://www.notion.so/woolworthsid",
         },
       ],
     });
@@ -280,30 +275,32 @@ describe("imports.executeImport", () => {
     expect(Array.isArray(result.failed)).toBe(true);
   });
 
-  it.skip("handles Notion API errors gracefully", async () => {
-    // TODO: Update shared mock to support error injection for specific tests
+  it("verifies transactions are written to SQLite", async () => {
     const { sessionId } = await caller.imports.executeImport({
       transactions: [
         {
           date: "2026-02-13",
-          description: "TEST",
+          description: "TEST TRANSACTION",
           amount: -100,
           account: "Amex",
-          rawRow: "{}",
-          checksum: "abc123",
+          rawRow: '{"test": true}',
+          checksum: "verify-sqlite-123",
           entityId: "entity-id",
           entityName: "Entity",
-          entityUrl: "https://notion.so/entity",
         },
       ],
     });
 
     const result = await waitForCompletion<ExecuteImportOutput>(sessionId);
-    expect(result).toBeDefined();
+    expect(result.imported).toBe(1);
 
-    expect(result.imported).toBe(0);
-    expect(result.failed.length).toBe(1);
-    expect(result.failed[0].error).toBe("Notion API error");
+    // Verify the row was written to SQLite
+    const row = db
+      .prepare("SELECT * FROM transactions WHERE checksum = ?")
+      .get("verify-sqlite-123") as { description: string; amount: number } | undefined;
+    expect(row).toBeDefined();
+    expect(row?.description).toBe("TEST TRANSACTION");
+    expect(row?.amount).toBe(-100);
   }, 10000);
 });
 
@@ -328,7 +325,6 @@ describe("imports.createEntity", () => {
     expect(result.entityId).toBeDefined();
     expect(result.entityId).toMatch(/^[0-9a-f-]{36}$/); // UUID format
     expect(result.entityName).toBe("New Merchant");
-    expect(result.entityUrl).toMatch(/^https:\/\/www\.notion\.so\/[0-9a-f]{32}$/);
   });
 
   it("returns correct output structure", async () => {
@@ -338,15 +334,14 @@ describe("imports.createEntity", () => {
 
     expect(result).toHaveProperty("entityId");
     expect(result).toHaveProperty("entityName");
-    expect(result).toHaveProperty("entityUrl");
   });
 
   it("handles entity names with special characters", async () => {
     const result = await caller.imports.createEntity({
-      name: "McDonald's Café & Grill",
+      name: "McDonald's Cafe & Grill",
     });
 
-    expect(result.entityName).toBe("McDonald's Café & Grill");
+    expect(result.entityName).toBe("McDonald's Cafe & Grill");
   });
 
   it("handles very long entity names", async () => {
@@ -356,15 +351,6 @@ describe("imports.createEntity", () => {
     });
 
     expect(result.entityName).toBe(longName);
-  });
-
-  it.skip("throws error when Notion API fails", async () => {
-    // TODO: Update shared mock to support error injection for specific tests
-    await expect(
-      caller.imports.createEntity({
-        name: "Test Entity",
-      })
-    ).rejects.toThrow("Notion API error");
   });
 
   it("inserts entity into SQLite", async () => {

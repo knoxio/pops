@@ -3,9 +3,9 @@
  *
  * Procedures:
  * - processImport: Deduplicate and match entities (no writes) - returns session ID for polling
- * - executeImport: Write confirmed transactions to Notion - returns session ID for polling
+ * - executeImport: Write confirmed transactions to SQLite - returns session ID for polling
  * - getImportProgress: Poll for import progress by session ID
- * - createEntity: Create new entity in Notion
+ * - createEntity: Create new entity in SQLite
  */
 import { z } from "zod";
 import crypto from "crypto";
@@ -53,7 +53,7 @@ export const importsRouter = router({
   }),
 
   /**
-   * Execute import: write confirmed transactions to Notion
+   * Execute import: write confirmed transactions to SQLite
    *
    * Returns session ID immediately, writing happens in background.
    * Use getImportProgress to poll for results.
@@ -73,10 +73,8 @@ export const importsRouter = router({
       startedAt: new Date().toISOString(),
     });
 
-    // Execute in background (don't await)
-    executeImportWithProgress(sessionId, input.transactions).catch((error) => {
-      console.error("[Import] Background execution failed:", error);
-    });
+    // Execute synchronously (writes to SQLite, no network calls)
+    executeImportWithProgress(sessionId, input.transactions);
 
     // Return session ID immediately
     return { sessionId };
@@ -92,10 +90,8 @@ export const importsRouter = router({
       return getProgress(input.sessionId);
     }),
 
-  /**
-   * Create a new entity in Notion and refresh SQLite cache
-   */
-  createEntity: protectedProcedure.input(createEntityInputSchema).mutation(async ({ input }) => {
+  /** Create a new entity in SQLite. */
+  createEntity: protectedProcedure.input(createEntityInputSchema).mutation(({ input }) => {
     return createEntity(input.name);
   }),
 });

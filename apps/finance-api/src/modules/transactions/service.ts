@@ -96,12 +96,12 @@ export function createTransaction(input: CreateTransactionInput): TransactionRow
     INSERT INTO transactions (
       id, description, account, amount, date, type, tags,
       entity_id, entity_name, location, country,
-      related_transaction_id, notes, last_edited_time
+      related_transaction_id, notes, checksum, raw_row, last_edited_time
     )
     VALUES (
       @id, @description, @account, @amount, @date, @type, @tags,
       @entityId, @entityName, @location, @country,
-      @relatedTransactionId, @notes, @lastEditedTime
+      @relatedTransactionId, @notes, @checksum, @rawRow, @lastEditedTime
     )
   `
   ).run({
@@ -118,6 +118,8 @@ export function createTransaction(input: CreateTransactionInput): TransactionRow
     country: input.country ?? null,
     relatedTransactionId: input.relatedTransactionId ?? null,
     notes: input.notes ?? null,
+    checksum: input.checksum ?? null,
+    rawRow: input.rawRow ?? null,
     lastEditedTime: now,
   });
 

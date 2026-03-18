@@ -78,11 +78,14 @@ export function createTestDb(): Database {
       country         TEXT,
       related_transaction_id TEXT,
       notes           TEXT,
+      checksum        TEXT,
+      raw_row         TEXT,
       last_edited_time TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
     CREATE INDEX IF NOT EXISTS idx_transactions_account ON transactions(account);
     CREATE INDEX IF NOT EXISTS idx_transactions_entity ON transactions(entity_id);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_checksum ON transactions(checksum);
 
     CREATE TABLE IF NOT EXISTS home_inventory (
       id                     TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
@@ -214,6 +217,8 @@ export function seedTransaction(
     country: string | null;
     related_transaction_id: string | null;
     notes: string | null;
+    checksum: string | null;
+    raw_row: string | null;
     last_edited_time: string;
   }> = {}
 ): string {
@@ -224,12 +229,12 @@ export function seedTransaction(
     INSERT INTO transactions (
       id, description, account, amount, date, type, tags,
       entity_id, entity_name, location, country,
-      related_transaction_id, notes, last_edited_time
+      related_transaction_id, notes, checksum, raw_row, last_edited_time
     )
     VALUES (
       @id, @description, @account, @amount, @date, @type, @tags,
       @entity_id, @entity_name, @location, @country,
-      @related_transaction_id, @notes, @last_edited_time
+      @related_transaction_id, @notes, @checksum, @raw_row, @last_edited_time
     )
   `
   ).run({
@@ -246,6 +251,8 @@ export function seedTransaction(
     country: overrides.country ?? null,
     related_transaction_id: overrides.related_transaction_id ?? null,
     notes: overrides.notes ?? null,
+    checksum: overrides.checksum ?? null,
+    raw_row: overrides.raw_row ?? null,
     last_edited_time: overrides.last_edited_time ?? "2025-01-01T00:00:00.000Z",
   });
 

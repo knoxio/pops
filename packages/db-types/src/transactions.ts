@@ -19,6 +19,8 @@ export const TransactionRowSchema = z.object({
   country: z.string().nullable(),
   related_transaction_id: z.string().nullable(),
   notes: z.string().nullable(),
+  checksum: z.string().nullable(),
+  raw_row: z.string().nullable(),
   last_edited_time: z.string(),
 });
 

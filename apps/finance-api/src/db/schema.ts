@@ -20,6 +20,7 @@ const INCLUDED_MIGRATIONS = [
   "008_add_tags_to_transactions.sql",
   "009_environments.sql",
   "010_uuid_primary_keys.sql",
+  "011_add_checksum_raw_row.sql",
 ];
 
 /**
@@ -48,6 +49,8 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       country TEXT,
       related_transaction_id TEXT,
       notes TEXT,
+      checksum TEXT,
+      raw_row TEXT,
       last_edited_time TEXT NOT NULL
     );
 
@@ -56,6 +59,7 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     CREATE INDEX IF NOT EXISTS idx_transactions_entity ON transactions(entity_id);
     CREATE INDEX IF NOT EXISTS idx_transactions_last_edited ON transactions(last_edited_time);
     CREATE INDEX IF NOT EXISTS idx_transactions_notion_id ON transactions(notion_id);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_checksum ON transactions(checksum);
 
     CREATE TABLE IF NOT EXISTS entities (
       id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),

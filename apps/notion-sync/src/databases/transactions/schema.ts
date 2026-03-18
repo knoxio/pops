@@ -18,6 +18,8 @@ export function createTransactionsTable(db: Database.Database): void {
       country         TEXT,
       related_transaction_id TEXT,
       notes           TEXT,
+      checksum        TEXT,
+      raw_row         TEXT,
       last_edited_time TEXT NOT NULL
     );
 
@@ -25,5 +27,6 @@ export function createTransactionsTable(db: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_transactions_account ON transactions(account);
     CREATE INDEX IF NOT EXISTS idx_transactions_entity ON transactions(entity_id);
     CREATE INDEX IF NOT EXISTS idx_transactions_last_edited ON transactions(last_edited_time);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_checksum ON transactions(checksum);
   `);
 }

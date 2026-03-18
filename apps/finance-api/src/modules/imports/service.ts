@@ -1,13 +1,13 @@
 /**
- * Import service — entity matching, deduplication, and Notion writes.
+ * Import service — entity matching, deduplication, and SQLite writes.
  *
  * Key features:
  * - Universal entity matching (same algorithm for all banks)
- * - Checksum-based deduplication (more reliable than date+amount)
+ * - Checksum-based deduplication against SQLite
  * - AI fallback with full row context
- * - Batch writes with rate limiting
+ * - Batch writes to SQLite (no Notion dependency)
  */
-import { getDb, isNamedEnvContext } from "../../db.js";
+import { getDb } from "../../db.js";
 import { logger } from "../../lib/logger.js";
 import { formatImportError } from "../../lib/errors.js";
 import { matchEntity } from "./lib/entity-matcher.js";
@@ -15,9 +15,7 @@ import { categorizeWithAi, AiCategorizationError } from "./lib/ai-categorizer.js
 import { updateProgress } from "./progress-store.js";
 import { findMatchingCorrection } from "../corrections/service.js";
 import { suggestTags } from "../../shared/tag-suggester.js";
-import { getNotionClient, getBalanceSheetId, getEntitiesDbId } from "../../shared/notion-client.js";
-import { createTransaction } from "../transactions/service.js";
-import type { Client } from "@notionhq/client";
+import type { TransactionRow } from "../transactions/types.js";
 import type {
   ParsedTransaction,
   ProcessedTransaction,
@@ -30,9 +28,6 @@ import type {
   AiUsageStats,
   SuggestedTag,
 } from "./types.js";
-
-const CONCURRENCY = 3;
-const DELAY_MS = 400;
 
 /** Parse a JSON-encoded tags string from the corrections table into a string array. */
 function parseCorrectionTags(raw: string): string[] {
@@ -56,7 +51,7 @@ function parseCorrectionTags(raw: string): string[] {
  * - entity: tags from suggestTags() that weren't already attributed above
  *
  * The "ai" match is case-insensitive against tags returned by availableTags
- * (i.e. what's actually in the user's Notion database), so no hardcoded list.
+ * (i.e. what's actually in the transactions table), so no hardcoded list.
  */
 /**
  * Load the flat list of all tag strings currently in the transactions table.
@@ -168,93 +163,79 @@ function loadAliases(): Record<string, string> {
 }
 
 /**
- * Query Notion for existing checksums
- * Returns set of checksums that already exist, and any error that occurred
- *
- * NOTE: Requires "Checksum" property to exist in Notion Balance Sheet.
- * If property doesn't exist, this will fail and we'll fall back to returning empty set.
+ * Query SQLite for existing checksums.
+ * Returns set of checksums that already exist in the transactions table.
  */
-async function findExistingChecksums(
-  client: Client,
-  checksums: string[]
-): Promise<{
-  checksums: Set<string>;
-  error?: { type: string; message: string; details?: string };
-}> {
-  // Named envs are ephemeral test databases with no Notion counterpart —
-  // deduplication against Notion is meaningless and would make an unnecessary
-  // network call. SKIP_NOTION_DEDUP=true is kept as a manual escape hatch.
-  if (isNamedEnvContext() || process.env["SKIP_NOTION_DEDUP"] === "true") {
-    return { checksums: new Set() };
+function findExistingChecksums(checksums: string[]): Set<string> {
+  if (checksums.length === 0) return new Set();
+
+  const db = getDb();
+  const existingChecksums = new Set<string>();
+
+  // Query in batches of 500 to avoid SQLite variable limits
+  for (let i = 0; i < checksums.length; i += 500) {
+    const batch = checksums.slice(i, i + 500);
+    const placeholders = batch.map(() => "?").join(",");
+    const rows = db
+      .prepare(`SELECT checksum FROM transactions WHERE checksum IN (${placeholders})`)
+      .all(...batch) as Array<{ checksum: string }>;
+
+    for (const row of rows) {
+      existingChecksums.add(row.checksum);
+    }
   }
 
-  try {
-    // Query in batches of 100 (Notion filter limit)
-    const existingChecksums = new Set<string>();
+  return existingChecksums;
+}
 
-    for (let i = 0; i < checksums.length; i += 100) {
-      const batch = checksums.slice(i, i + 100);
+/** Insert a transaction directly into SQLite. Returns the created row. */
+function insertTransaction(input: {
+  description: string;
+  account: string;
+  amount: number;
+  date: string;
+  type: string;
+  tags: string[];
+  entityId: string | null;
+  entityName: string | null;
+  location: string | null;
+  rawRow?: string;
+  checksum?: string;
+}): TransactionRow {
+  const db = getDb();
+  const id = crypto.randomUUID();
+  const now = new Date().toISOString();
 
-      const response = await client.databases.query({
-        database_id: getBalanceSheetId(),
-        filter: {
-          or: batch.map((checksum) => ({
-            property: "Checksum",
-            rich_text: { equals: checksum },
-          })),
-        },
-      });
+  db.prepare(
+    `
+    INSERT INTO transactions (
+      id, description, account, amount, date, type, tags,
+      entity_id, entity_name, location,
+      checksum, raw_row, last_edited_time
+    )
+    VALUES (
+      @id, @description, @account, @amount, @date, @type, @tags,
+      @entityId, @entityName, @location,
+      @checksum, @rawRow, @lastEditedTime
+    )
+  `
+  ).run({
+    id,
+    description: input.description,
+    account: input.account,
+    amount: input.amount,
+    date: input.date,
+    type: input.type || "",
+    tags: JSON.stringify(input.tags),
+    entityId: input.entityId,
+    entityName: input.entityName,
+    location: input.location,
+    checksum: input.checksum ?? null,
+    rawRow: input.rawRow ?? null,
+    lastEditedTime: now,
+  });
 
-      for (const page of response.results) {
-        if ("properties" in page) {
-          const checksumProp = page.properties["Checksum"];
-          if (checksumProp?.type === "rich_text") {
-            const richText = checksumProp.rich_text;
-            if (Array.isArray(richText) && richText[0]?.plain_text) {
-              existingChecksums.add(richText[0].plain_text);
-            }
-          }
-        }
-      }
-    }
-
-    return { checksums: existingChecksums };
-  } catch (error) {
-    console.warn("[imports] Failed to query checksums from Notion:", error);
-    console.warn("[imports] Checksum property may not exist. Skipping deduplication.");
-
-    // Determine error type
-    let errorType = "NOTION_API_ERROR";
-    let errorMessage = "Failed to query Notion for duplicates";
-    let errorDetails: string | undefined;
-
-    if (error && typeof error === "object" && "code" in error) {
-      const notionError = error as { code: string; message?: string; status?: number };
-
-      if (notionError.code === "object_not_found") {
-        errorType = "NOTION_DATABASE_NOT_FOUND";
-        errorMessage = `Database not found. Check that NOTION_BALANCE_SHEET_ID is correct and the database is shared with your integration.`;
-        errorDetails = notionError.message;
-      } else if (
-        notionError.code === "validation_error" &&
-        notionError.message?.includes("Checksum")
-      ) {
-        errorType = "DEDUPLICATION_DISABLED";
-        errorMessage = `Deduplication disabled: Notion database is missing the "Checksum" property. All transactions will be processed (duplicates may occur).`;
-        errorDetails = `To enable deduplication, add a "Rich text" property named "Checksum" to your Balance Sheet database.`;
-      } else {
-        errorMessage = notionError.message || errorMessage;
-        errorDetails = `Code: ${notionError.code}, Status: ${notionError.status}`;
-      }
-    } else if (error instanceof Error) {
-      errorDetails = error.message;
-    }
-
-    return {
-      checksums: new Set(),
-      error: { type: errorType, message: errorMessage, details: errorDetails },
-    };
-  }
+  return db.prepare("SELECT * FROM transactions WHERE id = ?").get(id) as TransactionRow;
 }
 
 /**
@@ -264,8 +245,6 @@ export async function processImport(
   transactions: ParsedTransaction[],
   account: string
 ): Promise<ProcessImportOutput> {
-  const client = getNotionClient();
-
   // Generate unique batch ID for tracking AI usage
   const importBatchId = `import-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
@@ -274,14 +253,13 @@ export async function processImport(
     "[Import] Starting processImport"
   );
 
-  // Step 1: Checksum-based deduplication
+  // Step 1: Checksum-based deduplication against SQLite
   logger.info(
     { checksumCount: transactions.length },
-    "[Import] Querying Notion for existing checksums"
+    "[Import] Querying SQLite for existing checksums"
   );
   const checksums = transactions.map((t) => t.checksum);
-  const deduplicationResult = await findExistingChecksums(client, checksums);
-  const existingChecksums = deduplicationResult.checksums;
+  const existingChecksums = findExistingChecksums(checksums);
 
   logger.info(
     {
@@ -345,7 +323,6 @@ export async function processImport(
           entity: {
             entityId: correction.entity_id,
             entityName: correction.entity_name ?? "Unknown",
-            entityUrl: `https://www.notion.so/${correction.entity_id.replace(/-/g, "")}`,
             matchType: "learned" as never, // UI-only matchType
             confidence: correction.confidence,
           },
@@ -387,7 +364,6 @@ export async function processImport(
           entity: {
             entityId,
             entityName: match.entityName,
-            entityUrl: `https://www.notion.so/${entityId.replace(/-/g, "")}`,
             matchType: match.matchType,
           },
           status: "matched",
@@ -440,7 +416,6 @@ export async function processImport(
               entity: {
                 entityId,
                 entityName: existingEntity,
-                entityUrl: `https://www.notion.so/${entityId.replace(/-/g, "")}`,
                 matchType: "ai",
               },
               status: "matched",
@@ -497,15 +472,6 @@ export async function processImport(
   // Build warnings array
   const warnings: ImportWarning[] = [];
 
-  // Add Notion API errors
-  if (deduplicationResult.error) {
-    warnings.push({
-      type: deduplicationResult.error.type as ImportWarning["type"],
-      message: deduplicationResult.error.message,
-      details: deduplicationResult.error.details,
-    });
-  }
-
   // Add AI categorization errors
   if (aiError && aiFailureCount > 0) {
     warnings.push({
@@ -553,88 +519,72 @@ export async function processImport(
   };
 }
 
-/**
- * Execute import: write confirmed transactions to Notion
- */
-export async function executeImport(
+/** Execute import: write confirmed transactions to SQLite. */
+export function executeImport(
   transactions: ConfirmedTransaction[]
-): Promise<ExecuteImportOutput> {
+): ExecuteImportOutput {
   logger.info({ totalCount: transactions.length }, "[Import] Starting executeImport");
 
   const results: ImportResult[] = [];
   let imported = 0;
   const skipped = 0;
 
-  // Batch writes with concurrency control
-  let idx = 0;
+  for (let i = 0; i < transactions.length; i++) {
+    const transaction = transactions[i];
+    if (!transaction) continue;
 
-  async function worker(): Promise<void> {
-    while (idx < transactions.length) {
-      const i = idx++;
-      const transaction = transactions[i];
-      if (!transaction) continue;
-
-      try {
-        const notionType =
-          transaction.transactionType === "transfer"
-            ? "Transfer"
-            : transaction.transactionType === "income"
-              ? "Income"
-              : "Expense";
-        const row = await createTransaction({
-          description: transaction.description,
-          account: transaction.account,
-          amount: transaction.amount,
-          date: transaction.date,
-          type: notionType,
-          tags: transaction.tags ?? [],
-          entityId: transaction.entityId ?? null,
-          entityName: transaction.entityName ?? null,
-          location: transaction.location ?? null,
-          rawRow: transaction.rawRow,
-          checksum: transaction.checksum,
-        });
-        const pageId = row.id;
-        logger.debug(
-          {
-            index: i + 1,
-            total: transactions.length,
-            description: transaction.description.substring(0, 50),
-            pageId,
-          },
-          "[Import] Transaction written"
-        );
-        results.push({
-          transaction,
-          success: true,
-          notionPageId: pageId,
-        });
-        imported++;
-      } catch (error) {
-        logger.error(
-          {
-            index: i + 1,
-            total: transactions.length,
-            description: transaction.description.substring(0, 50),
-            error: error instanceof Error ? error.message : String(error),
-          },
-          "[Import] Transaction write failed"
-        );
-        results.push({
-          transaction,
-          success: false,
-          error: error instanceof Error ? error.message : "Unknown error",
-        });
-      }
-
-      // Rate limiting delay
-      await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
+    try {
+      const type =
+        transaction.transactionType === "transfer"
+          ? "Transfer"
+          : transaction.transactionType === "income"
+            ? "Income"
+            : "Expense";
+      const row = insertTransaction({
+        description: transaction.description,
+        account: transaction.account,
+        amount: transaction.amount,
+        date: transaction.date,
+        type,
+        tags: transaction.tags ?? [],
+        entityId: transaction.entityId ?? null,
+        entityName: transaction.entityName ?? null,
+        location: transaction.location ?? null,
+        rawRow: transaction.rawRow,
+        checksum: transaction.checksum,
+      });
+      logger.debug(
+        {
+          index: i + 1,
+          total: transactions.length,
+          description: transaction.description.substring(0, 50),
+          id: row.id,
+        },
+        "[Import] Transaction written"
+      );
+      results.push({
+        transaction,
+        success: true,
+        pageId: row.id,
+      });
+      imported++;
+    } catch (error) {
+      logger.error(
+        {
+          index: i + 1,
+          total: transactions.length,
+          description: transaction.description.substring(0, 50),
+          error: error instanceof Error ? error.message : String(error),
+        },
+        "[Import] Transaction write failed"
+      );
+      results.push({
+        transaction,
+        success: false,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
     }
   }
-
-  // Run workers in parallel
-  const workers = Array.from({ length: CONCURRENCY }, () => worker());
-  await Promise.all(workers);
 
   const failed = results.filter((r) => !r.success);
 
@@ -644,35 +594,21 @@ export async function executeImport(
 }
 
 /**
- * Create a new entity in Notion and refresh SQLite cache
+ * Create a new entity in SQLite.
+ * Returns the generated id and name.
  */
-export async function createEntity(name: string): Promise<CreateEntityOutput> {
-  const client = getNotionClient();
-
-  // Create in Notion Entities database
-  const response = await client.pages.create({
-    parent: { database_id: getEntitiesDbId() },
-    properties: {
-      Name: {
-        title: [{ text: { content: name } }],
-      },
-    },
-  });
-
-  const notionId = response.id;
-  const entityId = crypto.randomUUID();
-  const entityUrl = `https://www.notion.so/${notionId.replace(/-/g, "")}`;
-
-  // Insert into SQLite (notion-sync will update it on next sync)
+export function createEntity(name: string): CreateEntityOutput {
   const db = getDb();
+  const entityId = crypto.randomUUID();
+
   db.prepare(
     `
-    INSERT OR REPLACE INTO entities (id, notion_id, name, type, abn, aliases, default_transaction_type, default_tags, notes, last_edited_time)
-    VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, ?)
+    INSERT INTO entities (id, name, last_edited_time)
+    VALUES (?, ?, ?)
   `
-  ).run(entityId, notionId, name, new Date().toISOString());
+  ).run(entityId, name, new Date().toISOString());
 
-  return { entityId, entityName: name, entityUrl };
+  return { entityId, entityName: name };
 }
 
 /**
@@ -685,7 +621,6 @@ export async function processImportWithProgress(
   account: string
 ): Promise<void> {
   try {
-    const client = getNotionClient();
     const importBatchId = `import-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
     logger.info(
@@ -693,16 +628,15 @@ export async function processImportWithProgress(
       "[Import] Starting background processImport"
     );
 
-    // Step 1: Deduplication
+    // Step 1: Deduplication against SQLite
     updateProgress(sessionId, { currentStep: "deduplicating", processedCount: 0 });
 
     logger.info(
       { checksumCount: transactions.length },
-      "[Import] Querying Notion for existing checksums"
+      "[Import] Querying SQLite for existing checksums"
     );
     const checksums = transactions.map((t) => t.checksum);
-    const deduplicationResult = await findExistingChecksums(client, checksums);
-    const existingChecksums = deduplicationResult.checksums;
+    const existingChecksums = findExistingChecksums(checksums);
 
     logger.info(
       {
@@ -794,7 +728,6 @@ export async function processImportWithProgress(
             entity: {
               entityId,
               entityName: match.entityName,
-              entityUrl: `https://www.notion.so/${entityId.replace(/-/g, "")}`,
               matchType: match.matchType,
             },
             status: "matched",
@@ -849,7 +782,6 @@ export async function processImportWithProgress(
                 entity: {
                   entityId,
                   entityName: existingEntity,
-                  entityUrl: `https://www.notion.so/${entityId.replace(/-/g, "")}`,
                   matchType: "ai",
                 },
                 status: "matched",
@@ -924,13 +856,6 @@ export async function processImportWithProgress(
 
     // Build warnings
     const warnings: ImportWarning[] = [];
-    if (deduplicationResult.error) {
-      warnings.push({
-        type: deduplicationResult.error.type as ImportWarning["type"],
-        message: deduplicationResult.error.message,
-        details: deduplicationResult.error.details,
-      });
-    }
     if (aiError && aiFailureCount > 0) {
       warnings.push({
         type:
@@ -1007,12 +932,12 @@ export async function processImportWithProgress(
 
 /**
  * Execute import with real-time progress updates.
- * This is an async wrapper that updates progress store as transactions are written.
+ * Writes transactions directly to SQLite and updates progress store.
  */
-export async function executeImportWithProgress(
+export function executeImportWithProgress(
   sessionId: string,
   transactions: ConfirmedTransaction[]
-): Promise<void> {
+): void {
   try {
     logger.info(
       { sessionId, totalCount: transactions.length },
@@ -1038,22 +963,18 @@ export async function executeImportWithProgress(
     }> = [];
     const errors: Array<{ description: string; error: string }> = [];
 
-    let idx = 0;
+    for (let i = 0; i < transactions.length; i++) {
+      const transaction = transactions[i];
+      if (!transaction) continue;
 
-    async function worker(): Promise<void> {
-      while (idx < transactions.length) {
-        const i = idx++;
-        const transaction = transactions[i];
-        if (!transaction) continue;
-
-        const batchItem: {
-          description: string;
-          status: "processing" | "success" | "failed";
-          error?: string;
-        } = {
-          description: transaction.description.substring(0, 50),
-          status: "processing",
-        };
+      const batchItem: {
+        description: string;
+        status: "processing" | "success" | "failed";
+        error?: string;
+      } = {
+        description: transaction.description.substring(0, 50),
+        status: "processing",
+      };
 
         // Update current batch (show up to 5 items)
         currentBatch.push(batchItem);
@@ -1065,18 +986,18 @@ export async function executeImportWithProgress(
         });
 
         try {
-          const notionType =
+          const type =
             transaction.transactionType === "transfer"
               ? "Transfer"
               : transaction.transactionType === "income"
                 ? "Income"
                 : "Expense";
-          const row = await createTransaction({
+          const row = insertTransaction({
             description: transaction.description,
             account: transaction.account,
             amount: transaction.amount,
             date: transaction.date,
-            type: notionType,
+            type,
             tags: transaction.tags ?? [],
             entityId: transaction.entityId ?? null,
             entityName: transaction.entityName ?? null,
@@ -1084,13 +1005,12 @@ export async function executeImportWithProgress(
             rawRow: transaction.rawRow,
             checksum: transaction.checksum,
           });
-          const pageId = row.id;
           logger.debug(
             {
               index: i + 1,
               total: transactions.length,
               description: transaction.description.substring(0, 50),
-              pageId,
+              id: row.id,
             },
             "[Import] Transaction written"
           );
@@ -1098,7 +1018,7 @@ export async function executeImportWithProgress(
           results.push({
             transaction,
             success: true,
-            notionPageId: pageId,
+            pageId: row.id,
           });
           imported++;
 
@@ -1132,17 +1052,9 @@ export async function executeImportWithProgress(
           });
         }
 
-        // Update batch item status
-        updateProgress(sessionId, { currentBatch: [...currentBatch] });
-
-        // Rate limiting delay
-        await new Promise((resolve) => setTimeout(resolve, DELAY_MS));
-      }
+      // Update batch item status
+      updateProgress(sessionId, { currentBatch: [...currentBatch] });
     }
-
-    // Run workers in parallel
-    const workers = Array.from({ length: CONCURRENCY }, () => worker());
-    await Promise.all(workers);
 
     const failed = results.filter((r) => !r.success);
 

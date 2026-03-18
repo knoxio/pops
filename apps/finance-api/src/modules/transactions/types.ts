@@ -67,9 +67,9 @@ export const CreateTransactionSchema = z.object({
   country: z.string().nullable().optional(),
   relatedTransactionId: z.string().nullable().optional(),
   notes: z.string().nullable().optional(),
-  /** Import-only: raw CSV row, stored in Notion for audit trail. Not persisted in SQLite. */
+  /** Import-only: raw CSV row for audit trail. */
   rawRow: z.string().optional(),
-  /** Import-only: checksum for deduplication, stored in Notion. Not persisted in SQLite. */
+  /** Import-only: checksum for deduplication. */
   checksum: z.string().optional(),
 });
 export type CreateTransactionInput = z.infer<typeof CreateTransactionSchema>;

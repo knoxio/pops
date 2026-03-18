@@ -54,17 +54,16 @@ export function ProcessingStep() {
       const result = progressQuery.data.result as ProcessImportOutput;
       setProcessedTransactions(result);
 
-      // Check if there are CRITICAL Notion errors (not deduplication warnings)
-      const hasCriticalNotionError = result.warnings?.some(
+      // Check if there are critical errors
+      const hasCriticalError = result.warnings?.some(
         (w: ImportWarning) =>
-          w.type === "NOTION_DATABASE_NOT_FOUND" ||
-          w.type === "NOTION_API_ERROR"
+          w.type === "AI_API_ERROR"
       );
 
-      if (hasCriticalNotionError) {
+      if (hasCriticalError) {
         // Don't auto-advance - let user see the error
         console.error(
-          "[Import] Processing completed with critical Notion errors - review warnings"
+          "[Import] Processing completed with critical errors - review warnings"
         );
       } else {
         // No critical errors - proceed to review (deduplication warnings are non-critical)
@@ -217,38 +216,18 @@ export function ProcessingStep() {
           <div className="w-full max-w-md space-y-2">
             {(progressQuery.data.result as ProcessImportOutput).warnings!.map(
               (warning: ImportWarning, idx: number) => {
-                const isCriticalNotionError =
-                  warning.type === "NOTION_DATABASE_NOT_FOUND" ||
-                  warning.type === "NOTION_API_ERROR";
-                const isDeduplicationDisabled =
-                  warning.type === "DEDUPLICATION_DISABLED";
-                const isAiError =
-                  warning.type === "AI_CATEGORIZATION_UNAVAILABLE" ||
-                  warning.type === "AI_API_ERROR";
-
                 return (
                   <div
                     key={idx}
-                    className={`p-4 text-sm rounded-lg border ${
-                      isCriticalNotionError
-                        ? "text-red-800 bg-red-50 dark:bg-red-900/20 dark:text-red-200 border-red-200 dark:border-red-800"
-                        : "text-amber-800 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-200 border-amber-200 dark:border-amber-800"
-                    }`}
+                    className="p-4 text-sm rounded-lg border text-amber-800 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-200 border-amber-200 dark:border-amber-800"
                   >
                     <div className="flex items-start gap-3">
                       <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                       <div className="flex-1 space-y-1">
                         <p className="font-medium">
-                          {warning.type === "NOTION_DATABASE_NOT_FOUND"
-                            ? "Notion Database Not Found"
-                            : warning.type === "NOTION_API_ERROR"
-                              ? "Notion API Error"
-                              : warning.type === "DEDUPLICATION_DISABLED"
-                                ? "Deduplication Disabled"
-                                : warning.type ===
-                                    "AI_CATEGORIZATION_UNAVAILABLE"
-                                  ? "AI Categorization Unavailable"
-                                  : "AI API Error"}
+                          {warning.type === "AI_CATEGORIZATION_UNAVAILABLE"
+                            ? "AI Categorization Unavailable"
+                            : "AI API Error"}
                         </p>
                         <p className="text-xs">{warning.message}</p>
                         {warning.details && (
@@ -256,30 +235,12 @@ export function ProcessingStep() {
                             {warning.details}
                           </p>
                         )}
-                        {isAiError && warning.affectedCount && (
+                        {warning.affectedCount && (
                           <p className="text-xs opacity-80">
                             {warning.affectedCount} transaction
                             {warning.affectedCount !== 1 ? "s" : ""} could not
                             be automatically categorized. You can manually
                             categorize them in the review step.
-                          </p>
-                        )}
-                        {(isCriticalNotionError || isDeduplicationDisabled) && (
-                          <p className="text-xs opacity-80 mt-2">
-                            {warning.type === "DEDUPLICATION_DISABLED" ? (
-                              <>
-                                This is expected for new databases. See{" "}
-                                <code>docs/NOTION_SETUP.md</code> for setup
-                                instructions. Imports will work but duplicates
-                                may occur.
-                              </>
-                            ) : (
-                              <>
-                                Check your .env file and ensure
-                                NOTION_BALANCE_SHEET_ID is correct and the
-                                database is shared with your Notion integration.
-                              </>
-                            )}
                           </p>
                         )}
                       </div>
@@ -317,8 +278,8 @@ export function ProcessingStep() {
       {progressQuery.data?.status === "completed" &&
         (progressQuery.data.result as ProcessImportOutput)?.warnings?.some(
           (w: ImportWarning) =>
-            w.type === "NOTION_DATABASE_NOT_FOUND" ||
-            w.type === "NOTION_API_ERROR"
+            w.type === "AI_CATEGORIZATION_UNAVAILABLE" ||
+            w.type === "AI_API_ERROR"
         ) && (
           <Button onClick={nextStep} className="mt-4">
             Continue to Review

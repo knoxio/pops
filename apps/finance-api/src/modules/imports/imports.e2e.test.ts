@@ -5,7 +5,7 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import Papa from "papaparse";
 import type { Database } from "better-sqlite3";
-import { seedEntity, createCaller, createTestDb } from "../../shared/test-utils.js";
+import { seedEntity, seedTransaction, createCaller, createTestDb } from "../../shared/test-utils.js";
 import { transformAmex } from "./transformers/amex.js";
 import { clearCache } from "./lib/ai-categorizer.js";
 import type { ConfirmedTransaction, ProcessImportOutput, ExecuteImportOutput } from "./types.js";
@@ -13,11 +13,11 @@ import type { ConfirmedTransaction, ProcessImportOutput, ExecuteImportOutput } f
 /**
  * E2E Integration Test for Complete Import Flow
  *
- * Tests the entire import pipeline from CSV → Notion with:
+ * Tests the entire import pipeline from CSV to SQLite with:
  * - Real CSV parsing (using test data)
  * - Real transformer functions
  * - Real entity matching (with seeded data)
- * - Mocked Notion API (100% offline)
+ * - Real SQLite writes (in-memory test DB)
  * - Mocked AI categorization (100% offline)
  *
  * NO external API calls - fully reproducible.
@@ -25,25 +25,6 @@ import type { ConfirmedTransaction, ProcessImportOutput, ExecuteImportOutput } f
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-
-// Mock Notion client
-const mockNotionQuery = vi.fn();
-const mockNotionCreate = vi.fn();
-
-vi.mock("@notionhq/client", () => {
-  return {
-    Client: vi.fn().mockImplementation(() => {
-      return {
-        databases: {
-          query: mockNotionQuery,
-        },
-        pages: {
-          create: mockNotionCreate,
-        },
-      };
-    }),
-  };
-});
 
 // Mock AI categorizer with smart lookup-based responses
 vi.mock("./lib/ai-categorizer.js", async (importOriginal) => {
@@ -60,7 +41,6 @@ import { setDb, closeDb } from "../../db.js";
 
 let caller: ReturnType<typeof createCaller>;
 let db: Database;
-const originalNotionToken = process.env["NOTION_API_TOKEN"];
 
 /**
  * Helper to poll for import progress until completion
@@ -92,34 +72,12 @@ beforeEach(() => {
   setDb(db);
   caller = createCaller(true);
 
-  mockNotionQuery.mockClear();
-  mockNotionCreate.mockClear();
   resetMockAi();
   clearCache();
-
-  // Set all required Notion env vars
-  process.env["NOTION_API_TOKEN"] = "test-notion-token";
-  process.env["NOTION_BALANCE_SHEET_ID"] = "test-balance-sheet-id";
-  process.env["NOTION_ENTITIES_DB_ID"] = "test-entities-db-id";
-  process.env["NOTION_HOME_INVENTORY_ID"] = "test-inventory-id";
-  process.env["NOTION_BUDGET_ID"] = "test-budget-id";
-  process.env["NOTION_WISH_LIST_ID"] = "test-wishlist-id";
 });
 
 afterEach(() => {
   closeDb();
-  if (originalNotionToken === undefined) {
-    delete process.env["NOTION_API_TOKEN"];
-  } else {
-    process.env["NOTION_API_TOKEN"] = originalNotionToken;
-  }
-
-  // Clean up other env vars
-  delete process.env["NOTION_BALANCE_SHEET_ID"];
-  delete process.env["NOTION_ENTITIES_DB_ID"];
-  delete process.env["NOTION_HOME_INVENTORY_ID"];
-  delete process.env["NOTION_BUDGET_ID"];
-  delete process.env["NOTION_WISH_LIST_ID"];
 });
 
 describe("E2E: Complete Import Flow", () => {
@@ -168,25 +126,11 @@ describe("E2E: Complete Import Flow", () => {
     expect(parsed[0].date).toBe("2026-02-13");
     expect(parsed[0].amount).toBe(-125.5); // Inverted
 
-    // Step 3: Mock Notion to simulate 1 existing checksum (row 7 is duplicate of row 1)
+    // Step 3: Seed an existing transaction to simulate 1 duplicate (row 7 is duplicate of row 1)
     const existingChecksum = parsed[6].checksum; // 7th row (duplicate)
-    mockNotionQuery.mockResolvedValue({
-      results: [
-        {
-          properties: {
-            Checksum: {
-              type: "rich_text",
-              rich_text: [{ plain_text: existingChecksum }],
-            },
-          },
-        },
-      ],
-    });
+    seedTransaction(db, { checksum: existingChecksum });
 
-    // Step 4: Pattern matching in mock will categorize unknown merchant
-    // (no explicit setup needed - default fallback returns "Unknown Merchant")
-
-    // Step 5: Process import (dedup + entity match)
+    // Step 4: Process import (dedup + entity match)
     const { sessionId: processSessionId } = await caller.imports.processImport({
       transactions: parsed,
       account: "Amex",
@@ -215,7 +159,7 @@ describe("E2E: Complete Import Flow", () => {
     expect(netflixMatch?.entity.entityName).toBe("Netflix");
     expect(netflixMatch?.entity.matchType).toBe("contains");
 
-    // Step 6: Manually resolve uncertain transactions
+    // Step 5: Manually resolve uncertain transactions
     const confirmed: ConfirmedTransaction[] = [
       ...processed.matched.map((t) => ({
         date: t.date,
@@ -228,51 +172,49 @@ describe("E2E: Complete Import Flow", () => {
         checksum: t.checksum,
         entityId: t.entity.entityId ?? "",
         entityName: t.entity.entityName ?? "",
-        entityUrl: t.entity.entityUrl ?? "",
       })),
     ];
 
     expect(confirmed.length).toBeGreaterThan(0);
 
-    // Step 7: Mock Notion page creation
-    let createCount = 0;
-    mockNotionCreate.mockImplementation(() => {
-      createCount++;
-      return Promise.resolve({ id: `page-id-${createCount}` });
-    });
-
-    // Step 8: Execute import (write to Notion)
+    // Step 6: Execute import (write to SQLite)
     const { sessionId: executeSessionId } = await caller.imports.executeImport({
       transactions: confirmed,
     });
 
-    // executeImport has 400ms rate limit per transaction, so increase timeout
-    const result = await waitForCompletion<ExecuteImportOutput>(executeSessionId, 500); // 5 second timeout
+    const result = await waitForCompletion<ExecuteImportOutput>(executeSessionId, 500);
     expect(result).toBeDefined();
 
-    // Step 9: Verify results
+    // Step 7: Verify results
     expect(result.imported).toBe(confirmed.length);
     expect(result.failed.length).toBe(0);
 
-    // Verify Notion API calls
-    expect(mockNotionCreate).toHaveBeenCalledTimes(confirmed.length);
+    // Verify rows were written to SQLite (excluding the 1 seeded duplicate)
+    const transactionCount = db
+      .prepare("SELECT COUNT(*) as cnt FROM transactions")
+      .get() as { cnt: number };
+    // 1 seeded duplicate + confirmed.length newly imported
+    expect(transactionCount.cnt).toBe(1 + confirmed.length);
 
-    // Verify structure of Notion page creation
-    const firstCall = mockNotionCreate.mock.calls[0][0];
-    expect(firstCall).toHaveProperty("parent");
-    expect(firstCall).toHaveProperty("properties");
-    expect(firstCall.properties).toHaveProperty("Description");
-    expect(firstCall.properties).toHaveProperty("Amount");
-    expect(firstCall.properties).toHaveProperty("Date");
-    expect(firstCall.properties).toHaveProperty("Checksum");
-    expect(firstCall.properties).toHaveProperty("Raw Row");
-    expect(firstCall.properties).toHaveProperty("Entity");
+    // Verify data integrity of a specific row
+    if (woolworthsMatch) {
+      const row = db
+        .prepare("SELECT * FROM transactions WHERE checksum = ?")
+        .get(woolworthsMatch.checksum) as {
+        description: string;
+        entity_name: string | null;
+        account: string;
+      } | undefined;
+      expect(row).toBeDefined();
+      expect(row?.description).toBe(woolworthsMatch.description);
+      expect(row?.entity_name).toBe("Woolworths");
+      expect(row?.account).toBe("Amex");
+    }
   }, 30000); // 30 second timeout
 
-  it("handles complete failure gracefully", async () => {
-    // Mock Notion API to always fail
-    mockNotionQuery.mockResolvedValue({ results: [] });
-    mockNotionCreate.mockRejectedValue(new Error("Notion API Error"));
+  it("imports a unique transaction alongside existing data", async () => {
+    // Seed an existing transaction, then verify a new unique one succeeds
+    seedTransaction(db, { checksum: "test123" });
 
     const mockTransaction: ConfirmedTransaction = {
       date: "2026-02-13",
@@ -280,10 +222,9 @@ describe("E2E: Complete Import Flow", () => {
       amount: -100,
       account: "Amex",
       rawRow: "{}",
-      checksum: "test123",
+      checksum: "unique-test-456",
       entityId: "entity-id",
       entityName: "Entity",
-      entityUrl: "https://notion.so/entity",
     };
 
     const { sessionId } = await caller.imports.executeImport({
@@ -293,10 +234,48 @@ describe("E2E: Complete Import Flow", () => {
     const result = await waitForCompletion<ExecuteImportOutput>(sessionId);
     expect(result).toBeDefined();
 
+    expect(result.imported).toBe(1);
+    expect(result.failed.length).toBe(0);
+  }, 10000);
+
+  it("rejects duplicate checksum on insert (UNIQUE constraint)", async () => {
+    seedTransaction(db, { checksum: "duplicate-checksum" });
+
+    const duplicate: ConfirmedTransaction = {
+      date: "2026-02-14",
+      description: "DUPLICATE TXN",
+      amount: -50,
+      account: "Amex",
+      rawRow: "{}",
+      checksum: "duplicate-checksum",
+      entityId: "entity-id",
+      entityName: "Entity",
+    };
+
+    const { sessionId } = await caller.imports.executeImport({
+      transactions: [duplicate],
+    });
+
+    const result = await waitForCompletion<ExecuteImportOutput>(sessionId);
+    expect(result).toBeDefined();
+
     expect(result.imported).toBe(0);
     expect(result.failed.length).toBe(1);
-    expect(result.failed[0].error).toContain("Notion API Error");
+    expect(result.failed[0].error).toMatch(/UNIQUE constraint/i);
   }, 10000);
+
+  it("allows multiple NULL checksums (no UNIQUE violation at DB layer)", () => {
+    // SQLite UNIQUE index treats each NULL as distinct, so multiple
+    // NULL-checksum rows should coexist without constraint errors
+    seedTransaction(db, { checksum: undefined });
+    seedTransaction(db, { checksum: undefined });
+
+    const count = db
+      .prepare("SELECT COUNT(*) AS cnt FROM transactions WHERE checksum IS NULL")
+      .get() as { cnt: number };
+
+    expect(count.cnt).toBe(2);
+  });
 
   it("deduplicates correctly across multiple imports", async () => {
     seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
@@ -313,8 +292,6 @@ describe("E2E: Complete Import Flow", () => {
     };
 
     // First import - no duplicates
-    mockNotionQuery.mockResolvedValue({ results: [] });
-
     const { sessionId: sid1 } = await caller.imports.processImport({
       transactions: [transaction],
       account: "Amex",
@@ -326,20 +303,19 @@ describe("E2E: Complete Import Flow", () => {
     expect(result1.matched.length).toBe(1);
     expect(result1.skipped.length).toBe(0);
 
-    // Second import - mock that checksum now exists
-    mockNotionQuery.mockResolvedValue({
-      results: [
-        {
-          properties: {
-            Checksum: {
-              type: "rich_text",
-              rich_text: [{ plain_text: "unique-checksum-123" }],
-            },
-          },
-        },
-      ],
-    });
+    // Execute the first import to write to SQLite
+    const confirmed: ConfirmedTransaction = {
+      ...transaction,
+      entityId: result1.matched[0].entity.entityId ?? "",
+      entityName: result1.matched[0].entity.entityName ?? "",
+    };
 
+    const { sessionId: execSid } = await caller.imports.executeImport({
+      transactions: [confirmed],
+    });
+    await waitForCompletion<ExecuteImportOutput>(execSid, 500);
+
+    // Second import - checksum now exists in SQLite
     const { sessionId: sid2 } = await caller.imports.processImport({
       transactions: [transaction],
       account: "Amex",
@@ -355,9 +331,8 @@ describe("E2E: Complete Import Flow", () => {
 
   it("handles mixed transaction types in single batch", async () => {
     seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
-    mockNotionQuery.mockResolvedValue({ results: [] });
 
-    // Mock AI to return null — unknown transaction routes to uncertain (needs human review)
+    // Mock AI to return null -- unknown transaction routes to uncertain (needs human review)
     mockConfig.alwaysReturnNull = true;
 
     const transactions = [
@@ -396,8 +371,6 @@ describe("E2E: Complete Import Flow", () => {
 
   it("preserves transaction data through complete pipeline", async () => {
     seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
-    mockNotionQuery.mockResolvedValue({ results: [] });
-    mockNotionCreate.mockResolvedValue({ id: "page-id" });
 
     const originalTransaction = {
       date: "2026-02-13",
@@ -424,7 +397,6 @@ describe("E2E: Complete Import Flow", () => {
       ...processed.matched[0],
       entityId: processed.matched[0].entity.entityId ?? "",
       entityName: processed.matched[0].entity.entityName ?? "",
-      entityUrl: processed.matched[0].entity.entityUrl ?? "",
     };
 
     // Execute
@@ -432,16 +404,28 @@ describe("E2E: Complete Import Flow", () => {
       transactions: [confirmed],
     });
 
-    await waitForCompletion<ExecuteImportOutput>(executeSessionId, 500); // 5 second timeout for rate limiting
+    await waitForCompletion<ExecuteImportOutput>(executeSessionId, 500);
 
-    // Verify data preservation in Notion call
-    const notionCall = mockNotionCreate.mock.calls[0][0];
-    expect(notionCall.properties.Description.title[0].text.content).toBe("WOOLWORTHS 1234");
-    expect(notionCall.properties.Amount.number).toBe(-125.5);
-    expect(notionCall.properties.Date.date.start).toBe("2026-02-13");
-    expect(notionCall.properties.Location.select.name).toBe("North Sydney");
-    expect(notionCall.properties.Tags.multi_select).toEqual([]);
-    expect(notionCall.properties.Checksum.rich_text[0].text.content).toBe("preserve123");
+    // Verify data preservation in SQLite
+    const row = db
+      .prepare("SELECT * FROM transactions WHERE checksum = ?")
+      .get("preserve123") as {
+      description: string;
+      amount: number;
+      date: string;
+      location: string | null;
+      tags: string;
+      checksum: string;
+      raw_row: string | null;
+    } | undefined;
+
+    expect(row).toBeDefined();
+    expect(row?.description).toBe("WOOLWORTHS 1234");
+    expect(row?.amount).toBe(-125.5);
+    expect(row?.date).toBe("2026-02-13");
+    expect(row?.location).toBe("North Sydney");
+    expect(JSON.parse(row?.tags ?? "[]")).toEqual([]);
+    expect(row?.checksum).toBe("preserve123");
   }, 10000);
 });
 

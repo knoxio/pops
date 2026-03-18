@@ -89,9 +89,6 @@ export const importWarningSchema = z.object({
   type: z.enum([
     "AI_CATEGORIZATION_UNAVAILABLE",
     "AI_API_ERROR",
-    "NOTION_DATABASE_NOT_FOUND",
-    "NOTION_API_ERROR",
-    "DEDUPLICATION_DISABLED",
   ]),
   message: z.string(),
   affectedCount: z.number().optional(),
@@ -144,7 +141,8 @@ export const importResultSchema = z.object({
   transaction: confirmedTransactionSchema,
   success: z.boolean(),
   error: z.string().optional(),
-  notionPageId: z.string().optional(),
+  /** ID of the created transaction row. */
+  pageId: z.string().optional(),
 });
 
 export type ImportResult = z.infer<typeof importResultSchema>;
@@ -175,7 +173,7 @@ export type CreateEntityInput = z.infer<typeof createEntityInputSchema>;
 export const createEntityOutputSchema = z.object({
   entityId: z.string(),
   entityName: z.string(),
-  entityUrl: z.string(),
+  entityUrl: z.string().optional(),
 });
 
 export type CreateEntityOutput = z.infer<typeof createEntityOutputSchema>;

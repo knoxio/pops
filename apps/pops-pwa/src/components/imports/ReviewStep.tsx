@@ -290,7 +290,7 @@ export function ReviewStep() {
   );
 
   const handleEntityCreated = useCallback(
-    (entity: { entityId: string; entityName: string; entityUrl: string }) => {
+    (entity: { entityId: string; entityName: string; entityUrl?: string }) => {
       // Handle bulk assignment if pending
       if (pendingBulkTransactions && pendingBulkTransactions.length > 0) {
         const bulkCount = pendingBulkTransactions.length;
@@ -518,33 +518,18 @@ export function ReviewStep() {
         processedTransactions.warnings.length > 0 && (
           <div className="space-y-2">
             {processedTransactions.warnings.map((warning, idx: number) => {
-              const isNotionError =
-                warning.type === "NOTION_DATABASE_NOT_FOUND" ||
-                warning.type === "NOTION_API_ERROR";
-              const isAiError =
-                warning.type === "AI_CATEGORIZATION_UNAVAILABLE" ||
-                warning.type === "AI_API_ERROR";
-
               return (
                 <div
                   key={idx}
-                  className={`p-4 text-sm rounded-lg border ${
-                    isNotionError
-                      ? "text-red-800 bg-red-50 dark:bg-red-900/20 dark:text-red-200 border-red-200 dark:border-red-800"
-                      : "text-amber-800 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-200 border-amber-200 dark:border-amber-800"
-                  }`}
+                  className="p-4 text-sm rounded-lg border text-amber-800 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-200 border-amber-200 dark:border-amber-800"
                 >
                   <div className="flex items-start gap-3">
                     <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
                     <div className="flex-1 space-y-1">
                       <p className="font-medium">
-                        {warning.type === "NOTION_DATABASE_NOT_FOUND"
-                          ? "Notion Database Not Found"
-                          : warning.type === "NOTION_API_ERROR"
-                            ? "Notion API Error"
-                            : warning.type === "AI_CATEGORIZATION_UNAVAILABLE"
-                              ? "AI Categorization Unavailable"
-                              : "AI API Error"}
+                        {warning.type === "AI_CATEGORIZATION_UNAVAILABLE"
+                          ? "AI Categorization Unavailable"
+                          : "AI API Error"}
                       </p>
                       <p className="text-xs">{warning.message}</p>
                       {warning.details && (
@@ -552,7 +537,7 @@ export function ReviewStep() {
                           {warning.details}
                         </p>
                       )}
-                      {isAiError && warning.affectedCount && (
+                      {warning.affectedCount && (
                         <p className="text-xs opacity-80">
                           {warning.affectedCount} transaction
                           {warning.affectedCount !== 1 ? "s" : ""} could not be
@@ -560,13 +545,7 @@ export function ReviewStep() {
                           Uncertain or Failed tabs.
                         </p>
                       )}
-                      {isNotionError && (
-                        <p className="text-xs opacity-80 mt-2">
-                          Check your .env file and ensure
-                          NOTION_BALANCE_SHEET_ID is correct and the database is
-                          shared with your Notion integration.
-                        </p>
-                      )}
+
                     </div>
                   </div>
                 </div>
