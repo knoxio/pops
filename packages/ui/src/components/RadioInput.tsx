@@ -3,8 +3,8 @@
  * Built on @radix-ui/react-radio-group
  */
 import { forwardRef } from "react";
-import { cn } from "@/lib/utils";
-import { RadioGroup, RadioGroupItem } from "@pops/ui";
+import { cn } from "../lib/utils";
+import { RadioGroup, RadioGroupItem } from "../primitives/radio-group";
 
 export interface RadioOption {
   label: string;

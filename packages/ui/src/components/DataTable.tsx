@@ -19,7 +19,7 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { ArrowUpDown, ChevronDown, Search } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils";
 import {
   Table,
   TableBody,
@@ -27,16 +27,16 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@pops/ui";
-import { Button } from "@/components/Button";
-import { TextInput } from "@/components/TextInput";
+} from "../primitives/table";
+import { Button } from "./Button";
+import { TextInput } from "./TextInput";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
-} from "@pops/ui";
-import { FilterBar, type ColumnFilter } from "@/components/DataTableFilters";
+} from "../primitives/dropdown-menu";
+import { FilterBar, type ColumnFilter } from "./DataTableFilters";
 
 export interface DataTableProps<TData, TValue = unknown> {
   /**

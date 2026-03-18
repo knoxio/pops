@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, useEffect } from "react";
 import { Progress } from "./progress";
-import { Button } from "@ui/components/Button";
+import { Button } from "../components/Button";
 
 const meta: Meta<typeof Progress> = {
   title: "Data Display/Progress",

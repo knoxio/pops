@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils";
 
 const containerVariants = cva(
   "flex items-center gap-2 w-full bg-background text-foreground transition-all outline-0 focus:outline-0 focus-visible:outline-0 focus-within:outline-0 ring-0 focus:ring-0 focus-visible:ring-0 focus-within:ring-0",

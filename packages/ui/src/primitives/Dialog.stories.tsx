@@ -9,11 +9,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./dialog";
-import { Button } from "@ui/components/Button";
-import { TextInput } from "@ui/components/TextInput";
-import { NumberInput } from "@ui/components/NumberInput";
-import { DateTimeInput } from "@ui/components/DateTimeInput";
-import { Select } from "@ui/components/Select";
+import { Button } from "../components/Button";
+import { TextInput } from "../components/TextInput";
+import { NumberInput } from "../components/NumberInput";
+import { DateTimeInput } from "../components/DateTimeInput";
+import { Select } from "../components/Select";
 
 const meta: Meta<typeof Dialog> = {
   title: "Feedback/Dialog",

@@ -4,7 +4,7 @@
 import { Outlet } from "react-router";
 import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";
-import { ErrorBoundary } from "@/components/ErrorBoundary";
+import { ErrorBoundary } from "@pops/ui";
 import { useUIStore } from "@/store/uiStore";
 
 export function RootLayout() {

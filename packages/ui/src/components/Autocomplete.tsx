@@ -3,7 +3,7 @@
  * Built on Popover + Command for proper positioning and filtering
  */
 import { useState, useRef, useEffect } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils";
 import {
   Command,
   CommandEmpty,
@@ -11,12 +11,12 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@pops/ui";
+} from "../primitives/command";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@pops/ui";
+} from "../primitives/popover";
 
 export interface AutocompleteSuggestion {
   label: string;

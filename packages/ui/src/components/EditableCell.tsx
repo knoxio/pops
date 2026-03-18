@@ -4,7 +4,7 @@
  */
 import { useState, useEffect, useRef } from "react";
 import { Check, X, Pencil } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "../lib/utils";
 import { TextInput } from "./TextInput";
 import { NumberInput } from "./NumberInput";
 import { DateTimeInput } from "./DateTimeInput";

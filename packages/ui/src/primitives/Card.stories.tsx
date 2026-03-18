@@ -8,7 +8,7 @@ import {
   CardFooter,
   CardAction,
 } from "./card";
-import { Button } from "@ui/components/Button";
+import { Button } from "../components/Button";
 import { Badge } from "./badge";
 import { Progress } from "./progress";
 import {

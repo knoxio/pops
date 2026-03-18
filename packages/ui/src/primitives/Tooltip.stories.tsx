@@ -5,7 +5,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "./tooltip";
-import { Button } from "@ui/components/Button";
+import { Button } from "../components/Button";
 import { InfoIcon, HelpCircleIcon } from "lucide-react";
 
 const meta: Meta<typeof Tooltip> = {

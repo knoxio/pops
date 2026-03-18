@@ -3,7 +3,7 @@ import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTable, SortableHeader } from "./DataTable";
 import { EditableCell } from "./EditableCell";
-import { Checkbox } from "@pops/ui";
+import { Checkbox } from "../primitives/checkbox";
 import { Button } from "./Button";
 
 const meta: Meta<typeof DataTable> = {
