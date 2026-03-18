@@ -59,8 +59,8 @@ export const transactionsRouter = router({
   }),
 
   /** Create a new transaction. */
-  create: protectedProcedure.input(CreateTransactionSchema).mutation(async ({ input }) => {
-    const row = await service.createTransaction(input);
+  create: protectedProcedure.input(CreateTransactionSchema).mutation(({ input }) => {
+    const row = service.createTransaction(input);
     return {
       data: toTransaction(row),
       message: "Transaction created",
@@ -75,9 +75,9 @@ export const transactionsRouter = router({
         data: UpdateTransactionSchema,
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(({ input }) => {
       try {
-        const row = await service.updateTransaction(input.id, input.data);
+        const row = service.updateTransaction(input.id, input.data);
         return {
           data: toTransaction(row),
           message: "Transaction updated",
@@ -91,9 +91,9 @@ export const transactionsRouter = router({
     }),
 
   /** Delete a transaction. */
-  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
+  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(({ input }) => {
     try {
-      await service.deleteTransaction(input.id);
+      service.deleteTransaction(input.id);
       return { message: "Transaction deleted" };
     } catch (err) {
       if (err instanceof NotFoundError) {
@@ -121,8 +121,7 @@ export const transactionsRouter = router({
 
   /**
    * List all distinct tag values from existing transactions.
-   * Used for autocomplete in tag editors — reflects the actual tags in the user's
-   * Notion database (mirrored to SQLite by notion-sync).
+   * Used for autocomplete in tag editors — reflects the actual tags in the SQLite database.
    * Returns an empty array when no transactions exist yet; callers allow free-form input.
    */
   availableTags: protectedProcedure.query(() => {

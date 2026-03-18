@@ -41,9 +41,9 @@ export const entitiesRouter = router({
   }),
 
   /** Create a new entity. */
-  create: protectedProcedure.input(CreateEntitySchema).mutation(async ({ input }) => {
+  create: protectedProcedure.input(CreateEntitySchema).mutation(({ input }) => {
     try {
-      const row = await service.createEntity(input);
+      const row = service.createEntity(input);
       return {
         data: toEntity(row),
         message: "Entity created",
@@ -64,9 +64,9 @@ export const entitiesRouter = router({
         data: UpdateEntitySchema,
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(({ input }) => {
       try {
-        const row = await service.updateEntity(input.id, input.data);
+        const row = service.updateEntity(input.id, input.data);
         return {
           data: toEntity(row),
           message: "Entity updated",
@@ -80,9 +80,9 @@ export const entitiesRouter = router({
     }),
 
   /** Delete an entity. */
-  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
+  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(({ input }) => {
     try {
-      await service.deleteEntity(input.id);
+      service.deleteEntity(input.id);
       return { message: "Entity deleted" };
     } catch (err) {
       if (err instanceof NotFoundError) {

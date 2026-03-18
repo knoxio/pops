@@ -46,8 +46,8 @@ export const wishlistRouter = router({
   }),
 
   /** Create a new wish list item. */
-  create: protectedProcedure.input(CreateWishListItemSchema).mutation(async ({ input }) => {
-    const row = await service.createWishListItem(input);
+  create: protectedProcedure.input(CreateWishListItemSchema).mutation(({ input }) => {
+    const row = service.createWishListItem(input);
     return {
       data: toWishListItem(row),
       message: "Wish list item created",
@@ -62,9 +62,9 @@ export const wishlistRouter = router({
         data: UpdateWishListItemSchema,
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(({ input }) => {
       try {
-        const row = await service.updateWishListItem(input.id, input.data);
+        const row = service.updateWishListItem(input.id, input.data);
         return {
           data: toWishListItem(row),
           message: "Wish list item updated",
@@ -78,9 +78,9 @@ export const wishlistRouter = router({
     }),
 
   /** Delete a wish list item. */
-  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
+  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(({ input }) => {
     try {
-      await service.deleteWishListItem(input.id);
+      service.deleteWishListItem(input.id);
       return { message: "Wish list item deleted" };
     } catch (err) {
       if (err instanceof NotFoundError) {

@@ -50,9 +50,9 @@ export const budgetsRouter = router({
   }),
 
   /** Create a new budget. */
-  create: protectedProcedure.input(CreateBudgetSchema).mutation(async ({ input }) => {
+  create: protectedProcedure.input(CreateBudgetSchema).mutation(({ input }) => {
     try {
-      const row = await service.createBudget(input);
+      const row = service.createBudget(input);
       return {
         data: toBudget(row),
         message: "Budget created",
@@ -73,9 +73,9 @@ export const budgetsRouter = router({
         data: UpdateBudgetSchema,
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(({ input }) => {
       try {
-        const row = await service.updateBudget(input.id, input.data);
+        const row = service.updateBudget(input.id, input.data);
         return {
           data: toBudget(row),
           message: "Budget updated",
@@ -89,9 +89,9 @@ export const budgetsRouter = router({
     }),
 
   /** Delete a budget. */
-  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(async ({ input }) => {
+  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(({ input }) => {
     try {
-      await service.deleteBudget(input.id);
+      service.deleteBudget(input.id);
       return { message: "Budget deleted" };
     } catch (err) {
       if (err instanceof NotFoundError) {
