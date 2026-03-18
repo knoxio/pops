@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
   DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu";
+} from "@pops/ui";
 
 export interface DropdownMenuItem {
   label: string;
@@ -140,4 +140,4 @@ export {
   DropdownMenuItem as DropdownMenuItemPrimitive,
   DropdownMenuSeparator,
   DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu";
+} from "@pops/ui";

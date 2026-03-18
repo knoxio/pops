@@ -27,7 +27,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@pops/ui";
 import { Button } from "@/components/Button";
 import { TextInput } from "@/components/TextInput";
 import {
@@ -35,7 +35,7 @@ import {
   DropdownMenuContent,
   DropdownMenuCheckboxItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@pops/ui";
 import { FilterBar, type ColumnFilter } from "@/components/DataTableFilters";
 
 export interface DataTableProps<TData, TValue = unknown> {

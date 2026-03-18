@@ -1,6 +1,6 @@
 import { CheckCircle, XCircle, AlertCircle } from "lucide-react";
 import { useImportStore } from "../../store/importStore";
-import { Button } from "../ui/button";
+import { Button } from "@pops/ui";
 import { useNavigate } from "react-router-dom";
 
 /**

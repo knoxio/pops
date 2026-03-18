@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import crypto from "crypto-js";
 import { useImportStore } from "../../store/importStore";
-import { Button } from "../ui/button";
+import { Button } from "@pops/ui";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import type { ParsedTransaction } from "@pops/finance-api/modules/imports";
 

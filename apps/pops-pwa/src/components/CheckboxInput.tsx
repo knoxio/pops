@@ -4,7 +4,7 @@
  */
 import { forwardRef, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { Checkbox } from "@/components/ui/checkbox";
+import { Checkbox } from "@pops/ui";
 
 export interface CheckboxInputProps {
   /**

@@ -1,11 +1,11 @@
 import { MapPin, Info } from "lucide-react";
-import { Badge } from "../ui/badge";
+import { Badge } from "@pops/ui";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "../ui/tooltip";
+} from "@pops/ui";
 import type { ProcessedTransaction } from "@pops/finance-api/modules/imports";
 import { extractLocationDetails } from "../../lib/transaction-utils";
 

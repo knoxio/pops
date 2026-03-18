@@ -7,8 +7,8 @@
  */
 import { useState, useRef, useEffect } from "react";
 import { Chip } from "./Chip";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { Badge } from "./ui/badge";
+import { Popover, PopoverContent, PopoverTrigger } from "@pops/ui";
+import { Badge } from "@pops/ui";
 import { cn } from "@/lib/utils";
 
 /** Source attribution for a tag — from AI, correction rule, or entity defaults. */

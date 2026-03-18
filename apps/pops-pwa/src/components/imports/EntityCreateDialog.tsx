@@ -7,10 +7,10 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "../ui/dialog";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
-import { Button } from "../ui/button";
+} from "@pops/ui";
+import { Input } from "@pops/ui";
+import { Label } from "@pops/ui";
+import { Button } from "@pops/ui";
 
 interface EntityCreateDialogProps {
   open: boolean;

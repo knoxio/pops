@@ -8,7 +8,7 @@ import { trpc, trpcClient } from "@/lib/trpc";
 import { router } from "./router";
 import { RouterProvider } from "react-router";
 import { useThemeStore } from "@/store/themeStore";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@pops/ui";
 
 const queryClient = new QueryClient({
   defaultOptions: {

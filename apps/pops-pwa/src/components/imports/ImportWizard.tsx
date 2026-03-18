@@ -5,7 +5,7 @@ import { ProcessingStep } from "./ProcessingStep";
 import { ReviewStep } from "./ReviewStep";
 import { TagReviewStep } from "./TagReviewStep";
 import { SummaryStep } from "./SummaryStep";
-import { Progress } from "../ui/progress";
+import { Progress } from "@pops/ui";
 
 /**
  * Import wizard orchestrator - manages 6-step flow
