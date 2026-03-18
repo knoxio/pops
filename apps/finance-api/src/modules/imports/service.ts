@@ -128,18 +128,18 @@ function buildSuggestedTags(
 }
 
 /**
- * Load entity lookup from SQLite: name → notion_id
+ * Load entity lookup from SQLite: name → id
  */
 function loadEntityLookup(): Record<string, string> {
   const db = getDb();
-  const rows = db.prepare("SELECT name, notion_id FROM entities").all() as Array<{
+  const rows = db.prepare("SELECT name, id FROM entities").all() as Array<{
     name: string;
-    notion_id: string;
+    id: string;
   }>;
 
   const lookup: Record<string, string> = {};
   for (const row of rows) {
-    lookup[row.name] = row.notion_id;
+    lookup[row.name] = row.id;
   }
   return lookup;
 }
@@ -594,7 +594,7 @@ export async function executeImport(
           rawRow: transaction.rawRow,
           checksum: transaction.checksum,
         });
-        const pageId = row.notion_id;
+        const pageId = row.id;
         logger.debug(
           {
             index: i + 1,
@@ -659,17 +659,18 @@ export async function createEntity(name: string): Promise<CreateEntityOutput> {
     },
   });
 
-  const entityId = response.id;
-  const entityUrl = `https://www.notion.so/${entityId.replace(/-/g, "")}`;
+  const notionId = response.id;
+  const entityId = crypto.randomUUID();
+  const entityUrl = `https://www.notion.so/${notionId.replace(/-/g, "")}`;
 
   // Insert into SQLite (notion-sync will update it on next sync)
   const db = getDb();
   db.prepare(
     `
-    INSERT OR REPLACE INTO entities (notion_id, name, type, abn, aliases, default_transaction_type, default_tags, notes, last_edited_time)
-    VALUES (?, ?, NULL, NULL, NULL, NULL, NULL, NULL, ?)
+    INSERT OR REPLACE INTO entities (id, notion_id, name, type, abn, aliases, default_transaction_type, default_tags, notes, last_edited_time)
+    VALUES (?, ?, ?, NULL, NULL, NULL, NULL, NULL, NULL, ?)
   `
-  ).run(entityId, name, new Date().toISOString());
+  ).run(entityId, notionId, name, new Date().toISOString());
 
   return { entityId, entityName: name, entityUrl };
 }
@@ -1083,7 +1084,7 @@ export async function executeImportWithProgress(
             rawRow: transaction.rawRow,
             checksum: transaction.checksum,
           });
-          const pageId = row.notion_id;
+          const pageId = row.id;
           logger.debug(
             {
               index: i + 1,

@@ -5,7 +5,7 @@ export type { EntityRow };
 
 /** API response shape (camelCase). */
 export interface Entity {
-  notionId: string;
+  id: string;
   name: string;
   type: string | null;
   abn: string | null;
@@ -19,7 +19,7 @@ export interface Entity {
 /** Map a SQLite row to the API response shape. */
 export function toEntity(row: EntityRow): Entity {
   return {
-    notionId: row.notion_id,
+    id: row.id,
     name: row.name,
     type: row.type,
     abn: row.abn,

@@ -33,7 +33,7 @@ interface TransactionGroupProps {
     editedFields: Partial<ProcessedTransaction>
   ) => void;
   onCancelEdit?: () => void;
-  entities?: Array<{ notionId: string; name: string }>;
+  entities?: Array<{ id: string; name: string }>;
   variant?: "uncertain" | "failed";
 }
 
@@ -177,14 +177,14 @@ export function TransactionGroup({
               className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-800"
               onChange={(e) => {
                 const selectedEntity = entities.find(
-                  (ent) => ent.notionId === e.target.value
+                  (ent) => ent.id === e.target.value
                 );
                 if (selectedEntity) {
                   // Apply selected entity to all transactions in group
                   group.transactions.forEach((t) => {
                     onEntitySelect(
                       t,
-                      selectedEntity.notionId,
+                      selectedEntity.id,
                       selectedEntity.name
                     );
                   });
@@ -195,7 +195,7 @@ export function TransactionGroup({
             >
               <option value="">Choose entity...</option>
               {entities.map((entity) => (
-                <option key={entity.notionId} value={entity.notionId}>
+                <option key={entity.id} value={entity.id}>
                   {entity.name}
                 </option>
               ))}

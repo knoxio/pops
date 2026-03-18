@@ -5,7 +5,8 @@
 import { z } from "zod/v4";
 
 export const BudgetRowSchema = z.object({
-  notion_id: z.string(),
+  id: z.string(),
+  notion_id: z.string().nullable(),
   category: z.string(),
   period: z.string().nullable(),
   amount: z.number().nullable(),

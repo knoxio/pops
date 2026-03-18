@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { ColumnFilter } from "@/components/DataTableFilters";
 
 interface InventoryItem {
-  notionId: string;
+  id: string;
   itemName: string;
   brand: string | null;
   model: string | null;

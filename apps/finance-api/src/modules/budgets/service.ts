@@ -5,7 +5,7 @@
  */
 import { getDb } from "../../db.js";
 import { NotFoundError, ConflictError } from "../../shared/errors.js";
-import { getNotionClient, getBudgetId } from "../../shared/notion-client.js";
+import { getNotionClient, getBudgetId, type NotionUpdateProperties } from "../../shared/notion-client.js";
 import type { BudgetRow, CreateBudgetInput, UpdateBudgetInput } from "./types.js";
 
 /** Count + rows for a paginated list. */
@@ -57,10 +57,10 @@ export function listBudgets(
   return { rows, total: countRow.total };
 }
 
-/** Get a single budget by notion_id. Throws NotFoundError if missing. */
+/** Get a single budget by id. Throws NotFoundError if missing. */
 export function getBudget(id: string): BudgetRow {
   const db = getDb();
-  const row = db.prepare("SELECT * FROM budgets WHERE notion_id = ?").get(id) as
+  const row = db.prepare("SELECT * FROM budgets WHERE id = ?").get(id) as
     | BudgetRow
     | undefined;
 
@@ -84,10 +84,10 @@ export async function createBudget(input: CreateBudgetInput): Promise<BudgetRow>
   // Check for duplicate category+period combination
   const existing = db
     .prepare(
-      "SELECT notion_id FROM budgets WHERE category = ? AND (period = ? OR (period IS NULL AND ? IS NULL))"
+      "SELECT id FROM budgets WHERE category = ? AND (period = ? OR (period IS NULL AND ? IS NULL))"
     )
     .get(input.category, input.period ?? null, input.period ?? null) as
-    | { notion_id: string }
+    | { id: string }
     | undefined;
 
   if (existing) {
@@ -122,12 +122,14 @@ export async function createBudget(input: CreateBudgetInput): Promise<BudgetRow>
   const now = new Date().toISOString();
 
   // 2. Insert into SQLite using Notion's ID
+  const id = crypto.randomUUID();
   db.prepare(
     `
-    INSERT INTO budgets (notion_id, category, period, amount, active, notes, last_edited_time)
-    VALUES (@notionId, @category, @period, @amount, @active, @notes, @lastEditedTime)
+    INSERT INTO budgets (id, notion_id, category, period, amount, active, notes, last_edited_time)
+    VALUES (@id, @notionId, @category, @period, @amount, @active, @notes, @lastEditedTime)
   `
   ).run({
+    id,
     notionId: response.id,
     category: input.category,
     period: input.period ?? null,
@@ -137,7 +139,7 @@ export async function createBudget(input: CreateBudgetInput): Promise<BudgetRow>
     lastEditedTime: now,
   });
 
-  return getBudget(response.id);
+  return getBudget(id);
 }
 
 /**
@@ -156,7 +158,7 @@ export async function updateBudget(id: string, input: UpdateBudgetInput): Promis
   getBudget(id);
 
   // Build Notion properties update
-  const properties: { [key: string]: unknown } = {};
+  const properties: NotionUpdateProperties = {};
 
   if (input.category !== undefined) {
     properties.Category = {
@@ -186,13 +188,12 @@ export async function updateBudget(id: string, input: UpdateBudgetInput): Promis
   const notion = getNotionClient();
   await notion.pages.update({
     page_id: id,
-    // @ts-expect-error - Dynamic property building conflicts with Notion's strict types, but properties are correct at runtime
     properties,
   });
 
   // 2. Update in SQLite
   const fields: string[] = [];
-  const params: Record<string, string | number | null> = { notionId: id };
+  const params: Record<string, string | number | null> = { id };
 
   if (input.category !== undefined) {
     fields.push("category = @category");
@@ -219,7 +220,7 @@ export async function updateBudget(id: string, input: UpdateBudgetInput): Promis
     fields.push("last_edited_time = @lastEditedTime");
     params["lastEditedTime"] = new Date().toISOString();
 
-    db.prepare(`UPDATE budgets SET ${fields.join(", ")} WHERE notion_id = @notionId`).run(params);
+    db.prepare(`UPDATE budgets SET ${fields.join(", ")} WHERE id = @id`).run(params);
   }
 
   return getBudget(id);
@@ -246,6 +247,6 @@ export async function deleteBudget(id: string): Promise<void> {
   });
 
   // 2. Delete from SQLite
-  const result = db.prepare("DELETE FROM budgets WHERE notion_id = ?").run(id);
+  const result = db.prepare("DELETE FROM budgets WHERE id = ?").run(id);
   if (result.changes === 0) throw new NotFoundError("Budget", id);
 }

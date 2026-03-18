@@ -7,7 +7,8 @@ import { z } from "zod/v4";
 export const WISH_LIST_PRIORITIES = ["Needing", "Soon", "One Day", "Dreaming"] as const;
 
 export const WishListRowSchema = z.object({
-  notion_id: z.string(),
+  id: z.string(),
+  notion_id: z.string().nullable(),
   item: z.string(),
   target_amount: z.number().nullable(),
   saved: z.number().nullable(),

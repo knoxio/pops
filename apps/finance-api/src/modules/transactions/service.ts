@@ -5,7 +5,7 @@
  */
 import { getDb } from "../../db.js";
 import { NotFoundError } from "../../shared/errors.js";
-import { getNotionClient, getBalanceSheetId } from "../../shared/notion-client.js";
+import { getNotionClient, getBalanceSheetId, type NotionCreateProperties } from "../../shared/notion-client.js";
 import { buildTransactionUpdateProperties } from "./transaction-notion-helpers.js";
 import type {
   TransactionRow,
@@ -72,10 +72,10 @@ export function listTransactions(
   return { rows, total: countRow.total };
 }
 
-/** Get a single transaction by notion_id. Throws NotFoundError if missing. */
+/** Get a single transaction by id. Throws NotFoundError if missing. */
 export function getTransaction(id: string): TransactionRow {
   const db = getDb();
-  const row = db.prepare("SELECT * FROM transactions WHERE notion_id = ?").get(id) as
+  const row = db.prepare("SELECT * FROM transactions WHERE id = ?").get(id) as
     | TransactionRow
     | undefined;
 
@@ -95,7 +95,7 @@ export async function createTransaction(input: CreateTransactionInput): Promise<
   const db = getDb();
 
   // Build Notion properties
-  const properties: { [key: string]: unknown } = {
+  const properties: NotionCreateProperties = {
     Description: {
       title: [{ text: { content: input.description } }],
     },
@@ -142,27 +142,28 @@ export async function createTransaction(input: CreateTransactionInput): Promise<
   const notion = getNotionClient();
   const response = await notion.pages.create({
     parent: { database_id: getBalanceSheetId() },
-    // @ts-expect-error - Dynamic property building conflicts with Notion's strict types, but properties are correct at runtime
     properties,
   });
 
   const now = new Date().toISOString();
 
   // 2. Insert into SQLite using Notion's ID
+  const id = crypto.randomUUID();
   db.prepare(
     `
     INSERT INTO transactions (
-      notion_id, description, account, amount, date, type, tags,
+      id, notion_id, description, account, amount, date, type, tags,
       entity_id, entity_name, location, country,
       related_transaction_id, notes, last_edited_time
     )
     VALUES (
-      @notionId, @description, @account, @amount, @date, @type, @tags,
+      @id, @notionId, @description, @account, @amount, @date, @type, @tags,
       @entityId, @entityName, @location, @country,
       @relatedTransactionId, @notes, @lastEditedTime
     )
   `
   ).run({
+    id,
     notionId: response.id,
     description: input.description,
     account: input.account,
@@ -179,7 +180,7 @@ export async function createTransaction(input: CreateTransactionInput): Promise<
     lastEditedTime: now,
   });
 
-  return getTransaction(response.id);
+  return getTransaction(id);
 }
 
 /**
@@ -207,13 +208,12 @@ export async function updateTransaction(
   const notion = getNotionClient();
   await notion.pages.update({
     page_id: id,
-    // @ts-expect-error - Dynamic property building conflicts with Notion's strict types, but properties are correct at runtime
     properties,
   });
 
   // 2. Update in SQLite
   const fields: string[] = [];
-  const params: Record<string, string | number | null> = { notionId: id };
+  const params: Record<string, string | number | null> = { id };
 
   if (input.description !== undefined) {
     fields.push("description = @description");
@@ -268,9 +268,7 @@ export async function updateTransaction(
     fields.push("last_edited_time = @lastEditedTime");
     params["lastEditedTime"] = new Date().toISOString();
 
-    db.prepare(`UPDATE transactions SET ${fields.join(", ")} WHERE notion_id = @notionId`).run(
-      params
-    );
+    db.prepare(`UPDATE transactions SET ${fields.join(", ")} WHERE id = @id`).run(params);
   }
 
   return getTransaction(id);
@@ -297,6 +295,6 @@ export async function deleteTransaction(id: string): Promise<void> {
   });
 
   // 2. Delete from SQLite
-  const result = db.prepare("DELETE FROM transactions WHERE notion_id = ?").run(id);
+  const result = db.prepare("DELETE FROM transactions WHERE id = ?").run(id);
   if (result.changes === 0) throw new NotFoundError("Transaction", id);
 }

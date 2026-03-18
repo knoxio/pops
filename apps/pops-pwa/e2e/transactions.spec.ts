@@ -22,7 +22,7 @@ import { test, expect, type Page } from '@playwright/test';
 // ---------------------------------------------------------------------------
 
 interface MockTransaction {
-  notionId: string;
+  id: string;
   description: string;
   account: string;
   amount: number;
@@ -36,7 +36,7 @@ interface MockTransaction {
 
 const TRANSACTIONS: MockTransaction[] = [
   {
-    notionId: 'txn-001',
+    id: 'txn-001',
     description: 'WOOLWORTHS 1234',
     account: 'Amex',
     amount: -125.5,
@@ -48,7 +48,7 @@ const TRANSACTIONS: MockTransaction[] = [
     location: 'North Sydney',
   },
   {
-    notionId: 'txn-002',
+    id: 'txn-002',
     description: 'NETFLIX.COM',
     account: 'Amex',
     amount: -19.99,
@@ -60,7 +60,7 @@ const TRANSACTIONS: MockTransaction[] = [
     location: null,
   },
   {
-    notionId: 'txn-003',
+    id: 'txn-003',
     description: 'SALARY DEPOSIT',
     account: 'ANZ Everyday',
     amount: 5000.0,
@@ -72,7 +72,7 @@ const TRANSACTIONS: MockTransaction[] = [
     location: null,
   },
   {
-    notionId: 'txn-004',
+    id: 'txn-004',
     description: 'SHELL PETROL',
     account: 'Amex',
     amount: -85.0,

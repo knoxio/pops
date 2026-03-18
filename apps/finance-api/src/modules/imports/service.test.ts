@@ -12,7 +12,7 @@ import { clearCache } from "./lib/ai-categorizer.js";
  */
 
 /** Shape of a row returned from the entities SQLite table. */
-type EntityRow = { name: string; notion_id: string; last_edited_time: string };
+type EntityRow = { name: string; id: string; notion_id: string | null; last_edited_time: string };
 
 // Mock Notion client
 const mockNotionQuery = vi.fn();
@@ -122,7 +122,7 @@ describe("processImport", () => {
     });
 
     it("processes transactions with new checksums", async () => {
-      seedEntity(db, { name: "Woolworths", notion_id: "woolworths-id" });
+      seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
 
       // Mock Notion returning no existing checksums
       mockNotionQuery.mockResolvedValue({
@@ -151,7 +151,7 @@ describe("processImport", () => {
     });
 
     it("handles Notion query errors gracefully", async () => {
-      seedEntity(db, { name: "Woolworths", notion_id: "woolworths-id" });
+      seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
 
       // Mock Notion query throwing error
       mockNotionQuery.mockRejectedValue(new Error("Notion API error"));
@@ -163,7 +163,7 @@ describe("processImport", () => {
     });
 
     it("handles missing Checksum property in Notion", async () => {
-      seedEntity(db, { name: "Woolworths", notion_id: "woolworths-id" });
+      seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
 
       // Mock Notion returning page without Checksum property
       mockNotionQuery.mockResolvedValue({
@@ -189,7 +189,7 @@ describe("processImport", () => {
     });
 
     it("matches via entity lookup (exact match)", async () => {
-      seedEntity(db, { name: "Woolworths", notion_id: "woolworths-id" });
+      seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
 
       const result = await processImport([baseParsedTransaction], "Amex");
 
@@ -203,7 +203,7 @@ describe("processImport", () => {
     it("matches via alias", async () => {
       seedEntity(db, {
         name: "Transport for NSW",
-        notion_id: "transport-nsw-id",
+        id: "transport-nsw-id",
         aliases: "TRANSPORTFORNSWTRAVEL, OPAL",
       });
 
@@ -232,7 +232,7 @@ describe("processImport", () => {
 
     it("throws error when matched entity missing from lookup", async () => {
       // Seed entity but with different name to cause mismatch
-      seedEntity(db, { name: "Woolworths Store", notion_id: "woolworths-id" });
+      seedEntity(db, { name: "Woolworths Store", id: "woolworths-id" });
 
       const result = await processImport([baseParsedTransaction], "Amex");
 
@@ -273,7 +273,7 @@ describe("processImport", () => {
     });
 
     it("matches AI result to existing entity (case-insensitive)", async () => {
-      seedEntity(db, { name: "Woolworths", notion_id: "woolworths-id" });
+      seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
 
       const rawRow = '{"Date":"13/02/2026","Description":"UNKNOWN MERCHANT XYZ"}';
       mockConfig.customLookup = {
@@ -366,7 +366,7 @@ describe("processImport", () => {
     });
 
     it("handles mixed: one matched, one routed to uncertain when AI unavailable", async () => {
-      seedEntity(db, { name: "Woolworths", notion_id: "woolworths-id" });
+      seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
       mockConfig.alwaysReturnNull = true;
 
       const transactions: ParsedTransaction[] = [
@@ -393,7 +393,7 @@ describe("processImport", () => {
     });
 
     it("handles transactions with missing optional fields", async () => {
-      seedEntity(db, { name: "Woolworths", notion_id: "woolworths-id" });
+      seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
       mockNotionQuery.mockResolvedValue({ results: [] });
 
       const transaction: ParsedTransaction = {
@@ -413,7 +413,7 @@ describe("processImport", () => {
     });
 
     it("generates correct Notion URL format", async () => {
-      seedEntity(db, { name: "Woolworths", notion_id: "aabbccdd-1122-3344-5566-778899001122" });
+      seedEntity(db, { name: "Woolworths", id: "aabbccdd-1122-3344-5566-778899001122" });
       mockNotionQuery.mockResolvedValue({ results: [] });
 
       const result = await processImport([baseParsedTransaction], "Amex");
@@ -431,7 +431,7 @@ describe("suggestedTags", () => {
   });
 
   it("includes empty suggestedTags array on matched transactions when no tags exist", async () => {
-    seedEntity(db, { name: "Woolworths", notion_id: "woolworths-id" });
+    seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
 
     const result = await processImport([baseParsedTransaction], "Amex");
 
@@ -442,7 +442,7 @@ describe("suggestedTags", () => {
   it("includes entity default_tags as source='entity'", async () => {
     seedEntity(db, {
       name: "Woolworths",
-      notion_id: "woolworths-id",
+      id: "woolworths-id",
       default_tags: '["Groceries"]',
     });
 
@@ -481,7 +481,7 @@ describe("suggestedTags", () => {
   });
 
   it("includes correction rule tags as source='rule'", async () => {
-    seedEntity(db, { name: "Woolworths", notion_id: "woolworths-id" });
+    seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
     // Seed a correction that matches the description (entity must exist first — FK constraint)
     db.prepare(
       `INSERT INTO transaction_corrections (id, description_pattern, match_type, entity_id, entity_name, tags, confidence)
@@ -504,7 +504,7 @@ describe("suggestedTags", () => {
   it("does not duplicate tags when correction and entity both suggest the same tag", async () => {
     seedEntity(db, {
       name: "Woolworths",
-      notion_id: "woolworths-id",
+      id: "woolworths-id",
       default_tags: '["Groceries"]', // same tag as correction
     });
     // Entity must exist before inserting correction (FK constraint)
@@ -725,7 +725,8 @@ describe("createEntity", () => {
 
     const result = await createEntity("New Entity");
 
-    expect(result.entityId).toBe("new-entity-id-1234");
+    // entityId is now a locally-generated UUID, not the Notion response ID
+    expect(result.entityId).toBeDefined();
     expect(result.entityName).toBe("New Entity");
     expect(result.entityUrl).toBe("https://www.notion.so/newentityid1234");
 
@@ -739,11 +740,12 @@ describe("createEntity", () => {
       },
     });
 
-    // Verify SQLite insert
+    // Verify SQLite insert — query by the returned entityId
     const row = db
-      .prepare("SELECT * FROM entities WHERE notion_id = ?")
-      .get("new-entity-id-1234") as EntityRow;
+      .prepare("SELECT * FROM entities WHERE id = ?")
+      .get(result.entityId) as EntityRow;
     expect(row.name).toBe("New Entity");
+    expect(row.notion_id).toBe("new-entity-id-1234");
   });
 
   it("handles entity name with special characters", async () => {
@@ -769,16 +771,17 @@ describe("createEntity", () => {
     expect(result.entityName).toBe(longName);
   });
 
-  it("uses INSERT OR REPLACE for SQLite upsert", async () => {
+  it("uses INSERT OR REPLACE for SQLite upsert on notion_id conflict", async () => {
     mockNotionCreate.mockResolvedValue({ id: "entity-id-123" });
 
     // First insert
     await createEntity("Test Entity");
 
-    // Second insert with same ID (simulates notion returning same ID)
+    // Second insert with same Notion ID (simulates notion returning same ID)
     mockNotionCreate.mockResolvedValue({ id: "entity-id-123" });
     await createEntity("Test Entity Updated");
 
+    // Should have replaced the old row since notion_id is UNIQUE
     const rows = db.prepare("SELECT * FROM entities WHERE notion_id = ?").all("entity-id-123");
     expect(rows).toHaveLength(1);
     expect((rows[0] as EntityRow).name).toBe("Test Entity Updated");
@@ -788,12 +791,12 @@ describe("createEntity", () => {
     mockNotionCreate.mockResolvedValue({ id: "entity-id" });
 
     const before = new Date().toISOString();
-    await createEntity("Test Entity");
+    const result = await createEntity("Test Entity");
     const after = new Date().toISOString();
 
     const row = db
-      .prepare("SELECT last_edited_time FROM entities WHERE notion_id = ?")
-      .get("entity-id") as EntityRow;
+      .prepare("SELECT last_edited_time FROM entities WHERE id = ?")
+      .get(result.entityId) as EntityRow;
     expect(row.last_edited_time >= before).toBe(true);
     expect(row.last_edited_time <= after).toBe(true);
   });
@@ -863,9 +866,9 @@ describe("loadEntityLookup", () => {
     expect(result).toBeDefined();
   });
 
-  it("returns correct name→notion_id mapping", async () => {
-    seedEntity(db, { name: "Woolworths", notion_id: "woolworths-id" });
-    seedEntity(db, { name: "Coles", notion_id: "coles-id" });
+  it("returns correct name→id mapping", async () => {
+    seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
+    seedEntity(db, { name: "Coles", id: "coles-id" });
     mockNotionQuery.mockResolvedValue({ results: [] });
 
     const transaction: ParsedTransaction = {
@@ -882,8 +885,8 @@ describe("loadEntityLookup", () => {
     expect(result.matched[0].entity.entityId).toBe("woolworths-id");
   });
 
-  it("handles null notion_id gracefully", async () => {
-    db.prepare("INSERT INTO entities (notion_id, name, last_edited_time) VALUES (NULL, ?, ?)").run(
+  it("handles null id gracefully", async () => {
+    db.prepare("INSERT INTO entities (id, name, last_edited_time) VALUES (NULL, ?, ?)").run(
       "Invalid Entity",
       "2026-01-01T00:00:00Z"
     );
@@ -898,7 +901,7 @@ describe("loadEntityLookup", () => {
 
 describe("loadAliases", () => {
   it("returns empty object when no aliases exist", async () => {
-    seedEntity(db, { name: "Woolworths", notion_id: "woolworths-id", aliases: null });
+    seedEntity(db, { name: "Woolworths", id: "woolworths-id", aliases: null });
     mockNotionQuery.mockResolvedValue({ results: [] });
 
     // Should not crash
@@ -909,7 +912,7 @@ describe("loadAliases", () => {
   it("parses comma-separated aliases correctly", async () => {
     seedEntity(db, {
       name: "Transport for NSW",
-      notion_id: "transport-id",
+      id: "transport-id",
       aliases: "TRANSPORTFORNSWTRAVEL, OPAL, TfNSW",
     });
     mockNotionQuery.mockResolvedValue({ results: [] });
@@ -932,7 +935,7 @@ describe("loadAliases", () => {
   it("trims whitespace from aliases", async () => {
     seedEntity(db, {
       name: "Woolworths",
-      notion_id: "woolworths-id",
+      id: "woolworths-id",
       aliases: "  WOW  ,  WOOLIES  ",
     });
     mockNotionQuery.mockResolvedValue({ results: [] });
@@ -954,7 +957,7 @@ describe("loadAliases", () => {
   it("handles single alias (no commas)", async () => {
     seedEntity(db, {
       name: "Netflix",
-      notion_id: "netflix-id",
+      id: "netflix-id",
       aliases: "NETFLIX.COM",
     });
     mockNotionQuery.mockResolvedValue({ results: [] });
@@ -974,7 +977,7 @@ describe("loadAliases", () => {
   });
 
   it("handles empty string aliases", async () => {
-    seedEntity(db, { name: "Test", notion_id: "test-id", aliases: "" });
+    seedEntity(db, { name: "Test", id: "test-id", aliases: "" });
     mockNotionQuery.mockResolvedValue({ results: [] });
 
     // Should not crash

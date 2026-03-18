@@ -30,7 +30,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
     // -------------------------------------------------------------------------
     const entities = [
       {
-        notion_id: "10000000-0000-4000-8000-000000000001",
+        id: "10000000-0000-4000-8000-000000000001",
         name: "Woolworths",
         type: "Supermarket",
         abn: "88000014675",
@@ -40,7 +40,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Primary grocery shopping",
       },
       {
-        notion_id: "10000000-0000-4000-8000-000000000002",
+        id: "10000000-0000-4000-8000-000000000002",
         name: "Coles",
         type: "Supermarket",
         abn: "45004189708",
@@ -50,7 +50,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: null,
       },
       {
-        notion_id: "10000000-0000-4000-8000-000000000003",
+        id: "10000000-0000-4000-8000-000000000003",
         name: "Netflix",
         type: "Subscription",
         abn: null,
@@ -60,7 +60,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Streaming service",
       },
       {
-        notion_id: "10000000-0000-4000-8000-000000000004",
+        id: "10000000-0000-4000-8000-000000000004",
         name: "Spotify",
         type: "Subscription",
         abn: null,
@@ -70,7 +70,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Music streaming",
       },
       {
-        notion_id: "10000000-0000-4000-8000-000000000005",
+        id: "10000000-0000-4000-8000-000000000005",
         name: "Shell",
         type: "Fuel Station",
         abn: "46004610459",
@@ -80,7 +80,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Fuel and convenience",
       },
       {
-        notion_id: "10000000-0000-4000-8000-000000000006",
+        id: "10000000-0000-4000-8000-000000000006",
         name: "Amazon AU",
         type: "Retailer",
         abn: "72054094117",
@@ -90,7 +90,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Online marketplace",
       },
       {
-        notion_id: "10000000-0000-4000-8000-000000000007",
+        id: "10000000-0000-4000-8000-000000000007",
         name: "Employer",
         type: "Employer",
         abn: null,
@@ -100,7 +100,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Primary income source",
       },
       {
-        notion_id: "10000000-0000-4000-8000-000000000008",
+        id: "10000000-0000-4000-8000-000000000008",
         name: "Apple",
         type: "Technology",
         abn: null,
@@ -110,7 +110,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: null,
       },
       {
-        notion_id: "10000000-0000-4000-8000-000000000009",
+        id: "10000000-0000-4000-8000-000000000009",
         name: "Bunnings",
         type: "Hardware",
         abn: "63008672179",
@@ -120,7 +120,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Hardware and home improvement",
       },
       {
-        notion_id: "10000000-0000-4000-8000-000000000010",
+        id: "10000000-0000-4000-8000-000000000010",
         name: "JB Hi-Fi",
         type: "Retailer",
         abn: "98093220136",
@@ -133,14 +133,14 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
 
     const insertEntity = db.prepare(`
       INSERT INTO entities (
-        notion_id, name, type, abn, aliases, default_transaction_type,
+        id, name, type, abn, aliases, default_transaction_type,
         default_tags, notes, last_edited_time
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     for (const entity of entities) {
       insertEntity.run(
-        entity.notion_id,
+        entity.id,
         entity.name,
         entity.type,
         entity.abn,
@@ -158,7 +158,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
     const transactions = [
       // Income
       {
-        notion_id: "txn-001",
+        id: "txn-001",
         description: "Salary Payment",
         account: "Bank Account",
         amount: 5200.0,
@@ -173,7 +173,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Fortnightly salary",
       },
       {
-        notion_id: "txn-002",
+        id: "txn-002",
         description: "Salary Payment",
         account: "Bank Account",
         amount: 5200.0,
@@ -189,7 +189,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       },
       // Groceries
       {
-        notion_id: "txn-003",
+        id: "txn-003",
         description: "Woolworths Metro",
         account: "Credit Card",
         amount: -87.45,
@@ -204,7 +204,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: null,
       },
       {
-        notion_id: "txn-004",
+        id: "txn-004",
         description: "Coles Local",
         account: "Debit Card",
         amount: -124.8,
@@ -219,7 +219,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Weekly shop",
       },
       {
-        notion_id: "txn-005",
+        id: "txn-005",
         description: "Woolworths",
         account: "Credit Card",
         amount: -156.32,
@@ -235,7 +235,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       },
       // Subscriptions
       {
-        notion_id: "txn-006",
+        id: "txn-006",
         description: "Netflix Subscription",
         account: "Credit Card",
         amount: -22.99,
@@ -250,7 +250,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Premium plan",
       },
       {
-        notion_id: "txn-007",
+        id: "txn-007",
         description: "Spotify Premium",
         account: "Credit Card",
         amount: -13.99,
@@ -266,7 +266,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       },
       // Fuel
       {
-        notion_id: "txn-008",
+        id: "txn-008",
         description: "Shell Service Station",
         account: "Credit Card",
         amount: -75.5,
@@ -281,7 +281,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "45L unleaded",
       },
       {
-        notion_id: "txn-009",
+        id: "txn-009",
         description: "Shell Coles Express",
         account: "Credit Card",
         amount: -68.2,
@@ -297,7 +297,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       },
       // Shopping
       {
-        notion_id: "txn-010",
+        id: "txn-010",
         description: "Amazon.com.au",
         account: "Credit Card",
         amount: -89.95,
@@ -312,7 +312,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "USB-C cables and phone case",
       },
       {
-        notion_id: "txn-011",
+        id: "txn-011",
         description: "JB Hi-Fi",
         account: "Credit Card",
         amount: -1299.0,
@@ -327,7 +327,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "New headphones - Sony WH-1000XM5",
       },
       {
-        notion_id: "txn-012",
+        id: "txn-012",
         description: "Bunnings Warehouse",
         account: "Debit Card",
         amount: -147.6,
@@ -343,7 +343,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       },
       // Transfer pair
       {
-        notion_id: "txn-013",
+        id: "txn-013",
         description: "Transfer to Savings",
         account: "Bank Account",
         amount: -500.0,
@@ -358,7 +358,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Monthly savings",
       },
       {
-        notion_id: "txn-014",
+        id: "txn-014",
         description: "Transfer from Bank Account",
         account: "Savings Account",
         amount: 500.0,
@@ -374,7 +374,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       },
       // Historical
       {
-        notion_id: "txn-015",
+        id: "txn-015",
         description: "Salary Payment",
         account: "Bank Account",
         amount: 5200.0,
@@ -389,7 +389,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Fortnightly salary",
       },
       {
-        notion_id: "txn-016",
+        id: "txn-016",
         description: "Woolworths",
         account: "Credit Card",
         amount: -203.45,
@@ -407,14 +407,14 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
 
     const insertTransaction = db.prepare(`
       INSERT INTO transactions (
-        notion_id, description, account, amount, date, type, tags,
+        id, description, account, amount, date, type, tags,
         entity_id, entity_name, location, country, related_transaction_id, notes, last_edited_time
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     for (const txn of transactions) {
       insertTransaction.run(
-        txn.notion_id,
+        txn.id,
         txn.description,
         txn.account,
         txn.amount,
@@ -436,7 +436,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
     // -------------------------------------------------------------------------
     const budgets = [
       {
-        notion_id: "budget-001",
+        id: "budget-001",
         category: "Groceries",
         period: "Monthly",
         amount: 800.0,
@@ -444,7 +444,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Supermarket shopping and essentials",
       },
       {
-        notion_id: "budget-002",
+        id: "budget-002",
         category: "Transport",
         period: "Monthly",
         amount: 300.0,
@@ -452,7 +452,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Fuel, tolls, parking",
       },
       {
-        notion_id: "budget-003",
+        id: "budget-003",
         category: "Entertainment",
         period: "Monthly",
         amount: 150.0,
@@ -460,7 +460,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Streaming, dining out, activities",
       },
       {
-        notion_id: "budget-004",
+        id: "budget-004",
         category: "Shopping",
         period: "Monthly",
         amount: 400.0,
@@ -468,7 +468,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Clothing, electronics, misc purchases",
       },
       {
-        notion_id: "budget-005",
+        id: "budget-005",
         category: "Home & Garden",
         period: "Monthly",
         amount: 200.0,
@@ -476,7 +476,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Maintenance, improvements, supplies",
       },
       {
-        notion_id: "budget-006",
+        id: "budget-006",
         category: "Utilities",
         period: "Monthly",
         amount: 250.0,
@@ -484,7 +484,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Electricity, gas, water, internet",
       },
       {
-        notion_id: "budget-007",
+        id: "budget-007",
         category: "Subscriptions",
         period: "Monthly",
         amount: 100.0,
@@ -492,7 +492,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Streaming services, software, memberships",
       },
       {
-        notion_id: "budget-008",
+        id: "budget-008",
         category: "Holiday Fund",
         period: "Yearly",
         amount: 5000.0,
@@ -502,13 +502,13 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
     ];
 
     const insertBudget = db.prepare(`
-      INSERT INTO budgets (notion_id, category, period, amount, active, notes, last_edited_time)
+      INSERT INTO budgets (id, category, period, amount, active, notes, last_edited_time)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
 
     for (const budget of budgets) {
       insertBudget.run(
-        budget.notion_id,
+        budget.id,
         budget.category,
         budget.period,
         budget.amount,
@@ -523,7 +523,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
     // -------------------------------------------------------------------------
     const homeInventory = [
       {
-        notion_id: "inv-001",
+        id: "inv-001",
         item_name: "MacBook Pro 16-inch",
         brand: "Apple",
         model: "M3 Max",
@@ -543,7 +543,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         purchased_from_name: "Apple",
       },
       {
-        notion_id: "inv-002",
+        id: "inv-002",
         item_name: "Sony WH-1000XM5 Headphones",
         brand: "Sony",
         model: "WH-1000XM5",
@@ -563,7 +563,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         purchased_from_name: "JB Hi-Fi",
       },
       {
-        notion_id: "inv-003",
+        id: "inv-003",
         item_name: 'Samsung 65" QLED TV',
         brand: "Samsung",
         model: "QN65Q80C",
@@ -583,7 +583,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         purchased_from_name: "JB Hi-Fi",
       },
       {
-        notion_id: "inv-004",
+        id: "inv-004",
         item_name: "Dyson V15 Vacuum",
         brand: "Dyson",
         model: "V15 Detect",
@@ -603,7 +603,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         purchased_from_name: "Amazon AU",
       },
       {
-        notion_id: "inv-005",
+        id: "inv-005",
         item_name: "Breville Barista Express",
         brand: "Breville",
         model: "BES870BSS",
@@ -626,7 +626,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
 
     const insertInventory = db.prepare(`
       INSERT INTO home_inventory (
-        notion_id, item_name, brand, model, item_id, room, location, type, condition,
+        id, item_name, brand, model, item_id, room, location, type, condition,
         in_use, deductible, purchase_date, warranty_expires, replacement_value,
         resale_value, purchase_transaction_id, purchased_from_id, purchased_from_name,
         last_edited_time
@@ -635,7 +635,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
 
     for (const item of homeInventory) {
       insertInventory.run(
-        item.notion_id,
+        item.id,
         item.item_name,
         item.brand,
         item.model,
@@ -662,7 +662,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
     // -------------------------------------------------------------------------
     const wishList = [
       {
-        notion_id: "wish-001",
+        id: "wish-001",
         item: "New Gaming PC",
         target_amount: 3500.0,
         saved: 1200.0,
@@ -671,7 +671,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "RTX 4080, Ryzen 9 7950X build",
       },
       {
-        notion_id: "wish-002",
+        id: "wish-002",
         item: "Standing Desk",
         target_amount: 800.0,
         saved: 450.0,
@@ -680,7 +680,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Fully Jarvis bamboo top",
       },
       {
-        notion_id: "wish-003",
+        id: "wish-003",
         item: "Japan Trip",
         target_amount: 8000.0,
         saved: 2100.0,
@@ -689,7 +689,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "2 week trip to Tokyo, Kyoto, Osaka",
       },
       {
-        notion_id: "wish-004",
+        id: "wish-004",
         item: "Herman Miller Chair",
         target_amount: 2200.0,
         saved: 0.0,
@@ -698,7 +698,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Aeron fully loaded",
       },
       {
-        notion_id: "wish-005",
+        id: "wish-005",
         item: "New Camera",
         target_amount: 4500.0,
         saved: 800.0,
@@ -709,13 +709,13 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
     ];
 
     const insertWishList = db.prepare(`
-      INSERT INTO wish_list (notion_id, item, target_amount, saved, priority, url, notes, last_edited_time)
+      INSERT INTO wish_list (id, item, target_amount, saved, priority, url, notes, last_edited_time)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     for (const wish of wishList) {
       insertWishList.run(
-        wish.notion_id,
+        wish.id,
         wish.item,
         wish.target_amount,
         wish.saved,

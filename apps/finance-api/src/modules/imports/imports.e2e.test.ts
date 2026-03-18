@@ -127,25 +127,25 @@ describe("E2E: Complete Import Flow", () => {
     // Step 0: Seed test entities in database
     seedEntity(db, {
       name: "Woolworths",
-      notion_id: "woolworths-id-123",
+      id: "woolworths-id-123",
       aliases: "WW, WOOLIES",
     });
     seedEntity(db, {
       name: "Coles",
-      notion_id: "coles-id-456",
+      id: "coles-id-456",
     });
     seedEntity(db, {
       name: "Netflix",
-      notion_id: "netflix-id-789",
+      id: "netflix-id-789",
     });
     seedEntity(db, {
       name: "Transport for NSW",
-      notion_id: "transport-nsw-id-abc",
+      id: "transport-nsw-id-abc",
       aliases: "TRANSPORTFORNSWTRAVEL, OPAL",
     });
     seedEntity(db, {
       name: "Roastville",
-      notion_id: "roastville-id-def",
+      id: "roastville-id-def",
     });
 
     // Step 1: Load and parse test CSV with proper CSV parser
@@ -299,7 +299,7 @@ describe("E2E: Complete Import Flow", () => {
   }, 10000);
 
   it("deduplicates correctly across multiple imports", async () => {
-    seedEntity(db, { name: "Woolworths", notion_id: "woolworths-id" });
+    seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
 
     const transaction = {
       date: "2026-02-13",
@@ -354,7 +354,7 @@ describe("E2E: Complete Import Flow", () => {
   });
 
   it("handles mixed transaction types in single batch", async () => {
-    seedEntity(db, { name: "Woolworths", notion_id: "woolworths-id" });
+    seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
     mockNotionQuery.mockResolvedValue({ results: [] });
 
     // Mock AI to return null — unknown transaction routes to uncertain (needs human review)
@@ -395,7 +395,7 @@ describe("E2E: Complete Import Flow", () => {
   });
 
   it("preserves transaction data through complete pipeline", async () => {
-    seedEntity(db, { name: "Woolworths", notion_id: "woolworths-id" });
+    seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
     mockNotionQuery.mockResolvedValue({ results: [] });
     mockNotionCreate.mockResolvedValue({ id: "page-id" });
 

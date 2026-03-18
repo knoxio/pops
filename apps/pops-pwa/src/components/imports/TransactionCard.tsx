@@ -20,7 +20,7 @@ interface TransactionCardProps {
   onCreateEntity?: (transaction: ProcessedTransaction) => void;
   onAcceptAiSuggestion?: (transaction: ProcessedTransaction) => void;
   onEdit?: (transaction: ProcessedTransaction) => void;
-  entities?: Array<{ notionId: string; name: string }>;
+  entities?: Array<{ id: string; name: string }>;
   readonly?: boolean;
   showMatchType?: boolean;
   variant?: "matched" | "uncertain" | "failed";
@@ -208,10 +208,10 @@ export function TransactionCard({
             value={transaction.entity?.entityId || ""}
             onChange={(e) => {
               const entity = entities?.find(
-                (ent) => ent.notionId === e.target.value
+                (ent) => ent.id === e.target.value
               );
               if (entity && onEntitySelect) {
-                onEntitySelect(transaction, entity.notionId, entity.name);
+                onEntitySelect(transaction, entity.id, entity.name);
               }
             }}
           >
@@ -219,7 +219,7 @@ export function TransactionCard({
             {entities && entities.length > 0 && (
               <>
                 {entities.map((entity) => (
-                  <option key={entity.notionId} value={entity.notionId}>
+                  <option key={entity.id} value={entity.id}>
                     {entity.name}
                   </option>
                 ))}

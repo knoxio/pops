@@ -11,7 +11,7 @@ import { Progress } from "@/components/ui/progress";
 import type { ColumnFilter } from "@/components/DataTableFilters";
 
 interface WishlistItem {
-  notionId: string;
+  id: string;
   item: string;
   targetAmount: number | null;
   saved: number | null;

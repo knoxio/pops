@@ -4,7 +4,8 @@ import type Database from 'better-sqlite3';
 export function createInventoryTable(db: Database.Database): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS home_inventory (
-      notion_id              TEXT PRIMARY KEY,
+      id                     TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      notion_id              TEXT UNIQUE,
       item_name              TEXT NOT NULL,
       brand                  TEXT,
       model                  TEXT,

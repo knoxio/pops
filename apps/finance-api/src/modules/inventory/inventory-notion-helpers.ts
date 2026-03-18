@@ -3,15 +3,14 @@
  * Separated to keep service.ts cleaner.
  */
 import type { UpdateInventoryItemInput } from "./types.js";
+import type { NotionUpdateProperties } from "../../shared/notion-client.js";
 
 /**
  * Build Notion properties for inventory update.
  * Only includes fields that are being updated.
  */
-export function buildInventoryUpdateProperties(input: UpdateInventoryItemInput): {
-  [key: string]: unknown;
-} {
-  const properties: { [key: string]: unknown } = {};
+export function buildInventoryUpdateProperties(input: UpdateInventoryItemInput): NotionUpdateProperties {
+  const properties: NotionUpdateProperties = {};
 
   if (input.itemName !== undefined) {
     properties["Item Name"] = {

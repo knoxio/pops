@@ -4,7 +4,8 @@ import type Database from 'better-sqlite3';
 export function createTransactionsTable(db: Database.Database): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS transactions (
-      notion_id       TEXT PRIMARY KEY,
+      id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      notion_id       TEXT UNIQUE,
       description     TEXT NOT NULL,
       account         TEXT NOT NULL,
       amount          REAL NOT NULL,

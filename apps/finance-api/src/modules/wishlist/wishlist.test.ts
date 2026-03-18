@@ -46,7 +46,7 @@ describe("wishlist.list", () => {
 
     const result = await caller.wishlist.list({});
     const wishItem = result.data[0];
-    expect(wishItem).toHaveProperty("notionId");
+    expect(wishItem).toHaveProperty("id");
     expect(wishItem).toHaveProperty("targetAmount", 3999);
     expect(wishItem).toHaveProperty("saved", 1500);
     expect(wishItem).toHaveProperty("remainingAmount");
@@ -159,7 +159,7 @@ describe("wishlist.get", () => {
     const id = seedWishListItem(db, { item: "MacBook Pro", target_amount: 3999, saved: 1500 });
 
     const result = await caller.wishlist.get({ id });
-    expect(result.data.notionId).toBe(id);
+    expect(result.data.id).toBe(id);
     expect(result.data.item).toBe("MacBook Pro");
     expect(result.data.targetAmount).toBe(3999);
     expect(result.data.saved).toBe(1500);
@@ -180,7 +180,7 @@ describe("wishlist.create", () => {
 
     expect(result.message).toBe("Wish list item created");
     expect(result.data.item).toBe("MacBook Pro");
-    expect(result.data.notionId).toBeDefined();
+    expect(result.data.id).toBeDefined();
     expect(result.data.targetAmount).toBeNull();
     expect(result.data.saved).toBeNull();
     expect(result.data.remainingAmount).toBeNull();
@@ -313,7 +313,7 @@ describe("wishlist.update", () => {
     await caller.wishlist.update({ id, data: { priority: "Needing" } });
 
     const row = db
-      .prepare("SELECT last_edited_time FROM wish_list WHERE notion_id = ?")
+      .prepare("SELECT last_edited_time FROM wish_list WHERE id = ?")
       .get(id) as { last_edited_time: string };
     expect(row.last_edited_time).not.toBe("2020-01-01T00:00:00.000Z");
   });
@@ -368,7 +368,7 @@ describe("wishlist.delete", () => {
     expect(result.message).toBe("Wish list item deleted");
 
     // Verify gone from DB
-    const row = db.prepare("SELECT * FROM wish_list WHERE notion_id = ?").get(id);
+    const row = db.prepare("SELECT * FROM wish_list WHERE id = ?").get(id);
     expect(row).toBeUndefined();
   });
 

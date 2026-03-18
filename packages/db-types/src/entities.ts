@@ -5,7 +5,8 @@
 import { z } from "zod/v4";
 
 export const EntityRowSchema = z.object({
-  notion_id: z.string(),
+  id: z.string(),
+  notion_id: z.string().nullable(),
   name: z.string(),
   type: z.string().nullable(),
   abn: z.string().nullable(),

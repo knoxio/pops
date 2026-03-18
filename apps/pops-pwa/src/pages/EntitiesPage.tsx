@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { ColumnFilter } from "@/components/DataTableFilters";
 
 interface Entity {
-  notionId: string;
+  id: string;
   name: string;
   type: string | null;
   abn: string | null;

@@ -3,15 +3,14 @@
  * Separated to keep service.ts cleaner.
  */
 import type { UpdateTransactionInput } from "./types.js";
+import type { NotionUpdateProperties } from "../../shared/notion-client.js";
 
 /**
  * Build Notion properties for transaction update.
  * Only includes fields that are being updated.
  */
-export function buildTransactionUpdateProperties(input: UpdateTransactionInput): {
-  [key: string]: unknown;
-} {
-  const properties: { [key: string]: unknown } = {};
+export function buildTransactionUpdateProperties(input: UpdateTransactionInput): NotionUpdateProperties {
+  const properties: NotionUpdateProperties = {};
 
   if (input.description !== undefined) {
     properties.Description = {

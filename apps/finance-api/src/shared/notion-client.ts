@@ -3,8 +3,18 @@
  * Used across all modules that need to sync with Notion.
  */
 import { Client } from "@notionhq/client";
+import type {
+  CreatePageParameters,
+  UpdatePageParameters,
+} from "@notionhq/client/build/src/api-endpoints.js";
 import { requireEnv } from "../env.js";
 import { getMockNotionClient } from "./test-globals.js";
+
+/** Notion property map type for pages.create calls. */
+export type NotionCreateProperties = CreatePageParameters["properties"];
+
+/** Notion property map type for pages.update calls. */
+export type NotionUpdateProperties = NonNullable<UpdatePageParameters["properties"]>;
 
 /**
  * Create Notion client from environment.

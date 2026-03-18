@@ -5,7 +5,7 @@
  */
 import { getDb } from "../../db.js";
 import { NotFoundError, ConflictError } from "../../shared/errors.js";
-import { getNotionClient, getEntitiesDbId } from "../../shared/notion-client.js";
+import { getNotionClient, getEntitiesDbId, type NotionCreateProperties, type NotionUpdateProperties } from "../../shared/notion-client.js";
 import type { EntityRow, CreateEntityInput, UpdateEntityInput } from "./types.js";
 
 /** Count + rows for a paginated list. */
@@ -47,10 +47,10 @@ export function listEntities(
   return { rows, total: countRow.total };
 }
 
-/** Get a single entity by notion_id. Throws NotFoundError if missing. */
+/** Get a single entity by id. Throws NotFoundError if missing. */
 export function getEntity(id: string): EntityRow {
   const db = getDb();
-  const row = db.prepare("SELECT * FROM entities WHERE notion_id = ?").get(id) as
+  const row = db.prepare("SELECT * FROM entities WHERE id = ?").get(id) as
     | EntityRow
     | undefined;
 
@@ -70,8 +70,8 @@ export function getEntity(id: string): EntityRow {
 export async function createEntity(input: CreateEntityInput): Promise<EntityRow> {
   const db = getDb();
 
-  const existing = db.prepare("SELECT notion_id FROM entities WHERE name = ?").get(input.name) as
-    | { notion_id: string }
+  const existing = db.prepare("SELECT id FROM entities WHERE name = ?").get(input.name) as
+    | { id: string }
     | undefined;
   if (existing) {
     throw new ConflictError(`Entity with name '${input.name}' already exists`);
@@ -79,7 +79,7 @@ export async function createEntity(input: CreateEntityInput): Promise<EntityRow>
 
   // 1. Create in Notion
   const notion = getNotionClient();
-  const properties: { [key: string]: unknown } = {
+  const properties: NotionCreateProperties = {
     Name: {
       title: [{ text: { content: input.name } }],
     },
@@ -108,19 +108,20 @@ export async function createEntity(input: CreateEntityInput): Promise<EntityRow>
 
   const response = await notion.pages.create({
     parent: { database_id: getEntitiesDbId() },
-    // @ts-expect-error - Dynamic property building conflicts with Notion's strict types, but properties are correct at runtime
     properties,
   });
 
   const now = new Date().toISOString();
 
   // 2. Insert into SQLite using Notion's ID
+  const id = crypto.randomUUID();
   db.prepare(
     `
-    INSERT INTO entities (notion_id, name, type, abn, aliases, default_transaction_type, default_tags, notes, last_edited_time)
-    VALUES (@notionId, @name, @type, @abn, @aliases, @defaultTransactionType, @defaultTags, @notes, @lastEditedTime)
+    INSERT INTO entities (id, notion_id, name, type, abn, aliases, default_transaction_type, default_tags, notes, last_edited_time)
+    VALUES (@id, @notionId, @name, @type, @abn, @aliases, @defaultTransactionType, @defaultTags, @notes, @lastEditedTime)
   `
   ).run({
+    id,
     notionId: response.id,
     name: input.name,
     type: input.type ?? null,
@@ -132,7 +133,7 @@ export async function createEntity(input: CreateEntityInput): Promise<EntityRow>
     lastEditedTime: now,
   });
 
-  return getEntity(response.id);
+  return getEntity(id);
 }
 
 /**
@@ -151,7 +152,7 @@ export async function updateEntity(id: string, input: UpdateEntityInput): Promis
   getEntity(id);
 
   // Build Notion properties update
-  const properties: { [key: string]: unknown } = {};
+  const properties: NotionUpdateProperties = {};
 
   if (input.name !== undefined) {
     properties.Name = {
@@ -191,13 +192,12 @@ export async function updateEntity(id: string, input: UpdateEntityInput): Promis
   const notion = getNotionClient();
   await notion.pages.update({
     page_id: id,
-    // @ts-expect-error - Dynamic property building conflicts with Notion's strict types, but properties are correct at runtime
     properties,
   });
 
   // 2. Update in SQLite
   const fields: string[] = [];
-  const params: Record<string, string | number | null> = { notionId: id };
+  const params: Record<string, string | number | null> = { id };
 
   if (input.name !== undefined) {
     fields.push("name = @name");
@@ -232,7 +232,7 @@ export async function updateEntity(id: string, input: UpdateEntityInput): Promis
     fields.push("last_edited_time = @lastEditedTime");
     params["lastEditedTime"] = new Date().toISOString();
 
-    db.prepare(`UPDATE entities SET ${fields.join(", ")} WHERE notion_id = @notionId`).run(params);
+    db.prepare(`UPDATE entities SET ${fields.join(", ")} WHERE id = @id`).run(params);
   }
 
   return getEntity(id);
@@ -259,6 +259,6 @@ export async function deleteEntity(id: string): Promise<void> {
   });
 
   // 2. Delete from SQLite
-  const result = db.prepare("DELETE FROM entities WHERE notion_id = ?").run(id);
+  const result = db.prepare("DELETE FROM entities WHERE id = ?").run(id);
   if (result.changes === 0) throw new NotFoundError("Entity", id);
 }

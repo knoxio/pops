@@ -49,7 +49,8 @@ export function createTestDb(): Database {
   // Create all tables that finance-api might query
   db.exec(`
     CREATE TABLE IF NOT EXISTS entities (
-      notion_id                TEXT PRIMARY KEY,
+      id                       TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      notion_id                TEXT UNIQUE,
       name                     TEXT NOT NULL,
       type                     TEXT,
       abn                      TEXT,
@@ -62,7 +63,8 @@ export function createTestDb(): Database {
     CREATE INDEX IF NOT EXISTS idx_entities_name ON entities(name);
 
     CREATE TABLE IF NOT EXISTS transactions (
-      notion_id       TEXT PRIMARY KEY,
+      id              TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      notion_id       TEXT UNIQUE,
       description     TEXT NOT NULL,
       account         TEXT NOT NULL,
       amount          REAL NOT NULL,
@@ -82,7 +84,8 @@ export function createTestDb(): Database {
     CREATE INDEX IF NOT EXISTS idx_transactions_entity ON transactions(entity_id);
 
     CREATE TABLE IF NOT EXISTS home_inventory (
-      notion_id              TEXT PRIMARY KEY,
+      id                     TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      notion_id              TEXT UNIQUE,
       item_name              TEXT NOT NULL,
       brand                  TEXT,
       model                  TEXT,
@@ -104,7 +107,8 @@ export function createTestDb(): Database {
     );
 
     CREATE TABLE IF NOT EXISTS budgets (
-      notion_id        TEXT PRIMARY KEY,
+      id               TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      notion_id        TEXT UNIQUE,
       category         TEXT NOT NULL,
       period           TEXT,
       amount           REAL,
@@ -115,7 +119,8 @@ export function createTestDb(): Database {
     CREATE INDEX IF NOT EXISTS idx_budgets_category ON budgets(category);
 
     CREATE TABLE IF NOT EXISTS wish_list (
-      notion_id        TEXT PRIMARY KEY,
+      id               TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      notion_id        TEXT UNIQUE,
       item             TEXT NOT NULL,
       target_amount    REAL,
       saved            REAL,
@@ -138,7 +143,7 @@ export function createTestDb(): Database {
       times_applied INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       last_used_at TEXT,
-      FOREIGN KEY (entity_id) REFERENCES entities(notion_id) ON DELETE SET NULL
+      FOREIGN KEY (entity_id) REFERENCES entities(id) ON DELETE SET NULL
     );
     CREATE INDEX IF NOT EXISTS idx_corrections_pattern ON transaction_corrections(description_pattern);
     CREATE INDEX IF NOT EXISTS idx_corrections_confidence ON transaction_corrections(confidence DESC);
@@ -151,12 +156,12 @@ export function createTestDb(): Database {
 /**
  * Seed a single entity row into the test DB.
  * Inserts into both SQLite and mock Notion to keep stores in sync.
- * Returns the notion_id.
+ * Returns the id.
  */
 export function seedEntity(
   db: Database,
   overrides: Partial<{
-    notion_id: string;
+    id: string;
     name: string;
     type: string | null;
     abn: string | null;
@@ -167,16 +172,16 @@ export function seedEntity(
     last_edited_time: string;
   }> = {}
 ): string {
-  const id = overrides.notion_id ?? crypto.randomUUID();
+  const id = overrides.id ?? crypto.randomUUID();
 
   // Insert into SQLite
   db.prepare(
     `
-    INSERT INTO entities (notion_id, name, type, abn, aliases, default_transaction_type, default_tags, notes, last_edited_time)
-    VALUES (@notion_id, @name, @type, @abn, @aliases, @default_transaction_type, @default_tags, @notes, @last_edited_time)
+    INSERT INTO entities (id, name, type, abn, aliases, default_transaction_type, default_tags, notes, last_edited_time)
+    VALUES (@id, @name, @type, @abn, @aliases, @default_transaction_type, @default_tags, @notes, @last_edited_time)
   `
   ).run({
-    notion_id: id,
+    id,
     name: overrides.name ?? "Test Entity",
     type: overrides.type ?? null,
     abn: overrides.abn ?? null,
@@ -198,12 +203,12 @@ export function seedEntity(
 /**
  * Seed a single transaction row into the test DB.
  * Inserts into both SQLite and mock Notion to keep stores in sync.
- * Returns the notion_id.
+ * Returns the id.
  */
 export function seedTransaction(
   db: Database,
   overrides: Partial<{
-    notion_id: string;
+    id: string;
     description: string;
     account: string;
     amount: number;
@@ -219,24 +224,24 @@ export function seedTransaction(
     last_edited_time: string;
   }> = {}
 ): string {
-  const id = overrides.notion_id ?? crypto.randomUUID();
+  const id = overrides.id ?? crypto.randomUUID();
 
   // Insert into SQLite
   db.prepare(
     `
     INSERT INTO transactions (
-      notion_id, description, account, amount, date, type, tags,
+      id, description, account, amount, date, type, tags,
       entity_id, entity_name, location, country,
       related_transaction_id, notes, last_edited_time
     )
     VALUES (
-      @notion_id, @description, @account, @amount, @date, @type, @tags,
+      @id, @description, @account, @amount, @date, @type, @tags,
       @entity_id, @entity_name, @location, @country,
       @related_transaction_id, @notes, @last_edited_time
     )
   `
   ).run({
-    notion_id: id,
+    id,
     description: overrides.description ?? "Test Transaction",
     account: overrides.account ?? "Test Account",
     amount: overrides.amount ?? 100.0,
@@ -253,7 +258,6 @@ export function seedTransaction(
   });
 
   // Also seed into mock Notion
-
   seedMockPage(id, {
     Description: { title: [{ text: { content: overrides.description ?? "Test Transaction" } }] },
   });
@@ -264,12 +268,12 @@ export function seedTransaction(
 /**
  * Seed a single inventory item row into the test DB.
  * Inserts into both SQLite and mock Notion to keep stores in sync.
- * Returns the notion_id.
+ * Returns the id.
  */
 export function seedInventoryItem(
   db: Database,
   overrides: Partial<{
-    notion_id: string;
+    id: string;
     item_name: string;
     brand: string | null;
     model: string | null;
@@ -290,24 +294,24 @@ export function seedInventoryItem(
     last_edited_time: string;
   }> = {}
 ): string {
-  const id = overrides.notion_id ?? crypto.randomUUID();
+  const id = overrides.id ?? crypto.randomUUID();
 
   // Insert into SQLite
   db.prepare(
     `
     INSERT INTO home_inventory (
-      notion_id, item_name, brand, model, item_id, room, location, type, condition,
+      id, item_name, brand, model, item_id, room, location, type, condition,
       in_use, deductible, purchase_date, warranty_expires, replacement_value, resale_value,
       purchase_transaction_id, purchased_from_id, purchased_from_name, last_edited_time
     )
     VALUES (
-      @notion_id, @item_name, @brand, @model, @item_id, @room, @location, @type, @condition,
+      @id, @item_name, @brand, @model, @item_id, @room, @location, @type, @condition,
       @in_use, @deductible, @purchase_date, @warranty_expires, @replacement_value, @resale_value,
       @purchase_transaction_id, @purchased_from_id, @purchased_from_name, @last_edited_time
     )
   `
   ).run({
-    notion_id: id,
+    id,
     item_name: overrides.item_name ?? "Test Item",
     brand: overrides.brand ?? null,
     model: overrides.model ?? null,
@@ -329,7 +333,6 @@ export function seedInventoryItem(
   });
 
   // Also seed into mock Notion
-
   seedMockPage(id, {
     "Item Name": { title: [{ text: { content: overrides.item_name ?? "Test Item" } }] },
   });
@@ -340,12 +343,12 @@ export function seedInventoryItem(
 /**
  * Seed a single budget row into the test DB.
  * Inserts into both SQLite and mock Notion to keep stores in sync.
- * Returns the notion_id.
+ * Returns the id.
  */
 export function seedBudget(
   db: Database,
   overrides: Partial<{
-    notion_id: string;
+    id: string;
     category: string;
     period: string | null;
     amount: number | null;
@@ -354,16 +357,16 @@ export function seedBudget(
     last_edited_time: string;
   }> = {}
 ): string {
-  const id = overrides.notion_id ?? crypto.randomUUID();
+  const id = overrides.id ?? crypto.randomUUID();
 
   // Insert into SQLite
   db.prepare(
     `
-    INSERT INTO budgets (notion_id, category, period, amount, active, notes, last_edited_time)
-    VALUES (@notion_id, @category, @period, @amount, @active, @notes, @last_edited_time)
+    INSERT INTO budgets (id, category, period, amount, active, notes, last_edited_time)
+    VALUES (@id, @category, @period, @amount, @active, @notes, @last_edited_time)
   `
   ).run({
-    notion_id: id,
+    id,
     category: overrides.category ?? "Test Category",
     period: overrides.period ?? null,
     amount: overrides.amount ?? null,
@@ -373,7 +376,6 @@ export function seedBudget(
   });
 
   // Also seed into mock Notion
-
   seedMockPage(id, {
     Category: { title: [{ text: { content: overrides.category ?? "Test Category" } }] },
   });
@@ -384,12 +386,12 @@ export function seedBudget(
 /**
  * Seed a single wish list item row into the test DB.
  * Inserts into both SQLite and mock Notion to keep stores in sync.
- * Returns the notion_id.
+ * Returns the id.
  */
 export function seedWishListItem(
   db: Database,
   overrides: Partial<{
-    notion_id: string;
+    id: string;
     item: string;
     target_amount: number | null;
     saved: number | null;
@@ -399,16 +401,16 @@ export function seedWishListItem(
     last_edited_time: string;
   }> = {}
 ): string {
-  const id = overrides.notion_id ?? crypto.randomUUID();
+  const id = overrides.id ?? crypto.randomUUID();
 
   // Insert into SQLite
   db.prepare(
     `
-    INSERT INTO wish_list (notion_id, item, target_amount, saved, priority, url, notes, last_edited_time)
-    VALUES (@notion_id, @item, @target_amount, @saved, @priority, @url, @notes, @last_edited_time)
+    INSERT INTO wish_list (id, item, target_amount, saved, priority, url, notes, last_edited_time)
+    VALUES (@id, @item, @target_amount, @saved, @priority, @url, @notes, @last_edited_time)
   `
   ).run({
-    notion_id: id,
+    id,
     item: overrides.item ?? "Test Wish List Item",
     target_amount: overrides.target_amount ?? null,
     saved: overrides.saved ?? null,
@@ -419,7 +421,6 @@ export function seedWishListItem(
   });
 
   // Also seed into mock Notion
-
   seedMockPage(id, {
     Item: { title: [{ text: { content: overrides.item ?? "Test Wish List Item" } }] },
   });

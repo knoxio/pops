@@ -5,7 +5,7 @@
  */
 import { getDb } from "../../db.js";
 import { NotFoundError } from "../../shared/errors.js";
-import { getNotionClient, getHomeInventoryId } from "../../shared/notion-client.js";
+import { getNotionClient, getHomeInventoryId, type NotionCreateProperties } from "../../shared/notion-client.js";
 import { buildInventoryUpdateProperties } from "./inventory-notion-helpers.js";
 import type { InventoryRow, CreateInventoryItemInput, UpdateInventoryItemInput } from "./types.js";
 
@@ -68,10 +68,10 @@ export function listInventoryItems(
   return { rows, total: countRow.total };
 }
 
-/** Get a single inventory item by notion_id. Throws NotFoundError if missing. */
+/** Get a single inventory item by id. Throws NotFoundError if missing. */
 export function getInventoryItem(id: string): InventoryRow {
   const db = getDb();
-  const row = db.prepare("SELECT * FROM home_inventory WHERE notion_id = ?").get(id) as
+  const row = db.prepare("SELECT * FROM home_inventory WHERE id = ?").get(id) as
     | InventoryRow
     | undefined;
 
@@ -91,7 +91,7 @@ export async function createInventoryItem(input: CreateInventoryItemInput): Prom
   const db = getDb();
 
   // Build Notion properties
-  const properties: { [key: string]: unknown } = {
+  const properties: NotionCreateProperties = {
     "Item Name": {
       title: [{ text: { content: input.itemName } }],
     },
@@ -147,27 +147,28 @@ export async function createInventoryItem(input: CreateInventoryItemInput): Prom
   const notion = getNotionClient();
   const response = await notion.pages.create({
     parent: { database_id: getHomeInventoryId() },
-    // @ts-expect-error - Dynamic property building conflicts with Notion's strict types, but properties are correct at runtime
     properties,
   });
 
   const now = new Date().toISOString();
 
   // 2. Insert into SQLite using Notion's ID
+  const id = crypto.randomUUID();
   db.prepare(
     `
     INSERT INTO home_inventory (
-      notion_id, item_name, brand, model, item_id, room, location, type, condition,
+      id, notion_id, item_name, brand, model, item_id, room, location, type, condition,
       in_use, deductible, purchase_date, warranty_expires, replacement_value, resale_value,
       purchase_transaction_id, purchased_from_id, purchased_from_name, last_edited_time
     )
     VALUES (
-      @notionId, @itemName, @brand, @model, @itemId, @room, @location, @type, @condition,
+      @id, @notionId, @itemName, @brand, @model, @itemId, @room, @location, @type, @condition,
       @inUse, @deductible, @purchaseDate, @warrantyExpires, @replacementValue, @resaleValue,
       @purchaseTransactionId, @purchasedFromId, @purchasedFromName, @lastEditedTime
     )
   `
   ).run({
+    id,
     notionId: response.id,
     itemName: input.itemName,
     brand: input.brand ?? null,
@@ -189,7 +190,7 @@ export async function createInventoryItem(input: CreateInventoryItemInput): Prom
     lastEditedTime: now,
   });
 
-  return getInventoryItem(response.id);
+  return getInventoryItem(id);
 }
 
 /**
@@ -217,13 +218,12 @@ export async function updateInventoryItem(
   const notion = getNotionClient();
   await notion.pages.update({
     page_id: id,
-    // @ts-expect-error - Dynamic property building conflicts with Notion's strict types, but properties are correct at runtime
     properties,
   });
 
   // 2. Update in SQLite
   const fields: string[] = [];
-  const params: Record<string, string | number | null> = { notionId: id };
+  const params: Record<string, string | number | null> = { id };
 
   if (input.itemName !== undefined) {
     fields.push("item_name = @itemName");
@@ -298,9 +298,7 @@ export async function updateInventoryItem(
     fields.push("last_edited_time = @lastEditedTime");
     params["lastEditedTime"] = new Date().toISOString();
 
-    db.prepare(`UPDATE home_inventory SET ${fields.join(", ")} WHERE notion_id = @notionId`).run(
-      params
-    );
+    db.prepare(`UPDATE home_inventory SET ${fields.join(", ")} WHERE id = @id`).run(params);
   }
 
   return getInventoryItem(id);
@@ -327,6 +325,6 @@ export async function deleteInventoryItem(id: string): Promise<void> {
   });
 
   // 2. Delete from SQLite
-  const result = db.prepare("DELETE FROM home_inventory WHERE notion_id = ?").run(id);
+  const result = db.prepare("DELETE FROM home_inventory WHERE id = ?").run(id);
   if (result.changes === 0) throw new NotFoundError("Inventory item", id);
 }

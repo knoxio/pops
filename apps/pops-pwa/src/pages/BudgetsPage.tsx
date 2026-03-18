@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { ColumnFilter } from "@/components/DataTableFilters";
 
 interface Budget {
-  notionId: string;
+  id: string;
   category: string;
   period: string | null;
   amount: number | null;

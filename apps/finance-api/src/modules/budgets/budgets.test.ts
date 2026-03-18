@@ -55,7 +55,7 @@ describe("budgets.list", () => {
 
     const result = await caller.budgets.list({});
     const budget = result.data[0];
-    expect(budget).toHaveProperty("notionId");
+    expect(budget).toHaveProperty("id");
     expect(budget).toHaveProperty("category", "Groceries");
     expect(budget).toHaveProperty("period", "2025-06");
     expect(budget).toHaveProperty("amount", 500);
@@ -182,7 +182,7 @@ describe("budgets.get", () => {
     const id = seedBudget(db, { category: "Groceries", amount: 500 });
 
     const result = await caller.budgets.get({ id });
-    expect(result.data.notionId).toBe(id);
+    expect(result.data.id).toBe(id);
     expect(result.data.category).toBe("Groceries");
     expect(result.data.amount).toBe(500);
   });
@@ -201,7 +201,7 @@ describe("budgets.create", () => {
 
     expect(result.message).toBe("Budget created");
     expect(result.data.category).toBe("Groceries");
-    expect(result.data.notionId).toBeDefined();
+    expect(result.data.id).toBeDefined();
     expect(result.data.period).toBeNull();
     expect(result.data.amount).toBeNull();
     expect(result.data.active).toBe(false);
@@ -362,7 +362,7 @@ describe("budgets.update", () => {
 
     await caller.budgets.update({ id, data: { amount: 500 } });
 
-    const row = db.prepare("SELECT last_edited_time FROM budgets WHERE notion_id = ?").get(id) as {
+    const row = db.prepare("SELECT last_edited_time FROM budgets WHERE id = ?").get(id) as {
       last_edited_time: string;
     };
     expect(row.last_edited_time).not.toBe("2020-01-01T00:00:00.000Z");
@@ -411,7 +411,7 @@ describe("budgets.delete", () => {
     expect(result.message).toBe("Budget deleted");
 
     // Verify gone from DB
-    const row = db.prepare("SELECT * FROM budgets WHERE notion_id = ?").get(id);
+    const row = db.prepare("SELECT * FROM budgets WHERE id = ?").get(id);
     expect(row).toBeUndefined();
   });
 

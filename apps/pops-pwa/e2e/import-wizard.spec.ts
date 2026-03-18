@@ -227,12 +227,12 @@ const setupMockAPIs = async (page: Page, options: SetupMockAPIsOptions = {}) => 
         result: {
           data: {
             data: [
-              { notionId: 'woolworths-id', name: 'Woolworths' },
-              { notionId: 'coles-id', name: 'Coles' },
-              { notionId: 'netflix-id', name: 'Netflix' },
-              { notionId: 'unknown-cafe-id', name: 'Unknown Cafe' },
-              { notionId: 'mystery-store-id', name: 'Mystery Store' },
-              { notionId: 'acme-corp-id', name: 'Acme Corporation' },
+              { id: 'woolworths-id', name: 'Woolworths' },
+              { id: 'coles-id', name: 'Coles' },
+              { id: 'netflix-id', name: 'Netflix' },
+              { id: 'unknown-cafe-id', name: 'Unknown Cafe' },
+              { id: 'mystery-store-id', name: 'Mystery Store' },
+              { id: 'acme-corp-id', name: 'Acme Corporation' },
             ],
             pagination: {
               total: 6,

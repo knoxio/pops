@@ -4,7 +4,8 @@ import type Database from 'better-sqlite3';
 export function createWishListTable(db: Database.Database): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS wish_list (
-      notion_id        TEXT PRIMARY KEY,
+      id               TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      notion_id        TEXT UNIQUE,
       item             TEXT NOT NULL,
       target_amount    REAL,
       saved            REAL,

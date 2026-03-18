@@ -34,7 +34,7 @@ let db: Database;
 let _notionMock: Client;
 
 /** Shape of a row returned from the entities SQLite table. */
-type EntityRow = { name: string; notion_id: string; last_edited_time: string };
+type EntityRow = { name: string; id: string; last_edited_time: string };
 
 /**
  * Helper to poll for import progress until completion
@@ -127,7 +127,7 @@ describe("imports.processImport", () => {
   });
 
   it("processes valid input successfully", async () => {
-    seedEntity(db, { name: "Woolworths", notion_id: "woolworths-id" });
+    seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
 
     const { sessionId } = await caller.imports.processImport({
       transactions: [
@@ -372,7 +372,7 @@ describe("imports.createEntity", () => {
       name: "SQLite Test Entity",
     });
 
-    const row = db.prepare("SELECT * FROM entities WHERE notion_id = ?").get(result.entityId);
+    const row = db.prepare("SELECT * FROM entities WHERE id = ?").get(result.entityId);
     expect(row).toBeDefined();
     expect((row as EntityRow).name).toBe("SQLite Test Entity");
   });

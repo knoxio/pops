@@ -18,7 +18,7 @@ interface EditableTransactionCardProps {
     shouldLearn?: boolean
   ) => void;
   onCancel: () => void;
-  entities?: Array<{ notionId: string; name: string }>;
+  entities?: Array<{ id: string; name: string }>;
 }
 
 /**
@@ -231,7 +231,7 @@ export function EditableTransactionCard({
           >
             <option value="">Select entity...</option>
             {entities.map((entity) => (
-              <option key={entity.notionId} value={entity.notionId}>
+              <option key={entity.id} value={entity.id}>
                 {entity.name}
               </option>
             ))}

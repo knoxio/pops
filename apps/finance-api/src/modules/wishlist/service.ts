@@ -5,7 +5,12 @@
  */
 import { getDb } from "../../db.js";
 import { NotFoundError } from "../../shared/errors.js";
-import { getNotionClient, getWishListId } from "../../shared/notion-client.js";
+import {
+  getNotionClient,
+  getWishListId,
+  type NotionCreateProperties,
+  type NotionUpdateProperties,
+} from "../../shared/notion-client.js";
 import type { WishListRow, CreateWishListItemInput, UpdateWishListItemInput } from "./types.js";
 
 /** Count + rows for a paginated list. */
@@ -47,10 +52,10 @@ export function listWishListItems(
   return { rows, total: countRow.total };
 }
 
-/** Get a single wish list item by notion_id. Throws NotFoundError if missing. */
+/** Get a single wish list item by id. Throws NotFoundError if missing. */
 export function getWishListItem(id: string): WishListRow {
   const db = getDb();
-  const row = db.prepare("SELECT * FROM wish_list WHERE notion_id = ?").get(id) as
+  const row = db.prepare("SELECT * FROM wish_list WHERE id = ?").get(id) as
     | WishListRow
     | undefined;
 
@@ -70,7 +75,7 @@ export async function createWishListItem(input: CreateWishListItemInput): Promis
   const db = getDb();
 
   // Build Notion properties
-  const properties: { [key: string]: unknown } = {
+  const properties: NotionCreateProperties = {
     Item: {
       title: [{ text: { content: input.item } }],
     },
@@ -96,19 +101,20 @@ export async function createWishListItem(input: CreateWishListItemInput): Promis
   const notion = getNotionClient();
   const response = await notion.pages.create({
     parent: { database_id: getWishListId() },
-    // @ts-expect-error - Dynamic property building conflicts with Notion's strict types, but properties are correct at runtime
     properties,
   });
 
   const now = new Date().toISOString();
 
   // 2. Insert into SQLite using Notion's ID
+  const id = crypto.randomUUID();
   db.prepare(
     `
-    INSERT INTO wish_list (notion_id, item, target_amount, saved, priority, url, notes, last_edited_time)
-    VALUES (@notionId, @item, @targetAmount, @saved, @priority, @url, @notes, @lastEditedTime)
+    INSERT INTO wish_list (id, notion_id, item, target_amount, saved, priority, url, notes, last_edited_time)
+    VALUES (@id, @notionId, @item, @targetAmount, @saved, @priority, @url, @notes, @lastEditedTime)
   `
   ).run({
+    id,
     notionId: response.id,
     item: input.item,
     targetAmount: input.targetAmount ?? null,
@@ -119,7 +125,7 @@ export async function createWishListItem(input: CreateWishListItemInput): Promis
     lastEditedTime: now,
   });
 
-  return getWishListItem(response.id);
+  return getWishListItem(id);
 }
 
 /**
@@ -141,7 +147,7 @@ export async function updateWishListItem(
   getWishListItem(id);
 
   // Build Notion properties update
-  const properties: { [key: string]: unknown } = {};
+  const properties: NotionUpdateProperties = {};
 
   if (input.item !== undefined) {
     properties.Item = {
@@ -171,13 +177,12 @@ export async function updateWishListItem(
   const notion = getNotionClient();
   await notion.pages.update({
     page_id: id,
-    // @ts-expect-error - Dynamic property building conflicts with Notion's strict types, but properties are correct at runtime
     properties,
   });
 
   // 2. Update in SQLite
   const fields: string[] = [];
-  const params: Record<string, string | number | null> = { notionId: id };
+  const params: Record<string, string | number | null> = { id };
 
   if (input.item !== undefined) {
     fields.push("item = @item");
@@ -208,7 +213,7 @@ export async function updateWishListItem(
     fields.push("last_edited_time = @lastEditedTime");
     params["lastEditedTime"] = new Date().toISOString();
 
-    db.prepare(`UPDATE wish_list SET ${fields.join(", ")} WHERE notion_id = @notionId`).run(params);
+    db.prepare(`UPDATE wish_list SET ${fields.join(", ")} WHERE id = @id`).run(params);
   }
 
   return getWishListItem(id);
@@ -235,6 +240,6 @@ export async function deleteWishListItem(id: string): Promise<void> {
   });
 
   // 2. Delete from SQLite
-  const result = db.prepare("DELETE FROM wish_list WHERE notion_id = ?").run(id);
+  const result = db.prepare("DELETE FROM wish_list WHERE id = ?").run(id);
   if (result.changes === 0) throw new NotFoundError("Wish list item", id);
 }

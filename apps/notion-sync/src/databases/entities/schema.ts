@@ -4,7 +4,8 @@ import type Database from 'better-sqlite3';
 export function createEntitiesTable(db: Database.Database): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS entities (
-      notion_id                TEXT PRIMARY KEY,
+      id                       TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      notion_id                TEXT UNIQUE,
       name                     TEXT NOT NULL,
       type                     TEXT,
       abn                      TEXT,

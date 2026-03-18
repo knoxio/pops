@@ -5,7 +5,7 @@ export { WISH_LIST_PRIORITIES, type WishListPriority, type WishListRow };
 
 /** API response shape (camelCase). */
 export interface WishListItem {
-  notionId: string;
+  id: string;
   item: string;
   targetAmount: number | null;
   saved: number | null;
@@ -25,7 +25,7 @@ export function toWishListItem(row: WishListRow): WishListItem {
     row.target_amount !== null && row.saved !== null ? row.target_amount - row.saved : null;
 
   return {
-    notionId: row.notion_id,
+    id: row.id,
     item: row.item,
     targetAmount: row.target_amount,
     saved: row.saved,

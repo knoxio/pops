@@ -19,17 +19,23 @@ const INCLUDED_MIGRATIONS = [
   "007_transaction_corrections.sql",
   "008_add_tags_to_transactions.sql",
   "009_environments.sql",
+  "010_uuid_primary_keys.sql",
 ];
 
 /**
  * Initialize a fresh SQLite database with the full POPS schema.
  * Safe to call on an empty file or an already-initialized database
  * (all statements use CREATE TABLE IF NOT EXISTS).
+ *
+ * Note: SQLite DEFAULTs use `lower(hex(randomblob(16)))` (32-char hex) as a
+ * fallback for direct SQL inserts. Service code always provides proper UUIDs
+ * via `crypto.randomUUID()` (RFC 4122 format with dashes).
  */
 export function initializeSchema(db: BetterSqlite3.Database): void {
   db.exec(`
     CREATE TABLE IF NOT EXISTS transactions (
-      notion_id TEXT PRIMARY KEY,
+      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      notion_id TEXT UNIQUE,
       description TEXT NOT NULL,
       account TEXT NOT NULL,
       amount REAL NOT NULL,
@@ -49,9 +55,11 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     CREATE INDEX IF NOT EXISTS idx_transactions_account ON transactions(account);
     CREATE INDEX IF NOT EXISTS idx_transactions_entity ON transactions(entity_id);
     CREATE INDEX IF NOT EXISTS idx_transactions_last_edited ON transactions(last_edited_time);
+    CREATE INDEX IF NOT EXISTS idx_transactions_notion_id ON transactions(notion_id);
 
     CREATE TABLE IF NOT EXISTS entities (
-      notion_id TEXT PRIMARY KEY,
+      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      notion_id TEXT UNIQUE,
       name TEXT NOT NULL,
       type TEXT,
       abn TEXT,
@@ -63,7 +71,8 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     );
 
     CREATE TABLE IF NOT EXISTS budgets (
-      notion_id TEXT PRIMARY KEY,
+      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      notion_id TEXT UNIQUE,
       category TEXT NOT NULL,
       period TEXT NOT NULL,
       amount REAL,
@@ -73,7 +82,8 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     );
 
     CREATE TABLE IF NOT EXISTS home_inventory (
-      notion_id TEXT PRIMARY KEY,
+      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      notion_id TEXT UNIQUE,
       item_name TEXT NOT NULL,
       brand TEXT,
       model TEXT,
@@ -95,7 +105,8 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     );
 
     CREATE TABLE IF NOT EXISTS wish_list (
-      notion_id TEXT PRIMARY KEY,
+      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      notion_id TEXT UNIQUE,
       item TEXT NOT NULL,
       target_amount REAL,
       saved REAL,
@@ -139,7 +150,7 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       times_applied INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       last_used_at TEXT,
-      FOREIGN KEY (entity_id) REFERENCES entities(notion_id) ON DELETE SET NULL
+      FOREIGN KEY (entity_id) REFERENCES entities(id) ON DELETE SET NULL
     );
 
     CREATE INDEX IF NOT EXISTS idx_corrections_pattern ON transaction_corrections(description_pattern);

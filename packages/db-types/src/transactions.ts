@@ -5,7 +5,8 @@
 import { z } from "zod/v4";
 
 export const TransactionRowSchema = z.object({
-  notion_id: z.string(),
+  id: z.string(),
+  notion_id: z.string().nullable(),
   description: z.string(),
   account: z.string(),
   amount: z.number(),

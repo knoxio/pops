@@ -5,7 +5,8 @@
 import { z } from "zod/v4";
 
 export const InventoryRowSchema = z.object({
-  notion_id: z.string(),
+  id: z.string(),
+  notion_id: z.string().nullable(),
   item_name: z.string(),
   brand: z.string().nullable(),
   model: z.string().nullable(),

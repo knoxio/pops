@@ -21,7 +21,7 @@ export function suggestTags(description: string, entityId: string | null): strin
   // 1. Entity default tags
   if (entityId) {
     const entity = db
-      .prepare("SELECT default_tags FROM entities WHERE notion_id = ?")
+      .prepare("SELECT default_tags FROM entities WHERE id = ?")
       .get(entityId) as Pick<EntityRow, "default_tags"> | undefined;
 
     if (entity?.default_tags) {

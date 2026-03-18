@@ -162,7 +162,7 @@ export function DashboardPage() {
             <div className="divide-y">
               {transactions.data.map((transaction) => (
                 <div
-                  key={transaction.notionId}
+                  key={transaction.id}
                   className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex-1 min-w-0">
@@ -224,7 +224,7 @@ export function DashboardPage() {
         ) : budgets && budgets.data.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {budgets.data.slice(0, 3).map((budget) => (
-              <Card key={budget.notionId} className="p-4">
+              <Card key={budget.id} className="p-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold">{budget.category}</h3>

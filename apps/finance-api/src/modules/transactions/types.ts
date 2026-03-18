@@ -5,7 +5,7 @@ export type { TransactionRow };
 
 /** API response shape (camelCase). */
 export interface Transaction {
-  notionId: string;
+  id: string;
   description: string;
   account: string;
   amount: number;
@@ -24,7 +24,7 @@ export interface Transaction {
 /** Map a SQLite row to the API response shape. */
 export function toTransaction(row: TransactionRow): Transaction {
   return {
-    notionId: row.notion_id,
+    id: row.id,
     description: row.description,
     account: row.account,
     amount: row.amount,

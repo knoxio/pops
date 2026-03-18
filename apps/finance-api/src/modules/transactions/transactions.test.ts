@@ -50,7 +50,7 @@ describe("transactions.list", () => {
 
     const result = await caller.transactions.list({});
     const txn = result.data[0];
-    expect(txn).toHaveProperty("notionId");
+    expect(txn).toHaveProperty("id");
     expect(txn).toHaveProperty("entityId", "ent-123");
     expect(txn).toHaveProperty("entityName", "Woolworths");
     expect(txn).toHaveProperty("relatedTransactionId", "txn-456");
@@ -255,7 +255,7 @@ describe("transactions.get", () => {
     const id = seedTransaction(db, { description: "Groceries", account: "Up" });
 
     const result = await caller.transactions.get({ id });
-    expect(result.data.notionId).toBe(id);
+    expect(result.data.id).toBe(id);
     expect(result.data.description).toBe("Groceries");
   });
 
@@ -283,7 +283,7 @@ describe("transactions.create", () => {
     expect(result.data.amount).toBe(50.0);
     expect(result.data.date).toBe("2025-06-15");
     expect(result.data.type).toBe("Purchase");
-    expect(result.data.notionId).toBeDefined();
+    expect(result.data.id).toBeDefined();
     expect(result.data.tags).toEqual([]);
   });
 
@@ -420,7 +420,7 @@ describe("transactions.update", () => {
     await caller.transactions.update({ id, data: { amount: 100.0 } });
 
     const row = db
-      .prepare("SELECT last_edited_time FROM transactions WHERE notion_id = ?")
+      .prepare("SELECT last_edited_time FROM transactions WHERE id = ?")
       .get(id) as { last_edited_time: string };
     expect(row.last_edited_time).not.toBe("2020-01-01T00:00:00.000Z");
   });
@@ -464,7 +464,7 @@ describe("transactions.delete", () => {
     expect(result.message).toBe("Transaction deleted");
 
     // Verify gone from DB
-    const row = db.prepare("SELECT * FROM transactions WHERE notion_id = ?").get(id);
+    const row = db.prepare("SELECT * FROM transactions WHERE id = ?").get(id);
     expect(row).toBeUndefined();
   });
 

@@ -5,7 +5,7 @@ export type { BudgetRow };
 
 /** API response shape (camelCase). */
 export interface Budget {
-  notionId: string;
+  id: string;
   category: string;
   period: string | null;
   amount: number | null;
@@ -20,7 +20,7 @@ export interface Budget {
  */
 export function toBudget(row: BudgetRow): Budget {
   return {
-    notionId: row.notion_id,
+    id: row.id,
     category: row.category,
     period: row.period,
     amount: row.amount,

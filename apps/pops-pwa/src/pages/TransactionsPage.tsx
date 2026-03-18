@@ -12,7 +12,7 @@ import { TagEditor } from "@/components/TagEditor";
 import type { ColumnFilter } from "@/components/DataTableFilters";
 
 interface Transaction {
-  notionId: string;
+  id: string;
   description: string;
   account: string;
   amount: number;
@@ -130,11 +130,11 @@ export function TransactionsPage() {
       accessorKey: "tags",
       header: "Tags",
       cell: ({ row }) => {
-        const { notionId, tags, entityId, description } = row.original;
+        const { id, tags, entityId, description } = row.original;
         return (
           <TagEditor
             currentTags={tags}
-            onSave={handleTagSave(notionId, entityId, description)}
+            onSave={handleTagSave(id, entityId, description)}
             onSuggest={handleTagSuggest(description, entityId)}
             availableTags={availableTags ?? []}
           />

@@ -5,7 +5,7 @@ export type { InventoryRow };
 
 /** API response shape (camelCase). */
 export interface InventoryItem {
-  notionId: string;
+  id: string;
   itemName: string;
   brand: string | null;
   model: string | null;
@@ -29,7 +29,7 @@ export interface InventoryItem {
 /** Map a SQLite row to the API response shape. */
 export function toInventoryItem(row: InventoryRow): InventoryItem {
   return {
-    notionId: row.notion_id,
+    id: row.id,
     itemName: row.item_name,
     brand: row.brand,
     model: row.model,

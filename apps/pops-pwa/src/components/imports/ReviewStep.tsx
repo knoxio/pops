@@ -189,7 +189,7 @@ export function ReviewStep() {
             transaction.entity?.entityName?.toLowerCase()
         );
         if (matchingEntity) {
-          entityId = matchingEntity.notionId;
+          entityId = matchingEntity.id;
         }
       }
 
@@ -221,14 +221,14 @@ export function ReviewStep() {
         // Check if entity exists
         let entityId = entities?.data?.find(
           (e) => e.name.toLowerCase() === entityName.toLowerCase()
-        )?.notionId;
+        )?.id;
 
         // Create entity if it doesn't exist
         if (!entityId) {
           const result = await createEntityMutation.mutateAsync({
             name: entityName,
           });
-          entityId = result.data.notionId;
+          entityId = result.data.id;
         }
 
         const resolvedEntityId = entityId;
@@ -714,7 +714,7 @@ function MatchedTab({
     edited: Partial<ProcessedTransaction>
   ) => void;
   onCancelEdit: () => void;
-  entities?: Array<{ notionId: string; name: string }>;
+  entities?: Array<{ id: string; name: string }>;
 }) {
   if (transactions.length === 0) {
     return (
@@ -795,7 +795,7 @@ function UncertainTab({
     edited: Partial<ProcessedTransaction>
   ) => void;
   onCancelEdit: () => void;
-  entities?: Array<{ notionId: string; name: string }>;
+  entities?: Array<{ id: string; name: string }>;
 }) {
   if (transactions.length === 0) {
     return (
@@ -923,7 +923,7 @@ function FailedTab({
     edited: Partial<ProcessedTransaction>
   ) => void;
   onCancelEdit: () => void;
-  entities?: Array<{ notionId: string; name: string }>;
+  entities?: Array<{ id: string; name: string }>;
 }) {
   if (transactions.length === 0) {
     return (
