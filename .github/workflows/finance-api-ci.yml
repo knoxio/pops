@@ -27,28 +27,31 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "yarn"
+          cache: "pnpm"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build shared packages
-        run: cd packages/db-types && yarn build
+        run: cd packages/db-types && pnpm build
 
       - name: Type check
-        run: cd apps/finance-api && yarn typecheck
+        run: cd apps/finance-api && pnpm typecheck
 
       - name: Lint
-        run: cd apps/finance-api && yarn lint
+        run: cd apps/finance-api && pnpm lint
 
       - name: Format check
-        run: cd apps/finance-api && yarn format
+        run: cd apps/finance-api && pnpm format
 
       - name: Run tests
-        run: cd apps/finance-api && yarn test
+        run: cd apps/finance-api && pnpm test
 
       - name: Build
-        run: cd apps/finance-api && yarn build
+        run: cd apps/finance-api && pnpm build
 
       - name: Upload build artifacts
         if: success()

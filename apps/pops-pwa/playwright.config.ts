@@ -52,7 +52,7 @@ export default defineConfig({
     // ReactQueryDevtools SVG logo renders at r=316.5px and intercepts pointer events,
     // so it must be disabled in E2E via VITE_E2E=true.
     {
-      command: 'yarn dev --port 5567',
+      command: 'pnpm dev --port 5567',
       url: 'http://localhost:5567',
       reuseExistingServer: !process.env.CI,
       timeout: 120000,
@@ -61,7 +61,7 @@ export default defineConfig({
     // Finance API — required for integration tests; mocked tests don't use it but starting
     // it is harmless and ensures the proxy target is always available.
     {
-      command: 'yarn dev',
+      command: 'pnpm dev',
       url: 'http://localhost:3000/health',
       cwd: '../finance-api',
       reuseExistingServer: !process.env.CI,

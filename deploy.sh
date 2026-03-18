@@ -114,7 +114,7 @@ if [ "$SKIP_CHECKS" = false ]; then
     echo -e "${BLUE}Shared packages:${NC}"
     cd packages/db-types
 
-    if ! yarn build; then
+    if ! pnpm build; then
         echo -e "${RED}✗ Failed to build db-types${NC}"
         exit 1
     fi
@@ -126,13 +126,13 @@ if [ "$SKIP_CHECKS" = false ]; then
     echo -e "${BLUE}Finance API:${NC}"
     cd apps/finance-api
 
-    if ! yarn typecheck; then
+    if ! pnpm typecheck; then
         echo -e "${RED}✗ TypeScript errors in finance-api${NC}"
         exit 1
     fi
     echo -e "${GREEN}✓ TypeScript passed${NC}"
 
-    if ! yarn test --run; then
+    if ! pnpm test --run; then
         echo -e "${RED}✗ Tests failed in finance-api${NC}"
         exit 1
     fi
@@ -144,7 +144,7 @@ if [ "$SKIP_CHECKS" = false ]; then
     echo -e "${BLUE}PWA:${NC}"
     cd apps/pops-pwa
 
-    if ! yarn typecheck; then
+    if ! pnpm typecheck; then
         echo -e "${RED}✗ TypeScript errors in pops-pwa${NC}"
         exit 1
     fi

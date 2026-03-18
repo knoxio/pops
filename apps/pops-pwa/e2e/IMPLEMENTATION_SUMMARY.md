@@ -165,7 +165,7 @@ interface SetupMockAPIsOptions {
 
 ```bash
 # Run all E2E tests
-yarn test:e2e
+pnpm test:e2e
 
 # Run import wizard tests only
 npx playwright test import-wizard
@@ -217,7 +217,7 @@ Tests for "Save & Learn" assume:
 ✅ **Individual Tests:** 46 tests (target was ~40+)
 ✅ **Type Safety:** No `any` types, full TypeScript
 ✅ **Maintainability:** Helper functions, fixtures, clear organization
-✅ **No TypeScript Errors:** `yarn typecheck` passes
+✅ **No TypeScript Errors:** `pnpm typecheck` passes
 
 ## Next Steps
 
@@ -247,10 +247,10 @@ Some tests require backend endpoints:
 Once the UI is implemented:
 ```bash
 # Start dev server
-yarn dev
+pnpm dev
 
 # Run tests in another terminal
-yarn test:e2e
+pnpm test:e2e
 ```
 
 ### 5. Set Up CI
@@ -260,7 +260,7 @@ Add E2E tests to CI pipeline:
 - name: Install Playwright
   run: npx playwright install --with-deps
 - name: Run E2E tests
-  run: yarn test:e2e
+  run: pnpm test:e2e
 ```
 
 ## Conclusion

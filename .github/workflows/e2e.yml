@@ -20,13 +20,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'yarn'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build shared packages
-        run: cd packages/db-types && yarn build
+        run: cd packages/db-types && pnpm build
 
       - name: Install Playwright browsers
         run: |
@@ -34,14 +37,14 @@ jobs:
           npx playwright install --with-deps
 
       - name: Initialize finance-api database
-        run: cd apps/finance-api && yarn dev:init
+        run: cd apps/finance-api && pnpm dev:init
         env:
           SQLITE_PATH: ./data/pops.db
 
       - name: Run Playwright tests
         run: |
           cd apps/pops-pwa
-          yarn test:e2e
+          pnpm test:e2e
         env:
           CI: true
           # finance-api is started by Playwright's webServer config.

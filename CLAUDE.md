@@ -73,15 +73,15 @@ Run `mise tasks` for the full list. All tasks are defined in `mise.toml`.
 
 ### Services (each has its own package.json)
 ```bash
-cd apps/finance-api && yarn install && yarn dev        # API with watch mode
-cd apps/pops-pwa && yarn install && yarn dev           # Vite dev server
+cd apps/finance-api && pnpm install && pnpm dev        # API with watch mode
+cd apps/pops-pwa && pnpm install && pnpm dev           # Vite dev server
 
 # Typecheck a service
-cd apps/<service> && yarn typecheck
+cd apps/<service> && pnpm typecheck
 
 # Run tests
-cd apps/<service> && yarn test                 # single run
-cd apps/<service> && yarn test:watch           # watch mode
+cd apps/<service> && pnpm test                 # single run
+cd apps/<service> && pnpm test:watch           # watch mode
 ```
 
 ### Tools (import scripts)
