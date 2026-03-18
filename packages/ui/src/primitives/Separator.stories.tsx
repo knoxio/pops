@@ -52,7 +52,7 @@ export const InText: Story = {
 
 export const InCard: Story = {
   render: () => (
-    <div className="w-[350px] rounded-lg border p-6 space-y-4">
+    <div className="w-sm rounded-lg border p-6 space-y-4">
       <div>
         <h3 className="text-lg font-semibold">Transaction Details</h3>
         <p className="text-sm text-muted-foreground">Feb 10, 2026</p>
@@ -87,7 +87,7 @@ export const InCard: Story = {
 
 export const BetweenSections: Story = {
   render: () => (
-    <div className="w-[600px] space-y-6">
+    <div className="w-150 space-y-6">
       <div className="space-y-2">
         <h2 className="text-2xl font-bold">Account Summary</h2>
         <div className="grid gap-4 md:grid-cols-3">
@@ -148,7 +148,7 @@ export const BetweenSections: Story = {
 
 export const InList: Story = {
   render: () => (
-    <div className="w-[400px] rounded-lg border">
+    <div className="w-100 rounded-lg border">
       {[
         { name: "Checking Account", balance: "$2,458.32" },
         { name: "Savings Account", balance: "$12,847.65" },
@@ -171,7 +171,7 @@ export const InList: Story = {
 
 export const WithLabel: Story = {
   render: () => (
-    <div className="w-[400px] space-y-4">
+    <div className="w-100 space-y-4">
       <div>
         <h3 className="text-lg font-semibold">Personal Information</h3>
       </div>
@@ -232,7 +232,7 @@ export const WithLabel: Story = {
 
 export const Dashboard: Story = {
   render: () => (
-    <div className="w-[800px] space-y-6">
+    <div className="w-200 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Dashboard</h1>
         <button className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">
@@ -262,7 +262,7 @@ export const Dashboard: Story = {
       <div className="grid gap-6 md:grid-cols-2">
         <div className="space-y-4">
           <h2 className="text-xl font-semibold">Spending by Category</h2>
-          <div className="h-[200px] rounded-lg border flex items-center justify-center text-muted-foreground">
+          <div className="h-50 rounded-lg border flex items-center justify-center text-muted-foreground">
             Chart placeholder
           </div>
         </div>

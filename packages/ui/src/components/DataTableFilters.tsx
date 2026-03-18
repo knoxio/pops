@@ -53,7 +53,7 @@ export function SelectFilter({
       onChange={(e) => column.setFilterValue(e.target.value || undefined)}
       options={options}
       placeholder={placeholder || "Select..."}
-      className="w-[180px]"
+      className="w-45"
     />
   );
 }
@@ -82,7 +82,7 @@ export function MultiSelectFilter({
       }
       multiple
       placeholder={placeholder || "Select..."}
-      className="min-w-[200px]"
+      className="min-w-50"
     />
   );
 }
@@ -103,7 +103,7 @@ export function DateRangeFilter({ column }: DateRangeFilterProps) {
           column.setFilterValue([e.target.value, filterValue[1]])
         }
         placeholder="From"
-        className="w-[150px]"
+        className="w-38"
       />
       <span className="text-muted-foreground">to</span>
       <TextInput
@@ -113,7 +113,7 @@ export function DateRangeFilter({ column }: DateRangeFilterProps) {
           column.setFilterValue([filterValue[0], e.target.value])
         }
         placeholder="To"
-        className="w-[150px]"
+        className="w-38"
       />
     </div>
   );
@@ -141,14 +141,14 @@ export function NumberRangeFilter({
         value={filterValue[0]}
         onChange={(value) => column.setFilterValue([value, filterValue[1]])}
         placeholder={minPlaceholder}
-        className="w-[100px]"
+        className="w-25"
       />
       <span className="text-muted-foreground">to</span>
       <NumberInput
         value={filterValue[1]}
         onChange={(value) => column.setFilterValue([filterValue[0], value])}
         placeholder={maxPlaceholder}
-        className="w-[100px]"
+        className="w-25"
       />
     </div>
   );

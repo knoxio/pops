@@ -31,7 +31,7 @@ type Story = StoryObj<typeof meta>;
 
 export const Basic: Story = {
   render: () => (
-    <Card className="w-[350px]">
+    <Card className="w-sm">
       <CardHeader>
         <CardTitle>Card Title</CardTitle>
         <CardDescription>Card description goes here</CardDescription>
@@ -45,7 +45,7 @@ export const Basic: Story = {
 
 export const WithFooter: Story = {
   render: () => (
-    <Card className="w-[350px]">
+    <Card className="w-sm">
       <CardHeader>
         <CardTitle>Confirm Action</CardTitle>
         <CardDescription>This action cannot be undone</CardDescription>
@@ -69,7 +69,7 @@ export const WithFooter: Story = {
 
 export const WithAction: Story = {
   render: () => (
-    <Card className="w-[350px]">
+    <Card className="w-sm">
       <CardHeader>
         <CardTitle>Recent Transactions</CardTitle>
         <CardDescription>Last 7 days</CardDescription>
@@ -90,7 +90,7 @@ export const WithAction: Story = {
 
 export const AccountBalance: Story = {
   render: () => (
-    <Card className="w-[350px]">
+    <Card className="w-sm">
       <CardHeader>
         <CardTitle>Checking Account</CardTitle>
         <CardDescription>ANZ Everyday Account</CardDescription>
@@ -120,7 +120,7 @@ export const AccountBalance: Story = {
 
 export const BudgetCard: Story = {
   render: () => (
-    <Card className="w-[350px]">
+    <Card className="w-sm">
       <CardHeader>
         <CardTitle>Food & Dining</CardTitle>
         <CardDescription>February 2026</CardDescription>
@@ -197,7 +197,7 @@ export const StatCard: Story = {
 
 export const TransactionCard: Story = {
   render: () => (
-    <Card className="w-[350px]">
+    <Card className="w-sm">
       <CardHeader>
         <CardTitle>Woolworths Sydney</CardTitle>
         <CardDescription>Feb 10, 2026 • 3:24 PM</CardDescription>
@@ -239,7 +239,7 @@ export const TransactionCard: Story = {
 
 export const SavingsGoalCard: Story = {
   render: () => (
-    <Card className="w-[350px]">
+    <Card className="w-sm">
       <CardHeader>
         <CardTitle>Emergency Fund</CardTitle>
         <CardDescription>Goal: $10,000</CardDescription>
@@ -272,7 +272,7 @@ export const SavingsGoalCard: Story = {
 
 export const NotificationCard: Story = {
   render: () => (
-    <Card className="w-[350px]">
+    <Card className="w-sm">
       <CardHeader>
         <CardTitle>Budget Alert</CardTitle>
         <CardDescription>2 hours ago</CardDescription>
@@ -355,7 +355,7 @@ export const DashboardGrid: Story = {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="h-[200px] flex items-center justify-center text-muted-foreground">
+          <div className="h-50 flex items-center justify-center text-muted-foreground">
             Chart would go here
           </div>
         </CardContent>

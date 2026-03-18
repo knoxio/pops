@@ -40,6 +40,13 @@
 
   --color-ring: hsl(215 20.2% 65.1%);
 
+  --color-success: hsl(142 76% 36%);
+  --color-success-hover: hsl(142 76% 30%);
+  --color-warning: hsl(38 92% 50%);
+  --color-warning-hover: hsl(38 92% 45%);
+  --color-info: hsl(199 89% 48%);
+  --color-info-hover: hsl(199 89% 43%);
+
   --radius: 0.5rem;
 }
 

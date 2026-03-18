@@ -172,7 +172,7 @@ export function EditableCell<T = unknown>({
     return (
       <div
         className={cn(
-          "group flex items-center gap-2 min-h-[2rem]",
+          "group flex items-center gap-2 min-h-8",
           editable && "cursor-pointer hover:bg-accent/50 rounded px-2 -mx-2",
           className
         )}
