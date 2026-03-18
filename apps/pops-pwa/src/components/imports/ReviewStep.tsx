@@ -90,7 +90,6 @@ export function ReviewStep() {
                 entity: {
                   entityId,
                   entityName,
-                  entityUrl: `https://www.notion.so/${entityId.replace(/-/g, "")}`,
                   matchType: "auto-matched" as never, // UI-only matchType
                   confidence: 1,
                 },
@@ -136,7 +135,6 @@ export function ReviewStep() {
             entity: {
               entityId,
               entityName,
-              entityUrl: `https://www.notion.so/${entityId.replace(/-/g, "")}`,
               matchType: "manual" as never, // UI-only matchType
               confidence: 1,
             },
@@ -252,7 +250,6 @@ export function ReviewStep() {
                   entity: {
                     entityId: resolvedEntityId,
                     entityName,
-                    entityUrl: `https://www.notion.so/${resolvedEntityId.replace(/-/g, "")}`,
                     matchType: "ai" as const,
                     confidence: 1,
                   },
@@ -290,7 +287,7 @@ export function ReviewStep() {
   );
 
   const handleEntityCreated = useCallback(
-    (entity: { entityId: string; entityName: string; entityUrl?: string }) => {
+    (entity: { entityId: string; entityName: string }) => {
       // Handle bulk assignment if pending
       if (pendingBulkTransactions && pendingBulkTransactions.length > 0) {
         const bulkCount = pendingBulkTransactions.length;
@@ -312,7 +309,6 @@ export function ReviewStep() {
                   entity: {
                     entityId: entity.entityId,
                     entityName: entity.entityName,
-                    entityUrl: entity.entityUrl,
                     matchType: "ai" as const,
                     confidence: 1,
                   },
@@ -480,7 +476,6 @@ export function ReviewStep() {
         transactionType: t.transactionType,
         entityId: t.entity?.entityId,
         entityName: t.entity?.entityName,
-        entityUrl: t.entity?.entityUrl,
         // Pre-populate tags from suggestedTags so TagReviewStep can display them
         tags: (t.suggestedTags ?? []).map((s) => s.tag),
         // Pass source attribution metadata for TagReviewStep badges

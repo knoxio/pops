@@ -23,7 +23,6 @@ export type ParsedTransaction = z.infer<typeof parsedTransactionSchema>;
 export const entityMatchSchema = z.object({
   entityId: z.string().optional(),
   entityName: z.string().optional(),
-  entityUrl: z.string().optional(),
   matchType: z.enum(["alias", "exact", "prefix", "contains", "ai", "none"]),
   confidence: z.number().min(0).max(1).optional(),
 });
@@ -58,15 +57,14 @@ export type ProcessedTransaction = z.infer<typeof processedTransactionSchema>;
 
 /**
  * Transaction confirmed by user (after review)
- * entityId/entityName/entityUrl are omitted for transfers and income.
+ * entityId/entityName are omitted for transfers and income.
  */
 export const confirmedTransactionSchema = parsedTransactionSchema.extend({
   transactionType: transactionTypeSchema.optional(),
   entityId: z.string().optional(),
   entityName: z.string().optional(),
-  entityUrl: z.string().optional(),
   tags: z.array(z.string()).optional(),
-  /** Source attribution metadata — used by TagReviewStep for badges; not written to Notion. */
+  /** Source attribution metadata — used by TagReviewStep for badges. */
   suggestedTags: z.array(suggestedTagSchema).optional(),
 });
 
@@ -173,7 +171,6 @@ export type CreateEntityInput = z.infer<typeof createEntityInputSchema>;
 export const createEntityOutputSchema = z.object({
   entityId: z.string(),
   entityName: z.string(),
-  entityUrl: z.string().optional(),
 });
 
 export type CreateEntityOutput = z.infer<typeof createEntityOutputSchema>;

@@ -274,7 +274,6 @@ const setupMockAPIs = async (page: Page, options: SetupMockAPIsOptions = {}) => 
           data: {
             entityId: 'new-entity-id',
             entityName,
-            entityUrl: 'https://www.notion.so/newentityid',
           },
         },
       }),
@@ -1458,7 +1457,6 @@ test.describe('Import Wizard - Error Recovery', () => {
               data: {
                 entityId: 'new-entity-id',
                 entityName: 'Retry Entity',
-                entityUrl: 'https://www.notion.so/retryentity',
               },
             },
           }),

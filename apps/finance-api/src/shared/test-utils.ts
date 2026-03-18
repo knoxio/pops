@@ -1,32 +1,12 @@
 /**
  * Shared test utilities for finance-api.
  * Provides in-memory SQLite setup, tRPC caller factory, and seed helpers.
- * Notion mocking is re-exported for the imports module which still uses Notion.
  */
 import type { Database } from "better-sqlite3";
 import BetterSqlite3 from "better-sqlite3";
-import type { Client } from "@notionhq/client";
 import { setDb, closeDb } from "../db.js";
 import { appRouter } from "../router.js";
 import type { Context } from "../trpc.js";
-import {
-  createMockNotionClient,
-  resetNotionMock,
-  seedMockPage,
-} from "./notion-mock.js";
-import { setMockNotionClient, clearMockNotionClient, getMockNotionClient } from "./test-globals.js";
-
-/**
- * Re-export Notion mock utilities for use in tests that still need them
- * (e.g. imports module tests).
- */
-export {
-  resetNotionMock,
-  setMockNotionClient,
-  clearMockNotionClient,
-  getMockNotionClient,
-  seedMockPage,
-};
 
 /**
  * Create a tRPC caller with authentication.
@@ -403,46 +383,20 @@ export function seedWishListItem(
 
 /**
  * Setup helper for test suites. Call in beforeEach/afterEach.
- * Returns the test DB, a tRPC caller, and the mock Notion client.
- * Note: Notion mocking is still initialized because the imports module
- * still uses Notion (until tb-008 removes it).
+ * Returns the test DB and a tRPC caller.
  */
 export function setupTestContext() {
   let db: Database;
-  let notionMock: Client;
 
-  function setup(): { db: Database; caller: ReturnType<typeof createCaller>; notionMock: Client } {
-    // Set required env vars for tests (still needed by imports module)
-    process.env.NOTION_API_TOKEN = "test-token";
-    process.env.NOTION_BALANCE_SHEET_ID = "test-balance-sheet-id";
-    process.env.NOTION_ENTITIES_DB_ID = "test-entities-db-id";
-    process.env.NOTION_HOME_INVENTORY_ID = "test-inventory-id";
-    process.env.NOTION_BUDGET_ID = "test-budget-id";
-    process.env.NOTION_WISH_LIST_ID = "test-wishlist-id";
-
+  function setup(): { db: Database; caller: ReturnType<typeof createCaller> } {
     db = createTestDb();
     setDb(db);
 
-    // Initialize Notion mock (still needed by imports module)
-    notionMock = createMockNotionClient();
-    setMockNotionClient(notionMock);
-    resetNotionMock();
-
-    return { db, caller: createCaller(true), notionMock };
+    return { db, caller: createCaller(true) };
   }
 
   function teardown() {
     closeDb();
-    clearMockNotionClient();
-    resetNotionMock();
-
-    // Clean up env vars
-    delete process.env.NOTION_API_TOKEN;
-    delete process.env.NOTION_BALANCE_SHEET_ID;
-    delete process.env.NOTION_ENTITIES_DB_ID;
-    delete process.env.NOTION_HOME_INVENTORY_ID;
-    delete process.env.NOTION_BUDGET_ID;
-    delete process.env.NOTION_WISH_LIST_ID;
   }
 
   return { setup, teardown };

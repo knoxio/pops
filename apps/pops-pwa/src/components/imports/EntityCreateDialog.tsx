@@ -18,7 +18,6 @@ interface EntityCreateDialogProps {
   onEntityCreated: (entity: {
     entityId: string;
     entityName: string;
-    entityUrl?: string;
   }) => void;
   suggestedName?: string;
 }

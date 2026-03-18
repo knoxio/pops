@@ -12,7 +12,7 @@ export interface TransactionQuery {
 
 /** Transaction row returned by the API */
 export interface Transaction {
-  notionId: string;
+  id: string;
   description: string;
   account: string;
   amount: number;
@@ -39,7 +39,7 @@ export interface BudgetSummary {
 
 /** Wish list item */
 export interface WishlistItem {
-  notionId: string;
+  id: string;
   item: string;
   targetAmount: number;
   saved: number;

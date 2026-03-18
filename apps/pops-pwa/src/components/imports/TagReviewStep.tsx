@@ -202,7 +202,6 @@ export function TagReviewStep() {
       transactionType: t.transactionType,
       entityId: t.entityId,
       entityName: t.entityName,
-      entityUrl: t.entityUrl,
       location: t.location,
       online: t.online,
       tags: localTags[t.checksum] ?? t.tags ?? [],

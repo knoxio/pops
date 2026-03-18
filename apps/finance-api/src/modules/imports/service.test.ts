@@ -603,13 +603,6 @@ describe("createEntity", () => {
     expect(row.name).toBe("New Entity");
   });
 
-  it("does not return entityUrl", () => {
-    const result = createEntity("New Entity");
-
-    // createEntity no longer returns entityUrl (SQLite-only, no Notion)
-    expect("entityUrl" in result).toBe(false);
-  });
-
   it("handles entity name with special characters", () => {
     const result = createEntity("McDonald's");
 
@@ -677,13 +670,14 @@ describe("loadEntityLookup", () => {
     expect(result.matched[0].entity.entityId).toBe("woolworths-id");
   });
 
-  it("handles null id gracefully", async () => {
-    db.prepare("INSERT INTO entities (id, name, last_edited_time) VALUES (NULL, ?, ?)").run(
+  it("handles entity with empty id gracefully", async () => {
+    db.prepare("INSERT INTO entities (id, name, last_edited_time) VALUES (?, ?, ?)").run(
+      "",
       "Invalid Entity",
       "2026-01-01T00:00:00Z"
     );
 
-    // Should not crash
+    // Should not crash when entity lookup encounters an empty-string id
     const result = await processImport([], "Amex");
     expect(result).toBeDefined();
   });

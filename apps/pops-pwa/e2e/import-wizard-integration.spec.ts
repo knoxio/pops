@@ -115,8 +115,8 @@ const mockNotionWrites = async (page: Page) => {
   await page.route(/\/trpc\/imports\.createEntity/, async (route) => {
     const isBatch = new URL(route.request().url()).searchParams.has('batch');
     const body = isBatch
-      ? [{ result: { data: { entityId: 'new-entity-id', entityName: 'New Entity', entityUrl: 'https://notion.so/new' } } }]
-      : { result: { data: { entityId: 'new-entity-id', entityName: 'New Entity', entityUrl: 'https://notion.so/new' } } };
+      ? [{ result: { data: { entityId: 'new-entity-id', entityName: 'New Entity' } } }]
+      : { result: { data: { entityId: 'new-entity-id', entityName: 'New Entity' } } };
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(body) });
   });
 

@@ -32,7 +32,6 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",
-    "@notionhq/client": "^2.2.15",
     "@pops/db-types": "*",
     "@trpc/server": "^11.0.0",
     "better-sqlite3": "^11.7.0",

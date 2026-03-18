@@ -22,7 +22,6 @@ interface MockTransaction {
   entity?: {
     entityId?: string;
     entityName: string;
-    entityUrl?: string;
     matchType: 'exact' | 'prefix' | 'contains' | 'ai' | 'none';
     confidence?: number;
   };
@@ -59,7 +58,6 @@ export const createSimpleMockData = (): MockImportResult => ({
       entity: {
         entityId: 'woolworths-id',
         entityName: 'Woolworths',
-        entityUrl: 'https://www.notion.so/woolworthsid',
         matchType: 'prefix',
       },
       status: 'matched',
@@ -102,7 +100,6 @@ export const createRealisticMockData = (): MockImportResult => ({
       entity: {
         entityId: 'woolworths-id',
         entityName: 'Woolworths',
-        entityUrl: 'https://www.notion.so/woolworthsid',
         matchType: 'prefix',
       },
       status: 'matched',
@@ -119,7 +116,6 @@ export const createRealisticMockData = (): MockImportResult => ({
       entity: {
         entityId: 'coles-id',
         entityName: 'Coles',
-        entityUrl: 'https://www.notion.so/colesid',
         matchType: 'prefix',
       },
       status: 'matched',
@@ -135,7 +131,6 @@ export const createRealisticMockData = (): MockImportResult => ({
       entity: {
         entityId: 'netflix-id',
         entityName: 'Netflix',
-        entityUrl: 'https://www.notion.so/netflixid',
         matchType: 'contains',
       },
       status: 'matched',
@@ -289,7 +284,6 @@ export const createBulkMockData = (): MockImportResult => ({
       entity: {
         entityId: 'woolworths-id',
         entityName: 'Woolworths',
-        entityUrl: 'https://www.notion.so/woolworthsid',
         matchType: 'prefix',
       },
       status: 'matched',
@@ -437,7 +431,6 @@ export const createDuplicatesMockData = (): MockImportResult => ({
       entity: {
         entityId: 'woolworths-id',
         entityName: 'Woolworths',
-        entityUrl: 'https://www.notion.so/woolworthsid',
         matchType: 'prefix',
       },
       status: 'matched',
@@ -452,7 +445,6 @@ export const createDuplicatesMockData = (): MockImportResult => ({
       entity: {
         entityId: 'coles-id',
         entityName: 'Coles',
-        entityUrl: 'https://www.notion.so/colesid',
         matchType: 'prefix',
       },
       status: 'matched',
