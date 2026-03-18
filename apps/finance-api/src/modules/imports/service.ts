@@ -416,7 +416,7 @@ export async function processImport(
               entity: {
                 entityId,
                 entityName: existingEntity,
-                  matchType: "ai",
+                matchType: "ai",
               },
               status: "matched",
               suggestedTags: buildSuggestedTags(
@@ -782,7 +782,7 @@ export async function processImportWithProgress(
                 entity: {
                   entityId,
                   entityName: existingEntity,
-                      matchType: "ai",
+                  matchType: "ai",
                 },
                 status: "matched",
                 suggestedTags: buildSuggestedTags(

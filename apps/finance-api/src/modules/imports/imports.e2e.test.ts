@@ -212,8 +212,8 @@ describe("E2E: Complete Import Flow", () => {
     }
   }, 30000); // 30 second timeout
 
-  it("handles complete failure gracefully", async () => {
-    // Seed a transaction and verify a new unique one succeeds
+  it("imports a unique transaction alongside existing data", async () => {
+    // Seed an existing transaction, then verify a new unique one succeeds
     seedTransaction(db, { checksum: "test123" });
 
     const mockTransaction: ConfirmedTransaction = {
@@ -237,6 +237,45 @@ describe("E2E: Complete Import Flow", () => {
     expect(result.imported).toBe(1);
     expect(result.failed.length).toBe(0);
   }, 10000);
+
+  it("rejects duplicate checksum on insert (UNIQUE constraint)", async () => {
+    seedTransaction(db, { checksum: "duplicate-checksum" });
+
+    const duplicate: ConfirmedTransaction = {
+      date: "2026-02-14",
+      description: "DUPLICATE TXN",
+      amount: -50,
+      account: "Amex",
+      rawRow: "{}",
+      checksum: "duplicate-checksum",
+      entityId: "entity-id",
+      entityName: "Entity",
+    };
+
+    const { sessionId } = await caller.imports.executeImport({
+      transactions: [duplicate],
+    });
+
+    const result = await waitForCompletion<ExecuteImportOutput>(sessionId);
+    expect(result).toBeDefined();
+
+    expect(result.imported).toBe(0);
+    expect(result.failed.length).toBe(1);
+    expect(result.failed[0].error).toMatch(/UNIQUE constraint/i);
+  }, 10000);
+
+  it("allows multiple NULL checksums (no UNIQUE violation at DB layer)", () => {
+    // SQLite UNIQUE index treats each NULL as distinct, so multiple
+    // NULL-checksum rows should coexist without constraint errors
+    seedTransaction(db, { checksum: undefined });
+    seedTransaction(db, { checksum: undefined });
+
+    const count = db
+      .prepare("SELECT COUNT(*) AS cnt FROM transactions WHERE checksum IS NULL")
+      .get() as { cnt: number };
+
+    expect(count.cnt).toBe(2);
+  });
 
   it("deduplicates correctly across multiple imports", async () => {
     seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
