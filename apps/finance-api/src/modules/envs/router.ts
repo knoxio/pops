@@ -11,7 +11,7 @@
  *       In local/test environments this is intentional — the service is not externally
  *       reachable.
  */
-import { Router } from "express";
+import { type Router as ExpressRouter, Router } from "express";
 import {
   validateEnvName,
   createEnv,
@@ -37,7 +37,7 @@ interface FormattedEnvRecord {
   expiresAt: string | null;
 }
 
-const envRouter = Router();
+const envRouter: ExpressRouter = Router();
 envRouter.use((_req, res, next) => {
   res.setHeader("Content-Type", "application/json");
   next();

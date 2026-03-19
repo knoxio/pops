@@ -2,7 +2,7 @@
 
 **Theme:** Foundation
 **Priority:** 1 (do first — shell and apps both depend on this)
-**Status:** Not started
+**Status:** Done
 
 ## Goal
 
@@ -41,8 +41,8 @@ Both the shell extraction and every app package need to import from `@pops/ui`. 
 1. `packages/ui/` package exists with all shared components
 2. `apps/pops-pwa/` imports from `@pops/ui` — no shared components remain in pops-pwa
 3. All existing stories pass in Storybook
-4. `yarn typecheck` passes across all packages
-5. `yarn build` produces working output
+4. `pnpm typecheck` passes across all packages
+5. `pnpm build` produces working output
 6. Zero runtime regressions — finance app works exactly as before
 
 ## Dependencies
