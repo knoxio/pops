@@ -22,19 +22,22 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "yarn"
+          cache: "pnpm"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build shared packages
-        run: cd packages/db-types && yarn build
+        run: cd packages/db-types && pnpm build
 
       - name: Type check
-        run: cd apps/pops-pwa && yarn typecheck
+        run: cd apps/pops-pwa && pnpm typecheck
 
       - name: Lint
-        run: cd apps/pops-pwa && yarn lint
+        run: cd apps/pops-pwa && pnpm lint
 
       - name: Build
-        run: cd apps/pops-pwa && yarn build
+        run: cd apps/pops-pwa && pnpm build

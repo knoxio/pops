@@ -10,8 +10,8 @@ import {
 import { useImportStore } from "../../store/importStore";
 import type { ProcessedTransaction } from "../../store/importStore";
 import { trpc } from "../../lib/trpc";
-import { Button } from "../ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
+import { Button } from "@pops/ui";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@pops/ui";
 import { EntityCreateDialog } from "./EntityCreateDialog";
 import { TransactionCard } from "./TransactionCard";
 import { TransactionGroup } from "./TransactionGroup";

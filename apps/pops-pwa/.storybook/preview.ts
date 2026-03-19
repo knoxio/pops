@@ -2,7 +2,7 @@ import type { Preview } from '@storybook/react-vite';
 import type { ReactRenderer } from '@storybook/react';
 import { createElement, useEffect } from 'react';
 import type { Decorator } from '@storybook/react';
-import '../src/styles/globals.css';
+import '@pops/ui/theme';
 
 // Decorator to toggle dark class on HTML element for Tailwind dark mode
 const withDarkMode: Decorator<ReactRenderer> = (Story, context) => {

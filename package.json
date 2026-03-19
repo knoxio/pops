@@ -1,11 +1,7 @@
 {
   "name": "@pops/monorepo",
   "private": true,
-  "packageManager": "yarn@1.22.22",
-  "workspaces": [
-    "packages/db-types",
-    "apps/*"
-  ],
+  "packageManager": "pnpm@10.32.1",
   "scripts": {
     "dev": "turbo dev",
     "build": "turbo build",
@@ -15,7 +11,14 @@
     "lint:fix": "turbo lint:fix",
     "format:check": "turbo format:check",
     "format:fix": "turbo format:fix",
-    "ci:fix": "turbo run lint:fix && turbo run format:fix && turbo run typecheck lint format:check && (cd packages/import-tools && yarn ci:fix)"
+    "ci:fix": "turbo run lint:fix && turbo run format:fix && turbo run typecheck lint format:check && (cd packages/import-tools && pnpm ci:fix)"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "better-sqlite3",
+      "esbuild",
+      "msw"
+    ]
   },
   "devDependencies": {
     "turbo": "^2.8.3"

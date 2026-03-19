@@ -6,9 +6,7 @@
  * This component is tRPC-agnostic — callers wire up the API.
  */
 import { useState, useRef, useEffect } from "react";
-import { Chip } from "./Chip";
-import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { Badge } from "./ui/badge";
+import { Chip, Popover, PopoverContent, PopoverTrigger, Badge } from "@pops/ui";
 import { cn } from "@/lib/utils";
 
 /** Source attribution for a tag — from AI, correction rule, or entity defaults. */

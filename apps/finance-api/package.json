@@ -28,11 +28,11 @@
     "format:fix": "prettier --write \"src/**/*.ts\"",
     "test": "vitest run",
     "test:watch": "vitest",
-    "ci": "yarn typecheck && yarn lint && yarn format && yarn test && yarn build"
+    "ci": "pnpm typecheck && pnpm lint && pnpm format && pnpm test && pnpm build"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.74.0",
-    "@pops/db-types": "*",
+    "@pops/db-types": "workspace:*",
     "@trpc/server": "^11.0.0",
     "better-sqlite3": "^11.7.0",
     "dotenv": "^17.3.1",

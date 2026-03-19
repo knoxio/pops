@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { ChevronRight, Globe, Store, Sparkles, Zap, Edit2 } from "lucide-react";
-import { Badge } from "../ui/badge";
-import { Button } from "../ui/button";
+import { Badge } from "@pops/ui";
+import { Button } from "@pops/ui";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "../ui/collapsible";
+} from "@pops/ui";
 import { LocationField } from "./LocationField";
 import type { ProcessedTransaction } from "@pops/finance-api/modules/imports";
 

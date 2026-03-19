@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { ChevronRight, Sparkles } from "lucide-react";
-import { Button } from "../ui/button";
-import { Badge } from "../ui/badge";
+import { Button } from "@pops/ui";
+import { Badge } from "@pops/ui";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "../ui/collapsible";
+} from "@pops/ui";
 import { TransactionCard } from "./TransactionCard";
 import { EditableTransactionCard } from "./EditableTransactionCard";
 import type { ProcessedTransaction } from "@pops/finance-api/modules/imports";

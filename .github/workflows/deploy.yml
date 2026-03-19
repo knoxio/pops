@@ -16,31 +16,34 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "22"
-          cache: "yarn"
+          cache: "pnpm"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build shared packages
-        run: cd packages/db-types && yarn build
+        run: cd packages/db-types && pnpm build
 
       - name: Type check all services
         run: |
-          cd apps/finance-api && yarn typecheck
-          cd ../pops-pwa && yarn typecheck
+          cd apps/finance-api && pnpm typecheck
+          cd ../pops-pwa && pnpm typecheck
 
       - name: Lint all services
         run: |
-          cd apps/finance-api && yarn lint
-          cd ../pops-pwa && yarn lint
+          cd apps/finance-api && pnpm lint
+          cd ../pops-pwa && pnpm lint
 
       - name: Test finance-api
-        run: cd apps/finance-api && yarn test
+        run: cd apps/finance-api && pnpm test
 
       - name: Build all services
         run: |
-          cd apps/finance-api && yarn build
-          cd ../pops-pwa && yarn build
+          cd apps/finance-api && pnpm build
+          cd ../pops-pwa && pnpm build
 
   # Deploy to N95 server
   # Note: This job expects a self-hosted runner on the N95 server

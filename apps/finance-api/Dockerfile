@@ -2,14 +2,14 @@ FROM node:22-alpine AS builder
 WORKDIR /app
 
 # Copy workspace root files
-COPY package.json yarn.lock ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Copy all workspace packages
 COPY packages/db-types/package.json ./packages/db-types/
 COPY apps/finance-api/package.json ./apps/finance-api/
 
-# Install dependencies (workspace resolution)
-RUN yarn install --frozen-lockfile
+# Install pnpm and dependencies (workspace resolution)
+RUN corepack enable && pnpm install --frozen-lockfile
 
 # Copy source files
 COPY packages/db-types/src ./packages/db-types/src
@@ -19,11 +19,11 @@ COPY apps/finance-api/src ./apps/finance-api/src
 
 # Build db-types first
 WORKDIR /app/packages/db-types
-RUN yarn build
+RUN pnpm build
 
 # Build finance-api
 WORKDIR /app/apps/finance-api
-RUN yarn build
+RUN pnpm build
 
 FROM node:22-alpine
 WORKDIR /app

@@ -19,23 +19,26 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'yarn'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build shared packages
-        run: cd packages/db-types && yarn build
+        run: cd packages/db-types && pnpm build
 
       - name: Typecheck
         run: |
           cd apps/finance-api
-          yarn typecheck
+          pnpm typecheck
 
       - name: Run all backend tests
         run: |
           cd apps/finance-api
-          yarn test --run
+          pnpm test --run
         env:
           # Tests use in-memory DB and mocked APIs - no real credentials needed
           NOTION_API_TOKEN: test-token
@@ -44,7 +47,7 @@ jobs:
       - name: Run imports module tests specifically
         run: |
           cd apps/finance-api
-          yarn test src/modules/imports --run --reporter=verbose
+          pnpm test src/modules/imports --run --reporter=verbose
         env:
           NOTION_API_TOKEN: test-token
           CLAUDE_API_KEY: test-key
@@ -61,25 +64,28 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'yarn'
+          cache: 'pnpm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build shared packages
-        run: cd packages/db-types && yarn build
+        run: cd packages/db-types && pnpm build
 
       - name: Typecheck PWA
         run: |
           cd apps/pops-pwa
-          yarn typecheck
+          pnpm typecheck
 
       - name: Lint PWA
         run: |
           cd apps/pops-pwa
-          yarn lint
+          pnpm lint
 
       - name: Build PWA
         run: |
           cd apps/pops-pwa
-          yarn build
+          pnpm build

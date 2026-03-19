@@ -2,10 +2,10 @@
  * Dashboard page - overview of finances
  */
 import { trpc } from "@/lib/trpc";
-import { Card } from "@/components/ui/card";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
+import { Card } from "@pops/ui";
+import { Alert, AlertTitle, AlertDescription } from "@pops/ui";
+import { Skeleton } from "@pops/ui";
+import { Badge } from "@pops/ui";
 
 /**
  * Simple stats card component

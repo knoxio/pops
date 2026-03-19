@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import Papa from "papaparse";
 import { FileUpload } from "./FileUpload";
 import { useImportStore } from "../../store/importStore";
-import { Button } from "../ui/button";
+import { Button } from "@pops/ui";
 
 /**
  * Step 1: Upload CSV file and parse it

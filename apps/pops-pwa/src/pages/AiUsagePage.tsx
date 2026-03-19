@@ -3,11 +3,11 @@
  */
 import type { ColumnDef } from "@tanstack/react-table";
 import { trpc } from "@/lib/trpc";
-import { DataTable, SortableHeader } from "@/components/DataTable";
-import { Badge } from "@/components/ui/badge";
-import { Alert } from "@/components/ui/alert";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Card } from "@/components/ui/card";
+import { DataTable, SortableHeader } from "@pops/ui";
+import { Badge } from "@pops/ui";
+import { Alert } from "@pops/ui";
+import { Skeleton } from "@pops/ui";
+import { Card } from "@pops/ui";
 
 interface AiUsageRecord {
   date: string;

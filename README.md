@@ -221,10 +221,10 @@ POPS uses Playwright for end-to-end tests with two modes:
 
 ```bash
 # Run all E2E tests
-cd apps/pops-pwa && yarn test:e2e
+cd apps/pops-pwa && pnpm test:e2e
 
 # Run in UI mode (interactive)
-cd apps/pops-pwa && yarn test:e2e --ui
+cd apps/pops-pwa && pnpm test:e2e --ui
 ```
 
 The `globalSetup` creates an isolated `e2e` named environment (seeded SQLite DB) before the run. Tests route through `?env=e2e` so they hit real data without touching production. `globalTeardown` deletes the env after the run.

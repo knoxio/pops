@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Loader2, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 import { useImportStore } from "../../store/importStore";
 import { trpc } from "../../lib/trpc";
-import { Button } from "../ui/button";
+import { Button } from "@pops/ui";
 import type {
   ProcessImportOutput,
   ImportWarning,

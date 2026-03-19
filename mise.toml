@@ -17,16 +17,16 @@ node = "24.5.0"
 description = "Run finance-api in dev mode with watch"
 dir = "apps/finance-api"
 run = """
-yarn install
-yarn dev
+pnpm install
+pnpm dev
 """
 
 [tasks."dev:pwa"]
 description = "Run pops-pwa Vite dev server"
 dir = "apps/pops-pwa"
 run = """
-yarn install
-yarn dev
+pnpm install
+pnpm dev
 """
 
 [tasks."dev"]
@@ -36,7 +36,7 @@ run = "turbo dev"
 [tasks."dev:storybook"]
 description = "Run Storybook for pops-pwa"
 dir = "apps/pops-pwa"
-run = "yarn storybook"
+run = "pnpm storybook"
 
 # ============================================================================
 # Quality Checks
@@ -49,12 +49,12 @@ run = "turbo typecheck"
 [tasks."typecheck:api"]
 description = "Type check finance-api"
 dir = "apps/finance-api"
-run = "yarn typecheck"
+run = "pnpm typecheck"
 
 [tasks."typecheck:pwa"]
 description = "Type check pops-pwa"
 dir = "apps/pops-pwa"
-run = "yarn typecheck"
+run = "pnpm typecheck"
 
 [tasks.test]
 description = "Run all tests"
@@ -67,12 +67,12 @@ run = "turbo test:watch"
 [tasks."test:api"]
 description = "Run finance-api tests"
 dir = "apps/finance-api"
-run = "yarn test"
+run = "pnpm test"
 
 [tasks."test:pwa"]
 description = "Run pops-pwa tests"
 dir = "apps/pops-pwa"
-run = "yarn test"
+run = "pnpm test"
 
 [tasks.lint]
 description = "Lint all packages"
@@ -89,17 +89,17 @@ run = "turbo build"
 [tasks."db:init"]
 description = "Initialize empty database with schema"
 dir = "apps/finance-api"
-run = "yarn dev:init"
+run = "pnpm dev:init"
 
 [tasks."db:clear"]
 description = "Clear all data from database (preserves schema)"
 dir = "apps/finance-api"
-run = "yarn db:clear"
+run = "pnpm db:clear"
 
 [tasks."db:seed"]
 description = "Clear and seed database with comprehensive test data"
 dir = "apps/finance-api"
-run = "yarn db:seed"
+run = "pnpm db:seed"
 
 # ============================================================================
 # Import Tools (run from packages/import-tools)
@@ -113,7 +113,7 @@ if [ -z "$CSV_PATH" ]; then
   echo "Error: CSV_PATH not set. Usage: CSV_PATH=path/to/file.csv mise import:anz [--execute]"
   exit 1
 fi
-yarn import:anz --csv "$CSV_PATH" "$@"
+pnpm import:anz --csv "$CSV_PATH" "$@"
 """
 
 [tasks."import:amex"]
@@ -124,7 +124,7 @@ if [ -z "$CSV_PATH" ]; then
   echo "Error: CSV_PATH not set. Usage: CSV_PATH=path/to/file.csv mise import:amex [--execute]"
   exit 1
 fi
-yarn import:amex --csv "$CSV_PATH" "$@"
+pnpm import:amex --csv "$CSV_PATH" "$@"
 """
 
 [tasks."import:ing"]
@@ -135,7 +135,7 @@ if [ -z "$CSV_PATH" ]; then
   echo "Error: CSV_PATH not set. Usage: CSV_PATH=path/to/file.csv mise import:ing [--execute]"
   exit 1
 fi
-yarn import:ing --csv "$CSV_PATH" "$@"
+pnpm import:ing --csv "$CSV_PATH" "$@"
 """
 
 [tasks."import:up"]
@@ -146,33 +146,33 @@ if [ -z "$SINCE_DATE" ]; then
   echo "Error: SINCE_DATE not set. Usage: SINCE_DATE=2026-01-01 mise import:up [--execute]"
   exit 1
 fi
-yarn import:up --since "$SINCE_DATE" "$@"
+pnpm import:up --since "$SINCE_DATE" "$@"
 """
 
 [tasks."match:transfers"]
 description = "Link transfer pairs (dry-run by default, add --execute to write)"
 dir = "packages/import-tools"
-run = "yarn match:transfers $@"
+run = "pnpm match:transfers $@"
 
 [tasks."match:novated"]
 description = "Link novated lease pairs (dry-run by default, add --execute to write)"
 dir = "packages/import-tools"
-run = "yarn match:novated $@"
+run = "pnpm match:novated $@"
 
 [tasks."entities:create"]
 description = "Batch create entities (dry-run by default, add --execute to write)"
 dir = "packages/import-tools"
-run = "yarn entities:create $@"
+run = "pnpm entities:create $@"
 
 [tasks."entities:lookup"]
 description = "Rebuild entity lookup cache"
 dir = "packages/import-tools"
-run = "yarn entities:lookup"
+run = "pnpm entities:lookup"
 
 [tasks.audit]
 description = "Show database statistics"
 dir = "packages/import-tools"
-run = "yarn audit"
+run = "pnpm audit"
 
 # ============================================================================
 # Docker Operations
@@ -385,18 +385,18 @@ run = """
 echo "Cleaning build artifacts..."
 rm -rf dist/ .turbo/
 find . -name 'node_modules' -type d -prune -exec rm -rf '{}' +
-echo "Done. Run 'yarn install' to reinstall dependencies."
+echo "Done. Run 'pnpm install' to reinstall dependencies."
 """
 
 [tasks.install]
 description = "Install all dependencies"
-run = "yarn install"
+run = "pnpm install"
 
 [tasks.setup]
 description = "Initial project setup (install deps + typecheck)"
 run = """
 echo "Installing dependencies..."
-yarn install
+pnpm install
 echo "Type checking..."
 turbo typecheck
 echo "Setup complete! Run 'mise dev:all' to start development."

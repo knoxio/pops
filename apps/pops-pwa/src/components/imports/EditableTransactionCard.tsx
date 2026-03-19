@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { Save, X, ChevronRight } from "lucide-react";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
-import { Label } from "../ui/label";
+import { Button } from "@pops/ui";
+import { Input } from "@pops/ui";
+import { Label } from "@pops/ui";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "../ui/collapsible";
+} from "@pops/ui";
 import type { ProcessedTransaction } from "@pops/finance-api/modules/imports";
 
 interface EditableTransactionCardProps {
