@@ -47,7 +47,7 @@ Replace Vite + React Router with Next.js. App Router provides file-based routing
 
 Rationale:
 
-- **One dev server** — `yarn dev` starts one Vite instance. No port juggling.
+- **One dev server** — `pnpm dev` starts one Vite instance. No port juggling.
 - **Fast loads** — Vite code-splits per route automatically. Only the active app's code is loaded. Subsequent apps load on navigation.
 - **Logical separation** — Each app is its own package with clear boundaries, its own tests, and its own dependencies. Prevents the monolith-creep that would happen with option A as we add 10+ apps.
 - **One Storybook** — A single Storybook config in `apps/pops-storybook/` discovers stories from `@pops/ui` and all app packages via globs. Stories co-locate with their components, not in the Storybook app.

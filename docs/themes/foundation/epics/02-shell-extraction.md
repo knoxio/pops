@@ -47,8 +47,8 @@ Extract the shared shell (layout, routing, app switcher, theming, tRPC provider)
 3. App switcher shows Finance as the sole app (more added later)
 4. Navigation within Finance works exactly as before
 5. Lazy loading works — finance routes are code-split
-6. `yarn dev` starts one Vite server serving the shell
-7. `yarn build` produces one output bundle with code splitting
+6. `pnpm dev` starts one Vite server serving the shell
+7. `pnpm build` produces one output bundle with code splitting
 8. All E2E tests pass
 9. `apps/pops-pwa/` is deleted
 

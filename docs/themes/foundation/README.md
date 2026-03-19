@@ -18,8 +18,8 @@ Transform the current single-app codebase (finance-focused PWA + API) into a mul
 
 | # | Epic | Summary | Status |
 |---|------|---------|--------|
-| 0 | [pnpm Migration](epics/00-pnpm-migration.md) | Replace Yarn v1 with pnpm | Not started |
-| 1 | [UI Library Extraction](epics/01-ui-library-extraction.md) | Extract shared components into `@pops/ui` package | Not started |
+| 0 | [pnpm Migration](epics/00-pnpm-migration.md) | Replace Yarn v1 with pnpm | Done |
+| 1 | [UI Library Extraction](epics/01-ui-library-extraction.md) | Extract shared components into `@pops/ui` package | Done |
 | 2 | [Shell Extraction](epics/02-shell-extraction.md) | Extract shell from pops-pwa, convert finance to app package | Not started |
 | 3 | [API Modularisation](epics/03-api-modularisation.md) | Rename to pops-api, domain module structure, promote entities to core | Not started |
 | 4 | [DB Schema Patterns](epics/04-db-schema-patterns.md) | Migration conventions, entity types, cross-domain FK patterns | Not started |

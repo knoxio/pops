@@ -31,7 +31,7 @@ pnpm dev
 
 [tasks."dev"]
 description = "Run all dev servers (using turbo)"
-run = "turbo dev"
+run = "pnpm dev"
 
 [tasks."dev:storybook"]
 description = "Run Storybook for pops-pwa"
@@ -44,7 +44,7 @@ run = "pnpm storybook"
 
 [tasks.typecheck]
 description = "Type check all packages"
-run = "turbo typecheck"
+run = "pnpm typecheck"
 
 [tasks."typecheck:api"]
 description = "Type check finance-api"
@@ -58,11 +58,11 @@ run = "pnpm typecheck"
 
 [tasks.test]
 description = "Run all tests"
-run = "turbo test"
+run = "pnpm test"
 
 [tasks."test:watch"]
 description = "Run all tests in watch mode"
-run = "turbo test:watch"
+run = "pnpm run test:watch"
 
 [tasks."test:api"]
 description = "Run finance-api tests"
@@ -76,11 +76,11 @@ run = "pnpm test"
 
 [tasks.lint]
 description = "Lint all packages"
-run = "turbo lint"
+run = "pnpm lint"
 
 [tasks.build]
 description = "Build all packages"
-run = "turbo build"
+run = "pnpm build"
 
 # ============================================================================
 # Database Management
@@ -398,6 +398,6 @@ run = """
 echo "Installing dependencies..."
 pnpm install
 echo "Type checking..."
-turbo typecheck
-echo "Setup complete! Run 'mise dev:all' to start development."
+pnpm typecheck
+echo "Setup complete! Run 'mise dev' to start development."
 """

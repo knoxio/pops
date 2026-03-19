@@ -250,11 +250,11 @@ import '@pops/ui/theme'
 5. `pops-pwa/src/components/` contains only finance-specific components (imports/ directory + TagEditor)
 6. Design token system is in `@pops/ui/theme` — CSS variables, @theme block, light/dark tokens
 7. All arbitrary Tailwind values replaced with token-based classes (except Radix CSS variable bindings)
-8. `yarn typecheck` passes across all packages
-9. `yarn lint` passes across all packages
-10. `yarn format:check` passes across all packages
-11. `yarn build` succeeds
-10. `yarn dev` serves the app with no regressions
+8. `pnpm typecheck` passes across all packages
+9. `pnpm lint` passes across all packages
+10. `pnpm format:check` passes across all packages
+11. `pnpm build` succeeds
+10. `pnpm dev` serves the app with no regressions
 11. Storybook discovers and renders all stories from `@pops/ui`
 12. All existing tests pass (unit + E2E)
 
@@ -275,7 +275,7 @@ A: `@pops/ui` components use `@ui/` as their internal path alias. Consumer packa
 ## User Stories
 
 > **Standard verification — applies to every US below:**
-> Each story is only done when `yarn typecheck`, `yarn lint`, `yarn format:check`, `yarn test`, and `yarn build` all pass. No story is merged with broken checks or failing tests.
+> Each story is only done when `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm test`, and `pnpm build` all pass. No story is merged with broken checks or failing tests.
 
 ### US-1: Create @pops/ui package scaffold
 **As a** developer, **I want** the `@pops/ui` workspace package to exist with correct configuration **so that** other packages can depend on it.
@@ -284,7 +284,7 @@ A: `@pops/ui` components use `@ui/` as their internal path alias. Consumer packa
 - `packages/ui/package.json` exists with correct name, exports, peer deps
 - `packages/ui/tsconfig.json` exists with strict mode
 - `packages/ui/src/index.ts` exists (empty barrel initially)
-- `yarn install` resolves the workspace package
+- `pnpm install` resolves the workspace package
 
 ### US-2: Extract design token system
 **As a** developer, **I want** the Tailwind theme (CSS variables, @theme block, light/dark tokens) in `@pops/ui/theme` **so that** all packages share one source of truth for design tokens.
@@ -338,6 +338,6 @@ A: `@pops/ui` components use `@ui/` as their internal path alias. Consumer packa
 **As a** developer, **I want** confirmation that the full extraction is complete with no regressions **so that** we can move to Epic 2.
 
 **Acceptance criteria:**
-- `yarn dev` serves the app with no visual regressions
+- `pnpm dev` serves the app with no visual regressions
 - All E2E tests pass (Playwright)
 - `pops-pwa/src/components/` contains only: `imports/` directory, `TagEditor.tsx`, `TagEditor.stories.tsx`

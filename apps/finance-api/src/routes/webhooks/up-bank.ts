@@ -1,8 +1,8 @@
-import { Router } from "express";
+import { type Router as ExpressRouter, Router } from "express";
 import { createHmac } from "node:crypto";
 import { readFileSync } from "node:fs";
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 function getWebhookSecret(): string {
   const filePath = process.env["UP_WEBHOOK_SECRET_FILE"];
