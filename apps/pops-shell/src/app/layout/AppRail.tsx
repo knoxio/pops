@@ -8,6 +8,7 @@
 import { useNavigate, useLocation } from "react-router";
 import { registeredApps } from "@/app/nav/registry";
 import { iconMap } from "@/app/nav/icon-map";
+import { matchesAtBoundary } from "@/app/nav/path-utils";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useUIStore } from "@/store/uiStore";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@pops/ui";
@@ -55,7 +56,7 @@ export function AppRail({ className }: AppRailProps) {
         .join(" ")}
     >
       {registeredApps.map((app) => {
-        const isActive = location.pathname.startsWith(app.basePath);
+        const isActive = matchesAtBoundary(location.pathname, app.basePath);
         const Icon = iconMap[app.icon];
 
         return (
