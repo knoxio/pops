@@ -62,7 +62,7 @@
 - name: Initialize database if it does not exist
   ansible.builtin.command:
     cmd: >-
-      docker compose run --rm finance-api
+      docker compose run --rm pops-api
       node -e "const s=require('./dist/db/schema.js');const b=require('better-sqlite3');s.initializeSchema(b('/data/sqlite/pops.db'));console.log('Database initialized')"
     chdir: "{{ docker_compose_dir }}"
   become: true

@@ -179,7 +179,7 @@ ssh -p 2222 pops@pops.local
 
 # View service logs
 cd /opt/pops
-docker compose logs -f finance-api
+docker compose logs -f pops-api
 docker compose logs -f pops-pwa
 docker compose logs -f metabase
 
@@ -211,7 +211,7 @@ ansible-playbook playbooks/deploy.yml -i inventory/hosts.yml
 
 Each service builds separately:
 
-1. **finance-api**:
+1. **pops-api**:
    - TypeScript → JavaScript compilation
    - Docker image build
    - ~50MB final image
@@ -227,7 +227,7 @@ Each service builds separately:
 Services expose health endpoints:
 
 ```bash
-# finance-api
+# pops-api
 curl http://localhost:3000/health
 # Expected: {"status":"ok"}
 
@@ -281,8 +281,8 @@ ansible-vault view inventory/group_vars/pops_servers/vault.yml
 cd /opt/pops/repo
 
 # Check Docker logs
-docker compose build --no-cache finance-api
-docker compose logs finance-api
+docker compose build --no-cache pops-api
+docker compose logs pops-api
 ```
 
 ### Services won't start

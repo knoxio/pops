@@ -2,11 +2,11 @@
 # Paths reference /opt/pops/secrets/ written by the secrets role.
 
 services:
-  finance-api:
+  pops-api:
     build:
       context: {{ docker_compose_dir }}/repo
-      dockerfile: apps/finance-api/Dockerfile
-    container_name: pops-finance-api
+      dockerfile: apps/pops-api/Dockerfile
+    container_name: pops-api
     restart: unless-stopped
     networks:
       - frontend
@@ -108,7 +108,7 @@ services:
       - finance_api_key
     environment:
       TELEGRAM_BOT_TOKEN_FILE: /run/secrets/telegram_bot_token
-      FINANCE_API_URL: http://finance-api:3000
+      FINANCE_API_URL: http://pops-api:3000
       FINANCE_API_KEY_FILE: /run/secrets/finance_api_key
 
   cloudflared:

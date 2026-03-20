@@ -23,7 +23,7 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
-    "@pops/finance-api": "workspace:*",
+    "@pops/api": "workspace:*",
     "@pops/ui": "workspace:*",
     "@radix-ui/react-accordion": "^1.2.12",
     "@radix-ui/react-alert-dialog": "^1.1.15",

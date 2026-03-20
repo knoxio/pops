@@ -160,7 +160,7 @@ The new Cloudflare JWT authentication requires additional secrets in Ansible vau
 
 ## Step 3: Update Environment Variables
 
-The finance-api now uses JWT instead of API keys.
+The pops-api now uses JWT instead of API keys.
 
 1. Check variables file:
    ```bash
@@ -189,9 +189,9 @@ The Ansible template needs Cloudflare environment variables.
    vim infra/ansible/roles/pops-deploy/templates/docker-compose.yml.j2
    ```
 
-2. Update finance-api service:
+2. Update pops-api service:
    ```yaml
-   finance-api:
+   pops-api:
      environment:
        CLOUDFLARE_ACCESS_TEAM_NAME: "{{ cloudflare_access_team_name }}"
        CLOUDFLARE_ACCESS_AUD: "{{ cloudflare_access_aud }}"
@@ -222,7 +222,7 @@ The Ansible template needs Cloudflare environment variables.
    ssh -p 2222 pops@pops.local
    cd /opt/pops
    docker compose ps
-   docker compose logs -f finance-api
+   docker compose logs -f pops-api
    ```
 
 4. Verify health:
@@ -356,7 +356,7 @@ docker system df
 curl -H "Cf-Access-Jwt-Assertion: <token>" http://localhost:3000/trpc/budgets.list
 
 # Check environment variables
-docker exec pops-finance-api env | grep CLOUDFLARE
+docker exec pops-api env | grep CLOUDFLARE
 ```
 
 ## Rollback Plan

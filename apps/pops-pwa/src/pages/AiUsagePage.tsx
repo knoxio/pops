@@ -24,14 +24,14 @@ export function AiUsagePage() {
     data: stats,
     isLoading: statsLoading,
     error: statsError,
-  } = trpc.aiUsage.getStats.useQuery();
+  } = trpc.core.aiUsage.getStats.useQuery();
 
   // Fetch usage history
   const {
     data: history,
     isLoading: historyLoading,
     error: historyError,
-  } = trpc.aiUsage.getHistory.useQuery({});
+  } = trpc.core.aiUsage.getHistory.useQuery({});
 
   // Loading state
   if (statsLoading || historyLoading) {

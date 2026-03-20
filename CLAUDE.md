@@ -17,7 +17,7 @@ POPS uses [mise](https://mise.jdx.dev/) for task running and tool version manage
 **Quick Start:**
 ```bash
 mise dev              # Run all dev servers
-mise dev:api          # Run finance-api only
+mise dev:api          # Run pops-api only
 mise dev:pwa          # Run pops-pwa only
 mise dev:storybook    # Run Storybook
 
@@ -73,7 +73,7 @@ Run `mise tasks` for the full list. All tasks are defined in `mise.toml`.
 
 ### Services (each has its own package.json)
 ```bash
-cd apps/finance-api && pnpm install && pnpm dev        # API with watch mode
+cd apps/pops-api && pnpm install && pnpm dev        # API with watch mode
 cd apps/pops-pwa && pnpm install && pnpm dev           # Vite dev server
 
 # Typecheck a service
@@ -145,7 +145,7 @@ ansible-vault encrypt inventory/group_vars/pops_servers/vault.yml
 
 ```
 apps/
-├── finance-api/          # Backend: tRPC API
+├── pops-api/          # Backend: tRPC API
 ├── pops-pwa/            # Frontend: React PWA
 └── moltbot/             # Bot: Telegram assistant
 
@@ -158,7 +158,7 @@ infra/
 └── docker-compose.yml   # Compose configs
 ```
 
-- `apps/finance-api/` — Express REST API over SQLite (bridges frontend/backend networks)
+- `apps/pops-api/` — Express REST API over SQLite (bridges frontend/backend networks)
 - `apps/pops-pwa/` — React PWA served via nginx (Phase 4 stub)
 - `apps/moltbot/` — Config + custom finance skill for Moltbot (no Dockerfile, uses upstream image)
 - `packages/import-tools/` — Import scripts (on-demand, run via `--profile tools` or locally)
@@ -167,11 +167,11 @@ infra/
 - `infra/ansible/` — Ansible playbooks + roles for provisioning the N95 mini PC
 
 ### Docker Networks
-- `pops-frontend` — cloudflared, pops-pwa, metabase, finance-api
-- `pops-backend` — finance-api, moltbot, tools (SQLite access)
+- `pops-frontend` — cloudflared, pops-pwa, metabase, pops-api
+- `pops-backend` — pops-api, moltbot, tools (SQLite access)
 - `pops-documents` — cloudflared, paperless-ngx, paperless-redis (isolated)
 
-finance-api bridges frontend ↔ backend. cloudflared bridges frontend ↔ documents.
+pops-api bridges frontend ↔ backend. cloudflared bridges frontend ↔ documents.
 
 ### Secrets
 Production: Ansible Vault → `/opt/pops/secrets/` files → Docker Compose file-based secrets → `/run/secrets/` in containers.
@@ -185,7 +185,7 @@ Interfaces: iPhone (PWA) | Telegram (Moltbot) | Web (Metabase)
     Cloudflare Tunnel + Cloudflare Access (Zero Trust)
     │
 N95 Mini PC (Docker Compose):
-    finance-api ── Node.js REST over SQLite
+    pops-api ── Node.js REST over SQLite
     metabase ───── Dashboards & analytics
     moltbot ────── AI assistant (Telegram + finance plugin)
     paperless-ngx  Receipt archive + OCR

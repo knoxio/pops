@@ -47,12 +47,12 @@ Three related decisions that follow from ADR-002 (shell architecture):
 
 ## Decision 2: API Domain Modules
 
-Rename `finance-api` → `pops-api`. Keep it as one Express/tRPC server. Each domain is a tRPC router module.
+Rename `pops-api` → `pops-api`. Keep it as one Express/tRPC server. Each domain is a tRPC router module.
 
 ### Current structure (finance-only)
 
 ```
-apps/finance-api/src/modules/
+apps/pops-api/src/modules/
   transactions/
   entities/
   budgets/

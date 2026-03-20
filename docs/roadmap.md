@@ -30,7 +30,7 @@ Agreed sequencing based on daily value, effort, and dependencies:
 
 - **Shell & App Switcher** — Extract shell from pops-pwa. Shared layout, routing, navigation, theming, auth.
 - **UI Component Library** — Extract shared components into a package. DataTable, forms, inputs, cards.
-- **API Rename & Modularisation** — finance-api → pops-api. Domain routers as modules, not a monolith name.
+- **API Rename & Modularisation** — pops-api → pops-api. Domain routers as modules, not a monolith name.
 - **DB Schema Patterns** — Establish conventions for new domains: migrations, shared entities, cross-domain foreign keys.
 - **Responsive Foundation** — Ensure the shell and shared components work well on mobile viewports from day one.
 

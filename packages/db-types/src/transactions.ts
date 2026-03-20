@@ -1,6 +1,6 @@
 /**
  * SQLite schema for transactions table (snake_case columns).
- * Used by finance-api for transaction types.
+ * Used by pops-api for transaction types.
  */
 import { z } from "zod/v4";
 

@@ -1,10 +1,10 @@
 /**
- * Helpers for routing Playwright browser requests to the real finance-api
+ * Helpers for routing Playwright browser requests to the real pops-api
  * using the named 'e2e' environment (isolated seeded SQLite DB).
  *
  * How it works:
  *   Browser → /trpc/... → page.route() intercepts → route.fetch() re-sends with ?env=e2e
- *   → Vite proxy → finance-api :3000 → envContextMiddleware → e2e SQLite DB
+ *   → Vite proxy → pops-api :3000 → envContextMiddleware → e2e SQLite DB
  *
  * This avoids needing a second API port or changes to vite.config.ts.
  */

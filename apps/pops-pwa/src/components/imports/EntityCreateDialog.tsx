@@ -43,10 +43,10 @@ export function EntityCreateDialog({
   }, [open, suggestedName]);
 
   const utils = trpc.useUtils();
-  const createEntityMutation = trpc.imports.createEntity.useMutation({
+  const createEntityMutation = trpc.finance.imports.createEntity.useMutation({
     onSuccess: (data) => {
       // Refresh entities list
-      utils.entities.list.invalidate();
+      utils.core.entities.list.invalidate();
       onEntityCreated(data);
       onOpenChange(false);
       setName("");

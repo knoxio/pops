@@ -3,7 +3,7 @@ import crypto from "crypto-js";
 import { useImportStore } from "../../store/importStore";
 import { Button } from "@pops/ui";
 import { AlertCircle, CheckCircle } from "lucide-react";
-import type { ParsedTransaction } from "@pops/finance-api/modules/imports";
+import type { ParsedTransaction } from "@pops/api/modules/finance/imports";
 
 /**
  * Step 2: Map CSV columns to schema fields and validate parsing

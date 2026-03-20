@@ -30,14 +30,14 @@ Migrations `007_` through `011_` use sequential numbering from the original deve
 All migrations live in a single flat directory:
 
 ```
-apps/finance-api/src/db/migrations/
+apps/pops-api/src/db/migrations/
 ```
 
 Domain is identified by the filename prefix, not by subdirectories.
 
 ## Migration File Format
 
-A template is available at `apps/finance-api/src/db/migration-template.sql`.
+A template is available at `apps/pops-api/src/db/migration-template.sql`.
 
 Each migration file must include:
 
@@ -71,7 +71,7 @@ ALTER TABLE transactions ADD COLUMN recurring INTEGER NOT NULL DEFAULT 0;
 
 ## How Migrations Run
 
-The migration runner (`apps/finance-api/src/db.ts` → `runMigrations()`) works as follows:
+The migration runner (`apps/pops-api/src/db.ts` → `runMigrations()`) works as follows:
 
 1. Creates `schema_migrations` table if it doesn't exist
 2. Reads all applied migration versions from `schema_migrations`
@@ -85,7 +85,7 @@ Migrations run automatically when the production database connection is opened.
 
 ## Fresh Database Initialization
 
-Fresh databases (and named test environments) bypass migration files entirely. Instead, `initializeSchema()` in `apps/finance-api/src/db/schema.ts`:
+Fresh databases (and named test environments) bypass migration files entirely. Instead, `initializeSchema()` in `apps/pops-api/src/db/schema.ts`:
 
 1. Creates all tables with `CREATE TABLE IF NOT EXISTS` using the final schema
 2. Pre-marks all known migrations as applied via the `INCLUDED_MIGRATIONS` array

@@ -6,7 +6,7 @@ import { Button } from "@pops/ui";
 import { Badge } from "@pops/ui";
 import { TagEditor, type TagMetaEntry } from "../TagEditor";
 import { toast } from "sonner";
-import type { ConfirmedTransaction, SuggestedTag } from "@pops/finance-api/modules/imports";
+import type { ConfirmedTransaction, SuggestedTag } from "@pops/api/modules/finance/imports";
 import { cn } from "../../lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -107,7 +107,7 @@ export function TagReviewStep() {
     [confirmedTransactions]
   );
 
-  const { data: serverTags } = trpc.transactions.availableTags.useQuery();
+  const { data: serverTags } = trpc.finance.transactions.availableTags.useQuery();
 
   // Merge server tags with any tags the user has added locally during this session.
   // This ensures newly typed tags appear as autocomplete suggestions across all rows.
@@ -116,7 +116,7 @@ export function TagReviewStep() {
     return [...new Set([...(serverTags ?? []), ...local])].sort();
   }, [serverTags, localTags]);
 
-  const executeImportMutation = trpc.imports.executeImport.useMutation({
+  const executeImportMutation = trpc.finance.imports.executeImport.useMutation({
     onSuccess: (data) => {
       setExecuteSessionId(data.sessionId);
       setPollingEnabled(true);
@@ -126,7 +126,7 @@ export function TagReviewStep() {
     },
   });
 
-  const progressQuery = trpc.imports.getImportProgress.useQuery(
+  const progressQuery = trpc.finance.imports.getImportProgress.useQuery(
     { sessionId: executeSessionId ?? "" },
     { enabled: pollingEnabled && !!executeSessionId, refetchInterval: 1500 }
   );

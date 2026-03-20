@@ -71,7 +71,7 @@ apps/
                          Imports all @pops/app-* packages as dependencies
                          Single Vite build, single entry point
   pops-storybook/      → Storybook config only. No stories live here — discovers *.stories.tsx from all packages via globs
-  pops-api/            → Backend API (renamed from finance-api)
+  pops-api/            → Backend API (renamed from pops-api)
 ```
 
 ### Routing

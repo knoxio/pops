@@ -7,7 +7,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useEffect } from "react";
 import { TagReviewStep } from "./TagReviewStep";
 import { useImportStore } from "../../store/importStore";
-import type { ConfirmedTransaction } from "@pops/finance-api/modules/imports";
+import type { ConfirmedTransaction } from "@pops/api/modules/finance/imports";
 
 // ---------------------------------------------------------------------------
 // Fixtures

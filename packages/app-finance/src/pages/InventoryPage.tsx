@@ -32,7 +32,7 @@ interface InventoryItem {
 }
 
 export function InventoryPage() {
-  const { data, isLoading, error, refetch } = trpc.inventory.list.useQuery({
+  const { data, isLoading, error, refetch } = trpc.inventory.items.list.useQuery({
     limit: 100,
   });
 

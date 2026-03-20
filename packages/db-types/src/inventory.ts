@@ -1,6 +1,6 @@
 /**
  * SQLite schema for home_inventory table (snake_case columns).
- * Used by finance-api for inventory types.
+ * Used by pops-api for inventory types.
  */
 import { z } from "zod/v4";
 

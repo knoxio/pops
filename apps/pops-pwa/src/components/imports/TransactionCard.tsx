@@ -8,7 +8,7 @@ import {
   CollapsibleTrigger,
 } from "@pops/ui";
 import { LocationField } from "./LocationField";
-import type { ProcessedTransaction } from "@pops/finance-api/modules/imports";
+import type { ProcessedTransaction } from "@pops/api/modules/finance/imports";
 
 interface TransactionCardProps {
   transaction: ProcessedTransaction;

@@ -5,7 +5,7 @@ import type {
   ConfirmedTransaction,
   ImportResult,
   ImportWarning,
-} from "@pops/finance-api/modules/imports";
+} from "@pops/api/modules/finance/imports";
 import { findSimilarTransactions } from "../lib/transaction-utils";
 
 export type BankType = "Amex";
