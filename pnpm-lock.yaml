@@ -114,6 +114,9 @@ importers:
       '@pops/app-finance':
         specifier: workspace:*
         version: link:../../packages/app-finance
+      '@pops/app-media':
+        specifier: workspace:*
+        version: link:../../packages/app-media
       '@pops/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -242,6 +245,31 @@ importers:
       '@types/papaparse':
         specifier: ^5.5.2
         version: 5.5.2
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+
+  packages/app-media:
+    dependencies:
+      '@pops/ui':
+        specifier: workspace:*
+        version: link:../ui
+      lucide-react:
+        specifier: ^0.563.0
+        version: 0.563.0(react@19.2.4)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      react-router:
+        specifier: ^7.13.1
+        version: 7.13.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+    devDependencies:
       '@types/react':
         specifier: ^19.0.0
         version: 19.2.14
