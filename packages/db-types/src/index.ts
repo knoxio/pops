@@ -1,14 +1,61 @@
 /**
  * Shared database types for POPS SQLite schema.
- * Used by pops-api to ensure type consistency.
+ *
+ * Types are inferred from Drizzle ORM table definitions, replacing the
+ * previous hand-written Zod schemas. This ensures types stay in sync
+ * with the actual database schema used by drizzle-kit migrations.
  */
-export { TransactionRowSchema, type TransactionRow } from "./transactions.js";
-export { EntityRowSchema, ENTITY_TYPES, type EntityRow, type EntityType } from "./entities.js";
-export { BudgetRowSchema, type BudgetRow } from "./budgets.js";
-export { InventoryRowSchema, type InventoryRow } from "./inventory.js";
+import type { InferSelectModel, InferInsertModel } from "drizzle-orm";
+import type { transactions } from "./schema/transactions.js";
+import type { entities } from "./schema/entities.js";
+import type { budgets } from "./schema/budgets.js";
+import type { homeInventory } from "./schema/inventory.js";
+import type { wishList } from "./schema/wishlist.js";
+import type { transactionCorrections } from "./schema/corrections.js";
+import type { aiUsage } from "./schema/ai-usage.js";
+import type { environments } from "./schema/environments.js";
+
+// Re-export Drizzle table objects for use in queries
 export {
-  WishListRowSchema,
-  WISH_LIST_PRIORITIES,
-  type WishListRow,
-  type WishListPriority,
-} from "./wishlist.js";
+  transactions,
+  entities,
+  budgets,
+  homeInventory,
+  wishList,
+  transactionCorrections,
+  aiUsage,
+  environments,
+} from "./schema/index.js";
+
+// Select types (what you get back from a SELECT query)
+export type TransactionRow = InferSelectModel<typeof transactions>;
+export type EntityRow = InferSelectModel<typeof entities>;
+export type BudgetRow = InferSelectModel<typeof budgets>;
+export type InventoryRow = InferSelectModel<typeof homeInventory>;
+export type WishListRow = InferSelectModel<typeof wishList>;
+export type TransactionCorrectionRow = InferSelectModel<typeof transactionCorrections>;
+export type AiUsageRow = InferSelectModel<typeof aiUsage>;
+export type EnvironmentRow = InferSelectModel<typeof environments>;
+
+// Insert types (what you pass to an INSERT statement)
+export type TransactionInsert = InferInsertModel<typeof transactions>;
+export type EntityInsert = InferInsertModel<typeof entities>;
+export type BudgetInsert = InferInsertModel<typeof budgets>;
+export type InventoryInsert = InferInsertModel<typeof homeInventory>;
+export type WishListInsert = InferInsertModel<typeof wishList>;
+export type TransactionCorrectionInsert = InferInsertModel<typeof transactionCorrections>;
+export type AiUsageInsert = InferInsertModel<typeof aiUsage>;
+export type EnvironmentInsert = InferInsertModel<typeof environments>;
+
+// Constants
+export const ENTITY_TYPES = [
+  "company",
+  "person",
+  "place",
+  "brand",
+  "organisation",
+] as const;
+export type EntityType = (typeof ENTITY_TYPES)[number];
+
+export const WISH_LIST_PRIORITIES = ["Needing", "Soon", "One Day", "Dreaming"] as const;
+export type WishListPriority = (typeof WISH_LIST_PRIORITIES)[number];

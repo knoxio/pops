@@ -4,7 +4,7 @@
  */
 import { eq } from "drizzle-orm";
 import { getDrizzle } from "../db.js";
-import { entities } from "../db/schema/entities.js";
+import { entities } from "@pops/db-types";
 import { findAllMatchingCorrections } from "../modules/core/corrections/service.js";
 
 /**

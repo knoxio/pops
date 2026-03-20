@@ -2,7 +2,7 @@
  * Drizzle Kit configuration for POPS API.
  *
  * Migration workflow:
- *   1. Edit schema files in src/db/schema/
+ *   1. Edit schema files in packages/db-types/src/schema/
  *   2. Run `mise drizzle:generate` (or `pnpm exec drizzle-kit generate`)
  *   3. Review the generated SQL in src/db/drizzle-migrations/
  *   4. Run `mise drizzle:migrate` to apply (or `pnpm exec drizzle-kit migrate`)
@@ -17,7 +17,7 @@ import { defineConfig } from "drizzle-kit";
 
 export default defineConfig({
   dialect: "sqlite",
-  schema: "./src/db/schema/*",
+  schema: "../../packages/db-types/src/schema/*",
   out: "./src/db/drizzle-migrations",
   dbCredentials: {
     url: process.env["SQLITE_PATH"] ?? "./data/pops.db",

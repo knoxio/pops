@@ -26,7 +26,7 @@ export function toBudget(row: BudgetRow): Budget {
     amount: row.amount,
     active: row.active === 1,
     notes: row.notes,
-    lastEditedTime: row.last_edited_time,
+    lastEditedTime: row.lastEditedTime,
   };
 }
 
