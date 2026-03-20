@@ -14,6 +14,8 @@ import type { wishList } from "./schema/wishlist.js";
 import type { transactionCorrections } from "./schema/corrections.js";
 import type { aiUsage } from "./schema/ai-usage.js";
 import type { environments } from "./schema/environments.js";
+import type { movies } from "./schema/movies.js";
+import type { tvShows } from "./schema/tv-shows.js";
 
 // Re-export Drizzle table objects for use in queries
 export {
@@ -25,6 +27,8 @@ export {
   transactionCorrections,
   aiUsage,
   environments,
+  movies,
+  tvShows,
 } from "./schema/index.js";
 
 // Select types (what you get back from a SELECT query)
@@ -36,6 +40,8 @@ export type WishListRow = InferSelectModel<typeof wishList>;
 export type TransactionCorrectionRow = InferSelectModel<typeof transactionCorrections>;
 export type AiUsageRow = InferSelectModel<typeof aiUsage>;
 export type EnvironmentRow = InferSelectModel<typeof environments>;
+export type MovieRow = InferSelectModel<typeof movies>;
+export type TvShowRow = InferSelectModel<typeof tvShows>;
 
 // Insert types (what you pass to an INSERT statement)
 export type TransactionInsert = InferInsertModel<typeof transactions>;
@@ -46,6 +52,8 @@ export type WishListInsert = InferInsertModel<typeof wishList>;
 export type TransactionCorrectionInsert = InferInsertModel<typeof transactionCorrections>;
 export type AiUsageInsert = InferInsertModel<typeof aiUsage>;
 export type EnvironmentInsert = InferInsertModel<typeof environments>;
+export type MovieInsert = InferInsertModel<typeof movies>;
+export type TvShowInsert = InferInsertModel<typeof tvShows>;
 
 // Constants
 export const ENTITY_TYPES = [
@@ -59,3 +67,6 @@ export type EntityType = (typeof ENTITY_TYPES)[number];
 
 export const WISH_LIST_PRIORITIES = ["Needing", "Soon", "One Day", "Dreaming"] as const;
 export type WishListPriority = (typeof WISH_LIST_PRIORITIES)[number];
+
+export const MEDIA_TYPES = ["movie", "tv_show"] as const;
+export type MediaType = (typeof MEDIA_TYPES)[number];
