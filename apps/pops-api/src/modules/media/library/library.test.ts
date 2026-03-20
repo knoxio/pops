@@ -130,14 +130,7 @@ describe("library.addMovie", () => {
 
     await expect(
       caller.media.library.addMovie({ tmdbId: 999999 }),
-    ).rejects.toThrow(TRPCError);
-
-    try {
-      await caller.media.library.addMovie({ tmdbId: 999999 });
-    } catch (err) {
-      expect(err).toBeInstanceOf(TRPCError);
-      expect((err as TRPCError).code).toBe("NOT_FOUND");
-    }
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
   });
 
   it("throws INTERNAL_SERVER_ERROR on TMDB API failure", async () => {
@@ -152,14 +145,7 @@ describe("library.addMovie", () => {
 
     await expect(
       caller.media.library.addMovie({ tmdbId: 550 }),
-    ).rejects.toThrow(TRPCError);
-
-    try {
-      await caller.media.library.addMovie({ tmdbId: 550 });
-    } catch (err) {
-      expect(err).toBeInstanceOf(TRPCError);
-      expect((err as TRPCError).code).toBe("INTERNAL_SERVER_ERROR");
-    }
+    ).rejects.toMatchObject({ code: "INTERNAL_SERVER_ERROR" });
   });
 
   it("rejects unauthenticated calls", async () => {

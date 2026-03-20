@@ -27,8 +27,8 @@ export const libraryRouter = router({
   addMovie: protectedProcedure
     .input(z.object({ tmdbId: z.number().int().positive() }))
     .mutation(async ({ input }) => {
+      const client = getTmdbClient();
       try {
-        const client = getTmdbClient();
         const { movie, created } = await libraryService.addMovie(
           input.tmdbId,
           client,
