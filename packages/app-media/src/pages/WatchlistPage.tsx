@@ -35,6 +35,7 @@ interface WatchlistItemProps {
   isRemoving: boolean;
   onUpdateNotes: (id: number, notes: string | null) => void;
   isUpdating: boolean;
+  updateError: string | null;
 }
 
 function WatchlistItem({
@@ -45,10 +46,11 @@ function WatchlistItem({
   isRemoving,
   onUpdateNotes,
   isUpdating,
+  updateError,
 }: WatchlistItemProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(entry.notes ?? "");
-  const [saving, setSaving] = useState(false);
+  const savePending = useRef(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const href =
@@ -64,13 +66,15 @@ function WatchlistItem({
     }
   }, [entry.notes, editing]);
 
-  // Close editor when mutation completes (success or error)
+  // Close editor only on success, keep open on error
   useEffect(() => {
-    if (saving && !isUpdating) {
-      setSaving(false);
-      setEditing(false);
+    if (savePending.current && !isUpdating) {
+      savePending.current = false;
+      if (!updateError) {
+        setEditing(false);
+      }
     }
-  }, [saving, isUpdating]);
+  }, [isUpdating, updateError]);
 
   useEffect(() => {
     if (editing && textareaRef.current) {
@@ -81,7 +85,7 @@ function WatchlistItem({
 
   const handleSave = () => {
     const trimmed = draft.trim();
-    setSaving(true);
+    savePending.current = true;
     onUpdateNotes(entry.id, trimmed || null);
   };
 
@@ -174,9 +178,12 @@ function WatchlistItem({
                 Cancel
               </button>
               <span className="text-xs text-muted-foreground ml-auto">
-                Ctrl+Enter to save
+                {draft.length}/500 · Ctrl+Enter to save
               </span>
             </div>
+            {updateError && (
+              <p className="text-xs text-destructive">{updateError}</p>
+            )}
           </div>
         ) : entry.notes ? (
           <button
@@ -219,8 +226,9 @@ export function WatchlistPage() {
     isLoading: tvShowsLoading,
   } = trpc.media.tvShows.list.useQuery({ limit: 500 });
 
-  const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [removingId, setRemovingId] = useState<number | null>(null);
+  const [updateErrorId, setUpdateErrorId] = useState<number | null>(null);
+  const [updateErrorMsg, setUpdateErrorMsg] = useState<string | null>(null);
 
   const utils = trpc.useUtils();
   const removeMutation = trpc.media.watchlist.remove.useMutation({
@@ -234,11 +242,12 @@ export function WatchlistPage() {
   });
   const updateMutation = trpc.media.watchlist.update.useMutation({
     onSuccess: () => {
-      setUpdatingId(null);
+      setUpdateErrorId(null);
+      setUpdateErrorMsg(null);
       void utils.media.watchlist.list.invalidate();
     },
-    onError: () => {
-      setUpdatingId(null);
+    onError: (error) => {
+      setUpdateErrorMsg(error.message ?? "Failed to save notes");
     },
   });
 
@@ -333,10 +342,17 @@ export function WatchlistPage() {
                 }}
                 isRemoving={removingId === entry.id}
                 onUpdateNotes={(id, notes) => {
-                  setUpdatingId(id);
+                  setUpdateErrorId(id);
+                  setUpdateErrorMsg(null);
                   updateMutation.mutate({ id, data: { notes } });
                 }}
-                isUpdating={updatingId === entry.id}
+                isUpdating={
+                  updateMutation.isPending &&
+                  updateMutation.variables?.id === entry.id
+                }
+                updateError={
+                  updateErrorId === entry.id ? updateErrorMsg : null
+                }
               />
             );
           })}
