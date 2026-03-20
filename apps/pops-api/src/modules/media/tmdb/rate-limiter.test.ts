@@ -83,7 +83,7 @@ describe("TokenBucketRateLimiter", () => {
 
     // 4th should wait
     let resolved = false;
-    limiter.acquire().then(() => {
+    void limiter.acquire().then(() => {
       resolved = true;
     });
 
@@ -102,9 +102,9 @@ describe("TokenBucketRateLimiter", () => {
     await limiter.acquire();
 
     // Queue 3 waiters
-    limiter.acquire().then(() => order.push(1));
-    limiter.acquire().then(() => order.push(2));
-    limiter.acquire().then(() => order.push(3));
+    void limiter.acquire().then(() => order.push(1));
+    void limiter.acquire().then(() => order.push(2));
+    void limiter.acquire().then(() => order.push(3));
 
     // Advance enough for 3 tokens
     await vi.advanceTimersByTimeAsync(3000);
@@ -125,7 +125,7 @@ describe("TokenBucketRateLimiter", () => {
 
     // 41st should wait
     let resolved = false;
-    limiter.acquire().then(() => {
+    void limiter.acquire().then(() => {
       resolved = true;
     });
 
@@ -146,7 +146,7 @@ describe("TokenBucketRateLimiter", () => {
     await limiter.acquire();
 
     let resolved = false;
-    limiter.acquire().then(() => {
+    void limiter.acquire().then(() => {
       resolved = true;
     });
 

@@ -2,7 +2,7 @@
  * Location service — CRUD operations for the location tree.
  * SQLite is the source of truth. All operations are local.
  */
-import { eq, asc, count, isNull, sql } from "drizzle-orm";
+import { eq, asc } from "drizzle-orm";
 import { locations } from "@pops/db-types";
 import { getDrizzle } from "../../../db.js";
 import { NotFoundError, ConflictError } from "../../../shared/errors.js";
@@ -65,9 +65,11 @@ export function getLocationTree(): LocationTreeNode[] {
 
   // Second pass: link children to parents
   for (const row of allRows) {
-    const node = nodeMap.get(row.id)!;
+    const node = nodeMap.get(row.id);
+    if (!node) continue;
     if (row.parentId && nodeMap.has(row.parentId)) {
-      nodeMap.get(row.parentId)!.children.push(node);
+      const parent = nodeMap.get(row.parentId);
+      if (parent) parent.children.push(node);
     } else {
       roots.push(node);
     }

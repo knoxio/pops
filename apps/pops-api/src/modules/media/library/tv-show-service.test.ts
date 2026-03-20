@@ -115,7 +115,9 @@ describe("addTvShow", () => {
     expect(result.seasons[1].seasonNumber).toBe(1);
 
     // Verify API calls
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(client.getSeriesExtended).toHaveBeenCalledWith(81189);
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(client.getSeriesEpisodes).toHaveBeenCalledTimes(2);
   });
 
@@ -128,6 +130,7 @@ describe("addTvShow", () => {
     expect(result.created).toBe(false);
     expect(result.show.tvdbId).toBe(81189);
     expect(result.show.name).toBe("Breaking Bad");
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(client.getSeriesExtended).not.toHaveBeenCalled();
   });
 
@@ -141,6 +144,7 @@ describe("addTvShow", () => {
     expect(result.show.numberOfSeasons).toBe(0);
     expect(result.show.numberOfEpisodes).toBe(0);
     expect(result.seasons).toHaveLength(0);
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(client.getSeriesEpisodes).not.toHaveBeenCalled();
   });
 
@@ -184,7 +188,9 @@ describe("addTvShow", () => {
 
     const result = await addTvShow(81189, client);
 
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(JSON.parse(result.show.genres!)).toEqual(["Drama", "Crime"]);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(JSON.parse(result.show.networks!)).toEqual(["AMC", "Netflix"]);
   });
 

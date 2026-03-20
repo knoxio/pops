@@ -118,7 +118,8 @@ export function createTvShow(input: CreateTvShowInput): TvShowRow {
     .where(eq(tvShows.tvdbId, input.tvdbId))
     .get();
 
-  return row!;
+  if (!row) throw new NotFoundError("TvShow", String(input.tvdbId));
+  return row;
 }
 
 export function updateTvShow(id: number, input: UpdateTvShowInput): TvShowRow {
@@ -241,7 +242,8 @@ export function createSeason(input: CreateSeasonInput): SeasonRow {
     .where(eq(seasons.tvdbId, input.tvdbId))
     .get();
 
-  return row!;
+  if (!row) throw new NotFoundError("Season", String(input.tvdbId));
+  return row;
 }
 
 export function deleteSeason(id: number): void {
@@ -331,7 +333,8 @@ export function createEpisode(input: CreateEpisodeInput): EpisodeRow {
     .where(eq(episodes.tvdbId, input.tvdbId))
     .get();
 
-  return row!;
+  if (!row) throw new NotFoundError("Episode", String(input.tvdbId));
+  return row;
 }
 
 export function deleteEpisode(id: number): void {

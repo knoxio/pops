@@ -8,7 +8,6 @@ import {
   createCaller,
   seedMovie,
 } from "../../../shared/test-utils.js";
-import { TmdbApiError } from "../tmdb/types.js";
 import type { TmdbMovieDetail } from "../tmdb/types.js";
 import { TRPCError } from "@trpc/server";
 

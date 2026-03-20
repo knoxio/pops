@@ -81,6 +81,7 @@ describe("createMovie", () => {
     expect(movie.tmdbId).toBe(550);
     expect(movie.releaseDate).toBe("1999-10-15");
     expect(movie.runtime).toBe(139);
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(JSON.parse(movie.genres!)).toEqual(["Drama", "Thriller"]);
   });
 
@@ -117,6 +118,7 @@ describe("updateMovie", () => {
     const id = seedMovie(db, { tmdb_id: 550, title: "Fight Club", genres: '["Drama"]' });
 
     const updated = service.updateMovie(id, { genres: ["Drama", "Thriller"] });
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(JSON.parse(updated.genres!)).toEqual(["Drama", "Thriller"]);
   });
 

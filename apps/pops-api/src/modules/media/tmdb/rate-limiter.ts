@@ -61,8 +61,8 @@ export class TokenBucketRateLimiter {
 
       while (this.waitQueue.length > 0 && this.tokens >= 1) {
         this.tokens -= 1;
-        const resolve = this.waitQueue.shift()!;
-        resolve();
+        const resolve = this.waitQueue.shift();
+        if (resolve) resolve();
       }
 
       // If still waiters left, schedule again
@@ -80,8 +80,8 @@ export class TokenBucketRateLimiter {
     }
     // Resolve any remaining waiters to prevent hanging promises
     while (this.waitQueue.length > 0) {
-      const resolve = this.waitQueue.shift()!;
-      resolve();
+      const resolve = this.waitQueue.shift();
+      if (resolve) resolve();
     }
   }
 }

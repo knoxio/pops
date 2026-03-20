@@ -85,16 +85,16 @@ describe("GET /media/images/:mediaType/:id/:filename", () => {
       const expectedPath = join(TEST_IMAGES_DIR, "movies", "550", "poster.jpg");
 
       // Mock stat to succeed for the poster file
-      vi.mocked(fs.stat).mockImplementation(async (path) => {
+      vi.mocked(fs.stat).mockImplementation((path) => {
         if (path === expectedPath) {
-          return { mtimeMs: 1700000000000, size: 12345 } as Awaited<
+          return Promise.resolve({ mtimeMs: 1700000000000, size: 12345 } as Awaited<
             ReturnType<typeof fs.stat>
-          >;
+          >);
         }
-        throw new Error("ENOENT");
+        return Promise.reject(new Error("ENOENT"));
       });
 
-      const res = await request(app).get("/media/images/movie/550/poster.jpg");
+      await request(app).get("/media/images/movie/550/poster.jpg");
 
       // sendFile will fail in test (no actual file) but headers are set
       // We check that stat was called with the correct path
@@ -109,9 +109,9 @@ describe("GET /media/images/:mediaType/:id/:filename", () => {
       const posterPath = join(TEST_IMAGES_DIR, "movies", "550", "poster.jpg");
 
       const statCalls: string[] = [];
-      vi.mocked(fs.stat).mockImplementation(async (path) => {
+      vi.mocked(fs.stat).mockImplementation((path) => {
         statCalls.push(path as string);
-        throw new Error("ENOENT");
+        return Promise.reject(new Error("ENOENT"));
       });
 
       await request(app).get("/media/images/movie/550/poster.jpg");
@@ -127,9 +127,9 @@ describe("GET /media/images/:mediaType/:id/:filename", () => {
       const overridePath = join(TEST_IMAGES_DIR, "movies", "550", "override.jpg");
 
       const statCalls: string[] = [];
-      vi.mocked(fs.stat).mockImplementation(async (path) => {
+      vi.mocked(fs.stat).mockImplementation((path) => {
         statCalls.push(path as string);
-        throw new Error("ENOENT");
+        return Promise.reject(new Error("ENOENT"));
       });
 
       await request(app).get("/media/images/movie/550/backdrop.jpg");
@@ -151,12 +151,11 @@ describe("GET /media/images/:mediaType/:id/:filename", () => {
 
     it("resolves tv images under tv/ directory (not tvs/)", async () => {
       const app = createTestApp();
-      const expectedPath = join(TEST_IMAGES_DIR, "tv", "81189", "poster.jpg");
 
       const statCalls: string[] = [];
-      vi.mocked(fs.stat).mockImplementation(async (path) => {
+      vi.mocked(fs.stat).mockImplementation((path) => {
         statCalls.push(path as string);
-        throw new Error("ENOENT");
+        return Promise.reject(new Error("ENOENT"));
       });
 
       await request(app).get("/media/images/tv/81189/poster.jpg");
@@ -171,9 +170,9 @@ describe("GET /media/images/:mediaType/:id/:filename", () => {
       const overridePath = join(TEST_IMAGES_DIR, "tv", "81189", "override.jpg");
 
       const statCalls: string[] = [];
-      vi.mocked(fs.stat).mockImplementation(async (path) => {
+      vi.mocked(fs.stat).mockImplementation((path) => {
         statCalls.push(path as string);
-        throw new Error("ENOENT");
+        return Promise.reject(new Error("ENOENT"));
       });
 
       await request(app).get("/media/images/tv/81189/poster.jpg");

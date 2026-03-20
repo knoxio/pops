@@ -81,7 +81,9 @@ describe("inventory.locations.tree", () => {
 
     const kitchen = home.children.find((c) => c.name === "Kitchen");
     expect(kitchen).toBeDefined();
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(kitchen!.children).toHaveLength(1); // Pantry
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     expect(kitchen!.children[0].name).toBe("Pantry");
   });
 });
