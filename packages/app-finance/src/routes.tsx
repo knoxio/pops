@@ -34,21 +34,7 @@ const AiUsagePage = lazy(() =>
   import("./pages/AiUsagePage").then((m) => ({ default: m.AiUsagePage }))
 );
 
-export interface NavItem {
-  path: string;
-  label: string;
-  icon: string;
-}
-
-export interface NavConfig {
-  id: string;
-  label: string;
-  icon: string;
-  basePath: string;
-  items: NavItem[];
-}
-
-export const navConfig: NavConfig = {
+export const navConfig = {
   id: "finance",
   label: "Finance",
   icon: "DollarSign",

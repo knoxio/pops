@@ -8,8 +8,7 @@
  * - Mobile (<768px): Overlay sidebar with backdrop, closes on link click
  */
 import { Link, useLocation } from "react-router";
-import { navConfig } from "@pops/app-finance";
-import type { NavConfig } from "@pops/app-finance";
+import { registeredApps } from "@/app/nav/registry";
 import { useUIStore } from "@/store/uiStore";
 import {
   LayoutDashboard,
@@ -39,9 +38,6 @@ const iconMap: Record<string, LucideIcon> = {
   Download,
   Bot,
 };
-
-/** All registered app nav configs — add new apps here. */
-const registeredApps: NavConfig[] = [navConfig];
 
 export function Sidebar({ open }: SidebarProps) {
   const location = useLocation();
