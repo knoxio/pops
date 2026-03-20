@@ -1,7 +1,238 @@
-export function MovieDetailPage() {
+import { useParams, Link } from "react-router";
+import { Alert, AlertTitle, AlertDescription, Badge, Skeleton } from "@pops/ui";
+import { trpc } from "../lib/trpc";
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function formatRuntime(minutes: number): string {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+
+function MovieDetailSkeleton() {
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold">Movie Detail</h1>
+    <div>
+      <div className="relative h-64 md:h-96 bg-muted">
+        <div className="absolute inset-0 flex items-end p-6 gap-6">
+          <Skeleton className="w-32 md:w-48 aspect-[2/3] rounded-lg shrink-0" />
+          <div className="flex-1 space-y-3 pb-4">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-5 w-48" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+      </div>
+      <div className="p-6 space-y-6">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-3/4" />
+        <div className="flex gap-2">
+          <Skeleton className="h-6 w-16" />
+          <Skeleton className="h-6 w-20" />
+          <Skeleton className="h-6 w-16" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function MovieDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const movieId = Number(id);
+
+  const { data, isLoading, error } = trpc.media.movies.get.useQuery(
+    { id: movieId },
+    { enabled: !Number.isNaN(movieId) }
+  );
+
+  if (Number.isNaN(movieId)) {
+    return (
+      <div className="p-6">
+        <Alert variant="destructive">
+          <AlertTitle>Invalid movie ID</AlertTitle>
+          <AlertDescription>The movie ID must be a number.</AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (isLoading) {
+    return <MovieDetailSkeleton />;
+  }
+
+  if (error) {
+    const is404 = error.data?.code === "NOT_FOUND";
+    return (
+      <div className="p-6">
+        <Alert variant="destructive">
+          <AlertTitle>{is404 ? "Movie not found" : "Error"}</AlertTitle>
+          <AlertDescription>
+            {is404
+              ? "This movie doesn't exist in your library."
+              : error.message}
+          </AlertDescription>
+        </Alert>
+        <Link
+          to="/media"
+          className="mt-4 inline-block text-sm text-primary underline"
+        >
+          Back to library
+        </Link>
+      </div>
+    );
+  }
+
+  const movie = data?.data;
+  if (!movie) return null;
+
+  const year = movie.releaseDate
+    ? new Date(movie.releaseDate).getFullYear()
+    : null;
+
+  const posterSrc = `/media/images/movie/${movie.id}/poster.jpg`;
+  const backdropSrc = movie.backdropPath
+    ? `/media/images/movie/${movie.id}/backdrop.jpg`
+    : null;
+  const logoSrc = movie.logoPath
+    ? `/media/images/movie/${movie.id}/logo.png`
+    : null;
+
+  const metadataItems = [
+    { label: "Status", value: movie.status },
+    { label: "Language", value: movie.originalLanguage?.toUpperCase() },
+    {
+      label: "Budget",
+      value: movie.budget ? formatCurrency(movie.budget) : null,
+    },
+    {
+      label: "Revenue",
+      value: movie.revenue ? formatCurrency(movie.revenue) : null,
+    },
+    {
+      label: "TMDB Rating",
+      value: movie.voteAverage
+        ? `${movie.voteAverage.toFixed(1)} (${movie.voteCount} votes)`
+        : null,
+    },
+    {
+      label: "Runtime",
+      value: movie.runtime ? formatRuntime(movie.runtime) : null,
+    },
+  ].filter((item) => item.value != null);
+
+  return (
+    <div>
+      {/* Hero section */}
+      <div className="relative h-64 md:h-96 overflow-hidden bg-muted">
+        {backdropSrc && (
+          <img
+            src={backdropSrc}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/20" />
+
+        <div className="relative h-full flex flex-col md:flex-row items-end p-6 gap-4 md:gap-6">
+          <img
+            src={posterSrc}
+            alt={`${movie.title} poster`}
+            className="w-28 md:w-44 aspect-[2/3] rounded-lg object-cover shadow-lg shrink-0"
+          />
+
+          <div className="flex-1 pb-1">
+            <h1 className="text-2xl md:text-4xl font-bold text-foreground">
+              {logoSrc ? (
+                <img
+                  src={logoSrc}
+                  alt={movie.title}
+                  className="h-12 md:h-16 object-contain"
+                />
+              ) : (
+                movie.title
+              )}
+            </h1>
+
+            {movie.tagline && (
+              <p className="text-sm md:text-base text-muted-foreground italic mt-1">
+                {movie.tagline}
+              </p>
+            )}
+
+            <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
+              {year && <span>{year}</span>}
+              {year && movie.runtime && <span>·</span>}
+              {movie.runtime && <span>{formatRuntime(movie.runtime)}</span>}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Content below hero */}
+      <div className="p-6 space-y-6 max-w-4xl">
+        {/* Overview */}
+        {movie.overview && (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">Overview</h2>
+            <p className="text-muted-foreground leading-relaxed">
+              {movie.overview}
+            </p>
+          </section>
+        )}
+
+        {/* Genre tags */}
+        {movie.genres.length > 0 && (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">Genres</h2>
+            <div className="flex flex-wrap gap-2">
+              {movie.genres.map((genre) => (
+                <Link
+                  key={genre}
+                  to={`/media?genre=${encodeURIComponent(genre)}`}
+                >
+                  <Badge
+                    variant="secondary"
+                    className="cursor-pointer hover:bg-secondary/80"
+                  >
+                    {genre}
+                  </Badge>
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Metadata grid */}
+        {metadataItems.length > 0 && (
+          <section>
+            <h2 className="text-lg font-semibold mb-2">Details</h2>
+            <dl className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {metadataItems.map((item) => (
+                <div key={item.label}>
+                  <dt className="text-sm text-muted-foreground">
+                    {item.label}
+                  </dt>
+                  <dd className="text-sm font-medium">{item.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </section>
+        )}
+
+        {/* Back link */}
+        <Link
+          to="/media"
+          className="inline-block text-sm text-primary underline"
+        >
+          Back to library
+        </Link>
+      </div>
     </div>
   );
 }
