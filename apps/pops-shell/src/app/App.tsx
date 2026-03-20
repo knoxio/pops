@@ -8,7 +8,7 @@ import { trpc, trpcClient } from "@/lib/trpc";
 import { router } from "./router";
 import { RouterProvider } from "react-router";
 import { useThemeStore } from "@/store/themeStore";
-import { Toaster } from "@pops/ui";
+import { Toaster, TooltipProvider } from "@pops/ui";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -29,7 +29,9 @@ export function App() {
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
+        <TooltipProvider>
+          <RouterProvider router={router} />
+        </TooltipProvider>
         {!import.meta.env.VITE_E2E && <ReactQueryDevtools initialIsOpen={false} />}
         <Toaster />
       </QueryClientProvider>
