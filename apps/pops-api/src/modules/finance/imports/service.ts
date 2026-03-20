@@ -7,7 +7,10 @@
  * - AI fallback with full row context
  * - Batch writes to SQLite
  */
-import { getDb } from "../../../db.js";
+import { eq, and, isNotNull, ne, inArray } from "drizzle-orm";
+import { getDrizzle } from "../../../db.js";
+import { transactions } from "../../../db/schema/transactions.js";
+import { entities } from "../../../db/schema/entities.js";
 import { logger } from "../../../lib/logger.js";
 import { formatImportError } from "../../../lib/errors.js";
 import { matchEntity } from "./lib/entity-matcher.js";
@@ -28,6 +31,29 @@ import type {
   AiUsageStats,
   SuggestedTag,
 } from "./types.js";
+
+/** Map a Drizzle camelCase row to the snake_case TransactionRow expected by consumers. */
+function toTransactionRow(row: typeof transactions.$inferSelect): TransactionRow {
+  return {
+    id: row.id,
+    notion_id: row.notionId,
+    description: row.description,
+    account: row.account,
+    amount: row.amount,
+    date: row.date,
+    type: row.type,
+    tags: row.tags,
+    entity_id: row.entityId,
+    entity_name: row.entityName,
+    location: row.location,
+    country: row.country,
+    related_transaction_id: row.relatedTransactionId,
+    notes: row.notes,
+    checksum: row.checksum,
+    raw_row: row.rawRow,
+    last_edited_time: row.lastEditedTime,
+  };
+}
 
 /** Parse a JSON-encoded tags string from the corrections table into a string array. */
 function parseCorrectionTags(raw: string): string[] {
@@ -59,10 +85,12 @@ function parseCorrectionTags(raw: string): string[] {
  * repeated identical queries for every transaction.
  */
 function loadKnownTags(): string[] {
-  const db = getDb();
+  const db = getDrizzle();
   const rows = db
-    .prepare("SELECT tags FROM transactions WHERE tags IS NOT NULL AND tags != '[]'")
-    .all() as { tags: string }[];
+    .select({ tags: transactions.tags })
+    .from(transactions)
+    .where(and(isNotNull(transactions.tags), ne(transactions.tags, "[]")))
+    .all();
 
   const seen = new Set<string>();
   for (const row of rows) {
@@ -126,11 +154,11 @@ function buildSuggestedTags(
  * Load entity lookup from SQLite: name → id
  */
 function loadEntityLookup(): Record<string, string> {
-  const db = getDb();
-  const rows = db.prepare("SELECT name, id FROM entities").all() as Array<{
-    name: string;
-    id: string;
-  }>;
+  const db = getDrizzle();
+  const rows = db
+    .select({ name: entities.name, id: entities.id })
+    .from(entities)
+    .all();
 
   const lookup: Record<string, string> = {};
   for (const row of rows) {
@@ -144,18 +172,18 @@ function loadEntityLookup(): Record<string, string> {
  * Aliases are stored as comma-separated strings in the aliases column
  */
 function loadAliases(): Record<string, string> {
-  const db = getDb();
+  const db = getDrizzle();
   const rows = db
-    .prepare("SELECT name, aliases FROM entities WHERE aliases IS NOT NULL")
-    .all() as Array<{
-    name: string;
-    aliases: string;
-  }>;
+    .select({ name: entities.name, aliases: entities.aliases })
+    .from(entities)
+    .where(isNotNull(entities.aliases))
+    .all();
 
   const aliasMap: Record<string, string> = {};
   for (const row of rows) {
-    const aliases = row.aliases.split(",").map((a) => a.trim());
-    for (const alias of aliases) {
+    if (!row.aliases) continue;
+    const aliasList = row.aliases.split(",").map((a) => a.trim());
+    for (const alias of aliasList) {
       aliasMap[alias] = row.name;
     }
   }
@@ -169,19 +197,20 @@ function loadAliases(): Record<string, string> {
 function findExistingChecksums(checksums: string[]): Set<string> {
   if (checksums.length === 0) return new Set();
 
-  const db = getDb();
+  const db = getDrizzle();
   const existingChecksums = new Set<string>();
 
   // Query in batches of 500 to avoid SQLite variable limits
   for (let i = 0; i < checksums.length; i += 500) {
     const batch = checksums.slice(i, i + 500);
-    const placeholders = batch.map(() => "?").join(",");
     const rows = db
-      .prepare(`SELECT checksum FROM transactions WHERE checksum IN (${placeholders})`)
-      .all(...batch) as Array<{ checksum: string }>;
+      .select({ checksum: transactions.checksum })
+      .from(transactions)
+      .where(inArray(transactions.checksum, batch))
+      .all();
 
     for (const row of rows) {
-      existingChecksums.add(row.checksum);
+      if (row.checksum) existingChecksums.add(row.checksum);
     }
   }
 
@@ -202,40 +231,36 @@ function insertTransaction(input: {
   rawRow?: string;
   checksum?: string;
 }): TransactionRow {
-  const db = getDb();
+  const db = getDrizzle();
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
 
-  db.prepare(
-    `
-    INSERT INTO transactions (
-      id, description, account, amount, date, type, tags,
-      entity_id, entity_name, location,
-      checksum, raw_row, last_edited_time
-    )
-    VALUES (
-      @id, @description, @account, @amount, @date, @type, @tags,
-      @entityId, @entityName, @location,
-      @checksum, @rawRow, @lastEditedTime
-    )
-  `
-  ).run({
-    id,
-    description: input.description,
-    account: input.account,
-    amount: input.amount,
-    date: input.date,
-    type: input.type || "",
-    tags: JSON.stringify(input.tags),
-    entityId: input.entityId,
-    entityName: input.entityName,
-    location: input.location,
-    checksum: input.checksum ?? null,
-    rawRow: input.rawRow ?? null,
-    lastEditedTime: now,
-  });
+  db.insert(transactions)
+    .values({
+      id,
+      description: input.description,
+      account: input.account,
+      amount: input.amount,
+      date: input.date,
+      type: input.type || "",
+      tags: JSON.stringify(input.tags),
+      entityId: input.entityId,
+      entityName: input.entityName,
+      location: input.location,
+      checksum: input.checksum ?? null,
+      rawRow: input.rawRow ?? null,
+      lastEditedTime: now,
+    })
+    .run();
 
-  return db.prepare("SELECT * FROM transactions WHERE id = ?").get(id) as TransactionRow;
+  const row = db
+    .select()
+    .from(transactions)
+    .where(eq(transactions.id, id))
+    .get();
+
+  if (!row) throw new Error(`Insert succeeded but row not found: ${id}`);
+  return toTransactionRow(row);
 }
 
 /**
@@ -598,15 +623,16 @@ export function executeImport(
  * Returns the generated id and name.
  */
 export function createEntity(name: string): CreateEntityOutput {
-  const db = getDb();
+  const db = getDrizzle();
   const entityId = crypto.randomUUID();
 
-  db.prepare(
-    `
-    INSERT INTO entities (id, name, last_edited_time)
-    VALUES (?, ?, ?)
-  `
-  ).run(entityId, name, new Date().toISOString());
+  db.insert(entities)
+    .values({
+      id: entityId,
+      name,
+      lastEditedTime: new Date().toISOString(),
+    })
+    .run();
 
   return { entityId, entityName: name };
 }
