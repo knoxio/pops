@@ -171,8 +171,8 @@ export function WishlistPage() {
 
   if (error) {
     return (
-      <div className="p-6 space-y-6">
-        <h1 className="text-3xl font-bold">Wish List</h1>
+      <div className="space-y-6">
+        <h1 className="text-2xl md:text-3xl font-bold">Wish List</h1>
         <Alert variant="destructive">
           <p className="font-semibold">Failed to load wish list</p>
           <p className="text-sm">{error.message}</p>
@@ -185,10 +185,10 @@ export function WishlistPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Wish List</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">Wish List</h1>
           <p className="text-muted-foreground">
             {data && `${data.pagination.total} total items`}
           </p>

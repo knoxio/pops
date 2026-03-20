@@ -74,8 +74,8 @@ export function DashboardPage() {
 
   if (transactionsError) {
     return (
-      <div className="p-6 space-y-6">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+      <div className="space-y-6">
+        <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
         <Alert variant="destructive">
           <AlertTitle>Unable to load dashboard</AlertTitle>
           <AlertDescription>
@@ -98,9 +98,9 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
         <p className="text-muted-foreground">
           Welcome back! Here's your financial overview.
         </p>
@@ -163,7 +163,7 @@ export function DashboardPage() {
               {transactions.data.map((transaction) => (
                 <div
                   key={transaction.id}
-                  className="p-4 flex items-center justify-between hover:bg-muted/50 transition-colors"
+                  className="p-3 sm:p-4 flex items-center justify-between gap-3 hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
@@ -171,7 +171,7 @@ export function DashboardPage() {
                         {transaction.description}
                       </p>
                       {transaction.tags.includes("Online") && (
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="secondary" className="hidden sm:inline-flex text-xs">
                           Online
                         </Badge>
                       )}
@@ -190,12 +190,12 @@ export function DashboardPage() {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <Badge variant="outline" className="text-xs">
+                  <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                    <Badge variant="outline" className="hidden sm:inline-flex text-xs">
                       {transaction.account}
                     </Badge>
                     <p
-                      className={`font-mono font-semibold ${
+                      className={`font-mono font-semibold tabular-nums ${
                         transaction.amount < 0
                           ? "text-red-600 dark:text-red-400"
                           : "text-green-600 dark:text-green-400"
