@@ -102,6 +102,25 @@ dir = "apps/pops-api"
 run = "pnpm db:seed"
 
 # ============================================================================
+# Drizzle ORM
+# ============================================================================
+
+[tasks."drizzle:generate"]
+description = "Generate Drizzle migrations from schema changes"
+dir = "apps/pops-api"
+run = "pnpm exec drizzle-kit generate"
+
+[tasks."drizzle:migrate"]
+description = "Apply pending Drizzle migrations"
+dir = "apps/pops-api"
+run = "pnpm exec drizzle-kit migrate"
+
+[tasks."drizzle:studio"]
+description = "Open Drizzle Studio (DB browser)"
+dir = "apps/pops-api"
+run = "pnpm exec drizzle-kit studio"
+
+# ============================================================================
 # Import Tools (run from packages/import-tools)
 # ============================================================================
 

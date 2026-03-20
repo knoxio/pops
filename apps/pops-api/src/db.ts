@@ -1,4 +1,5 @@
 import BetterSqlite3 from "better-sqlite3";
+import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -149,3 +150,16 @@ export function setDb(newDb: BetterSqlite3.Database): BetterSqlite3.Database | n
   prodDb = newDb;
   return prev;
 }
+
+/**
+ * Get a Drizzle ORM instance wrapping the current database connection.
+ * Respects the env context (AsyncLocalStorage) — returns a Drizzle instance
+ * for the correct database whether in prod or a named environment.
+ *
+ * Services migrating from raw SQL to Drizzle should call this instead of getDb().
+ */
+export function getDrizzle(): BetterSQLite3Database {
+  return drizzle(getDb());
+}
+
+export type { BetterSQLite3Database };
