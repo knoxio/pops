@@ -1,17 +1,17 @@
-name: PWA CI
+name: Shell CI
 
 on:
   push:
     branches: [main]
     paths:
-      - "apps/pops-pwa/**"
+      - "apps/pops-shell/**"
       - "packages/db-types/**"
-      - ".github/workflows/pwa-ci.yml"
+      - ".github/workflows/shell-ci.yml"
   pull_request:
     paths:
-      - "apps/pops-pwa/**"
+      - "apps/pops-shell/**"
       - "packages/db-types/**"
-      - ".github/workflows/pwa-ci.yml"
+      - ".github/workflows/shell-ci.yml"
 
 jobs:
   quality:
@@ -34,10 +34,10 @@ jobs:
         run: cd packages/db-types && pnpm build
 
       - name: Type check
-        run: cd apps/pops-pwa && pnpm typecheck
+        run: cd apps/pops-shell && pnpm typecheck
 
       - name: Lint
-        run: cd apps/pops-pwa && pnpm lint
+        run: cd apps/pops-shell && pnpm lint
 
       - name: Build
-        run: cd apps/pops-pwa && pnpm build
+        run: cd apps/pops-shell && pnpm build

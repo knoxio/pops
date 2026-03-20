@@ -18,7 +18,7 @@ POPS uses [mise](https://mise.jdx.dev/) for task running and tool version manage
 ```bash
 mise dev              # Run all dev servers
 mise dev:api          # Run pops-api only
-mise dev:pwa          # Run pops-pwa only
+mise dev:shell        # Run pops-shell only
 mise dev:storybook    # Run Storybook
 
 mise test             # Run all tests
@@ -74,7 +74,7 @@ Run `mise tasks` for the full list. All tasks are defined in `mise.toml`.
 ### Services (each has its own package.json)
 ```bash
 cd apps/pops-api && pnpm install && pnpm dev        # API with watch mode
-cd apps/pops-pwa && pnpm install && pnpm dev           # Vite dev server
+cd apps/pops-shell && pnpm install && pnpm dev          # Vite dev server
 
 # Typecheck a service
 cd apps/<service> && pnpm typecheck
@@ -146,11 +146,13 @@ ansible-vault encrypt inventory/group_vars/pops_servers/vault.yml
 ```
 apps/
 ├── pops-api/          # Backend: tRPC API
-├── pops-pwa/            # Frontend: React PWA
+├── pops-shell/          # Frontend: React shell + app packages
 └── moltbot/             # Bot: Telegram assistant
 
 packages/
+├── app-finance/         # App: Finance domain pages and components
 ├── db-types/            # Shared: Database types (in workspace)
+├── ui/                  # Shared: @pops/ui component library
 └── import-tools/        # Shared: Import utilities (standalone, not in workspace)
 
 infra/
@@ -159,7 +161,7 @@ infra/
 ```
 
 - `apps/pops-api/` — Express REST API over SQLite (bridges frontend/backend networks)
-- `apps/pops-pwa/` — React PWA served via nginx (Phase 4 stub)
+- `apps/pops-shell/` — React app shell with lazy-loaded app packages, served via nginx
 - `apps/moltbot/` — Config + custom finance skill for Moltbot (no Dockerfile, uses upstream image)
 - `packages/import-tools/` — Import scripts (on-demand, run via `--profile tools` or locally)
 - `packages/db-types/` — Shared TypeScript types for database schema
@@ -167,7 +169,7 @@ infra/
 - `infra/ansible/` — Ansible playbooks + roles for provisioning the N95 mini PC
 
 ### Docker Networks
-- `pops-frontend` — cloudflared, pops-pwa, metabase, pops-api
+- `pops-frontend` — cloudflared, pops-shell, metabase, pops-api
 - `pops-backend` — pops-api, moltbot, tools (SQLite access)
 - `pops-documents` — cloudflared, paperless-ngx, paperless-redis (isolated)
 
@@ -189,7 +191,7 @@ N95 Mini PC (Docker Compose):
     metabase ───── Dashboards & analytics
     moltbot ────── AI assistant (Telegram + finance plugin)
     paperless-ngx  Receipt archive + OCR
-    pops-pwa ───── React PWA
+    pops-shell ─── React PWA
     │
 Data Layer:
     SQLite (source of truth)
@@ -278,7 +280,7 @@ Full project documentation lives in Notion under **POPS - Personal Ops** (`30240
 mise db:init     # First time: Initialize empty database
 mise db:seed     # Seed with test data (44 records)
 mise dev:api     # Start API server
-mise dev:pwa     # Start PWA
+mise dev:shell   # Start shell
 ```
 
 **For E2E Testing:**

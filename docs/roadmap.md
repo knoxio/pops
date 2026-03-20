@@ -28,7 +28,7 @@ Agreed sequencing based on daily value, effort, and dependencies:
 
 > Extract the shared platform that everything else builds on.
 
-- **Shell & App Switcher** — Extract shell from pops-pwa. Shared layout, routing, navigation, theming, auth.
+- **Shell & App Switcher** — Extract shell into pops-shell. Shared layout, routing, navigation, theming, auth.
 - **UI Component Library** — Extract shared components into a package. DataTable, forms, inputs, cards.
 - **API Rename & Modularisation** — pops-api → pops-api. Domain routers as modules, not a monolith name.
 - **DB Schema Patterns** — Establish conventions for new domains: migrations, shared entities, cross-domain foreign keys.

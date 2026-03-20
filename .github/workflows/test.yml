@@ -73,17 +73,17 @@ jobs:
       - name: Build shared packages
         run: cd packages/db-types && pnpm build
 
-      - name: Typecheck PWA
+      - name: Typecheck Shell
         run: |
-          cd apps/pops-pwa
+          cd apps/pops-shell
           pnpm typecheck
 
-      - name: Lint PWA
+      - name: Lint Shell
         run: |
-          cd apps/pops-pwa
+          cd apps/pops-shell
           pnpm lint
 
-      - name: Build PWA
+      - name: Build Shell
         run: |
-          cd apps/pops-pwa
+          cd apps/pops-shell
           pnpm build

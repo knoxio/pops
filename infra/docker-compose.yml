@@ -30,11 +30,11 @@ services:
       retries: 3
 
   # ── FRONTEND ─────────────────────────────────────────────────────
-  pops-pwa:
+  pops-shell:
     build:
       context: ..
-      dockerfile: apps/pops-pwa/Dockerfile
-    container_name: pops-pwa
+      dockerfile: apps/pops-shell/Dockerfile
+    container_name: pops-shell
     restart: unless-stopped
     networks:
       - frontend

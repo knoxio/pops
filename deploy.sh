@@ -140,12 +140,12 @@ if [ "$SKIP_CHECKS" = false ]; then
 
     cd ../..
 
-    # Check pops-pwa
-    echo -e "${BLUE}PWA:${NC}"
-    cd apps/pops-pwa
+    # Check pops-shell
+    echo -e "${BLUE}Shell:${NC}"
+    cd apps/pops-shell
 
     if ! pnpm typecheck; then
-        echo -e "${RED}✗ TypeScript errors in pops-pwa${NC}"
+        echo -e "${RED}✗ TypeScript errors in pops-shell${NC}"
         exit 1
     fi
     echo -e "${GREEN}✓ TypeScript passed${NC}"
@@ -227,7 +227,7 @@ if (cd infra/ansible && ansible-playbook playbooks/deploy.yml $ANSIBLE_ARGS); th
 
 Deployed services:
 - pops-api: $(cd apps/pops-api && git log -1 --pretty=format:'%h %s')
-- pops-pwa: $(cd apps/pops-pwa && git log -1 --pretty=format:'%h %s')
+- pops-shell: $(cd apps/pops-shell && git log -1 --pretty=format:'%h %s')
 
 Deployed at: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
 Deployed to: pops.local (N95)"
@@ -245,7 +245,7 @@ Deployed to: pops.local (N95)"
         echo ""
         echo "Services deployed:"
         echo "  • Finance API:    http://localhost:3000"
-        echo "  • PWA:            https://pops.jmiranda.dev"
+        echo "  • Shell:          https://pops.jmiranda.dev"
         echo "  • Metabase:       http://localhost:3001"
         echo ""
         echo "Version: $NEXT_VERSION"

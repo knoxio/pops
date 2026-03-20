@@ -180,7 +180,7 @@ ssh -p 2222 pops@pops.local
 # View service logs
 cd /opt/pops
 docker compose logs -f pops-api
-docker compose logs -f pops-pwa
+docker compose logs -f pops-shell
 docker compose logs -f metabase
 
 # Check service health
@@ -216,7 +216,7 @@ Each service builds separately:
    - Docker image build
    - ~50MB final image
 
-2. **pops-pwa**:
+2. **pops-shell**:
    - Vite production build
    - Static assets optimized
    - Served via nginx

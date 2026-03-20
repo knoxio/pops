@@ -4,7 +4,7 @@
 
 ingress:
   - hostname: {{ cf_subdomain_pwa }}.{{ domain }}
-    service: http://pops-pwa:80
+    service: http://pops-shell:80
 
   - hostname: {{ cf_subdomain_api }}.{{ domain }}
     service: http://pops-api:3000

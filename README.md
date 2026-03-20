@@ -49,7 +49,7 @@ See `docs/DEPLOYMENT_SETUP.md` for setup instructions.
 │  metabase ────── Dashboards & analytics                 │
 │  moltbot ─────── AI assistant (Telegram + finance)      │
 │  paperless-ngx ─ Receipt archive + OCR                  │
-│  pops-pwa ────── React PWA (budget, wishlist, txns)     │
+│  pops-shell ──── React PWA (budget, wishlist, txns)     │
 └─────────────────────────────────────────────────────────┘
                          │
 ┌────────────────────────┴────────────────────────────────┐
@@ -108,7 +108,7 @@ See `docs/DEPLOYMENT_SETUP.md` for setup instructions.
 
 ### N95 Mini PC (POPS Server)
 - **OS:** Ubuntu 24.04 (Docker Compose, provisioned via Ansible)
-- **Services:** pops-api, metabase, moltbot, paperless-ngx, pops-pwa
+- **Services:** pops-api, metabase, moltbot, paperless-ngx, pops-shell
 - **Exposure:** Cloudflare Tunnel (free, zero port forwarding)
 - **URLs:** `pops.jmiranda.dev` (PWA), `pops-api.jmiranda.dev` (API), `pops-metabase.jmiranda.dev`, `pops-paperless.jmiranda.dev`
 
@@ -193,7 +193,7 @@ source ~/.zshrc
 ```bash
 mise dev              # Run all dev servers
 mise dev:api          # Run pops-api only
-mise dev:pwa          # Run pops-pwa only
+mise dev:shell        # Run pops-shell only
 
 mise test             # Run all tests
 mise typecheck        # Type check all packages
@@ -221,10 +221,10 @@ POPS uses Playwright for end-to-end tests with two modes:
 
 ```bash
 # Run all E2E tests
-cd apps/pops-pwa && pnpm test:e2e
+cd apps/pops-shell && pnpm test:e2e
 
 # Run in UI mode (interactive)
-cd apps/pops-pwa && pnpm test:e2e --ui
+cd apps/pops-shell && pnpm test:e2e --ui
 ```
 
 The `globalSetup` creates an isolated `e2e` named environment (seeded SQLite DB) before the run. Tests route through `?env=e2e` so they hit real data without touching production. `globalTeardown` deletes the env after the run.

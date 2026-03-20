@@ -21,9 +21,9 @@ pnpm install
 pnpm dev
 """
 
-[tasks."dev:pwa"]
-description = "Run pops-pwa Vite dev server"
-dir = "apps/pops-pwa"
+[tasks."dev:shell"]
+description = "Run pops-shell Vite dev server"
+dir = "apps/pops-shell"
 run = """
 pnpm install
 pnpm dev
@@ -34,8 +34,8 @@ description = "Run all dev servers (using turbo)"
 run = "pnpm dev"
 
 [tasks."dev:storybook"]
-description = "Run Storybook for pops-pwa"
-dir = "apps/pops-pwa"
+description = "Run Storybook for pops-shell"
+dir = "apps/pops-shell"
 run = "pnpm storybook"
 
 # ============================================================================
@@ -51,9 +51,9 @@ description = "Type check pops-api"
 dir = "apps/pops-api"
 run = "pnpm typecheck"
 
-[tasks."typecheck:pwa"]
-description = "Type check pops-pwa"
-dir = "apps/pops-pwa"
+[tasks."typecheck:shell"]
+description = "Type check pops-shell"
+dir = "apps/pops-shell"
 run = "pnpm typecheck"
 
 [tasks.test]
@@ -69,9 +69,9 @@ description = "Run pops-api tests"
 dir = "apps/pops-api"
 run = "pnpm test"
 
-[tasks."test:pwa"]
-description = "Run pops-pwa tests"
-dir = "apps/pops-pwa"
+[tasks."test:shell"]
+description = "Run pops-shell tests"
+dir = "apps/pops-shell"
 run = "pnpm test"
 
 [tasks.lint]

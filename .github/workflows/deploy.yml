@@ -30,12 +30,12 @@ jobs:
       - name: Type check all services
         run: |
           cd apps/pops-api && pnpm typecheck
-          cd ../pops-pwa && pnpm typecheck
+          cd ../pops-shell && pnpm typecheck
 
       - name: Lint all services
         run: |
           cd apps/pops-api && pnpm lint
-          cd ../pops-pwa && pnpm lint
+          cd ../pops-shell && pnpm lint
 
       - name: Test pops-api
         run: cd apps/pops-api && pnpm test
@@ -43,7 +43,7 @@ jobs:
       - name: Build all services
         run: |
           cd apps/pops-api && pnpm build
-          cd ../pops-pwa && pnpm build
+          cd ../pops-shell && pnpm build
 
   # Deploy to N95 server
   # Note: This job expects a self-hosted runner on the N95 server

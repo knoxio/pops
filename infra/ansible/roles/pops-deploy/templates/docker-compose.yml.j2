@@ -31,11 +31,11 @@ services:
       timeout: 5s
       retries: 3
 
-  pops-pwa:
+  pops-shell:
     build:
       context: {{ docker_compose_dir }}/repo
-      dockerfile: apps/pops-pwa/Dockerfile
-    container_name: pops-pwa
+      dockerfile: apps/pops-shell/Dockerfile
+    container_name: pops-shell
     restart: unless-stopped
     networks:
       - frontend
