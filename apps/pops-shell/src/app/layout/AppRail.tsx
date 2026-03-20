@@ -11,11 +11,20 @@ import { iconMap } from "@/app/nav/icon-map";
 import { matchesAtBoundary } from "@/app/nav/path-utils";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useUIStore } from "@/store/uiStore";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@pops/ui";
+import { Tooltip, TooltipContent, TooltipTrigger, cn } from "@pops/ui";
 
 interface AppRailProps {
   className?: string;
 }
+
+const colorMap = {
+  emerald: "bg-emerald-500",
+  indigo: "bg-indigo-500",
+  amber: "bg-amber-500",
+  rose: "bg-rose-500",
+  sky: "bg-sky-500",
+  violet: "bg-violet-500",
+} as const;
 
 export function AppRail({ className }: AppRailProps) {
   const navigate = useNavigate();
@@ -26,13 +35,11 @@ export function AppRail({ className }: AppRailProps) {
   if (!railOpen) {
     return (
       <div
-        className={[
+        className={cn(
           "w-0 md:w-10 shrink-0 bg-card border-r border-border",
           "hidden md:flex flex-col items-center pt-2",
-          className,
-        ]
-          .filter(Boolean)
-          .join(" ")}
+          className
+        )}
       >
         <button
           onClick={toggleRail}
@@ -47,47 +54,46 @@ export function AppRail({ className }: AppRailProps) {
 
   return (
     <div
-      className={[
+      className={cn(
         "w-16 shrink-0 bg-card border-r border-border",
-        "hidden md:flex flex-col items-center py-2 gap-2",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
+        "hidden md:flex flex-col py-2 gap-2",
+        className
+      )}
     >
       {registeredApps.map((app) => {
         const isActive = matchesAtBoundary(location.pathname, app.basePath);
         const Icon = iconMap[app.icon];
+        const appColor = app.color ? colorMap[app.color] : "bg-primary";
 
         return (
           <Tooltip key={app.id}>
             <TooltipTrigger asChild>
               <button
                 onClick={() => navigate(app.basePath)}
-                className="relative min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-colors"
+                className="relative w-full flex items-center justify-center py-1 transition-colors group"
                 aria-label={app.label}
                 aria-current={isActive ? "page" : undefined}
               >
-                {/* Active indicator — left-edge pill */}
+                {/* Active indicator — absolute left edge of rail */}
                 <span
-                  className={[
-                    "absolute left-0 top-1/2 -translate-y-1/2 w-1 rounded-r-full transition-all",
-                    isActive ? "h-6 bg-primary" : "h-0 bg-transparent",
-                  ].join(" ")}
+                  className={cn(
+                    "absolute left-0 top-1/2 -translate-y-1/2 w-1 rounded-r-full transition-all duration-300",
+                    isActive ? cn("h-8", appColor) : "h-0 bg-transparent group-hover:h-4 group-hover:bg-muted-foreground/40"
+                  )}
                 />
 
                 <span
-                  className={[
-                    "flex items-center justify-center w-10 h-10 rounded-xl transition-colors",
+                  className={cn(
+                    "flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300",
                     isActive
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                  ].join(" ")}
+                      ? cn(appColor, "text-white shadow-lg shadow-black/20 rounded-xl scale-100")
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground hover:rounded-xl scale-95 hover:scale-100"
+                  )}
                 >
                   {Icon ? (
-                    <Icon className="h-5 w-5" />
+                    <Icon className="h-6 w-6" />
                   ) : (
-                    <span className="text-sm font-semibold">
+                    <span className="text-lg font-semibold">
                       {app.label[0]}
                     </span>
                   )}
@@ -100,7 +106,7 @@ export function AppRail({ className }: AppRailProps) {
       })}
 
       {/* Collapse toggle at bottom */}
-      <div className="mt-auto">
+      <div className="mt-auto flex justify-center">
         <Tooltip>
           <TooltipTrigger asChild>
             <button
