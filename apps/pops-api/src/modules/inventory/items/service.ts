@@ -1,12 +1,39 @@
 /**
- * Inventory service — CRUD operations against SQLite.
+ * Inventory service — CRUD operations using Drizzle ORM.
  * SQLite is the source of truth. All operations are local.
- * All SQL uses parameterized queries (no string interpolation).
  */
 import crypto from "crypto";
-import { getDb } from "../../../db.js";
+import { eq, like, count, and, sql } from "drizzle-orm";
+import { getDrizzle } from "../../../db.js";
+import { homeInventory } from "../../../db/schema/inventory.js";
 import { NotFoundError } from "../../../shared/errors.js";
 import type { InventoryRow, CreateInventoryItemInput, UpdateInventoryItemInput } from "./types.js";
+
+/** Map a Drizzle result row to the snake_case InventoryRow interface. */
+function toRow(row: typeof homeInventory.$inferSelect): InventoryRow {
+  return {
+    id: row.id,
+    notion_id: row.notionId,
+    item_name: row.itemName,
+    brand: row.brand,
+    model: row.model,
+    item_id: row.itemId,
+    room: row.room,
+    location: row.location,
+    type: row.type,
+    condition: row.condition,
+    in_use: row.inUse ?? 0,
+    deductible: row.deductible ?? 0,
+    purchase_date: row.purchaseDate,
+    warranty_expires: row.warrantyExpires,
+    replacement_value: row.replacementValue,
+    resale_value: row.resaleValue,
+    purchase_transaction_id: row.purchaseTransactionId,
+    purchased_from_id: row.purchasedFromId,
+    purchased_from_name: row.purchasedFromName,
+    last_edited_time: row.lastEditedTime,
+  };
+}
 
 /** Count + rows for a paginated list. */
 export interface InventoryListResult {
@@ -25,57 +52,59 @@ export function listInventoryItems(
   limit: number,
   offset: number
 ): InventoryListResult {
-  const db = getDb();
-  const conditions: string[] = [];
-  const params: Record<string, string | number> = {};
+  const db = getDrizzle();
 
+  let query = db.select().from(homeInventory).$dynamic();
+  let countQuery = db.select({ total: count() }).from(homeInventory).$dynamic();
+
+  const conditions = [];
   if (search) {
-    conditions.push("item_name LIKE @search");
-    params["search"] = `%${search}%`;
+    conditions.push(like(homeInventory.itemName, `%${search}%`));
   }
   if (room) {
-    conditions.push("room = @room");
-    params["room"] = room;
+    conditions.push(eq(homeInventory.room, room));
   }
   if (type) {
-    conditions.push("type = @type");
-    params["type"] = type;
+    conditions.push(eq(homeInventory.type, type));
   }
   if (condition) {
-    conditions.push("condition = @condition");
-    params["condition"] = condition;
+    conditions.push(eq(homeInventory.condition, condition));
   }
   if (inUse !== undefined) {
-    conditions.push("in_use = @inUse");
-    params["inUse"] = inUse ? 1 : 0;
+    conditions.push(eq(homeInventory.inUse, inUse ? 1 : 0));
   }
   if (deductible !== undefined) {
-    conditions.push("deductible = @deductible");
-    params["deductible"] = deductible ? 1 : 0;
+    conditions.push(eq(homeInventory.deductible, deductible ? 1 : 0));
   }
 
-  const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  if (conditions.length > 0) {
+    const where = conditions.length === 1 ? conditions[0] : and(...conditions);
+    query = query.where(where);
+    countQuery = countQuery.where(where);
+  }
 
-  const rows = db
-    .prepare(`SELECT * FROM home_inventory ${where} ORDER BY item_name LIMIT @limit OFFSET @offset`)
-    .all({ ...params, limit, offset }) as InventoryRow[];
+  const rows = query
+    .orderBy(homeInventory.itemName)
+    .limit(limit)
+    .offset(offset)
+    .all();
 
-  const countRow = db
-    .prepare(`SELECT COUNT(*) as total FROM home_inventory ${where}`)
-    .get(params) as { total: number };
+  const [countResult] = countQuery.all();
 
-  return { rows, total: countRow.total };
+  return { rows: rows.map(toRow), total: countResult.total };
 }
 
 /** Get a single inventory item by id. Throws NotFoundError if missing. */
 export function getInventoryItem(id: string): InventoryRow {
-  const db = getDb();
-  const row = db.prepare("SELECT * FROM home_inventory WHERE id = ?").get(id) as
-    | InventoryRow
-    | undefined;
+  const db = getDrizzle();
+  const [row] = db
+    .select()
+    .from(homeInventory)
+    .where(eq(homeInventory.id, id))
+    .all();
 
   if (!row) throw new NotFoundError("Inventory item", id);
-  return row;
+  return toRow(row);
 }
 
 /**
@@ -83,44 +112,33 @@ export function getInventoryItem(id: string): InventoryRow {
  * Generates a local UUID and inserts directly into SQLite.
  */
 export function createInventoryItem(input: CreateInventoryItemInput): InventoryRow {
-  const db = getDb();
+  const db = getDrizzle();
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
 
-  db.prepare(
-    `
-    INSERT INTO home_inventory (
-      id, item_name, brand, model, item_id, room, location, type, condition,
-      in_use, deductible, purchase_date, warranty_expires, replacement_value, resale_value,
-      purchase_transaction_id, purchased_from_id, purchased_from_name, last_edited_time
-    )
-    VALUES (
-      @id, @itemName, @brand, @model, @itemId, @room, @location, @type, @condition,
-      @inUse, @deductible, @purchaseDate, @warrantyExpires, @replacementValue, @resaleValue,
-      @purchaseTransactionId, @purchasedFromId, @purchasedFromName, @lastEditedTime
-    )
-  `
-  ).run({
-    id,
-    itemName: input.itemName,
-    brand: input.brand ?? null,
-    model: input.model ?? null,
-    itemId: input.itemId ?? null,
-    room: input.room ?? null,
-    location: input.location ?? null,
-    type: input.type ?? null,
-    condition: input.condition ?? null,
-    inUse: input.inUse ? 1 : 0,
-    deductible: input.deductible ? 1 : 0,
-    purchaseDate: input.purchaseDate ?? null,
-    warrantyExpires: input.warrantyExpires ?? null,
-    replacementValue: input.replacementValue ?? null,
-    resaleValue: input.resaleValue ?? null,
-    purchaseTransactionId: input.purchaseTransactionId ?? null,
-    purchasedFromId: input.purchasedFromId ?? null,
-    purchasedFromName: input.purchasedFromName ?? null,
-    lastEditedTime: now,
-  });
+  db.insert(homeInventory)
+    .values({
+      id,
+      itemName: input.itemName,
+      brand: input.brand ?? null,
+      model: input.model ?? null,
+      itemId: input.itemId ?? null,
+      room: input.room ?? null,
+      location: input.location ?? null,
+      type: input.type ?? null,
+      condition: input.condition ?? null,
+      inUse: input.inUse ? 1 : 0,
+      deductible: input.deductible ? 1 : 0,
+      purchaseDate: input.purchaseDate ?? null,
+      warrantyExpires: input.warrantyExpires ?? null,
+      replacementValue: input.replacementValue ?? null,
+      resaleValue: input.resaleValue ?? null,
+      purchaseTransactionId: input.purchaseTransactionId ?? null,
+      purchasedFromId: input.purchasedFromId ?? null,
+      purchasedFromName: input.purchasedFromName ?? null,
+      lastEditedTime: now,
+    })
+    .run();
 
   return getInventoryItem(id);
 }
@@ -133,90 +151,86 @@ export function updateInventoryItem(
   id: string,
   input: UpdateInventoryItemInput
 ): InventoryRow {
-  const db = getDb();
+  const db = getDrizzle();
 
   // Verify it exists first
   getInventoryItem(id);
 
-  const fields: string[] = [];
-  const params: Record<string, string | number | null> = { id };
+  const updates: Partial<typeof homeInventory.$inferInsert> = {};
+  let hasUpdates = false;
 
   if (input.itemName !== undefined) {
-    fields.push("item_name = @itemName");
-    params["itemName"] = input.itemName;
+    updates.itemName = input.itemName;
+    hasUpdates = true;
   }
   if (input.brand !== undefined) {
-    fields.push("brand = @brand");
-    params["brand"] = input.brand ?? null;
+    updates.brand = input.brand ?? null;
+    hasUpdates = true;
   }
   if (input.model !== undefined) {
-    fields.push("model = @model");
-    params["model"] = input.model ?? null;
+    updates.model = input.model ?? null;
+    hasUpdates = true;
   }
   if (input.itemId !== undefined) {
-    fields.push("item_id = @itemId");
-    params["itemId"] = input.itemId ?? null;
+    updates.itemId = input.itemId ?? null;
+    hasUpdates = true;
   }
   if (input.room !== undefined) {
-    fields.push("room = @room");
-    params["room"] = input.room ?? null;
+    updates.room = input.room ?? null;
+    hasUpdates = true;
   }
   if (input.location !== undefined) {
-    fields.push("location = @location");
-    params["location"] = input.location ?? null;
+    updates.location = input.location ?? null;
+    hasUpdates = true;
   }
   if (input.type !== undefined) {
-    fields.push("type = @type");
-    params["type"] = input.type ?? null;
+    updates.type = input.type ?? null;
+    hasUpdates = true;
   }
   if (input.condition !== undefined) {
-    fields.push("condition = @condition");
-    params["condition"] = input.condition ?? null;
+    updates.condition = input.condition ?? null;
+    hasUpdates = true;
   }
   if (input.inUse !== undefined) {
-    fields.push("in_use = @inUse");
-    params["inUse"] = input.inUse ? 1 : 0;
+    updates.inUse = input.inUse ? 1 : 0;
+    hasUpdates = true;
   }
   if (input.deductible !== undefined) {
-    fields.push("deductible = @deductible");
-    params["deductible"] = input.deductible ? 1 : 0;
+    updates.deductible = input.deductible ? 1 : 0;
+    hasUpdates = true;
   }
   if (input.purchaseDate !== undefined) {
-    fields.push("purchase_date = @purchaseDate");
-    params["purchaseDate"] = input.purchaseDate ?? null;
+    updates.purchaseDate = input.purchaseDate ?? null;
+    hasUpdates = true;
   }
   if (input.warrantyExpires !== undefined) {
-    fields.push("warranty_expires = @warrantyExpires");
-    params["warrantyExpires"] = input.warrantyExpires ?? null;
+    updates.warrantyExpires = input.warrantyExpires ?? null;
+    hasUpdates = true;
   }
   if (input.replacementValue !== undefined) {
-    fields.push("replacement_value = @replacementValue");
-    params["replacementValue"] = input.replacementValue ?? null;
+    updates.replacementValue = input.replacementValue ?? null;
+    hasUpdates = true;
   }
   if (input.resaleValue !== undefined) {
-    fields.push("resale_value = @resaleValue");
-    params["resaleValue"] = input.resaleValue ?? null;
+    updates.resaleValue = input.resaleValue ?? null;
+    hasUpdates = true;
   }
   if (input.purchaseTransactionId !== undefined) {
-    fields.push("purchase_transaction_id = @purchaseTransactionId");
-    params["purchaseTransactionId"] = input.purchaseTransactionId ?? null;
+    updates.purchaseTransactionId = input.purchaseTransactionId ?? null;
+    hasUpdates = true;
   }
   if (input.purchasedFromId !== undefined) {
-    fields.push("purchased_from_id = @purchasedFromId");
-    params["purchasedFromId"] = input.purchasedFromId ?? null;
+    updates.purchasedFromId = input.purchasedFromId ?? null;
+    hasUpdates = true;
   }
   if (input.purchasedFromName !== undefined) {
-    fields.push("purchased_from_name = @purchasedFromName");
-    params["purchasedFromName"] = input.purchasedFromName ?? null;
+    updates.purchasedFromName = input.purchasedFromName ?? null;
+    hasUpdates = true;
   }
 
-  if (fields.length > 0) {
-    fields.push("last_edited_time = @lastEditedTime");
-    params["lastEditedTime"] = new Date().toISOString();
-
-    db.prepare(`UPDATE home_inventory SET ${fields.join(", ")} WHERE id = @id`).run(
-      params
-    );
+  if (hasUpdates) {
+    updates.lastEditedTime = new Date().toISOString();
+    db.update(homeInventory).set(updates).where(eq(homeInventory.id, id)).run();
   }
 
   return getInventoryItem(id);
@@ -227,11 +241,10 @@ export function updateInventoryItem(
  * Deletes directly from SQLite.
  */
 export function deleteInventoryItem(id: string): void {
-  const db = getDb();
-
   // Verify it exists first
   getInventoryItem(id);
 
-  const result = db.prepare("DELETE FROM home_inventory WHERE id = ?").run(id);
+  const db = getDrizzle();
+  const result = db.delete(homeInventory).where(eq(homeInventory.id, id)).run();
   if (result.changes === 0) throw new NotFoundError("Inventory item", id);
 }
