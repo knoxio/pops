@@ -1,12 +1,12 @@
 import { useSearchParams, Link } from "react-router";
 import { Badge, Skeleton } from "@pops/ui";
 import { useEffect } from "react";
-import { MediaGrid } from "@/components/MediaGrid";
+import { MediaGrid } from "../components/MediaGrid";
 import {
   useMediaLibrary,
   type MediaType,
   type SortOption,
-} from "@/hooks/useMediaLibrary";
+} from "../hooks/useMediaLibrary";
 
 const TYPE_OPTIONS: { value: MediaType; label: string }[] = [
   { value: "all", label: "All" },
@@ -115,11 +115,13 @@ export function LibraryPage() {
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Type toggle */}
-        <div className="flex rounded-lg border p-0.5">
+        <div className="flex rounded-lg border p-0.5" role="group" aria-label="Filter by type">
           {TYPE_OPTIONS.map((opt) => (
             <button
               key={opt.value}
+              type="button"
               onClick={() => setTypeFilter(opt.value)}
+              aria-pressed={typeFilter === opt.value}
               className={`px-3 py-1 text-sm rounded-md transition-colors ${
                 typeFilter === opt.value
                   ? "bg-primary text-primary-foreground"
@@ -136,6 +138,7 @@ export function LibraryPage() {
           <select
             value={genreFilter ?? ""}
             onChange={(e) => setGenreFilter(e.target.value || null)}
+            aria-label="Filter by genre"
             className="h-8 rounded-md border bg-background px-2 text-sm"
           >
             <option value="">All Genres</option>
@@ -151,6 +154,7 @@ export function LibraryPage() {
         <select
           value={sortBy}
           onChange={(e) => setSortBy(e.target.value as SortOption)}
+          aria-label="Sort by"
           className="h-8 rounded-md border bg-background px-2 text-sm"
         >
           {SORT_OPTIONS.map((opt) => (

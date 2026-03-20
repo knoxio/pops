@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { trpc } from "@/lib/trpc";
+import { trpc } from "../lib/trpc";
 
 export type MediaType = "all" | "movie" | "tv";
 export type SortOption = "title" | "dateAdded" | "releaseDate" | "rating";
@@ -78,7 +78,7 @@ export function useMediaLibrary() {
       items = items.filter((item) => item.genres.includes(genreFilter));
     }
 
-    items.sort((a, b) => {
+    return [...items].sort((a, b) => {
       switch (sortBy) {
         case "title":
           return a.title.localeCompare(b.title);
@@ -92,8 +92,6 @@ export function useMediaLibrary() {
           return 0;
       }
     });
-
-    return items;
   }, [allItems, typeFilter, genreFilter, sortBy]);
 
   return {
