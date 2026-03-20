@@ -8,3 +8,5 @@ export { aiUsage } from "./ai-usage.js";
 export { environments } from "./environments.js";
 export { movies } from "./movies.js";
 export { tvShows } from "./tv-shows.js";
+export { seasons } from "./seasons.js";
+export { episodes } from "./episodes.js";
