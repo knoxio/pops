@@ -1,0 +1,44 @@
+{
+  "name": "@pops/shell",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src --ext .ts,.tsx",
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "format:fix": "prettier --write \"src/**/*.{ts,tsx,css}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\"",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@pops/finance-api": "workspace:*",
+    "@pops/ui": "workspace:*",
+    "@tanstack/react-query": "5.90.20",
+    "@tailwindcss/vite": "4.0.14",
+    "@trpc/client": "11.13.4",
+    "@trpc/react-query": "11.13.4",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router": "^7.13.1",
+    "react-router-dom": "^7.1.0",
+    "sonner": "^2.0.7",
+    "tailwindcss": "4.0.14",
+    "zustand": "5.0.2"
+  },
+  "devDependencies": {
+    "@tanstack/react-query-devtools": "^5.91.3",
+    "@types/node": "^25.2.2",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.1.0",
+    "vitest": "^3.0.0"
+  }
+}
