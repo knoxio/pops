@@ -7,9 +7,8 @@
  */
 import { count, countDistinct, desc, eq, and, inArray, type SQL } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
-import { watchHistory, episodes, seasons } from "@pops/db-types";
+import { watchHistory, mediaWatchlist, episodes, seasons } from "@pops/db-types";
 import { NotFoundError } from "../../../shared/errors.js";
-import { removeByMedia } from "../watchlist/service.js";
 import type {
   WatchHistoryRow,
   LogWatchInput,
@@ -107,7 +106,14 @@ export function logWatch(input: LogWatchInput): WatchHistoryRow {
     // Auto-remove from watchlist (PRD-011 R6)
     if (completed === 1) {
       if (input.mediaType === "movie") {
-        removeByMedia("movie", input.mediaId);
+        tx.delete(mediaWatchlist)
+          .where(
+            and(
+              eq(mediaWatchlist.mediaType, "movie"),
+              eq(mediaWatchlist.mediaId, input.mediaId),
+            ),
+          )
+          .run();
       } else if (input.mediaType === "episode") {
         autoRemoveTvShowIfFullyWatched(tx, input.mediaId);
       }
@@ -170,7 +176,14 @@ function autoRemoveTvShowIfFullyWatched(
     .all();
 
   if (watched >= showEpisodeIds.length) {
-    removeByMedia("tv_show", tvShowId);
+    tx.delete(mediaWatchlist)
+      .where(
+        and(
+          eq(mediaWatchlist.mediaType, "tv_show"),
+          eq(mediaWatchlist.mediaId, tvShowId),
+        ),
+      )
+      .run();
   }
 }
 
