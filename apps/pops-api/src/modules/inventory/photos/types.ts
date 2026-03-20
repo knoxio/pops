@@ -44,7 +44,7 @@ export type UpdatePhotoInput = z.infer<typeof UpdatePhotoSchema>;
 /** Zod schema for listing photos for an item. */
 export const PhotoQuerySchema = z.object({
   itemId: z.string().min(1, "Item ID is required"),
-  limit: z.coerce.number().positive().optional(),
+  limit: z.coerce.number().positive().max(500).optional(),
   offset: z.coerce.number().nonnegative().optional(),
 });
 export type PhotoQuery = z.infer<typeof PhotoQuerySchema>;
