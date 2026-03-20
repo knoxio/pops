@@ -3,7 +3,7 @@
  * SQLite is the source of truth. All operations are local.
  */
 import crypto from "crypto";
-import { eq, like, count, and, sql } from "drizzle-orm";
+import { eq, like, count, and } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
 import { homeInventory } from "../../../db/schema/inventory.js";
 import { NotFoundError } from "../../../shared/errors.js";
