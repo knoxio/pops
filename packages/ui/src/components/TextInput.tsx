@@ -199,7 +199,7 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
           <button
             type="button"
             onClick={handleClear}
-            className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+            className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm p-1"
             aria-label="Clear input"
             tabIndex={-1}
           >

@@ -2,8 +2,9 @@
  * DataTableFilters - Filter components for DataTable
  * Supports text, select, multi-select, date range, and number range filters
  */
+import { useState } from "react";
 import type { Column, Row, Table } from "@tanstack/react-table";
-import { X } from "lucide-react";
+import { X, SlidersHorizontal } from "lucide-react";
 import { TextInput } from "./TextInput";
 import { Select, type SelectOption } from "./Select";
 import { Button } from "./Button";
@@ -161,6 +162,7 @@ interface FilterBarProps {
 }
 
 export function FilterBar({ filters, table, onClearAll }: FilterBarProps) {
+  const [mobileOpen, setMobileOpen] = useState(false);
   const activeFiltersCount = table.getState().columnFilters.filter((f) => {
     const value = f.value;
     if (Array.isArray(value)) {
@@ -177,20 +179,35 @@ export function FilterBar({ filters, table, onClearAll }: FilterBarProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium">Filters</h3>
+        {/* Mobile: toggle button; Desktop: heading */}
+        <Button
+          variant="outline"
+          size="default"
+          onClick={() => setMobileOpen((prev) => !prev)}
+          className="md:hidden"
+        >
+          <SlidersHorizontal className="h-4 w-4 mr-2" />
+          Filters
+          {activeFiltersCount > 0 && (
+            <span className="ml-1.5 rounded-full bg-primary text-primary-foreground text-xs px-1.5 py-0.5">
+              {activeFiltersCount}
+            </span>
+          )}
+        </Button>
+        <h3 className="text-sm font-medium hidden md:block">Filters</h3>
         {activeFiltersCount > 0 && (
           <Button
             variant="ghost"
-            size="sm"
+            size="default"
             onClick={handleClearAll}
-            className="h-8 px-2 lg:px-3"
+            className="px-3"
           >
             Clear all
             <X className="ml-2 h-4 w-4" />
           </Button>
         )}
       </div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <div className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 ${mobileOpen ? "grid" : "hidden"} md:grid`}>
         {filters.map((filter) => {
           const column = table.getColumn(filter.id);
           if (!column) return null;

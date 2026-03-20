@@ -162,7 +162,7 @@ export function TagEditor({
       <PopoverTrigger asChild>
         <button
           className={cn(
-            "flex flex-wrap gap-1 min-h-6 text-left w-full rounded px-1 py-0.5 transition-colors",
+            "flex flex-wrap gap-1 min-h-10 text-left w-full rounded px-2 py-1.5 transition-colors items-center",
             disabled
               ? "cursor-default"
               : "hover:bg-accent/50 cursor-pointer"
@@ -206,7 +206,7 @@ export function TagEditor({
 
           {/* Current tags as removable chips */}
           {tags.length > 0 && (
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-2">
               {tags.map((tag) => (
                 <Chip key={tag} size="sm" removable onRemove={() => removeTag(tag)}>
                   {tag}
@@ -229,13 +229,13 @@ export function TagEditor({
 
           {/* Autocomplete suggestions */}
           {filteredSuggestions.length > 0 && (
-            <div className="flex flex-wrap gap-1">
+            <div className="flex flex-wrap gap-2">
               {filteredSuggestions.slice(0, 8).map((tag) => (
                 <button
                   key={tag}
                   onClick={() => addTag(tag)}
                   className={cn(
-                    "text-xs px-2 py-0.5 border border-border rounded-full",
+                    "text-xs px-3 py-2 border border-border rounded-full",
                     "hover:bg-accent hover:border-accent-foreground/20 transition-colors"
                   )}
                 >
@@ -251,7 +251,7 @@ export function TagEditor({
               <button
                 onClick={handleSuggest}
                 disabled={isSuggesting}
-                className="text-xs text-muted-foreground hover:text-foreground underline disabled:opacity-50"
+                className="text-xs text-muted-foreground hover:text-foreground underline disabled:opacity-50 py-2"
               >
                 {isSuggesting ? "Suggesting…" : "Suggest"}
               </button>
@@ -261,14 +261,14 @@ export function TagEditor({
             <div className="flex gap-2">
               <button
                 onClick={handleCancel}
-                className="text-xs px-2 py-1 border border-border rounded hover:bg-accent transition-colors"
+                className="text-xs px-3 py-2 border border-border rounded hover:bg-accent transition-colors"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="text-xs px-2 py-1 bg-primary text-primary-foreground rounded hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                className="text-xs px-3 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 disabled:opacity-50 transition-colors"
               >
                 {isSaving ? "Saving…" : "Save"}
               </button>

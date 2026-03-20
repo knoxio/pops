@@ -266,7 +266,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
             type="button"
             onClick={decrement}
             disabled={disabled || (min !== undefined && value <= min)}
-            className="flex-shrink-0 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors p-0.5"
+            className="flex-shrink-0 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors p-2"
             tabIndex={-1}
           >
             <ChevronDownIcon />
@@ -292,7 +292,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
             type="button"
             onClick={increment}
             disabled={disabled || (max !== undefined && value >= max)}
-            className="flex-shrink-0 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors p-0.5"
+            className="flex-shrink-0 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors p-2"
             tabIndex={-1}
           >
             <ChevronUpIcon />
