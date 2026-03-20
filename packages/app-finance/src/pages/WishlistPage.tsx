@@ -248,24 +248,24 @@ export function WishlistPage() {
       id: "actions",
       cell: ({ row }) => (
         <div className="text-right">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          <DropdownMenu
+            trigger={
               <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleEdit(row.original)}>
-                <Pencil className="mr-2 h-4 w-4" /> Edit
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem 
-                className="text-destructive focus:text-destructive"
-                onClick={() => setDeletingId(row.original.id)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" /> Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
+            }
+            align="end"
+          >
+            <DropdownMenuItem onClick={() => handleEdit(row.original)}>
+              <Pencil className="mr-2 h-4 w-4" /> Edit
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem 
+              className="text-destructive focus:text-destructive"
+              onClick={() => setDeletingId(row.original.id)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" /> Delete
+            </DropdownMenuItem>
           </DropdownMenu>
         </div>
       ),
@@ -359,6 +359,7 @@ export function WishlistPage() {
                   placeholder="0.00"
                   prefix="$"
                   {...form.register("targetAmount", { valueAsNumber: true })}
+                  error={form.formState.errors.targetAmount?.message}
                 />
                 <TextInput
                   type="number"
@@ -366,6 +367,7 @@ export function WishlistPage() {
                   placeholder="0.00"
                   prefix="$"
                   {...form.register("saved", { valueAsNumber: true })}
+                  error={form.formState.errors.saved?.message}
                 />
               </div>
               <div className="space-y-2">
@@ -377,8 +379,8 @@ export function WishlistPage() {
                     { label: "One Day", value: "One Day" },
                     { label: "Dreaming", value: "Dreaming" },
                   ]}
-                  value={form.watch("priority") || "Soon"}
-                  onValueChange={(val) => form.setValue("priority", val as any)}
+                  {...form.register("priority")}
+                  error={form.formState.errors.priority?.message}
                 />
               </div>
               <div className="space-y-2">
@@ -394,6 +396,7 @@ export function WishlistPage() {
                   label="Notes"
                   placeholder="Why do you want this?"
                   {...form.register("notes")}
+                  error={form.formState.errors.notes?.message}
                 />
               </div>
             </div>

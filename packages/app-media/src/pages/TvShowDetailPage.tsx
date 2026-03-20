@@ -110,9 +110,9 @@ export function TvShowDetailPage() {
     ? new Date(show.lastAirDate).getFullYear()
     : null;
 
-  const posterSrc = show.posterUrl;
-  const backdropSrc = show.backdropUrl;
-  const logoSrc = show.logoUrl;
+  const posterSrc = show.posterUrl ?? "";
+  const backdropSrc = show.backdropUrl ?? "";
+  const logoSrc = show.logoUrl ?? "";
 
   const totalEpisodes = show.numberOfEpisodes ?? 0;
 

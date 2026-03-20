@@ -50,17 +50,23 @@ function MediaCard({
     item.type === "movie"
       ? `/media/movies/${item.id}`
       : `/media/tv/${item.id}`;
-  const posterSrc = item.posterUrl;
+  const posterSrc = item.posterUrl ?? "";
 
   return (
     <Link to={href} className="group block outline-none">
       <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-muted transition-all duration-300 group-hover:shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] group-hover:ring-1 group-hover:ring-indigo-500/30 group-focus-visible:ring-2 group-focus-visible:ring-indigo-500">
-        <img
-          src={posterSrc}
-          alt={item.title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          loading="lazy"
-        />
+        {posterSrc ? (
+          <img
+            src={posterSrc}
+            alt={item.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-muted/50">
+            No Poster
+          </div>
+        )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <Badge
           variant="secondary"
