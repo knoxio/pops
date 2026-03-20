@@ -16,7 +16,7 @@ dist/
 *.db-wal
 *.db-shm
 *.csv
-!apps/finance-api/src/modules/imports/test-data/amex-sample.csv
+!apps/pops-api/src/modules/finance/imports/test-data/amex-sample.csv
 entity_lookup.json
 ai_entity_cache.json
 

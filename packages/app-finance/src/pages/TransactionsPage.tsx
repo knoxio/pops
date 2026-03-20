@@ -28,15 +28,15 @@ export function TransactionsPage() {
   const utils = trpc.useUtils();
 
   // Fetch transactions using tRPC
-  const { data, isLoading, error, refetch } = trpc.transactions.list.useQuery({
+  const { data, isLoading, error, refetch } = trpc.finance.transactions.list.useQuery({
     limit: 100,
   });
 
-  const { data: availableTags } = trpc.transactions.availableTags.useQuery();
+  const { data: availableTags } = trpc.finance.transactions.availableTags.useQuery();
 
-  const updateMutation = trpc.transactions.update.useMutation({
+  const updateMutation = trpc.finance.transactions.update.useMutation({
     onSuccess: () => {
-      void utils.transactions.list.invalidate();
+      void utils.finance.transactions.list.invalidate();
     },
   });
 
@@ -50,7 +50,7 @@ export function TransactionsPage() {
 
   const handleTagSuggest = useCallback(
     (description: string, entityId: string | null) => async () => {
-      const result = await utils.transactions.suggestTags.fetch({
+      const result = await utils.finance.transactions.suggestTags.fetch({
         description,
         entityId: entityId ?? null,
       });

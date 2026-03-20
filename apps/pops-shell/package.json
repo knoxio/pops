@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@pops/app-finance": "workspace:*",
-    "@pops/finance-api": "workspace:*",
+    "@pops/api": "workspace:*",
     "@pops/ui": "workspace:*",
     "lucide-react": "^0.563.0",
     "@tanstack/react-query": "5.90.20",

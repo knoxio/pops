@@ -7,7 +7,7 @@ ingress:
     service: http://pops-pwa:80
 
   - hostname: {{ cf_subdomain_api }}.{{ domain }}
-    service: http://pops-finance-api:3000
+    service: http://pops-api:3000
 
   - hostname: {{ cf_subdomain_metabase }}.{{ domain }}
     service: http://pops-metabase:3000

@@ -48,13 +48,13 @@ export function DashboardPage() {
     data: transactions,
     isLoading: transactionsLoading,
     error: transactionsError,
-  } = trpc.transactions.list.useQuery({
+  } = trpc.finance.transactions.list.useQuery({
     limit: 10,
   });
 
   // Fetch budgets
   const { data: budgets, isLoading: budgetsLoading } =
-    trpc.budgets.list.useQuery({
+    trpc.finance.budgets.list.useQuery({
       limit: 5,
     });
 
@@ -80,7 +80,7 @@ export function DashboardPage() {
           <AlertTitle>Unable to load dashboard</AlertTitle>
           <AlertDescription>
             <p className="mb-2">
-              The backend API is not responding. Make sure the finance-api
+              The backend API is not responding. Make sure the pops-api
               server is running.
             </p>
             <details className="mt-3">

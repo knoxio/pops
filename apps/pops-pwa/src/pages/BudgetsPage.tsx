@@ -20,7 +20,7 @@ interface Budget {
 }
 
 export function BudgetsPage() {
-  const { data, isLoading, error, refetch } = trpc.budgets.list.useQuery({
+  const { data, isLoading, error, refetch } = trpc.finance.budgets.list.useQuery({
     limit: 100,
   });
 

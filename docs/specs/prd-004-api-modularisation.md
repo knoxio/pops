@@ -8,7 +8,7 @@
 
 ## Problem Statement
 
-The backend is named `finance-api` and has a flat module structure — entities, transactions, budgets, inventory, ai-usage, and corrections all sit as siblings. As POPS expands to media, fitness, travel, etc., this structure won't convey which modules belong to which domain. Entities are currently finance-scoped but need to be platform-level.
+The backend is named `pops-api` and has a flat module structure — entities, transactions, budgets, inventory, ai-usage, and corrections all sit as siblings. As POPS expands to media, fitness, travel, etc., this structure won't convey which modules belong to which domain. Entities are currently finance-scoped but need to be platform-level.
 
 ## Goal
 
@@ -18,8 +18,8 @@ Rename to `pops-api`, restructure modules into domain groups, promote shared mod
 
 ### R1: Rename Package
 
-- `apps/finance-api/` → `apps/pops-api/`
-- `@pops/finance-api` → `@pops/api`
+- `apps/pops-api/` → `apps/pops-api/`
+- `@pops/api` → `@pops/api`
 - Update all references: shell's tRPC AppRouter import, pnpm workspace, Turbo, mise, Docker, nginx, Ansible, CLAUDE.md
 
 ### R2: Module Restructure
@@ -114,9 +114,9 @@ Enforced by convention (and PR review):
 
 ### R6: Infrastructure Updates
 
-- Docker image name: `finance-api` → `pops-api`
+- Docker image name: `pops-api` → `pops-api`
 - `docker-compose.yml`: service name, build context, image name
-- Ansible templates: any references to `finance-api`
+- Ansible templates: any references to `pops-api`
 - nginx proxy config: likely unchanged (proxies `/trpc` regardless of backend name)
 - mise tasks: `dev:api`, `test:api`, etc.
 - CLAUDE.md: all references
@@ -131,7 +131,7 @@ Enforced by convention (and PR review):
 
 ## Acceptance Criteria
 
-1. `apps/pops-api/` exists, `apps/finance-api/` deleted
+1. `apps/pops-api/` exists, `apps/pops-api/` deleted
 2. Modules structured into `core/`, `finance/`, `inventory/` groups
 3. Entities, ai-usage, corrections, envs in `core/`
 4. tRPC router composed as nested domain routers
@@ -141,7 +141,7 @@ Enforced by convention (and PR review):
 8. All E2E tests pass
 9. `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm test`, `pnpm build` all pass
 10. Docker, mise, Ansible, CLAUDE.md updated
-11. Zero references to `finance-api` remain (except git history)
+11. Zero references to `pops-api` remain (except git history)
 
 ## Edge Cases & Decisions
 
@@ -167,7 +167,7 @@ A: Check if Moltbot references the API by package name or by HTTP endpoint. If b
 
 **Acceptance criteria:**
 - `apps/pops-api/` exists with all source code
-- `apps/finance-api/` deleted
+- `apps/pops-api/` deleted
 - Modules in `core/`, `finance/`, `inventory/` groups
 - Package name is `@pops/api`
 - All internal imports resolve correctly
@@ -191,4 +191,4 @@ A: Check if Moltbot references the API by package name or by HTTP endpoint. If b
 - Ansible templates updated
 - CLAUDE.md updated
 - All E2E tests pass
-- Zero references to `finance-api` remain in repo
+- Zero references to `pops-api` remain in repo

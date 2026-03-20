@@ -17,7 +17,7 @@ import { TransactionCard } from "./TransactionCard";
 import { TransactionGroup } from "./TransactionGroup";
 import { EditableTransactionCard } from "./EditableTransactionCard";
 import { toast } from "sonner";
-import type { ConfirmedTransaction } from "@pops/finance-api/modules/imports";
+import type { ConfirmedTransaction } from "@pops/api/modules/finance/imports";
 import { groupTransactionsByEntity } from "../../lib/transaction-utils";
 
 type ViewMode = "list" | "grouped";
@@ -47,13 +47,13 @@ export function ReviewStep() {
     useState<ProcessedTransaction | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("grouped");
 
-  const { data: entities } = trpc.entities.list.useQuery({});
+  const { data: entities } = trpc.core.entities.list.useQuery({});
 
   const utils = trpc.useUtils();
-  const createEntityMutation = trpc.entities.create.useMutation({
+  const createEntityMutation = trpc.core.entities.create.useMutation({
     onSuccess: () => {
       // Refresh entities list
-      utils.entities.list.invalidate();
+      utils.core.entities.list.invalidate();
     },
   });
 
@@ -342,7 +342,7 @@ export function ReviewStep() {
   }, []);
 
   const createCorrectionMutation =
-    trpc.corrections.createOrUpdate.useMutation();
+    trpc.core.corrections.createOrUpdate.useMutation();
 
   const handleSaveEdit = useCallback(
     (

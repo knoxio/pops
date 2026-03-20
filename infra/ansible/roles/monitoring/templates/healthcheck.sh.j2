@@ -2,7 +2,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-SERVICES=("pops-finance-api" "pops-pwa" "pops-metabase" "pops-paperless" "pops-cloudflared" "pops-moltbot")
+SERVICES=("pops-api" "pops-pwa" "pops-metabase" "pops-paperless" "pops-cloudflared" "pops-moltbot")
 FAILED=()
 
 for svc in "${SERVICES[@]}"; do

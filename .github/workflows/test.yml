@@ -32,12 +32,12 @@ jobs:
 
       - name: Typecheck
         run: |
-          cd apps/finance-api
+          cd apps/pops-api
           pnpm typecheck
 
       - name: Run all backend tests
         run: |
-          cd apps/finance-api
+          cd apps/pops-api
           pnpm test --run
         env:
           # Tests use in-memory DB and mocked APIs - no real credentials needed
@@ -45,8 +45,8 @@ jobs:
 
       - name: Run imports module tests specifically
         run: |
-          cd apps/finance-api
-          pnpm test src/modules/imports --run --reporter=verbose
+          cd apps/pops-api
+          pnpm test src/modules/finance/imports --run --reporter=verbose
         env:
           CLAUDE_API_KEY: test-key
 

@@ -36,8 +36,8 @@ jobs:
           cd apps/pops-pwa
           npx playwright install --with-deps
 
-      - name: Initialize finance-api database
-        run: cd apps/finance-api && pnpm dev:init
+      - name: Initialize pops-api database
+        run: cd apps/pops-api && pnpm dev:init
         env:
           SQLITE_PATH: ./data/pops.db
 
@@ -47,12 +47,12 @@ jobs:
           pnpm test:e2e
         env:
           CI: true
-          # finance-api is started by Playwright's webServer config.
+          # pops-api is started by Playwright's webServer config.
           # These dummy values satisfy validation. Integration tests use named
           # envs (?env=e2e), which automatically skip external API calls —
           # no real network traffic is made during E2E tests.
           CLAUDE_API_KEY: test-dummy-key
-          # Path is relative to the API server's working directory (apps/finance-api)
+          # Path is relative to the API server's working directory (apps/pops-api)
           SQLITE_PATH: ./data/pops.db
 
       - name: Upload Playwright report

@@ -6,7 +6,7 @@ import { Button } from "@pops/ui";
 import type {
   ProcessImportOutput,
   ImportWarning,
-} from "@pops/finance-api/modules/imports";
+} from "@pops/api/modules/finance/imports";
 
 /**
  * Step 3: Process transactions (deduplicate and match entities)
@@ -22,7 +22,7 @@ export function ProcessingStep() {
   } = useImportStore();
   const [pollingEnabled, setPollingEnabled] = useState(false);
 
-  const processImportMutation = trpc.imports.processImport.useMutation({
+  const processImportMutation = trpc.finance.imports.processImport.useMutation({
     onSuccess: (data) => {
       setProcessSessionId(data.sessionId);
       setPollingEnabled(true);
@@ -33,7 +33,7 @@ export function ProcessingStep() {
   });
 
   // Poll for progress every 1 second when enabled
-  const progressQuery = trpc.imports.getImportProgress.useQuery(
+  const progressQuery = trpc.finance.imports.getImportProgress.useQuery(
     { sessionId: processSessionId ?? "" },
     {
       enabled: pollingEnabled && !!processSessionId,

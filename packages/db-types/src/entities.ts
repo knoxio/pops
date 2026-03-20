@@ -1,6 +1,6 @@
 /**
  * SQLite schema for entities table (snake_case columns).
- * Used by finance-api for entity types.
+ * Used by pops-api for entity types.
  */
 import { z } from "zod/v4";
 

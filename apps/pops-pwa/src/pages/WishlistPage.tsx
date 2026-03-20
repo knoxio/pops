@@ -23,7 +23,7 @@ interface WishlistItem {
 }
 
 export function WishlistPage() {
-  const { data, isLoading, error, refetch } = trpc.wishlist.list.useQuery({
+  const { data, isLoading, error, refetch } = trpc.finance.wishlist.list.useQuery({
     limit: 100,
   });
 

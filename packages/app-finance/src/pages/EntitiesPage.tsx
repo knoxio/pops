@@ -22,7 +22,7 @@ interface Entity {
 }
 
 export function EntitiesPage() {
-  const { data, isLoading, error, refetch } = trpc.entities.list.useQuery({
+  const { data, isLoading, error, refetch } = trpc.core.entities.list.useQuery({
     limit: 100,
   });
 

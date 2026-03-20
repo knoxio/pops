@@ -9,7 +9,7 @@ import {
 } from "@pops/ui";
 import { TransactionCard } from "./TransactionCard";
 import { EditableTransactionCard } from "./EditableTransactionCard";
-import type { ProcessedTransaction } from "@pops/finance-api/modules/imports";
+import type { ProcessedTransaction } from "@pops/api/modules/finance/imports";
 import type { TransactionGroup as TransactionGroupType } from "../../lib/transaction-utils";
 
 interface TransactionGroupProps {

@@ -1,0 +1,62 @@
+name: Finance API CI
+
+on:
+  pull_request:
+    paths:
+      - "apps/pops-api/**"
+      - "packages/db-types/**"
+      - ".github/workflows/pops-api-ci.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/pops-api/**"
+      - "packages/db-types/**"
+      - ".github/workflows/pops-api-ci.yml"
+
+jobs:
+  quality-checks:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared packages
+        run: cd packages/db-types && pnpm build
+
+      - name: Type check
+        run: cd apps/pops-api && pnpm typecheck
+
+      - name: Lint
+        run: cd apps/pops-api && pnpm lint
+
+      - name: Format check
+        run: cd apps/pops-api && pnpm format
+
+      - name: Run tests
+        run: cd apps/pops-api && pnpm test
+
+      - name: Build
+        run: cd apps/pops-api && pnpm build
+
+      - name: Upload build artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pops-api-build
+          path: apps/pops-api/dist
+          retention-days: 7

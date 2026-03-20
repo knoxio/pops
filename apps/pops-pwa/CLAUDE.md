@@ -41,7 +41,7 @@
 
 - **Never use `any`** — banned
 - **tRPC inference** — Types are automatically inferred from backend
-- **Import AppRouter type** from backend: `import type { AppRouter } from '@pops/finance-api'`
+- **Import AppRouter type** from backend: `import type { AppRouter } from '@pops/api'`
 - **Zod 3.x** — pinned across monorepo for tRPC compatibility
 
 ### Styling

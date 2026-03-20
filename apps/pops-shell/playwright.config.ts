@@ -63,7 +63,7 @@ export default defineConfig({
     {
       command: 'pnpm dev',
       url: 'http://localhost:3000/health',
-      cwd: '../finance-api',
+      cwd: '../pops-api',
       reuseExistingServer: !process.env.CI,
       timeout: 60000,
     },

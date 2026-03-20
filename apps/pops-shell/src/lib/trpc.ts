@@ -1,10 +1,10 @@
 /**
  * tRPC client configuration for the shell
- * Provides type-safe API access to the finance-api backend
+ * Provides type-safe API access to the pops-api backend
  */
 import { httpBatchLink } from "@trpc/client";
 import { createTRPCReact } from "@trpc/react-query";
-import type { AppRouter } from "@pops/finance-api";
+import type { AppRouter } from "@pops/api";
 
 /**
  * React Query hooks for tRPC

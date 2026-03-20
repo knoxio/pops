@@ -8,7 +8,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@pops/ui";
-import type { ProcessedTransaction } from "@pops/finance-api/modules/imports";
+import type { ProcessedTransaction } from "@pops/api/modules/finance/imports";
 
 interface EditableTransactionCardProps {
   transaction: ProcessedTransaction;

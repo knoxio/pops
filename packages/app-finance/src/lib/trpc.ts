@@ -1,7 +1,7 @@
 /**
  * tRPC client re-export for app-finance
  *
- * This creates the typed tRPC hooks for the finance-api backend.
+ * This creates the typed tRPC hooks for the pops-api backend.
  * The Provider is owned by the shell (apps/pops-shell) — this module
  * is used here so that page-level imports resolve via the @/ alias.
  *
@@ -9,6 +9,6 @@
  * to ensure a single React context is shared across packages.
  */
 import { createTRPCReact } from "@trpc/react-query";
-import type { AppRouter } from "@pops/finance-api";
+import type { AppRouter } from "@pops/api";
 
 export const trpc = createTRPCReact<AppRouter>();

@@ -9,7 +9,7 @@ import { defineConfig, devices } from '@playwright/test';
  *     The API webServer is still started but irrelevant for these tests.
  *
  *   Integration tests (*-integration.spec.ts):
- *     Real API calls route through Vite proxy → finance-api → 'e2e' named environment.
+ *     Real API calls route through Vite proxy → pops-api → 'e2e' named environment.
  *     globalSetup creates the seeded env before tests; globalTeardown deletes it after.
  */
 export default defineConfig({
@@ -63,7 +63,7 @@ export default defineConfig({
     {
       command: 'pnpm dev',
       url: 'http://localhost:3000/health',
-      cwd: '../finance-api',
+      cwd: '../pops-api',
       reuseExistingServer: !process.env.CI,
       timeout: 60000,
     },

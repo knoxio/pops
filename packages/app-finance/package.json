@@ -10,7 +10,7 @@
     "lint:fix": "eslint src --ext .ts,.tsx --fix"
   },
   "dependencies": {
-    "@pops/finance-api": "workspace:*",
+    "@pops/api": "workspace:*",
     "@pops/ui": "workspace:*",
     "@tanstack/react-query": "5.90.20",
     "@trpc/client": "11.13.4",

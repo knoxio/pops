@@ -200,7 +200,7 @@ The provider stack moves from `pops-pwa/App.tsx` to `pops-shell/App.tsx`. No cha
 </trpc.Provider>
 ```
 
-The tRPC client config (`lib/trpc.ts`) moves to the shell unchanged. The `AppRouter` type import stays as `@pops/finance-api` until Epic 3 (API modularisation) renames it.
+The tRPC client config (`lib/trpc.ts`) moves to the shell unchanged. The `AppRouter` type import stays as `@pops/api` until Epic 3 (API modularisation) renames it.
 
 ### R6: Vite Config
 
@@ -268,7 +268,7 @@ A: In `@pops/app-finance` for now. It moves to `@pops/app-inventory` when that a
 A: In `apps/pops-shell/e2e/`. E2E tests exercise the integrated system, not individual packages. Unit tests for finance components stay in `packages/app-finance/`.
 
 **Q: What about the tRPC AppRouter type import?**
-A: Stays as `import type { AppRouter } from '@pops/finance-api'` until Epic 3 renames the API. The shell owns the tRPC client; app packages use tRPC hooks via the shell's provider.
+A: Stays as `import type { AppRouter } from '@pops/api'` until Epic 3 renames the API. The shell owns the tRPC client; app packages use tRPC hooks via the shell's provider.
 
 **Q: How do app packages access tRPC?**
 A: The shell provides the tRPC context via React providers. App packages import the `trpc` object from the shell (or from a shared package). The simplest approach: the shell re-exports `trpc` from a known import path, and app packages list `@pops/shell` as a peer dependency. Alternative: extract `trpc` into a tiny shared package. Decide during implementation based on what's cleaner.

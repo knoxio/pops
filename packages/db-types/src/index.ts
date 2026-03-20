@@ -1,6 +1,6 @@
 /**
  * Shared database types for POPS SQLite schema.
- * Used by finance-api to ensure type consistency.
+ * Used by pops-api to ensure type consistency.
  */
 export { TransactionRowSchema, type TransactionRow } from "./transactions.js";
 export { EntityRowSchema, ENTITY_TYPES, type EntityRow, type EntityType } from "./entities.js";

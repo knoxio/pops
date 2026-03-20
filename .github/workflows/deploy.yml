@@ -29,20 +29,20 @@ jobs:
 
       - name: Type check all services
         run: |
-          cd apps/finance-api && pnpm typecheck
+          cd apps/pops-api && pnpm typecheck
           cd ../pops-pwa && pnpm typecheck
 
       - name: Lint all services
         run: |
-          cd apps/finance-api && pnpm lint
+          cd apps/pops-api && pnpm lint
           cd ../pops-pwa && pnpm lint
 
-      - name: Test finance-api
-        run: cd apps/finance-api && pnpm test
+      - name: Test pops-api
+        run: cd apps/pops-api && pnpm test
 
       - name: Build all services
         run: |
-          cd apps/finance-api && pnpm build
+          cd apps/pops-api && pnpm build
           cd ../pops-pwa && pnpm build
 
   # Deploy to N95 server
@@ -93,10 +93,10 @@ jobs:
           cd /opt/pops
           docker compose ps
 
-          # Check finance-api health endpoint
-          if ! docker exec pops-finance-api wget -qO- http://localhost:3000/health > /dev/null 2>&1; then
+          # Check pops-api health endpoint
+          if ! docker exec pops-api wget -qO- http://localhost:3000/health > /dev/null 2>&1; then
             echo "❌ Health check failed"
-            docker compose logs --tail=50 finance-api
+            docker compose logs --tail=50 pops-api
             exit 1
           fi
 

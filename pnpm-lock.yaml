@@ -12,7 +12,7 @@ importers:
         specifier: ^2.8.3
         version: 2.8.17
 
-  apps/finance-api:
+  apps/pops-api:
     dependencies:
       '@anthropic-ai/sdk':
         specifier: ^0.74.0
@@ -102,9 +102,9 @@ importers:
 
   apps/pops-pwa:
     dependencies:
-      '@pops/finance-api':
+      '@pops/api':
         specifier: workspace:*
-        version: link:../finance-api
+        version: link:../pops-api
       '@pops/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -337,12 +337,12 @@ importers:
 
   apps/pops-shell:
     dependencies:
+      '@pops/api':
+        specifier: workspace:*
+        version: link:../pops-api
       '@pops/app-finance':
         specifier: workspace:*
         version: link:../../packages/app-finance
-      '@pops/finance-api':
-        specifier: workspace:*
-        version: link:../finance-api
       '@pops/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -410,9 +410,9 @@ importers:
 
   packages/app-finance:
     dependencies:
-      '@pops/finance-api':
+      '@pops/api':
         specifier: workspace:*
-        version: link:../../apps/finance-api
+        version: link:../../apps/pops-api
       '@pops/ui':
         specifier: workspace:*
         version: link:../ui
@@ -8954,7 +8954,7 @@ snapshots:
 
   '@types/better-sqlite3@7.6.13':
     dependencies:
-      '@types/node': 22.19.15
+      '@types/node': 25.5.0
 
   '@types/body-parser@1.19.6':
     dependencies:
@@ -9028,7 +9028,7 @@ snapshots:
   '@types/jsonwebtoken@9.0.10':
     dependencies:
       '@types/ms': 2.1.0
-      '@types/node': 22.19.15
+      '@types/node': 25.5.0
 
   '@types/mdx@2.0.13': {}
 
@@ -9050,7 +9050,7 @@ snapshots:
 
   '@types/papaparse@5.5.2':
     dependencies:
-      '@types/node': 22.19.15
+      '@types/node': 25.5.0
 
   '@types/qs@6.15.0': {}
 
@@ -10120,8 +10120,8 @@ snapshots:
       '@babel/parser': 7.29.2
       eslint: 10.0.3(jiti@2.6.1)
       hermes-parser: 0.25.1
-      zod: 3.25.76
-      zod-validation-error: 4.0.2(zod@3.25.76)
+      zod: 4.3.6
+      zod-validation-error: 4.0.2(zod@4.3.6)
     transitivePeerDependencies:
       - supports-color
 
@@ -10131,8 +10131,8 @@ snapshots:
       '@babel/parser': 7.29.2
       eslint: 9.39.4(jiti@2.6.1)
       hermes-parser: 0.25.1
-      zod: 3.25.76
-      zod-validation-error: 4.0.2(zod@3.25.76)
+      zod: 4.3.6
+      zod-validation-error: 4.0.2(zod@4.3.6)
     transitivePeerDependencies:
       - supports-color
 
@@ -13078,9 +13078,9 @@ snapshots:
     dependencies:
       zod: 3.25.76
 
-  zod-validation-error@4.0.2(zod@3.25.76):
+  zod-validation-error@4.0.2(zod@4.3.6):
     dependencies:
-      zod: 3.25.76
+      zod: 4.3.6
 
   zod@3.25.76: {}
 

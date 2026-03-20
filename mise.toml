@@ -14,8 +14,8 @@ node = "24.5.0"
 # ============================================================================
 
 [tasks."dev:api"]
-description = "Run finance-api in dev mode with watch"
-dir = "apps/finance-api"
+description = "Run pops-api in dev mode with watch"
+dir = "apps/pops-api"
 run = """
 pnpm install
 pnpm dev
@@ -47,8 +47,8 @@ description = "Type check all packages"
 run = "pnpm typecheck"
 
 [tasks."typecheck:api"]
-description = "Type check finance-api"
-dir = "apps/finance-api"
+description = "Type check pops-api"
+dir = "apps/pops-api"
 run = "pnpm typecheck"
 
 [tasks."typecheck:pwa"]
@@ -65,8 +65,8 @@ description = "Run all tests in watch mode"
 run = "pnpm run test:watch"
 
 [tasks."test:api"]
-description = "Run finance-api tests"
-dir = "apps/finance-api"
+description = "Run pops-api tests"
+dir = "apps/pops-api"
 run = "pnpm test"
 
 [tasks."test:pwa"]
@@ -88,17 +88,17 @@ run = "pnpm build"
 
 [tasks."db:init"]
 description = "Initialize empty database with schema"
-dir = "apps/finance-api"
+dir = "apps/pops-api"
 run = "pnpm dev:init"
 
 [tasks."db:clear"]
 description = "Clear all data from database (preserves schema)"
-dir = "apps/finance-api"
+dir = "apps/pops-api"
 run = "pnpm db:clear"
 
 [tasks."db:seed"]
 description = "Clear and seed database with comprehensive test data"
-dir = "apps/finance-api"
+dir = "apps/pops-api"
 run = "pnpm db:seed"
 
 # ============================================================================

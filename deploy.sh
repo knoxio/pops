@@ -122,18 +122,18 @@ if [ "$SKIP_CHECKS" = false ]; then
 
     cd ../..
 
-    # Check finance-api
+    # Check pops-api
     echo -e "${BLUE}Finance API:${NC}"
-    cd apps/finance-api
+    cd apps/pops-api
 
     if ! pnpm typecheck; then
-        echo -e "${RED}✗ TypeScript errors in finance-api${NC}"
+        echo -e "${RED}✗ TypeScript errors in pops-api${NC}"
         exit 1
     fi
     echo -e "${GREEN}✓ TypeScript passed${NC}"
 
     if ! pnpm test --run; then
-        echo -e "${RED}✗ Tests failed in finance-api${NC}"
+        echo -e "${RED}✗ Tests failed in pops-api${NC}"
         exit 1
     fi
     echo -e "${GREEN}✓ Tests passed${NC}"
@@ -226,7 +226,7 @@ if (cd infra/ansible && ansible-playbook playbooks/deploy.yml $ANSIBLE_ARGS); th
         COMMIT_MSG="Deploy $NEXT_VERSION to production
 
 Deployed services:
-- finance-api: $(cd apps/finance-api && git log -1 --pretty=format:'%h %s')
+- pops-api: $(cd apps/pops-api && git log -1 --pretty=format:'%h %s')
 - pops-pwa: $(cd apps/pops-pwa && git log -1 --pretty=format:'%h %s')
 
 Deployed at: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
