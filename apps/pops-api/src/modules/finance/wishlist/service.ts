@@ -1,12 +1,28 @@
 /**
- * Wish list service — CRUD operations against SQLite.
+ * Wish list service — CRUD operations against SQLite via Drizzle ORM.
  * SQLite is the source of truth. All operations are local.
- * All SQL uses parameterized queries (no string interpolation).
  */
-import crypto from "crypto";
-import { getDb } from "../../../db.js";
+import { eq, and, like, asc, count } from "drizzle-orm";
+import { getDrizzle } from "../../../db.js";
+import { wishList } from "../../../db/schema/wishlist.js";
 import { NotFoundError } from "../../../shared/errors.js";
 import type { WishListRow, CreateWishListItemInput, UpdateWishListItemInput } from "./types.js";
+
+/** Map a Drizzle select result back to the snake_case WishListRow expected by the router. */
+type DrizzleWishList = typeof wishList.$inferSelect;
+function toRow(r: DrizzleWishList): WishListRow {
+  return {
+    id: r.id,
+    notion_id: r.notionId,
+    item: r.item,
+    target_amount: r.targetAmount,
+    saved: r.saved,
+    priority: r.priority,
+    url: r.url,
+    notes: r.notes,
+    last_edited_time: r.lastEditedTime,
+  };
+}
 
 /** Count + rows for a paginated list. */
 export interface WishListListResult {
@@ -21,41 +37,48 @@ export function listWishListItems(
   limit: number,
   offset: number
 ): WishListListResult {
-  const db = getDb();
-  const conditions: string[] = [];
-  const params: Record<string, string | number> = {};
+  const db = getDrizzle();
+  const conditions = [];
 
   if (search) {
-    conditions.push("item LIKE @search");
-    params["search"] = `%${search}%`;
+    conditions.push(like(wishList.item, `%${search}%`));
   }
   if (priority) {
-    conditions.push("priority = @priority");
-    params["priority"] = priority;
+    conditions.push(eq(wishList.priority, priority));
   }
 
-  const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
 
   const rows = db
-    .prepare(`SELECT * FROM wish_list ${where} ORDER BY item LIMIT @limit OFFSET @offset`)
-    .all({ ...params, limit, offset }) as WishListRow[];
+    .select()
+    .from(wishList)
+    .where(where)
+    .orderBy(asc(wishList.item))
+    .limit(limit)
+    .offset(offset)
+    .all()
+    .map(toRow);
 
-  const countRow = db.prepare(`SELECT COUNT(*) as total FROM wish_list ${where}`).get(params) as {
-    total: number;
-  };
+  const [{ total }] = db
+    .select({ total: count() })
+    .from(wishList)
+    .where(where)
+    .all();
 
-  return { rows, total: countRow.total };
+  return { rows, total };
 }
 
 /** Get a single wish list item by id. Throws NotFoundError if missing. */
 export function getWishListItem(id: string): WishListRow {
-  const db = getDb();
-  const row = db.prepare("SELECT * FROM wish_list WHERE id = ?").get(id) as
-    | WishListRow
-    | undefined;
+  const db = getDrizzle();
+  const row = db
+    .select()
+    .from(wishList)
+    .where(eq(wishList.id, id))
+    .get();
 
   if (!row) throw new NotFoundError("Wish list item", id);
-  return row;
+  return toRow(row);
 }
 
 /**
@@ -63,25 +86,22 @@ export function getWishListItem(id: string): WishListRow {
  * Generates a local UUID and inserts directly into SQLite.
  */
 export function createWishListItem(input: CreateWishListItemInput): WishListRow {
-  const db = getDb();
+  const db = getDrizzle();
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
 
-  db.prepare(
-    `
-    INSERT INTO wish_list (id, item, target_amount, saved, priority, url, notes, last_edited_time)
-    VALUES (@id, @item, @targetAmount, @saved, @priority, @url, @notes, @lastEditedTime)
-  `
-  ).run({
-    id,
-    item: input.item,
-    targetAmount: input.targetAmount ?? null,
-    saved: input.saved ?? null,
-    priority: input.priority ?? null,
-    url: input.url ?? null,
-    notes: input.notes ?? null,
-    lastEditedTime: now,
-  });
+  db.insert(wishList)
+    .values({
+      id,
+      item: input.item,
+      targetAmount: input.targetAmount ?? null,
+      saved: input.saved ?? null,
+      priority: input.priority ?? null,
+      url: input.url ?? null,
+      notes: input.notes ?? null,
+      lastEditedTime: now,
+    })
+    .run();
 
   return getWishListItem(id);
 }
@@ -94,44 +114,42 @@ export function updateWishListItem(
   id: string,
   input: UpdateWishListItemInput
 ): WishListRow {
-  const db = getDb();
+  const db = getDrizzle();
 
   // Verify it exists first
   getWishListItem(id);
 
-  const fields: string[] = [];
-  const params: Record<string, string | number | null> = { id };
+  const updates: Partial<typeof wishList.$inferInsert> = {};
+  let hasUpdates = false;
 
   if (input.item !== undefined) {
-    fields.push("item = @item");
-    params["item"] = input.item;
+    updates.item = input.item;
+    hasUpdates = true;
   }
   if (input.targetAmount !== undefined) {
-    fields.push("target_amount = @targetAmount");
-    params["targetAmount"] = input.targetAmount ?? null;
+    updates.targetAmount = input.targetAmount ?? null;
+    hasUpdates = true;
   }
   if (input.saved !== undefined) {
-    fields.push("saved = @saved");
-    params["saved"] = input.saved ?? null;
+    updates.saved = input.saved ?? null;
+    hasUpdates = true;
   }
   if (input.priority !== undefined) {
-    fields.push("priority = @priority");
-    params["priority"] = input.priority ?? null;
+    updates.priority = input.priority ?? null;
+    hasUpdates = true;
   }
   if (input.url !== undefined) {
-    fields.push("url = @url");
-    params["url"] = input.url ?? null;
+    updates.url = input.url ?? null;
+    hasUpdates = true;
   }
   if (input.notes !== undefined) {
-    fields.push("notes = @notes");
-    params["notes"] = input.notes ?? null;
+    updates.notes = input.notes ?? null;
+    hasUpdates = true;
   }
 
-  if (fields.length > 0) {
-    fields.push("last_edited_time = @lastEditedTime");
-    params["lastEditedTime"] = new Date().toISOString();
-
-    db.prepare(`UPDATE wish_list SET ${fields.join(", ")} WHERE id = @id`).run(params);
+  if (hasUpdates) {
+    updates.lastEditedTime = new Date().toISOString();
+    db.update(wishList).set(updates).where(eq(wishList.id, id)).run();
   }
 
   return getWishListItem(id);
@@ -142,11 +160,10 @@ export function updateWishListItem(
  * Deletes directly from SQLite.
  */
 export function deleteWishListItem(id: string): void {
-  const db = getDb();
-
   // Verify it exists first
   getWishListItem(id);
 
-  const result = db.prepare("DELETE FROM wish_list WHERE id = ?").run(id);
+  const db = getDrizzle();
+  const result = db.delete(wishList).where(eq(wishList.id, id)).run();
   if (result.changes === 0) throw new NotFoundError("Wish list item", id);
 }

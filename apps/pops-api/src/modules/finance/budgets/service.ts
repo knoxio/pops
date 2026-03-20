@@ -1,11 +1,27 @@
 /**
- * Budget service — CRUD operations against SQLite.
+ * Budget service — CRUD operations against SQLite via Drizzle ORM.
  * SQLite is the source of truth. All operations are local.
- * All SQL uses parameterized queries (no string interpolation).
  */
-import { getDb } from "../../../db.js";
+import { eq, and, like, asc, count, isNull } from "drizzle-orm";
+import { getDrizzle } from "../../../db.js";
+import { budgets } from "../../../db/schema/budgets.js";
 import { NotFoundError, ConflictError } from "../../../shared/errors.js";
 import type { BudgetRow, CreateBudgetInput, UpdateBudgetInput } from "./types.js";
+
+/** Map a Drizzle select result back to the snake_case BudgetRow expected by the router. */
+type DrizzleBudget = typeof budgets.$inferSelect;
+function toRow(r: DrizzleBudget): BudgetRow {
+  return {
+    id: r.id,
+    notion_id: r.notionId,
+    category: r.category,
+    period: r.period,
+    amount: r.amount,
+    active: r.active,
+    notes: r.notes,
+    last_edited_time: r.lastEditedTime,
+  };
+}
 
 /** Count + rows for a paginated list. */
 export interface BudgetListResult {
@@ -26,45 +42,51 @@ export function listBudgets(
   limit: number,
   offset: number
 ): BudgetListResult {
-  const db = getDb();
-  const conditions: string[] = [];
-  const params: Record<string, string | number> = {};
+  const db = getDrizzle();
+  const conditions = [];
 
   if (search) {
-    conditions.push("category LIKE @search");
-    params["search"] = `%${search}%`;
+    conditions.push(like(budgets.category, `%${search}%`));
   }
   if (period) {
-    conditions.push("period = @period");
-    params["period"] = period;
+    conditions.push(eq(budgets.period, period));
   }
   if (active !== undefined) {
-    conditions.push("active = @active");
-    params["active"] = active ? 1 : 0;
+    conditions.push(eq(budgets.active, active ? 1 : 0));
   }
 
-  const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
 
   const rows = db
-    .prepare(`SELECT * FROM budgets ${where} ORDER BY category LIMIT @limit OFFSET @offset`)
-    .all({ ...params, limit, offset }) as BudgetRow[];
+    .select()
+    .from(budgets)
+    .where(where)
+    .orderBy(asc(budgets.category))
+    .limit(limit)
+    .offset(offset)
+    .all()
+    .map(toRow);
 
-  const countRow = db.prepare(`SELECT COUNT(*) as total FROM budgets ${where}`).get(params) as {
-    total: number;
-  };
+  const [{ total }] = db
+    .select({ total: count() })
+    .from(budgets)
+    .where(where)
+    .all();
 
-  return { rows, total: countRow.total };
+  return { rows, total };
 }
 
 /** Get a single budget by id. Throws NotFoundError if missing. */
 export function getBudget(id: string): BudgetRow {
-  const db = getDb();
-  const row = db.prepare("SELECT * FROM budgets WHERE id = ?").get(id) as
-    | BudgetRow
-    | undefined;
+  const db = getDrizzle();
+  const row = db
+    .select()
+    .from(budgets)
+    .where(eq(budgets.id, id))
+    .get();
 
   if (!row) throw new NotFoundError("Budget", id);
-  return row;
+  return toRow(row);
 }
 
 /**
@@ -73,16 +95,21 @@ export function getBudget(id: string): BudgetRow {
  * Generates a local UUID and inserts directly into SQLite.
  */
 export function createBudget(input: CreateBudgetInput): BudgetRow {
-  const db = getDb();
+  const db = getDrizzle();
 
   // Check for duplicate category+period combination
   const existing = db
-    .prepare(
-      "SELECT id FROM budgets WHERE category = ? AND (period = ? OR (period IS NULL AND ? IS NULL))"
+    .select({ id: budgets.id })
+    .from(budgets)
+    .where(
+      and(
+        eq(budgets.category, input.category),
+        input.period != null
+          ? eq(budgets.period, input.period)
+          : isNull(budgets.period)
+      )
     )
-    .get(input.category, input.period ?? null, input.period ?? null) as
-    | { id: string }
-    | undefined;
+    .get();
 
   if (existing) {
     const periodDesc = input.period ? `'${input.period}'` : "null";
@@ -94,20 +121,17 @@ export function createBudget(input: CreateBudgetInput): BudgetRow {
   const id = crypto.randomUUID();
   const now = new Date().toISOString();
 
-  db.prepare(
-    `
-    INSERT INTO budgets (id, category, period, amount, active, notes, last_edited_time)
-    VALUES (@id, @category, @period, @amount, @active, @notes, @lastEditedTime)
-  `
-  ).run({
-    id,
-    category: input.category,
-    period: input.period ?? null,
-    amount: input.amount ?? null,
-    active: input.active ? 1 : 0,
-    notes: input.notes ?? null,
-    lastEditedTime: now,
-  });
+  db.insert(budgets)
+    .values({
+      id,
+      category: input.category,
+      period: input.period ?? null,
+      amount: input.amount ?? null,
+      active: input.active ? 1 : 0,
+      notes: input.notes ?? null,
+      lastEditedTime: now,
+    })
+    .run();
 
   return getBudget(id);
 }
@@ -117,40 +141,38 @@ export function createBudget(input: CreateBudgetInput): BudgetRow {
  * Updates directly in SQLite.
  */
 export function updateBudget(id: string, input: UpdateBudgetInput): BudgetRow {
-  const db = getDb();
+  const db = getDrizzle();
 
   // Verify it exists first
   getBudget(id);
 
-  const fields: string[] = [];
-  const params: Record<string, string | number | null> = { id };
+  const updates: Partial<typeof budgets.$inferInsert> = {};
+  let hasUpdates = false;
 
   if (input.category !== undefined) {
-    fields.push("category = @category");
-    params["category"] = input.category;
+    updates.category = input.category;
+    hasUpdates = true;
   }
   if (input.period !== undefined) {
-    fields.push("period = @period");
-    params["period"] = input.period ?? null;
+    updates.period = input.period ?? null;
+    hasUpdates = true;
   }
   if (input.amount !== undefined) {
-    fields.push("amount = @amount");
-    params["amount"] = input.amount ?? null;
+    updates.amount = input.amount ?? null;
+    hasUpdates = true;
   }
   if (input.active !== undefined) {
-    fields.push("active = @active");
-    params["active"] = input.active ? 1 : 0;
+    updates.active = input.active ? 1 : 0;
+    hasUpdates = true;
   }
   if (input.notes !== undefined) {
-    fields.push("notes = @notes");
-    params["notes"] = input.notes ?? null;
+    updates.notes = input.notes ?? null;
+    hasUpdates = true;
   }
 
-  if (fields.length > 0) {
-    fields.push("last_edited_time = @lastEditedTime");
-    params["lastEditedTime"] = new Date().toISOString();
-
-    db.prepare(`UPDATE budgets SET ${fields.join(", ")} WHERE id = @id`).run(params);
+  if (hasUpdates) {
+    updates.lastEditedTime = new Date().toISOString();
+    db.update(budgets).set(updates).where(eq(budgets.id, id)).run();
   }
 
   return getBudget(id);
@@ -161,11 +183,10 @@ export function updateBudget(id: string, input: UpdateBudgetInput): BudgetRow {
  * Deletes directly from SQLite.
  */
 export function deleteBudget(id: string): void {
-  const db = getDb();
-
   // Verify it exists first
   getBudget(id);
 
-  const result = db.prepare("DELETE FROM budgets WHERE id = ?").run(id);
+  const db = getDrizzle();
+  const result = db.delete(budgets).where(eq(budgets.id, id)).run();
   if (result.changes === 0) throw new NotFoundError("Budget", id);
 }
