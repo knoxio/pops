@@ -93,9 +93,9 @@ describe("inventory.photos.attach", () => {
       filePath: "items/tv/photo.jpg",
     });
 
-    const row = db
-      .prepare("SELECT * FROM item_photos WHERE item_id = ?")
-      .get(itemId) as { file_path: string } | undefined;
+    const row = db.prepare("SELECT * FROM item_photos WHERE item_id = ?").get(itemId) as
+      | { file_path: string }
+      | undefined;
 
     expect(row).toBeDefined();
     expect(row!.file_path).toBe("items/tv/photo.jpg");
@@ -156,9 +156,7 @@ describe("inventory.photos.remove", () => {
   });
 
   it("throws NOT_FOUND for nonexistent photo", async () => {
-    await expect(
-      caller.inventory.photos.remove({ id: 999 })
-    ).rejects.toThrow(TRPCError);
+    await expect(caller.inventory.photos.remove({ id: 999 })).rejects.toThrow(TRPCError);
 
     try {
       await caller.inventory.photos.remove({ id: 999 });
@@ -347,9 +345,7 @@ describe("inventory.photos auth", () => {
 
   it("throws UNAUTHORIZED without auth on remove", async () => {
     const unauthCaller = createCaller(false);
-    await expect(
-      unauthCaller.inventory.photos.remove({ id: 1 })
-    ).rejects.toThrow(TRPCError);
+    await expect(unauthCaller.inventory.photos.remove({ id: 1 })).rejects.toThrow(TRPCError);
   });
 
   it("throws UNAUTHORIZED without auth on update", async () => {
@@ -361,9 +357,9 @@ describe("inventory.photos auth", () => {
 
   it("throws UNAUTHORIZED without auth on listForItem", async () => {
     const unauthCaller = createCaller(false);
-    await expect(
-      unauthCaller.inventory.photos.listForItem({ itemId: "a" })
-    ).rejects.toThrow(TRPCError);
+    await expect(unauthCaller.inventory.photos.listForItem({ itemId: "a" })).rejects.toThrow(
+      TRPCError
+    );
   });
 
   it("throws UNAUTHORIZED without auth on reorder", async () => {

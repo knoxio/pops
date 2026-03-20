@@ -23,7 +23,11 @@ export interface PhotoListResult {
 /** Validate that an inventory item exists. */
 function assertItemExists(itemId: string): void {
   const db = getDrizzle();
-  const [item] = db.select({ id: homeInventory.id }).from(homeInventory).where(eq(homeInventory.id, itemId)).all();
+  const [item] = db
+    .select({ id: homeInventory.id })
+    .from(homeInventory)
+    .where(eq(homeInventory.id, itemId))
+    .all();
   if (!item) throw new NotFoundError("Inventory item", itemId);
 }
 
@@ -42,7 +46,8 @@ export function attachPhoto(input: AttachPhotoInput): ItemPhotoRow {
   assertItemExists(input.itemId);
   assertSafeFilePath(input.filePath);
 
-  const result = db.insert(itemPhotos)
+  const result = db
+    .insert(itemPhotos)
     .values({
       itemId: input.itemId,
       filePath: input.filePath,
@@ -88,11 +93,7 @@ export function updatePhoto(id: number, input: UpdatePhotoInput): ItemPhotoRow {
 }
 
 /** List photos for an item, ordered by sortOrder. */
-export function listPhotosForItem(
-  itemId: string,
-  limit: number,
-  offset: number
-): PhotoListResult {
+export function listPhotosForItem(itemId: string, limit: number, offset: number): PhotoListResult {
   const db = getDrizzle();
 
   const rows = db
@@ -134,10 +135,7 @@ export function reorderPhotos(itemId: string, orderedIds: number[]): ItemPhotoRo
   // Apply all sort order updates in a single transaction
   rawDb.transaction(() => {
     for (let i = 0; i < orderedIds.length; i++) {
-      db.update(itemPhotos)
-        .set({ sortOrder: i })
-        .where(eq(itemPhotos.id, orderedIds[i]))
-        .run();
+      db.update(itemPhotos).set({ sortOrder: i }).where(eq(itemPhotos.id, orderedIds[i])).run();
     }
   })();
 
