@@ -1,0 +1,195 @@
+/**
+ * Image cache service tests — mocks fetch and filesystem.
+ */
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { ImageCacheService } from "./image-cache.js";
+import * as fs from "node:fs/promises";
+import * as path from "node:path";
+
+vi.mock("node:fs/promises");
+
+const IMAGES_DIR = "/data/media/images";
+let service: ImageCacheService;
+let fetchMock: ReturnType<typeof vi.fn>;
+
+beforeEach(() => {
+  fetchMock = vi.fn();
+  vi.stubGlobal("fetch", fetchMock);
+  service = new ImageCacheService(IMAGES_DIR);
+
+  // Default: mkdir succeeds, stat throws (file doesn't exist), writeFile succeeds
+  vi.mocked(fs.mkdir).mockResolvedValue(undefined);
+  vi.mocked(fs.writeFile).mockResolvedValue(undefined);
+  vi.mocked(fs.stat).mockRejectedValue(new Error("ENOENT"));
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+/** Helper to create a mock fetch Response for binary data. */
+function mockImageResponse(data = new ArrayBuffer(100), status = 200): Response {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    statusText: status === 200 ? "OK" : "Not Found",
+    arrayBuffer: () => Promise.resolve(data),
+    headers: new Headers(),
+    redirected: false,
+    type: "basic",
+    url: "",
+    clone: () => mockImageResponse(data, status),
+    body: null,
+    bodyUsed: false,
+    json: () => Promise.resolve({}),
+    blob: () => Promise.resolve(new Blob()),
+    formData: () => Promise.resolve(new FormData()),
+    text: () => Promise.resolve(""),
+    bytes: () => Promise.resolve(new Uint8Array()),
+  } as Response;
+}
+
+describe("downloadMovieImages", () => {
+  it("creates directory and downloads all three images", async () => {
+    fetchMock.mockResolvedValue(mockImageResponse());
+
+    await service.downloadMovieImages(
+      550,
+      "/poster123.jpg",
+      "/backdrop456.jpg",
+      "/logo789.png",
+    );
+
+    const movieDir = path.join(IMAGES_DIR, "movies", "550");
+    expect(fs.mkdir).toHaveBeenCalledWith(movieDir, { recursive: true });
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fs.writeFile).toHaveBeenCalledTimes(3);
+
+    // Verify correct TMDB URLs
+    const urls = fetchMock.mock.calls.map((c: unknown[]) => c[0] as string);
+    expect(urls).toContainEqual("https://image.tmdb.org/t/p/w780/poster123.jpg");
+    expect(urls).toContainEqual("https://image.tmdb.org/t/p/w1280/backdrop456.jpg");
+    expect(urls).toContainEqual("https://image.tmdb.org/t/p/w500/logo789.png");
+
+    // Verify correct local paths
+    const paths = vi.mocked(fs.writeFile).mock.calls.map((c) => c[0]);
+    expect(paths).toContainEqual(path.join(movieDir, "poster.jpg"));
+    expect(paths).toContainEqual(path.join(movieDir, "backdrop.jpg"));
+    expect(paths).toContainEqual(path.join(movieDir, "logo.png"));
+  });
+
+  it("skips null image paths", async () => {
+    fetchMock.mockResolvedValue(mockImageResponse());
+
+    await service.downloadMovieImages(550, "/poster.jpg", null, null);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fs.writeFile).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips all downloads when all paths are null", async () => {
+    await service.downloadMovieImages(550, null, null, null);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fs.writeFile).not.toHaveBeenCalled();
+
+    // Still creates the directory
+    expect(fs.mkdir).toHaveBeenCalled();
+  });
+
+  it("skips download if file already exists", async () => {
+    // First stat call (for poster) succeeds = file exists
+    vi.mocked(fs.stat)
+      .mockResolvedValueOnce({} as Awaited<ReturnType<typeof fs.stat>>);
+
+    await service.downloadMovieImages(550, "/poster.jpg", null, null);
+
+    // Should not fetch or write since file exists
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fs.writeFile).not.toHaveBeenCalled();
+  });
+
+  it("handles download failures gracefully without throwing", async () => {
+    // Poster succeeds, backdrop fails
+    fetchMock
+      .mockResolvedValueOnce(mockImageResponse())
+      .mockResolvedValueOnce(mockImageResponse(new ArrayBuffer(0), 404));
+
+    const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await expect(
+      service.downloadMovieImages(550, "/poster.jpg", "/backdrop.jpg", null),
+    ).resolves.toBeUndefined();
+
+    // Poster was written, backdrop was not (failed)
+    expect(fs.writeFile).toHaveBeenCalledTimes(1);
+    expect(consoleSpy).toHaveBeenCalledOnce();
+    expect(consoleSpy.mock.calls[0][0]).toContain("[ImageCache]");
+
+    consoleSpy.mockRestore();
+  });
+
+  it("handles network failures gracefully", async () => {
+    fetchMock.mockRejectedValueOnce(new Error("Network error"));
+
+    const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await expect(
+      service.downloadMovieImages(550, "/poster.jpg", null, null),
+    ).resolves.toBeUndefined();
+
+    expect(fs.writeFile).not.toHaveBeenCalled();
+    expect(consoleSpy).toHaveBeenCalledOnce();
+
+    consoleSpy.mockRestore();
+  });
+});
+
+describe("getImagePath", () => {
+  it("returns path when file exists", async () => {
+    vi.mocked(fs.stat).mockResolvedValueOnce(
+      {} as Awaited<ReturnType<typeof fs.stat>>,
+    );
+
+    const result = await service.getImagePath("movie", 550, "poster");
+
+    expect(result).toBe(path.join(IMAGES_DIR, "movies", "550", "poster.jpg"));
+  });
+
+  it("returns null when file does not exist", async () => {
+    vi.mocked(fs.stat).mockRejectedValueOnce(new Error("ENOENT"));
+
+    const result = await service.getImagePath("movie", 550, "poster");
+
+    expect(result).toBeNull();
+  });
+
+  it("resolves correct paths for different image types", async () => {
+    vi.mocked(fs.stat).mockResolvedValue(
+      {} as Awaited<ReturnType<typeof fs.stat>>,
+    );
+
+    const poster = await service.getImagePath("movie", 550, "poster");
+    const backdrop = await service.getImagePath("movie", 550, "backdrop");
+    const logo = await service.getImagePath("movie", 550, "logo");
+    const override = await service.getImagePath("movie", 550, "override");
+
+    expect(poster).toContain("poster.jpg");
+    expect(backdrop).toContain("backdrop.jpg");
+    expect(logo).toContain("logo.png");
+    expect(override).toContain("override.jpg");
+  });
+});
+
+describe("deleteMovieImages", () => {
+  it("removes the movie image directory", async () => {
+    vi.mocked(fs.rm).mockResolvedValueOnce(undefined);
+
+    await service.deleteMovieImages(550);
+
+    expect(fs.rm).toHaveBeenCalledWith(
+      path.join(IMAGES_DIR, "movies", "550"),
+      { recursive: true, force: true },
+    );
+  });
+});
