@@ -36,9 +36,9 @@ export function AiUsagePage() {
   // Loading state
   if (statsLoading || historyLoading) {
     return (
-      <div className="p-6 space-y-6">
+      <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">AI Usage</h1>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">AI Usage</h1>
           <p className="text-muted-foreground">
             Track AI categorization costs and usage
           </p>
@@ -58,8 +58,8 @@ export function AiUsagePage() {
   // Error state
   if (statsError || historyError) {
     return (
-      <div className="p-6">
-        <h1 className="text-3xl font-bold tracking-tight mb-6">AI Usage</h1>
+      <div className="space-y-6">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">AI Usage</h1>
         <Alert variant="destructive">
           <h3 className="font-semibold">Failed to load AI usage data</h3>
           <p className="text-sm mt-1">
@@ -178,10 +178,10 @@ export function AiUsagePage() {
   const cacheHitRate = totalRequests > 0 ? (stats?.cacheHitRate ?? 0) * 100 : 0;
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">AI Usage</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">AI Usage</h1>
         <p className="text-muted-foreground">
           Track AI categorization costs and usage across all imports
         </p>

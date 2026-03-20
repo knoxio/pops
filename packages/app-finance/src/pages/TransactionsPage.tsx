@@ -188,8 +188,8 @@ export function TransactionsPage() {
 
   if (error) {
     return (
-      <div className="p-6 space-y-6">
-        <h1 className="text-3xl font-bold">Transactions</h1>
+      <div className="space-y-6">
+        <h1 className="text-2xl md:text-3xl font-bold">Transactions</h1>
         <Alert variant="destructive">
           <p className="font-semibold">Failed to load transactions</p>
           <p className="text-sm">{error.message}</p>
@@ -202,10 +202,10 @@ export function TransactionsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Transactions</h1>
+          <h1 className="text-2xl md:text-3xl font-bold">Transactions</h1>
           <p className="text-muted-foreground">
             {data && `${data.pagination.total} total transactions`}
           </p>
