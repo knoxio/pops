@@ -9,35 +9,13 @@
  */
 import { Link, useLocation } from "react-router";
 import { registeredApps } from "@/app/nav/registry";
+import { iconMap } from "@/app/nav/icon-map";
 import { useUIStore } from "@/store/uiStore";
-import {
-  LayoutDashboard,
-  CreditCard,
-  Building2,
-  PiggyBank,
-  Package,
-  Star,
-  Download,
-  Bot,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { X } from "lucide-react";
 
 interface SidebarProps {
   open: boolean;
 }
-
-/** Map icon name strings from navConfig to Lucide components. */
-const iconMap: Record<string, LucideIcon> = {
-  LayoutDashboard,
-  CreditCard,
-  Building2,
-  PiggyBank,
-  Package,
-  Star,
-  Download,
-  Bot,
-};
 
 export function Sidebar({ open }: SidebarProps) {
   const location = useLocation();
