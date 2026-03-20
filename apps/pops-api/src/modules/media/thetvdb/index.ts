@@ -3,6 +3,8 @@ import { TheTvdbClient } from "./client.js";
 
 export { TheTvdbAuth, TheTvdbClient };
 export { TvdbApiError } from "./types.js";
+export { refreshTvShow } from "./service.js";
+export type { RefreshTvShowInput, RefreshTvShowResult } from "./service.js";
 export type {
   TvdbSearchResult,
   TvdbShowDetail,
