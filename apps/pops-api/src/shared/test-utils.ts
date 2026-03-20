@@ -153,6 +153,30 @@ export function createTestDb(): Database {
     CREATE INDEX IF NOT EXISTS idx_corrections_pattern ON transaction_corrections(description_pattern);
     CREATE INDEX IF NOT EXISTS idx_corrections_confidence ON transaction_corrections(confidence DESC);
     CREATE INDEX IF NOT EXISTS idx_corrections_times_applied ON transaction_corrections(times_applied DESC);
+
+    CREATE TABLE IF NOT EXISTS item_connections (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_a_id  TEXT NOT NULL,
+      item_b_id  TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (item_a_id) REFERENCES home_inventory(id) ON DELETE CASCADE,
+      FOREIGN KEY (item_b_id) REFERENCES home_inventory(id) ON DELETE CASCADE,
+      CHECK (item_a_id < item_b_id)
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_item_connections_pair ON item_connections(item_a_id, item_b_id);
+    CREATE INDEX IF NOT EXISTS idx_item_connections_a ON item_connections(item_a_id);
+    CREATE INDEX IF NOT EXISTS idx_item_connections_b ON item_connections(item_b_id);
+
+    CREATE TABLE IF NOT EXISTS item_photos (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_id    TEXT NOT NULL,
+      file_path  TEXT NOT NULL,
+      caption    TEXT,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (item_id) REFERENCES home_inventory(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_item_photos_item ON item_photos(item_id);
   `);
 
   return db;
@@ -366,6 +390,53 @@ export function seedLocation(
   });
 
   return id;
+}
+
+/**
+ * Seed an item connection row into the test DB.
+ * Returns the auto-incremented id.
+ */
+export function seedItemConnection(
+  db: Database,
+  itemAId: string,
+  itemBId: string
+): number {
+  // Enforce A < B ordering
+  const [a, b] = itemAId < itemBId ? [itemAId, itemBId] : [itemBId, itemAId];
+
+  const result = db.prepare(
+    `INSERT INTO item_connections (item_a_id, item_b_id) VALUES (@a, @b)`
+  ).run({ a, b });
+
+  return Number(result.lastInsertRowid);
+}
+
+/**
+ * Seed an item photo row into the test DB.
+ * Returns the auto-incremented id.
+ */
+export function seedItemPhoto(
+  db: Database,
+  overrides: {
+    item_id: string;
+    file_path?: string;
+    caption?: string | null;
+    sort_order?: number;
+  }
+): number {
+  const result = db.prepare(
+    `
+    INSERT INTO item_photos (item_id, file_path, caption, sort_order)
+    VALUES (@item_id, @file_path, @caption, @sort_order)
+  `
+  ).run({
+    item_id: overrides.item_id,
+    file_path: overrides.file_path ?? "items/test/photo_001.jpg",
+    caption: overrides.caption ?? null,
+    sort_order: overrides.sort_order ?? 0,
+  });
+
+  return Number(result.lastInsertRowid);
 }
 
 /**
