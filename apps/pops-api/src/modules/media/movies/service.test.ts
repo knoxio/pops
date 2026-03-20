@@ -81,7 +81,8 @@ describe("createMovie", () => {
     expect(movie.tmdbId).toBe(550);
     expect(movie.releaseDate).toBe("1999-10-15");
     expect(movie.runtime).toBe(139);
-    expect(JSON.parse(movie.genres!)).toEqual(["Drama", "Thriller"]);
+    expect(movie.genres).toBeDefined();
+    expect(JSON.parse(movie.genres ?? "null")).toEqual(["Drama", "Thriller"]);
   });
 
   it("sets default values for optional fields", () => {
@@ -117,7 +118,8 @@ describe("updateMovie", () => {
     const id = seedMovie(db, { tmdb_id: 550, title: "Fight Club", genres: '["Drama"]' });
 
     const updated = service.updateMovie(id, { genres: ["Drama", "Thriller"] });
-    expect(JSON.parse(updated.genres!)).toEqual(["Drama", "Thriller"]);
+    expect(updated.genres).toBeDefined();
+    expect(JSON.parse(updated.genres ?? "null")).toEqual(["Drama", "Thriller"]);
   });
 
   it("throws NotFoundError for missing movie", () => {

@@ -120,8 +120,8 @@ export function toEpisode(row: EpisodeRow): Episode {
 function parseJsonArray(value: string | null): string[] {
   if (!value) return [];
   try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : [];
+    const parsed: unknown = JSON.parse(value);
+    return Array.isArray(parsed) ? (parsed as string[]) : [];
   } catch {
     return [];
   }

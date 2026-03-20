@@ -135,7 +135,8 @@ export async function addTvShow(
         .select()
         .from(seasons)
         .where(eq(seasons.id, seasonId))
-        .get()!;
+        .get();
+      if (!seasonRow) throw new Error(`Failed to retrieve inserted season ${seasonId}`);
       insertedSeasons.push(seasonRow);
 
       // Insert episodes for this season
@@ -161,7 +162,8 @@ export async function addTvShow(
       .select()
       .from(tvShows)
       .where(eq(tvShows.id, showId))
-      .get()!;
+      .get();
+    if (!showRow) throw new Error(`Failed to retrieve inserted show ${showId}`);
 
     return { show: showRow, seasons: insertedSeasons, created: true as const };
   });

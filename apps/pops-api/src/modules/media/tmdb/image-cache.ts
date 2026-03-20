@@ -8,7 +8,7 @@
  * Failures are logged, not thrown.
  */
 import { mkdir, rm, stat, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
 

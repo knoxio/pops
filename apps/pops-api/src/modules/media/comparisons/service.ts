@@ -190,7 +190,7 @@ function getOrCreateScore(
     })
     .run();
 
-  return db
+  const created = db
     .select()
     .from(mediaScores)
     .where(
@@ -200,7 +200,9 @@ function getOrCreateScore(
         eq(mediaScores.dimensionId, dimensionId),
       ),
     )
-    .get()!;
+    .get();
+  if (!created) throw new Error("Failed to retrieve created media score");
+  return created;
 }
 
 function updateEloScores(input: RecordComparisonInput): void {

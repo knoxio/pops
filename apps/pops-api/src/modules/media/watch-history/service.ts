@@ -101,7 +101,8 @@ export function logWatch(input: LogWatchInput): WatchHistoryRow {
       .select()
       .from(watchHistory)
       .where(eq(watchHistory.id, Number(result.lastInsertRowid)))
-      .get()!;
+      .get();
+    if (!entry) throw new Error("Failed to retrieve logged watch entry");
 
     // Auto-remove from watchlist (PRD-011 R6)
     if (completed === 1) {

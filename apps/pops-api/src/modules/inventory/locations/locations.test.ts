@@ -81,8 +81,8 @@ describe("inventory.locations.tree", () => {
 
     const kitchen = home.children.find((c) => c.name === "Kitchen");
     expect(kitchen).toBeDefined();
-    expect(kitchen!.children).toHaveLength(1); // Pantry
-    expect(kitchen!.children[0].name).toBe("Pantry");
+    expect(kitchen?.children).toHaveLength(1); // Pantry
+    expect(kitchen?.children[0].name).toBe("Pantry");
   });
 });
 

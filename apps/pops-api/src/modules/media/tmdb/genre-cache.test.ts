@@ -29,12 +29,14 @@ describe("GenreCache", () => {
       expect(cache.size).toBe(0);
       await cache.ensureLoaded();
       expect(cache.size).toBe(3);
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(client.getGenreList).toHaveBeenCalledTimes(1);
     });
 
     it("does not re-fetch within TTL", async () => {
       await cache.ensureLoaded();
       await cache.ensureLoaded();
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(client.getGenreList).toHaveBeenCalledTimes(1);
     });
 
@@ -42,12 +44,14 @@ describe("GenreCache", () => {
       vi.useFakeTimers();
       try {
         await cache.ensureLoaded();
+        // eslint-disable-next-line @typescript-eslint/unbound-method
         expect(client.getGenreList).toHaveBeenCalledTimes(1);
 
         // Advance past TTL
         vi.advanceTimersByTime(CACHE_TTL_MS + 1);
 
         await cache.ensureLoaded();
+        // eslint-disable-next-line @typescript-eslint/unbound-method
         expect(client.getGenreList).toHaveBeenCalledTimes(2);
       } finally {
         vi.useRealTimers();
@@ -79,9 +83,11 @@ describe("GenreCache", () => {
       const p1 = slowCache.ensureLoaded();
       const p2 = slowCache.ensureLoaded();
 
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       resolvePromise!({ genres: TEST_GENRES });
       await Promise.all([p1, p2]);
 
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(slowClient.getGenreList).toHaveBeenCalledTimes(1);
       expect(slowCache.size).toBe(3);
     });
@@ -118,6 +124,7 @@ describe("GenreCache", () => {
       expect(cache.size).toBe(0);
 
       await cache.ensureLoaded();
+      // eslint-disable-next-line @typescript-eslint/unbound-method
       expect(client.getGenreList).toHaveBeenCalledTimes(2);
     });
   });
