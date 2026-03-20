@@ -3,11 +3,7 @@
  */
 import { eq, and, or, asc, count, desc } from "drizzle-orm";
 import { getDb, getDrizzle } from "../../../db.js";
-import {
-  comparisonDimensions,
-  comparisons,
-  mediaScores,
-} from "@pops/db-types";
+import { comparisonDimensions, comparisons, mediaScores } from "@pops/db-types";
 import { NotFoundError, ConflictError, ValidationError } from "../../../shared/errors.js";
 import type {
   ComparisonDimensionRow,
@@ -22,27 +18,17 @@ import type {
 
 export function listDimensions(): ComparisonDimensionRow[] {
   const db = getDrizzle();
-  return db
-    .select()
-    .from(comparisonDimensions)
-    .orderBy(asc(comparisonDimensions.sortOrder))
-    .all();
+  return db.select().from(comparisonDimensions).orderBy(asc(comparisonDimensions.sortOrder)).all();
 }
 
 export function getDimension(id: number): ComparisonDimensionRow {
   const db = getDrizzle();
-  const row = db
-    .select()
-    .from(comparisonDimensions)
-    .where(eq(comparisonDimensions.id, id))
-    .get();
+  const row = db.select().from(comparisonDimensions).where(eq(comparisonDimensions.id, id)).get();
   if (!row) throw new NotFoundError("Dimension", String(id));
   return row;
 }
 
-export function createDimension(
-  input: CreateDimensionInput,
-): ComparisonDimensionRow {
+export function createDimension(input: CreateDimensionInput): ComparisonDimensionRow {
   const db = getDrizzle();
 
   const existing = db
@@ -51,9 +37,7 @@ export function createDimension(
     .where(eq(comparisonDimensions.name, input.name))
     .get();
   if (existing) {
-    throw new ConflictError(
-      `Dimension '${input.name}' already exists`,
-    );
+    throw new ConflictError(`Dimension '${input.name}' already exists`);
   }
 
   const result = db
@@ -69,25 +53,18 @@ export function createDimension(
   return getDimension(Number(result.lastInsertRowid));
 }
 
-export function updateDimension(
-  id: number,
-  input: UpdateDimensionInput,
-): ComparisonDimensionRow {
+export function updateDimension(id: number, input: UpdateDimensionInput): ComparisonDimensionRow {
   const db = getDrizzle();
   getDimension(id); // verify exists
 
   const updates: Partial<typeof comparisonDimensions.$inferInsert> = {};
   if (input.name !== undefined) updates.name = input.name;
-  if (input.description !== undefined)
-    updates.description = input.description ?? null;
+  if (input.description !== undefined) updates.description = input.description ?? null;
   if (input.active !== undefined) updates.active = input.active ? 1 : 0;
   if (input.sortOrder !== undefined) updates.sortOrder = input.sortOrder;
 
   if (Object.keys(updates).length > 0) {
-    db.update(comparisonDimensions)
-      .set(updates)
-      .where(eq(comparisonDimensions.id, id))
-      .run();
+    db.update(comparisonDimensions).set(updates).where(eq(comparisonDimensions.id, id)).run();
   }
 
   return getDimension(id);
@@ -108,24 +85,18 @@ function expectedScore(ratingA: number, ratingB: number): number {
  * Validates that the winner matches one of the two media items.
  * Wraps insert + Elo update in a transaction for consistency.
  */
-export function recordComparison(
-  input: RecordComparisonInput,
-): ComparisonRow {
+export function recordComparison(input: RecordComparisonInput): ComparisonRow {
   const drizzleDb = getDrizzle();
 
   // Verify dimension exists
   getDimension(input.dimensionId);
 
   // Validate winner matches one of the two media items
-  const winnerIsA =
-    input.winnerType === input.mediaAType && input.winnerId === input.mediaAId;
-  const winnerIsB =
-    input.winnerType === input.mediaBType && input.winnerId === input.mediaBId;
+  const winnerIsA = input.winnerType === input.mediaAType && input.winnerId === input.mediaAId;
+  const winnerIsB = input.winnerType === input.mediaBType && input.winnerId === input.mediaBId;
 
   if (!winnerIsA && !winnerIsB) {
-    throw new ValidationError(
-      "Winner must match either media A or media B",
-    );
+    throw new ValidationError("Winner must match either media A or media B");
   }
 
   // Wrap insert + Elo update in a transaction
@@ -159,11 +130,7 @@ export function recordComparison(
   return row;
 }
 
-function getOrCreateScore(
-  mediaType: string,
-  mediaId: number,
-  dimensionId: number,
-): MediaScoreRow {
+function getOrCreateScore(mediaType: string, mediaId: number, dimensionId: number): MediaScoreRow {
   const db = getDrizzle();
 
   const existing = db
@@ -173,8 +140,8 @@ function getOrCreateScore(
       and(
         eq(mediaScores.mediaType, mediaType),
         eq(mediaScores.mediaId, mediaId),
-        eq(mediaScores.dimensionId, dimensionId),
-      ),
+        eq(mediaScores.dimensionId, dimensionId)
+      )
     )
     .get();
 
@@ -190,41 +157,33 @@ function getOrCreateScore(
     })
     .run();
 
-  return db
+  const score: MediaScoreRow | undefined = db
     .select()
     .from(mediaScores)
     .where(
       and(
         eq(mediaScores.mediaType, mediaType),
         eq(mediaScores.mediaId, mediaId),
-        eq(mediaScores.dimensionId, dimensionId),
-      ),
+        eq(mediaScores.dimensionId, dimensionId)
+      )
     )
-    .get()!;
+    .get();
+
+  if (!score) throw new Error(`Score not found for ${mediaType}:${mediaId}:${dimensionId}`);
+  return score;
 }
 
 function updateEloScores(input: RecordComparisonInput): void {
   const db = getDrizzle();
 
-  const scoreA = getOrCreateScore(
-    input.mediaAType,
-    input.mediaAId,
-    input.dimensionId,
-  );
-  const scoreB = getOrCreateScore(
-    input.mediaBType,
-    input.mediaBId,
-    input.dimensionId,
-  );
+  const scoreA = getOrCreateScore(input.mediaAType, input.mediaAId, input.dimensionId);
+  const scoreB = getOrCreateScore(input.mediaBType, input.mediaBId, input.dimensionId);
 
   const expectedA = expectedScore(scoreA.score, scoreB.score);
   const expectedB = expectedScore(scoreB.score, scoreA.score);
 
   const actualA =
-    input.winnerType === input.mediaAType &&
-    input.winnerId === input.mediaAId
-      ? 1
-      : 0;
+    input.winnerType === input.mediaAType && input.winnerId === input.mediaAId ? 1 : 0;
   const actualB = 1 - actualA;
 
   const newScoreA = scoreA.score + ELO_K * (actualA - expectedA);
@@ -260,19 +219,13 @@ export function listComparisonsForMedia(
   mediaId: number,
   dimensionId: number | undefined,
   limit: number,
-  offset: number,
+  offset: number
 ): ComparisonListResult {
   const db = getDrizzle();
 
   const mediaCondition = or(
-    and(
-      eq(comparisons.mediaAType, mediaType),
-      eq(comparisons.mediaAId, mediaId),
-    ),
-    and(
-      eq(comparisons.mediaBType, mediaType),
-      eq(comparisons.mediaBId, mediaId),
-    ),
+    and(eq(comparisons.mediaAType, mediaType), eq(comparisons.mediaAId, mediaId)),
+    and(eq(comparisons.mediaBType, mediaType), eq(comparisons.mediaBId, mediaId))
   );
 
   const conditions = dimensionId
@@ -288,11 +241,7 @@ export function listComparisonsForMedia(
     .offset(offset)
     .all();
 
-  const [{ total }] = db
-    .select({ total: count() })
-    .from(comparisons)
-    .where(conditions)
-    .all();
+  const [{ total }] = db.select({ total: count() }).from(comparisons).where(conditions).all();
 
   return { rows, total };
 }
@@ -302,14 +251,11 @@ export function listComparisonsForMedia(
 export function getScoresForMedia(
   mediaType: string,
   mediaId: number,
-  dimensionId?: number,
+  dimensionId?: number
 ): MediaScoreRow[] {
   const db = getDrizzle();
 
-  const conditions = [
-    eq(mediaScores.mediaType, mediaType),
-    eq(mediaScores.mediaId, mediaId),
-  ];
+  const conditions = [eq(mediaScores.mediaType, mediaType), eq(mediaScores.mediaId, mediaId)];
   if (dimensionId) {
     conditions.push(eq(mediaScores.dimensionId, dimensionId));
   }

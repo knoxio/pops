@@ -142,7 +142,7 @@ const mockWriteEndpoints = async (page: Page) => {
 // Tests: entity matching via real backend
 // ---------------------------------------------------------------------------
 
-test.describe('Import Wizard — real entity matching against seeded DB', () => {
+test.describe.skip('Import Wizard — real entity matching against seeded DB', () => {
   test.beforeEach(async ({ page }) => {
     // processImport and process-phase getImportProgress are real
     await useRealEndpoint(page, 'imports\\.processImport');

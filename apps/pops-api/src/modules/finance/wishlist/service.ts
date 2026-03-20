@@ -40,14 +40,8 @@ export function listWishListItems(
     .orderBy(asc(wishList.item))
     .limit(limit)
     .offset(offset)
-    .all()
-    ;
-
-  const [{ total }] = db
-    .select({ total: count() })
-    .from(wishList)
-    .where(where)
     .all();
+  const [{ total }] = db.select({ total: count() }).from(wishList).where(where).all();
 
   return { rows, total };
 }
@@ -55,11 +49,7 @@ export function listWishListItems(
 /** Get a single wish list item by id. Throws NotFoundError if missing. */
 export function getWishListItem(id: string): WishListRow {
   const db = getDrizzle();
-  const row = db
-    .select()
-    .from(wishList)
-    .where(eq(wishList.id, id))
-    .get();
+  const row = db.select().from(wishList).where(eq(wishList.id, id)).get();
 
   if (!row) throw new NotFoundError("Wish list item", id);
   return row;
@@ -94,10 +84,7 @@ export function createWishListItem(input: CreateWishListItemInput): WishListRow 
  * Update an existing wish list item. Returns the updated row.
  * Updates directly in SQLite.
  */
-export function updateWishListItem(
-  id: string,
-  input: UpdateWishListItemInput
-): WishListRow {
+export function updateWishListItem(id: string, input: UpdateWishListItemInput): WishListRow {
   const db = getDrizzle();
 
   // Verify it exists first

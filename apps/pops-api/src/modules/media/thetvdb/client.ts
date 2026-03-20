@@ -32,9 +32,7 @@ export class TheTvdbClient {
   /** Search for TV series by query string. */
   async searchSeries(query: string): Promise<TvdbSearchResult[]> {
     const params = new URLSearchParams({ q: query, type: "series" });
-    const raw = await this.get<RawTvdbSearchResponse>(
-      `/search?${params.toString()}`,
-    );
+    const raw = await this.get<RawTvdbSearchResponse>(`/search?${params.toString()}`);
 
     return raw.data.map((r) => ({
       tvdbId: Number(r.tvdb_id ?? r.objectID ?? 0),
@@ -52,9 +50,7 @@ export class TheTvdbClient {
 
   /** Get extended series detail by TheTVDB ID. */
   async getSeriesExtended(tvdbId: number): Promise<TvdbShowDetail> {
-    const raw = await this.get<RawTvdbSeriesExtendedResponse>(
-      `/series/${tvdbId}/extended`,
-    );
+    const raw = await this.get<RawTvdbSeriesExtendedResponse>(`/series/${tvdbId}/extended`);
     const d = raw.data;
 
     const mapSeason = (s: RawTvdbSeasonSummary): TvdbSeasonSummary => ({
@@ -76,7 +72,7 @@ export class TheTvdbClient {
 
     // Filter seasons to only "default" type (broadcast order)
     const seasons = (d.seasons ?? []).filter(
-      (s) => !s.type || s.type.type === "default" || s.type.type === "official",
+      (s) => !s.type || s.type.type === "default" || s.type.type === "official"
     );
 
     return {
@@ -97,12 +93,9 @@ export class TheTvdbClient {
   }
 
   /** Get episodes for a specific season of a series. */
-  async getSeriesEpisodes(
-    tvdbId: number,
-    seasonNumber: number,
-  ): Promise<TvdbEpisode[]> {
+  async getSeriesEpisodes(tvdbId: number, seasonNumber: number): Promise<TvdbEpisode[]> {
     const raw = await this.get<RawTvdbEpisodesResponse>(
-      `/series/${tvdbId}/episodes/default?season=${seasonNumber}`,
+      `/series/${tvdbId}/episodes/default?season=${seasonNumber}`
     );
 
     return raw.data.episodes.map((e) => ({
@@ -130,12 +123,12 @@ export class TheTvdbClient {
             Authorization: `Bearer ${token}`,
             Accept: "application/json",
           },
-        }),
+        })
       );
     } catch (err) {
       throw new TvdbApiError(
         0,
-        `Network error: ${err instanceof Error ? err.message : String(err)}`,
+        `Network error: ${err instanceof Error ? err.message : String(err)}`
       );
     }
 

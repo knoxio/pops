@@ -1,11 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import type { Database } from "better-sqlite3";
-import {
-  setupTestContext,
-  seedDimension,
-  createCaller,
-} from "../../../shared/test-utils.js";
+import { setupTestContext, seedDimension, createCaller } from "../../../shared/test-utils.js";
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;
@@ -60,9 +56,9 @@ describe("comparisons.createDimension", () => {
   it("throws CONFLICT on duplicate name", async () => {
     seedDimension(db, { name: "Overall" });
 
-    await expect(
-      caller.media.comparisons.createDimension({ name: "Overall" }),
-    ).rejects.toThrow(TRPCError);
+    await expect(caller.media.comparisons.createDimension({ name: "Overall" })).rejects.toThrow(
+      TRPCError
+    );
   });
 });
 
@@ -83,7 +79,7 @@ describe("comparisons.updateDimension", () => {
       caller.media.comparisons.updateDimension({
         id: 999,
         data: { name: "X" },
-      }),
+      })
     ).rejects.toThrow(TRPCError);
   });
 });
@@ -144,7 +140,7 @@ describe("comparisons.record", () => {
         mediaBId: 2,
         winnerType: "movie",
         winnerId: 1,
-      }),
+      })
     ).rejects.toThrow(TRPCError);
   });
 
@@ -160,7 +156,7 @@ describe("comparisons.record", () => {
         mediaBId: 2,
         winnerType: "movie",
         winnerId: 999,
-      }),
+      })
     ).rejects.toThrow(TRPCError);
   });
 });
@@ -276,8 +272,6 @@ describe("comparisons.scores", () => {
 describe("comparisons auth", () => {
   it("rejects unauthenticated calls", async () => {
     const anonCaller = createCaller(false);
-    await expect(
-      anonCaller.media.comparisons.listDimensions(),
-    ).rejects.toThrow(TRPCError);
+    await expect(anonCaller.media.comparisons.listDimensions()).rejects.toThrow(TRPCError);
   });
 });

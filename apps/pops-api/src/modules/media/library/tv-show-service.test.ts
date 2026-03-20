@@ -1,11 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { setupTestContext, seedTvShow } from "../../../shared/test-utils.js";
 import type { TheTvdbClient } from "../thetvdb/client.js";
-import type {
-  TvdbShowDetail,
-  TvdbEpisode,
-  TvdbArtwork,
-} from "../thetvdb/types.js";
+import type { TvdbShowDetail, TvdbEpisode, TvdbArtwork } from "../thetvdb/types.js";
 import { addTvShow, selectBestArtwork } from "./tv-show-service.js";
 import type { Database } from "better-sqlite3";
 
@@ -56,8 +52,20 @@ function makeShowDetail(overrides: Partial<TvdbShowDetail> = {}): TvdbShowDetail
       },
     ],
     artworks: [
-      { id: 1, type: 2, imageUrl: "https://artworks.thetvdb.com/poster.jpg", language: "eng", score: 100 },
-      { id: 2, type: 3, imageUrl: "https://artworks.thetvdb.com/backdrop.jpg", language: "eng", score: 80 },
+      {
+        id: 1,
+        type: 2,
+        imageUrl: "https://artworks.thetvdb.com/poster.jpg",
+        language: "eng",
+        score: 100,
+      },
+      {
+        id: 2,
+        type: 3,
+        imageUrl: "https://artworks.thetvdb.com/backdrop.jpg",
+        language: "eng",
+        score: 80,
+      },
     ],
     ...overrides,
   };
@@ -78,14 +86,15 @@ function makeEpisodes(seasonNumber: number, count: number): TvdbEpisode[] {
 
 function makeMockClient(
   detail: TvdbShowDetail,
-  episodeMap: Map<number, TvdbEpisode[]>,
+  episodeMap: Map<number, TvdbEpisode[]>
 ): TheTvdbClient {
   return {
     getSeriesExtended: vi.fn().mockResolvedValue(detail),
-    getSeriesEpisodes: vi.fn().mockImplementation(
-      (_tvdbId: number, seasonNumber: number) =>
-        Promise.resolve(episodeMap.get(seasonNumber) ?? []),
-    ),
+    getSeriesEpisodes: vi
+      .fn()
+      .mockImplementation((_tvdbId: number, seasonNumber: number) =>
+        Promise.resolve(episodeMap.get(seasonNumber) ?? [])
+      ),
     searchSeries: vi.fn(),
   } as unknown as TheTvdbClient;
 }
@@ -270,9 +279,7 @@ describe("addTvShow", () => {
       getSeriesExtended: vi.fn().mockRejectedValue(new Error("TheTVDB API error: 404 Not Found")),
     } as unknown as TheTvdbClient;
 
-    await expect(addTvShow(99999, client)).rejects.toThrow(
-      "TheTVDB API error: 404 Not Found",
-    );
+    await expect(addTvShow(99999, client)).rejects.toThrow("TheTVDB API error: 404 Not Found");
   });
 });
 

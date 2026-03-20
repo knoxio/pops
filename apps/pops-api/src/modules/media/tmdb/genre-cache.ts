@@ -39,9 +39,7 @@ export class GenreCache {
   /** Map an array of TMDB genre IDs to their names. Unknown IDs are skipped. */
   async mapGenreIds(ids: number[]): Promise<string[]> {
     await this.ensureLoaded();
-    return ids
-      .map((id) => this.cache.get(id))
-      .filter((name): name is string => name !== undefined);
+    return ids.map((id) => this.cache.get(id)).filter((name): name is string => name !== undefined);
   }
 
   /** Get the current cache size (for testing). */

@@ -39,9 +39,7 @@ export class TmdbClient {
       language: "en-US",
     });
 
-    const raw = await this.get<RawTmdbSearchResponse>(
-      `/3/search/movie?${params.toString()}`,
-    );
+    const raw = await this.get<RawTmdbSearchResponse>(`/3/search/movie?${params.toString()}`);
 
     return {
       page: raw.page,
@@ -66,9 +64,7 @@ export class TmdbClient {
 
   /** Get full movie detail by TMDB ID. */
   async getMovie(tmdbId: number): Promise<TmdbMovieDetail> {
-    const raw = await this.get<RawTmdbMovieDetail>(
-      `/3/movie/${tmdbId}?language=en-US`,
-    );
+    const raw = await this.get<RawTmdbMovieDetail>(`/3/movie/${tmdbId}?language=en-US`);
 
     return {
       tmdbId: raw.id,
@@ -95,9 +91,7 @@ export class TmdbClient {
 
   /** Get images (posters, backdrops, logos) for a movie. */
   async getMovieImages(tmdbId: number): Promise<TmdbImageResponse> {
-    const raw = await this.get<RawTmdbImageResponse>(
-      `/3/movie/${tmdbId}/images`,
-    );
+    const raw = await this.get<RawTmdbImageResponse>(`/3/movie/${tmdbId}/images`);
 
     const mapImage = (img: RawTmdbImageResponse["backdrops"][number]): TmdbImage => ({
       filePath: img.file_path,
@@ -119,9 +113,7 @@ export class TmdbClient {
 
   /** Get the full list of TMDB movie genres. */
   async getGenreList(): Promise<TmdbGenreListResponse> {
-    return this.get<TmdbGenreListResponse>(
-      "/3/genre/movie/list?language=en-US",
-    );
+    return this.get<TmdbGenreListResponse>("/3/genre/movie/list?language=en-US");
   }
 
   /** Generic GET with Bearer auth, rate limiting, and error handling. */
@@ -143,7 +135,7 @@ export class TmdbClient {
     } catch (err) {
       throw new TmdbApiError(
         0,
-        `Network error: ${err instanceof Error ? err.message : String(err)}`,
+        `Network error: ${err instanceof Error ? err.message : String(err)}`
       );
     }
 

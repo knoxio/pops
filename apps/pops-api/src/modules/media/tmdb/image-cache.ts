@@ -8,15 +8,12 @@
  * Failures are logged, not thrown.
  */
 import { mkdir, rm, stat, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { join } from "node:path";
 
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p";
 
 /** Allowed hostnames for image downloads. */
-const ALLOWED_IMAGE_HOSTS = new Set([
-  "image.tmdb.org",
-  "artworks.thetvdb.com",
-]);
+const ALLOWED_IMAGE_HOSTS = new Set(["image.tmdb.org", "artworks.thetvdb.com"]);
 
 /** Map media type to directory name. */
 export const MEDIA_DIR_NAMES: Record<string, string> = {
@@ -51,7 +48,7 @@ export class ImageCacheService {
     tmdbId: number,
     posterPath: string | null,
     backdropPath: string | null,
-    logoPath: string | null,
+    logoPath: string | null
   ): Promise<void> {
     const movieDir = this.movieDir(tmdbId);
     await mkdir(movieDir, { recursive: true });
@@ -62,8 +59,8 @@ export class ImageCacheService {
       downloads.push(
         this.downloadImage(
           `${TMDB_IMAGE_BASE}/${IMAGE_SIZES.poster}${posterPath}`,
-          join(movieDir, IMAGE_FILENAMES.poster),
-        ),
+          join(movieDir, IMAGE_FILENAMES.poster)
+        )
       );
     }
 
@@ -71,8 +68,8 @@ export class ImageCacheService {
       downloads.push(
         this.downloadImage(
           `${TMDB_IMAGE_BASE}/${IMAGE_SIZES.backdrop}${backdropPath}`,
-          join(movieDir, IMAGE_FILENAMES.backdrop),
-        ),
+          join(movieDir, IMAGE_FILENAMES.backdrop)
+        )
       );
     }
 
@@ -80,8 +77,8 @@ export class ImageCacheService {
       downloads.push(
         this.downloadImage(
           `${TMDB_IMAGE_BASE}/${IMAGE_SIZES.logo}${logoPath}`,
-          join(movieDir, IMAGE_FILENAMES.logo),
-        ),
+          join(movieDir, IMAGE_FILENAMES.logo)
+        )
       );
     }
 
@@ -98,7 +95,7 @@ export class ImageCacheService {
   async downloadTvShowImages(
     tvdbId: number,
     posterUrl: string | null,
-    backdropUrl: string | null,
+    backdropUrl: string | null
   ): Promise<void> {
     const tvDir = this.tvShowDir(tvdbId);
     await mkdir(tvDir, { recursive: true });
@@ -106,15 +103,11 @@ export class ImageCacheService {
     const downloads: Promise<void>[] = [];
 
     if (posterUrl) {
-      downloads.push(
-        this.downloadImage(posterUrl, join(tvDir, IMAGE_FILENAMES.poster)),
-      );
+      downloads.push(this.downloadImage(posterUrl, join(tvDir, IMAGE_FILENAMES.poster)));
     }
 
     if (backdropUrl) {
-      downloads.push(
-        this.downloadImage(backdropUrl, join(tvDir, IMAGE_FILENAMES.backdrop)),
-      );
+      downloads.push(this.downloadImage(backdropUrl, join(tvDir, IMAGE_FILENAMES.backdrop)));
     }
 
     if (downloads.length > 0) {
@@ -129,15 +122,10 @@ export class ImageCacheService {
   async getImagePath(
     mediaType: "movie" | "tv",
     id: number,
-    imageType: ImageType,
+    imageType: ImageType
   ): Promise<string | null> {
     const dirName = MEDIA_DIR_NAMES[mediaType] ?? `${mediaType}s`;
-    const filePath = join(
-      this.imagesDir,
-      dirName,
-      String(id),
-      IMAGE_FILENAMES[imageType],
-    );
+    const filePath = join(this.imagesDir, dirName, String(id), IMAGE_FILENAMES[imageType]);
 
     try {
       await stat(filePath);
@@ -172,9 +160,7 @@ export class ImageCacheService {
     try {
       const parsed = new URL(url);
       if (!ALLOWED_IMAGE_HOSTS.has(parsed.hostname)) {
-        console.warn(
-          `[ImageCache] Blocked download from untrusted host: ${parsed.hostname}`,
-        );
+        console.warn(`[ImageCache] Blocked download from untrusted host: ${parsed.hostname}`);
         return;
       }
     } catch {
@@ -201,7 +187,7 @@ export class ImageCacheService {
     } catch (err) {
       // Log but don't throw — missing images are not fatal
       console.warn(
-        `[ImageCache] Failed to download ${url}: ${err instanceof Error ? err.message : String(err)}`,
+        `[ImageCache] Failed to download ${url}: ${err instanceof Error ? err.message : String(err)}`
       );
     }
   }

@@ -46,7 +46,7 @@ export class TheTvdbAuth {
     } catch (err) {
       throw new TvdbApiError(
         0,
-        `Network error during TheTVDB login: ${err instanceof Error ? err.message : String(err)}`,
+        `Network error during TheTVDB login: ${err instanceof Error ? err.message : String(err)}`
       );
     }
 

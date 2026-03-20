@@ -9,11 +9,7 @@ import { count, countDistinct, desc, eq, and, inArray, type SQL } from "drizzle-
 import { getDrizzle } from "../../../db.js";
 import { watchHistory, mediaWatchlist, episodes, seasons } from "@pops/db-types";
 import { NotFoundError } from "../../../shared/errors.js";
-import type {
-  WatchHistoryRow,
-  LogWatchInput,
-  WatchHistoryFilters,
-} from "./types.js";
+import type { WatchHistoryRow, LogWatchInput, WatchHistoryFilters } from "./types.js";
 
 /** Count + rows for a paginated list. */
 export interface WatchHistoryListResult {
@@ -48,11 +44,7 @@ export function listWatchHistory(
     .offset(offset)
     .all();
 
-  const [countRow] = db
-    .select({ total: count() })
-    .from(watchHistory)
-    .where(where)
-    .all();
+  const [countRow] = db.select({ total: count() }).from(watchHistory).where(where).all();
 
   return { rows, total: countRow.total };
 }
@@ -60,11 +52,7 @@ export function listWatchHistory(
 /** Get a single watch history entry by id. Throws NotFoundError if missing. */
 export function getWatchHistoryEntry(id: number): WatchHistoryRow {
   const db = getDrizzle();
-  const row = db
-    .select()
-    .from(watchHistory)
-    .where(eq(watchHistory.id, id))
-    .get();
+  const row = db.select().from(watchHistory).where(eq(watchHistory.id, id)).get();
 
   if (!row) throw new NotFoundError("WatchHistoryEntry", String(id));
   return row;
@@ -101,17 +89,15 @@ export function logWatch(input: LogWatchInput): WatchHistoryRow {
       .select()
       .from(watchHistory)
       .where(eq(watchHistory.id, Number(result.lastInsertRowid)))
-      .get()!;
+      .get();
+    if (!entry) throw new Error("Watch history entry not found after insert");
 
     // Auto-remove from watchlist (PRD-011 R6)
     if (completed === 1) {
       if (input.mediaType === "movie") {
         tx.delete(mediaWatchlist)
           .where(
-            and(
-              eq(mediaWatchlist.mediaType, "movie"),
-              eq(mediaWatchlist.mediaId, input.mediaId),
-            ),
+            and(eq(mediaWatchlist.mediaType, "movie"), eq(mediaWatchlist.mediaId, input.mediaId))
           )
           .run();
       } else if (input.mediaType === "episode") {
@@ -132,7 +118,7 @@ export function logWatch(input: LogWatchInput): WatchHistoryRow {
  */
 function autoRemoveTvShowIfFullyWatched(
   tx: Parameters<Parameters<ReturnType<typeof getDrizzle>["transaction"]>[0]>[0],
-  episodeId: number,
+  episodeId: number
 ): void {
   // Look up episode → season → tv show
   const episode = tx
@@ -170,19 +156,14 @@ function autoRemoveTvShowIfFullyWatched(
       and(
         eq(watchHistory.mediaType, "episode"),
         eq(watchHistory.completed, 1),
-        inArray(watchHistory.mediaId, showEpisodeIds),
-      ),
+        inArray(watchHistory.mediaId, showEpisodeIds)
+      )
     )
     .all();
 
   if (watched >= showEpisodeIds.length) {
     tx.delete(mediaWatchlist)
-      .where(
-        and(
-          eq(mediaWatchlist.mediaType, "tv_show"),
-          eq(mediaWatchlist.mediaId, tvShowId),
-        ),
-      )
+      .where(and(eq(mediaWatchlist.mediaType, "tv_show"), eq(mediaWatchlist.mediaId, tvShowId)))
       .run();
   }
 }
@@ -191,9 +172,6 @@ function autoRemoveTvShowIfFullyWatched(
 export function deleteWatchHistoryEntry(id: number): void {
   getWatchHistoryEntry(id);
 
-  const result = getDrizzle()
-    .delete(watchHistory)
-    .where(eq(watchHistory.id, id))
-    .run();
+  const result = getDrizzle().delete(watchHistory).where(eq(watchHistory.id, id)).run();
   if (result.changes === 0) throw new NotFoundError("WatchHistoryEntry", String(id));
 }

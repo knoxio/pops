@@ -44,9 +44,7 @@ describe("inventory.locations.get", () => {
   });
 
   it("throws NOT_FOUND for missing ID", async () => {
-    await expect(
-      caller.inventory.locations.get({ id: "nonexistent" })
-    ).rejects.toThrow(TRPCError);
+    await expect(caller.inventory.locations.get({ id: "nonexistent" })).rejects.toThrow(TRPCError);
   });
 });
 
@@ -81,8 +79,8 @@ describe("inventory.locations.tree", () => {
 
     const kitchen = home.children.find((c) => c.name === "Kitchen");
     expect(kitchen).toBeDefined();
-    expect(kitchen!.children).toHaveLength(1); // Pantry
-    expect(kitchen!.children[0].name).toBe("Pantry");
+    expect(kitchen?.children).toHaveLength(1); // Pantry
+    expect(kitchen?.children[0].name).toBe("Pantry");
   });
 });
 
@@ -130,9 +128,7 @@ describe("inventory.locations.create", () => {
   });
 
   it("rejects empty name", async () => {
-    await expect(
-      caller.inventory.locations.create({ name: "" })
-    ).rejects.toThrow();
+    await expect(caller.inventory.locations.create({ name: "" })).rejects.toThrow();
   });
 });
 
@@ -200,9 +196,7 @@ describe("inventory.locations.delete", () => {
     expect(result.message).toBe("Location deleted");
 
     // Verify it's gone
-    await expect(
-      caller.inventory.locations.get({ id })
-    ).rejects.toThrow(TRPCError);
+    await expect(caller.inventory.locations.get({ id })).rejects.toThrow(TRPCError);
   });
 
   it("cascade deletes children", async () => {
@@ -218,8 +212,8 @@ describe("inventory.locations.delete", () => {
   });
 
   it("throws NOT_FOUND for missing ID", async () => {
-    await expect(
-      caller.inventory.locations.delete({ id: "nonexistent" })
-    ).rejects.toThrow(TRPCError);
+    await expect(caller.inventory.locations.delete({ id: "nonexistent" })).rejects.toThrow(
+      TRPCError
+    );
   });
 });

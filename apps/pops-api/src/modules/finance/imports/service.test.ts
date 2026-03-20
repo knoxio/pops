@@ -499,9 +499,9 @@ describe("executeImport", () => {
     expect(result.failed).toEqual([]);
 
     // Verify the transaction was inserted with a UUID
-    const row = db
-      .prepare("SELECT id FROM transactions WHERE checksum = ?")
-      .get("abc123") as { id: string } | undefined;
+    const row = db.prepare("SELECT id FROM transactions WHERE checksum = ?").get("abc123") as
+      | { id: string }
+      | undefined;
     expect(row).toBeDefined();
     expect(row?.id).toMatch(/^[0-9a-f-]{36}$/); // UUID format
   });
@@ -513,18 +513,18 @@ describe("executeImport", () => {
     };
     executeImport([transaction]);
 
-    const row = db
-      .prepare("SELECT tags FROM transactions WHERE checksum = ?")
-      .get("abc123") as { tags: string };
+    const row = db.prepare("SELECT tags FROM transactions WHERE checksum = ?").get("abc123") as {
+      tags: string;
+    };
     expect(JSON.parse(row.tags)).toEqual(["Groceries", "Weekly Shop"]);
   });
 
   it("defaults to empty tags when not provided", () => {
     executeImport([baseConfirmedTransaction]); // tags field absent
 
-    const row = db
-      .prepare("SELECT tags FROM transactions WHERE checksum = ?")
-      .get("abc123") as { tags: string };
+    const row = db.prepare("SELECT tags FROM transactions WHERE checksum = ?").get("abc123") as {
+      tags: string;
+    };
     expect(JSON.parse(row.tags)).toEqual([]);
   });
 
@@ -554,9 +554,9 @@ describe("executeImport", () => {
   it("stores rawRow in SQLite", () => {
     executeImport([baseConfirmedTransaction]);
 
-    const row = db
-      .prepare("SELECT raw_row FROM transactions WHERE checksum = ?")
-      .get("abc123") as { raw_row: string | null };
+    const row = db.prepare("SELECT raw_row FROM transactions WHERE checksum = ?").get("abc123") as {
+      raw_row: string | null;
+    };
     expect(row.raw_row).toBe('{"Date":"13/02/2026"}');
   });
 
@@ -597,9 +597,7 @@ describe("createEntity", () => {
     expect(result.entityName).toBe("New Entity");
 
     // Verify SQLite insert
-    const row = db
-      .prepare("SELECT * FROM entities WHERE id = ?")
-      .get(result.entityId) as EntityRow;
+    const row = db.prepare("SELECT * FROM entities WHERE id = ?").get(result.entityId) as EntityRow;
     expect(row.name).toBe("New Entity");
   });
 
@@ -608,9 +606,9 @@ describe("createEntity", () => {
 
     expect(result.entityName).toBe("McDonald's");
 
-    const row = db
-      .prepare("SELECT name FROM entities WHERE id = ?")
-      .get(result.entityId) as { name: string };
+    const row = db.prepare("SELECT name FROM entities WHERE id = ?").get(result.entityId) as {
+      name: string;
+    };
     expect(row.name).toBe("McDonald's");
   });
 

@@ -67,9 +67,8 @@ export function listCorrections(
 ): { rows: CorrectionRow[]; total: number } {
   const db = getDrizzle();
 
-  const condition = minConfidence !== undefined
-    ? gte(transactionCorrections.confidence, minConfidence)
-    : undefined;
+  const condition =
+    minConfidence !== undefined ? gte(transactionCorrections.confidence, minConfidence) : undefined;
 
   const [countResult] = db
     .select({ count: count() })
@@ -250,10 +249,7 @@ export function updateCorrection(id: string, input: UpdateCorrectionInput): Corr
     return existing; // No changes
   }
 
-  db.update(transactionCorrections)
-    .set(updates)
-    .where(eq(transactionCorrections.id, id))
-    .run();
+  db.update(transactionCorrections).set(updates).where(eq(transactionCorrections.id, id)).run();
 
   return getCorrection(id);
 }
@@ -263,10 +259,7 @@ export function updateCorrection(id: string, input: UpdateCorrectionInput): Corr
  */
 export function deleteCorrection(id: string): void {
   const db = getDrizzle();
-  const result = db
-    .delete(transactionCorrections)
-    .where(eq(transactionCorrections.id, id))
-    .run();
+  const result = db.delete(transactionCorrections).where(eq(transactionCorrections.id, id)).run();
 
   if (result.changes === 0) {
     throw new NotFoundError("Correction", id);

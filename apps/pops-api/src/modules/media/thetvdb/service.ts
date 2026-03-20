@@ -30,14 +30,10 @@ export interface RefreshTvShowResult {
  */
 function upsertSeason(
   showId: number,
-  seasonSummary: TvdbSeasonSummary,
+  seasonSummary: TvdbSeasonSummary
 ): { seasonId: number; added: boolean } {
   const db = getDrizzle();
-  const existing = db
-    .select()
-    .from(seasons)
-    .where(eq(seasons.tvdbId, seasonSummary.tvdbId))
-    .get();
+  const existing = db.select().from(seasons).where(eq(seasons.tvdbId, seasonSummary.tvdbId)).get();
 
   if (existing) {
     db.update(seasons)
@@ -64,11 +60,7 @@ function upsertSeason(
     })
     .run();
 
-  const newSeason = db
-    .select()
-    .from(seasons)
-    .where(eq(seasons.tvdbId, seasonSummary.tvdbId))
-    .get();
+  const newSeason = db.select().from(seasons).where(eq(seasons.tvdbId, seasonSummary.tvdbId)).get();
 
   if (!newSeason) {
     throw new Error(`Failed to insert season with tvdbId ${seasonSummary.tvdbId}`);
@@ -87,7 +79,7 @@ function upsertSeason(
  */
 export async function refreshTvShow(
   client: TheTvdbClient,
-  input: RefreshTvShowInput,
+  input: RefreshTvShowInput
 ): Promise<RefreshTvShowResult> {
   const { id, redownloadImages = false, refreshEpisodes = true } = input;
 
@@ -100,9 +92,7 @@ export async function refreshTvShow(
 
   // 3. Update show metadata, preserving poster_override_path
   // Exclude specials (season 0) from numberOfSeasons count
-  const regularSeasonCount = detail.seasons.filter(
-    (s) => s.seasonNumber > 0,
-  ).length;
+  const regularSeasonCount = detail.seasons.filter((s) => s.seasonNumber > 0).length;
 
   tvShowsService.updateTvShow(id, {
     name: detail.name,
@@ -148,10 +138,7 @@ export async function refreshTvShow(
       // Fetch episodes for this season
       let tvdbEpisodes: TvdbEpisode[];
       try {
-        tvdbEpisodes = await client.getSeriesEpisodes(
-          tvdbId,
-          seasonSummary.seasonNumber,
-        );
+        tvdbEpisodes = await client.getSeriesEpisodes(tvdbId, seasonSummary.seasonNumber);
       } catch {
         // Skip seasons where episode fetch fails (e.g., upcoming season with no data)
         continue;
@@ -159,11 +146,7 @@ export async function refreshTvShow(
 
       // Upsert episodes — insert new, update existing, never delete
       for (const ep of tvdbEpisodes) {
-        const existingEp = db
-          .select()
-          .from(episodes)
-          .where(eq(episodes.tvdbId, ep.tvdbId))
-          .get();
+        const existingEp = db.select().from(episodes).where(eq(episodes.tvdbId, ep.tvdbId)).get();
 
         if (existingEp) {
           db.update(episodes)

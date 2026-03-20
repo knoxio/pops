@@ -238,10 +238,12 @@ describe("wishlist.create", () => {
   });
 
   it("rejects invalid URL", async () => {
-    await expect(caller.finance.wishlist.create({ item: "Test", url: "not-a-url" })).rejects.toThrow(
-      TRPCError
-    );
-    await expect(caller.finance.wishlist.create({ item: "Test", url: "not-a-url" })).rejects.toMatchObject({
+    await expect(
+      caller.finance.wishlist.create({ item: "Test", url: "not-a-url" })
+    ).rejects.toThrow(TRPCError);
+    await expect(
+      caller.finance.wishlist.create({ item: "Test", url: "not-a-url" })
+    ).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
   });
@@ -312,9 +314,9 @@ describe("wishlist.update", () => {
 
     await caller.finance.wishlist.update({ id, data: { priority: "Needing" } });
 
-    const row = db
-      .prepare("SELECT last_edited_time FROM wish_list WHERE id = ?")
-      .get(id) as { last_edited_time: string };
+    const row = db.prepare("SELECT last_edited_time FROM wish_list WHERE id = ?").get(id) as {
+      last_edited_time: string;
+    };
     expect(row.last_edited_time).not.toBe("2020-01-01T00:00:00.000Z");
   });
 
@@ -338,7 +340,9 @@ describe("wishlist.update", () => {
   it("rejects empty item", async () => {
     const id = seedWishListItem(db, { item: "MacBook Pro" });
 
-    await expect(caller.finance.wishlist.update({ id, data: { item: "" } })).rejects.toThrow(TRPCError);
+    await expect(caller.finance.wishlist.update({ id, data: { item: "" } })).rejects.toThrow(
+      TRPCError
+    );
     await expect(caller.finance.wishlist.update({ id, data: { item: "" } })).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
@@ -373,7 +377,9 @@ describe("wishlist.delete", () => {
   });
 
   it("throws NOT_FOUND for non-existent ID", async () => {
-    await expect(caller.finance.wishlist.delete({ id: "does-not-exist" })).rejects.toThrow(TRPCError);
+    await expect(caller.finance.wishlist.delete({ id: "does-not-exist" })).rejects.toThrow(
+      TRPCError
+    );
     await expect(caller.finance.wishlist.delete({ id: "does-not-exist" })).rejects.toMatchObject({
       code: "NOT_FOUND",
     });

@@ -28,8 +28,7 @@ const RAW_SEARCH_RESULT: RawTvdbSearchResult = {
   objectID: "81189",
   name: "Breaking Bad",
   name_translated: { eng: "Breaking Bad" },
-  overview:
-    "Walter White, a New Mexico chemistry teacher, is diagnosed with Stage III cancer.",
+  overview: "Walter White, a New Mexico chemistry teacher, is diagnosed with Stage III cancer.",
   first_air_time: "2008-01-20",
   status: "Ended",
   primary_language: "eng",
@@ -45,8 +44,7 @@ const RAW_SERIES_EXTENDED: RawTvdbSeriesExtended = {
   id: 81189,
   name: "Breaking Bad",
   originalName: null,
-  overview:
-    "Walter White, a New Mexico chemistry teacher, is diagnosed with Stage III cancer.",
+  overview: "Walter White, a New Mexico chemistry teacher, is diagnosed with Stage III cancer.",
   firstAired: "2008-01-20",
   lastAired: "2013-09-29",
   status: { id: 2, name: "Ended" },
@@ -188,7 +186,7 @@ describe("mapSearchResult", () => {
   it("falls back to thumbnail when image_url missing", () => {
     const result = mapSearchResult({ ...RAW_SEARCH_RESULT, image_url: undefined });
     expect(result.posterPath).toBe(
-      "https://artworks.thetvdb.com/banners/posters/81189-1-thumb.jpg",
+      "https://artworks.thetvdb.com/banners/posters/81189-1-thumb.jpg"
     );
   });
 });
@@ -387,10 +385,12 @@ describe("mapArtworks", () => {
 
 describe("extractGenreNames", () => {
   it("extracts names from genre objects", () => {
-    expect(extractGenreNames([
-      { id: 1, name: "Drama" },
-      { id: 2, name: "Comedy" },
-    ])).toEqual(["Drama", "Comedy"]);
+    expect(
+      extractGenreNames([
+        { id: 1, name: "Drama" },
+        { id: 2, name: "Comedy" },
+      ])
+    ).toEqual(["Drama", "Comedy"]);
   });
 
   it("returns empty array for empty input", () => {
@@ -400,10 +400,12 @@ describe("extractGenreNames", () => {
 
 describe("extractNetworkNames", () => {
   it("extracts names from network objects", () => {
-    expect(extractNetworkNames([
-      { id: 1, name: "AMC" },
-      { id: 2, name: "Netflix" },
-    ])).toEqual(["AMC", "Netflix"]);
+    expect(
+      extractNetworkNames([
+        { id: 1, name: "AMC" },
+        { id: 2, name: "Netflix" },
+      ])
+    ).toEqual(["AMC", "Netflix"]);
   });
 });
 
@@ -431,26 +433,22 @@ describe("toTvShowInsert", () => {
 
   it("serializes genres as JSON string array", () => {
     const detail = mapShowDetail(RAW_SERIES_EXTENDED);
-    expect(toTvShowInsert(detail).genres).toBe(
-      JSON.stringify(["Drama", "Thriller", "Crime"]),
-    );
+    expect(toTvShowInsert(detail).genres).toBe(JSON.stringify(["Drama", "Thriller", "Crime"]));
   });
 
   it("serializes networks as JSON string array", () => {
     const detail = mapShowDetail(RAW_SERIES_EXTENDED);
     expect(toTvShowInsert(detail).networks).toBe(
-      JSON.stringify(["AMC", "Sony Pictures Television"]),
+      JSON.stringify(["AMC", "Sony Pictures Television"])
     );
   });
 
   it("picks best English poster from artworks", () => {
     const detail = mapShowDetail(RAW_SERIES_EXTENDED);
     const insert = toTvShowInsert(detail);
-    expect(insert.posterPath).toBe(
-      "https://artworks.thetvdb.com/banners/posters/81189-eng.jpg",
-    );
+    expect(insert.posterPath).toBe("https://artworks.thetvdb.com/banners/posters/81189-eng.jpg");
     expect(insert.backdropPath).toBe(
-      "https://artworks.thetvdb.com/banners/backgrounds/81189-1.jpg",
+      "https://artworks.thetvdb.com/banners/backgrounds/81189-1.jpg"
     );
   });
 });
@@ -466,17 +464,19 @@ describe("toSeasonInsert", () => {
     expect(insert.seasonNumber).toBe(1);
     expect(insert.name).toBe("Season 1");
     expect(insert.overview).toBe("The first season.");
-    expect(insert.posterPath).toBe(
-      "https://artworks.thetvdb.com/banners/seasons/81189-1.jpg",
-    );
+    expect(insert.posterPath).toBe("https://artworks.thetvdb.com/banners/seasons/81189-1.jpg");
     expect(insert.episodeCount).toBe(7);
     expect(insert.airDate).toBeNull();
   });
 
   it("maps zero episodes to null", () => {
     const season = {
-      tvdbId: 1, seasonNumber: 3, name: null, overview: null,
-      imageUrl: null, episodeCount: 0,
+      tvdbId: 1,
+      seasonNumber: 3,
+      name: null,
+      overview: null,
+      imageUrl: null,
+      episodeCount: 0,
     };
     expect(toSeasonInsert(season, 1).episodeCount).toBeNull();
   });
@@ -494,9 +494,7 @@ describe("toEpisodeInsert", () => {
     expect(insert.overview).toContain("50-year-old");
     expect(insert.airDate).toBe("2008-01-20");
     expect(insert.runtime).toBe(58);
-    expect(insert.stillPath).toBe(
-      "https://artworks.thetvdb.com/banners/episodes/81189/349232.jpg",
-    );
+    expect(insert.stillPath).toBe("https://artworks.thetvdb.com/banners/episodes/81189/349232.jpg");
     expect(insert.voteAverage).toBeNull();
   });
 });

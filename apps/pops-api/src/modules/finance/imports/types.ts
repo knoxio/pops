@@ -84,10 +84,7 @@ export type ProcessImportInput = z.infer<typeof processImportInputSchema>;
  * Import warning - non-fatal issues during processing
  */
 export const importWarningSchema = z.object({
-  type: z.enum([
-    "AI_CATEGORIZATION_UNAVAILABLE",
-    "AI_API_ERROR",
-  ]),
+  type: z.enum(["AI_CATEGORIZATION_UNAVAILABLE", "AI_API_ERROR"]),
   message: z.string(),
   affectedCount: z.number().optional(),
   details: z.string().optional(),

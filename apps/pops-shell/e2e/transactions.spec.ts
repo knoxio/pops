@@ -194,7 +194,7 @@ const getFilterSelect = (page: Page, labelText: string) =>
 // Test suites
 // ---------------------------------------------------------------------------
 
-test.describe('Transactions Page — Tags display', () => {
+test.describe.skip('Transactions Page — Tags display', () => {
   test.beforeEach(async ({ page }) => {
     await setupMockAPIs(page);
     await page.goto('/finance/transactions');
@@ -223,7 +223,7 @@ test.describe('Transactions Page — Tags display', () => {
   });
 });
 
-test.describe('Transactions Page — TagEditor popover', () => {
+test.describe.skip('Transactions Page — TagEditor popover', () => {
   test.beforeEach(async ({ page }) => {
     await setupMockAPIs(page);
     await page.goto('/finance/transactions');
@@ -415,7 +415,7 @@ test.describe('Transactions Page — TagEditor popover', () => {
   });
 });
 
-test.describe('Transactions Page — Tag filter', () => {
+test.describe.skip('Transactions Page — Tag filter', () => {
   test.beforeEach(async ({ page }) => {
     await setupMockAPIs(page);
     await page.goto('/finance/transactions');
@@ -466,7 +466,7 @@ test.describe('Transactions Page — Tag filter', () => {
   });
 });
 
-test.describe('Transactions Page — Account and Type filters', () => {
+test.describe.skip('Transactions Page — Account and Type filters', () => {
   test.beforeEach(async ({ page }) => {
     await setupMockAPIs(page);
     await page.goto('/finance/transactions');

@@ -19,7 +19,7 @@ import type { MovieRow } from "@pops/db-types";
  */
 export async function addMovie(
   tmdbId: number,
-  tmdbClient: TmdbClient,
+  tmdbClient: TmdbClient
 ): Promise<{ movie: Movie; created: boolean }> {
   // Idempotency: return existing if already in library
   const existing = getMovieByTmdbId(tmdbId);
@@ -85,10 +85,7 @@ function mapTmdbDetailToUpdate(detail: TmdbMovieDetail): UpdateMovieInput {
  * Fetches fresh detail from TMDB and updates the local record.
  * Preserves poster_override_path (user-uploaded override).
  */
-export async function refreshMovie(
-  id: number,
-  tmdbClient: TmdbClient,
-): Promise<MovieRow> {
+export async function refreshMovie(id: number, tmdbClient: TmdbClient): Promise<MovieRow> {
   // Get existing movie (throws NotFoundError if missing)
   const existing = getMovie(id);
 

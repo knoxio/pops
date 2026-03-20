@@ -2,11 +2,16 @@
  * Location service — CRUD operations for the location tree.
  * SQLite is the source of truth. All operations are local.
  */
-import { eq, asc, count, isNull, sql } from "drizzle-orm";
+import { eq, asc } from "drizzle-orm";
 import { locations } from "@pops/db-types";
 import { getDrizzle } from "../../../db.js";
 import { NotFoundError, ConflictError } from "../../../shared/errors.js";
-import type { LocationRow, CreateLocationInput, UpdateLocationInput, LocationTreeNode } from "./types.js";
+import type {
+  LocationRow,
+  CreateLocationInput,
+  UpdateLocationInput,
+  LocationTreeNode,
+} from "./types.js";
 import { toLocation } from "./types.js";
 
 /** Count + rows for a paginated list. */
@@ -31,11 +36,7 @@ export function listLocations(): LocationListResult {
 /** Get a single location by ID. Throws NotFoundError if missing. */
 export function getLocation(id: string): LocationRow {
   const db = getDrizzle();
-  const row = db
-    .select()
-    .from(locations)
-    .where(eq(locations.id, id))
-    .get();
+  const row = db.select().from(locations).where(eq(locations.id, id)).get();
 
   if (!row) throw new NotFoundError("Location", id);
   return row;
@@ -65,9 +66,11 @@ export function getLocationTree(): LocationTreeNode[] {
 
   // Second pass: link children to parents
   for (const row of allRows) {
-    const node = nodeMap.get(row.id)!;
-    if (row.parentId && nodeMap.has(row.parentId)) {
-      nodeMap.get(row.parentId)!.children.push(node);
+    const node = nodeMap.get(row.id);
+    if (!node) continue;
+    const parent = row.parentId ? nodeMap.get(row.parentId) : undefined;
+    if (parent) {
+      parent.children.push(node);
     } else {
       roots.push(node);
     }

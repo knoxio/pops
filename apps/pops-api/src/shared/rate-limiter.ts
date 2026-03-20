@@ -13,7 +13,7 @@ export class TokenBucketRateLimiter {
 
   constructor(
     private readonly capacity: number,
-    private readonly refillRate: number,
+    private readonly refillRate: number
   ) {
     this.tokens = capacity;
     this.lastRefill = Date.now();
@@ -58,8 +58,8 @@ export class TokenBucketRateLimiter {
 
       while (this.waitQueue.length > 0 && this.tokens >= 1) {
         this.tokens -= 1;
-        const resolve = this.waitQueue.shift()!;
-        resolve();
+        const next = this.waitQueue.shift();
+        if (next) next();
       }
 
       if (this.waitQueue.length > 0) {
@@ -75,8 +75,8 @@ export class TokenBucketRateLimiter {
       this.drainTimer = null;
     }
     while (this.waitQueue.length > 0) {
-      const resolve = this.waitQueue.shift()!;
-      resolve();
+      const next = this.waitQueue.shift();
+      if (next) next();
     }
   }
 }

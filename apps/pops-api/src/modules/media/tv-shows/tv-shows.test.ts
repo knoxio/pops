@@ -87,9 +87,7 @@ describe("tvShows.get", () => {
   });
 
   it("throws NOT_FOUND for missing show", async () => {
-    await expect(
-      caller.media.tvShows.get({ id: 999 }),
-    ).rejects.toThrow(TRPCError);
+    await expect(caller.media.tvShows.get({ id: 999 })).rejects.toThrow(TRPCError);
   });
 });
 
@@ -112,9 +110,9 @@ describe("tvShows.create", () => {
   it("throws CONFLICT on duplicate tvdbId", async () => {
     seedTvShow(db, { tvdb_id: 1396, name: "Breaking Bad" });
 
-    await expect(
-      caller.media.tvShows.create({ tvdbId: 1396, name: "Duplicate" }),
-    ).rejects.toThrow(TRPCError);
+    await expect(caller.media.tvShows.create({ tvdbId: 1396, name: "Duplicate" })).rejects.toThrow(
+      TRPCError
+    );
   });
 });
 
@@ -131,9 +129,9 @@ describe("tvShows.update", () => {
   });
 
   it("throws NOT_FOUND for missing show", async () => {
-    await expect(
-      caller.media.tvShows.update({ id: 999, data: { name: "X" } }),
-    ).rejects.toThrow(TRPCError);
+    await expect(caller.media.tvShows.update({ id: 999, data: { name: "X" } })).rejects.toThrow(
+      TRPCError
+    );
   });
 });
 
@@ -144,15 +142,11 @@ describe("tvShows.delete", () => {
     const result = await caller.media.tvShows.delete({ id: showId });
     expect(result.message).toBe("TV show deleted");
 
-    await expect(
-      caller.media.tvShows.get({ id: showId }),
-    ).rejects.toThrow(TRPCError);
+    await expect(caller.media.tvShows.get({ id: showId })).rejects.toThrow(TRPCError);
   });
 
   it("throws NOT_FOUND for missing show", async () => {
-    await expect(
-      caller.media.tvShows.delete({ id: 999 }),
-    ).rejects.toThrow(TRPCError);
+    await expect(caller.media.tvShows.delete({ id: 999 })).rejects.toThrow(TRPCError);
   });
 
   it("cascades to seasons and episodes", async () => {
@@ -163,9 +157,13 @@ describe("tvShows.delete", () => {
     await caller.media.tvShows.delete({ id: showId });
 
     // Seasons and episodes should be gone (CASCADE)
-    const seasonsLeft = db.prepare("SELECT count(*) as c FROM seasons WHERE tv_show_id = ?").get(showId) as { c: number };
+    const seasonsLeft = db
+      .prepare("SELECT count(*) as c FROM seasons WHERE tv_show_id = ?")
+      .get(showId) as { c: number };
     expect(seasonsLeft.c).toBe(0);
-    const episodesLeft = db.prepare("SELECT count(*) as c FROM episodes WHERE season_id = ?").get(seasonId) as { c: number };
+    const episodesLeft = db
+      .prepare("SELECT count(*) as c FROM episodes WHERE season_id = ?")
+      .get(seasonId) as { c: number };
     expect(episodesLeft.c).toBe(0);
   });
 });
@@ -185,9 +183,7 @@ describe("tvShows.listSeasons", () => {
   });
 
   it("throws NOT_FOUND for missing show", async () => {
-    await expect(
-      caller.media.tvShows.listSeasons({ tvShowId: 999 }),
-    ).rejects.toThrow(TRPCError);
+    await expect(caller.media.tvShows.listSeasons({ tvShowId: 999 })).rejects.toThrow(TRPCError);
   });
 });
 
@@ -213,7 +209,7 @@ describe("tvShows.createSeason", () => {
         tvShowId: 999,
         tvdbId: 500,
         seasonNumber: 1,
-      }),
+      })
     ).rejects.toThrow(TRPCError);
   });
 
@@ -226,7 +222,7 @@ describe("tvShows.createSeason", () => {
         tvShowId: showId,
         tvdbId: 500,
         seasonNumber: 2,
-      }),
+      })
     ).rejects.toThrow(TRPCError);
   });
 
@@ -239,7 +235,7 @@ describe("tvShows.createSeason", () => {
         tvShowId: showId,
         tvdbId: 501,
         seasonNumber: 1,
-      }),
+      })
     ).rejects.toThrow(TRPCError);
   });
 });
@@ -254,9 +250,7 @@ describe("tvShows.deleteSeason", () => {
   });
 
   it("throws NOT_FOUND for missing season", async () => {
-    await expect(
-      caller.media.tvShows.deleteSeason({ id: 999 }),
-    ).rejects.toThrow(TRPCError);
+    await expect(caller.media.tvShows.deleteSeason({ id: 999 })).rejects.toThrow(TRPCError);
   });
 
   it("cascades to episodes", async () => {
@@ -266,7 +260,9 @@ describe("tvShows.deleteSeason", () => {
 
     await caller.media.tvShows.deleteSeason({ id: seasonId });
 
-    const episodesLeft = db.prepare("SELECT count(*) as c FROM episodes WHERE season_id = ?").get(seasonId) as { c: number };
+    const episodesLeft = db
+      .prepare("SELECT count(*) as c FROM episodes WHERE season_id = ?")
+      .get(seasonId) as { c: number };
     expect(episodesLeft.c).toBe(0);
   });
 });
@@ -289,9 +285,7 @@ describe("tvShows.listEpisodes", () => {
   });
 
   it("throws NOT_FOUND for missing season", async () => {
-    await expect(
-      caller.media.tvShows.listEpisodes({ seasonId: 999 }),
-    ).rejects.toThrow(TRPCError);
+    await expect(caller.media.tvShows.listEpisodes({ seasonId: 999 })).rejects.toThrow(TRPCError);
   });
 });
 
@@ -320,7 +314,7 @@ describe("tvShows.createEpisode", () => {
         seasonId: 999,
         tvdbId: 2000,
         episodeNumber: 1,
-      }),
+      })
     ).rejects.toThrow(TRPCError);
   });
 
@@ -334,7 +328,7 @@ describe("tvShows.createEpisode", () => {
         seasonId,
         tvdbId: 2000,
         episodeNumber: 2,
-      }),
+      })
     ).rejects.toThrow(TRPCError);
   });
 
@@ -348,7 +342,7 @@ describe("tvShows.createEpisode", () => {
         seasonId,
         tvdbId: 2001,
         episodeNumber: 1,
-      }),
+      })
     ).rejects.toThrow(TRPCError);
   });
 });
@@ -364,9 +358,7 @@ describe("tvShows.deleteEpisode", () => {
   });
 
   it("throws NOT_FOUND for missing episode", async () => {
-    await expect(
-      caller.media.tvShows.deleteEpisode({ id: 999 }),
-    ).rejects.toThrow(TRPCError);
+    await expect(caller.media.tvShows.deleteEpisode({ id: 999 })).rejects.toThrow(TRPCError);
   });
 });
 
@@ -375,8 +367,6 @@ describe("tvShows.deleteEpisode", () => {
 describe("tvShows auth", () => {
   it("rejects unauthenticated calls", async () => {
     const anonCaller = createCaller(false);
-    await expect(
-      anonCaller.media.tvShows.list({}),
-    ).rejects.toThrow(TRPCError);
+    await expect(anonCaller.media.tvShows.list({})).rejects.toThrow(TRPCError);
   });
 });

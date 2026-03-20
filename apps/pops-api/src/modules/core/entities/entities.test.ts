@@ -276,7 +276,9 @@ describe("entities.update", () => {
   it("throws BAD_REQUEST for empty name", async () => {
     const id = seedEntity(db, { name: "Woolworths" });
 
-    await expect(caller.core.entities.update({ id, data: { name: "" } })).rejects.toThrow(TRPCError);
+    await expect(caller.core.entities.update({ id, data: { name: "" } })).rejects.toThrow(
+      TRPCError
+    );
     await expect(caller.core.entities.update({ id, data: { name: "" } })).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });

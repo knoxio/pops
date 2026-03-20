@@ -65,11 +65,7 @@ export function listInventoryItems(
     countQuery = countQuery.where(where);
   }
 
-  const rows = query
-    .orderBy(homeInventory.itemName)
-    .limit(limit)
-    .offset(offset)
-    .all();
+  const rows = query.orderBy(homeInventory.itemName).limit(limit).offset(offset).all();
 
   const [countResult] = countQuery.all();
 
@@ -79,11 +75,7 @@ export function listInventoryItems(
 /** Get a single inventory item by id. Throws NotFoundError if missing. */
 export function getInventoryItem(id: string): InventoryRow {
   const db = getDrizzle();
-  const [row] = db
-    .select()
-    .from(homeInventory)
-    .where(eq(homeInventory.id, id))
-    .all();
+  const [row] = db.select().from(homeInventory).where(eq(homeInventory.id, id)).all();
 
   if (!row) throw new NotFoundError("Inventory item", id);
   return row;
@@ -132,10 +124,7 @@ export function createInventoryItem(input: CreateInventoryItemInput): InventoryR
  * Update an existing inventory item. Returns the updated row.
  * Updates directly in SQLite.
  */
-export function updateInventoryItem(
-  id: string,
-  input: UpdateInventoryItemInput
-): InventoryRow {
+export function updateInventoryItem(id: string, input: UpdateInventoryItemInput): InventoryRow {
   const db = getDrizzle();
 
   // Verify it exists first

@@ -7,7 +7,7 @@ import type { TvShowInsert, SeasonInsert, EpisodeInsert } from "@pops/db-types";
 export class TvdbApiError extends Error {
   constructor(
     public readonly status: number,
-    message: string,
+    message: string
   ) {
     super(message);
     this.name = "TvdbApiError";
@@ -207,7 +207,7 @@ export function mapSearchResult(raw: RawTvdbSearchResult): TvdbSearchResult {
 export function mapShowDetail(raw: RawTvdbSeriesExtended): TvdbShowDetail {
   // Filter to default/official broadcast order only
   const rawSeasons = (raw.seasons ?? []).filter(
-    (s) => !s.type || s.type.type === "default" || s.type.type === "official",
+    (s) => !s.type || s.type.type === "default" || s.type.type === "official"
   );
 
   return {
@@ -258,19 +258,17 @@ export function mapEpisode(raw: RawTvdbEpisode): TvdbEpisode {
  * Select the best poster and backdrop URLs from an artwork array.
  * Prefers English-language artwork with the highest score.
  */
-export function mapArtworks(
-  artworks: TvdbArtwork[],
-): { posterUrl: string | null; backdropUrl: string | null } {
+export function mapArtworks(artworks: TvdbArtwork[]): {
+  posterUrl: string | null;
+  backdropUrl: string | null;
+} {
   return {
     posterUrl: pickBestArtwork(artworks, ARTWORK_TYPE_POSTER),
     backdropUrl: pickBestArtwork(artworks, ARTWORK_TYPE_BACKDROP),
   };
 }
 
-function pickBestArtwork(
-  artworks: TvdbArtwork[],
-  type: number,
-): string | null {
+function pickBestArtwork(artworks: TvdbArtwork[], type: number): string | null {
   const candidates = artworks.filter((a) => a.type === type);
   if (candidates.length === 0) return null;
 
@@ -289,16 +287,12 @@ function pickBestArtwork(
 // ---------------------------------------------------------------------------
 
 /** Extract genre names to a string array. */
-export function extractGenreNames(
-  genres: { id: number; name: string }[],
-): string[] {
+export function extractGenreNames(genres: { id: number; name: string }[]): string[] {
   return genres.map((g) => g.name);
 }
 
 /** Extract network names to a string array. */
-export function extractNetworkNames(
-  networks: { id: number; name: string }[],
-): string[] {
+export function extractNetworkNames(networks: { id: number; name: string }[]): string[] {
   return networks.map((n) => n.name);
 }
 
@@ -333,10 +327,7 @@ export function toTvShowInsert(detail: TvdbShowDetail): TvShowInsert {
 }
 
 /** Convert a TvdbSeasonSummary to a Drizzle insert value for seasons. */
-export function toSeasonInsert(
-  season: TvdbSeasonSummary,
-  tvShowId: number,
-): SeasonInsert {
+export function toSeasonInsert(season: TvdbSeasonSummary, tvShowId: number): SeasonInsert {
   return {
     tvShowId,
     tvdbId: season.tvdbId,
@@ -350,10 +341,7 @@ export function toSeasonInsert(
 }
 
 /** Convert a TvdbEpisode to a Drizzle insert value for episodes. */
-export function toEpisodeInsert(
-  episode: TvdbEpisode,
-  seasonId: number,
-): EpisodeInsert {
+export function toEpisodeInsert(episode: TvdbEpisode, seasonId: number): EpisodeInsert {
   return {
     seasonId,
     tvdbId: episode.tvdbId,

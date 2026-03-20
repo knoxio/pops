@@ -5,12 +5,7 @@ import { count, desc, eq, like, and, sql, type SQL } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
 import { movies } from "@pops/db-types";
 import { NotFoundError, ConflictError } from "../../../shared/errors.js";
-import type {
-  MovieRow,
-  CreateMovieInput,
-  UpdateMovieInput,
-  MovieFilters,
-} from "./types.js";
+import type { MovieRow, CreateMovieInput, UpdateMovieInput, MovieFilters } from "./types.js";
 
 /** Count + rows for a paginated list. */
 export interface MovieListResult {
@@ -19,11 +14,7 @@ export interface MovieListResult {
 }
 
 /** List movies with optional filters. */
-export function listMovies(
-  filters: MovieFilters,
-  limit: number,
-  offset: number
-): MovieListResult {
+export function listMovies(filters: MovieFilters, limit: number, offset: number): MovieListResult {
   const db = getDrizzle();
   const conditions: SQL[] = [];
 
@@ -47,11 +38,7 @@ export function listMovies(
     .offset(offset)
     .all();
 
-  const [countRow] = db
-    .select({ total: count() })
-    .from(movies)
-    .where(where)
-    .all();
+  const [countRow] = db.select({ total: count() }).from(movies).where(where).all();
 
   return { rows, total: countRow.total };
 }
@@ -59,11 +46,7 @@ export function listMovies(
 /** Get a single movie by id. Throws NotFoundError if missing. */
 export function getMovie(id: number): MovieRow {
   const db = getDrizzle();
-  const row = db
-    .select()
-    .from(movies)
-    .where(eq(movies.id, id))
-    .get();
+  const row = db.select().from(movies).where(eq(movies.id, id)).get();
 
   if (!row) throw new NotFoundError("Movie", String(id));
   return row;
@@ -72,11 +55,7 @@ export function getMovie(id: number): MovieRow {
 /** Get a single movie by TMDB ID. Returns null if not found. */
 export function getMovieByTmdbId(tmdbId: number): MovieRow | null {
   const db = getDrizzle();
-  return db
-    .select()
-    .from(movies)
-    .where(eq(movies.tmdbId, tmdbId))
-    .get() ?? null;
+  return db.select().from(movies).where(eq(movies.tmdbId, tmdbId)).get() ?? null;
 }
 
 /** Create a new movie. Returns the created row. Throws ConflictError on duplicate tmdbId. */
@@ -134,13 +113,15 @@ export function updateMovie(id: number, input: UpdateMovieInput): MovieRow {
   if (input.releaseDate !== undefined) updates.releaseDate = input.releaseDate ?? null;
   if (input.runtime !== undefined) updates.runtime = input.runtime ?? null;
   if (input.status !== undefined) updates.status = input.status ?? null;
-  if (input.originalLanguage !== undefined) updates.originalLanguage = input.originalLanguage ?? null;
+  if (input.originalLanguage !== undefined)
+    updates.originalLanguage = input.originalLanguage ?? null;
   if (input.budget !== undefined) updates.budget = input.budget ?? null;
   if (input.revenue !== undefined) updates.revenue = input.revenue ?? null;
   if (input.posterPath !== undefined) updates.posterPath = input.posterPath ?? null;
   if (input.backdropPath !== undefined) updates.backdropPath = input.backdropPath ?? null;
   if (input.logoPath !== undefined) updates.logoPath = input.logoPath ?? null;
-  if (input.posterOverridePath !== undefined) updates.posterOverridePath = input.posterOverridePath ?? null;
+  if (input.posterOverridePath !== undefined)
+    updates.posterOverridePath = input.posterOverridePath ?? null;
   if (input.voteAverage !== undefined) updates.voteAverage = input.voteAverage ?? null;
   if (input.voteCount !== undefined) updates.voteCount = input.voteCount ?? null;
   if (input.genres !== undefined) updates.genres = JSON.stringify(input.genres);
@@ -158,9 +139,6 @@ export function deleteMovie(id: number): void {
   // Verify it exists first
   getMovie(id);
 
-  const result = getDrizzle()
-    .delete(movies)
-    .where(eq(movies.id, id))
-    .run();
+  const result = getDrizzle().delete(movies).where(eq(movies.id, id)).run();
   if (result.changes === 0) throw new NotFoundError("Movie", String(id));
 }

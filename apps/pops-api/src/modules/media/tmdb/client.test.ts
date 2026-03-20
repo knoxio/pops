@@ -57,16 +57,14 @@ describe("TmdbClient constructor", () => {
 describe("TmdbClient authentication", () => {
   it("sends Bearer token in Authorization header", async () => {
     fetchMock.mockResolvedValueOnce(
-      mockResponse({ page: 1, results: [], total_results: 0, total_pages: 0 }),
+      mockResponse({ page: 1, results: [], total_results: 0, total_pages: 0 })
     );
 
     await client.searchMovies("test");
 
     expect(fetchMock).toHaveBeenCalledOnce();
     const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
-    expect((options.headers as Record<string, string>).Authorization).toBe(
-      `Bearer ${FAKE_KEY}`,
-    );
+    expect((options.headers as Record<string, string>).Authorization).toBe(`Bearer ${FAKE_KEY}`);
   });
 });
 
@@ -134,7 +132,7 @@ describe("searchMovies", () => {
 
   it("passes query and page as URL parameters", async () => {
     fetchMock.mockResolvedValueOnce(
-      mockResponse({ page: 3, results: [], total_results: 0, total_pages: 5 }),
+      mockResponse({ page: 3, results: [], total_results: 0, total_pages: 5 })
     );
 
     await client.searchMovies("inception", 3);
@@ -147,7 +145,7 @@ describe("searchMovies", () => {
 
   it("defaults page to 1", async () => {
     fetchMock.mockResolvedValueOnce(
-      mockResponse({ page: 1, results: [], total_results: 0, total_pages: 0 }),
+      mockResponse({ page: 1, results: [], total_results: 0, total_pages: 0 })
     );
 
     await client.searchMovies("test");
@@ -187,12 +185,8 @@ describe("getMovie", () => {
       { id: 18, name: "Drama" },
       { id: 53, name: "Thriller" },
     ],
-    production_companies: [
-      { id: 508, name: "Regency Enterprises" },
-    ],
-    spoken_languages: [
-      { iso_639_1: "en", name: "English" },
-    ],
+    production_companies: [{ id: 508, name: "Regency Enterprises" }],
+    spoken_languages: [{ iso_639_1: "en", name: "English" }],
   };
 
   it("returns mapped movie detail", async () => {
@@ -209,12 +203,8 @@ describe("getMovie", () => {
       { id: 18, name: "Drama" },
       { id: 53, name: "Thriller" },
     ]);
-    expect(result.productionCompanies).toEqual([
-      { id: 508, name: "Regency Enterprises" },
-    ]);
-    expect(result.spokenLanguages).toEqual([
-      { iso_639_1: "en", name: "English" },
-    ]);
+    expect(result.productionCompanies).toEqual([{ id: 508, name: "Regency Enterprises" }]);
+    expect(result.spokenLanguages).toEqual([{ iso_639_1: "en", name: "English" }]);
   });
 
   it("calls correct URL with tmdbId", async () => {
@@ -228,9 +218,7 @@ describe("getMovie", () => {
   });
 
   it("handles null imdb_id", async () => {
-    fetchMock.mockResolvedValueOnce(
-      mockResponse({ ...rawDetail, imdb_id: null }),
-    );
+    fetchMock.mockResolvedValueOnce(mockResponse({ ...rawDetail, imdb_id: null }));
 
     const result = await client.getMovie(550);
     expect(result.imdbId).toBeNull();
@@ -337,8 +325,8 @@ describe("error handling", () => {
       mockResponse(
         { status_message: "The resource you requested could not be found." },
         404,
-        "Not Found",
-      ),
+        "Not Found"
+      )
     );
 
     await expect(client.getMovie(999999)).rejects.toThrow(TmdbApiError);
@@ -348,16 +336,14 @@ describe("error handling", () => {
         mockResponse(
           { status_message: "The resource you requested could not be found." },
           404,
-          "Not Found",
-        ),
+          "Not Found"
+        )
       );
       await client.getMovie(999999);
     } catch (err) {
       expect(err).toBeInstanceOf(TmdbApiError);
       expect((err as TmdbApiError).status).toBe(404);
-      expect((err as TmdbApiError).message).toBe(
-        "The resource you requested could not be found.",
-      );
+      expect((err as TmdbApiError).message).toBe("The resource you requested could not be found.");
     }
   });
 
@@ -367,8 +353,8 @@ describe("error handling", () => {
       mockResponse(
         { status_message: "Invalid API key: You must be granted a valid key." },
         401,
-        "Unauthorized",
-      ),
+        "Unauthorized"
+      )
     );
 
     try {
@@ -385,8 +371,8 @@ describe("error handling", () => {
       mockResponse(
         { status_message: "Your request count is over the allowed limit." },
         429,
-        "Too Many Requests",
-      ),
+        "Too Many Requests"
+      )
     );
 
     await expect(client.searchMovies("test")).rejects.toThrow(TmdbApiError);
@@ -395,8 +381,8 @@ describe("error handling", () => {
       mockResponse(
         { status_message: "Your request count is over the allowed limit." },
         429,
-        "Too Many Requests",
-      ),
+        "Too Many Requests"
+      )
     );
 
     try {
@@ -426,9 +412,7 @@ describe("error handling", () => {
 
   it("uses fallback message when error response has no status_message", async () => {
     expect.assertions(3);
-    fetchMock.mockResolvedValueOnce(
-      mockResponse({}, 500, "Internal Server Error"),
-    );
+    fetchMock.mockResolvedValueOnce(mockResponse({}, 500, "Internal Server Error"));
 
     try {
       await client.getMovie(1);
@@ -447,7 +431,7 @@ describe("rate limiter integration", () => {
     const rateLimitedClient = new TmdbClient(FAKE_KEY, limiter);
 
     fetchMock.mockResolvedValueOnce(
-      mockResponse({ page: 1, results: [], total_results: 0, total_pages: 0 }),
+      mockResponse({ page: 1, results: [], total_results: 0, total_pages: 0 })
     );
 
     await rateLimitedClient.searchMovies("test");
@@ -460,7 +444,7 @@ describe("rate limiter integration", () => {
   it("does not call acquire() when no rate limiter is provided", async () => {
     // Default client has no rate limiter
     fetchMock.mockResolvedValueOnce(
-      mockResponse({ page: 1, results: [], total_results: 0, total_pages: 0 }),
+      mockResponse({ page: 1, results: [], total_results: 0, total_pages: 0 })
     );
 
     await client.searchMovies("test");

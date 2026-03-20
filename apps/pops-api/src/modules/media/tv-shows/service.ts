@@ -24,7 +24,7 @@ export function listTvShows(
   search: string | undefined,
   status: string | undefined,
   limit: number,
-  offset: number,
+  offset: number
 ): TvShowListResult {
   const db = getDrizzle();
   const conditions = [];
@@ -47,11 +47,7 @@ export function listTvShows(
     .offset(offset)
     .all();
 
-  const [{ total }] = db
-    .select({ total: count() })
-    .from(tvShows)
-    .where(where)
-    .all();
+  const [{ total }] = db.select({ total: count() }).from(tvShows).where(where).all();
 
   return { rows, total };
 }
@@ -112,13 +108,10 @@ export function createTvShow(input: CreateTvShowInput): TvShowRow {
     .run();
 
   // Retrieve by tvdbId since id is autoincrement
-  const row = db
-    .select()
-    .from(tvShows)
-    .where(eq(tvShows.tvdbId, input.tvdbId))
-    .get();
+  const row = db.select().from(tvShows).where(eq(tvShows.tvdbId, input.tvdbId)).get();
 
-  return row!;
+  if (!row) throw new Error(`TV show with TVDB ID ${input.tvdbId} not found after insert`);
+  return row;
 }
 
 export function updateTvShow(id: number, input: UpdateTvShowInput): TvShowRow {
@@ -128,24 +121,78 @@ export function updateTvShow(id: number, input: UpdateTvShowInput): TvShowRow {
   const updates: Partial<typeof tvShows.$inferInsert> = {};
   let hasUpdates = false;
 
-  if (input.name !== undefined) { updates.name = input.name; hasUpdates = true; }
-  if (input.originalName !== undefined) { updates.originalName = input.originalName ?? null; hasUpdates = true; }
-  if (input.overview !== undefined) { updates.overview = input.overview ?? null; hasUpdates = true; }
-  if (input.firstAirDate !== undefined) { updates.firstAirDate = input.firstAirDate ?? null; hasUpdates = true; }
-  if (input.lastAirDate !== undefined) { updates.lastAirDate = input.lastAirDate ?? null; hasUpdates = true; }
-  if (input.status !== undefined) { updates.status = input.status ?? null; hasUpdates = true; }
-  if (input.originalLanguage !== undefined) { updates.originalLanguage = input.originalLanguage ?? null; hasUpdates = true; }
-  if (input.numberOfSeasons !== undefined) { updates.numberOfSeasons = input.numberOfSeasons ?? null; hasUpdates = true; }
-  if (input.numberOfEpisodes !== undefined) { updates.numberOfEpisodes = input.numberOfEpisodes ?? null; hasUpdates = true; }
-  if (input.episodeRunTime !== undefined) { updates.episodeRunTime = input.episodeRunTime ?? null; hasUpdates = true; }
-  if (input.posterPath !== undefined) { updates.posterPath = input.posterPath ?? null; hasUpdates = true; }
-  if (input.backdropPath !== undefined) { updates.backdropPath = input.backdropPath ?? null; hasUpdates = true; }
-  if (input.logoPath !== undefined) { updates.logoPath = input.logoPath ?? null; hasUpdates = true; }
-  if (input.posterOverridePath !== undefined) { updates.posterOverridePath = input.posterOverridePath ?? null; hasUpdates = true; }
-  if (input.voteAverage !== undefined) { updates.voteAverage = input.voteAverage ?? null; hasUpdates = true; }
-  if (input.voteCount !== undefined) { updates.voteCount = input.voteCount ?? null; hasUpdates = true; }
-  if (input.genres !== undefined) { updates.genres = JSON.stringify(input.genres); hasUpdates = true; }
-  if (input.networks !== undefined) { updates.networks = JSON.stringify(input.networks); hasUpdates = true; }
+  if (input.name !== undefined) {
+    updates.name = input.name;
+    hasUpdates = true;
+  }
+  if (input.originalName !== undefined) {
+    updates.originalName = input.originalName ?? null;
+    hasUpdates = true;
+  }
+  if (input.overview !== undefined) {
+    updates.overview = input.overview ?? null;
+    hasUpdates = true;
+  }
+  if (input.firstAirDate !== undefined) {
+    updates.firstAirDate = input.firstAirDate ?? null;
+    hasUpdates = true;
+  }
+  if (input.lastAirDate !== undefined) {
+    updates.lastAirDate = input.lastAirDate ?? null;
+    hasUpdates = true;
+  }
+  if (input.status !== undefined) {
+    updates.status = input.status ?? null;
+    hasUpdates = true;
+  }
+  if (input.originalLanguage !== undefined) {
+    updates.originalLanguage = input.originalLanguage ?? null;
+    hasUpdates = true;
+  }
+  if (input.numberOfSeasons !== undefined) {
+    updates.numberOfSeasons = input.numberOfSeasons ?? null;
+    hasUpdates = true;
+  }
+  if (input.numberOfEpisodes !== undefined) {
+    updates.numberOfEpisodes = input.numberOfEpisodes ?? null;
+    hasUpdates = true;
+  }
+  if (input.episodeRunTime !== undefined) {
+    updates.episodeRunTime = input.episodeRunTime ?? null;
+    hasUpdates = true;
+  }
+  if (input.posterPath !== undefined) {
+    updates.posterPath = input.posterPath ?? null;
+    hasUpdates = true;
+  }
+  if (input.backdropPath !== undefined) {
+    updates.backdropPath = input.backdropPath ?? null;
+    hasUpdates = true;
+  }
+  if (input.logoPath !== undefined) {
+    updates.logoPath = input.logoPath ?? null;
+    hasUpdates = true;
+  }
+  if (input.posterOverridePath !== undefined) {
+    updates.posterOverridePath = input.posterOverridePath ?? null;
+    hasUpdates = true;
+  }
+  if (input.voteAverage !== undefined) {
+    updates.voteAverage = input.voteAverage ?? null;
+    hasUpdates = true;
+  }
+  if (input.voteCount !== undefined) {
+    updates.voteCount = input.voteCount ?? null;
+    hasUpdates = true;
+  }
+  if (input.genres !== undefined) {
+    updates.genres = JSON.stringify(input.genres);
+    hasUpdates = true;
+  }
+  if (input.networks !== undefined) {
+    updates.networks = JSON.stringify(input.networks);
+    hasUpdates = true;
+  }
 
   if (hasUpdates) {
     updates.updatedAt = new Date().toISOString();
@@ -208,18 +255,11 @@ export function createSeason(input: CreateSeasonInput): SeasonRow {
   const duplicateNumber = db
     .select({ id: seasons.id })
     .from(seasons)
-    .where(
-      and(
-        eq(seasons.tvShowId, input.tvShowId),
-        eq(seasons.seasonNumber, input.seasonNumber),
-      ),
-    )
+    .where(and(eq(seasons.tvShowId, input.tvShowId), eq(seasons.seasonNumber, input.seasonNumber)))
     .get();
 
   if (duplicateNumber) {
-    throw new ConflictError(
-      `Season ${input.seasonNumber} already exists for this show`,
-    );
+    throw new ConflictError(`Season ${input.seasonNumber} already exists for this show`);
   }
 
   db.insert(seasons)
@@ -235,13 +275,10 @@ export function createSeason(input: CreateSeasonInput): SeasonRow {
     })
     .run();
 
-  const row = db
-    .select()
-    .from(seasons)
-    .where(eq(seasons.tvdbId, input.tvdbId))
-    .get();
+  const row = db.select().from(seasons).where(eq(seasons.tvdbId, input.tvdbId)).get();
 
-  return row!;
+  if (!row) throw new Error(`Season with TVDB ID ${input.tvdbId} not found after insert`);
+  return row;
 }
 
 export function deleteSeason(id: number): void {
@@ -298,17 +335,12 @@ export function createEpisode(input: CreateEpisodeInput): EpisodeRow {
     .select({ id: episodes.id })
     .from(episodes)
     .where(
-      and(
-        eq(episodes.seasonId, input.seasonId),
-        eq(episodes.episodeNumber, input.episodeNumber),
-      ),
+      and(eq(episodes.seasonId, input.seasonId), eq(episodes.episodeNumber, input.episodeNumber))
     )
     .get();
 
   if (duplicateNumber) {
-    throw new ConflictError(
-      `Episode ${input.episodeNumber} already exists for this season`,
-    );
+    throw new ConflictError(`Episode ${input.episodeNumber} already exists for this season`);
   }
 
   db.insert(episodes)
@@ -325,13 +357,10 @@ export function createEpisode(input: CreateEpisodeInput): EpisodeRow {
     })
     .run();
 
-  const row = db
-    .select()
-    .from(episodes)
-    .where(eq(episodes.tvdbId, input.tvdbId))
-    .get();
+  const row = db.select().from(episodes).where(eq(episodes.tvdbId, input.tvdbId)).get();
 
-  return row!;
+  if (!row) throw new Error(`Episode with TVDB ID ${input.tvdbId} not found after insert`);
+  return row;
 }
 
 export function deleteEpisode(id: number): void {

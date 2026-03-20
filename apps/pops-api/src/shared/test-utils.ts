@@ -539,17 +539,13 @@ export function seedLocation(
  * Seed an item connection row into the test DB.
  * Returns the auto-incremented id.
  */
-export function seedItemConnection(
-  db: Database,
-  itemAId: string,
-  itemBId: string
-): number {
+export function seedItemConnection(db: Database, itemAId: string, itemBId: string): number {
   // Enforce A < B ordering
   const [a, b] = itemAId < itemBId ? [itemAId, itemBId] : [itemBId, itemAId];
 
-  const result = db.prepare(
-    `INSERT INTO item_connections (item_a_id, item_b_id) VALUES (@a, @b)`
-  ).run({ a, b });
+  const result = db
+    .prepare(`INSERT INTO item_connections (item_a_id, item_b_id) VALUES (@a, @b)`)
+    .run({ a, b });
 
   return Number(result.lastInsertRowid);
 }
@@ -567,17 +563,19 @@ export function seedItemPhoto(
     sort_order?: number;
   }
 ): number {
-  const result = db.prepare(
-    `
+  const result = db
+    .prepare(
+      `
     INSERT INTO item_photos (item_id, file_path, caption, sort_order)
     VALUES (@item_id, @file_path, @caption, @sort_order)
   `
-  ).run({
-    item_id: overrides.item_id,
-    file_path: overrides.file_path ?? "items/test/photo_001.jpg",
-    caption: overrides.caption ?? null,
-    sort_order: overrides.sort_order ?? 0,
-  });
+    )
+    .run({
+      item_id: overrides.item_id,
+      file_path: overrides.file_path ?? "items/test/photo_001.jpg",
+      caption: overrides.caption ?? null,
+      sort_order: overrides.sort_order ?? 0,
+    });
 
   return Number(result.lastInsertRowid);
 }
@@ -684,8 +682,9 @@ export function seedMovie(
     genres: string | null;
   }> = {}
 ): number {
-  const result = db.prepare(
-    `
+  const result = db
+    .prepare(
+      `
     INSERT INTO movies (
       tmdb_id, imdb_id, title, original_title, overview, tagline,
       release_date, runtime, status, original_language,
@@ -699,27 +698,28 @@ export function seedMovie(
       @vote_average, @vote_count, @genres
     )
   `
-  ).run({
-    tmdb_id: overrides.tmdb_id ?? 12345,
-    imdb_id: overrides.imdb_id ?? null,
-    title: overrides.title ?? "Test Movie",
-    original_title: overrides.original_title ?? null,
-    overview: overrides.overview ?? null,
-    tagline: overrides.tagline ?? null,
-    release_date: overrides.release_date ?? null,
-    runtime: overrides.runtime ?? null,
-    status: overrides.status ?? null,
-    original_language: overrides.original_language ?? null,
-    budget: overrides.budget ?? null,
-    revenue: overrides.revenue ?? null,
-    poster_path: overrides.poster_path ?? null,
-    backdrop_path: overrides.backdrop_path ?? null,
-    logo_path: overrides.logo_path ?? null,
-    poster_override_path: overrides.poster_override_path ?? null,
-    vote_average: overrides.vote_average ?? null,
-    vote_count: overrides.vote_count ?? null,
-    genres: overrides.genres ?? "[]",
-  });
+    )
+    .run({
+      tmdb_id: overrides.tmdb_id ?? 12345,
+      imdb_id: overrides.imdb_id ?? null,
+      title: overrides.title ?? "Test Movie",
+      original_title: overrides.original_title ?? null,
+      overview: overrides.overview ?? null,
+      tagline: overrides.tagline ?? null,
+      release_date: overrides.release_date ?? null,
+      runtime: overrides.runtime ?? null,
+      status: overrides.status ?? null,
+      original_language: overrides.original_language ?? null,
+      budget: overrides.budget ?? null,
+      revenue: overrides.revenue ?? null,
+      poster_path: overrides.poster_path ?? null,
+      backdrop_path: overrides.backdrop_path ?? null,
+      logo_path: overrides.logo_path ?? null,
+      poster_override_path: overrides.poster_override_path ?? null,
+      vote_average: overrides.vote_average ?? null,
+      vote_count: overrides.vote_count ?? null,
+      genres: overrides.genres ?? "[]",
+    });
 
   return Number(result.lastInsertRowid);
 }
@@ -737,17 +737,19 @@ export function seedWatchlistEntry(
     notes: string | null;
   }> = {}
 ): number {
-  const result = db.prepare(
-    `
+  const result = db
+    .prepare(
+      `
     INSERT INTO watchlist (media_type, media_id, priority, notes)
     VALUES (@media_type, @media_id, @priority, @notes)
   `
-  ).run({
-    media_type: overrides.media_type ?? "movie",
-    media_id: overrides.media_id ?? 1,
-    priority: overrides.priority ?? null,
-    notes: overrides.notes ?? null,
-  });
+    )
+    .run({
+      media_type: overrides.media_type ?? "movie",
+      media_id: overrides.media_id ?? 1,
+      priority: overrides.priority ?? null,
+      notes: overrides.notes ?? null,
+    });
 
   return Number(result.lastInsertRowid);
 }
@@ -765,17 +767,19 @@ export function seedWatchHistoryEntry(
     completed: number;
   }> = {}
 ): number {
-  const result = db.prepare(
-    `
+  const result = db
+    .prepare(
+      `
     INSERT INTO watch_history (media_type, media_id, watched_at, completed)
     VALUES (@media_type, @media_id, @watched_at, @completed)
   `
-  ).run({
-    media_type: overrides.media_type ?? "movie",
-    media_id: overrides.media_id ?? 1,
-    watched_at: overrides.watched_at ?? new Date().toISOString(),
-    completed: overrides.completed ?? 1,
-  });
+    )
+    .run({
+      media_type: overrides.media_type ?? "movie",
+      media_id: overrides.media_id ?? 1,
+      watched_at: overrides.watched_at ?? new Date().toISOString(),
+      completed: overrides.completed ?? 1,
+    });
 
   return Number(result.lastInsertRowid);
 }
@@ -827,10 +831,11 @@ export function seedTvShow(
     vote_count: number | null;
     genres: string | null;
     networks: string | null;
-  }> = {},
+  }> = {}
 ): number {
-  const result = db.prepare(
-    `INSERT INTO tv_shows (
+  const result = db
+    .prepare(
+      `INSERT INTO tv_shows (
       tvdb_id, name, original_name, overview, first_air_date, last_air_date,
       status, original_language, number_of_seasons, number_of_episodes,
       episode_run_time, poster_path, backdrop_path, logo_path, poster_override_path,
@@ -841,28 +846,29 @@ export function seedTvShow(
       @status, @original_language, @number_of_seasons, @number_of_episodes,
       @episode_run_time, @poster_path, @backdrop_path, @logo_path, @poster_override_path,
       @vote_average, @vote_count, @genres, @networks
-    )`,
-  ).run({
-    tvdb_id: overrides.tvdb_id ?? 99999,
-    name: overrides.name ?? "Test Show",
-    original_name: overrides.original_name ?? null,
-    overview: overrides.overview ?? null,
-    first_air_date: overrides.first_air_date ?? null,
-    last_air_date: overrides.last_air_date ?? null,
-    status: overrides.status ?? null,
-    original_language: overrides.original_language ?? null,
-    number_of_seasons: overrides.number_of_seasons ?? null,
-    number_of_episodes: overrides.number_of_episodes ?? null,
-    episode_run_time: overrides.episode_run_time ?? null,
-    poster_path: overrides.poster_path ?? null,
-    backdrop_path: overrides.backdrop_path ?? null,
-    logo_path: overrides.logo_path ?? null,
-    poster_override_path: overrides.poster_override_path ?? null,
-    vote_average: overrides.vote_average ?? null,
-    vote_count: overrides.vote_count ?? null,
-    genres: overrides.genres ?? null,
-    networks: overrides.networks ?? null,
-  });
+    )`
+    )
+    .run({
+      tvdb_id: overrides.tvdb_id ?? 99999,
+      name: overrides.name ?? "Test Show",
+      original_name: overrides.original_name ?? null,
+      overview: overrides.overview ?? null,
+      first_air_date: overrides.first_air_date ?? null,
+      last_air_date: overrides.last_air_date ?? null,
+      status: overrides.status ?? null,
+      original_language: overrides.original_language ?? null,
+      number_of_seasons: overrides.number_of_seasons ?? null,
+      number_of_episodes: overrides.number_of_episodes ?? null,
+      episode_run_time: overrides.episode_run_time ?? null,
+      poster_path: overrides.poster_path ?? null,
+      backdrop_path: overrides.backdrop_path ?? null,
+      logo_path: overrides.logo_path ?? null,
+      poster_override_path: overrides.poster_override_path ?? null,
+      vote_average: overrides.vote_average ?? null,
+      vote_count: overrides.vote_count ?? null,
+      genres: overrides.genres ?? null,
+      networks: overrides.networks ?? null,
+    });
   return Number(result.lastInsertRowid);
 }
 
@@ -881,21 +887,23 @@ export function seedSeason(
     poster_path?: string | null;
     air_date?: string | null;
     episode_count?: number | null;
-  },
+  }
 ): number {
-  const result = db.prepare(
-    `INSERT INTO seasons (tv_show_id, tvdb_id, season_number, name, overview, poster_path, air_date, episode_count)
-     VALUES (@tv_show_id, @tvdb_id, @season_number, @name, @overview, @poster_path, @air_date, @episode_count)`,
-  ).run({
-    tv_show_id: overrides.tv_show_id,
-    tvdb_id: overrides.tvdb_id,
-    season_number: overrides.season_number,
-    name: overrides.name ?? null,
-    overview: overrides.overview ?? null,
-    poster_path: overrides.poster_path ?? null,
-    air_date: overrides.air_date ?? null,
-    episode_count: overrides.episode_count ?? null,
-  });
+  const result = db
+    .prepare(
+      `INSERT INTO seasons (tv_show_id, tvdb_id, season_number, name, overview, poster_path, air_date, episode_count)
+     VALUES (@tv_show_id, @tvdb_id, @season_number, @name, @overview, @poster_path, @air_date, @episode_count)`
+    )
+    .run({
+      tv_show_id: overrides.tv_show_id,
+      tvdb_id: overrides.tvdb_id,
+      season_number: overrides.season_number,
+      name: overrides.name ?? null,
+      overview: overrides.overview ?? null,
+      poster_path: overrides.poster_path ?? null,
+      air_date: overrides.air_date ?? null,
+      episode_count: overrides.episode_count ?? null,
+    });
   return Number(result.lastInsertRowid);
 }
 
@@ -915,22 +923,24 @@ export function seedEpisode(
     still_path?: string | null;
     vote_average?: number | null;
     runtime?: number | null;
-  },
+  }
 ): number {
-  const result = db.prepare(
-    `INSERT INTO episodes (season_id, tvdb_id, episode_number, name, overview, air_date, still_path, vote_average, runtime)
-     VALUES (@season_id, @tvdb_id, @episode_number, @name, @overview, @air_date, @still_path, @vote_average, @runtime)`,
-  ).run({
-    season_id: overrides.season_id,
-    tvdb_id: overrides.tvdb_id,
-    episode_number: overrides.episode_number,
-    name: overrides.name ?? null,
-    overview: overrides.overview ?? null,
-    air_date: overrides.air_date ?? null,
-    still_path: overrides.still_path ?? null,
-    vote_average: overrides.vote_average ?? null,
-    runtime: overrides.runtime ?? null,
-  });
+  const result = db
+    .prepare(
+      `INSERT INTO episodes (season_id, tvdb_id, episode_number, name, overview, air_date, still_path, vote_average, runtime)
+     VALUES (@season_id, @tvdb_id, @episode_number, @name, @overview, @air_date, @still_path, @vote_average, @runtime)`
+    )
+    .run({
+      season_id: overrides.season_id,
+      tvdb_id: overrides.tvdb_id,
+      episode_number: overrides.episode_number,
+      name: overrides.name ?? null,
+      overview: overrides.overview ?? null,
+      air_date: overrides.air_date ?? null,
+      still_path: overrides.still_path ?? null,
+      vote_average: overrides.vote_average ?? null,
+      runtime: overrides.runtime ?? null,
+    });
   return Number(result.lastInsertRowid);
 }
 
@@ -944,16 +954,18 @@ export function seedDimension(
     description: string | null;
     active: number;
     sort_order: number;
-  }> = {},
+  }> = {}
 ): number {
-  const result = db.prepare(
-    `INSERT INTO comparison_dimensions (name, description, active, sort_order)
-     VALUES (@name, @description, @active, @sort_order)`,
-  ).run({
-    name: overrides.name ?? "Test Dimension",
-    description: overrides.description ?? null,
-    active: overrides.active ?? 1,
-    sort_order: overrides.sort_order ?? 0,
-  });
+  const result = db
+    .prepare(
+      `INSERT INTO comparison_dimensions (name, description, active, sort_order)
+     VALUES (@name, @description, @active, @sort_order)`
+    )
+    .run({
+      name: overrides.name ?? "Test Dimension",
+      description: overrides.description ?? null,
+      active: overrides.active ?? 1,
+      sort_order: overrides.sort_order ?? 0,
+    });
   return Number(result.lastInsertRowid);
 }

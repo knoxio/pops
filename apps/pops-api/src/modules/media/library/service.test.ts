@@ -3,12 +3,7 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type { Database } from "better-sqlite3";
-import {
-  setupTestContext,
-  createCaller,
-  seedMovie,
-} from "../../../shared/test-utils.js";
-import { TmdbApiError } from "../tmdb/types.js";
+import { setupTestContext, createCaller, seedMovie } from "../../../shared/test-utils.js";
 import type { TmdbMovieDetail } from "../tmdb/types.js";
 import { TRPCError } from "@trpc/server";
 
@@ -100,7 +95,7 @@ function mockTmdbFetch(detail: TmdbMovieDetail): void {
       formData: () => Promise.resolve(new FormData()),
       text: () => Promise.resolve(JSON.stringify(rawDetail)),
       bytes: () => Promise.resolve(new Uint8Array()),
-    } as Response),
+    } as Response)
   );
 }
 
@@ -154,9 +149,9 @@ describe("media.library.refreshMovie", () => {
     });
 
     // Get the original updatedAt
-    const before = db
-      .prepare("SELECT updated_at FROM movies WHERE id = ?")
-      .get(movieId) as { updated_at: string };
+    const before = db.prepare("SELECT updated_at FROM movies WHERE id = ?").get(movieId) as {
+      updated_at: string;
+    };
 
     mockTmdbFetch(fakeTmdbDetail());
 
@@ -190,8 +185,7 @@ describe("media.library.refreshMovie", () => {
         ok: false,
         status: 401,
         statusText: "Unauthorized",
-        json: () =>
-          Promise.resolve({ status_message: "Invalid API key" }),
+        json: () => Promise.resolve({ status_message: "Invalid API key" }),
         headers: new Headers(),
         redirected: false,
         type: "basic",
@@ -204,7 +198,7 @@ describe("media.library.refreshMovie", () => {
         formData: () => Promise.resolve(new FormData()),
         text: () => Promise.resolve(""),
         bytes: () => Promise.resolve(new Uint8Array()),
-      } as Response),
+      } as Response)
     );
 
     try {
@@ -217,9 +211,7 @@ describe("media.library.refreshMovie", () => {
 
   it("throws UNAUTHORIZED without auth", async () => {
     const unauthCaller = createCaller(false);
-    await expect(
-      unauthCaller.media.library.refreshMovie({ id: 1 }),
-    ).rejects.toThrow(TRPCError);
+    await expect(unauthCaller.media.library.refreshMovie({ id: 1 })).rejects.toThrow(TRPCError);
   });
 
   it("maps all TMDB genre names", async () => {

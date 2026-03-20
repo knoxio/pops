@@ -282,9 +282,10 @@ describe("budgets.create", () => {
     });
 
     // Verify all fields persisted in SQLite
-    const row = db
-      .prepare("SELECT * FROM budgets WHERE id = ?")
-      .get(result.data.id) as Record<string, unknown>;
+    const row = db.prepare("SELECT * FROM budgets WHERE id = ?").get(result.data.id) as Record<
+      string,
+      unknown
+    >;
     expect(row).toBeDefined();
     expect(row.category).toBe("Groceries");
     expect(row.period).toBe("2025-06");
@@ -403,7 +404,9 @@ describe("budgets.delete", () => {
   });
 
   it("throws NOT_FOUND for non-existent ID", async () => {
-    await expect(caller.finance.budgets.delete({ id: "does-not-exist" })).rejects.toThrow(TRPCError);
+    await expect(caller.finance.budgets.delete({ id: "does-not-exist" })).rejects.toThrow(
+      TRPCError
+    );
     await expect(caller.finance.budgets.delete({ id: "does-not-exist" })).rejects.toMatchObject({
       code: "NOT_FOUND",
     });

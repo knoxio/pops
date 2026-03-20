@@ -5,7 +5,12 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import Papa from "papaparse";
 import type { Database } from "better-sqlite3";
-import { seedEntity, seedTransaction, createCaller, createTestDb } from "../../../shared/test-utils.js";
+import {
+  seedEntity,
+  seedTransaction,
+  createCaller,
+  createTestDb,
+} from "../../../shared/test-utils.js";
 import { transformAmex } from "./transformers/amex.js";
 import { clearCache } from "./lib/ai-categorizer.js";
 import type { ConfirmedTransaction, ProcessImportOutput, ExecuteImportOutput } from "./types.js";
@@ -190,9 +195,9 @@ describe("E2E: Complete Import Flow", () => {
     expect(result.failed.length).toBe(0);
 
     // Verify rows were written to SQLite (excluding the 1 seeded duplicate)
-    const transactionCount = db
-      .prepare("SELECT COUNT(*) as cnt FROM transactions")
-      .get() as { cnt: number };
+    const transactionCount = db.prepare("SELECT COUNT(*) as cnt FROM transactions").get() as {
+      cnt: number;
+    };
     // 1 seeded duplicate + confirmed.length newly imported
     expect(transactionCount.cnt).toBe(1 + confirmed.length);
 
@@ -200,11 +205,13 @@ describe("E2E: Complete Import Flow", () => {
     if (woolworthsMatch) {
       const row = db
         .prepare("SELECT * FROM transactions WHERE checksum = ?")
-        .get(woolworthsMatch.checksum) as {
-        description: string;
-        entity_name: string | null;
-        account: string;
-      } | undefined;
+        .get(woolworthsMatch.checksum) as
+        | {
+            description: string;
+            entity_name: string | null;
+            account: string;
+          }
+        | undefined;
       expect(row).toBeDefined();
       expect(row?.description).toBe(woolworthsMatch.description);
       expect(row?.entity_name).toBe("Woolworths");
@@ -407,17 +414,17 @@ describe("E2E: Complete Import Flow", () => {
     await waitForCompletion<ExecuteImportOutput>(executeSessionId, 500);
 
     // Verify data preservation in SQLite
-    const row = db
-      .prepare("SELECT * FROM transactions WHERE checksum = ?")
-      .get("preserve123") as {
-      description: string;
-      amount: number;
-      date: string;
-      location: string | null;
-      tags: string;
-      checksum: string;
-      raw_row: string | null;
-    } | undefined;
+    const row = db.prepare("SELECT * FROM transactions WHERE checksum = ?").get("preserve123") as
+      | {
+          description: string;
+          amount: number;
+          date: string;
+          location: string | null;
+          tags: string;
+          checksum: string;
+          raw_row: string | null;
+        }
+      | undefined;
 
     expect(row).toBeDefined();
     expect(row?.description).toBe("WOOLWORTHS 1234");

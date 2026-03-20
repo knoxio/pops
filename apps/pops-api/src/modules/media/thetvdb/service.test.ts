@@ -27,25 +27,21 @@ afterEach(() => {
 /** Create a mock TheTVDB client. */
 function createMockClient(
   detail: TvdbShowDetail,
-  episodesBySeason: Record<number, TvdbEpisode[]> = {},
+  episodesBySeason: Record<number, TvdbEpisode[]> = {}
 ): TheTvdbClient {
   return {
     getSeriesExtended: vi.fn().mockResolvedValue(detail),
-    getSeriesEpisodes: vi.fn().mockImplementation(
-      (_tvdbId: number, seasonNumber: number) => {
-        const eps = episodesBySeason[seasonNumber];
-        if (eps) return Promise.resolve(eps);
-        return Promise.resolve([]);
-      },
-    ),
+    getSeriesEpisodes: vi.fn().mockImplementation((_tvdbId: number, seasonNumber: number) => {
+      const eps = episodesBySeason[seasonNumber];
+      if (eps) return Promise.resolve(eps);
+      return Promise.resolve([]);
+    }),
     searchSeries: vi.fn(),
   } as unknown as TheTvdbClient;
 }
 
 /** Build a TvdbShowDetail fixture. */
-function makeShowDetail(
-  overrides: Partial<TvdbShowDetail> = {},
-): TvdbShowDetail {
+function makeShowDetail(overrides: Partial<TvdbShowDetail> = {}): TvdbShowDetail {
   return {
     tvdbId: 81189,
     name: "Breaking Bad",
@@ -218,9 +214,10 @@ describe("refreshTvShow", () => {
     expect(result.episodesAdded).toBe(1);
 
     // Verify the bonus episode was NOT deleted
-    const allEpisodes = db
-      .prepare("SELECT * FROM episodes WHERE season_id = ?")
-      .all(seasonId) as { tvdb_id: number; name: string }[];
+    const allEpisodes = db.prepare("SELECT * FROM episodes WHERE season_id = ?").all(seasonId) as {
+      tvdb_id: number;
+      name: string;
+    }[];
     expect(allEpisodes).toHaveLength(3);
     const bonusEp = allEpisodes.find((e) => e.tvdb_id === 6099);
     expect(bonusEp).toBeDefined();
@@ -308,9 +305,7 @@ describe("refreshTvShow", () => {
     const detail = makeShowDetail();
     const client = createMockClient(detail);
 
-    await expect(
-      refreshTvShow(client, { id: 99999 }),
-    ).rejects.toThrow("TvShow");
+    await expect(refreshTvShow(client, { id: 99999 })).rejects.toThrow("TvShow");
   });
 
   it("skips episode refresh when refreshEpisodes is false", async () => {
@@ -339,7 +334,6 @@ describe("refreshTvShow", () => {
     expect(result.seasonsAdded).toBe(1);
     expect(result.episodesAdded).toBe(0);
     // getSeriesEpisodes should not have been called
-    // eslint-disable-next-line @typescript-eslint/unbound-method
     expect(client.getSeriesEpisodes).not.toHaveBeenCalled();
   });
 
@@ -366,9 +360,10 @@ describe("refreshTvShow", () => {
     });
 
     // Check the raw DB row for genres/networks (stored as JSON strings)
-    const row = db
-      .prepare("SELECT genres, networks FROM tv_shows WHERE id = ?")
-      .get(showId) as { genres: string; networks: string };
+    const row = db.prepare("SELECT genres, networks FROM tv_shows WHERE id = ?").get(showId) as {
+      genres: string;
+      networks: string;
+    };
     expect(JSON.parse(row.genres)).toEqual(["Drama", "Thriller"]);
     expect(JSON.parse(row.networks)).toEqual(["AMC"]);
   });
@@ -399,21 +394,19 @@ describe("refreshTvShow", () => {
 
     const client = {
       getSeriesExtended: vi.fn().mockResolvedValue(detail),
-      getSeriesEpisodes: vi.fn().mockImplementation(
-        (_tvdbId: number, seasonNumber: number) => {
-          if (seasonNumber === 1) {
-            return Promise.reject(new Error("Season not available"));
-          }
-          return Promise.resolve([
-            makeEpisode({
-              tvdbId: 6010,
-              episodeNumber: 1,
-              seasonNumber: 2,
-              name: "S2 Ep1",
-            }),
-          ]);
-        },
-      ),
+      getSeriesEpisodes: vi.fn().mockImplementation((_tvdbId: number, seasonNumber: number) => {
+        if (seasonNumber === 1) {
+          return Promise.reject(new Error("Season not available"));
+        }
+        return Promise.resolve([
+          makeEpisode({
+            tvdbId: 6010,
+            episodeNumber: 1,
+            seasonNumber: 2,
+            name: "S2 Ep1",
+          }),
+        ]);
+      }),
       searchSeries: vi.fn(),
     } as unknown as TheTvdbClient;
 

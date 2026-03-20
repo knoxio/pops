@@ -49,14 +49,8 @@ export function listBudgets(
     .orderBy(asc(budgets.category))
     .limit(limit)
     .offset(offset)
-    .all()
-    ;
-
-  const [{ total }] = db
-    .select({ total: count() })
-    .from(budgets)
-    .where(where)
     .all();
+  const [{ total }] = db.select({ total: count() }).from(budgets).where(where).all();
 
   return { rows, total };
 }
@@ -64,11 +58,7 @@ export function listBudgets(
 /** Get a single budget by id. Throws NotFoundError if missing. */
 export function getBudget(id: string): BudgetRow {
   const db = getDrizzle();
-  const row = db
-    .select()
-    .from(budgets)
-    .where(eq(budgets.id, id))
-    .get();
+  const row = db.select().from(budgets).where(eq(budgets.id, id)).get();
 
   if (!row) throw new NotFoundError("Budget", id);
   return row;
@@ -89,9 +79,7 @@ export function createBudget(input: CreateBudgetInput): BudgetRow {
     .where(
       and(
         eq(budgets.category, input.category),
-        input.period != null
-          ? eq(budgets.period, input.period)
-          : isNull(budgets.period)
+        input.period != null ? eq(budgets.period, input.period) : isNull(budgets.period)
       )
     )
     .get();

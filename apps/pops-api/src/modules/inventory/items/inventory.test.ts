@@ -370,9 +370,9 @@ describe("inventory.update", () => {
 
     await caller.inventory.items.update({ id, data: { brand: "Apple" } });
 
-    const row = db
-      .prepare("SELECT last_edited_time FROM home_inventory WHERE id = ?")
-      .get(id) as { last_edited_time: string };
+    const row = db.prepare("SELECT last_edited_time FROM home_inventory WHERE id = ?").get(id) as {
+      last_edited_time: string;
+    };
     expect(row.last_edited_time).not.toBe("2020-01-01T00:00:00.000Z");
   });
 
@@ -399,7 +399,9 @@ describe("inventory.update", () => {
     await expect(caller.inventory.items.update({ id, data: { itemName: "" } })).rejects.toThrow(
       TRPCError
     );
-    await expect(caller.inventory.items.update({ id, data: { itemName: "" } })).rejects.toMatchObject({
+    await expect(
+      caller.inventory.items.update({ id, data: { itemName: "" } })
+    ).rejects.toMatchObject({
       code: "BAD_REQUEST",
     });
   });
@@ -418,7 +420,9 @@ describe("inventory.delete", () => {
   });
 
   it("throws NOT_FOUND for non-existent ID", async () => {
-    await expect(caller.inventory.items.delete({ id: "does-not-exist" })).rejects.toThrow(TRPCError);
+    await expect(caller.inventory.items.delete({ id: "does-not-exist" })).rejects.toThrow(
+      TRPCError
+    );
     await expect(caller.inventory.items.delete({ id: "does-not-exist" })).rejects.toMatchObject({
       code: "NOT_FOUND",
     });

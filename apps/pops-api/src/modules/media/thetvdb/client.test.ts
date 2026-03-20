@@ -82,9 +82,7 @@ describe("TheTvdbAuth", () => {
     const FRESH_TOKEN = "fresh-token-abc";
     fetchMock
       .mockResolvedValueOnce(mockResponse(LOGIN_RESPONSE))
-      .mockResolvedValueOnce(
-        mockResponse({ status: "success", data: { token: FRESH_TOKEN } }),
-      );
+      .mockResolvedValueOnce(mockResponse({ status: "success", data: { token: FRESH_TOKEN } }));
 
     await auth.getToken();
     auth.invalidate();
@@ -97,7 +95,7 @@ describe("TheTvdbAuth", () => {
   it("throws TvdbApiError on login failure", async () => {
     expect.assertions(2);
     fetchMock.mockResolvedValueOnce(
-      mockResponse({ message: "Invalid API key" }, 401, "Unauthorized"),
+      mockResponse({ message: "Invalid API key" }, 401, "Unauthorized")
     );
 
     try {
@@ -185,17 +183,13 @@ describe("TheTvdbClient.searchSeries", () => {
     expect(results[1].overview).toBeNull();
     expect(results[1].firstAirDate).toBeNull();
     // Falls back to thumbnail when image_url is missing
-    expect(results[1].posterPath).toBe(
-      "https://artworks.thetvdb.com/banners/posters/73255.jpg",
-    );
+    expect(results[1].posterPath).toBe("https://artworks.thetvdb.com/banners/posters/73255.jpg");
   });
 
   it("passes query and type=series in URL", async () => {
     fetchMock
       .mockResolvedValueOnce(mockResponse(LOGIN_RESPONSE))
-      .mockResolvedValueOnce(
-        mockResponse({ status: "success", data: [] }),
-      );
+      .mockResolvedValueOnce(mockResponse({ status: "success", data: [] }));
 
     await client.searchSeries("breaking bad");
 
@@ -293,9 +287,7 @@ describe("TheTvdbClient.getSeriesExtended", () => {
     expect(result.seasons[0].episodeCount).toBe(2);
     expect(result.seasons[1].seasonNumber).toBe(1);
     expect(result.seasons[1].episodeCount).toBe(7);
-    expect(result.seasons[1].imageUrl).toBe(
-      "https://artworks.thetvdb.com/seasons/30273.jpg",
-    );
+    expect(result.seasons[1].imageUrl).toBe("https://artworks.thetvdb.com/seasons/30273.jpg");
   });
 
   it("maps artworks", async () => {
@@ -396,9 +388,7 @@ describe("TheTvdbClient error handling", () => {
     expect.assertions(2);
     fetchMock
       .mockResolvedValueOnce(mockResponse(LOGIN_RESPONSE))
-      .mockResolvedValueOnce(
-        mockResponse({ message: "Record not found" }, 404, "Not Found"),
-      );
+      .mockResolvedValueOnce(mockResponse({ message: "Record not found" }, 404, "Not Found"));
 
     try {
       await client.getSeriesExtended(999999);
@@ -414,17 +404,11 @@ describe("TheTvdbClient error handling", () => {
       // Initial login
       .mockResolvedValueOnce(mockResponse(LOGIN_RESPONSE))
       // First request → 401
-      .mockResolvedValueOnce(
-        mockResponse({ message: "Token expired" }, 401, "Unauthorized"),
-      )
+      .mockResolvedValueOnce(mockResponse({ message: "Token expired" }, 401, "Unauthorized"))
       // Re-login
-      .mockResolvedValueOnce(
-        mockResponse({ status: "success", data: { token: FRESH_TOKEN } }),
-      )
+      .mockResolvedValueOnce(mockResponse({ status: "success", data: { token: FRESH_TOKEN } }))
       // Retry → success
-      .mockResolvedValueOnce(
-        mockResponse({ status: "success", data: [] }),
-      );
+      .mockResolvedValueOnce(mockResponse({ status: "success", data: [] }));
 
     const results = await client.searchSeries("test");
 
@@ -434,9 +418,9 @@ describe("TheTvdbClient error handling", () => {
 
     // Verify the retry used the new token
     const [, retryOptions] = fetchMock.mock.calls[3] as [string, RequestInit];
-    expect(
-      (retryOptions.headers as Record<string, string>).Authorization,
-    ).toBe(`Bearer ${FRESH_TOKEN}`);
+    expect((retryOptions.headers as Record<string, string>).Authorization).toBe(
+      `Bearer ${FRESH_TOKEN}`
+    );
   });
 
   it("throws TvdbApiError on persistent 401 (does not retry infinitely)", async () => {
@@ -445,15 +429,11 @@ describe("TheTvdbClient error handling", () => {
       // Initial login
       .mockResolvedValueOnce(mockResponse(LOGIN_RESPONSE))
       // First request → 401
-      .mockResolvedValueOnce(
-        mockResponse({ message: "Unauthorized" }, 401, "Unauthorized"),
-      )
+      .mockResolvedValueOnce(mockResponse({ message: "Unauthorized" }, 401, "Unauthorized"))
       // Re-login
       .mockResolvedValueOnce(mockResponse(LOGIN_RESPONSE))
       // Retry → 401 again
-      .mockResolvedValueOnce(
-        mockResponse({ message: "Still unauthorized" }, 401, "Unauthorized"),
-      );
+      .mockResolvedValueOnce(mockResponse({ message: "Still unauthorized" }, 401, "Unauthorized"));
 
     try {
       await client.searchSeries("test");
@@ -481,15 +461,11 @@ describe("TheTvdbClient error handling", () => {
   it("sends Bearer token in Authorization header", async () => {
     fetchMock
       .mockResolvedValueOnce(mockResponse(LOGIN_RESPONSE))
-      .mockResolvedValueOnce(
-        mockResponse({ status: "success", data: [] }),
-      );
+      .mockResolvedValueOnce(mockResponse({ status: "success", data: [] }));
 
     await client.searchSeries("test");
 
     const [, options] = fetchMock.mock.calls[1] as [string, RequestInit];
-    expect(
-      (options.headers as Record<string, string>).Authorization,
-    ).toBe(`Bearer ${FAKE_TOKEN}`);
+    expect((options.headers as Record<string, string>).Authorization).toBe(`Bearer ${FAKE_TOKEN}`);
   });
 });

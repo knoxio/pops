@@ -53,12 +53,7 @@ describe("downloadMovieImages", () => {
   it("creates directory and downloads all three images", async () => {
     fetchMock.mockResolvedValue(mockImageResponse());
 
-    await service.downloadMovieImages(
-      550,
-      "/poster123.jpg",
-      "/backdrop456.jpg",
-      "/logo789.png",
-    );
+    await service.downloadMovieImages(550, "/poster123.jpg", "/backdrop456.jpg", "/logo789.png");
 
     const movieDir = path.join(IMAGES_DIR, "movies", "550");
     expect(fs.mkdir).toHaveBeenCalledWith(movieDir, { recursive: true });
@@ -99,8 +94,7 @@ describe("downloadMovieImages", () => {
 
   it("skips download if file already exists", async () => {
     // First stat call (for poster) succeeds = file exists
-    vi.mocked(fs.stat)
-      .mockResolvedValueOnce({} as Awaited<ReturnType<typeof fs.stat>>);
+    vi.mocked(fs.stat).mockResolvedValueOnce({} as Awaited<ReturnType<typeof fs.stat>>);
 
     await service.downloadMovieImages(550, "/poster.jpg", null, null);
 
@@ -118,7 +112,7 @@ describe("downloadMovieImages", () => {
     const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     await expect(
-      service.downloadMovieImages(550, "/poster.jpg", "/backdrop.jpg", null),
+      service.downloadMovieImages(550, "/poster.jpg", "/backdrop.jpg", null)
     ).resolves.toBeUndefined();
 
     // Poster was written, backdrop was not (failed)
@@ -135,7 +129,7 @@ describe("downloadMovieImages", () => {
     const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     await expect(
-      service.downloadMovieImages(550, "/poster.jpg", null, null),
+      service.downloadMovieImages(550, "/poster.jpg", null, null)
     ).resolves.toBeUndefined();
 
     expect(fs.writeFile).not.toHaveBeenCalled();
@@ -147,9 +141,7 @@ describe("downloadMovieImages", () => {
 
 describe("getImagePath", () => {
   it("returns path when file exists", async () => {
-    vi.mocked(fs.stat).mockResolvedValueOnce(
-      {} as Awaited<ReturnType<typeof fs.stat>>,
-    );
+    vi.mocked(fs.stat).mockResolvedValueOnce({} as Awaited<ReturnType<typeof fs.stat>>);
 
     const result = await service.getImagePath("movie", 550, "poster");
 
@@ -165,9 +157,7 @@ describe("getImagePath", () => {
   });
 
   it("resolves correct paths for different image types", async () => {
-    vi.mocked(fs.stat).mockResolvedValue(
-      {} as Awaited<ReturnType<typeof fs.stat>>,
-    );
+    vi.mocked(fs.stat).mockResolvedValue({} as Awaited<ReturnType<typeof fs.stat>>);
 
     const poster = await service.getImagePath("movie", 550, "poster");
     const backdrop = await service.getImagePath("movie", 550, "backdrop");
@@ -187,10 +177,10 @@ describe("deleteMovieImages", () => {
 
     await service.deleteMovieImages(550);
 
-    expect(fs.rm).toHaveBeenCalledWith(
-      path.join(IMAGES_DIR, "movies", "550"),
-      { recursive: true, force: true },
-    );
+    expect(fs.rm).toHaveBeenCalledWith(path.join(IMAGES_DIR, "movies", "550"), {
+      recursive: true,
+      force: true,
+    });
   });
 });
 
@@ -201,7 +191,7 @@ describe("downloadTvShowImages", () => {
     await service.downloadTvShowImages(
       81189,
       "https://artworks.thetvdb.com/banners/posters/81189.jpg",
-      "https://artworks.thetvdb.com/banners/backgrounds/81189.jpg",
+      "https://artworks.thetvdb.com/banners/backgrounds/81189.jpg"
     );
 
     const tvDir = path.join(IMAGES_DIR, "tv", "81189");
@@ -211,12 +201,8 @@ describe("downloadTvShowImages", () => {
 
     // TheTVDB uses full URLs (no size prefix)
     const urls = fetchMock.mock.calls.map((c: unknown[]) => c[0] as string);
-    expect(urls).toContainEqual(
-      "https://artworks.thetvdb.com/banners/posters/81189.jpg",
-    );
-    expect(urls).toContainEqual(
-      "https://artworks.thetvdb.com/banners/backgrounds/81189.jpg",
-    );
+    expect(urls).toContainEqual("https://artworks.thetvdb.com/banners/posters/81189.jpg");
+    expect(urls).toContainEqual("https://artworks.thetvdb.com/banners/backgrounds/81189.jpg");
 
     const paths = vi.mocked(fs.writeFile).mock.calls.map((c) => c[0]);
     expect(paths).toContainEqual(path.join(tvDir, "poster.jpg"));
@@ -241,15 +227,9 @@ describe("downloadTvShowImages", () => {
   });
 
   it("skips download if file already exists", async () => {
-    vi.mocked(fs.stat).mockResolvedValueOnce(
-      {} as Awaited<ReturnType<typeof fs.stat>>,
-    );
+    vi.mocked(fs.stat).mockResolvedValueOnce({} as Awaited<ReturnType<typeof fs.stat>>);
 
-    await service.downloadTvShowImages(
-      81189,
-      "https://artworks.thetvdb.com/poster.jpg",
-      null,
-    );
+    await service.downloadTvShowImages(81189, "https://artworks.thetvdb.com/poster.jpg", null);
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(fs.writeFile).not.toHaveBeenCalled();
@@ -260,7 +240,7 @@ describe("downloadTvShowImages", () => {
     const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     await expect(
-      service.downloadTvShowImages(81189, "https://artworks.thetvdb.com/p.jpg", null),
+      service.downloadTvShowImages(81189, "https://artworks.thetvdb.com/p.jpg", null)
     ).resolves.toBeUndefined();
 
     expect(fs.writeFile).not.toHaveBeenCalled();
@@ -273,7 +253,7 @@ describe("downloadTvShowImages", () => {
     const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
     await expect(
-      service.downloadTvShowImages(81189, "https://artworks.thetvdb.com/p.jpg", null),
+      service.downloadTvShowImages(81189, "https://artworks.thetvdb.com/p.jpg", null)
     ).resolves.toBeUndefined();
 
     expect(fs.writeFile).not.toHaveBeenCalled();
@@ -284,16 +264,12 @@ describe("downloadTvShowImages", () => {
   it("blocks downloads from untrusted hosts (SSRF defense)", async () => {
     const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-    await service.downloadTvShowImages(
-      81189,
-      "http://169.254.169.254/latest/meta-data",
-      null,
-    );
+    await service.downloadTvShowImages(81189, "http://169.254.169.254/latest/meta-data", null);
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(fs.writeFile).not.toHaveBeenCalled();
     expect(consoleSpy).toHaveBeenCalledWith(
-      expect.stringContaining("Blocked download from untrusted host"),
+      expect.stringContaining("Blocked download from untrusted host")
     );
     consoleSpy.mockRestore();
   });
@@ -301,9 +277,7 @@ describe("downloadTvShowImages", () => {
 
 describe("getImagePath — tv", () => {
   it("resolves tv path under tv/ directory (not tvs/)", async () => {
-    vi.mocked(fs.stat).mockResolvedValueOnce(
-      {} as Awaited<ReturnType<typeof fs.stat>>,
-    );
+    vi.mocked(fs.stat).mockResolvedValueOnce({} as Awaited<ReturnType<typeof fs.stat>>);
 
     const result = await service.getImagePath("tv", 81189, "poster");
 
@@ -325,9 +299,9 @@ describe("deleteTvShowImages", () => {
 
     await service.deleteTvShowImages(81189);
 
-    expect(fs.rm).toHaveBeenCalledWith(
-      path.join(IMAGES_DIR, "tv", "81189"),
-      { recursive: true, force: true },
-    );
+    expect(fs.rm).toHaveBeenCalledWith(path.join(IMAGES_DIR, "tv", "81189"), {
+      recursive: true,
+      force: true,
+    });
   });
 });

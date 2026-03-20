@@ -19,9 +19,7 @@ const { expired, orphaned } = startupCleanup();
 if (expired.length > 0)
   console.log(`[pops-api] Cleaned up ${expired.length} expired env(s): ${expired.join(", ")}`);
 if (orphaned.length > 0)
-  console.log(
-    `[pops-api] Removed ${orphaned.length} orphaned env DB(s): ${orphaned.join(", ")}`
-  );
+  console.log(`[pops-api] Removed ${orphaned.length} orphaned env DB(s): ${orphaned.join(", ")}`);
 
 const server = app.listen(port, () => {
   console.log(`[pops-api] Listening on port ${port}`);

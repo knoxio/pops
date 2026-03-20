@@ -41,10 +41,7 @@ export const libraryRouter = router({
     .mutation(async ({ input }) => {
       const client = getTmdbClient();
       try {
-        const { movie, created } = await libraryService.addMovie(
-          input.tmdbId,
-          client,
-        );
+        const { movie, created } = await libraryService.addMovie(input.tmdbId, client);
         return {
           data: movie,
           created,
@@ -68,32 +65,27 @@ export const libraryRouter = router({
     }),
 
   /** Refresh movie metadata from TMDB. */
-  refreshMovie: protectedProcedure
-    .input(RefreshMovieSchema)
-    .mutation(async ({ input }) => {
-      const tmdbClient = getTmdbClient();
-      try {
-        const row = await libraryService.refreshMovie(
-          input.id,
-          tmdbClient,
-        );
-        return {
-          data: toMovie(row),
-          message: "Movie metadata refreshed",
-        };
-      } catch (err) {
-        if (err instanceof NotFoundError) {
-          throw new TRPCError({ code: "NOT_FOUND", message: err.message });
-        }
-        if (err instanceof TmdbApiError) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: `TMDB API error: ${err.message}`,
-          });
-        }
-        throw err;
+  refreshMovie: protectedProcedure.input(RefreshMovieSchema).mutation(async ({ input }) => {
+    const tmdbClient = getTmdbClient();
+    try {
+      const row = await libraryService.refreshMovie(input.id, tmdbClient);
+      return {
+        data: toMovie(row),
+        message: "Movie metadata refreshed",
+      };
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        throw new TRPCError({ code: "NOT_FOUND", message: err.message });
       }
-    }),
+      if (err instanceof TmdbApiError) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `TMDB API error: ${err.message}`,
+        });
+      }
+      throw err;
+    }
+  }),
 
   /** Add a TV show to the local library by TVDB ID. Idempotent. */
   addTvShow: protectedProcedure
@@ -114,9 +106,7 @@ export const libraryRouter = router({
             seasons: result.seasons.map(toSeason),
           },
           created: result.created,
-          message: result.created
-            ? "TV show added to library"
-            : "TV show already in library",
+          message: result.created ? "TV show added to library" : "TV show already in library",
         };
       } catch (err) {
         if (err instanceof TvdbApiError) {
@@ -136,7 +126,7 @@ export const libraryRouter = router({
         id: z.number().int().positive(),
         redownloadImages: z.boolean().default(false),
         refreshEpisodes: z.boolean().default(true),
-      }),
+      })
     )
     .mutation(async ({ input }) => {
       const client = getTvdbClient();

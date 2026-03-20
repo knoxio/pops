@@ -60,9 +60,7 @@ describe("GenreCache", () => {
       } as unknown as TmdbClient;
       const failCache = new GenreCache(failClient);
 
-      await expect(failCache.ensureLoaded()).rejects.toThrow(
-        "TMDB API error: 401 Unauthorized",
-      );
+      await expect(failCache.ensureLoaded()).rejects.toThrow("TMDB API error: 401 Unauthorized");
     });
 
     it("deduplicates concurrent requests", async () => {

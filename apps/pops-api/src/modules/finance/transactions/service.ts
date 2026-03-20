@@ -62,14 +62,8 @@ export function listTransactions(
     .orderBy(desc(transactions.date))
     .limit(limit)
     .offset(offset)
-    .all()
-    ;
-
-  const [countRow] = db
-    .select({ total: count() })
-    .from(transactions)
-    .where(where)
     .all();
+  const [countRow] = db.select({ total: count() }).from(transactions).where(where).all();
 
   return { rows, total: countRow.total };
 }
@@ -77,11 +71,7 @@ export function listTransactions(
 /** Get a single transaction by id. Throws NotFoundError if missing. */
 export function getTransaction(id: string): TransactionRow {
   const db = getDrizzle();
-  const row = db
-    .select()
-    .from(transactions)
-    .where(eq(transactions.id, id))
-    .get();
+  const row = db.select().from(transactions).where(eq(transactions.id, id)).get();
 
   if (!row) throw new NotFoundError("Transaction", id);
   return row;
@@ -124,10 +114,7 @@ export function createTransaction(input: CreateTransactionInput): TransactionRow
  * Update an existing transaction. Returns the updated row.
  * Updates directly in SQLite.
  */
-export function updateTransaction(
-  id: string,
-  input: UpdateTransactionInput
-): TransactionRow {
+export function updateTransaction(id: string, input: UpdateTransactionInput): TransactionRow {
   // Verify it exists first
   getTransaction(id);
 
@@ -187,9 +174,6 @@ export function deleteTransaction(id: string): void {
   // Verify it exists first
   getTransaction(id);
 
-  const result = getDrizzle()
-    .delete(transactions)
-    .where(eq(transactions.id, id))
-    .run();
+  const result = getDrizzle().delete(transactions).where(eq(transactions.id, id)).run();
   if (result.changes === 0) throw new NotFoundError("Transaction", id);
 }

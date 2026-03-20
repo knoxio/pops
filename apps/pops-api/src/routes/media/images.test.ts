@@ -87,14 +87,12 @@ describe("GET /media/images/:mediaType/:id/:filename", () => {
       // Mock stat to succeed for the poster file
       vi.mocked(fs.stat).mockImplementation(async (path) => {
         if (path === expectedPath) {
-          return { mtimeMs: 1700000000000, size: 12345 } as Awaited<
-            ReturnType<typeof fs.stat>
-          >;
+          return { mtimeMs: 1700000000000, size: 12345 } as Awaited<ReturnType<typeof fs.stat>>;
         }
         throw new Error("ENOENT");
       });
 
-      const res = await request(app).get("/media/images/movie/550/poster.jpg");
+      await request(app).get("/media/images/movie/550/poster.jpg");
 
       // sendFile will fail in test (no actual file) but headers are set
       // We check that stat was called with the correct path
@@ -151,7 +149,6 @@ describe("GET /media/images/:mediaType/:id/:filename", () => {
 
     it("resolves tv images under tv/ directory (not tvs/)", async () => {
       const app = createTestApp();
-      const expectedPath = join(TEST_IMAGES_DIR, "tv", "81189", "poster.jpg");
 
       const statCalls: string[] = [];
       vi.mocked(fs.stat).mockImplementation(async (path) => {

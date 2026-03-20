@@ -131,10 +131,7 @@ function buildSuggestedTags(
  */
 function loadEntityLookup(): Record<string, string> {
   const db = getDrizzle();
-  const rows = db
-    .select({ name: entities.name, id: entities.id })
-    .from(entities)
-    .all();
+  const rows = db.select({ name: entities.name, id: entities.id }).from(entities).all();
 
   const lookup: Record<string, string> = {};
   for (const row of rows) {
@@ -229,11 +226,7 @@ function insertTransaction(input: {
     })
     .run();
 
-  const row = db
-    .select()
-    .from(transactions)
-    .where(eq(transactions.id, id))
-    .get();
+  const row = db.select().from(transactions).where(eq(transactions.id, id)).get();
 
   if (!row) throw new Error(`Insert succeeded but row not found: ${id}`);
   return row;
@@ -521,9 +514,7 @@ export async function processImport(
 }
 
 /** Execute import: write confirmed transactions to SQLite. */
-export function executeImport(
-  transactions: ConfirmedTransaction[]
-): ExecuteImportOutput {
+export function executeImport(transactions: ConfirmedTransaction[]): ExecuteImportOutput {
   logger.info({ totalCount: transactions.length }, "[Import] Starting executeImport");
 
   const results: ImportResult[] = [];
@@ -978,81 +969,81 @@ export function executeImportWithProgress(
         status: "processing",
       };
 
-        // Update current batch (show up to 5 items)
-        currentBatch.push(batchItem);
-        if (currentBatch.length > 5) currentBatch.shift();
+      // Update current batch (show up to 5 items)
+      currentBatch.push(batchItem);
+      if (currentBatch.length > 5) currentBatch.shift();
 
-        updateProgress(sessionId, {
-          processedCount: i + 1,
-          currentBatch: [...currentBatch],
+      updateProgress(sessionId, {
+        processedCount: i + 1,
+        currentBatch: [...currentBatch],
+      });
+
+      try {
+        const type =
+          transaction.transactionType === "transfer"
+            ? "Transfer"
+            : transaction.transactionType === "income"
+              ? "Income"
+              : "Expense";
+        const row = insertTransaction({
+          description: transaction.description,
+          account: transaction.account,
+          amount: transaction.amount,
+          date: transaction.date,
+          type,
+          tags: transaction.tags ?? [],
+          entityId: transaction.entityId ?? null,
+          entityName: transaction.entityName ?? null,
+          location: transaction.location ?? null,
+          rawRow: transaction.rawRow,
+          checksum: transaction.checksum,
+        });
+        logger.debug(
+          {
+            index: i + 1,
+            total: transactions.length,
+            description: transaction.description.substring(0, 50),
+            id: row.id,
+          },
+          "[Import] Transaction written"
+        );
+
+        results.push({
+          transaction,
+          success: true,
+          pageId: row.id,
+        });
+        imported++;
+
+        batchItem.status = "success";
+      } catch (error) {
+        logger.error(
+          {
+            index: i + 1,
+            total: transactions.length,
+            description: transaction.description.substring(0, 50),
+            error: error instanceof Error ? error.message : String(error),
+          },
+          "[Import] Transaction write failed"
+        );
+
+        results.push({
+          transaction,
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error",
         });
 
-        try {
-          const type =
-            transaction.transactionType === "transfer"
-              ? "Transfer"
-              : transaction.transactionType === "income"
-                ? "Income"
-                : "Expense";
-          const row = insertTransaction({
-            description: transaction.description,
-            account: transaction.account,
-            amount: transaction.amount,
-            date: transaction.date,
-            type,
-            tags: transaction.tags ?? [],
-            entityId: transaction.entityId ?? null,
-            entityName: transaction.entityName ?? null,
-            location: transaction.location ?? null,
-            rawRow: transaction.rawRow,
-            checksum: transaction.checksum,
-          });
-          logger.debug(
-            {
-              index: i + 1,
-              total: transactions.length,
-              description: transaction.description.substring(0, 50),
-              id: row.id,
-            },
-            "[Import] Transaction written"
-          );
+        batchItem.status = "failed";
+        batchItem.error = error instanceof Error ? error.message : "Unknown error";
 
-          results.push({
-            transaction,
-            success: true,
-            pageId: row.id,
-          });
-          imported++;
-
-          batchItem.status = "success";
-        } catch (error) {
-          logger.error(
-            {
-              index: i + 1,
-              total: transactions.length,
-              description: transaction.description.substring(0, 50),
-              error: error instanceof Error ? error.message : String(error),
-            },
-            "[Import] Transaction write failed"
-          );
-
-          results.push({
-            transaction,
-            success: false,
-            error: error instanceof Error ? error.message : "Unknown error",
-          });
-
-          batchItem.status = "failed";
-          batchItem.error = error instanceof Error ? error.message : "Unknown error";
-
-          const formattedError = formatImportError(error, { transaction: transaction.description });
-          errors.push({
-            description: transaction.description.substring(0, 50),
-            error:
-              formattedError.message +
-              (formattedError.suggestion ? ` - ${formattedError.suggestion}` : ""),
-          });
-        }
+        const formattedError = formatImportError(error, { transaction: transaction.description });
+        errors.push({
+          description: transaction.description.substring(0, 50),
+          error:
+            formattedError.message +
+            (formattedError.suggestion ? ` - ${formattedError.suggestion}` : ""),
+        });
+      }
 
       // Update batch item status
       updateProgress(sessionId, { currentBatch: [...currentBatch] });

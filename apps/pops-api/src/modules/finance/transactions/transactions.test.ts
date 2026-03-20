@@ -260,7 +260,9 @@ describe("transactions.get", () => {
   });
 
   it("throws NOT_FOUND for non-existent ID", async () => {
-    await expect(caller.finance.transactions.get({ id: "does-not-exist" })).rejects.toThrow(TRPCError);
+    await expect(caller.finance.transactions.get({ id: "does-not-exist" })).rejects.toThrow(
+      TRPCError
+    );
     await expect(caller.finance.transactions.get({ id: "does-not-exist" })).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
@@ -379,7 +381,10 @@ describe("transactions.update", () => {
       date: "2025-06-15",
     });
 
-    const result = await caller.finance.transactions.update({ id, data: { description: "Updated" } });
+    const result = await caller.finance.transactions.update({
+      id,
+      data: { description: "Updated" },
+    });
 
     expect(result.message).toBe("Transaction updated");
     expect(result.data.description).toBe("Updated");
@@ -419,9 +424,9 @@ describe("transactions.update", () => {
 
     await caller.finance.transactions.update({ id, data: { amount: 100.0 } });
 
-    const row = db
-      .prepare("SELECT last_edited_time FROM transactions WHERE id = ?")
-      .get(id) as { last_edited_time: string };
+    const row = db.prepare("SELECT last_edited_time FROM transactions WHERE id = ?").get(id) as {
+      last_edited_time: string;
+    };
     expect(row.last_edited_time).not.toBe("2020-01-01T00:00:00.000Z");
   });
 
@@ -445,9 +450,9 @@ describe("transactions.update", () => {
   it("rejects empty description", async () => {
     const id = seedTransaction(db, { description: "Test", account: "Up" });
 
-    await expect(caller.finance.transactions.update({ id, data: { description: "" } })).rejects.toThrow(
-      TRPCError
-    );
+    await expect(
+      caller.finance.transactions.update({ id, data: { description: "" } })
+    ).rejects.toThrow(TRPCError);
     await expect(
       caller.finance.transactions.update({ id, data: { description: "" } })
     ).rejects.toMatchObject({
@@ -469,8 +474,12 @@ describe("transactions.delete", () => {
   });
 
   it("throws NOT_FOUND for non-existent ID", async () => {
-    await expect(caller.finance.transactions.delete({ id: "does-not-exist" })).rejects.toThrow(TRPCError);
-    await expect(caller.finance.transactions.delete({ id: "does-not-exist" })).rejects.toMatchObject({
+    await expect(caller.finance.transactions.delete({ id: "does-not-exist" })).rejects.toThrow(
+      TRPCError
+    );
+    await expect(
+      caller.finance.transactions.delete({ id: "does-not-exist" })
+    ).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
   });

@@ -841,13 +841,13 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
     // -------------------------------------------------------------------------
     const connections = [
       // Power chain: power board → devices
-      ["inv-007", "inv-003"],  // PB-001 → TV
+      ["inv-007", "inv-003"], // PB-001 → TV
       // HDMI chain
-      ["inv-003", "inv-006"],  // TV → HDMI cable
+      ["inv-003", "inv-006"], // TV → HDMI cable
       // Office chain: power board → devices
-      ["inv-001", "inv-008"],  // MacBook → USB-C Hub
-      ["inv-008", "inv-010"],  // Hub → Power Board (via charger)
-      ["inv-008", "inv-009"],  // Hub → Ethernet cable
+      ["inv-001", "inv-008"], // MacBook → USB-C Hub
+      ["inv-008", "inv-010"], // Hub → Power Board (via charger)
+      ["inv-008", "inv-009"], // Hub → Ethernet cable
     ];
 
     const insertConnection = db.prepare(`
@@ -936,7 +936,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         tmdb_id: 278,
         title: "The Shawshank Redemption",
-        overview: "Imprisoned in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison.",
+        overview:
+          "Imprisoned in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison.",
         release_date: "1994-09-23",
         runtime: 142,
         status: "Released",
@@ -948,7 +949,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         tmdb_id: 238,
         title: "The Godfather",
-        overview: "Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family.",
+        overview:
+          "Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family.",
         release_date: "1972-03-14",
         runtime: 175,
         status: "Released",
@@ -960,7 +962,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         tmdb_id: 155,
         title: "The Dark Knight",
-        overview: "Batman raises the stakes in his war on crime. With the help of Lt. Jim Gordon and District Attorney Harvey Dent, Batman sets out to dismantle the remaining criminal organizations that plague the streets.",
+        overview:
+          "Batman raises the stakes in his war on crime. With the help of Lt. Jim Gordon and District Attorney Harvey Dent, Batman sets out to dismantle the remaining criminal organizations that plague the streets.",
         release_date: "2008-07-16",
         runtime: 152,
         status: "Released",
@@ -972,7 +975,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         tmdb_id: 680,
         title: "Pulp Fiction",
-        overview: "A burger-loving hit man, his philosophical partner, a drug-addled gangster's moll and a washed-up boxer converge in this sprawling, comedic crime caper.",
+        overview:
+          "A burger-loving hit man, his philosophical partner, a drug-addled gangster's moll and a washed-up boxer converge in this sprawling, comedic crime caper.",
         release_date: "1994-09-10",
         runtime: 154,
         status: "Released",
@@ -984,7 +988,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         tmdb_id: 13,
         title: "Forrest Gump",
-        overview: "A man with a low IQ has accomplished great things in his life and been present during significant historic events — in each case, far exceeding what anyone imagined he could do.",
+        overview:
+          "A man with a low IQ has accomplished great things in his life and been present during significant historic events — in each case, far exceeding what anyone imagined he could do.",
         release_date: "1994-06-23",
         runtime: 142,
         status: "Released",
@@ -996,7 +1001,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         tmdb_id: 550,
         title: "Fight Club",
-        overview: "A ticking-time bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy.",
+        overview:
+          "A ticking-time bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy.",
         release_date: "1999-10-15",
         runtime: 139,
         status: "Released",
@@ -1008,7 +1014,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         tmdb_id: 120,
         title: "The Lord of the Rings: The Fellowship of the Ring",
-        overview: "Young hobbit Frodo Baggins, after inheriting a mysterious ring from his uncle Bilbo, must leave his home in order to keep it from falling into the hands of its evil creator.",
+        overview:
+          "Young hobbit Frodo Baggins, after inheriting a mysterious ring from his uncle Bilbo, must leave his home in order to keep it from falling into the hands of its evil creator.",
         release_date: "2001-12-18",
         runtime: 179,
         status: "Released",
@@ -1020,7 +1027,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         tmdb_id: 603,
         title: "The Matrix",
-        overview: "Set in the 22nd century, The Matrix tells the story of a computer hacker who joins a group of underground insurgents fighting the vast and powerful computers who now rule the earth.",
+        overview:
+          "Set in the 22nd century, The Matrix tells the story of a computer hacker who joins a group of underground insurgents fighting the vast and powerful computers who now rule the earth.",
         release_date: "1999-03-30",
         runtime: 136,
         status: "Released",
@@ -1032,7 +1040,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         tmdb_id: 157336,
         title: "Interstellar",
-        overview: "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.",
+        overview:
+          "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.",
         release_date: "2014-11-05",
         runtime: 169,
         status: "Released",
@@ -1044,7 +1053,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         tmdb_id: 569094,
         title: "Spider-Man: Across the Spider-Verse",
-        overview: "After reuniting with Gwen Stacy, Brooklyn's full-time, friendly neighborhood Spider-Man is catapulted across the Multiverse.",
+        overview:
+          "After reuniting with Gwen Stacy, Brooklyn's full-time, friendly neighborhood Spider-Man is catapulted across the Multiverse.",
         release_date: "2023-05-31",
         runtime: 140,
         status: "Released",
@@ -1073,7 +1083,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         movie.original_language,
         movie.vote_average,
         movie.vote_count,
-        movie.genres,
+        movie.genres
       );
     }
 
@@ -1084,7 +1094,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         tvdb_id: 81189,
         name: "Breaking Bad",
-        overview: "A high school chemistry teacher diagnosed with inoperable lung cancer turns to manufacturing and selling methamphetamine in order to secure his family's future.",
+        overview:
+          "A high school chemistry teacher diagnosed with inoperable lung cancer turns to manufacturing and selling methamphetamine in order to secure his family's future.",
         first_air_date: "2008-01-20",
         last_air_date: "2013-09-29",
         status: "Ended",
@@ -1100,7 +1111,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         tvdb_id: 305288,
         name: "Severance",
-        overview: "Mark leads a team of office workers whose memories have been surgically divided between their work and personal lives.",
+        overview:
+          "Mark leads a team of office workers whose memories have been surgically divided between their work and personal lives.",
         first_air_date: "2022-02-18",
         last_air_date: null,
         status: "Returning Series",
@@ -1116,7 +1128,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         tvdb_id: 366924,
         name: "Shogun",
-        overview: "In Japan in the year 1600, at the dawn of a century-defining civil war, Lord Yoshii Toranaga is fighting for his life as his enemies on the Council of Regents unite against him.",
+        overview:
+          "In Japan in the year 1600, at the dawn of a century-defining civil war, Lord Yoshii Toranaga is fighting for his life as his enemies on the Council of Regents unite against him.",
         first_air_date: "2024-02-27",
         last_air_date: null,
         status: "Returning Series",
@@ -1155,7 +1168,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         show.vote_average,
         show.vote_count,
         show.genres,
-        show.networks,
+        show.networks
       );
       tvShowIds.push(Number(result.lastInsertRowid));
     }
@@ -1191,13 +1204,17 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
     insertEpisode.run(sevS1, 8400665, 2, "Half Loop", 51);
     insertEpisode.run(sevS1, 8786314, 9, "The We We Are", 42);
 
-    const sevS2 = Number(insertSeason.run(tvShowIds[1], 2145611, 2, "Season 2", 10).lastInsertRowid);
+    const sevS2 = Number(
+      insertSeason.run(tvShowIds[1], 2145611, 2, "Season 2", 10).lastInsertRowid
+    );
     insertEpisode.run(sevS2, 10337005, 1, "Hello, Ms. Cobel", 56);
     insertEpisode.run(sevS2, 10337006, 2, "Goodbye, Mrs. Selvig", 49);
     insertEpisode.run(sevS2, 10337013, 10, "Cold Harbor", 72);
 
     // Shogun — season 1
-    const shoS1 = Number(insertSeason.run(tvShowIds[2], 2043811, 1, "Season 1", 10).lastInsertRowid);
+    const shoS1 = Number(
+      insertSeason.run(tvShowIds[2], 2043811, 1, "Season 1", 10).lastInsertRowid
+    );
     insertEpisode.run(shoS1, 9784549, 1, "Anjin", 70);
     insertEpisode.run(shoS1, 9784550, 2, "Servants of Two Masters", 55);
     insertEpisode.run(shoS1, 9784558, 10, "A Dream of a Dream", 70);

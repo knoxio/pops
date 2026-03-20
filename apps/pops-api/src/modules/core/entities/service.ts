@@ -41,11 +41,7 @@ export function listEntities(
     countQuery = countQuery.where(where);
   }
 
-  const rows = query
-    .orderBy(entities.name)
-    .limit(limit)
-    .offset(offset)
-    .all();
+  const rows = query.orderBy(entities.name).limit(limit).offset(offset).all();
 
   const [countResult] = countQuery.all();
 

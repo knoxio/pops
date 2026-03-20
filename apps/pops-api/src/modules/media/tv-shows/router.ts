@@ -28,12 +28,7 @@ export const tvShowsRouter = router({
     const limit = input.limit ?? DEFAULT_LIMIT;
     const offset = input.offset ?? DEFAULT_OFFSET;
 
-    const { rows, total } = service.listTvShows(
-      input.search,
-      input.status,
-      limit,
-      offset,
-    );
+    const { rows, total } = service.listTvShows(input.search, input.status, limit, offset);
 
     return {
       data: rows.map(toTvShow),
@@ -184,5 +179,4 @@ export const tvShowsRouter = router({
         throw err;
       }
     }),
-
 });

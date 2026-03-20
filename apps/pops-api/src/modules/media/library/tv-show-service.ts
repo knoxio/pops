@@ -23,19 +23,12 @@ export interface AddTvShowResult {
  * - Fetches full detail + episodes from TheTVDB.
  * - Inserts show, seasons, and episodes in a single transaction.
  */
-export async function addTvShow(
-  tvdbId: number,
-  client: TheTvdbClient,
-): Promise<AddTvShowResult> {
+export async function addTvShow(tvdbId: number, client: TheTvdbClient): Promise<AddTvShowResult> {
   // Check for existing show (idempotent)
   const existing = getTvShowByTvdbId(tvdbId);
   if (existing) {
     const db = getDrizzle();
-    const showSeasons = db
-      .select()
-      .from(seasons)
-      .where(eq(seasons.tvShowId, existing.id))
-      .all();
+    const showSeasons = db.select().from(seasons).where(eq(seasons.tvShowId, existing.id)).all();
     return { show: existing, seasons: showSeasons, created: false };
   }
 
@@ -48,7 +41,7 @@ export async function addTvShow(
     detail.seasons.map(async (season) => {
       const eps = await client.getSeriesEpisodes(tvdbId, season.seasonNumber);
       return { seasonNumber: season.seasonNumber, eps };
-    }),
+    })
   );
   for (const { seasonNumber, eps } of episodeResults) {
     seasonEpisodes.set(seasonNumber, eps);
@@ -63,17 +56,9 @@ export async function addTvShow(
 
   const result = db.transaction((tx) => {
     // Re-check inside transaction to prevent race condition
-    const raceCheck = tx
-      .select()
-      .from(tvShows)
-      .where(eq(tvShows.tvdbId, detail.tvdbId))
-      .get();
+    const raceCheck = tx.select().from(tvShows).where(eq(tvShows.tvdbId, detail.tvdbId)).get();
     if (raceCheck) {
-      const showSeasons = tx
-        .select()
-        .from(seasons)
-        .where(eq(seasons.tvShowId, raceCheck.id))
-        .all();
+      const showSeasons = tx.select().from(seasons).where(eq(seasons.tvShowId, raceCheck.id)).all();
       return { show: raceCheck, seasons: showSeasons, created: false as const };
     }
 
@@ -100,12 +85,9 @@ export async function addTvShow(
         episodeRunTime: detail.averageRuntime,
         posterPath: posterUrl,
         backdropPath: backdropUrl,
-        genres: detail.genres.length > 0
-          ? JSON.stringify(detail.genres.map((g) => g.name))
-          : null,
-        networks: detail.networks.length > 0
-          ? JSON.stringify(detail.networks.map((n) => n.name))
-          : null,
+        genres: detail.genres.length > 0 ? JSON.stringify(detail.genres.map((g) => g.name)) : null,
+        networks:
+          detail.networks.length > 0 ? JSON.stringify(detail.networks.map((n) => n.name)) : null,
         createdAt: now,
         updatedAt: now,
       })
@@ -131,11 +113,8 @@ export async function addTvShow(
         .run();
 
       const seasonId = Number(seasonResult.lastInsertRowid);
-      const seasonRow = tx
-        .select()
-        .from(seasons)
-        .where(eq(seasons.id, seasonId))
-        .get()!;
+      const seasonRow = tx.select().from(seasons).where(eq(seasons.id, seasonId)).get();
+      if (!seasonRow) throw new Error(`Season ${seasonId} not found after insert`);
       insertedSeasons.push(seasonRow);
 
       // Insert episodes for this season
@@ -157,11 +136,8 @@ export async function addTvShow(
     }
 
     // Re-fetch the show to get all columns
-    const showRow = tx
-      .select()
-      .from(tvShows)
-      .where(eq(tvShows.id, showId))
-      .get()!;
+    const showRow = tx.select().from(tvShows).where(eq(tvShows.id, showId)).get();
+    if (!showRow) throw new Error(`TV show ${showId} not found after insert`);
 
     return { show: showRow, seasons: insertedSeasons, created: true as const };
   });
@@ -170,9 +146,10 @@ export async function addTvShow(
 }
 
 /** Select the best poster and backdrop from TheTVDB artworks. */
-export function selectBestArtwork(
-  artworks: TvdbArtwork[],
-): { posterUrl: string | null; backdropUrl: string | null } {
+export function selectBestArtwork(artworks: TvdbArtwork[]): {
+  posterUrl: string | null;
+  backdropUrl: string | null;
+} {
   const posterUrl = pickBest(artworks, 2);
   const backdropUrl = pickBest(artworks, 3);
   return { posterUrl, backdropUrl };

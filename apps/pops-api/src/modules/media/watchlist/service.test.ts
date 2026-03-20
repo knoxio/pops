@@ -85,9 +85,9 @@ describe("addToWatchlist", () => {
 
   it("throws ConflictError on duplicate mediaType+mediaId", () => {
     service.addToWatchlist({ mediaType: "movie", mediaId: 550 });
-    expect(() =>
-      service.addToWatchlist({ mediaType: "movie", mediaId: 550 })
-    ).toThrow("already on the watchlist");
+    expect(() => service.addToWatchlist({ mediaType: "movie", mediaId: 550 })).toThrow(
+      "already on the watchlist"
+    );
   });
 });
 

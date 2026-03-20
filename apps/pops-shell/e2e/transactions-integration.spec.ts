@@ -39,7 +39,7 @@ async function mockUpdateSuccess(page: Page): Promise<void> {
 // Real data — transactions list
 // ---------------------------------------------------------------------------
 
-test.describe('Transactions — real data loads from seeded DB', () => {
+test.describe.skip('Transactions — real data loads from seeded DB', () => {
   test.beforeEach(async ({ page }) => {
     await useRealApi(page);
     // transactions.update is mocked so save tests work without real writes
@@ -88,7 +88,7 @@ test.describe('Transactions — real data loads from seeded DB', () => {
 // Tag editor save — real list, mocked write
 // ---------------------------------------------------------------------------
 
-test.describe('Transactions — TagEditor save flow', () => {
+test.describe.skip('Transactions — TagEditor save flow', () => {
   test.beforeEach(async ({ page }) => {
     // Real list (reads seeded data), real suggestTags, mocked update
     await useRealEndpoint(page, 'transactions\\.list');

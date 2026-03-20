@@ -30,74 +30,66 @@ function getImagesDir(): string {
 
 const router: ExpressRouter = Router();
 
-router.get(
-  "/media/images/:mediaType/:id/:filename",
-  async (req, res): Promise<void> => {
-    const { mediaType, id, filename } = req.params;
+router.get("/media/images/:mediaType/:id/:filename", async (req, res): Promise<void> => {
+  const { mediaType, id, filename } = req.params;
 
-    // Validate mediaType
-    if (!VALID_MEDIA_TYPES.includes(mediaType as typeof VALID_MEDIA_TYPES[number])) {
-      res.status(400).json({ error: `Invalid media type: ${mediaType}` });
-      return;
-    }
+  // Validate mediaType
+  if (!VALID_MEDIA_TYPES.includes(mediaType as (typeof VALID_MEDIA_TYPES)[number])) {
+    res.status(400).json({ error: `Invalid media type: ${mediaType}` });
+    return;
+  }
 
-    // Validate id is numeric
-    if (!/^\d+$/.test(id)) {
-      res.status(400).json({ error: `Invalid id: ${id}` });
-      return;
-    }
+  // Validate id is numeric
+  if (!/^\d+$/.test(id)) {
+    res.status(400).json({ error: `Invalid id: ${id}` });
+    return;
+  }
 
-    // Validate filename
-    if (!VALID_FILENAMES.includes(filename as ValidFilename)) {
-      res.status(400).json({ error: `Invalid filename: ${filename}` });
-      return;
-    }
+  // Validate filename
+  if (!VALID_FILENAMES.includes(filename as ValidFilename)) {
+    res.status(400).json({ error: `Invalid filename: ${filename}` });
+    return;
+  }
 
-    const imagesDir = getImagesDir();
-    const mediaDirName = MEDIA_DIR_NAMES[mediaType] ?? `${mediaType}s`;
-    const mediaDir = join(imagesDir, mediaDirName, id);
+  const imagesDir = getImagesDir();
+  const mediaDirName = MEDIA_DIR_NAMES[mediaType] ?? `${mediaType}s`;
+  const mediaDir = join(imagesDir, mediaDirName, id);
 
-    // Path traversal defense: ensure resolved path stays within imagesDir
-    const resolvedDir = resolve(mediaDir);
-    if (!resolvedDir.startsWith(resolve(imagesDir))) {
-      res.status(400).json({ error: "Invalid path" });
-      return;
-    }
+  // Path traversal defense: ensure resolved path stays within imagesDir
+  const resolvedDir = resolve(mediaDir);
+  if (!resolvedDir.startsWith(resolve(imagesDir))) {
+    res.status(400).json({ error: "Invalid path" });
+    return;
+  }
 
-    // Override resolution: if requesting poster.jpg, check for override.jpg first
-    if (filename === "poster.jpg") {
-      const overridePath = join(mediaDir, "override.jpg");
-      const served = await tryServeFile(overridePath, res);
-      if (served) return;
-    }
-
-    // Serve the requested file
-    const filePath = join(mediaDir, filename);
-    const served = await tryServeFile(filePath, res);
+  // Override resolution: if requesting poster.jpg, check for override.jpg first
+  if (filename === "poster.jpg") {
+    const overridePath = join(mediaDir, "override.jpg");
+    const served = await tryServeFile(overridePath, res);
     if (served) return;
+  }
 
-    // Cache miss
-    res.status(404).json({ error: "Image not found" });
-  },
-);
+  // Serve the requested file
+  const filePath = join(mediaDir, filename);
+  const served = await tryServeFile(filePath, res);
+  if (served) return;
+
+  // Cache miss
+  res.status(404).json({ error: "Image not found" });
+});
 
 /**
  * Try to serve a file with cache headers.
  * Returns true if the file was served, false if it doesn't exist.
  */
-async function tryServeFile(
-  filePath: string,
-  res: import("express").Response,
-): Promise<boolean> {
+async function tryServeFile(filePath: string, res: import("express").Response): Promise<boolean> {
   try {
     const fileStat = await stat(filePath);
     const ext = extname(filePath);
     const contentType = CONTENT_TYPES[ext] ?? "application/octet-stream";
 
     // Generate ETag from mtime + size
-    const etag = createHash("md5")
-      .update(`${fileStat.mtimeMs}-${fileStat.size}`)
-      .digest("hex");
+    const etag = createHash("md5").update(`${fileStat.mtimeMs}-${fileStat.size}`).digest("hex");
 
     res.set({
       "Content-Type": contentType,

@@ -1,10 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { TokenBucketRateLimiter } from "../../../shared/rate-limiter.js";
-import {
-  getTvdbRateLimiter,
-  setTvdbRateLimiter,
-  fetchWithRetry,
-} from "./rate-limiter.js";
+import { getTvdbRateLimiter, setTvdbRateLimiter, fetchWithRetry } from "./rate-limiter.js";
 
 describe("getTvdbRateLimiter", () => {
   afterEach(() => {
@@ -116,10 +112,10 @@ describe("fetchWithRetry", () => {
     const promise = fetchWithRetry(fn);
 
     // Initial + 3 retries = 4 calls total
-    await vi.advanceTimersByTimeAsync(0);     // initial
-    await vi.advanceTimersByTimeAsync(1000);  // retry 1
-    await vi.advanceTimersByTimeAsync(2000);  // retry 2
-    await vi.advanceTimersByTimeAsync(4000);  // retry 3
+    await vi.advanceTimersByTimeAsync(0); // initial
+    await vi.advanceTimersByTimeAsync(1000); // retry 1
+    await vi.advanceTimersByTimeAsync(2000); // retry 2
+    await vi.advanceTimersByTimeAsync(4000); // retry 3
 
     const result = await promise;
     expect(result.status).toBe(429);
