@@ -34,6 +34,15 @@ const AiUsagePage = lazy(() =>
   import("./pages/AiUsagePage").then((m) => ({ default: m.AiUsagePage }))
 );
 
+/** Local type mirror for compile-time safety (shell owns the canonical types). */
+interface AppNavConfigShape {
+  id: string;
+  label: string;
+  icon: string;
+  basePath: string;
+  items: { path: string; label: string; icon: string }[];
+}
+
 export const navConfig = {
   id: "finance",
   label: "Finance",
@@ -49,7 +58,7 @@ export const navConfig = {
     { path: "/import", label: "Import", icon: "Download" },
     { path: "/ai-usage", label: "AI Usage", icon: "Bot" },
   ],
-};
+} satisfies AppNavConfigShape;
 
 export const routes: RouteObject[] = [
   { index: true, element: <DashboardPage /> },
