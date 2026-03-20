@@ -38,7 +38,7 @@ export type LogWatchInput = z.infer<typeof LogWatchSchema>;
 export const WatchHistoryQuerySchema = z.object({
   mediaType: z.enum(WATCH_MEDIA_TYPES).optional(),
   mediaId: z.number().int().positive().optional(),
-  limit: z.coerce.number().positive().optional(),
+  limit: z.coerce.number().positive().max(500).optional(),
   offset: z.coerce.number().nonnegative().optional(),
 });
 export type WatchHistoryQueryRaw = z.infer<typeof WatchHistoryQuerySchema>;
