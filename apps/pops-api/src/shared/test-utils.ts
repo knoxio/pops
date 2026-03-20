@@ -200,6 +200,26 @@ export function createTestDb(): Database {
     );
     CREATE UNIQUE INDEX IF NOT EXISTS idx_media_scores_unique ON media_scores(media_type, media_id, dimension_id);
     CREATE INDEX IF NOT EXISTS idx_media_scores_dimension ON media_scores(dimension_id);
+
+    CREATE TABLE IF NOT EXISTS watchlist (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      media_type TEXT NOT NULL CHECK(media_type IN ('movie', 'tv_show')),
+      media_id   INTEGER NOT NULL,
+      priority   INTEGER DEFAULT 0,
+      notes      TEXT,
+      added_at   TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_watchlist_media ON watchlist(media_type, media_id);
+
+    CREATE TABLE IF NOT EXISTS watch_history (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      media_type TEXT NOT NULL CHECK(media_type IN ('movie', 'episode')),
+      media_id   INTEGER NOT NULL,
+      watched_at TEXT NOT NULL DEFAULT (datetime('now')),
+      completed  INTEGER NOT NULL DEFAULT 1
+    );
+    CREATE INDEX IF NOT EXISTS idx_watch_history_media ON watch_history(media_type, media_id);
+    CREATE INDEX IF NOT EXISTS idx_watch_history_watched_at ON watch_history(watched_at);
   `);
 
   return db;
@@ -512,6 +532,34 @@ export function seedMovie(
     vote_average: overrides.vote_average ?? null,
     vote_count: overrides.vote_count ?? null,
     genres: overrides.genres ?? "[]",
+  });
+
+  return Number(result.lastInsertRowid);
+}
+
+/**
+ * Seed a single watchlist entry into the test DB.
+ * Returns the auto-generated id.
+ */
+export function seedWatchlistEntry(
+  db: Database,
+  overrides: Partial<{
+    media_type: string;
+    media_id: number;
+    priority: number | null;
+    notes: string | null;
+  }> = {}
+): number {
+  const result = db.prepare(
+    `
+    INSERT INTO watchlist (media_type, media_id, priority, notes)
+    VALUES (@media_type, @media_id, @priority, @notes)
+  `
+  ).run({
+    media_type: overrides.media_type ?? "movie",
+    media_id: overrides.media_id ?? 1,
+    priority: overrides.priority ?? null,
+    notes: overrides.notes ?? null,
   });
 
   return Number(result.lastInsertRowid);
