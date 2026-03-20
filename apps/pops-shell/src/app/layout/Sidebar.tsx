@@ -8,10 +8,33 @@
 import { Link, useLocation } from "react-router";
 import { navConfig } from "@pops/app-finance";
 import type { NavConfig } from "@pops/app-finance";
+import {
+  LayoutDashboard,
+  CreditCard,
+  Building2,
+  PiggyBank,
+  Package,
+  Star,
+  Download,
+  Bot,
+  type LucideIcon,
+} from "lucide-react";
 
 interface SidebarProps {
   open: boolean;
 }
+
+/** Map icon name strings from navConfig to Lucide components. */
+const iconMap: Record<string, LucideIcon> = {
+  LayoutDashboard,
+  CreditCard,
+  Building2,
+  PiggyBank,
+  Package,
+  Star,
+  Download,
+  Bot,
+};
 
 /** All registered app nav configs — add new apps here. */
 const registeredApps: NavConfig[] = [navConfig];
@@ -32,6 +55,7 @@ export function Sidebar({ open }: SidebarProps) {
                 ? location.pathname === app.basePath ||
                   location.pathname === `${app.basePath}/`
                 : location.pathname.startsWith(fullPath);
+            const Icon = iconMap[item.icon];
 
             return (
               <Link
@@ -43,6 +67,7 @@ export function Sidebar({ open }: SidebarProps) {
                     : "text-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
+                {Icon && <Icon className="h-5 w-5" />}
                 <span>{item.label}</span>
               </Link>
             );
