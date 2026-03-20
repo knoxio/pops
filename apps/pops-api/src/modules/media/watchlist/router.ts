@@ -13,7 +13,7 @@ import {
   type WatchlistFilters,
 } from "./types.js";
 import * as service from "./service.js";
-import { NotFoundError } from "../../../shared/errors.js";
+import { NotFoundError, ConflictError } from "../../../shared/errors.js";
 
 const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
@@ -51,11 +51,18 @@ export const watchlistRouter = router({
 
   /** Add an item to the watchlist. */
   add: protectedProcedure.input(AddToWatchlistSchema).mutation(({ input }) => {
-    const row = service.addToWatchlist(input);
-    return {
-      data: toWatchlistEntry(row),
-      message: "Added to watchlist",
-    };
+    try {
+      const row = service.addToWatchlist(input);
+      return {
+        data: toWatchlistEntry(row),
+        message: "Added to watchlist",
+      };
+    } catch (err) {
+      if (err instanceof ConflictError) {
+        throw new TRPCError({ code: "CONFLICT", message: err.message });
+      }
+      throw err;
+    }
   }),
 
   /** Update a watchlist entry. */

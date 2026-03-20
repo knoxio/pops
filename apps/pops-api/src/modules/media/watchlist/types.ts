@@ -45,7 +45,7 @@ export type UpdateWatchlistInput = z.infer<typeof UpdateWatchlistSchema>;
 /** Zod schema for watchlist list query params. */
 export const WatchlistQuerySchema = z.object({
   mediaType: z.enum(MEDIA_TYPES).optional(),
-  limit: z.coerce.number().positive().optional(),
+  limit: z.coerce.number().positive().max(500).optional(),
   offset: z.coerce.number().nonnegative().optional(),
 });
 export type WatchlistQueryRaw = z.infer<typeof WatchlistQuerySchema>;

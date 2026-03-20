@@ -4,7 +4,7 @@
 import { count, desc, eq, and, type SQL } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
 import { mediaWatchlist } from "@pops/db-types";
-import { NotFoundError } from "../../../shared/errors.js";
+import { NotFoundError, ConflictError } from "../../../shared/errors.js";
 import type {
   MediaWatchlistRow,
   AddToWatchlistInput,
@@ -64,21 +64,28 @@ export function getWatchlistEntry(id: number): MediaWatchlistRow {
   return row;
 }
 
-/** Add an item to the watchlist. Returns the created row. */
+/** Add an item to the watchlist. Returns the created row. Throws ConflictError on duplicate. */
 export function addToWatchlist(input: AddToWatchlistInput): MediaWatchlistRow {
   const db = getDrizzle();
 
-  const result = db
-    .insert(mediaWatchlist)
-    .values({
-      mediaType: input.mediaType,
-      mediaId: input.mediaId,
-      priority: input.priority ?? null,
-      notes: input.notes ?? null,
-    })
-    .run();
+  try {
+    const result = db
+      .insert(mediaWatchlist)
+      .values({
+        mediaType: input.mediaType,
+        mediaId: input.mediaId,
+        priority: input.priority ?? null,
+        notes: input.notes ?? null,
+      })
+      .run();
 
-  return getWatchlistEntry(Number(result.lastInsertRowid));
+    return getWatchlistEntry(Number(result.lastInsertRowid));
+  } catch (err) {
+    if (err instanceof Error && err.message.includes("UNIQUE constraint failed")) {
+      throw new ConflictError(`${input.mediaType} ${input.mediaId} is already on the watchlist`);
+    }
+    throw err;
+  }
 }
 
 /** Update a watchlist entry. Returns the updated row. */
