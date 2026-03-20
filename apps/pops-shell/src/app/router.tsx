@@ -1,14 +1,16 @@
 /**
  * Shell router configuration
  *
- * Currently renders a placeholder. US-2 and US-3 will wire in
- * lazy-loaded app routes from @pops/app-finance.
+ * RootLayout provides the top bar + sidebar chrome.
+ * US-3 will wire in lazy-loaded app routes from @pops/app-finance.
  */
 import { createBrowserRouter, Navigate } from "react-router";
+import { RootLayout } from "./layout/RootLayout";
 
 export const router = createBrowserRouter([
   {
     path: "/",
+    element: <RootLayout />,
     children: [
       { index: true, element: <Navigate to="/finance" replace /> },
       {
@@ -16,7 +18,11 @@ export const router = createBrowserRouter([
         children: [
           {
             index: true,
-            element: <div>Shell scaffold — finance routes will be wired in US-3</div>,
+            element: (
+              <div className="p-6 text-muted-foreground">
+                Shell layout ready — finance routes will be wired in US-3
+              </div>
+            ),
           },
         ],
       },
