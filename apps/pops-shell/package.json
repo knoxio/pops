@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "@pops/app-finance": "workspace:*",
+    "@pops/app-media": "workspace:*",
     "@pops/api": "workspace:*",
     "@pops/ui": "workspace:*",
     "lucide-react": "^0.563.0",

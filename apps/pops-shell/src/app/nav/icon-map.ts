@@ -16,6 +16,9 @@ import {
   Star,
   Download,
   Bot,
+  Film,
+  Library,
+  Search,
   type LucideIcon,
 } from "lucide-react";
 
@@ -29,4 +32,7 @@ export const iconMap: Record<string, LucideIcon> = {
   Star,
   Download,
   Bot,
+  Film,
+  Library,
+  Search,
 };

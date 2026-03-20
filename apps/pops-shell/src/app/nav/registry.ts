@@ -8,9 +8,10 @@
  * 4. Add its routes to the shell router (app/router.tsx)
  */
 import { navConfig as financeNavConfig } from "@pops/app-finance";
+import { navConfig as mediaNavConfig } from "@pops/app-media";
 import type { AppNavConfig } from "./types";
 
 /** All registered app nav configs. Order determines display order in the app rail. */
-export const registeredApps: AppNavConfig[] = [financeNavConfig];
+export const registeredApps: AppNavConfig[] = [financeNavConfig, mediaNavConfig];
 
 export type { AppNavConfig, AppNavItem } from "./types";
