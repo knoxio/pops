@@ -31,7 +31,7 @@ export type ConnectItemsInput = z.infer<typeof ConnectItemsSchema>;
 /** Zod schema for listing connections for an item. */
 export const ConnectionQuerySchema = z.object({
   itemId: z.string().min(1, "Item ID is required"),
-  limit: z.coerce.number().positive().optional(),
+  limit: z.coerce.number().positive().max(500).optional(),
   offset: z.coerce.number().nonnegative().optional(),
 });
 export type ConnectionQuery = z.infer<typeof ConnectionQuerySchema>;
