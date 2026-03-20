@@ -15,6 +15,13 @@
       "when": 1773995493955,
       "tag": "0001_many_marvel_zombies",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1773996191498,
+      "tag": "0002_magical_kid_colt",
+      "breakpoints": true
     }
   ]
 }
