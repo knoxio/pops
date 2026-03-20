@@ -17,6 +17,11 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
     // -------------------------------------------------------------------------
     // Clear existing data
     // -------------------------------------------------------------------------
+    db.exec(`DELETE FROM watch_history`);
+    db.exec(`DELETE FROM watchlist`);
+    db.exec(`DELETE FROM comparisons`);
+    db.exec(`DELETE FROM media_scores`);
+    db.exec(`DELETE FROM comparison_dimensions`);
     db.exec(`DELETE FROM episodes`);
     db.exec(`DELETE FROM seasons`);
     db.exec(`DELETE FROM tv_shows`);
@@ -796,7 +801,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         tmdb_id: 550,
         title: "Fight Club",
-        overview: "A ticking-Loss time bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy.",
+        overview: "A ticking-time bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy.",
         release_date: "1999-10-15",
         runtime: 139,
         status: "Released",
