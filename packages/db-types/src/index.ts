@@ -16,6 +16,8 @@ import type { aiUsage } from "./schema/ai-usage.js";
 import type { environments } from "./schema/environments.js";
 import type { movies } from "./schema/movies.js";
 import type { tvShows } from "./schema/tv-shows.js";
+import type { mediaWatchlist } from "./schema/media-watchlist.js";
+import type { watchHistory } from "./schema/watch-history.js";
 
 // Re-export Drizzle table objects for use in queries
 export {
@@ -29,6 +31,8 @@ export {
   environments,
   movies,
   tvShows,
+  mediaWatchlist,
+  watchHistory,
 } from "./schema/index.js";
 
 // Select types (what you get back from a SELECT query)
@@ -42,6 +46,8 @@ export type AiUsageRow = InferSelectModel<typeof aiUsage>;
 export type EnvironmentRow = InferSelectModel<typeof environments>;
 export type MovieRow = InferSelectModel<typeof movies>;
 export type TvShowRow = InferSelectModel<typeof tvShows>;
+export type MediaWatchlistRow = InferSelectModel<typeof mediaWatchlist>;
+export type WatchHistoryRow = InferSelectModel<typeof watchHistory>;
 
 // Insert types (what you pass to an INSERT statement)
 export type TransactionInsert = InferInsertModel<typeof transactions>;
@@ -54,6 +60,8 @@ export type AiUsageInsert = InferInsertModel<typeof aiUsage>;
 export type EnvironmentInsert = InferInsertModel<typeof environments>;
 export type MovieInsert = InferInsertModel<typeof movies>;
 export type TvShowInsert = InferInsertModel<typeof tvShows>;
+export type MediaWatchlistInsert = InferInsertModel<typeof mediaWatchlist>;
+export type WatchHistoryInsert = InferInsertModel<typeof watchHistory>;
 
 // Constants
 export const ENTITY_TYPES = [
