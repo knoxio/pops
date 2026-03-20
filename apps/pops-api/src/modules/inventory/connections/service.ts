@@ -29,10 +29,18 @@ export function connectItems(inputA: string, inputB: string): ItemConnectionRow 
   const [itemAId, itemBId] = inputA < inputB ? [inputA, inputB] : [inputB, inputA];
 
   // Validate both items exist
-  const [itemA] = db.select({ id: homeInventory.id }).from(homeInventory).where(eq(homeInventory.id, itemAId)).all();
+  const [itemA] = db
+    .select({ id: homeInventory.id })
+    .from(homeInventory)
+    .where(eq(homeInventory.id, itemAId))
+    .all();
   if (!itemA) throw new NotFoundError("Inventory item", itemAId);
 
-  const [itemB] = db.select({ id: homeInventory.id }).from(homeInventory).where(eq(homeInventory.id, itemBId)).all();
+  const [itemB] = db
+    .select({ id: homeInventory.id })
+    .from(homeInventory)
+    .where(eq(homeInventory.id, itemBId))
+    .all();
   if (!itemB) throw new NotFoundError("Inventory item", itemBId);
 
   // Check for existing connection
@@ -46,9 +54,7 @@ export function connectItems(inputA: string, inputB: string): ItemConnectionRow 
     throw new ConflictError(`Connection between '${itemAId}' and '${itemBId}' already exists`);
   }
 
-  db.insert(itemConnections)
-    .values({ itemAId, itemBId })
-    .run();
+  db.insert(itemConnections).values({ itemAId, itemBId }).run();
 
   // Fetch the created row
   const [created] = db
@@ -87,24 +93,11 @@ export function listConnectionsForItem(
 ): ConnectionListResult {
   const db = getDrizzle();
 
-  const condition = or(
-    eq(itemConnections.itemAId, itemId),
-    eq(itemConnections.itemBId, itemId)
-  );
+  const condition = or(eq(itemConnections.itemAId, itemId), eq(itemConnections.itemBId, itemId));
 
-  const rows = db
-    .select()
-    .from(itemConnections)
-    .where(condition)
-    .limit(limit)
-    .offset(offset)
-    .all();
+  const rows = db.select().from(itemConnections).where(condition).limit(limit).offset(offset).all();
 
-  const [countResult] = db
-    .select({ total: count() })
-    .from(itemConnections)
-    .where(condition)
-    .all();
+  const [countResult] = db.select({ total: count() }).from(itemConnections).where(condition).all();
 
   return { rows, total: countResult.total };
 }

@@ -159,9 +159,7 @@ describe("inventory.connections.disconnect", () => {
   });
 
   it("throws NOT_FOUND for nonexistent connection", async () => {
-    await expect(
-      caller.inventory.connections.disconnect({ id: 999 })
-    ).rejects.toThrow(TRPCError);
+    await expect(caller.inventory.connections.disconnect({ id: 999 })).rejects.toThrow(TRPCError);
 
     try {
       await caller.inventory.connections.disconnect({ id: 999 });
@@ -265,15 +263,15 @@ describe("inventory.connections auth", () => {
 
   it("throws UNAUTHORIZED without auth on disconnect", async () => {
     const unauthCaller = createCaller(false);
-    await expect(
-      unauthCaller.inventory.connections.disconnect({ id: 1 })
-    ).rejects.toThrow(TRPCError);
+    await expect(unauthCaller.inventory.connections.disconnect({ id: 1 })).rejects.toThrow(
+      TRPCError
+    );
   });
 
   it("throws UNAUTHORIZED without auth on listForItem", async () => {
     const unauthCaller = createCaller(false);
-    await expect(
-      unauthCaller.inventory.connections.listForItem({ itemId: "a" })
-    ).rejects.toThrow(TRPCError);
+    await expect(unauthCaller.inventory.connections.listForItem({ itemId: "a" })).rejects.toThrow(
+      TRPCError
+    );
   });
 });
