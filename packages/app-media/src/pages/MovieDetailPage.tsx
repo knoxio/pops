@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router";
 import { Alert, AlertTitle, AlertDescription, Badge, Skeleton } from "@pops/ui";
 import { trpc } from "../lib/trpc";
 import { formatCurrency, formatRuntime } from "../lib/format";
+import { WatchlistToggle } from "../components/WatchlistToggle";
 
 function MovieDetailSkeleton() {
   return (
@@ -160,6 +161,12 @@ export function MovieDetailPage() {
               {year && movie.runtime && <span>·</span>}
               {movie.runtime && <span>{formatRuntime(movie.runtime)}</span>}
             </div>
+
+            <WatchlistToggle
+              mediaType="movie"
+              mediaId={movie.id}
+              className="mt-3"
+            />
           </div>
         </div>
       </div>
