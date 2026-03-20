@@ -9,10 +9,11 @@
  */
 import { type Router as ExpressRouter, Router } from "express";
 import { stat } from "node:fs/promises";
-import { join, extname } from "node:path";
+import { join, resolve, extname } from "node:path";
 import { createHash } from "node:crypto";
+import { MEDIA_DIR_NAMES } from "../../modules/media/tmdb/image-cache.js";
 
-const VALID_MEDIA_TYPES = ["movie"] as const;
+const VALID_MEDIA_TYPES = ["movie", "tv"] as const;
 const VALID_FILENAMES = ["poster.jpg", "backdrop.jpg", "logo.png", "override.jpg"] as const;
 type ValidFilename = (typeof VALID_FILENAMES)[number];
 
@@ -53,7 +54,15 @@ router.get(
     }
 
     const imagesDir = getImagesDir();
-    const mediaDir = join(imagesDir, `${mediaType}s`, id);
+    const mediaDirName = MEDIA_DIR_NAMES[mediaType] ?? `${mediaType}s`;
+    const mediaDir = join(imagesDir, mediaDirName, id);
+
+    // Path traversal defense: ensure resolved path stays within imagesDir
+    const resolvedDir = resolve(mediaDir);
+    if (!resolvedDir.startsWith(resolve(imagesDir))) {
+      res.status(400).json({ error: "Invalid path" });
+      return;
+    }
 
     // Override resolution: if requesting poster.jpg, check for override.jpg first
     if (filename === "poster.jpg") {
