@@ -529,6 +529,34 @@ export function seedWatchlistEntry(
 }
 
 /**
+ * Seed a single watch history entry into the test DB.
+ * Returns the auto-generated id.
+ */
+export function seedWatchHistoryEntry(
+  db: Database,
+  overrides: Partial<{
+    media_type: string;
+    media_id: number;
+    watched_at: string;
+    completed: number;
+  }> = {}
+): number {
+  const result = db.prepare(
+    `
+    INSERT INTO watch_history (media_type, media_id, watched_at, completed)
+    VALUES (@media_type, @media_id, @watched_at, @completed)
+  `
+  ).run({
+    media_type: overrides.media_type ?? "movie",
+    media_id: overrides.media_id ?? 1,
+    watched_at: overrides.watched_at ?? new Date().toISOString(),
+    completed: overrides.completed ?? 1,
+  });
+
+  return Number(result.lastInsertRowid);
+}
+
+/**
  * Setup helper for test suites. Call in beforeEach/afterEach.
  * Returns the test DB and a tRPC caller.
  */

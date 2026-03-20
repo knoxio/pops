@@ -1,0 +1,50 @@
+import { z } from "zod";
+import type { WatchHistoryRow } from "@pops/db-types";
+
+export type { WatchHistoryRow };
+
+const WATCH_MEDIA_TYPES = ["movie", "episode"] as const;
+
+/** API response shape for a watch history entry. */
+export interface WatchHistoryEntry {
+  id: number;
+  mediaType: string;
+  mediaId: number;
+  watchedAt: string;
+  completed: number;
+}
+
+/** Map a SQLite row to the API response shape. */
+export function toWatchHistoryEntry(row: WatchHistoryRow): WatchHistoryEntry {
+  return {
+    id: row.id,
+    mediaType: row.mediaType,
+    mediaId: row.mediaId,
+    watchedAt: row.watchedAt,
+    completed: row.completed,
+  };
+}
+
+/** Zod schema for logging a watch event. */
+export const LogWatchSchema = z.object({
+  mediaType: z.enum(WATCH_MEDIA_TYPES),
+  mediaId: z.number().int().positive(),
+  watchedAt: z.string().optional(),
+  completed: z.number().int().min(0).max(1).optional().default(1),
+});
+export type LogWatchInput = z.infer<typeof LogWatchSchema>;
+
+/** Zod schema for watch history list query params. */
+export const WatchHistoryQuerySchema = z.object({
+  mediaType: z.enum(WATCH_MEDIA_TYPES).optional(),
+  mediaId: z.number().int().positive().optional(),
+  limit: z.coerce.number().positive().optional(),
+  offset: z.coerce.number().nonnegative().optional(),
+});
+export type WatchHistoryQueryRaw = z.infer<typeof WatchHistoryQuerySchema>;
+
+/** Parsed filter params passed to the service layer. */
+export interface WatchHistoryFilters {
+  mediaType?: string;
+  mediaId?: number;
+}
