@@ -4,8 +4,7 @@
  * and an "Add to Library" / "In Library" action.
  */
 import { useState } from "react";
-import { cn, Badge, Skeleton } from "@pops/ui";
-import { Button } from "@pops/ui";
+import { cn, Badge, Button, Skeleton } from "@pops/ui";
 import { Film, Tv, Loader2, Check, Plus } from "lucide-react";
 
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w342";
