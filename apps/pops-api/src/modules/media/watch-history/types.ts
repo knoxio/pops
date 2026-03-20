@@ -29,7 +29,7 @@ export function toWatchHistoryEntry(row: WatchHistoryRow): WatchHistoryEntry {
 export const LogWatchSchema = z.object({
   mediaType: z.enum(WATCH_MEDIA_TYPES),
   mediaId: z.number().int().positive(),
-  watchedAt: z.string().optional(),
+  watchedAt: z.string().datetime().optional(),
   completed: z.number().int().min(0).max(1).optional().default(1),
 });
 export type LogWatchInput = z.infer<typeof LogWatchSchema>;
