@@ -24,6 +24,8 @@ import type { comparisonDimensions } from "./schema/comparison-dimensions.js";
 import type { comparisons } from "./schema/comparisons.js";
 import type { mediaScores } from "./schema/media-scores.js";
 import type { locations } from "./schema/locations.js";
+import type { itemConnections } from "./schema/item-connections.js";
+import type { itemPhotos } from "./schema/item-photos.js";
 
 // Re-export Drizzle table objects for use in queries
 export {
@@ -45,6 +47,8 @@ export {
   comparisons,
   mediaScores,
   locations,
+  itemConnections,
+  itemPhotos,
 } from "./schema/index.js";
 
 // Select types (what you get back from a SELECT query)
@@ -66,6 +70,8 @@ export type ComparisonDimensionRow = InferSelectModel<typeof comparisonDimension
 export type ComparisonRow = InferSelectModel<typeof comparisons>;
 export type MediaScoreRow = InferSelectModel<typeof mediaScores>;
 export type LocationRow = InferSelectModel<typeof locations>;
+export type ItemConnectionRow = InferSelectModel<typeof itemConnections>;
+export type ItemPhotoRow = InferSelectModel<typeof itemPhotos>;
 
 // Insert types (what you pass to an INSERT statement)
 export type TransactionInsert = InferInsertModel<typeof transactions>;
@@ -86,6 +92,8 @@ export type ComparisonDimensionInsert = InferInsertModel<typeof comparisonDimens
 export type ComparisonInsert = InferInsertModel<typeof comparisons>;
 export type MediaScoreInsert = InferInsertModel<typeof mediaScores>;
 export type LocationInsert = InferInsertModel<typeof locations>;
+export type ItemConnectionInsert = InferInsertModel<typeof itemConnections>;
+export type ItemPhotoInsert = InferInsertModel<typeof itemPhotos>;
 
 // Constants
 export const ENTITY_TYPES = [
