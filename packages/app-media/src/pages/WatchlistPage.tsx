@@ -1,5 +1,5 @@
 import { Link } from "react-router";
-import { Badge, Skeleton } from "@pops/ui";
+import { Alert, AlertTitle, AlertDescription, Badge, Skeleton } from "@pops/ui";
 import { trpc } from "../lib/trpc";
 
 function WatchlistSkeleton() {
@@ -30,7 +30,6 @@ interface WatchlistItemProps {
   };
   title: string;
   year: number | null;
-  posterPath: string | null;
   onRemove: (id: number) => void;
   isRemoving: boolean;
 }
@@ -105,6 +104,7 @@ export function WatchlistPage() {
   const {
     data: watchlistData,
     isLoading,
+    error,
   } = trpc.media.watchlist.list.useQuery({ limit: 500 });
 
   const {
@@ -131,29 +131,26 @@ export function WatchlistPage() {
   interface MediaMeta {
     title: string;
     year: number | null;
-    posterPath: string | null;
   }
 
   const movieMap = new Map<number, MediaMeta>(
-    (moviesData?.data ?? []).map((m: { id: number; title: string; releaseDate: string | null; posterPath: string | null }) => [
+    (moviesData?.data ?? []).map((m: { id: number; title: string; releaseDate: string | null }) => [
       m.id,
       {
         title: m.title,
         year: m.releaseDate ? new Date(m.releaseDate).getFullYear() : null,
-        posterPath: m.posterPath,
       },
     ])
   );
 
   const tvMap = new Map<number, MediaMeta>(
-    (tvShowsData?.data ?? []).map((s: { id: number; name: string; firstAirDate: string | null; posterPath: string | null }) => [
+    (tvShowsData?.data ?? []).map((s: { id: number; name: string; firstAirDate: string | null }) => [
       s.id,
       {
         title: s.name,
         year: s.firstAirDate
           ? new Date(s.firstAirDate).getFullYear()
           : null,
-        posterPath: s.posterPath,
       },
     ])
   );
@@ -170,7 +167,12 @@ export function WatchlistPage() {
     <div className="p-4 md:p-6 space-y-6 max-w-3xl">
       <h1 className="text-2xl font-bold">Watchlist</h1>
 
-      {loading ? (
+      {error ? (
+        <Alert variant="destructive">
+          <AlertTitle>Error</AlertTitle>
+          <AlertDescription>{error.message}</AlertDescription>
+        </Alert>
+      ) : loading ? (
         <WatchlistSkeleton />
       ) : entries.length === 0 ? (
         <div className="text-center py-16">
@@ -207,7 +209,6 @@ export function WatchlistPage() {
                 entry={entry}
                 title={meta?.title ?? "Unknown"}
                 year={meta?.year ?? null}
-                posterPath={meta?.posterPath ?? null}
                 onRemove={(id) => removeMutation.mutate({ id })}
                 isRemoving={removeMutation.isPending}
               />
