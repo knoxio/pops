@@ -117,3 +117,23 @@ export function removeFromWatchlist(id: number): void {
     .run();
   if (result.changes === 0) throw new NotFoundError("WatchlistEntry", String(id));
 }
+
+/**
+ * Remove a watchlist entry by media type and media ID.
+ * Returns true if an entry was removed, false if none existed.
+ */
+export function removeByMedia(
+  mediaType: "movie" | "tv_show",
+  mediaId: number,
+): boolean {
+  const result = getDrizzle()
+    .delete(mediaWatchlist)
+    .where(
+      and(
+        eq(mediaWatchlist.mediaType, mediaType),
+        eq(mediaWatchlist.mediaId, mediaId),
+      ),
+    )
+    .run();
+  return result.changes > 0;
+}
