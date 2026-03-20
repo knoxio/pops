@@ -18,9 +18,9 @@ export function RootLayout() {
   return (
     <div className="min-h-screen bg-background">
       <TopBar />
-      <div className="flex pt-16">
+      <div className="flex pt-14 md:pt-16">
         {/* Desktop: two-level nav (app rail + page nav) */}
-        <div className="hidden md:flex h-[calc(100vh-4rem)] sticky top-16">
+        <div className="hidden md:flex h-[calc(100vh-4rem)] sticky top-16 shrink-0">
           <AppRail />
           <PageNav />
         </div>
@@ -28,11 +28,9 @@ export function RootLayout() {
         {/* Mobile: overlay sidebar */}
         <Sidebar open={sidebarOpen} />
 
-        <main className="flex-1 min-w-0">
+        <main className="flex-1 min-w-0 overflow-x-hidden">
           <ErrorBoundary>
-            <div className="p-4 md:p-6">
-              <Outlet />
-            </div>
+            <Outlet />
           </ErrorBoundary>
         </main>
       </div>
