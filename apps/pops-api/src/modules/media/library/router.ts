@@ -14,6 +14,7 @@ import { RefreshMovieSchema } from "./types.js";
 import * as libraryService from "./service.js";
 import { getTvdbClient } from "../thetvdb/index.js";
 import { TvdbApiError } from "../thetvdb/types.js";
+import { refreshTvShow } from "../thetvdb/service.js";
 import * as tvShowService from "./tv-show-service.js";
 
 /** Shared rate limiter: TMDB allows 40 req / 10 s → 4 req/s. */
@@ -118,6 +119,51 @@ export const libraryRouter = router({
             : "TV show already in library",
         };
       } catch (err) {
+        if (err instanceof TvdbApiError) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `TheTVDB API error: ${err.message}`,
+          });
+        }
+        throw err;
+      }
+    }),
+
+  /** Refresh TV show metadata from TheTVDB. */
+  refreshTvShow: protectedProcedure
+    .input(
+      z.object({
+        id: z.number().int().positive(),
+        redownloadImages: z.boolean().default(false),
+        refreshEpisodes: z.boolean().default(true),
+      }),
+    )
+    .mutation(async ({ input }) => {
+      const client = getTvdbClient();
+      if (!client) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "THETVDB_API_KEY environment variable is not set",
+        });
+      }
+
+      try {
+        const result = await refreshTvShow(client, input);
+        return {
+          data: {
+            show: toTvShow(result.show),
+            seasons: result.seasons.map(toSeason),
+          },
+          episodesAdded: result.episodesAdded,
+          episodesUpdated: result.episodesUpdated,
+          seasonsAdded: result.seasonsAdded,
+          seasonsUpdated: result.seasonsUpdated,
+          message: "TV show metadata refreshed",
+        };
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+        }
         if (err instanceof TvdbApiError) {
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",

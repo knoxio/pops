@@ -300,6 +300,8 @@ describe("refreshTvShow", () => {
     const specialsSeason = result.seasons.find((s) => s.seasonNumber === 0);
     expect(specialsSeason).toBeDefined();
     expect(specialsSeason?.name).toBe("Specials");
+    // numberOfSeasons should exclude specials (season 0)
+    expect(result.show.numberOfSeasons).toBe(1);
   });
 
   it("throws NotFoundError for invalid show id", async () => {
@@ -333,7 +335,8 @@ describe("refreshTvShow", () => {
       refreshEpisodes: false,
     });
 
-    expect(result.seasonsAdded).toBe(0);
+    // Seasons should still be upserted even when episodes are skipped
+    expect(result.seasonsAdded).toBe(1);
     expect(result.episodesAdded).toBe(0);
     // getSeriesEpisodes should not have been called
     // eslint-disable-next-line @typescript-eslint/unbound-method

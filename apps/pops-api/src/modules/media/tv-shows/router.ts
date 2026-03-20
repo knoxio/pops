@@ -17,9 +17,6 @@ import {
 } from "./types.js";
 import * as service from "./service.js";
 import { NotFoundError, ConflictError } from "../../../shared/errors.js";
-import { refreshTvShow } from "../thetvdb/service.js";
-import { TheTvdbAuth } from "../thetvdb/auth.js";
-import { TheTvdbClient } from "../thetvdb/client.js";
 
 const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
@@ -188,44 +185,4 @@ export const tvShowsRouter = router({
       }
     }),
 
-  // ── Library operations ──
-
-  refreshTvShow: protectedProcedure
-    .input(
-      z.object({
-        id: z.number().int().positive(),
-        redownloadImages: z.boolean().default(false),
-        refreshEpisodes: z.boolean().default(true),
-      }),
-    )
-    .mutation(async ({ input }) => {
-      const apiKey = process.env.THETVDB_API_KEY;
-      if (!apiKey) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "THETVDB_API_KEY not configured",
-        });
-      }
-
-      const auth = new TheTvdbAuth(apiKey);
-      const client = new TheTvdbClient(auth);
-
-      try {
-        const result = await refreshTvShow(client, input);
-        return {
-          data: toTvShow(result.show),
-          seasons: result.seasons.map(toSeason),
-          episodesAdded: result.episodesAdded,
-          episodesUpdated: result.episodesUpdated,
-          seasonsAdded: result.seasonsAdded,
-          seasonsUpdated: result.seasonsUpdated,
-          message: "TV show metadata refreshed",
-        };
-      } catch (err) {
-        if (err instanceof NotFoundError) {
-          throw new TRPCError({ code: "NOT_FOUND", message: err.message });
-        }
-        throw err;
-      }
-    }),
 });

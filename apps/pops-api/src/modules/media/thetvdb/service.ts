@@ -7,7 +7,7 @@ import { getDrizzle } from "../../../db.js";
 import { seasons, episodes } from "@pops/db-types";
 import * as tvShowsService from "../tv-shows/service.js";
 import type { TheTvdbClient } from "./client.js";
-import type { TvdbEpisode } from "./types.js";
+import type { TvdbEpisode, TvdbSeasonSummary } from "./types.js";
 
 export interface RefreshTvShowInput {
   id: number;
@@ -25,11 +25,64 @@ export interface RefreshTvShowResult {
 }
 
 /**
+ * Upsert a season row — insert if new, update if existing.
+ * Returns the local season ID and whether it was newly added.
+ */
+function upsertSeason(
+  showId: number,
+  seasonSummary: TvdbSeasonSummary,
+): { seasonId: number; added: boolean } {
+  const db = getDrizzle();
+  const existing = db
+    .select()
+    .from(seasons)
+    .where(eq(seasons.tvdbId, seasonSummary.tvdbId))
+    .get();
+
+  if (existing) {
+    db.update(seasons)
+      .set({
+        name: seasonSummary.name,
+        overview: seasonSummary.overview,
+        posterPath: seasonSummary.imageUrl,
+        episodeCount: seasonSummary.episodeCount,
+      })
+      .where(eq(seasons.id, existing.id))
+      .run();
+    return { seasonId: existing.id, added: false };
+  }
+
+  db.insert(seasons)
+    .values({
+      tvShowId: showId,
+      tvdbId: seasonSummary.tvdbId,
+      seasonNumber: seasonSummary.seasonNumber,
+      name: seasonSummary.name,
+      overview: seasonSummary.overview,
+      posterPath: seasonSummary.imageUrl,
+      episodeCount: seasonSummary.episodeCount,
+    })
+    .run();
+
+  const newSeason = db
+    .select()
+    .from(seasons)
+    .where(eq(seasons.tvdbId, seasonSummary.tvdbId))
+    .get();
+
+  if (!newSeason) {
+    throw new Error(`Failed to insert season with tvdbId ${seasonSummary.tvdbId}`);
+  }
+
+  return { seasonId: newSeason.id, added: true };
+}
+
+/**
  * Refresh TV show metadata from TheTVDB.
  *
  * - Fetches fresh show detail and updates local record (preserves poster_override_path)
- * - If refreshEpisodes (default true): fetches all season/episode data,
- *   inserts new seasons/episodes, updates existing ones, never deletes
+ * - Always upserts seasons from show detail
+ * - If refreshEpisodes (default true): also fetches and upserts episode data
  * - If redownloadImages: re-downloads cached images (stubbed until image cache lands)
  */
 export async function refreshTvShow(
@@ -38,7 +91,7 @@ export async function refreshTvShow(
 ): Promise<RefreshTvShowResult> {
   const { id, redownloadImages = false, refreshEpisodes = true } = input;
 
-  // 1. Get existing show to retrieve tvdbId and poster_override_path
+  // 1. Get existing show to retrieve tvdbId
   const existingShow = tvShowsService.getTvShow(id);
   const tvdbId = existingShow.tvdbId;
 
@@ -46,6 +99,11 @@ export async function refreshTvShow(
   const detail = await client.getSeriesExtended(tvdbId);
 
   // 3. Update show metadata, preserving poster_override_path
+  // Exclude specials (season 0) from numberOfSeasons count
+  const regularSeasonCount = detail.seasons.filter(
+    (s) => s.seasonNumber > 0,
+  ).length;
+
   tvShowsService.updateTvShow(id, {
     name: detail.name,
     originalName: detail.originalName,
@@ -55,7 +113,7 @@ export async function refreshTvShow(
     status: detail.status,
     originalLanguage: detail.originalLanguage,
     episodeRunTime: detail.averageRuntime,
-    numberOfSeasons: detail.seasons.length,
+    numberOfSeasons: regularSeasonCount,
     genres: detail.genres.map((g) => g.name),
     networks: detail.networks.map((g) => g.name),
     // Explicitly do NOT update posterOverridePath — preserve user override
@@ -66,58 +124,26 @@ export async function refreshTvShow(
   let seasonsAdded = 0;
   let seasonsUpdated = 0;
 
-  // 4. Refresh episodes if requested
+  // 4. Always upsert seasons from show detail
+  const seasonIdMap = new Map<number, number>();
+
+  for (const seasonSummary of detail.seasons) {
+    const { seasonId, added } = upsertSeason(id, seasonSummary);
+    seasonIdMap.set(seasonSummary.seasonNumber, seasonId);
+    if (added) {
+      seasonsAdded++;
+    } else {
+      seasonsUpdated++;
+    }
+  }
+
+  // 5. Refresh episodes if requested
   if (refreshEpisodes) {
     const db = getDrizzle();
 
     for (const seasonSummary of detail.seasons) {
-      // Upsert season
-      const existingSeason = db
-        .select()
-        .from(seasons)
-        .where(eq(seasons.tvdbId, seasonSummary.tvdbId))
-        .get();
-
-      let seasonId: number;
-
-      if (existingSeason) {
-        // Update existing season
-        db.update(seasons)
-          .set({
-            name: seasonSummary.name,
-            overview: seasonSummary.overview,
-            posterPath: seasonSummary.imageUrl,
-            episodeCount: seasonSummary.episodeCount,
-          })
-          .where(eq(seasons.id, existingSeason.id))
-          .run();
-        seasonId = existingSeason.id;
-        seasonsUpdated++;
-      } else {
-        // Insert new season
-        db.insert(seasons)
-          .values({
-            tvShowId: id,
-            tvdbId: seasonSummary.tvdbId,
-            seasonNumber: seasonSummary.seasonNumber,
-            name: seasonSummary.name,
-            overview: seasonSummary.overview,
-            posterPath: seasonSummary.imageUrl,
-            episodeCount: seasonSummary.episodeCount,
-          })
-          .run();
-        const newSeason = db
-          .select()
-          .from(seasons)
-          .where(eq(seasons.tvdbId, seasonSummary.tvdbId))
-          .get();
-        if (!newSeason) {
-          // Should never happen — we just inserted it
-          continue;
-        }
-        seasonId = newSeason.id;
-        seasonsAdded++;
-      }
+      const seasonId = seasonIdMap.get(seasonSummary.seasonNumber);
+      if (seasonId === undefined) continue;
 
       // Fetch episodes for this season
       let tvdbEpisodes: TvdbEpisode[];
@@ -131,7 +157,7 @@ export async function refreshTvShow(
         continue;
       }
 
-      // Upsert episodes
+      // Upsert episodes — insert new, update existing, never delete
       for (const ep of tvdbEpisodes) {
         const existingEp = db
           .select()
@@ -140,7 +166,6 @@ export async function refreshTvShow(
           .get();
 
         if (existingEp) {
-          // Update existing episode
           db.update(episodes)
             .set({
               name: ep.name,
@@ -153,7 +178,6 @@ export async function refreshTvShow(
             .run();
           episodesUpdated++;
         } else {
-          // Insert new episode
           db.insert(episodes)
             .values({
               seasonId,
@@ -181,14 +205,14 @@ export async function refreshTvShow(
     tvShowsService.updateTvShow(id, { numberOfEpisodes: totalEpisodes });
   }
 
-  // 5. Re-download images if requested (stubbed — image cache tb-065 in review)
+  // 6. Re-download images if requested (stubbed — image cache tb-065 in review)
   if (redownloadImages) {
     // TODO: When image cache service lands (tb-065), call:
     // await imageCache.deleteTvShowImages(tvdbId);
     // await imageCache.downloadTvShowImages(tvdbId, posterUrl, backdropUrl);
   }
 
-  // 6. Return updated show with seasons
+  // 7. Return updated show with seasons
   const updatedShow = tvShowsService.getTvShow(id);
   const updatedSeasons = tvShowsService.listSeasons(id);
 

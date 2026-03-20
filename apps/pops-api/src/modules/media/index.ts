@@ -1,5 +1,5 @@
 /**
- * Media domain — movies, tv shows, comparisons, watchlist, watch history.
+ * Media domain — movies, tv shows, comparisons, watchlist, watch history, library.
  */
 import { router } from "../../trpc.js";
 import { moviesRouter } from "./movies/router.js";
