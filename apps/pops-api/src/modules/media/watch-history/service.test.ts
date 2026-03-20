@@ -1,6 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { setupTestContext, seedWatchHistoryEntry } from "../../../shared/test-utils.js";
+import {
+  setupTestContext,
+  seedWatchHistoryEntry,
+  seedWatchlistEntry,
+  seedTvShow,
+  seedSeason,
+  seedEpisode,
+} from "../../../shared/test-utils.js";
 import * as service from "./service.js";
+import * as watchlistService from "../watchlist/service.js";
 import type { Database } from "better-sqlite3";
 
 const ctx = setupTestContext();
@@ -113,5 +121,84 @@ describe("deleteWatchHistoryEntry", () => {
 
   it("throws NotFoundError for missing entry", () => {
     expect(() => service.deleteWatchHistoryEntry(999)).toThrow("WatchHistoryEntry");
+  });
+});
+
+describe("auto-remove from watchlist (PRD-011 R6)", () => {
+  it("removes movie from watchlist when marked as watched", () => {
+    // Add movie 550 to watchlist
+    const wlId = seedWatchlistEntry(db, { media_type: "movie", media_id: 550 });
+
+    // Log watch → should auto-remove from watchlist
+    service.logWatch({ mediaType: "movie", mediaId: 550, completed: 1 });
+
+    // Watchlist entry should be gone
+    expect(() => watchlistService.getWatchlistEntry(wlId)).toThrow("WatchlistEntry");
+  });
+
+  it("does not remove movie from watchlist when watch is incomplete", () => {
+    const wlId = seedWatchlistEntry(db, { media_type: "movie", media_id: 550 });
+
+    service.logWatch({ mediaType: "movie", mediaId: 550, completed: 0 });
+
+    // Watchlist entry should still exist
+    const entry = watchlistService.getWatchlistEntry(wlId);
+    expect(entry.mediaId).toBe(550);
+  });
+
+  it("does not error when movie is not on watchlist", () => {
+    // Log watch without any watchlist entry — should not throw
+    expect(() => {
+      service.logWatch({ mediaType: "movie", mediaId: 999, completed: 1 });
+    }).not.toThrow();
+  });
+
+  it("removes TV show from watchlist when all episodes are watched", () => {
+    // Create a show with 2 seasons, 2 episodes each
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const s1Id = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    const s2Id = seedSeason(db, { tv_show_id: showId, tvdb_id: 3002, season_number: 2 });
+    const ep1 = seedEpisode(db, { season_id: s1Id, tvdb_id: 5001, episode_number: 1 });
+    const ep2 = seedEpisode(db, { season_id: s1Id, tvdb_id: 5002, episode_number: 2 });
+    const ep3 = seedEpisode(db, { season_id: s2Id, tvdb_id: 5003, episode_number: 1 });
+    const ep4 = seedEpisode(db, { season_id: s2Id, tvdb_id: 5004, episode_number: 2 });
+
+    // Add show to watchlist
+    const wlId = seedWatchlistEntry(db, { media_type: "tv_show", media_id: showId });
+
+    // Watch first 3 episodes — show should stay on watchlist
+    service.logWatch({ mediaType: "episode", mediaId: ep1, completed: 1 });
+    service.logWatch({ mediaType: "episode", mediaId: ep2, completed: 1 });
+    service.logWatch({ mediaType: "episode", mediaId: ep3, completed: 1 });
+
+    const stillThere = watchlistService.getWatchlistEntry(wlId);
+    expect(stillThere.mediaId).toBe(showId);
+
+    // Watch final episode → show should be removed from watchlist
+    service.logWatch({ mediaType: "episode", mediaId: ep4, completed: 1 });
+
+    expect(() => watchlistService.getWatchlistEntry(wlId)).toThrow("WatchlistEntry");
+  });
+
+  it("does not remove TV show when individual episode is watched", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    const ep1 = seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
+
+    const wlId = seedWatchlistEntry(db, { media_type: "tv_show", media_id: showId });
+
+    // Watch only one of two episodes
+    service.logWatch({ mediaType: "episode", mediaId: ep1, completed: 1 });
+
+    const entry = watchlistService.getWatchlistEntry(wlId);
+    expect(entry.mediaId).toBe(showId);
+  });
+
+  it("handles episode not in database gracefully", () => {
+    // Log watch for an episode ID that doesn't exist in episodes table
+    expect(() => {
+      service.logWatch({ mediaType: "episode", mediaId: 99999, completed: 1 });
+    }).not.toThrow();
   });
 });
