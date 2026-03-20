@@ -98,7 +98,8 @@ describe("inventory.photos.attach", () => {
       | undefined;
 
     expect(row).toBeDefined();
-    expect(row!.file_path).toBe("items/tv/photo.jpg");
+    if (!row) return;
+    expect(row.file_path).toBe("items/tv/photo.jpg");
   });
 
   it("rejects path traversal with '..'", async () => {
