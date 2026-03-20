@@ -1,15 +1,7 @@
 import { useParams, Link } from "react-router";
 import { Alert, AlertTitle, AlertDescription, Badge, Skeleton } from "@pops/ui";
 import { trpc } from "../lib/trpc";
-import { formatRuntime } from "../lib/utils";
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(value);
-}
+import { formatCurrency, formatRuntime } from "../lib/format";
 
 function MovieDetailSkeleton() {
   return (
@@ -144,11 +136,14 @@ export function MovieDetailPage() {
           <div className="flex-1 pb-1">
             <h1 className="text-2xl md:text-4xl font-bold text-foreground">
               {logoSrc ? (
-                <img
-                  src={logoSrc}
-                  alt={movie.title}
-                  className="h-12 md:h-16 object-contain"
-                />
+                <>
+                  <img
+                    src={logoSrc}
+                    alt={movie.title}
+                    className="h-12 md:h-16 object-contain"
+                  />
+                  <span className="sr-only">{movie.title}</span>
+                </>
               ) : (
                 movie.title
               )}
