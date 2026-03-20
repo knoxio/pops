@@ -36,7 +36,9 @@ export const inventoryRouter = router({
       inUse,
       deductible,
       limit,
-      offset
+      offset,
+      input.locationId,
+      input.assetId
     );
 
     return {

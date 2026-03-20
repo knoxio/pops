@@ -15,7 +15,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
 
   const run = db.transaction(() => {
     // -------------------------------------------------------------------------
-    // Clear existing data
+    // Clear existing data (order matters for FK constraints)
     // -------------------------------------------------------------------------
     db.exec(`DELETE FROM watch_history`);
     db.exec(`DELETE FROM watchlist`);
@@ -26,10 +26,13 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
     db.exec(`DELETE FROM seasons`);
     db.exec(`DELETE FROM tv_shows`);
     db.exec(`DELETE FROM movies`);
+    db.exec(`DELETE FROM item_connections`);
+    db.exec(`DELETE FROM item_photos`);
+    db.exec(`DELETE FROM home_inventory`);
+    db.exec(`DELETE FROM locations`);
     db.exec(`DELETE FROM transactions`);
     db.exec(`DELETE FROM entities`);
     db.exec(`DELETE FROM budgets`);
-    db.exec(`DELETE FROM home_inventory`);
     db.exec(`DELETE FROM wish_list`);
     db.exec(`DELETE FROM ai_usage`);
 
@@ -527,6 +530,40 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
     }
 
     // -------------------------------------------------------------------------
+    // Locations (tree structure for inventory items)
+    // -------------------------------------------------------------------------
+    const locations = [
+      // Root locations
+      { id: "loc-home", name: "Home", parent_id: null, sort_order: 0 },
+      { id: "loc-car", name: "Car", parent_id: null, sort_order: 1 },
+      { id: "loc-storage", name: "Storage Cage", parent_id: null, sort_order: 2 },
+      // Home children
+      { id: "loc-living", name: "Living Room", parent_id: "loc-home", sort_order: 0 },
+      { id: "loc-bedroom", name: "Bedroom", parent_id: "loc-home", sort_order: 1 },
+      { id: "loc-kitchen", name: "Kitchen", parent_id: "loc-home", sort_order: 2 },
+      { id: "loc-office", name: "Office", parent_id: "loc-home", sort_order: 3 },
+      { id: "loc-laundry", name: "Laundry", parent_id: "loc-home", sort_order: 4 },
+      { id: "loc-balcony", name: "Main Balcony", parent_id: "loc-home", sort_order: 5 },
+      // Sub-locations
+      { id: "loc-tv-unit", name: "TV Unit", parent_id: "loc-living", sort_order: 0 },
+      { id: "loc-bar", name: "Bar", parent_id: "loc-living", sort_order: 1 },
+      { id: "loc-wardrobe", name: "Wardrobe Right Door", parent_id: "loc-bedroom", sort_order: 0 },
+      { id: "loc-counter", name: "Counter", parent_id: "loc-kitchen", sort_order: 0 },
+      { id: "loc-desk", name: "Desk", parent_id: "loc-office", sort_order: 0 },
+      { id: "loc-shelf", name: "Shelf", parent_id: "loc-office", sort_order: 1 },
+      { id: "loc-cupboard", name: "Storage Cupboard", parent_id: "loc-laundry", sort_order: 0 },
+    ];
+
+    const insertLocation = db.prepare(`
+      INSERT INTO locations (id, name, parent_id, sort_order)
+      VALUES (?, ?, ?, ?)
+    `);
+
+    for (const loc of locations) {
+      insertLocation.run(loc.id, loc.name, loc.parent_id, loc.sort_order);
+    }
+
+    // -------------------------------------------------------------------------
     // Home Inventory
     // -------------------------------------------------------------------------
     const homeInventory = [
@@ -549,6 +586,9 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         purchase_transaction_id: null,
         purchased_from_id: "10000000-0000-4000-8000-000000000008",
         purchased_from_name: "Apple",
+        asset_id: "MBP-001",
+        notes: "Primary work machine. AppleCare+ until 2027.",
+        location_id: "loc-desk",
       },
       {
         id: "inv-002",
@@ -569,6 +609,9 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         purchase_transaction_id: "txn-011",
         purchased_from_id: "10000000-0000-4000-8000-000000000010",
         purchased_from_name: "JB Hi-Fi",
+        asset_id: "AUDIO-001",
+        notes: null,
+        location_id: "loc-shelf",
       },
       {
         id: "inv-003",
@@ -589,6 +632,9 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         purchase_transaction_id: null,
         purchased_from_id: "10000000-0000-4000-8000-000000000010",
         purchased_from_name: "JB Hi-Fi",
+        asset_id: "TV-001",
+        notes: "Mounted in living room. HDMI 1: Apple TV, HDMI 2: PlayStation.",
+        location_id: "loc-tv-unit",
       },
       {
         id: "inv-004",
@@ -609,6 +655,9 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         purchase_transaction_id: null,
         purchased_from_id: "10000000-0000-4000-8000-000000000006",
         purchased_from_name: "Amazon AU",
+        asset_id: null,
+        notes: "Wall-mounted charging dock in laundry.",
+        location_id: "loc-cupboard",
       },
       {
         id: "inv-005",
@@ -629,6 +678,125 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         purchase_transaction_id: null,
         purchased_from_id: "10000000-0000-4000-8000-000000000006",
         purchased_from_name: "Amazon AU",
+        asset_id: null,
+        notes: "Descale monthly. Last descale: 2026-02-15.",
+        location_id: "loc-counter",
+      },
+      // New items
+      {
+        id: "inv-006",
+        item_name: "HDMI Cable 2m",
+        brand: "Belkin",
+        model: "Ultra HD 2.1",
+        item_id: null,
+        room: "Living Room",
+        location: "TV Unit",
+        type: "Cable",
+        condition: "Good",
+        in_use: 1,
+        deductible: 0,
+        purchase_date: "2023-08-20",
+        warranty_expires: null,
+        replacement_value: 39.0,
+        resale_value: null,
+        purchase_transaction_id: null,
+        purchased_from_id: "10000000-0000-4000-8000-000000000010",
+        purchased_from_name: "JB Hi-Fi",
+        asset_id: "HDMI-001",
+        notes: "Connects TV to Apple TV.",
+        location_id: "loc-tv-unit",
+      },
+      {
+        id: "inv-007",
+        item_name: "Power Board 6-Way",
+        brand: "HPM",
+        model: "D105/6PAWE",
+        item_id: null,
+        room: "Living Room",
+        location: "TV Unit",
+        type: "Electronics",
+        condition: "Good",
+        in_use: 1,
+        deductible: 0,
+        purchase_date: "2023-06-01",
+        warranty_expires: null,
+        replacement_value: 35.0,
+        resale_value: null,
+        purchase_transaction_id: null,
+        purchased_from_id: "10000000-0000-4000-8000-000000000009",
+        purchased_from_name: "Bunnings",
+        asset_id: "PB-001",
+        notes: "Behind TV unit. Powers TV, Apple TV, soundbar.",
+        location_id: "loc-tv-unit",
+      },
+      {
+        id: "inv-008",
+        item_name: "USB-C Hub",
+        brand: "Anker",
+        model: "PowerExpand 8-in-1",
+        item_id: null,
+        room: "Home Office",
+        location: "Desk",
+        type: "Electronics",
+        condition: "Excellent",
+        in_use: 1,
+        deductible: 1,
+        purchase_date: "2024-11-15",
+        warranty_expires: "2026-11-15",
+        replacement_value: 89.0,
+        resale_value: 40.0,
+        purchase_transaction_id: null,
+        purchased_from_id: "10000000-0000-4000-8000-000000000006",
+        purchased_from_name: "Amazon AU",
+        asset_id: "HUB-001",
+        notes: "Connected to MacBook. HDMI out to monitor.",
+        location_id: "loc-desk",
+      },
+      {
+        id: "inv-009",
+        item_name: "Ethernet Cable 3m",
+        brand: "Cable Matters",
+        model: "Cat6a",
+        item_id: null,
+        room: "Home Office",
+        location: "Desk",
+        type: "Cable",
+        condition: "Good",
+        in_use: 1,
+        deductible: 0,
+        purchase_date: "2024-01-10",
+        warranty_expires: null,
+        replacement_value: 15.0,
+        resale_value: null,
+        purchase_transaction_id: null,
+        purchased_from_id: "10000000-0000-4000-8000-000000000006",
+        purchased_from_name: "Amazon AU",
+        asset_id: "ETH-001",
+        notes: "Hub to wall socket.",
+        location_id: "loc-desk",
+      },
+      {
+        id: "inv-010",
+        item_name: "Power Board 4-Way",
+        brand: "HPM",
+        model: "D105/4PAWE",
+        item_id: null,
+        room: "Home Office",
+        location: "Desk",
+        type: "Electronics",
+        condition: "Good",
+        in_use: 1,
+        deductible: 0,
+        purchase_date: "2024-11-15",
+        warranty_expires: null,
+        replacement_value: 25.0,
+        resale_value: null,
+        purchase_transaction_id: null,
+        purchased_from_id: "10000000-0000-4000-8000-000000000009",
+        purchased_from_name: "Bunnings",
+        asset_id: "PB-002",
+        notes: "Under desk. Powers MacBook charger, monitor, hub.",
+        location_id: "loc-desk",
       },
     ];
 
@@ -637,8 +805,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         id, item_name, brand, model, item_id, room, location, type, condition,
         in_use, deductible, purchase_date, warranty_expires, replacement_value,
         resale_value, purchase_transaction_id, purchased_from_id, purchased_from_name,
-        last_edited_time
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        last_edited_time, asset_id, notes, location_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     for (const item of homeInventory) {
@@ -661,8 +829,35 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         item.purchase_transaction_id,
         item.purchased_from_id,
         item.purchased_from_name,
-        now
+        now,
+        item.asset_id,
+        item.notes,
+        item.location_id
       );
+    }
+
+    // -------------------------------------------------------------------------
+    // Item Connections (bidirectional links, A<B ordering)
+    // -------------------------------------------------------------------------
+    const connections = [
+      // Power chain: power board → devices
+      ["inv-007", "inv-003"],  // PB-001 → TV
+      // HDMI chain
+      ["inv-003", "inv-006"],  // TV → HDMI cable
+      // Office chain: power board → devices
+      ["inv-001", "inv-008"],  // MacBook → USB-C Hub
+      ["inv-008", "inv-010"],  // Hub → Power Board (via charger)
+      ["inv-008", "inv-009"],  // Hub → Ethernet cable
+    ];
+
+    const insertConnection = db.prepare(`
+      INSERT INTO item_connections (item_a_id, item_b_id) VALUES (?, ?)
+    `);
+
+    for (const [a, b] of connections) {
+      // Enforce A < B ordering
+      const [lo, hi] = a < b ? [a, b] : [b, a];
+      insertConnection.run(lo, hi);
     }
 
     // -------------------------------------------------------------------------
@@ -1014,7 +1209,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
     console.log(
       `[seeder] Seeded ${entities.length} entities, ${transactions.length} transactions, ` +
         `${budgets.length} budgets, ${homeInventory.length} inventory items, ${wishList.length} wish list items, ` +
-        `${movies.length} movies, ${tvShowsData.length} tv shows, ${seasonCount} seasons, ${episodeCount} episodes`
+        `${movies.length} movies, ${tvShowsData.length} tv shows, ${seasonCount} seasons, ${episodeCount} episodes, ` +
+        `${locations.length} locations, ${connections.length} connections`
     );
   });
 

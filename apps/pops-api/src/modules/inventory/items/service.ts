@@ -24,7 +24,9 @@ export function listInventoryItems(
   inUse: boolean | undefined,
   deductible: boolean | undefined,
   limit: number,
-  offset: number
+  offset: number,
+  locationId?: string,
+  assetId?: string
 ): InventoryListResult {
   const db = getDrizzle();
 
@@ -49,6 +51,12 @@ export function listInventoryItems(
   }
   if (deductible !== undefined) {
     conditions.push(eq(homeInventory.deductible, deductible ? 1 : 0));
+  }
+  if (locationId) {
+    conditions.push(eq(homeInventory.locationId, locationId));
+  }
+  if (assetId) {
+    conditions.push(eq(homeInventory.assetId, assetId));
   }
 
   if (conditions.length > 0) {
