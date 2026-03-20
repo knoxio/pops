@@ -341,7 +341,7 @@ export function DataTable<TData, TValue>({
                 onChange={(e) => {
                   table.setPageSize(Number(e.target.value));
                 }}
-                className="h-8 w-18 rounded-md border border-input bg-transparent px-2 text-sm"
+                className="h-10 w-18 rounded-md border border-input bg-transparent px-2 text-sm"
               >
                 {pageSizeOptions.map((pageSize) => (
                   <option key={pageSize} value={pageSize}>
