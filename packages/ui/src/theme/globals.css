@@ -2,6 +2,7 @@
  * Tailwind CSS v4 configuration using CSS-based @theme
  * No tailwind.config.ts file needed
  */
+@import "@fontsource-variable/plus-jakarta-sans";
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -105,12 +106,14 @@ body {
   background-color: var(--color-background);
   color: var(--color-foreground);
   font-family:
+    "Plus Jakarta Sans Variable",
     system-ui,
     -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
-    Roboto,
     sans-serif;
+  font-kerning: normal;
+  font-variant-ligatures: common-ligatures;
 }
 
 /*---break---
@@ -205,4 +208,54 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+
+  /**
+   * Typography hierarchy defaults.
+   * Tailwind utility classes (text-2xl, font-bold, etc.) override these
+   * via layer specificity, so components with explicit classes are unaffected.
+   *
+   * Type scale (major third, 1.25 ratio):
+   *   xs:   0.75rem  (12px) — captions, timestamps
+   *   sm:   0.875rem (14px) — secondary UI, metadata
+   *   base: 1rem     (16px) — body text
+   *   lg:   1.25rem  (20px) — subheadings
+   *   xl:   1.5rem   (24px) — section headings
+   *   2xl:  1.875rem (30px) — page titles
+   *   3xl:  2.25rem  (36px) — display / hero
+   */
+  h1 {
+    font-size: 1.875rem;
+    line-height: 1.2;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    line-height: 1.25;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+    line-height: 1.3;
+    font-weight: 600;
+  }
+
+  h4 {
+    font-size: 1rem;
+    line-height: 1.4;
+    font-weight: 600;
+  }
+
+  /* Tabular figures for data-heavy contexts */
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Utility: force tabular figures (financial data, counters, dashboards) */
+@utility tabular-nums {
+  font-variant-numeric: tabular-nums;
 }
