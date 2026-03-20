@@ -3,7 +3,7 @@
  * SQLite is the source of truth. All operations are local.
  */
 import crypto from "crypto";
-import { eq, like, count, sql } from "drizzle-orm";
+import { eq, like, count, and } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
 import { entities } from "../../../db/schema/entities.js";
 import { NotFoundError, ConflictError } from "../../../shared/errors.js";
@@ -52,7 +52,7 @@ export function listEntities(
   }
 
   if (conditions.length > 0) {
-    const where = conditions.length === 1 ? conditions[0] : sql`${conditions[0]} AND ${conditions[1]}`;
+    const where = and(...conditions);
     query = query.where(where);
     countQuery = countQuery.where(where);
   }
