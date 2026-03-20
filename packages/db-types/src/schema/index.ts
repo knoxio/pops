@@ -6,3 +6,5 @@ export { wishList } from "./wishlist.js";
 export { transactionCorrections } from "./corrections.js";
 export { aiUsage } from "./ai-usage.js";
 export { environments } from "./environments.js";
+export { itemConnections } from "./item-connections.js";
+export { itemPhotos } from "./item-photos.js";
