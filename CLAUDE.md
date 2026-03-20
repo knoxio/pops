@@ -34,7 +34,7 @@ mise setup            # Initial project setup
 ```bash
 mise db:init          # Initialize empty database with schema
 mise db:clear         # Clear all data (preserves schema)
-mise db:seed          # Seed with comprehensive test data (44 records)
+mise db:seed          # Seed with comprehensive test data (78 records)
 ```
 
 **Import Tools:**
@@ -278,7 +278,7 @@ Full project documentation lives in Notion under **POPS - Personal Ops** (`30240
 **For Local Development:**
 ```bash
 mise db:init     # First time: Initialize empty database
-mise db:seed     # Seed with test data (44 records)
+mise db:seed     # Seed with test data (78 records)
 mise dev:api     # Start API server
 mise dev:shell   # Start shell
 ```
@@ -296,6 +296,8 @@ mise db:seed     # Reset between test runs
 - 8 budgets (monthly and yearly)
 - 5 inventory items (MacBook, headphones, TV, vacuum, coffee machine)
 - 5 wish list items (gaming PC, desk, Japan trip, chair, camera)
+- 10 movies (Shawshank Redemption, Godfather, Dark Knight, Pulp Fiction, Forrest Gump, Fight Club, LOTR, Matrix, Interstellar, Spider-Verse)
+- 3 TV shows (Breaking Bad, Severance, Shogun) with 5 seasons and 16 episodes
 
 ### Process
 
