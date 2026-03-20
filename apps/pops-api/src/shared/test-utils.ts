@@ -220,6 +220,64 @@ export function createTestDb(): Database {
     );
     CREATE INDEX IF NOT EXISTS idx_watch_history_media ON watch_history(media_type, media_id);
     CREATE INDEX IF NOT EXISTS idx_watch_history_watched_at ON watch_history(watched_at);
+
+    CREATE TABLE IF NOT EXISTS tv_shows (
+      id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+      tvdb_id              INTEGER NOT NULL,
+      name                 TEXT NOT NULL,
+      original_name        TEXT,
+      overview             TEXT,
+      first_air_date       TEXT,
+      last_air_date        TEXT,
+      status               TEXT,
+      original_language    TEXT,
+      number_of_seasons    INTEGER,
+      number_of_episodes   INTEGER,
+      episode_run_time     INTEGER,
+      poster_path          TEXT,
+      backdrop_path        TEXT,
+      logo_path            TEXT,
+      poster_override_path TEXT,
+      vote_average         REAL,
+      vote_count           INTEGER,
+      genres               TEXT,
+      networks             TEXT,
+      created_at           TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at           TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_tv_shows_tvdb_id ON tv_shows(tvdb_id);
+    CREATE INDEX IF NOT EXISTS idx_tv_shows_name ON tv_shows(name);
+
+    CREATE TABLE IF NOT EXISTS seasons (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      tv_show_id    INTEGER NOT NULL REFERENCES tv_shows(id) ON DELETE CASCADE,
+      tvdb_id       INTEGER NOT NULL,
+      season_number INTEGER NOT NULL,
+      name          TEXT,
+      overview      TEXT,
+      poster_path   TEXT,
+      air_date      TEXT,
+      episode_count INTEGER,
+      created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_seasons_tvdb_id ON seasons(tvdb_id);
+    CREATE INDEX IF NOT EXISTS idx_seasons_tv_show_id ON seasons(tv_show_id);
+
+    CREATE TABLE IF NOT EXISTS episodes (
+      id             INTEGER PRIMARY KEY AUTOINCREMENT,
+      season_id      INTEGER NOT NULL REFERENCES seasons(id) ON DELETE CASCADE,
+      tvdb_id        INTEGER NOT NULL,
+      episode_number INTEGER NOT NULL,
+      name           TEXT,
+      overview       TEXT,
+      air_date       TEXT,
+      still_path     TEXT,
+      vote_average   REAL,
+      runtime        INTEGER,
+      created_at     TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_episodes_tvdb_id ON episodes(tvdb_id);
+    CREATE INDEX IF NOT EXISTS idx_episodes_season_id ON episodes(season_id);
   `);
 
   return db;
@@ -612,6 +670,139 @@ export function setupTestContext() {
   }
 
   return { setup, teardown };
+}
+
+/**
+ * Seed a single TV show row into the test DB.
+ * Returns the auto-generated id.
+ */
+export function seedTvShow(
+  db: Database,
+  overrides: Partial<{
+    tvdb_id: number;
+    name: string;
+    original_name: string | null;
+    overview: string | null;
+    first_air_date: string | null;
+    last_air_date: string | null;
+    status: string | null;
+    original_language: string | null;
+    number_of_seasons: number | null;
+    number_of_episodes: number | null;
+    episode_run_time: number | null;
+    poster_path: string | null;
+    backdrop_path: string | null;
+    logo_path: string | null;
+    poster_override_path: string | null;
+    vote_average: number | null;
+    vote_count: number | null;
+    genres: string | null;
+    networks: string | null;
+  }> = {},
+): number {
+  const result = db.prepare(
+    `INSERT INTO tv_shows (
+      tvdb_id, name, original_name, overview, first_air_date, last_air_date,
+      status, original_language, number_of_seasons, number_of_episodes,
+      episode_run_time, poster_path, backdrop_path, logo_path, poster_override_path,
+      vote_average, vote_count, genres, networks
+    )
+    VALUES (
+      @tvdb_id, @name, @original_name, @overview, @first_air_date, @last_air_date,
+      @status, @original_language, @number_of_seasons, @number_of_episodes,
+      @episode_run_time, @poster_path, @backdrop_path, @logo_path, @poster_override_path,
+      @vote_average, @vote_count, @genres, @networks
+    )`,
+  ).run({
+    tvdb_id: overrides.tvdb_id ?? 99999,
+    name: overrides.name ?? "Test Show",
+    original_name: overrides.original_name ?? null,
+    overview: overrides.overview ?? null,
+    first_air_date: overrides.first_air_date ?? null,
+    last_air_date: overrides.last_air_date ?? null,
+    status: overrides.status ?? null,
+    original_language: overrides.original_language ?? null,
+    number_of_seasons: overrides.number_of_seasons ?? null,
+    number_of_episodes: overrides.number_of_episodes ?? null,
+    episode_run_time: overrides.episode_run_time ?? null,
+    poster_path: overrides.poster_path ?? null,
+    backdrop_path: overrides.backdrop_path ?? null,
+    logo_path: overrides.logo_path ?? null,
+    poster_override_path: overrides.poster_override_path ?? null,
+    vote_average: overrides.vote_average ?? null,
+    vote_count: overrides.vote_count ?? null,
+    genres: overrides.genres ?? null,
+    networks: overrides.networks ?? null,
+  });
+  return Number(result.lastInsertRowid);
+}
+
+/**
+ * Seed a single season row into the test DB.
+ * Requires tv_show_id. Returns the auto-generated id.
+ */
+export function seedSeason(
+  db: Database,
+  overrides: {
+    tv_show_id: number;
+    tvdb_id: number;
+    season_number: number;
+    name?: string | null;
+    overview?: string | null;
+    poster_path?: string | null;
+    air_date?: string | null;
+    episode_count?: number | null;
+  },
+): number {
+  const result = db.prepare(
+    `INSERT INTO seasons (tv_show_id, tvdb_id, season_number, name, overview, poster_path, air_date, episode_count)
+     VALUES (@tv_show_id, @tvdb_id, @season_number, @name, @overview, @poster_path, @air_date, @episode_count)`,
+  ).run({
+    tv_show_id: overrides.tv_show_id,
+    tvdb_id: overrides.tvdb_id,
+    season_number: overrides.season_number,
+    name: overrides.name ?? null,
+    overview: overrides.overview ?? null,
+    poster_path: overrides.poster_path ?? null,
+    air_date: overrides.air_date ?? null,
+    episode_count: overrides.episode_count ?? null,
+  });
+  return Number(result.lastInsertRowid);
+}
+
+/**
+ * Seed a single episode row into the test DB.
+ * Requires season_id. Returns the auto-generated id.
+ */
+export function seedEpisode(
+  db: Database,
+  overrides: {
+    season_id: number;
+    tvdb_id: number;
+    episode_number: number;
+    name?: string | null;
+    overview?: string | null;
+    air_date?: string | null;
+    still_path?: string | null;
+    vote_average?: number | null;
+    runtime?: number | null;
+  },
+): number {
+  const result = db.prepare(
+    `INSERT INTO episodes (season_id, tvdb_id, episode_number, name, overview, air_date, still_path, vote_average, runtime)
+     VALUES (@season_id, @tvdb_id, @episode_number, @name, @overview, @air_date, @still_path, @vote_average, @runtime)`,
+  ).run({
+    season_id: overrides.season_id,
+    tvdb_id: overrides.tvdb_id,
+    episode_number: overrides.episode_number,
+    name: overrides.name ?? null,
+    overview: overrides.overview ?? null,
+    air_date: overrides.air_date ?? null,
+    still_path: overrides.still_path ?? null,
+    vote_average: overrides.vote_average ?? null,
+    runtime: overrides.runtime ?? null,
+  });
+  return Number(result.lastInsertRowid);
 }
 
 /**
