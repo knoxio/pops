@@ -5,7 +5,7 @@
  *   - Movie: removed from watchlist when marked as watched.
  *   - Episode: TV show removed from watchlist when all episodes are watched.
  */
-import { count, desc, eq, and, type SQL } from "drizzle-orm";
+import { count, countDistinct, desc, eq, and, inArray, type SQL } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
 import { watchHistory, episodes, seasons } from "@pops/db-types";
 import { NotFoundError } from "../../../shared/errors.js";
@@ -71,52 +71,72 @@ export function getWatchHistoryEntry(id: number): WatchHistoryRow {
   return row;
 }
 
-/** Log a watch event. Returns the created row. */
+/**
+ * Log a watch event. Returns the created row.
+ *
+ * Side effects (PRD-011 R6 — auto-remove from watchlist):
+ *   - If mediaType is "movie" and completed === 1, removes the movie
+ *     from the watchlist (if present).
+ *   - If mediaType is "episode" and completed === 1, checks whether all
+ *     episodes of the parent TV show are now watched, and if so removes
+ *     the TV show from the watchlist.
+ *
+ * Insert and auto-remove run inside a single transaction.
+ */
 export function logWatch(input: LogWatchInput): WatchHistoryRow {
   const db = getDrizzle();
-
-  const result = db
-    .insert(watchHistory)
-    .values({
-      mediaType: input.mediaType,
-      mediaId: input.mediaId,
-      watchedAt: input.watchedAt ?? new Date().toISOString(),
-      completed: input.completed ?? 1,
-    })
-    .run();
-
-  const entry = getWatchHistoryEntry(Number(result.lastInsertRowid));
-
-  // Auto-remove from watchlist (PRD-011 R6)
   const completed = input.completed ?? 1;
-  if (completed) {
-    if (input.mediaType === "movie") {
-      removeByMedia("movie", input.mediaId);
-    } else if (input.mediaType === "episode") {
-      autoRemoveTvShowIfFullyWatched(input.mediaId);
-    }
-  }
 
-  return entry;
+  return db.transaction((tx) => {
+    const result = tx
+      .insert(watchHistory)
+      .values({
+        mediaType: input.mediaType,
+        mediaId: input.mediaId,
+        watchedAt: input.watchedAt ?? new Date().toISOString(),
+        completed,
+      })
+      .run();
+
+    const entry = tx
+      .select()
+      .from(watchHistory)
+      .where(eq(watchHistory.id, Number(result.lastInsertRowid)))
+      .get()!;
+
+    // Auto-remove from watchlist (PRD-011 R6)
+    if (completed === 1) {
+      if (input.mediaType === "movie") {
+        removeByMedia("movie", input.mediaId);
+      } else if (input.mediaType === "episode") {
+        autoRemoveTvShowIfFullyWatched(tx, input.mediaId);
+      }
+    }
+
+    return entry;
+  });
 }
 
 /**
  * Check if the TV show owning the given episode is fully watched.
- * If all episodes across all seasons are in watch_history, remove
- * the show from the watchlist.
+ * If all episodes across all seasons have completed watch_history entries,
+ * remove the show from the watchlist.
+ *
+ * Uses a single JOIN query to count watched episodes (no N+1).
  */
-function autoRemoveTvShowIfFullyWatched(episodeId: number): void {
-  const db = getDrizzle();
-
+function autoRemoveTvShowIfFullyWatched(
+  tx: Parameters<Parameters<ReturnType<typeof getDrizzle>["transaction"]>[0]>[0],
+  episodeId: number,
+): void {
   // Look up episode → season → tv show
-  const episode = db
+  const episode = tx
     .select({ seasonId: episodes.seasonId })
     .from(episodes)
     .where(eq(episodes.id, episodeId))
     .get();
   if (!episode) return;
 
-  const season = db
+  const season = tx
     .select({ tvShowId: seasons.tvShowId })
     .from(seasons)
     .where(eq(seasons.id, episode.seasonId))
@@ -126,7 +146,7 @@ function autoRemoveTvShowIfFullyWatched(episodeId: number): void {
   const tvShowId = season.tvShowId;
 
   // Get all episode IDs for this show
-  const showEpisodeIds = db
+  const showEpisodeIds = tx
     .select({ id: episodes.id })
     .from(episodes)
     .innerJoin(seasons, eq(episodes.seasonId, seasons.id))
@@ -136,24 +156,20 @@ function autoRemoveTvShowIfFullyWatched(episodeId: number): void {
 
   if (showEpisodeIds.length === 0) return;
 
-  // Count how many of this show's episodes have completed watch entries
-  let watchedCount = 0;
-  for (const epId of showEpisodeIds) {
-    const entry = db
-      .select({ id: watchHistory.id })
-      .from(watchHistory)
-      .where(
-        and(
-          eq(watchHistory.mediaType, "episode"),
-          eq(watchHistory.mediaId, epId),
-          eq(watchHistory.completed, 1),
-        ),
-      )
-      .get();
-    if (entry) watchedCount++;
-  }
+  // Count distinct watched episodes for this show in a single query
+  const [{ watched }] = tx
+    .select({ watched: countDistinct(watchHistory.mediaId) })
+    .from(watchHistory)
+    .where(
+      and(
+        eq(watchHistory.mediaType, "episode"),
+        eq(watchHistory.completed, 1),
+        inArray(watchHistory.mediaId, showEpisodeIds),
+      ),
+    )
+    .all();
 
-  if (watchedCount >= showEpisodeIds.length) {
+  if (watched >= showEpisodeIds.length) {
     removeByMedia("tv_show", tvShowId);
   }
 }

@@ -201,4 +201,38 @@ describe("auto-remove from watchlist (PRD-011 R6)", () => {
       service.logWatch({ mediaType: "episode", mediaId: 99999, completed: 1 });
     }).not.toThrow();
   });
+
+  it("allows re-watch after removal — movie can be re-added and re-watched", () => {
+    // Add movie, watch it (auto-removed), re-add, re-watch
+    seedWatchlistEntry(db, { media_type: "movie", media_id: 550 });
+    service.logWatch({ mediaType: "movie", mediaId: 550, completed: 1 });
+
+    // Re-add to watchlist
+    const wl2 = seedWatchlistEntry(db, { media_type: "movie", media_id: 550 });
+
+    // Re-watch → should auto-remove again
+    service.logWatch({ mediaType: "movie", mediaId: 550, completed: 1 });
+    expect(() => watchlistService.getWatchlistEntry(wl2)).toThrow("WatchlistEntry");
+  });
+
+  it("handles duplicate episode watch — does not double-count", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    const ep1 = seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
+    const ep2 = seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
+
+    const wlId = seedWatchlistEntry(db, { media_type: "tv_show", media_id: showId });
+
+    // Watch ep1 twice — should not count as both episodes watched
+    service.logWatch({ mediaType: "episode", mediaId: ep1, completed: 1 });
+    service.logWatch({ mediaType: "episode", mediaId: ep1, completed: 1 });
+
+    // Show should still be on watchlist (ep2 unwatched)
+    const entry = watchlistService.getWatchlistEntry(wlId);
+    expect(entry.mediaId).toBe(showId);
+
+    // Watch ep2 → now all episodes watched, should remove
+    service.logWatch({ mediaType: "episode", mediaId: ep2, completed: 1 });
+    expect(() => watchlistService.getWatchlistEntry(wlId)).toThrow("WatchlistEntry");
+  });
 });
