@@ -23,6 +23,7 @@ import type { watchHistory } from "./schema/watch-history.js";
 import type { comparisonDimensions } from "./schema/comparison-dimensions.js";
 import type { comparisons } from "./schema/comparisons.js";
 import type { mediaScores } from "./schema/media-scores.js";
+import type { locations } from "./schema/locations.js";
 
 // Re-export Drizzle table objects for use in queries
 export {
@@ -43,6 +44,7 @@ export {
   comparisonDimensions,
   comparisons,
   mediaScores,
+  locations,
 } from "./schema/index.js";
 
 // Select types (what you get back from a SELECT query)
@@ -63,6 +65,7 @@ export type WatchHistoryRow = InferSelectModel<typeof watchHistory>;
 export type ComparisonDimensionRow = InferSelectModel<typeof comparisonDimensions>;
 export type ComparisonRow = InferSelectModel<typeof comparisons>;
 export type MediaScoreRow = InferSelectModel<typeof mediaScores>;
+export type LocationRow = InferSelectModel<typeof locations>;
 
 // Insert types (what you pass to an INSERT statement)
 export type TransactionInsert = InferInsertModel<typeof transactions>;
@@ -82,6 +85,7 @@ export type WatchHistoryInsert = InferInsertModel<typeof watchHistory>;
 export type ComparisonDimensionInsert = InferInsertModel<typeof comparisonDimensions>;
 export type ComparisonInsert = InferInsertModel<typeof comparisons>;
 export type MediaScoreInsert = InferInsertModel<typeof mediaScores>;
+export type LocationInsert = InferInsertModel<typeof locations>;
 
 // Constants
 export const ENTITY_TYPES = [

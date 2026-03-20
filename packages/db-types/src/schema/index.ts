@@ -15,3 +15,4 @@ export { comparisons } from "./comparisons.js";
 export { mediaWatchlist } from "./media-watchlist.js";
 export { watchHistory } from "./watch-history.js";
 export { mediaScores } from "./media-scores.js";
+export { locations } from "./locations.js";
