@@ -99,33 +99,33 @@
   --radius: 0.625rem;
   
   /* Light mode - Clean, Warm, Efficient with subtle indigo tint */
-  --background: oklch(0.985 0.005 260); /* Very soft tinted background */
-  --foreground: oklch(0.25 0.02 260);
+  --background: oklch(0.975 0.01 260); /* Slightly deeper background for better contrast with cards */
+  --foreground: oklch(0.2 0.02 260); /* Darker foreground for better text contrast */
   
   --card: oklch(1 0 0); /* Pure white cards to pop */
-  --card-foreground: oklch(0.25 0.02 260);
+  --card-foreground: oklch(0.2 0.02 260);
   
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.25 0.02 260);
+  --popover-foreground: oklch(0.2 0.02 260);
   
-  --primary: oklch(0.35 0.05 260);
+  --primary: oklch(0.3 0.06 260); /* Slightly deeper primary */
   --primary-foreground: oklch(0.98 0.01 260);
   
-  --secondary: oklch(0.95 0.01 260);
-  --secondary-foreground: oklch(0.35 0.05 260);
+  --secondary: oklch(0.92 0.02 260); /* More visible secondary */
+  --secondary-foreground: oklch(0.3 0.06 260);
   
-  --muted: oklch(0.95 0.01 260);
-  --muted-foreground: oklch(0.55 0.02 260); /* Darker for better contrast */
+  --muted: oklch(0.92 0.02 260); /* More visible muted background */
+  --muted-foreground: oklch(0.4 0.03 260); /* Darker for accessibility */
   
-  --accent: oklch(0.95 0.01 260);
-  --accent-foreground: oklch(0.25 0.02 260);
+  --accent: oklch(0.92 0.02 260);
+  --accent-foreground: oklch(0.2 0.02 260);
   
   --destructive: oklch(0.6 0.18 25);
   --destructive-foreground: oklch(0.98 0.01 260);
   
-  --border: oklch(0.92 0.01 260); /* Subtle tinted border */
-  --input: oklch(0.92 0.01 260);
-  --ring: oklch(0.6 0.05 260);
+  --border: oklch(0.88 0.03 260); /* Much clearer borders */
+  --input: oklch(0.88 0.03 260);
+  --ring: oklch(0.5 0.08 260);
   
   --chart-1: oklch(0.6 0.15 260);
   --chart-2: oklch(0.7 0.12 180);
