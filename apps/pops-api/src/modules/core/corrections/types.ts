@@ -28,7 +28,7 @@ export function toCorrection(row: CorrectionRow): Correction {
   return {
     id: row.id,
     descriptionPattern: row.descriptionPattern,
-    matchType: row.matchType as Correction["matchType"],
+    matchType: row.matchType,
     entityId: row.entityId,
     entityName: row.entityName,
     location: row.location,
@@ -43,7 +43,7 @@ export function toCorrection(row: CorrectionRow): Correction {
         return [];
       }
     })(),
-    transactionType: row.transactionType as Correction["transactionType"],
+    transactionType: row.transactionType,
     confidence: row.confidence,
     timesApplied: row.timesApplied,
     createdAt: row.createdAt,
