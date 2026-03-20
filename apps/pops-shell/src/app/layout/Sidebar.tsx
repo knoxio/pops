@@ -7,6 +7,7 @@
 import { Link, useLocation } from "react-router";
 import { registeredApps } from "@/app/nav/registry";
 import { iconMap } from "@/app/nav/icon-map";
+import { isPageActive } from "@/app/nav/path-utils";
 import { useUIStore } from "@/store/uiStore";
 import { X } from "lucide-react";
 
@@ -51,11 +52,11 @@ export function Sidebar({ open }: SidebarProps) {
           {registeredApps.map((app) =>
             app.items.map((item) => {
               const fullPath = `${app.basePath}${item.path}`;
-              const isActive =
-                item.path === ""
-                  ? location.pathname === app.basePath ||
-                    location.pathname === `${app.basePath}/`
-                  : location.pathname.startsWith(fullPath);
+              const isActive = isPageActive(
+                location.pathname,
+                app.basePath,
+                item.path,
+              );
               const Icon = iconMap[item.icon];
 
               return (

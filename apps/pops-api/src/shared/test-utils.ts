@@ -163,6 +163,43 @@ export function createTestDb(): Database {
     CREATE INDEX IF NOT EXISTS idx_corrections_pattern ON transaction_corrections(description_pattern);
     CREATE INDEX IF NOT EXISTS idx_corrections_confidence ON transaction_corrections(confidence DESC);
     CREATE INDEX IF NOT EXISTS idx_corrections_times_applied ON transaction_corrections(times_applied DESC);
+
+    CREATE TABLE IF NOT EXISTS comparison_dimensions (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      name        TEXT NOT NULL,
+      description TEXT,
+      active      INTEGER NOT NULL DEFAULT 1,
+      sort_order  INTEGER NOT NULL DEFAULT 0,
+      created_at  TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_comparison_dimensions_name ON comparison_dimensions(name);
+
+    CREATE TABLE IF NOT EXISTS comparisons (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      dimension_id  INTEGER NOT NULL REFERENCES comparison_dimensions(id),
+      media_a_type  TEXT NOT NULL,
+      media_a_id    INTEGER NOT NULL,
+      media_b_type  TEXT NOT NULL,
+      media_b_id    INTEGER NOT NULL,
+      winner_type   TEXT NOT NULL,
+      winner_id     INTEGER NOT NULL,
+      compared_at   TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_comparisons_dimension_id ON comparisons(dimension_id);
+    CREATE INDEX IF NOT EXISTS idx_comparisons_media_a ON comparisons(media_a_type, media_a_id);
+    CREATE INDEX IF NOT EXISTS idx_comparisons_media_b ON comparisons(media_b_type, media_b_id);
+
+    CREATE TABLE IF NOT EXISTS media_scores (
+      id               INTEGER PRIMARY KEY AUTOINCREMENT,
+      media_type       TEXT NOT NULL,
+      media_id         INTEGER NOT NULL,
+      dimension_id     INTEGER NOT NULL REFERENCES comparison_dimensions(id),
+      score            REAL NOT NULL DEFAULT 1500.0,
+      comparison_count INTEGER NOT NULL DEFAULT 0,
+      updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_media_scores_unique ON media_scores(media_type, media_id, dimension_id);
+    CREATE INDEX IF NOT EXISTS idx_media_scores_dimension ON media_scores(dimension_id);
   `);
 
   return db;
@@ -499,4 +536,28 @@ export function setupTestContext() {
   }
 
   return { setup, teardown };
+}
+
+/**
+ * Seed a comparison dimension. Returns the id.
+ */
+export function seedDimension(
+  db: Database,
+  overrides: Partial<{
+    name: string;
+    description: string | null;
+    active: number;
+    sort_order: number;
+  }> = {},
+): number {
+  const result = db.prepare(
+    `INSERT INTO comparison_dimensions (name, description, active, sort_order)
+     VALUES (@name, @description, @active, @sort_order)`,
+  ).run({
+    name: overrides.name ?? "Test Dimension",
+    description: overrides.description ?? null,
+    active: overrides.active ?? 1,
+    sort_order: overrides.sort_order ?? 0,
+  });
+  return Number(result.lastInsertRowid);
 }
