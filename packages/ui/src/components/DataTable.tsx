@@ -210,7 +210,7 @@ export function DataTable<TData, TValue>({
 
       {/* Toolbar */}
       {(searchable || columnVisibility) && (
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           {searchable && searchColumn && (
             <TextInput
               placeholder={searchPlaceholder}
@@ -222,7 +222,7 @@ export function DataTable<TData, TValue>({
               onChange={(e) =>
                 table.getColumn(searchColumn)?.setFilterValue(e.target.value)
               }
-              className="max-w-sm"
+              className="w-full sm:max-w-sm"
               clearable
               onClear={() => table.getColumn(searchColumn)?.setFilterValue("")}
             />
@@ -322,8 +322,8 @@ export function DataTable<TData, TValue>({
 
       {/* Pagination */}
       {paginated && (
-        <div className="flex items-center justify-between">
-          <div className="flex-1 text-sm text-muted-foreground">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-muted-foreground">
             {enableRowSelection && (
               <>
                 {table.getFilteredSelectedRowModel().rows.length} of{" "}
@@ -331,9 +331,11 @@ export function DataTable<TData, TValue>({
               </>
             )}
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <div className="flex items-center gap-2">
-              <p className="text-sm font-medium">Rows per page</p>
+              <p className="hidden text-sm font-medium sm:block">
+                Rows per page
+              </p>
               <select
                 value={table.getState().pagination.pageSize}
                 onChange={(e) => {

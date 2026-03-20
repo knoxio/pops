@@ -32,10 +32,7 @@ export * from "./primitives/tooltip";
 
 // Primitives with naming conflicts — aliased to avoid collision with composites
 // Import directly from "@pops/ui/primitives/button" etc. if primitive versions are needed
-export {
-  Button as ButtonPrimitive,
-  buttonVariants,
-} from "./primitives/button";
+export { Button as ButtonPrimitive, buttonVariants } from "./primitives/button";
 export {
   Select as SelectPrimitive,
   SelectContent,

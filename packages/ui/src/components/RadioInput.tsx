@@ -128,7 +128,9 @@ export const RadioInput = forwardRef<HTMLDivElement, RadioInputProps>(
           required={required}
           aria-invalid={error}
           className={cn(
-            orientation === "horizontal" ? "flex flex-row gap-4" : "grid gap-3"
+            orientation === "horizontal"
+              ? "grid gap-3 sm:flex sm:flex-row sm:gap-4"
+              : "grid gap-3"
           )}
           {...props}
         >

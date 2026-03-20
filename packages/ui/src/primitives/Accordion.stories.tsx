@@ -164,8 +164,8 @@ export const FAQ: Story = {
         <AccordionItem value="q4">
           <AccordionTrigger>Can I export my data?</AccordionTrigger>
           <AccordionContent>
-            Yes, SQLite is the source of truth, so you can export your data
-            at any time in CSV or other formats via the API.
+            Yes, SQLite is the source of truth, so you can export your data at
+            any time in CSV or other formats via the API.
           </AccordionContent>
         </AccordionItem>
 

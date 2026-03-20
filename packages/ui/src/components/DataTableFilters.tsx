@@ -31,7 +31,7 @@ export function TextFilter({ column, placeholder }: TextFilterProps) {
       onChange={(e) => column.setFilterValue(e.target.value)}
       clearable
       onClear={() => column.setFilterValue("")}
-      className="max-w-sm"
+      className="w-full sm:max-w-sm"
     />
   );
 }
@@ -95,7 +95,7 @@ export function DateRangeFilter({ column }: DateRangeFilterProps) {
   const filterValue = (column.getFilterValue() as [string, string]) ?? ["", ""];
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <TextInput
         type="date"
         value={filterValue[0]}
@@ -103,9 +103,9 @@ export function DateRangeFilter({ column }: DateRangeFilterProps) {
           column.setFilterValue([e.target.value, filterValue[1]])
         }
         placeholder="From"
-        className="w-38"
+        className="w-full sm:w-38"
       />
-      <span className="text-muted-foreground">to</span>
+      <span className="hidden text-muted-foreground sm:block">to</span>
       <TextInput
         type="date"
         value={filterValue[1]}
@@ -113,7 +113,7 @@ export function DateRangeFilter({ column }: DateRangeFilterProps) {
           column.setFilterValue([filterValue[0], e.target.value])
         }
         placeholder="To"
-        className="w-38"
+        className="w-full sm:w-38"
       />
     </div>
   );
@@ -136,19 +136,19 @@ export function NumberRangeFilter({
   ];
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <NumberInput
         value={filterValue[0]}
         onChange={(value) => column.setFilterValue([value, filterValue[1]])}
         placeholder={minPlaceholder}
-        className="w-25"
+        className="w-full sm:w-25"
       />
-      <span className="text-muted-foreground">to</span>
+      <span className="hidden text-muted-foreground sm:block">to</span>
       <NumberInput
         value={filterValue[1]}
         onChange={(value) => column.setFilterValue([filterValue[0], value])}
         placeholder={maxPlaceholder}
-        className="w-25"
+        className="w-full sm:w-25"
       />
     </div>
   );

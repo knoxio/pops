@@ -102,7 +102,7 @@ export const Chip = forwardRef<HTMLDivElement, ChipProps>(
               e.stopPropagation();
               onRemove?.();
             }}
-            className="inline-flex shrink-0 rounded-sm opacity-70 hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring transition-opacity"
+            className="inline-flex shrink-0 items-center justify-center rounded-sm opacity-70 hover:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring transition-opacity p-1"
             aria-label={removeLabel}
           >
             <XIcon />

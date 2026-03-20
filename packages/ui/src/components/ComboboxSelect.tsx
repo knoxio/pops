@@ -15,11 +15,7 @@ import {
   CommandItem,
   CommandList,
 } from "../primitives/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "../primitives/popover";
+import { Popover, PopoverContent, PopoverTrigger } from "../primitives/popover";
 
 export interface ComboboxOption {
   label: string;
