@@ -8,21 +8,6 @@ import { budgets } from "../../../db/schema/budgets.js";
 import { NotFoundError, ConflictError } from "../../../shared/errors.js";
 import type { BudgetRow, CreateBudgetInput, UpdateBudgetInput } from "./types.js";
 
-/** Map a Drizzle select result back to the snake_case BudgetRow expected by the router. */
-type DrizzleBudget = typeof budgets.$inferSelect;
-function toRow(r: DrizzleBudget): BudgetRow {
-  return {
-    id: r.id,
-    notion_id: r.notionId,
-    category: r.category,
-    period: r.period,
-    amount: r.amount,
-    active: r.active,
-    notes: r.notes,
-    last_edited_time: r.lastEditedTime,
-  };
-}
-
 /** Count + rows for a paginated list. */
 export interface BudgetListResult {
   rows: BudgetRow[];
@@ -64,8 +49,7 @@ export function listBudgets(
     .orderBy(asc(budgets.category))
     .limit(limit)
     .offset(offset)
-    .all()
-    .map(toRow);
+    .all();
 
   const [{ total }] = db
     .select({ total: count() })
@@ -86,7 +70,7 @@ export function getBudget(id: string): BudgetRow {
     .get();
 
   if (!row) throw new NotFoundError("Budget", id);
-  return toRow(row);
+  return row;
 }
 
 /**

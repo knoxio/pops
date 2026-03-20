@@ -21,7 +21,7 @@ export interface Transaction {
   lastEditedTime: string;
 }
 
-/** Map a SQLite row to the API response shape. */
+/** Map a database row to the API response shape. */
 export function toTransaction(row: TransactionRow): Transaction {
   return {
     id: row.id,
@@ -43,13 +43,13 @@ export function toTransaction(row: TransactionRow): Transaction {
           }
         })()
       : [],
-    entityId: row.entity_id,
-    entityName: row.entity_name,
+    entityId: row.entityId,
+    entityName: row.entityName,
     location: row.location,
     country: row.country,
-    relatedTransactionId: row.related_transaction_id,
+    relatedTransactionId: row.relatedTransactionId,
     notes: row.notes,
-    lastEditedTime: row.last_edited_time,
+    lastEditedTime: row.lastEditedTime,
   };
 }
 

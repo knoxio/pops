@@ -32,29 +32,6 @@ import type {
   SuggestedTag,
 } from "./types.js";
 
-/** Map a Drizzle camelCase row to the snake_case TransactionRow expected by consumers. */
-function toTransactionRow(row: typeof transactions.$inferSelect): TransactionRow {
-  return {
-    id: row.id,
-    notion_id: row.notionId,
-    description: row.description,
-    account: row.account,
-    amount: row.amount,
-    date: row.date,
-    type: row.type,
-    tags: row.tags,
-    entity_id: row.entityId,
-    entity_name: row.entityName,
-    location: row.location,
-    country: row.country,
-    related_transaction_id: row.relatedTransactionId,
-    notes: row.notes,
-    checksum: row.checksum,
-    raw_row: row.rawRow,
-    last_edited_time: row.lastEditedTime,
-  };
-}
-
 /** Parse a JSON-encoded tags string from the corrections table into a string array. */
 function parseCorrectionTags(raw: string): string[] {
   try {
@@ -260,7 +237,7 @@ function insertTransaction(input: {
     .get();
 
   if (!row) throw new Error(`Insert succeeded but row not found: ${id}`);
-  return toTransactionRow(row);
+  return row;
 }
 
 /**

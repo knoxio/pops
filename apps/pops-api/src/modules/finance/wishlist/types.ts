@@ -17,23 +17,23 @@ export interface WishListItem {
 }
 
 /**
- * Map a SQLite row to the API response shape.
+ * Map a database row to the API response shape.
  * Computes remainingAmount as targetAmount - saved, or null if either is null.
  */
 export function toWishListItem(row: WishListRow): WishListItem {
   const remainingAmount =
-    row.target_amount !== null && row.saved !== null ? row.target_amount - row.saved : null;
+    row.targetAmount !== null && row.saved !== null ? row.targetAmount - row.saved : null;
 
   return {
     id: row.id,
     item: row.item,
-    targetAmount: row.target_amount,
+    targetAmount: row.targetAmount,
     saved: row.saved,
     remainingAmount,
     priority: row.priority,
     url: row.url,
     notes: row.notes,
-    lastEditedTime: row.last_edited_time,
+    lastEditedTime: row.lastEditedTime,
   };
 }
 

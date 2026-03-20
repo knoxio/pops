@@ -18,7 +18,7 @@ export interface Entity {
   lastEditedTime: string;
 }
 
-/** Map a SQLite row to the API response shape. */
+/** Map a database row to the API response shape. */
 export function toEntity(row: EntityRow): Entity {
   return {
     id: row.id,
@@ -31,11 +31,11 @@ export function toEntity(row: EntityRow): Entity {
           .map((s) => s.trim())
           .filter(Boolean)
       : [],
-    defaultTransactionType: row.default_transaction_type,
-    defaultTags: row.default_tags
+    defaultTransactionType: row.defaultTransactionType,
+    defaultTags: row.defaultTags
       ? (() => {
           try {
-            const parsed = JSON.parse(row.default_tags) as unknown;
+            const parsed = JSON.parse(row.defaultTags) as unknown;
             if (Array.isArray(parsed)) {
               return parsed.filter((item): item is string => typeof item === "string");
             }
@@ -46,7 +46,7 @@ export function toEntity(row: EntityRow): Entity {
         })()
       : [],
     notes: row.notes,
-    lastEditedTime: row.last_edited_time,
+    lastEditedTime: row.lastEditedTime,
   };
 }
 

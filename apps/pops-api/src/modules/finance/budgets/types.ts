@@ -15,7 +15,7 @@ export interface Budget {
 }
 
 /**
- * Map a SQLite row to the API response shape.
+ * Map a database row to the API response shape.
  * Converts active from INTEGER (0/1) to boolean.
  */
 export function toBudget(row: BudgetRow): Budget {
@@ -26,7 +26,7 @@ export function toBudget(row: BudgetRow): Budget {
     amount: row.amount,
     active: row.active === 1,
     notes: row.notes,
-    lastEditedTime: row.last_edited_time,
+    lastEditedTime: row.lastEditedTime,
   };
 }
 

@@ -9,22 +9,6 @@ import { entities } from "../../../db/schema/entities.js";
 import { NotFoundError, ConflictError } from "../../../shared/errors.js";
 import type { EntityRow, CreateEntityInput, UpdateEntityInput } from "./types.js";
 
-/** Map a Drizzle result row to the snake_case EntityRow interface. */
-function toRow(row: typeof entities.$inferSelect): EntityRow {
-  return {
-    id: row.id,
-    notion_id: row.notionId,
-    name: row.name,
-    type: row.type,
-    abn: row.abn,
-    aliases: row.aliases,
-    default_transaction_type: row.defaultTransactionType,
-    default_tags: row.defaultTags,
-    notes: row.notes,
-    last_edited_time: row.lastEditedTime,
-  };
-}
-
 /** Count + rows for a paginated list. */
 export interface EntityListResult {
   rows: EntityRow[];
@@ -65,7 +49,7 @@ export function listEntities(
 
   const [countResult] = countQuery.all();
 
-  return { rows: rows.map(toRow), total: countResult.total };
+  return { rows, total: countResult.total };
 }
 
 /** Get a single entity by id. Throws NotFoundError if missing. */
@@ -74,7 +58,7 @@ export function getEntity(id: string): EntityRow {
   const [row] = db.select().from(entities).where(eq(entities.id, id)).all();
 
   if (!row) throw new NotFoundError("Entity", id);
-  return toRow(row);
+  return row;
 }
 
 /**
