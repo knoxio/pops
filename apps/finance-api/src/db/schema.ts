@@ -21,6 +21,7 @@ const INCLUDED_MIGRATIONS = [
   "009_environments.sql",
   "010_uuid_primary_keys.sql",
   "011_add_checksum_raw_row.sql",
+  "20260320120000_core_entity_types.sql",
 ];
 
 /**
@@ -65,7 +66,7 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
       notion_id TEXT UNIQUE,
       name TEXT NOT NULL,
-      type TEXT,
+      type TEXT NOT NULL DEFAULT 'company',
       abn TEXT,
       aliases TEXT,
       default_transaction_type TEXT,

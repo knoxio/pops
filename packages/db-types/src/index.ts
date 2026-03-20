@@ -3,7 +3,7 @@
  * Used by finance-api to ensure type consistency.
  */
 export { TransactionRowSchema, type TransactionRow } from "./transactions.js";
-export { EntityRowSchema, type EntityRow } from "./entities.js";
+export { EntityRowSchema, ENTITY_TYPES, type EntityRow, type EntityType } from "./entities.js";
 export { BudgetRowSchema, type BudgetRow } from "./budgets.js";
 export { InventoryRowSchema, type InventoryRow } from "./inventory.js";
 export {

@@ -4,11 +4,22 @@
  */
 import { z } from "zod/v4";
 
+/** Supported entity types — extensible via new values, not schema changes. */
+export const ENTITY_TYPES = [
+  "company",
+  "person",
+  "place",
+  "brand",
+  "organisation",
+] as const;
+
+export type EntityType = (typeof ENTITY_TYPES)[number];
+
 export const EntityRowSchema = z.object({
   id: z.string(),
   notion_id: z.string().nullable(),
   name: z.string(),
-  type: z.string().nullable(),
+  type: z.string(),
   abn: z.string().nullable(),
   aliases: z.string().nullable(),
   default_transaction_type: z.string().nullable(),

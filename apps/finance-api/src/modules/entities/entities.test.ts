@@ -24,8 +24,8 @@ describe("entities.list", () => {
   });
 
   it("returns all entities with correct shape", async () => {
-    seedEntity(db, { name: "Woolworths", type: "Retailer" });
-    seedEntity(db, { name: "Coles", type: "Retailer" });
+    seedEntity(db, { name: "Woolworths", type: "company" });
+    seedEntity(db, { name: "Coles", type: "company" });
 
     const result = await caller.entities.list({});
     expect(result.data).toHaveLength(2);
@@ -39,7 +39,7 @@ describe("entities.list", () => {
   it("returns camelCase fields", async () => {
     seedEntity(db, {
       name: "Woolworths",
-      type: "Retailer",
+      type: "company",
       default_transaction_type: "Purchase",
       default_tags: '["Groceries"]',
       last_edited_time: "2025-06-15T10:00:00.000Z",
@@ -82,10 +82,10 @@ describe("entities.list", () => {
   });
 
   it("filters by type", async () => {
-    seedEntity(db, { name: "Woolworths", type: "Retailer" });
-    seedEntity(db, { name: "ATO", type: "Government" });
+    seedEntity(db, { name: "Woolworths", type: "company" });
+    seedEntity(db, { name: "ATO", type: "organisation" });
 
-    const result = await caller.entities.list({ type: "Government" });
+    const result = await caller.entities.list({ type: "organisation" });
     expect(result.data).toHaveLength(1);
     expect(result.data[0].name).toBe("ATO");
   });
@@ -154,13 +154,13 @@ describe("entities.create", () => {
     expect(result.data.name).toBe("Woolworths");
     expect(result.data.id).toBeDefined();
     expect(result.data.aliases).toEqual([]);
-    expect(result.data.type).toBeNull();
+    expect(result.data.type).toBe("company");
   });
 
   it("creates an entity with all fields", async () => {
     const result = await caller.entities.create({
       name: "Woolworths",
-      type: "Retailer",
+      type: "company",
       abn: "88000014675",
       aliases: ["Woolies", "WW"],
       defaultTransactionType: "Purchase",
@@ -169,7 +169,7 @@ describe("entities.create", () => {
     });
 
     expect(result.data.name).toBe("Woolworths");
-    expect(result.data.type).toBe("Retailer");
+    expect(result.data.type).toBe("company");
     expect(result.data.abn).toBe("88000014675");
     expect(result.data.aliases).toEqual(["Woolies", "WW"]);
     expect(result.data.defaultTransactionType).toBe("Purchase");
@@ -210,11 +210,11 @@ describe("entities.update", () => {
   it("updates a single field", async () => {
     const id = seedEntity(db, { name: "Woolworths" });
 
-    const result = await caller.entities.update({ id, data: { type: "Retailer" } });
+    const result = await caller.entities.update({ id, data: { type: "brand" } });
 
     expect(result.message).toBe("Entity updated");
     expect(result.data.name).toBe("Woolworths");
-    expect(result.data.type).toBe("Retailer");
+    expect(result.data.type).toBe("brand");
   });
 
   it("updates multiple fields at once", async () => {
@@ -224,22 +224,22 @@ describe("entities.update", () => {
       id,
       data: {
         name: "Woolworths Group",
-        type: "Retailer",
+        type: "company",
         aliases: ["Woolies", "WW"],
       },
     });
 
     expect(result.data.name).toBe("Woolworths Group");
-    expect(result.data.type).toBe("Retailer");
+    expect(result.data.type).toBe("company");
     expect(result.data.aliases).toEqual(["Woolies", "WW"]);
   });
 
-  it("clears a field by setting to null", async () => {
-    const id = seedEntity(db, { name: "Woolworths", type: "Retailer" });
+  it("clears a nullable field by setting to null", async () => {
+    const id = seedEntity(db, { name: "Woolworths", abn: "88000014675" });
 
-    const result = await caller.entities.update({ id, data: { type: null } });
+    const result = await caller.entities.update({ id, data: { abn: null } });
 
-    expect(result.data.type).toBeNull();
+    expect(result.data.abn).toBeNull();
   });
 
   it("updates last_edited_time", async () => {
@@ -248,7 +248,7 @@ describe("entities.update", () => {
       last_edited_time: "2020-01-01T00:00:00.000Z",
     });
 
-    await caller.entities.update({ id, data: { type: "Retailer" } });
+    await caller.entities.update({ id, data: { type: "brand" } });
 
     const row = db.prepare("SELECT last_edited_time FROM entities WHERE id = ?").get(id) as {
       last_edited_time: string;

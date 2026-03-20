@@ -33,7 +33,7 @@ export function createTestDb(): Database {
       id                       TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
       notion_id                TEXT UNIQUE,
       name                     TEXT NOT NULL,
-      type                     TEXT,
+      type                     TEXT NOT NULL DEFAULT 'company',
       abn                      TEXT,
       aliases                  TEXT,
       default_transaction_type TEXT,
@@ -165,7 +165,7 @@ export function seedEntity(
   ).run({
     id,
     name: overrides.name ?? "Test Entity",
-    type: overrides.type ?? null,
+    type: overrides.type ?? "company",
     abn: overrides.abn ?? null,
     aliases: overrides.aliases ?? null,
     default_transaction_type: overrides.default_transaction_type ?? null,

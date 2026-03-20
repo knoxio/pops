@@ -1,13 +1,15 @@
 import { z } from "zod";
 import type { EntityRow } from "@pops/db-types";
+import { ENTITY_TYPES } from "@pops/db-types";
 
 export type { EntityRow };
+export { ENTITY_TYPES };
 
 /** API response shape (camelCase). */
 export interface Entity {
   id: string;
   name: string;
-  type: string | null;
+  type: string;
   abn: string | null;
   aliases: string[];
   defaultTransactionType: string | null;
@@ -51,7 +53,7 @@ export function toEntity(row: EntityRow): Entity {
 /** Zod schema for creating an entity. */
 export const CreateEntitySchema = z.object({
   name: z.string().min(1, "Name is required"),
-  type: z.string().nullable().optional(),
+  type: z.enum(ENTITY_TYPES).optional().default("company"),
   abn: z.string().nullable().optional(),
   aliases: z.array(z.string()).optional().default([]),
   defaultTransactionType: z.string().nullable().optional(),
@@ -63,7 +65,7 @@ export type CreateEntityInput = z.infer<typeof CreateEntitySchema>;
 /** Zod schema for updating an entity (all fields optional). */
 export const UpdateEntitySchema = z.object({
   name: z.string().min(1, "Name cannot be empty").optional(),
-  type: z.string().nullable().optional(),
+  type: z.enum(ENTITY_TYPES).optional(),
   abn: z.string().nullable().optional(),
   aliases: z.array(z.string()).optional(),
   defaultTransactionType: z.string().nullable().optional(),
@@ -75,7 +77,7 @@ export type UpdateEntityInput = z.infer<typeof UpdateEntitySchema>;
 /** Zod schema for entity list query params. */
 export const EntityQuerySchema = z.object({
   search: z.string().optional(),
-  type: z.string().optional(),
+  type: z.enum(ENTITY_TYPES).optional(),
   limit: z.coerce.number().positive().optional(),
   offset: z.coerce.number().nonnegative().optional(),
 });

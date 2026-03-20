@@ -31,7 +31,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         id: "10000000-0000-4000-8000-000000000001",
         name: "Woolworths",
-        type: "Supermarket",
+        type: "company",
         abn: "88000014675",
         aliases: "Woolies, WOW, Woolworths Metro",
         default_transaction_type: "Expense",
@@ -41,7 +41,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         id: "10000000-0000-4000-8000-000000000002",
         name: "Coles",
-        type: "Supermarket",
+        type: "company",
         abn: "45004189708",
         aliases: "Coles Express, Coles Local",
         default_transaction_type: "Expense",
@@ -51,7 +51,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         id: "10000000-0000-4000-8000-000000000003",
         name: "Netflix",
-        type: "Subscription",
+        type: "company",
         abn: null,
         aliases: "Netflix.com",
         default_transaction_type: "Expense",
@@ -61,7 +61,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         id: "10000000-0000-4000-8000-000000000004",
         name: "Spotify",
-        type: "Subscription",
+        type: "company",
         abn: null,
         aliases: "Spotify Premium",
         default_transaction_type: "Expense",
@@ -71,7 +71,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         id: "10000000-0000-4000-8000-000000000005",
         name: "Shell",
-        type: "Fuel Station",
+        type: "company",
         abn: "46004610459",
         aliases: "Shell Coles Express, Shell Service Station",
         default_transaction_type: "Expense",
@@ -81,7 +81,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         id: "10000000-0000-4000-8000-000000000006",
         name: "Amazon AU",
-        type: "Retailer",
+        type: "company",
         abn: "72054094117",
         aliases: "Amazon.com.au, Amazon Australia",
         default_transaction_type: "Expense",
@@ -91,7 +91,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         id: "10000000-0000-4000-8000-000000000007",
         name: "Employer",
-        type: "Employer",
+        type: "person",
         abn: null,
         aliases: "Salary, Payroll",
         default_transaction_type: "Income",
@@ -101,7 +101,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         id: "10000000-0000-4000-8000-000000000008",
         name: "Apple",
-        type: "Technology",
+        type: "brand",
         abn: null,
         aliases: "Apple Inc, Apple Store, iTunes",
         default_transaction_type: "Expense",
@@ -111,7 +111,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         id: "10000000-0000-4000-8000-000000000009",
         name: "Bunnings",
-        type: "Hardware",
+        type: "company",
         abn: "63008672179",
         aliases: "Bunnings Warehouse",
         default_transaction_type: "Expense",
@@ -121,7 +121,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       {
         id: "10000000-0000-4000-8000-000000000010",
         name: "JB Hi-Fi",
-        type: "Retailer",
+        type: "company",
         abn: "98093220136",
         aliases: "JB HiFi, JB",
         default_transaction_type: "Expense",

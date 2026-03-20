@@ -83,7 +83,7 @@ export function createEntity(input: CreateEntityInput): EntityRow {
   ).run({
     id,
     name: input.name,
-    type: input.type ?? null,
+    type: input.type ?? "company",
     abn: input.abn ?? null,
     aliases: input.aliases?.length ? input.aliases.join(", ") : null,
     defaultTransactionType: input.defaultTransactionType ?? null,
@@ -114,7 +114,7 @@ export function updateEntity(id: string, input: UpdateEntityInput): EntityRow {
   }
   if (input.type !== undefined) {
     fields.push("type = @type");
-    params["type"] = input.type ?? null;
+    params["type"] = input.type;
   }
   if (input.abn !== undefined) {
     fields.push("abn = @abn");
