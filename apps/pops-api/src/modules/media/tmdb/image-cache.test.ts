@@ -193,3 +193,103 @@ describe("deleteMovieImages", () => {
     );
   });
 });
+
+describe("downloadTvShowImages", () => {
+  it("creates directory and downloads poster and backdrop", async () => {
+    fetchMock.mockResolvedValue(mockImageResponse());
+
+    await service.downloadTvShowImages(
+      81189,
+      "https://artworks.thetvdb.com/banners/posters/81189.jpg",
+      "https://artworks.thetvdb.com/banners/backgrounds/81189.jpg",
+    );
+
+    const tvDir = path.join(IMAGES_DIR, "tv", "81189");
+    expect(fs.mkdir).toHaveBeenCalledWith(tvDir, { recursive: true });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fs.writeFile).toHaveBeenCalledTimes(2);
+
+    // TheTVDB uses full URLs (no size prefix)
+    const urls = fetchMock.mock.calls.map((c: unknown[]) => c[0] as string);
+    expect(urls).toContainEqual(
+      "https://artworks.thetvdb.com/banners/posters/81189.jpg",
+    );
+    expect(urls).toContainEqual(
+      "https://artworks.thetvdb.com/banners/backgrounds/81189.jpg",
+    );
+
+    const paths = vi.mocked(fs.writeFile).mock.calls.map((c) => c[0]);
+    expect(paths).toContainEqual(path.join(tvDir, "poster.jpg"));
+    expect(paths).toContainEqual(path.join(tvDir, "backdrop.jpg"));
+  });
+
+  it("skips null URLs", async () => {
+    fetchMock.mockResolvedValue(mockImageResponse());
+
+    await service.downloadTvShowImages(81189, "https://example.com/p.jpg", null);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fs.writeFile).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips all downloads when both URLs are null", async () => {
+    await service.downloadTvShowImages(81189, null, null);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fs.writeFile).not.toHaveBeenCalled();
+    expect(fs.mkdir).toHaveBeenCalled();
+  });
+
+  it("skips download if file already exists", async () => {
+    vi.mocked(fs.stat).mockResolvedValueOnce(
+      {} as Awaited<ReturnType<typeof fs.stat>>,
+    );
+
+    await service.downloadTvShowImages(
+      81189,
+      "https://example.com/poster.jpg",
+      null,
+    );
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fs.writeFile).not.toHaveBeenCalled();
+  });
+
+  it("handles download failures gracefully", async () => {
+    fetchMock.mockRejectedValueOnce(new Error("Network error"));
+    const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await expect(
+      service.downloadTvShowImages(81189, "https://example.com/p.jpg", null),
+    ).resolves.toBeUndefined();
+
+    expect(fs.writeFile).not.toHaveBeenCalled();
+    expect(consoleSpy).toHaveBeenCalledOnce();
+    consoleSpy.mockRestore();
+  });
+});
+
+describe("getImagePath — tv", () => {
+  it("resolves tv path under tv/ directory (not tvs/)", async () => {
+    vi.mocked(fs.stat).mockResolvedValueOnce(
+      {} as Awaited<ReturnType<typeof fs.stat>>,
+    );
+
+    const result = await service.getImagePath("tv", 81189, "poster");
+
+    expect(result).toBe(path.join(IMAGES_DIR, "tv", "81189", "poster.jpg"));
+  });
+});
+
+describe("deleteTvShowImages", () => {
+  it("removes the tv show image directory", async () => {
+    vi.mocked(fs.rm).mockResolvedValueOnce(undefined);
+
+    await service.deleteTvShowImages(81189);
+
+    expect(fs.rm).toHaveBeenCalledWith(
+      path.join(IMAGES_DIR, "tv", "81189"),
+      { recursive: true, force: true },
+    );
+  });
+});

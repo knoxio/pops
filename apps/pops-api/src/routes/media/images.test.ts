@@ -138,4 +138,47 @@ describe("GET /media/images/:mediaType/:id/:filename", () => {
       expect(statCalls).not.toContain(overridePath);
     });
   });
+
+  describe("tv media type", () => {
+    it("accepts tv as a valid media type", async () => {
+      const app = createTestApp();
+
+      const res = await request(app).get("/media/images/tv/81189/poster.jpg");
+
+      // Should be 404 (file not found), not 400 (validation error)
+      expect(res.status).toBe(404);
+    });
+
+    it("resolves tv images under tv/ directory (not tvs/)", async () => {
+      const app = createTestApp();
+      const expectedPath = join(TEST_IMAGES_DIR, "tv", "81189", "poster.jpg");
+
+      const statCalls: string[] = [];
+      vi.mocked(fs.stat).mockImplementation(async (path) => {
+        statCalls.push(path as string);
+        throw new Error("ENOENT");
+      });
+
+      await request(app).get("/media/images/tv/81189/poster.jpg");
+
+      // Should look in tv/ not tvs/
+      expect(statCalls.some((p) => p.includes("/tv/81189/"))).toBe(true);
+      expect(statCalls.some((p) => p.includes("/tvs/"))).toBe(false);
+    });
+
+    it("checks override for tv poster requests", async () => {
+      const app = createTestApp();
+      const overridePath = join(TEST_IMAGES_DIR, "tv", "81189", "override.jpg");
+
+      const statCalls: string[] = [];
+      vi.mocked(fs.stat).mockImplementation(async (path) => {
+        statCalls.push(path as string);
+        throw new Error("ENOENT");
+      });
+
+      await request(app).get("/media/images/tv/81189/poster.jpg");
+
+      expect(statCalls[0]).toBe(overridePath);
+    });
+  });
 });

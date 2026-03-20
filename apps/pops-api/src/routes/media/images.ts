@@ -12,7 +12,7 @@ import { stat } from "node:fs/promises";
 import { join, extname } from "node:path";
 import { createHash } from "node:crypto";
 
-const VALID_MEDIA_TYPES = ["movie"] as const;
+const VALID_MEDIA_TYPES = ["movie", "tv"] as const;
 const VALID_FILENAMES = ["poster.jpg", "backdrop.jpg", "logo.png", "override.jpg"] as const;
 type ValidFilename = (typeof VALID_FILENAMES)[number];
 
@@ -53,7 +53,9 @@ router.get(
     }
 
     const imagesDir = getImagesDir();
-    const mediaDir = join(imagesDir, `${mediaType}s`, id);
+    // movie → movies/, tv → tv/ (no pluralisation for TV)
+    const mediaDirName = mediaType === "tv" ? "tv" : `${mediaType}s`;
+    const mediaDir = join(imagesDir, mediaDirName, id);
 
     // Override resolution: if requesting poster.jpg, check for override.jpg first
     if (filename === "poster.jpg") {

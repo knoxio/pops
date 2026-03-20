@@ -1,9 +1,11 @@
 /**
- * TMDB image cache service — downloads and serves movie images locally.
+ * Media image cache service — downloads and caches images locally.
  *
- * Images are stored at {MEDIA_IMAGES_DIR}/movies/{tmdb_id}/.
- * Downloads poster (w780), backdrop (w1280), and logo (w500) concurrently.
- * Skips null paths and existing files. Failures are logged, not thrown.
+ * Movie images: {MEDIA_IMAGES_DIR}/movies/{tmdb_id}/ (via TMDB with size prefixes)
+ * TV images:    {MEDIA_IMAGES_DIR}/tv/{tvdb_id}/     (via TheTVDB full URLs)
+ *
+ * Downloads concurrently. Skips null paths and existing files.
+ * Failures are logged, not thrown.
  */
 import { mkdir, rm, stat, writeFile } from "node:fs/promises";
 import { join } from "node:path";
@@ -77,17 +79,50 @@ export class ImageCacheService {
   }
 
   /**
+   * Download TV show images from TheTVDB to local cache.
+   * TheTVDB provides full URLs (no size prefix needed).
+   * Skips null URLs and files that already exist.
+   */
+  async downloadTvShowImages(
+    tvdbId: number,
+    posterUrl: string | null,
+    backdropUrl: string | null,
+  ): Promise<void> {
+    const tvDir = this.tvShowDir(tvdbId);
+    await mkdir(tvDir, { recursive: true });
+
+    const downloads: Promise<void>[] = [];
+
+    if (posterUrl) {
+      downloads.push(
+        this.downloadImage(posterUrl, join(tvDir, IMAGE_FILENAMES.poster)),
+      );
+    }
+
+    if (backdropUrl) {
+      downloads.push(
+        this.downloadImage(backdropUrl, join(tvDir, IMAGE_FILENAMES.backdrop)),
+      );
+    }
+
+    if (downloads.length > 0) {
+      await Promise.allSettled(downloads);
+    }
+  }
+
+  /**
    * Get the absolute path to a cached image file.
    * Returns null if the file doesn't exist.
    */
   async getImagePath(
-    mediaType: "movie",
+    mediaType: "movie" | "tv",
     id: number,
     imageType: ImageType,
   ): Promise<string | null> {
+    const dirName = mediaType === "tv" ? "tv" : "movies";
     const filePath = join(
       this.imagesDir,
-      `${mediaType}s`,
+      dirName,
       String(id),
       IMAGE_FILENAMES[imageType],
     );
@@ -106,8 +141,18 @@ export class ImageCacheService {
     await rm(movieDir, { recursive: true, force: true });
   }
 
+  /** Delete all cached images for a TV show. */
+  async deleteTvShowImages(tvdbId: number): Promise<void> {
+    const tvDir = this.tvShowDir(tvdbId);
+    await rm(tvDir, { recursive: true, force: true });
+  }
+
   private movieDir(tmdbId: number): string {
     return join(this.imagesDir, "movies", String(tmdbId));
+  }
+
+  private tvShowDir(tvdbId: number): string {
+    return join(this.imagesDir, "tv", String(tvdbId));
   }
 
   private async downloadImage(url: string, destPath: string): Promise<void> {
