@@ -1,24 +1,20 @@
 /**
  * TMDB genre mapping cache.
  *
- * Lazily fetches the TMDB genre list and caches it in memory.
+ * Composes with TmdbClient to lazily fetch and cache the genre list.
  * Maps genre IDs (integers) to human-readable names for search results.
  * Refreshes automatically after 24 hours.
  */
-import type { TmdbGenreListResponse } from "./types.js";
+import type { TmdbClient } from "./client.js";
 
-const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-const TMDB_BASE_URL = "https://api.themoviedb.org/3";
+export const CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 export class GenreCache {
   private cache: Map<number, string> = new Map();
   private lastFetchedAt = 0;
   private inflightRequest: Promise<void> | null = null;
-  private apiKey: string;
 
-  constructor(apiKey: string) {
-    this.apiKey = apiKey;
-  }
+  constructor(private readonly client: TmdbClient) {}
 
   /** Ensure the cache is populated. Lazy — fetches on first call. */
   async ensureLoaded(): Promise<void> {
@@ -61,19 +57,7 @@ export class GenreCache {
   }
 
   private async fetchGenres(): Promise<void> {
-    const url = `${TMDB_BASE_URL}/genre/movie/list`;
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${this.apiKey}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error(`TMDB genre fetch failed: ${response.status} ${response.statusText}`);
-    }
-
-    const data = (await response.json()) as TmdbGenreListResponse;
+    const data = await this.client.getGenreList();
 
     this.cache.clear();
     for (const genre of data.genres) {
@@ -86,14 +70,10 @@ export class GenreCache {
 /** Singleton genre cache instance. */
 let instance: GenreCache | null = null;
 
-/** Get or create the singleton GenreCache. Uses TMDB_API_KEY from environment. */
-export function getGenreCache(): GenreCache {
+/** Get or create the singleton GenreCache. Requires a TmdbClient. */
+export function getGenreCache(client: TmdbClient): GenreCache {
   if (!instance) {
-    const apiKey = process.env["TMDB_API_KEY"];
-    if (!apiKey) {
-      throw new Error("TMDB_API_KEY environment variable is not set");
-    }
-    instance = new GenreCache(apiKey);
+    instance = new GenreCache(client);
   }
   return instance;
 }

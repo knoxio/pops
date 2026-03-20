@@ -1,16 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { GenreCache, getGenreCache, setGenreCache } from "./genre-cache.js";
-
-// Mock global fetch
-const mockFetch = vi.fn();
-vi.stubGlobal("fetch", mockFetch);
-
-function makeGenreResponse(genres: { id: number; name: string }[]) {
-  return {
-    ok: true,
-    json: () => Promise.resolve({ genres }),
-  };
-}
+import { GenreCache, CACHE_TTL_MS, getGenreCache, setGenreCache } from "./genre-cache.js";
+import type { TmdbClient } from "./client.js";
+import type { TmdbGenreListResponse } from "./types.js";
 
 const TEST_GENRES = [
   { id: 28, name: "Action" },
@@ -18,87 +9,85 @@ const TEST_GENRES = [
   { id: 18, name: "Drama" },
 ];
 
+function makeMockClient(genres = TEST_GENRES): TmdbClient {
+  return {
+    getGenreList: vi.fn().mockResolvedValue({ genres } as TmdbGenreListResponse),
+  } as unknown as TmdbClient;
+}
+
 describe("GenreCache", () => {
   let cache: GenreCache;
+  let client: TmdbClient;
 
   beforeEach(() => {
-    cache = new GenreCache("test-api-key");
-    mockFetch.mockReset();
+    client = makeMockClient();
+    cache = new GenreCache(client);
   });
 
   describe("ensureLoaded", () => {
     it("fetches genres lazily on first call", async () => {
-      mockFetch.mockResolvedValueOnce(makeGenreResponse(TEST_GENRES));
-
       expect(cache.size).toBe(0);
       await cache.ensureLoaded();
       expect(cache.size).toBe(3);
-      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(client.getGenreList).toHaveBeenCalledTimes(1);
     });
 
     it("does not re-fetch within TTL", async () => {
-      mockFetch.mockResolvedValueOnce(makeGenreResponse(TEST_GENRES));
-
       await cache.ensureLoaded();
       await cache.ensureLoaded();
-      expect(mockFetch).toHaveBeenCalledTimes(1);
+      expect(client.getGenreList).toHaveBeenCalledTimes(1);
     });
 
     it("re-fetches after TTL expires", async () => {
-      mockFetch.mockResolvedValue(makeGenreResponse(TEST_GENRES));
-
-      await cache.ensureLoaded();
-      expect(mockFetch).toHaveBeenCalledTimes(1);
-
-      // Simulate TTL expiry by manipulating lastFetchedAt via clear + time
       vi.useFakeTimers();
-      cache.clear();
-      await cache.ensureLoaded();
-      expect(mockFetch).toHaveBeenCalledTimes(2);
-      vi.useRealTimers();
+      try {
+        await cache.ensureLoaded();
+        expect(client.getGenreList).toHaveBeenCalledTimes(1);
+
+        // Advance past TTL
+        vi.advanceTimersByTime(CACHE_TTL_MS + 1);
+
+        await cache.ensureLoaded();
+        expect(client.getGenreList).toHaveBeenCalledTimes(2);
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
-    it("throws on failed fetch", async () => {
-      mockFetch.mockResolvedValueOnce({
-        ok: false,
-        status: 401,
-        statusText: "Unauthorized",
-      });
+    it("propagates client errors", async () => {
+      const failClient = {
+        getGenreList: vi.fn().mockRejectedValue(new Error("TMDB API error: 401 Unauthorized")),
+      } as unknown as TmdbClient;
+      const failCache = new GenreCache(failClient);
 
-      await expect(cache.ensureLoaded()).rejects.toThrow(
-        "TMDB genre fetch failed: 401 Unauthorized",
+      await expect(failCache.ensureLoaded()).rejects.toThrow(
+        "TMDB API error: 401 Unauthorized",
       );
     });
 
     it("deduplicates concurrent requests", async () => {
-      let resolvePromise: () => void;
-      const delayed = new Promise<void>((resolve) => {
+      let resolvePromise: (value: TmdbGenreListResponse) => void;
+      const delayed = new Promise<TmdbGenreListResponse>((resolve) => {
         resolvePromise = resolve;
       });
 
-      mockFetch.mockImplementationOnce(async () => {
-        await delayed;
-        return makeGenreResponse(TEST_GENRES);
-      });
+      const slowClient = {
+        getGenreList: vi.fn().mockReturnValue(delayed),
+      } as unknown as TmdbClient;
+      const slowCache = new GenreCache(slowClient);
 
-      // Fire two concurrent ensureLoaded calls
-      const p1 = cache.ensureLoaded();
-      const p2 = cache.ensureLoaded();
+      const p1 = slowCache.ensureLoaded();
+      const p2 = slowCache.ensureLoaded();
 
-      resolvePromise!();
+      resolvePromise!({ genres: TEST_GENRES });
       await Promise.all([p1, p2]);
 
-      // Should only have fetched once
-      expect(mockFetch).toHaveBeenCalledTimes(1);
-      expect(cache.size).toBe(3);
+      expect(slowClient.getGenreList).toHaveBeenCalledTimes(1);
+      expect(slowCache.size).toBe(3);
     });
   });
 
   describe("mapGenreIds", () => {
-    beforeEach(async () => {
-      mockFetch.mockResolvedValueOnce(makeGenreResponse(TEST_GENRES));
-    });
-
     it("maps known genre IDs to names", async () => {
       const names = await cache.mapGenreIds([28, 18]);
       expect(names).toEqual(["Action", "Drama"]);
@@ -121,36 +110,15 @@ describe("GenreCache", () => {
   });
 
   describe("clear", () => {
-    it("resets cache state", async () => {
-      mockFetch.mockResolvedValue(makeGenreResponse(TEST_GENRES));
-
+    it("resets cache state and triggers re-fetch", async () => {
       await cache.ensureLoaded();
       expect(cache.size).toBe(3);
 
       cache.clear();
       expect(cache.size).toBe(0);
 
-      // Should re-fetch after clear
       await cache.ensureLoaded();
-      expect(mockFetch).toHaveBeenCalledTimes(2);
-    });
-  });
-
-  describe("fetch request format", () => {
-    it("sends correct Authorization header", async () => {
-      mockFetch.mockResolvedValueOnce(makeGenreResponse(TEST_GENRES));
-
-      await cache.ensureLoaded();
-
-      expect(mockFetch).toHaveBeenCalledWith(
-        "https://api.themoviedb.org/3/genre/movie/list",
-        {
-          headers: {
-            Authorization: "Bearer test-api-key",
-            "Content-Type": "application/json",
-          },
-        },
-      );
+      expect(client.getGenreList).toHaveBeenCalledTimes(2);
     });
   });
 });
@@ -158,32 +126,23 @@ describe("GenreCache", () => {
 describe("singleton helpers", () => {
   afterEach(() => {
     setGenreCache(null);
-    delete process.env["TMDB_API_KEY"];
   });
 
-  it("getGenreCache creates singleton from env var", () => {
-    process.env["TMDB_API_KEY"] = "env-test-key";
-    const cache = getGenreCache();
+  it("getGenreCache creates singleton from client", () => {
+    const client = makeMockClient();
+    const cache = getGenreCache(client);
     expect(cache).toBeInstanceOf(GenreCache);
-
-    // Returns same instance
-    expect(getGenreCache()).toBe(cache);
-  });
-
-  it("getGenreCache throws when TMDB_API_KEY is not set", () => {
-    expect(() => getGenreCache()).toThrow(
-      "TMDB_API_KEY environment variable is not set",
-    );
+    expect(getGenreCache(client)).toBe(cache);
   });
 
   it("setGenreCache replaces the singleton", () => {
-    process.env["TMDB_API_KEY"] = "env-test-key";
-    const original = getGenreCache();
+    const client = makeMockClient();
+    const original = getGenreCache(client);
 
-    const custom = new GenreCache("custom-key");
+    const custom = new GenreCache(client);
     setGenreCache(custom);
 
-    expect(getGenreCache()).toBe(custom);
-    expect(getGenreCache()).not.toBe(original);
+    expect(getGenreCache(client)).toBe(custom);
+    expect(getGenreCache(client)).not.toBe(original);
   });
 });
