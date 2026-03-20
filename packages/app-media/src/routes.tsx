@@ -28,6 +28,11 @@ const SeasonDetailPage = lazy(() =>
 const SearchPage = lazy(() =>
   import("./pages/SearchPage").then((m) => ({ default: m.SearchPage }))
 );
+const WatchlistPage = lazy(() =>
+  import("./pages/WatchlistPage").then((m) => ({
+    default: m.WatchlistPage,
+  }))
+);
 
 /** Local type mirror for compile-time safety (shell owns the canonical types). */
 interface AppNavConfigShape {
@@ -45,6 +50,7 @@ export const navConfig = {
   basePath: "/media",
   items: [
     { path: "", label: "Library", icon: "Library" },
+    { path: "/watchlist", label: "Watchlist", icon: "Bookmark" },
     { path: "/search", label: "Search", icon: "Search" },
   ],
 } satisfies AppNavConfigShape;
@@ -54,5 +60,6 @@ export const routes: RouteObject[] = [
   { path: "movies/:id", element: <MovieDetailPage /> },
   { path: "tv/:id", element: <TvShowDetailPage /> },
   { path: "tv/:id/season/:num", element: <SeasonDetailPage /> },
+  { path: "watchlist", element: <WatchlistPage /> },
   { path: "search", element: <SearchPage /> },
 ];
