@@ -26,6 +26,7 @@ export function createCaller(authenticated = true): ReturnType<typeof appRouter.
 export function createTestDb(): Database {
   const db = new BetterSqlite3(":memory:");
   db.pragma("journal_mode = WAL");
+  db.pragma("foreign_keys = ON");
 
   // Create all tables that finance-api might query
   db.exec(`
@@ -87,7 +88,9 @@ export function createTestDb(): Database {
       purchase_transaction_id TEXT,
       purchased_from_id      TEXT,
       purchased_from_name    TEXT,
-      last_edited_time       TEXT NOT NULL
+      last_edited_time       TEXT NOT NULL,
+      FOREIGN KEY (purchase_transaction_id) REFERENCES transactions(id) ON DELETE SET NULL,
+      FOREIGN KEY (purchased_from_id) REFERENCES entities(id) ON DELETE SET NULL
     );
 
     CREATE TABLE IF NOT EXISTS budgets (

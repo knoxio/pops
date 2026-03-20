@@ -22,6 +22,7 @@ const INCLUDED_MIGRATIONS = [
   "010_uuid_primary_keys.sql",
   "011_add_checksum_raw_row.sql",
   "20260320120000_core_entity_types.sql",
+  "20260320130000_core_inventory_fks.sql",
 ];
 
 /**
@@ -106,7 +107,9 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       purchase_transaction_id TEXT,
       purchased_from_id TEXT,
       purchased_from_name TEXT,
-      last_edited_time TEXT NOT NULL
+      last_edited_time TEXT NOT NULL,
+      FOREIGN KEY (purchase_transaction_id) REFERENCES transactions(id) ON DELETE SET NULL,
+      FOREIGN KEY (purchased_from_id) REFERENCES entities(id) ON DELETE SET NULL
     );
 
     CREATE TABLE IF NOT EXISTS wish_list (

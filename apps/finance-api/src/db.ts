@@ -68,6 +68,7 @@ function openDatabase(path: string): BetterSqlite3.Database {
   const db = new BetterSqlite3(path);
   db.pragma("journal_mode = WAL");
   db.pragma("busy_timeout = 5000");
+  db.pragma("foreign_keys = ON");
   runMigrations(db);
   return db;
 }
@@ -126,6 +127,7 @@ export function openEnvDatabase(path: string): BetterSqlite3.Database {
   const db = new BetterSqlite3(path);
   db.pragma("journal_mode = WAL");
   db.pragma("busy_timeout = 5000");
+  db.pragma("foreign_keys = ON");
   initializeSchema(db);
   return db;
 }

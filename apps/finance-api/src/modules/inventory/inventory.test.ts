@@ -254,8 +254,8 @@ describe("inventory.create", () => {
       warrantyExpires: "2027-01-15",
       replacementValue: 2500.0,
       resaleValue: 1800.0,
-      purchaseTransactionId: "txn-123",
-      purchasedFromId: "entity-456",
+      purchaseTransactionId: null,
+      purchasedFromId: null,
       purchasedFromName: "Apple Store",
     });
 
@@ -273,8 +273,8 @@ describe("inventory.create", () => {
     expect(result.data.warrantyExpires).toBe("2027-01-15");
     expect(result.data.replacementValue).toBe(2500.0);
     expect(result.data.resaleValue).toBe(1800.0);
-    expect(result.data.purchaseTransactionId).toBe("txn-123");
-    expect(result.data.purchasedFromId).toBe("entity-456");
+    expect(result.data.purchaseTransactionId).toBeNull();
+    expect(result.data.purchasedFromId).toBeNull();
     expect(result.data.purchasedFromName).toBe("Apple Store");
   });
 
