@@ -6,6 +6,7 @@ import { envContextMiddleware } from "./middleware/env-context.js";
 import healthRouter from "./routes/health.js";
 import upBankRouter from "./routes/webhooks/up-bank.js";
 import { envRouter } from "./modules/core/envs/router.js";
+import mediaImagesRouter from "./routes/media/images.js";
 import { appRouter } from "./router.js";
 import { createContext } from "./trpc.js";
 
@@ -36,6 +37,9 @@ export function createApp(): express.Express {
 
   // Up Bank webhook handler (processes its own raw body + signature verification)
   app.use(upBankRouter);
+
+  // Media image serving — static file serving, no DB needed
+  app.use(mediaImagesRouter);
 
   // Env CRUD routes — mounted before env context middleware so these always
   // use the prod DB regardless of any ?env= query param on the request.
