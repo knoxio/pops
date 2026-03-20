@@ -159,7 +159,7 @@ This migration is Drizzle-generated for the structural changes, with a custom da
 
 ### R6: tRPC Router — Locations
 
-**media.locations** (or `inventory.locations` depending on module naming):
+**inventory.locations:**
 
 | Procedure | Type | Input | Output | Description |
 |-----------|------|-------|--------|-------------|
@@ -325,6 +325,9 @@ A: No. `asset_id` has a UNIQUE constraint. If you have two identical HDMI cables
 
 **Q: What about the connection dedup (A < B)?**
 A: The service layer normalises before insert: `const [a, b] = itemAId < itemBId ? [itemAId, itemBId] : [itemBId, itemAId]`. The unique constraint on `(item_a_id, item_b_id)` is the safety net. When querying connections for an item, check both columns: `WHERE item_a_id = ? OR item_b_id = ?`.
+
+**Q: Why does inventory use integer PKs while finance uses UUID text PKs?**
+A: The existing finance tables use UUID text IDs (legacy from Notion import). New tables use auto-increment integers (cleaner, faster, standard). Cross-domain FKs (`purchase_transaction_id`, `purchased_from_id`) remain TEXT to reference the finance tables' UUID PKs. This mixed pattern is intentional and will be resolved when finance tables are migrated to integer PKs in a future cleanup.
 
 **Q: How is `updated_at` maintained?**
 A: Application-level — Drizzle `.set({ updatedAt: sql\`datetime('now')\` })` on every update.

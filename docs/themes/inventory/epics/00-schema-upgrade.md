@@ -60,7 +60,7 @@ Every other epic — Notion import, UI, connections, Paperless, reporting — de
 
 ## Dependencies
 
-- Foundation Epic 4 (Drizzle adoption) — Drizzle infrastructure must exist
+- Foundation Epic 6 (Drizzle adoption) — Drizzle infrastructure must exist
 
 ## Risks
 

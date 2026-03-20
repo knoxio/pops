@@ -17,9 +17,9 @@ Every other epic — TMDB integration, UI, tracking, comparisons, recommendation
 ### In scope
 
 - Create `movies` table — TMDB metadata (title, overview, release_date, runtime, poster_path, backdrop_path, vote_average, vote_count, genres, tmdb_id, imdb_id, tagline, status, original_language, budget, revenue)
-- Create `tv_shows` table — TMDB metadata (name, overview, first_air_date, last_air_date, number_of_seasons, number_of_episodes, poster_path, backdrop_path, vote_average, vote_count, genres, tmdb_id, status, original_language, networks, episode_run_time)
-- Create `seasons` table — FK to tv_shows (season_number, name, overview, poster_path, air_date, tmdb_id, episode_count)
-- Create `episodes` table — FK to seasons (episode_number, name, overview, air_date, still_path, tmdb_id, vote_average, runtime)
+- Create `tv_shows` table — TheTVDB metadata (name, overview, first_air_date, last_air_date, number_of_seasons, number_of_episodes, poster_path, backdrop_path, vote_average, vote_count, genres, tvdb_id, status, original_language, networks, episode_run_time)
+- Create `seasons` table — FK to tv_shows (season_number, name, overview, poster_path, air_date, tvdb_id, episode_count)
+- Create `episodes` table — FK to seasons (episode_number, name, overview, air_date, still_path, tvdb_id, vote_average, runtime)
 - Create `watchlist` table — polymorphic reference to movie or tv_show (media_type discriminator + media_id), added_at, priority, notes
 - Create `watch_history` table — tracks individual watch events (media_type + media_id for movies, episode_id for TV, watched_at, completed)
 - Create `comparison_dimensions` table — configurable taste dimensions (name, description, active, sort_order)

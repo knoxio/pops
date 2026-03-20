@@ -56,7 +56,7 @@ One-time import of all inventory data from the Notion "Home Inventory" database 
 ## Dependencies
 
 - Epic 0 (Schema Upgrade) — target schema must exist
-- Notion API access (existing — already configured in POPS)
+- Notion API access (requires setup — the previous Notion client was removed in PRs #49/#51. Use the Notion MCP integration or build a lightweight API client for the import script)
 
 ## Risks
 

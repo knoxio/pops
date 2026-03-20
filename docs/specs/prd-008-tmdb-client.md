@@ -17,7 +17,7 @@ A TMDB client service wraps the TMDB v3 API, providing movie search, detail fetc
 
 ### R1: TMDB API Client Service
 
-Create `apps/pops-api/src/modules/media/tmdb/` (or `finance-api` if Foundation Epic 3 hasn't landed):
+Create `apps/pops-api/src/modules/media/tmdb/`:
 
 ```
 media/tmdb/

@@ -135,7 +135,7 @@ const row = db.select().from(movies).where(eq(movies.id, id)).get();
 ## Consequences
 
 - All new domain modules (media, inventory upgrade, fitness, etc.) use Drizzle from day one
-- Existing finance services are migrated to Drizzle as part of Foundation Epic 4
+- Existing finance services are migrated to Drizzle as part of Foundation Epic 6
 - `@pops/db-types` either re-exports Drizzle inferred types or is deprecated (types come directly from schema imports)
 - Migrations are auto-generated but still reviewable SQL — no opaque tooling
 - One new dev dependency: `drizzle-orm` + `drizzle-kit` (dev)

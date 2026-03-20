@@ -49,7 +49,7 @@ These need to be resolved in PRDs or ADRs before implementation:
 
 Decisions already made through discussion:
 
-1. **Drizzle ORM** — Per ADR-011, all schema work uses Drizzle. The existing `home_inventory` table will be migrated to a Drizzle schema as part of Foundation Epic 4.
+1. **Drizzle ORM** — Per ADR-011, all schema work uses Drizzle. The existing `home_inventory` table will be migrated to a Drizzle schema as part of Foundation Epic 6.
 2. **Workspace package** — Per ADR-002, inventory becomes `@pops/app-inventory` as a workspace package plugged into the shell.
 3. **Location hierarchy: tree with self-referential parent** — A `locations` table with `parent_id` FK. Arbitrary depth, multiple roots (Home, Car, Storage Cage, Friend X). Not flat select dropdowns. The tree is set up once and rarely changes — the UI should make initial setup painless but doesn't need to optimise for frequent reorganisation.
 4. **Connections: untyped bidirectional** — A junction table `item_connections(item_a_id, item_b_id)`. No connection types — the item's own metadata (Type: Cable, name: "HDMI cable") carries the semantic meaning. Inserting one row means both items see the connection. A device can have many connections (TV ↔ HDMI, TV ↔ optical, TV ↔ power supply). Multiple connections between the same pair of items are not needed — each physical cable/wire is its own item.
