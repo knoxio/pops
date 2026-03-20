@@ -110,13 +110,9 @@ export function TvShowDetailPage() {
     ? new Date(show.lastAirDate).getFullYear()
     : null;
 
-  const posterSrc = `/media/images/tv/${show.id}/poster.jpg`;
-  const backdropSrc = show.backdropPath
-    ? `/media/images/tv/${show.id}/backdrop.jpg`
-    : null;
-  const logoSrc = show.logoPath
-    ? `/media/images/tv/${show.id}/logo.png`
-    : null;
+  const posterSrc = show.posterUrl ?? "";
+  const backdropSrc = show.backdropUrl ?? "";
+  const logoSrc = show.logoUrl ?? "";
 
   const totalEpisodes = show.numberOfEpisodes ?? 0;
 
@@ -316,9 +312,7 @@ export function TvShowDetailPage() {
                   season.seasonNumber === 0
                     ? "Specials"
                     : `Season ${season.seasonNumber}`;
-                const seasonPosterSrc = season.posterPath
-                  ? `/media/images/tv/${show.id}/season-${season.seasonNumber}-poster.jpg`
-                  : null;
+                const seasonPosterSrc = season.posterUrl;
 
                 return (
                   <Link

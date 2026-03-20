@@ -47,16 +47,20 @@ export {
 } from "./primitives/select";
 export {
   DropdownMenu as DropdownMenuRoot,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
   DropdownMenuPortal,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuLabel,
+  DropdownMenuItem,
+  DropdownMenuCheckboxItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
+  DropdownMenuSeparator,
   DropdownMenuShortcut,
   DropdownMenuSub,
-  DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-  DropdownMenuTrigger,
+  DropdownMenuSubContent,
 } from "./primitives/dropdown-menu";
 
 // Composite components
@@ -76,4 +80,5 @@ export * from "./components/InfiniteScrollTable";
 export * from "./components/NumberInput";
 export * from "./components/RadioInput";
 export * from "./components/Select";
+export * from "./components/StatCard";
 export * from "./components/TextInput";

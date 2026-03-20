@@ -19,8 +19,11 @@ export interface Movie {
   budget: number | null;
   revenue: number | null;
   posterPath: string | null;
+  posterUrl: string | null;
   backdropPath: string | null;
+  backdropUrl: string | null;
   logoPath: string | null;
+  logoUrl: string | null;
   posterOverridePath: string | null;
   voteAverage: number | null;
   voteCount: number | null;
@@ -31,6 +34,30 @@ export interface Movie {
 
 /** Map a SQLite row to the API response shape. */
 export function toMovie(row: MovieRow): Movie {
+  // Determine the best URLs:
+  // 1. User override (local upload) - for poster only for now
+  // 2. TMDB CDN fallback
+  // 3. Null (placeholder in UI)
+  let posterUrl: string | null = null;
+  if (row.posterOverridePath) {
+    posterUrl = row.posterOverridePath;
+  } else if (row.posterPath) {
+    const path = row.posterPath.startsWith("/") ? row.posterPath : `/${row.posterPath}`;
+    posterUrl = `https://image.tmdb.org/t/p/w600_and_h900_bestv2${path}`;
+  }
+
+  let backdropUrl: string | null = null;
+  if (row.backdropPath) {
+    const path = row.backdropPath.startsWith("/") ? row.backdropPath : `/${row.backdropPath}`;
+    backdropUrl = `https://image.tmdb.org/t/p/original${path}`;
+  }
+
+  let logoUrl: string | null = null;
+  if (row.logoPath) {
+    const path = row.logoPath.startsWith("/") ? row.logoPath : `/${row.logoPath}`;
+    logoUrl = `https://image.tmdb.org/t/p/w500${path}`;
+  }
+
   return {
     id: row.id,
     tmdbId: row.tmdbId,
@@ -46,8 +73,11 @@ export function toMovie(row: MovieRow): Movie {
     budget: row.budget,
     revenue: row.revenue,
     posterPath: row.posterPath,
+    posterUrl,
     backdropPath: row.backdropPath,
+    backdropUrl,
     logoPath: row.logoPath,
+    logoUrl,
     posterOverridePath: row.posterOverridePath,
     voteAverage: row.voteAverage,
     voteCount: row.voteCount,

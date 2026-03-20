@@ -34,26 +34,34 @@ const WatchlistPage = lazy(() =>
   }))
 );
 
-/** Local type mirror for compile-time safety (shell owns the canonical types). */
-interface AppNavConfigShape {
+/** Shared navigation types (mirrored from shell to avoid circular dependency) */
+export interface AppNavItem {
+  path: string;
+  label: string;
+  icon: string;
+}
+
+export interface AppNavConfig {
   id: string;
   label: string;
   icon: string;
+  color?: "emerald" | "indigo" | "amber" | "rose" | "sky" | "violet";
   basePath: string;
-  items: { path: string; label: string; icon: string }[];
+  items: AppNavItem[];
 }
 
-export const navConfig = {
+export const navConfig: AppNavConfig = {
   id: "media",
   label: "Media",
   icon: "Film",
+  color: "indigo",
   basePath: "/media",
   items: [
     { path: "", label: "Library", icon: "Library" },
     { path: "/watchlist", label: "Watchlist", icon: "Bookmark" },
     { path: "/search", label: "Search", icon: "Search" },
   ],
-} satisfies AppNavConfigShape;
+};
 
 export const routes: RouteObject[] = [
   { index: true, element: <LibraryPage /> },

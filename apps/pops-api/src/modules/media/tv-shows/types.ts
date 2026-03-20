@@ -18,8 +18,11 @@ export interface TvShow {
   numberOfEpisodes: number | null;
   episodeRunTime: number | null;
   posterPath: string | null;
+  posterUrl: string | null;
   backdropPath: string | null;
+  backdropUrl: string | null;
   logoPath: string | null;
+  logoUrl: string | null;
   posterOverridePath: string | null;
   voteAverage: number | null;
   voteCount: number | null;
@@ -38,6 +41,7 @@ export interface Season {
   name: string | null;
   overview: string | null;
   posterPath: string | null;
+  posterUrl: string | null;
   airDate: string | null;
   episodeCount: number | null;
   createdAt: string;
@@ -60,6 +64,40 @@ export interface Episode {
 
 /** Map a SQLite row to the API response shape. */
 export function toTvShow(row: TvShowRow): TvShow {
+  // Determine the best URLs:
+  // 1. User override (local upload)
+  // 2. TheTVDB full URL (TheTVDB returns full URLs usually)
+  // 3. TMDB fallback (if path starts with /)
+  // 4. Null (placeholder in UI)
+  let posterUrl: string | null = null;
+  if (row.posterOverridePath) {
+    posterUrl = row.posterOverridePath;
+  } else if (row.posterPath) {
+    if (row.posterPath.startsWith("http")) {
+      posterUrl = row.posterPath;
+    } else if (row.posterPath.startsWith("/")) {
+      posterUrl = `https://image.tmdb.org/t/p/w600_and_h900_bestv2${row.posterPath}`;
+    }
+  }
+
+  let backdropUrl: string | null = null;
+  if (row.backdropPath) {
+    if (row.backdropPath.startsWith("http")) {
+      backdropUrl = row.backdropPath;
+    } else if (row.backdropPath.startsWith("/")) {
+      backdropUrl = `https://image.tmdb.org/t/p/original${row.backdropPath}`;
+    }
+  }
+
+  let logoUrl: string | null = null;
+  if (row.logoPath) {
+    if (row.logoPath.startsWith("http")) {
+      logoUrl = row.logoPath;
+    } else if (row.logoPath.startsWith("/")) {
+      logoUrl = `https://image.tmdb.org/t/p/w500${row.logoPath}`;
+    }
+  }
+
   return {
     id: row.id,
     tvdbId: row.tvdbId,
@@ -74,8 +112,11 @@ export function toTvShow(row: TvShowRow): TvShow {
     numberOfEpisodes: row.numberOfEpisodes,
     episodeRunTime: row.episodeRunTime,
     posterPath: row.posterPath,
+    posterUrl,
     backdropPath: row.backdropPath,
+    backdropUrl,
     logoPath: row.logoPath,
+    logoUrl,
     posterOverridePath: row.posterOverridePath,
     voteAverage: row.voteAverage,
     voteCount: row.voteCount,
@@ -87,6 +128,19 @@ export function toTvShow(row: TvShowRow): TvShow {
 }
 
 export function toSeason(row: SeasonRow): Season {
+  // Determine the best poster URL:
+  // 1. TheTVDB full URL
+  // 2. TMDB fallback (if path starts with /)
+  // 3. Null
+  let posterUrl: string | null = null;
+  if (row.posterPath) {
+    if (row.posterPath.startsWith("http")) {
+      posterUrl = row.posterPath;
+    } else if (row.posterPath.startsWith("/")) {
+      posterUrl = `https://image.tmdb.org/t/p/w600_and_h900_bestv2${row.posterPath}`;
+    }
+  }
+
   return {
     id: row.id,
     tvShowId: row.tvShowId,
@@ -95,6 +149,7 @@ export function toSeason(row: SeasonRow): Season {
     name: row.name,
     overview: row.overview,
     posterPath: row.posterPath,
+    posterUrl,
     airDate: row.airDate,
     episodeCount: row.episodeCount,
     createdAt: row.createdAt,

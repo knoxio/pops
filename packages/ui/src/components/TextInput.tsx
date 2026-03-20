@@ -71,6 +71,14 @@ export interface TextInputProps
     Omit<InputHTMLAttributes<HTMLInputElement>, "size" | "prefix">,
     VariantProps<typeof containerVariants> {
   /**
+   * Label for the input
+   */
+  label?: string;
+  /**
+   * Error message to display
+   */
+  error?: string;
+  /**
    * Icon or content to display before the input
    */
   prefix?: ReactNode;
@@ -115,6 +123,8 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
       variant,
       size,
       shape,
+      label,
+      error,
       prefix,
       suffix,
       clearable = false,
@@ -169,45 +179,59 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
     const showClearButton = clearable && hasValue && !disabled;
 
     return (
-      <div
-        className={cn(
-          containerVariants({
-            variant,
-            size,
-            shape,
-          }),
-          disabled && "opacity-50 cursor-not-allowed",
-          containerClassName
+      <div className="flex flex-col gap-1.5 w-full">
+        {label && (
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest ml-1">
+            {label}
+          </label>
         )}
-        style={isFocused ? { borderColor: "rgb(55, 65, 81)" } : undefined}
-      >
-        {prefix && (
-          <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>
-        )}
-        <input
-          ref={ref}
-          className={cn(inputVariants({ size, centered, className }))}
-          style={{ outline: "none", boxShadow: "none" }}
-          value={value}
-          onChange={handleChange}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          disabled={disabled}
-          {...props}
-        />
-        {showClearButton && (
-          <button
-            type="button"
-            onClick={handleClear}
-            className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm p-1"
-            aria-label="Clear input"
-            tabIndex={-1}
-          >
-            <XIcon />
-          </button>
-        )}
-        {suffix && !showClearButton && (
-          <span className="flex-shrink-0 text-muted-foreground">{suffix}</span>
+        <div
+          className={cn(
+            containerVariants({
+              variant,
+              size,
+              shape,
+            }),
+            disabled && "opacity-50 cursor-not-allowed",
+            error && "border-destructive ring-destructive/20",
+            containerClassName
+          )}
+          style={isFocused && !error ? { borderColor: "rgb(55, 65, 81)" } : undefined}
+        >
+          {prefix && (
+            <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>
+          )}
+          <input
+            ref={ref}
+            className={cn(inputVariants({ size, centered, className }))}
+            style={{ outline: "none", boxShadow: "none" }}
+            value={value}
+            onChange={handleChange}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            disabled={disabled}
+            aria-invalid={!!error}
+            {...props}
+          />
+          {showClearButton && (
+            <button
+              type="button"
+              onClick={handleClear}
+              className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm p-1"
+              aria-label="Clear input"
+              tabIndex={-1}
+            >
+              <XIcon />
+            </button>
+          )}
+          {suffix && !showClearButton && (
+            <span className="flex-shrink-0 text-muted-foreground">{suffix}</span>
+          )}
+        </div>
+        {error && (
+          <p className="text-[10px] font-medium text-destructive ml-1">
+            {error}
+          </p>
         )}
       </div>
     );

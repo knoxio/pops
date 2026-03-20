@@ -83,13 +83,9 @@ export function MovieDetailPage() {
     ? new Date(movie.releaseDate).getFullYear()
     : null;
 
-  const posterSrc = `/media/images/movie/${movie.id}/poster.jpg`;
-  const backdropSrc = movie.backdropPath
-    ? `/media/images/movie/${movie.id}/backdrop.jpg`
-    : null;
-  const logoSrc = movie.logoPath
-    ? `/media/images/movie/${movie.id}/logo.png`
-    : null;
+  const posterSrc = movie.posterUrl ?? "";
+  const backdropSrc = movie.backdropUrl ?? "";
+  const logoSrc = movie.logoUrl ?? "";
 
   const metadataItems = [
     { label: "Status", value: movie.status },
