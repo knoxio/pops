@@ -69,6 +69,16 @@ export function getMovie(id: number): MovieRow {
   return row;
 }
 
+/** Get a single movie by TMDB ID. Returns null if not found. */
+export function getMovieByTmdbId(tmdbId: number): MovieRow | null {
+  const db = getDrizzle();
+  return db
+    .select()
+    .from(movies)
+    .where(eq(movies.tmdbId, tmdbId))
+    .get() ?? null;
+}
+
 /** Create a new movie. Returns the created row. Throws ConflictError on duplicate tmdbId. */
 export function createMovie(input: CreateMovieInput): MovieRow {
   const db = getDrizzle();

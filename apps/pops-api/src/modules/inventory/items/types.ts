@@ -23,6 +23,9 @@ export interface InventoryItem {
   purchaseTransactionId: string | null;
   purchasedFromId: string | null;
   purchasedFromName: string | null;
+  assetId: string | null;
+  notes: string | null;
+  locationId: string | null;
   lastEditedTime: string;
 }
 
@@ -47,6 +50,9 @@ export function toInventoryItem(row: InventoryRow): InventoryItem {
     purchaseTransactionId: row.purchaseTransactionId,
     purchasedFromId: row.purchasedFromId,
     purchasedFromName: row.purchasedFromName,
+    assetId: row.assetId,
+    notes: row.notes,
+    locationId: row.locationId,
     lastEditedTime: row.lastEditedTime,
   };
 }
@@ -70,6 +76,9 @@ export const CreateInventoryItemSchema = z.object({
   purchaseTransactionId: z.string().nullable().optional(),
   purchasedFromId: z.string().nullable().optional(),
   purchasedFromName: z.string().nullable().optional(),
+  assetId: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  locationId: z.string().nullable().optional(),
 });
 export type CreateInventoryItemInput = z.infer<typeof CreateInventoryItemSchema>;
 
@@ -92,6 +101,9 @@ export const UpdateInventoryItemSchema = z.object({
   purchaseTransactionId: z.string().nullable().optional(),
   purchasedFromId: z.string().nullable().optional(),
   purchasedFromName: z.string().nullable().optional(),
+  assetId: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
+  locationId: z.string().nullable().optional(),
 });
 export type UpdateInventoryItemInput = z.infer<typeof UpdateInventoryItemSchema>;
 
@@ -103,6 +115,8 @@ export const InventoryQuerySchema = z.object({
   condition: z.string().optional(),
   inUse: z.enum(["true", "false"]).optional(),
   deductible: z.enum(["true", "false"]).optional(),
+  locationId: z.string().optional(),
+  assetId: z.string().optional(),
   limit: z.coerce.number().positive().optional(),
   offset: z.coerce.number().nonnegative().optional(),
 });

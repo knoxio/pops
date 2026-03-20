@@ -68,6 +68,16 @@ export function createTestDb(): Database {
     CREATE INDEX IF NOT EXISTS idx_transactions_entity ON transactions(entity_id);
     CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_checksum ON transactions(checksum);
 
+    CREATE TABLE IF NOT EXISTS locations (
+      id               TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      name             TEXT NOT NULL,
+      parent_id        TEXT REFERENCES locations(id) ON DELETE CASCADE,
+      sort_order       INTEGER NOT NULL DEFAULT 0,
+      last_edited_time TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_locations_parent ON locations(parent_id);
+    CREATE INDEX IF NOT EXISTS idx_locations_name ON locations(name);
+
     CREATE TABLE IF NOT EXISTS home_inventory (
       id                     TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
       notion_id              TEXT UNIQUE,
@@ -88,10 +98,18 @@ export function createTestDb(): Database {
       purchase_transaction_id TEXT,
       purchased_from_id      TEXT,
       purchased_from_name    TEXT,
+      asset_id               TEXT UNIQUE,
+      notes                  TEXT,
+      location_id            TEXT,
       last_edited_time       TEXT NOT NULL,
       FOREIGN KEY (purchase_transaction_id) REFERENCES transactions(id) ON DELETE SET NULL,
-      FOREIGN KEY (purchased_from_id) REFERENCES entities(id) ON DELETE SET NULL
+      FOREIGN KEY (purchased_from_id) REFERENCES entities(id) ON DELETE SET NULL,
+      FOREIGN KEY (location_id) REFERENCES locations(id) ON DELETE SET NULL
     );
+    CREATE INDEX IF NOT EXISTS idx_inventory_asset_id ON home_inventory(asset_id);
+    CREATE INDEX IF NOT EXISTS idx_inventory_name ON home_inventory(item_name);
+    CREATE INDEX IF NOT EXISTS idx_inventory_location ON home_inventory(location_id);
+    CREATE INDEX IF NOT EXISTS idx_inventory_type ON home_inventory(type);
 
     CREATE TABLE IF NOT EXISTS budgets (
       id               TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
@@ -278,6 +296,30 @@ export function createTestDb(): Database {
     );
     CREATE UNIQUE INDEX IF NOT EXISTS idx_episodes_tvdb_id ON episodes(tvdb_id);
     CREATE INDEX IF NOT EXISTS idx_episodes_season_id ON episodes(season_id);
+
+    CREATE TABLE IF NOT EXISTS item_connections (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_a_id  TEXT NOT NULL,
+      item_b_id  TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (item_a_id) REFERENCES home_inventory(id) ON DELETE CASCADE,
+      FOREIGN KEY (item_b_id) REFERENCES home_inventory(id) ON DELETE CASCADE,
+      CHECK (item_a_id < item_b_id)
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_item_connections_pair ON item_connections(item_a_id, item_b_id);
+    CREATE INDEX IF NOT EXISTS idx_item_connections_a ON item_connections(item_a_id);
+    CREATE INDEX IF NOT EXISTS idx_item_connections_b ON item_connections(item_b_id);
+
+    CREATE TABLE IF NOT EXISTS item_photos (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_id    TEXT NOT NULL,
+      file_path  TEXT NOT NULL,
+      caption    TEXT,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (item_id) REFERENCES home_inventory(id) ON DELETE CASCADE
+    );
+    CREATE INDEX IF NOT EXISTS idx_item_photos_item ON item_photos(item_id);
   `);
 
   return db;
@@ -410,6 +452,9 @@ export function seedInventoryItem(
     purchase_transaction_id: string | null;
     purchased_from_id: string | null;
     purchased_from_name: string | null;
+    asset_id: string | null;
+    notes: string | null;
+    location_id: string | null;
     last_edited_time: string;
   }> = {}
 ): string {
@@ -420,12 +465,14 @@ export function seedInventoryItem(
     INSERT INTO home_inventory (
       id, item_name, brand, model, item_id, room, location, type, condition,
       in_use, deductible, purchase_date, warranty_expires, replacement_value, resale_value,
-      purchase_transaction_id, purchased_from_id, purchased_from_name, last_edited_time
+      purchase_transaction_id, purchased_from_id, purchased_from_name,
+      asset_id, notes, location_id, last_edited_time
     )
     VALUES (
       @id, @item_name, @brand, @model, @item_id, @room, @location, @type, @condition,
       @in_use, @deductible, @purchase_date, @warranty_expires, @replacement_value, @resale_value,
-      @purchase_transaction_id, @purchased_from_id, @purchased_from_name, @last_edited_time
+      @purchase_transaction_id, @purchased_from_id, @purchased_from_name,
+      @asset_id, @notes, @location_id, @last_edited_time
     )
   `
   ).run({
@@ -447,10 +494,92 @@ export function seedInventoryItem(
     purchase_transaction_id: overrides.purchase_transaction_id ?? null,
     purchased_from_id: overrides.purchased_from_id ?? null,
     purchased_from_name: overrides.purchased_from_name ?? null,
+    asset_id: overrides.asset_id ?? null,
+    notes: overrides.notes ?? null,
+    location_id: overrides.location_id ?? null,
     last_edited_time: overrides.last_edited_time ?? "2025-01-01T00:00:00.000Z",
   });
 
   return id;
+}
+
+/**
+ * Seed a single location row into the test DB.
+ * Returns the id.
+ */
+export function seedLocation(
+  db: Database,
+  overrides: Partial<{
+    id: string;
+    name: string;
+    parent_id: string | null;
+    sort_order: number;
+    last_edited_time: string;
+  }> = {}
+): string {
+  const id = overrides.id ?? crypto.randomUUID();
+
+  db.prepare(
+    `
+    INSERT INTO locations (id, name, parent_id, sort_order, last_edited_time)
+    VALUES (@id, @name, @parent_id, @sort_order, @last_edited_time)
+  `
+  ).run({
+    id,
+    name: overrides.name ?? "Test Location",
+    parent_id: overrides.parent_id ?? null,
+    sort_order: overrides.sort_order ?? 0,
+    last_edited_time: overrides.last_edited_time ?? "2025-01-01T00:00:00.000Z",
+  });
+
+  return id;
+}
+
+/**
+ * Seed an item connection row into the test DB.
+ * Returns the auto-incremented id.
+ */
+export function seedItemConnection(
+  db: Database,
+  itemAId: string,
+  itemBId: string
+): number {
+  // Enforce A < B ordering
+  const [a, b] = itemAId < itemBId ? [itemAId, itemBId] : [itemBId, itemAId];
+
+  const result = db.prepare(
+    `INSERT INTO item_connections (item_a_id, item_b_id) VALUES (@a, @b)`
+  ).run({ a, b });
+
+  return Number(result.lastInsertRowid);
+}
+
+/**
+ * Seed an item photo row into the test DB.
+ * Returns the auto-incremented id.
+ */
+export function seedItemPhoto(
+  db: Database,
+  overrides: {
+    item_id: string;
+    file_path?: string;
+    caption?: string | null;
+    sort_order?: number;
+  }
+): number {
+  const result = db.prepare(
+    `
+    INSERT INTO item_photos (item_id, file_path, caption, sort_order)
+    VALUES (@item_id, @file_path, @caption, @sort_order)
+  `
+  ).run({
+    item_id: overrides.item_id,
+    file_path: overrides.file_path ?? "items/test/photo_001.jpg",
+    caption: overrides.caption ?? null,
+    sort_order: overrides.sort_order ?? 0,
+  });
+
+  return Number(result.lastInsertRowid);
 }
 
 /**

@@ -7,6 +7,7 @@
 import { Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router";
 import { routes as financeRoutes } from "@pops/app-finance";
+import { routes as mediaRoutes } from "@pops/app-media";
 import { RootLayout } from "./layout/RootLayout";
 
 /**
@@ -39,7 +40,10 @@ export const router = createBrowserRouter([
         path: "finance",
         children: withSuspense(financeRoutes),
       },
-      // Future: { path: 'media', children: mediaRoutes }
+      {
+        path: "media",
+        children: withSuspense(mediaRoutes),
+      },
     ],
   },
 ]);

@@ -1,6 +1,7 @@
 /**
- * TheTVDB v4 API response types and error class.
+ * TheTVDB v4 API response types, mapping functions, and Drizzle insert builders.
  */
+import type { TvShowInsert, SeasonInsert, EpisodeInsert } from "@pops/db-types";
 
 /** Typed error for TheTVDB API failures. */
 export class TvdbApiError extends Error {
@@ -176,5 +177,192 @@ export interface RawTvdbLoginResponse {
   status: string;
   data: {
     token: string;
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Mapping functions: Raw API → Domain
+// ---------------------------------------------------------------------------
+
+const ARTWORK_TYPE_POSTER = 2;
+const ARTWORK_TYPE_BACKDROP = 3;
+
+/** Map a raw search result to a clean domain object. */
+export function mapSearchResult(raw: RawTvdbSearchResult): TvdbSearchResult {
+  return {
+    tvdbId: Number(raw.tvdb_id ?? raw.objectID ?? 0),
+    name: raw.name,
+    originalName: raw.name_translated?.eng ?? null,
+    overview: raw.overview ?? raw.overviews?.eng ?? null,
+    firstAirDate: raw.first_air_time ?? null,
+    status: raw.status ?? null,
+    posterPath: raw.image_url ?? raw.thumbnail ?? null,
+    genres: raw.genres ?? [],
+    originalLanguage: raw.primary_language ?? null,
+    year: raw.year ?? null,
+  };
+}
+
+/** Map a raw extended series response to a clean domain object. */
+export function mapShowDetail(raw: RawTvdbSeriesExtended): TvdbShowDetail {
+  // Filter to default/official broadcast order only
+  const rawSeasons = (raw.seasons ?? []).filter(
+    (s) => !s.type || s.type.type === "default" || s.type.type === "official",
+  );
+
+  return {
+    tvdbId: raw.id,
+    name: raw.name,
+    originalName: raw.originalName ?? null,
+    overview: raw.overview ?? null,
+    firstAirDate: raw.firstAired ?? null,
+    lastAirDate: raw.lastAired ?? null,
+    status: raw.status?.name ?? null,
+    originalLanguage: raw.originalLanguage ?? null,
+    averageRuntime: raw.averageRuntime ?? null,
+    genres: (raw.genres ?? []).map((g) => ({ id: g.id, name: g.name })),
+    networks: (raw.networks ?? []).map((n) => ({ id: n.id, name: n.name })),
+    seasons: rawSeasons.map((s) => ({
+      tvdbId: s.id,
+      seasonNumber: s.number,
+      name: s.name ?? null,
+      overview: s.overview ?? null,
+      imageUrl: s.image ?? null,
+      episodeCount: Array.isArray(s.episodes) ? s.episodes.length : 0,
+    })),
+    artworks: (raw.artworks ?? []).map((a) => ({
+      id: a.id,
+      type: a.type,
+      imageUrl: a.image,
+      language: a.language,
+      score: a.score,
+    })),
+  };
+}
+
+/** Map a raw episode to a clean domain object. */
+export function mapEpisode(raw: RawTvdbEpisode): TvdbEpisode {
+  return {
+    tvdbId: raw.id,
+    episodeNumber: raw.number,
+    seasonNumber: raw.seasonNumber,
+    name: raw.name ?? null,
+    overview: raw.overview ?? null,
+    airDate: raw.aired ?? null,
+    runtime: raw.runtime ?? null,
+    imageUrl: raw.image ?? null,
+  };
+}
+
+/**
+ * Select the best poster and backdrop URLs from an artwork array.
+ * Prefers English-language artwork with the highest score.
+ */
+export function mapArtworks(
+  artworks: TvdbArtwork[],
+): { posterUrl: string | null; backdropUrl: string | null } {
+  return {
+    posterUrl: pickBestArtwork(artworks, ARTWORK_TYPE_POSTER),
+    backdropUrl: pickBestArtwork(artworks, ARTWORK_TYPE_BACKDROP),
+  };
+}
+
+function pickBestArtwork(
+  artworks: TvdbArtwork[],
+  type: number,
+): string | null {
+  const candidates = artworks.filter((a) => a.type === type);
+  if (candidates.length === 0) return null;
+
+  const sorted = [...candidates].sort((a, b) => {
+    const aEng = a.language === "eng" ? 1 : 0;
+    const bEng = b.language === "eng" ? 1 : 0;
+    if (aEng !== bEng) return bEng - aEng;
+    return b.score - a.score;
+  });
+
+  return sorted[0].imageUrl;
+}
+
+// ---------------------------------------------------------------------------
+// Genre & network extraction helpers
+// ---------------------------------------------------------------------------
+
+/** Extract genre names to a string array. */
+export function extractGenreNames(
+  genres: { id: number; name: string }[],
+): string[] {
+  return genres.map((g) => g.name);
+}
+
+/** Extract network names to a string array. */
+export function extractNetworkNames(
+  networks: { id: number; name: string }[],
+): string[] {
+  return networks.map((n) => n.name);
+}
+
+// ---------------------------------------------------------------------------
+// Drizzle insert value builders
+// ---------------------------------------------------------------------------
+
+/** Convert a TvdbShowDetail to a Drizzle insert value for tv_shows. */
+export function toTvShowInsert(detail: TvdbShowDetail): TvShowInsert {
+  const { posterUrl, backdropUrl } = mapArtworks(detail.artworks);
+
+  return {
+    tvdbId: detail.tvdbId,
+    name: detail.name,
+    originalName: detail.originalName,
+    overview: detail.overview,
+    firstAirDate: detail.firstAirDate,
+    lastAirDate: detail.lastAirDate,
+    status: detail.status,
+    originalLanguage: detail.originalLanguage,
+    numberOfSeasons: detail.seasons.length || null,
+    numberOfEpisodes: null, // populated after episode fetch
+    episodeRunTime: detail.averageRuntime,
+    posterPath: posterUrl,
+    backdropPath: backdropUrl,
+    logoPath: null,
+    voteAverage: null,
+    voteCount: null,
+    genres: JSON.stringify(extractGenreNames(detail.genres)),
+    networks: JSON.stringify(extractNetworkNames(detail.networks)),
+  };
+}
+
+/** Convert a TvdbSeasonSummary to a Drizzle insert value for seasons. */
+export function toSeasonInsert(
+  season: TvdbSeasonSummary,
+  tvShowId: number,
+): SeasonInsert {
+  return {
+    tvShowId,
+    tvdbId: season.tvdbId,
+    seasonNumber: season.seasonNumber,
+    name: season.name,
+    overview: season.overview,
+    posterPath: season.imageUrl,
+    airDate: null,
+    episodeCount: season.episodeCount || null,
+  };
+}
+
+/** Convert a TvdbEpisode to a Drizzle insert value for episodes. */
+export function toEpisodeInsert(
+  episode: TvdbEpisode,
+  seasonId: number,
+): EpisodeInsert {
+  return {
+    seasonId,
+    tvdbId: episode.tvdbId,
+    episodeNumber: episode.episodeNumber,
+    name: episode.name,
+    overview: episode.overview,
+    airDate: episode.airDate,
+    stillPath: episode.imageUrl,
+    voteAverage: null,
+    runtime: episode.runtime,
   };
 }

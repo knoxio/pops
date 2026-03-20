@@ -15,3 +15,6 @@ export { comparisons } from "./comparisons.js";
 export { mediaWatchlist } from "./media-watchlist.js";
 export { watchHistory } from "./watch-history.js";
 export { mediaScores } from "./media-scores.js";
+export { locations } from "./locations.js";
+export { itemConnections } from "./item-connections.js";
+export { itemPhotos } from "./item-photos.js";

@@ -7,7 +7,7 @@ import { tvShowsRouter } from "./tv-shows/index.js";
 import { comparisonsRouter } from "./comparisons/index.js";
 import { watchlistRouter } from "./watchlist/router.js";
 import { watchHistoryRouter } from "./watch-history/router.js";
-import { libraryRouter } from "./library/router.js";
+import { libraryRouter } from "./library/index.js";
 
 export const mediaRouter = router({
   movies: moviesRouter,

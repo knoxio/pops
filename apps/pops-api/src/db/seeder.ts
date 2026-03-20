@@ -15,12 +15,24 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
 
   const run = db.transaction(() => {
     // -------------------------------------------------------------------------
-    // Clear existing data
+    // Clear existing data (order matters for FK constraints)
     // -------------------------------------------------------------------------
+    db.exec(`DELETE FROM watch_history`);
+    db.exec(`DELETE FROM watchlist`);
+    db.exec(`DELETE FROM comparisons`);
+    db.exec(`DELETE FROM media_scores`);
+    db.exec(`DELETE FROM comparison_dimensions`);
+    db.exec(`DELETE FROM episodes`);
+    db.exec(`DELETE FROM seasons`);
+    db.exec(`DELETE FROM tv_shows`);
+    db.exec(`DELETE FROM movies`);
+    db.exec(`DELETE FROM item_connections`);
+    db.exec(`DELETE FROM item_photos`);
+    db.exec(`DELETE FROM home_inventory`);
+    db.exec(`DELETE FROM locations`);
     db.exec(`DELETE FROM transactions`);
     db.exec(`DELETE FROM entities`);
     db.exec(`DELETE FROM budgets`);
-    db.exec(`DELETE FROM home_inventory`);
     db.exec(`DELETE FROM wish_list`);
     db.exec(`DELETE FROM ai_usage`);
 
@@ -518,6 +530,40 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
     }
 
     // -------------------------------------------------------------------------
+    // Locations (tree structure for inventory items)
+    // -------------------------------------------------------------------------
+    const locations = [
+      // Root locations
+      { id: "loc-home", name: "Home", parent_id: null, sort_order: 0 },
+      { id: "loc-car", name: "Car", parent_id: null, sort_order: 1 },
+      { id: "loc-storage", name: "Storage Cage", parent_id: null, sort_order: 2 },
+      // Home children
+      { id: "loc-living", name: "Living Room", parent_id: "loc-home", sort_order: 0 },
+      { id: "loc-bedroom", name: "Bedroom", parent_id: "loc-home", sort_order: 1 },
+      { id: "loc-kitchen", name: "Kitchen", parent_id: "loc-home", sort_order: 2 },
+      { id: "loc-office", name: "Office", parent_id: "loc-home", sort_order: 3 },
+      { id: "loc-laundry", name: "Laundry", parent_id: "loc-home", sort_order: 4 },
+      { id: "loc-balcony", name: "Main Balcony", parent_id: "loc-home", sort_order: 5 },
+      // Sub-locations
+      { id: "loc-tv-unit", name: "TV Unit", parent_id: "loc-living", sort_order: 0 },
+      { id: "loc-bar", name: "Bar", parent_id: "loc-living", sort_order: 1 },
+      { id: "loc-wardrobe", name: "Wardrobe Right Door", parent_id: "loc-bedroom", sort_order: 0 },
+      { id: "loc-counter", name: "Counter", parent_id: "loc-kitchen", sort_order: 0 },
+      { id: "loc-desk", name: "Desk", parent_id: "loc-office", sort_order: 0 },
+      { id: "loc-shelf", name: "Shelf", parent_id: "loc-office", sort_order: 1 },
+      { id: "loc-cupboard", name: "Storage Cupboard", parent_id: "loc-laundry", sort_order: 0 },
+    ];
+
+    const insertLocation = db.prepare(`
+      INSERT INTO locations (id, name, parent_id, sort_order)
+      VALUES (?, ?, ?, ?)
+    `);
+
+    for (const loc of locations) {
+      insertLocation.run(loc.id, loc.name, loc.parent_id, loc.sort_order);
+    }
+
+    // -------------------------------------------------------------------------
     // Home Inventory
     // -------------------------------------------------------------------------
     const homeInventory = [
@@ -540,6 +586,9 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         purchase_transaction_id: null,
         purchased_from_id: "10000000-0000-4000-8000-000000000008",
         purchased_from_name: "Apple",
+        asset_id: "MBP-001",
+        notes: "Primary work machine. AppleCare+ until 2027.",
+        location_id: "loc-desk",
       },
       {
         id: "inv-002",
@@ -560,6 +609,9 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         purchase_transaction_id: "txn-011",
         purchased_from_id: "10000000-0000-4000-8000-000000000010",
         purchased_from_name: "JB Hi-Fi",
+        asset_id: "AUDIO-001",
+        notes: null,
+        location_id: "loc-shelf",
       },
       {
         id: "inv-003",
@@ -580,6 +632,9 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         purchase_transaction_id: null,
         purchased_from_id: "10000000-0000-4000-8000-000000000010",
         purchased_from_name: "JB Hi-Fi",
+        asset_id: "TV-001",
+        notes: "Mounted in living room. HDMI 1: Apple TV, HDMI 2: PlayStation.",
+        location_id: "loc-tv-unit",
       },
       {
         id: "inv-004",
@@ -600,6 +655,9 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         purchase_transaction_id: null,
         purchased_from_id: "10000000-0000-4000-8000-000000000006",
         purchased_from_name: "Amazon AU",
+        asset_id: null,
+        notes: "Wall-mounted charging dock in laundry.",
+        location_id: "loc-cupboard",
       },
       {
         id: "inv-005",
@@ -620,6 +678,125 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         purchase_transaction_id: null,
         purchased_from_id: "10000000-0000-4000-8000-000000000006",
         purchased_from_name: "Amazon AU",
+        asset_id: null,
+        notes: "Descale monthly. Last descale: 2026-02-15.",
+        location_id: "loc-counter",
+      },
+      // New items
+      {
+        id: "inv-006",
+        item_name: "HDMI Cable 2m",
+        brand: "Belkin",
+        model: "Ultra HD 2.1",
+        item_id: null,
+        room: "Living Room",
+        location: "TV Unit",
+        type: "Cable",
+        condition: "Good",
+        in_use: 1,
+        deductible: 0,
+        purchase_date: "2023-08-20",
+        warranty_expires: null,
+        replacement_value: 39.0,
+        resale_value: null,
+        purchase_transaction_id: null,
+        purchased_from_id: "10000000-0000-4000-8000-000000000010",
+        purchased_from_name: "JB Hi-Fi",
+        asset_id: "HDMI-001",
+        notes: "Connects TV to Apple TV.",
+        location_id: "loc-tv-unit",
+      },
+      {
+        id: "inv-007",
+        item_name: "Power Board 6-Way",
+        brand: "HPM",
+        model: "D105/6PAWE",
+        item_id: null,
+        room: "Living Room",
+        location: "TV Unit",
+        type: "Electronics",
+        condition: "Good",
+        in_use: 1,
+        deductible: 0,
+        purchase_date: "2023-06-01",
+        warranty_expires: null,
+        replacement_value: 35.0,
+        resale_value: null,
+        purchase_transaction_id: null,
+        purchased_from_id: "10000000-0000-4000-8000-000000000009",
+        purchased_from_name: "Bunnings",
+        asset_id: "PB-001",
+        notes: "Behind TV unit. Powers TV, Apple TV, soundbar.",
+        location_id: "loc-tv-unit",
+      },
+      {
+        id: "inv-008",
+        item_name: "USB-C Hub",
+        brand: "Anker",
+        model: "PowerExpand 8-in-1",
+        item_id: null,
+        room: "Home Office",
+        location: "Desk",
+        type: "Electronics",
+        condition: "Excellent",
+        in_use: 1,
+        deductible: 1,
+        purchase_date: "2024-11-15",
+        warranty_expires: "2026-11-15",
+        replacement_value: 89.0,
+        resale_value: 40.0,
+        purchase_transaction_id: null,
+        purchased_from_id: "10000000-0000-4000-8000-000000000006",
+        purchased_from_name: "Amazon AU",
+        asset_id: "HUB-001",
+        notes: "Connected to MacBook. HDMI out to monitor.",
+        location_id: "loc-desk",
+      },
+      {
+        id: "inv-009",
+        item_name: "Ethernet Cable 3m",
+        brand: "Cable Matters",
+        model: "Cat6a",
+        item_id: null,
+        room: "Home Office",
+        location: "Desk",
+        type: "Cable",
+        condition: "Good",
+        in_use: 1,
+        deductible: 0,
+        purchase_date: "2024-01-10",
+        warranty_expires: null,
+        replacement_value: 15.0,
+        resale_value: null,
+        purchase_transaction_id: null,
+        purchased_from_id: "10000000-0000-4000-8000-000000000006",
+        purchased_from_name: "Amazon AU",
+        asset_id: "ETH-001",
+        notes: "Hub to wall socket.",
+        location_id: "loc-desk",
+      },
+      {
+        id: "inv-010",
+        item_name: "Power Board 4-Way",
+        brand: "HPM",
+        model: "D105/4PAWE",
+        item_id: null,
+        room: "Home Office",
+        location: "Desk",
+        type: "Electronics",
+        condition: "Good",
+        in_use: 1,
+        deductible: 0,
+        purchase_date: "2024-11-15",
+        warranty_expires: null,
+        replacement_value: 25.0,
+        resale_value: null,
+        purchase_transaction_id: null,
+        purchased_from_id: "10000000-0000-4000-8000-000000000009",
+        purchased_from_name: "Bunnings",
+        asset_id: "PB-002",
+        notes: "Under desk. Powers MacBook charger, monitor, hub.",
+        location_id: "loc-desk",
       },
     ];
 
@@ -628,8 +805,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         id, item_name, brand, model, item_id, room, location, type, condition,
         in_use, deductible, purchase_date, warranty_expires, replacement_value,
         resale_value, purchase_transaction_id, purchased_from_id, purchased_from_name,
-        last_edited_time
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        last_edited_time, asset_id, notes, location_id
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     for (const item of homeInventory) {
@@ -652,8 +829,35 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         item.purchase_transaction_id,
         item.purchased_from_id,
         item.purchased_from_name,
-        now
+        now,
+        item.asset_id,
+        item.notes,
+        item.location_id
       );
+    }
+
+    // -------------------------------------------------------------------------
+    // Item Connections (bidirectional links, A<B ordering)
+    // -------------------------------------------------------------------------
+    const connections = [
+      // Power chain: power board → devices
+      ["inv-007", "inv-003"],  // PB-001 → TV
+      // HDMI chain
+      ["inv-003", "inv-006"],  // TV → HDMI cable
+      // Office chain: power board → devices
+      ["inv-001", "inv-008"],  // MacBook → USB-C Hub
+      ["inv-008", "inv-010"],  // Hub → Power Board (via charger)
+      ["inv-008", "inv-009"],  // Hub → Ethernet cable
+    ];
+
+    const insertConnection = db.prepare(`
+      INSERT INTO item_connections (item_a_id, item_b_id) VALUES (?, ?)
+    `);
+
+    for (const [a, b] of connections) {
+      // Enforce A < B ordering
+      const [lo, hi] = a < b ? [a, b] : [b, a];
+      insertConnection.run(lo, hi);
     }
 
     // -------------------------------------------------------------------------
@@ -725,9 +929,288 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       );
     }
 
+    // -------------------------------------------------------------------------
+    // Movies
+    // -------------------------------------------------------------------------
+    const movies = [
+      {
+        tmdb_id: 278,
+        title: "The Shawshank Redemption",
+        overview: "Imprisoned in the 1940s for the double murder of his wife and her lover, upstanding banker Andy Dufresne begins a new life at the Shawshank prison.",
+        release_date: "1994-09-23",
+        runtime: 142,
+        status: "Released",
+        original_language: "en",
+        vote_average: 8.7,
+        vote_count: 26000,
+        genres: '["Drama","Crime"]',
+      },
+      {
+        tmdb_id: 238,
+        title: "The Godfather",
+        overview: "Spanning the years 1945 to 1955, a chronicle of the fictional Italian-American Corleone crime family.",
+        release_date: "1972-03-14",
+        runtime: 175,
+        status: "Released",
+        original_language: "en",
+        vote_average: 8.7,
+        vote_count: 20000,
+        genres: '["Drama","Crime"]',
+      },
+      {
+        tmdb_id: 155,
+        title: "The Dark Knight",
+        overview: "Batman raises the stakes in his war on crime. With the help of Lt. Jim Gordon and District Attorney Harvey Dent, Batman sets out to dismantle the remaining criminal organizations that plague the streets.",
+        release_date: "2008-07-16",
+        runtime: 152,
+        status: "Released",
+        original_language: "en",
+        vote_average: 8.5,
+        vote_count: 32000,
+        genres: '["Drama","Action","Crime","Thriller"]',
+      },
+      {
+        tmdb_id: 680,
+        title: "Pulp Fiction",
+        overview: "A burger-loving hit man, his philosophical partner, a drug-addled gangster's moll and a washed-up boxer converge in this sprawling, comedic crime caper.",
+        release_date: "1994-09-10",
+        runtime: 154,
+        status: "Released",
+        original_language: "en",
+        vote_average: 8.5,
+        vote_count: 27000,
+        genres: '["Thriller","Crime"]',
+      },
+      {
+        tmdb_id: 13,
+        title: "Forrest Gump",
+        overview: "A man with a low IQ has accomplished great things in his life and been present during significant historic events — in each case, far exceeding what anyone imagined he could do.",
+        release_date: "1994-06-23",
+        runtime: 142,
+        status: "Released",
+        original_language: "en",
+        vote_average: 8.5,
+        vote_count: 26000,
+        genres: '["Comedy","Drama","Romance"]',
+      },
+      {
+        tmdb_id: 550,
+        title: "Fight Club",
+        overview: "A ticking-time bomb insomniac and a slippery soap salesman channel primal male aggression into a shocking new form of therapy.",
+        release_date: "1999-10-15",
+        runtime: 139,
+        status: "Released",
+        original_language: "en",
+        vote_average: 8.4,
+        vote_count: 28000,
+        genres: '["Drama"]',
+      },
+      {
+        tmdb_id: 120,
+        title: "The Lord of the Rings: The Fellowship of the Ring",
+        overview: "Young hobbit Frodo Baggins, after inheriting a mysterious ring from his uncle Bilbo, must leave his home in order to keep it from falling into the hands of its evil creator.",
+        release_date: "2001-12-18",
+        runtime: 179,
+        status: "Released",
+        original_language: "en",
+        vote_average: 8.4,
+        vote_count: 24000,
+        genres: '["Adventure","Fantasy","Action"]',
+      },
+      {
+        tmdb_id: 603,
+        title: "The Matrix",
+        overview: "Set in the 22nd century, The Matrix tells the story of a computer hacker who joins a group of underground insurgents fighting the vast and powerful computers who now rule the earth.",
+        release_date: "1999-03-30",
+        runtime: 136,
+        status: "Released",
+        original_language: "en",
+        vote_average: 8.2,
+        vote_count: 25000,
+        genres: '["Action","Science Fiction"]',
+      },
+      {
+        tmdb_id: 157336,
+        title: "Interstellar",
+        overview: "The adventures of a group of explorers who make use of a newly discovered wormhole to surpass the limitations on human space travel and conquer the vast distances involved in an interstellar voyage.",
+        release_date: "2014-11-05",
+        runtime: 169,
+        status: "Released",
+        original_language: "en",
+        vote_average: 8.4,
+        vote_count: 34000,
+        genres: '["Adventure","Drama","Science Fiction"]',
+      },
+      {
+        tmdb_id: 569094,
+        title: "Spider-Man: Across the Spider-Verse",
+        overview: "After reuniting with Gwen Stacy, Brooklyn's full-time, friendly neighborhood Spider-Man is catapulted across the Multiverse.",
+        release_date: "2023-05-31",
+        runtime: 140,
+        status: "Released",
+        original_language: "en",
+        vote_average: 8.4,
+        vote_count: 6500,
+        genres: '["Animation","Action","Adventure"]',
+      },
+    ];
+
+    const insertMovie = db.prepare(`
+      INSERT INTO movies (
+        tmdb_id, title, overview, release_date, runtime, status,
+        original_language, vote_average, vote_count, genres
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    for (const movie of movies) {
+      insertMovie.run(
+        movie.tmdb_id,
+        movie.title,
+        movie.overview,
+        movie.release_date,
+        movie.runtime,
+        movie.status,
+        movie.original_language,
+        movie.vote_average,
+        movie.vote_count,
+        movie.genres,
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // TV Shows
+    // -------------------------------------------------------------------------
+    const tvShowsData = [
+      {
+        tvdb_id: 81189,
+        name: "Breaking Bad",
+        overview: "A high school chemistry teacher diagnosed with inoperable lung cancer turns to manufacturing and selling methamphetamine in order to secure his family's future.",
+        first_air_date: "2008-01-20",
+        last_air_date: "2013-09-29",
+        status: "Ended",
+        original_language: "en",
+        number_of_seasons: 5,
+        number_of_episodes: 62,
+        episode_run_time: 47,
+        vote_average: 8.9,
+        vote_count: 13000,
+        genres: '["Drama","Crime"]',
+        networks: '["AMC"]',
+      },
+      {
+        tvdb_id: 305288,
+        name: "Severance",
+        overview: "Mark leads a team of office workers whose memories have been surgically divided between their work and personal lives.",
+        first_air_date: "2022-02-18",
+        last_air_date: null,
+        status: "Returning Series",
+        original_language: "en",
+        number_of_seasons: 2,
+        number_of_episodes: 19,
+        episode_run_time: 50,
+        vote_average: 8.4,
+        vote_count: 3000,
+        genres: '["Drama","Mystery","Science Fiction"]',
+        networks: '["Apple TV+"]',
+      },
+      {
+        tvdb_id: 366924,
+        name: "Shogun",
+        overview: "In Japan in the year 1600, at the dawn of a century-defining civil war, Lord Yoshii Toranaga is fighting for his life as his enemies on the Council of Regents unite against him.",
+        first_air_date: "2024-02-27",
+        last_air_date: null,
+        status: "Returning Series",
+        original_language: "en",
+        number_of_seasons: 1,
+        number_of_episodes: 10,
+        episode_run_time: 60,
+        vote_average: 8.7,
+        vote_count: 2500,
+        genres: '["Drama","War & Politics"]',
+        networks: '["FX"]',
+      },
+    ];
+
+    const insertTvShow = db.prepare(`
+      INSERT INTO tv_shows (
+        tvdb_id, name, overview, first_air_date, last_air_date, status,
+        original_language, number_of_seasons, number_of_episodes, episode_run_time,
+        vote_average, vote_count, genres, networks
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const tvShowIds: number[] = [];
+    for (const show of tvShowsData) {
+      const result = insertTvShow.run(
+        show.tvdb_id,
+        show.name,
+        show.overview,
+        show.first_air_date,
+        show.last_air_date,
+        show.status,
+        show.original_language,
+        show.number_of_seasons,
+        show.number_of_episodes,
+        show.episode_run_time,
+        show.vote_average,
+        show.vote_count,
+        show.genres,
+        show.networks,
+      );
+      tvShowIds.push(Number(result.lastInsertRowid));
+    }
+
+    // -------------------------------------------------------------------------
+    // Seasons & Episodes
+    // -------------------------------------------------------------------------
+    const insertSeason = db.prepare(`
+      INSERT INTO seasons (tv_show_id, tvdb_id, season_number, name, episode_count)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+
+    const insertEpisode = db.prepare(`
+      INSERT INTO episodes (season_id, tvdb_id, episode_number, name, runtime)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+
+    // Breaking Bad — seasons 1 & 5
+    const bbS1 = Number(insertSeason.run(tvShowIds[0], 30272, 1, "Season 1", 7).lastInsertRowid);
+    insertEpisode.run(bbS1, 349232, 1, "Pilot", 58);
+    insertEpisode.run(bbS1, 349233, 2, "Cat's in the Bag...", 48);
+    insertEpisode.run(bbS1, 349234, 3, "...And the Bag's in the River", 48);
+
+    const bbS5 = Number(insertSeason.run(tvShowIds[0], 488434, 5, "Season 5", 16).lastInsertRowid);
+    insertEpisode.run(bbS5, 4161693, 1, "Live Free or Die", 47);
+    insertEpisode.run(bbS5, 4161694, 2, "Madrigal", 47);
+    insertEpisode.run(bbS5, 4529635, 9, "Blood Money", 47);
+    insertEpisode.run(bbS5, 4649411, 16, "Felina", 55);
+
+    // Severance — seasons 1 & 2
+    const sevS1 = Number(insertSeason.run(tvShowIds[1], 1893498, 1, "Season 1", 9).lastInsertRowid);
+    insertEpisode.run(sevS1, 8361124, 1, "Good News About Hell", 57);
+    insertEpisode.run(sevS1, 8400665, 2, "Half Loop", 51);
+    insertEpisode.run(sevS1, 8786314, 9, "The We We Are", 42);
+
+    const sevS2 = Number(insertSeason.run(tvShowIds[1], 2145611, 2, "Season 2", 10).lastInsertRowid);
+    insertEpisode.run(sevS2, 10337005, 1, "Hello, Ms. Cobel", 56);
+    insertEpisode.run(sevS2, 10337006, 2, "Goodbye, Mrs. Selvig", 49);
+    insertEpisode.run(sevS2, 10337013, 10, "Cold Harbor", 72);
+
+    // Shogun — season 1
+    const shoS1 = Number(insertSeason.run(tvShowIds[2], 2043811, 1, "Season 1", 10).lastInsertRowid);
+    insertEpisode.run(shoS1, 9784549, 1, "Anjin", 70);
+    insertEpisode.run(shoS1, 9784550, 2, "Servants of Two Masters", 55);
+    insertEpisode.run(shoS1, 9784558, 10, "A Dream of a Dream", 70);
+
+    // Count totals for log
+    const seasonCount = 5;
+    const episodeCount = 16;
+
     console.log(
       `[seeder] Seeded ${entities.length} entities, ${transactions.length} transactions, ` +
-        `${budgets.length} budgets, ${homeInventory.length} inventory items, ${wishList.length} wish list items`
+        `${budgets.length} budgets, ${homeInventory.length} inventory items, ${wishList.length} wish list items, ` +
+        `${movies.length} movies, ${tvShowsData.length} tv shows, ${seasonCount} seasons, ${episodeCount} episodes, ` +
+        `${locations.length} locations, ${connections.length} connections`
     );
   });
 

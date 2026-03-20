@@ -24,7 +24,9 @@ export function listInventoryItems(
   inUse: boolean | undefined,
   deductible: boolean | undefined,
   limit: number,
-  offset: number
+  offset: number,
+  locationId?: string,
+  assetId?: string
 ): InventoryListResult {
   const db = getDrizzle();
 
@@ -49,6 +51,12 @@ export function listInventoryItems(
   }
   if (deductible !== undefined) {
     conditions.push(eq(homeInventory.deductible, deductible ? 1 : 0));
+  }
+  if (locationId) {
+    conditions.push(eq(homeInventory.locationId, locationId));
+  }
+  if (assetId) {
+    conditions.push(eq(homeInventory.assetId, assetId));
   }
 
   if (conditions.length > 0) {
@@ -110,6 +118,9 @@ export function createInventoryItem(input: CreateInventoryItemInput): InventoryR
       purchaseTransactionId: input.purchaseTransactionId ?? null,
       purchasedFromId: input.purchasedFromId ?? null,
       purchasedFromName: input.purchasedFromName ?? null,
+      assetId: input.assetId ?? null,
+      notes: input.notes ?? null,
+      locationId: input.locationId ?? null,
       lastEditedTime: now,
     })
     .run();
@@ -199,6 +210,18 @@ export function updateInventoryItem(
   }
   if (input.purchasedFromName !== undefined) {
     updates.purchasedFromName = input.purchasedFromName ?? null;
+    hasUpdates = true;
+  }
+  if (input.assetId !== undefined) {
+    updates.assetId = input.assetId ?? null;
+    hasUpdates = true;
+  }
+  if (input.notes !== undefined) {
+    updates.notes = input.notes ?? null;
+    hasUpdates = true;
+  }
+  if (input.locationId !== undefined) {
+    updates.locationId = input.locationId ?? null;
     hasUpdates = true;
   }
 
