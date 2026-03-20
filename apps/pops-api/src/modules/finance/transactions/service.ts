@@ -3,9 +3,9 @@
  * SQLite is the source of truth. All operations are local.
  */
 import crypto from "crypto";
-import { count, desc, eq, like, gte, lte, and, sql, type SQL, type InferSelectModel } from "drizzle-orm";
+import { count, desc, eq, like, gte, lte, and, sql, type SQL } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
-import { transactions } from "../../../db/schema/transactions.js";
+import { transactions } from "@pops/db-types";
 import { NotFoundError } from "../../../shared/errors.js";
 import type {
   TransactionRow,
@@ -13,30 +13,6 @@ import type {
   UpdateTransactionInput,
   TransactionFilters,
 } from "./types.js";
-
-/** Map Drizzle's camelCase result to the snake_case TransactionRow interface. */
-type DrizzleRow = InferSelectModel<typeof transactions>;
-function toDbRow(row: DrizzleRow): TransactionRow {
-  return {
-    id: row.id,
-    notion_id: row.notionId,
-    description: row.description,
-    account: row.account,
-    amount: row.amount,
-    date: row.date,
-    type: row.type,
-    tags: row.tags,
-    entity_id: row.entityId,
-    entity_name: row.entityName,
-    location: row.location,
-    country: row.country,
-    related_transaction_id: row.relatedTransactionId,
-    notes: row.notes,
-    checksum: row.checksum,
-    raw_row: row.rawRow,
-    last_edited_time: row.lastEditedTime,
-  };
-}
 
 /** Count + rows for a paginated list. */
 export interface TransactionListResult {
@@ -87,7 +63,7 @@ export function listTransactions(
     .limit(limit)
     .offset(offset)
     .all()
-    .map(toDbRow);
+    ;
 
   const [countRow] = db
     .select({ total: count() })
@@ -108,7 +84,7 @@ export function getTransaction(id: string): TransactionRow {
     .get();
 
   if (!row) throw new NotFoundError("Transaction", id);
-  return toDbRow(row);
+  return row;
 }
 
 /**
@@ -155,7 +131,7 @@ export function updateTransaction(
   // Verify it exists first
   getTransaction(id);
 
-  const updates: Partial<DrizzleRow> = {};
+  const updates: Partial<typeof transactions.$inferSelect> = {};
 
   if (input.description !== undefined) {
     updates.description = input.description;

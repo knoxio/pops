@@ -4,28 +4,10 @@
  */
 import { eq, gte, desc, count, sql, and } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
-import { transactionCorrections } from "../../../db/schema/corrections.js";
+import { transactionCorrections } from "@pops/db-types";
 import { NotFoundError } from "../../../shared/errors.js";
 import type { CorrectionRow, CreateCorrectionInput, UpdateCorrectionInput } from "./types.js";
 import { normalizeDescription } from "./types.js";
-
-/** Map a Drizzle result row to the snake_case CorrectionRow interface. */
-function toRow(row: typeof transactionCorrections.$inferSelect): CorrectionRow {
-  return {
-    id: row.id,
-    description_pattern: row.descriptionPattern,
-    match_type: row.matchType as CorrectionRow["match_type"],
-    entity_id: row.entityId,
-    entity_name: row.entityName,
-    location: row.location,
-    tags: row.tags,
-    transaction_type: row.transactionType as CorrectionRow["transaction_type"],
-    confidence: row.confidence,
-    times_applied: row.timesApplied,
-    created_at: row.createdAt,
-    last_used_at: row.lastUsedAt,
-  };
-}
 
 /**
  * Find the best matching correction for a description
@@ -52,7 +34,7 @@ export function findMatchingCorrection(
     .limit(1)
     .all();
 
-  if (exactMatch) return toRow(exactMatch);
+  if (exactMatch) return exactMatch;
 
   // Try contains match (pattern is substring of description)
   // This uses SQL LIKE which needs raw SQL for the dynamic pattern
@@ -70,7 +52,7 @@ export function findMatchingCorrection(
     .limit(1)
     .all();
 
-  if (containsMatch) return toRow(containsMatch);
+  if (containsMatch) return containsMatch;
 
   return null;
 }
@@ -104,7 +86,7 @@ export function listCorrections(
     .offset(offset)
     .all();
 
-  return { rows: rows.map(toRow), total: countResult.count };
+  return { rows: rows, total: countResult.count };
 }
 
 /**
@@ -122,7 +104,7 @@ export function getCorrection(id: string): CorrectionRow {
     throw new NotFoundError("Correction", id);
   }
 
-  return toRow(row);
+  return row;
 }
 
 /**
@@ -156,7 +138,7 @@ export function findAllMatchingCorrections(description: string): CorrectionRow[]
     .orderBy(desc(transactionCorrections.confidence), desc(transactionCorrections.timesApplied))
     .all();
 
-  return [...exactMatches.map(toRow), ...containsMatches.map(toRow)];
+  return [...exactMatches, ...containsMatches];
 }
 
 /**
@@ -226,7 +208,7 @@ export function createOrUpdateCorrection(input: CreateCorrectionInput): Correcti
     throw new NotFoundError("Correction", String(result.lastInsertRowid));
   }
 
-  return toRow(inserted);
+  return inserted;
 }
 
 /**

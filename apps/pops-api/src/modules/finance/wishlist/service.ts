@@ -4,25 +4,9 @@
  */
 import { eq, and, like, asc, count } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
-import { wishList } from "../../../db/schema/wishlist.js";
+import { wishList } from "@pops/db-types";
 import { NotFoundError } from "../../../shared/errors.js";
 import type { WishListRow, CreateWishListItemInput, UpdateWishListItemInput } from "./types.js";
-
-/** Map a Drizzle select result back to the snake_case WishListRow expected by the router. */
-type DrizzleWishList = typeof wishList.$inferSelect;
-function toRow(r: DrizzleWishList): WishListRow {
-  return {
-    id: r.id,
-    notion_id: r.notionId,
-    item: r.item,
-    target_amount: r.targetAmount,
-    saved: r.saved,
-    priority: r.priority,
-    url: r.url,
-    notes: r.notes,
-    last_edited_time: r.lastEditedTime,
-  };
-}
 
 /** Count + rows for a paginated list. */
 export interface WishListListResult {
@@ -57,7 +41,7 @@ export function listWishListItems(
     .limit(limit)
     .offset(offset)
     .all()
-    .map(toRow);
+    ;
 
   const [{ total }] = db
     .select({ total: count() })
@@ -78,7 +62,7 @@ export function getWishListItem(id: string): WishListRow {
     .get();
 
   if (!row) throw new NotFoundError("Wish list item", id);
-  return toRow(row);
+  return row;
 }
 
 /**

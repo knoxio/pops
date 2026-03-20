@@ -9,8 +9,7 @@
  */
 import { eq, and, isNotNull, ne, inArray } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
-import { transactions } from "../../../db/schema/transactions.js";
-import { entities } from "../../../db/schema/entities.js";
+import { transactions, entities } from "@pops/db-types";
 import { logger } from "../../../lib/logger.js";
 import { formatImportError } from "../../../lib/errors.js";
 import { matchEntity } from "./lib/entity-matcher.js";
@@ -31,29 +30,6 @@ import type {
   AiUsageStats,
   SuggestedTag,
 } from "./types.js";
-
-/** Map a Drizzle camelCase row to the snake_case TransactionRow expected by consumers. */
-function toTransactionRow(row: typeof transactions.$inferSelect): TransactionRow {
-  return {
-    id: row.id,
-    notion_id: row.notionId,
-    description: row.description,
-    account: row.account,
-    amount: row.amount,
-    date: row.date,
-    type: row.type,
-    tags: row.tags,
-    entity_id: row.entityId,
-    entity_name: row.entityName,
-    location: row.location,
-    country: row.country,
-    related_transaction_id: row.relatedTransactionId,
-    notes: row.notes,
-    checksum: row.checksum,
-    raw_row: row.rawRow,
-    last_edited_time: row.lastEditedTime,
-  };
-}
 
 /** Parse a JSON-encoded tags string from the corrections table into a string array. */
 function parseCorrectionTags(raw: string): string[] {
@@ -260,7 +236,7 @@ function insertTransaction(input: {
     .get();
 
   if (!row) throw new Error(`Insert succeeded but row not found: ${id}`);
-  return toTransactionRow(row);
+  return row;
 }
 
 /**
@@ -330,13 +306,13 @@ export async function processImport(
       // Step 1: Apply learned corrections (highest priority)
       const correction = findMatchingCorrection(transaction.description, 0.7);
 
-      if (correction && correction.entity_id) {
+      if (correction && correction.entityId) {
         logger.debug(
           {
             index: i + 1,
             total: newTransactions.length,
             description: transaction.description.substring(0, 50),
-            entityName: correction.entity_name,
+            entityName: correction.entityName,
             confidence: correction.confidence,
           },
           "[Import] Applied learned correction"
@@ -346,19 +322,19 @@ export async function processImport(
           ...transaction,
           location: correction.location ?? transaction.location,
           entity: {
-            entityId: correction.entity_id,
-            entityName: correction.entity_name ?? "Unknown",
+            entityId: correction.entityId,
+            entityName: correction.entityName ?? "Unknown",
             matchType: "learned" as never, // UI-only matchType
             confidence: correction.confidence,
           },
           status: correction.confidence >= 0.9 ? "matched" : "uncertain",
           suggestedTags: buildSuggestedTags(
             transaction.description,
-            correction.entity_id,
+            correction.entityId,
             parseCorrectionTags(correction.tags),
             null,
             knownTags,
-            correction.description_pattern
+            correction.descriptionPattern
           ),
         });
         continue; // Skip to next transaction

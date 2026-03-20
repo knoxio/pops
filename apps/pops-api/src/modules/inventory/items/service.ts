@@ -5,35 +5,9 @@
 import crypto from "crypto";
 import { eq, like, count, and } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
-import { homeInventory } from "../../../db/schema/inventory.js";
+import { homeInventory } from "@pops/db-types";
 import { NotFoundError } from "../../../shared/errors.js";
 import type { InventoryRow, CreateInventoryItemInput, UpdateInventoryItemInput } from "./types.js";
-
-/** Map a Drizzle result row to the snake_case InventoryRow interface. */
-function toRow(row: typeof homeInventory.$inferSelect): InventoryRow {
-  return {
-    id: row.id,
-    notion_id: row.notionId,
-    item_name: row.itemName,
-    brand: row.brand,
-    model: row.model,
-    item_id: row.itemId,
-    room: row.room,
-    location: row.location,
-    type: row.type,
-    condition: row.condition,
-    in_use: row.inUse ?? 0,
-    deductible: row.deductible ?? 0,
-    purchase_date: row.purchaseDate,
-    warranty_expires: row.warrantyExpires,
-    replacement_value: row.replacementValue,
-    resale_value: row.resaleValue,
-    purchase_transaction_id: row.purchaseTransactionId,
-    purchased_from_id: row.purchasedFromId,
-    purchased_from_name: row.purchasedFromName,
-    last_edited_time: row.lastEditedTime,
-  };
-}
 
 /** Count + rows for a paginated list. */
 export interface InventoryListResult {
@@ -91,7 +65,7 @@ export function listInventoryItems(
 
   const [countResult] = countQuery.all();
 
-  return { rows: rows.map(toRow), total: countResult.total };
+  return { rows: rows, total: countResult.total };
 }
 
 /** Get a single inventory item by id. Throws NotFoundError if missing. */
@@ -104,7 +78,7 @@ export function getInventoryItem(id: string): InventoryRow {
     .all();
 
   if (!row) throw new NotFoundError("Inventory item", id);
-  return toRow(row);
+  return row;
 }
 
 /**

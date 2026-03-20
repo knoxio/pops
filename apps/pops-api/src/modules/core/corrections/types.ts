@@ -1,22 +1,7 @@
 import { z } from "zod";
+import type { TransactionCorrectionRow } from "@pops/db-types";
 
-/**
- * Database row shape for transaction_corrections table
- */
-export interface CorrectionRow {
-  id: string;
-  description_pattern: string;
-  match_type: "exact" | "contains" | "regex";
-  entity_id: string | null;
-  entity_name: string | null;
-  location: string | null;
-  tags: string; // JSON array string
-  transaction_type: "purchase" | "transfer" | "income" | null;
-  confidence: number;
-  times_applied: number;
-  created_at: string;
-  last_used_at: string | null;
-}
+export type CorrectionRow = TransactionCorrectionRow;
 
 /**
  * API response shape (camelCase)
@@ -42,10 +27,10 @@ export interface Correction {
 export function toCorrection(row: CorrectionRow): Correction {
   return {
     id: row.id,
-    descriptionPattern: row.description_pattern,
-    matchType: row.match_type,
-    entityId: row.entity_id,
-    entityName: row.entity_name,
+    descriptionPattern: row.descriptionPattern,
+    matchType: row.matchType as Correction["matchType"],
+    entityId: row.entityId,
+    entityName: row.entityName,
     location: row.location,
     tags: (() => {
       try {
@@ -58,11 +43,11 @@ export function toCorrection(row: CorrectionRow): Correction {
         return [];
       }
     })(),
-    transactionType: row.transaction_type,
+    transactionType: row.transactionType as Correction["transactionType"],
     confidence: row.confidence,
-    timesApplied: row.times_applied,
-    createdAt: row.created_at,
-    lastUsedAt: row.last_used_at,
+    timesApplied: row.timesApplied,
+    createdAt: row.createdAt,
+    lastUsedAt: row.lastUsedAt,
   };
 }
 

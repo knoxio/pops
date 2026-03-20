@@ -3,7 +3,7 @@
  */
 import { sql, gte, lte, and } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
-import { aiUsage } from "../../../db/schema/ai-usage.js";
+import { aiUsage } from "@pops/db-types";
 import type { AiUsageStatsOutput, AiUsageHistoryOutput, AiUsageHistoryRecord } from "./types.js";
 
 /**
