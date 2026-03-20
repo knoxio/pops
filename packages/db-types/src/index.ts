@@ -16,6 +16,8 @@ import type { aiUsage } from "./schema/ai-usage.js";
 import type { environments } from "./schema/environments.js";
 import type { movies } from "./schema/movies.js";
 import type { tvShows } from "./schema/tv-shows.js";
+import type { seasons } from "./schema/seasons.js";
+import type { episodes } from "./schema/episodes.js";
 import type { comparisonDimensions } from "./schema/comparison-dimensions.js";
 import type { comparisons } from "./schema/comparisons.js";
 import type { mediaScores } from "./schema/media-scores.js";
@@ -32,6 +34,8 @@ export {
   environments,
   movies,
   tvShows,
+  seasons,
+  episodes,
   comparisonDimensions,
   comparisons,
   mediaScores,
@@ -48,6 +52,8 @@ export type AiUsageRow = InferSelectModel<typeof aiUsage>;
 export type EnvironmentRow = InferSelectModel<typeof environments>;
 export type MovieRow = InferSelectModel<typeof movies>;
 export type TvShowRow = InferSelectModel<typeof tvShows>;
+export type SeasonRow = InferSelectModel<typeof seasons>;
+export type EpisodeRow = InferSelectModel<typeof episodes>;
 export type ComparisonDimensionRow = InferSelectModel<typeof comparisonDimensions>;
 export type ComparisonRow = InferSelectModel<typeof comparisons>;
 export type MediaScoreRow = InferSelectModel<typeof mediaScores>;
@@ -63,6 +69,8 @@ export type AiUsageInsert = InferInsertModel<typeof aiUsage>;
 export type EnvironmentInsert = InferInsertModel<typeof environments>;
 export type MovieInsert = InferInsertModel<typeof movies>;
 export type TvShowInsert = InferInsertModel<typeof tvShows>;
+export type SeasonInsert = InferInsertModel<typeof seasons>;
+export type EpisodeInsert = InferInsertModel<typeof episodes>;
 export type ComparisonDimensionInsert = InferInsertModel<typeof comparisonDimensions>;
 export type ComparisonInsert = InferInsertModel<typeof comparisons>;
 export type MediaScoreInsert = InferInsertModel<typeof mediaScores>;
