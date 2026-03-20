@@ -5,6 +5,7 @@
  *   core     — entities, ai-usage, corrections
  *   finance  — transactions, budgets, imports, wishlist
  *   inventory — items
+ *   media    — comparisons
  *
  * Note: envs is an Express router (not tRPC) — mounted directly in app.ts.
  */
