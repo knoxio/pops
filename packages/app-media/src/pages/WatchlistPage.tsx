@@ -386,19 +386,17 @@ export function WatchlistPage() {
 
   if (watchlistError) {
     return (
-      <div className="p-4 md:p-6">
-        <Alert variant="destructive">
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            Failed to load watchlist. Please try again.
-          </AlertDescription>
-        </Alert>
-      </div>
+      <Alert variant="destructive">
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>
+          Failed to load watchlist. Please try again.
+        </AlertDescription>
+      </Alert>
     );
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-3xl">
       <h1 className="text-2xl font-bold">Watchlist</h1>
 
       {loading ? (

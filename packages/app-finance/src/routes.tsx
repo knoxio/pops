@@ -39,6 +39,7 @@ interface AppNavConfigShape {
   id: string;
   label: string;
   icon: string;
+  color?: string;
   basePath: string;
   items: { path: string; label: string; icon: string }[];
 }
@@ -47,6 +48,7 @@ export const navConfig = {
   id: "finance",
   label: "Finance",
   icon: "DollarSign",
+  color: "emerald",
   basePath: "/finance",
   items: [
     { path: "", label: "Dashboard", icon: "LayoutDashboard" },

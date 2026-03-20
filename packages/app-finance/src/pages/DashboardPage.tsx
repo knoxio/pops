@@ -2,45 +2,7 @@
  * Dashboard page - overview of finances
  */
 import { trpc } from "../lib/trpc";
-import { Card } from "@pops/ui";
-import { Alert, AlertTitle, AlertDescription } from "@pops/ui";
-import { Skeleton } from "@pops/ui";
-import { Badge } from "@pops/ui";
-
-/**
- * Simple stats card component
- */
-function StatsCard({
-  title,
-  value,
-  description,
-  variant = "default",
-}: {
-  title: string;
-  value: string | number;
-  description?: string;
-  variant?: "default" | "positive" | "negative";
-}) {
-  const variantClasses = {
-    default: "text-foreground",
-    positive: "text-green-600 dark:text-green-400",
-    negative: "text-red-600 dark:text-red-400",
-  };
-
-  return (
-    <Card className="p-6">
-      <div className="space-y-2">
-        <h3 className="text-sm font-medium text-muted-foreground">{title}</h3>
-        <p className={`text-3xl font-bold ${variantClasses[variant]}`}>
-          {value}
-        </p>
-        {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
-        )}
-      </div>
-    </Card>
-  );
-}
+import { Card, StatCard, Alert, AlertTitle, AlertDescription, Skeleton, Badge, cn } from "@pops/ui";
 
 export function DashboardPage() {
   // Fetch recent transactions
@@ -74,8 +36,8 @@ export function DashboardPage() {
 
   if (transactionsError) {
     return (
-      <div className="space-y-6">
-        <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
+      <div className="container mx-auto py-8">
+        <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
         <Alert variant="destructive">
           <AlertTitle>Unable to load dashboard</AlertTitle>
           <AlertDescription>
@@ -98,16 +60,16 @@ export function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">
+    <div className="max-w-7xl mx-auto space-y-8 pb-10">
+      <header>
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground mt-1">
           Welcome back! Here's your financial overview.
         </p>
-      </div>
+      </header>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {transactionsLoading ? (
           <>
             <Skeleton className="h-32" />
@@ -117,85 +79,84 @@ export function DashboardPage() {
           </>
         ) : stats ? (
           <>
-            <StatsCard
+            <StatCard
               title="Total Transactions"
               value={stats.totalTransactions.toLocaleString()}
               description="All-time transactions"
+              color="slate"
             />
-            <StatsCard
+            <StatCard
               title="Recent Income"
               value={`$${stats.totalIncome.toFixed(2)}`}
               description="Last 10 transactions"
-              variant="positive"
+              color="emerald"
             />
-            <StatsCard
+            <StatCard
               title="Recent Expenses"
               value={`$${stats.totalExpenses.toFixed(2)}`}
               description="Last 10 transactions"
-              variant="negative"
+              color="rose"
             />
-            <StatsCard
+            <StatCard
               title="Net Balance"
               value={`$${(stats.totalIncome - stats.totalExpenses).toFixed(2)}`}
               description="Last 10 transactions"
-              variant={
-                stats.totalIncome > stats.totalExpenses
-                  ? "positive"
-                  : "negative"
-              }
+              color={stats.totalIncome > stats.totalExpenses ? "emerald" : "rose"}
             />
           </>
         ) : null}
-      </div>
+      </section>
 
       {/* Recent Transactions */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold">Recent Transactions</h2>
+      <section className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold tracking-tight">Recent Transactions</h2>
+        </div>
         {transactionsLoading ? (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Skeleton className="h-16" />
             <Skeleton className="h-16" />
             <Skeleton className="h-16" />
           </div>
         ) : transactions && transactions.data.length > 0 ? (
-          <Card>
-            <div className="divide-y">
+          <Card className="overflow-hidden p-0">
+            <div className="divide-y divide-border">
               {transactions.data.map((transaction) => (
                 <div
                   key={transaction.id}
-                  className="p-3 sm:p-4 flex items-center justify-between gap-3 hover:bg-muted/50 transition-colors"
+                  className="p-4 flex items-center justify-between gap-4 hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium truncate">
+                      <p className="font-medium truncate text-base">
                         {transaction.description}
                       </p>
                       {transaction.tags.includes("Online") && (
-                        <Badge variant="secondary" className="hidden sm:inline-flex text-xs">
+                        <Badge variant="secondary" className="hidden sm:inline-flex text-[10px] uppercase tracking-wider px-1.5 py-0">
                           Online
                         </Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 mt-1">
-                      <p className="text-sm text-muted-foreground">
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-xs text-muted-foreground">
                         {new Date(transaction.date).toLocaleDateString("en-AU")}
                       </p>
                       {transaction.entityName && (
                         <>
-                          <span className="text-muted-foreground">•</span>
-                          <p className="text-sm text-muted-foreground truncate">
+                          <span className="text-muted-foreground/50 text-[10px]">•</span>
+                          <p className="text-xs text-muted-foreground truncate">
                             {transaction.entityName}
                           </p>
                         </>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-                    <Badge variant="outline" className="hidden sm:inline-flex text-xs">
+                  <div className="flex items-center gap-4 shrink-0">
+                    <Badge variant="outline" className="hidden sm:inline-flex text-[10px] uppercase tracking-wider px-1.5 py-0 text-muted-foreground font-normal">
                       {transaction.account}
                     </Badge>
                     <p
-                      className={`font-mono font-semibold tabular-nums ${
+                      className={`text-lg font-bold tabular-nums tracking-tight ${
                         transaction.amount < 0
                           ? "text-red-600 dark:text-red-400"
                           : "text-green-600 dark:text-green-400"
@@ -210,40 +171,44 @@ export function DashboardPage() {
             </div>
           </Card>
         ) : (
-          <Card className="p-6 text-center text-muted-foreground">
+          <Card className="p-12 text-center text-muted-foreground border-dashed">
             No transactions found
           </Card>
         )}
-      </div>
+      </section>
 
       {/* Active Budgets */}
-      <div className="space-y-4">
-        <h2 className="text-2xl font-bold">Active Budgets</h2>
+      <section className="space-y-4">
+        <h2 className="text-xl font-semibold tracking-tight">Active Budgets</h2>
         {budgetsLoading ? (
-          <Skeleton className="h-32" />
+          <div className="grid gap-4 md:grid-cols-3">
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+          </div>
         ) : budgets && budgets.data.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {budgets.data.slice(0, 3).map((budget) => (
-              <Card key={budget.id} className="p-4">
-                <div className="space-y-2">
+              <Card key={budget.id} className="p-5 flex flex-col justify-between h-full">
+                <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-semibold">{budget.category}</h3>
-                    <Badge variant={budget.active ? "default" : "secondary"}>
+                    <h3 className="font-medium text-muted-foreground uppercase text-[10px] tracking-widest">{budget.category}</h3>
+                    <Badge variant={budget.active ? "default" : "secondary"} className="text-[10px] h-5">
                       {budget.active ? "Active" : "Inactive"}
                     </Badge>
                   </div>
-                  <p className="text-2xl font-bold">
-                    ${budget.amount ? budget.amount.toFixed(2) : "0.00"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {budget.period}
-                  </p>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-bold">${budget.amount ? budget.amount.toFixed(2) : "0.00"}</span>
+                    <span className="text-xs text-muted-foreground">/ {budget.period}</span>
+                  </div>
                 </div>
               </Card>
             ))}
           </div>
-        ) : null}
-      </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">No active budgets found</p>
+        )}
+      </section>
     </div>
   );
 }

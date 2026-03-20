@@ -10,6 +10,7 @@
     "lint:fix": "eslint src --ext .ts,.tsx --fix"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.2",
     "@pops/api": "workspace:*",
     "@pops/ui": "workspace:*",
     "@tanstack/react-query": "5.90.20",

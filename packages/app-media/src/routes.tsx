@@ -39,6 +39,7 @@ interface AppNavConfigShape {
   id: string;
   label: string;
   icon: string;
+  color?: string;
   basePath: string;
   items: { path: string; label: string; icon: string }[];
 }
@@ -47,6 +48,7 @@ export const navConfig = {
   id: "media",
   label: "Media",
   icon: "Film",
+  color: "indigo",
   basePath: "/media",
   items: [
     { path: "", label: "Library", icon: "Library" },
