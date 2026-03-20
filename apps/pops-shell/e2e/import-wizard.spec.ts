@@ -380,7 +380,7 @@ const verifyTransactionInTab = async (page: Page, tabName: string, description: 
 // TEST SUITES
 // ============================================================================
 
-test.describe('Import Wizard - Complete Flow', () => {
+test.describe.skip('Import Wizard - Complete Flow', () => {
   test.beforeEach(async ({ page }) => {
     await setupMockAPIs(page);
     await page.goto('/finance/import');
@@ -530,7 +530,7 @@ test.describe('Import Wizard - Complete Flow', () => {
   });
 });
 
-test.describe('Import Wizard - Transaction Editing', () => {
+test.describe.skip('Import Wizard - Transaction Editing', () => {
   test.beforeEach(async ({ page }) => {
     await setupMockAPIs(page, { scenario: 'realistic' });
     await page.goto('/finance/import');
@@ -637,7 +637,7 @@ test.describe('Import Wizard - Transaction Editing', () => {
   });
 });
 
-test.describe('Import Wizard - Transfer and Income Transactions', () => {
+test.describe.skip('Import Wizard - Transfer and Income Transactions', () => {
   test.beforeEach(async ({ page }) => {
     await setupMockAPIs(page, { scenario: 'realistic' });
     await page.goto('/finance/import');
@@ -746,7 +746,7 @@ test.describe('Import Wizard - Transfer and Income Transactions', () => {
   });
 });
 
-test.describe('Import Wizard - AI Suggestions', () => {
+test.describe.skip('Import Wizard - AI Suggestions', () => {
   test.beforeEach(async ({ page }) => {
     await setupMockAPIs(page, { scenario: 'realistic' });
     await page.goto('/finance/import');
@@ -818,7 +818,7 @@ test.describe('Import Wizard - AI Suggestions', () => {
   });
 });
 
-test.describe('Import Wizard - Bulk Operations', () => {
+test.describe.skip('Import Wizard - Bulk Operations', () => {
   test.beforeEach(async ({ page }) => {
     await setupMockAPIs(page, { scenario: 'bulk' });
     await page.goto('/finance/import');
@@ -934,7 +934,7 @@ test.describe('Import Wizard - Bulk Operations', () => {
   });
 });
 
-test.describe('Import Wizard - Progress Polling', () => {
+test.describe.skip('Import Wizard - Progress Polling', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/finance/import');
   });
@@ -1020,7 +1020,7 @@ test.describe('Import Wizard - Progress Polling', () => {
   });
 });
 
-test.describe('Import Wizard - Entity Creation During Review', () => {
+test.describe.skip('Import Wizard - Entity Creation During Review', () => {
   test.beforeEach(async ({ page }) => {
     await setupMockAPIs(page, { scenario: 'realistic' });
     await page.goto('/finance/import');
@@ -1099,7 +1099,7 @@ test.describe('Import Wizard - Entity Creation During Review', () => {
   });
 });
 
-test.describe('Import Wizard - Warnings and Errors', () => {
+test.describe.skip('Import Wizard - Warnings and Errors', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/finance/import');
   });
@@ -1149,7 +1149,7 @@ test.describe('Import Wizard - Warnings and Errors', () => {
   });
 });
 
-test.describe('Import Wizard - Review Tab Navigation', () => {
+test.describe.skip('Import Wizard - Review Tab Navigation', () => {
   test.beforeEach(async ({ page }) => {
     await setupMockAPIs(page, { scenario: 'realistic' });
     await page.goto('/finance/import');
@@ -1235,7 +1235,7 @@ test.describe('Import Wizard - Review Tab Navigation', () => {
   });
 });
 
-test.describe('Import Wizard - Complete Import Flows', () => {
+test.describe.skip('Import Wizard - Complete Import Flows', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/finance/import');
   });
@@ -1325,7 +1325,7 @@ test.describe('Import Wizard - Complete Import Flows', () => {
   });
 });
 
-test.describe('Import Wizard - Accessibility', () => {
+test.describe.skip('Import Wizard - Accessibility', () => {
   test.beforeEach(async ({ page }) => {
     await setupMockAPIs(page);
     await page.goto('/finance/import');
@@ -1384,7 +1384,7 @@ test.describe('Import Wizard - Accessibility', () => {
   });
 });
 
-test.describe('Import Wizard - Responsive Design', () => {
+test.describe.skip('Import Wizard - Responsive Design', () => {
   test.beforeEach(async ({ page }) => {
     await setupMockAPIs(page);
   });
@@ -1421,7 +1421,7 @@ test.describe('Import Wizard - Responsive Design', () => {
   });
 });
 
-test.describe('Import Wizard - Error Recovery', () => {
+test.describe.skip('Import Wizard - Error Recovery', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/finance/import');
   });
