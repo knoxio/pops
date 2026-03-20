@@ -175,42 +175,27 @@ A: Evaluate recharts (most popular, largest bundle), visx (lower-level, smaller 
 ## User Stories
 
 > **Standard verification — applies to every US below.**
+>
+> **Sizing:** Each story is scoped for one agent, ~15-20 minutes.
 
-### US-1: Comparison arena
-**As a** user, **I want** to compare two movies side by side and pick a winner **so that** the system learns my taste.
+### Batch A — Core (parallelisable)
 
-**Acceptance criteria:**
-- Two movie cards with poster, title, year
-- Dimension prompt shown
-- Tap card to select winner
-- Animation on selection
-- Next pair auto-loads
-- Skip button works
-- Session counter shown
+#### US-1a: Comparison arena — card layout and selection
+**Scope:** Create `CompareArenaPage.tsx`. Two movie cards side-by-side (poster, title, year). Dimension prompt above cards. Tap/click card to select winner → calls `media.comparisons.submit`. Brief animation on selection (winner pulses). Skip button below cards. Responsive: stacked vertical on mobile, side-by-side on tablet+. Add route + "Compare" to secondary nav.
+**Files:** `packages/app-media/src/pages/CompareArenaPage.tsx`
 
-### US-2: Dimension management
-**As a** user, **I want** to add, edit, and reorder comparison dimensions **so that** I rate movies on the qualities I care about.
+#### US-1b: Comparison arena — flow logic
+**Scope:** Add auto-load-next-pair after selection. Dimension auto-rotation (cycle through active dimensions). Session counter ("5 comparisons this session"). "Done" button exits arena. Dimension selector to switch/lock dimension. Score delta shown briefly in animation ("+12", "-12"). Data from `media.comparisons.getRandomPair`. Error state when <2 watched movies.
+**Files:** `CompareArenaPage.tsx` (enhance)
 
-**Acceptance criteria:**
-- Add new dimension with name + description
-- Edit existing dimensions
-- Deactivate without deleting
-- Reorder dimensions
+#### US-2: Dimension management UI
+**Scope:** Create a settings section or modal accessible from the arena page. Add new dimension (name + description). Edit existing (rename, update description). Deactivate (hides from comparisons, preserves data). Reorder (drag or up/down). Calls dimension CRUD procedures from PRD-007.
+**Files:** New component (DimensionManager or settings section)
 
-### US-3: Rankings page
-**As a** user, **I want** to see my movies ranked by dimension **so that** I can see what my top-rated movies are.
+#### US-3: Rankings page
+**Scope:** Create `RankingsPage.tsx`. Dimension selector (tabs or dropdown) at top. "Overall" tab shows composite score (average across dimensions). Ranked list: position number, poster thumbnail, title, year, score indicator bar. Click movie → detail page. Paginated. Add route + "Rankings" to secondary nav.
+**Files:** `packages/app-media/src/pages/RankingsPage.tsx`
 
-**Acceptance criteria:**
-- Dimension selector (tabs/dropdown)
-- Overall composite ranking
-- Ranked list with position, poster, title, score indicator
-- Click movie → detail page
-
-### US-4: Score visualisation on detail page
-**As a** user, **I want** to see a radar chart of a movie's comparison scores **so that** I understand its strengths at a glance.
-
-**Acceptance criteria:**
-- Radar chart with one axis per dimension
-- Score and comparison count per dimension
-- "Not enough data" for movies with <3 comparisons
-- Storybook story with various data states
+#### US-4: Radar chart on movie detail page
+**Scope:** Add "Your Ratings" section to `MovieDetailPage`. Radar chart (use recharts `RadarChart`) with one axis per dimension. Score and comparison count per dimension displayed as tooltip or legend. "Not enough data" message when <3 total comparisons. Storybook story with variants: no data, partial data, full data.
+**Files:** `MovieDetailPage.tsx`, new chart component, story

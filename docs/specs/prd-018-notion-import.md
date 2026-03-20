@@ -187,57 +187,37 @@ The import should be safe to run multiple times:
 ## User Stories
 
 > **Standard verification — applies to every US below.**
+>
+> **Sizing:** Each story is scoped for one agent, ~15-20 minutes.
 
-### US-1: Notion data fetch
-**As a** developer, **I want** to fetch all items from the Notion inventory database **so that** I can map them to the POPS schema.
+### Batch A — Core import logic (parallelisable)
 
-**Acceptance criteria:**
-- All items fetched with all properties
-- Page content fetched for photos and notes
-- Handles pagination (Notion API returns max 100 items per request)
+#### US-1: Notion data fetch
+**Scope:** Create the Notion API fetch module for the import script. Paginated fetch of all items from the Home Inventory database (`collection://7784d712-0114-4371-90c1-cb15ea003fe2`). Fetch properties + page content for each item. Handle pagination (max 100 per request). Use Notion MCP integration or build a lightweight REST client.
+**Files:** Import script (notion fetch module)
 
-### US-2: Property mapping and item creation
-**As a** developer, **I want** Notion properties mapped to POPS fields **so that** items are created with correct data.
+#### US-2: Property mapping
+**Scope:** Create mapping functions: Notion properties → POPS inventory_items fields. Map per R2 table: Item Name → name, Brand → brand, ID → asset_id, Room/Location → location_id (via lookup), Type/Condition → enums, In-use/Deductible → booleans (from `__YES__`/`__NO__`), dates → ISO strings, values → numbers. Cross-domain FK matching for Purchase Transaction and Purchased From.
+**Files:** Import script (mapping module)
 
-**Acceptance criteria:**
-- All fields mapped per R2 table
-- Enum values (Type, Condition) mapped correctly
-- Boolean fields (In-use, Deductible) converted from Notion format
-- Dates converted to ISO strings
+#### US-3: Location tree auto-creation
+**Scope:** Create location tree builder for the import. Create "Home" root. For each unique `Room` value, create as child of Home. For each unique `Location` value within a room, create as child of that room. Set `location_id` on items (most specific available). Idempotent — don't duplicate on re-run.
+**Files:** Import script (location builder module)
 
-### US-3: Location tree auto-creation
-**As a** developer, **I want** the location tree built from Notion Room + Location values **so that** items have correct hierarchical locations.
+#### US-4: "Used By" notes preservation
+**Scope:** For each item with "Used By" multi-select values, append to the `notes` field as markdown: `## Connected to (from Notion)\n- Value1\n- Value2`. Preserve existing page content (specs, notes) above the connection list. Items with no "Used By" get no extra content.
+**Files:** Import script (notes builder)
 
-**Acceptance criteria:**
-- "Home" root created
-- Unique rooms created as children of Home
-- Unique locations created as children of their rooms
-- Items linked to most specific location
-- Duplicate locations not created on re-run
+#### US-5: Photo download
+**Scope:** Parse page content for image URLs (Notion's S3 signed URLs). Download each image immediately (URLs expire in ~1 hour). Compress: resize to max 1920px, convert HEIC→JPEG, strip EXIF. Store in `{INVENTORY_IMAGES_DIR}/items/{item_id}/photo_{NNN}.jpg`. Create `item_photos` rows with correct ordering. Handle items with zero photos gracefully.
+**Files:** Import script (photo download module)
 
-### US-4: "Used By" preservation
-**As a** developer, **I want** "Used By" values preserved in item notes **so that** connections can be created manually later.
+### Batch B — Integration (depends on Batch A)
 
-**Acceptance criteria:**
-- "Used By" values appended to notes as a markdown list
-- Formatted under a "Connected to (from Notion)" heading
-- Items with no "Used By" values have no extra notes content
-- Existing notes content (specs, etc.) is preserved above the connection list
+#### US-6: Dry-run mode and reporting
+**Scope:** Add `--execute` flag. Without it, run in dry-run mode: fetch all data, compute everything, generate report (item count, location tree preview, photo count + estimated size, match stats, unmatched references) — but write nothing to the database. With `--execute`, write everything. Add `mise import:notion-inventory` task to `mise.toml`.
+**Files:** Import script (main entry + mise.toml)
 
-### US-5: Photo download
-**As a** developer, **I want** photos downloaded from Notion pages **so that** item images are preserved in POPS.
-
-**Acceptance criteria:**
-- Images downloaded immediately (before URL expiry)
-- Compressed and stored locally
-- HEIC converted to JPEG
-- item_photos rows created with correct ordering
-- Items with no photos handled gracefully
-
-### US-6: Dry-run mode
-**As a** user, **I want** to preview the import without writing **so that** I can verify before committing.
-
-**Acceptance criteria:**
-- Full report: item count, location tree, photo count, match stats
-- No database writes in dry-run mode
-- Estimated photo download size shown
+#### US-7: Idempotency and error handling
+**Scope:** Check `notion_id` before inserting — skip items that already exist. Optional `--update` flag to update existing items on re-run. Import log: total/imported/skipped/error counts. Don't duplicate locations or photos on re-run.
+**Files:** Import script (dedup logic)

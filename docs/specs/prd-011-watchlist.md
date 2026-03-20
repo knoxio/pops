@@ -115,45 +115,25 @@ Display the watchlist count in the media app's navigation:
 ## User Stories
 
 > **Standard verification — applies to every US below.**
+>
+> **Sizing:** Each story is scoped for one agent, ~15-20 minutes. All stories in this PRD are parallelisable.
 
-### US-1: Watchlist page
-**As a** user, **I want** a dedicated page showing everything I plan to watch **so that** I can decide what to watch next.
+#### US-1: Watchlist page
+**Scope:** Create `WatchlistPage.tsx`. Ordered list by priority. Each item: poster, title, year, type badge, notes. Click navigates to detail page. Empty state with CTA. Add route to `routes.tsx`. Add "Watchlist" to secondary nav with count badge.
+**Files:** `packages/app-media/src/pages/WatchlistPage.tsx`
 
-**Acceptance criteria:**
-- All watchlist items displayed in priority order
-- Each item shows poster, title, year, type, notes
-- Click navigates to detail page
-- Empty state with CTA when empty
+#### US-2: Add/remove watchlist toggle
+**Scope:** Add "Add to Watchlist" / "On Watchlist" toggle button to `MovieDetailPage`, `TvShowDetailPage`, and `MediaCard` (hover/context). Calls `media.watchlist.add` / `media.watchlist.remove`. Toast notifications on success.
+**Files:** `MovieDetailPage.tsx`, `TvShowDetailPage.tsx`, `MediaCard.tsx`
 
-### US-2: Add/remove from watchlist
-**As a** user, **I want** to add and remove items from my watchlist from anywhere in the app **so that** managing my queue is frictionless.
+#### US-3: Watchlist reorder
+**Scope:** Add drag-to-reorder (desktop) or up/down buttons (mobile) to the watchlist page. On reorder, re-index all affected items' priority values via `media.watchlist.updatePriority`. Persist after reload.
+**Files:** `WatchlistPage.tsx`
 
-**Acceptance criteria:**
-- Add button on movie/TV detail pages
-- Add button on library cards (hover/context)
-- Toggle state reflects current watchlist status
-- Toast notifications on add/remove
+#### US-4: Watchlist notes
+**Scope:** Add inline notes editing to watchlist items. Click to add/edit, muted text display below title, empty notes hidden. Calls `media.watchlist.updateNotes`.
+**Files:** `WatchlistPage.tsx`
 
-### US-3: Reorder watchlist
-**As a** user, **I want** to reorder my watchlist **so that** the most urgent items are at the top.
-
-**Acceptance criteria:**
-- Drag-to-reorder or up/down controls
-- Priority persists after page reload
-- Reorder updates priority values for all affected items
-
-### US-4: Watchlist notes
-**As a** user, **I want** to attach notes to watchlist items **so that** I remember why I added something.
-
-**Acceptance criteria:**
-- Inline add/edit for notes
-- Notes displayed below title
-- Empty notes hidden
-
-### US-5: Auto-remove on watch
-**As a** developer, **I want** watched items automatically removed from the watchlist **so that** the list stays current.
-
-**Acceptance criteria:**
-- Movie removed from watchlist when marked as watched
-- TV show removed when all episodes are watched
-- Individual episode watches do not trigger removal
+#### US-5: Auto-remove on watch
+**Scope:** In the watch history service (`modules/media/watch-history/service.ts`), add logic: when logging a movie watch event, check if the movie is on the watchlist and remove it. For TV shows, remove from watchlist only when all episodes are marked watched. Individual episode watches do not trigger removal. Unit tests.
+**Files:** `modules/media/watch-history/service.ts`, test

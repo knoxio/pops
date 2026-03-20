@@ -312,91 +312,63 @@ A: Fire `media.search.movies` and `media.search.tvShows` in parallel via `Promis
 
 > **Standard verification — applies to every US below:**
 > Each story is only done when `pnpm typecheck`, `pnpm lint`, `pnpm test`, and `pnpm build` all pass.
+>
+> **Sizing:** Each story is scoped for one agent, ~15-20 minutes.
 
-### US-1: Create @pops/app-media package scaffold
-**As a** developer, **I want** the `@pops/app-media` workspace package to exist with correct configuration **so that** the shell can import media routes.
+### Batch A — Scaffold (sequential, small)
 
-**Acceptance criteria:**
-- `packages/app-media/package.json` exists with correct name, exports, peer deps
-- `packages/app-media/tsconfig.json` extends workspace base
-- `packages/app-media/src/routes.tsx` exports route definitions
-- `pnpm install` resolves the workspace package
-- Shell can `lazy(() => import('@pops/app-media/routes'))` without error
+#### US-1: Package scaffold
+**Scope:** Create `packages/app-media/` with `package.json` (@pops/app-media, exports, peer deps), `tsconfig.json` (extends workspace base), `src/index.ts`, `src/routes.tsx` (empty route array export). Verify `pnpm install` resolves and shell can `lazy(() => import('@pops/app-media/routes'))`.
+**Files:** `packages/app-media/package.json`, `tsconfig.json`, `src/index.ts`, `src/routes.tsx`
 
-### US-2: Register media in app switcher
-**As a** user, **I want** to see "Media" in the app switcher **so that** I can navigate to the media app.
+#### US-2: Shell integration
+**Scope:** Register media in the shell's app switcher. Film/clapperboard icon, "Media" label, `/media` route prefix. Lazy-loaded. Active state on `/media/*` routes.
+**Files:** `apps/pops-shell/` (app switcher config, router)
 
-**Acceptance criteria:**
-- Media appears in the shell app switcher with a film/clapperboard icon
-- Clicking "Media" navigates to `/media`
-- Media routes are lazily loaded (not in the initial bundle)
-- Active state is shown when on a `/media/*` route
+### Batch B — Components (parallelisable, depends on Batch A)
 
-### US-3: Library page
-**As a** user, **I want** to browse all movies and TV shows in my library **so that** I can see what I have.
+#### US-4a: MediaCard component
+**Scope:** Create `MediaCard.tsx` + `MediaCard.stories.tsx`. Poster from local cache, title (2-line truncate), year, type badge ("Movie"/"TV") in top corner. Click navigates to detail page. Story variants: movie, TV show, long title, no poster (placeholder).
+**Files:** `packages/app-media/src/components/MediaCard.tsx`, `.stories.tsx`
 
-**Acceptance criteria:**
-- Grid of `MediaCard` components displays all library items
-- Filter by type (All / Movies / TV Shows)
-- Filter by genre (dropdown of all genres in the library)
-- Sort by title, date added, release date, rating
-- Empty state with CTA shown when library is empty
-- Responsive: 2 columns on mobile, 3-4 on tablet, 4-6 on desktop
-- Loading skeleton shown while data fetches
+#### US-4b: MediaGrid component
+**Scope:** Create `MediaGrid.tsx` + story. Responsive grid of MediaCards. Columns: 2 mobile, 3-4 tablet, 4-6 desktop. Handles empty array.
+**Files:** `packages/app-media/src/components/MediaGrid.tsx`, `.stories.tsx`
 
-### US-4: MediaCard component
-**As a** user, **I want** each item in the grid to show a poster, title, year, and type **so that** I can identify items at a glance.
+#### US-4c: MediaDetail component
+**Scope:** Create `MediaDetail.tsx` + story. Hero section layout: backdrop background with gradient, poster left, title/tagline/year/runtime right. Logo over backdrop when available. Responsive: stacked mobile, side-by-side tablet+.
+**Files:** `packages/app-media/src/components/MediaDetail.tsx`, `.stories.tsx`
 
-**Acceptance criteria:**
-- Poster image loads from local cache endpoint
-- Title truncated to 2 lines
-- Year displayed below title
-- Type badge ("Movie" / "TV") in top corner
-- Click navigates to detail page
-- Storybook story with variants: movie, TV show, long title, no poster (placeholder)
+#### US-4d: EpisodeList component
+**Scope:** Create `EpisodeList.tsx` + story. Vertical list of episode rows: number, name, air date, runtime. Expandable/collapsible overview per episode.
+**Files:** `packages/app-media/src/components/EpisodeList.tsx`, `.stories.tsx`
 
-### US-5: Movie detail page
-**As a** user, **I want** to see full details for a movie **so that** I can learn about it.
+#### US-4e: SearchResults component
+**Scope:** Create `SearchResults.tsx` + story. Result cards: poster thumbnail, title, year, overview (truncated), genre tags, rating. "Add to Library" button per result, "In Library" badge for existing items. Loading state on add.
+**Files:** `packages/app-media/src/components/SearchResults.tsx`, `.stories.tsx`
 
-**Acceptance criteria:**
-- Hero section with backdrop, poster, title, tagline, year, runtime
-- Logo rendered over backdrop when available
-- Overview, genre tags, metadata grid
-- Genre tags clickable → navigate to library with genre filter
-- Responsive: stacked on mobile, side-by-side on tablet+
-- 404 page if movie ID doesn't exist
-- Storybook story for `MediaDetail` component
+#### US-4f: GenreTags and MediaTypeBadge components
+**Scope:** Create `GenreTags.tsx` (clickable genre tag chips) and `MediaTypeBadge.tsx` ("Movie"/"TV" badge) + stories for both.
+**Files:** `packages/app-media/src/components/GenreTags.tsx`, `MediaTypeBadge.tsx`, stories
 
-### US-6: TV show detail page
-**As a** user, **I want** to see show details and a list of seasons **so that** I can navigate to specific seasons.
+### Batch C — Pages (parallelisable, depends on Batch B)
 
-**Acceptance criteria:**
-- Hero section with show metadata
-- Season list with poster thumbnails, episode counts, air dates
-- Click season → navigate to `/media/tv/{id}/season/{num}`
-- 404 if show ID doesn't exist
+#### US-3: Library page
+**Scope:** Create `LibraryPage.tsx`. Grid of MediaCards via MediaGrid. Filter bar: type toggle (All/Movies/TV), genre dropdown, sort options (title, date added, release date, rating). Empty state with CTA linking to `/media/search`. Loading skeleton. Data from `media.movies.list` + `media.tvShows.list`.
+**Files:** `packages/app-media/src/pages/LibraryPage.tsx`, `hooks/useMediaLibrary.ts`
 
-### US-7: Season detail page
-**As a** user, **I want** to see all episodes in a season **so that** I can view episode details.
+#### US-5: Movie detail page
+**Scope:** Create `MovieDetailPage.tsx`. Uses MediaDetail component. Adds: overview text, genre tags (clickable → filter library), metadata grid (status, language, budget, revenue, TMDB rating). 404 if ID not found. Data from `media.movies.getById`.
+**Files:** `packages/app-media/src/pages/MovieDetailPage.tsx`
 
-**Acceptance criteria:**
-- Breadcrumb navigation: Media → Show Name → Season N
-- Episode list with number, name, air date, runtime
-- Expandable overview per episode
-- 404 if season doesn't exist
-- Storybook story for `EpisodeList` component
+#### US-6: TV show detail page
+**Scope:** Create `TvShowDetailPage.tsx`. Uses MediaDetail component. Adds: overview, genre/network tags, metadata (seasons, episodes, runtime), season list (poster thumbnails, episode counts, air dates). Click season → `/media/tv/{id}/season/{num}`. 404 if not found.
+**Files:** `packages/app-media/src/pages/TvShowDetailPage.tsx`
 
-### US-8: Search page
-**As a** user, **I want** to search for movies and TV shows and add them to my library **so that** I can build my collection.
+#### US-7: Season detail page
+**Scope:** Create `SeasonDetailPage.tsx`. Breadcrumb: Media → Show Name → Season N. Season header (poster, name, overview). Uses EpisodeList component. 404 if not found. Data from `media.tvShows.getSeason`.
+**Files:** `packages/app-media/src/pages/SeasonDetailPage.tsx`
 
-**Acceptance criteria:**
-- Search input with 300ms debounce
-- Type toggle: Movies / TV Shows / Both
-- Results show poster, title, year, overview, genres, rating
-- "Add to Library" button per result
-- Button shows loading state during add, changes to "In Library" on success
-- Items already in library show "In Library" badge immediately
-- Error toast on add failure
-- "No results" message for empty search
-- Loading skeletons while searching
-- Storybook story for `SearchResults` component
+#### US-8: Search page
+**Scope:** Create `SearchPage.tsx`. Search input (300ms debounce). Type toggle: Movies/TV/Both. Both mode fires parallel queries. Uses SearchResults component. "Add to Library" calls `media.library.addMovie` or `addTvShow`. Error toast on failure. "No results" message. Loading skeletons.
+**Files:** `packages/app-media/src/pages/SearchPage.tsx`, `hooks/useSearch.ts`

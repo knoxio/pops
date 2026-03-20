@@ -338,68 +338,61 @@ A: Rename to `inventory_items` during migration. The table name should reflect t
 ## User Stories
 
 > **Standard verification — applies to every US below.**
+>
+> **Sizing:** Each story is scoped for one agent, ~15-20 minutes.
 
-### US-1: Create Drizzle schema files
-**As a** developer, **I want** all inventory tables defined as Drizzle schemas **so that** types and DDL are a single source of truth.
+### Batch A — Schema files (parallelisable)
 
-**Acceptance criteria:**
-- Schema files for: inventory_items, locations, item_connections, item_photos
-- `drizzle-kit generate` produces migration SQL
-- Migrations run on fresh and existing databases
+#### US-1a: Locations schema
+**Scope:** Create `src/db/schema/locations.ts`. Self-referential tree: `parent_id` FK to self, `ON DELETE CASCADE`. Fields: name, parent_id, sort_order, created_at. Index on parent_id.
+**Files:** `src/db/schema/locations.ts`
 
-### US-2: Migrate existing data
-**As a** developer, **I want** existing inventory data preserved during the schema upgrade **so that** no data is lost.
+#### US-1b: Inventory items schema
+**Scope:** Create `src/db/schema/inventory-items.ts`. Upgraded from `home_inventory`. All fields per R2: asset_id (unique), location_id FK to locations (ON DELETE SET NULL), notes, type/condition enums. Indexes on asset_id, name, location_id, type.
+**Files:** `src/db/schema/inventory-items.ts`
 
-**Acceptance criteria:**
-- Location tree created from existing room/location values
-- Existing items mapped to new schema with correct location_id
-- Old table removed or renamed after verification
+#### US-1c: Item connections schema
+**Scope:** Create `src/db/schema/item-connections.ts`. Junction table: item_a_id, item_b_id (both FK to inventory_items, ON DELETE CASCADE). Unique on (item_a_id, item_b_id). Indexes on both columns.
+**Files:** `src/db/schema/item-connections.ts`
 
-### US-3: Locations tRPC router
-**As a** developer, **I want** CRUD procedures for the location tree **so that** the UI can manage locations.
+#### US-1d: Item photos schema
+**Scope:** Create `src/db/schema/item-photos.ts`. Fields: item_id FK (ON DELETE CASCADE), file_path, caption, sort_order. Index on item_id.
+**Files:** `src/db/schema/item-photos.ts`
 
-**Acceptance criteria:**
-- Full tree retrieval with item counts
-- Create/update/delete with cascade behaviour
-- Breadcrumb path query
-- Items-at-location query with optional children inclusion
-- Unit tests for tree operations
+### Batch B — Migration + types (depends on Batch A)
 
-### US-4: Connections tRPC router
-**As a** developer, **I want** procedures for managing item connections **so that** the UI can connect and disconnect items.
+#### US-1e: Schema integration and migration generation
+**Scope:** Re-export all inventory schemas from `src/db/schema/index.ts`. Run `drizzle-kit generate`. Verify migrations run on fresh and existing databases. Export Drizzle-inferred types from `@pops/db-types`.
+**Files:** `src/db/schema/index.ts`, migrations/, `packages/db-types/`
 
-**Acceptance criteria:**
-- Connect/disconnect with dedup normalisation
-- List connections for an item
-- Recursive chain traversal with depth limit
-- Unit tests including circular connection handling
+#### US-2: Data migration from home_inventory
+**Scope:** Create a migration script that: (1) creates location tree from unique room + location values in old table, (2) maps existing items to new schema with correct location_id, (3) copies asset IDs from old `item_id`/`ID` fields. Verify all 5 existing seed items migrate correctly. Rename old table to `home_inventory_legacy`.
+**Files:** Custom migration script
 
-### US-5: Photos tRPC router
-**As a** developer, **I want** procedures for managing item photos **so that** the UI can upload and display photos.
+### Batch C — Routers (parallelisable, depends on Batch B)
 
-**Acceptance criteria:**
-- Upload with compression (resize, HEIC→JPEG, EXIF strip)
-- Delete removes file and record
-- Reorder updates sort_order
-- Image serving endpoint with cache headers
-- Unit tests for upload validation
+#### US-3a: Locations router — tree CRUD
+**Scope:** Create `modules/inventory/locations/` with router, service, types. Implement: `getTree` (recursive, with item counts), `create` (root or child), `update` (rename, move, reorder), `delete` (with confirmation for non-empty). Unit tests for tree operations.
+**Files:** `modules/inventory/locations/*`
 
-### US-6: Updated items router
-**As a** developer, **I want** the items router extended with new fields **so that** asset IDs, locations, notes, and search work.
+#### US-3b: Locations router — queries
+**Scope:** Add `getItems({ id, includeChildren? })` (items at a location, optionally including subtree) and `getPath({ id })` (breadcrumb array from root to location). Unit tests.
+**Files:** `modules/inventory/locations/service.ts`, test
 
-**Acceptance criteria:**
-- Create/update accept asset_id, location_id, notes
-- List filterable by location (with children option)
-- Search by asset ID (exact match)
-- Get includes location breadcrumb, connection count, photo count
-- Delete cleans up connections and photo files
+#### US-4: Connections router
+**Scope:** Create `modules/inventory/connections/` with router, service, types. Implement: `connect` (normalise A < B, dedup), `disconnect`, `listForItem` (check both columns), `traceChain` (recursive CTE with depth limit, handles cycles via visited set). Unit tests including circular connection handling.
+**Files:** `modules/inventory/connections/*`
 
-### US-7: Seed data
-**As a** developer, **I want** realistic seed data **so that** E2E tests have a meaningful dataset.
+#### US-5: Photos router
+**Scope:** Create `modules/inventory/photos/` with router, service. Upload: multipart form, validate type (JPEG/PNG/HEIC) + size (10MB max), compress (resize to 1920px, HEIC→JPEG, strip EXIF), store in `{INVENTORY_IMAGES_DIR}/items/{item_id}/photo_{NNN}.jpg`. Delete: remove file + record. Reorder: update sort_order. Add Express endpoint `GET /inventory/images/:itemId/:filename` with cache headers. Unit tests.
+**Files:** `modules/inventory/photos/*`, `src/routes/inventory-images.ts`
 
-**Acceptance criteria:**
-- Location tree with 4+ rooms and sub-locations
-- 15+ items with asset IDs across locations
-- 10+ connections forming at least one chain (wall → power board → devices)
-- 2-3 photos on select items
-- Idempotent seeding
+#### US-6: Updated items router
+**Scope:** Extend existing `modules/inventory/items/` router. Add: `assetId`, `locationId`, `notes` to create/update inputs. Add `searchByAssetId` procedure (exact, case-insensitive). Update `list` with `locationId` filter (with `includeChildren` option). Update `get` response to include: location breadcrumb, connection count, photo count. Update `delete` to clean up connections (cascaded) and photo files (application-level). Unit tests.
+**Files:** `modules/inventory/items/*`
+
+### Batch D — Seed (depends on Batch C)
+
+#### US-7: Seed data
+**Scope:** Update `mise db:seed`. Location tree: Home with 4+ rooms (Living Room, Bedroom, Kitchen, Office) and sub-locations (TV Unit, Wardrobe Right Door, etc.). Plus Car, Storage Cage roots. 15+ items with asset IDs across locations. 10+ connections forming a chain (wall plug → PB01 → PS001/PS002 → router/switch). 2-3 placeholder photos. Idempotent.
+**Files:** `src/db/seeder.ts`

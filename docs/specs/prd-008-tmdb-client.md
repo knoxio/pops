@@ -308,75 +308,39 @@ A: Default to `language=en-US` for all requests. The user can't change this in v
 
 > **Standard verification — applies to every US below:**
 > Each story is only done when `pnpm typecheck`, `pnpm lint`, `pnpm test`, and `pnpm build` all pass.
+>
+> **Sizing:** Each story is scoped for one agent, ~15-20 minutes.
 
-### US-1: TMDB API client
-**As a** developer, **I want** a typed HTTP client for the TMDB v3 API **so that** other services can search and fetch movie data.
+### Batch A — Infrastructure (parallelisable)
 
-**Acceptance criteria:**
-- Client authenticates with Bearer token from `TMDB_API_KEY`
-- Client exposes: `searchMovies(query, page)`, `getMovie(tmdbId)`, `getMovieImages(tmdbId)`, `getGenreList()`
-- All responses are typed (not `any`)
-- HTTP errors throw typed errors with status code and message
-- Unit tests with mocked HTTP responses cover: success, 404, 401, 429, network error
+#### US-1: TMDB HTTP client
+**Scope:** Create `modules/media/tmdb/client.ts` and `types.ts`. Implement: `searchMovies(query, page)`, `getMovie(tmdbId)`, `getMovieImages(tmdbId)`, `getGenreList()`. Bearer token auth from `TMDB_API_KEY`. Typed responses, typed errors. Unit tests with mocked HTTP (success, 404, 401, 429, network error).
+**Files:** `client.ts`, `types.ts`, `client.test.ts`
 
-### US-2: Rate limiter
-**As a** developer, **I want** a token bucket rate limiter **so that** TMDB requests never exceed 40 per 10 seconds.
+#### US-2: Token bucket rate limiter
+**Scope:** Create `modules/media/tmdb/rate-limiter.ts`. Configurable capacity and refill rate. `acquire()` resolves immediately or waits. Unit test verifies throttling. This is a shared class — TheTVDB will reuse it with a separate instance.
+**Files:** `rate-limiter.ts`, `rate-limiter.test.ts`
 
-**Acceptance criteria:**
-- `TokenBucketRateLimiter` with configurable capacity and refill rate
-- `acquire()` resolves immediately when tokens are available
-- `acquire()` waits when tokens are exhausted
-- All TMDB client requests go through the limiter
-- Unit test verifies requests are throttled correctly
+#### US-7: Genre ID-to-name mapping cache
+**Scope:** Add genre cache logic to the TMDB client. Fetch genre list on first use, cache in memory, refresh if >24h old. Search results include genre names not just IDs.
+**Files:** `client.ts` (extend with genre cache)
 
-### US-3: Image cache service
-**As a** developer, **I want** movie images downloaded and cached locally **so that** the UI serves images without external API calls.
+### Batch B — Image system (parallelisable, depends on Batch A)
 
-**Acceptance criteria:**
-- Images download to `{MEDIA_IMAGES_DIR}/movies/{tmdb_id}/poster.jpg` etc.
-- Poster, backdrop, and logo download concurrently
-- Existing files are not re-downloaded (unless forced)
-- Missing images (null path from TMDB) are skipped without error
-- Download failures are logged but don't throw
-- `deleteMovieImages` removes the movie's image directory
-- Unit tests with mocked downloads
+#### US-3: Image cache service
+**Scope:** Create `modules/media/tmdb/image-cache.ts`. Download poster/backdrop/logo concurrently. Store in `{MEDIA_IMAGES_DIR}/movies/{tmdb_id}/`. Skip nulls, log failures without throwing. `deleteMovieImages` removes directory. Unit tests with mocked downloads.
+**Files:** `image-cache.ts`, test
 
-### US-4: Image serving endpoint
-**As a** developer, **I want** an Express route that serves cached images **so that** the frontend loads images from the local API.
+#### US-4: Image serving Express endpoint
+**Scope:** Create Express route `GET /media/images/:mediaType/:id/:filename`. Resolution chain: override → cached file → on-demand download → generated placeholder. Placeholder: genre-coloured background + title text, correct aspect ratio, cached to disk. Headers: `Content-Type`, `Cache-Control: immutable`, `ETag`.
+**Files:** `src/routes/media-images.ts` or `app.ts`
 
-**Acceptance criteria:**
-- `GET /media/images/movie/{tmdb_id}/poster.jpg` serves the cached poster
-- Override resolution: serves `override.jpg` when `poster_override_path` is set
-- Cache miss triggers on-demand download attempt
-- Generated placeholder served when no image exists (correct aspect ratio, genre-coloured, title text)
-- Response headers: correct `Content-Type`, `Cache-Control: immutable`, `ETag`
-- Placeholder is cached to disk after first generation
+### Batch C — Orchestration (depends on A + B)
 
-### US-5: Add movie to library
-**As a** developer, **I want** a single procedure that fetches TMDB metadata and creates the local record **so that** adding a movie is one action.
+#### US-5: Add movie to library flow
+**Scope:** Create `modules/media/tmdb/service.ts`. `addMovie({ tmdbId })`: check exists → fetch detail → fetch images metadata → map to MovieCreateInput (genre IDs → names) → insert via movies router → download images in background. Returns existing record if duplicate. Integration test with mocked TMDB responses.
+**Files:** `service.ts`, `service.test.ts`
 
-**Acceptance criteria:**
-- `media.library.addMovie({ tmdbId })` fetches detail, maps fields, inserts record, downloads images
-- Genres mapped from TMDB IDs to name strings
-- Returns existing record if movie already exists (idempotent)
-- Images download in background (doesn't block response)
-- Integration test: mock TMDB responses → verify DB record + image files created
-
-### US-6: Metadata refresh
-**As a** developer, **I want** to re-fetch TMDB metadata for an existing movie **so that** the local record stays up-to-date.
-
-**Acceptance criteria:**
-- `media.library.refreshMovie({ id, redownloadImages })` fetches fresh TMDB data
-- Updates all metadata columns
-- Preserves `poster_override_path` (does not overwrite user override)
-- `redownloadImages: true` deletes and re-downloads cached images
-- `updated_at` is set to current time
-
-### US-7: Genre mapping cache
-**As a** developer, **I want** TMDB genre IDs mapped to human-readable names **so that** search results display genre labels without extra API calls.
-
-**Acceptance criteria:**
-- Genre list fetched from TMDB and cached in memory
-- Search results include genre names (not just IDs)
-- Cache is populated on first search request (lazy) or on startup
-- Cache is refreshed if older than 24 hours
+#### US-6: Metadata refresh flow
+**Scope:** Add `refreshMovie({ id, redownloadImages })` to service. Fetch fresh TMDB data → update record (preserve `poster_override_path`) → optionally re-download images. Set `updated_at`.
+**Files:** `service.ts`

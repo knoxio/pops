@@ -218,66 +218,52 @@ All pages and components at three breakpoints:
 
 > **Standard verification — applies to every US below.**
 
-### US-1: Package scaffold and shell integration
-**As a** developer, **I want** `@pops/app-inventory` plugged into the shell **so that** users can navigate to the inventory app.
+### Batch A — Scaffold
 
-**Acceptance criteria:**
-- Package exists, builds, appears in app switcher
-- Lazy-loaded routes
+#### US-1: Package scaffold and shell integration
+**Scope:** Create `packages/app-inventory/` with `package.json` (@pops/app-inventory), `tsconfig.json`, `src/index.ts`, `src/routes.tsx`. Register in shell app switcher (package/box icon, "Inventory", `/inventory`). Lazy-loaded routes. Verify `pnpm install` resolves.
+**Files:** `packages/app-inventory/*`, `apps/pops-shell/` (app switcher config)
 
-### US-2: Item list page
-**As a** user, **I want** to browse all my items with search and filters **so that** I can find what I'm looking for.
+### Batch B — Components (parallelisable, depends on Batch A)
 
-**Acceptance criteria:**
-- Table and grid views with toggle
-- Search by name or asset ID
-- Filter by type, condition, room, in-use
-- Sort by name, date, value, location
-- Total count and value summary
+#### US-c1: InventoryCard component
+**Scope:** Create `InventoryCard.tsx` + story. Photo thumbnail (or placeholder), name, asset ID badge, type badge, location breadcrumb. Click navigates to detail page.
+**Files:** `packages/app-inventory/src/components/InventoryCard.tsx`, story
 
-### US-3: Item detail page
-**As a** user, **I want** to see full details for an item **so that** I know everything about it.
+#### US-c2: InventoryTable component
+**Scope:** Create `InventoryTable.tsx` + story. Enhanced data table with columns: Asset ID, Name, Brand, Type, Condition, Location (breadcrumb), Value, In Use. Sortable columns. Click row → detail page.
+**Files:** `packages/app-inventory/src/components/InventoryTable.tsx`, story
 
-**Acceptance criteria:**
-- All metadata, photos, connections, notes displayed
-- Location as clickable breadcrumb
-- Warranty status with days remaining
-- Edit and delete actions
+#### US-c3: PhotoGallery and PhotoUpload components
+**Scope:** Create `PhotoGallery.tsx` (grid of photos, click → lightbox/fullscreen, first photo = thumbnail) + `PhotoUpload.tsx` (drag-and-drop or file picker, camera capture via `<input capture="environment">`, progress indicator, delete per photo, drag-to-reorder) + stories for both.
+**Files:** `packages/app-inventory/src/components/PhotoGallery.tsx`, `PhotoUpload.tsx`, stories
 
-### US-4: Item create/edit form
-**As a** user, **I want** to add and edit items from the UI **so that** I don't need to use the API directly.
+#### US-c4: LocationPicker component
+**Scope:** Create `LocationPicker.tsx` + story. Button shows current selection as breadcrumb ("Home > Bedroom > Wardrobe"). Click opens tree overlay/modal. Expandable/collapsible nodes. Type to search/filter. Click leaf to select. "Clear" button for no location. "Add location" inline quick-add.
+**Files:** `packages/app-inventory/src/components/LocationPicker.tsx`, story
 
-**Acceptance criteria:**
-- All fields including location picker
-- Asset ID uniqueness validation
-- Create navigates to new item's detail page
-- Edit pre-fills form with current values
-- Unsaved changes warning
+#### US-c5: Badge components
+**Scope:** Create `AssetIdBadge.tsx` (prominent display of asset tag), `ConditionBadge.tsx` (colour-coded: green=New, blue=Excellent, yellow=Good, orange=Fair, red=Poor), `TypeBadge.tsx`, `LocationBreadcrumb.tsx` (clickable path). Stories for all.
+**Files:** `packages/app-inventory/src/components/AssetIdBadge.tsx`, `ConditionBadge.tsx`, `TypeBadge.tsx`, `LocationBreadcrumb.tsx`, stories
 
-### US-5: Photo gallery and upload
-**As a** user, **I want** to view and manage photos for an item **so that** I have a visual record.
+#### US-c6: ConnectionsList component
+**Scope:** Create `ConnectionsList.tsx` + story. List of connected items: asset ID badge, name, type badge. Click → navigate to that item's detail page. Connection count in section header. "Connect to..." button placeholder.
+**Files:** `packages/app-inventory/src/components/ConnectionsList.tsx`, story
 
-**Acceptance criteria:**
-- Grid gallery with lightbox on detail page
-- Upload with compression on edit page
-- Drag-to-reorder photos
-- Camera capture on mobile
-- Delete individual photos
+### Batch C — Pages (parallelisable, depends on Batch B)
 
-### US-6: Location picker
-**As a** user, **I want** to pick a location from a tree **so that** items are placed in the correct spot.
+#### US-2: Item list page
+**Scope:** Create `ItemListPage.tsx`. Table/grid toggle (InventoryTable vs InventoryCard grid). Search bar (by name or asset ID). Filter bar: type, condition, room (from location tree), in-use toggle, deductible toggle. Sort: name, date added, value, location. Total item count + total replacement value summary line. Empty state. Data from `inventory.items.list`.
+**Files:** `packages/app-inventory/src/pages/ItemListPage.tsx`, hooks
 
-**Acceptance criteria:**
-- Tree overlay with expand/collapse
-- Search to filter by name
-- Breadcrumb display of selection
-- Quick-add new location inline
-- Clear to set no location
+#### US-3: Item detail page
+**Scope:** Create `ItemDetailPage.tsx`. Header: name, asset ID badge, type badge, condition badge. PhotoGallery. Metadata: brand, model, location breadcrumb (clickable), in-use/deductible flags, purchase date, warranty status (with days remaining or "Expired"), values, purchased from, purchase transaction. Notes (rendered markdown). ConnectionsList. Documents section (placeholder for PRD-022). Edit + Delete actions (delete with confirmation). 404 if not found.
+**Files:** `packages/app-inventory/src/pages/ItemDetailPage.tsx`
 
-### US-7: Asset ID search
-**As a** user, **I want** to search by asset tag **so that** I can find items by their physical label.
+#### US-4: Item create/edit form
+**Scope:** Create `ItemFormPage.tsx` (shared for create + edit). All fields: name (required), asset ID (validated unique on blur), brand, model, type (select), condition (select), location (LocationPicker), in-use, deductible, purchase date, warranty expires, replacement value, resale value, notes (textarea with markdown preview). PhotoUpload section. Create: `inventory.items.create`, navigate to detail. Edit: pre-fill, `inventory.items.update`. Unsaved changes warning. Toast on success/error.
+**Files:** `packages/app-inventory/src/pages/ItemFormPage.tsx`
 
-**Acceptance criteria:**
-- Exact asset ID match returns result immediately
-- Case-insensitive
-- Works from the list page search bar
+#### US-7: Asset ID search
+**Scope:** In the list page search bar, when the search term exactly matches an asset ID (case-insensitive), navigate directly to that item's detail page or highlight it in the list. Uses `inventory.items.searchByAssetId`.
+**Files:** `ItemListPage.tsx` (search logic)

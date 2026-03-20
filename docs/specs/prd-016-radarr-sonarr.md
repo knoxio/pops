@@ -169,47 +169,37 @@ The media app must work fully without Radarr/Sonarr:
 ## User Stories
 
 > **Standard verification — applies to every US below.**
+>
+> **Sizing:** Each story is scoped for one agent, ~15-20 minutes.
 
-### US-1: Shared *arr base client
-**As a** developer, **I want** a shared HTTP client for the *arr API pattern **so that** Radarr and Sonarr clients share common logic.
+### Batch A — Clients (parallelisable)
 
-**Acceptance criteria:**
-- Base client handles authentication (`X-Api-Key`), request construction, error handling
-- Radarr and Sonarr clients extend the base with service-specific endpoints
-- Connection test works for both services
-- Unit tests with mocked HTTP
+#### US-1a: Shared *arr base client
+**Scope:** Create `modules/media/arr/base-client.ts`. Auth via `X-Api-Key` header. Request construction (base URL + path + params). Error handling (typed errors). Connection test method (`GET /api/v3/system/status`). Unit tests with mocked HTTP.
+**Files:** `modules/media/arr/base-client.ts`, test
 
-### US-2: Radarr status on movie detail
-**As a** user, **I want** to see the Radarr status of a movie on its detail page **so that** I know if it's downloaded or being monitored.
+#### US-1b: Radarr client
+**Scope:** Create `modules/media/arr/radarr-client.ts` extending base client. Endpoints: `getMovies()`, `getMovie(id)`, `getQueue()`. Status mapping: monitored + hasFile → "Available", monitored + !hasFile → "Monitored", in queue → "Downloading X%". Match to local library by TMDB ID. Unit tests.
+**Files:** `modules/media/arr/radarr-client.ts`, test
 
-**Acceptance criteria:**
-- Status badge: Available / Monitored / Downloading / Not in Radarr
-- Colour-coded badge
-- Hidden when Radarr not configured
-- Status cached (not fetched on every page load)
+#### US-1c: Sonarr client
+**Scope:** Create `modules/media/arr/sonarr-client.ts` extending base client. Endpoints: `getSeries()`, `getSeriesById(id)`, `getQueue()`. Status mapping: all episodes filed → "Complete", partial → "Partial (X/Y)", none → "Monitored". Match by TheTVDB ID. Unit tests.
+**Files:** `modules/media/arr/sonarr-client.ts`, test
 
-### US-3: Sonarr status on TV show detail
-**As a** user, **I want** to see the Sonarr status of a TV show on its detail page **so that** I know which episodes are available.
+### Batch B — UI (parallelisable, depends on Batch A)
 
-**Acceptance criteria:**
-- Status badge: Complete / Partial (X/Y) / Monitored / Not in Sonarr
-- Colour-coded badge
-- Hidden when Sonarr not configured
+#### US-2: Radarr status badge on movie detail
+**Scope:** Add Radarr status badge to `MovieDetailPage` metadata section. Badge: "Available" (green) / "Monitored" (yellow) / "Downloading 45%" (yellow) / "Not in Radarr" (grey). Hidden when `RADARR_URL` not configured. Status cached in memory (5 min TTL). Data from Radarr client via a service/tRPC procedure.
+**Files:** `MovieDetailPage.tsx`, service layer
 
-### US-4: Download queue
-**As a** user, **I want** to see what's currently downloading **so that** I know what will be available soon.
+#### US-3: Sonarr status badge on TV show detail
+**Scope:** Add Sonarr status badge to `TvShowDetailPage`. Badge: "Complete" (green) / "Partial (45/62)" (yellow) / "Monitored" (yellow) / "Not in Sonarr" (grey). Hidden when `SONARR_URL` not configured. Cached.
+**Files:** `TvShowDetailPage.tsx`, service layer
 
-**Acceptance criteria:**
-- Combined queue from Radarr + Sonarr
-- Title, progress percentage, ETA per item
-- Auto-refreshes when visible
-- Empty state when nothing downloading
+#### US-4: Download queue widget
+**Scope:** Create download queue component. Combined active downloads from Radarr + Sonarr. Each entry: title, type badge (movie/episode), progress %, ETA. Auto-refreshes every 30 seconds when visible. Empty state: hidden or "Nothing downloading". Can be placed on media home or as a sidebar widget.
+**Files:** New component
 
-### US-5: Graceful degradation
-**As a** developer, **I want** the media app to work fully without Radarr/Sonarr **so that** these integrations are optional.
-
-**Acceptance criteria:**
-- No errors when services aren't configured
-- No badge sections when not configured
-- Stale cache shown when service becomes unreachable
-- Connection failures logged, not thrown
+#### US-5: Graceful degradation
+**Scope:** Ensure the media app works fully when Radarr/Sonarr are not configured or unreachable. No errors when `RADARR_URL` / `SONARR_URL` not set — badge sections hidden. When configured but unreachable: show muted "unavailable" badge, serve stale cache if available, log connection failures without throwing. `.env.example` updated with all 4 variables.
+**Files:** Service layer guards, UI conditional rendering

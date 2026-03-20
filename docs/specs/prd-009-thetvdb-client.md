@@ -339,69 +339,39 @@ A: The free tier API key is sufficient for personal use. TheTVDB's paid tiers ar
 
 > **Standard verification — applies to every US below:**
 > Each story is only done when `pnpm typecheck`, `pnpm lint`, `pnpm test`, and `pnpm build` all pass.
+>
+> **Sizing:** Each story is scoped for one agent, ~15-20 minutes.
 
-### US-1: TheTVDB API client with auth
-**As a** developer, **I want** a typed HTTP client for the TheTVDB v4 API with token-based authentication **so that** other services can search and fetch TV show data.
+### Batch A — Infrastructure (parallelisable)
 
-**Acceptance criteria:**
-- Client authenticates via `POST /login` with API key from `THETVDB_API_KEY`
-- Token cached in memory with expiry tracking
-- Token auto-refreshes on expiry or 401 response
-- Client exposes: `searchSeries(query)`, `getSeriesExtended(tvdbId)`, `getSeriesEpisodes(tvdbId, seasonNumber)`
-- All responses are typed (not `any`)
-- HTTP errors throw typed errors with status code and message
-- Unit tests with mocked HTTP cover: success, 401 (triggers re-auth), 404, network error
+#### US-1a: TheTVDB auth module
+**Scope:** Create `modules/media/thetvdb/auth.ts`. Login via `POST /login` with API key from `THETVDB_API_KEY`. Cache JWT token with expiry tracking. Auto-refresh on expiry or 401. Unit tests (success, expired token, re-auth on 401).
+**Files:** `auth.ts`, `auth.test.ts`
 
-### US-2: Rate limiter
-**As a** developer, **I want** a rate limiter for TheTVDB requests **so that** we don't get throttled.
+#### US-1b: TheTVDB HTTP client
+**Scope:** Create `modules/media/thetvdb/client.ts`. Uses auth module for tokens. Implement: `searchSeries(query)`, `getSeriesExtended(tvdbId)`, `getSeriesEpisodes(tvdbId, seasonNumber)`. Typed responses, typed errors. Unit tests with mocked HTTP.
+**Files:** `client.ts`, `client.test.ts`
 
-**Acceptance criteria:**
-- Separate `TokenBucketRateLimiter` instance (20 tokens, 2 tokens/sec refill)
-- All TheTVDB client requests go through the limiter
-- 429 responses trigger exponential backoff (up to 3 retries)
-- Unit test verifies throttling behaviour
+#### US-6: Response mapping functions
+**Scope:** Create mapping functions in `modules/media/thetvdb/types.ts`: `mapSearchResult`, `mapShowDetail`, `mapEpisode`, `mapArtworks`. Drizzle insert builders: `toTvShowInsert`, `toSeasonInsert`, `toEpisodeInsert`. Genre/network name extraction. Unit tests with realistic TheTVDB fixtures.
+**Files:** `types.ts`, test
 
-### US-3: TV image cache
-**As a** developer, **I want** TV show images downloaded and cached locally **so that** the UI serves images without external API calls.
+#### US-2: TheTVDB rate limiter instance
+**Scope:** Instantiate a `TokenBucketRateLimiter` (from PRD-008) with TheTVDB config (20 tokens, 2/sec refill). Wire into TheTVDB client. Add 429 exponential backoff (up to 3 retries).
+**Files:** `client.ts` (instantiation + backoff logic)
 
-**Acceptance criteria:**
-- Images download to `{MEDIA_IMAGES_DIR}/tv/{tvdb_id}/poster.jpg` etc.
-- Best artwork selected from show's artwork array (highest score, English preferred)
-- Existing files not re-downloaded unless forced
-- Missing artwork gracefully skipped
-- Image serving endpoint handles `/media/images/tv/{tvdb_id}/poster.jpg`
-- Generated placeholder for shows with no artwork
+### Batch B — Image system (depends on Batch A)
 
-### US-4: Add TV show to library
-**As a** developer, **I want** a single procedure that fetches TheTVDB metadata and creates the local show with all seasons and episodes **so that** adding a show is one action.
+#### US-3: TV image cache
+**Scope:** Extend the image cache service (from PRD-008) with TV methods: `downloadTvShowImages(tvdbId, posterUrl, backdropUrl)`, `deleteTvShowImages(tvdbId)`. Best artwork selection from artworks array (highest score, English preferred). Store in `{MEDIA_IMAGES_DIR}/tv/{tvdb_id}/`. Image serving endpoint already handles `/media/images/tv/` via PRD-008 US-4.
+**Files:** `image-cache.ts` (extend)
 
-**Acceptance criteria:**
-- `media.library.addTvShow({ tvdbId })` fetches detail + episodes, inserts show + seasons + episodes
-- All inserts happen in a single Drizzle transaction
-- Genres and networks mapped to string arrays
-- Returns existing record if show already exists (idempotent)
-- Images download in background
-- Shows with no seasons/episodes are handled gracefully
-- Specials (season 0) are included
-- Integration test: mock TheTVDB responses → verify DB records created
+### Batch C — Orchestration (depends on A + B)
 
-### US-5: Metadata refresh
-**As a** developer, **I want** to re-fetch TheTVDB metadata for an existing show **so that** new episodes and updated info are captured.
+#### US-4: Add TV show to library flow
+**Scope:** Create `modules/media/thetvdb/service.ts`. `addTvShow({ tvdbId })`: check exists → fetch extended detail → for each season fetch episodes → map all to Drizzle inserts → insert show + seasons + episodes in single transaction → download images in background. Returns existing if duplicate. Handles zero seasons/episodes. Includes specials (season 0). Integration test.
+**Files:** `service.ts`, `service.test.ts`
 
-**Acceptance criteria:**
-- `media.library.refreshTvShow({ id, redownloadImages, refreshEpisodes })` fetches fresh data
-- Show metadata updated, `poster_override_path` preserved
-- New episodes inserted, existing episodes updated (air dates, names)
-- No episodes deleted (data integrity)
-- New seasons inserted if a new season has aired
-- `redownloadImages: true` re-downloads cached images
-- `updated_at` set to current time
-
-### US-6: Response mapping and type conversion
-**As a** developer, **I want** typed mapping functions between TheTVDB API responses and local schema types **so that** the service layer doesn't deal with raw API shapes.
-
-**Acceptance criteria:**
-- Mapping functions for: search results, show detail, episodes, artworks
-- Drizzle insert value builders for show, season, episode
-- Genre and network name extraction from TheTVDB objects to string arrays
-- Unit tests for each mapping function with realistic TheTVDB response fixtures
+#### US-5: TV metadata refresh flow
+**Scope:** Add `refreshTvShow({ id, redownloadImages, refreshEpisodes })` to service. Fetch fresh data → update show metadata (preserve `poster_override_path`) → insert new episodes/seasons, update existing (no deletes) → optionally re-download images.
+**Files:** `service.ts`

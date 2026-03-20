@@ -608,97 +608,89 @@ A: Drizzle doesn't support cross-column CHECK constraints declaratively (e.g., `
 
 > **Standard verification — applies to every US below:**
 > Each story is only done when `pnpm typecheck`, `pnpm lint`, `pnpm test`, and `pnpm build` all pass. No story is merged with broken checks.
+>
+> **Sizing:** Each story is scoped for one agent, ~15-20 minutes. Stories within the same batch are parallelisable. Dependencies are between batches only.
 
-### US-1: Create Drizzle schema files and generate migrations
-**As a** developer, **I want** all media tables defined as Drizzle schema files **so that** types and DDL come from a single source of truth and migrations are auto-generated.
+### Batch A — Drizzle Schema Files (parallelisable)
 
-**Acceptance criteria:**
-- Five schema files exist in `src/db/schema/` (movies, tv-shows, watchlist, watch-history, comparisons)
-- `drizzle-kit generate` produces migration SQL for all media tables
-- Generated migrations run successfully on fresh and existing databases
-- Comparison dimensions seeded (via seed script, not migration — Drizzle migrations are structural only)
-- All schema files re-exported from `schema/index.ts`
+#### US-1a: Movies schema file
+**Scope:** Create `src/db/schema/movies.ts` with the `movies` table definition per R2. Include indexes.
+**Acceptance criteria:** Schema file exists, exports `movies` table, `pnpm typecheck` passes.
 
-### US-2: Export media types from @pops/db-types
-**As a** developer, **I want** Drizzle-inferred types re-exported from `@pops/db-types` **so that** the frontend and other packages have type-safe access to media data.
+#### US-1b: TV shows, seasons, episodes schema file
+**Scope:** Create `src/db/schema/tv-shows.ts` with `tvShows`, `seasons`, `episodes` tables per R3. Include FK cascades, unique constraints, indexes.
+**Acceptance criteria:** Schema file exists, exports all three tables, FK references resolve, `pnpm typecheck` passes.
 
-**Acceptance criteria:**
-- `InferSelectModel` and `InferInsertModel` types exported for all 9 media tables
-- Exported from `@pops/db-types` barrel
-- `pnpm typecheck` passes across all packages
+#### US-1c: Watchlist schema file
+**Scope:** Create `src/db/schema/watchlist.ts` with the `watchlist` table per R4. Include unique constraint and indexes.
+**Acceptance criteria:** Schema file exists, exports `watchlist` table, `pnpm typecheck` passes.
 
-### US-3: Create movies sub-module
-**As a** developer, **I want** CRUD tRPC procedures for movies **so that** the metadata integration and UI can read/write movie records.
+#### US-1d: Watch history schema file
+**Scope:** Create `src/db/schema/watch-history.ts` with the `watchHistory` table per R5. Include indexes.
+**Acceptance criteria:** Schema file exists, exports `watchHistory` table, `pnpm typecheck` passes.
 
-**Acceptance criteria:**
-- `media/movies/` module exists with router, service, types
-- All 6 procedures from R9 implemented with zod validation
-- Service uses Drizzle query builder (no raw SQL strings)
-- Unit tests for: create, read by id, read by tmdb_id, list with filters, update, delete
-- Delete cleans up associated watch_history and media_scores rows
+#### US-1e: Comparison tables schema file
+**Scope:** Create `src/db/schema/comparisons.ts` with `comparisonDimensions`, `comparisons`, `mediaScores` tables per R6. Include FK references to movies, indexes, unique constraints.
+**Acceptance criteria:** Schema file exists, exports all three tables, FK references resolve, `pnpm typecheck` passes.
 
-### US-4: Create TV shows sub-module
-**As a** developer, **I want** CRUD tRPC procedures for TV shows, seasons, and episodes **so that** the metadata integration can populate the TV hierarchy.
+### Batch B — Schema Integration (depends on Batch A)
 
-**Acceptance criteria:**
-- `media/tv-shows/` module exists with router, service, types
-- All 8 procedures from R9 implemented
-- `createWithSeasons` inserts show + seasons + episodes in a single transaction
-- `getSeason` returns season with embedded episode list
-- `delete` cascades to seasons and episodes (verified by test)
-- Unit tests for all procedures
+#### US-1f: Schema barrel export and migration generation
+**Scope:** Re-export all media schemas from `src/db/schema/index.ts`. Run `drizzle-kit generate` to produce migration SQL. Verify migrations run on fresh and existing databases.
+**Acceptance criteria:** `schema/index.ts` exports all media tables. Migration SQL generated. Migrations succeed on fresh DB and existing DB with finance data. No conflicts.
 
-### US-5: Create watchlist sub-module
-**As a** developer, **I want** CRUD tRPC procedures for the watchlist **so that** users can queue media to watch later.
+#### US-2: Export media types from @pops/db-types
+**Scope:** Create `packages/db-types/src/media.ts` with `InferSelectModel` and `InferInsertModel` types for all 9 media tables. Re-export from barrel.
+**Acceptance criteria:** Types exported for all tables. `pnpm typecheck` passes across all packages.
 
-**Acceptance criteria:**
-- `media/watchlist/` module exists with router, service, types
-- All 5 procedures from R9 implemented
-- Adding a non-existent media item returns a validation error
-- Adding a duplicate returns a meaningful error (not a raw UNIQUE constraint violation)
-- Unit tests for all procedures including duplicate and invalid media_id cases
+### Batch C — tRPC Routers (parallelisable, depends on Batch B)
 
-### US-6: Create watch history sub-module
-**As a** developer, **I want** tRPC procedures for recording and querying watch events **so that** the tracking and comparison systems have data to work with.
+#### US-3: Movies router
+**Scope:** Create `modules/media/movies/` with router, service, types. Implement all 6 procedures from R9 (getById, getByTmdbId, list, create, update, delete). Drizzle queries, zod validation, unit tests.
+**Acceptance criteria:** All 6 procedures work. Delete cleans up watch_history and media_scores. Unit tests for each procedure.
 
-**Acceptance criteria:**
-- `media/watch-history/` module exists with router, service, types
-- All 6 procedures from R9 implemented
-- `batchLog` inserts all entries in a single transaction
-- `getProgress` correctly counts watched episodes vs total for a TV show
-- `getProgress` identifies the next unwatched episode in sequence
-- Unit tests for all procedures including batch operations and progress calculation
+#### US-4a: TV shows router — basic CRUD
+**Scope:** Create `modules/media/tv-shows/` with router, service, types. Implement: getById, getByTvdbId, list, create, update, delete. Unit tests.
+**Acceptance criteria:** All 6 basic procedures work. Delete cascades verified by test.
 
-### US-7: Create comparisons sub-module with ELO
-**As a** developer, **I want** tRPC procedures for the comparison system and ELO scoring **so that** the ratings and recommendations engines have a foundation.
+#### US-4b: TV shows — createWithSeasons and getSeason
+**Scope:** Add `createWithSeasons` (transactional insert of show + seasons + episodes) and `getSeason` (season with embedded episode list) to the TV shows module. Unit tests.
+**Acceptance criteria:** `createWithSeasons` inserts all rows in one transaction. `getSeason` returns season with episodes. Tests verify transaction rollback on failure.
 
-**Acceptance criteria:**
-- `media/comparisons/` module exists with router, service, types, elo.ts
-- ELO calculation is a pure function with unit tests covering: equal ratings, unequal ratings, K-factor application, symmetric score changes
-- `getRandomPair` only returns watched movies (verified by test)
-- `getRandomPair` doesn't return the same pair consecutively (best-effort)
-- `submit` validates both movies are watched, dimension is active, winner is one of the pair
-- `submit` updates ELO scores atomically in a transaction
-- Dimension CRUD works (create, update, deactivate)
-- Rankings query returns movies sorted by score for a dimension
-- Unit tests for all procedures
+#### US-5: Watchlist router
+**Scope:** Create `modules/media/watchlist/` with router, service, types. Implement all 5 procedures (list, add, remove, updatePriority, updateNotes). Unit tests.
+**Acceptance criteria:** All procedures work. Duplicate add returns meaningful error. Non-existent media returns validation error.
 
-### US-8: Seed media test data
-**As a** developer, **I want** `mise db:seed` to include media test data **so that** E2E tests have a realistic dataset.
+#### US-6a: Watch history router — basic CRUD
+**Scope:** Create `modules/media/watch-history/` with router, service, types. Implement: log, remove, listByMedia, listRecent. Unit tests.
+**Acceptance criteria:** All 4 procedures work. Multiple watch events per item allowed.
 
-**Acceptance criteria:**
-- 10 movies seeded with realistic metadata (titles, genres, years, vote averages)
-- 3 TV shows seeded with full season/episode hierarchy
-- 5 comparison dimensions seeded
-- Seed data uses recognisable TMDB/TheTVDB IDs
-- Existing finance seed data is not affected
-- `mise db:seed` followed by `mise db:seed` is idempotent (no duplicate errors)
+#### US-6b: Watch history — batch log and progress
+**Scope:** Add `batchLog` (batch insert in transaction) and `getProgress` (watched/total count + next episode) to watch history module. Unit tests.
+**Acceptance criteria:** `batchLog` is atomic. `getProgress` counts correctly. Next episode identified in sequence. Tests cover edge cases (no episodes watched, all watched, mid-season).
 
-### US-9: Register media router
-**As a** developer, **I want** the media tRPC router composed into the top-level app router **so that** the frontend can call media procedures.
+#### US-7a: ELO calculation function
+**Scope:** Create `modules/media/comparisons/elo.ts` — pure function `calculateElo(scoreA, scoreB, winner, kFactor)`. Unit tests.
+**Acceptance criteria:** Standard ELO formula. Tests cover: equal ratings, unequal ratings, K-factor application, symmetric score changes, edge cases.
 
-**Acceptance criteria:**
-- Media router registered as `media` namespace in the app router
-- Frontend can call `trpc.media.movies.list.useQuery()` etc.
-- Existing finance procedures are unaffected
-- `pnpm typecheck` passes (AppRouter type includes media namespace)
+#### US-7b: Comparison dimensions CRUD
+**Scope:** Create `modules/media/comparisons/` router with dimension procedures: listDimensions, createDimension, updateDimension. Unit tests.
+**Acceptance criteria:** CRUD works. Deactivated dimensions excluded from list by default. Reorder via sortOrder.
+
+#### US-7c: Comparison submit with ELO scoring
+**Scope:** Add `submit` procedure — validates inputs, calculates ELO (using elo.ts), updates media_scores, inserts comparison row. All in one transaction. Unit tests.
+**Acceptance criteria:** Validates: both movies exist, both watched, dimension active, winner is one of the pair. Scores update atomically. Tests verify validation errors.
+
+#### US-7d: Random pair selection and rankings
+**Scope:** Add `getRandomPair` (random pair from watched movies for a dimension) and `getRankings` (leaderboard sorted by score) procedures. Unit tests.
+**Acceptance criteria:** Pair only from watched movies. No self-pairing. Avoids consecutive duplicate pairs (best-effort). Rankings sorted by score descending with pagination.
+
+### Batch D — Integration (depends on Batch C)
+
+#### US-9: Register media router
+**Scope:** Create `modules/media/index.ts` composing all sub-routers. Register as `media` namespace in top-level app router.
+**Acceptance criteria:** `trpc.media.movies.list` etc. callable. Finance procedures unaffected. `pnpm typecheck` passes.
+
+#### US-8: Seed media test data
+**Scope:** Update `mise db:seed` — insert 10 movies, 3 TV shows (with seasons/episodes), 5 comparison dimensions. Use realistic TMDB/TheTVDB IDs.
+**Acceptance criteria:** Seed data inserted. Finance seed unaffected. Idempotent (re-run doesn't duplicate).

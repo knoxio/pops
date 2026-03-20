@@ -148,54 +148,29 @@ Add "Locations" to the inventory app's secondary navigation.
 ## User Stories
 
 > **Standard verification — applies to every US below.**
+>
+> **Sizing:** Each story is scoped for one agent, ~15-20 minutes. All stories are parallelisable (all modify the same page but different sections).
 
-### US-1: View location tree
-**As a** user, **I want** to see all my locations in a tree **so that** I understand how my space is organised.
+#### US-1: Location tree display
+**Scope:** Create `LocationTreePage.tsx`. Hierarchical tree of all locations from `inventory.locations.getTree`. Each node: name, item count badge, expand/collapse toggle. Click to select (highlights node). Responsive: full-width tree on mobile, side-by-side tree + contents panel on tablet+. Add route + "Locations" to inventory secondary nav. Storybook stories for `LocationTree` and `LocationNode` components.
+**Files:** `packages/app-inventory/src/pages/LocationTreePage.tsx`, tree components
 
-**Acceptance criteria:**
-- All locations displayed hierarchically
-- Item counts shown per location
-- Expandable/collapsible nodes
+#### US-2: Add locations
+**Scope:** Add "Add root location" button at top of tree. "Add child" icon/action on each node. New node appears with editable text field. Enter saves via `inventory.locations.create`. Escape cancels. New location appears immediately in tree.
+**Files:** `LocationTreePage.tsx`
 
-### US-2: Add locations
-**As a** user, **I want** to add new locations to the tree **so that** I can organise new areas.
+#### US-3: Rename and reorder
+**Scope:** Double-click location name → inline edit mode. Enter saves, Escape cancels. Drag within same parent level → reorder (updates `sort_order`). Mobile fallback: up/down buttons. Calls `inventory.locations.update`.
+**Files:** `LocationTreePage.tsx`
 
-**Acceptance criteria:**
-- Add root location
-- Add child location to any existing location
-- Inline text input for naming
-- Location appears immediately in the tree
+#### US-4: Move locations (reparent)
+**Scope:** Drag a location node onto another → reparent as child of drop target. Visual indicator showing drop target. Validation: can't move a location into its own subtree (circular reference check). Mobile fallback: right-click or menu → "Move to..." → LocationPicker modal. Calls `inventory.locations.update({ id, parentId })`.
+**Files:** `LocationTreePage.tsx`
 
-### US-3: Rename and reorder
-**As a** user, **I want** to rename and reorder locations **so that** the tree stays accurate.
+#### US-5: Delete locations
+**Scope:** Delete icon/action per location. If has items: confirmation "This location has X items. They will become unlocated." If has children: "This location has Y sub-locations with Z items total. All sub-locations will be deleted." Empty locations: delete immediately with toast. Calls `inventory.locations.delete({ id, force: true })`.
+**Files:** `LocationTreePage.tsx`
 
-**Acceptance criteria:**
-- Double-click to rename inline
-- Drag to reorder within a level
-- Changes persist after reload
-
-### US-4: Move locations
-**As a** user, **I want** to move a location (and its children) to a different parent **so that** I can reorganise.
-
-**Acceptance criteria:**
-- Drag-and-drop to reparent
-- "Move to..." dialog as fallback
-- Circular reference prevented
-- Children and items move with the location
-
-### US-5: Delete locations
-**As a** user, **I want** to delete unused locations **so that** the tree stays clean.
-
-**Acceptance criteria:**
-- Confirmation when location has items or children
-- Items become unlocated (not deleted)
-- Empty locations delete immediately
-
-### US-6: Browse location contents
-**As a** user, **I want** to see what's at a location **so that** I can answer "what's in this drawer?"
-
-**Acceptance criteria:**
-- Select location → see items in side panel
-- Toggle to include sub-location items
-- Item count and total value shown
-- Click item to navigate to detail page
+#### US-6: Location contents panel
+**Scope:** When a location is selected in the tree, show its contents in a side panel (desktop) or below (mobile). Location name + breadcrumb. List of items: name, asset ID, type badge. "Include items in sub-locations" toggle. Item count + total replacement value. Click item → navigate to detail page. "Add item here" button → navigate to create form with location pre-selected. Storybook story.
+**Files:** `LocationTreePage.tsx`, `LocationContentsPanel` component

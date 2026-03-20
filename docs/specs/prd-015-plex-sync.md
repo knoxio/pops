@@ -221,54 +221,39 @@ This table enables efficient sync: query Plex for changes, look up the local ID 
 ## User Stories
 
 > **Standard verification — applies to every US below.**
+>
+> **Sizing:** Each story is scoped for one agent, ~15-20 minutes.
 
-### US-1: Plex client and connection
-**As a** developer, **I want** an HTTP client for the Plex API **so that** the sync service can fetch library and watch data.
+### Batch A — Infrastructure (parallelisable)
 
-**Acceptance criteria:**
-- Client authenticates with `X-Plex-Token`
-- Exposes: library list, library items, item detail, episode list
-- Connection test verifies server reachability
-- Unit tests with mocked Plex responses
+#### US-1: Plex HTTP client
+**Scope:** Create `modules/media/plex/client.ts`. Auth via `X-Plex-Token` header. Implement: `getLibraries()`, `getLibraryItems(sectionId)`, `getItemDetail(metadataId)`, `getEpisodes(showId)`. Connection test (call `GET /` → return server name/version). Typed responses, typed errors. Unit tests with mocked Plex responses.
+**Files:** `modules/media/plex/client.ts`, `types.ts`, `client.test.ts`
 
-### US-2: Metadata matching
-**As a** developer, **I want** Plex items matched to TMDB/TheTVDB IDs **so that** they can be added to the POPS library.
+#### US-2: Metadata matching logic
+**Scope:** Create `modules/media/plex/matcher.ts`. Three strategies in order: (1) extract TMDB/TheTVDB ID from Plex GUID format, (2) extract from Plex external IDs array, (3) title+year search fallback via TMDB/TheTVDB clients. Returns `MatchResult` with `externalId`, `matchMethod`, `confidence`. Logs unmatched items. Unit tests for each strategy.
+**Files:** `modules/media/plex/matcher.ts`, `matcher.test.ts`
 
-**Acceptance criteria:**
-- Agent ID extraction from Plex GUIDs
-- External ID extraction from Plex metadata
-- Title+year search fallback
-- Match confidence reported per item
-- Unmatched items logged
-- Unit tests for each matching strategy
+#### US-schema: Plex link and sync log schemas
+**Scope:** Create `src/db/schema/plex.ts` with `plexLinks` and `plexSyncLog` Drizzle schemas per R7 and R5. Run `drizzle-kit generate`. Add tRPC query for sync log retrieval and connection config.
+**Files:** `src/db/schema/plex.ts`, `modules/media/plex/router.ts`
 
-### US-3: Initial library import
-**As a** user, **I want** to import my entire Plex library into POPS **so that** I don't add 500 movies manually.
+### Batch B — Sync logic (depends on Batch A)
 
-**Acceptance criteria:**
-- All matched movies added via `addMovie` flow
-- All matched shows added via `addTvShow` flow
-- Watch history imported with Plex timestamps
-- Progress queryable during import
-- Duplicate items skipped
-- Unmatched items reported
+#### US-3a: Initial movie import
+**Scope:** In `modules/media/plex/sync-service.ts`, implement movie library import: fetch all items from Plex movie library → match to TMDB → for matched items not in POPS, call `addMovie` → if `importWatchHistory`, check Plex watch status and create `watch_history` entries with Plex timestamps → create `plexLinks` rows. Skip duplicates (match on TMDB ID). Track progress. Integration test with mocked Plex + TMDB responses.
+**Files:** `modules/media/plex/sync-service.ts`, test
 
-### US-4: Periodic sync
-**As a** user, **I want** POPS to automatically sync with Plex **so that** new watches are tracked without manual input.
+#### US-3b: Initial TV import
+**Scope:** Same flow for TV: fetch Plex TV library → match to TheTVDB → call `addTvShow` → sync episode-level watch status → create `plexLinks`. Integration test.
+**Files:** `modules/media/plex/sync-service.ts` (extend)
 
-**Acceptance criteria:**
-- Sync runs every N hours (configurable, default 6)
-- New Plex items added to POPS
-- New watch events created from Plex
-- Sync log records results
-- "Sync Now" button triggers immediate sync
+#### US-4: Periodic sync scheduler
+**Scope:** Add polling scheduler: `setInterval` at configurable interval (`PLEX_SYNC_INTERVAL_HOURS`, default 6). Manual trigger via `media.plex.syncNow` tRPC mutation. On each sync: check for new Plex items, check for new watch events, write sync log entry. `.env.example` updated.
+**Files:** `modules/media/plex/sync-service.ts` (scheduler), `router.ts` (syncNow procedure)
 
-### US-5: Sync status UI
-**As a** user, **I want** to see the status of my Plex connection and sync history **so that** I know the integration is working.
+### Batch C — UI (depends on Batch B)
 
-**Acceptance criteria:**
-- Connection status displayed
-- Last sync time and summary
-- "Sync Now" button with progress
-- Sync history (last 5 runs)
-- Unmatched items list
+#### US-5: Plex sync status UI
+**Scope:** Create Plex settings section (in media settings page or standalone). Connection status ("Connected to [Server Name]" or "Not connected"). Connection test button. Library selection (checkboxes). Last sync time + summary. "Sync Now" button with progress indicator. Sync history (last 5 runs). Unmatched items list.
+**Files:** Media settings page/section

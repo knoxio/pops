@@ -147,45 +147,29 @@ A visual node-and-edge graph of connected items.
 ## User Stories
 
 > **Standard verification — applies to every US below.**
+>
+> **Sizing:** Each story is scoped for one agent, ~15-20 minutes. All stories are parallelisable.
 
-### US-1: Connect and disconnect items
-**As a** user, **I want** to connect two items and disconnect them **so that** the system tracks physical connections.
+#### US-1a: ConnectDialog component
+**Scope:** Create `ConnectDialog.tsx` + story. Modal/overlay with search input for finding items by name or asset ID. Autocomplete results with asset ID badge, name, type. Select an item to return it to the caller. Prevents selecting the current item (self-connection).
+**Files:** `packages/app-inventory/src/components/ConnectDialog.tsx`, story
 
-**Acceptance criteria:**
-- "Connect to..." with search/autocomplete
-- Disconnect action per connection
-- Bidirectional: both items show the connection
+#### US-1b: Connect/disconnect on detail page
+**Scope:** Add "Connect to..." button to `ItemDetailPage` connections section. Opens `ConnectDialog`. On select, calls `inventory.connections.connect`. "Disconnect" icon button per connection, calls `inventory.connections.disconnect`. Toast on success. Bidirectional: navigating to the connected item shows the reverse connection.
+**Files:** `ItemDetailPage.tsx`
 
-### US-2: View connections list
-**As a** user, **I want** to see what's connected to an item **so that** I know what cables and accessories it uses.
+#### US-2: Enhanced ConnectionsList
+**Scope:** Enhance `ConnectionsList.tsx` (from PRD-019 US-c6). Each connected item shows: asset ID badge, name, type badge, location breadcrumb. Click → navigate to that item's detail page. Connection count in section header ("Connected to (4)"). Order by type then name.
+**Files:** `ConnectionsList.tsx`
 
-**Acceptance criteria:**
-- All direct connections listed with asset ID, name, type
-- Click to navigate to connected item
-- Connection count in header
+#### US-3: Connection chain tracing
+**Scope:** Create `ConnectionChain.tsx` component + story. "Trace connections" button/section on detail page. Uses `inventory.connections.traceChain` data. Renders as expandable tree: each node shows asset ID, name, type badge. Click any node → navigate. Circular connections: visited nodes shown with "↻ already shown" label, not expanded. Depth limit indicator.
+**Files:** `packages/app-inventory/src/components/ConnectionChain.tsx`, story, `ItemDetailPage.tsx`
 
-### US-3: Trace connection chain
-**As a** user, **I want** to trace connections from a wall outlet through power boards to devices **so that** I can see the full chain.
+#### US-4: Connect during item creation
+**Scope:** Add "Connected to" section to `ItemFormPage` (create mode). Uses `ConnectDialog` to search and add connections. Selected connections shown as a removable list. Connections created after item save (in the same operation or immediately after).
+**Files:** `ItemFormPage.tsx`
 
-**Acceptance criteria:**
-- Expandable tree showing recursive connections
-- Each node shows asset ID, name, type
-- Circular connections marked, not infinitely expanded
-- Depth limit of 10
-
-### US-4: Connect during creation
-**As a** user, **I want** to connect a new item to existing items when I create it **so that** I don't have to go back and add connections later.
-
-**Acceptance criteria:**
-- "Connected to" section on create form
-- Search and add connections before saving
-- Connections created with the item
-
-### US-5: Graph visualisation (stretch)
-**As a** user, **I want** a visual graph of item connections **so that** I can see the big picture.
-
-**Acceptance criteria:**
-- Node-and-edge graph with type-based icons
-- Click node to navigate
-- Zoom and pan
-- Filter by room or connected-to
+#### US-5: Graph visualisation (stretch)
+**Scope:** Create visual node-and-edge graph of connected items. Nodes = items (icon by type), edges = connections. Force-directed layout. Click node → navigate to detail. Zoom/pan. Optional filter by room or starting item. Library: react-force-graph or d3-force. Accessible via "View graph" button in connections section. **Stretch goal — implement only if time permits.**
+**Files:** New graph component

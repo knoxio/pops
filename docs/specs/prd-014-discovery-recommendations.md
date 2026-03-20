@@ -180,49 +180,37 @@ Add "Discover" to the media app's secondary navigation — this is a high-visibi
 ## User Stories
 
 > **Standard verification — applies to every US below.**
+>
+> **Sizing:** Each story is scoped for one agent, ~15-20 minutes.
 
-### US-1: Preference profile
-**As a** developer, **I want** a preference profile derived from comparisons **so that** recommendations are personalised.
+### Batch A — Backend (parallelisable)
 
-**Acceptance criteria:**
-- Genre affinity scores computed from ELO data
-- Dimension weights computed from comparison frequency
-- Profile updates when new comparisons are recorded
-- Unit tests for profile computation
+#### US-1: Preference profile computation
+**Scope:** Create `modules/media/recommendations/profile.ts`. Compute genre affinity scores (average ELO of watched movies per genre). Compute dimension weights (comparison frequency per dimension). Pure functions, unit tests.
+**Files:** `modules/media/recommendations/profile.ts`, test
 
-### US-2: Candidate sourcing and scoring
-**As a** developer, **I want** TMDB candidates scored against the user's profile **so that** recommendations are ranked by relevance.
+#### US-2a: Candidate sourcing from TMDB
+**Scope:** Create `modules/media/recommendations/candidates.ts`. Fetch TMDB "similar" for top 10 library movies, "popular", "top rated", "trending". Deduplicate. Filter out library items and dismissed. Cache locally (in-memory with 24h TTL or DB table).
+**Files:** `modules/media/recommendations/candidates.ts`
 
-**Acceptance criteria:**
-- Candidates fetched from TMDB (similar, popular, trending, top-rated)
-- Filtered to exclude library items and dismissed suggestions
-- Scored using weighted algorithm
-- Cached for 24 hours
-- Unit tests for scoring algorithm
+#### US-2b: Scoring algorithm
+**Scope:** Create `modules/media/recommendations/scoring.ts`. Score = `genre_affinity_match × 0.5 + tmdb_vote_average × 0.3 + source_boost × 0.2`. Source boosts per R3. Pure function, unit tests.
+**Files:** `modules/media/recommendations/scoring.ts`, test
 
-### US-3: Discovery page
-**As a** user, **I want** a page showing movies I might enjoy **so that** I discover new things to watch.
+#### US-5: Dismissed suggestions
+**Scope:** Create `src/db/schema/dismissed.ts` Drizzle schema (`dismissed_suggestions` table). Add tRPC procedures: `media.recommendations.dismiss({ tmdbId })`, `media.recommendations.listDismissed`. Filter dismissed from candidate sourcing. Unit tests.
+**Files:** `src/db/schema/dismissed.ts`, `modules/media/recommendations/router.ts`, test
 
-**Acceptance criteria:**
-- "Recommended for You" with match indicators and explanations
-- "Trending This Week" section
-- "Because You Liked [X]" sections
-- Cold start state with comparison CTA
-- Horizontal scroll rows
+### Batch B — Frontend (parallelisable, depends on Batch A)
 
-### US-4: "What should I watch tonight?"
-**As a** user, **I want** a quick recommendation **so that** I don't spend 30 minutes deciding.
+#### US-3a: Discovery page — Recommended for You
+**Scope:** Create `DiscoverPage.tsx`. "Recommended for You" section: horizontal scroll row of top 10-20 scored candidates. Each card: poster, title, year, genres, match indicator (percentage or "Strong match"), brief explanation ("Because you rated [X] highly"). "Add to Library" / "Add to Watchlist" / "Not Interested" actions. Cold start state (<5 comparisons): hide section, show arena CTA. Add route + "Discover" to secondary nav.
+**Files:** `packages/app-media/src/pages/DiscoverPage.tsx`
 
-**Acceptance criteria:**
-- Single recommendation card with full details
-- "Show Another" for next pick
-- "Not Tonight" to dismiss and close
-- Draws from candidates + watchlist
+#### US-3b: Discovery page — Trending and Similar sections
+**Scope:** Add "Trending This Week" horizontal scroll row (TMDB trending, exclude library items). Add 2-3 "Because You Liked [Movie]" rows (similar movies for top-rated library items, each with row header showing the source movie). Same card format as Recommended section.
+**Files:** `DiscoverPage.tsx` (extend)
 
-### US-5: Dismiss suggestions
-**As a** user, **I want** to dismiss suggestions I'm not interested in **so that** they don't keep appearing.
-
-**Acceptance criteria:**
-- "Not Interested" button on recommendation cards
-- Dismissed movies don't reappear in future recommendations
-- Persisted in `dismissed_suggestions` table
+#### US-4: "What should I watch tonight?" flow
+**Scope:** Create quick-pick component/modal. Prominent button on media home or discover page. Shows single recommendation card (large poster, title, year, overview, genres, match, TMDB rating). Actions: "Watch This" (add to library if needed), "Show Another" (next pick from candidates + watchlist), "Not Tonight" (dismiss and close).
+**Files:** New component

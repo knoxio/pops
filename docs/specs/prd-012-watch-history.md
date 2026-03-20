@@ -132,56 +132,29 @@ Add "History" to the media app's secondary navigation, after "Watchlist."
 ## User Stories
 
 > **Standard verification — applies to every US below.**
+>
+> **Sizing:** Each story is scoped for one agent, ~15-20 minutes. All stories are parallelisable.
 
-### US-1: Movie watch toggle
-**As a** user, **I want** to mark a movie as watched or unwatched **so that** my library reflects what I've seen.
+#### US-1: Movie watch toggle
+**Scope:** Add "Mark as Watched" / "Watched ✓" / "Watch Again" button to `MovieDetailPage`. Calls `media.watchHistory.log` / `media.watchHistory.remove`. Show watch date on detail page. Multiple watches displayed: "Watched 3 times — last on Mar 15, 2026". Add checkmark overlay to `MediaCard` for watched movies.
+**Files:** `MovieDetailPage.tsx`, `MediaCard.tsx`
 
-**Acceptance criteria:**
-- "Mark as Watched" button on movie detail page
-- Toggles to "Watched ✓" after marking
-- "Watch Again" option for re-watches
-- Checkmark overlay on MediaCard in library grid
-- Watch date shown on detail page
+#### US-2: Episode watch toggles
+**Scope:** Add checkbox/toggle per episode on `SeasonDetailPage` via `EpisodeList` component. Checked = watched, unchecked = unwatched. Each toggle calls `media.watchHistory.log` / `remove` for that episode ID.
+**Files:** `SeasonDetailPage.tsx`, `EpisodeList.tsx`
 
-### US-2: Episode watch toggles
-**As a** user, **I want** to mark individual episodes as watched **so that** I can track my progress through a show.
+#### US-3: Batch watch operations
+**Scope:** Add "Mark Season as Watched" / "Mark Season as Unwatched" buttons to `SeasonDetailPage`. Add "Mark All as Watched" to `TvShowDetailPage`. Calls `media.watchHistory.batchLog`. All operations atomic (single transaction in service layer).
+**Files:** `SeasonDetailPage.tsx`, `TvShowDetailPage.tsx`
 
-**Acceptance criteria:**
-- Toggle per episode on the season detail page
-- Checked/unchecked state persists
-- Toggle triggers individual watch event log/remove
+#### US-4: TV show progress indicators
+**Scope:** Add progress bar to `TvShowDetailPage` ("12 / 24 episodes"). Add per-season progress in season list ("6 / 10"). Add mini progress indicator to `MediaCard` for TV shows. Add "Next episode" indicator with link ("Continue watching: S02E05 — [name]"). Data from `media.watchHistory.getProgress`.
+**Files:** `TvShowDetailPage.tsx`, `MediaCard.tsx`
 
-### US-3: Batch watch operations
-**As a** user, **I want** to mark an entire season or show as watched in one action **so that** I don't toggle 60 episodes individually.
+#### US-5: Watch history page
+**Scope:** Create `HistoryPage.tsx`. Reverse-chronological list of all watch events. Movies show poster + title + date. Episodes show show name + S01E05 + episode name + date. Filter by type (All/Movies/Episodes) and date range. Paginated or infinite scroll. Add route + "History" to secondary nav.
+**Files:** `packages/app-media/src/pages/HistoryPage.tsx`
 
-**Acceptance criteria:**
-- "Mark Season as Watched" button
-- "Mark All as Watched" on show detail page
-- Batch inserts all in one transaction
-- Reverse operations: "Mark Season as Unwatched"
-
-### US-4: TV show progress
-**As a** user, **I want** to see how far through a TV show I am **so that** I know where to pick up.
-
-**Acceptance criteria:**
-- Progress bar on show detail page ("12 / 24 episodes")
-- Per-season progress in season list
-- Mini progress indicator on MediaCard
-- "Next episode" indicator with link
-
-### US-5: Watch history page
-**As a** user, **I want** a chronological log of everything I've watched **so that** I can review my viewing history.
-
-**Acceptance criteria:**
-- Reverse-chronological list of all watches
-- Episodes show show name + S01E05 format
-- Filter by type and date range
-- Paginated or infinite scroll
-
-### US-6: Custom watch date
-**As a** user, **I want** to set a past date when marking something as watched **so that** I can log things I watched before using POPS.
-
-**Acceptance criteria:**
-- Date picker on "Mark as Watched" (defaults to today)
-- Custom dates accepted for individual movie/episode watches
-- History page displays the overridden date
+#### US-6: Custom watch date
+**Scope:** Add optional date picker to the "Mark as Watched" action on `MovieDetailPage` (defaults to today). Passes `watchedAt` to `media.watchHistory.log`. History page displays the custom date.
+**Files:** `MovieDetailPage.tsx`

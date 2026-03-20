@@ -142,39 +142,33 @@ export const itemDocuments = sqliteTable('item_documents', {
 ## User Stories
 
 > **Standard verification — applies to every US below.**
+>
+> **Sizing:** Each story is scoped for one agent, ~15-20 minutes.
 
-### US-1: Paperless-ngx API client
-**As a** developer, **I want** a client for the Paperless-ngx REST API **so that** the linking feature can search and fetch documents.
+### Batch A — Backend (parallelisable)
 
-**Acceptance criteria:**
-- Client authenticates with API token
-- Search, metadata fetch, thumbnail proxy work
-- Connection test endpoint
-- Unit tests with mocked responses
+#### US-1a: Paperless-ngx HTTP client
+**Scope:** Create `modules/inventory/paperless/client.ts`. Auth via `Authorization: Token {PAPERLESS_API_TOKEN}`. Implement: `searchDocuments(query)`, `getDocument(id)`, `getDocumentThumbnail(id)`. Connection test: `GET /api/` with token validation. Typed responses. Unit tests with mocked HTTP (success, 401, 404). `.env.example` updated.
+**Files:** `modules/inventory/paperless/client.ts`, `types.ts`, `client.test.ts`
 
-### US-2: Link documents to items
-**As a** user, **I want** to link a Paperless-ngx receipt to an inventory item **so that** I can find proof of purchase from the item page.
+#### US-1b: Item documents schema and router
+**Scope:** Create `src/db/schema/item-documents.ts` Drizzle schema per R2. Create tRPC router with: `link({ itemId, paperlessDocumentId, documentType, title })`, `unlink({ id })`, `listForItem({ itemId })`. Unique constraint prevents duplicate links. Generate migration. Unit tests.
+**Files:** `src/db/schema/item-documents.ts`, `modules/inventory/documents/router.ts`, service, test
 
-**Acceptance criteria:**
-- "Link Document" opens search modal
-- Search returns Paperless-ngx results with thumbnails
-- Select document type and link
-- Linked document appears on detail page
+#### US-1c: Thumbnail proxy
+**Scope:** Add `getThumbnail` tRPC procedure (or Express route) that proxies the thumbnail from Paperless-ngx. Returns base64 or proxied URL. Caches in memory briefly (5 min) to avoid repeated calls.
+**Files:** `modules/inventory/paperless/client.ts` or `modules/inventory/documents/router.ts`
 
-### US-3: View and manage linked documents
-**As a** user, **I want** to see linked documents on the item detail page **so that** I have everything in one place.
+### Batch B — Frontend (parallelisable, depends on Batch A)
 
-**Acceptance criteria:**
-- Documents grouped by type (receipt, warranty, manual)
-- Thumbnail preview per document
-- Click to open in Paperless-ngx
-- Download button
-- Unlink action
+#### US-2: Link Document modal
+**Scope:** Create `LinkDocumentDialog.tsx`. Search input → queries Paperless-ngx via `inventory.documents.search`. Results show: title, date, correspondent, tags, thumbnail preview. Document type selector (receipt/warranty/manual/other). "Link" button per result. Calls `inventory.documents.link`. Linked document appears immediately. Storybook story.
+**Files:** `packages/app-inventory/src/components/LinkDocumentDialog.tsx`, story
 
-### US-4: Graceful degradation
-**As a** developer, **I want** the inventory app to work without Paperless-ngx **so that** the integration is optional.
+#### US-3: Linked documents display on detail page
+**Scope:** Add Documents section to `ItemDetailPage`. Shows linked documents grouped by type: 📄 Receipts, 📋 Warranties, 📖 Manuals, 📎 Other. Each: title, linked date, thumbnail. Click → open in Paperless-ngx (new tab). Download button → proxy file download. "Unlink" action. "Link Document" button opens LinkDocumentDialog.
+**Files:** `ItemDetailPage.tsx`
 
-**Acceptance criteria:**
-- No errors when not configured
-- Documents section hidden when not configured
-- "Unavailable" message when configured but unreachable
+#### US-4: Graceful degradation
+**Scope:** When `PAPERLESS_URL` not set: Documents section hidden on detail page, no errors. When configured but unreachable: show muted "Paperless-ngx unavailable" message in Documents section. Item detail page works fully without documents. Connection test procedure for settings display.
+**Files:** Service layer guards, `ItemDetailPage.tsx` conditional rendering
