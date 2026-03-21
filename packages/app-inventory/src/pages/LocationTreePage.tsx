@@ -2,8 +2,8 @@
  * LocationTreePage — hierarchical tree display of all locations.
  *
  * Uses inventory.locations.tree tRPC query to render an expand/collapse
- * tree with item count badges. Supports adding root/child locations
- * and inline renaming via double-click.
+ * tree with item count badges. Supports adding root/child locations,
+ * inline renaming, move-to-parent modal, and sibling reordering.
  */
 import { useState, useCallback, useRef, useEffect } from "react";
 import {
@@ -12,6 +12,11 @@ import {
   Collapsible,
   CollapsibleTrigger,
   CollapsibleContent,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from "@pops/ui";
 import {
   MapPin,
@@ -21,6 +26,9 @@ import {
   Folder,
   Plus,
   FolderPlus,
+  ArrowUp,
+  ArrowDown,
+  MoveRight,
 } from "lucide-react";
 import { trpc } from "../lib/trpc";
 
@@ -76,6 +84,35 @@ function countDescendants(node: LocationTreeNode): number {
   return count;
 }
 
+/** Check if targetId is a descendant of nodeId (prevents circular moves). */
+function isDescendant(
+  nodeId: string,
+  targetId: string,
+  nodeMap: Map<string, LocationTreeNode>
+): boolean {
+  const node = nodeMap.get(nodeId);
+  if (!node) return false;
+  for (const child of node.children) {
+    if (child.id === targetId || isDescendant(child.id, targetId, nodeMap)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/** Get siblings of a node (including itself). */
+function getSiblings(
+  nodeId: string,
+  treeNodes: LocationTreeNode[],
+  nodeMap: Map<string, LocationTreeNode>
+): LocationTreeNode[] {
+  const node = nodeMap.get(nodeId);
+  if (!node) return [];
+  if (!node.parentId) return treeNodes;
+  const parent = nodeMap.get(node.parentId);
+  return parent?.children ?? [];
+}
+
 /** Inline text input for creating/renaming locations. */
 function InlineInput({
   defaultValue,
@@ -119,6 +156,58 @@ function InlineInput({
   );
 }
 
+/** Simplified tree picker for the "Move To" dialog. */
+function MoveTargetPicker({
+  nodes,
+  movingId,
+  nodeMap,
+  onSelect,
+  depth = 0,
+}: {
+  nodes: LocationTreeNode[];
+  movingId: string;
+  nodeMap: Map<string, LocationTreeNode>;
+  onSelect: (parentId: string | null) => void;
+  depth?: number;
+}) {
+  return (
+    <>
+      {nodes
+        .filter((n) => n.id !== movingId)
+        .map((node) => {
+          const disabled = isDescendant(movingId, node.id, nodeMap);
+          return (
+            <div key={node.id}>
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={() => onSelect(node.id)}
+                className={`w-full text-left flex items-center gap-1.5 py-1.5 px-2 rounded-md transition-colors ${
+                  disabled
+                    ? "opacity-40 cursor-not-allowed"
+                    : "hover:bg-muted/50 cursor-pointer"
+                }`}
+                style={{ paddingLeft: `${depth * 16 + 8}px` }}
+              >
+                <Folder className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                <span className="text-sm truncate">{node.name}</span>
+              </button>
+              {node.children.length > 0 && (
+                <MoveTargetPicker
+                  nodes={node.children}
+                  movingId={movingId}
+                  nodeMap={nodeMap}
+                  onSelect={onSelect}
+                  depth={depth + 1}
+                />
+              )}
+            </div>
+          );
+        })}
+    </>
+  );
+}
+
 interface LocationNodeProps {
   node: LocationTreeNode;
   depth: number;
@@ -126,9 +215,13 @@ interface LocationNodeProps {
   onSelect: (id: string) => void;
   onAddChild: (parentId: string) => void;
   onRename: (id: string, newName: string) => void;
+  onMoveStart: (id: string) => void;
+  onReorder: (id: string, direction: "up" | "down") => void;
   addingChildOf: string | null;
   onNewChildSave: (name: string) => void;
   onNewChildCancel: () => void;
+  siblingIndex: number;
+  siblingCount: number;
 }
 
 function LocationNode({
@@ -138,9 +231,13 @@ function LocationNode({
   onSelect,
   onAddChild,
   onRename,
+  onMoveStart,
+  onReorder,
   addingChildOf,
   onNewChildSave,
   onNewChildCancel,
+  siblingIndex,
+  siblingCount,
 }: LocationNodeProps) {
   const [open, setOpen] = useState(depth < 1);
   const [renaming, setRenaming] = useState(false);
@@ -207,18 +304,60 @@ function LocationNode({
           <span className="text-sm font-medium truncate">{node.name}</span>
         )}
 
-        <button
-          type="button"
-          className="p-0.5 rounded hover:bg-muted opacity-0 group-hover:opacity-100 transition-opacity ml-auto shrink-0"
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddChild(node.id);
-          }}
-          aria-label={`Add child to ${node.name}`}
-          title="Add child location"
-        >
-          <FolderPlus className="h-3.5 w-3.5 text-muted-foreground" />
-        </button>
+        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-auto shrink-0">
+          {siblingCount > 1 && siblingIndex > 0 && (
+            <button
+              type="button"
+              className="p-0.5 rounded hover:bg-muted"
+              onClick={(e) => {
+                e.stopPropagation();
+                onReorder(node.id, "up");
+              }}
+              aria-label="Move up"
+              title="Move up"
+            >
+              <ArrowUp className="h-3 w-3 text-muted-foreground" />
+            </button>
+          )}
+          {siblingCount > 1 && siblingIndex < siblingCount - 1 && (
+            <button
+              type="button"
+              className="p-0.5 rounded hover:bg-muted"
+              onClick={(e) => {
+                e.stopPropagation();
+                onReorder(node.id, "down");
+              }}
+              aria-label="Move down"
+              title="Move down"
+            >
+              <ArrowDown className="h-3 w-3 text-muted-foreground" />
+            </button>
+          )}
+          <button
+            type="button"
+            className="p-0.5 rounded hover:bg-muted"
+            onClick={(e) => {
+              e.stopPropagation();
+              onMoveStart(node.id);
+            }}
+            aria-label={`Move ${node.name}`}
+            title="Move to..."
+          >
+            <MoveRight className="h-3 w-3 text-muted-foreground" />
+          </button>
+          <button
+            type="button"
+            className="p-0.5 rounded hover:bg-muted"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddChild(node.id);
+            }}
+            aria-label={`Add child to ${node.name}`}
+            title="Add child location"
+          >
+            <FolderPlus className="h-3.5 w-3.5 text-muted-foreground" />
+          </button>
+        </div>
 
         {hasChildren && (
           <Badge variant="secondary" className="text-xs shrink-0">
@@ -230,7 +369,7 @@ function LocationNode({
       {(hasChildren || isAddingChild) && (
         <CollapsibleContent forceMount={isAddingChild ? true : undefined}>
           <div role="group">
-            {node.children.map((child) => (
+            {node.children.map((child, i) => (
               <LocationNode
                 key={child.id}
                 node={child}
@@ -239,9 +378,13 @@ function LocationNode({
                 onSelect={onSelect}
                 onAddChild={onAddChild}
                 onRename={onRename}
+                onMoveStart={onMoveStart}
+                onReorder={onReorder}
                 addingChildOf={addingChildOf}
                 onNewChildSave={onNewChildSave}
                 onNewChildCancel={onNewChildCancel}
+                siblingIndex={i}
+                siblingCount={node.children.length}
               />
             ))}
             {isAddingChild && (
@@ -320,6 +463,7 @@ export function LocationTreePage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [addingChildOf, setAddingChildOf] = useState<string | null>(null);
   const [addingRoot, setAddingRoot] = useState(false);
+  const [movingId, setMovingId] = useState<string | null>(null);
 
   const utils = trpc.useUtils();
   const { data, isLoading, error } = trpc.inventory.locations.tree.useQuery();
@@ -339,6 +483,7 @@ export function LocationTreePage() {
   });
 
   const nodeMap = new Map<string, LocationTreeNode>();
+  const treeNodes = data?.data ?? [];
   if (data?.data) {
     buildNodeMap(data.data, nodeMap);
   }
@@ -384,6 +529,42 @@ export function LocationTreePage() {
     setAddingRoot(false);
   }, []);
 
+  const handleMoveStart = useCallback((id: string) => {
+    setMovingId(id);
+  }, []);
+
+  const handleMoveTo = useCallback(
+    (newParentId: string | null) => {
+      if (!movingId) return;
+      updateMutation.mutate(
+        { id: movingId, data: { parentId: newParentId } },
+        { onSuccess: () => setMovingId(null) }
+      );
+    },
+    [movingId, updateMutation]
+  );
+
+  const handleReorder = useCallback(
+    (id: string, direction: "up" | "down") => {
+      const siblings = getSiblings(id, treeNodes, nodeMap);
+      const idx = siblings.findIndex((s) => s.id === id);
+      if (idx < 0) return;
+
+      const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+      if (swapIdx < 0 || swapIdx >= siblings.length) return;
+
+      const current = siblings[idx];
+      const swap = siblings[swapIdx];
+
+      // Swap sort orders
+      updateMutation.mutate({ id: current.id, data: { sortOrder: swap.sortOrder } });
+      updateMutation.mutate({ id: swap.id, data: { sortOrder: current.sortOrder } });
+    },
+    [treeNodes, nodeMap, updateMutation]
+  );
+
+  const movingNode = movingId ? nodeMap.get(movingId) : null;
+
   if (error) {
     return (
       <div className="space-y-6 max-w-4xl">
@@ -395,8 +576,6 @@ export function LocationTreePage() {
       </div>
     );
   }
-
-  const treeNodes = data?.data ?? [];
 
   return (
     <div className="space-y-6 max-w-4xl">
@@ -430,7 +609,7 @@ export function LocationTreePage() {
       ) : (
         <div className="flex flex-col md:flex-row gap-6">
           <div className="md:w-2/5 border rounded-lg py-2" role="tree" aria-label="Location tree">
-            {treeNodes.map((node) => (
+            {treeNodes.map((node, i) => (
               <LocationNode
                 key={node.id}
                 node={node}
@@ -439,9 +618,13 @@ export function LocationTreePage() {
                 onSelect={handleSelect}
                 onAddChild={handleAddChild}
                 onRename={handleRename}
+                onMoveStart={handleMoveStart}
+                onReorder={handleReorder}
                 addingChildOf={addingChildOf}
                 onNewChildSave={handleNewChildSave}
                 onNewChildCancel={handleNewChildCancel}
+                siblingIndex={i}
+                siblingCount={treeNodes.length}
               />
             ))}
             {addingRoot && (
@@ -468,6 +651,37 @@ export function LocationTreePage() {
           </div>
         </div>
       )}
+
+      {/* Move To dialog */}
+      <Dialog open={!!movingId} onOpenChange={(open) => !open && setMovingId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Move &ldquo;{movingNode?.name}&rdquo;</DialogTitle>
+            <DialogDescription>
+              Select a new parent location, or move to root level.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-64 overflow-y-auto border rounded-lg py-2">
+            <button
+              type="button"
+              onClick={() => handleMoveTo(null)}
+              className="w-full text-left flex items-center gap-1.5 py-1.5 px-2 rounded-md hover:bg-muted/50"
+              style={{ paddingLeft: "8px" }}
+            >
+              <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              <span className="text-sm font-medium">Root level</span>
+            </button>
+            {movingId && (
+              <MoveTargetPicker
+                nodes={treeNodes}
+                movingId={movingId}
+                nodeMap={nodeMap}
+                onSelect={handleMoveTo}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
