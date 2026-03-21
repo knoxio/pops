@@ -8,6 +8,7 @@ import { paginationMeta } from "../../../shared/pagination.js";
 import {
   LogWatchSchema,
   BatchLogWatchSchema,
+  BatchProgressQuerySchema,
   WatchHistoryQuerySchema,
   ProgressQuerySchema,
   RecentWatchHistoryQuerySchema,
@@ -91,6 +92,11 @@ export const watchHistoryRouter = router({
       }
       throw err;
     }
+  }),
+
+  /** Get watch progress percentages for multiple TV shows (for library grid). */
+  batchProgress: protectedProcedure.input(BatchProgressQuerySchema).query(({ input }) => {
+    return { data: service.getBatchProgress(input.tvShowIds) };
   }),
 
   /** Batch-log watch events for all episodes in a season or show. */

@@ -15,7 +15,9 @@ import type {
   WatchHistoryFilters,
   TvShowProgress,
   SeasonProgress,
+  NextEpisode,
   BatchLogWatchInput,
+  BatchProgressEntry,
   RecentWatchHistoryFilters,
   RecentWatchHistoryEntry,
 } from "./types.js";
@@ -359,6 +361,9 @@ export function getProgress(tvShowId: number): TvShowProgress {
   const totalWatched = seasonProgress.reduce((sum, s) => sum + s.watched, 0);
   const totalEpisodes = seasonProgress.reduce((sum, s) => sum + s.total, 0);
 
+  // Find next unwatched episode
+  const nextEpisode = findNextUnwatchedEpisode(db, tvShowId);
+
   return {
     tvShowId,
     overall: {
@@ -367,7 +372,60 @@ export function getProgress(tvShowId: number): TvShowProgress {
       percentage: totalEpisodes > 0 ? Math.round((totalWatched / totalEpisodes) * 100) : 0,
     },
     seasons: seasonProgress,
+    nextEpisode,
   };
+}
+
+function findNextUnwatchedEpisode(
+  db: ReturnType<typeof getDrizzle>,
+  tvShowId: number
+): NextEpisode | null {
+  // Get all episodes for this show, ordered by season then episode
+  const allEpisodes = db
+    .select({
+      episodeId: episodes.id,
+      seasonNumber: seasons.seasonNumber,
+      episodeNumber: episodes.episodeNumber,
+      episodeName: episodes.name,
+    })
+    .from(episodes)
+    .innerJoin(seasons, eq(episodes.seasonId, seasons.id))
+    .where(eq(seasons.tvShowId, tvShowId))
+    .orderBy(seasons.seasonNumber, episodes.episodeNumber)
+    .all();
+
+  if (allEpisodes.length === 0) return null;
+
+  // Get set of watched episode IDs
+  const watchedIds = new Set(
+    db
+      .select({ mediaId: watchHistory.mediaId })
+      .from(watchHistory)
+      .innerJoin(episodes, eq(episodes.id, watchHistory.mediaId))
+      .innerJoin(seasons, eq(seasons.id, episodes.seasonId))
+      .where(
+        and(
+          eq(watchHistory.mediaType, "episode"),
+          eq(watchHistory.completed, 1),
+          eq(seasons.tvShowId, tvShowId)
+        )
+      )
+      .all()
+      .map((r) => r.mediaId)
+  );
+
+  // Find first unwatched
+  for (const ep of allEpisodes) {
+    if (!watchedIds.has(ep.episodeId)) {
+      return {
+        seasonNumber: ep.seasonNumber,
+        episodeNumber: ep.episodeNumber,
+        episodeName: ep.episodeName,
+      };
+    }
+  }
+
+  return null; // All watched
 }
 
 /** Result of a batch log operation. */
@@ -502,6 +560,57 @@ export function batchLogWatch(input: BatchLogWatchInput): BatchLogResult {
     }
 
     return { logged: toLog.length, skipped: alreadyWatched.size };
+  });
+}
+
+/**
+ * Get watch progress percentages for multiple TV shows in a single query.
+ * Returns only the overall percentage per show (lightweight for grid views).
+ */
+export function getBatchProgress(tvShowIds: number[]): BatchProgressEntry[] {
+  if (tvShowIds.length === 0) return [];
+
+  const db = getDrizzle();
+
+  // Get total episode counts per show
+  const totalRows = db
+    .select({
+      tvShowId: seasons.tvShowId,
+      total: count(episodes.id),
+    })
+    .from(episodes)
+    .innerJoin(seasons, eq(episodes.seasonId, seasons.id))
+    .where(inArray(seasons.tvShowId, tvShowIds))
+    .groupBy(seasons.tvShowId)
+    .all();
+
+  // Get watched episode counts per show
+  const watchedRows = db
+    .select({
+      tvShowId: seasons.tvShowId,
+      watched: countDistinct(watchHistory.mediaId),
+    })
+    .from(watchHistory)
+    .innerJoin(episodes, eq(episodes.id, watchHistory.mediaId))
+    .innerJoin(seasons, eq(seasons.id, episodes.seasonId))
+    .where(
+      and(
+        eq(watchHistory.mediaType, "episode"),
+        eq(watchHistory.completed, 1),
+        inArray(seasons.tvShowId, tvShowIds)
+      )
+    )
+    .groupBy(seasons.tvShowId)
+    .all();
+
+  const watchedMap = new Map(watchedRows.map((r) => [r.tvShowId, r.watched]));
+
+  return totalRows.map((row) => {
+    const watched = watchedMap.get(row.tvShowId) ?? 0;
+    return {
+      tvShowId: row.tvShowId,
+      percentage: row.total > 0 ? Math.round((watched / row.total) * 100) : 0,
+    };
   });
 }
 

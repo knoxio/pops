@@ -74,6 +74,13 @@ export interface SeasonProgress {
   percentage: number;
 }
 
+/** Next unwatched episode pointer. */
+export interface NextEpisode {
+  seasonNumber: number;
+  episodeNumber: number;
+  episodeName: string | null;
+}
+
 /** Overall + per-season watch progress for a TV show. */
 export interface TvShowProgress {
   tvShowId: number;
@@ -83,7 +90,19 @@ export interface TvShowProgress {
     percentage: number;
   };
   seasons: SeasonProgress[];
+  nextEpisode: NextEpisode | null;
 }
+
+/** Batch progress result — percentage per TV show. */
+export interface BatchProgressEntry {
+  tvShowId: number;
+  percentage: number;
+}
+
+/** Zod schema for batch progress query. */
+export const BatchProgressQuerySchema = z.object({
+  tvShowIds: z.array(z.number().int().positive()).min(1).max(500),
+});
 
 /** Zod schema for listRecent query params with date range and mediaType filters. */
 export const RecentWatchHistoryQuerySchema = z.object({

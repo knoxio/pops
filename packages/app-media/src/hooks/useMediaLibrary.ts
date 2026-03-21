@@ -14,6 +14,8 @@ interface MediaItem {
   voteAverage: number | null;
   createdAt: string;
   releaseDate: string | null;
+  /** Watch progress percentage for TV shows (0–100). */
+  progress: number | null;
 }
 
 export function useMediaLibrary() {
@@ -21,20 +23,31 @@ export function useMediaLibrary() {
   const [genreFilter, setGenreFilter] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("dateAdded");
 
-  const {
-    data: moviesData,
-    isLoading: moviesLoading,
-  } = trpc.media.movies.list.useQuery({ limit: 500 });
+  const { data: moviesData, isLoading: moviesLoading } =
+    trpc.media.movies.list.useQuery({ limit: 500 });
 
-  const {
-    data: tvShowsData,
-    isLoading: tvShowsLoading,
-  } = trpc.media.tvShows.list.useQuery({ limit: 500 });
+  const { data: tvShowsData, isLoading: tvShowsLoading } =
+    trpc.media.tvShows.list.useQuery({ limit: 500 });
+
+  // Fetch batch progress for all TV shows
+  const tvShowIds = useMemo(
+    () => (tvShowsData?.data ?? []).map((s) => s.id),
+    [tvShowsData],
+  );
+
+  const { data: progressData } = trpc.media.watchHistory.batchProgress.useQuery(
+    { tvShowIds },
+    { enabled: tvShowIds.length > 0 },
+  );
 
   const isLoading = moviesLoading || tvShowsLoading;
 
   const allItems = useMemo<MediaItem[]>(() => {
-    const movies: MediaItem[] = (moviesData?.data ?? []).map((m) => ({
+    const progressMap = new Map(
+      (progressData?.data ?? []).map((p) => [p.tvShowId, p.percentage]),
+    );
+
+    const movieItems: MediaItem[] = (moviesData?.data ?? []).map((m) => ({
       id: m.id,
       type: "movie" as const,
       title: m.title,
@@ -44,6 +57,7 @@ export function useMediaLibrary() {
       voteAverage: m.voteAverage,
       createdAt: m.createdAt,
       releaseDate: m.releaseDate,
+      progress: null,
     }));
 
     const shows: MediaItem[] = (tvShowsData?.data ?? []).map((s) => ({
@@ -56,10 +70,11 @@ export function useMediaLibrary() {
       voteAverage: s.voteAverage,
       createdAt: s.createdAt,
       releaseDate: s.firstAirDate,
+      progress: progressMap.get(s.id) ?? null,
     }));
 
-    return [...movies, ...shows];
-  }, [moviesData, tvShowsData]);
+    return [...movieItems, ...shows];
+  }, [moviesData, tvShowsData, progressData]);
 
   const allGenres = useMemo(() => {
     const genres = new Set<string>();
