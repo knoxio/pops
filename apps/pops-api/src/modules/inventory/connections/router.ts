@@ -5,7 +5,12 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../../../trpc.js";
 import { paginationMeta } from "../../../shared/pagination.js";
-import { ConnectItemsSchema, ConnectionQuerySchema, toConnection } from "./types.js";
+import {
+  ConnectItemsSchema,
+  ConnectionQuerySchema,
+  TraceQuerySchema,
+  toConnection,
+} from "./types.js";
 import * as service from "./service.js";
 import { NotFoundError, ConflictError } from "../../../shared/errors.js";
 
@@ -58,5 +63,18 @@ export const connectionsRouter = router({
       data: rows.map(toConnection),
       pagination: paginationMeta(total, limit, offset),
     };
+  }),
+
+  /** Trace the connection chain from an item as a tree. */
+  trace: protectedProcedure.input(TraceQuerySchema).query(({ input }) => {
+    try {
+      const tree = service.traceConnections(input.itemId, input.maxDepth);
+      return { data: tree };
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+      }
+      throw err;
+    }
   }),
 });

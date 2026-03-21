@@ -12,9 +12,10 @@ import {
   AlertDescription,
   Skeleton,
 } from "@pops/ui";
-import { ArrowLeft, Pencil, Link2, Unlink } from "lucide-react";
+import { ArrowLeft, Pencil, Link2, Unlink, GitBranch } from "lucide-react";
 import { trpc } from "../lib/trpc";
 import { ConnectDialog } from "../components/ConnectDialog";
+import { ConnectionTracePanel } from "../components/ConnectionTracePanel";
 
 export function ItemDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -194,6 +195,17 @@ export function ItemDetailPage() {
           </p>
         )}
       </section>
+
+      {/* Connection Chain Trace */}
+      {connectionsData?.data.length ? (
+        <section>
+          <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+            <GitBranch className="h-5 w-5" />
+            Connection Chain
+          </h2>
+          <ConnectionTracePanel itemId={id!} />
+        </section>
+      ) : null}
     </div>
   );
 }

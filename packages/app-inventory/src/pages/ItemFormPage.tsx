@@ -2,7 +2,7 @@
  * Item create/edit form page.
  * Supports /inventory/items/new (create) and /inventory/items/:id/edit (edit).
  */
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate, Link } from "react-router";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -17,9 +17,15 @@ import {
   AlertTitle,
   AlertDescription,
   Skeleton,
+  Badge,
 } from "@pops/ui";
-import { ArrowLeft, Save } from "lucide-react";
+import { ArrowLeft, Save, Link2, X, Search } from "lucide-react";
 import { trpc } from "../lib/trpc";
+
+interface PendingConnection {
+  id: string;
+  itemName: string;
+}
 
 interface ItemFormValues {
   itemName: string;
@@ -102,6 +108,20 @@ export function ItemFormPage() {
     formState: { errors, isDirty },
   } = useForm<ItemFormValues>({ defaultValues });
 
+  // Pending connections for create mode
+  const [pendingConnections, setPendingConnections] = useState<
+    PendingConnection[]
+  >([]);
+  const [connectionSearch, setConnectionSearch] = useState("");
+
+  const { data: searchResults, isLoading: searchLoading } =
+    trpc.inventory.items.list.useQuery(
+      { search: connectionSearch, limit: 10 },
+      { enabled: !isEditMode && connectionSearch.length >= 2 },
+    );
+
+  const connectMutation = trpc.inventory.connections.connect.useMutation();
+
   // Fetch existing item for edit mode
   const {
     data: itemData,
@@ -144,8 +164,34 @@ export function ItemFormPage() {
   }, [isDirty]);
 
   const createMutation = trpc.inventory.items.create.useMutation({
-    onSuccess: () => {
-      toast.success("Item created");
+    onSuccess: async (result) => {
+      const newItemId = result.data.id;
+
+      // Create pending connections sequentially
+      if (pendingConnections.length > 0) {
+        let connected = 0;
+        for (const conn of pendingConnections) {
+          try {
+            await connectMutation.mutateAsync({
+              itemAId: newItemId,
+              itemBId: conn.id,
+            });
+            connected++;
+          } catch {
+            // Skip failed connections (e.g. conflict)
+          }
+        }
+        if (connected > 0) {
+          toast.success(
+            `Item created with ${connected} connection${connected > 1 ? "s" : ""}`,
+          );
+        } else {
+          toast.success("Item created");
+        }
+      } else {
+        toast.success("Item created");
+      }
+
       void utils.inventory.items.list.invalidate();
       navigate("/inventory");
     },
@@ -361,6 +407,104 @@ export function ItemFormPage() {
             className="w-full"
           />
         </section>
+
+        {/* Connected Items (create mode only) */}
+        {!isEditMode && (
+          <section className="space-y-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Link2 className="h-5 w-5" />
+              Connected Items
+            </h2>
+
+            {pendingConnections.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {pendingConnections.map((conn) => (
+                  <Badge
+                    key={conn.id}
+                    variant="secondary"
+                    className="flex items-center gap-1.5 pl-3 pr-1.5 py-1"
+                  >
+                    {conn.itemName}
+                    <button
+                      type="button"
+                      className="rounded-full p-0.5 hover:bg-muted"
+                      onClick={() =>
+                        setPendingConnections((prev) =>
+                          prev.filter((c) => c.id !== conn.id),
+                        )
+                      }
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+            )}
+
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <TextInput
+                value={connectionSearch}
+                onChange={(e) => setConnectionSearch(e.target.value)}
+                placeholder="Search items to connect..."
+                className="pl-9"
+              />
+            </div>
+
+            {connectionSearch.length >= 2 && (
+              <div className="max-h-48 overflow-y-auto border rounded-lg divide-y">
+                {searchLoading ? (
+                  <div className="space-y-2 p-2">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                ) : (
+                  (() => {
+                    const pendingIds = new Set(
+                      pendingConnections.map((c) => c.id),
+                    );
+                    const filtered =
+                      searchResults?.data.filter(
+                        (item) => !pendingIds.has(item.id),
+                      ) ?? [];
+                    return filtered.length === 0 ? (
+                      <p className="text-sm text-muted-foreground py-3 text-center">
+                        No items found
+                      </p>
+                    ) : (
+                      filtered.map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          className="w-full flex items-center justify-between p-2.5 hover:bg-accent text-left transition-colors"
+                          onClick={() => {
+                            setPendingConnections((prev) => [
+                              ...prev,
+                              { id: item.id, itemName: item.itemName },
+                            ]);
+                            setConnectionSearch("");
+                          }}
+                        >
+                          <div>
+                            <div className="font-medium text-sm">
+                              {item.itemName}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {[item.brand, item.model, item.assetId]
+                                .filter(Boolean)
+                                .join(" · ") || "No details"}
+                            </div>
+                          </div>
+                          <Link2 className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
+                        </button>
+                      ))
+                    );
+                  })()
+                )}
+              </div>
+            )}
+          </section>
+        )}
 
         {/* Actions */}
         <div className="flex gap-3 pt-4 border-t">

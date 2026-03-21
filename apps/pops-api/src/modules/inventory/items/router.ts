@@ -28,7 +28,7 @@ export const inventoryRouter = router({
     const deductible =
       input.deductible === "true" ? true : input.deductible === "false" ? false : undefined;
 
-    const { rows, total } = service.listInventoryItems(
+    const { rows, total, totalReplacementValue, totalResaleValue } = service.listInventoryItems(
       input.search,
       input.room,
       input.type,
@@ -44,6 +44,7 @@ export const inventoryRouter = router({
     return {
       data: rows.map(toInventoryItem),
       pagination: paginationMeta(total, limit, offset),
+      totals: { totalReplacementValue, totalResaleValue },
     };
   }),
 

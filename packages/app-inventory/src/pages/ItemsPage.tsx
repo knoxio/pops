@@ -105,11 +105,8 @@ export function ItemsPage() {
 
   const items = data?.data ?? [];
   const totalCount = data?.pagination?.total ?? 0;
-
-  const totalValue = useMemo(
-    () => items.reduce((sum, item) => sum + (item.replacementValue ?? 0), 0),
-    [items],
-  );
+  const totalReplacementValue = data?.totals?.totalReplacementValue ?? 0;
+  const totalResaleValue = data?.totals?.totalResaleValue ?? 0;
 
   const handleViewChange = useCallback((mode: ViewMode) => {
     setViewMode(mode);
@@ -208,8 +205,11 @@ export function ItemsPage() {
       {!isLoading && (
         <p className="text-sm text-muted-foreground">
           {totalCount} {totalCount === 1 ? "item" : "items"}
-          {totalValue > 0 && (
-            <span> · Total value: {formatCurrency(totalValue)}</span>
+          {totalReplacementValue > 0 && (
+            <span> — {formatCurrency(totalReplacementValue)} replacement</span>
+          )}
+          {totalResaleValue > 0 && (
+            <span> — {formatCurrency(totalResaleValue)} resale</span>
           )}
         </p>
       )}

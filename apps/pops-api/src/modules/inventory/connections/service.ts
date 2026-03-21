@@ -6,7 +6,7 @@ import { eq, and, or, count } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
 import { itemConnections, homeInventory } from "@pops/db-types";
 import { NotFoundError, ConflictError } from "../../../shared/errors.js";
-import type { ItemConnectionRow } from "./types.js";
+import type { ItemConnectionRow, TraceNode } from "./types.js";
 
 /** Count + rows for a paginated list. */
 export interface ConnectionListResult {
@@ -100,4 +100,84 @@ export function listConnectionsForItem(
   const [countResult] = db.select({ total: count() }).from(itemConnections).where(condition).all();
 
   return { rows, total: countResult.total };
+}
+
+/**
+ * Trace the full connection graph from a starting item as a tree.
+ * Uses BFS to avoid stack overflow on deep graphs. Handles circular
+ * references by tracking visited nodes.
+ */
+export function traceConnections(itemId: string, maxDepth: number): TraceNode {
+  const db = getDrizzle();
+
+  // Validate the starting item exists
+  const [startItem] = db
+    .select({
+      id: homeInventory.id,
+      itemName: homeInventory.itemName,
+      assetId: homeInventory.assetId,
+      type: homeInventory.type,
+    })
+    .from(homeInventory)
+    .where(eq(homeInventory.id, itemId))
+    .all();
+
+  if (!startItem) throw new NotFoundError("Inventory item", itemId);
+
+  const root: TraceNode = {
+    id: startItem.id,
+    itemName: startItem.itemName,
+    assetId: startItem.assetId,
+    type: startItem.type,
+    children: [],
+  };
+
+  const visited = new Set<string>([itemId]);
+  const queue: { node: TraceNode; depth: number }[] = [{ node: root, depth: 0 }];
+
+  while (queue.length > 0) {
+    const entry = queue.shift();
+    if (!entry) break;
+    const { node, depth } = entry;
+    if (depth >= maxDepth) continue;
+
+    // Find all connections for this node
+    const connections = db
+      .select()
+      .from(itemConnections)
+      .where(or(eq(itemConnections.itemAId, node.id), eq(itemConnections.itemBId, node.id)))
+      .all();
+
+    for (const conn of connections) {
+      const neighborId = conn.itemAId === node.id ? conn.itemBId : conn.itemAId;
+      if (visited.has(neighborId)) continue;
+      visited.add(neighborId);
+
+      const [neighbor] = db
+        .select({
+          id: homeInventory.id,
+          itemName: homeInventory.itemName,
+          assetId: homeInventory.assetId,
+          type: homeInventory.type,
+        })
+        .from(homeInventory)
+        .where(eq(homeInventory.id, neighborId))
+        .all();
+
+      if (!neighbor) continue;
+
+      const childNode: TraceNode = {
+        id: neighbor.id,
+        itemName: neighbor.itemName,
+        assetId: neighbor.assetId,
+        type: neighbor.type,
+        children: [],
+      };
+
+      node.children.push(childNode);
+      queue.push({ node: childNode, depth: depth + 1 });
+    }
+  }
+
+  return root;
 }
