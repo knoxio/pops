@@ -1,5 +1,5 @@
 /**
- * Item detail page — shows item info and connected items.
+ * Item detail page — shows item info, documents, and connected items.
  * Route: /inventory/items/:id
  */
 import { useParams, Link } from "react-router";
