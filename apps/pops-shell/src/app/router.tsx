@@ -8,6 +8,7 @@ import { Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router";
 import { routes as financeRoutes } from "@pops/app-finance";
 import { routes as mediaRoutes } from "@pops/app-media";
+import { routes as inventoryRoutes } from "@pops/app-inventory";
 import { RootLayout } from "./layout/RootLayout";
 
 /**
@@ -43,6 +44,10 @@ export const router = createBrowserRouter([
       {
         path: "media",
         children: withSuspense(mediaRoutes),
+      },
+      {
+        path: "inventory",
+        children: withSuspense(inventoryRoutes),
       },
     ],
   },

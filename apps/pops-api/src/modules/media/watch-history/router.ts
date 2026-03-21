@@ -8,6 +8,7 @@ import { paginationMeta } from "../../../shared/pagination.js";
 import {
   LogWatchSchema,
   WatchHistoryQuerySchema,
+  ProgressQuerySchema,
   toWatchHistoryEntry,
   type WatchHistoryFilters,
 } from "./types.js";
@@ -56,6 +57,18 @@ export const watchHistoryRouter = router({
       data: toWatchHistoryEntry(row),
       message: "Watch logged",
     };
+  }),
+
+  /** Get watch progress for a TV show (watched/total per season + overall). */
+  progress: protectedProcedure.input(ProgressQuerySchema).query(({ input }) => {
+    try {
+      return { data: service.getProgress(input.tvShowId) };
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+      }
+      throw err;
+    }
   }),
 
   /** Delete a watch history entry. */

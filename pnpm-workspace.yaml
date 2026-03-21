@@ -2,5 +2,6 @@ packages:
   - 'apps/*'
   - 'packages/app-finance'
   - 'packages/app-media'
+  - 'packages/app-inventory'
   - 'packages/db-types'
   - 'packages/ui'

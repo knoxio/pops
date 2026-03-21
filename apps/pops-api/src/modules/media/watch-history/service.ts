@@ -9,7 +9,14 @@ import { count, countDistinct, desc, eq, and, inArray, type SQL } from "drizzle-
 import { getDrizzle } from "../../../db.js";
 import { watchHistory, mediaWatchlist, episodes, seasons } from "@pops/db-types";
 import { NotFoundError } from "../../../shared/errors.js";
-import type { WatchHistoryRow, LogWatchInput, WatchHistoryFilters } from "./types.js";
+import type {
+  WatchHistoryRow,
+  LogWatchInput,
+  WatchHistoryFilters,
+  TvShowProgress,
+  SeasonProgress,
+} from "./types.js";
+import { tvShows } from "@pops/db-types";
 
 /** Count + rows for a paginated list. */
 export interface WatchHistoryListResult {
@@ -166,6 +173,78 @@ function autoRemoveTvShowIfFullyWatched(
       .where(and(eq(mediaWatchlist.mediaType, "tv_show"), eq(mediaWatchlist.mediaId, tvShowId)))
       .run();
   }
+}
+
+/**
+ * Get watch progress for a TV show — watched/total episode counts per season and overall.
+ * Uses countDistinct to avoid double-counting rewatches.
+ * Throws NotFoundError if the TV show doesn't exist.
+ */
+export function getProgress(tvShowId: number): TvShowProgress {
+  const db = getDrizzle();
+
+  // Verify TV show exists
+  const show = db.select({ id: tvShows.id }).from(tvShows).where(eq(tvShows.id, tvShowId)).get();
+  if (!show) throw new NotFoundError("TvShow", String(tvShowId));
+
+  // Get all seasons with their episode counts
+  const seasonRows = db
+    .select({
+      seasonId: seasons.id,
+      seasonNumber: seasons.seasonNumber,
+      total: count(episodes.id),
+    })
+    .from(seasons)
+    .leftJoin(episodes, eq(episodes.seasonId, seasons.id))
+    .where(eq(seasons.tvShowId, tvShowId))
+    .groupBy(seasons.id)
+    .orderBy(seasons.seasonNumber)
+    .all();
+
+  // Get watched episode counts per season
+  const watchedRows = db
+    .select({
+      seasonId: seasons.id,
+      watched: countDistinct(watchHistory.mediaId),
+    })
+    .from(watchHistory)
+    .innerJoin(episodes, eq(episodes.id, watchHistory.mediaId))
+    .innerJoin(seasons, eq(seasons.id, episodes.seasonId))
+    .where(
+      and(
+        eq(watchHistory.mediaType, "episode"),
+        eq(watchHistory.completed, 1),
+        eq(seasons.tvShowId, tvShowId)
+      )
+    )
+    .groupBy(seasons.id)
+    .all();
+
+  const watchedBySeason = new Map(watchedRows.map((r) => [r.seasonId, r.watched]));
+
+  const seasonProgress: SeasonProgress[] = seasonRows.map((s) => {
+    const watched = watchedBySeason.get(s.seasonId) ?? 0;
+    return {
+      seasonId: s.seasonId,
+      seasonNumber: s.seasonNumber,
+      watched,
+      total: s.total,
+      percentage: s.total > 0 ? Math.round((watched / s.total) * 100) : 0,
+    };
+  });
+
+  const totalWatched = seasonProgress.reduce((sum, s) => sum + s.watched, 0);
+  const totalEpisodes = seasonProgress.reduce((sum, s) => sum + s.total, 0);
+
+  return {
+    tvShowId,
+    overall: {
+      watched: totalWatched,
+      total: totalEpisodes,
+      percentage: totalEpisodes > 0 ? Math.round((totalWatched / totalEpisodes) * 100) : 0,
+    },
+    seasons: seasonProgress,
+  };
 }
 
 /** Delete a watch history entry by ID. Throws NotFoundError if missing. */

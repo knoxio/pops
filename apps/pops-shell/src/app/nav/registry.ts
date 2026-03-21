@@ -9,9 +9,10 @@
  */
 import { navConfig as financeNavConfig } from "@pops/app-finance";
 import { navConfig as mediaNavConfig } from "@pops/app-media";
+import { navConfig as inventoryNavConfig } from "@pops/app-inventory";
 import type { AppNavConfig } from "./types";
 
 /** All registered app nav configs. Order determines display order in the app rail. */
-export const registeredApps: AppNavConfig[] = [financeNavConfig, mediaNavConfig];
+export const registeredApps: AppNavConfig[] = [financeNavConfig, mediaNavConfig, inventoryNavConfig];
 
 export type { AppNavConfig, AppNavItem } from "./types";
