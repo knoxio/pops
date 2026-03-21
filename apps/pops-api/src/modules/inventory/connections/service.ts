@@ -136,7 +136,9 @@ export function traceConnections(itemId: string, maxDepth: number): TraceNode {
   const queue: { node: TraceNode; depth: number }[] = [{ node: root, depth: 0 }];
 
   while (queue.length > 0) {
-    const { node, depth } = queue.shift()!;
+    const entry = queue.shift();
+    if (!entry) break;
+    const { node, depth } = entry;
     if (depth >= maxDepth) continue;
 
     // Find all connections for this node
