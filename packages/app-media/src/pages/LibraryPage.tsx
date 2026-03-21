@@ -1,7 +1,7 @@
 import { useSearchParams, Link } from "react-router";
 import { Badge, Button, Skeleton } from "@pops/ui";
 import { useEffect } from "react";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Settings } from "lucide-react";
 import { MediaGrid } from "../components/MediaGrid";
 import { DownloadQueue } from "../components/DownloadQueue";
 import { QuickPickDialog } from "../components/QuickPickDialog";
@@ -130,6 +130,12 @@ export function LibraryPage() {
             <Button variant="outline" size="sm">
               <Sparkles className="h-4 w-4 mr-1.5" />
               Quick Pick
+            </Button>
+          </Link>
+          <Link to="/media/plex">
+            <Button variant="outline" size="sm">
+              <Settings className="h-4 w-4 mr-1.5" />
+              Plex
             </Button>
           </Link>
           <Link

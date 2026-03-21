@@ -53,6 +53,11 @@ const RankingsPage = lazy(() =>
     default: m.RankingsPage,
   })),
 );
+const PlexSettingsPage = lazy(() =>
+  import("./pages/PlexSettingsPage").then((m) => ({
+    default: m.PlexSettingsPage,
+  })),
+);
 
 /** Shared navigation types (mirrored from shell to avoid circular dependency) */
 export interface AppNavItem {
@@ -97,4 +102,5 @@ export const routes: RouteObject[] = [
   { path: "search", element: <SearchPage /> },
   { path: "compare", element: <CompareArenaPage /> },
   { path: "quick-pick", element: <QuickPickPage /> },
+  { path: "plex", element: <PlexSettingsPage /> },
 ];
