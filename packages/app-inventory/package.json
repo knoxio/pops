@@ -13,6 +13,7 @@
     "@pops/api": "workspace:*",
     "@pops/ui": "workspace:*",
     "@tanstack/react-query": "5.90.20",
+    "@tanstack/react-table": "^8.21.3",
     "@trpc/client": "11.13.4",
     "@trpc/react-query": "11.13.4",
     "lucide-react": "^0.563.0",
