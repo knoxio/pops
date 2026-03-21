@@ -23,6 +23,18 @@ afterEach(() => {
   ctx.teardown();
 });
 
+/** Recursively collect all node IDs from a trace tree. */
+function collectIds(node: {
+  id: string;
+  children: { id: string; children: unknown[] }[];
+}): string[] {
+  const ids = [node.id];
+  for (const child of node.children) {
+    ids.push(...collectIds(child as typeof node));
+  }
+  return ids;
+}
+
 /** Seed two items and return their IDs (sorted for A<B). */
 function seedTwoItems(nameA = "Item A", nameB = "Item B") {
   const idA = seedInventoryItem(db, { item_name: nameA });
@@ -320,12 +332,12 @@ describe("inventory.connections.trace", () => {
 
     // Should not throw / infinite loop
     expect(result.data.id).toBe(idA);
-    expect(result.data.children).toHaveLength(2);
-    // Each child should NOT list A again (visited)
-    for (const child of result.data.children) {
-      const grandchildIds = child.children.map((gc: { id: string }) => gc.id);
-      expect(grandchildIds).not.toContain(idA);
-    }
+    // All 3 nodes should appear exactly once in the tree (DFS visits B first, then C via B)
+    const allIds = collectIds(result.data);
+    expect(allIds).toHaveLength(3);
+    expect(allIds).toContain(idA);
+    expect(allIds).toContain(idB);
+    expect(allIds).toContain(idC);
   });
 
   it("throws NOT_FOUND for nonexistent item", async () => {
