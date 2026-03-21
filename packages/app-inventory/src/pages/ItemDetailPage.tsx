@@ -12,8 +12,24 @@ import {
   AlertDescription,
   Skeleton,
 } from "@pops/ui";
-import { ArrowLeft, Pencil, Link2, Unlink, GitBranch, FileText } from "lucide-react";
+import {
+  ArrowLeft,
+  Pencil,
+  Link2,
+  Unlink,
+  GitBranch,
+  FileText,
+  X,
+} from "lucide-react";
 import { trpc } from "../lib/trpc";
+
+const DOCUMENT_TYPE_LABELS: Record<string, string> = {
+  receipt: "Receipts",
+  warranty: "Warranties",
+  manual: "Manuals",
+  invoice: "Invoices",
+  other: "Other",
+};
 import { ConnectDialog } from "../components/ConnectDialog";
 import { ConnectionTracePanel } from "../components/ConnectionTracePanel";
 
@@ -269,9 +285,35 @@ function DocumentsSection({ itemId }: { itemId: string }) {
 }
 
 function DocumentsList({ itemId }: { itemId: string }) {
+  const utils = trpc.useUtils();
   const { data, isLoading } = trpc.inventory.documents.listForItem.useQuery({
     itemId,
   });
+
+  const unlinkMutation = trpc.inventory.documents.unlink.useMutation({
+    onSuccess: () => {
+      toast.success("Document unlinked");
+      void utils.inventory.documents.listForItem.invalidate({ itemId });
+    },
+    onError: (err: { message: string }) => {
+      toast.error(`Failed to unlink: ${err.message}`);
+    },
+  });
+
+  // Group documents by type
+  const grouped = new Map<string, typeof docs>();
+  const docs = data?.data ?? [];
+  for (const doc of docs) {
+    const type = doc.documentType;
+    const list = grouped.get(type) ?? [];
+    list.push(doc);
+    grouped.set(type, list);
+  }
+
+  const typeOrder = ["receipt", "warranty", "manual", "invoice", "other"];
+  const sortedTypes = [...grouped.keys()].sort(
+    (a, b) => (typeOrder.indexOf(a) ?? 99) - (typeOrder.indexOf(b) ?? 99),
+  );
 
   return (
     <section className="mt-8">
@@ -284,23 +326,42 @@ function DocumentsList({ itemId }: { itemId: string }) {
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />
         </div>
-      ) : data?.data.length ? (
-        <div className="space-y-2">
-          {data.data.map((doc) => (
-            <div
-              key={doc.id}
-              className="flex items-center justify-between p-3 rounded-lg border"
-            >
-              <div className="flex items-center gap-3">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                <div>
-                  <p className="font-medium text-sm">
-                    {doc.title ?? `Document #${doc.paperlessDocumentId}`}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {doc.documentType}
-                  </p>
-                </div>
+      ) : docs.length ? (
+        <div className="space-y-4">
+          {sortedTypes.map((type) => (
+            <div key={type}>
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                {DOCUMENT_TYPE_LABELS[type] ?? type}
+              </h3>
+              <div className="space-y-1.5">
+                {grouped.get(type)?.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between p-3 rounded-lg border"
+                  >
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <div className="min-w-0">
+                        <span className="font-medium text-sm truncate block">
+                          {doc.title ?? `Document #${doc.paperlessDocumentId}`}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          Linked {new Date(doc.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive shrink-0"
+                      onClick={() => unlinkMutation.mutate({ id: doc.id })}
+                      disabled={unlinkMutation.isPending}
+                      title="Unlink document"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             </div>
           ))}
