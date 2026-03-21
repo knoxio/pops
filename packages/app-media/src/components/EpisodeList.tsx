@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronRight } from "lucide-react";
+import { Check, ChevronDown, ChevronRight } from "lucide-react";
 import { formatRuntime } from "../lib/utils";
 
 interface Episode {
@@ -11,24 +11,58 @@ interface Episode {
   runtime: number | null;
 }
 
-interface EpisodeListProps {
+export interface EpisodeListProps {
   episodes: Episode[];
+  /** Set of episode IDs that have been watched. */
+  watchedEpisodeIds?: Set<number>;
+  /** Called when user toggles an episode's watched state. */
+  onToggleWatched?: (episodeId: number, watched: boolean) => void;
+  /** Episode IDs currently being toggled (pending mutation). */
+  togglingIds?: Set<number>;
 }
 
 function EpisodeRow({
   ep,
   isExpanded,
   onToggle,
+  isWatched,
+  isToggling,
+  onToggleWatched,
 }: {
   ep: Episode;
   isExpanded: boolean;
   onToggle: () => void;
+  isWatched: boolean;
+  isToggling: boolean;
+  onToggleWatched?: (episodeId: number, watched: boolean) => void;
 }) {
   const hasOverview = ep.overview && ep.overview.length > 0;
 
   return (
     <div className="px-4 py-3">
       <div className="flex items-start gap-3">
+        {onToggleWatched && (
+          <button
+            type="button"
+            onClick={() => onToggleWatched(ep.id, !isWatched)}
+            disabled={isToggling}
+            aria-label={
+              isWatched
+                ? `Mark episode ${ep.episodeNumber} as unwatched`
+                : `Mark episode ${ep.episodeNumber} as watched`
+            }
+            className={`mt-0.5 shrink-0 flex items-center justify-center h-5 w-5 rounded border transition-colors ${
+              isToggling
+                ? "opacity-50 cursor-not-allowed border-muted"
+                : isWatched
+                  ? "bg-primary border-primary text-primary-foreground"
+                  : "border-muted-foreground/40 hover:border-primary"
+            }`}
+          >
+            {isWatched && <Check className="h-3.5 w-3.5" />}
+          </button>
+        )}
+
         {hasOverview ? (
           <button
             type="button"
@@ -49,7 +83,9 @@ function EpisodeRow({
             <span className="text-sm font-medium text-muted-foreground shrink-0">
               {ep.episodeNumber}
             </span>
-            <span className="text-sm font-medium truncate">
+            <span
+              className={`text-sm font-medium truncate ${isWatched ? "text-muted-foreground" : ""}`}
+            >
               {ep.name ?? `Episode ${ep.episodeNumber}`}
             </span>
           </div>
@@ -71,8 +107,15 @@ function EpisodeRow({
   );
 }
 
-export function EpisodeList({ episodes }: EpisodeListProps) {
+export function EpisodeList({
+  episodes,
+  watchedEpisodeIds,
+  onToggleWatched,
+  togglingIds,
+}: EpisodeListProps) {
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const watched = watchedEpisodeIds ?? new Set<number>();
+  const toggling = togglingIds ?? new Set<number>();
 
   const toggleExpanded = (id: number) => {
     setExpandedIds((prev) => {
@@ -100,6 +143,9 @@ export function EpisodeList({ episodes }: EpisodeListProps) {
           ep={ep}
           isExpanded={expandedIds.has(ep.id)}
           onToggle={() => toggleExpanded(ep.id)}
+          isWatched={watched.has(ep.id)}
+          isToggling={toggling.has(ep.id)}
+          onToggleWatched={onToggleWatched}
         />
       ))}
     </div>
