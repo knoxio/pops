@@ -8,30 +8,35 @@ import { lazy } from "react";
 import type { RouteObject } from "react-router";
 
 const LibraryPage = lazy(() =>
-  import("./pages/LibraryPage").then((m) => ({ default: m.LibraryPage }))
+  import("./pages/LibraryPage").then((m) => ({ default: m.LibraryPage })),
 );
 const MovieDetailPage = lazy(() =>
   import("./pages/MovieDetailPage").then((m) => ({
     default: m.MovieDetailPage,
-  }))
+  })),
 );
 const TvShowDetailPage = lazy(() =>
   import("./pages/TvShowDetailPage").then((m) => ({
     default: m.TvShowDetailPage,
-  }))
+  })),
 );
 const SeasonDetailPage = lazy(() =>
   import("./pages/SeasonDetailPage").then((m) => ({
     default: m.SeasonDetailPage,
-  }))
+  })),
 );
 const SearchPage = lazy(() =>
-  import("./pages/SearchPage").then((m) => ({ default: m.SearchPage }))
+  import("./pages/SearchPage").then((m) => ({ default: m.SearchPage })),
 );
 const WatchlistPage = lazy(() =>
   import("./pages/WatchlistPage").then((m) => ({
     default: m.WatchlistPage,
-  }))
+  })),
+);
+const CompareArenaPage = lazy(() =>
+  import("./pages/CompareArenaPage").then((m) => ({
+    default: m.CompareArenaPage,
+  })),
 );
 
 /** Shared navigation types (mirrored from shell to avoid circular dependency) */
@@ -60,6 +65,7 @@ export const navConfig: AppNavConfig = {
     { path: "", label: "Library", icon: "Library" },
     { path: "/watchlist", label: "Watchlist", icon: "Bookmark" },
     { path: "/search", label: "Search", icon: "Search" },
+    { path: "/compare", label: "Compare", icon: "ArrowLeftRight" },
   ],
 };
 
@@ -70,4 +76,5 @@ export const routes: RouteObject[] = [
   { path: "tv/:id/season/:num", element: <SeasonDetailPage /> },
   { path: "watchlist", element: <WatchlistPage /> },
   { path: "search", element: <SearchPage /> },
+  { path: "compare", element: <CompareArenaPage /> },
 ];
