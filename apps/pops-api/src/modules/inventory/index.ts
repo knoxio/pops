@@ -6,10 +6,12 @@ import { inventoryRouter as itemsRouter } from "./items/router.js";
 import { locationsRouter } from "./locations/router.js";
 import { connectionsRouter } from "./connections/index.js";
 import { photosRouter } from "./photos/index.js";
+import { reportsRouter } from "./reports/index.js";
 
 export const inventoryRouter = router({
   items: itemsRouter,
   locations: locationsRouter,
   connections: connectionsRouter,
   photos: photosRouter,
+  reports: reportsRouter,
 });
