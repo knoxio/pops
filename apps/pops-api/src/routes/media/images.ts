@@ -57,6 +57,13 @@ router.get("/media/images/:mediaType/:id/:filename", async (req, res): Promise<v
   const mediaDirName = MEDIA_DIR_NAMES[mediaType] ?? `${mediaType}s`;
   const mediaDir = join(imagesDir, mediaDirName, id);
 
+  // Path traversal defense: ensure resolved path stays within imagesDir
+  const resolvedDir = resolve(mediaDir);
+  if (!resolvedDir.startsWith(resolve(imagesDir))) {
+    res.status(400).json({ error: "Invalid path" });
+    return;
+  }
+
   // Override resolution: if requesting poster.jpg, check for override.jpg first
   if (filename === "poster.jpg") {
     const overridePath = join(mediaDir, "override.jpg");
@@ -74,7 +81,11 @@ router.get("/media/images/:mediaType/:id/:filename", async (req, res): Promise<v
     const db = getDb();
     const table = mediaType === "movie" ? "movies" : "tv_shows";
     const idColumn = mediaType === "movie" ? "tmdb_id" : "tvdb_id";
-    const pathColumn = filename.startsWith("poster") ? "poster_path" : "backdrop_path";
+    const pathColumn = filename.startsWith("poster")
+      ? "poster_path"
+      : filename.startsWith("logo")
+        ? "logo_path"
+        : "backdrop_path";
 
     const record = db
       .prepare(`SELECT ${pathColumn} AS path FROM ${table} WHERE ${idColumn} = ?`)
