@@ -6,6 +6,7 @@ import {
   seedTvShow,
   seedSeason,
   seedEpisode,
+  seedMovie,
 } from "../../../shared/test-utils.js";
 import * as service from "./service.js";
 import * as watchlistService from "../watchlist/service.js";
@@ -65,6 +66,178 @@ describe("listWatchHistory", () => {
     const result = service.listWatchHistory({ mediaType: "movie", mediaId: 550 }, 50, 0);
     expect(result.rows).toHaveLength(1);
     expect(result.rows[0].mediaType).toBe("movie");
+  });
+});
+
+describe("listRecent", () => {
+  it("returns empty list when no entries exist", () => {
+    const result = service.listRecent({}, 50, 0);
+    expect(result.rows).toHaveLength(0);
+    expect(result.total).toBe(0);
+  });
+
+  it("returns enriched movie entries with title and poster", () => {
+    const movieId = seedMovie(db, { tmdb_id: 550, title: "Fight Club", poster_path: "/fc.jpg" });
+    seedWatchHistoryEntry(db, { media_type: "movie", media_id: movieId });
+
+    const result = service.listRecent({}, 50, 0);
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0].title).toBe("Fight Club");
+    expect(result.rows[0].posterPath).toBe("/fc.jpg");
+    expect(result.rows[0].seasonNumber).toBeNull();
+    expect(result.rows[0].episodeNumber).toBeNull();
+    expect(result.rows[0].showName).toBeNull();
+  });
+
+  it("returns enriched episode entries with show name and season/episode info", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Breaking Bad", poster_path: "/bb.jpg" });
+    const seasonId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    const epId = seedEpisode(db, {
+      season_id: seasonId,
+      tvdb_id: 5001,
+      episode_number: 1,
+      name: "Pilot",
+    });
+    seedWatchHistoryEntry(db, { media_type: "episode", media_id: epId });
+
+    const result = service.listRecent({}, 50, 0);
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0].title).toBe("Pilot");
+    expect(result.rows[0].showName).toBe("Breaking Bad");
+    expect(result.rows[0].posterPath).toBe("/bb.jpg");
+    expect(result.rows[0].seasonNumber).toBe(1);
+    expect(result.rows[0].episodeNumber).toBe(1);
+  });
+
+  it("filters by mediaType", () => {
+    const movieId = seedMovie(db, { tmdb_id: 550, title: "Fight Club" });
+    seedWatchHistoryEntry(db, { media_type: "movie", media_id: movieId });
+    seedWatchHistoryEntry(db, { media_type: "episode", media_id: 999 });
+
+    const result = service.listRecent({ mediaType: "movie" }, 50, 0);
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0].mediaType).toBe("movie");
+  });
+
+  it("filters by startDate", () => {
+    const movieId = seedMovie(db, { tmdb_id: 550, title: "Fight Club" });
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: movieId,
+      watched_at: "2026-01-01T00:00:00.000Z",
+    });
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: movieId,
+      watched_at: "2026-03-15T00:00:00.000Z",
+    });
+
+    const result = service.listRecent({ startDate: "2026-03-01T00:00:00.000Z" }, 50, 0);
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0].watchedAt).toBe("2026-03-15T00:00:00.000Z");
+  });
+
+  it("filters by endDate", () => {
+    const movieId = seedMovie(db, { tmdb_id: 550, title: "Fight Club" });
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: movieId,
+      watched_at: "2026-01-01T00:00:00.000Z",
+    });
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: movieId,
+      watched_at: "2026-03-15T00:00:00.000Z",
+    });
+
+    const result = service.listRecent({ endDate: "2026-02-01T00:00:00.000Z" }, 50, 0);
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0].watchedAt).toBe("2026-01-01T00:00:00.000Z");
+  });
+
+  it("filters by date range (startDate + endDate)", () => {
+    const movieId = seedMovie(db, { tmdb_id: 550, title: "Fight Club" });
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: movieId,
+      watched_at: "2026-01-01T00:00:00.000Z",
+    });
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: movieId,
+      watched_at: "2026-02-15T00:00:00.000Z",
+    });
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: movieId,
+      watched_at: "2026-03-15T00:00:00.000Z",
+    });
+
+    const result = service.listRecent(
+      { startDate: "2026-02-01T00:00:00.000Z", endDate: "2026-03-01T00:00:00.000Z" },
+      50,
+      0
+    );
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0].watchedAt).toBe("2026-02-15T00:00:00.000Z");
+  });
+
+  it("combines mediaType + date range filters", () => {
+    const movieId = seedMovie(db, { tmdb_id: 550, title: "Fight Club" });
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: movieId,
+      watched_at: "2026-03-15T00:00:00.000Z",
+    });
+    seedWatchHistoryEntry(db, {
+      media_type: "episode",
+      media_id: 999,
+      watched_at: "2026-03-15T00:00:00.000Z",
+    });
+
+    const result = service.listRecent(
+      { mediaType: "movie", startDate: "2026-03-01T00:00:00.000Z" },
+      50,
+      0
+    );
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0].mediaType).toBe("movie");
+  });
+
+  it("handles missing media gracefully", () => {
+    seedWatchHistoryEntry(db, { media_type: "movie", media_id: 99999 });
+
+    const result = service.listRecent({}, 50, 0);
+    expect(result.rows).toHaveLength(1);
+    expect(result.rows[0].title).toBeNull();
+    expect(result.rows[0].posterPath).toBeNull();
+  });
+
+  it("supports pagination", () => {
+    const movieId = seedMovie(db, { tmdb_id: 550, title: "Fight Club" });
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: movieId,
+      watched_at: "2026-01-01T00:00:00.000Z",
+    });
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: movieId,
+      watched_at: "2026-02-01T00:00:00.000Z",
+    });
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: movieId,
+      watched_at: "2026-03-01T00:00:00.000Z",
+    });
+
+    const page1 = service.listRecent({}, 2, 0);
+    expect(page1.rows).toHaveLength(2);
+    expect(page1.total).toBe(3);
+
+    const page2 = service.listRecent({}, 2, 2);
+    expect(page2.rows).toHaveLength(1);
+    expect(page2.total).toBe(3);
   });
 });
 

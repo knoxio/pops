@@ -5,9 +5,9 @@
  *   - Movie: removed from watchlist when marked as watched.
  *   - Episode: TV show removed from watchlist when all episodes are watched.
  */
-import { count, countDistinct, desc, eq, and, inArray, type SQL } from "drizzle-orm";
+import { count, countDistinct, desc, eq, and, inArray, gte, lte, type SQL } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
-import { watchHistory, mediaWatchlist, episodes, seasons } from "@pops/db-types";
+import { watchHistory, mediaWatchlist, episodes, seasons, movies, tvShows } from "@pops/db-types";
 import { NotFoundError } from "../../../shared/errors.js";
 import type {
   WatchHistoryRow,
@@ -16,8 +16,9 @@ import type {
   TvShowProgress,
   SeasonProgress,
   BatchLogWatchInput,
+  RecentWatchHistoryFilters,
+  RecentWatchHistoryEntry,
 } from "./types.js";
-import { tvShows } from "@pops/db-types";
 
 /** Count + rows for a paginated list. */
 export interface WatchHistoryListResult {
@@ -53,6 +54,127 @@ export function listWatchHistory(
     .all();
 
   const [countRow] = db.select({ total: count() }).from(watchHistory).where(where).all();
+
+  return { rows, total: countRow.total };
+}
+
+/** Count + enriched rows for a paginated recent history list. */
+export interface RecentWatchHistoryListResult {
+  rows: RecentWatchHistoryEntry[];
+  total: number;
+}
+
+/**
+ * List recent watch history entries with date range and mediaType filters.
+ * Joins media metadata (title, poster) for display on the history page.
+ */
+export function listRecent(
+  filters: RecentWatchHistoryFilters,
+  limit: number,
+  offset: number
+): RecentWatchHistoryListResult {
+  const db = getDrizzle();
+  const conditions: SQL[] = [];
+
+  if (filters.mediaType) {
+    conditions.push(eq(watchHistory.mediaType, filters.mediaType as "movie" | "episode"));
+  }
+  if (filters.startDate) {
+    conditions.push(gte(watchHistory.watchedAt, filters.startDate));
+  }
+  if (filters.endDate) {
+    conditions.push(lte(watchHistory.watchedAt, filters.endDate));
+  }
+
+  const where = conditions.length > 0 ? and(...conditions) : undefined;
+
+  // Get raw watch history rows first
+  const rawRows = db
+    .select()
+    .from(watchHistory)
+    .where(where)
+    .orderBy(desc(watchHistory.watchedAt))
+    .limit(limit)
+    .offset(offset)
+    .all();
+
+  const [countRow] = db.select({ total: count() }).from(watchHistory).where(where).all();
+
+  // Enrich with media metadata
+  const rows: RecentWatchHistoryEntry[] = rawRows.map((row) => {
+    if (row.mediaType === "movie") {
+      const movie = db
+        .select({ title: movies.title, posterPath: movies.posterPath })
+        .from(movies)
+        .where(eq(movies.id, row.mediaId))
+        .get();
+      return {
+        id: row.id,
+        mediaType: row.mediaType,
+        mediaId: row.mediaId,
+        watchedAt: row.watchedAt,
+        completed: row.completed,
+        title: movie?.title ?? null,
+        posterPath: movie?.posterPath ?? null,
+        seasonNumber: null,
+        episodeNumber: null,
+        showName: null,
+      };
+    }
+    // episode — look up episode → season → tv show
+    const episode = db
+      .select({
+        name: episodes.name,
+        episodeNumber: episodes.episodeNumber,
+        seasonId: episodes.seasonId,
+        stillPath: episodes.stillPath,
+      })
+      .from(episodes)
+      .where(eq(episodes.id, row.mediaId))
+      .get();
+
+    if (!episode) {
+      return {
+        id: row.id,
+        mediaType: row.mediaType,
+        mediaId: row.mediaId,
+        watchedAt: row.watchedAt,
+        completed: row.completed,
+        title: null,
+        posterPath: null,
+        seasonNumber: null,
+        episodeNumber: null,
+        showName: null,
+      };
+    }
+
+    const season = db
+      .select({ tvShowId: seasons.tvShowId, seasonNumber: seasons.seasonNumber })
+      .from(seasons)
+      .where(eq(seasons.id, episode.seasonId))
+      .get();
+
+    const show = season
+      ? db
+          .select({ name: tvShows.name, posterPath: tvShows.posterPath })
+          .from(tvShows)
+          .where(eq(tvShows.id, season.tvShowId))
+          .get()
+      : null;
+
+    return {
+      id: row.id,
+      mediaType: row.mediaType,
+      mediaId: row.mediaId,
+      watchedAt: row.watchedAt,
+      completed: row.completed,
+      title: episode.name ?? null,
+      posterPath: show?.posterPath ?? episode.stillPath ?? null,
+      seasonNumber: season?.seasonNumber ?? null,
+      episodeNumber: episode.episodeNumber,
+      showName: show?.name ?? null,
+    };
+  });
 
   return { rows, total: countRow.total };
 }

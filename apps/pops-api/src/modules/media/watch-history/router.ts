@@ -10,8 +10,10 @@ import {
   BatchLogWatchSchema,
   WatchHistoryQuerySchema,
   ProgressQuerySchema,
+  RecentWatchHistoryQuerySchema,
   toWatchHistoryEntry,
   type WatchHistoryFilters,
+  type RecentWatchHistoryFilters,
 } from "./types.js";
 import * as service from "./service.js";
 import { NotFoundError } from "../../../shared/errors.js";
@@ -34,6 +36,25 @@ export const watchHistoryRouter = router({
 
     return {
       data: rows.map(toWatchHistoryEntry),
+      pagination: paginationMeta(total, limit, offset),
+    };
+  }),
+
+  /** List recent watch history with date range filters and enriched media metadata. */
+  listRecent: protectedProcedure.input(RecentWatchHistoryQuerySchema).query(({ input }) => {
+    const limit = input.limit ?? DEFAULT_LIMIT;
+    const offset = input.offset ?? DEFAULT_OFFSET;
+
+    const filters: RecentWatchHistoryFilters = {
+      mediaType: input.mediaType,
+      startDate: input.startDate,
+      endDate: input.endDate,
+    };
+
+    const { rows, total } = service.listRecent(filters, limit, offset);
+
+    return {
+      data: rows,
       pagination: paginationMeta(total, limit, offset),
     };
   }),
