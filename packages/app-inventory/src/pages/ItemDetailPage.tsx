@@ -12,7 +12,7 @@ import {
   AlertDescription,
   Skeleton,
 } from "@pops/ui";
-import { ArrowLeft, Pencil, Link2, Unlink, GitBranch } from "lucide-react";
+import { ArrowLeft, Pencil, Link2, Unlink, GitBranch, FileText } from "lucide-react";
 import { trpc } from "../lib/trpc";
 import { ConnectDialog } from "../components/ConnectDialog";
 import { ConnectionTracePanel } from "../components/ConnectionTracePanel";
@@ -206,6 +206,9 @@ export function ItemDetailPage() {
           <ConnectionTracePanel itemId={id!} />
         </section>
       ) : null}
+
+      {/* Documents — hidden when Paperless-ngx not configured */}
+      <DocumentsSection itemId={id!} />
     </div>
   );
 }
@@ -222,6 +225,92 @@ function DetailField({
       <dt className="text-sm text-muted-foreground">{label}</dt>
       <dd className="font-medium">{value}</dd>
     </div>
+  );
+}
+
+function DocumentsSection({ itemId }: { itemId: string }) {
+  const { data: statusData, isLoading: statusLoading } =
+    trpc.inventory.paperless.status.useQuery();
+
+  const status = statusData?.data;
+
+  // Not configured — hide entirely
+  if (!statusLoading && !status?.configured) return null;
+
+  // Loading status check
+  if (statusLoading) {
+    return (
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+          <FileText className="h-5 w-5" />
+          Documents
+        </h2>
+        <Skeleton className="h-12 w-full" />
+      </section>
+    );
+  }
+
+  // Configured but unreachable
+  if (!status?.available) {
+    return (
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+          <FileText className="h-5 w-5" />
+          Documents
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Paperless-ngx unavailable
+        </p>
+      </section>
+    );
+  }
+
+  return <DocumentsList itemId={itemId} />;
+}
+
+function DocumentsList({ itemId }: { itemId: string }) {
+  const { data, isLoading } = trpc.inventory.documents.listForItem.useQuery({
+    itemId,
+  });
+
+  return (
+    <section className="mt-8">
+      <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+        <FileText className="h-5 w-5" />
+        Documents
+      </h2>
+      {isLoading ? (
+        <div className="space-y-2">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      ) : data?.data.length ? (
+        <div className="space-y-2">
+          {data.data.map((doc) => (
+            <div
+              key={doc.id}
+              className="flex items-center justify-between p-3 rounded-lg border"
+            >
+              <div className="flex items-center gap-3">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="font-medium text-sm">
+                    {doc.title ?? `Document #${doc.paperlessDocumentId}`}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {doc.documentType}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-muted-foreground text-sm">
+          No documents linked yet.
+        </p>
+      )}
+    </section>
   );
 }
 
