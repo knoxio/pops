@@ -785,6 +785,34 @@ export function seedWatchHistoryEntry(
 }
 
 /**
+ * Seed a single item photo row into the test DB.
+ * Returns the auto-generated id.
+ */
+export function seedPhoto(
+  db: Database,
+  overrides: {
+    item_id: string;
+    file_path?: string;
+    caption?: string | null;
+    sort_order?: number;
+  }
+): number {
+  const result = db
+    .prepare(
+      `INSERT INTO item_photos (item_id, file_path, caption, sort_order)
+       VALUES (@item_id, @file_path, @caption, @sort_order)`
+    )
+    .run({
+      item_id: overrides.item_id,
+      file_path: overrides.file_path ?? "items/test/photo.jpg",
+      caption: overrides.caption ?? null,
+      sort_order: overrides.sort_order ?? 0,
+    });
+
+  return Number(result.lastInsertRowid);
+}
+
+/**
  * Setup helper for test suites. Call in beforeEach/afterEach.
  * Returns the test DB and a tRPC caller.
  */

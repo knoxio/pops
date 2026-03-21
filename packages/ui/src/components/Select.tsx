@@ -77,6 +77,14 @@ export interface SelectProps
     Omit<SelectHTMLAttributes<HTMLSelectElement>, "size" | "prefix">,
     VariantProps<typeof containerVariants> {
   /**
+   * Label for the select
+   */
+  label?: string;
+  /**
+   * Error message to display
+   */
+  error?: string;
+  /**
    * Select options
    */
   options: SelectOption[];
@@ -115,6 +123,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
       variant,
       size,
       shape,
+      label,
+      error,
       prefix,
       centered = false,
       options,
@@ -139,46 +149,60 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
     };
 
     return (
-      <div
-        className={cn(
-          containerVariants({
-            variant,
-            size,
-            shape,
-          }),
-          disabled && "opacity-50 cursor-not-allowed",
-          containerClassName
+      <div className="flex flex-col gap-1.5 w-full">
+        {label && (
+          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest ml-1">
+            {label}
+          </label>
         )}
-        style={isFocused ? { borderColor: "rgb(55, 65, 81)" } : undefined}
-      >
-        {prefix && (
-          <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>
-        )}
-        <select
-          ref={ref}
-          className={cn(selectVariants({ size, centered, className }))}
-          style={{ outline: "none", boxShadow: "none" }}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          disabled={disabled}
-          {...props}
-        >
-          {placeholder && (
-            <option value="" disabled>
-              {placeholder}
-            </option>
+        <div
+          className={cn(
+            containerVariants({
+              variant,
+              size,
+              shape,
+            }),
+            disabled && "opacity-50 cursor-not-allowed",
+            error && "border-destructive ring-destructive/20",
+            containerClassName
           )}
-          {options.map((option) => (
-            <option
-              key={option.value}
-              value={option.value}
-              disabled={option.disabled}
-            >
-              {option.label}
-            </option>
-          ))}
-        </select>
-        <ChevronDownIcon />
+          style={isFocused && !error ? { borderColor: "rgb(55, 65, 81)" } : undefined}
+        >
+          {prefix && (
+            <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>
+          )}
+          <select
+            ref={ref}
+            className={cn(selectVariants({ size, centered, className }))}
+            style={{ outline: "none", boxShadow: "none" }}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            disabled={disabled}
+            aria-invalid={!!error}
+            {...props}
+          >
+            {placeholder && (
+              <option value="" disabled>
+                {placeholder}
+              </option>
+            )}
+            {options.map((option) => (
+              <option
+                key={option.value}
+                value={option.value}
+                disabled={option.disabled}
+              >
+                {option.label}
+              </option>
+            ))}
+          </select>
+          <ChevronDownIcon />
+        </div>
+        {error && (
+          <p className="text-[10px] font-medium text-destructive ml-1">
+            {error}
+          </p>
+        )}
       </div>
     );
   }

@@ -1,0 +1,55 @@
+[project]
+repo = "git@github.com:knoxio/pops.git"
+container_name = "sandbox-pops"
+
+[[agent]]
+name = "r2d2"
+role = "coder"
+
+[[agent]]
+name = "c3po"
+role = "coder"
+
+[[agent]]
+name = "wall-e"
+role = "coder"
+
+[[agent]]
+name = "qa"
+role = "reviewer"
+
+[[agent]]
+name = "manager"
+role = "manager"
+
+[[agent]]
+name = "saphire"
+role = "coder"
+
+[[agent]]
+name = "qa2"
+role = "reviewer"
+
+[[agent]]
+name = "samantha"
+role = "coder"
+
+[[agent]]
+name = "jessica"
+role = "coder"
+
+[room]
+default = "dev"
+
+[auth]
+method = "gh-cli"
+mount_ssh = false
+gh_account = "knoxio"
+
+[environment]
+languages = ["node"]
+utilities = [
+    "glow",
+    "playwright",
+    "mise",
+]

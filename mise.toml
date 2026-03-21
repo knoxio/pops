@@ -34,8 +34,8 @@ description = "Run all dev servers (using turbo)"
 run = "pnpm dev"
 
 [tasks."dev:storybook"]
-description = "Run Storybook for pops-shell"
-dir = "apps/pops-shell"
+description = "Run unified Storybook for all packages and apps"
+dir = "packages/ui"
 run = "pnpm storybook"
 
 # ============================================================================

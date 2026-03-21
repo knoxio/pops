@@ -194,16 +194,16 @@ export function FilterBar({ filters, table, onClearAll }: FilterBarProps) {
             </span>
           )}
         </Button>
-        <h3 className="text-sm font-medium hidden md:block">Filters</h3>
+        <h3 className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/80 hidden md:block">Filters</h3>
         {activeFiltersCount > 0 && (
           <Button
             variant="ghost"
             size="default"
             onClick={handleClearAll}
-            className="px-3"
+            className="px-3 h-8 text-xs text-muted-foreground hover:text-foreground"
           >
             Clear all
-            <X className="ml-2 h-4 w-4" />
+            <X className="ml-2 h-3.5 w-3.5" />
           </Button>
         )}
       </div>
@@ -213,8 +213,8 @@ export function FilterBar({ filters, table, onClearAll }: FilterBarProps) {
           if (!column) return null;
 
           return (
-            <div key={filter.id} className="space-y-2">
-              <label className="text-sm font-medium leading-none">
+            <div key={filter.id} className="space-y-1.5">
+              <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-0.5">
                 {filter.label}
               </label>
               {filter.type === "text" && (

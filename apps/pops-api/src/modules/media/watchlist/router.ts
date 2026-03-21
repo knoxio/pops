@@ -88,6 +88,33 @@ export const watchlistRouter = router({
       }
     }),
 
+  /** Batch-reorder watchlist items by setting new priorities. */
+  reorder: protectedProcedure
+    .input(
+      z.object({
+        items: z.array(
+          z.object({
+            id: z.number(),
+            priority: z.number().int().min(0),
+          })
+        ),
+      })
+    )
+    .mutation(({ input }) => {
+      try {
+        service.reorderWatchlist(input.items);
+        return { message: "Watchlist reordered" };
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+        }
+        if (err instanceof ConflictError) {
+          throw new TRPCError({ code: "CONFLICT", message: err.message });
+        }
+        throw err;
+      }
+    }),
+
   /** Remove an entry from the watchlist. */
   remove: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => {
     try {

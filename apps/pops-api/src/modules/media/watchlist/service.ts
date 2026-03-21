@@ -1,8 +1,8 @@
 /**
  * Watchlist service — CRUD operations against SQLite via Drizzle ORM.
  */
-import { count, desc, eq, and, type SQL } from "drizzle-orm";
-import { getDrizzle } from "../../../db.js";
+import { asc, count, desc, eq, and, type SQL } from "drizzle-orm";
+import { getDb, getDrizzle } from "../../../db.js";
 import { mediaWatchlist } from "@pops/db-types";
 import { NotFoundError, ConflictError } from "../../../shared/errors.js";
 import type {
@@ -37,7 +37,7 @@ export function listWatchlist(
     .select()
     .from(mediaWatchlist)
     .where(where)
-    .orderBy(desc(mediaWatchlist.addedAt))
+    .orderBy(asc(mediaWatchlist.priority), desc(mediaWatchlist.addedAt))
     .limit(limit)
     .offset(offset)
     .all();
@@ -102,6 +102,35 @@ export function removeFromWatchlist(id: number): void {
 
   const result = getDrizzle().delete(mediaWatchlist).where(eq(mediaWatchlist.id, id)).run();
   if (result.changes === 0) throw new NotFoundError("WatchlistEntry", String(id));
+}
+
+/** Batch-update priorities for reordering. */
+export function reorderWatchlist(items: { id: number; priority: number }[]): void {
+  if (items.length === 0) return;
+
+  const db = getDrizzle();
+
+  // Validate all IDs exist
+  for (const item of items) {
+    const row = db.select().from(mediaWatchlist).where(eq(mediaWatchlist.id, item.id)).get();
+    if (!row) throw new NotFoundError("WatchlistEntry", String(item.id));
+  }
+
+  // Check for duplicate priorities
+  const priorities = items.map((i) => i.priority);
+  if (new Set(priorities).size !== priorities.length) {
+    throw new ConflictError("Duplicate priorities in reorder request");
+  }
+
+  // Update all priorities in a transaction
+  getDb().transaction(() => {
+    for (const item of items) {
+      db.update(mediaWatchlist)
+        .set({ priority: item.priority })
+        .where(eq(mediaWatchlist.id, item.id))
+        .run();
+    }
+  })();
 }
 
 /**
