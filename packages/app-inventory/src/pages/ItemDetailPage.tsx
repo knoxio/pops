@@ -369,7 +369,7 @@ function DocumentRow({
 }
 
 function ConnectionRow({
-  connectionId,
+  connectionId: _connectionId,
   connectedItemId,
   onDisconnect,
   isDisconnecting,
