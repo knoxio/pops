@@ -121,9 +121,15 @@ function createColumns(): ColumnDef<InventoryTableItem>[] {
 export interface InventoryTableProps {
   items: InventoryTableItem[];
   loading?: boolean;
+  /** Show the built-in search bar (default false — parent page handles search). */
+  searchable?: boolean;
 }
 
-export function InventoryTable({ items, loading }: InventoryTableProps) {
+export function InventoryTable({
+  items,
+  loading,
+  searchable = false,
+}: InventoryTableProps) {
   const navigate = useNavigate();
   const columns = useMemo(() => createColumns(), []);
 
@@ -132,7 +138,7 @@ export function InventoryTable({ items, loading }: InventoryTableProps) {
       columns={columns}
       data={items}
       loading={loading}
-      searchable
+      searchable={searchable}
       searchColumn="itemName"
       searchPlaceholder="Search items..."
       paginated

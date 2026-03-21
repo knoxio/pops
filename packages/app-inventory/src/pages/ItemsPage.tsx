@@ -1,16 +1,250 @@
 /**
- * Inventory items list page — placeholder for PRD-019/US-2.
+ * ItemsPage — inventory item list with search, filters, table/grid toggle,
+ * and summary statistics. PRD-019/US-2.
  */
-import { Package } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
+import { useNavigate } from "react-router";
+import { Package, LayoutGrid, LayoutList, Search } from "lucide-react";
+import {
+  Skeleton,
+  Select,
+  type SelectOption,
+  Button,
+  TextInput,
+} from "@pops/ui";
+import type { Condition } from "@pops/ui";
+import { trpc } from "../lib/trpc";
+import { InventoryTable } from "../components/InventoryTable";
+import { InventoryCard } from "../components/InventoryCard";
+
+type ViewMode = "table" | "grid";
+
+const STORAGE_KEY = "inventory-view-mode";
+
+function getInitialView(): ViewMode {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === "grid" || stored === "table") return stored;
+  } catch {
+    // SSR or no localStorage
+  }
+  return "table";
+}
+
+const TYPE_OPTIONS: SelectOption[] = [
+  { value: "", label: "All Types" },
+  { value: "Electronics", label: "Electronics" },
+  { value: "Furniture", label: "Furniture" },
+  { value: "Appliance", label: "Appliance" },
+  { value: "Clothing", label: "Clothing" },
+  { value: "Tools", label: "Tools" },
+  { value: "Sports", label: "Sports" },
+  { value: "Other", label: "Other" },
+];
+
+const CONDITION_OPTIONS: SelectOption[] = [
+  { value: "", label: "All Conditions" },
+  { value: "Excellent", label: "Excellent" },
+  { value: "Good", label: "Good" },
+  { value: "Fair", label: "Fair" },
+  { value: "Poor", label: "Poor" },
+];
+
+const IN_USE_OPTIONS: SelectOption[] = [
+  { value: "", label: "All" },
+  { value: "true", label: "In Use" },
+  { value: "false", label: "Not In Use" },
+];
+
+function formatCurrency(value: number): string {
+  return new Intl.NumberFormat("en-AU", {
+    style: "currency",
+    currency: "AUD",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
+function ItemsPageSkeleton() {
+  return (
+    <div className="space-y-4">
+      <div className="flex gap-3">
+        <Skeleton className="h-10 w-64" />
+        <Skeleton className="h-10 w-36" />
+        <Skeleton className="h-10 w-36" />
+        <Skeleton className="h-10 w-28" />
+      </div>
+      <Skeleton className="h-4 w-48" />
+      {Array.from({ length: 8 }).map((_, i) => (
+        <Skeleton key={i} className="h-12 w-full" />
+      ))}
+    </div>
+  );
+}
 
 export function ItemsPage() {
+  const navigate = useNavigate();
+  const [viewMode, setViewMode] = useState<ViewMode>(getInitialView);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [conditionFilter, setConditionFilter] = useState("");
+  const [inUseFilter, setInUseFilter] = useState("");
+
+  const queryInput = useMemo(
+    () => ({
+      search: search || undefined,
+      type: typeFilter || undefined,
+      condition: conditionFilter || undefined,
+      inUse: (inUseFilter || undefined) as "true" | "false" | undefined,
+      limit: 200,
+    }),
+    [search, typeFilter, conditionFilter, inUseFilter],
+  );
+
+  const { data, isLoading } = trpc.inventory.items.list.useQuery(queryInput);
+
+  const items = data?.data ?? [];
+  const totalCount = data?.pagination?.total ?? 0;
+
+  const totalValue = useMemo(
+    () => items.reduce((sum, item) => sum + (item.replacementValue ?? 0), 0),
+    [items],
+  );
+
+  const handleViewChange = useCallback((mode: ViewMode) => {
+    setViewMode(mode);
+    try {
+      localStorage.setItem(STORAGE_KEY, mode);
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const hasActiveFilters = !!(typeFilter || conditionFilter || inUseFilter);
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl md:text-3xl font-bold">Inventory</h1>
-      <div className="flex flex-col items-center justify-center h-64 text-muted-foreground gap-4">
-        <Package className="h-12 w-12" />
-        <p>Item list coming soon.</p>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl md:text-3xl font-bold">Inventory</h1>
+        <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5">
+          <button
+            type="button"
+            onClick={() => handleViewChange("table")}
+            aria-label="Table view"
+            aria-pressed={viewMode === "table"}
+            className={`rounded-md p-1.5 transition-all ${
+              viewMode === "table"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <LayoutList className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => handleViewChange("grid")}
+            aria-label="Grid view"
+            aria-pressed={viewMode === "grid"}
+            className={`rounded-md p-1.5 transition-all ${
+              viewMode === "grid"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <LayoutGrid className="h-4 w-4" />
+          </button>
+        </div>
       </div>
+
+      {/* Search + Filters */}
+      <div className="flex flex-wrap items-end gap-3">
+        <TextInput
+          placeholder="Search items or asset IDs..."
+          prefix={<Search className="h-4 w-4" />}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          clearable
+          onClear={() => setSearch("")}
+          className="w-full sm:max-w-xs"
+        />
+        <Select
+          value={typeFilter}
+          onChange={(e) => setTypeFilter(e.target.value)}
+          options={TYPE_OPTIONS}
+          placeholder="All Types"
+          className="w-36"
+        />
+        <Select
+          value={conditionFilter}
+          onChange={(e) => setConditionFilter(e.target.value)}
+          options={CONDITION_OPTIONS}
+          placeholder="All Conditions"
+          className="w-40"
+        />
+        <Select
+          value={inUseFilter}
+          onChange={(e) => setInUseFilter(e.target.value)}
+          options={IN_USE_OPTIONS}
+          placeholder="All"
+          className="w-28"
+        />
+        {hasActiveFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setTypeFilter("");
+              setConditionFilter("");
+              setInUseFilter("");
+            }}
+          >
+            Clear filters
+          </Button>
+        )}
+      </div>
+
+      {/* Summary line */}
+      {!isLoading && (
+        <p className="text-sm text-muted-foreground">
+          {totalCount} {totalCount === 1 ? "item" : "items"}
+          {totalValue > 0 && (
+            <span> · Total value: {formatCurrency(totalValue)}</span>
+          )}
+        </p>
+      )}
+
+      {/* Content */}
+      {isLoading ? (
+        <ItemsPageSkeleton />
+      ) : items.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-64 text-muted-foreground gap-4">
+          <Package className="h-12 w-12 opacity-40" />
+          <p>
+            {search || hasActiveFilters
+              ? "No items match your filters."
+              : "No inventory items yet."}
+          </p>
+        </div>
+      ) : viewMode === "table" ? (
+        <InventoryTable items={items} />
+      ) : (
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {items.map((item) => (
+            <InventoryCard
+              key={item.id}
+              id={item.id}
+              itemName={item.itemName}
+              brand={item.brand}
+              model={item.model}
+              assetId={item.assetId}
+              type={item.type}
+              condition={item.condition as Condition | null}
+              onClick={() => navigate(`/inventory/${item.id}`)}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
