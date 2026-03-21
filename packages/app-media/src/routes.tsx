@@ -58,6 +58,11 @@ const PlexSettingsPage = lazy(() =>
     default: m.PlexSettingsPage,
   })),
 );
+const HistoryPage = lazy(() =>
+  import("./pages/HistoryPage").then((m) => ({
+    default: m.HistoryPage,
+  })),
+);
 
 /** Shared navigation types (mirrored from shell to avoid circular dependency) */
 export interface AppNavItem {
@@ -84,6 +89,7 @@ export const navConfig: AppNavConfig = {
   items: [
     { path: "", label: "Library", icon: "Library" },
     { path: "/watchlist", label: "Watchlist", icon: "Bookmark" },
+    { path: "/history", label: "History", icon: "Clock" },
     { path: "/discover", label: "Discover", icon: "Compass" },
     { path: "/rankings", label: "Rankings", icon: "Trophy" },
     { path: "/search", label: "Search", icon: "Search" },
@@ -97,6 +103,7 @@ export const routes: RouteObject[] = [
   { path: "tv/:id", element: <TvShowDetailPage /> },
   { path: "tv/:id/season/:num", element: <SeasonDetailPage /> },
   { path: "watchlist", element: <WatchlistPage /> },
+  { path: "history", element: <HistoryPage /> },
   { path: "discover", element: <DiscoverPage /> },
   { path: "rankings", element: <RankingsPage /> },
   { path: "search", element: <SearchPage /> },

@@ -121,6 +121,7 @@ export function listRecent(
         seasonNumber: null,
         episodeNumber: null,
         showName: null,
+        tvShowId: null,
       };
     }
     // episode — look up episode → season → tv show
@@ -147,6 +148,7 @@ export function listRecent(
         seasonNumber: null,
         episodeNumber: null,
         showName: null,
+        tvShowId: null,
       };
     }
 
@@ -175,6 +177,7 @@ export function listRecent(
       seasonNumber: season?.seasonNumber ?? null,
       episodeNumber: episode.episodeNumber,
       showName: show?.name ?? null,
+      tvShowId: season?.tvShowId ?? null,
     };
   });
 
