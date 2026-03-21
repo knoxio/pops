@@ -20,6 +20,8 @@
     "dev:init": "tsx scripts/init-db.ts",
     "db:clear": "tsx scripts/db-clear.ts",
     "db:seed": "tsx scripts/db-seed.ts",
+    "media:sync-images": "tsx scripts/sync-images.ts",
+    "media:sync-metadata": "tsx scripts/sync-metadata.ts",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",

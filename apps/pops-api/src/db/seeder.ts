@@ -945,6 +945,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         vote_average: 8.7,
         vote_count: 26000,
         genres: '["Drama","Crime"]',
+        poster_path: "/9cq9oGvBr8vV0HOf4Uf69TfO8S9.jpg",
+        backdrop_path: "/kXfq7j3nBYXoztZ6QT6O9HriI7v.jpg",
       },
       {
         tmdb_id: 238,
@@ -958,6 +960,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         vote_average: 8.7,
         vote_count: 20000,
         genres: '["Drama","Crime"]',
+        poster_path: "/3bhkrjOiERoSTq9A91In2Y7LpXm.jpg",
+        backdrop_path: "/tmU7GeKVZ2uDZZCOREPt7m86ub3.jpg",
       },
       {
         tmdb_id: 155,
@@ -971,6 +975,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         vote_average: 8.5,
         vote_count: 32000,
         genres: '["Drama","Action","Crime","Thriller"]',
+        poster_path: "/qJ2PvW9brE7FieldVwaGZp0uX2P.jpg",
+        backdrop_path: "/nMK9Szwu260ySbb1oMcIu6YpDoc.jpg",
       },
       {
         tmdb_id: 680,
@@ -984,6 +990,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         vote_average: 8.5,
         vote_count: 27000,
         genres: '["Thriller","Crime"]',
+        poster_path: "/d5iIl9h9btztU0kzRXR9qUFjwYc.jpg",
+        backdrop_path: "/su69mB7W4PkIPq46tS9vC0S9gh8.jpg",
       },
       {
         tmdb_id: 13,
@@ -997,6 +1005,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         vote_average: 8.5,
         vote_count: 26000,
         genres: '["Comedy","Drama","Romance"]',
+        poster_path: "/arw2vcBveWOvMsCMD0STz0nSCDI.jpg",
+        backdrop_path: "/qd9p8942lKz3H6F8u7D7i2E2L7m.jpg",
       },
       {
         tmdb_id: 550,
@@ -1010,6 +1020,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         vote_average: 8.4,
         vote_count: 28000,
         genres: '["Drama"]',
+        poster_path: "/pB8BM7vSc6WL6rsRzfnv3C98U1M.jpg",
+        backdrop_path: "/hZ965qFIn6lYyL0vjJdO1OqUjUv.jpg",
       },
       {
         tmdb_id: 120,
@@ -1023,6 +1035,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         vote_average: 8.4,
         vote_count: 24000,
         genres: '["Adventure","Fantasy","Action"]',
+        poster_path: "/6oom5QYvA1Ssq1Cish9v66fT0bi.jpg",
+        backdrop_path: "/vYvUb7v6KMjJhLW6o79q9B957io.jpg",
       },
       {
         tmdb_id: 603,
@@ -1036,6 +1050,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         vote_average: 8.2,
         vote_count: 25000,
         genres: '["Action","Science Fiction"]',
+        poster_path: "/f89U3Y9SJuCYFJj6ArpZ3sbvhrZ.jpg",
+        backdrop_path: "/3u9uL6iPz9D59M37I0mO0D0M8sM.jpg",
       },
       {
         tmdb_id: 157336,
@@ -1049,6 +1065,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         vote_average: 8.4,
         vote_count: 34000,
         genres: '["Adventure","Drama","Science Fiction"]',
+        poster_path: "/gEU2QniE6E77NI6vCU67xtiBPzG.jpg",
+        backdrop_path: "/xJHtm9C6z2yv3Kq5B6p5H2L0q1s.jpg",
       },
       {
         tmdb_id: 569094,
@@ -1062,14 +1080,17 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         vote_average: 8.4,
         vote_count: 6500,
         genres: '["Animation","Action","Adventure"]',
+        poster_path: "/8Gxv0gSjLSL1R3m9q1SjSygZsgX.jpg",
+        backdrop_path: "/4HodYYKEIsS6teju63uDU6L6rO8.jpg",
       },
     ];
 
     const insertMovie = db.prepare(`
       INSERT INTO movies (
         tmdb_id, title, overview, release_date, runtime, status,
-        original_language, vote_average, vote_count, genres
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        original_language, vote_average, vote_count, genres,
+        poster_path, backdrop_path
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     for (const movie of movies) {
@@ -1083,7 +1104,9 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         movie.original_language,
         movie.vote_average,
         movie.vote_count,
-        movie.genres
+        movie.genres,
+        movie.poster_path,
+        movie.backdrop_path
       );
     }
 
@@ -1107,6 +1130,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         vote_count: 13000,
         genres: '["Drama","Crime"]',
         networks: '["AMC"]',
+        poster_path: "https://artworks.thetvdb.com/artworks/posters/81189-1.jpg",
+        backdrop_path: "https://artworks.thetvdb.com/artworks/fanart/81189-1.jpg",
       },
       {
         tvdb_id: 305288,
@@ -1124,6 +1149,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         vote_count: 3000,
         genres: '["Drama","Mystery","Science Fiction"]',
         networks: '["Apple TV+"]',
+        poster_path: "https://artworks.thetvdb.com/artworks/posters/305288-2.jpg",
+        backdrop_path: "https://artworks.thetvdb.com/artworks/fanart/305288-1.jpg",
       },
       {
         tvdb_id: 366924,
@@ -1141,6 +1168,8 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         vote_count: 2500,
         genres: '["Drama","War & Politics"]',
         networks: '["FX"]',
+        poster_path: "https://artworks.thetvdb.com/artworks/posters/366924-1.jpg",
+        backdrop_path: "https://artworks.thetvdb.com/artworks/fanart/366924-1.jpg",
       },
     ];
 
@@ -1148,8 +1177,9 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       INSERT INTO tv_shows (
         tvdb_id, name, overview, first_air_date, last_air_date, status,
         original_language, number_of_seasons, number_of_episodes, episode_run_time,
-        vote_average, vote_count, genres, networks
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        vote_average, vote_count, genres, networks,
+        poster_path, backdrop_path
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const tvShowIds: number[] = [];
@@ -1168,7 +1198,9 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         show.vote_average,
         show.vote_count,
         show.genres,
-        show.networks
+        show.networks,
+        show.poster_path,
+        show.backdrop_path
       );
       tvShowIds.push(Number(result.lastInsertRowid));
     }

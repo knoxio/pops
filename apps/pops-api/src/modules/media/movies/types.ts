@@ -35,27 +35,27 @@ export interface Movie {
 /** Map a SQLite row to the API response shape. */
 export function toMovie(row: MovieRow): Movie {
   // Determine the best URLs:
-  // 1. User override (local upload) - for poster only for now
-  // 2. TMDB CDN fallback
-  // 3. Null (placeholder in UI)
+  // 1. User override (local upload)
+  // 2. Local cache (downloaded from TMDB)
+  // 3. TMDB CDN fallback
+  // 4. Null (placeholder in UI)
+
   let posterUrl: string | null = null;
   if (row.posterOverridePath) {
     posterUrl = row.posterOverridePath;
   } else if (row.posterPath) {
-    const path = row.posterPath.startsWith("/") ? row.posterPath : `/${row.posterPath}`;
-    posterUrl = `https://image.tmdb.org/t/p/w600_and_h900_bestv2${path}`;
+    // Try local cache first (express route handles the file serving)
+    posterUrl = `/media/images/movie/${row.tmdbId}/poster.jpg`;
   }
 
   let backdropUrl: string | null = null;
   if (row.backdropPath) {
-    const path = row.backdropPath.startsWith("/") ? row.backdropPath : `/${row.backdropPath}`;
-    backdropUrl = `https://image.tmdb.org/t/p/original${path}`;
+    backdropUrl = `/media/images/movie/${row.tmdbId}/backdrop.jpg`;
   }
 
   let logoUrl: string | null = null;
   if (row.logoPath) {
-    const path = row.logoPath.startsWith("/") ? row.logoPath : `/${row.logoPath}`;
-    logoUrl = `https://image.tmdb.org/t/p/w500${path}`;
+    logoUrl = `/media/images/movie/${row.tmdbId}/logo.png`;
   }
 
   return {
