@@ -109,9 +109,7 @@ export async function getDownloadQueue(): Promise<DownloadQueueItem[]> {
   if (radarrQueue) {
     for (const record of radarrQueue.records) {
       const progress =
-        record.size > 0
-          ? Math.round(((record.size - record.sizeleft) / record.size) * 100)
-          : 0;
+        record.size > 0 ? Math.round(((record.size - record.sizeleft) / record.size) * 100) : 0;
       items.push({
         id: `radarr-${record.id}`,
         title: record.title,
@@ -125,9 +123,7 @@ export async function getDownloadQueue(): Promise<DownloadQueueItem[]> {
   if (sonarrQueue) {
     for (const record of sonarrQueue.records) {
       const progress =
-        record.size > 0
-          ? Math.round(((record.size - record.sizeleft) / record.size) * 100)
-          : 0;
+        record.size > 0 ? Math.round(((record.size - record.sizeleft) / record.size) * 100) : 0;
       const episodeLabel = record.episode
         ? `S${String(record.episode.seasonNumber).padStart(2, "0")}E${String(record.episode.episodeNumber).padStart(2, "0")}`
         : undefined;
