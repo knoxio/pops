@@ -43,6 +43,11 @@ const CompareArenaPage = lazy(() =>
     default: m.CompareArenaPage,
   }))
 );
+const DiscoverPage = lazy(() =>
+  import("./pages/DiscoverPage").then((m) => ({
+    default: m.DiscoverPage,
+  }))
+);
 
 /** Shared navigation types (mirrored from shell to avoid circular dependency) */
 export interface AppNavItem {
@@ -69,6 +74,7 @@ export const navConfig: AppNavConfig = {
   items: [
     { path: "", label: "Library", icon: "Library" },
     { path: "/watchlist", label: "Watchlist", icon: "Bookmark" },
+    { path: "/discover", label: "Discover", icon: "Compass" },
     { path: "/search", label: "Search", icon: "Search" },
     { path: "/compare", label: "Compare", icon: "ArrowLeftRight" },
   ],
@@ -80,6 +86,7 @@ export const routes: RouteObject[] = [
   { path: "tv/:id", element: <TvShowDetailPage /> },
   { path: "tv/:id/season/:num", element: <SeasonDetailPage /> },
   { path: "watchlist", element: <WatchlistPage /> },
+  { path: "discover", element: <DiscoverPage /> },
   { path: "search", element: <SearchPage /> },
   { path: "compare", element: <CompareArenaPage /> },
   { path: "quick-pick", element: <QuickPickPage /> },

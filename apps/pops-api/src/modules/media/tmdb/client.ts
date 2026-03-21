@@ -14,6 +14,8 @@ import {
   type RawTmdbSearchResponse,
   type RawTmdbMovieDetail,
   type RawTmdbImageResponse,
+  type RawTmdbTrendingResponse,
+  type RawTmdbRecommendationsResponse,
 } from "./types.js";
 import type { TokenBucketRateLimiter } from "./rate-limiter.js";
 
@@ -108,6 +110,73 @@ export class TmdbClient {
       backdrops: raw.backdrops.map(mapImage),
       posters: raw.posters.map(mapImage),
       logos: raw.logos.map(mapImage),
+    };
+  }
+
+  /** Get trending movies (daily or weekly). */
+  async getTrendingMovies(
+    timeWindow: "day" | "week" = "week",
+    page = 1
+  ): Promise<TmdbSearchResponse> {
+    const params = new URLSearchParams({
+      page: String(page),
+      language: "en-US",
+    });
+
+    const raw = await this.get<RawTmdbTrendingResponse>(
+      `/3/trending/movie/${timeWindow}?${params.toString()}`
+    );
+
+    return {
+      page: raw.page,
+      totalResults: raw.total_results,
+      totalPages: raw.total_pages,
+      results: raw.results.map((r) => ({
+        tmdbId: r.id,
+        title: r.title,
+        originalTitle: r.original_title,
+        overview: r.overview,
+        releaseDate: r.release_date,
+        posterPath: r.poster_path,
+        backdropPath: r.backdrop_path,
+        voteAverage: r.vote_average,
+        voteCount: r.vote_count,
+        genreIds: r.genre_ids,
+        originalLanguage: r.original_language,
+        popularity: r.popularity,
+      })),
+    };
+  }
+
+  /** Get movie recommendations based on a specific movie. */
+  async getMovieRecommendations(tmdbId: number, page = 1): Promise<TmdbSearchResponse> {
+    const params = new URLSearchParams({
+      page: String(page),
+      language: "en-US",
+    });
+
+    const raw = await this.get<RawTmdbRecommendationsResponse>(
+      `/3/movie/${tmdbId}/recommendations?${params.toString()}`
+    );
+
+    return {
+      page: raw.page,
+      totalResults: raw.total_results,
+      totalPages: raw.total_pages,
+      results: raw.results.map((r) => ({
+        tmdbId: r.id,
+        title: r.title,
+        originalTitle: r.original_title,
+        overview: r.overview,
+        releaseDate: r.release_date,
+        posterPath: r.poster_path,
+        backdropPath: r.backdrop_path,
+        voteAverage: r.vote_average,
+        voteCount: r.vote_count,
+        genreIds: r.genre_ids,
+        originalLanguage: r.original_language,
+        popularity: r.popularity,
+      })),
     };
   }
 
