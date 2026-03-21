@@ -32,6 +32,7 @@ const DOCUMENT_TYPE_LABELS: Record<string, string> = {
 };
 import { ConnectDialog } from "../components/ConnectDialog";
 import { ConnectionTracePanel } from "../components/ConnectionTracePanel";
+import { LinkDocumentDialog } from "../components/LinkDocumentDialog";
 
 export function ItemDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -196,7 +197,6 @@ export function ItemDetailPage() {
             {connectionsData.data.map((conn) => (
               <ConnectionRow
                 key={conn.id}
-                connectionId={conn.id}
                 connectedItemId={
                   conn.itemAId === id ? conn.itemBId : conn.itemAId
                 }
@@ -317,10 +317,23 @@ function DocumentsList({ itemId }: { itemId: string }) {
 
   return (
     <section className="mt-8">
-      <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
-        <FileText className="h-5 w-5" />
-        Documents
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <FileText className="h-5 w-5" />
+          Documents
+          {docs.length ? (
+            <span className="text-sm font-normal text-muted-foreground">
+              ({docs.length})
+            </span>
+          ) : null}
+        </h2>
+        <LinkDocumentDialog
+          itemId={itemId}
+          onLinked={() => {
+            void utils.inventory.documents.listForItem.invalidate({ itemId });
+          }}
+        />
+      </div>
       {isLoading ? (
         <div className="space-y-2">
           <Skeleton className="h-12 w-full" />
@@ -376,12 +389,10 @@ function DocumentsList({ itemId }: { itemId: string }) {
 }
 
 function ConnectionRow({
-  connectionId,
   connectedItemId,
   onDisconnect,
   isDisconnecting,
 }: {
-  connectionId: number;
   connectedItemId: string;
   onDisconnect: () => void;
   isDisconnecting: boolean;
