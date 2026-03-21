@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { Sparkles } from "lucide-react";
 import { MediaGrid } from "../components/MediaGrid";
 import { DownloadQueue } from "../components/DownloadQueue";
+import { QuickPickDialog } from "../components/QuickPickDialog";
 import {
   useMediaLibrary,
   type MediaType,
@@ -114,6 +115,7 @@ export function LibraryPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Library</h1>
         <div className="flex items-center gap-3">
+          <QuickPickDialog />
           <Link to="/media/quick-pick">
             <Button variant="outline" size="sm">
               <Sparkles className="h-4 w-4 mr-1.5" />
