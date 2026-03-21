@@ -253,6 +253,94 @@ describe("inventory.connections.listForItem", () => {
   });
 });
 
+describe("inventory.connections.trace", () => {
+  it("returns a single node with no children when item has no connections", async () => {
+    const id = seedInventoryItem(db, { item_name: "Lonely Item", type: "Electronics" });
+
+    const result = await caller.inventory.connections.trace({ itemId: id });
+
+    expect(result.data.id).toBe(id);
+    expect(result.data.itemName).toBe("Lonely Item");
+    expect(result.data.type).toBe("Electronics");
+    expect(result.data.children).toEqual([]);
+  });
+
+  it("returns direct connections as children", async () => {
+    const idA = seedInventoryItem(db, { item_name: "Hub" });
+    const idB = seedInventoryItem(db, { item_name: "Monitor" });
+    const idC = seedInventoryItem(db, { item_name: "Keyboard" });
+
+    const pairAB = [idA, idB].sort() as [string, string];
+    const pairAC = [idA, idC].sort() as [string, string];
+    seedItemConnection(db, pairAB[0], pairAB[1]);
+    seedItemConnection(db, pairAC[0], pairAC[1]);
+
+    const result = await caller.inventory.connections.trace({ itemId: idA });
+
+    expect(result.data.id).toBe(idA);
+    expect(result.data.children).toHaveLength(2);
+    const childNames = result.data.children.map((c: { itemName: string }) => c.itemName).sort();
+    expect(childNames).toEqual(["Keyboard", "Monitor"]);
+  });
+
+  it("traces multi-level chains", async () => {
+    const idA = seedInventoryItem(db, { item_name: "PC" });
+    const idB = seedInventoryItem(db, { item_name: "USB Hub" });
+    const idC = seedInventoryItem(db, { item_name: "Mouse" });
+
+    // Chain: PC - USB Hub - Mouse
+    const pairAB = [idA, idB].sort() as [string, string];
+    const pairBC = [idB, idC].sort() as [string, string];
+    seedItemConnection(db, pairAB[0], pairAB[1]);
+    seedItemConnection(db, pairBC[0], pairBC[1]);
+
+    const result = await caller.inventory.connections.trace({ itemId: idA });
+
+    expect(result.data.id).toBe(idA);
+    expect(result.data.children).toHaveLength(1);
+    expect(result.data.children[0].itemName).toBe("USB Hub");
+    expect(result.data.children[0].children).toHaveLength(1);
+    expect(result.data.children[0].children[0].itemName).toBe("Mouse");
+  });
+
+  it("handles circular connections without infinite loop", async () => {
+    const idA = seedInventoryItem(db, { item_name: "Node A" });
+    const idB = seedInventoryItem(db, { item_name: "Node B" });
+    const idC = seedInventoryItem(db, { item_name: "Node C" });
+
+    // Triangle: A-B, B-C, A-C
+    const pairAB = [idA, idB].sort() as [string, string];
+    const pairBC = [idB, idC].sort() as [string, string];
+    const pairAC = [idA, idC].sort() as [string, string];
+    seedItemConnection(db, pairAB[0], pairAB[1]);
+    seedItemConnection(db, pairBC[0], pairBC[1]);
+    seedItemConnection(db, pairAC[0], pairAC[1]);
+
+    const result = await caller.inventory.connections.trace({ itemId: idA });
+
+    // Should not throw / infinite loop
+    expect(result.data.id).toBe(idA);
+    expect(result.data.children).toHaveLength(2);
+    // Each child should NOT list A again (visited)
+    for (const child of result.data.children) {
+      const grandchildIds = child.children.map((gc: { id: string }) => gc.id);
+      expect(grandchildIds).not.toContain(idA);
+    }
+  });
+
+  it("throws NOT_FOUND for nonexistent item", async () => {
+    await expect(caller.inventory.connections.trace({ itemId: "nonexistent" })).rejects.toThrow(
+      TRPCError
+    );
+
+    try {
+      await caller.inventory.connections.trace({ itemId: "nonexistent" });
+    } catch (err) {
+      expect((err as TRPCError).code).toBe("NOT_FOUND");
+    }
+  });
+});
+
 describe("inventory.connections auth", () => {
   it("throws UNAUTHORIZED without auth on connect", async () => {
     const unauthCaller = createCaller(false);
@@ -271,6 +359,13 @@ describe("inventory.connections auth", () => {
   it("throws UNAUTHORIZED without auth on listForItem", async () => {
     const unauthCaller = createCaller(false);
     await expect(unauthCaller.inventory.connections.listForItem({ itemId: "a" })).rejects.toThrow(
+      TRPCError
+    );
+  });
+
+  it("throws UNAUTHORIZED without auth on trace", async () => {
+    const unauthCaller = createCaller(false);
+    await expect(unauthCaller.inventory.connections.trace({ itemId: "a" })).rejects.toThrow(
       TRPCError
     );
   });

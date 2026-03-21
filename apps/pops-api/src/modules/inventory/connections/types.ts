@@ -35,3 +35,18 @@ export const ConnectionQuerySchema = z.object({
   offset: z.coerce.number().nonnegative().optional(),
 });
 export type ConnectionQuery = z.infer<typeof ConnectionQuerySchema>;
+
+/** Zod schema for tracing connections from an item. */
+export const TraceQuerySchema = z.object({
+  itemId: z.string().min(1, "Item ID is required"),
+});
+export type TraceQuery = z.infer<typeof TraceQuerySchema>;
+
+/** A node in the connection trace tree. */
+export interface TraceNode {
+  id: string;
+  itemName: string;
+  type: string | null;
+  assetId: string | null;
+  children: TraceNode[];
+}
