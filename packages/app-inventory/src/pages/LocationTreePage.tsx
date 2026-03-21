@@ -29,7 +29,9 @@ import {
   ArrowUp,
   ArrowDown,
   MoveRight,
+  FileText,
 } from "lucide-react";
+import { Link } from "react-router";
 import { trpc } from "../lib/trpc";
 import { LocationContentsPanel } from "../components/LocationContentsPanel";
 
@@ -45,7 +47,11 @@ function TreeSkeleton() {
   return (
     <div className="space-y-2 p-4">
       {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-2" style={{ paddingLeft: `${(i % 3) * 20}px` }}>
+        <div
+          key={i}
+          className="flex items-center gap-2"
+          style={{ paddingLeft: `${(i % 3) * 20}px` }}
+        >
           <Skeleton className="h-4 w-4" />
           <Skeleton className="h-4 w-32" />
         </div>
@@ -56,7 +62,7 @@ function TreeSkeleton() {
 
 function buildBreadcrumb(
   nodeId: string,
-  nodeMap: Map<string, LocationTreeNode>
+  nodeMap: Map<string, LocationTreeNode>,
 ): string[] {
   const path: string[] = [];
   let current = nodeMap.get(nodeId);
@@ -69,7 +75,7 @@ function buildBreadcrumb(
 
 function buildNodeMap(
   nodes: LocationTreeNode[],
-  map: Map<string, LocationTreeNode>
+  map: Map<string, LocationTreeNode>,
 ): void {
   for (const node of nodes) {
     map.set(node.id, node);
@@ -89,7 +95,7 @@ function countDescendants(node: LocationTreeNode): number {
 function isDescendant(
   nodeId: string,
   targetId: string,
-  nodeMap: Map<string, LocationTreeNode>
+  nodeMap: Map<string, LocationTreeNode>,
 ): boolean {
   const node = nodeMap.get(nodeId);
   if (!node) return false;
@@ -105,7 +111,7 @@ function isDescendant(
 function getSiblings(
   nodeId: string,
   treeNodes: LocationTreeNode[],
-  nodeMap: Map<string, LocationTreeNode>
+  nodeMap: Map<string, LocationTreeNode>,
 ): LocationTreeNode[] {
   const node = nodeMap.get(nodeId);
   if (!node) return [];
@@ -274,7 +280,11 @@ function LocationNode({
               e.stopPropagation();
             }}
           >
-            <button type="button" className="p-0.5 rounded hover:bg-muted" aria-label={open ? "Collapse" : "Expand"}>
+            <button
+              type="button"
+              className="p-0.5 rounded hover:bg-muted"
+              aria-label={open ? "Collapse" : "Expand"}
+            >
               {open ? (
                 <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
               ) : (
@@ -358,6 +368,14 @@ function LocationNode({
           >
             <FolderPlus className="h-3.5 w-3.5 text-muted-foreground" />
           </button>
+          <Link
+            to={`/inventory/report?locationId=${node.id}`}
+            onClick={(e) => e.stopPropagation()}
+            className="p-0.5 rounded hover:bg-muted"
+            title={`Insurance report for ${node.name}`}
+          >
+            <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+          </Link>
         </div>
 
         {hasChildren && (
@@ -409,7 +427,6 @@ function LocationNode({
   );
 }
 
-
 export function LocationTreePage() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [addingChildOf, setAddingChildOf] = useState<string | null>(null);
@@ -455,7 +472,7 @@ export function LocationTreePage() {
     (id: string, newName: string) => {
       updateMutation.mutate({ id, data: { name: newName } });
     },
-    [updateMutation]
+    [updateMutation],
   );
 
   const handleNewChildSave = useCallback(
@@ -465,7 +482,7 @@ export function LocationTreePage() {
         parentId: addingChildOf,
       });
     },
-    [addingChildOf, createMutation]
+    [addingChildOf, createMutation],
   );
 
   const handleNewChildCancel = useCallback(() => {
@@ -476,7 +493,7 @@ export function LocationTreePage() {
     (name: string) => {
       createMutation.mutate({ name, parentId: null });
     },
-    [createMutation]
+    [createMutation],
   );
 
   const handleNewRootCancel = useCallback(() => {
@@ -492,10 +509,10 @@ export function LocationTreePage() {
       if (!movingId) return;
       updateMutation.mutate(
         { id: movingId, data: { parentId: newParentId } },
-        { onSuccess: () => setMovingId(null) }
+        { onSuccess: () => setMovingId(null) },
       );
     },
-    [movingId, updateMutation]
+    [movingId, updateMutation],
   );
 
   const handleReorder = useCallback(
@@ -511,10 +528,16 @@ export function LocationTreePage() {
       const swap = siblings[swapIdx];
 
       // Swap sort orders
-      updateMutation.mutate({ id: current.id, data: { sortOrder: swap.sortOrder } });
-      updateMutation.mutate({ id: swap.id, data: { sortOrder: current.sortOrder } });
+      updateMutation.mutate({
+        id: current.id,
+        data: { sortOrder: swap.sortOrder },
+      });
+      updateMutation.mutate({
+        id: swap.id,
+        data: { sortOrder: current.sortOrder },
+      });
     },
-    [treeNodes, nodeMap, updateMutation]
+    [treeNodes, nodeMap, updateMutation],
   );
 
   const movingNode = movingId ? nodeMap.get(movingId) : null;
@@ -538,17 +561,26 @@ export function LocationTreePage() {
           <MapPin className="h-6 w-6 text-muted-foreground" />
           <h1 className="text-2xl font-bold">Locations</h1>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setAddingRoot(true);
-            setAddingChildOf(null);
-          }}
-          className="flex items-center gap-1.5 text-sm text-primary hover:underline"
-        >
-          <Plus className="h-4 w-4" />
-          Add Root Location
-        </button>
+        <div className="flex items-center gap-4">
+          <Link
+            to="/inventory/report"
+            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+          >
+            <FileText className="h-4 w-4" />
+            Insurance Report
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              setAddingRoot(true);
+              setAddingChildOf(null);
+            }}
+            className="flex items-center gap-1.5 text-sm text-primary hover:underline"
+          >
+            <Plus className="h-4 w-4" />
+            Add Root Location
+          </button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -562,7 +594,11 @@ export function LocationTreePage() {
         </div>
       ) : (
         <div className="flex flex-col md:flex-row gap-6">
-          <div className="md:w-2/5 border rounded-lg py-2" role="tree" aria-label="Location tree">
+          <div
+            className="md:w-2/5 border rounded-lg py-2"
+            role="tree"
+            aria-label="Location tree"
+          >
             {treeNodes.map((node, i) => (
               <LocationNode
                 key={node.id}
@@ -582,7 +618,10 @@ export function LocationTreePage() {
               />
             ))}
             {addingRoot && (
-              <div className="flex items-center gap-1.5 py-1.5 px-2" style={{ paddingLeft: "8px" }}>
+              <div
+                className="flex items-center gap-1.5 py-1.5 px-2"
+                style={{ paddingLeft: "8px" }}
+              >
                 <span className="w-[22px]" />
                 <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
                 <InlineInput
@@ -612,7 +651,10 @@ export function LocationTreePage() {
       )}
 
       {/* Move To dialog */}
-      <Dialog open={!!movingId} onOpenChange={(open) => !open && setMovingId(null)}>
+      <Dialog
+        open={!!movingId}
+        onOpenChange={(open) => !open && setMovingId(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Move &ldquo;{movingNode?.name}&rdquo;</DialogTitle>
