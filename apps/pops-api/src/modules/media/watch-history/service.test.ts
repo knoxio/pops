@@ -124,6 +124,126 @@ describe("deleteWatchHistoryEntry", () => {
   });
 });
 
+describe("getProgress", () => {
+  it("throws NotFoundError for non-existent TV show", () => {
+    expect(() => service.getProgress(999)).toThrow("TvShow");
+  });
+
+  it("returns zero progress for a show with no episodes", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Empty Show" });
+
+    const progress = service.getProgress(showId);
+    expect(progress.tvShowId).toBe(showId);
+    expect(progress.overall).toEqual({ watched: 0, total: 0, percentage: 0 });
+    expect(progress.seasons).toHaveLength(0);
+  });
+
+  it("returns zero progress when no episodes are watched", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
+
+    const progress = service.getProgress(showId);
+    expect(progress.overall).toEqual({ watched: 0, total: 2, percentage: 0 });
+    expect(progress.seasons).toHaveLength(1);
+    expect(progress.seasons[0]).toEqual({
+      seasonId: sId,
+      seasonNumber: 1,
+      watched: 0,
+      total: 2,
+      percentage: 0,
+    });
+  });
+
+  it("returns correct progress with partial watches", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    const ep1 = seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
+
+    service.logWatch({ mediaType: "episode", mediaId: ep1, completed: 1 });
+
+    const progress = service.getProgress(showId);
+    expect(progress.overall).toEqual({ watched: 1, total: 2, percentage: 50 });
+    expect(progress.seasons[0].watched).toBe(1);
+    expect(progress.seasons[0].percentage).toBe(50);
+  });
+
+  it("returns 100% when all episodes are watched", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    const ep1 = seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
+    const ep2 = seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
+
+    service.logWatch({ mediaType: "episode", mediaId: ep1, completed: 1 });
+    service.logWatch({ mediaType: "episode", mediaId: ep2, completed: 1 });
+
+    const progress = service.getProgress(showId);
+    expect(progress.overall).toEqual({ watched: 2, total: 2, percentage: 100 });
+  });
+
+  it("returns per-season progress across multiple seasons", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const s1Id = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    const s2Id = seedSeason(db, { tv_show_id: showId, tvdb_id: 3002, season_number: 2 });
+    const ep1 = seedEpisode(db, { season_id: s1Id, tvdb_id: 5001, episode_number: 1 });
+    const ep2 = seedEpisode(db, { season_id: s1Id, tvdb_id: 5002, episode_number: 2 });
+    const ep3 = seedEpisode(db, { season_id: s2Id, tvdb_id: 5003, episode_number: 1 });
+    seedEpisode(db, { season_id: s2Id, tvdb_id: 5004, episode_number: 2 });
+
+    // Watch all of season 1 and one of season 2
+    service.logWatch({ mediaType: "episode", mediaId: ep1, completed: 1 });
+    service.logWatch({ mediaType: "episode", mediaId: ep2, completed: 1 });
+    service.logWatch({ mediaType: "episode", mediaId: ep3, completed: 1 });
+
+    const progress = service.getProgress(showId);
+    expect(progress.overall).toEqual({ watched: 3, total: 4, percentage: 75 });
+    expect(progress.seasons).toHaveLength(2);
+    expect(progress.seasons[0]).toEqual({
+      seasonId: s1Id,
+      seasonNumber: 1,
+      watched: 2,
+      total: 2,
+      percentage: 100,
+    });
+    expect(progress.seasons[1]).toEqual({
+      seasonId: s2Id,
+      seasonNumber: 2,
+      watched: 1,
+      total: 2,
+      percentage: 50,
+    });
+  });
+
+  it("does not double-count rewatched episodes", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    const ep1 = seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
+
+    // Watch ep1 three times
+    service.logWatch({ mediaType: "episode", mediaId: ep1, completed: 1 });
+    service.logWatch({ mediaType: "episode", mediaId: ep1, completed: 1 });
+    service.logWatch({ mediaType: "episode", mediaId: ep1, completed: 1 });
+
+    const progress = service.getProgress(showId);
+    expect(progress.overall.watched).toBe(1);
+    expect(progress.seasons[0].watched).toBe(1);
+  });
+
+  it("ignores incomplete watches", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    const ep1 = seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
+
+    service.logWatch({ mediaType: "episode", mediaId: ep1, completed: 0 });
+
+    const progress = service.getProgress(showId);
+    expect(progress.overall.watched).toBe(0);
+  });
+});
+
 describe("auto-remove from watchlist (PRD-011 R6)", () => {
   it("removes movie from watchlist when marked as watched", () => {
     // Add movie 550 to watchlist

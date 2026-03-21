@@ -48,3 +48,28 @@ export interface WatchHistoryFilters {
   mediaType?: string;
   mediaId?: number;
 }
+
+/** Zod schema for getProgress input. */
+export const ProgressQuerySchema = z.object({
+  tvShowId: z.number().int().positive(),
+});
+
+/** Progress for a single season. */
+export interface SeasonProgress {
+  seasonId: number;
+  seasonNumber: number;
+  watched: number;
+  total: number;
+  percentage: number;
+}
+
+/** Overall + per-season watch progress for a TV show. */
+export interface TvShowProgress {
+  tvShowId: number;
+  overall: {
+    watched: number;
+    total: number;
+    percentage: number;
+  };
+  seasons: SeasonProgress[];
+}
