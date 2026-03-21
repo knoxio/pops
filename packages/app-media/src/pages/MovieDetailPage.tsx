@@ -3,6 +3,7 @@ import { Alert, AlertTitle, AlertDescription, Badge, Skeleton } from "@pops/ui";
 import { trpc } from "../lib/trpc";
 import { formatCurrency, formatRuntime } from "../lib/format";
 import { WatchlistToggle } from "../components/WatchlistToggle";
+import { ArrStatusBadge } from "../components/ArrStatusBadge";
 
 function MovieDetailSkeleton() {
   return (
@@ -36,7 +37,7 @@ export function MovieDetailPage() {
 
   const { data, isLoading, error } = trpc.media.movies.get.useQuery(
     { id: movieId },
-    { enabled: !Number.isNaN(movieId) }
+    { enabled: !Number.isNaN(movieId) },
   );
 
   if (Number.isNaN(movieId)) {
@@ -158,11 +159,10 @@ export function MovieDetailPage() {
               {movie.runtime && <span>{formatRuntime(movie.runtime)}</span>}
             </div>
 
-            <WatchlistToggle
-              mediaType="movie"
-              mediaId={movie.id}
-              className="mt-3"
-            />
+            <div className="flex items-center gap-2 mt-3">
+              <WatchlistToggle mediaType="movie" mediaId={movie.id} />
+              <ArrStatusBadge mediaType="movie" externalId={movie.tmdbId} />
+            </div>
           </div>
         </div>
       </div>

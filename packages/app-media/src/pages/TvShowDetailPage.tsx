@@ -14,6 +14,7 @@ import {
 } from "@pops/ui";
 import { trpc } from "../lib/trpc";
 import { formatRuntime } from "../lib/format";
+import { ArrStatusBadge } from "../components/ArrStatusBadge";
 
 function TvShowDetailSkeleton() {
   return (
@@ -55,13 +56,11 @@ export function TvShowDetailPage() {
     { enabled: !Number.isNaN(showId) },
   );
 
-  const {
-    data: seasonsData,
-    isLoading: seasonsLoading,
-  } = trpc.media.tvShows.listSeasons.useQuery(
-    { tvShowId: showId },
-    { enabled: !Number.isNaN(showId) },
-  );
+  const { data: seasonsData, isLoading: seasonsLoading } =
+    trpc.media.tvShows.listSeasons.useQuery(
+      { tvShowId: showId },
+      { enabled: !Number.isNaN(showId) },
+    );
 
   if (Number.isNaN(showId)) {
     return (
@@ -199,7 +198,9 @@ export function TvShowDetailPage() {
 
             <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
               {firstYear && lastYear && firstYear !== lastYear && (
-                <span>{firstYear}–{lastYear}</span>
+                <span>
+                  {firstYear}–{lastYear}
+                </span>
               )}
               {firstYear && (!lastYear || firstYear === lastYear) && (
                 <span>{firstYear}</span>
@@ -211,6 +212,12 @@ export function TvShowDetailPage() {
                 </>
               )}
             </div>
+
+            <ArrStatusBadge
+              mediaType="tv"
+              externalId={show.tvdbId}
+              className="mt-2"
+            />
           </div>
         </div>
       </div>
