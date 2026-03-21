@@ -205,8 +205,8 @@ export function getDeleteStats(id: string): DeleteLocationStats {
   // Collect all descendant IDs (BFS)
   const descendantIds: string[] = [];
   const queue = [id];
-  while (queue.length > 0) {
-    const current = queue.shift()!;
+  let current: string | undefined;
+  while ((current = queue.shift()) !== undefined) {
     const children = db
       .select({ id: locations.id })
       .from(locations)
