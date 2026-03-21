@@ -229,7 +229,7 @@ export function WarrantiesPage() {
                     item={item}
                     daysRemaining={item.daysRemaining}
                     showUrgency
-                    onClick={() => navigate(`/inventory/${item.id}`)}
+                    onClick={() => navigate(`/inventory/items/${item.id}`)}
                   />
                 ))}
               </div>
@@ -244,7 +244,7 @@ export function WarrantiesPage() {
                   key={item.id}
                   item={item}
                   daysRemaining={item.daysRemaining}
-                  onClick={() => navigate(`/inventory/${item.id}`)}
+                  onClick={() => navigate(`/inventory/items/${item.id}`)}
                 />
               ))}
             </CollapsibleSection>
@@ -262,7 +262,7 @@ export function WarrantiesPage() {
                   key={item.id}
                   item={item}
                   daysRemaining={item.daysRemaining}
-                  onClick={() => navigate(`/inventory/${item.id}`)}
+                  onClick={() => navigate(`/inventory/items/${item.id}`)}
                 />
               ))}
             </CollapsibleSection>
