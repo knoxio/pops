@@ -33,6 +33,11 @@ const WatchlistPage = lazy(() =>
     default: m.WatchlistPage,
   }))
 );
+const CompareArenaPage = lazy(() =>
+  import("./pages/CompareArenaPage").then((m) => ({
+    default: m.CompareArenaPage,
+  }))
+);
 
 /** Shared navigation types (mirrored from shell to avoid circular dependency) */
 export interface AppNavItem {
@@ -60,6 +65,7 @@ export const navConfig: AppNavConfig = {
     { path: "", label: "Library", icon: "Library" },
     { path: "/watchlist", label: "Watchlist", icon: "Bookmark" },
     { path: "/search", label: "Search", icon: "Search" },
+    { path: "/compare", label: "Compare", icon: "ArrowLeftRight" },
   ],
 };
 
@@ -70,4 +76,5 @@ export const routes: RouteObject[] = [
   { path: "tv/:id/season/:num", element: <SeasonDetailPage /> },
   { path: "watchlist", element: <WatchlistPage /> },
   { path: "search", element: <SearchPage /> },
+  { path: "compare", element: <CompareArenaPage /> },
 ];

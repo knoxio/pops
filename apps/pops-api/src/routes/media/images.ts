@@ -12,6 +12,7 @@ import { stat } from "node:fs/promises";
 import { join, resolve, extname } from "node:path";
 import { createHash } from "node:crypto";
 import { MEDIA_DIR_NAMES } from "../../modules/media/tmdb/image-cache.js";
+import { getDb } from "../../db.js";
 
 const VALID_MEDIA_TYPES = ["movie", "tv"] as const;
 const VALID_FILENAMES = ["poster.jpg", "backdrop.jpg", "logo.png", "override.jpg"] as const;
@@ -25,7 +26,8 @@ const CONTENT_TYPES: Record<string, string> = {
 const CACHE_CONTROL = "public, max-age=31536000, immutable";
 
 function getImagesDir(): string {
-  return process.env.MEDIA_IMAGES_DIR ?? "/data/media/images";
+  const dir = process.env.MEDIA_IMAGES_DIR ?? "./data/media/images";
+  return resolve(dir); // Return absolute path
 }
 
 const router: ExpressRouter = Router();
@@ -74,7 +76,39 @@ router.get("/media/images/:mediaType/:id/:filename", async (req, res): Promise<v
   const served = await tryServeFile(filePath, res);
   if (served) return;
 
-  // Cache miss
+  // Cache miss — try to redirect to original source
+  try {
+    const db = getDb();
+    const table = mediaType === "movie" ? "movies" : "tv_shows";
+    const idColumn = mediaType === "movie" ? "tmdb_id" : "tvdb_id";
+    const pathColumn = filename.startsWith("poster")
+      ? "poster_path"
+      : filename.startsWith("logo")
+        ? "logo_path"
+        : "backdrop_path";
+
+    const record = db
+      .prepare(`SELECT ${pathColumn} AS path FROM ${table} WHERE ${idColumn} = ?`)
+      .get(id) as { path: string | null } | undefined;
+
+    if (record?.path) {
+      const originalPath = record.path;
+
+      if (originalPath.startsWith("http")) {
+        res.redirect(originalPath);
+        return;
+      } else if (originalPath.startsWith("/")) {
+        // Assume TMDB
+        const size = filename.startsWith("poster") ? "w780" : "w1280";
+        res.redirect(`https://image.tmdb.org/t/p/${size}${originalPath}`);
+        return;
+      }
+    }
+  } catch (err) {
+    console.error("[Images] Fallback redirect failed:", err);
+  }
+
+  // Final 404 if no fallback available
   res.status(404).json({ error: "Image not found" });
 });
 
@@ -104,7 +138,7 @@ async function tryServeFile(filePath: string, res: import("express").Response): 
       return true;
     }
 
-    res.sendFile(filePath);
+    res.sendFile(resolve(filePath)); // Ensure absolute path
     return true;
   } catch {
     return false;
