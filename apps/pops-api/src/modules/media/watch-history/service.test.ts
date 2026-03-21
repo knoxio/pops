@@ -356,3 +356,149 @@ describe("auto-remove from watchlist (PRD-011 R6)", () => {
     expect(() => watchlistService.getWatchlistEntry(wlId)).toThrow("WatchlistEntry");
   });
 });
+
+describe("batchLogWatch", () => {
+  it("logs all episodes in a season", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5003, episode_number: 3 });
+
+    const result = service.batchLogWatch({ mediaType: "season", mediaId: sId, completed: 1 });
+
+    expect(result.logged).toBe(3);
+    expect(result.skipped).toBe(0);
+
+    // Verify entries exist
+    const history = service.listWatchHistory({ mediaType: "episode" }, 50, 0);
+    expect(history.total).toBe(3);
+  });
+
+  it("logs all episodes across all seasons of a show", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const s1Id = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    const s2Id = seedSeason(db, { tv_show_id: showId, tvdb_id: 3002, season_number: 2 });
+    seedEpisode(db, { season_id: s1Id, tvdb_id: 5001, episode_number: 1 });
+    seedEpisode(db, { season_id: s1Id, tvdb_id: 5002, episode_number: 2 });
+    seedEpisode(db, { season_id: s2Id, tvdb_id: 5003, episode_number: 1 });
+
+    const result = service.batchLogWatch({ mediaType: "show", mediaId: showId, completed: 1 });
+
+    expect(result.logged).toBe(3);
+    expect(result.skipped).toBe(0);
+  });
+
+  it("skips already-watched episodes", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    const ep1 = seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
+
+    // Watch ep1 individually first
+    service.logWatch({ mediaType: "episode", mediaId: ep1, completed: 1 });
+
+    // Batch log the whole season — ep1 should be skipped
+    const result = service.batchLogWatch({ mediaType: "season", mediaId: sId, completed: 1 });
+
+    expect(result.logged).toBe(1);
+    expect(result.skipped).toBe(1);
+  });
+
+  it("returns zeros for empty season", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    // No episodes added
+
+    const result = service.batchLogWatch({ mediaType: "season", mediaId: sId, completed: 1 });
+
+    expect(result.logged).toBe(0);
+    expect(result.skipped).toBe(0);
+  });
+
+  it("returns zeros for non-existent show", () => {
+    const result = service.batchLogWatch({ mediaType: "show", mediaId: 99999, completed: 1 });
+
+    expect(result.logged).toBe(0);
+    expect(result.skipped).toBe(0);
+  });
+
+  it("removes TV show from watchlist when all episodes batch-logged for show", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
+
+    const wlId = seedWatchlistEntry(db, { media_type: "tv_show", media_id: showId });
+
+    service.batchLogWatch({ mediaType: "show", mediaId: showId, completed: 1 });
+
+    expect(() => watchlistService.getWatchlistEntry(wlId)).toThrow("WatchlistEntry");
+  });
+
+  it("removes TV show from watchlist when all episodes batch-logged for season (single season show)", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
+
+    const wlId = seedWatchlistEntry(db, { media_type: "tv_show", media_id: showId });
+
+    service.batchLogWatch({ mediaType: "season", mediaId: sId, completed: 1 });
+
+    expect(() => watchlistService.getWatchlistEntry(wlId)).toThrow("WatchlistEntry");
+  });
+
+  it("does not remove TV show from watchlist when only one season batch-logged (multi-season)", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const s1Id = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    const s2Id = seedSeason(db, { tv_show_id: showId, tvdb_id: 3002, season_number: 2 });
+    seedEpisode(db, { season_id: s1Id, tvdb_id: 5001, episode_number: 1 });
+    seedEpisode(db, { season_id: s2Id, tvdb_id: 5002, episode_number: 1 });
+
+    const wlId = seedWatchlistEntry(db, { media_type: "tv_show", media_id: showId });
+
+    // Only batch log season 1
+    service.batchLogWatch({ mediaType: "season", mediaId: s1Id, completed: 1 });
+
+    // Show should still be on watchlist
+    const entry = watchlistService.getWatchlistEntry(wlId);
+    expect(entry.mediaId).toBe(showId);
+  });
+
+  it("uses custom watchedAt for all entries", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
+
+    const customDate = "2026-03-01T12:00:00.000Z";
+    service.batchLogWatch({
+      mediaType: "season",
+      mediaId: sId,
+      watchedAt: customDate,
+      completed: 1,
+    });
+
+    const history = service.listWatchHistory({ mediaType: "episode" }, 50, 0);
+    for (const row of history.rows) {
+      expect(row.watchedAt).toBe(customDate);
+    }
+  });
+
+  it("does not skip when completed is 0 (re-logging incomplete watches)", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    const ep1 = seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
+
+    // Watch ep1 as completed
+    service.logWatch({ mediaType: "episode", mediaId: ep1, completed: 1 });
+
+    // Batch log with completed=0 — should not skip any (different semantics)
+    const result = service.batchLogWatch({ mediaType: "season", mediaId: sId, completed: 0 });
+
+    expect(result.logged).toBe(2);
+    expect(result.skipped).toBe(0);
+  });
+});

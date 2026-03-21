@@ -43,6 +43,17 @@ export const WatchHistoryQuerySchema = z.object({
 });
 export type WatchHistoryQueryRaw = z.infer<typeof WatchHistoryQuerySchema>;
 
+/** Zod schema for batch-logging watch events (whole season or show). */
+const BATCH_MEDIA_TYPES = ["season", "show"] as const;
+
+export const BatchLogWatchSchema = z.object({
+  mediaType: z.enum(BATCH_MEDIA_TYPES),
+  mediaId: z.number().int().positive(),
+  watchedAt: z.string().datetime().optional(),
+  completed: z.number().int().min(0).max(1).optional().default(1),
+});
+export type BatchLogWatchInput = z.infer<typeof BatchLogWatchSchema>;
+
 /** Parsed filter params passed to the service layer. */
 export interface WatchHistoryFilters {
   mediaType?: string;

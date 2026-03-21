@@ -15,6 +15,7 @@ import type {
   WatchHistoryFilters,
   TvShowProgress,
   SeasonProgress,
+  BatchLogWatchInput,
 } from "./types.js";
 import { tvShows } from "@pops/db-types";
 
@@ -245,6 +246,141 @@ export function getProgress(tvShowId: number): TvShowProgress {
     },
     seasons: seasonProgress,
   };
+}
+
+/** Result of a batch log operation. */
+export interface BatchLogResult {
+  logged: number;
+  skipped: number;
+}
+
+/**
+ * Batch-log watch events for all episodes in a season or all episodes in a show.
+ *
+ * - mediaType "season": logs all episodes in the given season.
+ * - mediaType "show": logs all episodes across all seasons of the given show.
+ *
+ * Skips episodes that already have a completed watch history entry.
+ * Triggers auto-remove from watchlist when all episodes are watched.
+ * Runs in a single transaction for atomicity.
+ */
+export function batchLogWatch(input: BatchLogWatchInput): BatchLogResult {
+  const db = getDrizzle();
+  const completed = input.completed ?? 1;
+  const watchedAt = input.watchedAt ?? new Date().toISOString();
+
+  return db.transaction((tx) => {
+    // Resolve episode IDs based on mediaType
+    let episodeIds: number[];
+
+    if (input.mediaType === "season") {
+      episodeIds = tx
+        .select({ id: episodes.id })
+        .from(episodes)
+        .where(eq(episodes.seasonId, input.mediaId))
+        .all()
+        .map((r) => r.id);
+    } else {
+      // "show" — get all episodes across all seasons
+      episodeIds = tx
+        .select({ id: episodes.id })
+        .from(episodes)
+        .innerJoin(seasons, eq(episodes.seasonId, seasons.id))
+        .where(eq(seasons.tvShowId, input.mediaId))
+        .all()
+        .map((r) => r.id);
+    }
+
+    if (episodeIds.length === 0) {
+      return { logged: 0, skipped: 0 };
+    }
+
+    // Find already-watched episodes (completed = 1) to skip
+    const alreadyWatched =
+      completed === 1
+        ? new Set(
+            tx
+              .select({ mediaId: watchHistory.mediaId })
+              .from(watchHistory)
+              .where(
+                and(
+                  eq(watchHistory.mediaType, "episode"),
+                  eq(watchHistory.completed, 1),
+                  inArray(watchHistory.mediaId, episodeIds)
+                )
+              )
+              .all()
+              .map((r) => r.mediaId)
+          )
+        : new Set<number>();
+
+    const toLog = episodeIds.filter((id) => !alreadyWatched.has(id));
+
+    // Insert watch history entries for episodes not yet watched
+    for (const episodeId of toLog) {
+      tx.insert(watchHistory)
+        .values({
+          mediaType: "episode",
+          mediaId: episodeId,
+          watchedAt,
+          completed,
+        })
+        .run();
+    }
+
+    // Auto-remove from watchlist if all episodes now watched
+    if (completed === 1 && toLog.length > 0) {
+      // Determine the TV show ID for watchlist removal
+      let tvShowId: number | undefined;
+
+      if (input.mediaType === "show") {
+        tvShowId = input.mediaId;
+      } else {
+        // season → look up the show
+        const season = tx
+          .select({ tvShowId: seasons.tvShowId })
+          .from(seasons)
+          .where(eq(seasons.id, input.mediaId))
+          .get();
+        tvShowId = season?.tvShowId;
+      }
+
+      if (tvShowId !== undefined) {
+        // Check if ALL episodes of the show are now watched
+        const allShowEpisodeIds = tx
+          .select({ id: episodes.id })
+          .from(episodes)
+          .innerJoin(seasons, eq(episodes.seasonId, seasons.id))
+          .where(eq(seasons.tvShowId, tvShowId))
+          .all()
+          .map((r) => r.id);
+
+        if (allShowEpisodeIds.length > 0) {
+          const [{ watched }] = tx
+            .select({ watched: countDistinct(watchHistory.mediaId) })
+            .from(watchHistory)
+            .where(
+              and(
+                eq(watchHistory.mediaType, "episode"),
+                eq(watchHistory.completed, 1),
+                inArray(watchHistory.mediaId, allShowEpisodeIds)
+              )
+            )
+            .all();
+
+          if (watched >= allShowEpisodeIds.length) {
+            tx.delete(mediaWatchlist)
+              .where(
+                and(eq(mediaWatchlist.mediaType, "tv_show"), eq(mediaWatchlist.mediaId, tvShowId))
+              )
+              .run();
+          }
+        }
+      }
+    }
+
+    return { logged: toLog.length, skipped: alreadyWatched.size };
+  });
 }
 
 /** Delete a watch history entry by ID. Throws NotFoundError if missing. */
