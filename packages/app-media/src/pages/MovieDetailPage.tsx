@@ -3,6 +3,7 @@ import { Alert, AlertTitle, AlertDescription, Badge, Skeleton } from "@pops/ui";
 import { trpc } from "../lib/trpc";
 import { formatCurrency, formatRuntime } from "../lib/format";
 import { WatchlistToggle } from "../components/WatchlistToggle";
+import { ComparisonScores } from "../components/ComparisonScores";
 import { MarkAsWatchedButton } from "../components/MarkAsWatchedButton";
 
 function MovieDetailSkeleton() {
@@ -200,6 +201,9 @@ export function MovieDetailPage() {
             </div>
           </section>
         )}
+
+        {/* Comparison scores radar chart */}
+        <ComparisonScores mediaType="movie" mediaId={movie.id} />
 
         {/* Metadata grid */}
         {metadataItems.length > 0 && (
