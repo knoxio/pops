@@ -103,3 +103,18 @@ export interface ArrSystemStatus {
   version: string;
   appName: string;
 }
+
+/** Unified download queue item for the frontend. */
+export interface DownloadQueueItem {
+  id: string;
+  title: string;
+  mediaType: "movie" | "episode";
+  /** Episode label, e.g. "S01E05" */
+  episodeLabel?: string;
+  /** Download progress 0–100. */
+  progress: number;
+  /** Human-readable ETA, e.g. "12m", "2h 30m". */
+  eta?: string;
+  /** Source service. */
+  source: "radarr" | "sonarr";
+}

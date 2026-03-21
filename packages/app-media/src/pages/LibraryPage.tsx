@@ -3,6 +3,7 @@ import { Badge, Button, Skeleton } from "@pops/ui";
 import { useEffect } from "react";
 import { Sparkles } from "lucide-react";
 import { MediaGrid } from "../components/MediaGrid";
+import { DownloadQueue } from "../components/DownloadQueue";
 import {
   useMediaLibrary,
   type MediaType,
@@ -127,6 +128,9 @@ export function LibraryPage() {
           </Link>
         </div>
       </div>
+
+      {/* Download queue */}
+      <DownloadQueue />
 
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-3">

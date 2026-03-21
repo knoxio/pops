@@ -3,7 +3,7 @@
  */
 import { RadarrClient } from "./radarr-client.js";
 import { SonarrClient } from "./sonarr-client.js";
-import type { ArrConfig, ArrStatusResult } from "./types.js";
+import type { ArrConfig, ArrStatusResult, DownloadQueueItem } from "./types.js";
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -81,8 +81,74 @@ export async function getShowStatus(tvdbId: number): Promise<ArrStatusResult> {
   return result;
 }
 
+const QUEUE_CACHE_TTL_MS = 30 * 1000; // 30 seconds
+
+interface QueueCacheEntry {
+  items: DownloadQueueItem[];
+  expiresAt: number;
+}
+
+let queueCache: QueueCacheEntry | null = null;
+
+/** Get combined download queue from Radarr + Sonarr with 30s cache. */
+export async function getDownloadQueue(): Promise<DownloadQueueItem[]> {
+  if (queueCache && queueCache.expiresAt > Date.now()) {
+    return queueCache.items;
+  }
+
+  const radarrClient = getRadarrClient();
+  const sonarrClient = getSonarrClient();
+
+  const [radarrQueue, sonarrQueue] = await Promise.all([
+    radarrClient ? radarrClient.getQueue().catch(() => null) : null,
+    sonarrClient ? sonarrClient.getQueue().catch(() => null) : null,
+  ]);
+
+  const items: DownloadQueueItem[] = [];
+
+  if (radarrQueue) {
+    for (const record of radarrQueue.records) {
+      const progress =
+        record.size > 0
+          ? Math.round(((record.size - record.sizeleft) / record.size) * 100)
+          : 0;
+      items.push({
+        id: `radarr-${record.id}`,
+        title: record.title,
+        mediaType: "movie",
+        progress,
+        source: "radarr",
+      });
+    }
+  }
+
+  if (sonarrQueue) {
+    for (const record of sonarrQueue.records) {
+      const progress =
+        record.size > 0
+          ? Math.round(((record.size - record.sizeleft) / record.size) * 100)
+          : 0;
+      const episodeLabel = record.episode
+        ? `S${String(record.episode.seasonNumber).padStart(2, "0")}E${String(record.episode.episodeNumber).padStart(2, "0")}`
+        : undefined;
+      items.push({
+        id: `sonarr-${record.id}`,
+        title: record.title,
+        mediaType: "episode",
+        episodeLabel,
+        progress,
+        source: "sonarr",
+      });
+    }
+  }
+
+  queueCache = { items, expiresAt: Date.now() + QUEUE_CACHE_TTL_MS };
+  return items;
+}
+
 /** Clear all cached statuses. */
 export function clearStatusCache(): void {
   movieStatusCache.clear();
   showStatusCache.clear();
+  queueCache = null;
 }
