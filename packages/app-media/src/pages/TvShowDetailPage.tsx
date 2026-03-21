@@ -1,5 +1,12 @@
 import { useParams, Link } from "react-router";
-import { Alert, AlertTitle, AlertDescription, Badge, Button, Skeleton } from "@pops/ui";
+import {
+  Alert,
+  AlertTitle,
+  AlertDescription,
+  Badge,
+  Button,
+  Skeleton,
+} from "@pops/ui";
 import { trpc } from "../lib/trpc";
 import { ProgressBar } from "../components/ProgressBar";
 import { ArrStatusBadge } from "../components/ArrStatusBadge";
@@ -36,17 +43,17 @@ export function TvShowDetailPage() {
 
   const { data, isLoading, error } = trpc.media.tvShows.get.useQuery(
     { id: showId },
-    { enabled: !Number.isNaN(showId) }
+    { enabled: !Number.isNaN(showId) },
   );
 
   const { data: seasonsData } = trpc.media.tvShows.listSeasons.useQuery(
     { tvShowId: showId },
-    { enabled: !Number.isNaN(showId) }
+    { enabled: !Number.isNaN(showId) },
   );
 
   const { data: progressData } = trpc.media.watchHistory.progress.useQuery(
     { tvShowId: showId },
-    { enabled: !Number.isNaN(showId) }
+    { enabled: !Number.isNaN(showId) },
   );
 
   const utils = trpc.useUtils();
@@ -109,10 +116,7 @@ export function TvShowDetailPage() {
   const seasons = seasonsData?.data ?? [];
   const progress = progressData?.data;
 
-  // Find the next unwatched episode
-  const nextSeason = progress?.seasons?.find(
-    (s: { watched: number; total: number }) => s.watched < s.total
-  );
+  const nextEpisode = progress?.nextEpisode ?? null;
 
   const metadataItems = [
     { label: "Status", value: show.status },
@@ -123,7 +127,10 @@ export function TvShowDetailPage() {
         ? `${show.voteAverage.toFixed(1)} (${show.voteCount} votes)`
         : null,
     },
-    { label: "Seasons", value: seasons.length > 0 ? `${seasons.length}` : null },
+    {
+      label: "Seasons",
+      value: seasons.length > 0 ? `${seasons.length}` : null,
+    },
   ].filter((item) => item.value != null);
 
   return (
@@ -173,12 +180,15 @@ export function TvShowDetailPage() {
             )}
 
             {/* Next episode indicator */}
-            {nextSeason && (
+            {nextEpisode && (
               <Link
-                to={`/media/tv/${show.id}/season/${nextSeason.seasonNumber}`}
+                to={`/media/tv/${show.id}/season/${nextEpisode.seasonNumber}`}
                 className="inline-block mt-2 text-sm text-primary hover:underline"
               >
-                Continue: Season {nextSeason.seasonNumber}
+                Continue watching: S
+                {String(nextEpisode.seasonNumber).padStart(2, "0")}E
+                {String(nextEpisode.episodeNumber).padStart(2, "0")}
+                {nextEpisode.episodeName ? ` — ${nextEpisode.episodeName}` : ""}
               </Link>
             )}
 
@@ -201,8 +211,16 @@ export function TvShowDetailPage() {
                   </Button>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 text-sm text-green-500 font-medium">
-                    <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    <svg
+                      className="w-4 h-4"
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                     All Watched
                   </span>
@@ -261,39 +279,49 @@ export function TvShowDetailPage() {
           <section>
             <h2 className="text-lg font-semibold mb-3">Seasons</h2>
             <div className="space-y-2">
-              {seasons.map((season: { id: number; seasonNumber: number; name: string | null; episodeCount: number | null }) => {
-                const seasonProg = progress?.seasons?.find(
-                  (s: { seasonNumber: number }) => s.seasonNumber === season.seasonNumber
-                );
-                const label =
-                  season.seasonNumber === 0
-                    ? "Specials"
-                    : season.name ?? `Season ${season.seasonNumber}`;
+              {seasons.map(
+                (season: {
+                  id: number;
+                  seasonNumber: number;
+                  name: string | null;
+                  episodeCount: number | null;
+                }) => {
+                  const seasonProg = progress?.seasons?.find(
+                    (s: { seasonNumber: number }) =>
+                      s.seasonNumber === season.seasonNumber,
+                  );
+                  const label =
+                    season.seasonNumber === 0
+                      ? "Specials"
+                      : (season.name ?? `Season ${season.seasonNumber}`);
 
-                return (
-                  <Link
-                    key={season.id}
-                    to={`/media/tv/${show.id}/season/${season.seasonNumber}`}
-                    className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors"
-                  >
-                    <span className="text-sm font-medium flex-1">{label}</span>
-                    {season.episodeCount != null && (
-                      <span className="text-xs text-muted-foreground">
-                        {season.episodeCount} episodes
+                  return (
+                    <Link
+                      key={season.id}
+                      to={`/media/tv/${show.id}/season/${season.seasonNumber}`}
+                      className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors"
+                    >
+                      <span className="text-sm font-medium flex-1">
+                        {label}
                       </span>
-                    )}
-                    {seasonProg && seasonProg.total > 0 && (
-                      <div className="w-24">
-                        <ProgressBar
-                          watched={seasonProg.watched}
-                          total={seasonProg.total}
-                          showLabel={false}
-                        />
-                      </div>
-                    )}
-                  </Link>
-                );
-              })}
+                      {season.episodeCount != null && (
+                        <span className="text-xs text-muted-foreground">
+                          {season.episodeCount} episodes
+                        </span>
+                      )}
+                      {seasonProg && seasonProg.total > 0 && (
+                        <div className="w-24">
+                          <ProgressBar
+                            watched={seasonProg.watched}
+                            total={seasonProg.total}
+                            showLabel={false}
+                          />
+                        </div>
+                      )}
+                    </Link>
+                  );
+                },
+              )}
             </div>
           </section>
         )}

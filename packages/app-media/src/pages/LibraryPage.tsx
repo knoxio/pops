@@ -47,6 +47,7 @@ function MediaCard({
     title: string;
     year: number | null;
     posterUrl: string | null;
+    progress: number | null;
   };
 }) {
   const href =
@@ -75,6 +76,15 @@ function MediaCard({
         >
           {item.type === "movie" ? "Movie" : "TV"}
         </Badge>
+        {/* Progress bar for TV shows */}
+        {item.progress != null && item.progress > 0 && (
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/30">
+            <div
+              className={`h-full transition-all ${item.progress >= 100 ? "bg-green-500" : "bg-indigo-500"}`}
+              style={{ width: `${Math.min(item.progress, 100)}%` }}
+            />
+          </div>
+        )}
       </div>
       <h3 className="mt-2 text-sm font-medium line-clamp-2 transition-colors group-hover:text-indigo-400">
         {item.title}
