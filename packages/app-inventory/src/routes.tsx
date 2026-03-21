@@ -8,7 +8,10 @@ import { lazy } from "react";
 import type { RouteObject } from "react-router";
 
 const ItemsPage = lazy(() =>
-  import("./pages/ItemsPage").then((m) => ({ default: m.ItemsPage }))
+  import("./pages/ItemsPage").then((m) => ({ default: m.ItemsPage })),
+);
+const ItemFormPage = lazy(() =>
+  import("./pages/ItemFormPage").then((m) => ({ default: m.ItemFormPage })),
 );
 
 /** Local type mirror for compile-time safety (shell owns the canonical types). */
@@ -30,4 +33,6 @@ export const navConfig = {
 
 export const routes: RouteObject[] = [
   { index: true, element: <ItemsPage /> },
+  { path: "items/new", element: <ItemFormPage /> },
+  { path: "items/:id/edit", element: <ItemFormPage /> },
 ];
