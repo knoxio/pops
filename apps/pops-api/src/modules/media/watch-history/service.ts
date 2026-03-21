@@ -9,7 +9,13 @@ import { count, countDistinct, desc, eq, and, inArray, type SQL } from "drizzle-
 import { getDrizzle } from "../../../db.js";
 import { watchHistory, mediaWatchlist, episodes, seasons } from "@pops/db-types";
 import { NotFoundError } from "../../../shared/errors.js";
-import type { WatchHistoryRow, LogWatchInput, WatchHistoryFilters, TvShowProgress, SeasonProgress } from "./types.js";
+import type {
+  WatchHistoryRow,
+  LogWatchInput,
+  WatchHistoryFilters,
+  TvShowProgress,
+  SeasonProgress,
+} from "./types.js";
 import { tvShows } from "@pops/db-types";
 
 /** Count + rows for a paginated list. */
