@@ -154,12 +154,7 @@ export function traceConnections(itemId: string, maxDepth: number): TraceNode {
     const connections = db
       .select()
       .from(itemConnections)
-      .where(
-        or(
-          eq(itemConnections.itemAId, currentId),
-          eq(itemConnections.itemBId, currentId),
-        ),
-      )
+      .where(or(eq(itemConnections.itemAId, currentId), eq(itemConnections.itemBId, currentId)))
       .all();
 
     for (const conn of connections) {

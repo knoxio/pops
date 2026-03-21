@@ -5,7 +5,12 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../../../trpc.js";
 import { paginationMeta } from "../../../shared/pagination.js";
-import { ConnectItemsSchema, ConnectionQuerySchema, TraceQuerySchema, toConnection } from "./types.js";
+import {
+  ConnectItemsSchema,
+  ConnectionQuerySchema,
+  TraceQuerySchema,
+  toConnection,
+} from "./types.js";
 import * as service from "./service.js";
 import { NotFoundError, ConflictError } from "../../../shared/errors.js";
 
