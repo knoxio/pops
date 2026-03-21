@@ -98,6 +98,19 @@ export interface SonarrQueueResponse {
   records: SonarrQueueRecord[];
 }
 
+/** Unified download queue item for frontend. */
+export interface DownloadQueueItem {
+  id: string;
+  title: string;
+  mediaType: "movie" | "episode";
+  /** Progress percentage (0-100). */
+  progress: number;
+  /** Estimated time of arrival, if available. */
+  eta?: string;
+  /** Human-readable status label. */
+  statusLabel: string;
+}
+
 /** System status response shared by Radarr and Sonarr. */
 export interface ArrSystemStatus {
   version: string;

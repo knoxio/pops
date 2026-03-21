@@ -61,6 +61,22 @@ export const arrRouter = router({
     return { data: arrService.getArrConfig() };
   }),
 
+  /** Get combined download queue from Radarr + Sonarr. */
+  getDownloadQueue: protectedProcedure.query(async () => {
+    try {
+      const items = await arrService.getDownloadQueue();
+      return { data: items };
+    } catch (err) {
+      if (err instanceof ArrApiError) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Queue error: ${err.message}`,
+        });
+      }
+      throw err;
+    }
+  }),
+
   /** Get Radarr status for a movie by TMDB ID. */
   getMovieStatus: protectedProcedure
     .input(z.object({ tmdbId: z.number().int().positive() }))

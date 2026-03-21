@@ -3,9 +3,10 @@
  */
 import { RadarrClient } from "./radarr-client.js";
 import { SonarrClient } from "./sonarr-client.js";
-import type { ArrConfig, ArrStatusResult } from "./types.js";
+import type { ArrConfig, ArrStatusResult, DownloadQueueItem } from "./types.js";
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const QUEUE_CACHE_TTL_MS = 30 * 1000; // 30 seconds
 
 interface CacheEntry {
   result: ArrStatusResult;
@@ -81,8 +82,69 @@ export async function getShowStatus(tvdbId: number): Promise<ArrStatusResult> {
   return result;
 }
 
+// -- Download queue cache --
+
+interface QueueCacheEntry {
+  items: DownloadQueueItem[];
+  expiresAt: number;
+}
+
+let queueCache: QueueCacheEntry | null = null;
+
+/** Get combined download queue from Radarr + Sonarr. */
+export async function getDownloadQueue(): Promise<DownloadQueueItem[]> {
+  if (queueCache && queueCache.expiresAt > Date.now()) {
+    return queueCache.items;
+  }
+
+  const radarrClient = getRadarrClient();
+  const sonarrClient = getSonarrClient();
+
+  if (!radarrClient && !sonarrClient) return [];
+
+  const [radarrQueue, sonarrQueue] = await Promise.all([
+    radarrClient?.getQueue().catch(() => null),
+    sonarrClient?.getQueue().catch(() => null),
+  ]);
+
+  const items: DownloadQueueItem[] = [];
+
+  if (radarrQueue) {
+    for (const r of radarrQueue.records) {
+      const progress = r.size > 0 ? Math.round(((r.size - r.sizeleft) / r.size) * 100) : 0;
+      items.push({
+        id: `radarr-${r.id}`,
+        title: r.title,
+        mediaType: "movie",
+        progress,
+        statusLabel: `${progress}%`,
+      });
+    }
+  }
+
+  if (sonarrQueue) {
+    for (const r of sonarrQueue.records) {
+      const progress = r.size > 0 ? Math.round(((r.size - r.sizeleft) / r.size) * 100) : 0;
+      const episodeLabel = r.episode
+        ? `S${String(r.episode.seasonNumber).padStart(2, "0")}E${String(r.episode.episodeNumber).padStart(2, "0")}`
+        : "";
+      items.push({
+        id: `sonarr-${r.id}`,
+        title: episodeLabel ? `${r.title} — ${episodeLabel}` : r.title,
+        mediaType: "episode",
+        progress,
+        statusLabel: `${progress}%`,
+      });
+    }
+  }
+
+  queueCache = { items, expiresAt: Date.now() + QUEUE_CACHE_TTL_MS };
+  return items;
+}
+
 /** Clear all cached statuses. */
 export function clearStatusCache(): void {
   movieStatusCache.clear();
   showStatusCache.clear();
+  queueCache = null;
 }
