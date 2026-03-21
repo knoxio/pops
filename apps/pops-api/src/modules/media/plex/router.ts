@@ -5,9 +5,10 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../../../trpc.js";
 import { PlexApiError } from "./types.js";
+import type { PlexClient } from "./client.js";
 import * as plexService from "./service.js";
 
-function requirePlexClient() {
+function requirePlexClient(): PlexClient {
   const client = plexService.getPlexClient();
   if (!client) {
     throw new TRPCError({

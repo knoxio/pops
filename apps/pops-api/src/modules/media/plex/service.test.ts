@@ -2,7 +2,7 @@
  * Plex sync service tests — mocks PlexClient, library service, and watch history.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import type { PlexMediaItem, PlexEpisode, PlexLibrary } from "./types.js";
+import type { PlexMediaItem } from "./types.js";
 
 // Mock dependencies before importing service
 vi.mock("./client.js", () => ({
@@ -171,7 +171,7 @@ describe("syncMovies", () => {
     const fakeTmdbClient = {} as ReturnType<typeof getTmdbClient>;
     mockGetTmdbClient.mockReturnValue(fakeTmdbClient);
     mockAddMovie.mockResolvedValue({
-      movie: { id: 1, title: "Fight Club" } as any,
+      movie: { id: 1, title: "Fight Club" } as unknown as import("../movies/types.js").Movie,
       created: true,
     });
 
@@ -217,7 +217,7 @@ describe("syncMovies", () => {
     const fakeTmdbClient = {} as ReturnType<typeof getTmdbClient>;
     mockGetTmdbClient.mockReturnValue(fakeTmdbClient);
     mockAddMovie.mockResolvedValue({
-      movie: { id: 1, title: "Fight Club" } as any,
+      movie: { id: 1, title: "Fight Club" } as unknown as import("../movies/types.js").Movie,
       created: true,
     });
 
@@ -273,7 +273,7 @@ describe("getSyncStatus", () => {
     const fakeTmdbClient = {} as ReturnType<typeof getTmdbClient>;
     mockGetTmdbClient.mockReturnValue(fakeTmdbClient);
     mockAddMovie.mockResolvedValue({
-      movie: { id: 1 } as any,
+      movie: { id: 1 } as unknown as import("../movies/types.js").Movie,
       created: true,
     });
 
