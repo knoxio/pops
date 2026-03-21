@@ -3,6 +3,7 @@ import { TokenBucketRateLimiter } from "./rate-limiter.js";
 
 export { GenreCache, getGenreCache, setGenreCache } from "./genre-cache.js";
 export { TmdbClient } from "./client.js";
+export { ImageCacheService } from "./image-cache.js";
 export { TmdbApiError, type TmdbSearchResult } from "./types.js";
 export type { TmdbGenre, TmdbGenreListResponse } from "./types.js";
 

@@ -28,6 +28,10 @@ export default defineConfig({
         changeOrigin: true,
         // Don't rewrite — tRPC expects /trpc prefix
       },
+      "/media/images": {
+        target: "http://localhost:3000",
+        changeOrigin: true,
+      },
     },
   },
 });

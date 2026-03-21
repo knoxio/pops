@@ -12,34 +12,34 @@ import { findActiveApp, isPageActive } from "@/app/nav/path-utils";
 
 const colorMap = {
   emerald: {
-    bg: "bg-emerald-600",
-    text: "text-emerald-400",
-    muted: "text-emerald-500/70",
+    bg: "bg-[oklch(0.65_0.15_150)]",
+    text: "text-[oklch(0.65_0.15_150)]",
+    muted: "text-[oklch(0.65_0.15_150/0.7)]",
   },
   indigo: {
-    bg: "bg-indigo-600",
-    text: "text-indigo-400",
-    muted: "text-indigo-500/70",
+    bg: "bg-[oklch(0.6_0.15_260)]",
+    text: "text-[oklch(0.6_0.15_260)]",
+    muted: "text-[oklch(0.6_0.15_260/0.7)]",
   },
   amber: {
-    bg: "bg-amber-600",
-    text: "text-amber-400",
-    muted: "text-amber-500/70",
+    bg: "bg-[oklch(0.7_0.15_70)]",
+    text: "text-[oklch(0.7_0.15_70)]",
+    muted: "text-[oklch(0.7_0.15_70/0.7)]",
   },
   rose: {
-    bg: "bg-rose-600",
-    text: "text-rose-400",
-    muted: "text-rose-500/70",
+    bg: "bg-[oklch(0.65_0.15_25)]",
+    text: "text-[oklch(0.65_0.15_25)]",
+    muted: "text-[oklch(0.65_0.15_25/0.7)]",
   },
   sky: {
-    bg: "bg-sky-600",
-    text: "text-sky-400",
-    muted: "text-sky-500/70",
+    bg: "bg-[oklch(0.65_0.15_220)]",
+    text: "text-[oklch(0.65_0.15_220)]",
+    muted: "text-[oklch(0.65_0.15_220/0.7)]",
   },
   violet: {
-    bg: "bg-violet-600",
-    text: "text-violet-400",
-    muted: "text-violet-500/70",
+    bg: "bg-[oklch(0.65_0.15_290)]",
+    text: "text-[oklch(0.65_0.15_290)]",
+    muted: "text-[oklch(0.65_0.15_290/0.7)]",
   },
 } as const;
 

@@ -11,6 +11,7 @@ import {
   RecordComparisonSchema,
   ComparisonQuerySchema,
   ScoreQuerySchema,
+  RandomPairQuerySchema,
   toDimension,
   toComparison,
   toMediaScore,
@@ -86,6 +87,25 @@ export const comparisonsRouter = router({
       data: rows.map(toComparison),
       pagination: paginationMeta(total, limit, offset),
     };
+  }),
+
+  /** Get a random pair of watched movies for comparison. */
+  getRandomPair: protectedProcedure.input(RandomPairQuerySchema).query(({ input }) => {
+    try {
+      const pair = service.getRandomPair(input.dimensionId, input.avoidRecent);
+      if (!pair) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Not enough watched movies to create a comparison pair (need at least 2)",
+        });
+      }
+      return { data: pair };
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+      }
+      throw err;
+    }
   }),
 
   /** Get scores for a media item (optionally filtered by dimension). */

@@ -16,147 +16,54 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  /* Color system */
-  --color-background: hsl(0 0% 100%);
-  --color-foreground: hsl(222.2 47.4% 11.2%);
+  /* Breakpoints */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
 
-  --color-muted: hsl(210 40% 96.1%);
-  --color-muted-foreground: hsl(215.4 16.3% 46.9%);
-
-  --color-card: hsl(0 0% 100%);
-  --color-card-foreground: hsl(222.2 47.4% 11.2%);
-
-  --color-popover: hsl(0 0% 100%);
-  --color-popover-foreground: hsl(222.2 47.4% 11.2%);
-
-  --color-border: hsl(214.3 31.8% 91.4%);
-  --color-input: hsl(214.3 31.8% 91.4%);
-
-  --color-primary: hsl(222.2 47.4% 11.2%);
-  --color-primary-foreground: hsl(210 40% 98%);
-
-  --color-secondary: hsl(210 40% 96.1%);
-  --color-secondary-foreground: hsl(222.2 47.4% 11.2%);
-
-  --color-accent: hsl(210 40% 96.1%);
-  --color-accent-foreground: hsl(222.2 47.4% 11.2%);
-
-  --color-destructive: hsl(0 100% 50%);
-  --color-destructive-foreground: hsl(210 40% 98%);
-
-  --color-ring: hsl(215 20.2% 65.1%);
-
-  --color-success: hsl(142 76% 36%);
-  --color-success-hover: hsl(142 76% 30%);
-  --color-warning: hsl(38 92% 50%);
-  --color-warning-hover: hsl(38 92% 45%);
-  --color-info: hsl(199 89% 48%);
-  --color-info-hover: hsl(199 89% 43%);
-
-  --radius: 0.5rem;
-}
-
-/* Dark mode colors - override both prefixed and non-prefixed variables */
-:root.dark,
-.dark {
-  /* Prefixed variables (used by @theme) */
-  --color-background: oklch(0.12 0.02 260);
-  --color-foreground: oklch(0.98 0.01 260);
-  --color-card: oklch(0.16 0.02 260);
-  --color-card-foreground: oklch(0.98 0.01 260);
-  --color-popover: oklch(0.16 0.02 260);
-  --color-popover-foreground: oklch(0.98 0.01 260);
-  --color-primary: oklch(0.95 0.02 260);
-  --color-primary-foreground: oklch(0.16 0.02 260);
-  --color-secondary: oklch(0.25 0.02 260);
-  --color-secondary-foreground: oklch(0.98 0.01 260);
-  --color-muted: oklch(0.25 0.02 260);
-  --color-muted-foreground: oklch(0.75 0.02 260);
-  --color-accent: oklch(0.25 0.02 260);
-  --color-accent-foreground: oklch(0.98 0.01 260);
-  --color-destructive: oklch(0.65 0.18 25);
-  --color-destructive-foreground: oklch(0.98 0.01 260);
-  --color-border: oklch(1 0 0 / 12%);
-  --color-input: oklch(1 0 0 / 15%);
-  --color-ring: oklch(0.6 0.03 260);
-
-  /* Non-prefixed variables (used by components) */
-  --background: oklch(0.12 0.02 260);
-  --foreground: oklch(0.98 0.01 260);
-  --card: oklch(0.16 0.02 260);
-  --card-foreground: oklch(0.98 0.01 260);
-  --popover: oklch(0.16 0.02 260);
-  --popover-foreground: oklch(0.98 0.01 260);
-  --primary: oklch(0.95 0.02 260);
-  --primary-foreground: oklch(0.16 0.02 260);
-  --secondary: oklch(0.25 0.02 260);
-  --secondary-foreground: oklch(0.98 0.01 260);
-  --muted: oklch(0.25 0.02 260);
-  --muted-foreground: oklch(0.75 0.02 260);
-  --accent: oklch(0.25 0.02 260);
-  --accent-foreground: oklch(0.98 0.01 260);
-  --destructive: oklch(0.65 0.18 25);
-  --destructive-foreground: oklch(0.98 0.01 260);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.6 0.03 260);
-}
-
-/* Base styles */
-* {
-  border-color: var(--color-border);
-}
-
-body {
-  background-color: var(--color-background);
-  color: var(--color-foreground);
-  font-family:
-    "Plus Jakarta Sans Variable",
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
-  font-kerning: normal;
-  font-variant-ligatures: common-ligatures;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-/*---break---
- */
-
-@theme inline {
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
+  /* Color system - these map to the CSS variables defined in :root */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+
   --color-popover: var(--popover);
   --color-popover-foreground: var(--popover-foreground);
+
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
+
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
+
+  --color-success: oklch(0.65 0.15 150);
+  --color-warning: oklch(0.75 0.15 70);
+  --color-info: oklch(0.65 0.15 240);
+
+  /* Charts */
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
+
+  /* Sidebar */
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
@@ -165,100 +72,197 @@ body {
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Radius */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+
+  /* Animations */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
 }
 
-/*---break---
- */
-
+/* Variable definitions */
 :root {
   --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.15 0.02 260);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.15 0.02 260);
+
+  /* Light mode - Clean, Warm, Efficient with subtle indigo tint */
+  --background: oklch(
+    0.975 0.01 260
+  ); /* Slightly deeper background for better contrast with cards */
+  --foreground: oklch(
+    0.2 0.02 260
+  ); /* Darker foreground for better text contrast */
+
+  --card: oklch(1 0 0); /* Pure white cards to pop */
+  --card-foreground: oklch(0.2 0.02 260);
+
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.15 0.02 260);
-  --primary: oklch(0.2 0.02 260);
+  --popover-foreground: oklch(0.2 0.02 260);
+
+  --primary: oklch(0.3 0.06 260); /* Slightly deeper primary */
   --primary-foreground: oklch(0.98 0.01 260);
-  --secondary: oklch(0.96 0.01 260);
-  --secondary-foreground: oklch(0.15 0.02 260);
-  --muted: oklch(0.96 0.01 260);
-  --muted-foreground: oklch(0.45 0.02 260);
-  --accent: oklch(0.96 0.01 260);
-  --accent-foreground: oklch(0.15 0.02 260);
+
+  --secondary: oklch(0.92 0.02 260); /* More visible secondary */
+  --secondary-foreground: oklch(0.3 0.06 260);
+
+  --muted: oklch(0.92 0.02 260); /* More visible muted background */
+  --muted-foreground: oklch(0.4 0.03 260); /* Darker for accessibility */
+
+  --accent: oklch(0.92 0.02 260);
+  --accent-foreground: oklch(0.2 0.02 260);
+
   --destructive: oklch(0.6 0.18 25);
-  --border: oklch(0.9 0.01 260);
-  --input: oklch(0.9 0.01 260);
-  --ring: oklch(0.5 0.02 260);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.98 0.01 260);
-  --sidebar-foreground: oklch(0.15 0.02 260);
-  --sidebar-primary: oklch(0.2 0.02 260);
+  --destructive-foreground: oklch(0.98 0.01 260);
+
+  --border: oklch(0.88 0.03 260); /* Much clearer borders */
+  --input: oklch(0.88 0.03 260);
+  --ring: oklch(0.5 0.08 260);
+
+  --chart-1: oklch(0.6 0.15 260);
+  --chart-2: oklch(0.7 0.12 180);
+  --chart-3: oklch(0.5 0.15 30);
+  --chart-4: oklch(0.8 0.15 80);
+  --chart-5: oklch(0.6 0.15 330);
+
+  --sidebar: oklch(0.98 0.005 260); /* Matches background */
+  --sidebar-foreground: oklch(0.35 0.02 260);
+  --sidebar-primary: oklch(0.35 0.05 260);
   --sidebar-primary-foreground: oklch(0.98 0.01 260);
-  --sidebar-accent: oklch(0.96 0.01 260);
-  --sidebar-accent-foreground: oklch(0.15 0.02 260);
-  --sidebar-border: oklch(0.9 0.01 260);
-  --sidebar-ring: oklch(0.5 0.02 260);
+  --sidebar-accent: oklch(0.95 0.01 260);
+  --sidebar-accent-foreground: oklch(0.35 0.05 260);
+  --sidebar-border: oklch(0.92 0.01 260);
+  --sidebar-ring: oklch(0.6 0.05 260);
 }
 
-/*---break---
- */
+.dark {
+  /* Dark mode - Consistent with light mode indigo hue */
+  --background: oklch(0.14 0.02 260);
+  --foreground: oklch(0.92 0.01 260);
 
+  --card: oklch(0.18 0.03 260);
+  --card-foreground: oklch(0.92 0.01 260);
+
+  --popover: oklch(0.18 0.03 260);
+  --popover-foreground: oklch(0.92 0.01 260);
+
+  --primary: oklch(0.6 0.12 260);
+  --primary-foreground: oklch(0.14 0.02 260);
+
+  --secondary: oklch(0.25 0.04 260);
+  --secondary-foreground: oklch(0.92 0.01 260);
+
+  --muted: oklch(0.25 0.04 260);
+  --muted-foreground: oklch(0.7 0.02 260);
+
+  --accent: oklch(0.25 0.04 260);
+  --accent-foreground: oklch(0.92 0.01 260);
+
+  --destructive: oklch(0.5 0.15 25);
+  --destructive-foreground: oklch(0.92 0.01 260);
+
+  --border: oklch(0.25 0.04 260);
+  --input: oklch(0.25 0.04 260);
+  --ring: oklch(0.6 0.12 260);
+
+  --sidebar: oklch(0.16 0.02 260);
+  --sidebar-foreground: oklch(0.85 0.01 260);
+  --sidebar-primary: oklch(0.6 0.12 260);
+  --sidebar-primary-foreground: oklch(0.14 0.02 260);
+  --sidebar-accent: oklch(0.25 0.04 260);
+  --sidebar-accent-foreground: oklch(0.92 0.01 260);
+  --sidebar-border: oklch(0.25 0.04 260);
+  --sidebar-ring: oklch(0.6 0.12 260);
+}
+
+/* Base styles */
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
+    font-family:
+      "Plus Jakarta Sans Variable",
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+    font-feature-settings: "cv02", "cv03", "cv04", "ss01";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  /**
-   * Typography hierarchy defaults.
-   * Tailwind utility classes (text-2xl, font-bold, etc.) override these
-   * via layer specificity, so components with explicit classes are unaffected.
-   *
-   * Type scale (major third, 1.25 ratio):
-   *   xs:   0.75rem  (12px) — captions, timestamps
-   *   sm:   0.875rem (14px) — secondary UI, metadata
-   *   base: 1rem     (16px) — body text
-   *   lg:   1.25rem  (20px) — subheadings
-   *   xl:   1.5rem   (24px) — section headings
-   *   2xl:  1.875rem (30px) — page titles
-   *   3xl:  2.25rem  (36px) — display / hero
-   */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-bold tracking-tight text-foreground;
+  }
+
   h1 {
-    font-size: 1.875rem;
-    line-height: 1.2;
-    font-weight: 700;
-    letter-spacing: -0.025em;
+    font-size: clamp(1.875rem, 5vw, 3rem);
+    line-height: 1.1;
+    font-weight: 800;
+    letter-spacing: -0.04em;
   }
 
   h2 {
-    font-size: 1.5rem;
-    line-height: 1.25;
-    font-weight: 600;
-    letter-spacing: -0.02em;
+    font-size: clamp(1.5rem, 4vw, 2.25rem);
+    line-height: 1.2;
+    letter-spacing: -0.03em;
   }
 
   h3 {
-    font-size: 1.25rem;
+    font-size: clamp(1.25rem, 3vw, 1.75rem);
     line-height: 1.3;
-    font-weight: 600;
+    letter-spacing: -0.02em;
   }
 
   h4 {
-    font-size: 1rem;
+    font-size: clamp(1.125rem, 2vw, 1.25rem);
     line-height: 1.4;
-    font-weight: 600;
   }
 
-  /* Tabular figures for data-heavy contexts */
+  /* Tabular figures in tables for aligned numeric columns */
   table {
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Improved scrollbars */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/20 rounded-full hover:bg-muted-foreground/30 transition-colors;
   }
 }
 

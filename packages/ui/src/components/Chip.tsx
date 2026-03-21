@@ -15,9 +15,9 @@ const chipVariants = cva(
         primary: "bg-primary text-primary-foreground hover:bg-primary/90",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        success: "bg-success text-white hover:bg-success-hover",
-        warning: "bg-warning text-white hover:bg-warning-hover",
-        info: "bg-info text-white hover:bg-info-hover",
+        success: "bg-success text-white hover:bg-success/80",
+        warning: "bg-warning text-white hover:bg-warning/80",
+        info: "bg-info text-white hover:bg-info/80",
         outline:
           "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
         ghost: "hover:bg-accent hover:text-accent-foreground",

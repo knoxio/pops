@@ -1,3 +1,4 @@
+import { useCallback, useMemo, useRef, useState } from "react";
 import { useParams, Link } from "react-router";
 import {
   Alert,
@@ -11,8 +12,10 @@ import {
   BreadcrumbSeparator,
   Skeleton,
 } from "@pops/ui";
+import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
 import { EpisodeList } from "../components/EpisodeList";
+import { ProgressBar } from "../components/ProgressBar";
 
 function SeasonDetailSkeleton() {
   return (
@@ -47,25 +50,118 @@ export function SeasonDetailPage() {
     error: showError,
   } = trpc.media.tvShows.get.useQuery(
     { id: showId },
-    { enabled: !Number.isNaN(showId) }
+    { enabled: !Number.isNaN(showId) },
   );
 
-  const {
-    data: seasonsData,
-    isLoading: seasonsLoading,
-  } = trpc.media.tvShows.listSeasons.useQuery(
+  const { data: seasonsData, isLoading: seasonsLoading } =
+    trpc.media.tvShows.listSeasons.useQuery(
+      { tvShowId: showId },
+      { enabled: !Number.isNaN(showId) },
+    );
+
+  const season = seasonsData?.data?.find((s) => s.seasonNumber === seasonNum);
+
+  const { data: episodesData, isLoading: episodesLoading } =
+    trpc.media.tvShows.listEpisodes.useQuery(
+      { seasonId: season?.id ?? 0 },
+      { enabled: !!season?.id },
+    );
+
+  const episodes = episodesData?.data ?? [];
+  const episodeIds = useMemo(() => episodes.map((ep) => ep.id), [episodes]);
+
+  // Query watch history for all episodes in this season
+  const { data: watchHistoryData } = trpc.media.watchHistory.list.useQuery(
+    { mediaType: "episode", limit: 500 },
+    { enabled: episodeIds.length > 0 },
+  );
+
+  const watchedEpisodeIds = useMemo(() => {
+    if (!watchHistoryData?.data) return new Set<number>();
+    const episodeIdSet = new Set(episodeIds);
+    return new Set(
+      watchHistoryData.data
+        .filter((entry) => episodeIdSet.has(entry.mediaId))
+        .map((entry) => entry.mediaId),
+    );
+  }, [watchHistoryData, episodeIds]);
+
+  // Track which episodes are currently being toggled
+  const [togglingIds, setTogglingIds] = useState<Set<number>>(new Set());
+  // Map from watch history entry ID → episode ID for delete tracking
+  const deleteEntryToEpisode = useRef<Map<number, number>>(new Map());
+
+  const utils = trpc.useUtils();
+
+  const logMutation = trpc.media.watchHistory.log.useMutation({
+    onSuccess: () => {
+      void utils.media.watchHistory.list.invalidate();
+    },
+    onError: (err) => {
+      toast.error(`Failed to log watch: ${err.message}`);
+    },
+    onSettled: (_data, _err, variables) => {
+      setTogglingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(variables.mediaId);
+        return next;
+      });
+    },
+  });
+
+  const deleteMutation = trpc.media.watchHistory.delete.useMutation({
+    onSuccess: () => {
+      void utils.media.watchHistory.list.invalidate();
+    },
+    onError: (err) => {
+      toast.error(`Failed to remove watch: ${err.message}`);
+    },
+    onSettled: (_data, _err, variables) => {
+      const episodeId = deleteEntryToEpisode.current.get(variables.id);
+      deleteEntryToEpisode.current.delete(variables.id);
+      if (episodeId != null) {
+        setTogglingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(episodeId);
+          return next;
+        });
+      }
+    },
+  });
+
+  const handleToggleWatched = useCallback(
+    (episodeId: number, watched: boolean) => {
+      setTogglingIds((prev) => new Set(prev).add(episodeId));
+
+      if (watched) {
+        logMutation.mutate({ mediaType: "episode", mediaId: episodeId });
+      } else {
+        // Find the watch history entry to delete
+        const entry = watchHistoryData?.data?.find(
+          (e) => e.mediaId === episodeId,
+        );
+        if (entry) {
+          deleteEntryToEpisode.current.set(entry.id, episodeId);
+          deleteMutation.mutate({ id: entry.id });
+        } else {
+          setTogglingIds((prev) => {
+            const next = new Set(prev);
+            next.delete(episodeId);
+            return next;
+          });
+        }
+      }
+    },
+    [logMutation, deleteMutation, watchHistoryData],
+  );
+
+  const { data: progressData } = trpc.media.watchHistory.progress.useQuery(
     { tvShowId: showId },
     { enabled: !Number.isNaN(showId) }
   );
 
-  const season = seasonsData?.data?.find((s) => s.seasonNumber === seasonNum);
-
-  const {
-    data: episodesData,
-    isLoading: episodesLoading,
-  } = trpc.media.tvShows.listEpisodes.useQuery(
-    { seasonId: season?.id ?? 0 },
-    { enabled: !!season?.id }
+  const seasonProgress = progressData?.data?.seasons?.find(
+    (s: { seasonNumber: number }) => s.seasonNumber === seasonNum
   );
 
   if (Number.isNaN(showId) || Number.isNaN(seasonNum)) {
@@ -73,7 +169,9 @@ export function SeasonDetailPage() {
       <div className="p-6">
         <Alert variant="destructive">
           <AlertTitle>Invalid parameters</AlertTitle>
-          <AlertDescription>Show ID and season number must be valid numbers.</AlertDescription>
+          <AlertDescription>
+            Show ID and season number must be valid numbers.
+          </AlertDescription>
         </Alert>
       </div>
     );
@@ -90,10 +188,15 @@ export function SeasonDetailPage() {
         <Alert variant="destructive">
           <AlertTitle>{is404 ? "Show not found" : "Error"}</AlertTitle>
           <AlertDescription>
-            {is404 ? "This TV show doesn't exist in your library." : showError.message}
+            {is404
+              ? "This TV show doesn't exist in your library."
+              : showError.message}
           </AlertDescription>
         </Alert>
-        <Link to="/media" className="mt-4 inline-block text-sm text-primary underline">
+        <Link
+          to="/media"
+          className="mt-4 inline-block text-sm text-primary underline"
+        >
           Back to library
         </Link>
       </div>
@@ -122,8 +225,7 @@ export function SeasonDetailPage() {
     );
   }
 
-  const seasonLabel =
-    seasonNum === 0 ? "Specials" : `Season ${seasonNum}`;
+  const seasonLabel = seasonNum === 0 ? "Specials" : `Season ${seasonNum}`;
   const posterSrc = season.posterPath
     ? `/media/images/tv/${show.id}/season-${seasonNum}-poster.jpg`
     : null;
@@ -162,9 +264,7 @@ export function SeasonDetailPage() {
         )}
 
         <div className="flex-1">
-          <h1 className="text-2xl font-bold">
-            {season.name ?? seasonLabel}
-          </h1>
+          <h1 className="text-2xl font-bold">{season.name ?? seasonLabel}</h1>
 
           <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
             {season.episodeCount != null && (
@@ -179,6 +279,15 @@ export function SeasonDetailPage() {
               {season.overview}
             </p>
           )}
+
+          {seasonProgress && seasonProgress.total > 0 && (
+            <div className="mt-3">
+              <ProgressBar
+                watched={seasonProgress.watched}
+                total={seasonProgress.total}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -192,7 +301,12 @@ export function SeasonDetailPage() {
             ))}
           </div>
         ) : (
-          <EpisodeList episodes={episodesData?.data ?? []} />
+          <EpisodeList
+            episodes={episodes}
+            watchedEpisodeIds={watchedEpisodeIds}
+            onToggleWatched={handleToggleWatched}
+            togglingIds={togglingIds}
+          />
         )}
       </section>
     </div>

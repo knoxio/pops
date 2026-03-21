@@ -66,36 +66,27 @@ export interface Episode {
 export function toTvShow(row: TvShowRow): TvShow {
   // Determine the best URLs:
   // 1. User override (local upload)
-  // 2. TheTVDB full URL (TheTVDB returns full URLs usually)
-  // 3. TMDB fallback (if path starts with /)
-  // 4. Null (placeholder in UI)
+  // 2. Local cache (downloaded from TheTVDB)
+  // 3. Original path (TheTVDB returns full URLs usually)
+  // 4. TMDB fallback (if path starts with /)
+  // 5. Null (placeholder in UI)
+
   let posterUrl: string | null = null;
   if (row.posterOverridePath) {
     posterUrl = row.posterOverridePath;
   } else if (row.posterPath) {
-    if (row.posterPath.startsWith("http")) {
-      posterUrl = row.posterPath;
-    } else if (row.posterPath.startsWith("/")) {
-      posterUrl = `https://image.tmdb.org/t/p/w600_and_h900_bestv2${row.posterPath}`;
-    }
+    // Try local cache first
+    posterUrl = `/media/images/tv/${row.tvdbId}/poster.jpg`;
   }
 
   let backdropUrl: string | null = null;
   if (row.backdropPath) {
-    if (row.backdropPath.startsWith("http")) {
-      backdropUrl = row.backdropPath;
-    } else if (row.backdropPath.startsWith("/")) {
-      backdropUrl = `https://image.tmdb.org/t/p/original${row.backdropPath}`;
-    }
+    backdropUrl = `/media/images/tv/${row.tvdbId}/backdrop.jpg`;
   }
 
   let logoUrl: string | null = null;
   if (row.logoPath) {
-    if (row.logoPath.startsWith("http")) {
-      logoUrl = row.logoPath;
-    } else if (row.logoPath.startsWith("/")) {
-      logoUrl = `https://image.tmdb.org/t/p/w500${row.logoPath}`;
-    }
+    logoUrl = `/media/images/tv/${row.tvdbId}/logo.png`;
   }
 
   return {

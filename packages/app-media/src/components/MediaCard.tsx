@@ -19,6 +19,8 @@ export interface MediaCardProps {
   year?: string | number | null;
   /** Poster image URL from local cache. When null, shows placeholder. */
   posterUrl?: string | null;
+  /** Watch progress for TV shows (0–100 percentage). */
+  progress?: number | null;
   /** Click handler — typically navigates to detail page. */
   onClick?: (id: number, type: MediaType) => void;
   /** Additional CSS classes for the root element. */
@@ -36,6 +38,7 @@ export function MediaCard({
   title,
   year,
   posterUrl,
+  progress,
   onClick,
   className,
 }: MediaCardProps) {
@@ -94,6 +97,19 @@ export function MediaCard({
         {showPlaceholder && (
           <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
             <Film className="h-10 w-10 opacity-40" />
+          </div>
+        )}
+
+        {/* Progress bar for TV shows */}
+        {progress != null && progress > 0 && (
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted/50">
+            <div
+              className={cn(
+                "h-full transition-all",
+                progress >= 100 ? "bg-green-500" : "bg-primary",
+              )}
+              style={{ width: `${Math.min(progress, 100)}%` }}
+            />
           </div>
         )}
       </div>
