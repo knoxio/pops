@@ -1,5 +1,5 @@
 /**
- * Inventory reports tRPC router — warranty tracking.
+ * Inventory reports tRPC router — warranty tracking and dashboard summaries.
  */
 import { router, protectedProcedure } from "../../../trpc.js";
 import { toInventoryItem } from "../items/types.js";
@@ -10,5 +10,10 @@ export const reportsRouter = router({
   warranties: protectedProcedure.query(() => {
     const rows = service.listWarrantyItems();
     return { data: rows.map(toInventoryItem) };
+  }),
+
+  /** Get dashboard summary (item count, total values, warranty alerts, recent items). */
+  dashboard: protectedProcedure.query(() => {
+    return { data: service.getDashboard() };
   }),
 });
