@@ -84,3 +84,35 @@ export interface TvShowProgress {
   };
   seasons: SeasonProgress[];
 }
+
+/** Zod schema for listRecent query params with date range and mediaType filters. */
+export const RecentWatchHistoryQuerySchema = z.object({
+  mediaType: z.enum(WATCH_MEDIA_TYPES).optional(),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
+  limit: z.coerce.number().positive().max(500).optional(),
+  offset: z.coerce.number().nonnegative().optional(),
+});
+export type RecentWatchHistoryQuery = z.infer<typeof RecentWatchHistoryQuerySchema>;
+
+/** Parsed filter params for listRecent. */
+export interface RecentWatchHistoryFilters {
+  mediaType?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+/** Enriched watch history entry with media metadata for the history page. */
+export interface RecentWatchHistoryEntry {
+  id: number;
+  mediaType: string;
+  mediaId: number;
+  watchedAt: string;
+  completed: number;
+  title: string | null;
+  posterPath: string | null;
+  /** For episodes: season/episode info */
+  seasonNumber: number | null;
+  episodeNumber: number | null;
+  showName: string | null;
+}
