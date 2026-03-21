@@ -82,3 +82,9 @@ export * from "./components/RadioInput";
 export * from "./components/Select";
 export * from "./components/StatCard";
 export * from "./components/TextInput";
+
+// Inventory composites
+export * from "./components/AssetIdBadge";
+export * from "./components/ConditionBadge";
+export * from "./components/TypeBadge";
+export * from "./components/LocationBreadcrumb";
