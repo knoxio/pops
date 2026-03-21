@@ -12,6 +12,7 @@ import {
   ComparisonQuerySchema,
   ScoreQuerySchema,
   RandomPairQuerySchema,
+  RankingsQuerySchema,
   toDimension,
   toComparison,
   toMediaScore,
@@ -112,5 +113,16 @@ export const comparisonsRouter = router({
   scores: protectedProcedure.input(ScoreQuerySchema).query(({ input }) => {
     const rows = service.getScoresForMedia(input.mediaType, input.mediaId, input.dimensionId);
     return { data: rows.map(toMediaScore) };
+  }),
+
+  /** Get ranked list of media items by Elo score (per-dimension or Overall). */
+  rankings: protectedProcedure.input(RankingsQuerySchema).query(({ input }) => {
+    const limit = input.limit ?? DEFAULT_LIMIT;
+    const offset = input.offset ?? 0;
+    const { rows, total } = service.getRankings(input.dimensionId, input.mediaType, limit, offset);
+    return {
+      data: rows,
+      pagination: paginationMeta(total, limit, offset),
+    };
   }),
 });

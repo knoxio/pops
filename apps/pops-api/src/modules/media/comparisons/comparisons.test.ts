@@ -367,6 +367,184 @@ describe("comparisons.getRandomPair", () => {
   });
 });
 
+describe("comparisons.rankings", () => {
+  it("returns empty when no scores exist", async () => {
+    const result = await caller.media.comparisons.rankings({});
+    expect(result.data).toEqual([]);
+    expect(result.pagination.total).toBe(0);
+  });
+
+  it("returns per-dimension rankings ordered by score", async () => {
+    const dimId = seedDimension(db, { name: "Overall" });
+
+    // Movie 1 beats movie 2, movie 1 beats movie 3
+    await caller.media.comparisons.record({
+      dimensionId: dimId,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 2,
+      winnerType: "movie",
+      winnerId: 1,
+    });
+    await caller.media.comparisons.record({
+      dimensionId: dimId,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 3,
+      winnerType: "movie",
+      winnerId: 1,
+    });
+
+    const result = await caller.media.comparisons.rankings({ dimensionId: dimId });
+    expect(result.data.length).toBe(3);
+    expect(result.data[0].rank).toBe(1);
+    expect(result.data[0].mediaId).toBe(1); // winner should be #1
+    expect(result.data[0].score).toBeGreaterThan(1500);
+    expect(result.data[1].rank).toBe(2);
+    expect(result.data[2].rank).toBe(3);
+  });
+
+  it("returns overall rankings averaging across active dimensions", async () => {
+    const dim1 = seedDimension(db, { name: "Story", active: 1 });
+    const dim2 = seedDimension(db, { name: "Visuals", active: 1 });
+
+    // Movie 1 wins in Story, Movie 2 wins in Visuals
+    await caller.media.comparisons.record({
+      dimensionId: dim1,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 2,
+      winnerType: "movie",
+      winnerId: 1,
+    });
+    await caller.media.comparisons.record({
+      dimensionId: dim2,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 2,
+      winnerType: "movie",
+      winnerId: 2,
+    });
+
+    const result = await caller.media.comparisons.rankings({});
+    expect(result.data.length).toBe(2);
+    // Both should have avg score ~1500 since each won one dimension
+    expect(result.data[0].rank).toBe(1);
+    expect(result.data[1].rank).toBe(2);
+  });
+
+  it("filters by mediaType", async () => {
+    const dimId = seedDimension(db, { name: "Overall" });
+
+    // Movie comparison
+    await caller.media.comparisons.record({
+      dimensionId: dimId,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 2,
+      winnerType: "movie",
+      winnerId: 1,
+    });
+    // TV show comparison
+    await caller.media.comparisons.record({
+      dimensionId: dimId,
+      mediaAType: "tv_show",
+      mediaAId: 10,
+      mediaBType: "tv_show",
+      mediaBId: 20,
+      winnerType: "tv_show",
+      winnerId: 10,
+    });
+
+    const movieRankings = await caller.media.comparisons.rankings({
+      dimensionId: dimId,
+      mediaType: "movie",
+    });
+    expect(movieRankings.data.length).toBe(2);
+    expect(movieRankings.data.every((r) => r.mediaType === "movie")).toBe(true);
+
+    const tvRankings = await caller.media.comparisons.rankings({
+      dimensionId: dimId,
+      mediaType: "tv_show",
+    });
+    expect(tvRankings.data.length).toBe(2);
+    expect(tvRankings.data.every((r) => r.mediaType === "tv_show")).toBe(true);
+  });
+
+  it("supports pagination", async () => {
+    const dimId = seedDimension(db, { name: "Overall" });
+
+    // Create 4 movies with comparisons
+    for (let i = 2; i <= 4; i++) {
+      await caller.media.comparisons.record({
+        dimensionId: dimId,
+        mediaAType: "movie",
+        mediaAId: 1,
+        mediaBType: "movie",
+        mediaBId: i,
+        winnerType: "movie",
+        winnerId: 1,
+      });
+    }
+
+    const page1 = await caller.media.comparisons.rankings({
+      dimensionId: dimId,
+      limit: 2,
+      offset: 0,
+    });
+    expect(page1.data.length).toBe(2);
+    expect(page1.pagination.total).toBe(4);
+    expect(page1.pagination.hasMore).toBe(true);
+    expect(page1.data[0].rank).toBe(1);
+    expect(page1.data[1].rank).toBe(2);
+
+    const page2 = await caller.media.comparisons.rankings({
+      dimensionId: dimId,
+      limit: 2,
+      offset: 2,
+    });
+    expect(page2.data.length).toBe(2);
+    expect(page2.data[0].rank).toBe(3);
+    expect(page2.data[1].rank).toBe(4);
+  });
+
+  it("excludes inactive dimensions from overall rankings", async () => {
+    const activeDim = seedDimension(db, { name: "Story", active: 1 });
+    const inactiveDim = seedDimension(db, { name: "Inactive", active: 0 });
+
+    await caller.media.comparisons.record({
+      dimensionId: activeDim,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 2,
+      winnerType: "movie",
+      winnerId: 1,
+    });
+    await caller.media.comparisons.record({
+      dimensionId: inactiveDim,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 2,
+      winnerType: "movie",
+      winnerId: 2,
+    });
+
+    // Overall should only use active dimension
+    const result = await caller.media.comparisons.rankings({});
+    expect(result.data.length).toBe(2);
+    // Movie 1 won in active dim, so should rank higher
+    expect(result.data[0].mediaId).toBe(1);
+    expect(result.data[0].score).toBeGreaterThan(1500);
+  });
+});
+
 describe("comparisons auth", () => {
   it("rejects unauthenticated calls", async () => {
     const anonCaller = createCaller(false);

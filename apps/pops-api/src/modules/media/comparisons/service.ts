@@ -19,6 +19,7 @@ import type {
   UpdateDimensionInput,
   RecordComparisonInput,
   RandomPair,
+  RankedMediaEntry,
 } from "./types.js";
 
 // ── Dimensions ──
@@ -373,4 +374,123 @@ export function getScoresForMedia(
     .where(and(...conditions))
     .orderBy(desc(mediaScores.score))
     .all();
+}
+
+// ── Rankings ──
+
+export interface RankingsResult {
+  rows: RankedMediaEntry[];
+  total: number;
+}
+
+/**
+ * Get ranked list of media items by Elo score.
+ *
+ * - With dimensionId: returns scores for that specific dimension, ordered by score DESC.
+ * - Without dimensionId (Overall): computes average score across all active dimensions
+ *   for each media item, ordered by average score DESC.
+ *
+ * Supports optional mediaType filter and pagination.
+ */
+export function getRankings(
+  dimensionId: number | undefined,
+  mediaType: string | undefined,
+  limit: number,
+  offset: number
+): RankingsResult {
+  const db = getDrizzle();
+
+  if (dimensionId) {
+    // Per-dimension ranking — query media_scores directly
+    const conditions: ReturnType<typeof eq>[] = [eq(mediaScores.dimensionId, dimensionId)];
+    if (mediaType) {
+      conditions.push(eq(mediaScores.mediaType, mediaType));
+    }
+
+    const where = and(...conditions);
+
+    const rows = db
+      .select()
+      .from(mediaScores)
+      .where(where)
+      .orderBy(desc(mediaScores.score))
+      .limit(limit)
+      .offset(offset)
+      .all();
+
+    const [{ total }] = db.select({ total: count() }).from(mediaScores).where(where).all();
+
+    return {
+      rows: rows.map((row, i) => ({
+        rank: offset + i + 1,
+        mediaType: row.mediaType,
+        mediaId: row.mediaId,
+        score: Math.round(row.score * 10) / 10,
+        comparisonCount: row.comparisonCount,
+      })),
+      total,
+    };
+  }
+
+  // Overall ranking — average score across all active dimensions
+  const activeDimensionIds = db
+    .select({ id: comparisonDimensions.id })
+    .from(comparisonDimensions)
+    .where(eq(comparisonDimensions.active, 1))
+    .all()
+    .map((r) => r.id);
+
+  if (activeDimensionIds.length === 0) {
+    return { rows: [], total: 0 };
+  }
+
+  // Use raw SQL for the grouped aggregate query with parameterized values
+  const rawDb = getDb();
+  const dimensionPlaceholders = activeDimensionIds.map(() => "?").join(",");
+  const baseParams = [...activeDimensionIds];
+
+  const mediaTypeClause = mediaType ? "AND ms.media_type = ?" : "";
+  const filterParams = mediaType ? [...baseParams, mediaType] : [...baseParams];
+
+  const countResult = rawDb
+    .prepare(
+      `SELECT COUNT(*) as total FROM (
+        SELECT ms.media_type, ms.media_id
+        FROM media_scores ms
+        WHERE ms.dimension_id IN (${dimensionPlaceholders}) ${mediaTypeClause}
+        GROUP BY ms.media_type, ms.media_id
+      )`
+    )
+    .get(...filterParams) as { total: number };
+
+  const rows = rawDb
+    .prepare(
+      `SELECT
+        ms.media_type as mediaType,
+        ms.media_id as mediaId,
+        AVG(ms.score) as score,
+        SUM(ms.comparison_count) as comparisonCount
+      FROM media_scores ms
+      WHERE ms.dimension_id IN (${dimensionPlaceholders}) ${mediaTypeClause}
+      GROUP BY ms.media_type, ms.media_id
+      ORDER BY score DESC
+      LIMIT ? OFFSET ?`
+    )
+    .all(...filterParams, limit, offset) as Array<{
+    mediaType: string;
+    mediaId: number;
+    score: number;
+    comparisonCount: number;
+  }>;
+
+  return {
+    rows: rows.map((row, i) => ({
+      rank: offset + i + 1,
+      mediaType: row.mediaType,
+      mediaId: row.mediaId,
+      score: Math.round(row.score * 10) / 10,
+      comparisonCount: row.comparisonCount,
+    })),
+    total: countResult.total,
+  };
 }
