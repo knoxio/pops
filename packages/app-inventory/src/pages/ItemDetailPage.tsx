@@ -12,7 +12,14 @@ import {
   AlertDescription,
   Skeleton,
 } from "@pops/ui";
-import { ArrowLeft, Pencil, Link2, Unlink } from "lucide-react";
+import {
+  ArrowLeft,
+  Pencil,
+  Link2,
+  Unlink,
+  FileText,
+  AlertTriangle,
+} from "lucide-react";
 import { trpc } from "../lib/trpc";
 import { ConnectDialog } from "../components/ConnectDialog";
 
@@ -194,7 +201,99 @@ export function ItemDetailPage() {
           </p>
         )}
       </section>
+
+      {/* Documents */}
+      <DocumentsSection itemId={id!} />
     </div>
+  );
+}
+
+function DocumentsSection({ itemId }: { itemId: string }) {
+  const { data: statusData, isLoading: statusLoading } =
+    trpc.inventory.paperless.status.useQuery();
+
+  const status = statusData?.data;
+
+  // Not configured — hide entirely
+  if (!statusLoading && (!status || !status.configured)) {
+    return null;
+  }
+
+  // Configured but unavailable
+  if (!statusLoading && status?.configured && !status.available) {
+    return (
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+          <FileText className="h-5 w-5" />
+          Documents
+        </h2>
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <AlertTriangle className="h-4 w-4" />
+          Paperless-ngx unavailable
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <DocumentsList
+      itemId={itemId}
+      isReady={!statusLoading && !!status?.available}
+    />
+  );
+}
+
+function DocumentsList({
+  itemId,
+  isReady,
+}: {
+  itemId: string;
+  isReady: boolean;
+}) {
+  const { data, isLoading } = trpc.inventory.documents.listForItem.useQuery(
+    { itemId },
+    { enabled: isReady },
+  );
+
+  const docs = data?.data ?? [];
+
+  return (
+    <section className="mt-8">
+      <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+        <FileText className="h-5 w-5" />
+        Documents
+      </h2>
+
+      {isLoading ? (
+        <div className="space-y-2">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      ) : docs.length === 0 ? (
+        <p className="text-muted-foreground text-sm">No linked documents.</p>
+      ) : (
+        <div className="space-y-2">
+          {docs.map((doc) => (
+            <div
+              key={doc.id}
+              className="flex items-center justify-between p-3 rounded-lg border"
+            >
+              <div className="flex items-center gap-3">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium">
+                    {doc.title ?? `Document #${doc.paperlessDocumentId}`}
+                  </p>
+                  <Badge variant="secondary" className="text-xs mt-0.5">
+                    {doc.documentType}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </section>
   );
 }
 
