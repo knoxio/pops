@@ -7,6 +7,7 @@ import { router, protectedProcedure } from "../../../trpc.js";
 import { paginationMeta } from "../../../shared/pagination.js";
 import {
   LogWatchSchema,
+  BatchLogWatchSchema,
   WatchHistoryQuerySchema,
   ProgressQuerySchema,
   toWatchHistoryEntry,
@@ -69,6 +70,15 @@ export const watchHistoryRouter = router({
       }
       throw err;
     }
+  }),
+
+  /** Batch-log watch events for all episodes in a season or show. */
+  batchLog: protectedProcedure.input(BatchLogWatchSchema).mutation(({ input }) => {
+    const result = service.batchLogWatch(input);
+    return {
+      data: result,
+      message: `Batch logged ${result.logged} episode(s), skipped ${result.skipped}`,
+    };
   }),
 
   /** Delete a watch history entry. */
