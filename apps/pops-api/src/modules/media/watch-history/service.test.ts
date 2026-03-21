@@ -473,7 +473,12 @@ describe("batchLogWatch", () => {
     seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
 
     const customDate = "2026-03-01T12:00:00.000Z";
-    service.batchLogWatch({ mediaType: "season", mediaId: sId, watchedAt: customDate, completed: 1 });
+    service.batchLogWatch({
+      mediaType: "season",
+      mediaId: sId,
+      watchedAt: customDate,
+      completed: 1,
+    });
 
     const history = service.listWatchHistory({ mediaType: "episode" }, 50, 0);
     for (const row of history.rows) {

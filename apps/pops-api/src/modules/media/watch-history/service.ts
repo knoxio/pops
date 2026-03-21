@@ -296,22 +296,23 @@ export function batchLogWatch(input: BatchLogWatchInput): BatchLogResult {
     }
 
     // Find already-watched episodes (completed = 1) to skip
-    const alreadyWatched = completed === 1
-      ? new Set(
-          tx
-            .select({ mediaId: watchHistory.mediaId })
-            .from(watchHistory)
-            .where(
-              and(
-                eq(watchHistory.mediaType, "episode"),
-                eq(watchHistory.completed, 1),
-                inArray(watchHistory.mediaId, episodeIds)
+    const alreadyWatched =
+      completed === 1
+        ? new Set(
+            tx
+              .select({ mediaId: watchHistory.mediaId })
+              .from(watchHistory)
+              .where(
+                and(
+                  eq(watchHistory.mediaType, "episode"),
+                  eq(watchHistory.completed, 1),
+                  inArray(watchHistory.mediaId, episodeIds)
+                )
               )
-            )
-            .all()
-            .map((r) => r.mediaId)
-        )
-      : new Set<number>();
+              .all()
+              .map((r) => r.mediaId)
+          )
+        : new Set<number>();
 
     const toLog = episodeIds.filter((id) => !alreadyWatched.has(id));
 
@@ -370,10 +371,7 @@ export function batchLogWatch(input: BatchLogWatchInput): BatchLogResult {
           if (watched >= allShowEpisodeIds.length) {
             tx.delete(mediaWatchlist)
               .where(
-                and(
-                  eq(mediaWatchlist.mediaType, "tv_show"),
-                  eq(mediaWatchlist.mediaId, tvShowId)
-                )
+                and(eq(mediaWatchlist.mediaType, "tv_show"), eq(mediaWatchlist.mediaId, tvShowId))
               )
               .run();
           }
