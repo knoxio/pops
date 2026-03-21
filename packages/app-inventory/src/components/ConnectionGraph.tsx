@@ -4,7 +4,7 @@
  * Uses d3-force for layout physics and renders to HTML5 Canvas for performance.
  * Nodes are colored by item type. Click navigates to item detail. Zoom/pan supported.
  */
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router";
 import {
   forceSimulation,
@@ -88,8 +88,6 @@ export function ConnectionGraph({
     tx: number;
     ty: number;
   } | null>(null);
-  const [_tick, setTick] = useState(0);
-
   const { data, isLoading, error } = trpc.inventory.connections.graph.useQuery(
     { itemId },
     { enabled: !!itemId },
@@ -263,7 +261,6 @@ export function ConnectionGraph({
       .force("collide", forceCollide(NODE_RADIUS + 8))
       .on("tick", () => {
         draw();
-        setTick((t) => t + 1);
       });
 
     return (): void => {

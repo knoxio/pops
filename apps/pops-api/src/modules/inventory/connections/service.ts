@@ -184,14 +184,15 @@ export function traceConnections(itemId: string, maxDepth: number): TraceNode {
 
 /**
  * Get the connection subgraph for an item as flat nodes + edges.
- * Uses BFS like trace, but returns all edges (including cross-links
- * between already-visited nodes).
+ * Pre-fetches all connections and items to avoid N+1 queries,
+ * then performs BFS in-memory.
  */
 export function getConnectionGraph(itemId: string, maxDepth: number): GraphData {
   const db = getDrizzle();
 
-  // Validate starting item
-  const [startItem] = db
+  // Pre-fetch all connections and items in 2 bulk queries
+  const allConnections = db.select().from(itemConnections).all();
+  const allItems = db
     .select({
       id: homeInventory.id,
       itemName: homeInventory.itemName,
@@ -199,9 +200,26 @@ export function getConnectionGraph(itemId: string, maxDepth: number): GraphData 
       type: homeInventory.type,
     })
     .from(homeInventory)
-    .where(eq(homeInventory.id, itemId))
     .all();
 
+  // Build lookup maps
+  const itemMap = new Map(allItems.map((item) => [item.id, item]));
+
+  // Build adjacency list: itemId -> list of { neighborId, conn }
+  const adjacency = new Map<string, { neighborId: string; itemAId: string; itemBId: string }[]>();
+  for (const conn of allConnections) {
+    if (!adjacency.has(conn.itemAId)) adjacency.set(conn.itemAId, []);
+    if (!adjacency.has(conn.itemBId)) adjacency.set(conn.itemBId, []);
+    const entryA = { neighborId: conn.itemBId, itemAId: conn.itemAId, itemBId: conn.itemBId };
+    const entryB = { neighborId: conn.itemAId, itemAId: conn.itemAId, itemBId: conn.itemBId };
+    const listA = adjacency.get(conn.itemAId);
+    const listB = adjacency.get(conn.itemBId);
+    if (listA) listA.push(entryA);
+    if (listB) listB.push(entryB);
+  }
+
+  // Validate starting item
+  const startItem = itemMap.get(itemId);
   if (!startItem) throw new NotFoundError("Inventory item", itemId);
 
   const nodes: GraphNode[] = [startItem];
@@ -216,37 +234,21 @@ export function getConnectionGraph(itemId: string, maxDepth: number): GraphData 
     const { nodeId, depth } = entry;
     if (depth >= maxDepth) continue;
 
-    const connections = db
-      .select()
-      .from(itemConnections)
-      .where(or(eq(itemConnections.itemAId, nodeId), eq(itemConnections.itemBId, nodeId)))
-      .all();
+    const neighbors = adjacency.get(nodeId) ?? [];
 
-    for (const conn of connections) {
-      const neighborId = conn.itemAId === nodeId ? conn.itemBId : conn.itemAId;
-
-      // Always add the edge (both directions normalized to A<B)
-      const edgeKey = `${conn.itemAId}-${conn.itemBId}`;
+    for (const { neighborId, itemAId, itemBId } of neighbors) {
+      // Always add the edge (already normalized to A<B by DB constraint)
+      const edgeKey = `${itemAId}-${itemBId}`;
       if (!visitedEdges.has(edgeKey)) {
         visitedEdges.add(edgeKey);
-        edges.push({ source: conn.itemAId, target: conn.itemBId });
+        edges.push({ source: itemAId, target: itemBId });
       }
 
       // Only add unvisited nodes to the queue
       if (visitedNodes.has(neighborId)) continue;
       visitedNodes.add(neighborId);
 
-      const [neighbor] = db
-        .select({
-          id: homeInventory.id,
-          itemName: homeInventory.itemName,
-          assetId: homeInventory.assetId,
-          type: homeInventory.type,
-        })
-        .from(homeInventory)
-        .where(eq(homeInventory.id, neighborId))
-        .all();
-
+      const neighbor = itemMap.get(neighborId);
       if (!neighbor) continue;
 
       nodes.push(neighbor);
