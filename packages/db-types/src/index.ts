@@ -26,6 +26,7 @@ import type { mediaScores } from "./schema/media-scores.js";
 import type { locations } from "./schema/locations.js";
 import type { itemConnections } from "./schema/item-connections.js";
 import type { itemPhotos } from "./schema/item-photos.js";
+import type { itemDocuments } from "./schema/item-documents.js";
 
 // Re-export Drizzle table objects for use in queries
 export {
@@ -49,6 +50,7 @@ export {
   locations,
   itemConnections,
   itemPhotos,
+  itemDocuments,
 } from "./schema/index.js";
 
 // Select types (what you get back from a SELECT query)
@@ -57,7 +59,9 @@ export type EntityRow = InferSelectModel<typeof entities>;
 export type BudgetRow = InferSelectModel<typeof budgets>;
 export type InventoryRow = InferSelectModel<typeof homeInventory>;
 export type WishListRow = InferSelectModel<typeof wishList>;
-export type TransactionCorrectionRow = InferSelectModel<typeof transactionCorrections>;
+export type TransactionCorrectionRow = InferSelectModel<
+  typeof transactionCorrections
+>;
 export type AiUsageRow = InferSelectModel<typeof aiUsage>;
 export type EnvironmentRow = InferSelectModel<typeof environments>;
 export type MovieRow = InferSelectModel<typeof movies>;
@@ -66,12 +70,15 @@ export type SeasonRow = InferSelectModel<typeof seasons>;
 export type EpisodeRow = InferSelectModel<typeof episodes>;
 export type MediaWatchlistRow = InferSelectModel<typeof mediaWatchlist>;
 export type WatchHistoryRow = InferSelectModel<typeof watchHistory>;
-export type ComparisonDimensionRow = InferSelectModel<typeof comparisonDimensions>;
+export type ComparisonDimensionRow = InferSelectModel<
+  typeof comparisonDimensions
+>;
 export type ComparisonRow = InferSelectModel<typeof comparisons>;
 export type MediaScoreRow = InferSelectModel<typeof mediaScores>;
 export type LocationRow = InferSelectModel<typeof locations>;
 export type ItemConnectionRow = InferSelectModel<typeof itemConnections>;
 export type ItemPhotoRow = InferSelectModel<typeof itemPhotos>;
+export type ItemDocumentRow = InferSelectModel<typeof itemDocuments>;
 
 // Insert types (what you pass to an INSERT statement)
 export type TransactionInsert = InferInsertModel<typeof transactions>;
@@ -79,7 +86,9 @@ export type EntityInsert = InferInsertModel<typeof entities>;
 export type BudgetInsert = InferInsertModel<typeof budgets>;
 export type InventoryInsert = InferInsertModel<typeof homeInventory>;
 export type WishListInsert = InferInsertModel<typeof wishList>;
-export type TransactionCorrectionInsert = InferInsertModel<typeof transactionCorrections>;
+export type TransactionCorrectionInsert = InferInsertModel<
+  typeof transactionCorrections
+>;
 export type AiUsageInsert = InferInsertModel<typeof aiUsage>;
 export type EnvironmentInsert = InferInsertModel<typeof environments>;
 export type MovieInsert = InferInsertModel<typeof movies>;
@@ -88,12 +97,15 @@ export type SeasonInsert = InferInsertModel<typeof seasons>;
 export type EpisodeInsert = InferInsertModel<typeof episodes>;
 export type MediaWatchlistInsert = InferInsertModel<typeof mediaWatchlist>;
 export type WatchHistoryInsert = InferInsertModel<typeof watchHistory>;
-export type ComparisonDimensionInsert = InferInsertModel<typeof comparisonDimensions>;
+export type ComparisonDimensionInsert = InferInsertModel<
+  typeof comparisonDimensions
+>;
 export type ComparisonInsert = InferInsertModel<typeof comparisons>;
 export type MediaScoreInsert = InferInsertModel<typeof mediaScores>;
 export type LocationInsert = InferInsertModel<typeof locations>;
 export type ItemConnectionInsert = InferInsertModel<typeof itemConnections>;
 export type ItemPhotoInsert = InferInsertModel<typeof itemPhotos>;
+export type ItemDocumentInsert = InferInsertModel<typeof itemDocuments>;
 
 // Constants
 export const ENTITY_TYPES = [
@@ -105,7 +117,12 @@ export const ENTITY_TYPES = [
 ] as const;
 export type EntityType = (typeof ENTITY_TYPES)[number];
 
-export const WISH_LIST_PRIORITIES = ["Needing", "Soon", "One Day", "Dreaming"] as const;
+export const WISH_LIST_PRIORITIES = [
+  "Needing",
+  "Soon",
+  "One Day",
+  "Dreaming",
+] as const;
 export type WishListPriority = (typeof WISH_LIST_PRIORITIES)[number];
 
 export const MEDIA_TYPES = ["movie", "tv_show"] as const;

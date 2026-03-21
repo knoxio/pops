@@ -18,3 +18,4 @@ export { mediaScores } from "./media-scores.js";
 export { locations } from "./locations.js";
 export { itemConnections } from "./item-connections.js";
 export { itemPhotos } from "./item-photos.js";
+export { itemDocuments } from "./item-documents.js";
