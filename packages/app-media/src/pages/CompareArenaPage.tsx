@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Link } from "react-router";
 import { Badge, Skeleton } from "@pops/ui";
 import { trpc } from "../lib/trpc";
+import { DimensionManager } from "../components/DimensionManager";
 
 interface ScoreDelta {
   winnerId: number;
@@ -122,9 +123,12 @@ export function CompareArenaPage() {
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Compare Arena</h1>
-        <Badge variant="outline" className="text-sm">
-          {sessionCount} comparison{sessionCount !== 1 ? "s" : ""} this session
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-sm">
+            {sessionCount} comparison{sessionCount !== 1 ? "s" : ""} this session
+          </Badge>
+          <DimensionManager />
+        </div>
       </div>
 
       {/* Dimension tabs */}
