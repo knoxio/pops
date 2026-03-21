@@ -1,19 +1,7 @@
 import { useParams, Link } from "react-router";
-import {
-  Alert,
-  AlertTitle,
-  AlertDescription,
-  Badge,
-  Skeleton,
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@pops/ui";
+import { Alert, AlertTitle, AlertDescription, Badge, Skeleton } from "@pops/ui";
 import { trpc } from "../lib/trpc";
-import { formatRuntime } from "../lib/format";
+import { ProgressBar } from "../components/ProgressBar";
 
 function TvShowDetailSkeleton() {
   return (
@@ -31,14 +19,9 @@ function TvShowDetailSkeleton() {
       <div className="p-6 space-y-6">
         <Skeleton className="h-4 w-full" />
         <Skeleton className="h-4 w-3/4" />
-        <div className="flex gap-2">
-          <Skeleton className="h-6 w-16" />
-          <Skeleton className="h-6 w-20" />
-          <Skeleton className="h-6 w-16" />
-        </div>
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-20 w-full" />
+            <Skeleton key={i} className="h-16 w-full" />
           ))}
         </div>
       </div>
@@ -52,15 +35,17 @@ export function TvShowDetailPage() {
 
   const { data, isLoading, error } = trpc.media.tvShows.get.useQuery(
     { id: showId },
-    { enabled: !Number.isNaN(showId) },
+    { enabled: !Number.isNaN(showId) }
   );
 
-  const {
-    data: seasonsData,
-    isLoading: seasonsLoading,
-  } = trpc.media.tvShows.listSeasons.useQuery(
+  const { data: seasonsData } = trpc.media.tvShows.listSeasons.useQuery(
     { tvShowId: showId },
-    { enabled: !Number.isNaN(showId) },
+    { enabled: !Number.isNaN(showId) }
+  );
+
+  const { data: progressData } = trpc.media.watchHistory.progress.useQuery(
+    { tvShowId: showId },
+    { enabled: !Number.isNaN(showId) }
   );
 
   if (Number.isNaN(showId)) {
@@ -103,66 +88,37 @@ export function TvShowDetailPage() {
   const show = data?.data;
   if (!show) return null;
 
-  const firstYear = show.firstAirDate
+  const year = show.firstAirDate
     ? new Date(show.firstAirDate).getFullYear()
     : null;
-  const lastYear = show.lastAirDate
-    ? new Date(show.lastAirDate).getFullYear()
+
+  const posterSrc = `/media/images/tv/${show.id}/poster.jpg`;
+  const backdropSrc = show.backdropPath
+    ? `/media/images/tv/${show.id}/backdrop.jpg`
     : null;
 
-  const posterSrc = show.posterUrl ?? "";
-  const backdropSrc = show.backdropUrl ?? "";
-  const logoSrc = show.logoUrl ?? "";
+  const seasons = seasonsData?.data ?? [];
+  const progress = progressData?.data;
 
-  const totalEpisodes = show.numberOfEpisodes ?? 0;
+  // Find the next unwatched episode
+  const nextSeason = progress?.seasons?.find(
+    (s: { watched: number; total: number }) => s.watched < s.total
+  );
 
   const metadataItems = [
     { label: "Status", value: show.status },
     { label: "Language", value: show.originalLanguage?.toUpperCase() },
     {
-      label: "Seasons",
-      value: show.numberOfSeasons != null ? String(show.numberOfSeasons) : null,
-    },
-    {
-      label: "Episodes",
-      value: totalEpisodes > 0 ? String(totalEpisodes) : null,
-    },
-    {
-      label: "Episode Runtime",
-      value: show.episodeRunTime ? formatRuntime(show.episodeRunTime) : null,
-    },
-    {
-      label: "Rating",
+      label: "TMDB Rating",
       value: show.voteAverage
         ? `${show.voteAverage.toFixed(1)} (${show.voteCount} votes)`
         : null,
     },
+    { label: "Seasons", value: seasons.length > 0 ? `${seasons.length}` : null },
   ].filter((item) => item.value != null);
-
-  const seasons = seasonsData?.data ?? [];
-  const sortedSeasons = [...seasons].sort(
-    (a, b) => a.seasonNumber - b.seasonNumber,
-  );
 
   return (
     <div>
-      {/* Breadcrumb */}
-      <div className="p-6 pb-0">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/media">Media</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{show.name}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </div>
-
       {/* Hero section */}
       <div className="relative h-64 md:h-96 overflow-hidden bg-muted">
         {backdropSrc && (
@@ -183,34 +139,38 @@ export function TvShowDetailPage() {
 
           <div className="flex-1 pb-1">
             <h1 className="text-2xl md:text-4xl font-bold text-foreground">
-              {logoSrc ? (
-                <>
-                  <img
-                    src={logoSrc}
-                    alt={show.name}
-                    className="h-12 md:h-16 object-contain"
-                  />
-                  <span className="sr-only">{show.name}</span>
-                </>
-              ) : (
-                show.name
-              )}
+              {show.name}
             </h1>
 
             <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-              {firstYear && lastYear && firstYear !== lastYear && (
-                <span>{firstYear}–{lastYear}</span>
-              )}
-              {firstYear && (!lastYear || firstYear === lastYear) && (
-                <span>{firstYear}</span>
-              )}
+              {year && <span>{year}</span>}
               {show.status && (
                 <>
-                  {firstYear && <span>·</span>}
+                  {year && <span>·</span>}
                   <span>{show.status}</span>
                 </>
               )}
             </div>
+
+            {/* Overall progress */}
+            {progress && progress.overall.total > 0 && (
+              <div className="mt-3 max-w-xs">
+                <ProgressBar
+                  watched={progress.overall.watched}
+                  total={progress.overall.total}
+                />
+              </div>
+            )}
+
+            {/* Next episode indicator */}
+            {nextSeason && (
+              <Link
+                to={`/media/tv/${show.id}/season/${nextSeason.seasonNumber}`}
+                className="inline-block mt-2 text-sm text-primary hover:underline"
+              >
+                Continue: Season {nextSeason.seasonNumber}
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -228,35 +188,13 @@ export function TvShowDetailPage() {
         )}
 
         {/* Genre tags */}
-        {show.genres.length > 0 && (
+        {show.genres && show.genres.length > 0 && (
           <section>
             <h2 className="text-lg font-semibold mb-2">Genres</h2>
             <div className="flex flex-wrap gap-2">
-              {show.genres.map((genre) => (
-                <Link
-                  key={genre}
-                  to={`/media?genre=${encodeURIComponent(genre)}`}
-                >
-                  <Badge
-                    variant="secondary"
-                    className="cursor-pointer hover:bg-secondary/80"
-                  >
-                    {genre}
-                  </Badge>
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-
-        {/* Network tags */}
-        {show.networks.length > 0 && (
-          <section>
-            <h2 className="text-lg font-semibold mb-2">Networks</h2>
-            <div className="flex flex-wrap gap-2">
-              {show.networks.map((network) => (
-                <Badge key={network} variant="outline">
-                  {network}
+              {show.genres.map((genre: string) => (
+                <Badge key={genre} variant="secondary">
+                  {genre}
                 </Badge>
               ))}
             </div>
@@ -280,76 +218,47 @@ export function TvShowDetailPage() {
           </section>
         )}
 
-        {/* Progress placeholder */}
-        {totalEpisodes > 0 && (
+        {/* Seasons list with progress */}
+        {seasons.length > 0 && (
           <section>
-            <h2 className="text-lg font-semibold mb-2">Progress</h2>
-            <p className="text-sm text-muted-foreground">
-              0 / {totalEpisodes} episodes watched
-            </p>
-          </section>
-        )}
-
-        {/* Season list */}
-        <section>
-          <h2 className="text-lg font-semibold mb-3">
-            Seasons{seasons.length > 0 && ` (${seasons.length})`}
-          </h2>
-          {seasonsLoading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <Skeleton key={i} className="h-20 w-full rounded-lg" />
-              ))}
-            </div>
-          ) : sortedSeasons.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              No season data available.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {sortedSeasons.map((season) => {
-                const seasonLabel =
+            <h2 className="text-lg font-semibold mb-3">Seasons</h2>
+            <div className="space-y-2">
+              {seasons.map((season: { id: number; seasonNumber: number; name: string | null; episodeCount: number | null }) => {
+                const seasonProg = progress?.seasons?.find(
+                  (s: { seasonNumber: number }) => s.seasonNumber === season.seasonNumber
+                );
+                const label =
                   season.seasonNumber === 0
                     ? "Specials"
-                    : `Season ${season.seasonNumber}`;
-                const seasonPosterSrc = season.posterUrl;
+                    : season.name ?? `Season ${season.seasonNumber}`;
 
                 return (
                   <Link
                     key={season.id}
                     to={`/media/tv/${show.id}/season/${season.seasonNumber}`}
-                    className="flex gap-4 rounded-lg border p-3 transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors"
                   >
-                    {seasonPosterSrc ? (
-                      <img
-                        src={seasonPosterSrc}
-                        alt={`${seasonLabel} poster`}
-                        className="w-14 aspect-[2/3] rounded object-cover shrink-0"
-                      />
-                    ) : (
-                      <div className="w-14 aspect-[2/3] rounded bg-muted shrink-0" />
+                    <span className="text-sm font-medium flex-1">{label}</span>
+                    {season.episodeCount != null && (
+                      <span className="text-xs text-muted-foreground">
+                        {season.episodeCount} episodes
+                      </span>
                     )}
-
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium">
-                        {season.name ?? seasonLabel}
-                      </h3>
-                      <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                        {season.episodeCount != null && (
-                          <span>{season.episodeCount} episodes</span>
-                        )}
-                        {season.episodeCount != null && season.airDate && (
-                          <span>·</span>
-                        )}
-                        {season.airDate && <span>{season.airDate}</span>}
+                    {seasonProg && seasonProg.total > 0 && (
+                      <div className="w-24">
+                        <ProgressBar
+                          watched={seasonProg.watched}
+                          total={seasonProg.total}
+                          showLabel={false}
+                        />
                       </div>
-                    </div>
+                    )}
                   </Link>
                 );
               })}
             </div>
-          )}
-        </section>
+          </section>
+        )}
 
         {/* Back link */}
         <Link

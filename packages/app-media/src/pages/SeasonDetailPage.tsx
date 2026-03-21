@@ -15,6 +15,7 @@ import {
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
 import { EpisodeList } from "../components/EpisodeList";
+import { ProgressBar } from "../components/ProgressBar";
 
 function SeasonDetailSkeleton() {
   return (
@@ -154,6 +155,15 @@ export function SeasonDetailPage() {
     [logMutation, deleteMutation, watchHistoryData],
   );
 
+  const { data: progressData } = trpc.media.watchHistory.progress.useQuery(
+    { tvShowId: showId },
+    { enabled: !Number.isNaN(showId) }
+  );
+
+  const seasonProgress = progressData?.data?.seasons?.find(
+    (s: { seasonNumber: number }) => s.seasonNumber === seasonNum
+  );
+
   if (Number.isNaN(showId) || Number.isNaN(seasonNum)) {
     return (
       <div className="p-6">
@@ -268,6 +278,15 @@ export function SeasonDetailPage() {
             <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
               {season.overview}
             </p>
+          )}
+
+          {seasonProgress && seasonProgress.total > 0 && (
+            <div className="mt-3">
+              <ProgressBar
+                watched={seasonProgress.watched}
+                total={seasonProgress.total}
+              />
+            </div>
           )}
         </div>
       </div>
