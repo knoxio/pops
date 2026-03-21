@@ -119,12 +119,7 @@ export const comparisonsRouter = router({
   rankings: protectedProcedure.input(RankingsQuerySchema).query(({ input }) => {
     const limit = input.limit ?? DEFAULT_LIMIT;
     const offset = input.offset ?? 0;
-    const { rows, total } = service.getRankings(
-      input.dimensionId,
-      input.mediaType,
-      limit,
-      offset
-    );
+    const { rows, total } = service.getRankings(input.dimensionId, input.mediaType, limit, offset);
     return {
       data: rows,
       pagination: paginationMeta(total, limit, offset),
