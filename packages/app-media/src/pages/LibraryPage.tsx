@@ -43,32 +43,39 @@ function MediaCard({
     type: "movie" | "tv";
     title: string;
     year: number | null;
-    posterPath: string | null;
+    posterUrl: string | null;
   };
 }) {
   const href =
     item.type === "movie"
       ? `/media/movies/${item.id}`
       : `/media/tv/${item.id}`;
-  const posterSrc = `/media/images/${item.type === "movie" ? "movie" : "tv"}/${item.id}/poster.jpg`;
+  const posterSrc = item.posterUrl ?? "";
 
   return (
-    <Link to={href} className="group block">
-      <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-muted">
-        <img
-          src={posterSrc}
-          alt={item.title}
-          className="w-full h-full object-cover transition-transform group-hover:scale-105"
-          loading="lazy"
-        />
+    <Link to={href} className="group block outline-none">
+      <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-muted transition-all duration-300 group-hover:shadow-[0_0_20px_-5px_rgba(99,102,241,0.4)] group-hover:ring-1 group-hover:ring-indigo-500/30 group-focus-visible:ring-2 group-focus-visible:ring-indigo-500">
+        {posterSrc ? (
+          <img
+            src={posterSrc}
+            alt={item.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-muted/50">
+            No Poster
+          </div>
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         <Badge
           variant="secondary"
-          className="absolute top-2 right-2 text-xs"
+          className="absolute top-2 right-2 text-[10px] uppercase tracking-wider px-1.5 py-0 bg-indigo-500/10 text-indigo-200 border-indigo-500/20 backdrop-blur-md"
         >
           {item.type === "movie" ? "Movie" : "TV"}
         </Badge>
       </div>
-      <h3 className="mt-2 text-sm font-medium line-clamp-2">{item.title}</h3>
+      <h3 className="mt-2 text-sm font-medium line-clamp-2 transition-colors group-hover:text-indigo-400">{item.title}</h3>
       {item.year && (
         <p className="text-xs text-muted-foreground">{item.year}</p>
       )}
@@ -100,13 +107,13 @@ export function LibraryPage() {
   }, [genreParam, setGenreFilter]);
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Library</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Library</h1>
         <Link
           to="/media/search"
-          className="text-sm text-primary hover:underline"
+          className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
         >
           Search
         </Link>
@@ -115,16 +122,16 @@ export function LibraryPage() {
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Type toggle */}
-        <div className="flex rounded-lg border p-0.5" role="group" aria-label="Filter by type">
+        <div className="flex rounded-lg border bg-muted/30 p-0.5" role="group" aria-label="Filter by type">
           {TYPE_OPTIONS.map((opt) => (
             <button
               key={opt.value}
               type="button"
               onClick={() => setTypeFilter(opt.value)}
               aria-pressed={typeFilter === opt.value}
-              className={`px-3 py-1 text-sm rounded-md transition-colors ${
+              className={`px-3 py-1 text-xs font-semibold uppercase tracking-wider rounded-md transition-all duration-200 ${
                 typeFilter === opt.value
-                  ? "bg-primary text-primary-foreground"
+                  ? "bg-indigo-600 text-white shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >

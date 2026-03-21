@@ -3,6 +3,8 @@ import { Alert, AlertTitle, AlertDescription, Badge, Skeleton } from "@pops/ui";
 import { trpc } from "../lib/trpc";
 import { formatCurrency, formatRuntime } from "../lib/format";
 import { WatchlistToggle } from "../components/WatchlistToggle";
+import { ComparisonScores } from "../components/ComparisonScores";
+import { MarkAsWatchedButton } from "../components/MarkAsWatchedButton";
 
 function MovieDetailSkeleton() {
   return (
@@ -36,7 +38,7 @@ export function MovieDetailPage() {
 
   const { data, isLoading, error } = trpc.media.movies.get.useQuery(
     { id: movieId },
-    { enabled: !Number.isNaN(movieId) }
+    { enabled: !Number.isNaN(movieId) },
   );
 
   if (Number.isNaN(movieId)) {
@@ -83,13 +85,9 @@ export function MovieDetailPage() {
     ? new Date(movie.releaseDate).getFullYear()
     : null;
 
-  const posterSrc = `/media/images/movie/${movie.id}/poster.jpg`;
-  const backdropSrc = movie.backdropPath
-    ? `/media/images/movie/${movie.id}/backdrop.jpg`
-    : null;
-  const logoSrc = movie.logoPath
-    ? `/media/images/movie/${movie.id}/logo.png`
-    : null;
+  const posterSrc = movie.posterUrl ?? "";
+  const backdropSrc = movie.backdropUrl ?? "";
+  const logoSrc = movie.logoUrl ?? "";
 
   const metadataItems = [
     { label: "Status", value: movie.status },
@@ -162,11 +160,10 @@ export function MovieDetailPage() {
               {movie.runtime && <span>{formatRuntime(movie.runtime)}</span>}
             </div>
 
-            <WatchlistToggle
-              mediaType="movie"
-              mediaId={movie.id}
-              className="mt-3"
-            />
+            <div className="flex items-start gap-3 mt-3">
+              <WatchlistToggle mediaType="movie" mediaId={movie.id} />
+              <MarkAsWatchedButton mediaId={movie.id} />
+            </div>
           </div>
         </div>
       </div>
@@ -204,6 +201,9 @@ export function MovieDetailPage() {
             </div>
           </section>
         )}
+
+        {/* Comparison scores radar chart */}
+        <ComparisonScores mediaType="movie" mediaId={movie.id} />
 
         {/* Metadata grid */}
         {metadataItems.length > 0 && (

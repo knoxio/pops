@@ -3,7 +3,7 @@
  * Run with: tsx scripts/init-db.ts
  */
 import BetterSqlite3 from "better-sqlite3";
-import { mkdirSync } from "node:fs";
+import { existsSync, mkdirSync, unlinkSync } from "node:fs";
 import { dirname } from "node:path";
 import { initializeSchema } from "../src/db/schema.js";
 
@@ -11,6 +11,16 @@ const DB_PATH = process.env.SQLITE_PATH ?? "./data/pops.db";
 
 // Create data directory if it doesn't exist
 mkdirSync(dirname(DB_PATH), { recursive: true });
+
+// Delete existing database — init always creates a fresh database.
+// Use migrations (runMigrations in db.ts) to upgrade existing databases.
+if (existsSync(DB_PATH)) {
+  unlinkSync(DB_PATH);
+  // Also remove WAL/SHM files if present
+  if (existsSync(`${DB_PATH}-wal`)) unlinkSync(`${DB_PATH}-wal`);
+  if (existsSync(`${DB_PATH}-shm`)) unlinkSync(`${DB_PATH}-shm`);
+  console.log(`🗑️  Removed existing database at ${DB_PATH}`);
+}
 
 const db = new BetterSqlite3(DB_PATH);
 db.pragma("journal_mode = WAL");

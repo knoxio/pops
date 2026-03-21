@@ -8,12 +8,15 @@ import { lazy } from "react";
 import type { RouteObject } from "react-router";
 
 const ItemsPage = lazy(() =>
-  import("./pages/ItemsPage").then((m) => ({ default: m.ItemsPage }))
+  import("./pages/ItemsPage").then((m) => ({ default: m.ItemsPage })),
 );
-const LocationTreePage = lazy(() =>
-  import("./pages/LocationTreePage").then((m) => ({
-    default: m.LocationTreePage,
-  }))
+const ItemDetailPage = lazy(() =>
+  import("./pages/ItemDetailPage").then((m) => ({
+    default: m.ItemDetailPage,
+  })),
+);
+const ItemFormPage = lazy(() =>
+  import("./pages/ItemFormPage").then((m) => ({ default: m.ItemFormPage })),
 );
 
 /** Local type mirror for compile-time safety (shell owns the canonical types). */
@@ -30,13 +33,12 @@ export const navConfig = {
   label: "Inventory",
   icon: "Package",
   basePath: "/inventory",
-  items: [
-    { path: "", label: "Items", icon: "Package" },
-    { path: "/locations", label: "Locations", icon: "MapPin" },
-  ],
+  items: [{ path: "", label: "Items", icon: "Package" }],
 } satisfies AppNavConfigShape;
 
 export const routes: RouteObject[] = [
   { index: true, element: <ItemsPage /> },
-  { path: "locations", element: <LocationTreePage /> },
+  { path: "items/new", element: <ItemFormPage /> },
+  { path: "items/:id", element: <ItemDetailPage /> },
+  { path: "items/:id/edit", element: <ItemFormPage /> },
 ];

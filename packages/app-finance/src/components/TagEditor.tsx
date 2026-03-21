@@ -58,6 +58,24 @@ const SOURCE_ICONS: Record<TagSource, string> = {
   entity: "🏪",
 };
 
+/**
+ * Deterministic tag coloring based on string hash.
+ * Uses OKLCH for perceptually uniform colors that look good in dark mode.
+ */
+function getTagStyle(tag: string) {
+  let hash = 0;
+  for (let i = 0; i < tag.length; i++) {
+    hash = tag.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash % 360);
+  // Soft tinted background with high-contrast text for dark mode
+  return {
+    backgroundColor: `oklch(0.3 0.08 ${hue} / 0.4)`,
+    color: `oklch(0.85 0.06 ${hue})`,
+    borderColor: `oklch(0.85 0.06 ${hue} / 0.2)`,
+  };
+}
+
 export function TagEditor({
   currentTags,
   onSave,
@@ -180,11 +198,13 @@ export function TagEditor({
                 : meta?.source
                 ? `${meta.source} suggestion`
                 : undefined;
+              const style = getTagStyle(tag);
               return (
                 <Badge
                   key={tag}
-                  variant="secondary"
-                  className="text-xs"
+                  variant="outline"
+                  className="text-[10px] uppercase tracking-wider font-bold py-0 px-1.5"
+                  style={style}
                   title={tooltipText}
                 >
                   {meta ? `${SOURCE_ICONS[meta.source]} ` : ""}
@@ -194,7 +214,7 @@ export function TagEditor({
             })
           )}
           {tags.length > 3 && (
-            <Badge variant="secondary" className="text-xs">
+            <Badge variant="secondary" className="text-[10px] py-0 px-1.5 font-normal opacity-70">
               +{tags.length - 3}
             </Badge>
           )}
@@ -207,11 +227,21 @@ export function TagEditor({
           {/* Current tags as removable chips */}
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <Chip key={tag} size="sm" removable onRemove={() => removeTag(tag)}>
-                  {tag}
-                </Chip>
-              ))}
+              {tags.map((tag) => {
+                const style = getTagStyle(tag);
+                return (
+                  <Chip
+                    key={tag}
+                    size="sm"
+                    removable
+                    onRemove={() => removeTag(tag)}
+                    style={style}
+                    className="border"
+                  >
+                    {tag}
+                  </Chip>
+                );
+              })}
             </div>
           )}
 
@@ -230,18 +260,22 @@ export function TagEditor({
           {/* Autocomplete suggestions */}
           {filteredSuggestions.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {filteredSuggestions.slice(0, 8).map((tag) => (
-                <button
-                  key={tag}
-                  onClick={() => addTag(tag)}
-                  className={cn(
-                    "text-xs px-3 py-2 border border-border rounded-full",
-                    "hover:bg-accent hover:border-accent-foreground/20 transition-colors"
-                  )}
-                >
-                  + {tag}
-                </button>
-              ))}
+              {filteredSuggestions.slice(0, 8).map((tag) => {
+                const style = getTagStyle(tag);
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => addTag(tag)}
+                    className={cn(
+                      "text-xs px-3 py-2 border rounded-full transition-colors",
+                      "hover:brightness-110"
+                    )}
+                    style={style}
+                  >
+                    + {tag}
+                  </button>
+                );
+              })}
             </div>
           )}
 

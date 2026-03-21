@@ -3,7 +3,7 @@
  */
 import type { ColumnDef } from "@tanstack/react-table";
 import { trpc } from "../lib/trpc";
-import { DataTable, SortableHeader } from "@pops/ui";
+import { DataTable, SortableHeader, StatCard } from "@pops/ui";
 import { Badge } from "@pops/ui";
 import { Alert } from "@pops/ui";
 import { Skeleton } from "@pops/ui";
@@ -189,72 +189,33 @@ export function AiUsagePage() {
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {/* Total Cost */}
-        <Card className="p-6">
-          <div className="flex flex-col space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">
-              Total Cost
-            </p>
-            <p className="text-3xl font-bold tabular-nums">
-              ${(stats?.totalCost ?? 0).toFixed(4)}
-            </p>
-            {stats?.last30Days && (
-              <p className="text-xs text-muted-foreground">
-                ${stats.last30Days.cost.toFixed(4)} last 30 days
-              </p>
-            )}
-          </div>
-        </Card>
+        <StatCard
+          title="Total Cost"
+          value={`$${(stats?.totalCost ?? 0).toFixed(4)}`}
+          description={stats?.last30Days ? `$${stats.last30Days.cost.toFixed(4)} last 30 days` : undefined}
+          color="amber"
+        />
 
-        {/* API Calls */}
-        <Card className="p-6">
-          <div className="flex flex-col space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">
-              API Calls
-            </p>
-            <p className="text-3xl font-bold tabular-nums">
-              {(stats?.totalApiCalls ?? 0).toLocaleString()}
-            </p>
-            {stats?.last30Days && (
-              <p className="text-xs text-muted-foreground">
-                {stats.last30Days.apiCalls.toLocaleString()} last 30 days
-              </p>
-            )}
-          </div>
-        </Card>
+        <StatCard
+          title="API Calls"
+          value={(stats?.totalApiCalls ?? 0).toLocaleString()}
+          description={stats?.last30Days ? `${stats.last30Days.apiCalls.toLocaleString()} last 30 days` : undefined}
+          color="indigo"
+        />
 
-        {/* Cache Hit Rate */}
-        <Card className="p-6">
-          <div className="flex flex-col space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">
-              Cache Hit Rate
-            </p>
-            <p className="text-3xl font-bold tabular-nums">
-              {cacheHitRate.toFixed(1)}%
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {(stats?.totalCacheHits ?? 0).toLocaleString()} cached results
-            </p>
-          </div>
-        </Card>
+        <StatCard
+          title="Cache Hit Rate"
+          value={`${cacheHitRate.toFixed(1)}%`}
+          description={`${(stats?.totalCacheHits ?? 0).toLocaleString()} cached results`}
+          color="emerald"
+        />
 
-        {/* Avg Cost Per Call */}
-        <Card className="p-6">
-          <div className="flex flex-col space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">
-              Avg Cost/Call
-            </p>
-            <p className="text-3xl font-bold tabular-nums">
-              ${(stats?.avgCostPerCall ?? 0).toFixed(5)}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {(
-                (stats?.totalInputTokens ?? 0) + (stats?.totalOutputTokens ?? 0)
-              ).toLocaleString()}{" "}
-              total tokens
-            </p>
-          </div>
-        </Card>
+        <StatCard
+          title="Avg Cost/Call"
+          value={`$${(stats?.avgCostPerCall ?? 0).toFixed(5)}`}
+          description={`${((stats?.totalInputTokens ?? 0) + (stats?.totalOutputTokens ?? 0)).toLocaleString()} total tokens`}
+          color="sky"
+        />
       </div>
 
       {/* Usage History Table */}

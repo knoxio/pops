@@ -9,7 +9,7 @@ interface MediaItem {
   type: "movie" | "tv";
   title: string;
   year: number | null;
-  posterPath: string | null;
+  posterUrl: string | null;
   genres: string[];
   voteAverage: number | null;
   createdAt: string;
@@ -39,7 +39,7 @@ export function useMediaLibrary() {
       type: "movie" as const,
       title: m.title,
       year: m.releaseDate ? new Date(m.releaseDate).getFullYear() : null,
-      posterPath: m.posterPath,
+      posterUrl: m.posterUrl,
       genres: m.genres,
       voteAverage: m.voteAverage,
       createdAt: m.createdAt,
@@ -51,7 +51,7 @@ export function useMediaLibrary() {
       type: "tv" as const,
       title: s.name,
       year: s.firstAirDate ? new Date(s.firstAirDate).getFullYear() : null,
-      posterPath: s.posterPath,
+      posterUrl: s.posterUrl,
       genres: s.genres,
       voteAverage: s.voteAverage,
       createdAt: s.createdAt,

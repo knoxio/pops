@@ -34,19 +34,27 @@ const AiUsagePage = lazy(() =>
   import("./pages/AiUsagePage").then((m) => ({ default: m.AiUsagePage }))
 );
 
-/** Local type mirror for compile-time safety (shell owns the canonical types). */
-interface AppNavConfigShape {
+/** Shared navigation types (mirrored from shell to avoid circular dependency) */
+export interface AppNavItem {
+  path: string;
+  label: string;
+  icon: string;
+}
+
+export interface AppNavConfig {
   id: string;
   label: string;
   icon: string;
+  color?: "emerald" | "indigo" | "amber" | "rose" | "sky" | "violet";
   basePath: string;
-  items: { path: string; label: string; icon: string }[];
+  items: AppNavItem[];
 }
 
-export const navConfig = {
+export const navConfig: AppNavConfig = {
   id: "finance",
   label: "Finance",
   icon: "DollarSign",
+  color: "emerald",
   basePath: "/finance",
   items: [
     { path: "", label: "Dashboard", icon: "LayoutDashboard" },
@@ -58,7 +66,7 @@ export const navConfig = {
     { path: "/import", label: "Import", icon: "Download" },
     { path: "/ai-usage", label: "AI Usage", icon: "Bot" },
   ],
-} satisfies AppNavConfigShape;
+};
 
 export const routes: RouteObject[] = [
   { index: true, element: <DashboardPage /> },

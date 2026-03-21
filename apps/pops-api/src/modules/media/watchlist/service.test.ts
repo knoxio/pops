@@ -110,6 +110,70 @@ describe("updateWatchlistEntry", () => {
   });
 });
 
+describe("listWatchlist ordering", () => {
+  it("orders by priority ASC then addedAt DESC", () => {
+    seedWatchlistEntry(db, { media_type: "movie", media_id: 1, priority: 2 });
+    seedWatchlistEntry(db, { media_type: "movie", media_id: 2, priority: 0 });
+    seedWatchlistEntry(db, { media_type: "movie", media_id: 3, priority: 1 });
+
+    const result = service.listWatchlist({}, 50, 0);
+    expect(result.rows.map((r) => r.mediaId)).toEqual([2, 3, 1]);
+  });
+});
+
+describe("reorderWatchlist", () => {
+  it("batch-updates priorities for all items", () => {
+    const id1 = seedWatchlistEntry(db, { media_type: "movie", media_id: 1, priority: 0 });
+    const id2 = seedWatchlistEntry(db, { media_type: "movie", media_id: 2, priority: 1 });
+    const id3 = seedWatchlistEntry(db, { media_type: "movie", media_id: 3, priority: 2 });
+
+    service.reorderWatchlist([
+      { id: id3, priority: 0 },
+      { id: id1, priority: 1 },
+      { id: id2, priority: 2 },
+    ]);
+
+    const result = service.listWatchlist({}, 50, 0);
+    expect(result.rows.map((r) => r.mediaId)).toEqual([3, 1, 2]);
+  });
+
+  it("does nothing for empty array", () => {
+    service.reorderWatchlist([]);
+    // Should not throw
+  });
+
+  it("throws NotFoundError for missing IDs", () => {
+    expect(() => service.reorderWatchlist([{ id: 999, priority: 0 }])).toThrow("WatchlistEntry");
+  });
+
+  it("throws ConflictError for duplicate priorities", () => {
+    const id1 = seedWatchlistEntry(db, { media_type: "movie", media_id: 1, priority: 0 });
+    const id2 = seedWatchlistEntry(db, { media_type: "movie", media_id: 2, priority: 1 });
+
+    expect(() =>
+      service.reorderWatchlist([
+        { id: id1, priority: 0 },
+        { id: id2, priority: 0 },
+      ])
+    ).toThrow("Duplicate priorities");
+  });
+
+  it("persists reorder across reads", () => {
+    const id1 = seedWatchlistEntry(db, { media_type: "movie", media_id: 1, priority: 0 });
+    const id2 = seedWatchlistEntry(db, { media_type: "movie", media_id: 2, priority: 1 });
+
+    service.reorderWatchlist([
+      { id: id2, priority: 0 },
+      { id: id1, priority: 1 },
+    ]);
+
+    const entry1 = service.getWatchlistEntry(id1);
+    const entry2 = service.getWatchlistEntry(id2);
+    expect(entry1.priority).toBe(1);
+    expect(entry2.priority).toBe(0);
+  });
+});
+
 describe("removeFromWatchlist", () => {
   it("removes an existing entry", () => {
     const id = seedWatchlistEntry(db, { media_type: "movie", media_id: 550 });

@@ -320,6 +320,19 @@ export function createTestDb(): Database {
       FOREIGN KEY (item_id) REFERENCES home_inventory(id) ON DELETE CASCADE
     );
     CREATE INDEX IF NOT EXISTS idx_item_photos_item ON item_photos(item_id);
+
+    CREATE TABLE IF NOT EXISTS item_documents (
+      id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+      item_id                TEXT NOT NULL,
+      paperless_document_id  INTEGER NOT NULL,
+      document_type          TEXT NOT NULL,
+      title                  TEXT,
+      created_at             TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (item_id) REFERENCES home_inventory(id) ON DELETE CASCADE
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_item_documents_pair ON item_documents(item_id, paperless_document_id);
+    CREATE INDEX IF NOT EXISTS idx_item_documents_item ON item_documents(item_id);
+    CREATE INDEX IF NOT EXISTS idx_item_documents_doc ON item_documents(paperless_document_id);
   `);
 
   return db;
@@ -581,6 +594,36 @@ export function seedItemPhoto(
 }
 
 /**
+ * Seed an item document link row into the test DB.
+ * Returns the auto-incremented id.
+ */
+export function seedItemDocument(
+  db: Database,
+  overrides: {
+    item_id: string;
+    paperless_document_id: number;
+    document_type?: string;
+    title?: string | null;
+  }
+): number {
+  const result = db
+    .prepare(
+      `
+    INSERT INTO item_documents (item_id, paperless_document_id, document_type, title)
+    VALUES (@item_id, @paperless_document_id, @document_type, @title)
+  `
+    )
+    .run({
+      item_id: overrides.item_id,
+      paperless_document_id: overrides.paperless_document_id,
+      document_type: overrides.document_type ?? "receipt",
+      title: overrides.title ?? null,
+    });
+
+  return Number(result.lastInsertRowid);
+}
+
+/**
  * Seed a single budget row into the test DB.
  * Returns the id.
  */
@@ -779,6 +822,34 @@ export function seedWatchHistoryEntry(
       media_id: overrides.media_id ?? 1,
       watched_at: overrides.watched_at ?? new Date().toISOString(),
       completed: overrides.completed ?? 1,
+    });
+
+  return Number(result.lastInsertRowid);
+}
+
+/**
+ * Seed a single item photo row into the test DB.
+ * Returns the auto-generated id.
+ */
+export function seedPhoto(
+  db: Database,
+  overrides: {
+    item_id: string;
+    file_path?: string;
+    caption?: string | null;
+    sort_order?: number;
+  }
+): number {
+  const result = db
+    .prepare(
+      `INSERT INTO item_photos (item_id, file_path, caption, sort_order)
+       VALUES (@item_id, @file_path, @caption, @sort_order)`
+    )
+    .run({
+      item_id: overrides.item_id,
+      file_path: overrides.file_path ?? "items/test/photo.jpg",
+      caption: overrides.caption ?? null,
+      sort_order: overrides.sort_order ?? 0,
     });
 
   return Number(result.lastInsertRowid);

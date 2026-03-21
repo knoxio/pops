@@ -23,6 +23,7 @@ const INCLUDED_MIGRATIONS = [
   "011_add_checksum_raw_row.sql",
   "20260320120000_core_entity_types.sql",
   "20260320130000_core_inventory_fks.sql",
+  "20260320140000_inventory_new_columns.sql",
 ];
 
 /**
