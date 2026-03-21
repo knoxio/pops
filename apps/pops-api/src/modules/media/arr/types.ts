@@ -10,7 +10,8 @@ export type ArrStatus =
   | "unmonitored"
   | "complete"
   | "partial"
-  | "not_found";
+  | "not_found"
+  | "unavailable";
 
 /** Status result returned to the frontend. */
 export interface ArrStatusResult {

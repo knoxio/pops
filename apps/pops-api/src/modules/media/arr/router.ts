@@ -8,51 +8,43 @@ import { ArrApiError } from "./types.js";
 import * as arrService from "./service.js";
 
 export const arrRouter = router({
-  /** Test Radarr connection and return server version. */
+  /** Test Radarr connection and return server version. Safe to call when not configured. */
   testRadarr: protectedProcedure.query(async () => {
     const client = arrService.getRadarrClient();
     if (!client) {
-      throw new TRPCError({
-        code: "PRECONDITION_FAILED",
-        message: "Radarr is not configured (RADARR_URL / RADARR_API_KEY not set)",
-      });
+      return { data: { configured: false, connected: false } };
     }
 
     try {
       const status = await client.testConnection();
-      return { data: status, message: "Radarr connection successful" };
+      return {
+        data: { configured: true, connected: true, ...status },
+        message: "Radarr connection successful",
+      };
     } catch (err) {
-      if (err instanceof ArrApiError) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `Radarr error: ${err.message}`,
-        });
-      }
-      throw err;
+      const errorMsg =
+        err instanceof ArrApiError ? err.message : err instanceof Error ? err.message : String(err);
+      return { data: { configured: true, connected: false, error: errorMsg } };
     }
   }),
 
-  /** Test Sonarr connection and return server version. */
+  /** Test Sonarr connection and return server version. Safe to call when not configured. */
   testSonarr: protectedProcedure.query(async () => {
     const client = arrService.getSonarrClient();
     if (!client) {
-      throw new TRPCError({
-        code: "PRECONDITION_FAILED",
-        message: "Sonarr is not configured (SONARR_URL / SONARR_API_KEY not set)",
-      });
+      return { data: { configured: false, connected: false } };
     }
 
     try {
       const status = await client.testConnection();
-      return { data: status, message: "Sonarr connection successful" };
+      return {
+        data: { configured: true, connected: true, ...status },
+        message: "Sonarr connection successful",
+      };
     } catch (err) {
-      if (err instanceof ArrApiError) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `Sonarr error: ${err.message}`,
-        });
-      }
-      throw err;
+      const errorMsg =
+        err instanceof ArrApiError ? err.message : err instanceof Error ? err.message : String(err);
+      return { data: { configured: true, connected: false, error: errorMsg } };
     }
   }),
 
