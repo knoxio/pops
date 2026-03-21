@@ -18,6 +18,11 @@ const ItemDetailPage = lazy(() =>
 const ItemFormPage = lazy(() =>
   import("./pages/ItemFormPage").then((m) => ({ default: m.ItemFormPage })),
 );
+const WarrantiesPage = lazy(() =>
+  import("./pages/WarrantiesPage").then((m) => ({
+    default: m.WarrantiesPage,
+  })),
+);
 
 /** Local type mirror for compile-time safety (shell owns the canonical types). */
 interface AppNavConfigShape {
@@ -33,7 +38,10 @@ export const navConfig = {
   label: "Inventory",
   icon: "Package",
   basePath: "/inventory",
-  items: [{ path: "", label: "Items", icon: "Package" }],
+  items: [
+    { path: "", label: "Items", icon: "Package" },
+    { path: "/warranties", label: "Warranties", icon: "ShieldCheck" },
+  ],
 } satisfies AppNavConfigShape;
 
 export const routes: RouteObject[] = [
@@ -41,4 +49,5 @@ export const routes: RouteObject[] = [
   { path: "items/new", element: <ItemFormPage /> },
   { path: "items/:id", element: <ItemDetailPage /> },
   { path: "items/:id/edit", element: <ItemFormPage /> },
+  { path: "warranties", element: <WarrantiesPage /> },
 ];
