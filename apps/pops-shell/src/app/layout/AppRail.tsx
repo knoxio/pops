@@ -18,12 +18,12 @@ interface AppRailProps {
 }
 
 const colorMap = {
-  emerald: "bg-emerald-500",
-  indigo: "bg-indigo-500",
-  amber: "bg-amber-500",
-  rose: "bg-rose-500",
-  sky: "bg-sky-500",
-  violet: "bg-violet-500",
+  emerald: "bg-[oklch(0.65_0.15_150)]",
+  indigo: "bg-[oklch(0.6_0.15_260)]",
+  amber: "bg-[oklch(0.7_0.15_70)]",
+  rose: "bg-[oklch(0.65_0.15_25)]",
+  sky: "bg-[oklch(0.65_0.15_220)]",
+  violet: "bg-[oklch(0.65_0.15_290)]",
 } as const;
 
 export function AppRail({ className }: AppRailProps) {
