@@ -5,12 +5,20 @@ on:
     branches: [main]
     paths:
       - "apps/pops-shell/**"
+      - "packages/app-*/**"
       - "packages/db-types/**"
+      - "packages/ui/**"
+      - "packages/widgets/**"
+      - "packages/navigation/**"
       - ".github/workflows/shell-ci.yml"
   pull_request:
     paths:
       - "apps/pops-shell/**"
+      - "packages/app-*/**"
       - "packages/db-types/**"
+      - "packages/ui/**"
+      - "packages/widgets/**"
+      - "packages/navigation/**"
       - ".github/workflows/shell-ci.yml"
 
 jobs:
