@@ -16,6 +16,7 @@
     "@tanstack/react-table": "^8.21.3",
     "@trpc/client": "11.13.4",
     "@trpc/react-query": "11.13.4",
+    "d3-force": "^3.0.0",
     "lucide-react": "^0.563.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
@@ -25,6 +26,7 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "@types/d3-force": "^3.0.10",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "eslint": "^9.39.4",

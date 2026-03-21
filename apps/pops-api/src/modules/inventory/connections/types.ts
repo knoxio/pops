@@ -51,3 +51,29 @@ export const TraceQuerySchema = z.object({
   maxDepth: z.coerce.number().int().positive().max(10).optional().default(10),
 });
 export type TraceQuery = z.infer<typeof TraceQuerySchema>;
+
+/** Node in a connection graph. */
+export interface GraphNode {
+  id: string;
+  itemName: string;
+  assetId: string | null;
+  type: string | null;
+}
+
+/** Edge in a connection graph. */
+export interface GraphEdge {
+  source: string;
+  target: string;
+}
+
+/** Full connection subgraph for an item. */
+export interface GraphData {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
+/** Zod schema for graph query. */
+export const GraphQuerySchema = z.object({
+  itemId: z.string().min(1, "Item ID is required"),
+  maxDepth: z.coerce.number().int().positive().max(10).optional().default(10),
+});

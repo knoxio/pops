@@ -2,6 +2,7 @@
  * Item detail page — shows item info and connected items.
  * Route: /inventory/items/:id
  */
+import { useState } from "react";
 import { useParams, Link } from "react-router";
 import { toast } from "sonner";
 import {
@@ -20,6 +21,7 @@ import {
   GitBranch,
   FileText,
   X,
+  Network,
 } from "lucide-react";
 import { trpc } from "../lib/trpc";
 
@@ -33,6 +35,7 @@ const DOCUMENT_TYPE_LABELS: Record<string, string> = {
 import { ConnectDialog } from "../components/ConnectDialog";
 import { ConnectionTracePanel } from "../components/ConnectionTracePanel";
 import { LinkDocumentDialog } from "../components/LinkDocumentDialog";
+import { ConnectionGraph } from "../components/ConnectionGraph";
 
 export function ItemDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -49,6 +52,8 @@ export function ItemDetailPage() {
       { itemId: id! },
       { enabled: !!id },
     );
+
+  const [showGraph, setShowGraph] = useState(false);
 
   const disconnectMutation = trpc.inventory.connections.disconnect.useMutation({
     onSuccess: () => {
@@ -215,11 +220,25 @@ export function ItemDetailPage() {
       {/* Connection Chain Trace */}
       {connectionsData?.data.length ? (
         <section>
-          <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
-            <GitBranch className="h-5 w-5" />
-            Connection Chain
-          </h2>
-          <ConnectionTracePanel itemId={id!} />
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <GitBranch className="h-5 w-5" />
+              Connection Chain
+            </h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowGraph((v) => !v)}
+            >
+              <Network className="h-4 w-4 mr-1.5" />
+              {showGraph ? "Hide Graph" : "View Graph"}
+            </Button>
+          </div>
+          {showGraph ? (
+            <ConnectionGraph itemId={id!} />
+          ) : (
+            <ConnectionTracePanel itemId={id!} />
+          )}
         </section>
       ) : null}
 
