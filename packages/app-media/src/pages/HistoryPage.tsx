@@ -57,16 +57,22 @@ interface HistoryItemProps {
     seasonNumber: number | null;
     episodeNumber: number | null;
     showName: string | null;
+    tvShowId: number | null;
   };
 }
 
 function HistoryItem({ entry }: HistoryItemProps) {
   const isEpisode = entry.mediaType === "episode";
-  const href = isEpisode
-    ? `/media/tv/${entry.mediaId}`
-    : `/media/movies/${entry.mediaId}`;
+  const href =
+    isEpisode && entry.tvShowId
+      ? `/media/tv/${entry.tvShowId}/season/${entry.seasonNumber}`
+      : isEpisode
+        ? `/media`
+        : `/media/movies/${entry.mediaId}`;
   const posterSrc = entry.posterPath
-    ? `/media/images/${isEpisode ? "tv" : "movie"}/${entry.mediaId}/poster.jpg`
+    ? isEpisode && entry.tvShowId
+      ? `/media/images/tv/${entry.tvShowId}/poster.jpg`
+      : `/media/images/movie/${entry.mediaId}/poster.jpg`
     : null;
 
   const title = entry.title ?? "Unknown";

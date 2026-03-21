@@ -115,4 +115,6 @@ export interface RecentWatchHistoryEntry {
   seasonNumber: number | null;
   episodeNumber: number | null;
   showName: string | null;
+  /** For episodes: the parent TV show ID for linking */
+  tvShowId: number | null;
 }
