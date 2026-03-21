@@ -12,9 +12,17 @@ import {
   AlertDescription,
   Skeleton,
 } from "@pops/ui";
-import { ArrowLeft, Pencil, Link2, Unlink } from "lucide-react";
+import { ArrowLeft, Pencil, Link2, Unlink, FileText, X } from "lucide-react";
 import { trpc } from "../lib/trpc";
 import { ConnectDialog } from "../components/ConnectDialog";
+
+const DOCUMENT_TYPE_LABELS: Record<string, string> = {
+  receipt: "Receipts",
+  warranty: "Warranties",
+  manual: "Manuals",
+  invoice: "Invoices",
+  other: "Other",
+};
 
 export function ItemDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -39,6 +47,22 @@ export function ItemDetailPage() {
     },
     onError: (err) => {
       toast.error(`Failed to disconnect: ${err.message}`);
+    },
+  });
+
+  const { data: documentsData, isLoading: documentsLoading } =
+    trpc.inventory.documents.listForItem.useQuery(
+      { itemId: id! },
+      { enabled: !!id },
+    );
+
+  const unlinkMutation = trpc.inventory.documents.unlink.useMutation({
+    onSuccess: () => {
+      toast.success("Document unlinked");
+      void utils.inventory.documents.listForItem.invalidate({ itemId: id! });
+    },
+    onError: (err) => {
+      toast.error(`Failed to unlink: ${err.message}`);
     },
   });
 
@@ -152,6 +176,33 @@ export function ItemDetailPage() {
         </div>
       )}
 
+      {/* Documents */}
+      <section className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold flex items-center gap-2">
+            <FileText className="h-5 w-5" />
+            Documents
+          </h2>
+        </div>
+
+        {documentsLoading ? (
+          <div className="space-y-2">
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </div>
+        ) : documentsData?.data.length ? (
+          <DocumentsList
+            documents={documentsData.data}
+            onUnlink={(linkId) => unlinkMutation.mutate({ id: linkId })}
+            isUnlinking={unlinkMutation.isPending}
+          />
+        ) : (
+          <p className="text-muted-foreground text-sm">
+            No documents linked yet.
+          </p>
+        )}
+      </section>
+
       {/* Connections */}
       <section>
         <div className="flex items-center justify-between mb-4">
@@ -209,6 +260,82 @@ function DetailField({
     <div>
       <dt className="text-sm text-muted-foreground">{label}</dt>
       <dd className="font-medium">{value}</dd>
+    </div>
+  );
+}
+
+interface DocumentItem {
+  id: number;
+  paperlessDocumentId: number;
+  documentType: string;
+  title: string | null;
+  createdAt: string;
+}
+
+function DocumentsList({
+  documents,
+  onUnlink,
+  isUnlinking,
+}: {
+  documents: DocumentItem[];
+  onUnlink: (id: number) => void;
+  isUnlinking: boolean;
+}) {
+  // Group documents by type
+  const grouped = new Map<string, DocumentItem[]>();
+  for (const doc of documents) {
+    const type = doc.documentType;
+    const list = grouped.get(type) ?? [];
+    list.push(doc);
+    grouped.set(type, list);
+  }
+
+  // Sort type groups in a consistent order
+  const typeOrder = ["receipt", "warranty", "manual", "invoice", "other"];
+  const sortedTypes = [...grouped.keys()].sort(
+    (a, b) => (typeOrder.indexOf(a) ?? 99) - (typeOrder.indexOf(b) ?? 99),
+  );
+
+  return (
+    <div className="space-y-4">
+      {sortedTypes.map((type) => (
+        <div key={type}>
+          <h3 className="text-sm font-medium text-muted-foreground mb-2">
+            {DOCUMENT_TYPE_LABELS[type] ?? type}
+          </h3>
+          <div className="space-y-1.5">
+            {grouped.get(type)?.map((doc) => (
+              <div
+                key={doc.id}
+                className="flex items-center justify-between p-3 rounded-lg border"
+              >
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div className="min-w-0">
+                    <span className="font-medium text-sm truncate block">
+                      {doc.title ?? `Document #${doc.paperlessDocumentId}`}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      Linked{" "}
+                      {new Date(doc.createdAt).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-destructive hover:text-destructive shrink-0"
+                  onClick={() => onUnlink(doc.id)}
+                  disabled={isUnlinking}
+                  title="Unlink document"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
