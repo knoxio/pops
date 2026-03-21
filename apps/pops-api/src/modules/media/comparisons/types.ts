@@ -76,6 +76,19 @@ export function toMediaScore(row: MediaScoreRow): MediaScore {
   };
 }
 
+/** API response shape for a random pair of movies to compare. */
+export interface RandomPair {
+  movieA: { id: number; title: string; posterPath: string | null };
+  movieB: { id: number; title: string; posterPath: string | null };
+}
+
+/** Zod schema for getRandomPair query. */
+export const RandomPairQuerySchema = z.object({
+  dimensionId: z.number().int().positive(),
+  avoidRecent: z.coerce.number().int().nonnegative().max(100).optional().default(10),
+});
+export type RandomPairQuery = z.infer<typeof RandomPairQuerySchema>;
+
 /** Zod schemas */
 export const CreateDimensionSchema = z.object({
   name: z.string().min(1, "Name is required"),
