@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router";
 import { Alert, AlertTitle, AlertDescription, Badge, Skeleton } from "@pops/ui";
 import { trpc } from "../lib/trpc";
 import { ProgressBar } from "../components/ProgressBar";
+import { ArrStatusBadge } from "../components/ArrStatusBadge";
 
 function TvShowDetailSkeleton() {
   return (
@@ -150,6 +151,7 @@ export function TvShowDetailPage() {
                   <span>{show.status}</span>
                 </>
               )}
+              <ArrStatusBadge kind="show" externalId={show.tvdbId} />
             </div>
 
             {/* Overall progress */}

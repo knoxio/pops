@@ -5,6 +5,7 @@ import { formatCurrency, formatRuntime } from "../lib/format";
 import { WatchlistToggle } from "../components/WatchlistToggle";
 import { ComparisonScores } from "../components/ComparisonScores";
 import { MarkAsWatchedButton } from "../components/MarkAsWatchedButton";
+import { ArrStatusBadge } from "../components/ArrStatusBadge";
 
 function MovieDetailSkeleton() {
   return (
@@ -163,6 +164,7 @@ export function MovieDetailPage() {
             <div className="flex items-start gap-3 mt-3">
               <WatchlistToggle mediaType="movie" mediaId={movie.id} />
               <MarkAsWatchedButton mediaId={movie.id} />
+              <ArrStatusBadge kind="movie" externalId={movie.tmdbId} />
             </div>
           </div>
         </div>
