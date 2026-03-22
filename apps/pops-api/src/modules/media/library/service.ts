@@ -2,6 +2,9 @@
  * Library service — orchestrates adding media to the local library
  * by fetching metadata from external APIs and inserting records.
  */
+import { sql } from "drizzle-orm";
+import { getDrizzle } from "../../../db.js";
+import { movies, watchHistory } from "@pops/db-types";
 import type { TmdbClient } from "../tmdb/client.js";
 import type { TmdbMovieDetail } from "../tmdb/types.js";
 import { getMovieByTmdbId, getMovie, createMovie, updateMovie } from "../movies/service.js";
@@ -97,4 +100,31 @@ export async function refreshMovie(id: number, tmdbClient: TmdbClient): Promise<
 
   // Update the local record
   return updateMovie(id, updateInput);
+}
+
+/**
+ * Get random unwatched movies from the library.
+ *
+ * Returns movies that have no completed watch_history entries.
+ * Uses SQLite's RANDOM() for ordering.
+ */
+export function getQuickPicks(count: number): Movie[] {
+  const db = getDrizzle();
+
+  const rows = db
+    .select()
+    .from(movies)
+    .where(
+      sql`${movies.id} NOT IN (
+        SELECT DISTINCT ${watchHistory.mediaId}
+        FROM ${watchHistory}
+        WHERE ${watchHistory.mediaType} = 'movie'
+          AND ${watchHistory.completed} = 1
+      )`
+    )
+    .orderBy(sql`RANDOM()`)
+    .limit(count)
+    .all();
+
+  return rows.map(toMovie);
 }

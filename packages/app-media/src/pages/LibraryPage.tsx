@@ -235,6 +235,17 @@ export function LibraryPage() {
           ))}
         </MediaGrid>
       )}
+
+      {/* Quick Pick FAB */}
+      <Link
+        to="/media/quick-pick"
+        className="fixed bottom-6 right-6 z-50"
+        aria-label="What should I watch tonight?"
+      >
+        <Button className="h-14 w-14 rounded-full bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/25 p-0">
+          <Sparkles className="h-6 w-6" />
+        </Button>
+      </Link>
     </div>
   );
 }
