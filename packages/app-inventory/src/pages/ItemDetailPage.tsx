@@ -12,6 +12,8 @@ import {
   AlertTitle,
   AlertDescription,
   Skeleton,
+  TypeBadge,
+  ConditionBadge,
 } from "@pops/ui";
 import {
   ArrowLeft,
