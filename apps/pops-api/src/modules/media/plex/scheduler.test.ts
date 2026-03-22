@@ -115,7 +115,7 @@ describe("getSchedulerStatus", () => {
 describe("sync execution", () => {
   it("runs sync on interval tick", async () => {
     const mockClient = {} as PlexClient;
-    mockGetPlexClient.mockResolvedValue(mockClient);
+    mockGetPlexClient.mockReturnValue(mockClient);
     mockImportMovies.mockResolvedValue({
       total: 5,
       processed: 5,
@@ -149,7 +149,7 @@ describe("sync execution", () => {
   });
 
   it("records error when Plex is not configured", async () => {
-    mockGetPlexClient.mockResolvedValue(null);
+    mockGetPlexClient.mockReturnValue(null);
 
     await _triggerSync();
 
@@ -160,7 +160,7 @@ describe("sync execution", () => {
 
   it("records error when sync throws", async () => {
     const mockClient = {} as PlexClient;
-    mockGetPlexClient.mockResolvedValue(mockClient);
+    mockGetPlexClient.mockReturnValue(mockClient);
     mockImportMovies.mockRejectedValue(new Error("Network timeout"));
 
     await _triggerSync();
@@ -172,7 +172,7 @@ describe("sync execution", () => {
 
   it("continues running after sync error", async () => {
     const mockClient = {} as PlexClient;
-    mockGetPlexClient.mockResolvedValue(mockClient);
+    mockGetPlexClient.mockReturnValue(mockClient);
     mockImportMovies.mockRejectedValue(new Error("Plex down"));
 
     startScheduler({ intervalMs: 5000 });
@@ -211,7 +211,7 @@ describe("sync execution", () => {
 
   it("accumulates sync counts across multiple cycles", async () => {
     const mockClient = {} as PlexClient;
-    mockGetPlexClient.mockResolvedValue(mockClient);
+    mockGetPlexClient.mockReturnValue(mockClient);
     mockImportMovies.mockResolvedValue({
       total: 2,
       processed: 2,
@@ -243,7 +243,7 @@ describe("sync execution", () => {
 
   it("uses custom section IDs", async () => {
     const mockClient = {} as PlexClient;
-    mockGetPlexClient.mockResolvedValue(mockClient);
+    mockGetPlexClient.mockReturnValue(mockClient);
     mockImportMovies.mockResolvedValue({
       total: 0,
       processed: 0,
@@ -275,7 +275,7 @@ describe("sync execution", () => {
 
   it("does not sync after stop", async () => {
     const mockClient = {} as PlexClient;
-    mockGetPlexClient.mockResolvedValue(mockClient);
+    mockGetPlexClient.mockReturnValue(mockClient);
     mockImportMovies.mockResolvedValue({
       total: 0,
       processed: 0,
@@ -306,7 +306,7 @@ describe("sync execution", () => {
 describe("_triggerSync", () => {
   it("runs a sync cycle immediately", async () => {
     const mockClient = {} as PlexClient;
-    mockGetPlexClient.mockResolvedValue(mockClient);
+    mockGetPlexClient.mockReturnValue(mockClient);
     mockImportMovies.mockResolvedValue({
       total: 1,
       processed: 1,

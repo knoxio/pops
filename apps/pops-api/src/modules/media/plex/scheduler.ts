@@ -99,7 +99,7 @@ export function getSchedulerStatus(): SchedulerStatus {
 // ---------------------------------------------------------------------------
 
 async function runSync(): Promise<void> {
-  const client = await getPlexClient();
+  const client = getPlexClient();
   if (!client) {
     lastSyncError = "Plex not configured (PLEX_URL or plex_token missing)";
     lastSyncAt = new Date().toISOString();

@@ -71,7 +71,11 @@ export function getPlexClientId(): string {
       .onConflictDoNothing()
       .run();
     // Fetch again just in case another request won the race
-    const finalRecord = db.select().from(settings).where(eq(settings.key, "plex_client_identifier")).get();
+    const finalRecord = db
+      .select()
+      .from(settings)
+      .where(eq(settings.key, "plex_client_identifier"))
+      .get();
     return finalRecord?.value ?? newId;
   }
   return record.value;
@@ -91,7 +95,7 @@ export function getPlexUrl(): string | null {
  * Create a PlexClient using the configured URL and the token from the database.
  * Returns null if the URL or the plex_token setting are not configured.
  */
-export async function getPlexClient(): Promise<PlexClient | null> {
+export function getPlexClient(): PlexClient | null {
   const url = getPlexUrl();
   if (!url) {
     console.log("[Plex] PLEX_URL not set in settings or environment");
@@ -101,7 +105,7 @@ export async function getPlexClient(): Promise<PlexClient | null> {
   const db = getDrizzle();
   const tokenRecord = db.select().from(settings).where(eq(settings.key, "plex_token")).get();
   const token = tokenRecord?.value;
-  
+
   if (!token) {
     console.log("[Plex] No plex_token found in settings table");
     return null;
@@ -236,7 +240,7 @@ export async function syncTvShows(client: PlexClient, sectionId: string): Promis
 }
 
 /** Get current sync status. */
-export async function getSyncStatus(client: PlexClient | null): Promise<PlexSyncStatus> {
+export function getSyncStatus(client: PlexClient | null): PlexSyncStatus {
   const db = getDrizzle();
   const token = db.select().from(settings).where(eq(settings.key, "plex_token")).get();
   const url = getPlexUrl();

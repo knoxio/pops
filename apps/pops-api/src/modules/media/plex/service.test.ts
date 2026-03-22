@@ -84,6 +84,7 @@ beforeEach(() => {
     where: vi.fn().mockReturnThis(),
     get: vi.fn().mockReturnValue(undefined),
   };
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
   mockGetDrizzle.mockReturnValue(mockDb as any);
 });
 
@@ -92,33 +93,34 @@ afterEach(() => {
 });
 
 describe("getPlexClient", () => {
-  it("returns null when PLEX_URL is not set", async () => {
+  it("returns null when PLEX_URL is not set", () => {
     mockGetEnv.mockReturnValue(undefined);
-    expect(await getPlexClient()).toBeNull();
+    expect(getPlexClient()).toBeNull();
   });
 
-  it("returns null when PLEX_TOKEN is not in db", async () => {
+  it("returns null when PLEX_TOKEN is not in db", () => {
     mockGetEnv.mockImplementation((name) =>
       name === "PLEX_URL" ? "http://plex:32400" : undefined
     );
-    expect(await getPlexClient()).toBeNull();
+    expect(getPlexClient()).toBeNull();
   });
 
-  it("returns PlexClient when both url and token are set", async () => {
+  it("returns PlexClient when both url and token are set", () => {
     mockGetEnv.mockImplementation((name) => {
       if (name === "PLEX_URL") return "http://plex:32400";
       return undefined;
     });
-    
+
     const mockDb = {
       select: vi.fn().mockReturnThis(),
       from: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
       get: vi.fn().mockReturnValue({ value: "abc123" }),
     };
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument, @typescript-eslint/no-explicit-any
     mockGetDrizzle.mockReturnValue(mockDb as any);
 
-    const client = await getPlexClient();
+    const client = getPlexClient();
     expect(client).toBeInstanceOf(PlexClient);
   });
 });
@@ -276,16 +278,16 @@ describe("syncMovies", () => {
 });
 
 describe("getSyncStatus", () => {
-  it("reports not configured when client is null", async () => {
-    const status = await getSyncStatus(null);
+  it("reports not configured when client is null", () => {
+    const status = getSyncStatus(null);
     expect(status.configured).toBe(false);
     expect(status.lastSyncMovies).toBeNull();
     expect(status.lastSyncTvShows).toBeNull();
   });
 
-  it("reports configured when client is provided", async () => {
+  it("reports configured when client is provided", () => {
     const mockClient = {} as PlexClient;
-    const status = await getSyncStatus(mockClient);
+    const status = getSyncStatus(mockClient);
     expect(status.configured).toBe(true);
   });
 
@@ -314,7 +316,7 @@ describe("getSyncStatus", () => {
 
     await syncMovies(mockClient, "1");
 
-    const status = await getSyncStatus(mockClient);
+    const status = getSyncStatus(mockClient);
     expect(status.lastSyncMovies).not.toBeNull();
     expect(status.lastSyncMovies!.synced).toBe(1);
   });

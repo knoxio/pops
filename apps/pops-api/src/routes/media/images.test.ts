@@ -11,6 +11,15 @@ import imagesRouter from "./images.js";
 vi.mock("node:fs/promises");
 import * as fs from "node:fs/promises";
 
+// Mock database
+vi.mock("../../db.js", () => ({
+  getDb: vi.fn(() => ({
+    prepare: vi.fn(() => ({
+      get: vi.fn(() => undefined),
+    })),
+  })),
+}));
+
 const TEST_IMAGES_DIR = "/test/media/images";
 
 function createTestApp() {

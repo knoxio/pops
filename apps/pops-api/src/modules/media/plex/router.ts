@@ -12,8 +12,8 @@ import * as plexService from "./service.js";
 import * as scheduler from "./scheduler.js";
 import { getDrizzle } from "../../../db.js";
 
-async function requirePlexClient(): Promise<PlexClient> {
-  const client = await plexService.getPlexClient();
+function requirePlexClient(): PlexClient {
+  const client = plexService.getPlexClient();
   if (!client) {
     throw new TRPCError({
       code: "PRECONDITION_FAILED",
@@ -26,7 +26,7 @@ async function requirePlexClient(): Promise<PlexClient> {
 export const plexRouter = router({
   /** Test connection to Plex Media Server. */
   testConnection: protectedProcedure.query(async () => {
-    const client = await requirePlexClient();
+    const client = requirePlexClient();
     try {
       const connected = await plexService.testConnection(client);
       return { data: { connected } };
@@ -40,7 +40,7 @@ export const plexRouter = router({
 
   /** List Plex library sections. */
   getLibraries: protectedProcedure.query(async () => {
-    const client = await requirePlexClient();
+    const client = requirePlexClient();
     try {
       const libraries = await client.getLibraries();
       return { data: libraries };
@@ -59,7 +59,7 @@ export const plexRouter = router({
   syncMovies: protectedProcedure
     .input(z.object({ sectionId: z.string().min(1) }))
     .mutation(async ({ input }) => {
-      const client = await requirePlexClient();
+      const client = requirePlexClient();
       try {
         const result = await plexService.syncMovies(client, input.sectionId);
         return {
@@ -81,7 +81,7 @@ export const plexRouter = router({
   syncTvShows: protectedProcedure
     .input(z.object({ sectionId: z.string().min(1) }))
     .mutation(async ({ input }) => {
-      const client = await requirePlexClient();
+      const client = requirePlexClient();
       try {
         const result = await plexService.syncTvShows(client, input.sectionId);
         return {
@@ -100,9 +100,9 @@ export const plexRouter = router({
     }),
 
   /** Get current sync status. */
-  getSyncStatus: protectedProcedure.query(async () => {
-    const client = await plexService.getPlexClient();
-    return { data: await plexService.getSyncStatus(client) };
+  getSyncStatus: protectedProcedure.query(() => {
+    const client = plexService.getPlexClient();
+    return { data: plexService.getSyncStatus(client) };
   }),
 
   /** Set Plex Server URL and validate connection */
@@ -120,7 +120,8 @@ export const plexRouter = router({
       } catch {
         throw new TRPCError({
           code: "BAD_REQUEST",
-          message: "Invalid URL format. Please provide a valid address (e.g., http://192.168.1.100:32400)",
+          message:
+            "Invalid URL format. Please provide a valid address (e.g., http://192.168.1.100:32400)",
         });
       }
 
@@ -140,11 +141,11 @@ export const plexRouter = router({
           console.log(`[Plex] Validating reachability for ${finalUrl}...`);
           const controller = new AbortController();
           const id = setTimeout(() => controller.abort(), 5000);
-          
+
           try {
-            const res = await fetch(`${finalUrl}/identity`, { 
+            const res = await fetch(`${finalUrl}/identity`, {
               signal: controller.signal,
-              headers: { "Accept": "application/json" }
+              headers: { Accept: "application/json" },
             });
             if (!res.ok && res.status !== 401) {
               throw new Error(`Server responded with ${res.status}`);
@@ -167,7 +168,7 @@ export const plexRouter = router({
         .values({ key: "plex_url", value: finalUrl })
         .onConflictDoUpdate({ target: settings.key, set: { value: finalUrl } })
         .run();
-      
+
       return { message: "Plex URL updated and validated" };
     }),
 
@@ -217,7 +218,7 @@ export const plexRouter = router({
     if (!res.ok) {
       throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to get Plex PIN" });
     }
-    const data = await res.json() as { id: number, code: string };
+    const data = (await res.json()) as { id: number; code: string };
     return { data: { id: data.id, code: data.code, clientId } };
   }),
 
@@ -235,9 +236,12 @@ export const plexRouter = router({
       if (!res.ok) {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to check Plex PIN" });
       }
-      const data = await res.json() as { authToken?: string | null };
-      console.log(`[Plex] PIN check response for ${input.id}:`, data.authToken ? "Token received" : "No token yet");
-      
+      const data = (await res.json()) as { authToken?: string | null };
+      console.log(
+        `[Plex] PIN check response for ${input.id}:`,
+        data.authToken ? "Token received" : "No token yet"
+      );
+
       if (data.authToken) {
         const db = getDrizzle();
         console.log(`[Plex] Saving token to database...`);
