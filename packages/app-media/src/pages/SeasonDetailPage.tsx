@@ -10,11 +10,13 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
+  Button,
   Skeleton,
 } from "@pops/ui";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
 import { EpisodeList } from "../components/EpisodeList";
+import { ProgressBar } from "../components/ProgressBar";
 
 function SeasonDetailSkeleton() {
   return (
@@ -154,6 +156,25 @@ export function SeasonDetailPage() {
     [logMutation, deleteMutation, watchHistoryData],
   );
 
+  const { data: progressData } = trpc.media.watchHistory.progress.useQuery(
+    { tvShowId: showId },
+    { enabled: !Number.isNaN(showId) },
+  );
+
+  const seasonProgress = progressData?.data?.seasons?.find(
+    (s: { seasonNumber: number }) => s.seasonNumber === seasonNum,
+  );
+
+  const batchLogMutation = trpc.media.watchHistory.batchLog.useMutation({
+    onSuccess: () => {
+      utils.media.watchHistory.invalidate();
+    },
+  });
+
+  const isSeasonWatched = seasonProgress
+    ? seasonProgress.watched >= seasonProgress.total && seasonProgress.total > 0
+    : false;
+
   if (Number.isNaN(showId) || Number.isNaN(seasonNum)) {
     return (
       <div className="p-6">
@@ -268,6 +289,50 @@ export function SeasonDetailPage() {
             <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
               {season.overview}
             </p>
+          )}
+
+          {seasonProgress && seasonProgress.total > 0 && (
+            <div className="mt-3">
+              <ProgressBar
+                watched={seasonProgress.watched}
+                total={seasonProgress.total}
+              />
+            </div>
+          )}
+
+          {season?.id && (
+            <div className="flex gap-2 mt-3">
+              {!isSeasonWatched ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    batchLogMutation.mutate({
+                      mediaType: "season",
+                      mediaId: season.id,
+                    })
+                  }
+                  disabled={batchLogMutation.isPending}
+                >
+                  Mark Season Watched
+                </Button>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 text-sm text-green-500 font-medium">
+                  <svg
+                    className="w-4 h-4"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  All Watched
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>

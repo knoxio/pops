@@ -84,11 +84,11 @@ export const locationsRouter = router({
       }
     }),
 
-  /** Delete a location (cascade deletes children). */
-  delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(({ input }) => {
+  /** Get stats about what will be affected by deleting a location. */
+  deleteStats: protectedProcedure.input(z.object({ id: z.string() })).query(({ input }) => {
     try {
-      service.deleteLocation(input.id);
-      return { message: "Location deleted" };
+      const stats = service.getDeleteStats(input.id);
+      return { data: stats };
     } catch (err) {
       if (err instanceof NotFoundError) {
         throw new TRPCError({ code: "NOT_FOUND", message: err.message });
@@ -96,4 +96,26 @@ export const locationsRouter = router({
       throw err;
     }
   }),
+
+  /** Delete a location (cascade deletes children, items become unlocated). */
+  delete: protectedProcedure
+    .input(z.object({ id: z.string(), force: z.boolean().optional().default(false) }))
+    .mutation(({ input }) => {
+      try {
+        // If not forced, check if location has contents and require confirmation
+        if (!input.force) {
+          const stats = service.getDeleteStats(input.id);
+          if (stats.childCount > 0 || stats.itemCount > 0) {
+            return { requiresConfirmation: true, stats };
+          }
+        }
+        service.deleteLocation(input.id);
+        return { message: "Location deleted" };
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+        }
+        throw err;
+      }
+    }),
 });

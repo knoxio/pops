@@ -155,3 +155,19 @@ export interface RawTmdbImageResponse {
   posters: RawTmdbImage[];
   logos: RawTmdbImage[];
 }
+
+/** Raw TMDB API trending response (same shape as search). */
+export interface RawTmdbTrendingResponse {
+  page: number;
+  results: RawTmdbSearchResult[];
+  total_results: number;
+  total_pages: number;
+}
+
+/** Raw TMDB API recommendations response (same shape as search). */
+export interface RawTmdbRecommendationsResponse {
+  page: number;
+  results: RawTmdbSearchResult[];
+  total_results: number;
+  total_pages: number;
+}

@@ -8,7 +8,7 @@ import { getTmdbClient, TmdbClient, TmdbApiError } from "../tmdb/index.js";
 import { NotFoundError } from "../../../shared/errors.js";
 import { toMovie } from "../movies/types.js";
 import { toTvShow, toSeason } from "../tv-shows/types.js";
-import { RefreshMovieSchema } from "./types.js";
+import { RefreshMovieSchema, QuickPickSchema } from "./types.js";
 import * as libraryService from "./service.js";
 import { getTvdbClient } from "../thetvdb/index.js";
 import { TvdbApiError } from "../thetvdb/types.js";
@@ -113,6 +113,15 @@ export const libraryRouter = router({
         throw err;
       }
     }),
+
+  /**
+   * Quick pick — returns random unwatched movies from the library.
+   * Used by the "What should I watch tonight?" flow.
+   */
+  quickPick: protectedProcedure.input(QuickPickSchema).query(({ input }) => {
+    const picks = libraryService.getQuickPicks(input.count);
+    return { data: picks };
+  }),
 
   /** Refresh TV show metadata from TheTVDB. */
   refreshTvShow: protectedProcedure

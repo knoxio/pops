@@ -253,6 +253,108 @@ describe("inventory.connections.listForItem", () => {
   });
 });
 
+describe("inventory.connections.graph", () => {
+  it("returns nodes and edges for a connected graph", async () => {
+    const idA = seedInventoryItem(db, { item_name: "Hub" });
+    const idB = seedInventoryItem(db, { item_name: "Device 1" });
+    const idC = seedInventoryItem(db, { item_name: "Device 2" });
+
+    const pairAB = [idA, idB].sort() as [string, string];
+    const pairAC = [idA, idC].sort() as [string, string];
+    seedItemConnection(db, pairAB[0], pairAB[1]);
+    seedItemConnection(db, pairAC[0], pairAC[1]);
+
+    const result = await caller.inventory.connections.graph({ itemId: idA });
+
+    expect(result.data.nodes).toHaveLength(3);
+    expect(result.data.edges).toHaveLength(2);
+
+    const nodeIds = result.data.nodes.map((n: { id: string }) => n.id).sort();
+    expect(nodeIds).toEqual([idA, idB, idC].sort());
+  });
+
+  it("returns single node with no edges when item has no connections", async () => {
+    const id = seedInventoryItem(db, { item_name: "Lonely Item" });
+
+    const result = await caller.inventory.connections.graph({ itemId: id });
+
+    expect(result.data.nodes).toHaveLength(1);
+    expect(result.data.nodes[0].id).toBe(id);
+    expect(result.data.edges).toHaveLength(0);
+  });
+
+  it("throws NOT_FOUND for nonexistent item", async () => {
+    await expect(caller.inventory.connections.graph({ itemId: "nonexistent" })).rejects.toThrow(
+      TRPCError
+    );
+
+    try {
+      await caller.inventory.connections.graph({ itemId: "nonexistent" });
+    } catch (err) {
+      expect((err as TRPCError).code).toBe("NOT_FOUND");
+    }
+  });
+
+  it("respects maxDepth parameter", async () => {
+    // Chain: A -- B -- C -- D
+    const idA = seedInventoryItem(db, { item_name: "A" });
+    const idB = seedInventoryItem(db, { item_name: "B" });
+    const idC = seedInventoryItem(db, { item_name: "C" });
+    const idD = seedInventoryItem(db, { item_name: "D" });
+
+    const pairAB = [idA, idB].sort() as [string, string];
+    const pairBC = [idB, idC].sort() as [string, string];
+    const pairCD = [idC, idD].sort() as [string, string];
+    seedItemConnection(db, pairAB[0], pairAB[1]);
+    seedItemConnection(db, pairBC[0], pairBC[1]);
+    seedItemConnection(db, pairCD[0], pairCD[1]);
+
+    // maxDepth=1 from A should only reach B
+    const result = await caller.inventory.connections.graph({ itemId: idA, maxDepth: 1 });
+
+    expect(result.data.nodes).toHaveLength(2);
+    const nodeIds = result.data.nodes.map((n: { id: string }) => n.id).sort();
+    expect(nodeIds).toEqual([idA, idB].sort());
+  });
+
+  it("includes cross-links between visited nodes", async () => {
+    // Triangle: A -- B, A -- C, B -- C
+    const idA = seedInventoryItem(db, { item_name: "A" });
+    const idB = seedInventoryItem(db, { item_name: "B" });
+    const idC = seedInventoryItem(db, { item_name: "C" });
+
+    const pairAB = [idA, idB].sort() as [string, string];
+    const pairAC = [idA, idC].sort() as [string, string];
+    const pairBC = [idB, idC].sort() as [string, string];
+    seedItemConnection(db, pairAB[0], pairAB[1]);
+    seedItemConnection(db, pairAC[0], pairAC[1]);
+    seedItemConnection(db, pairBC[0], pairBC[1]);
+
+    const result = await caller.inventory.connections.graph({ itemId: idA });
+
+    expect(result.data.nodes).toHaveLength(3);
+    // All 3 edges should be present (cross-link B--C included)
+    expect(result.data.edges).toHaveLength(3);
+  });
+
+  it("returns node metadata (itemName, assetId, type)", async () => {
+    const id = seedInventoryItem(db, {
+      item_name: "MacBook Pro",
+      asset_id: "ASSET-001",
+      type: "electronics",
+    });
+
+    const result = await caller.inventory.connections.graph({ itemId: id });
+
+    expect(result.data.nodes[0]).toMatchObject({
+      id,
+      itemName: "MacBook Pro",
+      assetId: "ASSET-001",
+      type: "electronics",
+    });
+  });
+});
+
 describe("inventory.connections auth", () => {
   it("throws UNAUTHORIZED without auth on connect", async () => {
     const unauthCaller = createCaller(false);

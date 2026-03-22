@@ -1,7 +1,10 @@
 import { useSearchParams, Link } from "react-router";
-import { Badge, Skeleton } from "@pops/ui";
+import { Badge, Button, Skeleton } from "@pops/ui";
 import { useEffect } from "react";
+import { Sparkles, Settings } from "lucide-react";
 import { MediaGrid } from "../components/MediaGrid";
+import { DownloadQueue } from "../components/DownloadQueue";
+import { QuickPickDialog } from "../components/QuickPickDialog";
 import {
   useMediaLibrary,
   type MediaType,
@@ -44,12 +47,11 @@ function MediaCard({
     title: string;
     year: number | null;
     posterUrl: string | null;
+    progress: number | null;
   };
 }) {
   const href =
-    item.type === "movie"
-      ? `/media/movies/${item.id}`
-      : `/media/tv/${item.id}`;
+    item.type === "movie" ? `/media/movies/${item.id}` : `/media/tv/${item.id}`;
   const posterSrc = item.posterUrl ?? "";
 
   return (
@@ -74,8 +76,19 @@ function MediaCard({
         >
           {item.type === "movie" ? "Movie" : "TV"}
         </Badge>
+        {/* Progress bar for TV shows */}
+        {item.progress != null && item.progress > 0 && (
+          <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/30">
+            <div
+              className={`h-full transition-all ${item.progress >= 100 ? "bg-green-500" : "bg-indigo-500"}`}
+              style={{ width: `${Math.min(item.progress, 100)}%` }}
+            />
+          </div>
+        )}
       </div>
-      <h3 className="mt-2 text-sm font-medium line-clamp-2 transition-colors group-hover:text-indigo-400">{item.title}</h3>
+      <h3 className="mt-2 text-sm font-medium line-clamp-2 transition-colors group-hover:text-indigo-400">
+        {item.title}
+      </h3>
       {item.year && (
         <p className="text-xs text-muted-foreground">{item.year}</p>
       )}
@@ -111,18 +124,40 @@ export function LibraryPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Library</h1>
-        <Link
-          to="/media/search"
-          className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
-        >
-          Search
-        </Link>
+        <div className="flex items-center gap-3">
+          <QuickPickDialog />
+          <Link to="/media/quick-pick">
+            <Button variant="outline" size="sm">
+              <Sparkles className="h-4 w-4 mr-1.5" />
+              Quick Pick
+            </Button>
+          </Link>
+          <Link to="/media/plex">
+            <Button variant="outline" size="sm">
+              <Settings className="h-4 w-4 mr-1.5" />
+              Plex
+            </Button>
+          </Link>
+          <Link
+            to="/media/search"
+            className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
+          >
+            Search
+          </Link>
+        </div>
       </div>
+
+      {/* Download queue */}
+      <DownloadQueue />
 
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-3">
         {/* Type toggle */}
-        <div className="flex rounded-lg border bg-muted/30 p-0.5" role="group" aria-label="Filter by type">
+        <div
+          className="flex rounded-lg border bg-muted/30 p-0.5"
+          role="group"
+          aria-label="Filter by type"
+        >
           {TYPE_OPTIONS.map((opt) => (
             <button
               key={opt.value}
@@ -200,6 +235,17 @@ export function LibraryPage() {
           ))}
         </MediaGrid>
       )}
+
+      {/* Quick Pick FAB */}
+      <Link
+        to="/media/quick-pick"
+        className="fixed bottom-6 right-6 z-50"
+        aria-label="What should I watch tonight?"
+      >
+        <Button className="h-14 w-14 rounded-full bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-500/25 p-0">
+          <Sparkles className="h-6 w-6" />
+        </Button>
+      </Link>
     </div>
   );
 }

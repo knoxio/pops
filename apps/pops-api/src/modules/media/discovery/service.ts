@@ -8,7 +8,11 @@ import type {
   DimensionWeight,
   GenreDistribution,
   PreferenceProfile,
+  QuickPickMovie,
+  DiscoverResult,
+  ScoredDiscoverResult,
 } from "./types.js";
+import { TMDB_GENRE_MAP } from "./types.js";
 
 /**
  * Compute genre affinity scores by averaging Elo scores for movies
@@ -113,6 +117,31 @@ function getTotalComparisons(): number {
 }
 
 /**
+ * Get random unwatched movies from the library for quick pick.
+ * Excludes movies already on the watchlist or already watched.
+ */
+export function getQuickPickMovies(count: number): QuickPickMovie[] {
+  const db = getDb();
+
+  return db
+    .prepare(
+      `SELECT m.id, m.tmdb_id AS tmdbId, m.title, m.release_date AS releaseDate,
+              m.poster_path AS posterPath, m.backdrop_path AS backdropPath,
+              m.overview, m.vote_average AS voteAverage, m.genres, m.runtime
+       FROM movies m
+       WHERE m.id NOT IN (
+         SELECT DISTINCT media_id FROM watch_history WHERE media_type = 'movie'
+       )
+       AND m.id NOT IN (
+         SELECT media_id FROM media_watchlist WHERE media_type = 'movie'
+       )
+       ORDER BY RANDOM()
+       LIMIT ?`
+    )
+    .all(count) as QuickPickMovie[];
+}
+
+/**
  * Compute the full preference profile on demand.
  */
 export function getPreferenceProfile(): PreferenceProfile {
@@ -128,4 +157,69 @@ export function getPreferenceProfile(): PreferenceProfile {
     totalMoviesWatched: totalWatched,
     totalComparisons,
   };
+}
+
+/**
+ * Score recommendation results against the user's preference profile.
+ *
+ * For each result, maps TMDB genre IDs to genre names, looks up the user's
+ * genre affinity scores, and computes a weighted match percentage.
+ * Results are sorted by matchPercentage descending.
+ */
+export function scoreRecommendations(
+  results: DiscoverResult[],
+  profile: PreferenceProfile
+): ScoredDiscoverResult[] {
+  // Build genre name → normalized score (0–1) from affinities
+  const affinityMap = new Map<string, number>();
+  if (profile.genreAffinities.length > 0) {
+    const maxScore = Math.max(...profile.genreAffinities.map((a) => a.avgScore));
+    const minScore = Math.min(...profile.genreAffinities.map((a) => a.avgScore));
+    const range = maxScore - minScore || 1;
+    for (const a of profile.genreAffinities) {
+      affinityMap.set(a.genre, (a.avgScore - minScore) / range);
+    }
+  }
+
+  // Fall back to genre distribution if no comparison data
+  if (affinityMap.size === 0 && profile.genreDistribution.length > 0) {
+    const maxPct = Math.max(...profile.genreDistribution.map((g) => g.percentage));
+    for (const g of profile.genreDistribution) {
+      affinityMap.set(g.genre, maxPct > 0 ? g.percentage / maxPct : 0);
+    }
+  }
+
+  return results
+    .map((result) => {
+      const genreNames = result.genreIds
+        .map((id) => TMDB_GENRE_MAP[id])
+        .filter((name): name is string => name != null);
+
+      if (genreNames.length === 0 || affinityMap.size === 0) {
+        return { ...result, matchPercentage: 0, matchReason: "" };
+      }
+
+      // Average the normalized affinity scores for this movie's genres
+      let totalScore = 0;
+      const matchedGenres: { name: string; score: number }[] = [];
+      for (const genre of genreNames) {
+        const score = affinityMap.get(genre) ?? 0;
+        totalScore += score;
+        if (score > 0) {
+          matchedGenres.push({ name: genre, score });
+        }
+      }
+
+      const avgScore = totalScore / genreNames.length;
+      // Scale to 50–98 range for a realistic feel (pure 100% is unlikely)
+      const matchPercentage = Math.round(50 + avgScore * 48);
+
+      // Top matching genres for the explanation
+      matchedGenres.sort((a, b) => b.score - a.score);
+      const topGenres = matchedGenres.slice(0, 3).map((g) => g.name);
+      const matchReason = topGenres.length > 0 ? topGenres.join(", ") : "";
+
+      return { ...result, matchPercentage, matchReason };
+    })
+    .sort((a, b) => b.matchPercentage - a.matchPercentage);
 }

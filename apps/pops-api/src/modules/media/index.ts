@@ -10,6 +10,8 @@ import { watchHistoryRouter } from "./watch-history/router.js";
 import { libraryRouter } from "./library/index.js";
 import { searchRouter } from "./search/index.js";
 import { discoveryRouter } from "./discovery/index.js";
+import { arrRouter } from "./arr/index.js";
+import { plexRouter } from "./plex/index.js";
 
 export const mediaRouter = router({
   movies: moviesRouter,
@@ -20,4 +22,6 @@ export const mediaRouter = router({
   library: libraryRouter,
   search: searchRouter,
   discovery: discoveryRouter,
+  arr: arrRouter,
+  plex: plexRouter,
 });

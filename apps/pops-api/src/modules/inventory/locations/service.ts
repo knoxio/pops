@@ -2,8 +2,8 @@
  * Location service — CRUD operations for the location tree.
  * SQLite is the source of truth. All operations are local.
  */
-import { eq, asc } from "drizzle-orm";
-import { locations } from "@pops/db-types";
+import { eq, asc, count } from "drizzle-orm";
+import { locations, homeInventory } from "@pops/db-types";
 import { getDrizzle } from "../../../db.js";
 import { NotFoundError, ConflictError } from "../../../shared/errors.js";
 import type {
@@ -11,6 +11,7 @@ import type {
   CreateLocationInput,
   UpdateLocationInput,
   LocationTreeNode,
+  DeleteLocationStats,
 } from "./types.js";
 import { toLocation } from "./types.js";
 
@@ -188,8 +189,66 @@ export function updateLocation(id: string, input: UpdateLocationInput): Location
 }
 
 /**
+ * Get stats about what will be affected by deleting a location.
+ * Walks the subtree to count all descendants and their items.
+ */
+export function getDeleteStats(id: string): DeleteLocationStats {
+  // Verify it exists
+  getLocation(id);
+
+  const db = getDrizzle();
+
+  // Count direct children
+  const directChildren = db.select().from(locations).where(eq(locations.parentId, id)).all();
+  const childCount = directChildren.length;
+
+  // Collect all descendant IDs (BFS)
+  const descendantIds: string[] = [];
+  const queue = [id];
+  let current: string | undefined;
+  while ((current = queue.shift()) !== undefined) {
+    const children = db
+      .select({ id: locations.id })
+      .from(locations)
+      .where(eq(locations.parentId, current))
+      .all();
+    for (const child of children) {
+      descendantIds.push(child.id);
+      queue.push(child.id);
+    }
+  }
+
+  // Count items directly in this location
+  const [directItems] = db
+    .select({ total: count() })
+    .from(homeInventory)
+    .where(eq(homeInventory.locationId, id))
+    .all();
+  const itemCount = directItems.total;
+
+  // Count items in all descendant locations
+  let totalItemCount = itemCount;
+  for (const descId of descendantIds) {
+    const [desc] = db
+      .select({ total: count() })
+      .from(homeInventory)
+      .where(eq(homeInventory.locationId, descId))
+      .all();
+    totalItemCount += desc.total;
+  }
+
+  return {
+    childCount,
+    descendantCount: descendantIds.length,
+    itemCount,
+    totalItemCount,
+  };
+}
+
+/**
  * Delete a location by ID. Throws NotFoundError if missing.
  * Children are cascade-deleted by the FK constraint.
+ * Items in deleted locations become unlocated (SET NULL FK).
  */
 export function deleteLocation(id: string): void {
   // Verify it exists

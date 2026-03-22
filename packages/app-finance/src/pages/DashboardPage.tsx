@@ -2,7 +2,7 @@
  * Dashboard page - overview of finances
  */
 import { trpc } from "../lib/trpc";
-import { Card, StatCard, Alert, AlertTitle, AlertDescription, Skeleton, Badge, cn } from "@pops/ui";
+import { Card, StatCard, Alert, AlertTitle, AlertDescription, Skeleton, Badge } from "@pops/ui";
 
 export function DashboardPage() {
   // Fetch recent transactions

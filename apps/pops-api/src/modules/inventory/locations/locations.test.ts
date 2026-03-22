@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import type { Database } from "better-sqlite3";
-import { setupTestContext, seedLocation, createCaller } from "../../../shared/test-utils.js";
+import {
+  setupTestContext,
+  seedLocation,
+  seedInventoryItem,
+  createCaller,
+} from "../../../shared/test-utils.js";
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;
@@ -189,8 +194,51 @@ describe("inventory.locations.update", () => {
   });
 });
 
+describe("inventory.locations.deleteStats", () => {
+  it("returns zeros for an empty location", async () => {
+    const id = seedLocation(db, { name: "Empty" });
+    const result = await caller.inventory.locations.deleteStats({ id });
+    expect(result.data).toEqual({
+      childCount: 0,
+      descendantCount: 0,
+      itemCount: 0,
+      totalItemCount: 0,
+    });
+  });
+
+  it("counts direct children and descendants", async () => {
+    const homeId = seedLocation(db, { name: "Home" });
+    const kitchenId = seedLocation(db, { name: "Kitchen", parent_id: homeId });
+    seedLocation(db, { name: "Pantry", parent_id: kitchenId });
+    seedLocation(db, { name: "Bedroom", parent_id: homeId });
+
+    const result = await caller.inventory.locations.deleteStats({ id: homeId });
+    expect(result.data.childCount).toBe(2); // Kitchen, Bedroom
+    expect(result.data.descendantCount).toBe(3); // Kitchen, Pantry, Bedroom
+  });
+
+  it("counts items in location and descendants", async () => {
+    const homeId = seedLocation(db, { name: "Home" });
+    const kitchenId = seedLocation(db, { name: "Kitchen", parent_id: homeId });
+
+    seedInventoryItem(db, { item_name: "Fridge", location_id: kitchenId });
+    seedInventoryItem(db, { item_name: "Oven", location_id: kitchenId });
+    seedInventoryItem(db, { item_name: "Couch", location_id: homeId });
+
+    const result = await caller.inventory.locations.deleteStats({ id: homeId });
+    expect(result.data.itemCount).toBe(1); // Couch directly in Home
+    expect(result.data.totalItemCount).toBe(3); // Couch + Fridge + Oven
+  });
+
+  it("throws NOT_FOUND for missing ID", async () => {
+    await expect(caller.inventory.locations.deleteStats({ id: "nonexistent" })).rejects.toThrow(
+      TRPCError
+    );
+  });
+});
+
 describe("inventory.locations.delete", () => {
-  it("deletes a location", async () => {
+  it("deletes an empty location immediately", async () => {
     const id = seedLocation(db, { name: "Temp" });
     const result = await caller.inventory.locations.delete({ id });
     expect(result.message).toBe("Location deleted");
@@ -199,16 +247,52 @@ describe("inventory.locations.delete", () => {
     await expect(caller.inventory.locations.get({ id })).rejects.toThrow(TRPCError);
   });
 
-  it("cascade deletes children", async () => {
+  it("returns requiresConfirmation when location has children and force is false", async () => {
+    const parentId = seedLocation(db, { name: "Home" });
+    seedLocation(db, { name: "Kitchen", parent_id: parentId });
+
+    const result = await caller.inventory.locations.delete({ id: parentId });
+    expect(result.requiresConfirmation).toBe(true);
+    expect(result.stats?.childCount).toBe(1);
+
+    // Location should still exist
+    const loc = await caller.inventory.locations.get({ id: parentId });
+    expect(loc.data.name).toBe("Home");
+  });
+
+  it("returns requiresConfirmation when location has items and force is false", async () => {
+    const locId = seedLocation(db, { name: "Kitchen" });
+    seedInventoryItem(db, { item_name: "Fridge", location_id: locId });
+
+    const result = await caller.inventory.locations.delete({ id: locId });
+    expect(result.requiresConfirmation).toBe(true);
+    expect(result.stats?.itemCount).toBe(1);
+  });
+
+  it("force-deletes location with children (cascade)", async () => {
     const parentId = seedLocation(db, { name: "Home" });
     const childId = seedLocation(db, { name: "Kitchen", parent_id: parentId });
     seedLocation(db, { name: "Pantry", parent_id: childId });
 
-    await caller.inventory.locations.delete({ id: parentId });
+    await caller.inventory.locations.delete({ id: parentId, force: true });
 
     // All should be gone
     const list = await caller.inventory.locations.list();
     expect(list.data).toHaveLength(0);
+  });
+
+  it("force-deletes location with items (items become unlocated)", async () => {
+    const locId = seedLocation(db, { name: "Kitchen" });
+    const itemId = seedInventoryItem(db, { item_name: "Fridge", location_id: locId });
+
+    await caller.inventory.locations.delete({ id: locId, force: true });
+
+    // Location gone
+    await expect(caller.inventory.locations.get({ id: locId })).rejects.toThrow(TRPCError);
+
+    // Item still exists but unlocated
+    const item = await caller.inventory.items.get({ id: itemId });
+    expect(item.data.locationId).toBeNull();
   });
 
   it("throws NOT_FOUND for missing ID", async () => {

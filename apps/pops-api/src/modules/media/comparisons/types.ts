@@ -124,6 +124,23 @@ export const ScoreQuerySchema = z.object({
 });
 export type ScoreQuery = z.infer<typeof ScoreQuerySchema>;
 
+/** API response shape for a ranked media entry. */
+export interface RankedMediaEntry {
+  rank: number;
+  mediaType: string;
+  mediaId: number;
+  score: number;
+  comparisonCount: number;
+}
+
+export const RankingsQuerySchema = z.object({
+  dimensionId: z.number().int().positive().optional(),
+  mediaType: z.enum(MEDIA_TYPES).optional(),
+  limit: z.coerce.number().positive().max(100).optional(),
+  offset: z.coerce.number().nonnegative().optional(),
+});
+export type RankingsQuery = z.infer<typeof RankingsQuerySchema>;
+
 export const ComparisonQuerySchema = z.object({
   mediaType: z.enum(MEDIA_TYPES),
   mediaId: z.number().int().positive(),

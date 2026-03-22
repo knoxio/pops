@@ -41,3 +41,15 @@ export const UpdateLocationSchema = z.object({
   sortOrder: z.number().int().nonnegative().optional(),
 });
 export type UpdateLocationInput = z.infer<typeof UpdateLocationSchema>;
+
+/** Stats returned before confirming a delete. */
+export interface DeleteLocationStats {
+  /** Number of direct child locations. */
+  childCount: number;
+  /** Total number of descendant locations (children, grandchildren, etc.). */
+  descendantCount: number;
+  /** Number of inventory items directly in this location. */
+  itemCount: number;
+  /** Number of inventory items in this location and all descendants. */
+  totalItemCount: number;
+}

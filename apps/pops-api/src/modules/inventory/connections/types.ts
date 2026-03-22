@@ -35,3 +35,45 @@ export const ConnectionQuerySchema = z.object({
   offset: z.coerce.number().nonnegative().optional(),
 });
 export type ConnectionQuery = z.infer<typeof ConnectionQuerySchema>;
+
+/** Tree node for connection chain tracing. */
+export interface TraceNode {
+  id: string;
+  itemName: string;
+  assetId: string | null;
+  type: string | null;
+  children: TraceNode[];
+}
+
+/** Zod schema for trace query. */
+export const TraceQuerySchema = z.object({
+  itemId: z.string().min(1, "Item ID is required"),
+  maxDepth: z.coerce.number().int().positive().max(10).optional().default(10),
+});
+export type TraceQuery = z.infer<typeof TraceQuerySchema>;
+
+/** Node in a connection graph. */
+export interface GraphNode {
+  id: string;
+  itemName: string;
+  assetId: string | null;
+  type: string | null;
+}
+
+/** Edge in a connection graph. */
+export interface GraphEdge {
+  source: string;
+  target: string;
+}
+
+/** Full connection subgraph for an item. */
+export interface GraphData {
+  nodes: GraphNode[];
+  edges: GraphEdge[];
+}
+
+/** Zod schema for graph query. */
+export const GraphQuerySchema = z.object({
+  itemId: z.string().min(1, "Item ID is required"),
+  maxDepth: z.coerce.number().int().positive().max(10).optional().default(10),
+});

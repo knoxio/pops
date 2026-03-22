@@ -23,8 +23,6 @@ import {
   DialogTitle,
   DialogFooter,
   DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   AlertDialog,

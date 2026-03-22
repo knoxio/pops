@@ -2,6 +2,7 @@
  * Item detail page — shows item info and connected items.
  * Route: /inventory/items/:id
  */
+import { useState } from "react";
 import { useParams, Link } from "react-router";
 import { toast } from "sonner";
 import {
@@ -12,9 +13,29 @@ import {
   AlertDescription,
   Skeleton,
 } from "@pops/ui";
-import { ArrowLeft, Pencil, Link2, Unlink } from "lucide-react";
+import {
+  ArrowLeft,
+  Pencil,
+  Link2,
+  Unlink,
+  GitBranch,
+  FileText,
+  X,
+  Network,
+} from "lucide-react";
 import { trpc } from "../lib/trpc";
+
+const DOCUMENT_TYPE_LABELS: Record<string, string> = {
+  receipt: "Receipts",
+  warranty: "Warranties",
+  manual: "Manuals",
+  invoice: "Invoices",
+  other: "Other",
+};
 import { ConnectDialog } from "../components/ConnectDialog";
+import { ConnectionTracePanel } from "../components/ConnectionTracePanel";
+import { LinkDocumentDialog } from "../components/LinkDocumentDialog";
+import { ConnectionGraph } from "../components/ConnectionGraph";
 
 export function ItemDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -31,6 +52,8 @@ export function ItemDetailPage() {
       { itemId: id! },
       { enabled: !!id },
     );
+
+  const [showGraph, setShowGraph] = useState(false);
 
   const disconnectMutation = trpc.inventory.connections.disconnect.useMutation({
     onSuccess: () => {
@@ -179,7 +202,6 @@ export function ItemDetailPage() {
             {connectionsData.data.map((conn) => (
               <ConnectionRow
                 key={conn.id}
-                connectionId={conn.id}
                 connectedItemId={
                   conn.itemAId === id ? conn.itemBId : conn.itemAId
                 }
@@ -194,6 +216,34 @@ export function ItemDetailPage() {
           </p>
         )}
       </section>
+
+      {/* Connection Chain Trace */}
+      {connectionsData?.data.length ? (
+        <section>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <GitBranch className="h-5 w-5" />
+              Connection Chain
+            </h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowGraph((v) => !v)}
+            >
+              <Network className="h-4 w-4 mr-1.5" />
+              {showGraph ? "Hide Graph" : "View Graph"}
+            </Button>
+          </div>
+          {showGraph ? (
+            <ConnectionGraph itemId={id!} />
+          ) : (
+            <ConnectionTracePanel itemId={id!} />
+          )}
+        </section>
+      ) : null}
+
+      {/* Documents — hidden when Paperless-ngx not configured */}
+      <DocumentsSection itemId={id!} />
     </div>
   );
 }
@@ -213,13 +263,155 @@ function DetailField({
   );
 }
 
+function DocumentsSection({ itemId }: { itemId: string }) {
+  const { data: statusData, isLoading: statusLoading } =
+    trpc.inventory.paperless.status.useQuery();
+
+  const status = statusData?.data;
+
+  // Not configured — hide entirely
+  if (!statusLoading && !status?.configured) return null;
+
+  // Loading status check
+  if (statusLoading) {
+    return (
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+          <FileText className="h-5 w-5" />
+          Documents
+        </h2>
+        <Skeleton className="h-12 w-full" />
+      </section>
+    );
+  }
+
+  // Configured but unreachable
+  if (!status?.available) {
+    return (
+      <section className="mt-8">
+        <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+          <FileText className="h-5 w-5" />
+          Documents
+        </h2>
+        <p className="text-sm text-muted-foreground">
+          Paperless-ngx unavailable
+        </p>
+      </section>
+    );
+  }
+
+  return <DocumentsList itemId={itemId} />;
+}
+
+function DocumentsList({ itemId }: { itemId: string }) {
+  const utils = trpc.useUtils();
+  const { data, isLoading } = trpc.inventory.documents.listForItem.useQuery({
+    itemId,
+  });
+
+  const unlinkMutation = trpc.inventory.documents.unlink.useMutation({
+    onSuccess: () => {
+      toast.success("Document unlinked");
+      void utils.inventory.documents.listForItem.invalidate({ itemId });
+    },
+    onError: (err: { message: string }) => {
+      toast.error(`Failed to unlink: ${err.message}`);
+    },
+  });
+
+  // Group documents by type
+  const grouped = new Map<string, typeof docs>();
+  const docs = data?.data ?? [];
+  for (const doc of docs) {
+    const type = doc.documentType;
+    const list = grouped.get(type) ?? [];
+    list.push(doc);
+    grouped.set(type, list);
+  }
+
+  const typeOrder = ["receipt", "warranty", "manual", "invoice", "other"];
+  const sortedTypes = [...grouped.keys()].sort(
+    (a, b) => (typeOrder.indexOf(a) ?? 99) - (typeOrder.indexOf(b) ?? 99),
+  );
+
+  return (
+    <section className="mt-8">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <FileText className="h-5 w-5" />
+          Documents
+          {docs.length ? (
+            <span className="text-sm font-normal text-muted-foreground">
+              ({docs.length})
+            </span>
+          ) : null}
+        </h2>
+        <LinkDocumentDialog
+          itemId={itemId}
+          onLinked={() => {
+            void utils.inventory.documents.listForItem.invalidate({ itemId });
+          }}
+        />
+      </div>
+      {isLoading ? (
+        <div className="space-y-2">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </div>
+      ) : docs.length ? (
+        <div className="space-y-4">
+          {sortedTypes.map((type) => (
+            <div key={type}>
+              <h3 className="text-sm font-medium text-muted-foreground mb-2">
+                {DOCUMENT_TYPE_LABELS[type] ?? type}
+              </h3>
+              <div className="space-y-1.5">
+                {grouped.get(type)?.map((doc) => (
+                  <div
+                    key={doc.id}
+                    className="flex items-center justify-between p-3 rounded-lg border"
+                  >
+                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                      <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <div className="min-w-0">
+                        <span className="font-medium text-sm truncate block">
+                          {doc.title ?? `Document #${doc.paperlessDocumentId}`}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          Linked {new Date(doc.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive hover:text-destructive shrink-0"
+                      onClick={() => unlinkMutation.mutate({ id: doc.id })}
+                      disabled={unlinkMutation.isPending}
+                      title="Unlink document"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-muted-foreground text-sm">
+          No documents linked yet.
+        </p>
+      )}
+    </section>
+  );
+}
+
 function ConnectionRow({
-  connectionId,
   connectedItemId,
   onDisconnect,
   isDisconnecting,
 }: {
-  connectionId: number;
   connectedItemId: string;
   onDisconnect: () => void;
   isDisconnecting: boolean;

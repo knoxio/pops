@@ -31,6 +31,7 @@ const config = {
           '@pops/ui': path.resolve(__dirname, '../src'),
           '@pops/app-media': path.resolve(__dirname, '../../app-media/src'),
           '@pops/app-finance': path.resolve(__dirname, '../../app-finance/src'),
+          '@pops/app-inventory': path.resolve(__dirname, '../../app-inventory/src'),
         },
       },
     });

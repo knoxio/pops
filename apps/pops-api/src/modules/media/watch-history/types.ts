@@ -43,6 +43,17 @@ export const WatchHistoryQuerySchema = z.object({
 });
 export type WatchHistoryQueryRaw = z.infer<typeof WatchHistoryQuerySchema>;
 
+/** Zod schema for batch-logging watch events (whole season or show). */
+const BATCH_MEDIA_TYPES = ["season", "show"] as const;
+
+export const BatchLogWatchSchema = z.object({
+  mediaType: z.enum(BATCH_MEDIA_TYPES),
+  mediaId: z.number().int().positive(),
+  watchedAt: z.string().datetime().optional(),
+  completed: z.number().int().min(0).max(1).optional().default(1),
+});
+export type BatchLogWatchInput = z.infer<typeof BatchLogWatchSchema>;
+
 /** Parsed filter params passed to the service layer. */
 export interface WatchHistoryFilters {
   mediaType?: string;
@@ -63,6 +74,13 @@ export interface SeasonProgress {
   percentage: number;
 }
 
+/** Next unwatched episode pointer. */
+export interface NextEpisode {
+  seasonNumber: number;
+  episodeNumber: number;
+  episodeName: string | null;
+}
+
 /** Overall + per-season watch progress for a TV show. */
 export interface TvShowProgress {
   tvShowId: number;
@@ -72,4 +90,50 @@ export interface TvShowProgress {
     percentage: number;
   };
   seasons: SeasonProgress[];
+  nextEpisode: NextEpisode | null;
+}
+
+/** Batch progress result — percentage per TV show. */
+export interface BatchProgressEntry {
+  tvShowId: number;
+  percentage: number;
+}
+
+/** Zod schema for batch progress query. */
+export const BatchProgressQuerySchema = z.object({
+  tvShowIds: z.array(z.number().int().positive()).min(1).max(500),
+});
+
+/** Zod schema for listRecent query params with date range and mediaType filters. */
+export const RecentWatchHistoryQuerySchema = z.object({
+  mediaType: z.enum(WATCH_MEDIA_TYPES).optional(),
+  startDate: z.string().datetime().optional(),
+  endDate: z.string().datetime().optional(),
+  limit: z.coerce.number().positive().max(500).optional(),
+  offset: z.coerce.number().nonnegative().optional(),
+});
+export type RecentWatchHistoryQuery = z.infer<typeof RecentWatchHistoryQuerySchema>;
+
+/** Parsed filter params for listRecent. */
+export interface RecentWatchHistoryFilters {
+  mediaType?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
+/** Enriched watch history entry with media metadata for the history page. */
+export interface RecentWatchHistoryEntry {
+  id: number;
+  mediaType: string;
+  mediaId: number;
+  watchedAt: string;
+  completed: number;
+  title: string | null;
+  posterPath: string | null;
+  /** For episodes: season/episode info */
+  seasonNumber: number | null;
+  episodeNumber: number | null;
+  showName: string | null;
+  /** For episodes: the parent TV show ID for linking */
+  tvShowId: number | null;
 }

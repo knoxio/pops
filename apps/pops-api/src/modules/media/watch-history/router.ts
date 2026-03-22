@@ -7,10 +7,14 @@ import { router, protectedProcedure } from "../../../trpc.js";
 import { paginationMeta } from "../../../shared/pagination.js";
 import {
   LogWatchSchema,
+  BatchLogWatchSchema,
+  BatchProgressQuerySchema,
   WatchHistoryQuerySchema,
   ProgressQuerySchema,
+  RecentWatchHistoryQuerySchema,
   toWatchHistoryEntry,
   type WatchHistoryFilters,
+  type RecentWatchHistoryFilters,
 } from "./types.js";
 import * as service from "./service.js";
 import { NotFoundError } from "../../../shared/errors.js";
@@ -33,6 +37,25 @@ export const watchHistoryRouter = router({
 
     return {
       data: rows.map(toWatchHistoryEntry),
+      pagination: paginationMeta(total, limit, offset),
+    };
+  }),
+
+  /** List recent watch history with date range filters and enriched media metadata. */
+  listRecent: protectedProcedure.input(RecentWatchHistoryQuerySchema).query(({ input }) => {
+    const limit = input.limit ?? DEFAULT_LIMIT;
+    const offset = input.offset ?? DEFAULT_OFFSET;
+
+    const filters: RecentWatchHistoryFilters = {
+      mediaType: input.mediaType,
+      startDate: input.startDate,
+      endDate: input.endDate,
+    };
+
+    const { rows, total } = service.listRecent(filters, limit, offset);
+
+    return {
+      data: rows,
       pagination: paginationMeta(total, limit, offset),
     };
   }),
@@ -69,6 +92,20 @@ export const watchHistoryRouter = router({
       }
       throw err;
     }
+  }),
+
+  /** Get watch progress percentages for multiple TV shows (for library grid). */
+  batchProgress: protectedProcedure.input(BatchProgressQuerySchema).query(({ input }) => {
+    return { data: service.getBatchProgress(input.tvShowIds) };
+  }),
+
+  /** Batch-log watch events for all episodes in a season or show. */
+  batchLog: protectedProcedure.input(BatchLogWatchSchema).mutation(({ input }) => {
+    const result = service.batchLogWatch(input);
+    return {
+      data: result,
+      message: `Batch logged ${result.logged} episode(s), skipped ${result.skipped}`,
+    };
   }),
 
   /** Delete a watch history entry. */
