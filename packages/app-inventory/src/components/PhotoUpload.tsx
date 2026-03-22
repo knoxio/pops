@@ -154,7 +154,7 @@ export function PhotoUpload({
         className={cn(
           "flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 cursor-pointer transition-colors",
           isDragOver
-            ? "border-primary bg-primary/5"
+            ? "border-amber-500 bg-amber-500/10"
             : "border-muted-foreground/25 hover:border-muted-foreground/50",
           disabled && "opacity-50 cursor-not-allowed",
         )}

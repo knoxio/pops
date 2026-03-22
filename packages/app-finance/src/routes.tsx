@@ -21,9 +21,6 @@ const EntitiesPage = lazy(() =>
 const BudgetsPage = lazy(() =>
   import("./pages/BudgetsPage").then((m) => ({ default: m.BudgetsPage }))
 );
-const InventoryPage = lazy(() =>
-  import("./pages/InventoryPage").then((m) => ({ default: m.InventoryPage }))
-);
 const WishlistPage = lazy(() =>
   import("./pages/WishlistPage").then((m) => ({ default: m.WishlistPage }))
 );
@@ -61,7 +58,6 @@ export const navConfig: AppNavConfig = {
     { path: "/transactions", label: "Transactions", icon: "CreditCard" },
     { path: "/entities", label: "Entities", icon: "Building2" },
     { path: "/budgets", label: "Budgets", icon: "PiggyBank" },
-    { path: "/inventory", label: "Inventory", icon: "Package" },
     { path: "/wishlist", label: "Wish List", icon: "Star" },
     { path: "/import", label: "Import", icon: "Download" },
     { path: "/ai-usage", label: "AI Usage", icon: "Bot" },
@@ -73,7 +69,6 @@ export const routes: RouteObject[] = [
   { path: "transactions", element: <TransactionsPage /> },
   { path: "entities", element: <EntitiesPage /> },
   { path: "budgets", element: <BudgetsPage /> },
-  { path: "inventory", element: <InventoryPage /> },
   { path: "wishlist", element: <WishlistPage /> },
   { path: "import", element: <ImportPage /> },
   { path: "ai-usage", element: <AiUsagePage /> },

@@ -105,7 +105,7 @@ export function InsuranceReportPage(): React.ReactElement {
         </div>
         <button
           onClick={() => window.print()}
-          className="flex items-center gap-2 px-4 py-2 rounded-md bg-primary text-primary-foreground text-sm hover:bg-primary/90 print:hidden"
+          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-amber-600 text-white text-sm font-bold hover:bg-amber-700 transition-colors shadow-sm shadow-amber-500/20 print:hidden"
         >
           <Printer className="h-4 w-4" />
           Print
@@ -113,16 +113,16 @@ export function InsuranceReportPage(): React.ReactElement {
       </div>
 
       {/* Summary */}
-      <div className="flex gap-6 mb-6 p-4 rounded-lg bg-muted/50 print:bg-transparent print:border print:border-gray-300">
+      <div className="grid grid-cols-2 gap-6 mb-8 p-6 rounded-2xl bg-amber-500/10 border-2 border-amber-500/10 print:bg-transparent print:border print:border-gray-300 print:rounded-none">
         <div>
-          <p className="text-sm text-muted-foreground">Total Items</p>
-          <p className="text-2xl font-bold">{report.totalItems}</p>
+          <p className="text-xs font-bold text-amber-900/60 dark:text-amber-100/60 uppercase tracking-widest mb-1">Total Items</p>
+          <p className="text-3xl font-black text-amber-900 dark:text-amber-50">{report.totalItems}</p>
         </div>
-        <div>
-          <p className="text-sm text-muted-foreground">
+        <div className="text-right">
+          <p className="text-xs font-bold text-amber-900/60 dark:text-amber-100/60 uppercase tracking-widest mb-1">
             Total Replacement Value
           </p>
-          <p className="text-2xl font-bold">
+          <p className="text-3xl font-black text-amber-600 dark:text-amber-400">
             {formatCurrency(report.totalValue)}
           </p>
         </div>

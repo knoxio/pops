@@ -162,7 +162,7 @@ function InlineInput({
       onKeyDown={handleKeyDown}
       onBlur={onCancel}
       placeholder={placeholder}
-      className="text-sm font-medium bg-transparent border-b border-primary outline-none px-0.5 py-0 w-full max-w-[200px]"
+      className="text-sm font-medium bg-transparent border-b border-amber-500 outline-none px-0.5 py-0 w-full max-w-[200px]"
     />
   );
 }
@@ -266,8 +266,8 @@ function LocationNode({
   return (
     <Collapsible open={open} onOpenChange={setOpen}>
       <div
-        className={`group flex items-center gap-1.5 py-1.5 px-2 rounded-md cursor-pointer transition-colors hover:bg-muted/50 ${
-          isSelected ? "bg-primary/10 text-primary" : ""
+        className={`group flex items-center gap-1.5 py-1.5 px-2 rounded-md cursor-pointer transition-colors hover:bg-amber-500/10 ${
+          isSelected ? "bg-amber-500/20 text-amber-900 dark:text-amber-100 font-bold border-l-2 border-amber-500 rounded-l-none ml-[-2px]" : ""
         }`}
         style={{ paddingLeft: `${depth * 20 + 8}px` }}
         onClick={() => onSelect(node.id)}
@@ -653,7 +653,7 @@ export function LocationTreePage() {
               setAddingRoot(true);
               setAddingChildOf(null);
             }}
-            className="flex items-center gap-1.5 text-sm text-primary hover:underline"
+            className="flex items-center gap-1.5 text-sm font-bold text-amber-600 hover:text-amber-700 dark:text-amber-400 dark:hover:text-amber-300 transition-colors"
           >
             <Plus className="h-4 w-4" />
             Add Root Location

@@ -195,8 +195,10 @@ export function WarrantiesPage() {
     <div className="space-y-6 max-w-3xl">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <ShieldCheck className="h-6 w-6 text-muted-foreground" />
-        <h1 className="text-2xl font-bold">Warranty Tracking</h1>
+        <div className="p-2 rounded-xl bg-amber-500/10">
+          <ShieldCheck className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+        </div>
+        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Warranty Tracking</h1>
       </div>
 
       {isLoading ? (
@@ -213,16 +215,17 @@ export function WarrantiesPage() {
         <div className="space-y-4">
           {/* Expiring Soon — always open */}
           {expiringSoon.length > 0 && (
-            <div className="border border-yellow-500/30 rounded-lg bg-yellow-500/5">
-              <div className="flex items-center gap-2 px-4 py-3 font-medium">
-                <span className={urgencyColor(expiringSoon[0].daysRemaining)}>
+            <div className="border-2 border-amber-500/20 rounded-2xl bg-amber-500/5 overflow-hidden shadow-sm shadow-amber-500/5">
+              <div className="flex items-center gap-2 px-5 py-4 font-bold text-amber-900 dark:text-amber-100 bg-amber-500/10">
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
                   Expiring Soon
                 </span>
-                <Badge variant="secondary" className="text-xs">
+                <Badge className="bg-amber-500/20 text-amber-700 border-amber-500/30 ml-auto">
                   {expiringSoon.length}
                 </Badge>
               </div>
-              <div className="px-2 pb-2">
+              <div className="px-3 pb-3">
                 {expiringSoon.map((item) => (
                   <WarrantyRow
                     key={item.id}

@@ -203,15 +203,18 @@ export function ItemsPage() {
 
       {/* Summary line */}
       {!isLoading && (
-        <p className="text-sm text-muted-foreground">
-          {totalCount} {totalCount === 1 ? "item" : "items"}
-          {totalReplacementValue > 0 && (
-            <span> — {formatCurrency(totalReplacementValue)} replacement</span>
-          )}
-          {totalResaleValue > 0 && (
-            <span> — {formatCurrency(totalResaleValue)} resale</span>
-          )}
-        </p>
+        <div className="flex items-center gap-2 rounded-full bg-amber-500/10 px-3 py-1.5 w-fit">
+          <Package className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+          <p className="text-xs font-semibold text-amber-900 dark:text-amber-200 uppercase tracking-wider">
+            {totalCount} {totalCount === 1 ? "item" : "items"}
+            {totalReplacementValue > 0 && (
+              <span> — {formatCurrency(totalReplacementValue)} replacement</span>
+            )}
+            {totalResaleValue > 0 && (
+              <span> — {formatCurrency(totalResaleValue)} resale</span>
+            )}
+          </p>
+        </div>
       )}
 
       {/* Content */}

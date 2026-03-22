@@ -43,8 +43,8 @@ function TraceNodeRow({ node, depth, currentItemId }: TraceNodeRowProps) {
       <div
         className={`flex items-center gap-2 py-1.5 px-2 rounded-md transition-colors ${
           isCurrent
-            ? "bg-primary/5 text-primary"
-            : "hover:bg-muted/50 cursor-pointer"
+            ? "bg-amber-500/10 text-amber-900 dark:text-amber-100 font-bold border-l-2 border-amber-500 rounded-l-none ml-[-2px]"
+            : "hover:bg-amber-500/5 cursor-pointer"
         }`}
         style={{ paddingLeft: `${depth * 20 + 8}px` }}
         onClick={() => {

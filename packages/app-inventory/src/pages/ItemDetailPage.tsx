@@ -92,7 +92,7 @@ export function ItemDetailPage() {
         </Alert>
         <Link
           to="/inventory"
-          className="mt-4 inline-block text-sm text-primary underline"
+          className="mt-4 inline-block text-sm text-amber-600 hover:text-amber-700 underline font-medium"
         >
           Back to inventory
         </Link>
@@ -107,63 +107,54 @@ export function ItemDetailPage() {
   return (
     <div className="p-6 max-w-3xl">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-8">
         <Link to="/inventory">
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <ArrowLeft className="h-4 w-4" />
+          <Button variant="ghost" size="icon" className="h-9 w-9 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 hover:text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 dark:hover:bg-amber-500/30 rounded-full transition-colors">
+            <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
         <div className="flex-1">
-          <h1 className="text-2xl font-bold">{item.itemName}</h1>
+          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">{item.itemName}</h1>
           {(item.brand || item.model) && (
-            <p className="text-muted-foreground">
-              {[item.brand, item.model].filter(Boolean).join(" ")}
+            <p className="text-muted-foreground font-medium uppercase text-xs tracking-widest opacity-80 mt-1">
+              {[item.brand, item.model].filter(Boolean).join(" • ")}
             </p>
           )}
         </div>
         <Link to={`/inventory/items/${id}/edit`}>
-          <Button variant="outline" size="sm">
-            <Pencil className="h-4 w-4 mr-1.5" />
+          <Button variant="outline" size="sm" className="font-bold border-amber-500/20 hover:border-amber-500/50 hover:bg-amber-500/5 transition-colors">
+            <Pencil className="h-4 w-4 mr-2 text-amber-600 dark:text-amber-400" />
             Edit
           </Button>
         </Link>
       </div>
 
-      {/* Details */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
-        {item.type && <DetailField label="Type" value={item.type} />}
-        {item.condition && (
-          <DetailField
-            label="Condition"
-            value={<Badge variant="secondary">{item.condition}</Badge>}
-          />
-        )}
-        {item.room && <DetailField label="Room" value={item.room} />}
-        {item.itemId && <DetailField label="Item ID" value={item.itemId} />}
-        {item.assetId && <DetailField label="Asset ID" value={item.assetId} />}
-        <DetailField label="In Use" value={item.inUse ? "Yes" : "No"} />
-        <DetailField
-          label="Tax Deductible"
-          value={item.deductible ? "Yes" : "No"}
-        />
-        {item.purchaseDate && (
-          <DetailField label="Purchase Date" value={item.purchaseDate} />
-        )}
-        {item.warrantyExpires && (
-          <DetailField label="Warranty Expires" value={item.warrantyExpires} />
-        )}
-        {item.replacementValue !== null && (
-          <DetailField
-            label="Replacement Value"
-            value={`$${item.replacementValue.toFixed(2)}`}
-          />
-        )}
-        {item.resaleValue !== null && (
-          <DetailField
-            label="Resale Value"
-            value={`$${item.resaleValue.toFixed(2)}`}
-          />
-        )}
+      {/* Details Grid */}
+      <div className="bg-card border-2 border-amber-500/10 rounded-2xl overflow-hidden mb-8 shadow-sm shadow-amber-500/5">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-6 p-6">
+          {item.type && <DetailField label="Type" value={<TypeBadge type={item.type} />} />}
+          {item.condition && (
+            <DetailField
+              label="Condition"
+              value={<ConditionBadge condition={item.condition as any} />}
+            />
+          )}
+          {item.room && <DetailField label="Room" value={item.room} />}
+          {item.assetId && <DetailField label="Asset ID" value={<Badge variant="outline" className="font-mono bg-muted/50">{item.assetId}</Badge>} />}
+          <DetailField label="Status" value={item.inUse ? 
+            <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-500/20 hover:bg-emerald-500/15">In Use</Badge> : 
+            <Badge variant="secondary">Stored</Badge>
+          } />
+          {item.purchaseDate && (
+            <DetailField label="Purchased" value={new Date(item.purchaseDate).toLocaleDateString("en-AU", { year: 'numeric', month: 'short' })} />
+          )}
+          {item.replacementValue !== null && (
+            <DetailField
+              label="Replacement"
+              value={<span className="text-amber-700 dark:text-amber-300 font-bold">{`$${item.replacementValue.toLocaleString()}`}</span>}
+            />
+          )}
+        </div>
       </div>
 
       {item.notes && (
@@ -257,8 +248,8 @@ function DetailField({
 }) {
   return (
     <div>
-      <dt className="text-sm text-muted-foreground">{label}</dt>
-      <dd className="font-medium">{value}</dd>
+      <dt className="text-xs font-bold text-amber-900/60 dark:text-amber-100/60 uppercase tracking-widest mb-1">{label}</dt>
+      <dd className="font-semibold text-foreground">{value}</dd>
     </div>
   );
 }

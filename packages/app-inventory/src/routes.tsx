@@ -34,6 +34,7 @@ interface AppNavConfigShape {
   id: string;
   label: string;
   icon: string;
+  color?: "emerald" | "indigo" | "amber" | "rose" | "sky" | "violet";
   basePath: string;
   items: { path: string; label: string; icon: string }[];
 }
@@ -42,6 +43,7 @@ export const navConfig = {
   id: "inventory",
   label: "Inventory",
   icon: "Package",
+  color: "amber",
   basePath: "/inventory",
   items: [
     { path: "", label: "Items", icon: "Package" },

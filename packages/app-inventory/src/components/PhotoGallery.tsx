@@ -85,7 +85,7 @@ export function PhotoGallery({
             <button
               type="button"
               onClick={() => openLightbox(index)}
-              className="w-full aspect-square rounded-md overflow-hidden border border-border hover:border-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="w-full aspect-square rounded-md overflow-hidden border border-border hover:border-amber-500 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               <img
                 src={photoSrc(photo.filePath)}

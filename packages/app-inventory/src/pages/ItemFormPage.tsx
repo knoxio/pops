@@ -270,7 +270,7 @@ export function ItemFormPage() {
         </Alert>
         <Link
           to="/inventory"
-          className="mt-4 inline-block text-sm text-primary underline"
+          className="mt-4 inline-block text-sm text-amber-600 hover:text-amber-700 underline font-medium"
         >
           Back to inventory
         </Link>
@@ -280,21 +280,24 @@ export function ItemFormPage() {
 
   return (
     <div className="p-6 max-w-2xl">
-      <div className="flex items-center gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-8">
         <Link to="/inventory">
-          <Button variant="ghost" size="icon" className="h-8 w-8">
-            <ArrowLeft className="h-4 w-4" />
+          <Button variant="ghost" size="icon" className="h-9 w-9 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 hover:text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 dark:hover:bg-amber-500/30 rounded-full transition-colors">
+            <ArrowLeft className="h-5 w-5" />
           </Button>
         </Link>
-        <h1 className="text-2xl font-bold">
+        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
           {isEditMode ? "Edit Item" : "New Item"}
         </h1>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         {/* Basic Info */}
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold">Basic Information</h2>
+        <section className="space-y-4 p-6 rounded-2xl border-2 border-amber-500/10 bg-card/50 shadow-sm shadow-amber-500/5">
+          <h2 className="text-lg font-bold flex items-center gap-2 text-amber-900 dark:text-amber-100">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            Basic Information
+          </h2>
 
           <FormField label="Item Name *" error={errors.itemName?.message}>
             <TextInput
@@ -302,6 +305,7 @@ export function ItemFormPage() {
                 required: "Item name is required",
               })}
               placeholder="e.g. MacBook Pro 16-inch"
+              className="font-semibold"
             />
           </FormField>
 
@@ -319,14 +323,17 @@ export function ItemFormPage() {
               <TextInput {...register("itemId")} />
             </FormField>
             <FormField label="Asset ID">
-              <TextInput {...register("assetId")} />
+              <TextInput {...register("assetId")} className="font-mono" />
             </FormField>
           </div>
         </section>
 
         {/* Classification */}
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold">Classification</h2>
+        <section className="space-y-4 p-6 rounded-2xl border-2 border-amber-500/10 bg-card/50 shadow-sm shadow-amber-500/5">
+          <h2 className="text-lg font-bold flex items-center gap-2 text-amber-900 dark:text-amber-100">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            Classification
+          </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="Type">
@@ -356,15 +363,18 @@ export function ItemFormPage() {
             />
           </FormField>
 
-          <div className="flex gap-6">
+          <div className="flex gap-6 p-4 rounded-xl bg-amber-500/5">
             <CheckboxInput label="In Use" {...register("inUse")} />
             <CheckboxInput label="Tax Deductible" {...register("deductible")} />
           </div>
         </section>
 
         {/* Dates & Values */}
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold">Dates & Values</h2>
+        <section className="space-y-4 p-6 rounded-2xl border-2 border-amber-500/10 bg-card/50 shadow-sm shadow-amber-500/5">
+          <h2 className="text-lg font-bold flex items-center gap-2 text-amber-900 dark:text-amber-100">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            Dates & Values
+          </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField label="Purchase Date">
@@ -383,6 +393,7 @@ export function ItemFormPage() {
                 min="0"
                 {...register("replacementValue")}
                 placeholder="0.00"
+                className="font-bold text-amber-600 dark:text-amber-400"
               />
             </FormField>
             <FormField label="Resale Value ($)">
@@ -398,21 +409,24 @@ export function ItemFormPage() {
         </section>
 
         {/* Notes */}
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold">Notes</h2>
+        <section className="space-y-4 p-6 rounded-2xl border-2 border-amber-500/10 bg-card/50 shadow-sm shadow-amber-500/5">
+          <h2 className="text-lg font-bold flex items-center gap-2 text-amber-900 dark:text-amber-100">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            Notes
+          </h2>
           <Textarea
             {...register("notes")}
             rows={4}
             placeholder="Add notes about this item..."
-            className="w-full"
+            className="w-full bg-transparent"
           />
         </section>
 
         {/* Connected Items (create mode only) */}
         {!isEditMode && (
-          <section className="space-y-4">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <Link2 className="h-5 w-5" />
+          <section className="space-y-4 p-6 rounded-2xl border-2 border-amber-500/10 bg-card/50 shadow-sm shadow-amber-500/5">
+            <h2 className="text-lg font-bold flex items-center gap-2 text-amber-900 dark:text-amber-100">
+              <Link2 className="h-5 w-5 text-amber-500" />
               Connected Items
             </h2>
 
@@ -422,12 +436,12 @@ export function ItemFormPage() {
                   <Badge
                     key={conn.id}
                     variant="secondary"
-                    className="flex items-center gap-1.5 pl-3 pr-1.5 py-1"
+                    className="flex items-center gap-1.5 pl-3 pr-1.5 py-1 bg-amber-500/10 text-amber-800 border-amber-500/20"
                   >
                     {conn.itemName}
                     <button
                       type="button"
-                      className="rounded-full p-0.5 hover:bg-muted"
+                      className="rounded-full p-0.5 hover:bg-amber-500/20"
                       onClick={() =>
                         setPendingConnections((prev) =>
                           prev.filter((c) => c.id !== conn.id),
@@ -476,7 +490,7 @@ export function ItemFormPage() {
                         <button
                           key={item.id}
                           type="button"
-                          className="w-full flex items-center justify-between p-2.5 hover:bg-accent text-left transition-colors"
+                          className="w-full flex items-center justify-between p-2.5 hover:bg-amber-500/5 text-left transition-colors"
                           onClick={() => {
                             setPendingConnections((prev) => [
                               ...prev,
@@ -495,7 +509,7 @@ export function ItemFormPage() {
                                 .join(" · ") || "No details"}
                             </div>
                           </div>
-                          <Link2 className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
+                          <Link2 className="h-4 w-4 text-amber-500/50 shrink-0 ml-2" />
                         </button>
                       ))
                     );
@@ -507,17 +521,19 @@ export function ItemFormPage() {
         )}
 
         {/* Actions */}
-        <div className="flex gap-3 pt-4 border-t">
+        <div className="flex gap-4 pt-6 border-t">
           <Button
             type="submit"
+            size="lg"
+            className="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-bold transition-all shadow-md shadow-amber-500/20"
             loading={isMutating}
             loadingText={isEditMode ? "Saving..." : "Creating..."}
-            prefix={<Save className="h-4 w-4" />}
           >
+            <Save className="h-5 w-5 mr-2" />
             {isEditMode ? "Save Changes" : "Create Item"}
           </Button>
           <Link to="/inventory">
-            <Button type="button" variant="outline">
+            <Button type="button" variant="outline" size="lg" className="px-8 font-bold border-amber-500/20 hover:bg-amber-500/5">
               Cancel
             </Button>
           </Link>

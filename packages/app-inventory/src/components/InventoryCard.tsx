@@ -56,6 +56,7 @@ export function InventoryCard({
       aria-label={itemName}
       className={cn(
         "group flex w-full cursor-pointer gap-3 rounded-lg border border-border bg-card p-3 text-left",
+        "border-l-4 border-l-amber-500/50",
         "transition-colors hover:bg-accent/50",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
         className,
