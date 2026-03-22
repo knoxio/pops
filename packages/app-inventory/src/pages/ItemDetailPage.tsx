@@ -14,6 +14,7 @@ import {
   Skeleton,
   TypeBadge,
   ConditionBadge,
+  type Condition,
 } from "@pops/ui";
 import {
   ArrowLeft,
@@ -138,7 +139,7 @@ export function ItemDetailPage() {
           {item.condition && (
             <DetailField
               label="Condition"
-              value={<ConditionBadge condition={item.condition as any} />}
+              value={<ConditionBadge condition={item.condition as Condition} />}
             />
           )}
           {item.room && <DetailField label="Room" value={item.room} />}
