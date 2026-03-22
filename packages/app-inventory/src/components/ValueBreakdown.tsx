@@ -15,15 +15,7 @@ import {
 } from "recharts";
 import { useNavigate } from "react-router";
 import { trpc } from "../lib/trpc";
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-AU", {
-    style: "currency",
-    currency: "AUD",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-}
+import { formatCurrency } from "../lib/utils";
 
 const BAR_COLORS = [
   "hsl(var(--primary))",
@@ -51,7 +43,11 @@ function BreakdownChart({ data, onBarClick }: BreakdownChartProps) {
 
   return (
     <ResponsiveContainer width="100%" height={chartHeight}>
-      <BarChart data={data} layout="vertical" margin={{ left: 0, right: 16, top: 4, bottom: 4 }}>
+      <BarChart
+        data={data}
+        layout="vertical"
+        margin={{ left: 0, right: 16, top: 4, bottom: 4 }}
+      >
         <XAxis
           type="number"
           tickFormatter={(v: number) => formatCurrency(v)}
@@ -70,7 +66,8 @@ function BreakdownChart({ data, onBarClick }: BreakdownChartProps) {
         <Tooltip
           content={({ payload }) => {
             if (!payload?.length) return null;
-            const entry = payload[0].payload as BreakdownChartProps["data"][number];
+            const entry = payload[0]
+              .payload as BreakdownChartProps["data"][number];
             return (
               <div className="rounded-md border bg-popover px-3 py-2 text-sm shadow-md">
                 <p className="font-medium">{entry.name}</p>

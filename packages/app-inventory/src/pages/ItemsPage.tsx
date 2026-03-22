@@ -28,6 +28,7 @@ import { InventoryTable } from "../components/InventoryTable";
 import { InventoryCard } from "../components/InventoryCard";
 import { ValueBreakdown } from "../components/ValueBreakdown";
 import { formatCurrency } from "../lib/utils";
+<<<<<<< HEAD
 
 type ViewMode = "table" | "grid";
 
@@ -42,6 +43,8 @@ function getInitialView(): ViewMode {
   }
   return "table";
 }
+=======
+>>>>>>> 7220bb4 (fix: extract formatCurrency to utils)
 
 const TYPE_OPTIONS: SelectOption[] = [
   { value: "", label: "All Types" },
