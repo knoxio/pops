@@ -25,9 +25,26 @@ export function MarkAsWatchedButton({
   const watchCount = historyData?.data?.length ?? 0;
   const lastWatched = historyData?.data?.[0]?.watchedAt;
 
-  const logMutation = trpc.media.watchHistory.log.useMutation({
+  const deleteMutation = trpc.media.watchHistory.delete.useMutation({
     onSuccess: () => {
-      toast.success("Marked as watched");
+      toast.success("Watch entry undone");
+      void utils.media.watchHistory.list.invalidate();
+      void utils.media.watchlist.list.invalidate();
+    },
+    onError: (err) => {
+      toast.error(`Failed to undo: ${err.message}`);
+    },
+  });
+
+  const logMutation = trpc.media.watchHistory.log.useMutation({
+    onSuccess: (result) => {
+      toast.success("Marked as watched", {
+        duration: 5000,
+        action: {
+          label: "Undo",
+          onClick: () => deleteMutation.mutate({ id: result.data.id }),
+        },
+      });
       void utils.media.watchHistory.list.invalidate();
       void utils.media.watchlist.list.invalidate();
       setShowDatePicker(false);
