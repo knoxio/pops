@@ -336,12 +336,12 @@ E2E tests move to `apps/pops-shell/e2e/` since they test the integrated app, not
 9. Top-level (sidebar-accessible) pages show neither a back button nor breadcrumbs
 10. Sidebar shows Finance nav items driven by the app's exported navConfig
 11. Lazy loading works — finance routes are code-split (verify in network tab)
-8. `pnpm dev` starts one Vite server
-9. `pnpm build` produces one output with code splitting
-10. `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm test` all pass
-11. All E2E tests pass with updated routes
-12. Storybook discovers stories from both `@pops/ui` and `@pops/app-finance`
-13. Docker/nginx/deployment configs updated and working
+12. `pnpm dev` starts one Vite server
+13. `pnpm build` produces one output with code splitting
+14. `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm test` all pass
+15. All E2E tests pass with updated routes
+16. Storybook discovers stories from both `@pops/ui` and `@pops/app-finance`
+17. Docker/nginx/deployment configs updated and working
 
 ## Edge Cases & Decisions
 

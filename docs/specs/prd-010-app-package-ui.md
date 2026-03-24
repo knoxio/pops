@@ -142,7 +142,7 @@ The primary visual unit — a card representing a movie or TV show.
 
 ### R5: Movie Detail Page (`/media/movies/:id`)
 
-Full detail view for a single movie. This is a drill-down page per PRD-002 R4.
+Full detail view for a single movie. This is a drill-down page per PRD-002 R5.
 
 **Layout:**
 - Page header: ArrowLeft back button + breadcrumb (`Library › Movie Title`) — padded section (`px-4 md:px-6 lg:px-8`)
@@ -163,7 +163,7 @@ Full detail view for a single movie. This is a drill-down page per PRD-002 R4.
 
 ### R6: TV Show Detail Page (`/media/tv/:id`)
 
-Full detail view for a TV show. This is a drill-down page per PRD-002 R4.
+Full detail view for a TV show. This is a drill-down page per PRD-002 R5.
 
 **Layout:**
 - Page header: ArrowLeft back button + breadcrumb (`Library › Show Title`) — padded section (`px-4 md:px-6 lg:px-8`)
@@ -185,7 +185,7 @@ Full detail view for a TV show. This is a drill-down page per PRD-002 R4.
 
 ### R7: Season Detail Page (`/media/tv/:id/season/:num`)
 
-Episode-level view for a single season. This is a drill-down page per PRD-002 R4.
+Episode-level view for a single season. This is a drill-down page per PRD-002 R5.
 
 **Layout:**
 - Page header: ArrowLeft back button (→ TV show detail) + breadcrumb (`Library › Show Name › Season N`) with each segment clickable
