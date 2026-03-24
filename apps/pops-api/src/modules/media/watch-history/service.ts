@@ -208,6 +208,7 @@ export function getWatchHistoryEntry(id: number): WatchHistoryRow {
 export function logWatch(input: LogWatchInput): WatchHistoryRow {
   const db = getDrizzle();
   const completed = input.completed ?? 1;
+  const watchedAt = input.watchedAt ?? new Date().toISOString();
 
   return db.transaction((tx) => {
     const result = tx
@@ -215,10 +216,28 @@ export function logWatch(input: LogWatchInput): WatchHistoryRow {
       .values({
         mediaType: input.mediaType,
         mediaId: input.mediaId,
-        watchedAt: input.watchedAt ?? new Date().toISOString(),
+        watchedAt,
         completed,
       })
+      .onConflictDoNothing()
       .run();
+
+    // If duplicate, return the existing row
+    if (result.changes === 0) {
+      const existing = tx
+        .select()
+        .from(watchHistory)
+        .where(
+          and(
+            eq(watchHistory.mediaType, input.mediaType),
+            eq(watchHistory.mediaId, input.mediaId),
+            eq(watchHistory.watchedAt, watchedAt)
+          )
+        )
+        .get();
+      if (!existing) throw new Error("Watch history entry not found after conflict");
+      return existing;
+    }
 
     const entry = tx
       .select()
@@ -508,6 +527,7 @@ export function batchLogWatch(input: BatchLogWatchInput): BatchLogResult {
           watchedAt,
           completed,
         })
+        .onConflictDoNothing()
         .run();
     }
 

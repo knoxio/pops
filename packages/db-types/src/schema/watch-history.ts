@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 export const watchHistory = sqliteTable(
@@ -13,5 +13,6 @@ export const watchHistory = sqliteTable(
   (table) => [
     index("idx_watch_history_media").on(table.mediaType, table.mediaId),
     index("idx_watch_history_watched_at").on(table.watchedAt),
+    uniqueIndex("idx_watch_history_unique").on(table.mediaType, table.mediaId, table.watchedAt),
   ]
 );
