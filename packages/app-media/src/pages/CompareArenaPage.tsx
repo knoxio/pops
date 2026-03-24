@@ -175,6 +175,16 @@ export function CompareArenaPage() {
         </div>
       ) : pairError ? (
         <div className="text-center py-12 text-muted-foreground">
+          <p className="text-lg mb-2">Something went wrong</p>
+          <p className="text-sm">
+            {pairError.message}{" "}
+            <button onClick={() => refetchPair()} className="text-primary underline">
+              Try again
+            </button>
+          </p>
+        </div>
+      ) : pairData?.data === null ? (
+        <div className="text-center py-12 text-muted-foreground">
           <p className="text-lg mb-2">Not enough watched movies</p>
           <p className="text-sm">
             Watch at least 2 movies to start comparing.{" "}

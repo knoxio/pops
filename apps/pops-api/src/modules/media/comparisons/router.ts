@@ -95,12 +95,9 @@ export const comparisonsRouter = router({
     try {
       const pair = service.getRandomPair(input.dimensionId, input.avoidRecent);
       if (!pair) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Not enough watched movies to create a comparison pair (need at least 2)",
-        });
+        return { data: null, reason: "insufficient_watched_movies" as const };
       }
-      return { data: pair };
+      return { data: pair, reason: null };
     } catch (err) {
       if (err instanceof NotFoundError) {
         throw new TRPCError({ code: "NOT_FOUND", message: err.message });
