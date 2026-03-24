@@ -26,6 +26,7 @@ const INCLUDED_MIGRATIONS = [
   "20260320140000_inventory_new_columns.sql",
   "20260321140000_item_documents.sql",
   "20260322120000_settings.sql",
+  "20260324140000_watch_history_unique_index.sql",
 ];
 
 /**
@@ -366,6 +367,7 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     );
     CREATE INDEX IF NOT EXISTS idx_watch_history_media ON watch_history(media_type, media_id);
     CREATE INDEX IF NOT EXISTS idx_watch_history_watched_at ON watch_history(watched_at);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_watch_history_unique ON watch_history(media_type, media_id, watched_at);
 
     CREATE TABLE IF NOT EXISTS schema_migrations (
       version TEXT PRIMARY KEY,
