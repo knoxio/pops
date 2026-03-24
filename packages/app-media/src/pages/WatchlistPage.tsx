@@ -2,10 +2,11 @@
  * WatchlistPage — displays the user's watchlist with reorder controls and inline notes.
  *
  * Items are ordered by priority (lower = higher in list).
- * Up/down buttons allow reordering, which persists via the reorder mutation.
+ * Mobile: compact list with up/down reorder buttons.
+ * Desktop (md+): responsive poster card grid with priority badges.
  */
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
   Alert,
   AlertTitle,
@@ -15,7 +16,7 @@ import {
   Textarea,
 } from "@pops/ui";
 import { Button } from "@pops/ui";
-import { ArrowUp, ArrowDown, Trash2 } from "lucide-react";
+import { ArrowUp, ArrowDown, Trash2, Film } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
 
@@ -36,18 +37,31 @@ interface MediaMeta {
 
 function WatchlistSkeleton() {
   return (
-    <div className="space-y-3">
-      {Array.from({ length: 5 }).map((_, i) => (
-        <div key={i} className="flex gap-4 p-3 rounded-lg border">
-          <Skeleton className="w-16 aspect-[2/3] rounded shrink-0" />
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-5 w-48" />
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-3 w-full" />
+    <>
+      {/* Mobile skeleton */}
+      <div className="space-y-3 md:hidden">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="flex gap-4 p-3 rounded-lg border">
+            <Skeleton className="w-16 aspect-[2/3] rounded shrink-0" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-5 w-48" />
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-3 w-full" />
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+      {/* Desktop skeleton */}
+      <div className="hidden md:grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} className="space-y-2">
+            <Skeleton className="w-full aspect-[2/3] rounded-md" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-3 w-1/2" />
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -265,6 +279,105 @@ function WatchlistItem({
   );
 }
 
+interface WatchlistCardProps {
+  entry: WatchlistEntry;
+  title: string;
+  year: number | null;
+  priority: number;
+  onRemove: (id: number) => void;
+  isRemoving: boolean;
+}
+
+function WatchlistCard({
+  entry,
+  title,
+  year,
+  priority,
+  onRemove,
+  isRemoving,
+}: WatchlistCardProps) {
+  const navigate = useNavigate();
+  const [imageError, setImageError] = useState(false);
+
+  const href =
+    entry.mediaType === "movie"
+      ? `/media/movies/${entry.mediaId}`
+      : `/media/tv/${entry.mediaId}`;
+  const posterSrc = `/media/images/${entry.mediaType === "movie" ? "movie" : "tv"}/${entry.mediaId}/poster.jpg`;
+
+  return (
+    <div className="group flex flex-col gap-2">
+      {/* Poster */}
+      <div
+        role="button"
+        tabIndex={0}
+        className="relative w-full overflow-hidden rounded-md bg-muted aspect-[2/3] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        onClick={() => navigate(href)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            navigate(href);
+          }
+        }}
+      >
+        {/* Priority badge */}
+        <div className="absolute top-2 left-2 z-10 bg-primary text-primary-foreground text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+          #{priority}
+        </div>
+
+        {/* Type badge */}
+        <Badge
+          variant={entry.mediaType === "movie" ? "default" : "secondary"}
+          className="absolute top-2 right-2 z-10"
+        >
+          {entry.mediaType === "movie" ? "Movie" : "TV"}
+        </Badge>
+
+        {/* Remove button (hover) */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove(entry.id);
+          }}
+          disabled={isRemoving}
+          aria-label={`Remove ${title} from watchlist`}
+          className="absolute bottom-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-destructive text-destructive-foreground rounded-md p-1.5 hover:bg-destructive/90 disabled:opacity-50"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+
+        {imageError ? (
+          <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+            <Film className="h-10 w-10 opacity-40" />
+          </div>
+        ) : (
+          <img
+            src={posterSrc}
+            alt={`${title} poster`}
+            loading="lazy"
+            className="h-full w-full object-cover group-hover:opacity-80 transition-opacity"
+            onError={() => setImageError(true)}
+          />
+        )}
+      </div>
+
+      {/* Title + year + notes */}
+      <div className="space-y-0.5 px-0.5">
+        <Link to={href} className="hover:underline">
+          <h3 className="text-sm font-medium leading-tight line-clamp-2">{title}</h3>
+        </Link>
+        {year && (
+          <p className="text-xs text-muted-foreground">{year}</p>
+        )}
+        {entry.notes && (
+          <p className="text-xs text-muted-foreground line-clamp-1">{entry.notes}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function WatchlistPage() {
   const [isReordering, setIsReordering] = useState(false);
   const [removingId, setRemovingId] = useState<number | null>(null);
@@ -406,7 +519,7 @@ export function WatchlistPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6">
       <h1 className="text-2xl font-bold">Watchlist</h1>
 
       {loading ? (
@@ -430,46 +543,74 @@ export function WatchlistPage() {
           </div>
         </div>
       ) : (
-        <div className="space-y-3" role="list" aria-label="Watchlist items">
-          {sortedEntries.map((entry: WatchlistEntry, index: number) => {
-            const meta =
-              entry.mediaType === "movie"
-                ? movieMap.get(entry.mediaId)
-                : tvMap.get(entry.mediaId);
+        <>
+          {/* Mobile: compact list with reorder */}
+          <div className="space-y-3 md:hidden" role="list" aria-label="Watchlist items">
+            {sortedEntries.map((entry: WatchlistEntry, index: number) => {
+              const meta =
+                entry.mediaType === "movie"
+                  ? movieMap.get(entry.mediaId)
+                  : tvMap.get(entry.mediaId);
 
-            return (
-              <WatchlistItem
-                key={entry.id}
-                entry={entry}
-                title={meta?.title ?? "Unknown"}
-                year={meta?.year ?? null}
-                posterUrl={meta?.posterUrl ?? null}
-                isFirst={index === 0}
-                isLast={index === sortedEntries.length - 1}
-                onMoveUp={() => handleMove(index, "up")}
-                onMoveDown={() => handleMove(index, "down")}
-                onRemove={(id) => {
-                  setRemovingId(id);
-                  removeMutation.mutate({ id });
-                }}
-                isRemoving={removingId === entry.id}
-                isReordering={isReordering}
-                onUpdateNotes={(id, notes) => {
-                  setUpdateErrorId(id);
-                  setUpdateErrorMsg(null);
-                  updateMutation.mutate({ id, data: { notes } });
-                }}
-                isUpdating={
-                  updateMutation.isPending &&
-                  updateMutation.variables?.id === entry.id
-                }
-                updateError={
-                  updateErrorId === entry.id ? updateErrorMsg : null
-                }
-              />
-            );
-          })}
-        </div>
+              return (
+                <WatchlistItem
+                  key={entry.id}
+                  entry={entry}
+                  title={meta?.title ?? "Unknown"}
+                  year={meta?.year ?? null}
+                  posterUrl={meta?.posterUrl ?? null}
+                  isFirst={index === 0}
+                  isLast={index === sortedEntries.length - 1}
+                  onMoveUp={() => handleMove(index, "up")}
+                  onMoveDown={() => handleMove(index, "down")}
+                  onRemove={(id) => {
+                    setRemovingId(id);
+                    removeMutation.mutate({ id });
+                  }}
+                  isRemoving={removingId === entry.id}
+                  isReordering={isReordering}
+                  onUpdateNotes={(id, notes) => {
+                    setUpdateErrorId(id);
+                    setUpdateErrorMsg(null);
+                    updateMutation.mutate({ id, data: { notes } });
+                  }}
+                  isUpdating={
+                    updateMutation.isPending &&
+                    updateMutation.variables?.id === entry.id
+                  }
+                  updateError={
+                    updateErrorId === entry.id ? updateErrorMsg : null
+                  }
+                />
+              );
+            })}
+          </div>
+
+          {/* Desktop: poster card grid */}
+          <div className="hidden md:grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {sortedEntries.map((entry: WatchlistEntry, index: number) => {
+              const meta =
+                entry.mediaType === "movie"
+                  ? movieMap.get(entry.mediaId)
+                  : tvMap.get(entry.mediaId);
+
+              return (
+                <WatchlistCard
+                  key={entry.id}
+                  entry={entry}
+                  title={meta?.title ?? "Unknown"}
+                  year={meta?.year ?? null}
+                  priority={index + 1}
+                  onRemove={(id) => {
+                    setRemovingId(id);
+                    removeMutation.mutate({ id });
+                  }}
+                  isRemoving={removingId === entry.id}
+                />
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );

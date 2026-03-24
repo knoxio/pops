@@ -1,5 +1,10 @@
+/**
+ * HistoryPage — watch history with filter tabs and pagination.
+ *
+ * Mobile: compact list. Desktop (md+): responsive poster card grid.
+ */
 import { useState } from "react";
-import { Link } from "react-router";
+import { Link, useNavigate } from "react-router";
 import {
   Alert,
   AlertTitle,
@@ -8,6 +13,7 @@ import {
   Button,
   Skeleton,
 } from "@pops/ui";
+import { Film } from "lucide-react";
 import { trpc } from "../lib/trpc";
 
 const PAGE_SIZE = 50;
@@ -30,47 +36,78 @@ function formatWatchDate(iso: string): string {
   });
 }
 
+function formatShortDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-AU", {
+    day: "numeric",
+    month: "short",
+  });
+}
+
 function HistorySkeleton() {
   return (
-    <div className="space-y-3">
-      {Array.from({ length: 6 }).map((_, i) => (
-        <div key={i} className="flex gap-3 p-3 rounded-lg border">
-          <Skeleton className="w-12 aspect-[2/3] rounded shrink-0" />
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-4 w-48" />
-            <Skeleton className="h-3 w-32" />
+    <>
+      {/* Mobile */}
+      <div className="space-y-3 md:hidden">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="flex gap-3 p-3 rounded-lg border">
+            <Skeleton className="w-12 aspect-[2/3] rounded shrink-0" />
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-4 w-48" />
+              <Skeleton className="h-3 w-32" />
+            </div>
           </div>
-        </div>
-      ))}
-    </div>
+        ))}
+      </div>
+      {/* Desktop */}
+      <div className="hidden md:grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <div key={i} className="space-y-2">
+            <Skeleton className="w-full aspect-[2/3] rounded-md" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-3 w-1/2" />
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 
-interface HistoryItemProps {
-  entry: {
-    id: number;
-    mediaType: string;
-    mediaId: number;
-    watchedAt: string;
-    title: string | null;
-    posterPath: string | null;
-    posterUrl: string | null;
-    seasonNumber: number | null;
-    episodeNumber: number | null;
-    showName: string | null;
-    tvShowId: number | null;
-  };
+interface HistoryEntry {
+  id: number;
+  mediaType: string;
+  mediaId: number;
+  watchedAt: string;
+  title: string | null;
+  posterPath: string | null;
+  posterUrl: string | null;
+  seasonNumber: number | null;
+  episodeNumber: number | null;
+  showName: string | null;
+  tvShowId: number | null;
 }
 
-function HistoryItem({ entry }: HistoryItemProps) {
+function getHistoryHref(entry: HistoryEntry): string {
   const isEpisode = entry.mediaType === "episode";
-  const href =
-    isEpisode && entry.tvShowId
-      ? `/media/tv/${entry.tvShowId}/season/${entry.seasonNumber}`
-      : isEpisode
-        ? `/media`
-        : `/media/movies/${entry.mediaId}`;
-  const posterSrc = entry.posterUrl;
+  if (isEpisode && entry.tvShowId) {
+    return `/media/tv/${entry.tvShowId}/season/${entry.seasonNumber}`;
+  }
+  if (isEpisode) return `/media`;
+  return `/media/movies/${entry.mediaId}`;
+}
+
+function getHistoryPoster(entry: HistoryEntry): string | null {
+  if (!entry.posterPath) return null;
+  const isEpisode = entry.mediaType === "episode";
+  if (isEpisode && entry.tvShowId) {
+    return `/media/images/tv/${entry.tvShowId}/poster.jpg`;
+  }
+  return `/media/images/movie/${entry.mediaId}/poster.jpg`;
+}
+
+function HistoryItem({ entry }: { entry: HistoryEntry }) {
+  const href = getHistoryHref(entry);
+  const posterSrc = getHistoryPoster(entry);
+  const isEpisode = entry.mediaType === "episode";
 
   const title = entry.title ?? "Unknown";
   const subtitle =
@@ -117,6 +154,73 @@ function HistoryItem({ entry }: HistoryItemProps) {
   );
 }
 
+function HistoryCard({ entry }: { entry: HistoryEntry }) {
+  const navigate = useNavigate();
+  const [imageError, setImageError] = useState(false);
+  const href = getHistoryHref(entry);
+  const posterSrc = getHistoryPoster(entry);
+  const isEpisode = entry.mediaType === "episode";
+
+  const title = entry.title ?? "Unknown";
+  const subtitle =
+    isEpisode && entry.showName
+      ? `${entry.showName} · S${entry.seasonNumber ?? "?"}E${entry.episodeNumber ?? "?"}`
+      : null;
+
+  return (
+    <div className="group flex flex-col gap-2">
+      <div
+        role="button"
+        tabIndex={0}
+        className="relative w-full overflow-hidden rounded-md bg-muted aspect-[2/3] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        onClick={() => navigate(href)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            navigate(href);
+          }
+        }}
+      >
+        {/* Type badge */}
+        <Badge
+          variant={isEpisode ? "secondary" : "default"}
+          className="absolute top-2 left-2 z-10"
+        >
+          {isEpisode ? "Episode" : "Movie"}
+        </Badge>
+
+        {/* Watch date badge */}
+        <span className="absolute top-2 right-2 z-10 bg-black/60 text-white text-[10px] font-medium px-1.5 py-0.5 rounded">
+          {formatShortDate(entry.watchedAt)}
+        </span>
+
+        {!posterSrc || imageError ? (
+          <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+            <Film className="h-10 w-10 opacity-40" />
+          </div>
+        ) : (
+          <img
+            src={posterSrc}
+            alt={`${title} poster`}
+            loading="lazy"
+            className="h-full w-full object-cover group-hover:opacity-80 transition-opacity"
+            onError={() => setImageError(true)}
+          />
+        )}
+      </div>
+
+      <div className="space-y-0.5 px-0.5">
+        <Link to={href} className="hover:underline">
+          <h3 className="text-sm font-medium leading-tight line-clamp-2">{title}</h3>
+        </Link>
+        {subtitle && (
+          <p className="text-xs text-muted-foreground line-clamp-1">{subtitle}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function HistoryPage() {
   const [filter, setFilter] = useState<MediaTypeFilter>("all");
   const [offset, setOffset] = useState(0);
@@ -135,7 +239,7 @@ export function HistoryPage() {
   const hasMore = offset + PAGE_SIZE < total;
 
   return (
-    <div className="p-4 md:p-6 space-y-6 max-w-3xl">
+    <div className="space-y-6">
       <h1 className="text-2xl font-bold">Watch History</h1>
 
       {/* Type filter tabs */}
@@ -182,9 +286,17 @@ export function HistoryPage() {
         </div>
       ) : (
         <>
-          <div className="space-y-2">
+          {/* Mobile: compact list */}
+          <div className="space-y-2 md:hidden">
             {entries.map((entry) => (
               <HistoryItem key={entry.id} entry={entry} />
+            ))}
+          </div>
+
+          {/* Desktop: poster card grid */}
+          <div className="hidden md:grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {entries.map((entry) => (
+              <HistoryCard key={entry.id} entry={entry} />
             ))}
           </div>
 
