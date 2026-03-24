@@ -3,8 +3,8 @@
  * Three horizontal scroll sections: Recommended for You, Trending, Similar to Top Rated.
  */
 import { useState, useCallback } from "react";
-import { Alert } from "@pops/ui";
-import { Compass, AlertCircle } from "lucide-react";
+import { Alert, Button } from "@pops/ui";
+import { Compass, AlertCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
 import { HorizontalScrollRow } from "../components/HorizontalScrollRow";
@@ -104,9 +104,6 @@ export function DiscoverPage() {
     [addMovieMutation, addWatchlistMutation, utils],
   );
 
-  const hasError =
-    trending.error || recommendations.error || similarToTopRated.error;
-
   return (
     <div className="space-y-8 pb-8">
       {/* Header */}
@@ -120,16 +117,6 @@ export function DiscoverPage() {
         </div>
       </div>
 
-      {/* Error alert */}
-      {hasError && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <p>
-            Some sections failed to load. Check that TMDB_API_KEY is configured.
-          </p>
-        </Alert>
-      )}
-
       {/* Recommended for You */}
       <HorizontalScrollRow
         title="Recommended for You"
@@ -140,7 +127,16 @@ export function DiscoverPage() {
         }
         isLoading={recommendations.isLoading}
       >
-        {recommendations.data?.results.length === 0 && (
+        {recommendations.error && (
+          <Alert variant="destructive" className="flex items-center gap-3">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <p className="flex-1 text-sm">{recommendations.error.message}</p>
+            <Button variant="outline" size="sm" onClick={() => recommendations.refetch()}>
+              <RefreshCw className="mr-1 h-3 w-3" /> Retry
+            </Button>
+          </Alert>
+        )}
+        {!recommendations.error && recommendations.data?.results.length === 0 && (
           <p className="py-8 text-sm text-muted-foreground">
             Add movies to your library to get personalized recommendations.
           </p>
@@ -169,6 +165,15 @@ export function DiscoverPage() {
         title="Trending This Week"
         isLoading={trending.isLoading}
       >
+        {trending.error && (
+          <Alert variant="destructive" className="flex items-center gap-3">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <p className="flex-1 text-sm">{trending.error.message}</p>
+            <Button variant="outline" size="sm" onClick={() => trending.refetch()}>
+              <RefreshCw className="mr-1 h-3 w-3" /> Retry
+            </Button>
+          </Alert>
+        )}
         {trending.data?.results.map((item) => (
           <DiscoverCard
             key={item.tmdbId}
@@ -196,7 +201,16 @@ export function DiscoverPage() {
         }
         isLoading={similarToTopRated.isLoading}
       >
-        {similarToTopRated.data?.results.length === 0 && (
+        {similarToTopRated.error && (
+          <Alert variant="destructive" className="flex items-center gap-3">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            <p className="flex-1 text-sm">{similarToTopRated.error.message}</p>
+            <Button variant="outline" size="sm" onClick={() => similarToTopRated.refetch()}>
+              <RefreshCw className="mr-1 h-3 w-3" /> Retry
+            </Button>
+          </Alert>
+        )}
+        {!similarToTopRated.error && similarToTopRated.data?.results.length === 0 && (
           <p className="py-8 text-sm text-muted-foreground">
             Rate more movies to discover similar titles.
           </p>

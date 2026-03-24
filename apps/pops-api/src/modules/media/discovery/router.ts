@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../../../trpc.js";
-import { getTmdbClient, TmdbApiError } from "../tmdb/index.js";
+import { getTmdbClient } from "../tmdb/index.js";
 import { TrendingQuerySchema, RecommendationsQuerySchema } from "./types.js";
 import * as service from "./service.js";
 import * as tmdbService from "./tmdb-service.js";
@@ -34,13 +34,11 @@ export const discoveryRouter = router({
     try {
       return await tmdbService.getTrending(client, input.timeWindow, input.page);
     } catch (err) {
-      if (err instanceof TmdbApiError) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `TMDB API error: ${err.message}`,
-        });
-      }
-      throw err;
+      if (err instanceof TRPCError) throw err;
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: err instanceof Error ? err.message : "Unknown error fetching trending",
+      });
     }
   }),
 
@@ -59,13 +57,11 @@ export const discoveryRouter = router({
       const scored = service.scoreRecommendations(raw.results, profile);
       return { results: scored, sourceMovies: raw.sourceMovies };
     } catch (err) {
-      if (err instanceof TmdbApiError) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `TMDB API error: ${err.message}`,
-        });
-      }
-      throw err;
+      if (err instanceof TRPCError) throw err;
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: err instanceof Error ? err.message : "Unknown error fetching recommendations",
+      });
     }
   }),
 });
