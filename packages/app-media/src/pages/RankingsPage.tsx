@@ -69,7 +69,15 @@ function RankingRow({
     <div className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
       <span className="w-8 text-right text-sm font-bold text-muted-foreground tabular-nums">
         {rank <= 3 ? (
-          <span className={rank === 1 ? "text-yellow-500" : rank === 2 ? "text-zinc-400" : "text-amber-700"}>
+          <span
+            className={
+              rank === 1
+                ? "text-yellow-500"
+                : rank === 2
+                  ? "text-zinc-400"
+                  : "text-amber-700"
+            }
+          >
             #{rank}
           </span>
         ) : (
@@ -126,7 +134,9 @@ function RankingsList({ dimensionId }: { dimensionId?: number }) {
   });
 
   const { data: moviesData } = trpc.media.movies.list.useQuery({ limit: 500 });
-  const { data: tvShowsData } = trpc.media.tvShows.list.useQuery({ limit: 500 });
+  const { data: tvShowsData } = trpc.media.tvShows.list.useQuery({
+    limit: 500,
+  });
 
   const movieMap = useMemo(
     () =>
@@ -139,10 +149,10 @@ function RankingsList({ dimensionId }: { dimensionId?: number }) {
               year: m.releaseDate ? new Date(m.releaseDate).getFullYear() : null,
               posterUrl: m.posterUrl,
             },
-          ]
-        )
+          ],
+        ),
       ),
-    [moviesData?.data]
+    [moviesData?.data],
   );
 
   const tvMap = useMemo(
@@ -156,10 +166,10 @@ function RankingsList({ dimensionId }: { dimensionId?: number }) {
               year: s.firstAirDate ? new Date(s.firstAirDate).getFullYear() : null,
               posterUrl: s.posterUrl,
             },
-          ]
-        )
+          ],
+        ),
       ),
-    [tvShowsData?.data]
+    [tvShowsData?.data],
   );
 
   if (error) {
@@ -181,7 +191,8 @@ function RankingsList({ dimensionId }: { dimensionId?: number }) {
       <div className="text-center py-16">
         <Trophy className="h-12 w-12 mx-auto text-muted-foreground/40 mb-4" />
         <p className="text-muted-foreground">
-          No rankings yet. Compare some movies to start building your leaderboard.
+          No rankings yet. Compare some movies to start building your
+          leaderboard.
         </p>
       </div>
     );
@@ -215,7 +226,8 @@ function RankingsList({ dimensionId }: { dimensionId?: number }) {
       {pagination && pagination.total > PAGE_SIZE && (
         <div className="flex items-center justify-between pt-2">
           <span className="text-sm text-muted-foreground">
-            Showing {offset + 1}–{Math.min(offset + PAGE_SIZE, pagination.total)} of{" "}
+            Showing {offset + 1}–
+            {Math.min(offset + PAGE_SIZE, pagination.total)} of{" "}
             {pagination.total}
           </span>
           <div className="flex gap-2">
@@ -248,13 +260,13 @@ export function RankingsPage() {
 
   const activeDimensions = useMemo(
     () => (dimensionsData?.data ?? []).filter((d) => d.active),
-    [dimensionsData?.data]
+    [dimensionsData?.data],
   );
 
   const showTabs = activeDimensions.length > 0;
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3">
         <Trophy className="h-6 w-6 text-yellow-500" />
         <h1 className="text-2xl font-bold">Rankings</h1>
