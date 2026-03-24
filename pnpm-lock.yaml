@@ -111,6 +111,9 @@ importers:
       '@pops/api':
         specifier: workspace:*
         version: link:../pops-api
+      '@pops/app-ai':
+        specifier: workspace:*
+        version: link:../../packages/app-ai
       '@pops/app-finance':
         specifier: workspace:*
         version: link:../../packages/app-finance
@@ -190,6 +193,52 @@ importers:
       vitest:
         specifier: ^3.0.0
         version: 3.2.4(@types/node@25.5.0)(@vitest/browser@3.2.4)(jiti@2.6.1)(lightningcss@1.32.0)(msw@2.12.13(@types/node@25.5.0)(typescript@5.9.3))(terser@5.46.1)(tsx@4.21.0)
+
+  packages/app-ai:
+    dependencies:
+      '@pops/api':
+        specifier: workspace:*
+        version: link:../../apps/pops-api
+      '@pops/ui':
+        specifier: workspace:*
+        version: link:../ui
+      '@tanstack/react-query':
+        specifier: 5.90.20
+        version: 5.90.20(react@19.2.4)
+      '@tanstack/react-table':
+        specifier: 8.21.3
+        version: 8.21.3(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+      '@trpc/client':
+        specifier: 11.13.4
+        version: 11.13.4(@trpc/server@11.13.4(typescript@5.9.3))(typescript@5.9.3)
+      '@trpc/react-query':
+        specifier: 11.13.4
+        version: 11.13.4(@tanstack/react-query@5.90.20(react@19.2.4))(@trpc/client@11.13.4(@trpc/server@11.13.4(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.13.4(typescript@5.9.3))(react@19.2.4)(typescript@5.9.3)
+      lucide-react:
+        specifier: ^0.563.0
+        version: 0.563.0(react@19.2.4)
+      react:
+        specifier: ^19.0.0
+        version: 19.2.4
+      react-router:
+        specifier: ^7.13.1
+        version: 7.13.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.0.0
+        version: 19.2.14
+      '@types/react-dom':
+        specifier: ^19.0.0
+        version: 19.2.3(@types/react@19.2.14)
+      eslint:
+        specifier: ^10.0.3
+        version: 10.0.3(jiti@2.6.1)
+      typescript:
+        specifier: ^5.7.0
+        version: 5.9.3
+      typescript-eslint:
+        specifier: ^8.57.1
+        version: 8.57.1(eslint@10.0.3(jiti@2.6.1))(typescript@5.9.3)
 
   packages/app-finance:
     dependencies:

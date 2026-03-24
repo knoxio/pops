@@ -27,10 +27,6 @@ const WishlistPage = lazy(() =>
 const ImportPage = lazy(() =>
   import("./pages/ImportPage").then((m) => ({ default: m.ImportPage }))
 );
-const AiUsagePage = lazy(() =>
-  import("./pages/AiUsagePage").then((m) => ({ default: m.AiUsagePage }))
-);
-
 /** Shared navigation types (mirrored from shell to avoid circular dependency) */
 export interface AppNavItem {
   path: string;
@@ -60,7 +56,6 @@ export const navConfig: AppNavConfig = {
     { path: "/budgets", label: "Budgets", icon: "PiggyBank" },
     { path: "/wishlist", label: "Wish List", icon: "Star" },
     { path: "/import", label: "Import", icon: "Download" },
-    { path: "/ai-usage", label: "AI Usage", icon: "Bot" },
   ],
 };
 
@@ -71,5 +66,4 @@ export const routes: RouteObject[] = [
   { path: "budgets", element: <BudgetsPage /> },
   { path: "wishlist", element: <WishlistPage /> },
   { path: "import", element: <ImportPage /> },
-  { path: "ai-usage", element: <AiUsagePage /> },
 ];

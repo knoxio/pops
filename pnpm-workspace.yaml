@@ -3,5 +3,6 @@ packages:
   - 'packages/app-finance'
   - 'packages/app-media'
   - 'packages/app-inventory'
+  - 'packages/app-ai'
   - 'packages/db-types'
   - 'packages/ui'

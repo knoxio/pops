@@ -9,6 +9,7 @@ import { createBrowserRouter, Link, Navigate } from "react-router";
 import { routes as financeRoutes } from "@pops/app-finance";
 import { routes as mediaRoutes } from "@pops/app-media";
 import { routes as inventoryRoutes } from "@pops/app-inventory";
+import { routes as aiRoutes } from "@pops/app-ai";
 import { RootLayout } from "./layout/RootLayout";
 import { NotFoundPage } from "./pages/NotFoundPage";
 
@@ -63,6 +64,10 @@ export const router = createBrowserRouter([
       {
         path: "inventory",
         children: withSuspense(inventoryRoutes),
+      },
+      {
+        path: "ai",
+        children: withSuspense(aiRoutes),
       },
       { path: "*", element: <NotFoundPage /> },
     ],
