@@ -157,6 +157,7 @@ describe("logMovieWatch", () => {
       mediaId: 42,
       watchedAt: new Date(1711500000 * 1000).toISOString(),
       completed: 1,
+      source: "plex_sync",
     });
   });
 
@@ -194,6 +195,7 @@ describe("syncEpisodeWatches", () => {
       mediaId: 100,
       watchedAt: new Date(1711400000 * 1000).toISOString(),
       completed: 1,
+      source: "plex_sync",
     });
   });
 
