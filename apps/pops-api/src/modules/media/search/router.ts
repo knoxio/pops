@@ -36,13 +36,17 @@ export const searchRouter = router({
         page: response.page,
       };
     } catch (err) {
-      if (err instanceof TmdbApiError) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `TMDB API error: ${err.message}`,
-        });
-      }
-      throw err;
+      if (err instanceof TRPCError) throw err;
+      const message =
+        err instanceof TmdbApiError
+          ? `TMDB API error: ${err.message}`
+          : err instanceof Error
+            ? err.message
+            : "Unknown error searching movies";
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message,
+      });
     }
   }),
 
@@ -59,13 +63,17 @@ export const searchRouter = router({
       const results = await client.searchSeries(input.query);
       return { results };
     } catch (err) {
-      if (err instanceof TvdbApiError) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `TheTVDB API error: ${err.message}`,
-        });
-      }
-      throw err;
+      if (err instanceof TRPCError) throw err;
+      const message =
+        err instanceof TvdbApiError
+          ? `TheTVDB API error: ${err.message}`
+          : err instanceof Error
+            ? err.message
+            : "Unknown error searching TV shows";
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message,
+      });
     }
   }),
 });

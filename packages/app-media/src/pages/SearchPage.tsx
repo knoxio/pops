@@ -6,8 +6,8 @@
  * "In Library" badge for items already in the collection.
  */
 import { useState, useEffect, useCallback } from "react";
-import { Input, Skeleton, Tabs, TabsList, TabsTrigger } from "@pops/ui";
-import { Search } from "lucide-react";
+import { Button, Input, Skeleton, Tabs, TabsList, TabsTrigger } from "@pops/ui";
+import { AlertTriangle, Search } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
 import {
@@ -159,6 +159,16 @@ export function SearchPage() {
   const hasQuery = debouncedQuery.length > 0;
   const hasError = movieSearch.error || tvSearch.error;
 
+  // Toast actual error message on failure
+  useEffect(() => {
+    if (movieSearch.error) {
+      toast.error(`Movie search failed: ${movieSearch.error.message}`);
+    }
+    if (tvSearch.error) {
+      toast.error(`TV search failed: ${tvSearch.error.message}`);
+    }
+  }, [movieSearch.error, tvSearch.error]);
+
   // Merge results
   const movieResults = shouldSearchMovies
     ? (movieSearch.data?.results ?? [])
@@ -202,9 +212,24 @@ export function SearchPage() {
 
       {/* Error state */}
       {hasError && (
-        <p className="text-sm text-destructive">
-          Search failed. Please try again.
-        </p>
+        <div className="flex flex-col items-center justify-center py-12 space-y-4">
+          <AlertTriangle className="h-10 w-10 text-destructive opacity-60" />
+          <div className="text-center space-y-1">
+            <p className="font-semibold">Search failed</p>
+            <p className="text-sm text-muted-foreground">
+              Something went wrong. Check your connection and try again.
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => {
+              if (movieSearch.error) movieSearch.refetch();
+              if (tvSearch.error) tvSearch.refetch();
+            }}
+          >
+            Retry
+          </Button>
+        </div>
       )}
 
       {/* Loading skeletons */}
