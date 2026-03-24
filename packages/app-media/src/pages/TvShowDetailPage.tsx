@@ -135,8 +135,8 @@ export function TvShowDetailPage() {
 
   return (
     <div>
-      {/* Hero section */}
-      <div className="relative h-64 md:h-96 overflow-hidden bg-muted">
+      {/* Hero section — negative margins cancel shell padding for edge-to-edge */}
+      <div className="-mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8 relative h-64 md:h-96 overflow-hidden bg-muted">
         {backdropSrc && (
           <img
             src={backdropSrc}
