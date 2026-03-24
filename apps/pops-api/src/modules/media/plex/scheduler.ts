@@ -7,7 +7,7 @@
 import type { PlexClient } from "./client.js";
 import { importMoviesFromPlex } from "./sync-movies.js";
 import { importTvShowsFromPlex } from "./sync-tv.js";
-import { getPlexClient } from "./service.js";
+import { getPlexClient, getPlexSectionIds } from "./service.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -45,8 +45,8 @@ let lastSyncError: string | null = null;
 let nextSyncAt: string | null = null;
 let moviesSynced = 0;
 let tvShowsSynced = 0;
-let movieSectionId = "1";
-let tvSectionId = "2";
+let movieSectionId: string | null = null;
+let tvSectionId: string | null = null;
 
 // ---------------------------------------------------------------------------
 // Public API
@@ -59,8 +59,11 @@ export function startScheduler(options: SchedulerOptions = {}): SchedulerStatus 
   }
 
   intervalMs = options.intervalMs ?? DEFAULT_INTERVAL_MS;
-  movieSectionId = options.movieSectionId ?? "1";
-  tvSectionId = options.tvSectionId ?? "2";
+
+  // Use explicit options, then saved settings, then null (will skip sync)
+  const saved = getPlexSectionIds();
+  movieSectionId = options.movieSectionId ?? saved.movieSectionId;
+  tvSectionId = options.tvSectionId ?? saved.tvSectionId;
 
   // Schedule next sync
   nextSyncAt = new Date(Date.now() + intervalMs).toISOString();
@@ -119,11 +122,19 @@ async function runSync(): Promise<void> {
 }
 
 async function executeSyncCycle(client: PlexClient): Promise<void> {
-  const movieResult = await importMoviesFromPlex(client, movieSectionId);
-  moviesSynced += movieResult.synced;
+  if (movieSectionId) {
+    const movieResult = await importMoviesFromPlex(client, movieSectionId);
+    moviesSynced += movieResult.synced;
+  } else {
+    console.warn("[Plex Scheduler] Movie section ID not configured — skipping movie sync");
+  }
 
-  const tvResult = await importTvShowsFromPlex(client, tvSectionId);
-  tvShowsSynced += tvResult.synced;
+  if (tvSectionId) {
+    const tvResult = await importTvShowsFromPlex(client, tvSectionId);
+    tvShowsSynced += tvResult.synced;
+  } else {
+    console.warn("[Plex Scheduler] TV section ID not configured — skipping TV sync");
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -138,8 +149,8 @@ export function _resetScheduler(): void {
   nextSyncAt = null;
   moviesSynced = 0;
   tvShowsSynced = 0;
-  movieSectionId = "1";
-  tvSectionId = "2";
+  movieSectionId = null;
+  tvSectionId = null;
   intervalMs = DEFAULT_INTERVAL_MS;
 }
 

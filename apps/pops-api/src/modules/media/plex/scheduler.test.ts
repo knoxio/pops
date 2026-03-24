@@ -6,6 +6,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 // Mock dependencies
 vi.mock("./service.js", () => ({
   getPlexClient: vi.fn(),
+  getPlexSectionIds: vi.fn().mockReturnValue({ movieSectionId: null, tvSectionId: null }),
 }));
 
 vi.mock("./sync-movies.js", () => ({
@@ -23,12 +24,13 @@ import {
   _resetScheduler,
   _triggerSync,
 } from "./scheduler.js";
-import { getPlexClient } from "./service.js";
+import { getPlexClient, getPlexSectionIds } from "./service.js";
 import { importMoviesFromPlex } from "./sync-movies.js";
 import { importTvShowsFromPlex } from "./sync-tv.js";
 import type { PlexClient } from "./client.js";
 
 const mockGetPlexClient = vi.mocked(getPlexClient);
+const mockGetPlexSectionIds = vi.mocked(getPlexSectionIds);
 const mockImportMovies = vi.mocked(importMoviesFromPlex);
 const mockImportTvShows = vi.mocked(importTvShowsFromPlex);
 
@@ -116,6 +118,7 @@ describe("sync execution", () => {
   it("runs sync on interval tick", async () => {
     const mockClient = {} as PlexClient;
     mockGetPlexClient.mockReturnValue(mockClient);
+    mockGetPlexSectionIds.mockReturnValue({ movieSectionId: "1", tvSectionId: "2" });
     mockImportMovies.mockResolvedValue({
       total: 5,
       processed: 5,
@@ -161,8 +164,10 @@ describe("sync execution", () => {
   it("records error when sync throws", async () => {
     const mockClient = {} as PlexClient;
     mockGetPlexClient.mockReturnValue(mockClient);
+    mockGetPlexSectionIds.mockReturnValue({ movieSectionId: "1", tvSectionId: "2" });
     mockImportMovies.mockRejectedValue(new Error("Network timeout"));
 
+    startScheduler({ intervalMs: 5000, movieSectionId: "1", tvSectionId: "2" });
     await _triggerSync();
 
     const status = getSchedulerStatus();
@@ -173,9 +178,10 @@ describe("sync execution", () => {
   it("continues running after sync error", async () => {
     const mockClient = {} as PlexClient;
     mockGetPlexClient.mockReturnValue(mockClient);
+    mockGetPlexSectionIds.mockReturnValue({ movieSectionId: "1", tvSectionId: "2" });
     mockImportMovies.mockRejectedValue(new Error("Plex down"));
 
-    startScheduler({ intervalMs: 5000 });
+    startScheduler({ intervalMs: 5000, movieSectionId: "1", tvSectionId: "2" });
 
     // First tick — error
     vi.advanceTimersByTime(5000);
@@ -212,6 +218,7 @@ describe("sync execution", () => {
   it("accumulates sync counts across multiple cycles", async () => {
     const mockClient = {} as PlexClient;
     mockGetPlexClient.mockReturnValue(mockClient);
+    mockGetPlexSectionIds.mockReturnValue({ movieSectionId: "1", tvSectionId: "2" });
     mockImportMovies.mockResolvedValue({
       total: 2,
       processed: 2,
@@ -228,7 +235,7 @@ describe("sync execution", () => {
       errors: [],
     });
 
-    startScheduler({ intervalMs: 1000 });
+    startScheduler({ intervalMs: 1000, movieSectionId: "1", tvSectionId: "2" });
 
     // Run 3 cycles
     for (let i = 0; i < 3; i++) {
@@ -276,6 +283,7 @@ describe("sync execution", () => {
   it("does not sync after stop", async () => {
     const mockClient = {} as PlexClient;
     mockGetPlexClient.mockReturnValue(mockClient);
+    mockGetPlexSectionIds.mockReturnValue({ movieSectionId: "1", tvSectionId: "2" });
     mockImportMovies.mockResolvedValue({
       total: 0,
       processed: 0,
@@ -292,7 +300,7 @@ describe("sync execution", () => {
       errors: [],
     });
 
-    startScheduler({ intervalMs: 5000 });
+    startScheduler({ intervalMs: 5000, movieSectionId: "1", tvSectionId: "2" });
     stopScheduler();
 
     vi.advanceTimersByTime(10000);
@@ -307,6 +315,7 @@ describe("_triggerSync", () => {
   it("runs a sync cycle immediately", async () => {
     const mockClient = {} as PlexClient;
     mockGetPlexClient.mockReturnValue(mockClient);
+    mockGetPlexSectionIds.mockReturnValue({ movieSectionId: "1", tvSectionId: "2" });
     mockImportMovies.mockResolvedValue({
       total: 1,
       processed: 1,
@@ -323,11 +332,24 @@ describe("_triggerSync", () => {
       errors: [],
     });
 
+    startScheduler({ intervalMs: 60000, movieSectionId: "1", tvSectionId: "2" });
     await _triggerSync();
 
     expect(mockImportMovies).toHaveBeenCalledOnce();
     expect(mockImportTvShows).toHaveBeenCalledOnce();
     expect(getSchedulerStatus().lastSyncAt).not.toBeNull();
     expect(getSchedulerStatus().moviesSynced).toBe(1);
+  });
+
+  it("skips sync when section IDs are not configured", async () => {
+    const mockClient = {} as PlexClient;
+    mockGetPlexClient.mockReturnValue(mockClient);
+    mockGetPlexSectionIds.mockReturnValue({ movieSectionId: null, tvSectionId: null });
+
+    startScheduler({ intervalMs: 60000 });
+    await _triggerSync();
+
+    expect(mockImportMovies).not.toHaveBeenCalled();
+    expect(mockImportTvShows).not.toHaveBeenCalled();
   });
 });

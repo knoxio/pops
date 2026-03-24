@@ -204,6 +204,24 @@ export const plexRouter = router({
     return { data: scheduler.getSchedulerStatus() };
   }),
 
+  /** Get saved Plex library section IDs. */
+  getSectionIds: protectedProcedure.query(() => {
+    return { data: plexService.getPlexSectionIds() };
+  }),
+
+  /** Save Plex library section IDs. */
+  saveSectionIds: protectedProcedure
+    .input(
+      z.object({
+        movieSectionId: z.string().min(1).optional(),
+        tvSectionId: z.string().min(1).optional(),
+      })
+    )
+    .mutation(({ input }) => {
+      plexService.savePlexSectionIds(input.movieSectionId, input.tvSectionId);
+      return { message: "Section IDs saved" };
+    }),
+
   /** Get Plex Auth PIN */
   getAuthPin: protectedProcedure.mutation(async () => {
     const clientId = plexService.getPlexClientId();

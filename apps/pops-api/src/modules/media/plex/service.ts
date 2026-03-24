@@ -115,6 +115,47 @@ export function getPlexClient(): PlexClient | null {
 }
 
 // ---------------------------------------------------------------------------
+// Section ID settings
+// ---------------------------------------------------------------------------
+
+export interface PlexSectionIds {
+  movieSectionId: string | null;
+  tvSectionId: string | null;
+}
+
+/** Read saved Plex library section IDs from the settings table. */
+export function getPlexSectionIds(): PlexSectionIds {
+  const db = getDrizzle();
+  const movieRecord = db
+    .select()
+    .from(settings)
+    .where(eq(settings.key, "plex_movie_section_id"))
+    .get();
+  const tvRecord = db.select().from(settings).where(eq(settings.key, "plex_tv_section_id")).get();
+  return {
+    movieSectionId: movieRecord?.value ?? null,
+    tvSectionId: tvRecord?.value ?? null,
+  };
+}
+
+/** Persist Plex library section IDs to the settings table. */
+export function savePlexSectionIds(movieSectionId?: string, tvSectionId?: string): void {
+  const db = getDrizzle();
+  if (movieSectionId) {
+    db.insert(settings)
+      .values({ key: "plex_movie_section_id", value: movieSectionId })
+      .onConflictDoUpdate({ target: settings.key, set: { value: movieSectionId } })
+      .run();
+  }
+  if (tvSectionId) {
+    db.insert(settings)
+      .values({ key: "plex_tv_section_id", value: tvSectionId })
+      .onConflictDoUpdate({ target: settings.key, set: { value: tvSectionId } })
+      .run();
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Operations
 // ---------------------------------------------------------------------------
 
