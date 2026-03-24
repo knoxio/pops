@@ -14,6 +14,7 @@ export interface RecentItem {
   id: string;
   itemName: string;
   type: string | null;
+  assetId: string | null;
   lastEditedTime: string;
 }
 

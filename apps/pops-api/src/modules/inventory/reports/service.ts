@@ -48,6 +48,7 @@ export function getDashboard(): DashboardSummary {
       id: homeInventory.id,
       itemName: homeInventory.itemName,
       type: homeInventory.type,
+      assetId: homeInventory.assetId,
       lastEditedTime: homeInventory.lastEditedTime,
     })
     .from(homeInventory)
