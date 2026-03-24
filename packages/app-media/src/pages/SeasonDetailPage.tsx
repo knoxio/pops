@@ -244,7 +244,7 @@ export function SeasonDetailPage() {
     : null;
 
   return (
-    <div className="p-6 space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-4xl mx-auto">
       {/* Breadcrumb */}
       <Breadcrumb>
         <BreadcrumbList>

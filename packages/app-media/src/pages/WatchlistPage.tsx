@@ -277,15 +277,11 @@ export function WatchlistPage() {
     error: watchlistError,
   } = trpc.media.watchlist.list.useQuery({ limit: 500 });
 
-  const {
-    data: moviesData,
-    isLoading: moviesLoading,
-  } = trpc.media.movies.list.useQuery({ limit: 500 });
+  const { data: moviesData, isLoading: moviesLoading } =
+    trpc.media.movies.list.useQuery({ limit: 500 });
 
-  const {
-    data: tvShowsData,
-    isLoading: tvShowsLoading,
-  } = trpc.media.tvShows.list.useQuery({ limit: 500 });
+  const { data: tvShowsData, isLoading: tvShowsLoading } =
+    trpc.media.tvShows.list.useQuery({ limit: 500 });
 
   const utils = trpc.useUtils();
 
@@ -406,7 +402,7 @@ export function WatchlistPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6 max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold">Watchlist</h1>
 
       {loading ? (
@@ -421,10 +417,7 @@ export function WatchlistPage() {
             <Link to="/media" className="text-sm text-primary underline">
               Browse library
             </Link>
-            <Link
-              to="/media/search"
-              className="text-sm text-primary underline"
-            >
+            <Link to="/media/search" className="text-sm text-primary underline">
               Search
             </Link>
           </div>
@@ -463,9 +456,7 @@ export function WatchlistPage() {
                   updateMutation.isPending &&
                   updateMutation.variables?.id === entry.id
                 }
-                updateError={
-                  updateErrorId === entry.id ? updateErrorMsg : null
-                }
+                updateError={updateErrorId === entry.id ? updateErrorMsg : null}
               />
             );
           })}

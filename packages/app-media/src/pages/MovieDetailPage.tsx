@@ -171,7 +171,7 @@ export function MovieDetailPage() {
       </div>
 
       {/* Content below hero */}
-      <div className="p-6 space-y-6 max-w-4xl">
+      <div className="space-y-6 max-w-4xl mx-auto">
         {/* Overview */}
         {movie.overview && (
           <section>
