@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
-import { Link } from "react-router";
-import { Badge, Skeleton } from "@pops/ui";
+import { Link, useNavigate } from "react-router";
+import { Badge, Skeleton, Button } from "@pops/ui";
+import { ImageOff } from "lucide-react";
 import { trpc } from "../lib/trpc";
 import { DimensionManager } from "../components/DimensionManager";
 
@@ -12,6 +13,7 @@ interface ScoreDelta {
 }
 
 export function CompareArenaPage() {
+  const navigate = useNavigate();
   const [sessionCount, setSessionCount] = useState(0);
   const [selectedDimensionId, setSelectedDimensionId] = useState<number | null>(
     null,
@@ -22,9 +24,8 @@ export function CompareArenaPage() {
   const { data: dimensionsData, isLoading: dimsLoading } =
     trpc.media.comparisons.listDimensions.useQuery();
 
-  const activeDimensions = dimensionsData?.data?.filter(
-    (d: { active: boolean }) => d.active,
-  ) ?? [];
+  const activeDimensions =
+    dimensionsData?.data?.filter((d: { active: boolean }) => d.active) ?? [];
 
   // Auto-select first dimension when loaded
   const dimensionId = selectedDimensionId ?? activeDimensions[0]?.id ?? null;
@@ -125,7 +126,8 @@ export function CompareArenaPage() {
         <h1 className="text-2xl font-bold">Compare Arena</h1>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-sm">
-            {sessionCount} comparison{sessionCount !== 1 ? "s" : ""} this session
+            {sessionCount} comparison{sessionCount !== 1 ? "s" : ""} this
+            session
           </Badge>
           <DimensionManager />
         </div>
@@ -144,26 +146,24 @@ export function CompareArenaPage() {
         </p>
       ) : (
         <div className="flex gap-2 flex-wrap" role="tablist">
-          {activeDimensions.map(
-            (dim: { id: number; name: string }) => (
-              <button
-                key={dim.id}
-                role="tab"
-                aria-selected={dim.id === dimensionId}
-                onClick={() => {
-                  setSelectedDimensionId(dim.id);
-                  refetchPair();
-                }}
-                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                  dim.id === dimensionId
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
-              >
-                {dim.name}
-              </button>
-            ),
-          )}
+          {activeDimensions.map((dim: { id: number; name: string }) => (
+            <button
+              key={dim.id}
+              role="tab"
+              aria-selected={dim.id === dimensionId}
+              onClick={() => {
+                setSelectedDimensionId(dim.id);
+                refetchPair();
+              }}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                dim.id === dimensionId
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+              }`}
+            >
+              {dim.name}
+            </button>
+          ))}
         </div>
       )}
 
@@ -196,7 +196,13 @@ export function CompareArenaPage() {
       ) : pairData?.data ? (
         <>
           <p className="text-center text-muted-foreground text-sm">
-            Which movie wins? Click to pick.
+            Which movie has better{" "}
+            <span className="font-medium text-foreground">
+              {activeDimensions.find(
+                (d: { id: number }) => d.id === dimensionId,
+              )?.name ?? "Overall"}
+            </span>
+            ? Click to pick.
           </p>
           <div className="grid grid-cols-2 gap-6">
             <MovieCard
@@ -229,15 +235,15 @@ export function CompareArenaPage() {
         </>
       ) : null}
 
-      {/* Skip button */}
+      {/* Skip + Done buttons */}
       {pairData?.data && !recordMutation.isPending && !scoreDelta && (
-        <div className="text-center">
-          <button
-            onClick={() => refetchPair()}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
+        <div className="flex justify-center gap-3">
+          <Button variant="outline" size="sm" onClick={() => refetchPair()}>
             Skip this pair
-          </button>
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => navigate("/media")}>
+            Done
+          </Button>
         </div>
       )}
     </div>
@@ -257,7 +263,8 @@ function MovieCard({
   scoreDelta?: number | null;
   isWinner?: boolean;
 }) {
-  const posterSrc = movie.posterUrl ?? "";
+  const posterSrc = `/media/images/movie/${movie.id}/poster.jpg`;
+  const [imgError, setImgError] = useState(false);
 
   return (
     <button
@@ -271,11 +278,18 @@ function MovieCard({
             : "border-border hover:border-primary hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
       } ${disabled ? "cursor-default" : "cursor-pointer"}`}
     >
-      <img
-        src={posterSrc}
-        alt={`${movie.title} poster`}
-        className="w-full aspect-[2/3] rounded-md object-cover mb-3"
-      />
+      {imgError ? (
+        <div className="w-full aspect-[2/3] rounded-md mb-3 bg-muted flex items-center justify-center">
+          <ImageOff className="h-8 w-8 text-muted-foreground" />
+        </div>
+      ) : (
+        <img
+          src={posterSrc}
+          alt={`${movie.title} poster`}
+          className="w-full aspect-[2/3] rounded-md object-cover mb-3"
+          onError={() => setImgError(true)}
+        />
+      )}
       <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
         {movie.title}
       </h3>
