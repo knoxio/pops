@@ -266,8 +266,8 @@ export function logWatch(input: LogWatchInput): WatchHistoryRow {
       .get();
     if (!entry) throw new Error("Watch history entry not found after insert");
 
-    // Auto-remove from watchlist (PRD-011 R6)
-    if (completed === 1) {
+    // Auto-remove from watchlist (PRD-011 R6) — skip for plex_sync source
+    if (completed === 1 && input.source !== "plex_sync") {
       if (input.mediaType === "movie") {
         tx.delete(mediaWatchlist)
           .where(

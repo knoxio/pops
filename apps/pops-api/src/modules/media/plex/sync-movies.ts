@@ -120,6 +120,7 @@ async function syncSingleMovie(
         mediaId: movie.id,
         watchedAt: new Date(item.lastViewedAt * 1000).toISOString(),
         completed: 1,
+        source: "plex_sync",
       });
     } catch {
       // Ignore duplicate watch entries

@@ -192,6 +192,7 @@ function syncEpisodeWatches(tvdbId: number, plexEpisodes: PlexEpisode[]): number
           ? new Date(plexEp.lastViewedAt * 1000).toISOString()
           : new Date().toISOString(),
         completed: 1,
+        source: "plex_sync",
       });
 
       matched++;
