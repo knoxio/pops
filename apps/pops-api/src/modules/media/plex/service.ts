@@ -8,19 +8,17 @@
  *   3. For each TV library: iterate items, extract TVDB ID, upsert via library service
  *   4. Sync watch history from Plex viewCount/lastViewedAt
  */
-import { eq, and } from "drizzle-orm";
-import { episodes, seasons, settings } from "@pops/db-types";
+import { eq } from "drizzle-orm";
+import { settings } from "@pops/db-types";
 import { randomUUID } from "node:crypto";
 import { PlexClient } from "./client.js";
-import { type PlexMediaItem, type PlexEpisode } from "./types.js";
+import { extractExternalIdAsNumber, logMovieWatch, syncEpisodeWatches } from "./sync-helpers.js";
 import { getEnv } from "../../../env.js";
 import { getDrizzle } from "../../../db.js";
 import * as libraryService from "../library/service.js";
 import * as tvShowService from "../library/tv-show-service.js";
 import { getTmdbClient } from "../tmdb/index.js";
 import { getTvdbClient } from "../thetvdb/index.js";
-import { getTvShowByTvdbId } from "../tv-shows/service.js";
-import { logWatch } from "../watch-history/service.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -192,24 +190,18 @@ export async function syncMovies(client: PlexClient, sectionId: string): Promise
 
   for (const item of items) {
     try {
-      const tmdbId = extractExternalId(item, "tmdb");
+      const tmdbId = extractExternalIdAsNumber(item, "tmdb");
       if (!tmdbId) {
         result.skipped++;
         continue;
       }
 
-      const tmdbIdNum = Number(tmdbId);
-      if (Number.isNaN(tmdbIdNum)) {
-        result.skipped++;
-        continue;
-      }
-
       // Add movie to library (idempotent)
-      const { movie } = await libraryService.addMovie(tmdbIdNum, tmdbClient);
+      const { movie } = await libraryService.addMovie(tmdbId, tmdbClient);
 
       // Sync watch history if Plex shows it was watched
       if (item.viewCount > 0 && item.lastViewedAt) {
-        syncMovieWatch(movie.id, item.lastViewedAt);
+        logMovieWatch(movie.id, item.lastViewedAt);
       }
 
       result.synced++;
@@ -248,24 +240,18 @@ export async function syncTvShows(client: PlexClient, sectionId: string): Promis
 
   for (const item of items) {
     try {
-      const tvdbId = extractExternalId(item, "tvdb");
+      const tvdbId = extractExternalIdAsNumber(item, "tvdb");
       if (!tvdbId) {
         result.skipped++;
         continue;
       }
 
-      const tvdbIdNum = Number(tvdbId);
-      if (Number.isNaN(tvdbIdNum)) {
-        result.skipped++;
-        continue;
-      }
-
       // Add TV show to library (idempotent)
-      await tvShowService.addTvShow(tvdbIdNum, tvdbClient);
+      await tvShowService.addTvShow(tvdbId, tvdbClient);
 
       // Sync episode watch history
       const plexEpisodes = await client.getEpisodes(item.ratingKey);
-      syncEpisodeWatches(tvdbIdNum, plexEpisodes);
+      syncEpisodeWatches(tvdbId, plexEpisodes);
 
       result.synced++;
     } catch (err) {
@@ -294,81 +280,6 @@ export function getSyncStatus(client: PlexClient | null): PlexSyncStatus {
     lastSyncMovies: lastMovieSync,
     lastSyncTvShows: lastTvSync,
   };
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Extract an external ID (tmdb, tvdb, imdb) from a Plex media item. */
-function extractExternalId(item: PlexMediaItem, source: string): string | null {
-  const match = item.externalIds.find((id) => id.source === source);
-  return match?.id ?? null;
-}
-
-/**
- * Log a movie watch event from Plex data.
- * Only logs if the movie doesn't already have a watch history entry.
- */
-function syncMovieWatch(movieId: number, lastViewedAtUnix: number): void {
-  try {
-    logWatch({
-      mediaType: "movie",
-      mediaId: movieId,
-      watchedAt: new Date(lastViewedAtUnix * 1000).toISOString(),
-      completed: 1,
-      source: "plex_sync",
-    });
-  } catch {
-    // Ignore duplicate watch entries
-  }
-}
-
-/**
- * Sync episode watches from Plex episode data.
- * Matches Plex episodes to local episodes by season+episode number.
- */
-function syncEpisodeWatches(tvdbId: number, plexEpisodes: PlexEpisode[]): void {
-  const show = getTvShowByTvdbId(tvdbId);
-  if (!show) return;
-
-  const db = getDrizzle();
-
-  for (const plexEp of plexEpisodes) {
-    if (plexEp.viewCount === 0) continue;
-
-    try {
-      // Find the local season
-      const season = db
-        .select()
-        .from(seasons)
-        .where(and(eq(seasons.tvShowId, show.id), eq(seasons.seasonNumber, plexEp.seasonIndex)))
-        .get();
-      if (!season) continue;
-
-      // Find the local episode
-      const episode = db
-        .select()
-        .from(episodes)
-        .where(
-          and(eq(episodes.seasonId, season.id), eq(episodes.episodeNumber, plexEp.episodeIndex))
-        )
-        .get();
-      if (!episode) continue;
-
-      logWatch({
-        mediaType: "episode",
-        mediaId: episode.id,
-        watchedAt: plexEp.lastViewedAt
-          ? new Date(plexEp.lastViewedAt * 1000).toISOString()
-          : new Date().toISOString(),
-        completed: 1,
-        source: "plex_sync",
-      });
-    } catch {
-      // Ignore duplicate or failed episode watch entries
-    }
-  }
 }
 
 // ---------------------------------------------------------------------------

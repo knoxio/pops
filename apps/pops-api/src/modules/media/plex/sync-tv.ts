@@ -6,15 +6,11 @@
  * and logs watch history for watched episodes.
  */
 import type { PlexClient } from "./client.js";
-import type { PlexMediaItem, PlexEpisode } from "./types.js";
+import type { PlexMediaItem } from "./types.js";
 import type { TheTvdbClient } from "../thetvdb/client.js";
 import { getTvdbClient } from "../thetvdb/index.js";
 import * as tvShowService from "../library/tv-show-service.js";
-import { getTvShowByTvdbId } from "../tv-shows/service.js";
-import { logWatch } from "../watch-history/service.js";
-import { getDrizzle } from "../../../db.js";
-import { episodes, seasons } from "@pops/db-types";
-import { eq, and } from "drizzle-orm";
+import { extractExternalIdAsNumber, syncEpisodeWatches } from "./sync-helpers.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -110,7 +106,7 @@ async function syncSingleShow(
   progress: TvSyncProgress
 ): Promise<void> {
   // Step 1: Resolve TVDB ID
-  const tvdbId = resolveTvdbId(item);
+  const tvdbId = extractExternalIdAsNumber(item, "tvdb");
 
   if (!tvdbId) {
     progress.skipped++;
@@ -126,80 +122,4 @@ async function syncSingleShow(
   progress.episodesMatched += matched;
 
   progress.synced++;
-}
-
-// ---------------------------------------------------------------------------
-// TVDB ID resolution
-// ---------------------------------------------------------------------------
-
-/**
- * Extract TVDB ID from a Plex media item's Guid array.
- * Returns null if no TVDB Guid is found or the ID is not numeric.
- */
-function resolveTvdbId(item: PlexMediaItem): number | null {
-  const tvdbGuid = item.externalIds.find((id) => id.source === "tvdb");
-  if (!tvdbGuid) return null;
-
-  const parsed = Number(tvdbGuid.id);
-  if (Number.isNaN(parsed)) return null;
-
-  return parsed;
-}
-
-// ---------------------------------------------------------------------------
-// Episode watch sync
-// ---------------------------------------------------------------------------
-
-/**
- * Match Plex episodes to local DB episodes by season+episode number
- * and log watch history for watched episodes.
- *
- * Returns the number of episodes matched and logged.
- */
-function syncEpisodeWatches(tvdbId: number, plexEpisodes: PlexEpisode[]): number {
-  const show = getTvShowByTvdbId(tvdbId);
-  if (!show) return 0;
-
-  const db = getDrizzle();
-  let matched = 0;
-
-  for (const plexEp of plexEpisodes) {
-    if (plexEp.viewCount === 0) continue;
-
-    try {
-      // Find the local season
-      const season = db
-        .select()
-        .from(seasons)
-        .where(and(eq(seasons.tvShowId, show.id), eq(seasons.seasonNumber, plexEp.seasonIndex)))
-        .get();
-      if (!season) continue;
-
-      // Find the local episode
-      const episode = db
-        .select()
-        .from(episodes)
-        .where(
-          and(eq(episodes.seasonId, season.id), eq(episodes.episodeNumber, plexEp.episodeIndex))
-        )
-        .get();
-      if (!episode) continue;
-
-      logWatch({
-        mediaType: "episode",
-        mediaId: episode.id,
-        watchedAt: plexEp.lastViewedAt
-          ? new Date(plexEp.lastViewedAt * 1000).toISOString()
-          : new Date().toISOString(),
-        completed: 1,
-        source: "plex_sync",
-      });
-
-      matched++;
-    } catch {
-      // Ignore duplicate or failed episode watch entries
-    }
-  }
-
-  return matched;
 }

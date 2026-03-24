@@ -10,7 +10,7 @@ import type { PlexMediaItem } from "./types.js";
 import type { TmdbClient } from "../tmdb/client.js";
 import { getTmdbClient } from "../tmdb/index.js";
 import * as libraryService from "../library/service.js";
-import { logWatch } from "../watch-history/service.js";
+import { logMovieWatch } from "./sync-helpers.js";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -114,17 +114,7 @@ async function syncSingleMovie(
 
   // Step 3: Sync watch history
   if (item.viewCount > 0 && item.lastViewedAt) {
-    try {
-      logWatch({
-        mediaType: "movie",
-        mediaId: movie.id,
-        watchedAt: new Date(item.lastViewedAt * 1000).toISOString(),
-        completed: 1,
-        source: "plex_sync",
-      });
-    } catch {
-      // Ignore duplicate watch entries
-    }
+    logMovieWatch(movie.id, item.lastViewedAt);
   }
 
   progress.synced++;
