@@ -1,6 +1,15 @@
 import { useState, useCallback, useEffect } from "react";
-import { Link } from "react-router";
-import { Badge, Skeleton } from "@pops/ui";
+import { Link, useNavigate } from "react-router";
+import {
+  Badge,
+  Button,
+  Skeleton,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@pops/ui";
+import { SkipForward } from "lucide-react";
 import { trpc } from "../lib/trpc";
 import { DimensionManager } from "../components/DimensionManager";
 
@@ -12,6 +21,7 @@ interface ScoreDelta {
 }
 
 export function CompareArenaPage() {
+  const navigate = useNavigate();
   const [sessionCount, setSessionCount] = useState(0);
   const [selectedDimensionId, setSelectedDimensionId] = useState<number | null>(
     null,
@@ -28,6 +38,9 @@ export function CompareArenaPage() {
 
   // Auto-select first dimension when loaded
   const dimensionId = selectedDimensionId ?? activeDimensions[0]?.id ?? null;
+  const activeDimensionName = activeDimensions.find(
+    (d: { id: number }) => d.id === dimensionId,
+  )?.name ?? "overall";
 
   // Fetch random pair
   const {
@@ -124,10 +137,24 @@ export function CompareArenaPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Compare Arena</h1>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-sm">
-            {sessionCount} comparison{sessionCount !== 1 ? "s" : ""} this session
-          </Badge>
-          <DimensionManager />
+          {sessionCount > 0 && (
+            <Badge variant="outline" className="text-sm">
+              {sessionCount} comparison{sessionCount !== 1 ? "s" : ""} this session
+            </Badge>
+          )}
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span>
+                  <DimensionManager />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>Manage dimensions</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+          <Button variant="outline" size="sm" onClick={() => navigate("/media")}>
+            Done
+          </Button>
         </div>
       </div>
 
@@ -186,7 +213,7 @@ export function CompareArenaPage() {
       ) : pairData?.data ? (
         <>
           <p className="text-center text-muted-foreground text-sm">
-            Which movie wins? Click to pick.
+            Which is more <span className="font-medium text-foreground">{activeDimensionName.toLowerCase()}</span>? Click to pick.
           </p>
           <div className="grid grid-cols-2 gap-6">
             <MovieCard
@@ -222,12 +249,10 @@ export function CompareArenaPage() {
       {/* Skip button */}
       {pairData?.data && !recordMutation.isPending && !scoreDelta && (
         <div className="text-center">
-          <button
-            onClick={() => refetchPair()}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Skip this pair
-          </button>
+          <Button variant="ghost" size="sm" onClick={() => refetchPair()}>
+            <SkipForward className="mr-1 h-4 w-4" />
+            Skip
+          </Button>
         </div>
       )}
     </div>
@@ -241,13 +266,14 @@ function MovieCard({
   scoreDelta,
   isWinner,
 }: {
-  movie: { id: number; title: string; posterPath: string | null };
+  movie: { id: number; title: string; posterPath: string | null; posterUrl?: string | null };
   onPick: () => void;
   disabled?: boolean;
   scoreDelta?: number | null;
   isWinner?: boolean;
 }) {
-  const posterSrc = `/media/images/movie/${movie.id}/poster.jpg`;
+  const [posterFailed, setPosterFailed] = useState(false);
+  const posterSrc = movie.posterUrl ?? `/media/images/movie/${movie.id}/poster.jpg`;
 
   return (
     <button
@@ -261,11 +287,20 @@ function MovieCard({
             : "border-border hover:border-primary hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
       } ${disabled ? "cursor-default" : "cursor-pointer"}`}
     >
-      <img
-        src={posterSrc}
-        alt={`${movie.title} poster`}
-        className="w-full aspect-[2/3] rounded-md object-cover mb-3"
-      />
+      {posterFailed ? (
+        <div className="w-full aspect-[2/3] rounded-md mb-3 bg-muted flex items-center justify-center p-4">
+          <span className="text-sm font-medium text-muted-foreground text-center">
+            {movie.title}
+          </span>
+        </div>
+      ) : (
+        <img
+          src={posterSrc}
+          alt={`${movie.title} poster`}
+          className="w-full aspect-[2/3] rounded-md object-cover mb-3"
+          onError={() => setPosterFailed(true)}
+        />
+      )}
       <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
         {movie.title}
       </h3>
