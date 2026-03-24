@@ -77,9 +77,16 @@ export function toMediaScore(row: MediaScoreRow): MediaScore {
 }
 
 /** API response shape for a random pair of movies to compare. */
+export interface RandomPairMovie {
+  id: number;
+  title: string;
+  posterPath: string | null;
+  posterUrl: string | null;
+}
+
 export interface RandomPair {
-  movieA: { id: number; title: string; posterPath: string | null };
-  movieB: { id: number; title: string; posterPath: string | null };
+  movieA: RandomPairMovie;
+  movieB: RandomPairMovie;
 }
 
 /** Zod schema for getRandomPair query. */

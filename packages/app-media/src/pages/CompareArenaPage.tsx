@@ -241,13 +241,13 @@ function MovieCard({
   scoreDelta,
   isWinner,
 }: {
-  movie: { id: number; title: string; posterPath: string | null };
+  movie: { id: number; title: string; posterPath: string | null; posterUrl: string | null };
   onPick: () => void;
   disabled?: boolean;
   scoreDelta?: number | null;
   isWinner?: boolean;
 }) {
-  const posterSrc = `/media/images/movie/${movie.id}/poster.jpg`;
+  const posterSrc = movie.posterUrl ?? "";
 
   return (
     <button
