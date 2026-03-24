@@ -467,16 +467,20 @@ export function LocationTreePage() {
 
   const createMutation = trpc.inventory.locations.create.useMutation({
     onSuccess: () => {
+      toast.success("Location created");
       utils.inventory.locations.tree.invalidate();
       setAddingChildOf(null);
       setAddingRoot(false);
     },
+    onError: (err) => toast.error(`Failed to create location: ${err.message}`),
   });
 
   const updateMutation = trpc.inventory.locations.update.useMutation({
     onSuccess: () => {
+      toast.success("Location updated");
       utils.inventory.locations.tree.invalidate();
     },
+    onError: (err) => toast.error(`Failed to update location: ${err.message}`),
   });
 
   const deleteMutation = trpc.inventory.locations.delete.useMutation({

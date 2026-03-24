@@ -18,6 +18,7 @@ import {
   Server,
   Save,
 } from "lucide-react";
+import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
 
 function ConnectionBadge({ connected }: { connected: boolean }) {
@@ -116,28 +117,35 @@ export function PlexSettingsPage() {
   });
 
   const syncMovies = trpc.media.plex.syncMovies.useMutation({
-    onSuccess: () => syncStatus.refetch(),
+    onSuccess: () => {
+      toast.success("Movie sync complete");
+      syncStatus.refetch();
+    },
+    onError: (err) => toast.error(`Movie sync failed: ${err.message}`),
   });
   const syncTvShows = trpc.media.plex.syncTvShows.useMutation({
-    onSuccess: () => syncStatus.refetch(),
+    onSuccess: () => {
+      toast.success("TV show sync complete");
+      syncStatus.refetch();
+    },
+    onError: (err) => toast.error(`TV show sync failed: ${err.message}`),
   });
 
   const saveUrl = trpc.media.plex.setUrl.useMutation({
     onSuccess: () => {
-      console.log("[Plex] Server URL saved successfully");
+      toast.success("Server URL saved");
       syncStatus.refetch();
       connectionTest.refetch();
       currentUrl.refetch();
     },
     onError: (err) => {
-      console.error("[Plex] Failed to save URL:", err);
+      toast.error(`Failed to save URL: ${err.message}`);
     },
   });
 
   const getPin = trpc.media.plex.getAuthPin.useMutation({
     onSuccess: (res) => {
       const { id, code, clientId } = res.data;
-      console.log(`[Plex] Obtained PIN ID: ${id}, Code: ${code}`);
       setPinId(id);
       window.open(
         `https://app.plex.tv/auth#?clientID=${clientId}&code=${code}&context[device][product]=POPS`,
@@ -145,29 +153,31 @@ export function PlexSettingsPage() {
       );
     },
     onError: (err) => {
-      console.error("[Plex] Failed to get PIN:", err);
+      toast.error(`Failed to start auth: ${err.message}`);
     },
   });
 
   const checkPin = trpc.media.plex.checkAuthPin.useMutation({
     onSuccess: (res) => {
       if (res.data.connected) {
-        console.log("[Plex] Successfully connected! Refetching status...");
+        toast.success("Plex account connected");
         setPinId(null);
         syncStatus.refetch();
         connectionTest.refetch();
       }
     },
     onError: (err) => {
-      console.error("[Plex] Failed to check PIN:", err);
+      toast.error(`Auth check failed: ${err.message}`);
     },
   });
 
   const disconnect = trpc.media.plex.disconnect.useMutation({
     onSuccess: () => {
+      toast.success("Plex account disconnected");
       syncStatus.refetch();
       connectionTest.refetch();
     },
+    onError: (err) => toast.error(`Failed to disconnect: ${err.message}`),
   });
 
   useEffect(() => {

@@ -291,10 +291,12 @@ export function WatchlistPage() {
   const removeMutation = trpc.media.watchlist.remove.useMutation({
     onSuccess: () => {
       setRemovingId(null);
+      toast.success("Removed from watchlist");
       void utils.media.watchlist.list.invalidate();
     },
-    onError: () => {
+    onError: (err) => {
       setRemovingId(null);
+      toast.error(`Failed to remove: ${err.message}`);
     },
   });
 
@@ -302,10 +304,12 @@ export function WatchlistPage() {
     onSuccess: () => {
       setUpdateErrorId(null);
       setUpdateErrorMsg(null);
+      toast.success("Notes saved");
       void utils.media.watchlist.list.invalidate();
     },
     onError: (error) => {
       setUpdateErrorMsg(error.message ?? "Failed to save notes");
+      toast.error(`Failed to save notes: ${error.message}`);
     },
   });
 
