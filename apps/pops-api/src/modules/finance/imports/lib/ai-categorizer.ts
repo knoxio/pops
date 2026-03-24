@@ -31,18 +31,8 @@ export function clearCache(): void {
   cache.clear();
 }
 
-/**
- * AI categorization error - thrown when API fails
- */
-export class AiCategorizationError extends Error {
-  constructor(
-    message: string,
-    public readonly code: "NO_API_KEY" | "API_ERROR" | "INSUFFICIENT_CREDITS"
-  ) {
-    super(message);
-    this.name = "AiCategorizationError";
-  }
-}
+import { AiCategorizationError } from "./ai-categorizer-error.js";
+export { AiCategorizationError } from "./ai-categorizer-error.js";
 
 const MAX_RETRIES = 5;
 const BASE_DELAY_MS = 1000;

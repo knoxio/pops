@@ -4,6 +4,7 @@
  * Allows testing various AI response scenarios (good, bad, edge cases).
  */
 import type { AiCacheEntry, AiUsageStats } from "./ai-categorizer.js";
+import { AiCategorizationError } from "./ai-categorizer-error.js";
 
 /**
  * Lookup table for known descriptions.
@@ -192,9 +193,11 @@ export async function mockCategorizeWithAi(
   rawRow: string,
   _importBatchId?: string
 ): Promise<{ result: AiCacheEntry | null; usage?: AiUsageStats }> {
+  // Yield to event loop to match async signature of real implementation
+  await Promise.resolve();
+
   // Simulate error scenarios
   if (mockConfig.throwError) {
-    const { AiCategorizationError } = await import("./ai-categorizer.js");
     throw new AiCategorizationError("Mock AI error", mockConfig.errorType);
   }
 
