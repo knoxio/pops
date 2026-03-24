@@ -362,9 +362,9 @@ describe("comparisons.getRandomPair", () => {
     seedWatchHistoryEntry(db, { media_type: "movie", media_id: m2, completed: 0 }); // incomplete
 
     // Only 1 completed watch → not enough
-    await expect(caller.media.comparisons.getRandomPair({ dimensionId: dimId })).rejects.toThrow(
-      TRPCError
-    );
+    const result = await caller.media.comparisons.getRandomPair({ dimensionId: dimId });
+    expect(result.data).toBeNull();
+    expect(result.reason).toBe("insufficient_watched_movies");
   });
 });
 
