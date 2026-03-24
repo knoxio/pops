@@ -28,6 +28,11 @@ const InsuranceReportPage = lazy(() =>
     default: m.InsuranceReportPage,
   })),
 );
+const LocationTreePage = lazy(() =>
+  import("./pages/LocationTreePage").then((m) => ({
+    default: m.LocationTreePage,
+  })),
+);
 
 /** Local type mirror for compile-time safety (shell owns the canonical types). */
 interface AppNavConfigShape {
@@ -48,6 +53,7 @@ export const navConfig = {
   items: [
     { path: "", label: "Items", icon: "Package" },
     { path: "/warranties", label: "Warranties", icon: "ShieldCheck" },
+    { path: "/locations", label: "Locations", icon: "MapPin" },
     { path: "/report", label: "Insurance Report", icon: "FileText" },
   ],
 } satisfies AppNavConfigShape;
@@ -58,5 +64,6 @@ export const routes: RouteObject[] = [
   { path: "items/:id", element: <ItemDetailPage /> },
   { path: "items/:id/edit", element: <ItemFormPage /> },
   { path: "warranties", element: <WarrantiesPage /> },
+  { path: "locations", element: <LocationTreePage /> },
   { path: "report", element: <InsuranceReportPage /> },
 ];
