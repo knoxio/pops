@@ -43,12 +43,6 @@ function daysUntil(dateStr: string): number {
   return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function urgencyColor(days: number): string {
-  if (days <= 14) return "text-red-600";
-  if (days <= 30) return "text-orange-500";
-  return "text-yellow-600";
-}
-
 function urgencyBadgeVariant(
   days: number,
 ): "destructive" | "secondary" | "outline" {
