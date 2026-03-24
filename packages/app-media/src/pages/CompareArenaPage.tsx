@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Link } from "react-router";
-import { Badge, Skeleton } from "@pops/ui";
+import { Badge, Skeleton, Button } from "@pops/ui";
+import { ImageOff } from "lucide-react";
 import { trpc } from "../lib/trpc";
 import { DimensionManager } from "../components/DimensionManager";
 
@@ -196,7 +197,11 @@ export function CompareArenaPage() {
       ) : pairData?.data ? (
         <>
           <p className="text-center text-muted-foreground text-sm">
-            Which movie wins? Click to pick.
+            Which movie has better{" "}
+            <span className="font-medium text-foreground">
+              {activeDimensions.find((d: { id: number }) => d.id === dimensionId)?.name ?? "Overall"}
+            </span>
+            ? Click to pick.
           </p>
           <div className="grid grid-cols-2 gap-6">
             <MovieCard
@@ -229,15 +234,15 @@ export function CompareArenaPage() {
         </>
       ) : null}
 
-      {/* Skip button */}
+      {/* Skip + Done buttons */}
       {pairData?.data && !recordMutation.isPending && !scoreDelta && (
-        <div className="text-center">
-          <button
-            onClick={() => refetchPair()}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
+        <div className="flex justify-center gap-3">
+          <Button variant="outline" size="sm" onClick={() => refetchPair()}>
             Skip this pair
-          </button>
+          </Button>
+          <Button variant="ghost" size="sm" asChild>
+            <Link to="/media">Done</Link>
+          </Button>
         </div>
       )}
     </div>
@@ -257,7 +262,8 @@ function MovieCard({
   scoreDelta?: number | null;
   isWinner?: boolean;
 }) {
-  const posterSrc = movie.posterUrl ?? "";
+  const posterSrc = `/media/images/movie/${movie.id}/poster.jpg`;
+  const [imgError, setImgError] = useState(false);
 
   return (
     <button
@@ -271,11 +277,18 @@ function MovieCard({
             : "border-border hover:border-primary hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
       } ${disabled ? "cursor-default" : "cursor-pointer"}`}
     >
-      <img
-        src={posterSrc}
-        alt={`${movie.title} poster`}
-        className="w-full aspect-[2/3] rounded-md object-cover mb-3"
-      />
+      {imgError ? (
+        <div className="w-full aspect-[2/3] rounded-md mb-3 bg-muted flex items-center justify-center">
+          <ImageOff className="h-8 w-8 text-muted-foreground" />
+        </div>
+      ) : (
+        <img
+          src={posterSrc}
+          alt={`${movie.title} poster`}
+          className="w-full aspect-[2/3] rounded-md object-cover mb-3"
+          onError={() => setImgError(true)}
+        />
+      )}
       <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
         {movie.title}
       </h3>
