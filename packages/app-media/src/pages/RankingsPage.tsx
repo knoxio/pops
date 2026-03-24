@@ -142,11 +142,18 @@ function RankingsList({ dimensionId }: { dimensionId?: number }) {
     () =>
       new Map<number, MediaMeta>(
         (moviesData?.data ?? []).map(
-          (m: { id: number; title: string; releaseDate: string | null; posterUrl: string | null }) => [
+          (m: {
+            id: number;
+            title: string;
+            releaseDate: string | null;
+            posterUrl: string | null;
+          }) => [
             m.id,
             {
               title: m.title,
-              year: m.releaseDate ? new Date(m.releaseDate).getFullYear() : null,
+              year: m.releaseDate
+                ? new Date(m.releaseDate).getFullYear()
+                : null,
               posterUrl: m.posterUrl,
             },
           ],
@@ -159,11 +166,18 @@ function RankingsList({ dimensionId }: { dimensionId?: number }) {
     () =>
       new Map<number, MediaMeta>(
         (tvShowsData?.data ?? []).map(
-          (s: { id: number; name: string; firstAirDate: string | null; posterUrl: string | null }) => [
+          (s: {
+            id: number;
+            name: string;
+            firstAirDate: string | null;
+            posterUrl: string | null;
+          }) => [
             s.id,
             {
               title: s.name,
-              year: s.firstAirDate ? new Date(s.firstAirDate).getFullYear() : null,
+              year: s.firstAirDate
+                ? new Date(s.firstAirDate).getFullYear()
+                : null,
               posterUrl: s.posterUrl,
             },
           ],
