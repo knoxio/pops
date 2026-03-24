@@ -150,10 +150,21 @@ export function ItemDetailPage() {
           {item.purchaseDate && (
             <DetailField label="Purchased" value={new Date(item.purchaseDate).toLocaleDateString("en-AU", { year: 'numeric', month: 'short' })} />
           )}
+          {item.itemId && <DetailField label="Item ID" value={item.itemId} />}
+          <DetailField label="Tax Deductible" value={item.deductible ? "Yes" : "No"} />
+          {item.warrantyExpires && (
+            <DetailField label="Warranty Expires" value={item.warrantyExpires} />
+          )}
           {item.replacementValue !== null && (
             <DetailField
               label="Replacement"
               value={<span className="text-amber-700 dark:text-amber-300 font-bold">{`$${item.replacementValue.toLocaleString()}`}</span>}
+            />
+          )}
+          {item.resaleValue !== null && (
+            <DetailField
+              label="Resale Value"
+              value={`$${item.resaleValue.toFixed(2)}`}
             />
           )}
         </div>
