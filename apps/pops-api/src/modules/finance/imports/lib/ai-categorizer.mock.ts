@@ -6,6 +6,21 @@
 import type { AiCacheEntry, AiUsageStats } from "./ai-categorizer.js";
 
 /**
+ * Lightweight mock of AiCategorizationError to avoid importing
+ * the real ai-categorizer module (which pulls in heavy deps like
+ * @anthropic-ai/sdk, database, etc.) and can cause test timeouts.
+ */
+class AiCategorizationError extends Error {
+  constructor(
+    message: string,
+    public readonly code: "NO_API_KEY" | "API_ERROR" | "INSUFFICIENT_CREDITS"
+  ) {
+    super(message);
+    this.name = "AiCategorizationError";
+  }
+}
+
+/**
  * Lookup table for known descriptions.
  * Add new entries here as you discover edge cases in testing.
  */
@@ -192,9 +207,11 @@ export async function mockCategorizeWithAi(
   rawRow: string,
   _importBatchId?: string
 ): Promise<{ result: AiCacheEntry | null; usage?: AiUsageStats }> {
+  // Yield to event loop to match async signature of real implementation
+  await Promise.resolve();
+
   // Simulate error scenarios
   if (mockConfig.throwError) {
-    const { AiCategorizationError } = await import("./ai-categorizer.js");
     throw new AiCategorizationError("Mock AI error", mockConfig.errorType);
   }
 
