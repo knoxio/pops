@@ -1,7 +1,7 @@
 /**
  * WarrantiesPage — warranty tracking dashboard for inventory items.
  *
- * Sections: expiring soon (90 days), expired, active warranties.
+ * Sections: expiring soon (90 days), active, expired warranties.
  * Color-coded urgency for expiring items. PRD-023/US-2.
  */
 import { useMemo, useState } from "react";
@@ -239,10 +239,14 @@ export function WarrantiesPage() {
             </div>
           )}
 
-          {/* Expired — collapsible */}
-          {expired.length > 0 && (
-            <CollapsibleSection title="Expired" count={expired.length}>
-              {expired.map((item) => (
+          {/* Active — collapsible */}
+          {active.length > 0 && (
+            <CollapsibleSection
+              title="Active"
+              count={active.length}
+              defaultOpen
+            >
+              {active.map((item) => (
                 <WarrantyRow
                   key={item.id}
                   item={item}
@@ -253,14 +257,10 @@ export function WarrantiesPage() {
             </CollapsibleSection>
           )}
 
-          {/* Active — collapsible */}
-          {active.length > 0 && (
-            <CollapsibleSection
-              title="Active"
-              count={active.length}
-              defaultOpen
-            >
-              {active.map((item) => (
+          {/* Expired — collapsible */}
+          {expired.length > 0 && (
+            <CollapsibleSection title="Expired" count={expired.length}>
+              {expired.map((item) => (
                 <WarrantyRow
                   key={item.id}
                   item={item}
