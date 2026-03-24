@@ -59,21 +59,24 @@ packages/app-inventory/
 ### R3: Item List Page (`/inventory`)
 
 **Layout:**
+- Dashboard widgets (stats, recent items) — shown when no filters are active
 - Search bar: search by item name or asset ID (debounced, 300ms)
 - Filter bar: type dropdown, condition dropdown, room dropdown (from location tree roots' children), in-use toggle, deductible toggle
 - Sort options: name (A-Z), date added, replacement value, location
-- View toggle: table view / grid view
 - Total items count and total replacement value summary line
+- **View toggle + data area:** The `ViewToggleGroup` (PRD-001 R9) is rendered in the same row as the search/filter bar or directly above the table/grid — **not** in the page header. The toggle controls the data view so it must be visually adjacent to the content it affects, not separated by dashboard widgets or other sections.
 
 **Table view** (default):
 - Columns: Asset ID, Name, Brand, Type, Condition, Location (breadcrumb), Value, In Use
 - Sortable columns
-- Click row → item detail page
+- Click row → item detail page (`/inventory/items/:id`)
 
 **Grid view:**
 - `InventoryCard` components in a responsive grid
 - Each card shows: primary photo (or placeholder), name, asset ID badge, type badge, location breadcrumb
-- Click card → item detail page
+- Click card → item detail page (`/inventory/items/:id`)
+
+**Navigation paths:** All click-to-detail navigation must use `/inventory/items/:id` — matching the route definition in `routes.tsx`. This applies to table rows, grid cards, search results, connected items, and any other link to an inventory item. Using `/inventory/:id` (without the `items/` segment) produces a route mismatch crash.
 
 **Empty state:** "No items yet. Add your first item." with CTA button.
 

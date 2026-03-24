@@ -24,6 +24,7 @@ See [roadmap.md](../roadmap.md) for sequencing and dependencies.
 
 | Theme | One-liner | Phase |
 |-------|-----------|-------|
+| **[AI](ai/README.md)** | AI operations app — usage tracking, model config, categorisation rules. Grows into the hub for all AI capabilities | 2+ |
 | **Media** | Movies and TV show tracking, preference learning, recommendations. Plex/Radarr/Sonarr/TMDB/TheTVDB integration | 2 |
 | **Inventory** | Home inventory — connectivity graph, hierarchical locations, photos, Paperless-ngx receipts, insurance reports. Highest daily-use app. [Fully specced](inventory/README.md) | 2 |
 | **Finance** | Polish existing finance app, reduce friction, add subscriptions tracking as a built-in feature | 2 |

@@ -150,12 +150,14 @@ export const routes = [
 // apps/pops-shell/src/app/router.tsx
 import { createBrowserRouter, Navigate } from 'react-router'
 import { RootLayout } from './layout/RootLayout'
+import { NotFoundPage } from './pages/NotFoundPage'
 import { routes as financeRoutes } from '@pops/app-finance'
 
 export const router = createBrowserRouter([
   {
     path: '/',
     element: <RootLayout />,
+    errorElement: <RootLayout><NotFoundPage /></RootLayout>,
     children: [
       { index: true, element: <Navigate to="/finance" replace /> },
       {
@@ -163,12 +165,90 @@ export const router = createBrowserRouter([
         children: financeRoutes,
       },
       // Future: { path: 'media', children: mediaRoutes }
+      { path: '*', element: <NotFoundPage /> },
     ],
   },
 ])
 ```
 
-### R4: Sidebar Navigation
+**Error handling:**
+- A catch-all `*` route renders a `NotFoundPage` within the shell layout (nav stays visible so the user can navigate away).
+- An `errorElement` on the root route catches React Router errors (e.g., lazy-load failures) and renders the same layout + error page instead of the React crash screen.
+- `NotFoundPage` shows: "Page not found" heading, the invalid URL, and a link back to the home page. Minimal — no elaborate illustrations.
+
+### R4: Shell Chrome Scroll Behaviour
+
+The shell chrome (TopBar + sidebar navigation) must remain **fixed on screen** while page content scrolls. The user must always have access to navigation regardless of scroll position.
+
+**TopBar:** Fixed to the top of the viewport. Use `fixed top-0 w-full z-40` (not `sticky`).
+
+**Sidebar nav (AppRail + PageNav):** Fixed height, does not scroll with content. Use `fixed` or `sticky top-{topbar-height}` positioning with `h-[calc(100vh-{topbar-height})]` and `overflow-y-auto` for long nav lists.
+
+**Content area:** Scrolls independently below the fixed TopBar, beside the fixed sidebar. The `<main>` element handles its own scroll.
+
+**Critical implementation note:** `position: sticky` breaks when any ancestor element has `overflow: hidden`, `overflow: auto`, or `overflow: scroll`. The shell layout must not apply `overflow-hidden` to any ancestor of sticky/fixed chrome elements. If overflow containment is needed (e.g., for decorative background blurs), apply it to a separate element that is not an ancestor of the TopBar or sidebar.
+
+### R5: Page-Level Navigation (Back Button + Breadcrumbs)
+
+**Rule:** Pages fall into two categories based on how they're accessed:
+
+| Category | Accessed via | Back button | Breadcrumb | Examples |
+|----------|-------------|-------------|------------|---------|
+| **Top-level** | Sidebar/PageNav link | No | No | Library, Watchlist, History, Rankings, Dashboard |
+| **Drill-down** | Link from another page (detail, settings, form) | Yes | Yes | Movie detail, TV show detail, Season detail, Plex settings, Item detail, Item form |
+
+#### Back button
+
+**Drill-down pages must show a back button:**
+- Position: top-left of the page header, before the breadcrumb and title.
+- Icon: `ArrowLeft` from Lucide.
+- Behaviour: navigates to the **logical parent** (not `history.back()`), so the destination is predictable regardless of how the user arrived.
+- Style: ghost button or plain icon link, consistent across all apps. App packages may apply their own colour accent (e.g., inventory uses amber) but the pattern is the same.
+
+#### Breadcrumbs
+
+**Drill-down pages must show a breadcrumb trail** showing the user's position in the page hierarchy. Each segment is a clickable link except the current page (plain text).
+
+**Breadcrumb structure by page:**
+
+| Page | Breadcrumb |
+|------|-----------|
+| Movie detail | Library → *Movie Title* |
+| TV show detail | Library → *Show Title* |
+| Season detail | Library → *Show Title* → *Season N* |
+| Plex settings | Settings → *Plex* |
+| Item detail | Items → *Item Name* |
+| Item form (create) | Items → *New Item* |
+| Item form (edit) | Items → *Item Name* → *Edit* |
+| Transaction detail | Transactions → *Entity Name* |
+
+**Breadcrumb formatting:**
+- Separator: `›` or `/` — consistent across the app.
+- Clickable segments: `text-muted-foreground hover:text-foreground` link style.
+- Current page (last segment): `text-foreground font-medium`, not clickable.
+- Truncation: on mobile, collapse middle segments with `…` if the breadcrumb exceeds available width. Always show the first and last segments.
+
+**Top-level pages show neither a back button nor a breadcrumb** — the sidebar/PageNav is the navigation mechanism.
+
+#### Implementation
+
+The `@pops/ui` library should provide a `Breadcrumb` component (already scaffolded in PRD-001 R1). All app PRDs that define drill-down pages must include the back button and breadcrumb in their page layout spec. The standard page header pattern is:
+
+```tsx
+<div className="flex items-center gap-3">
+  <Link to={parentPath}>
+    <ArrowLeft className="h-5 w-5" />
+  </Link>
+  <Breadcrumb items={[
+    { label: "Library", href: "/media" },
+    { label: movie.title },
+  ]} />
+</div>
+```
+
+**Never place back navigation at the bottom of the page** — it's invisible until the user scrolls past all content, which is terrible UX on long detail pages.
+
+### R6: Sidebar Navigation
 
 The Sidebar reads navigation config from registered apps instead of a hardcoded list. For now it only shows Finance, but the data structure supports multiple apps.
 
@@ -186,7 +266,7 @@ The Sidebar renders:
 
 This is a minimal version — the full app switcher UX is PRD-003.
 
-### R5: Provider Stack
+### R7: Provider Stack
 
 The provider stack moves from `pops-pwa/App.tsx` to `pops-shell/App.tsx`. No changes to the providers themselves:
 
@@ -202,7 +282,7 @@ The provider stack moves from `pops-pwa/App.tsx` to `pops-shell/App.tsx`. No cha
 
 The tRPC client config (`lib/trpc.ts`) moves to the shell unchanged. The `AppRouter` type import stays as `@pops/api` until Epic 3 (API modularisation) renames it.
 
-### R6: Vite Config
+### R8: Vite Config
 
 The shell's Vite config is based on the current `pops-pwa/vite.config.ts`:
 
@@ -213,7 +293,7 @@ The shell's Vite config is based on the current `pops-pwa/vite.config.ts`:
 - Workspace packages resolved natively by Vite (no special config needed for `@pops/ui`, `@pops/app-finance`)
 - Storybook Vitest plugin config needs updating — story discovery from `packages/` directories
 
-### R7: E2E Test Migration
+### R9: E2E Test Migration
 
 4 Playwright spec files need route updates:
 
@@ -226,7 +306,7 @@ The shell's Vite config is based on the current `pops-pwa/vite.config.ts`:
 
 E2E tests move to `apps/pops-shell/e2e/` since they test the integrated app, not individual packages. Fixtures and helpers move with them.
 
-### R8: Cleanup
+### R10: Cleanup
 
 - Delete `apps/pops-pwa/` entirely after all code is extracted
 - Update `pnpm-workspace.yaml` to include `packages/app-finance`
@@ -250,14 +330,18 @@ E2E tests move to `apps/pops-shell/e2e/` since they test the integrated app, not
 3. `apps/pops-pwa/` is deleted
 4. Routes are namespaced under `/finance/*`
 5. `/` redirects to `/finance`
-6. Sidebar shows Finance nav items driven by the app's exported navConfig
-7. Lazy loading works — finance routes are code-split (verify in network tab)
-8. `pnpm dev` starts one Vite server
-9. `pnpm build` produces one output with code splitting
-10. `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm test` all pass
-11. All E2E tests pass with updated routes
-12. Storybook discovers stories from both `@pops/ui` and `@pops/app-finance`
-13. Docker/nginx/deployment configs updated and working
+6. Navigating to a non-existent route shows a styled 404 page within the shell layout (not a React crash screen)
+7. TopBar and sidebar nav remain fixed on screen while page content scrolls — at any scroll position on any page
+8. All drill-down pages have a back button (ArrowLeft) and breadcrumb trail in the page header
+9. Top-level (sidebar-accessible) pages show neither a back button nor breadcrumbs
+10. Sidebar shows Finance nav items driven by the app's exported navConfig
+11. Lazy loading works — finance routes are code-split (verify in network tab)
+12. `pnpm dev` starts one Vite server
+13. `pnpm build` produces one output with code splitting
+14. `pnpm typecheck`, `pnpm lint`, `pnpm format:check`, `pnpm test` all pass
+15. All E2E tests pass with updated routes
+16. Storybook discovers stories from both `@pops/ui` and `@pops/app-finance`
+17. Docker/nginx/deployment configs updated and working
 
 ## Edge Cases & Decisions
 

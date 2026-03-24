@@ -142,10 +142,11 @@ The primary visual unit — a card representing a movie or TV show.
 
 ### R5: Movie Detail Page (`/media/movies/:id`)
 
-Full detail view for a single movie.
+Full detail view for a single movie. This is a drill-down page per PRD-002 R5.
 
 **Layout:**
-- Hero section: backdrop image as full-width background (gradient overlay for text readability), poster on the left, title + tagline + year + runtime on the right
+- Page header: ArrowLeft back button + breadcrumb (`Library › Movie Title`) — padded section (`px-4 md:px-6 lg:px-8`)
+- Hero section: backdrop image as **edge-to-edge** background (gradient overlay for text readability), poster on the left, title + tagline + year + runtime on the right. The hero is a full-width section with no padding — naturally edge-to-edge because the shell `<main>` has zero padding (PRD-006 R2). Inner content within the hero uses its own padding.
 - If logo image available, display logo over backdrop instead of plain text title
 - Below hero:
   - Overview (synopsis text)
@@ -162,10 +163,11 @@ Full detail view for a single movie.
 
 ### R6: TV Show Detail Page (`/media/tv/:id`)
 
-Full detail view for a TV show.
+Full detail view for a TV show. This is a drill-down page per PRD-002 R5.
 
 **Layout:**
-- Hero section: same pattern as movies — backdrop, poster/logo, title, first/last air date, status
+- Page header: ArrowLeft back button + breadcrumb (`Library › Show Title`) — padded section (`px-4 md:px-6 lg:px-8`)
+- Hero section: same edge-to-edge backdrop pattern as movies (R5) — full-width, no padding, poster/logo, title, first/last air date, status
 - Below hero:
   - Overview
   - Genre tags
@@ -183,10 +185,10 @@ Full detail view for a TV show.
 
 ### R7: Season Detail Page (`/media/tv/:id/season/:num`)
 
-Episode-level view for a single season.
+Episode-level view for a single season. This is a drill-down page per PRD-002 R5.
 
 **Layout:**
-- Breadcrumb: Media → [Show Name] → Season N
+- Page header: ArrowLeft back button (→ TV show detail) + breadcrumb (`Library › Show Name › Season N`) with each segment clickable
 - Season header: poster (if available), name, overview, episode count
 - Episode list: vertical list of episode rows, each showing:
   - Episode number
@@ -217,7 +219,11 @@ Search for movies and TV shows to add to the library.
 - TV shows search via `media.search.tvShows` (TheTVDB)
 - "Both" mode fires both queries in parallel, merges results
 - Show loading skeleton while searching
-- Show "No results" message when search returns empty
+- Show "No results" message when search returns empty — centered with icon, same visual quality as the pre-search empty state
+
+**Error handling:**
+- On search error: show toast with the actual server error message (per PRD-024). In the results area, show a centered error state with `AlertCircle` icon, the error message, and a "Retry" button. Do **not** show a bare red text line — error states must have the same visual quality as empty states (centered, icon, muted description).
+- The error message must come from the server response, not a hardcoded string like "Search failed." If the API key is missing, the server already returns that specific message. If it's a rate limit or network error, show that.
 
 **Add to library flow:**
 - Click "Add to Library" → calls `media.library.addMovie` or `media.library.addTvShow`
@@ -230,10 +236,16 @@ Search for movies and TV shows to add to the library.
 All images served from the local cache endpoint (for library items) or external CDN (for search results):
 
 **Library items:**
-- Poster: `GET /media/images/{movie|tv}/{id}/poster.jpg`
-- Backdrop: `GET /media/images/{movie|tv}/{id}/backdrop.jpg`
-- Logo: `GET /media/images/{movie|tv}/{id}/logo.png`
+- Poster: `GET /media/images/{movie|tv}/{externalId}/poster.jpg`
+- Backdrop: `GET /media/images/{movie|tv}/{externalId}/backdrop.jpg`
+- Logo: `GET /media/images/{movie|tv}/{externalId}/logo.png`
 - Fallback to generated placeholder (handled by the image endpoint — see PRD-008 R7)
+
+**`{externalId}` is the TMDB ID (movies) or TVDB ID (TV shows), NOT the local database ID.** The image cache stores files by external ID, and the image endpoint's fallback redirect queries by external ID. Using the local DB `id` column produces broken image URLs whenever local ID ≠ external ID.
+
+**Rule:** Frontend pages must **never construct image URLs manually**. Instead, use the `posterUrl` / `backdropUrl` / `logoUrl` fields from the API response (computed by `toMovie()` / `toTvShow()` which resolve the correct external ID). Pages that display media from list endpoints (watchlist, history, rankings, compare arena) must either:
+- (a) Use an API response that includes resolved `posterUrl`, or
+- (b) Join media metadata server-side and return the URL in the list response.
 
 **Search results (not yet in library):**
 - Movies: TMDB CDN URL directly (`https://image.tmdb.org/t/p/w342/{posterPath}`)

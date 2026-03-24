@@ -21,13 +21,15 @@ The primary comparison interface — designed to feel like a game, not a form.
 
 **Layout:**
 - Two movie cards side by side, each showing: poster, title, year
-- Dimension prompt above the cards: "Which has better cinematography?"
+- **Dimension question** prominently above the cards, phrased as a question specific to the active dimension: e.g., "Which is more emotional?", "Which has better cinematography?" — not a generic "Which movie wins?" The question is the core prompt the user is responding to; without it, the user doesn't know what they're comparing on. Generate the question from the dimension name: `"Which is more {dimension}?"` or use a custom question field on the dimension if available.
 - Tap/click either card to select the winner
 - On selection: brief animation (winner card pulses/scales), scores update, next pair loads
-- Skip button below cards: "Skip this pair"
+- **Skip button** below cards — styled as a ghost `Button` with `SkipForward` icon (per PRD-001 R8), not a bare text link
 - Dimension indicator: which dimension is active, tap to change or auto-rotate
-- Session counter: "5 comparisons this session" (light gamification)
-- "Done" button to exit the arena
+- Session counter: "5 comparisons this session" (light gamification). **Hide at 0** — only show after the first comparison to avoid displaying noise before the user has engaged.
+- **"Done" button** — visible at all times, navigates back to the library or previous page. Positioned in the header area alongside the session counter.
+- **Poster fallback:** If the poster image fails to load (broken URL, cache miss), show a placeholder with the movie title centered on a muted gradient background. Never show a broken image icon or alt text — the poster is the primary visual element and broken images make the page unusable.
+- **Settings gear** (dimension manager): must have a tooltip label ("Manage dimensions") so its purpose is discoverable.
 
 **Interaction flow:**
 1. Page loads → fetch random pair for a random active dimension
@@ -88,7 +90,7 @@ The client can show the score change briefly in the animation: "+12" / "-12".
 - Both movies must be different
 - Avoid repeating the same pair consecutively (best-effort — track the last served pair in memory, not database)
 - If `dimensionId` is provided, use that dimension. Otherwise, pick a random active dimension.
-- If fewer than 2 watched movies exist, return an error: "Need at least 2 watched movies to compare"
+- If fewer than 2 watched movies exist, return a **success response** with `data: null` and a `reason` field (e.g., `reason: "insufficient_watched_movies"`). Do **not** throw a `NOT_FOUND` error — the endpoint exists, the data is insufficient. Using HTTP 404 for this case makes the response indistinguishable from an actual routing failure in browser dev tools, monitoring, and logs. The frontend should check for `data: null` and render an empty state, not rely on error handling.
 
 **Pair diversity:** With a small watched library (<20 movies), pairs will repeat. This is acceptable. Track compared pairs per dimension if needed to avoid immediate repeats, but don't over-engineer for small pools.
 
@@ -141,13 +143,17 @@ Add "Compare" and "Rankings" to the media app's secondary navigation.
 
 ## Acceptance Criteria
 
-1. Comparison arena loads a random pair of watched movies with a dimension prompt
+1. Comparison arena loads a random pair of watched movies with a dimension-specific question (e.g., "Which is more emotional?")
 2. Tapping a card records the comparison and updates ELO scores
 3. Score changes animate briefly on the cards
 4. Next pair loads automatically after selection
-5. Skip button works without recording a comparison
+5. Skip button styled as a ghost Button with icon, works without recording a comparison
 6. Dimension can be changed manually or auto-rotates
-7. Fewer than 2 watched movies shows an error instead of the arena
+6a. "Done" button visible in header, navigates back to library
+6b. Session counter hidden at 0, shown after first comparison
+6c. Broken poster images show a placeholder with movie title — never broken image icons
+6d. Settings gear has a tooltip label
+7. Fewer than 2 watched movies shows an empty state (not an HTTP error) with a CTA to browse the library or mark movies as watched
 8. Rankings page displays movies sorted by ELO score per dimension
 9. "Overall" ranking shows composite score across dimensions
 10. Radar chart on movie detail pages visualises dimension scores
@@ -181,11 +187,11 @@ A: Evaluate recharts (most popular, largest bundle), visx (lower-level, smaller 
 ### Batch A — Core (parallelisable)
 
 #### US-1a: Comparison arena — card layout and selection
-**Scope:** Create `CompareArenaPage.tsx`. Two movie cards side-by-side (poster, title, year). Dimension prompt above cards. Tap/click card to select winner → calls `media.comparisons.submit`. Brief animation on selection (winner pulses). Skip button below cards. Responsive: stacked vertical on mobile, side-by-side on tablet+. Add route + "Compare" to secondary nav.
+**Scope:** Create `CompareArenaPage.tsx`. Two movie cards side-by-side (poster with fallback placeholder, title, year). Dimension-specific question above cards (e.g., "Which is more emotional?" — generated from dimension name, not generic). Tap/click card to select winner → calls `media.comparisons.submit`. Brief animation on selection (winner pulses). Skip button as ghost Button with icon. Responsive: stacked vertical on mobile, side-by-side on tablet+. Add route + "Compare" to secondary nav. Settings gear has tooltip.
 **Files:** `packages/app-media/src/pages/CompareArenaPage.tsx`
 
 #### US-1b: Comparison arena — flow logic
-**Scope:** Add auto-load-next-pair after selection. Dimension auto-rotation (cycle through active dimensions). Session counter ("5 comparisons this session"). "Done" button exits arena. Dimension selector to switch/lock dimension. Score delta shown briefly in animation ("+12", "-12"). Data from `media.comparisons.getRandomPair`. Error state when <2 watched movies.
+**Scope:** Add auto-load-next-pair after selection. Dimension auto-rotation (cycle through active dimensions). Session counter hidden at 0, shown after first comparison. "Done" button in header, navigates to library. Dimension selector to switch/lock dimension. Score delta shown briefly in animation ("+12", "-12"). Data from `media.comparisons.getRandomPair`. Empty state (not 404) when <2 watched movies.
 **Files:** `CompareArenaPage.tsx` (enhance)
 
 #### US-2: Dimension management UI

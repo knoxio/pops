@@ -18,12 +18,21 @@ A dashboard with total asset value, warranty expiry alerts, and value breakdowns
 
 Enhance the inventory home page (`/inventory`) with summary widgets above the item list:
 
-**Widgets:**
+**Widgets (responsive grid — `grid-cols-2 md:grid-cols-4`):**
 - **Total replacement value** — sum of all items' `replacement_value`. Prominent, large number. e.g., "$42,350"
 - **Total resale value** — sum of all items' `resale_value`. Smaller, secondary. e.g., "Est. resale: $18,200"
 - **Item count** — total items in the inventory
 - **Warranties expiring soon** — count of items with warranties expiring within 90 days. Click → filtered list
-- **Recently added** — last 5 items added (by `created_at`)
+
+**Recently added — compact, not full-width:**
+
+The "Recently Added" widget shows the last 5 items. It must **not** span the full page width — on wide viewports a 5-row list stretched across the whole screen wastes space. Instead:
+- Place it **inside the same grid** as the stat widgets, spanning 2 columns (`md:col-span-2`), or
+- Render as a compact card with `max-w-md` alongside the stat row.
+
+Each item row should include: name, type badge, asset ID, and a relative timestamp ("2 days ago"). The type label should be a badge next to the name, not pushed to the far right edge — `justify-between` on a wide card creates a visual desert between the name and type.
+
+Items are clickable — navigate to the item detail page.
 
 **Data source:** `inventory.reports.dashboard` tRPC query — returns all summary values in one call.
 
@@ -44,6 +53,13 @@ Enhance the inventory home page (`/inventory`) with summary widgets above the it
 
 **Data source:** `inventory.reports.valueByLocation({ depth?: number })` — aggregates replacement_value grouped by location at a specified depth (default: room level = depth 2 under "Home").
 
+**Error handling (applies to ALL inventory report procedures — dashboard, breakdowns, warranties, insurance report):**
+
+- The router must wrap all report queries in try/catch and return meaningful error messages (not unhandled 500s).
+- Widget/chart components must distinguish between **error** (show error state with message and retry) and **empty data** (show "No data" with a CTA to add items). Showing "No data available" when the actual problem is a server error is misleading.
+- Per PRD-006 R2: error states must have the same visual quality as empty states — centered icon, message, action. Per PRD-024 R2: error toasts include the server error message.
+- Errors in individual widgets must not break the entire page — other widgets that succeed should still render (same pattern as PRD-014 R4 per-section error handling).
+
 ### R3: Value Breakdown by Type
 
 Same visualisation as R2 but grouped by item type:
@@ -63,20 +79,24 @@ Cables            $350  ▌
 
 **"Warranties" section on dashboard (or dedicated `/inventory/warranties` page):**
 
-**Expiring soon (next 90 days):**
-- List of items with warranties expiring within 90 days
-- Each shows: item name, asset ID, warranty expiry date, days remaining, replacement value
-- Sorted by expiry date (soonest first)
-- Colour-coded: red (<30 days), yellow (30-60 days), orange (60-90 days)
+**Section order (priority — most actionable first):**
 
-**Expired:**
-- Collapsible section showing items with expired warranties
-- Same fields, muted styling
-- "Expired X days ago" instead of "X days remaining"
+1. **Expiring soon (next 90 days)** — always expanded:
+   - List of items with warranties expiring within 90 days
+   - Each shows: item name, asset ID, warranty expiry date, days remaining, replacement value
+   - Sorted by expiry date (soonest first)
+   - Colour-coded: red (<30 days), yellow (30-60 days), orange (60-90 days)
 
-**Active warranties:**
-- Collapsible section showing items with warranties expiring >90 days from now
-- "Expires in X months"
+2. **Active warranties** — collapsible, expanded by default:
+   - Items with warranties expiring >90 days from now
+   - "Expires in X months"
+
+3. **Expired** — collapsible, collapsed by default:
+   - Items with expired warranties
+   - Same fields, muted styling
+   - "Expired X days ago" instead of "X days remaining"
+
+**Rationale:** Expiring items need attention now. Active items are informational. Expired items are historical — they should not dominate the top of the page.
 
 **On item detail page (PRD-019):**
 - Warranty status indicator:

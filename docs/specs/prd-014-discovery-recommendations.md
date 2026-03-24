@@ -95,6 +95,15 @@ This is deliberately simple. The algorithm evolves as data accumulates (see [med
 - Link to the comparison arena
 - Still show trending and popular sections
 
+**Error handling — per-section, not page-level:**
+
+Each section fetches data independently. Failures must be handled **per-section**, not with a page-level banner:
+
+- If "Trending" fails but "Recommended" succeeds, show trending's error inline and display recommendations normally.
+- Per-section error state: muted message within the section (e.g., "Failed to load trending movies") with a "Retry" button. Do **not** show a page-level banner that implies everything is broken.
+- Error messages must include the **actual server error** (e.g., "TMDB API error: 429 Too Many Requests"), not a hardcoded guess like "Check that TMDB_API_KEY is configured." The API key check belongs only when `getTmdbClient()` returns null — not as a catch-all for any 500.
+- The router must catch **all** errors (not just `TmdbApiError`) and return meaningful messages. Unhandled errors should surface as "Unexpected error: [message]", not a generic 500 with no context.
+
 ### R5: "What Should I Watch Tonight?" Flow
 
 Quick-pick entry point — prominent button on the media home page or discovery page.
@@ -175,7 +184,9 @@ Add "Discover" to the media app's secondary navigation — this is a high-visibi
 13. Page responsive at 375px, 768px, 1024px
 14. `mise db:seed` updated with dismissed suggestions data
 15. Unit tests for scoring algorithm
-16. `pnpm typecheck` and `pnpm test` pass
+16. Section failures show per-section inline errors with actual server message — no page-level "check API key" banner
+17. A single section failing does not break other sections
+18. `pnpm typecheck` and `pnpm test` pass
 
 ## User Stories
 

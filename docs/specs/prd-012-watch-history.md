@@ -20,9 +20,30 @@ On the movie detail page (PRD-010 R5), activate the "Mark as Watched" button:
 
 **States:**
 - **Unwatched:** "Mark as Watched" button → calls `media.watchHistory.log({ mediaType: 'movie', mediaId })`
-- **Watched:** "Watched ✓" indicator with a "Mark Unwatched" action → calls `media.watchHistory.remove({ id })` (removes the most recent watch event)
+- **Watched:** "Watched ✓" indicator with a "Watch Again" action → logs a new watch event without removing the previous one
 
-**Re-watch support:** If already watched, show "Watch Again" alongside "Watched ✓". Clicking "Watch Again" logs a new watch event without removing the previous one.
+**Undo via toast:**
+
+Every "Mark as Watched" / "Watch Again" action shows a success toast with an **"Undo" action button**:
+
+```
+✓ Marked as watched                [Undo]
+```
+
+Clicking "Undo" calls `media.watchHistory.delete({ id })` using the watch history entry ID returned by the `logWatch` response. The toast remains visible for 5 seconds — standard Sonner `toast.success()` with an `action` config:
+
+```typescript
+toast.success("Marked as watched", {
+  action: {
+    label: "Undo",
+    onClick: () => deleteMutation.mutate({ id: newEntryId }),
+  },
+});
+```
+
+This handles accidental clicks without cluttering the UI with a permanent "Mark Unwatched" button. The `logWatch` response must return the created entry's `id` so the frontend can reference it for undo.
+
+**Undo side effects:** If the original `logWatch` triggered auto-removal from the watchlist (PRD-011 R6), the undo should **not** re-add the item to the watchlist — that would be surprising. Undo only deletes the watch history entry. The user can manually re-add to watchlist if needed.
 
 **Visual feedback:**
 - Watched movies show a checkmark overlay on their `MediaCard` in the library grid
@@ -65,12 +86,27 @@ Activate the progress placeholders from PRD-010:
 
 ### R4: Watch History Page (`/media/history`)
 
-A chronological log of everything watched.
+A chronological log of everything watched. Must use available screen space — no hard `max-width` cap.
 
-**Layout:**
-- Reverse-chronological list (most recent first)
-- Each entry shows: poster thumbnail, title, type badge, watched date
-- For episodes: show name + episode identifier (S01E05) + episode name
+**Layout — responsive grid/list:**
+
+**Desktop (≥768px) — poster card grid with date grouping:**
+- Group entries by date (e.g., "Today", "Yesterday", "March 20, 2026")
+- Within each group, display a responsive poster card grid (reuse `MediaGrid` column pattern)
+- Each card shows:
+  - Poster image (2:3 aspect ratio, same as library `MediaCard`)
+  - Title overlay or below poster
+  - Type badge (Movie / Episode)
+  - Watched time (e.g., "3:42 PM")
+  - For episodes: show name + S01E05 as subtitle
+  - Click → navigate to detail page
+
+**Mobile (<768px) — compact list:**
+- Full-width list (no `max-w-*` constraint), grouped by date
+- Each entry: small poster thumbnail, title, type badge, watched date/time
+- For episodes: show name + episode identifier
+
+**Shared:**
 - Filterable by type (All / Movies / TV Episodes)
 - Filterable by date range (this week, this month, this year, custom)
 - Paginated or infinite scroll
@@ -114,12 +150,14 @@ Add "History" to the media app's secondary navigation, after "Watchlist."
 
 ## Acceptance Criteria
 
-1. Movie watch toggle works: mark watched, mark unwatched, watch again
+1. Movie watch toggle works: mark watched, watch again
+1a. "Marked as watched" toast includes an "Undo" button that deletes the just-created entry
+1b. Undo does not re-add to watchlist even if the original watch triggered auto-removal
 2. Watched movies show checkmark overlay in library grid
 3. Episode watch toggles work: individual toggle, mark season, mark show
 4. TV show progress bars display correct watched/total counts
 5. "Next episode" indicator correctly identifies the next unwatched episode in sequence
-6. Watch history page displays all watches in reverse-chronological order
+6. Watch history page displays all watches in reverse-chronological order, using responsive grid (desktop) / list (mobile) that fills available screen width
 7. History page filtering works: by type and date range
 8. Custom watch date works for backdating watches
 9. Auto-remove from watchlist on movie watch and full TV show watch
@@ -136,7 +174,7 @@ Add "History" to the media app's secondary navigation, after "Watchlist."
 > **Sizing:** Each story is scoped for one agent, ~15-20 minutes. All stories are parallelisable.
 
 #### US-1: Movie watch toggle
-**Scope:** Add "Mark as Watched" / "Watched ✓" / "Watch Again" button to `MovieDetailPage`. Calls `media.watchHistory.log` / `media.watchHistory.remove`. Show watch date on detail page. Multiple watches displayed: "Watched 3 times — last on Mar 15, 2026". Add checkmark overlay to `MediaCard` for watched movies.
+**Scope:** Add "Mark as Watched" / "Watched (N)" / "Watch Again" button to `MovieDetailPage` via `MarkAsWatchedButton`. Calls `media.watchHistory.log`. On success, show toast with "Undo" action button that calls `media.watchHistory.delete({ id })` using the returned entry ID. Show watch date on detail page. Multiple watches displayed: "Watched 3 times — last on Mar 15, 2026". Add checkmark overlay to `MediaCard` for watched movies. Undo must not re-add to watchlist.
 **Files:** `MovieDetailPage.tsx`, `MediaCard.tsx`
 
 #### US-2: Episode watch toggles
@@ -152,7 +190,7 @@ Add "History" to the media app's secondary navigation, after "Watchlist."
 **Files:** `TvShowDetailPage.tsx`, `MediaCard.tsx`
 
 #### US-5: Watch history page
-**Scope:** Create `HistoryPage.tsx`. Reverse-chronological list of all watch events. Movies show poster + title + date. Episodes show show name + S01E05 + episode name + date. Filter by type (All/Movies/Episodes) and date range. Paginated or infinite scroll. Add route + "History" to secondary nav.
+**Scope:** Create `HistoryPage.tsx`. Desktop: responsive poster card grid grouped by date (reuse `MediaGrid` columns), each card shows poster, title, type badge, watched time, episode info. Mobile: compact full-width list grouped by date. No `max-width` cap. Filter by type (All/Movies/Episodes) and date range. Paginated or infinite scroll. Add route + "History" to secondary nav.
 **Files:** `packages/app-media/src/pages/HistoryPage.tsx`
 
 #### US-6: Custom watch date

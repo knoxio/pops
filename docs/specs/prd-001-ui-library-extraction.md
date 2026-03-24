@@ -117,7 +117,7 @@ Components are classified as **shared** (→ `@pops/ui`) or **domain-specific** 
 | Category | Components | Count |
 |----------|-----------|-------|
 | Primitives | All 28 shadcn/ui components in `ui/` | 28 |
-| Composite | Autocomplete, Button, CheckboxInput, Chip, ChipInput, ComboboxSelect, DataTable, DataTableFilters, DateTimeInput, DropdownMenu, EditableCell, ErrorBoundary, InfiniteScrollTable, NumberInput, RadioInput, Select, TextInput | 17 |
+| Composite | Autocomplete, Button, CheckboxInput, Chip, ChipInput, ComboboxSelect, DataTable, DataTableFilters, DateTimeInput, DropdownMenu, EditableCell, ErrorBoundary, InfiniteScrollTable, NumberInput, RadioInput, Select, TextInput, **ViewToggleGroup** | 18 |
 | Utilities | `cn()` from lib/utils.ts | 1 |
 | Theme | globals.css (CSS variables, @theme block, Tailwind config) | 1 |
 | Stories | All story files for the above components | 28 |
@@ -230,6 +230,69 @@ import '@pops/ui/theme'
 - The shell (and later each app) imports this CSS file
 - Tailwind v4 content detection automatically finds classes in workspace packages — no manual `content` config needed
 - Apps do NOT define their own theme tokens — they consume from `@pops/ui`
+
+### R8: Action Icon Standards
+
+POPS uses [Lucide React](https://lucide.dev) for icons. All interactive actions must use a **consistent icon vocabulary** across every app package. Text-only action labels (e.g., a bare "Remove" link) are not permitted — actions must use an icon, either icon-only (with `aria-label`) or icon + text label.
+
+**Standard action icons:**
+
+| Action | Icon | Usage |
+|--------|------|-------|
+| Add / Create | `Plus` | Add item, create new, add to list |
+| Edit | `Pencil` | Edit item, edit inline, open edit form |
+| Delete / Remove | `Trash2` | Delete item, remove from list, remove from watchlist |
+| Close / Dismiss | `X` | Close dialog, dismiss notification, cancel |
+| Save | `Check` | Confirm, save changes |
+| Cancel | `X` | Cancel edit, cancel action (context-dependent — use `X` for inline cancels, text "Cancel" for dialog buttons) |
+| Move up | `ArrowUp` | Reorder up |
+| Move down | `ArrowDown` | Reorder down |
+| Expand | `ChevronDown` or `ChevronRight` | Expand section, show details |
+| Search | `Search` | Search input, search action |
+| Settings | `Settings` | Open settings |
+| External link | `ExternalLink` | Open in new tab |
+
+**Do not use:** `Edit2` (use `Pencil`), `Trash` (use `Trash2`), `PenLine` (use `Pencil`). One icon per action, no aliases.
+
+**Icon button pattern:**
+
+For compact actions (table rows, list items, card actions), use icon-only buttons with `aria-label`:
+```tsx
+<Button variant="ghost" size="icon" aria-label="Remove from watchlist">
+  <Trash2 className="h-4 w-4" />
+</Button>
+```
+
+For prominent actions (page-level CTAs, form buttons), use icon + text:
+```tsx
+<Button>
+  <Plus className="h-4 w-4 mr-2" /> Add Item
+</Button>
+```
+
+**Destructive actions** (delete, remove) use `variant="ghost"` with `text-destructive` or `hover:text-destructive` styling so they don't draw attention until hovered.
+
+### R9: ViewToggleGroup Component
+
+A reusable table/grid view toggle for any list page. Used by inventory items, media library, watchlist, history, and any future list page.
+
+**Component:** `@pops/ui` → `components/ViewToggleGroup.tsx`
+
+```tsx
+interface ViewToggleGroupProps {
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string; icon: React.ComponentType<{ className?: string }> }>;
+}
+```
+
+**Default options:** `LayoutList` (table/list) and `LayoutGrid` (grid/card) from Lucide. The component accepts custom options so pages can offer additional views if needed.
+
+**Rendering:** Segmented button group (pill shape, muted background, active item has elevated background + shadow). Same visual pattern as the current inventory implementation but extracted into a shared component.
+
+**Placement rule:** The view toggle must be rendered **directly above the content it controls** — in the same toolbar as the search/filter bar, or immediately before the data area. Never in the page header if the content is separated by dashboard widgets, filters, or other sections. The toggle controls the data view, so it belongs with the data.
+
+**Persistence:** Pages that use `ViewToggleGroup` should persist the selection to `localStorage` with a page-specific key (e.g., `inventory-view-mode`, `media-library-view-mode`).
 
 ## Out of Scope
 

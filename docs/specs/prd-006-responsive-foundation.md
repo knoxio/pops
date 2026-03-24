@@ -28,7 +28,7 @@ Define standard breakpoints in the `@pops/ui` design tokens:
 
 These are Tailwind v4 defaults. No need to customise unless a specific breakpoint is missing. Document them as the standard set.
 
-### R2: Shell Layout — Mobile
+### R2: Shell Layout & Page Content Width
 
 **App Switcher (from PRD-003):**
 - Desktop: side rail + page nav panel (already specified)
@@ -39,9 +39,59 @@ These are Tailwind v4 defaults. No need to customise unless a specific breakpoin
 - Compact on mobile: hide user email, keep theme toggle and hamburger/menu trigger
 - POPS title can shrink or become an icon
 
-**Content area:**
-- Full width on mobile (no side margins wasted)
+**Content area — mobile (<768px):**
+- Full width (no side margins wasted)
 - Appropriate padding for touch (min 16px)
+
+**Content area — padding ownership:**
+
+The shell's `<main>` element must have **zero padding** (`p-0`). Pages own their own padding. This avoids the negative-margin hack needed when full-width content (hero backdrops, poster grids, horizontal scroll rows) must bleed past shell-level padding.
+
+**Standard page padding:** `px-4 md:px-6 lg:px-8` applied by each page to its padded sections. Full-width sections (heroes, grids, scroll rows) simply omit the padding.
+
+**Example — movie detail page:**
+```tsx
+<div>
+  {/* Hero — no padding, edge-to-edge */}
+  <div className="relative h-64 md:h-96 overflow-hidden bg-muted">
+    <img src={backdrop} className="absolute inset-0 w-full h-full object-cover" />
+  </div>
+
+  {/* Content — padded and constrained */}
+  <div className="px-4 md:px-6 lg:px-8 max-w-4xl mx-auto space-y-6">
+    <h1>{title}</h1>
+    <p>{overview}</p>
+  </div>
+</div>
+```
+
+**Content area — desktop (≥768px), page width convention:**
+
+Pages fall into two categories:
+
+| Category | Max width | Centering | Use when |
+|----------|----------|-----------|----------|
+| **Full-width** | None | N/A | Content fills available space: grids, horizontal scroll rows, data tables, hero backdrops. E.g., Library, Discover, Watchlist (grid), History (grid), detail page heroes |
+| **Constrained** | `max-w-4xl mx-auto` | Centered | Content is primarily text/forms that become hard to read at full width. E.g., Plex settings, Compare arena, detail page content below hero |
+
+**Rules:**
+- **Constrained sections must always use `mx-auto`** to center within the content area. A `max-w-*` without `mx-auto` creates dead space on the right — this is never acceptable.
+- **Empty states and error states must have equal visual quality.** Both are centered horizontally and vertically, include a relevant icon (muted), a heading, a description, and an action (CTA link or retry button). A bare red text line is not an acceptable error state. The pattern:
+
+```tsx
+<div className="flex flex-col items-center justify-center py-16 text-center">
+  <AlertCircle className="h-12 w-12 text-muted-foreground/40 mb-4" />
+  <p className="text-lg font-medium">Search failed</p>
+  <p className="text-sm text-muted-foreground mt-1">{error.message}</p>
+  <Button variant="outline" size="sm" className="mt-4" onClick={retry}>
+    Try again
+  </Button>
+</div>
+```
+
+- **No page should be designed for a single viewport width.** Content must adapt to the available space — grids add columns, constrained content centers, empty states center.
+- **Pages mix full-width and constrained sections freely.** A detail page has a full-width hero followed by constrained text content — each section applies its own padding and width.
+- **Page title icons must be consistent within an app.** Either all top-level pages in an app have an icon next to the title, or none do. Mixing (e.g., Warranties has an icon but Items doesn't) looks inconsistent. The icon should match the sidebar nav icon for that page. Drill-down pages (detail, form) don't need title icons — the back button + breadcrumb provides context.
 
 ### R3: Shared Component Audit
 
@@ -100,6 +150,9 @@ Per Apple HIG and WCAG:
 ## Acceptance Criteria
 
 1. Shell layout works on 375px+ viewports without horizontal scroll
+1a. Constrained pages use `max-w-* mx-auto` (centered) — never `max-w-*` alone (left-aligned with dead space)
+1b. Empty states are centered horizontally and vertically
+1c. No page has dead space on the right at any viewport width
 2. App switcher has a mobile interaction pattern (bottom bar or hamburger)
 3. All `@pops/ui` components render without overflow/clipping at 375px
 4. Touch targets meet 44x44px minimum on all interactive elements
