@@ -139,6 +139,7 @@ describe("importMoviesFromPlex", () => {
       mediaId: 42,
       watchedAt: expect.any(String),
       completed: 1,
+      source: "plex_sync",
     });
   });
 

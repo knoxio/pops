@@ -33,7 +33,7 @@ export const LogWatchSchema = z.object({
   completed: z.number().int().min(0).max(1).optional().default(1),
   source: z.enum(["manual", "plex_sync"]).optional().default("manual"),
 });
-export type LogWatchInput = z.infer<typeof LogWatchSchema>;
+export type LogWatchInput = z.input<typeof LogWatchSchema>;
 
 /** Zod schema for watch history list query params. */
 export const WatchHistoryQuerySchema = z.object({

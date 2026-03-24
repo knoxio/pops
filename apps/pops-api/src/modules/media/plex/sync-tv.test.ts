@@ -223,6 +223,7 @@ describe("importTvShowsFromPlex", () => {
       mediaId: 100,
       watchedAt: expect.any(String),
       completed: 1,
+      source: "plex_sync",
     });
   });
 
