@@ -143,7 +143,7 @@ export function InventoryTable({
       searchPlaceholder="Search items..."
       paginated
       defaultPageSize={20}
-      onRowClick={(row) => navigate(`/inventory/${row.id}`)}
+      onRowClick={(row) => navigate(`/inventory/items/${row.id}`)}
       emptyState="No inventory items found."
     />
   );

@@ -362,7 +362,7 @@ export function ItemsPage() {
               assetId={item.assetId}
               type={item.type}
               condition={item.condition as Condition | null}
-              onClick={() => navigate(`/inventory/${item.id}`)}
+              onClick={() => navigate(`/inventory/items/${item.id}`)}
             />
           ))}
         </div>
