@@ -168,7 +168,9 @@ export function SeasonDetailPage() {
   const batchLogMutation = trpc.media.watchHistory.batchLog.useMutation({
     onSuccess: (result) => {
       utils.media.watchHistory.invalidate();
-      toast.success(`Marked ${result.data.logged} episode${result.data.logged !== 1 ? "s" : ""} as watched`);
+      toast.success(
+        `Marked ${result.data.logged} episode${result.data.logged !== 1 ? "s" : ""} as watched`,
+      );
     },
     onError: (err) => toast.error(`Failed to mark season: ${err.message}`),
   });
@@ -244,7 +246,7 @@ export function SeasonDetailPage() {
     : null;
 
   return (
-    <div className="p-6 space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-4xl mx-auto">
       {/* Breadcrumb */}
       <Breadcrumb>
         <BreadcrumbList>

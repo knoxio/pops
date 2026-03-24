@@ -365,13 +365,15 @@ function WatchlistCard({
       {/* Title + year + notes */}
       <div className="space-y-0.5 px-0.5">
         <Link to={href} className="hover:underline">
-          <h3 className="text-sm font-medium leading-tight line-clamp-2">{title}</h3>
+          <h3 className="text-sm font-medium leading-tight line-clamp-2">
+            {title}
+          </h3>
         </Link>
-        {year && (
-          <p className="text-xs text-muted-foreground">{year}</p>
-        )}
+        {year && <p className="text-xs text-muted-foreground">{year}</p>}
         {entry.notes && (
-          <p className="text-xs text-muted-foreground line-clamp-1">{entry.notes}</p>
+          <p className="text-xs text-muted-foreground line-clamp-1">
+            {entry.notes}
+          </p>
         )}
       </div>
     </div>
@@ -390,15 +392,11 @@ export function WatchlistPage() {
     error: watchlistError,
   } = trpc.media.watchlist.list.useQuery({ limit: 500 });
 
-  const {
-    data: moviesData,
-    isLoading: moviesLoading,
-  } = trpc.media.movies.list.useQuery({ limit: 500 });
+  const { data: moviesData, isLoading: moviesLoading } =
+    trpc.media.movies.list.useQuery({ limit: 500 });
 
-  const {
-    data: tvShowsData,
-    isLoading: tvShowsLoading,
-  } = trpc.media.tvShows.list.useQuery({ limit: 500 });
+  const { data: tvShowsData, isLoading: tvShowsLoading } =
+    trpc.media.tvShows.list.useQuery({ limit: 500 });
 
   const utils = trpc.useUtils();
 
@@ -447,7 +445,12 @@ export function WatchlistPage() {
     () =>
       new Map<number, MediaMeta>(
         (moviesData?.data ?? []).map(
-          (m: { id: number; title: string; releaseDate: string | null; posterUrl: string | null }) => [
+          (m: {
+            id: number;
+            title: string;
+            releaseDate: string | null;
+            posterUrl: string | null;
+          }) => [
             m.id,
             {
               title: m.title,
@@ -466,7 +469,12 @@ export function WatchlistPage() {
     () =>
       new Map<number, MediaMeta>(
         (tvShowsData?.data ?? []).map(
-          (s: { id: number; name: string; firstAirDate: string | null; posterUrl: string | null }) => [
+          (s: {
+            id: number;
+            name: string;
+            firstAirDate: string | null;
+            posterUrl: string | null;
+          }) => [
             s.id,
             {
               title: s.name,
@@ -519,7 +527,7 @@ export function WatchlistPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold">Watchlist</h1>
 
       {loading ? (
@@ -534,10 +542,7 @@ export function WatchlistPage() {
             <Link to="/media" className="text-sm text-primary underline">
               Browse library
             </Link>
-            <Link
-              to="/media/search"
-              className="text-sm text-primary underline"
-            >
+            <Link to="/media/search" className="text-sm text-primary underline">
               Search
             </Link>
           </div>
@@ -545,7 +550,11 @@ export function WatchlistPage() {
       ) : (
         <>
           {/* Mobile: compact list with reorder */}
-          <div className="space-y-3 md:hidden" role="list" aria-label="Watchlist items">
+          <div
+            className="space-y-3 md:hidden"
+            role="list"
+            aria-label="Watchlist items"
+          >
             {sortedEntries.map((entry: WatchlistEntry, index: number) => {
               const meta =
                 entry.mediaType === "movie"
