@@ -130,6 +130,8 @@ export interface RecentWatchHistoryEntry {
   completed: number;
   title: string | null;
   posterPath: string | null;
+  /** Resolved poster URL using TMDB/TVDB external IDs (not DB IDs). */
+  posterUrl: string | null;
   /** For episodes: season/episode info */
   seasonNumber: number | null;
   episodeNumber: number | null;

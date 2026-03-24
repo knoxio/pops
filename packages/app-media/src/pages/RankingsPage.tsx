@@ -48,6 +48,7 @@ interface RankingRowProps {
   comparisonCount: number;
   title: string;
   year: number | null;
+  posterUrl: string | null;
 }
 
 function RankingRow({
@@ -58,10 +59,11 @@ function RankingRow({
   comparisonCount,
   title,
   year,
+  posterUrl,
 }: RankingRowProps) {
   const href =
     mediaType === "movie" ? `/media/movies/${mediaId}` : `/media/tv/${mediaId}`;
-  const posterSrc = `/media/images/${mediaType === "movie" ? "movie" : "tv"}/${mediaId}/poster.jpg`;
+  const posterSrc = posterUrl ?? "";
 
   return (
     <div className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/50 transition-colors">
@@ -111,6 +113,7 @@ function RankingRow({
 interface MediaMeta {
   title: string;
   year: number | null;
+  posterUrl: string | null;
 }
 
 function RankingsList({ dimensionId }: { dimensionId?: number }) {
@@ -129,11 +132,12 @@ function RankingsList({ dimensionId }: { dimensionId?: number }) {
     () =>
       new Map<number, MediaMeta>(
         (moviesData?.data ?? []).map(
-          (m: { id: number; title: string; releaseDate: string | null }) => [
+          (m: { id: number; title: string; releaseDate: string | null; posterUrl: string | null }) => [
             m.id,
             {
               title: m.title,
               year: m.releaseDate ? new Date(m.releaseDate).getFullYear() : null,
+              posterUrl: m.posterUrl,
             },
           ]
         )
@@ -145,11 +149,12 @@ function RankingsList({ dimensionId }: { dimensionId?: number }) {
     () =>
       new Map<number, MediaMeta>(
         (tvShowsData?.data ?? []).map(
-          (s: { id: number; name: string; firstAirDate: string | null }) => [
+          (s: { id: number; name: string; firstAirDate: string | null; posterUrl: string | null }) => [
             s.id,
             {
               title: s.name,
               year: s.firstAirDate ? new Date(s.firstAirDate).getFullYear() : null,
+              posterUrl: s.posterUrl,
             },
           ]
         )
@@ -201,6 +206,7 @@ function RankingsList({ dimensionId }: { dimensionId?: number }) {
               comparisonCount={entry.comparisonCount}
               title={meta?.title ?? "Unknown"}
               year={meta?.year ?? null}
+              posterUrl={meta?.posterUrl ?? null}
             />
           );
         })}

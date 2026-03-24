@@ -31,6 +31,7 @@ interface WatchlistEntry {
 interface MediaMeta {
   title: string;
   year: number | null;
+  posterUrl: string | null;
 }
 
 function WatchlistSkeleton() {
@@ -54,6 +55,7 @@ interface WatchlistItemProps {
   entry: WatchlistEntry;
   title: string;
   year: number | null;
+  posterUrl: string | null;
   isFirst: boolean;
   isLast: boolean;
   onMoveUp: () => void;
@@ -70,6 +72,7 @@ function WatchlistItem({
   entry,
   title,
   year,
+  posterUrl,
   isFirst,
   isLast,
   onMoveUp,
@@ -90,7 +93,7 @@ function WatchlistItem({
     entry.mediaType === "movie"
       ? `/media/movies/${entry.mediaId}`
       : `/media/tv/${entry.mediaId}`;
-  const posterSrc = `/media/images/${entry.mediaType === "movie" ? "movie" : "tv"}/${entry.mediaId}/poster.jpg`;
+  const posterSrc = posterUrl ?? "";
 
   // Sync draft when server data changes
   useEffect(() => {
@@ -326,13 +329,14 @@ export function WatchlistPage() {
     () =>
       new Map<number, MediaMeta>(
         (moviesData?.data ?? []).map(
-          (m: { id: number; title: string; releaseDate: string | null }) => [
+          (m: { id: number; title: string; releaseDate: string | null; posterUrl: string | null }) => [
             m.id,
             {
               title: m.title,
               year: m.releaseDate
                 ? new Date(m.releaseDate).getFullYear()
                 : null,
+              posterUrl: m.posterUrl,
             },
           ],
         ),
@@ -344,13 +348,14 @@ export function WatchlistPage() {
     () =>
       new Map<number, MediaMeta>(
         (tvShowsData?.data ?? []).map(
-          (s: { id: number; name: string; firstAirDate: string | null }) => [
+          (s: { id: number; name: string; firstAirDate: string | null; posterUrl: string | null }) => [
             s.id,
             {
               title: s.name,
               year: s.firstAirDate
                 ? new Date(s.firstAirDate).getFullYear()
                 : null,
+              posterUrl: s.posterUrl,
             },
           ],
         ),
@@ -433,6 +438,7 @@ export function WatchlistPage() {
                 entry={entry}
                 title={meta?.title ?? "Unknown"}
                 year={meta?.year ?? null}
+                posterUrl={meta?.posterUrl ?? null}
                 isFirst={index === 0}
                 isLast={index === sortedEntries.length - 1}
                 onMoveUp={() => handleMove(index, "up")}

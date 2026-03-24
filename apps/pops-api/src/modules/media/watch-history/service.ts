@@ -106,10 +106,13 @@ export function listRecent(
   const rows: RecentWatchHistoryEntry[] = rawRows.map((row) => {
     if (row.mediaType === "movie") {
       const movie = db
-        .select({ title: movies.title, posterPath: movies.posterPath })
+        .select({ title: movies.title, posterPath: movies.posterPath, tmdbId: movies.tmdbId, posterOverridePath: movies.posterOverridePath })
         .from(movies)
         .where(eq(movies.id, row.mediaId))
         .get();
+      let posterUrl: string | null = null;
+      if (movie?.posterOverridePath) posterUrl = movie.posterOverridePath;
+      else if (movie?.posterPath) posterUrl = `/media/images/movie/${movie.tmdbId}/poster.jpg`;
       return {
         id: row.id,
         mediaType: row.mediaType,
@@ -118,6 +121,7 @@ export function listRecent(
         completed: row.completed,
         title: movie?.title ?? null,
         posterPath: movie?.posterPath ?? null,
+        posterUrl,
         seasonNumber: null,
         episodeNumber: null,
         showName: null,
@@ -145,6 +149,7 @@ export function listRecent(
         completed: row.completed,
         title: null,
         posterPath: null,
+        posterUrl: null,
         seasonNumber: null,
         episodeNumber: null,
         showName: null,
@@ -160,11 +165,15 @@ export function listRecent(
 
     const show = season
       ? db
-          .select({ name: tvShows.name, posterPath: tvShows.posterPath })
+          .select({ name: tvShows.name, posterPath: tvShows.posterPath, tvdbId: tvShows.tvdbId, posterOverridePath: tvShows.posterOverridePath })
           .from(tvShows)
           .where(eq(tvShows.id, season.tvShowId))
           .get()
       : null;
+
+    let posterUrl: string | null = null;
+    if (show?.posterOverridePath) posterUrl = show.posterOverridePath;
+    else if (show?.posterPath) posterUrl = `/media/images/tv/${show.tvdbId}/poster.jpg`;
 
     return {
       id: row.id,
@@ -174,6 +183,7 @@ export function listRecent(
       completed: row.completed,
       title: episode.name ?? null,
       posterPath: show?.posterPath ?? episode.stillPath ?? null,
+      posterUrl,
       seasonNumber: season?.seasonNumber ?? null,
       episodeNumber: episode.episodeNumber,
       showName: show?.name ?? null,

@@ -54,6 +54,7 @@ interface HistoryItemProps {
     watchedAt: string;
     title: string | null;
     posterPath: string | null;
+    posterUrl: string | null;
     seasonNumber: number | null;
     episodeNumber: number | null;
     showName: string | null;
@@ -69,11 +70,7 @@ function HistoryItem({ entry }: HistoryItemProps) {
       : isEpisode
         ? `/media`
         : `/media/movies/${entry.mediaId}`;
-  const posterSrc = entry.posterPath
-    ? isEpisode && entry.tvShowId
-      ? `/media/images/tv/${entry.tvShowId}/poster.jpg`
-      : `/media/images/movie/${entry.mediaId}/poster.jpg`
-    : null;
+  const posterSrc = entry.posterUrl;
 
   const title = entry.title ?? "Unknown";
   const subtitle =
