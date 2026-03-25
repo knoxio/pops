@@ -95,18 +95,9 @@ function getHistoryHref(entry: HistoryEntry): string {
   return `/media/movies/${entry.mediaId}`;
 }
 
-function getHistoryPoster(entry: HistoryEntry): string | null {
-  if (!entry.posterPath) return null;
-  const isEpisode = entry.mediaType === "episode";
-  if (isEpisode && entry.tvShowId) {
-    return `/media/images/tv/${entry.tvShowId}/poster.jpg`;
-  }
-  return `/media/images/movie/${entry.mediaId}/poster.jpg`;
-}
-
 function HistoryItem({ entry }: { entry: HistoryEntry }) {
   const href = getHistoryHref(entry);
-  const posterSrc = getHistoryPoster(entry);
+  const posterSrc = entry.posterUrl;
   const isEpisode = entry.mediaType === "episode";
 
   const title = entry.title ?? "Unknown";
@@ -158,7 +149,7 @@ function HistoryCard({ entry }: { entry: HistoryEntry }) {
   const navigate = useNavigate();
   const [imageError, setImageError] = useState(false);
   const href = getHistoryHref(entry);
-  const posterSrc = getHistoryPoster(entry);
+  const posterSrc = entry.posterUrl;
   const isEpisode = entry.mediaType === "episode";
 
   const title = entry.title ?? "Unknown";
