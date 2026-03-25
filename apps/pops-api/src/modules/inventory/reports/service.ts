@@ -1,7 +1,7 @@
 /**
  * Inventory reports service — warranty tracking and insurance report queries.
  */
-import { isNotNull, asc, sql, desc, and, gte, lte } from "drizzle-orm";
+import { isNotNull, asc, sql, desc, and, gte, lte, count, eq } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
 import { homeInventory, locations, itemPhotos } from "@pops/db-types";
 import type { InventoryRow } from "../items/types.js";
@@ -19,7 +19,7 @@ export function getDashboard(): DashboardSummary {
 
   const [summary] = db
     .select({
-      itemCount: sql<number>`COUNT(*)`,
+      itemCount: count(),
       totalReplacementValue: sql<number>`COALESCE(SUM(${homeInventory.replacementValue}), 0)`,
       totalResaleValue: sql<number>`COALESCE(SUM(${homeInventory.resaleValue}), 0)`,
     })
@@ -32,7 +32,7 @@ export function getDashboard(): DashboardSummary {
   const cutoffIso = cutoff.toISOString().split("T")[0];
 
   const [warrantyResult] = db
-    .select({ cnt: sql<number>`COUNT(*)` })
+    .select({ cnt: count() })
     .from(homeInventory)
     .where(
       and(
@@ -237,10 +237,10 @@ export function getValueByLocation(): ValueBreakdownEntry[] {
     .select({
       name: sql<string>`COALESCE(${locations.name}, 'Unassigned')`,
       totalValue: sql<number>`COALESCE(SUM(${homeInventory.replacementValue}), 0)`,
-      itemCount: sql<number>`COUNT(*)`,
+      itemCount: count(),
     })
     .from(homeInventory)
-    .leftJoin(locations, sql`${homeInventory.locationId} = ${locations.id}`)
+    .leftJoin(locations, eq(homeInventory.locationId, locations.id))
     .groupBy(sql`COALESCE(${locations.name}, 'Unassigned')`)
     .orderBy(desc(sql`COALESCE(SUM(${homeInventory.replacementValue}), 0)`))
     .all() as ValueBreakdownEntry[];
@@ -256,7 +256,7 @@ export function getValueByType(): ValueBreakdownEntry[] {
     .select({
       name: sql<string>`COALESCE(${homeInventory.type}, 'Uncategorized')`,
       totalValue: sql<number>`COALESCE(SUM(${homeInventory.replacementValue}), 0)`,
-      itemCount: sql<number>`COUNT(*)`,
+      itemCount: count(),
     })
     .from(homeInventory)
     .groupBy(sql`COALESCE(${homeInventory.type}, 'Uncategorized')`)
