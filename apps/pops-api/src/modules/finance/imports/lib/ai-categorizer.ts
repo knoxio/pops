@@ -1,11 +1,14 @@
 /**
  * Use Claude Haiku to categorize unknown transaction descriptions.
- * Results are cached so each unique description only requires one API call.
+ * Results are cached to disk (ai_entity_cache.json) so each unique description
+ * only requires one API call, even across process restarts (FS-007).
  *
  * Only the merchant description is sent to the API — no account numbers,
  * card numbers, or personal identifiers.
  */
 import Anthropic from "@anthropic-ai/sdk";
+import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { dirname, join } from "node:path";
 import { getEnv } from "../../../../env.js";
 import { getDb, isNamedEnvContext } from "../../../../db.js";
 import { logger } from "../../../../lib/logger.js";
@@ -23,12 +26,55 @@ export interface AiUsageStats {
   costUsd: number;
 }
 
-// In-memory cache (could be moved to Redis/database later)
+// In-memory hot cache, hydrated from disk on first access
 const cache = new Map<string, AiCacheEntry>();
+let diskLoaded = false;
 
-/** Clear the in-memory cache (for testing) */
+function getCachePath(): string {
+  return (
+    process.env["AI_CACHE_PATH"] ??
+    join(dirname(process.env["SQLITE_PATH"] ?? "./data/pops.db"), "ai_entity_cache.json")
+  );
+}
+
+function loadCacheFromDisk(): void {
+  if (diskLoaded) return;
+  diskLoaded = true;
+  const path = getCachePath();
+  if (!existsSync(path)) return;
+  try {
+    const raw = readFileSync(path, "utf-8");
+    const entries = JSON.parse(raw) as AiCacheEntry[];
+    for (const entry of entries) {
+      cache.set(entry.description.toUpperCase().trim(), entry);
+    }
+    logger.info({ path, entries: entries.length }, "[AI] Loaded cache from disk");
+  } catch (err) {
+    logger.warn(
+      { path, error: err instanceof Error ? err.message : String(err) },
+      "[AI] Failed to load cache from disk, starting fresh"
+    );
+  }
+}
+
+function saveCacheToDisk(): void {
+  const path = getCachePath();
+  try {
+    mkdirSync(dirname(path), { recursive: true });
+    const entries = Array.from(cache.values());
+    writeFileSync(path, JSON.stringify(entries, null, 2));
+  } catch (err) {
+    logger.warn(
+      { path, error: err instanceof Error ? err.message : String(err) },
+      "[AI] Failed to save cache to disk"
+    );
+  }
+}
+
+/** Clear the in-memory cache and reset disk-loaded flag (for testing) */
 export function clearCache(): void {
   cache.clear();
+  diskLoaded = false;
 }
 
 import { AiCategorizationError } from "./ai-categorizer-error.js";
@@ -77,6 +123,9 @@ export async function categorizeWithAi(
   if (isNamedEnvContext()) {
     return { result: null };
   }
+
+  // Hydrate in-memory cache from disk on first access
+  loadCacheFromDisk();
 
   const cached = cache.get(key);
   if (cached) {
@@ -154,6 +203,7 @@ Common categories: Groceries, Dining, Transport, Utilities, Entertainment, Shopp
       cachedAt: new Date().toISOString(),
     };
     cache.set(key, entry);
+    saveCacheToDisk();
 
     // Track API usage and cost
     // Haiku 4.5 pricing: $1.00/MTok input, $5.00/MTok output
