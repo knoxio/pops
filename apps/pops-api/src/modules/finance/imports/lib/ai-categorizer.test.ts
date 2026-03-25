@@ -35,6 +35,14 @@ vi.mock("../../../../db.js", () => {
   };
 });
 
+// Mock node:fs so disk I/O doesn't interfere with unit tests
+vi.mock("node:fs", () => ({
+  existsSync: vi.fn().mockReturnValue(false),
+  readFileSync: vi.fn(),
+  writeFileSync: vi.fn(),
+  mkdirSync: vi.fn(),
+}));
+
 // Store original env var
 const originalEnv = process.env["CLAUDE_API_KEY"];
 
