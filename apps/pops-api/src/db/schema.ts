@@ -27,6 +27,7 @@ const INCLUDED_MIGRATIONS = [
   "20260321140000_item_documents.sql",
   "20260322120000_settings.sql",
   "20260324140000_watch_history_unique_index.sql",
+  "20260325150000_locations_last_edited_time.sql",
 ];
 
 /**
