@@ -555,12 +555,12 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
     ];
 
     const insertLocation = db.prepare(`
-      INSERT INTO locations (id, name, parent_id, sort_order)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO locations (id, name, parent_id, sort_order, last_edited_time)
+      VALUES (?, ?, ?, ?, ?)
     `);
 
     for (const loc of locations) {
-      insertLocation.run(loc.id, loc.name, loc.parent_id, loc.sort_order);
+      insertLocation.run(loc.id, loc.name, loc.parent_id, loc.sort_order, now);
     }
 
     // -------------------------------------------------------------------------
