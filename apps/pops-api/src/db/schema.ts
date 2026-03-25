@@ -96,6 +96,7 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       name       TEXT NOT NULL,
       parent_id  TEXT,
       sort_order INTEGER NOT NULL DEFAULT 0,
+      last_edited_time TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (parent_id) REFERENCES locations(id) ON DELETE CASCADE
     );
 
