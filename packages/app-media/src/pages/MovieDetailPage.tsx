@@ -127,23 +127,6 @@ export function MovieDetailPage() {
 
   return (
     <div>
-      {/* Breadcrumb */}
-      <div className="p-6 pb-0">
-        <Breadcrumb>
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link to="/media">Media</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>{movie.title}</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      </div>
-
       {/* Hero section — negative margins cancel shell padding for edge-to-edge */}
       <div className="-mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8 relative h-64 md:h-96 overflow-hidden bg-muted">
         {backdropSrc && (
@@ -154,6 +137,27 @@ export function MovieDetailPage() {
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/20" />
+
+        {/* Breadcrumb overlay */}
+        <div className="absolute top-0 left-0 right-0 p-4 md:p-6 z-10">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink asChild>
+                  <Link to="/media" className="text-white/70 hover:text-white">
+                    Media
+                  </Link>
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator className="text-white/50" />
+              <BreadcrumbItem>
+                <BreadcrumbPage className="text-white/90">
+                  {movie.title}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
+        </div>
 
         <div className="relative h-full flex flex-col md:flex-row items-end p-6 gap-4 md:gap-6">
           <img
