@@ -242,7 +242,7 @@ export function getValueByLocation(): ValueBreakdownEntry[] {
     .from(homeInventory)
     .leftJoin(locations, sql`${homeInventory.locationId} = ${locations.id}`)
     .groupBy(sql`COALESCE(${locations.name}, 'Unassigned')`)
-    .orderBy(desc(sql`totalValue`))
+    .orderBy(desc(sql`COALESCE(SUM(${homeInventory.replacementValue}), 0)`))
     .all() as ValueBreakdownEntry[];
 }
 
@@ -260,6 +260,6 @@ export function getValueByType(): ValueBreakdownEntry[] {
     })
     .from(homeInventory)
     .groupBy(sql`COALESCE(${homeInventory.type}, 'Uncategorized')`)
-    .orderBy(desc(sql`totalValue`))
+    .orderBy(desc(sql`COALESCE(SUM(${homeInventory.replacementValue}), 0)`))
     .all() as ValueBreakdownEntry[];
 }
