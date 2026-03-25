@@ -2,7 +2,7 @@
 
 **Theme:** Inventory
 **Priority:** 0 (prerequisite to everything)
-**Status:** Not started
+**Status:** Done
 
 ## Goal
 

@@ -2,7 +2,7 @@
 
 **Theme:** Media
 **Priority:** 2 (first visible UI — depends on TMDB data)
-**Status:** Not started
+**Status:** Done
 
 ## Goal
 

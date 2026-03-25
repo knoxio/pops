@@ -2,7 +2,7 @@
 
 **Theme:** Media
 **Priority:** 3 (core user flow — depends on UI)
-**Status:** Not started
+**Status:** Done
 
 ## Goal
 

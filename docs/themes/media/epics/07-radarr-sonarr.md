@@ -2,7 +2,7 @@
 
 **Theme:** Media
 **Priority:** 7 (can run in parallel with Epic 6 after Epic 3)
-**Status:** Not started
+**Status:** Done
 
 ## Goal
 

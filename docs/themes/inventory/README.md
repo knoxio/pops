@@ -29,12 +29,12 @@ The current POPS inventory is a read-only data table with 5 seeded items. The No
 
 | # | Epic | Summary | Status |
 |---|------|---------|--------|
-| 0 | [Schema Upgrade & Migration](epics/00-schema-upgrade.md) | Extend schema: location tree, connections junction table, asset IDs, photos, notes. Drizzle migration | Not started |
-| 1 | [Notion Import](epics/01-notion-import.md) | One-time import of all Notion inventory data into POPS (items, photos, locations, relationships) | Not started |
-| 2 | [App Package & Edit UI](epics/02-app-package-ui.md) | `@pops/app-inventory` workspace package, CRUD pages, detail views, photo gallery, location picker | Not started |
-| 3 | [Connections & Graph](epics/03-connections-graph.md) | Bidirectional item connections, connection chain tracing, graph visualisation | Not started |
-| 4 | [Paperless-ngx Integration](epics/04-paperless-integration.md) | Link receipts, warranties, and manuals from Paperless-ngx to inventory items | Not started |
-| 5 | [Warranty, Value & Reporting](epics/05-warranty-value-reporting.md) | Warranty expiry alerts, total asset value dashboard, room-level value reports, insurance-ready exports | Not started |
+| 0 | [Schema Upgrade & Migration](epics/00-schema-upgrade.md) | Extend schema: location tree, connections junction table, asset IDs, photos, notes. Drizzle migration | Done |
+| 1 | [Notion Import](epics/01-notion-import.md) | One-time import of all Notion inventory data into POPS (items, photos, locations, relationships) | Done |
+| 2 | [App Package & Edit UI](epics/02-app-package-ui.md) | `@pops/app-inventory` workspace package, CRUD pages, detail views, photo gallery, location picker | Done |
+| 3 | [Connections & Graph](epics/03-connections-graph.md) | Bidirectional item connections, connection chain tracing, graph visualisation | Done |
+| 4 | [Paperless-ngx Integration](epics/04-paperless-integration.md) | Link receipts, warranties, and manuals from Paperless-ngx to inventory items | Done |
+| 5 | [Warranty, Value & Reporting](epics/05-warranty-value-reporting.md) | Warranty expiry alerts, total asset value dashboard, room-level value reports, insurance-ready exports | Done |
 
 Epic 0 is prerequisite to everything. Epic 1 depends on 0. Epic 2 can start after 0 (doesn't need Notion data to build the UI). Epics 3, 4, 5 can run in parallel after 2.
 

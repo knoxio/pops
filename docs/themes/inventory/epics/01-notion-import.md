@@ -2,7 +2,7 @@
 
 **Theme:** Inventory
 **Priority:** 1 (depends on schema)
-**Status:** Not started
+**Status:** Done
 
 ## Goal
 

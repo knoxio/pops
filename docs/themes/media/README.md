@@ -23,14 +23,14 @@ This is the first app post-Foundation. It validates every platform pattern: work
 
 | # | Epic | Summary | Status |
 |---|------|---------|--------|
-| 0 | [Data Model & API Module](epics/00-data-model-api.md) | Split tables (movies, shows, seasons, episodes), comparisons schema, tRPC routers | Not started |
-| 1 | [Metadata Integration](epics/01-metadata-integration.md) | Service layer for TMDB (movies) and TheTVDB (TV) — search, metadata fetch, poster management | Not started |
-| 2 | [App Package & Core UI](epics/02-app-package-ui.md) | `@pops/app-media` workspace package, routes, pages, browse/search/detail views | Not started |
-| 3 | [Tracking & Watchlist](epics/03-tracking-watchlist.md) | Watch history, watchlist management, episode-level progress tracking | Not started |
-| 4 | [Ratings & Comparisons](epics/04-ratings-comparisons.md) | 1v1 pairwise comparison system across taste dimensions, ELO-style scoring | Not started |
-| 5 | [Discovery & Recommendations](epics/05-discovery-recommendations.md) | Preference profile from comparisons, genre weighting, personalized suggestions | Not started |
-| 6 | [Plex Sync](epics/06-plex-sync.md) | Import library and watch history from Plex, keep in sync via polling | Not started |
-| 7 | [Radarr & Sonarr](epics/07-radarr-sonarr.md) | Read-only status display — what's monitored, what's downloaded | Not started |
+| 0 | [Data Model & API Module](epics/00-data-model-api.md) | Split tables (movies, shows, seasons, episodes), comparisons schema, tRPC routers | Done |
+| 1 | [Metadata Integration](epics/01-metadata-integration.md) | Service layer for TMDB (movies) and TheTVDB (TV) — search, metadata fetch, poster management | Done |
+| 2 | [App Package & Core UI](epics/02-app-package-ui.md) | `@pops/app-media` workspace package, routes, pages, browse/search/detail views | Done |
+| 3 | [Tracking & Watchlist](epics/03-tracking-watchlist.md) | Watch history, watchlist management, episode-level progress tracking | Done |
+| 4 | [Ratings & Comparisons](epics/04-ratings-comparisons.md) | 1v1 pairwise comparison system across taste dimensions, ELO-style scoring | Done |
+| 5 | [Discovery & Recommendations](epics/05-discovery-recommendations.md) | Preference profile from comparisons, genre weighting, personalized suggestions | Done |
+| 6 | [Plex Sync](epics/06-plex-sync.md) | Import library and watch history from Plex, keep in sync via polling | In Progress |
+| 7 | [Radarr & Sonarr](epics/07-radarr-sonarr.md) | Read-only status display — what's monitored, what's downloaded | Done |
 
 Epic 0 is prerequisite to everything. Epic 1 is prerequisite to 2. Epics 3 and 4 can run in parallel after 2. Epic 5 depends on 4. Epics 6 and 7 can run in parallel after 3.
 

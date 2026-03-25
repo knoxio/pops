@@ -2,7 +2,7 @@
 
 **Theme:** Foundation
 **Priority:** 5 (do last — needs the shell and UI library in place)
-**Status:** Not started
+**Status:** Done
 
 ## Goal
 

@@ -23,8 +23,8 @@ Transform the current single-app codebase (finance-focused PWA + API) into a mul
 | 2 | [Shell Extraction](epics/02-shell-extraction.md) | Extract shell from pops-pwa, convert finance to app package | Done |
 | 3 | [API Modularisation](epics/03-api-modularisation.md) | Rename to pops-api, domain module structure, promote entities to core | Done |
 | 4 | [DB Schema Patterns](epics/04-db-schema-patterns.md) | Migration conventions, entity types, cross-domain FK patterns | Done |
-| 5 | [Responsive Foundation](epics/05-responsive-foundation.md) | Audit and fix shell + shared components for mobile viewports | In Progress |
-| 6 | [Drizzle ORM Migration](epics/06-drizzle-migration.md) | Migrate from raw SQL to Drizzle ORM — blocks all Phase 2 app development ([ADR-011](../../architecture/adr-011-drizzle-orm.md)) | Not started |
+| 5 | [Responsive Foundation](epics/05-responsive-foundation.md) | Audit and fix shell + shared components for mobile viewports | Done |
+| 6 | [Drizzle ORM Migration](epics/06-drizzle-migration.md) | Migrate from raw SQL to Drizzle ORM — blocks all Phase 2 app development ([ADR-011](../../architecture/adr-011-drizzle-orm.md)) | Done |
 
 Epic 0 is a prerequisite to everything. Epics 3 and 4 can run in parallel. Epic 5 depends on 1 and 2. Epic 6 blocks Phase 2.
 

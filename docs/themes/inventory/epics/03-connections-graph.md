@@ -2,7 +2,7 @@
 
 **Theme:** Inventory
 **Priority:** 3 (can run after Epic 2)
-**Status:** Not started
+**Status:** Done
 
 ## Goal
 

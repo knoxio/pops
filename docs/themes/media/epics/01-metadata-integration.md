@@ -2,7 +2,7 @@
 
 **Theme:** Media
 **Priority:** 1 (required before UI — provides all metadata)
-**Status:** Not started
+**Status:** Done
 
 ## Goal
 

@@ -20,7 +20,7 @@ The first step is extracting AI usage into its own app package (`@pops/app-ai`).
 
 | # | Epic | Status | PRD |
 |---|------|--------|-----|
-| 01 | AI Operations App | Not started | [PRD-025](../../specs/prd-025-ai-operations-app.md) |
+| 01 | AI Operations App | Done | [PRD-025](../../specs/prd-025-ai-operations-app.md) |
 | 02 | AI Overlay | Not started | — |
 | 03 | AI Inference | Not started | — |
 
