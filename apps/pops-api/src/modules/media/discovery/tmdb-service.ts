@@ -2,7 +2,7 @@
  * Discovery TMDB service — trending movies and recommendations from TMDB,
  * enriched with library membership status.
  */
-import { desc, sql } from "drizzle-orm";
+import { desc, isNotNull } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
 import { movies } from "@pops/db-types";
 import type { TmdbClient } from "../tmdb/client.js";
@@ -77,7 +77,7 @@ export async function getRecommendations(
   const topMovies = db
     .select({ tmdbId: movies.tmdbId, title: movies.title })
     .from(movies)
-    .where(sql`${movies.voteAverage} IS NOT NULL`)
+    .where(isNotNull(movies.voteAverage))
     .orderBy(desc(movies.voteAverage))
     .limit(sampleSize)
     .all();

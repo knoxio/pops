@@ -2,7 +2,7 @@
  * Library service — orchestrates adding media to the local library
  * by fetching metadata from external APIs and inserting records.
  */
-import { sql } from "drizzle-orm";
+import { and, eq, notInArray, sql } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
 import { movies, watchHistory } from "@pops/db-types";
 import type { TmdbClient } from "../tmdb/client.js";
@@ -111,17 +111,15 @@ export async function refreshMovie(id: number, tmdbClient: TmdbClient): Promise<
 export function getQuickPicks(count: number): Movie[] {
   const db = getDrizzle();
 
+  const watchedIds = db
+    .selectDistinct({ mediaId: watchHistory.mediaId })
+    .from(watchHistory)
+    .where(and(eq(watchHistory.mediaType, "movie"), eq(watchHistory.completed, 1)));
+
   const rows = db
     .select()
     .from(movies)
-    .where(
-      sql`${movies.id} NOT IN (
-        SELECT DISTINCT ${watchHistory.mediaId}
-        FROM ${watchHistory}
-        WHERE ${watchHistory.mediaType} = 'movie'
-          AND ${watchHistory.completed} = 1
-      )`
-    )
+    .where(notInArray(movies.id, watchedIds))
     .orderBy(sql`RANDOM()`)
     .limit(count)
     .all();
