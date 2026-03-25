@@ -313,52 +313,54 @@ export function ItemsPage() {
             Clear filters
           </Button>
         )}
-        <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5 ml-auto">
-          <button
-            type="button"
-            onClick={() => handleViewChange("table")}
-            aria-label="Table view"
-            aria-pressed={viewMode === "table"}
-            className={`rounded-md p-1.5 transition-all ${
-              viewMode === "table"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <LayoutList className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            onClick={() => handleViewChange("grid")}
-            aria-label="Grid view"
-            aria-pressed={viewMode === "grid"}
-            className={`rounded-md p-1.5 transition-all ${
-              viewMode === "grid"
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </button>
-        </div>
       </div>
 
-      {/* Summary line */}
+      {/* Summary line + View Toggle */}
       {!isLoading && (
-        <div className="flex items-center gap-2 rounded-full bg-amber-500/10 px-3 py-1.5 w-fit">
-          <Package className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-          <p className="text-xs font-semibold text-amber-900 dark:text-amber-200 uppercase tracking-wider">
-            {totalCount} {totalCount === 1 ? "item" : "items"}
-            {totalReplacementValue > 0 && (
-              <span>
-                {" "}
-                — {formatCurrency(totalReplacementValue)} replacement
-              </span>
-            )}
-            {totalResaleValue > 0 && (
-              <span> — {formatCurrency(totalResaleValue)} resale</span>
-            )}
-          </p>
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 rounded-full bg-amber-500/10 px-3 py-1.5">
+            <Package className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            <p className="text-xs font-semibold text-amber-900 dark:text-amber-200 uppercase tracking-wider">
+              {totalCount} {totalCount === 1 ? "item" : "items"}
+              {totalReplacementValue > 0 && (
+                <span>
+                  {" "}
+                  — {formatCurrency(totalReplacementValue)} replacement
+                </span>
+              )}
+              {totalResaleValue > 0 && (
+                <span> — {formatCurrency(totalResaleValue)} resale</span>
+              )}
+            </p>
+          </div>
+          <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5 ml-auto">
+            <button
+              type="button"
+              onClick={() => handleViewChange("table")}
+              aria-label="Table view"
+              aria-pressed={viewMode === "table"}
+              className={`rounded-md p-1.5 transition-all ${
+                viewMode === "table"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <LayoutList className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={() => handleViewChange("grid")}
+              aria-label="Grid view"
+              aria-pressed={viewMode === "grid"}
+              className={`rounded-md p-1.5 transition-all ${
+                viewMode === "grid"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       )}
 
