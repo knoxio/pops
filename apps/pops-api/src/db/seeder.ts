@@ -544,14 +544,23 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       { id: "loc-office", name: "Office", parent_id: "loc-home", sort_order: 3 },
       { id: "loc-laundry", name: "Laundry", parent_id: "loc-home", sort_order: 4 },
       { id: "loc-balcony", name: "Main Balcony", parent_id: "loc-home", sort_order: 5 },
-      // Sub-locations
+      // Sub-locations (Home)
       { id: "loc-tv-unit", name: "TV Unit", parent_id: "loc-living", sort_order: 0 },
       { id: "loc-bar", name: "Bar", parent_id: "loc-living", sort_order: 1 },
       { id: "loc-wardrobe", name: "Wardrobe Right Door", parent_id: "loc-bedroom", sort_order: 0 },
+      { id: "loc-nightstand", name: "Nightstand", parent_id: "loc-bedroom", sort_order: 1 },
       { id: "loc-counter", name: "Counter", parent_id: "loc-kitchen", sort_order: 0 },
+      { id: "loc-pantry", name: "Pantry", parent_id: "loc-kitchen", sort_order: 1 },
       { id: "loc-desk", name: "Desk", parent_id: "loc-office", sort_order: 0 },
       { id: "loc-shelf", name: "Shelf", parent_id: "loc-office", sort_order: 1 },
+      { id: "loc-cabinet", name: "Cabinet", parent_id: "loc-office", sort_order: 2 },
       { id: "loc-cupboard", name: "Storage Cupboard", parent_id: "loc-laundry", sort_order: 0 },
+      // Sub-locations (Car)
+      { id: "loc-car-boot", name: "Boot", parent_id: "loc-car", sort_order: 0 },
+      { id: "loc-car-glovebox", name: "Glovebox", parent_id: "loc-car", sort_order: 1 },
+      // Sub-locations (Storage Cage)
+      { id: "loc-cage-shelf1", name: "Shelf 1", parent_id: "loc-storage", sort_order: 0 },
+      { id: "loc-cage-shelf2", name: "Shelf 2", parent_id: "loc-storage", sort_order: 1 },
     ];
 
     const insertLocation = db.prepare(`
@@ -798,6 +807,243 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         notes: "Under desk. Powers MacBook charger, monitor, hub.",
         location_id: "loc-desk",
       },
+      // Furniture
+      {
+        id: "inv-011",
+        item_name: "Standing Desk",
+        brand: "Desky",
+        model: "Dual Ergo Edge",
+        item_id: null,
+        room: "Home Office",
+        location: "Office",
+        type: "Furniture",
+        condition: "Excellent",
+        in_use: 1,
+        deductible: 1,
+        purchase_date: "2024-10-01",
+        warranty_expires: "2029-10-01",
+        replacement_value: 899.0,
+        resale_value: 500.0,
+        purchase_transaction_id: null,
+        purchased_from_id: null,
+        purchased_from_name: "Desky",
+        asset_id: "DESK-001",
+        notes: "Height adjustable. Memory presets: 72cm sit, 110cm stand.",
+        location_id: "loc-office",
+      },
+      {
+        id: "inv-012",
+        item_name: "Ergonomic Chair",
+        brand: "Herman Miller",
+        model: "Aeron Size B",
+        item_id: null,
+        room: "Home Office",
+        location: "Office",
+        type: "Furniture",
+        condition: "Good",
+        in_use: 1,
+        deductible: 1,
+        purchase_date: "2022-06-15",
+        warranty_expires: "2034-06-15",
+        replacement_value: 2195.0,
+        resale_value: 1400.0,
+        purchase_transaction_id: null,
+        purchased_from_id: null,
+        purchased_from_name: "Herman Miller",
+        asset_id: "CHAIR-001",
+        notes: "12-year warranty. Lumbar support adjusted.",
+        location_id: "loc-office",
+      },
+      // Tools
+      {
+        id: "inv-013",
+        item_name: "Drill Driver Kit",
+        brand: "Makita",
+        model: "DHP486",
+        item_id: null,
+        room: "Storage Cage",
+        location: "Shelf 1",
+        type: "Tools",
+        condition: "Good",
+        in_use: 1,
+        deductible: 0,
+        purchase_date: "2023-03-20",
+        warranty_expires: "2026-03-20",
+        replacement_value: 349.0,
+        resale_value: 200.0,
+        purchase_transaction_id: null,
+        purchased_from_id: "10000000-0000-4000-8000-000000000009",
+        purchased_from_name: "Bunnings",
+        asset_id: "TOOL-001",
+        notes: "Includes 2x 5.0Ah batteries and charger.",
+        location_id: "loc-cage-shelf1",
+      },
+      {
+        id: "inv-014",
+        item_name: "Socket Set 94pc",
+        brand: "Stanley",
+        model: "STMT74394",
+        item_id: null,
+        room: "Storage Cage",
+        location: "Shelf 1",
+        type: "Tools",
+        condition: "Good",
+        in_use: 1,
+        deductible: 0,
+        purchase_date: "2022-01-10",
+        warranty_expires: null,
+        replacement_value: 129.0,
+        resale_value: 60.0,
+        purchase_transaction_id: null,
+        purchased_from_id: "10000000-0000-4000-8000-000000000009",
+        purchased_from_name: "Bunnings",
+        asset_id: "TOOL-002",
+        notes: null,
+        location_id: "loc-cage-shelf1",
+      },
+      // Sports
+      {
+        id: "inv-015",
+        item_name: "Road Bike",
+        brand: "Giant",
+        model: "Defy Advanced 2",
+        item_id: null,
+        room: "Storage Cage",
+        location: "Shelf 2",
+        type: "Sports",
+        condition: "Good",
+        in_use: 1,
+        deductible: 1,
+        purchase_date: "2023-09-01",
+        warranty_expires: null,
+        replacement_value: 3299.0,
+        resale_value: 2000.0,
+        purchase_transaction_id: null,
+        purchased_from_id: null,
+        purchased_from_name: "Giant Store",
+        asset_id: "BIKE-001",
+        notes: "Last service: 2026-01-15. Size M/L.",
+        location_id: "loc-cage-shelf2",
+      },
+      {
+        id: "inv-016",
+        item_name: "Bike Helmet",
+        brand: "Giro",
+        model: "Synthe MIPS",
+        item_id: null,
+        room: "Storage Cage",
+        location: "Shelf 2",
+        type: "Sports",
+        condition: "Fair",
+        in_use: 1,
+        deductible: 0,
+        purchase_date: "2023-09-01",
+        warranty_expires: null,
+        replacement_value: 249.0,
+        resale_value: null,
+        purchase_transaction_id: null,
+        purchased_from_id: null,
+        purchased_from_name: "Giant Store",
+        asset_id: null,
+        notes: "Replace after 3 years or any impact.",
+        location_id: "loc-cage-shelf2",
+      },
+      // Clothing
+      {
+        id: "inv-017",
+        item_name: "Winter Jacket",
+        brand: "Patagonia",
+        model: "Nano Puff",
+        item_id: null,
+        room: "Bedroom",
+        location: "Wardrobe Right Door",
+        type: "Clothing",
+        condition: "Excellent",
+        in_use: 1,
+        deductible: 0,
+        purchase_date: "2025-05-10",
+        warranty_expires: null,
+        replacement_value: 349.0,
+        resale_value: 150.0,
+        purchase_transaction_id: null,
+        purchased_from_id: null,
+        purchased_from_name: "Patagonia",
+        asset_id: null,
+        notes: "Size M. Machine washable.",
+        location_id: "loc-wardrobe",
+      },
+      // Car items
+      {
+        id: "inv-018",
+        item_name: "Emergency Kit",
+        brand: "NRMA",
+        model: "Roadside Kit",
+        item_id: null,
+        room: "Car",
+        location: "Boot",
+        type: "Other",
+        condition: "Good",
+        in_use: 1,
+        deductible: 0,
+        purchase_date: "2024-06-01",
+        warranty_expires: null,
+        replacement_value: 89.0,
+        resale_value: null,
+        purchase_transaction_id: null,
+        purchased_from_id: null,
+        purchased_from_name: "NRMA",
+        asset_id: null,
+        notes: "First aid, jumper cables, torch, reflective triangle.",
+        location_id: "loc-car-boot",
+      },
+      // More electronics — bedroom
+      {
+        id: "inv-019",
+        item_name: "iPad Air",
+        brand: "Apple",
+        model: "M2 11-inch",
+        item_id: null,
+        room: "Bedroom",
+        location: "Nightstand",
+        type: "Electronics",
+        condition: "Excellent",
+        in_use: 1,
+        deductible: 1,
+        purchase_date: "2025-10-20",
+        warranty_expires: "2027-10-20",
+        replacement_value: 999.0,
+        resale_value: 700.0,
+        purchase_transaction_id: null,
+        purchased_from_id: "10000000-0000-4000-8000-000000000008",
+        purchased_from_name: "Apple",
+        asset_id: "IPAD-001",
+        notes: "WiFi model. 256GB. Used for reading and streaming.",
+        location_id: "loc-nightstand",
+      },
+      // Balcony
+      {
+        id: "inv-020",
+        item_name: "Outdoor Table Set",
+        brand: "Kmart",
+        model: "Acacia 3pc",
+        item_id: null,
+        room: "Main Balcony",
+        location: "Balcony",
+        type: "Furniture",
+        condition: "Fair",
+        in_use: 1,
+        deductible: 0,
+        purchase_date: "2022-11-01",
+        warranty_expires: null,
+        replacement_value: 199.0,
+        resale_value: 50.0,
+        purchase_transaction_id: null,
+        purchased_from_id: null,
+        purchased_from_name: "Kmart",
+        asset_id: null,
+        notes: "Oil annually. Table + 2 chairs.",
+        location_id: "loc-balcony",
+      },
     ];
 
     const insertInventory = db.prepare(`
@@ -840,14 +1086,21 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
     // Item Connections (bidirectional links, A<B ordering)
     // -------------------------------------------------------------------------
     const connections = [
-      // Power chain: power board → devices
-      ["inv-007", "inv-003"], // PB-001 → TV
-      // HDMI chain
-      ["inv-003", "inv-006"], // TV → HDMI cable
-      // Office chain: power board → devices
-      ["inv-001", "inv-008"], // MacBook → USB-C Hub
-      ["inv-008", "inv-010"], // Hub → Power Board (via charger)
-      ["inv-008", "inv-009"], // Hub → Ethernet cable
+      // Living room: power board → TV → HDMI cable
+      ["inv-003", "inv-007"], // TV ↔ Power Board 6-Way
+      ["inv-003", "inv-006"], // TV ↔ HDMI cable
+      // Office desk setup: desk → chair, MacBook → hub → cables → power
+      ["inv-001", "inv-008"], // MacBook ↔ USB-C Hub
+      ["inv-008", "inv-009"], // Hub ↔ Ethernet cable
+      ["inv-008", "inv-010"], // Hub ↔ Power Board 4-Way
+      ["inv-001", "inv-010"], // MacBook ↔ Power Board (charger)
+      ["inv-001", "inv-002"], // MacBook ↔ Headphones (Bluetooth pair)
+      ["inv-001", "inv-011"], // MacBook ↔ Standing Desk (work station)
+      ["inv-011", "inv-012"], // Standing Desk ↔ Chair (ergonomic pair)
+      // Bike gear
+      ["inv-015", "inv-016"], // Road Bike ↔ Helmet
+      // Tool storage
+      ["inv-013", "inv-014"], // Drill ↔ Socket Set (stored together)
     ];
 
     const insertConnection = db.prepare(`
