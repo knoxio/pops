@@ -148,6 +148,7 @@ export function DiscoverPage() {
             title={item.title}
             releaseDate={item.releaseDate}
             posterPath={item.posterPath}
+            posterUrl={item.posterUrl}
             voteAverage={item.voteAverage}
             inLibrary={item.inLibrary}
             isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
@@ -181,6 +182,7 @@ export function DiscoverPage() {
             title={item.title}
             releaseDate={item.releaseDate}
             posterPath={item.posterPath}
+            posterUrl={item.posterUrl}
             voteAverage={item.voteAverage}
             inLibrary={item.inLibrary}
             isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
@@ -222,6 +224,7 @@ export function DiscoverPage() {
             title={item.title}
             releaseDate={item.releaseDate}
             posterPath={item.posterPath}
+            posterUrl={item.posterUrl}
             voteAverage={item.voteAverage}
             inLibrary={item.inLibrary}
             isAddingToLibrary={addingToLibrary.has(item.tmdbId)}

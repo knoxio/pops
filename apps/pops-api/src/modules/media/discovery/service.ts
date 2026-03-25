@@ -123,7 +123,7 @@ function getTotalComparisons(): number {
 export function getQuickPickMovies(count: number): QuickPickMovie[] {
   const db = getDb();
 
-  return db
+  const rows = db
     .prepare(
       `SELECT m.id, m.tmdb_id AS tmdbId, m.title, m.release_date AS releaseDate,
               m.poster_path AS posterPath, m.backdrop_path AS backdropPath,
@@ -138,7 +138,12 @@ export function getQuickPickMovies(count: number): QuickPickMovie[] {
        ORDER BY RANDOM()
        LIMIT ?`
     )
-    .all(count) as QuickPickMovie[];
+    .all(count) as Omit<QuickPickMovie, "posterUrl">[];
+
+  return rows.map((row) => ({
+    ...row,
+    posterUrl: row.posterPath ? `/media/images/movie/${row.tmdbId}/poster.jpg` : null,
+  }));
 }
 
 /**

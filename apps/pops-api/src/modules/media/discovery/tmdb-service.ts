@@ -16,21 +16,36 @@ function getLibraryTmdbIds(): Set<number> {
   return new Set(rows.map((r) => r.tmdbId));
 }
 
+/** Build a poster URL: proxy for library items, TMDB CDN for non-library items. */
+function buildPosterUrl(
+  posterPath: string | null,
+  tmdbId: number,
+  inLibrary: boolean
+): string | null {
+  if (!posterPath) return null;
+  if (inLibrary) return `/media/images/movie/${tmdbId}/poster.jpg`;
+  return `https://image.tmdb.org/t/p/w342${posterPath}`;
+}
+
 /** Map TMDB search results to discover results with library status. */
 function toDiscoverResults(results: TmdbSearchResult[], libraryIds: Set<number>): DiscoverResult[] {
-  return results.map((r) => ({
-    tmdbId: r.tmdbId,
-    title: r.title,
-    overview: r.overview,
-    releaseDate: r.releaseDate,
-    posterPath: r.posterPath,
-    backdropPath: r.backdropPath,
-    voteAverage: r.voteAverage,
-    voteCount: r.voteCount,
-    genreIds: r.genreIds,
-    popularity: r.popularity,
-    inLibrary: libraryIds.has(r.tmdbId),
-  }));
+  return results.map((r) => {
+    const inLibrary = libraryIds.has(r.tmdbId);
+    return {
+      tmdbId: r.tmdbId,
+      title: r.title,
+      overview: r.overview,
+      releaseDate: r.releaseDate,
+      posterPath: r.posterPath,
+      posterUrl: buildPosterUrl(r.posterPath, r.tmdbId, inLibrary),
+      backdropPath: r.backdropPath,
+      voteAverage: r.voteAverage,
+      voteCount: r.voteCount,
+      genreIds: r.genreIds,
+      popularity: r.popularity,
+      inLibrary,
+    };
+  });
 }
 
 /** Fetch trending movies from TMDB. */
@@ -85,18 +100,20 @@ export async function getRecommendations(
     for (const result of response.results) {
       if (!seen.has(result.tmdbId)) {
         seen.add(result.tmdbId);
+        const inLibrary = libraryIds.has(result.tmdbId);
         merged.push({
           tmdbId: result.tmdbId,
           title: result.title,
           overview: result.overview,
           releaseDate: result.releaseDate,
           posterPath: result.posterPath,
+          posterUrl: buildPosterUrl(result.posterPath, result.tmdbId, inLibrary),
           backdropPath: result.backdropPath,
           voteAverage: result.voteAverage,
           voteCount: result.voteCount,
           genreIds: result.genreIds,
           popularity: result.popularity,
-          inLibrary: libraryIds.has(result.tmdbId),
+          inLibrary,
         });
       }
     }

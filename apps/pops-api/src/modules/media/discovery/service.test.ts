@@ -10,6 +10,7 @@ function makeResult(overrides: Partial<DiscoverResult> = {}): DiscoverResult {
     overview: "",
     releaseDate: "2025-01-01",
     posterPath: null,
+    posterUrl: null,
     backdropPath: null,
     voteAverage: 7.5,
     voteCount: 100,

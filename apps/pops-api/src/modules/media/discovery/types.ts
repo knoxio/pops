@@ -37,6 +37,7 @@ export interface QuickPickMovie {
   title: string;
   releaseDate: string | null;
   posterPath: string | null;
+  posterUrl: string | null;
   backdropPath: string | null;
   overview: string | null;
   voteAverage: number | null;
@@ -63,6 +64,7 @@ export interface DiscoverResult {
   overview: string;
   releaseDate: string;
   posterPath: string | null;
+  posterUrl: string | null;
   backdropPath: string | null;
   voteAverage: number;
   voteCount: number;

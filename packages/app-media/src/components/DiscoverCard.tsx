@@ -6,13 +6,12 @@ import { useState } from "react";
 import { cn, Badge, Button, Skeleton } from "@pops/ui";
 import { Film, Plus, Bookmark, Check, Loader2, X } from "lucide-react";
 
-const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w342";
-
 export interface DiscoverCardProps {
   tmdbId: number;
   title: string;
   releaseDate: string;
   posterPath: string | null;
+  posterUrl: string | null;
   voteAverage: number;
   inLibrary: boolean;
   isAddingToLibrary?: boolean;
@@ -31,7 +30,7 @@ export function DiscoverCard({
   tmdbId,
   title,
   releaseDate,
-  posterPath,
+  posterUrl: posterUrlProp,
   voteAverage,
   inLibrary,
   isAddingToLibrary,
@@ -49,7 +48,7 @@ export function DiscoverCard({
 
   if (dismissed) return null;
 
-  const posterUrl = posterPath ? `${TMDB_IMAGE_BASE}${posterPath}` : null;
+  const posterUrl = posterUrlProp;
   const showPlaceholder = !posterUrl || imageError;
   const year = releaseDate ? releaseDate.slice(0, 4) : null;
 

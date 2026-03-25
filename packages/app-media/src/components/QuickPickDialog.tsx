@@ -19,14 +19,6 @@ import {
 import { Sparkles, SkipForward, Play } from "lucide-react";
 import { trpc } from "../lib/trpc";
 
-const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w342";
-
-function buildPosterUrl(posterPath: string | null): string | null {
-  if (!posterPath) return null;
-  if (posterPath.startsWith("/")) return `${TMDB_IMAGE_BASE}${posterPath}`;
-  return posterPath;
-}
-
 export function QuickPickDialog() {
   const [open, setOpen] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -147,7 +139,7 @@ function PickCard({
 }: {
   movie: {
     title: string;
-    posterPath: string | null;
+    posterUrl: string | null;
     releaseDate: string | null;
     genres: string | null;
     overview: string | null;
@@ -160,7 +152,7 @@ function PickCard({
   onWatch: () => void;
   isAdding: boolean;
 }) {
-  const posterUrl = buildPosterUrl(movie.posterPath);
+  const posterUrl = movie.posterUrl;
   const year = movie.releaseDate?.slice(0, 4);
   const genres: string[] = movie.genres ? JSON.parse(movie.genres) : [];
 
