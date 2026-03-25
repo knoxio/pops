@@ -138,6 +138,12 @@ export function LibraryPage() {
               Plex
             </Button>
           </Link>
+          <Link to="/media/arr">
+            <Button variant="outline" size="sm">
+              <Settings className="h-4 w-4 mr-1.5" />
+              Arr
+            </Button>
+          </Link>
           <Link
             to="/media/search"
             className="text-sm font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
