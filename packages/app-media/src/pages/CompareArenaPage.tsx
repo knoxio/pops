@@ -263,7 +263,7 @@ function MovieCard({
   scoreDelta?: number | null;
   isWinner?: boolean;
 }) {
-  const posterSrc = `/media/images/movie/${movie.id}/poster.jpg`;
+  const posterSrc = movie.posterUrl ?? undefined;
   const [imgError, setImgError] = useState(false);
 
   return (

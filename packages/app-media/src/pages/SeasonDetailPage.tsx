@@ -241,9 +241,7 @@ export function SeasonDetailPage() {
   }
 
   const seasonLabel = seasonNum === 0 ? "Specials" : `Season ${seasonNum}`;
-  const posterSrc = season.posterPath
-    ? `/media/images/tv/${show.id}/season-${seasonNum}-poster.jpg`
-    : null;
+  const posterSrc = season.posterUrl ?? null;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">

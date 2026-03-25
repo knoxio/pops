@@ -96,12 +96,7 @@ function getHistoryHref(entry: HistoryEntry): string {
 }
 
 function getHistoryPoster(entry: HistoryEntry): string | null {
-  if (!entry.posterPath) return null;
-  const isEpisode = entry.mediaType === "episode";
-  if (isEpisode && entry.tvShowId) {
-    return `/media/images/tv/${entry.tvShowId}/poster.jpg`;
-  }
-  return `/media/images/movie/${entry.mediaId}/poster.jpg`;
+  return entry.posterUrl ?? null;
 }
 
 function HistoryItem({ entry }: { entry: HistoryEntry }) {

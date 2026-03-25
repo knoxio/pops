@@ -283,6 +283,7 @@ interface WatchlistCardProps {
   entry: WatchlistEntry;
   title: string;
   year: number | null;
+  posterUrl: string | null;
   priority: number;
   onRemove: (id: number) => void;
   isRemoving: boolean;
@@ -292,6 +293,7 @@ function WatchlistCard({
   entry,
   title,
   year,
+  posterUrl,
   priority,
   onRemove,
   isRemoving,
@@ -303,7 +305,7 @@ function WatchlistCard({
     entry.mediaType === "movie"
       ? `/media/movies/${entry.mediaId}`
       : `/media/tv/${entry.mediaId}`;
-  const posterSrc = `/media/images/${entry.mediaType === "movie" ? "movie" : "tv"}/${entry.mediaId}/poster.jpg`;
+  const posterSrc = posterUrl;
 
   return (
     <div className="group flex flex-col gap-2">
@@ -347,7 +349,7 @@ function WatchlistCard({
           <Trash2 className="h-3.5 w-3.5" />
         </button>
 
-        {imageError ? (
+        {!posterSrc || imageError ? (
           <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
             <Film className="h-10 w-10 opacity-40" />
           </div>
@@ -609,6 +611,7 @@ export function WatchlistPage() {
                   entry={entry}
                   title={meta?.title ?? "Unknown"}
                   year={meta?.year ?? null}
+                  posterUrl={meta?.posterUrl ?? null}
                   priority={index + 1}
                   onRemove={(id) => {
                     setRemovingId(id);
