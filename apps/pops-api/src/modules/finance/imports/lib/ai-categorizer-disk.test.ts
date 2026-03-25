@@ -33,7 +33,10 @@ const originalEnv = {
 };
 
 beforeEach(async () => {
-  tmpDir = join(tmpdir(), `pops-ai-cache-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+  tmpDir = join(
+    tmpdir(),
+    `pops-ai-cache-test-${Date.now()}-${Math.random().toString(36).slice(2)}`
+  );
   mkdirSync(tmpDir, { recursive: true });
   cachePath = join(tmpDir, "ai_entity_cache.json");
   process.env["AI_CACHE_PATH"] = cachePath;
@@ -53,7 +56,9 @@ afterEach(() => {
   if (originalEnv.AI_CACHE_PATH === undefined) delete process.env["AI_CACHE_PATH"];
   else process.env["AI_CACHE_PATH"] = originalEnv.AI_CACHE_PATH;
 
-  try { rmSync(tmpDir, { recursive: true, force: true }); } catch {}
+  try {
+    rmSync(tmpDir, { recursive: true, force: true });
+  } catch {}
 });
 
 describe("AI categorizer disk cache", () => {
@@ -76,7 +81,12 @@ describe("AI categorizer disk cache", () => {
   it("loads cache from disk on first access after clearCache", async () => {
     // Pre-populate the cache file
     const entries = [
-      { description: "NETFLIX.COM", entityName: "Netflix", category: "Subscriptions", cachedAt: "2026-01-01T00:00:00.000Z" },
+      {
+        description: "NETFLIX.COM",
+        entityName: "Netflix",
+        category: "Subscriptions",
+        cachedAt: "2026-01-01T00:00:00.000Z",
+      },
     ];
     writeFileSync(cachePath, JSON.stringify(entries, null, 2));
 

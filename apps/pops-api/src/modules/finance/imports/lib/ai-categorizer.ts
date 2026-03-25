@@ -31,8 +31,10 @@ const cache = new Map<string, AiCacheEntry>();
 let diskLoaded = false;
 
 function getCachePath(): string {
-  return process.env["AI_CACHE_PATH"] ??
-    join(dirname(process.env["SQLITE_PATH"] ?? "./data/pops.db"), "ai_entity_cache.json");
+  return (
+    process.env["AI_CACHE_PATH"] ??
+    join(dirname(process.env["SQLITE_PATH"] ?? "./data/pops.db"), "ai_entity_cache.json")
+  );
 }
 
 function loadCacheFromDisk(): void {
@@ -48,7 +50,10 @@ function loadCacheFromDisk(): void {
     }
     logger.info({ path, entries: entries.length }, "[AI] Loaded cache from disk");
   } catch (err) {
-    logger.warn({ path, error: err instanceof Error ? err.message : String(err) }, "[AI] Failed to load cache from disk, starting fresh");
+    logger.warn(
+      { path, error: err instanceof Error ? err.message : String(err) },
+      "[AI] Failed to load cache from disk, starting fresh"
+    );
   }
 }
 
@@ -59,7 +64,10 @@ function saveCacheToDisk(): void {
     const entries = Array.from(cache.values());
     writeFileSync(path, JSON.stringify(entries, null, 2));
   } catch (err) {
-    logger.warn({ path, error: err instanceof Error ? err.message : String(err) }, "[AI] Failed to save cache to disk");
+    logger.warn(
+      { path, error: err instanceof Error ? err.message : String(err) },
+      "[AI] Failed to save cache to disk"
+    );
   }
 }
 
