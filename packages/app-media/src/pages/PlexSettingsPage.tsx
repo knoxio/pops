@@ -19,6 +19,7 @@ import {
   BreadcrumbPage,
 } from "@pops/ui";
 import {
+  ArrowLeft,
   CheckCircle2,
   XCircle,
   RefreshCw,
@@ -250,6 +251,13 @@ export function PlexSettingsPage() {
 
       {/* Header */}
       <div className="flex items-center gap-3">
+        <Link
+          to="/media"
+          className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+          aria-label="Back to Media"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
         <h1 className="text-2xl font-bold tracking-tight">Plex Settings</h1>
         {status?.configured && <ConnectionBadge connected={connected} />}
 
