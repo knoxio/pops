@@ -2,7 +2,7 @@
  * Discovery service — computes preference profile from watch history,
  * comparison scores, and genre data.
  */
-import { count, avg, sum, desc, eq, sql, and, notInArray } from "drizzle-orm";
+import { count, desc, eq, sql, and, notInArray } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
 import {
   movies,
