@@ -2,7 +2,16 @@
  * Discovery service — computes preference profile from watch history,
  * comparison scores, and genre data.
  */
-import { getDb } from "../../../db.js";
+import { count, avg, sum, desc, eq, sql, and, notInArray } from "drizzle-orm";
+import { getDrizzle } from "../../../db.js";
+import {
+  movies,
+  mediaScores,
+  comparisonDimensions,
+  watchHistory,
+  comparisons,
+  mediaWatchlist,
+} from "@pops/db-types";
 import type {
   GenreAffinity,
   DimensionWeight,
@@ -17,25 +26,31 @@ import { TMDB_GENRE_MAP } from "./types.js";
 /**
  * Compute genre affinity scores by averaging Elo scores for movies
  * in each genre, weighted by comparison count.
+ *
+ * Uses json_each() (SQLite table-valued function) which has no native
+ * Drizzle equivalent — expressed via sql template literals.
  */
 function getGenreAffinities(): GenreAffinity[] {
-  const db = getDb();
+  const db = getDrizzle();
 
   return db
-    .prepare(
-      `SELECT
-        g.value AS genre,
-        ROUND(AVG(ms.score), 1) AS avgScore,
-        COUNT(DISTINCT m.id) AS movieCount,
-        COALESCE(SUM(ms.comparison_count), 0) AS totalComparisons
-      FROM movies m
-      JOIN json_each(m.genres) g
-      JOIN media_scores ms
-        ON ms.media_type = 'movie'
-        AND ms.media_id = m.id
-      GROUP BY g.value
-      ORDER BY avgScore DESC`
+    .select({
+      genre: sql<string>`g.value`,
+      avgScore: sql<number>`ROUND(AVG(${mediaScores.score}), 1)`,
+      movieCount: sql<number>`COUNT(DISTINCT ${movies.id})`,
+      totalComparisons: sql<number>`COALESCE(SUM(${mediaScores.comparisonCount}), 0)`,
+    })
+    .from(movies)
+    .innerJoin(sql`json_each(${movies.genres}) g`, sql`1=1`)
+    .innerJoin(
+      mediaScores,
+      and(
+        eq(mediaScores.mediaType, "movie"),
+        eq(mediaScores.mediaId, movies.id),
+      ),
     )
+    .groupBy(sql`g.value`)
+    .orderBy(desc(sql`ROUND(AVG(${mediaScores.score}), 1)`))
     .all() as GenreAffinity[];
 }
 
@@ -43,39 +58,38 @@ function getGenreAffinities(): GenreAffinity[] {
  * Compute dimension weights from comparison frequency and average scores.
  */
 function getDimensionWeights(): DimensionWeight[] {
-  const db = getDb();
+  const db = getDrizzle();
+  const compCountExpr = sql<number>`COALESCE(SUM(${mediaScores.comparisonCount}), 0)`;
 
   return db
-    .prepare(
-      `SELECT
-        cd.id AS dimensionId,
-        cd.name,
-        COALESCE(SUM(ms.comparison_count), 0) AS comparisonCount,
-        ROUND(AVG(ms.score), 1) AS avgScore
-      FROM comparison_dimensions cd
-      LEFT JOIN media_scores ms ON ms.dimension_id = cd.id
-      WHERE cd.active = 1
-      GROUP BY cd.id, cd.name
-      ORDER BY comparisonCount DESC`
-    )
+    .select({
+      dimensionId: comparisonDimensions.id,
+      name: comparisonDimensions.name,
+      comparisonCount: compCountExpr,
+      avgScore: sql<number>`ROUND(AVG(${mediaScores.score}), 1)`,
+    })
+    .from(comparisonDimensions)
+    .leftJoin(mediaScores, eq(mediaScores.dimensionId, comparisonDimensions.id))
+    .where(eq(comparisonDimensions.active, 1))
+    .groupBy(comparisonDimensions.id, comparisonDimensions.name)
+    .orderBy(desc(compCountExpr))
     .all() as DimensionWeight[];
 }
 
 /**
  * Compute genre distribution from watch history — how often each genre
  * appears across watched movies.
+ *
+ * Uses json_each() (SQLite table-valued function) via sql template literals.
  */
 function getGenreDistribution(): { genres: GenreDistribution[]; totalWatched: number } {
-  const db = getDb();
+  const db = getDrizzle();
 
-  // Total unique movies watched
-  const totalResult = db
-    .prepare(
-      `SELECT COUNT(DISTINCT media_id) AS cnt
-      FROM watch_history
-      WHERE media_type = 'movie'`
-    )
-    .get() as { cnt: number };
+  const [totalResult] = db
+    .select({ cnt: sql<number>`COUNT(DISTINCT ${watchHistory.mediaId})` })
+    .from(watchHistory)
+    .where(eq(watchHistory.mediaType, "movie"))
+    .all();
 
   const totalWatched = totalResult.cnt;
 
@@ -84,16 +98,18 @@ function getGenreDistribution(): { genres: GenreDistribution[]; totalWatched: nu
   }
 
   const rows = db
-    .prepare(
-      `SELECT
-        g.value AS genre,
-        COUNT(DISTINCT wh.media_id) AS watchCount
-      FROM watch_history wh
-      JOIN movies m ON m.id = wh.media_id AND wh.media_type = 'movie'
-      JOIN json_each(m.genres) g
-      GROUP BY g.value
-      ORDER BY watchCount DESC`
+    .select({
+      genre: sql<string>`g.value`,
+      watchCount: sql<number>`COUNT(DISTINCT ${watchHistory.mediaId})`,
+    })
+    .from(watchHistory)
+    .innerJoin(
+      movies,
+      and(eq(movies.id, watchHistory.mediaId), eq(watchHistory.mediaType, "movie")),
     )
+    .innerJoin(sql`json_each(${movies.genres}) g`, sql`1=1`)
+    .groupBy(sql`g.value`)
+    .orderBy(desc(sql`COUNT(DISTINCT ${watchHistory.mediaId})`))
     .all() as { genre: string; watchCount: number }[];
 
   const genres: GenreDistribution[] = rows.map((row) => ({
@@ -109,9 +125,9 @@ function getGenreDistribution(): { genres: GenreDistribution[]; totalWatched: nu
  * Get total comparison count across all dimensions.
  */
 function getTotalComparisons(): number {
-  const db = getDb();
+  const db = getDrizzle();
 
-  const result = db.prepare(`SELECT COUNT(*) AS cnt FROM comparisons`).get() as { cnt: number };
+  const [result] = db.select({ cnt: count() }).from(comparisons).all();
 
   return result.cnt;
 }
@@ -120,28 +136,46 @@ function getTotalComparisons(): number {
  * Get random unwatched movies from the library for quick pick.
  * Excludes movies already on the watchlist or already watched.
  */
-export function getQuickPickMovies(count: number): QuickPickMovie[] {
-  const db = getDb();
+export function getQuickPickMovies(count_: number): QuickPickMovie[] {
+  const db = getDrizzle();
+
+  const watchedIds = db
+    .selectDistinct({ mediaId: watchHistory.mediaId })
+    .from(watchHistory)
+    .where(eq(watchHistory.mediaType, "movie"));
+
+  const watchlistIds = db
+    .select({ mediaId: mediaWatchlist.mediaId })
+    .from(mediaWatchlist)
+    .where(eq(mediaWatchlist.mediaType, "movie"));
 
   const rows = db
-    .prepare(
-      `SELECT m.id, m.tmdb_id AS tmdbId, m.title, m.release_date AS releaseDate,
-              m.poster_path AS posterPath, m.backdrop_path AS backdropPath,
-              m.overview, m.vote_average AS voteAverage, m.genres, m.runtime
-       FROM movies m
-       WHERE m.id NOT IN (
-         SELECT DISTINCT media_id FROM watch_history WHERE media_type = 'movie'
-       )
-       AND m.id NOT IN (
-         SELECT media_id FROM watchlist WHERE media_type = 'movie'
-       )
-       ORDER BY RANDOM()
-       LIMIT ?`
+    .select({
+      id: movies.id,
+      tmdbId: movies.tmdbId,
+      title: movies.title,
+      releaseDate: movies.releaseDate,
+      posterPath: movies.posterPath,
+      backdropPath: movies.backdropPath,
+      overview: movies.overview,
+      voteAverage: movies.voteAverage,
+      genres: movies.genres,
+      runtime: movies.runtime,
+    })
+    .from(movies)
+    .where(
+      and(
+        notInArray(movies.id, watchedIds),
+        notInArray(movies.id, watchlistIds),
+      ),
     )
-    .all(count) as Omit<QuickPickMovie, "posterUrl">[];
+    .orderBy(sql`RANDOM()`)
+    .limit(count_)
+    .all();
 
   return rows.map((row) => ({
     ...row,
+    genres: row.genres ?? "[]",
     posterUrl: row.posterPath ? `/media/images/movie/${row.tmdbId}/poster.jpg` : null,
   }));
 }
