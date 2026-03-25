@@ -1223,8 +1223,12 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
     // Breaking Bad — seasons 1 & 5
     const bbS1 = Number(insertSeason.run(tvShowIds[0], 30272, 1, "Season 1", 7).lastInsertRowid);
     const bbS1E1 = Number(insertEpisode.run(bbS1, 349232, 1, "Pilot", 58).lastInsertRowid);
-    const bbS1E2 = Number(insertEpisode.run(bbS1, 349233, 2, "Cat's in the Bag...", 48).lastInsertRowid);
-    const bbS1E3 = Number(insertEpisode.run(bbS1, 349234, 3, "...And the Bag's in the River", 48).lastInsertRowid);
+    const bbS1E2 = Number(
+      insertEpisode.run(bbS1, 349233, 2, "Cat's in the Bag...", 48).lastInsertRowid
+    );
+    const bbS1E3 = Number(
+      insertEpisode.run(bbS1, 349234, 3, "...And the Bag's in the River", 48).lastInsertRowid
+    );
 
     const bbS5 = Number(insertSeason.run(tvShowIds[0], 488434, 5, "Season 5", 16).lastInsertRowid);
     insertEpisode.run(bbS5, 4161693, 1, "Live Free or Die", 47);
@@ -1262,7 +1266,13 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
     `);
 
     // Queue up some movies and a show to watch
-    insertWatchlist.run("movie", movieIds[7], 1, "Rewatch — it's been years", "2026-02-01T10:00:00Z"); // Matrix
+    insertWatchlist.run(
+      "movie",
+      movieIds[7],
+      1,
+      "Rewatch — it's been years",
+      "2026-02-01T10:00:00Z"
+    ); // Matrix
     insertWatchlist.run("movie", movieIds[8], 2, "IMAX re-release coming", "2026-02-05T14:00:00Z"); // Interstellar
     insertWatchlist.run("movie", movieIds[5], 0, null, "2026-02-10T09:00:00Z"); // Fight Club
     insertWatchlist.run("tv_show", tvShowIds[2], 1, "Finish season 1", "2026-01-20T08:00:00Z"); // Shogun
@@ -1296,11 +1306,26 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       VALUES (?, ?, 1, ?)
     `);
 
-    const dimCinema = Number(insertDimension.run("Cinematography", "Visual quality, camera work, and artistic direction", 1).lastInsertRowid);
-    const dimActing = Number(insertDimension.run("Acting", "Quality of performances", 2).lastInsertRowid);
-    const dimRewatch = Number(insertDimension.run("Rewatchability", "How much you want to watch it again", 3).lastInsertRowid);
-    const dimFun = Number(insertDimension.run("Fun", "Pure entertainment value", 4).lastInsertRowid);
-    const dimEmotion = Number(insertDimension.run("Emotional Impact", "How deeply it affects you", 5).lastInsertRowid);
+    const dimCinema = Number(
+      insertDimension.run(
+        "Cinematography",
+        "Visual quality, camera work, and artistic direction",
+        1
+      ).lastInsertRowid
+    );
+    const dimActing = Number(
+      insertDimension.run("Acting", "Quality of performances", 2).lastInsertRowid
+    );
+    const dimRewatch = Number(
+      insertDimension.run("Rewatchability", "How much you want to watch it again", 3)
+        .lastInsertRowid
+    );
+    const dimFun = Number(
+      insertDimension.run("Fun", "Pure entertainment value", 4).lastInsertRowid
+    );
+    const dimEmotion = Number(
+      insertDimension.run("Emotional Impact", "How deeply it affects you", 5).lastInsertRowid
+    );
     const dimensionCount = 5;
 
     // -------------------------------------------------------------------------
@@ -1337,17 +1362,17 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
     `);
 
     // Give scored movies reasonable Elo-like ratings based on comparisons
-    insertScore.run(movieIds[0], dimCinema, 1480, 1);   // Shawshank
-    insertScore.run(movieIds[1], dimCinema, 1530, 2);   // Godfather (won)
-    insertScore.run(movieIds[2], dimCinema, 1520, 1);   // Dark Knight (won)
-    insertScore.run(movieIds[8], dimCinema, 1520, 1);   // Interstellar (won)
-    insertScore.run(movieIds[0], dimActing, 1520, 1);   // Shawshank (won)
-    insertScore.run(movieIds[1], dimActing, 1520, 1);   // Godfather (won)
-    insertScore.run(movieIds[3], dimRewatch, 1520, 1);  // Pulp Fiction (won)
-    insertScore.run(movieIds[9], dimRewatch, 1520, 1);  // Spider-Verse (won)
-    insertScore.run(movieIds[9], dimFun, 1530, 1);      // Spider-Verse (won)
-    insertScore.run(movieIds[2], dimFun, 1520, 1);      // Dark Knight (won)
-    insertScore.run(movieIds[0], dimEmotion, 1520, 1);  // Shawshank (won)
+    insertScore.run(movieIds[0], dimCinema, 1480, 1); // Shawshank
+    insertScore.run(movieIds[1], dimCinema, 1530, 2); // Godfather (won)
+    insertScore.run(movieIds[2], dimCinema, 1520, 1); // Dark Knight (won)
+    insertScore.run(movieIds[8], dimCinema, 1520, 1); // Interstellar (won)
+    insertScore.run(movieIds[0], dimActing, 1520, 1); // Shawshank (won)
+    insertScore.run(movieIds[1], dimActing, 1520, 1); // Godfather (won)
+    insertScore.run(movieIds[3], dimRewatch, 1520, 1); // Pulp Fiction (won)
+    insertScore.run(movieIds[9], dimRewatch, 1520, 1); // Spider-Verse (won)
+    insertScore.run(movieIds[9], dimFun, 1530, 1); // Spider-Verse (won)
+    insertScore.run(movieIds[2], dimFun, 1520, 1); // Dark Knight (won)
+    insertScore.run(movieIds[0], dimEmotion, 1520, 1); // Shawshank (won)
     const scoreCount = 11;
 
     // -------------------------------------------------------------------------
@@ -1358,9 +1383,39 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
-    insertAiUsage.run("Categorize transaction: WOOLWORTHS 1234", "Woolworths", "Groceries", 150, 25, 0.0003, 0, "batch-2026-01-15", "2026-01-15T10:00:00Z");
-    insertAiUsage.run("Categorize transaction: SPOTIFY PREMIUM", "Spotify", "Subscriptions", 140, 20, 0.0002, 0, "batch-2026-01-15", "2026-01-15T10:00:01Z");
-    insertAiUsage.run("Categorize transaction: WOOLWORTHS 5678", "Woolworths", "Groceries", 150, 25, 0.0001, 1, "batch-2026-02-01", "2026-02-01T10:00:00Z");
+    insertAiUsage.run(
+      "Categorize transaction: WOOLWORTHS 1234",
+      "Woolworths",
+      "Groceries",
+      150,
+      25,
+      0.0003,
+      0,
+      "batch-2026-01-15",
+      "2026-01-15T10:00:00Z"
+    );
+    insertAiUsage.run(
+      "Categorize transaction: SPOTIFY PREMIUM",
+      "Spotify",
+      "Subscriptions",
+      140,
+      20,
+      0.0002,
+      0,
+      "batch-2026-01-15",
+      "2026-01-15T10:00:01Z"
+    );
+    insertAiUsage.run(
+      "Categorize transaction: WOOLWORTHS 5678",
+      "Woolworths",
+      "Groceries",
+      150,
+      25,
+      0.0001,
+      1,
+      "batch-2026-02-01",
+      "2026-02-01T10:00:00Z"
+    );
     const aiUsageCount = 3;
 
     // Count totals for log
