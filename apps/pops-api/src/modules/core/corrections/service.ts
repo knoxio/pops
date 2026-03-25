@@ -168,7 +168,7 @@ export function createOrUpdateCorrection(input: CreateCorrectionInput): Correcti
       .set({
         confidence: newConfidence,
         timesApplied: newTimesApplied,
-        lastUsedAt: sql`datetime('now')`,
+        lastUsedAt: new Date().toISOString(),
         entityId: input.entityId ?? existing.entityId,
         entityName: input.entityName ?? existing.entityName,
         location: input.location ?? existing.location,
@@ -274,7 +274,7 @@ export function incrementCorrectionUsage(id: string): void {
   db.update(transactionCorrections)
     .set({
       timesApplied: sql`${transactionCorrections.timesApplied} + 1`,
-      lastUsedAt: sql`datetime('now')`,
+      lastUsedAt: new Date().toISOString(),
     })
     .where(eq(transactionCorrections.id, id))
     .run();

@@ -1,7 +1,7 @@
 /**
  * AI usage analytics service — Drizzle ORM
  */
-import { sql, gte, lte, and } from "drizzle-orm";
+import { sql, gte, lte, and, desc } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
 import { aiUsage } from "@pops/db-types";
 import type { AiUsageStatsOutput, AiUsageHistoryOutput, AiUsageHistoryRecord } from "./types.js";
@@ -98,7 +98,7 @@ export function getHistory(startDate?: string, endDate?: string): AiUsageHistory
     .from(aiUsage)
     .where(where)
     .groupBy(sql`DATE(${aiUsage.createdAt})`)
-    .orderBy(sql`DATE(${aiUsage.createdAt}) DESC`)
+    .orderBy(desc(sql`DATE(${aiUsage.createdAt})`))
     .all();
 
   // Calculate summary
