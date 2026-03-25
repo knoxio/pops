@@ -27,7 +27,7 @@ import type { Condition } from "@pops/ui";
 import { trpc } from "../lib/trpc";
 import { InventoryTable } from "../components/InventoryTable";
 import { InventoryCard } from "../components/InventoryCard";
-import { ValueBreakdown } from "../components/ValueBreakdown";
+import { ValueByTypeCard } from "../components/ValueBreakdown";
 import { formatCurrency } from "../lib/utils";
 type ViewMode = "table" | "grid";
 
@@ -199,6 +199,8 @@ function DashboardWidgets() {
           </CardContent>
         </Card>
       )}
+
+      <ValueByTypeCard className="col-span-2" />
     </div>
   );
 }
@@ -264,12 +266,7 @@ export function ItemsPage() {
         <h1 className="text-2xl md:text-3xl font-bold">Inventory</h1>
       </div>
 
-      {!hasActiveFilters && !search && (
-        <>
-          <DashboardWidgets />
-          <ValueBreakdown />
-        </>
-      )}
+      {!hasActiveFilters && !search && <DashboardWidgets />}
 
       {/* Search + Filters + View Toggle */}
       <div className="flex flex-wrap items-end gap-3">
@@ -353,7 +350,10 @@ export function ItemsPage() {
           <p className="text-xs font-semibold text-amber-900 dark:text-amber-200 uppercase tracking-wider">
             {totalCount} {totalCount === 1 ? "item" : "items"}
             {totalReplacementValue > 0 && (
-              <span> — {formatCurrency(totalReplacementValue)} replacement</span>
+              <span>
+                {" "}
+                — {formatCurrency(totalReplacementValue)} replacement
+              </span>
             )}
             {totalResaleValue > 0 && (
               <span> — {formatCurrency(totalResaleValue)} resale</span>

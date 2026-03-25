@@ -1,9 +1,16 @@
 /**
- * ValueBreakdown — horizontal bar charts showing replacement value
- * grouped by location and by item type.
+ * ValueByTypeCard — horizontal bar chart showing replacement value
+ * grouped by item type.
  */
-import { Alert, AlertDescription, Button, Card, CardContent, Skeleton } from "@pops/ui";
-import { AlertCircle, MapPin, RefreshCw, Tag } from "lucide-react";
+import {
+  Alert,
+  AlertDescription,
+  Button,
+  Card,
+  CardContent,
+  Skeleton,
+} from "@pops/ui";
+import { AlertCircle, RefreshCw, Tag } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -97,41 +104,8 @@ function BreakdownChart({ data, onBarClick }: BreakdownChartProps) {
   );
 }
 
-function BreakdownSkeleton() {
-  return (
-    <Card>
-      <CardContent className="p-4 space-y-2">
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-40 w-full" />
-      </CardContent>
-    </Card>
-  );
-}
-
-function BreakdownError({ message, onRetry }: { message: string; onRetry: () => void }) {
-  return (
-    <Alert variant="destructive">
-      <AlertCircle className="h-4 w-4" />
-      <AlertDescription className="flex items-center justify-between gap-2">
-        <span>{message}</span>
-        <Button variant="outline" size="sm" onClick={onRetry}>
-          <RefreshCw className="h-3 w-3 mr-1" />
-          Retry
-        </Button>
-      </AlertDescription>
-    </Alert>
-  );
-}
-
-export function ValueBreakdown() {
+export function ValueByTypeCard({ className }: { className?: string }) {
   const navigate = useNavigate();
-
-  const {
-    data: locationData,
-    isLoading: locationLoading,
-    isError: locationError,
-    refetch: refetchLocation,
-  } = trpc.inventory.reports.valueByLocation.useQuery();
 
   const {
     data: typeData,
@@ -140,63 +114,46 @@ export function ValueBreakdown() {
     refetch: refetchType,
   } = trpc.inventory.reports.valueByType.useQuery();
 
-  if (locationLoading || typeLoading) {
+  if (typeLoading) {
     return (
-      <div className="grid gap-4 md:grid-cols-2">
-        <BreakdownSkeleton />
-        <BreakdownSkeleton />
-      </div>
+      <Card className={className}>
+        <CardContent className="p-4 space-y-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-40 w-full" />
+        </CardContent>
+      </Card>
     );
   }
 
-  const locationEntries = locationData?.data ?? [];
   const typeEntries = typeData?.data ?? [];
 
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 text-muted-foreground mb-3">
-            <MapPin className="h-4 w-4" />
-            <span className="text-xs font-medium">Value by Location</span>
-          </div>
-          {locationError ? (
-            <BreakdownError
-              message="Failed to load location breakdown"
-              onRetry={() => refetchLocation()}
-            />
-          ) : (
-            <BreakdownChart
-              data={locationEntries}
-              onBarClick={(name) =>
-                navigate(`/inventory?location=${encodeURIComponent(name)}`)
-              }
-            />
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 text-muted-foreground mb-3">
-            <Tag className="h-4 w-4" />
-            <span className="text-xs font-medium">Value by Type</span>
-          </div>
-          {typeError ? (
-            <BreakdownError
-              message="Failed to load type breakdown"
-              onRetry={() => refetchType()}
-            />
-          ) : (
-            <BreakdownChart
-              data={typeEntries}
-              onBarClick={(name) =>
-                navigate(`/inventory?type=${encodeURIComponent(name)}`)
-              }
-            />
-          )}
-        </CardContent>
-      </Card>
-    </div>
+    <Card className={className}>
+      <CardContent className="p-4">
+        <div className="flex items-center gap-2 text-muted-foreground mb-3">
+          <Tag className="h-4 w-4" />
+          <span className="text-xs font-medium">Value by Type</span>
+        </div>
+        {typeError ? (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between gap-2">
+              <span>Failed to load type breakdown</span>
+              <Button variant="outline" size="sm" onClick={() => refetchType()}>
+                <RefreshCw className="h-3 w-3 mr-1" />
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <BreakdownChart
+            data={typeEntries}
+            onBarClick={(name) =>
+              navigate(`/inventory?type=${encodeURIComponent(name)}`)
+            }
+          />
+        )}
+      </CardContent>
+    </Card>
   );
 }
