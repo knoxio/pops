@@ -43,9 +43,7 @@ function daysUntil(dateStr: string): number {
   return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function urgencyBadgeVariant(
-  days: number,
-): "destructive" | "secondary" | "outline" {
+function urgencyBadgeVariant(days: number): "destructive" | "secondary" | "outline" {
   if (days <= 14) return "destructive";
   if (days <= 30) return "secondary";
   return "outline";
@@ -69,12 +67,7 @@ interface WarrantyRowProps {
   onClick: () => void;
 }
 
-function WarrantyRow({
-  item,
-  daysRemaining,
-  showUrgency,
-  onClick,
-}: WarrantyRowProps) {
+function WarrantyRow({ item, daysRemaining, showUrgency, onClick }: WarrantyRowProps) {
   return (
     <button
       type="button"
@@ -87,15 +80,8 @@ function WarrantyRow({
         {item.warrantyExpires && formatDate(item.warrantyExpires)}
       </span>
       {showUrgency && (
-        <Badge
-          variant={urgencyBadgeVariant(daysRemaining)}
-          className="text-xs whitespace-nowrap"
-        >
-          {daysRemaining === 0
-            ? "Today"
-            : daysRemaining === 1
-              ? "1 day"
-              : `${daysRemaining} days`}
+        <Badge variant={urgencyBadgeVariant(daysRemaining)} className="text-xs whitespace-nowrap">
+          {daysRemaining === 0 ? "Today" : daysRemaining === 1 ? "1 day" : `${daysRemaining} days`}
         </Badge>
       )}
       {!showUrgency && daysRemaining < 0 && (
@@ -201,8 +187,8 @@ export function WarrantiesPage() {
         <div className="text-center py-16">
           <ShieldCheck className="h-12 w-12 mx-auto text-muted-foreground/40 mb-4" />
           <p className="text-muted-foreground">
-            No items with warranty dates. Add warranty expiry dates to your
-            inventory items to track them here.
+            No items with warranty dates. Add warranty expiry dates to your inventory items to track
+            them here.
           </p>
         </div>
       ) : (
@@ -235,11 +221,7 @@ export function WarrantiesPage() {
 
           {/* Active — collapsible */}
           {active.length > 0 && (
-            <CollapsibleSection
-              title="Active"
-              count={active.length}
-              defaultOpen
-            >
+            <CollapsibleSection title="Active" count={active.length} defaultOpen>
               {active.map((item) => (
                 <WarrantyRow
                   key={item.id}

@@ -3,10 +3,7 @@ import { Loader2, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
 import { useImportStore } from "../../store/importStore";
 import { trpc } from "../../lib/trpc";
 import { Button } from "@pops/ui";
-import type {
-  ProcessImportOutput,
-  ImportWarning,
-} from "@pops/api/modules/finance/imports";
+import type { ProcessImportOutput, ImportWarning } from "@pops/api/modules/finance/imports";
 
 /**
  * Step 3: Process transactions (deduplicate and match entities)
@@ -44,10 +41,7 @@ export function ProcessingStep() {
 
   // Handle completion
   useEffect(() => {
-    if (
-      progressQuery.data?.status === "completed" &&
-      progressQuery.data.result
-    ) {
+    if (progressQuery.data?.status === "completed" && progressQuery.data.result) {
       setPollingEnabled(false);
 
       // Type-cast to ProcessImportOutput since this is the processImport step
@@ -56,15 +50,12 @@ export function ProcessingStep() {
 
       // Check if there are critical errors
       const hasCriticalError = result.warnings?.some(
-        (w: ImportWarning) =>
-          w.type === "AI_API_ERROR"
+        (w: ImportWarning) => w.type === "AI_API_ERROR"
       );
 
       if (hasCriticalError) {
         // Don't auto-advance - let user see the error
-        console.error(
-          "[Import] Processing completed with critical errors - review warnings"
-        );
+        console.error("[Import] Processing completed with critical errors - review warnings");
       } else {
         // No critical errors - proceed to review (deduplication warnings are non-critical)
         nextStep();
@@ -111,12 +102,7 @@ export function ProcessingStep() {
         <div className="w-full max-w-md">
           <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
             <span>Progress</span>
-            <span>
-              {Math.round(
-                (progress.processedCount / progress.totalTransactions) * 100
-              )}
-              %
-            </span>
+            <span>{Math.round((progress.processedCount / progress.totalTransactions) * 100)}%</span>
           </div>
           <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
             <div
@@ -167,15 +153,9 @@ export function ProcessingStep() {
                 key={idx}
                 className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400"
               >
-                {item.status === "processing" && (
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                )}
-                {item.status === "success" && (
-                  <CheckCircle className="w-3 h-3 text-green-500" />
-                )}
-                {item.status === "failed" && (
-                  <XCircle className="w-3 h-3 text-red-500" />
-                )}
+                {item.status === "processing" && <Loader2 className="w-3 h-3 animate-spin" />}
+                {item.status === "success" && <CheckCircle className="w-3 h-3 text-green-500" />}
+                {item.status === "failed" && <XCircle className="w-3 h-3 text-red-500" />}
                 <span className="truncate">{item.description}</span>
               </div>
             ))}
@@ -211,8 +191,7 @@ export function ProcessingStep() {
       {/* Warnings (from completed result) */}
       {progressQuery.data?.result &&
         (progressQuery.data.result as ProcessImportOutput).warnings &&
-        (progressQuery.data.result as ProcessImportOutput).warnings!.length >
-          0 && (
+        (progressQuery.data.result as ProcessImportOutput).warnings!.length > 0 && (
           <div className="w-full max-w-md space-y-2">
             {(progressQuery.data.result as ProcessImportOutput).warnings!.map(
               (warning: ImportWarning, idx: number) => {
@@ -231,16 +210,13 @@ export function ProcessingStep() {
                         </p>
                         <p className="text-xs">{warning.message}</p>
                         {warning.details && (
-                          <p className="text-xs opacity-70 font-mono">
-                            {warning.details}
-                          </p>
+                          <p className="text-xs opacity-70 font-mono">{warning.details}</p>
                         )}
                         {warning.affectedCount && (
                           <p className="text-xs opacity-80">
                             {warning.affectedCount} transaction
-                            {warning.affectedCount !== 1 ? "s" : ""} could not
-                            be automatically categorized. You can manually
-                            categorize them in the review step.
+                            {warning.affectedCount !== 1 ? "s" : ""} could not be automatically
+                            categorized. You can manually categorize them in the review step.
                           </p>
                         )}
                       </div>
@@ -253,24 +229,19 @@ export function ProcessingStep() {
         )}
 
       {/* Fatal errors */}
-      {(processImportMutation.isError ||
-        progressQuery.data?.status === "failed") && (
+      {(processImportMutation.isError || progressQuery.data?.status === "failed") && (
         <div className="p-4 max-w-md text-sm text-red-700 bg-red-100 dark:bg-red-900 dark:text-red-200 rounded-lg">
           <p className="font-medium mb-1">Processing Failed</p>
-          <p>
-            {processImportMutation.error?.message ||
-              "An unexpected error occurred"}
-          </p>
-          {progressQuery.data?.errors &&
-            progressQuery.data.errors.length > 0 && (
-              <div className="mt-2 space-y-1">
-                {progressQuery.data.errors.map((error, idx) => (
-                  <p key={idx} className="text-xs">
-                    • {error.error}
-                  </p>
-                ))}
-              </div>
-            )}
+          <p>{processImportMutation.error?.message || "An unexpected error occurred"}</p>
+          {progressQuery.data?.errors && progressQuery.data.errors.length > 0 && (
+            <div className="mt-2 space-y-1">
+              {progressQuery.data.errors.map((error, idx) => (
+                <p key={idx} className="text-xs">
+                  • {error.error}
+                </p>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -278,8 +249,7 @@ export function ProcessingStep() {
       {progressQuery.data?.status === "completed" &&
         (progressQuery.data.result as ProcessImportOutput)?.warnings?.some(
           (w: ImportWarning) =>
-            w.type === "AI_CATEGORIZATION_UNAVAILABLE" ||
-            w.type === "AI_API_ERROR"
+            w.type === "AI_CATEGORIZATION_UNAVAILABLE" || w.type === "AI_API_ERROR"
         ) && (
           <Button onClick={nextStep} className="mt-4">
             Continue to Review

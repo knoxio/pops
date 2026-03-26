@@ -3,11 +3,7 @@ import { Save, X, ChevronRight } from "lucide-react";
 import { Button } from "@pops/ui";
 import { Input } from "@pops/ui";
 import { Label } from "@pops/ui";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@pops/ui";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@pops/ui";
 import type { ProcessedTransaction } from "@pops/api/modules/finance/imports";
 
 interface EditableTransactionCardProps {
@@ -31,9 +27,7 @@ export function EditableTransactionCard({
   entities,
 }: EditableTransactionCardProps) {
   const [isRawDataExpanded, setIsRawDataExpanded] = useState(false);
-  const [editedFields, setEditedFields] = useState<
-    Partial<ProcessedTransaction>
-  >({
+  const [editedFields, setEditedFields] = useState<Partial<ProcessedTransaction>>({
     description: transaction.description,
     amount: transaction.amount,
     date: transaction.date,
@@ -70,9 +64,7 @@ export function EditableTransactionCard({
     >
       {/* Header */}
       <div className="flex justify-between items-center mb-4 pb-2 border-b border-blue-200 dark:border-blue-800">
-        <h3 className="font-semibold text-blue-900 dark:text-blue-100">
-          Edit Transaction
-        </h3>
+        <h3 className="font-semibold text-blue-900 dark:text-blue-100">Edit Transaction</h3>
         <div className="flex gap-2">
           <Button
             variant="default"
@@ -106,27 +98,20 @@ export function EditableTransactionCard({
           onChange={(e) =>
             setEditedFields({
               ...editedFields,
-              transactionType: e.target.value as
-                | "purchase"
-                | "transfer"
-                | "income",
+              transactionType: e.target.value as "purchase" | "transfer" | "income",
             })
           }
           className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-800"
         >
           <option value="purchase">Purchase (requires entity)</option>
-          <option value="transfer">
-            Transfer (between accounts, no entity)
-          </option>
+          <option value="transfer">Transfer (between accounts, no entity)</option>
           <option value="income">Income (salary, refund, etc.)</option>
         </select>
         <p className="text-xs mt-1 text-blue-700 dark:text-blue-300">
           {transactionType === "transfer" &&
             "Transfers don't need an entity - they move money between accounts"}
-          {transactionType === "income" &&
-            "Income transactions: salary, interest, refunds, etc."}
-          {transactionType === "purchase" &&
-            "Purchases require an entity (merchant/payee)"}
+          {transactionType === "income" && "Income transactions: salary, interest, refunds, etc."}
+          {transactionType === "purchase" && "Purchases require an entity (merchant/payee)"}
         </p>
       </div>
 
@@ -138,9 +123,7 @@ export function EditableTransactionCard({
             id="description"
             autoFocus
             value={editedFields.description || ""}
-            onChange={(e) =>
-              setEditedFields({ ...editedFields, description: e.target.value })
-            }
+            onChange={(e) => setEditedFields({ ...editedFields, description: e.target.value })}
             className="bg-white dark:bg-gray-800"
           />
         </div>
@@ -168,9 +151,7 @@ export function EditableTransactionCard({
             id="date"
             type="date"
             value={editedFields.date || ""}
-            onChange={(e) =>
-              setEditedFields({ ...editedFields, date: e.target.value })
-            }
+            onChange={(e) => setEditedFields({ ...editedFields, date: e.target.value })}
             className="bg-white dark:bg-gray-800"
           />
         </div>
@@ -180,9 +161,7 @@ export function EditableTransactionCard({
           <Input
             id="account"
             value={editedFields.account || ""}
-            onChange={(e) =>
-              setEditedFields({ ...editedFields, account: e.target.value })
-            }
+            onChange={(e) => setEditedFields({ ...editedFields, account: e.target.value })}
             className="bg-white dark:bg-gray-800"
           />
         </div>
@@ -192,9 +171,7 @@ export function EditableTransactionCard({
           <Input
             id="location"
             value={editedFields.location || ""}
-            onChange={(e) =>
-              setEditedFields({ ...editedFields, location: e.target.value })
-            }
+            onChange={(e) => setEditedFields({ ...editedFields, location: e.target.value })}
             placeholder="Optional"
             className="bg-white dark:bg-gray-800"
           />
@@ -206,9 +183,7 @@ export function EditableTransactionCard({
               id="online"
               type="checkbox"
               checked={editedFields.online || false}
-              onChange={(e) =>
-                setEditedFields({ ...editedFields, online: e.target.checked })
-              }
+              onChange={(e) => setEditedFields({ ...editedFields, online: e.target.checked })}
               className="w-4 h-4"
             />
             <span>Online transaction</span>
@@ -242,9 +217,8 @@ export function EditableTransactionCard({
       {transactionType === "transfer" && (
         <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg mb-4 text-sm">
           <p className="text-gray-700 dark:text-gray-300">
-            💡 <strong>Transfer transactions</strong> don't require an entity.
-            They represent money moving between your accounts (e.g., credit card
-            payments, savings transfers).
+            💡 <strong>Transfer transactions</strong> don't require an entity. They represent money
+            moving between your accounts (e.g., credit card payments, savings transfers).
           </p>
         </div>
       )}

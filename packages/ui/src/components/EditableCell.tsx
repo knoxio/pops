@@ -125,11 +125,7 @@ export function EditableCell<T = unknown>({
     if (validate) {
       const validationResult = validate(value);
       if (validationResult !== true) {
-        setError(
-          typeof validationResult === "string"
-            ? validationResult
-            : "Invalid value"
-        );
+        setError(typeof validationResult === "string" ? validationResult : "Invalid value");
         return;
       }
     }
@@ -165,9 +161,7 @@ export function EditableCell<T = unknown>({
 
   // Display mode
   if (!isEditing) {
-    const displayValue = formatDisplay
-      ? formatDisplay(value)
-      : String(value ?? "");
+    const displayValue = formatDisplay ? formatDisplay(value) : String(value ?? "");
 
     return (
       <div

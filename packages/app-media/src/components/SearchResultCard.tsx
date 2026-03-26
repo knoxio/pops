@@ -33,7 +33,7 @@ export interface SearchResultCardProps {
  */
 export function buildPosterUrl(
   posterPath: string | null | undefined,
-  type: SearchResultType,
+  type: SearchResultType
 ): string | null {
   if (!posterPath) return null;
   if (type === "movie" && posterPath.startsWith("/")) {
@@ -64,12 +64,7 @@ export function SearchResultCard({
   const Icon = type === "movie" ? Film : Tv;
 
   return (
-    <div
-      className={cn(
-        "flex gap-4 rounded-lg border bg-card p-3 text-card-foreground",
-        className,
-      )}
-    >
+    <div className={cn("flex gap-4 rounded-lg border bg-card p-3 text-card-foreground", className)}>
       {/* Poster */}
       <div className="relative w-20 shrink-0 overflow-hidden rounded-md bg-muted aspect-[2/3]">
         {!showPlaceholder && (
@@ -77,10 +72,7 @@ export function SearchResultCard({
             src={posterUrl}
             alt={`${title} poster`}
             loading="lazy"
-            className={cn(
-              "h-full w-full object-cover",
-              imageLoaded ? "opacity-100" : "opacity-0",
-            )}
+            className={cn("h-full w-full object-cover", imageLoaded ? "opacity-100" : "opacity-0")}
             onLoad={() => setImageLoaded(true)}
             onError={() => setImageError(true)}
           />
@@ -99,9 +91,7 @@ export function SearchResultCard({
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <h3 className="text-sm font-semibold leading-tight line-clamp-2">
-              {title}
-            </h3>
+            <h3 className="text-sm font-semibold leading-tight line-clamp-2">{title}</h3>
             <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
               {year && <span>{year}</span>}
               {voteAverage != null && voteAverage > 0 && (
@@ -113,18 +103,13 @@ export function SearchResultCard({
             </div>
           </div>
 
-          <Badge
-            variant={type === "movie" ? "default" : "secondary"}
-            className="shrink-0"
-          >
+          <Badge variant={type === "movie" ? "default" : "secondary"} className="shrink-0">
             {type === "movie" ? "Movie" : "TV"}
           </Badge>
         </div>
 
         {overview && (
-          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-            {overview}
-          </p>
+          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">{overview}</p>
         )}
 
         {genres && genres.length > 0 && (

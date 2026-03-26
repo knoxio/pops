@@ -13,13 +13,11 @@ const chipVariants = cva(
       variant: {
         default: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         primary: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/90",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         success: "bg-success text-white hover:bg-success/80",
         warning: "bg-warning text-white hover:bg-warning/80",
         info: "bg-info text-white hover:bg-info/80",
-        outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
         ghost: "hover:bg-accent hover:text-accent-foreground",
       },
       size: {
@@ -36,9 +34,7 @@ const chipVariants = cva(
 );
 
 export interface ChipProps
-  extends
-    Omit<HTMLAttributes<HTMLDivElement>, "prefix">,
-    VariantProps<typeof chipVariants> {
+  extends Omit<HTMLAttributes<HTMLDivElement>, "prefix">, VariantProps<typeof chipVariants> {
   /**
    * Content to display inside the chip
    */
@@ -88,11 +84,7 @@ export const Chip = forwardRef<HTMLDivElement, ChipProps>(
     ref
   ) => {
     return (
-      <div
-        ref={ref}
-        className={cn(chipVariants({ variant, size, className }))}
-        {...props}
-      >
+      <div ref={ref} className={cn(chipVariants({ variant, size, className }))} {...props}>
         {prefix && <span className="inline-flex shrink-0">{prefix}</span>}
         <span className="truncate">{children}</span>
         {removable && (

@@ -61,8 +61,7 @@ function RankingRow({
   year,
   posterUrl,
 }: RankingRowProps) {
-  const href =
-    mediaType === "movie" ? `/media/movies/${mediaId}` : `/media/tv/${mediaId}`;
+  const href = mediaType === "movie" ? `/media/movies/${mediaId}` : `/media/tv/${mediaId}`;
   const posterSrc = posterUrl ?? "";
 
   return (
@@ -71,11 +70,7 @@ function RankingRow({
         {rank <= 3 ? (
           <span
             className={
-              rank === 1
-                ? "text-yellow-500"
-                : rank === 2
-                  ? "text-zinc-400"
-                  : "text-amber-700"
+              rank === 1 ? "text-yellow-500" : rank === 2 ? "text-zinc-400" : "text-amber-700"
             }
           >
             #{rank}
@@ -102,9 +97,7 @@ function RankingRow({
           <Badge variant="secondary" className="text-xs">
             {mediaType === "movie" ? "Movie" : "TV"}
           </Badge>
-          {year && (
-            <span className="text-xs text-muted-foreground">{year}</span>
-          )}
+          {year && <span className="text-xs text-muted-foreground">{year}</span>}
         </div>
       </div>
 
@@ -151,15 +144,13 @@ function RankingsList({ dimensionId }: { dimensionId?: number }) {
             m.id,
             {
               title: m.title,
-              year: m.releaseDate
-                ? new Date(m.releaseDate).getFullYear()
-                : null,
+              year: m.releaseDate ? new Date(m.releaseDate).getFullYear() : null,
               posterUrl: m.posterUrl,
             },
-          ],
-        ),
+          ]
+        )
       ),
-    [moviesData?.data],
+    [moviesData?.data]
   );
 
   const tvMap = useMemo(
@@ -175,15 +166,13 @@ function RankingsList({ dimensionId }: { dimensionId?: number }) {
             s.id,
             {
               title: s.name,
-              year: s.firstAirDate
-                ? new Date(s.firstAirDate).getFullYear()
-                : null,
+              year: s.firstAirDate ? new Date(s.firstAirDate).getFullYear() : null,
               posterUrl: s.posterUrl,
             },
-          ],
-        ),
+          ]
+        )
       ),
-    [tvShowsData?.data],
+    [tvShowsData?.data]
   );
 
   if (error) {
@@ -205,8 +194,7 @@ function RankingsList({ dimensionId }: { dimensionId?: number }) {
       <div className="text-center py-16">
         <Trophy className="h-12 w-12 mx-auto text-muted-foreground/40 mb-4" />
         <p className="text-muted-foreground">
-          No rankings yet. Compare some movies to start building your
-          leaderboard.
+          No rankings yet. Compare some movies to start building your leaderboard.
         </p>
       </div>
     );
@@ -217,9 +205,7 @@ function RankingsList({ dimensionId }: { dimensionId?: number }) {
       <div className="space-y-2" role="list" aria-label="Rankings">
         {entries.map((entry) => {
           const meta =
-            entry.mediaType === "movie"
-              ? movieMap.get(entry.mediaId)
-              : tvMap.get(entry.mediaId);
+            entry.mediaType === "movie" ? movieMap.get(entry.mediaId) : tvMap.get(entry.mediaId);
 
           return (
             <RankingRow
@@ -240,8 +226,7 @@ function RankingsList({ dimensionId }: { dimensionId?: number }) {
       {pagination && pagination.total > PAGE_SIZE && (
         <div className="flex items-center justify-between pt-2">
           <span className="text-sm text-muted-foreground">
-            Showing {offset + 1}–
-            {Math.min(offset + PAGE_SIZE, pagination.total)} of{" "}
+            Showing {offset + 1}–{Math.min(offset + PAGE_SIZE, pagination.total)} of{" "}
             {pagination.total}
           </span>
           <div className="flex gap-2">
@@ -274,7 +259,7 @@ export function RankingsPage() {
 
   const activeDimensions = useMemo(
     () => (dimensionsData?.data ?? []).filter((d) => d.active),
-    [dimensionsData?.data],
+    [dimensionsData?.data]
   );
 
   const showTabs = activeDimensions.length > 0;

@@ -8,65 +8,65 @@ import { lazy } from "react";
 import type { RouteObject } from "react-router";
 
 const LibraryPage = lazy(() =>
-  import("./pages/LibraryPage").then((m) => ({ default: m.LibraryPage })),
+  import("./pages/LibraryPage").then((m) => ({ default: m.LibraryPage }))
 );
 const MovieDetailPage = lazy(() =>
   import("./pages/MovieDetailPage").then((m) => ({
     default: m.MovieDetailPage,
-  })),
+  }))
 );
 const TvShowDetailPage = lazy(() =>
   import("./pages/TvShowDetailPage").then((m) => ({
     default: m.TvShowDetailPage,
-  })),
+  }))
 );
 const SeasonDetailPage = lazy(() =>
   import("./pages/SeasonDetailPage").then((m) => ({
     default: m.SeasonDetailPage,
-  })),
+  }))
 );
 const SearchPage = lazy(() =>
-  import("./pages/SearchPage").then((m) => ({ default: m.SearchPage })),
+  import("./pages/SearchPage").then((m) => ({ default: m.SearchPage }))
 );
 const WatchlistPage = lazy(() =>
   import("./pages/WatchlistPage").then((m) => ({
     default: m.WatchlistPage,
-  })),
+  }))
 );
 const QuickPickPage = lazy(() =>
   import("./pages/QuickPickPage").then((m) => ({
     default: m.QuickPickPage,
-  })),
+  }))
 );
 const CompareArenaPage = lazy(() =>
   import("./pages/CompareArenaPage").then((m) => ({
     default: m.CompareArenaPage,
-  })),
+  }))
 );
 const DiscoverPage = lazy(() =>
   import("./pages/DiscoverPage").then((m) => ({
     default: m.DiscoverPage,
-  })),
+  }))
 );
 const RankingsPage = lazy(() =>
   import("./pages/RankingsPage").then((m) => ({
     default: m.RankingsPage,
-  })),
+  }))
 );
 const PlexSettingsPage = lazy(() =>
   import("./pages/PlexSettingsPage").then((m) => ({
     default: m.PlexSettingsPage,
-  })),
+  }))
 );
 const ArrSettingsPage = lazy(() =>
   import("./pages/ArrSettingsPage").then((m) => ({
     default: m.ArrSettingsPage,
-  })),
+  }))
 );
 const HistoryPage = lazy(() =>
   import("./pages/HistoryPage").then((m) => ({
     default: m.HistoryPage,
-  })),
+  }))
 );
 
 /** Shared navigation types (mirrored from shell to avoid circular dependency) */

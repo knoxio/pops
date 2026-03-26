@@ -29,9 +29,7 @@ export const Controlled: Story = {
     return (
       <div className="space-y-4">
         <Slider value={value} onValueChange={setValue} max={100} step={1} />
-        <p className="text-center text-sm text-muted-foreground">
-          Value: {value[0]}
-        </p>
+        <p className="text-center text-sm text-muted-foreground">Value: {value[0]}</p>
       </div>
     );
   },
@@ -65,9 +63,7 @@ export const Steps: Story = {
     return (
       <div className="space-y-4">
         <Slider value={value} onValueChange={setValue} max={100} step={25} />
-        <p className="text-center text-sm text-muted-foreground">
-          Value: {value[0]} (steps of 25)
-        </p>
+        <p className="text-center text-sm text-muted-foreground">Value: {value[0]} (steps of 25)</p>
       </div>
     );
   },
@@ -84,13 +80,7 @@ export const BudgetLimit: Story = {
             <label className="text-sm font-medium">Monthly Budget</label>
             <span className="text-sm font-semibold">${budget[0]}</span>
           </div>
-          <Slider
-            value={budget}
-            onValueChange={setBudget}
-            min={0}
-            max={2000}
-            step={50}
-          />
+          <Slider value={budget} onValueChange={setBudget} min={0} max={2000} step={50} />
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>$0</span>
             <span>$2,000</span>
@@ -145,13 +135,7 @@ export const MultipleBudgets: Story = {
             <label className="text-sm font-medium">Food & Dining</label>
             <span className="text-sm font-semibold">${food[0]}</span>
           </div>
-          <Slider
-            value={food}
-            onValueChange={setFood}
-            min={0}
-            max={1000}
-            step={50}
-          />
+          <Slider value={food} onValueChange={setFood} min={0} max={1000} step={50} />
         </div>
 
         <div className="space-y-2">
@@ -159,13 +143,7 @@ export const MultipleBudgets: Story = {
             <label className="text-sm font-medium">Shopping</label>
             <span className="text-sm font-semibold">${shopping[0]}</span>
           </div>
-          <Slider
-            value={shopping}
-            onValueChange={setShopping}
-            min={0}
-            max={1000}
-            step={50}
-          />
+          <Slider value={shopping} onValueChange={setShopping} min={0} max={1000} step={50} />
         </div>
 
         <div className="space-y-2">
@@ -187,13 +165,7 @@ export const MultipleBudgets: Story = {
             <label className="text-sm font-medium">Transport</label>
             <span className="text-sm font-semibold">${transport[0]}</span>
           </div>
-          <Slider
-            value={transport}
-            onValueChange={setTransport}
-            min={0}
-            max={1000}
-            step={50}
-          />
+          <Slider value={transport} onValueChange={setTransport} min={0} max={1000} step={50} />
         </div>
 
         <div className="pt-4 flex justify-between border-t">
@@ -215,9 +187,7 @@ export const DateRange: Story = {
     return (
       <div className="space-y-6 w-96">
         <div className="space-y-2">
-          <label className="text-sm font-medium">
-            Transaction History Range
-          </label>
+          <label className="text-sm font-medium">Transaction History Range</label>
           <Slider
             value={days}
             onValueChange={setDays}
@@ -247,17 +217,13 @@ export const SavingsGoal: Story = {
       <div className="space-y-6 w-96 rounded-lg border p-6">
         <div>
           <h3 className="text-lg font-semibold">Savings Goal Calculator</h3>
-          <p className="text-sm text-muted-foreground">
-            Goal: ${goal.toLocaleString()}
-          </p>
+          <p className="text-sm text-muted-foreground">Goal: ${goal.toLocaleString()}</p>
         </div>
 
         <div className="space-y-2">
           <div className="flex justify-between">
             <label className="text-sm font-medium">Monthly Contribution</label>
-            <span className="text-sm font-semibold">
-              ${monthlyContribution[0]}
-            </span>
+            <span className="text-sm font-semibold">${monthlyContribution[0]}</span>
           </div>
           <Slider
             value={monthlyContribution}
@@ -335,26 +301,15 @@ export const WithLabels: Story = {
       <div className="space-y-6 w-96">
         <div className="space-y-4">
           <label className="text-sm font-medium">Risk Tolerance</label>
-          <Slider
-            value={value}
-            onValueChange={setValue}
-            min={0}
-            max={4}
-            step={1}
-          />
+          <Slider value={value} onValueChange={setValue} min={0} max={4} step={1} />
           <div className="flex justify-between text-xs text-muted-foreground">
             {labels.map((label, i) => (
-              <span
-                key={i}
-                className={value[0] === i ? "font-medium text-foreground" : ""}
-              >
+              <span key={i} className={value[0] === i ? "font-medium text-foreground" : ""}>
                 {label}
               </span>
             ))}
           </div>
-          <p className="text-center text-sm font-medium">
-            Current: {labels[value[0]]}
-          </p>
+          <p className="text-center text-sm font-medium">Current: {labels[value[0]]}</p>
         </div>
       </div>
     );

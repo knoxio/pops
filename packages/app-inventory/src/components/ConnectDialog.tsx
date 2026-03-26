@@ -24,16 +24,13 @@ interface ConnectDialogProps {
   onConnected: () => void;
 }
 
-export function ConnectDialog({
-  currentItemId,
-  onConnected,
-}: ConnectDialogProps) {
+export function ConnectDialog({ currentItemId, onConnected }: ConnectDialogProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
   const { data, isLoading } = trpc.inventory.items.list.useQuery(
     { search, limit: 10 },
-    { enabled: open && search.length >= 2 },
+    { enabled: open && search.length >= 2 }
   );
 
   const connectMutation = trpc.inventory.connections.connect.useMutation({
@@ -76,9 +73,7 @@ export function ConnectDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Connect Item</DialogTitle>
-          <DialogDescription>
-            Search for an item to connect by name or asset ID.
-          </DialogDescription>
+          <DialogDescription>Search for an item to connect by name or asset ID.</DialogDescription>
         </DialogHeader>
 
         <div className="relative">
@@ -104,9 +99,7 @@ export function ConnectDialog({
               <Skeleton className="h-10 w-full" />
             </div>
           ) : results.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">
-              No items found
-            </p>
+            <p className="text-sm text-muted-foreground py-4 text-center">No items found</p>
           ) : (
             results.map((item) => (
               <button
@@ -119,9 +112,8 @@ export function ConnectDialog({
                 <div>
                   <div className="font-medium text-sm">{item.itemName}</div>
                   <div className="text-xs text-muted-foreground">
-                    {[item.brand, item.model, item.assetId]
-                      .filter(Boolean)
-                      .join(" · ") || "No details"}
+                    {[item.brand, item.model, item.assetId].filter(Boolean).join(" · ") ||
+                      "No details"}
                   </div>
                 </div>
                 <Link2 className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />

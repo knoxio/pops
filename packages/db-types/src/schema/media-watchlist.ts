@@ -9,9 +9,9 @@ export const mediaWatchlist = sqliteTable(
     mediaId: integer("media_id").notNull(),
     priority: integer("priority").default(0),
     notes: text("notes"),
-    addedAt: text("added_at").notNull().default(sql`(datetime('now'))`),
+    addedAt: text("added_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
   },
-  (table) => [
-    uniqueIndex("idx_watchlist_media").on(table.mediaType, table.mediaId),
-  ]
+  (table) => [uniqueIndex("idx_watchlist_media").on(table.mediaType, table.mediaId)]
 );

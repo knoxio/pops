@@ -63,9 +63,7 @@ export function TransactionsPage() {
   const columns: ColumnDef<Transaction>[] = [
     {
       accessorKey: "date",
-      header: ({ column }) => (
-        <SortableHeader column={column}>Date</SortableHeader>
-      ),
+      header: ({ column }) => <SortableHeader column={column}>Date</SortableHeader>,
       cell: ({ row }) => {
         const date = new Date(row.original.date);
         return date.toLocaleDateString("en-AU", {
@@ -90,9 +88,7 @@ export function TransactionsPage() {
     {
       accessorKey: "account",
       header: "Account",
-      cell: ({ row }) => (
-        <span className="text-sm font-mono">{row.original.account}</span>
-      ),
+      cell: ({ row }) => <span className="text-sm font-mono">{row.original.account}</span>,
     },
     {
       accessorKey: "amount",

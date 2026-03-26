@@ -40,15 +40,11 @@ export function PhotoGallery({
   }, []);
 
   const goNext = useCallback(() => {
-    setLightboxIndex((prev) =>
-      prev !== null ? (prev + 1) % sorted.length : null,
-    );
+    setLightboxIndex((prev) => (prev !== null ? (prev + 1) % sorted.length : null));
   }, [sorted.length]);
 
   const goPrev = useCallback(() => {
-    setLightboxIndex((prev) =>
-      prev !== null ? (prev - 1 + sorted.length) % sorted.length : null,
-    );
+    setLightboxIndex((prev) => (prev !== null ? (prev - 1 + sorted.length) % sorted.length : null));
   }, [sorted.length]);
 
   // Keyboard navigation
@@ -66,13 +62,10 @@ export function PhotoGallery({
   }, [lightboxIndex, closeLightbox, goNext, goPrev]);
 
   if (photos.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">No photos yet.</p>
-    );
+    return <p className="text-sm text-muted-foreground">No photos yet.</p>;
   }
 
-  const photoSrc = (filePath: string) =>
-    `${baseUrl}/${encodeURIComponent(filePath)}`;
+  const photoSrc = (filePath: string) => `${baseUrl}/${encodeURIComponent(filePath)}`;
 
   const currentPhoto = lightboxIndex !== null ? sorted[lightboxIndex] : null;
 
@@ -158,9 +151,7 @@ export function PhotoGallery({
               className="max-w-full max-h-[80vh] object-contain rounded-md"
             />
             {currentPhoto.caption && (
-              <p className="text-white text-sm text-center">
-                {currentPhoto.caption}
-              </p>
+              <p className="text-white text-sm text-center">{currentPhoto.caption}</p>
             )}
             <p className="text-white/60 text-xs">
               {lightboxIndex! + 1} / {sorted.length}

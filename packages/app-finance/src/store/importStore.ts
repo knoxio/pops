@@ -67,9 +67,7 @@ interface ImportStore {
   setColumnMap: (columnMap: ImportStore["columnMap"]) => void;
   setParsedTransactions: (parsed: ParsedTransaction[]) => void;
   setProcessSessionId: (sessionId: string | null) => void;
-  setProcessedTransactions: (
-    processed: ImportStore["processedTransactions"]
-  ) => void;
+  setProcessedTransactions: (processed: ImportStore["processedTransactions"]) => void;
   setConfirmedTransactions: (confirmed: ConfirmedTransaction[]) => void;
   setExecuteSessionId: (sessionId: string | null) => void;
   setImportResult: (result: ImportStore["importResult"]) => void;
@@ -125,17 +123,13 @@ export const useImportStore = create<ImportStore>((set) => ({
   setColumnMap: (columnMap) => set({ columnMap }),
   setParsedTransactions: (parsedTransactions) => set({ parsedTransactions }),
   setProcessSessionId: (processSessionId) => set({ processSessionId }),
-  setProcessedTransactions: (processedTransactions) =>
-    set({ processedTransactions }),
-  setConfirmedTransactions: (confirmedTransactions) =>
-    set({ confirmedTransactions }),
+  setProcessedTransactions: (processedTransactions) => set({ processedTransactions }),
+  setConfirmedTransactions: (confirmedTransactions) => set({ confirmedTransactions }),
   setExecuteSessionId: (executeSessionId) => set({ executeSessionId }),
   setImportResult: (importResult) => set({ importResult }),
 
-  nextStep: () =>
-    set((state) => ({ currentStep: Math.min(state.currentStep + 1, 6) })),
-  prevStep: () =>
-    set((state) => ({ currentStep: Math.max(state.currentStep - 1, 1) })),
+  nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 6) })),
+  prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 1) })),
   goToStep: (step) => set({ currentStep: step }),
   reset: () => set(initialState),
 

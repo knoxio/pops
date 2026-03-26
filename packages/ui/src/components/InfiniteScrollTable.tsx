@@ -155,13 +155,9 @@ export function InfiniteScrollTable<TData, TValue>({
       {/* Infinite scroll trigger */}
       {data.length > 0 && (
         <div ref={observerTarget} className="py-4 text-center">
-          {loading && (
-            <div className="text-sm text-muted-foreground">Loading more...</div>
-          )}
+          {loading && <div className="text-sm text-muted-foreground">Loading more...</div>}
           {!loading && !hasMore && (
-            <div className="text-sm text-muted-foreground">
-              No more items to load
-            </div>
+            <div className="text-sm text-muted-foreground">No more items to load</div>
           )}
         </div>
       )}

@@ -81,38 +81,24 @@ const sampleUsers: User[] = [
   },
 ];
 
-const sampleTransactions: Transaction[] = Array.from(
-  { length: 50 },
-  (_, i) => ({
-    id: `txn-${i + 1}`,
-    date: new Date(2024, 0, i + 1).toISOString().split("T")[0],
-    description: [
-      "Woolworths",
-      "Coles",
-      "Amazon",
-      "Netflix",
-      "Uber",
-      "Spotify",
-    ][i % 6],
-    amount: Math.random() * 200 - 100,
-    category: ["Food", "Shopping", "Entertainment", "Transport"][i % 4],
-    account: ["Checking", "Savings", "Credit Card"][i % 3],
-  })
-);
+const sampleTransactions: Transaction[] = Array.from({ length: 50 }, (_, i) => ({
+  id: `txn-${i + 1}`,
+  date: new Date(2024, 0, i + 1).toISOString().split("T")[0],
+  description: ["Woolworths", "Coles", "Amazon", "Netflix", "Uber", "Spotify"][i % 6],
+  amount: Math.random() * 200 - 100,
+  category: ["Food", "Shopping", "Entertainment", "Transport"][i % 4],
+  account: ["Checking", "Savings", "Credit Card"][i % 3],
+}));
 
 // Basic columns
 const userColumns: ColumnDef<User>[] = [
   {
     accessorKey: "name",
-    header: ({ column }) => (
-      <SortableHeader column={column}>Name</SortableHeader>
-    ),
+    header: ({ column }) => <SortableHeader column={column}>Name</SortableHeader>,
   },
   {
     accessorKey: "email",
-    header: ({ column }) => (
-      <SortableHeader column={column}>Email</SortableHeader>
-    ),
+    header: ({ column }) => <SortableHeader column={column}>Email</SortableHeader>,
   },
   {
     accessorKey: "role",
@@ -124,11 +110,7 @@ const userColumns: ColumnDef<User>[] = [
     cell: ({ row }) => {
       const status = row.getValue("status") as string;
       return (
-        <span
-          className={
-            status === "active" ? "text-green-600" : "text-muted-foreground"
-          }
-        >
+        <span className={status === "active" ? "text-green-600" : "text-muted-foreground"}>
           {status}
         </span>
       );
@@ -136,9 +118,7 @@ const userColumns: ColumnDef<User>[] = [
   },
   {
     accessorKey: "createdAt",
-    header: ({ column }) => (
-      <SortableHeader column={column}>Created</SortableHeader>
-    ),
+    header: ({ column }) => <SortableHeader column={column}>Created</SortableHeader>,
   },
 ];
 
@@ -170,9 +150,7 @@ export const WithPagination: Story = {
     const transactionColumns: ColumnDef<Transaction>[] = [
       {
         accessorKey: "date",
-        header: ({ column }) => (
-          <SortableHeader column={column}>Date</SortableHeader>
-        ),
+        header: ({ column }) => <SortableHeader column={column}>Date</SortableHeader>,
       },
       {
         accessorKey: "description",
@@ -180,9 +158,7 @@ export const WithPagination: Story = {
       },
       {
         accessorKey: "amount",
-        header: ({ column }) => (
-          <SortableHeader column={column}>Amount</SortableHeader>
-        ),
+        header: ({ column }) => <SortableHeader column={column}>Amount</SortableHeader>,
         cell: ({ row }) => {
           const amount = row.getValue("amount") as number;
           const formatted = new Intl.NumberFormat("en-AU", {
@@ -190,9 +166,7 @@ export const WithPagination: Story = {
             currency: "AUD",
           }).format(amount);
           return (
-            <span className={amount < 0 ? "text-red-600" : "text-green-600"}>
-              {formatted}
-            </span>
+            <span className={amount < 0 ? "text-red-600" : "text-green-600"}>{formatted}</span>
           );
         },
       },
@@ -231,9 +205,7 @@ export const WithRowSelection: Story = {
         header: ({ table }) => (
           <Checkbox
             checked={table.getIsAllPageRowsSelected()}
-            onCheckedChange={(value) =>
-              table.toggleAllPageRowsSelected(!!value)
-            }
+            onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
             aria-label="Select all"
           />
         ),
@@ -261,9 +233,7 @@ export const WithRowSelection: Story = {
           searchColumn="name"
         />
         {selectedUsers.length > 0 && (
-          <div className="text-sm">
-            Selected: {selectedUsers.map((u) => u.name).join(", ")}
-          </div>
+          <div className="text-sm">Selected: {selectedUsers.map((u) => u.name).join(", ")}</div>
         )}
       </div>
     );
@@ -275,32 +245,20 @@ export const WithEditableCells: Story = {
   render: () => {
     const [users, setUsers] = useState(sampleUsers);
 
-    const updateUser = (
-      id: number,
-      field: keyof User,
-      value: User[keyof User]
-    ) => {
-      setUsers((prev) =>
-        prev.map((user) =>
-          user.id === id ? { ...user, [field]: value } : user
-        )
-      );
+    const updateUser = (id: number, field: keyof User, value: User[keyof User]) => {
+      setUsers((prev) => prev.map((user) => (user.id === id ? { ...user, [field]: value } : user)));
     };
 
     const editableColumns: ColumnDef<User>[] = [
       {
         accessorKey: "name",
-        header: ({ column }) => (
-          <SortableHeader column={column}>Name</SortableHeader>
-        ),
+        header: ({ column }) => <SortableHeader column={column}>Name</SortableHeader>,
         cell: ({ row }) => (
           <EditableCell
             value={row.original.name}
             type="text"
             onSave={(newValue) => updateUser(row.original.id, "name", newValue)}
-            validate={(val) =>
-              val.length >= 2 || "Name must be at least 2 characters"
-            }
+            validate={(val) => val.length >= 2 || "Name must be at least 2 characters"}
           />
         ),
       },
@@ -311,12 +269,8 @@ export const WithEditableCells: Story = {
           <EditableCell
             value={row.original.email}
             type="text"
-            onSave={(newValue) =>
-              updateUser(row.original.id, "email", newValue)
-            }
-            validate={(val) =>
-              /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || "Invalid email"
-            }
+            onSave={(newValue) => updateUser(row.original.id, "email", newValue)}
+            validate={(val) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || "Invalid email"}
           />
         ),
       },
@@ -347,9 +301,7 @@ export const WithEditableCells: Story = {
               { label: "Active", value: "active" },
               { label: "Inactive", value: "inactive" },
             ]}
-            onSave={(newValue) =>
-              updateUser(row.original.id, "status", newValue)
-            }
+            onSave={(newValue) => updateUser(row.original.id, "status", newValue)}
           />
         ),
       },
@@ -359,14 +311,7 @@ export const WithEditableCells: Story = {
       },
     ];
 
-    return (
-      <DataTable
-        columns={editableColumns}
-        data={users}
-        searchable
-        searchColumn="name"
-      />
-    );
+    return <DataTable columns={editableColumns} data={users} searchable searchColumn="name" />;
   },
 };
 
@@ -388,18 +333,10 @@ export const WithActions: Story = {
         header: "Actions",
         cell: ({ row }) => (
           <div className="flex gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => handleEdit(row.original)}
-            >
+            <Button size="sm" variant="ghost" onClick={() => handleEdit(row.original)}>
               Edit
             </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => handleDelete(row.original)}
-            >
+            <Button size="sm" variant="ghost" onClick={() => handleDelete(row.original)}>
               Delete
             </Button>
           </div>
@@ -434,9 +371,7 @@ export const EmptyState: Story = {
         emptyState={
           <div className="flex flex-col items-center gap-2">
             <p className="text-lg font-medium">No users found</p>
-            <p className="text-sm text-muted-foreground">
-              Get started by adding your first user
-            </p>
+            <p className="text-sm text-muted-foreground">Get started by adding your first user</p>
             <Button size="sm" className="mt-2">
               Add User
             </Button>

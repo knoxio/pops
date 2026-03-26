@@ -26,7 +26,7 @@ export function QuickPickDialog() {
 
   const { data, isLoading, refetch } = trpc.media.discovery.quickPick.useQuery(
     { count: 5 },
-    { enabled: open },
+    { enabled: open }
   );
 
   const addToWatchlist = trpc.media.watchlist.add.useMutation({
@@ -57,7 +57,7 @@ export function QuickPickDialog() {
         void refetch();
       }
     },
-    [refetch],
+    [refetch]
   );
 
   const handleSkip = () => setCurrentIndex((i) => i + 1);
@@ -99,16 +99,13 @@ export function QuickPickDialog() {
           ) : movies.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">
-                No picks available — all movies are watched or on your
-                watchlist.
+                No picks available — all movies are watched or on your watchlist.
               </p>
             </div>
           ) : isFinished ? (
             <div className="text-center py-8 space-y-4">
               <Sparkles className="h-10 w-10 mx-auto text-indigo-400" />
-              <p className="text-muted-foreground">
-                You&apos;ve seen all the picks!
-              </p>
+              <p className="text-muted-foreground">You&apos;ve seen all the picks!</p>
               <Button onClick={handleRefresh} variant="outline">
                 Get More Picks
               </Button>
@@ -183,9 +180,7 @@ function PickCard({
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             {year && <span>{year}</span>}
             {movie.runtime && <span>· {movie.runtime} min</span>}
-            {movie.voteAverage !== null && (
-              <span>· ★ {movie.voteAverage.toFixed(1)}</span>
-            )}
+            {movie.voteAverage !== null && <span>· ★ {movie.voteAverage.toFixed(1)}</span>}
           </div>
           {genres.length > 0 && (
             <div className="flex flex-wrap gap-1">
@@ -197,9 +192,7 @@ function PickCard({
             </div>
           )}
           {movie.overview && (
-            <p className="text-xs text-muted-foreground line-clamp-3">
-              {movie.overview}
-            </p>
+            <p className="text-xs text-muted-foreground line-clamp-3">{movie.overview}</p>
           )}
         </div>
       </div>

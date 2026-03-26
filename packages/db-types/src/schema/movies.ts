@@ -24,8 +24,12 @@ export const movies = sqliteTable(
     voteAverage: real("vote_average"),
     voteCount: integer("vote_count"),
     genres: text("genres"), // JSON array
-    createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
-    updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
   },
   (table) => [
     uniqueIndex("idx_movies_tmdb_id").on(table.tmdbId),

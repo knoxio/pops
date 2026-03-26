@@ -19,11 +19,7 @@ export interface LocationBreadcrumbProps {
   className?: string;
 }
 
-export function LocationBreadcrumb({
-  segments,
-  onNavigate,
-  className,
-}: LocationBreadcrumbProps) {
+export function LocationBreadcrumb({ segments, onNavigate, className }: LocationBreadcrumbProps) {
   if (segments.length === 0) {
     return <span className="text-muted-foreground/50">—</span>;
   }
@@ -36,9 +32,7 @@ export function LocationBreadcrumb({
           return (
             <BreadcrumbItem key={segment.id}>
               {isLast ? (
-                <BreadcrumbPage className="text-xs font-medium">
-                  {segment.name}
-                </BreadcrumbPage>
+                <BreadcrumbPage className="text-xs font-medium">{segment.name}</BreadcrumbPage>
               ) : (
                 <>
                   <BreadcrumbLink

@@ -14,6 +14,11 @@ import { navConfig as aiNavConfig } from "@pops/app-ai";
 import type { AppNavConfig } from "./types";
 
 /** All registered app nav configs. Order determines display order in the app rail. */
-export const registeredApps: AppNavConfig[] = [financeNavConfig, mediaNavConfig, inventoryNavConfig, aiNavConfig];
+export const registeredApps: AppNavConfig[] = [
+  financeNavConfig,
+  mediaNavConfig,
+  inventoryNavConfig,
+  aiNavConfig,
+];
 
 export type { AppNavConfig, AppNavItem } from "./types";

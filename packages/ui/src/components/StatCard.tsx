@@ -61,13 +61,7 @@ export interface StatCardProps {
  * StatCard — a high-impact card for displaying key metrics.
  * Features domain-specific coloring and subtle glow effects.
  */
-export function StatCard({
-  title,
-  value,
-  description,
-  color = "slate",
-  className,
-}: StatCardProps) {
+export function StatCard({ title, value, description, color = "slate", className }: StatCardProps) {
   const styles = statCardColorMap[color];
 
   return (
@@ -89,14 +83,7 @@ export function StatCard({
         <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">
           {title}
         </h3>
-        <p
-          className={cn(
-            "text-3xl font-bold tabular-nums tracking-tight",
-            styles.text
-          )}
-        >
-          {value}
-        </p>
+        <p className={cn("text-3xl font-bold tabular-nums tracking-tight", styles.text)}>{value}</p>
       </div>
       {description && (
         <div className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter opacity-70 relative z-10">

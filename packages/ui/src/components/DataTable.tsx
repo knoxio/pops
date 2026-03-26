@@ -20,14 +20,7 @@ import {
 } from "@tanstack/react-table";
 import { ArrowUpDown, ChevronDown, Search } from "lucide-react";
 import { cn } from "../lib/utils";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "../primitives/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../primitives/table";
 import { Button } from "./Button";
 import { TextInput } from "./TextInput";
 import {
@@ -158,8 +151,7 @@ export function DataTable<TData, TValue>({
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-  const [columnVisibilityState, setColumnVisibilityState] =
-    useState<VisibilityState>({});
+  const [columnVisibilityState, setColumnVisibilityState] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
 
   const table = useReactTable({
@@ -191,9 +183,7 @@ export function DataTable<TData, TValue>({
   // Notify parent of selection changes
   useMemo(() => {
     if (onSelectionChange && enableRowSelection) {
-      const selectedRows = table
-        .getFilteredSelectedRowModel()
-        .rows.map((row) => row.original);
+      const selectedRows = table.getFilteredSelectedRowModel().rows.map((row) => row.original);
       onSelectionChange(selectedRows);
     }
   }, [rowSelection, onSelectionChange, enableRowSelection, table]);
@@ -202,10 +192,7 @@ export function DataTable<TData, TValue>({
     <div className={cn("space-y-4", className)}>
       {/* Filters */}
       {filters && filters.length > 0 && (
-        <FilterBar
-          filters={filters}
-          table={table as unknown as TanStackTable<unknown>}
-        />
+        <FilterBar filters={filters} table={table as unknown as TanStackTable<unknown>} />
       )}
 
       {/* Toolbar */}
@@ -215,13 +202,8 @@ export function DataTable<TData, TValue>({
             <TextInput
               placeholder={searchPlaceholder}
               prefix={<Search className="h-4 w-4" />}
-              value={
-                (table.getColumn(searchColumn)?.getFilterValue() as string) ??
-                ""
-              }
-              onChange={(e) =>
-                table.getColumn(searchColumn)?.setFilterValue(e.target.value)
-              }
+              value={(table.getColumn(searchColumn)?.getFilterValue() as string) ?? ""}
+              onChange={(e) => table.getColumn(searchColumn)?.setFilterValue(e.target.value)}
               className="w-full sm:max-w-sm"
               clearable
               onClear={() => table.getColumn(searchColumn)?.setFilterValue("")}
@@ -243,9 +225,7 @@ export function DataTable<TData, TValue>({
                       <DropdownMenuCheckboxItem
                         key={column.id}
                         checked={column.getIsVisible()}
-                        onCheckedChange={(value) =>
-                          column.toggleVisibility(!!value)
-                        }
+                        onCheckedChange={(value) => column.toggleVisibility(!!value)}
                       >
                         {column.id}
                       </DropdownMenuCheckboxItem>
@@ -268,10 +248,7 @@ export function DataTable<TData, TValue>({
                     <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                        : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
                   );
                 })}
@@ -281,10 +258,7 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
+                <TableCell colSpan={columns.length} className="h-24 text-center">
                   Loading...
                 </TableCell>
               </TableRow>
@@ -298,20 +272,14 @@ export function DataTable<TData, TValue>({
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
+                <TableCell colSpan={columns.length} className="h-24 text-center">
                   {emptyState || "No results."}
                 </TableCell>
               </TableRow>
@@ -333,9 +301,7 @@ export function DataTable<TData, TValue>({
           </div>
           <div className="flex flex-wrap items-center gap-4 sm:gap-6">
             <div className="flex items-center gap-2">
-              <p className="hidden text-sm font-medium sm:block">
-                Rows per page
-              </p>
+              <p className="hidden text-sm font-medium sm:block">Rows per page</p>
               <select
                 value={table.getState().pagination.pageSize}
                 onChange={(e) => {
@@ -352,8 +318,7 @@ export function DataTable<TData, TValue>({
             </div>
             <div className="flex items-center gap-2">
               <div className="text-sm font-medium">
-                Page {table.getState().pagination.pageIndex + 1} of{" "}
-                {table.getPageCount()}
+                Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
               </div>
               <div className="flex gap-2">
                 <Button

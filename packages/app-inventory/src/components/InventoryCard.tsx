@@ -59,7 +59,7 @@ export function InventoryCard({
         "border-l-4 border-l-amber-500/50",
         "transition-colors hover:bg-accent/50",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        className,
+        className
       )}
       onClick={() => onClick?.(id)}
     >
@@ -72,7 +72,7 @@ export function InventoryCard({
             loading="lazy"
             className={cn(
               "h-full w-full object-cover transition-opacity duration-200",
-              imageLoaded ? "opacity-100" : "opacity-0",
+              imageLoaded ? "opacity-100" : "opacity-0"
             )}
             onLoad={() => setImageLoaded(true)}
             onError={() => setImageError(true)}
@@ -94,15 +94,11 @@ export function InventoryCard({
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         {/* Item name + subtitle */}
         <div>
-          <h3 className="text-sm font-semibold leading-tight line-clamp-1">
-            {itemName}
-          </h3>
+          <h3 className="text-sm font-semibold leading-tight line-clamp-1">{itemName}</h3>
           {(brand || model) && (
             <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground mt-0.5 opacity-80 line-clamp-1">
               {brand}
-              {brand && model && (
-                <span className="mx-1 opacity-50">&bull;</span>
-              )}
+              {brand && model && <span className="mx-1 opacity-50">&bull;</span>}
               {model}
             </p>
           )}
@@ -119,10 +115,7 @@ export function InventoryCard({
 
         {/* Location breadcrumb */}
         {locationSegments.length > 0 && (
-          <LocationBreadcrumb
-            segments={locationSegments}
-            onNavigate={onLocationNavigate}
-          />
+          <LocationBreadcrumb segments={locationSegments} onNavigate={onLocationNavigate} />
         )}
       </div>
     </button>

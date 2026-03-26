@@ -2,24 +2,9 @@
  * ValueByTypeCard — horizontal bar chart showing replacement value
  * grouped by item type.
  */
-import {
-  Alert,
-  AlertDescription,
-  Button,
-  Card,
-  CardContent,
-  Skeleton,
-} from "@pops/ui";
+import { Alert, AlertDescription, Button, Card, CardContent, Skeleton } from "@pops/ui";
 import { AlertCircle, RefreshCw, Tag } from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { useNavigate } from "react-router";
 import { trpc } from "../lib/trpc";
 import { formatCurrency } from "../lib/utils";
@@ -50,11 +35,7 @@ function BreakdownChart({ data, onBarClick }: BreakdownChartProps) {
 
   return (
     <ResponsiveContainer width="100%" height={chartHeight}>
-      <BarChart
-        data={data}
-        layout="vertical"
-        margin={{ left: 0, right: 16, top: 4, bottom: 4 }}
-      >
+      <BarChart data={data} layout="vertical" margin={{ left: 0, right: 16, top: 4, bottom: 4 }}>
         <XAxis
           type="number"
           tickFormatter={(v: number) => formatCurrency(v)}
@@ -73,8 +54,7 @@ function BreakdownChart({ data, onBarClick }: BreakdownChartProps) {
         <Tooltip
           content={({ payload }) => {
             if (!payload?.length) return null;
-            const entry = payload[0]
-              .payload as BreakdownChartProps["data"][number];
+            const entry = payload[0].payload as BreakdownChartProps["data"][number];
             return (
               <div className="rounded-md border bg-popover px-3 py-2 text-sm shadow-md">
                 <p className="font-medium">{entry.name}</p>
@@ -148,9 +128,7 @@ export function ValueByTypeCard({ className }: { className?: string }) {
         ) : (
           <BreakdownChart
             data={typeEntries}
-            onBarClick={(name) =>
-              navigate(`/inventory?type=${encodeURIComponent(name)}`)
-            }
+            onBarClick={(name) => navigate(`/inventory?type=${encodeURIComponent(name)}`)}
           />
         )}
       </CardContent>

@@ -4,12 +4,7 @@
  * location tree, type-to-filter, and optional inline create.
  */
 import { useState, useMemo, useCallback } from "react";
-import {
-  cn,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@pops/ui";
+import { cn, Popover, PopoverContent, PopoverTrigger } from "@pops/ui";
 import { Button } from "@pops/ui";
 import { ChevronRight, ChevronDown, MapPin, X, Plus } from "lucide-react";
 
@@ -31,10 +26,7 @@ export interface LocationPickerProps {
 }
 
 /** Build breadcrumb path from root to target node. */
-function buildPath(
-  nodes: LocationTreeNode[],
-  targetId: string
-): LocationTreeNode[] {
+function buildPath(nodes: LocationTreeNode[], targetId: string): LocationTreeNode[] {
   for (const node of nodes) {
     if (node.id === targetId) return [node];
     const childPath = buildPath(node.children, targetId);
@@ -44,10 +36,7 @@ function buildPath(
 }
 
 /** Flatten tree for search, returning nodes that match filter. */
-function filterTree(
-  nodes: LocationTreeNode[],
-  query: string
-): Set<string> {
+function filterTree(nodes: LocationTreeNode[], query: string): Set<string> {
   const matches = new Set<string>();
   const lower = query.toLowerCase();
 
@@ -100,7 +89,7 @@ function TreeNode({
         className={cn(
           "flex w-full items-center gap-1 rounded-md px-2 py-1.5 text-sm",
           "hover:bg-accent/50 transition-colors",
-          isSelected && "bg-accent text-accent-foreground font-medium",
+          isSelected && "bg-accent text-accent-foreground font-medium"
         )}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={() => onSelect(node.id)}
@@ -232,9 +221,7 @@ export function LocationPicker({
         >
           <MapPin className="mr-2 h-4 w-4 shrink-0 opacity-50" />
           {selectedPath.length > 0 ? (
-            <span className="truncate text-sm">
-              {selectedPath.map((n) => n.name).join(" › ")}
-            </span>
+            <span className="truncate text-sm">{selectedPath.map((n) => n.name).join(" › ")}</span>
           ) : (
             <span className="text-sm">{placeholder}</span>
           )}
@@ -256,9 +243,7 @@ export function LocationPicker({
         {/* Tree */}
         <div className="max-h-[240px] overflow-y-auto p-1">
           {locations.length === 0 ? (
-            <p className="py-4 text-center text-sm text-muted-foreground">
-              No locations found
-            </p>
+            <p className="py-4 text-center text-sm text-muted-foreground">No locations found</p>
           ) : (
             locations.map((node) => (
               <TreeNode

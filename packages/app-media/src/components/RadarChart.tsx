@@ -34,10 +34,7 @@ export function RadarChart({
   /** Convert a dimension index + normalized value (0–1) to SVG coordinates. */
   function polarToXY(index: number, value: number): [number, number] {
     const angle = index * angleStep - Math.PI / 2; // Start from top
-    return [
-      cx + radius * value * Math.cos(angle),
-      cy + radius * value * Math.sin(angle),
-    ];
+    return [cx + radius * value * Math.cos(angle), cy + radius * value * Math.sin(angle)];
   }
 
   /** Normalize a score to 0–1 range, clamped. */
@@ -48,9 +45,7 @@ export function RadarChart({
   // Build grid rings
   const gridRings = Array.from({ length: GRID_RINGS }, (_, i) => {
     const fraction = (i + 1) / GRID_RINGS;
-    const points = dimensions
-      .map((_, idx) => polarToXY(idx, fraction).join(","))
-      .join(" ");
+    const points = dimensions.map((_, idx) => polarToXY(idx, fraction).join(",")).join(" ");
     return points;
   });
 
@@ -118,15 +113,7 @@ export function RadarChart({
       {/* Data points */}
       {dimensions.map((d, idx) => {
         const [x, y] = polarToXY(idx, normalize(d.score));
-        return (
-          <circle
-            key={`point-${idx}`}
-            cx={x}
-            cy={y}
-            r={3}
-            fill="hsl(var(--primary))"
-          />
-        );
+        return <circle key={`point-${idx}`} cx={x} cy={y} r={3} fill="hsl(var(--primary))" />;
       })}
 
       {/* Labels */}

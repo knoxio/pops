@@ -16,26 +16,22 @@ export function DiscoverPage() {
   // Queries
   const trending = trpc.media.discovery.trending.useQuery(
     { timeWindow: "week", page: 1 },
-    { staleTime: 5 * 60 * 1000 },
+    { staleTime: 5 * 60 * 1000 }
   );
 
   const recommendations = trpc.media.discovery.recommendations.useQuery(
     { sampleSize: 3 },
-    { staleTime: 5 * 60 * 1000 },
+    { staleTime: 5 * 60 * 1000 }
   );
 
   const similarToTopRated = trpc.media.discovery.recommendations.useQuery(
     { sampleSize: 5 },
-    { staleTime: 5 * 60 * 1000 },
+    { staleTime: 5 * 60 * 1000 }
   );
 
   // Track in-progress mutations per tmdbId
-  const [addingToLibrary, setAddingToLibrary] = useState<Set<number>>(
-    new Set(),
-  );
-  const [addingToWatchlist, setAddingToWatchlist] = useState<Set<number>>(
-    new Set(),
-  );
+  const [addingToLibrary, setAddingToLibrary] = useState<Set<number>>(new Set());
+  const [addingToWatchlist, setAddingToWatchlist] = useState<Set<number>>(new Set());
 
   // Mutations
   const addMovieMutation = trpc.media.library.addMovie.useMutation();
@@ -63,7 +59,7 @@ export function DiscoverPage() {
         });
       }
     },
-    [addMovieMutation, utils],
+    [addMovieMutation, utils]
   );
 
   const handleAddToWatchlist = useCallback(
@@ -101,7 +97,7 @@ export function DiscoverPage() {
         });
       }
     },
-    [addMovieMutation, addWatchlistMutation, utils],
+    [addMovieMutation, addWatchlistMutation, utils]
   );
 
   return (
@@ -111,9 +107,7 @@ export function DiscoverPage() {
         <Compass className="h-6 w-6 text-muted-foreground" />
         <div>
           <h1 className="text-2xl font-bold">Discover</h1>
-          <p className="text-sm text-muted-foreground">
-            Find your next favourite movie
-          </p>
+          <p className="text-sm text-muted-foreground">Find your next favourite movie</p>
         </div>
       </div>
 
@@ -162,10 +156,7 @@ export function DiscoverPage() {
       </HorizontalScrollRow>
 
       {/* Trending */}
-      <HorizontalScrollRow
-        title="Trending This Week"
-        isLoading={trending.isLoading}
-      >
+      <HorizontalScrollRow title="Trending This Week" isLoading={trending.isLoading}>
         {trending.error && (
           <Alert variant="destructive" className="flex items-center gap-3">
             <AlertCircle className="h-4 w-4 shrink-0" />

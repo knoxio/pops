@@ -115,16 +115,13 @@ export function ItemFormPage() {
   } = useForm<ItemFormValues>({ defaultValues });
 
   // Pending connections for create mode
-  const [pendingConnections, setPendingConnections] = useState<
-    PendingConnection[]
-  >([]);
+  const [pendingConnections, setPendingConnections] = useState<PendingConnection[]>([]);
   const [connectionSearch, setConnectionSearch] = useState("");
 
-  const { data: searchResults, isLoading: searchLoading } =
-    trpc.inventory.items.list.useQuery(
-      { search: connectionSearch, limit: 10 },
-      { enabled: !isEditMode && connectionSearch.length >= 2 },
-    );
+  const { data: searchResults, isLoading: searchLoading } = trpc.inventory.items.list.useQuery(
+    { search: connectionSearch, limit: 10 },
+    { enabled: !isEditMode && connectionSearch.length >= 2 }
+  );
 
   const connectMutation = trpc.inventory.connections.connect.useMutation();
 
@@ -188,9 +185,7 @@ export function ItemFormPage() {
           }
         }
         if (connected > 0) {
-          toast.success(
-            `Item created with ${connected} connection${connected > 1 ? "s" : ""}`,
-          );
+          toast.success(`Item created with ${connected} connection${connected > 1 ? "s" : ""}`);
         } else {
           toast.success("Item created");
         }
@@ -236,9 +231,7 @@ export function ItemFormPage() {
       deductible: values.deductible,
       purchaseDate: values.purchaseDate || null,
       warrantyExpires: values.warrantyExpires || null,
-      replacementValue: values.replacementValue
-        ? parseFloat(values.replacementValue)
-        : null,
+      replacementValue: values.replacementValue ? parseFloat(values.replacementValue) : null,
       resaleValue: values.resaleValue ? parseFloat(values.resaleValue) : null,
       assetId: values.assetId || null,
       notes: values.notes || null,
@@ -270,9 +263,7 @@ export function ItemFormPage() {
       <div className="p-6">
         <Alert variant="destructive">
           <AlertTitle>{is404 ? "Item not found" : "Error"}</AlertTitle>
-          <AlertDescription>
-            {is404 ? "This item doesn't exist." : error.message}
-          </AlertDescription>
+          <AlertDescription>{is404 ? "This item doesn't exist." : error.message}</AlertDescription>
         </Alert>
         <Link
           to="/inventory"
@@ -387,10 +378,7 @@ export function ItemFormPage() {
           </div>
 
           <FormField label="Room">
-            <TextInput
-              {...register("room")}
-              placeholder="e.g. Office, Bedroom"
-            />
+            <TextInput {...register("room")} placeholder="e.g. Office, Bedroom" />
           </FormField>
 
           <div className="flex gap-6 p-4 rounded-xl bg-amber-500/5">
@@ -473,9 +461,7 @@ export function ItemFormPage() {
                       type="button"
                       className="rounded-full p-0.5 hover:bg-amber-500/20"
                       onClick={() =>
-                        setPendingConnections((prev) =>
-                          prev.filter((c) => c.id !== conn.id),
-                        )
+                        setPendingConnections((prev) => prev.filter((c) => c.id !== conn.id))
                       }
                     >
                       <X className="h-3 w-3" />
@@ -504,13 +490,9 @@ export function ItemFormPage() {
                   </div>
                 ) : (
                   (() => {
-                    const pendingIds = new Set(
-                      pendingConnections.map((c) => c.id),
-                    );
+                    const pendingIds = new Set(pendingConnections.map((c) => c.id));
                     const filtered =
-                      searchResults?.data.filter(
-                        (item) => !pendingIds.has(item.id),
-                      ) ?? [];
+                      searchResults?.data.filter((item) => !pendingIds.has(item.id)) ?? [];
                     return filtered.length === 0 ? (
                       <p className="text-sm text-muted-foreground py-3 text-center">
                         No items found
@@ -530,13 +512,10 @@ export function ItemFormPage() {
                           }}
                         >
                           <div>
-                            <div className="font-medium text-sm">
-                              {item.itemName}
-                            </div>
+                            <div className="font-medium text-sm">{item.itemName}</div>
                             <div className="text-xs text-muted-foreground">
-                              {[item.brand, item.model, item.assetId]
-                                .filter(Boolean)
-                                .join(" · ") || "No details"}
+                              {[item.brand, item.model, item.assetId].filter(Boolean).join(" · ") ||
+                                "No details"}
                             </div>
                           </div>
                           <Link2 className="h-4 w-4 text-amber-500/50 shrink-0 ml-2" />
@@ -563,7 +542,12 @@ export function ItemFormPage() {
             {isEditMode ? "Save Changes" : "Create Item"}
           </Button>
           <Link to="/inventory">
-            <Button type="button" variant="outline" size="lg" className="px-8 font-bold border-amber-500/20 hover:bg-amber-500/5">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="px-8 font-bold border-amber-500/20 hover:bg-amber-500/5"
+            >
               Cancel
             </Button>
           </Link>

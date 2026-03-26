@@ -126,9 +126,7 @@ export function FileUpload({
             htmlFor="file-upload"
             className="flex flex-col items-center justify-center cursor-pointer"
           >
-            <Upload
-              className={`w-12 h-12 mb-4 ${error ? "text-red-500" : "text-gray-400"}`}
-            />
+            <Upload className={`w-12 h-12 mb-4 ${error ? "text-red-500" : "text-gray-400"}`} />
             <span className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Drop CSV file here or click to browse
             </span>

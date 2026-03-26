@@ -114,9 +114,7 @@ export const RadioInput = forwardRef<HTMLDivElement, RadioInputProps>(
                 {required && <span className="text-destructive ml-1">*</span>}
               </label>
             )}
-            {description && (
-              <p className="text-sm text-muted-foreground">{description}</p>
-            )}
+            {description && <p className="text-sm text-muted-foreground">{description}</p>}
           </div>
         )}
         <RadioGroup
@@ -128,9 +126,7 @@ export const RadioInput = forwardRef<HTMLDivElement, RadioInputProps>(
           required={required}
           aria-invalid={error}
           className={cn(
-            orientation === "horizontal"
-              ? "grid gap-3 sm:flex sm:flex-row sm:gap-4"
-              : "grid gap-3"
+            orientation === "horizontal" ? "grid gap-3 sm:flex sm:flex-row sm:gap-4" : "grid gap-3"
           )}
           {...props}
         >
@@ -147,24 +143,19 @@ export const RadioInput = forwardRef<HTMLDivElement, RadioInputProps>(
                   htmlFor={`radio-${option.value}`}
                   className={cn(
                     "text-sm font-medium leading-none cursor-pointer select-none",
-                    (option.disabled || disabled) &&
-                      "opacity-50 cursor-not-allowed"
+                    (option.disabled || disabled) && "opacity-50 cursor-not-allowed"
                   )}
                 >
                   {option.label}
                 </label>
                 {option.description && (
-                  <p className="text-sm text-muted-foreground">
-                    {option.description}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{option.description}</p>
                 )}
               </div>
             </div>
           ))}
         </RadioGroup>
-        {error && errorMessage && (
-          <p className="text-sm text-destructive">{errorMessage}</p>
-        )}
+        {error && errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
       </div>
     );
   }

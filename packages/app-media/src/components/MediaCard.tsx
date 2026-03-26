@@ -58,7 +58,7 @@ export function MediaCard({
       className={cn(
         "group flex w-full cursor-pointer flex-col gap-2 text-left",
         "rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-        className,
+        className
       )}
       onClick={handleClick}
     >
@@ -81,7 +81,7 @@ export function MediaCard({
             className={cn(
               "h-full w-full object-cover transition-opacity duration-200",
               "group-hover:opacity-80",
-              imageLoaded ? "opacity-100" : "opacity-0",
+              imageLoaded ? "opacity-100" : "opacity-0"
             )}
             onLoad={() => setImageLoaded(true)}
             onError={() => setImageError(true)}
@@ -106,7 +106,7 @@ export function MediaCard({
             <div
               className={cn(
                 "h-full transition-all",
-                progress >= 100 ? "bg-green-500" : "bg-primary",
+                progress >= 100 ? "bg-green-500" : "bg-primary"
               )}
               style={{ width: `${Math.min(progress, 100)}%` }}
             />
@@ -116,9 +116,7 @@ export function MediaCard({
 
       {/* Title + Year */}
       <div className="space-y-0.5 px-0.5">
-        <h3 className="text-sm font-medium leading-tight line-clamp-2">
-          {title}
-        </h3>
+        <h3 className="text-sm font-medium leading-tight line-clamp-2">{title}</h3>
         {year && (
           <p className="text-xs text-muted-foreground">
             {typeof year === "string" ? year.slice(0, 4) : year}

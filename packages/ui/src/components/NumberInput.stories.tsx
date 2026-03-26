@@ -183,11 +183,7 @@ export const Controlled: Story = {
     const [value, setValue] = useState(25);
     return (
       <div className="space-y-4">
-        <NumberInput
-          {...args}
-          value={value}
-          onChange={(e) => setValue(Number(e.target.value))}
-        />
+        <NumberInput {...args} value={value} onChange={(e) => setValue(Number(e.target.value))} />
         <p className="text-sm text-muted-foreground">Current value: {value}</p>
       </div>
     );
@@ -228,13 +224,7 @@ export const PercentageInput: Story = {
   render: () => (
     <div className="space-y-2 max-w-xs">
       <label className="block text-sm font-medium">Discount</label>
-      <NumberInput
-        suffix={<PercentIcon />}
-        defaultValue={0}
-        min={0}
-        max={100}
-        step={5}
-      />
+      <NumberInput suffix={<PercentIcon />} defaultValue={0} min={0} max={100} step={5} />
     </div>
   ),
 };
@@ -254,11 +244,7 @@ export const AllVariants: Story = {
     <div className="space-y-4">
       <NumberInput placeholder="Default" defaultValue={10} />
       <NumberInput placeholder="Ghost" variant="ghost" defaultValue={10} />
-      <NumberInput
-        placeholder="Underline"
-        variant="underline"
-        defaultValue={10}
-      />
+      <NumberInput placeholder="Underline" variant="underline" defaultValue={10} />
     </div>
   ),
 };
@@ -311,9 +297,7 @@ export const FeaturesShowcase: Story = {
         <NumberInput defaultValue={50} showSteppers />
       </div>
       <div>
-        <p className="text-sm font-medium mb-2">
-          Drag to change (hover and drag)
-        </p>
+        <p className="text-sm font-medium mb-2">Drag to change (hover and drag)</p>
         <NumberInput defaultValue={50} enableDrag />
       </div>
       <div>

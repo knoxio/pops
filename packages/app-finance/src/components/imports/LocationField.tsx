@@ -1,11 +1,6 @@
 import { MapPin, Info } from "lucide-react";
 import { Badge } from "@pops/ui";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@pops/ui";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@pops/ui";
 import type { ProcessedTransaction } from "@pops/api/modules/finance/imports";
 import { extractLocationDetails } from "../../lib/transaction-utils";
 
@@ -34,10 +29,7 @@ export function LocationField({ transaction }: LocationFieldProps) {
       <span className="text-sm">{details.location}</span>
 
       {details.source && (
-        <Badge
-          variant={details.source === "csv" ? "default" : "secondary"}
-          className="text-xs"
-        >
+        <Badge variant={details.source === "csv" ? "default" : "secondary"} className="text-xs">
           {details.source === "csv" ? "From CSV" : "Matched"}
         </Badge>
       )}
@@ -51,9 +43,7 @@ export function LocationField({ transaction }: LocationFieldProps) {
             <TooltipContent>
               <p className="text-xs">{details.extractedFrom}</p>
               {details.confidence && (
-                <p className="text-xs text-gray-400 mt-1">
-                  Confidence: {details.confidence}
-                </p>
+                <p className="text-xs text-gray-400 mt-1">Confidence: {details.confidence}</p>
               )}
             </TooltipContent>
           </Tooltip>

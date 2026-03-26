@@ -40,9 +40,7 @@ export function TopBar() {
           )}
         </button>
 
-        <div className="hidden md:block text-sm text-muted-foreground">
-          user@example.com
-        </div>
+        <div className="hidden md:block text-sm text-muted-foreground">user@example.com</div>
       </div>
     </header>
   );

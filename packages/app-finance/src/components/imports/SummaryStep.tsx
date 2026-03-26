@@ -14,27 +14,24 @@ export function SummaryStep() {
     return (
       <div className="text-center py-12 space-y-4">
         <p className="text-gray-500">No import results available</p>
-        {processedTransactions.warnings &&
-          processedTransactions.warnings.length > 0 && (
-            <div className="max-w-md mx-auto space-y-2">
-              <p className="text-sm text-gray-600">Import warnings:</p>
-              {processedTransactions.warnings.map((warning, idx) => (
-                <div
-                  key={idx}
-                  className="p-3 text-sm bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded text-left"
-                >
-                  <p className="font-medium text-amber-900 dark:text-amber-100">
-                    {warning.message}
+        {processedTransactions.warnings && processedTransactions.warnings.length > 0 && (
+          <div className="max-w-md mx-auto space-y-2">
+            <p className="text-sm text-gray-600">Import warnings:</p>
+            {processedTransactions.warnings.map((warning, idx) => (
+              <div
+                key={idx}
+                className="p-3 text-sm bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded text-left"
+              >
+                <p className="font-medium text-amber-900 dark:text-amber-100">{warning.message}</p>
+                {warning.details && (
+                  <p className="text-xs text-amber-700 dark:text-amber-300 mt-1 font-mono">
+                    {warning.details}
                   </p>
-                  {warning.details && (
-                    <p className="text-xs text-amber-700 dark:text-amber-300 mt-1 font-mono">
-                      {warning.details}
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -58,9 +55,7 @@ export function SummaryStep() {
           <div className="text-2xl font-semibold text-green-900 dark:text-green-100">
             {importResult.imported}
           </div>
-          <div className="text-xs text-green-700 dark:text-green-300">
-            Imported
-          </div>
+          <div className="text-xs text-green-700 dark:text-green-300">Imported</div>
         </div>
 
         <div className="bg-red-50 dark:bg-red-950 border border-red-200 dark:border-red-800 rounded-lg p-4 text-center">
@@ -80,9 +75,7 @@ export function SummaryStep() {
           <div className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
             {importResult.skipped}
           </div>
-          <div className="text-xs text-gray-700 dark:text-gray-300">
-            Skipped
-          </div>
+          <div className="text-xs text-gray-700 dark:text-gray-300">Skipped</div>
         </div>
       </div>
 
@@ -97,9 +90,7 @@ export function SummaryStep() {
             <ul className="divide-y dark:divide-gray-700">
               {importResult.failed.map((result, idx) => (
                 <li key={idx} className="px-4 py-3 text-sm">
-                  <div className="font-medium">
-                    {result.transaction.description}
-                  </div>
+                  <div className="font-medium">{result.transaction.description}</div>
                   <div className="text-xs text-red-600 dark:text-red-400">
                     {result.error ?? "Unknown error"}
                   </div>
@@ -120,9 +111,7 @@ export function SummaryStep() {
         >
           New Import
         </Button>
-        <Button onClick={() => navigate("/transactions")}>
-          View Transactions
-        </Button>
+        <Button onClick={() => navigate("/transactions")}>View Transactions</Button>
       </div>
     </div>
   );

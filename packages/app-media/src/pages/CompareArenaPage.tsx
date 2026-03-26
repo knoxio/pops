@@ -15,17 +15,14 @@ interface ScoreDelta {
 export function CompareArenaPage() {
   const navigate = useNavigate();
   const [sessionCount, setSessionCount] = useState(0);
-  const [selectedDimensionId, setSelectedDimensionId] = useState<number | null>(
-    null,
-  );
+  const [selectedDimensionId, setSelectedDimensionId] = useState<number | null>(null);
   const [scoreDelta, setScoreDelta] = useState<ScoreDelta | null>(null);
 
   // Fetch dimensions for tab selector
   const { data: dimensionsData, isLoading: dimsLoading } =
     trpc.media.comparisons.listDimensions.useQuery();
 
-  const activeDimensions =
-    dimensionsData?.data?.filter((d: { active: boolean }) => d.active) ?? [];
+  const activeDimensions = dimensionsData?.data?.filter((d: { active: boolean }) => d.active) ?? [];
 
   // Auto-select first dimension when loaded
   const dimensionId = selectedDimensionId ?? activeDimensions[0]?.id ?? null;
@@ -38,7 +35,7 @@ export function CompareArenaPage() {
     refetch: refetchPair,
   } = trpc.media.comparisons.getRandomPair.useQuery(
     { dimensionId: dimensionId! },
-    { enabled: dimensionId !== null, refetchOnWindowFocus: false },
+    { enabled: dimensionId !== null, refetchOnWindowFocus: false }
   );
 
   const utils = trpc.useUtils();
@@ -48,10 +45,7 @@ export function CompareArenaPage() {
     onSuccess: async (_data, variables) => {
       // Fetch updated scores for both movies to compute delta
       const winnerId = variables.winnerId;
-      const loserId =
-        variables.mediaAId === winnerId
-          ? variables.mediaBId
-          : variables.mediaAId;
+      const loserId = variables.mediaAId === winnerId ? variables.mediaBId : variables.mediaAId;
 
       try {
         const [winnerScores, loserScores] = await Promise.all([
@@ -68,17 +62,14 @@ export function CompareArenaPage() {
         ]);
 
         const winnerScore =
-          winnerScores?.data?.find(
-            (s: { dimensionId: number }) => s.dimensionId === dimensionId,
-          )?.score ?? 1500;
+          winnerScores?.data?.find((s: { dimensionId: number }) => s.dimensionId === dimensionId)
+            ?.score ?? 1500;
         const loserScore =
-          loserScores?.data?.find(
-            (s: { dimensionId: number }) => s.dimensionId === dimensionId,
-          )?.score ?? 1500;
+          loserScores?.data?.find((s: { dimensionId: number }) => s.dimensionId === dimensionId)
+            ?.score ?? 1500;
 
         // Approximate delta from current scores (K=32 Elo)
-        const expectedWinner =
-          1 / (1 + Math.pow(10, (loserScore - winnerScore) / 400));
+        const expectedWinner = 1 / (1 + Math.pow(10, (loserScore - winnerScore) / 400));
         const winnerDelta = Math.round(32 * (1 - expectedWinner));
         const loserDelta = -winnerDelta;
 
@@ -117,7 +108,7 @@ export function CompareArenaPage() {
         winnerId,
       });
     },
-    [pairData, dimensionId, recordMutation],
+    [pairData, dimensionId, recordMutation]
   );
 
   return (
@@ -126,8 +117,7 @@ export function CompareArenaPage() {
         <h1 className="text-2xl font-bold">Compare Arena</h1>
         <div className="flex items-center gap-2">
           <Badge variant="outline" className="text-sm">
-            {sessionCount} comparison{sessionCount !== 1 ? "s" : ""} this
-            session
+            {sessionCount} comparison{sessionCount !== 1 ? "s" : ""} this session
           </Badge>
           <DimensionManager />
         </div>
@@ -141,9 +131,7 @@ export function CompareArenaPage() {
           <Skeleton className="h-8 w-20" />
         </div>
       ) : activeDimensions.length === 0 ? (
-        <p className="text-muted-foreground">
-          No comparison dimensions configured yet.
-        </p>
+        <p className="text-muted-foreground">No comparison dimensions configured yet.</p>
       ) : (
         <div className="flex gap-2 flex-wrap" role="tablist">
           {activeDimensions.map((dim: { id: number; name: string }) => (
@@ -198,9 +186,8 @@ export function CompareArenaPage() {
           <p className="text-center text-muted-foreground text-sm">
             Which movie has better{" "}
             <span className="font-medium text-foreground">
-              {activeDimensions.find(
-                (d: { id: number }) => d.id === dimensionId,
-              )?.name ?? "Overall"}
+              {activeDimensions.find((d: { id: number }) => d.id === dimensionId)?.name ??
+                "Overall"}
             </span>
             ? Click to pick.
           </p>
@@ -298,9 +285,7 @@ function MovieCard({
       {scoreDelta != null && (
         <div
           className={`absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-bold animate-bounce ${
-            scoreDelta > 0
-              ? "bg-green-500/90 text-white"
-              : "bg-red-500/90 text-white"
+            scoreDelta > 0 ? "bg-green-500/90 text-white" : "bg-red-500/90 text-white"
           }`}
         >
           {scoreDelta > 0 ? "+" : ""}

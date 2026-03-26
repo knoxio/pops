@@ -29,9 +29,7 @@ export function EntitiesPage() {
   const columns: ColumnDef<Entity>[] = [
     {
       accessorKey: "name",
-      header: ({ column }) => (
-        <SortableHeader column={column}>Name</SortableHeader>
-      ),
+      header: ({ column }) => <SortableHeader column={column}>Name</SortableHeader>,
       cell: ({ row }) => <div className="font-medium">{row.original.name}</div>,
     },
     {
@@ -90,9 +88,7 @@ export function EntitiesPage() {
         }
         const aliases = row.getValue<string[]>(columnId);
         if (!aliases || aliases.length === 0) return false;
-        return aliases.some((alias) =>
-          alias.toLowerCase().includes(searchTerm)
-        );
+        return aliases.some((alias) => alias.toLowerCase().includes(searchTerm));
       },
     },
     {

@@ -68,9 +68,7 @@ export interface ConnectionGraphProps {
   itemId: string;
 }
 
-export function ConnectionGraph({
-  itemId,
-}: ConnectionGraphProps): React.ReactElement {
+export function ConnectionGraph({ itemId }: ConnectionGraphProps): React.ReactElement {
   const navigate = useNavigate();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -90,28 +88,25 @@ export function ConnectionGraph({
   } | null>(null);
   const { data, isLoading, error } = trpc.inventory.connections.graph.useQuery(
     { itemId },
-    { enabled: !!itemId },
+    { enabled: !!itemId }
   );
 
-  const findNodeAt = useCallback(
-    (canvasX: number, canvasY: number): GraphNode | null => {
-      const t = transformRef.current;
-      const worldX = (canvasX - t.x) / t.k;
-      const worldY = (canvasY - t.y) / t.k;
+  const findNodeAt = useCallback((canvasX: number, canvasY: number): GraphNode | null => {
+    const t = transformRef.current;
+    const worldX = (canvasX - t.x) / t.k;
+    const worldY = (canvasY - t.y) / t.k;
 
-      // Search in reverse so top-drawn nodes are found first
-      for (let i = nodesRef.current.length - 1; i >= 0; i--) {
-        const node = nodesRef.current[i];
-        const dx = (node.x ?? 0) - worldX;
-        const dy = (node.y ?? 0) - worldY;
-        if (dx * dx + dy * dy <= NODE_RADIUS * NODE_RADIUS) {
-          return node;
-        }
+    // Search in reverse so top-drawn nodes are found first
+    for (let i = nodesRef.current.length - 1; i >= 0; i--) {
+      const node = nodesRef.current[i];
+      const dx = (node.x ?? 0) - worldX;
+      const dy = (node.y ?? 0) - worldY;
+      if (dx * dx + dy * dy <= NODE_RADIUS * NODE_RADIUS) {
+        return node;
       }
-      return null;
-    },
-    [],
-  );
+    }
+    return null;
+  }, []);
 
   const draw = useCallback((): void => {
     const canvas = canvasRef.current;
@@ -175,10 +170,7 @@ export function ConnectionGraph({
       ctx.font = `${11 / t.k}px system-ui, sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
-      const label =
-        node.itemName.length > 20
-          ? node.itemName.slice(0, 18) + "..."
-          : node.itemName;
+      const label = node.itemName.length > 20 ? node.itemName.slice(0, 18) + "..." : node.itemName;
       ctx.fillText(label, nx, ny + LABEL_OFFSET / t.k);
     }
 
@@ -254,7 +246,7 @@ export function ConnectionGraph({
         "link",
         forceLink<GraphNode, GraphLink>(links)
           .id((d) => d.id)
-          .distance(120),
+          .distance(120)
       )
       .force("charge", forceManyBody().strength(-400))
       .force("center", forceCenter(0, 0))
@@ -376,18 +368,12 @@ export function ConnectionGraph({
   }
 
   if (error) {
-    return (
-      <p className="text-sm text-destructive">
-        Failed to load connection graph.
-      </p>
-    );
+    return <p className="text-sm text-destructive">Failed to load connection graph.</p>;
   }
 
   if (!data?.data.nodes.length || data.data.nodes.length < 2) {
     return (
-      <p className="text-sm text-muted-foreground">
-        Not enough connections to display a graph.
-      </p>
+      <p className="text-sm text-muted-foreground">Not enough connections to display a graph.</p>
     );
   }
 
@@ -396,10 +382,7 @@ export function ConnectionGraph({
       ref={containerRef}
       className="relative h-[400px] w-full border rounded-lg bg-muted/20 overflow-hidden"
     >
-      <canvas
-        ref={canvasRef}
-        className="w-full h-full cursor-grab active:cursor-grabbing"
-      />
+      <canvas ref={canvasRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
       <div className="absolute bottom-2 right-2 text-xs text-muted-foreground">
         Scroll to zoom, drag to pan, click node to navigate
       </div>

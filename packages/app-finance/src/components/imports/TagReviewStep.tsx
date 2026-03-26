@@ -85,27 +85,19 @@ export function TagReviewStep() {
 
   // Local tag state keyed by checksum — edits don't touch the store until Import
   const [localTags, setLocalTags] = useState<Record<string, string[]>>(() =>
-    Object.fromEntries(
-      confirmedTransactions.map((t) => [t.checksum, t.tags ?? []])
-    )
+    Object.fromEntries(confirmedTransactions.map((t) => [t.checksum, t.tags ?? []]))
   );
 
   // Immutable snapshot of original suggested tags per checksum — for source badges
   const originalSuggestedTags = useMemo<Record<string, SuggestedTag[]>>(
-    () =>
-      Object.fromEntries(
-        confirmedTransactions.map((t) => [t.checksum, t.suggestedTags ?? []])
-      ),
+    () => Object.fromEntries(confirmedTransactions.map((t) => [t.checksum, t.suggestedTags ?? []])),
     [confirmedTransactions]
   );
 
   const [pollingEnabled, setPollingEnabled] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
 
-  const groups = useMemo(
-    () => groupByEntity(confirmedTransactions),
-    [confirmedTransactions]
-  );
+  const groups = useMemo(() => groupByEntity(confirmedTransactions), [confirmedTransactions]);
 
   const { data: serverTags } = trpc.finance.transactions.availableTags.useQuery();
 
@@ -170,20 +162,17 @@ export function TagReviewStep() {
    * Merge a set of tags into every transaction in a group.
    * Never replaces existing tags — only adds tags the transaction doesn't already have.
    */
-  const handleApplyGroupTags = useCallback(
-    (group: ConfirmedGroup, newTags: string[]) => {
-      setLocalTags((prev) => {
-        const next = { ...prev };
-        for (const t of group.transactions) {
-          const existing = prev[t.checksum] ?? [];
-          const merged = Array.from(new Set([...existing, ...newTags]));
-          next[t.checksum] = merged;
-        }
-        return next;
-      });
-    },
-    []
-  );
+  const handleApplyGroupTags = useCallback((group: ConfirmedGroup, newTags: string[]) => {
+    setLocalTags((prev) => {
+      const next = { ...prev };
+      for (const t of group.transactions) {
+        const existing = prev[t.checksum] ?? [];
+        const merged = Array.from(new Set([...existing, ...newTags]));
+        next[t.checksum] = merged;
+      }
+      return next;
+    });
+  }, []);
 
   const handleImport = useCallback(() => {
     setImportError(null);
@@ -252,7 +241,7 @@ export function TagReviewStep() {
                 <p className="text-sm text-muted-foreground">
                   {progressQuery.data.currentStep === "writing"
                     ? `Writing ${progressQuery.data.processedCount ?? 0} / ${progressQuery.data.totalTransactions ?? confirmedTransactions.length}`
-                    : progressQuery.data.currentStep ?? "Processing…"}
+                    : (progressQuery.data.currentStep ?? "Processing…")}
                 </p>
               )}
             </div>
@@ -263,8 +252,8 @@ export function TagReviewStep() {
       <div>
         <h2 className="text-2xl font-semibold mb-2">Tag Review</h2>
         <p className="text-sm text-muted-foreground">
-          Review and adjust tags before importing. Tags are pre-filled from AI
-          suggestions, learned rules, and entity defaults.
+          Review and adjust tags before importing. Tags are pre-filled from AI suggestions, learned
+          rules, and entity defaults.
         </p>
       </div>
 
@@ -338,17 +327,13 @@ function EntityGroup({
   const [expanded, setExpanded] = useState(true);
 
   // Reactive union of all current tags across this group (updates as user edits)
-  const currentTagsPerTx = group.transactions.map(
-    (t) => localTags[t.checksum] ?? []
-  );
+  const currentTagsPerTx = group.transactions.map((t) => localTags[t.checksum] ?? []);
   const currentUnion = unionTags(currentTagsPerTx);
 
   // Suggested union from original suggestions (for "apply suggestions to all" button)
   const suggestedUnion = useMemo(() => {
     return unionTags(
-      group.transactions.map((t) =>
-        (originalSuggestedTags[t.checksum] ?? []).map((s) => s.tag)
-      )
+      group.transactions.map((t) => (originalSuggestedTags[t.checksum] ?? []).map((s) => s.tag))
     );
   }, [group.transactions, originalSuggestedTags]);
 
@@ -376,11 +361,14 @@ function EntityGroup({
     setGroupStagedTags((prev) => prev.filter((t) => t !== tag));
   }, []);
 
-  const addGroupStagedTag = useCallback((tag: string) => {
-    if (!groupStagedTags.includes(tag)) {
-      setGroupStagedTags((prev) => [...prev, tag]);
-    }
-  }, [groupStagedTags]);
+  const addGroupStagedTag = useCallback(
+    (tag: string) => {
+      if (!groupStagedTags.includes(tag)) {
+        setGroupStagedTags((prev) => [...prev, tag]);
+      }
+    },
+    [groupStagedTags]
+  );
 
   return (
     <div className="border rounded-lg overflow-hidden">
@@ -397,9 +385,7 @@ function EntityGroup({
             <ChevronRight className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
           )}
           <span className="font-medium text-sm">{group.entityName}</span>
-          <span className="text-xs text-muted-foreground">
-            ({group.transactions.length})
-          </span>
+          <span className="text-xs text-muted-foreground">({group.transactions.length})</span>
         </button>
 
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -571,9 +557,7 @@ function GroupTagBar({
             if (e.key === "Enter") {
               e.preventDefault();
               // If there's an exact match in filtered, pick it; else add free-form
-              const exactMatch = filtered.find(
-                (t) => t.toLowerCase() === inputValue.toLowerCase()
-              );
+              const exactMatch = filtered.find((t) => t.toLowerCase() === inputValue.toLowerCase());
               if (exactMatch) {
                 onAddTag(exactMatch);
               } else if (inputValue.trim()) {
@@ -655,10 +639,7 @@ function TransactionTagRow({
   const isNegative = amount < 0;
 
   // Build tagMeta map for source badges in TagEditor
-  const tagMeta = useMemo(
-    () => buildTagMetaMap(originalSuggestedTags),
-    [originalSuggestedTags]
-  );
+  const tagMeta = useMemo(() => buildTagMetaMap(originalSuggestedTags), [originalSuggestedTags]);
 
   return (
     <div className="flex items-center gap-3 px-4 py-2 hover:bg-muted/20 transition-colors">
@@ -672,9 +653,7 @@ function TransactionTagRow({
       <span
         className={cn(
           "text-sm font-mono tabular-nums flex-shrink-0",
-          isNegative
-            ? "text-red-600 dark:text-red-400"
-            : "text-green-600 dark:text-green-400"
+          isNegative ? "text-red-600 dark:text-red-400" : "text-green-600 dark:text-green-400"
         )}
       >
         {isNegative ? "-" : "+"}${Math.abs(amount).toFixed(2)}

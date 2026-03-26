@@ -170,11 +170,7 @@ export const TimeControlled: StoryObj<typeof TimeInput> = {
     const [time, setTime] = useState("14:30");
     return (
       <div className="space-y-4">
-        <TimeInput
-          value={time}
-          onChange={(e) => setTime(e.target.value)}
-          prefix={<ClockIcon />}
-        />
+        <TimeInput value={time} onChange={(e) => setTime(e.target.value)} prefix={<ClockIcon />} />
         <p className="text-sm text-muted-foreground">Selected: {time}</p>
       </div>
     );
@@ -310,9 +306,7 @@ export const AppointmentScheduler: StoryObj = {
         <h3 className="text-lg font-semibold">Book Appointment</h3>
 
         <div className="space-y-2">
-          <label className="block text-sm font-medium">
-            Select Date & Time
-          </label>
+          <label className="block text-sm font-medium">Select Date & Time</label>
           <DateTimeInput
             value={dateTime}
             onChange={(e) => setDateTime(e.target.value)}
@@ -396,11 +390,7 @@ export const AllDateVariants: StoryObj = {
   render: () => (
     <div className="space-y-4">
       <DateInput prefix={<CalendarIcon />} placeholder="Default" />
-      <DateInput
-        variant="ghost"
-        prefix={<CalendarIcon />}
-        placeholder="Ghost"
-      />
+      <DateInput variant="ghost" prefix={<CalendarIcon />} placeholder="Ghost" />
       <DateInput variant="underline" placeholder="Underline" />
     </div>
   ),
@@ -420,11 +410,7 @@ export const AllDateTimeVariants: StoryObj = {
   render: () => (
     <div className="space-y-4">
       <DateTimeInput prefix={<CalendarIcon />} placeholder="Default" />
-      <DateTimeInput
-        variant="ghost"
-        prefix={<CalendarIcon />}
-        placeholder="Ghost"
-      />
+      <DateTimeInput variant="ghost" prefix={<CalendarIcon />} placeholder="Ghost" />
       <DateTimeInput variant="underline" placeholder="Underline" />
     </div>
   ),
@@ -439,11 +425,7 @@ export const States: StoryObj = {
         <div className="space-y-2">
           <DateInput prefix={<CalendarIcon />} placeholder="Empty" />
           <DateInput prefix={<CalendarIcon />} defaultValue="2024-06-15" />
-          <DateInput
-            prefix={<CalendarIcon />}
-            disabled
-            defaultValue="2024-06-15"
-          />
+          <DateInput prefix={<CalendarIcon />} disabled defaultValue="2024-06-15" />
         </div>
       </div>
 
@@ -460,15 +442,8 @@ export const States: StoryObj = {
         <p className="text-sm font-medium">DateTime States</p>
         <div className="space-y-2">
           <DateTimeInput prefix={<CalendarIcon />} placeholder="Empty" />
-          <DateTimeInput
-            prefix={<CalendarIcon />}
-            defaultValue="2024-06-15T14:30"
-          />
-          <DateTimeInput
-            prefix={<CalendarIcon />}
-            disabled
-            defaultValue="2024-06-15T14:30"
-          />
+          <DateTimeInput prefix={<CalendarIcon />} defaultValue="2024-06-15T14:30" />
+          <DateTimeInput prefix={<CalendarIcon />} disabled defaultValue="2024-06-15T14:30" />
         </div>
       </div>
     </div>

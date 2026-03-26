@@ -79,7 +79,7 @@ export function PhotoUpload({
 
       return valid;
     },
-    [maxSizeMb],
+    [maxSizeMb]
   );
 
   const handleFiles = useCallback(
@@ -90,7 +90,7 @@ export function PhotoUpload({
         onFilesSelected(valid);
       }
     },
-    [validateFiles, onFilesSelected],
+    [validateFiles, onFilesSelected]
   );
 
   const handleDrop = useCallback(
@@ -100,7 +100,7 @@ export function PhotoUpload({
       if (disabled) return;
       handleFiles(e.dataTransfer.files);
     },
-    [disabled, handleFiles],
+    [disabled, handleFiles]
   );
 
   const handleDragOver = useCallback(
@@ -108,7 +108,7 @@ export function PhotoUpload({
       e.preventDefault();
       if (!disabled) setIsDragOver(true);
     },
-    [disabled],
+    [disabled]
   );
 
   const handleDragLeave = useCallback((e: React.DragEvent) => {
@@ -126,7 +126,7 @@ export function PhotoUpload({
       // Reset input so the same file can be re-selected
       if (inputRef.current) inputRef.current.value = "";
     },
-    [handleFiles],
+    [handleFiles]
   );
 
   const handleCameraChange = useCallback(
@@ -134,7 +134,7 @@ export function PhotoUpload({
       handleFiles(e.target.files);
       if (cameraRef.current) cameraRef.current.value = "";
     },
-    [handleFiles],
+    [handleFiles]
   );
 
   return (
@@ -156,17 +156,14 @@ export function PhotoUpload({
           isDragOver
             ? "border-amber-500 bg-amber-500/10"
             : "border-muted-foreground/25 hover:border-muted-foreground/50",
-          disabled && "opacity-50 cursor-not-allowed",
+          disabled && "opacity-50 cursor-not-allowed"
         )}
       >
         <Upload className="h-8 w-8 text-muted-foreground" />
         <p className="text-sm text-muted-foreground text-center">
-          <span className="font-medium text-foreground">Click to browse</span>{" "}
-          or drag and drop
+          <span className="font-medium text-foreground">Click to browse</span> or drag and drop
         </p>
-        <p className="text-xs text-muted-foreground">
-          Images up to {maxSizeMb}MB
-        </p>
+        <p className="text-xs text-muted-foreground">Images up to {maxSizeMb}MB</p>
       </div>
 
       <input
@@ -202,9 +199,7 @@ export function PhotoUpload({
       </Button>
 
       {/* Validation error */}
-      {validationError && (
-        <p className="text-sm text-destructive">{validationError}</p>
-      )}
+      {validationError && <p className="text-sm text-destructive">{validationError}</p>}
 
       {/* File preview list */}
       {files.length > 0 && (
@@ -239,13 +234,9 @@ export function PhotoUpload({
                       Uploading…
                     </span>
                   )}
-                  {f.status === "done" && (
-                    <span className="text-xs text-green-600">Uploaded</span>
-                  )}
+                  {f.status === "done" && <span className="text-xs text-green-600">Uploaded</span>}
                   {f.status === "error" && (
-                    <span className="text-xs text-destructive">
-                      {f.error ?? "Upload failed"}
-                    </span>
+                    <span className="text-xs text-destructive">{f.error ?? "Upload failed"}</span>
                   )}
                   {f.status === "pending" && (
                     <span className="text-xs text-muted-foreground">Ready</span>

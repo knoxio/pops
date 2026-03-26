@@ -64,10 +64,7 @@ function TreeSkeleton() {
   );
 }
 
-function buildBreadcrumb(
-  nodeId: string,
-  nodeMap: Map<string, LocationTreeNode>,
-): string[] {
+function buildBreadcrumb(nodeId: string, nodeMap: Map<string, LocationTreeNode>): string[] {
   const path: string[] = [];
   let current = nodeMap.get(nodeId);
   while (current) {
@@ -77,10 +74,7 @@ function buildBreadcrumb(
   return path;
 }
 
-function buildNodeMap(
-  nodes: LocationTreeNode[],
-  map: Map<string, LocationTreeNode>,
-): void {
+function buildNodeMap(nodes: LocationTreeNode[], map: Map<string, LocationTreeNode>): void {
   for (const node of nodes) {
     map.set(node.id, node);
     buildNodeMap(node.children, map);
@@ -99,7 +93,7 @@ function countDescendants(node: LocationTreeNode): number {
 function isDescendant(
   nodeId: string,
   targetId: string,
-  nodeMap: Map<string, LocationTreeNode>,
+  nodeMap: Map<string, LocationTreeNode>
 ): boolean {
   const node = nodeMap.get(nodeId);
   if (!node) return false;
@@ -115,7 +109,7 @@ function isDescendant(
 function getSiblings(
   nodeId: string,
   treeNodes: LocationTreeNode[],
-  nodeMap: Map<string, LocationTreeNode>,
+  nodeMap: Map<string, LocationTreeNode>
 ): LocationTreeNode[] {
   const node = nodeMap.get(nodeId);
   if (!node) return [];
@@ -194,9 +188,7 @@ function MoveTargetPicker({
                 disabled={disabled}
                 onClick={() => onSelect(node.id)}
                 className={`w-full text-left flex items-center gap-1.5 py-1.5 px-2 rounded-md transition-colors ${
-                  disabled
-                    ? "opacity-40 cursor-not-allowed"
-                    : "hover:bg-muted/50 cursor-pointer"
+                  disabled ? "opacity-40 cursor-not-allowed" : "hover:bg-muted/50 cursor-pointer"
                 }`}
                 style={{ paddingLeft: `${depth * 16 + 8}px` }}
               >
@@ -267,7 +259,9 @@ function LocationNode({
     <Collapsible open={open} onOpenChange={setOpen}>
       <div
         className={`group flex items-center gap-1.5 py-1.5 px-2 rounded-md cursor-pointer transition-colors hover:bg-amber-500/10 ${
-          isSelected ? "bg-amber-500/20 text-amber-900 dark:text-amber-100 font-bold border-l-2 border-amber-500 rounded-l-none ml-[-2px]" : ""
+          isSelected
+            ? "bg-amber-500/20 text-amber-900 dark:text-amber-100 font-bold border-l-2 border-amber-500 rounded-l-none ml-[-2px]"
+            : ""
         }`}
         style={{ paddingLeft: `${depth * 20 + 8}px` }}
         onClick={() => onSelect(node.id)}
@@ -538,7 +532,7 @@ export function LocationTreePage() {
     (id: string, newName: string) => {
       updateMutation.mutate({ id, data: { name: newName } });
     },
-    [updateMutation],
+    [updateMutation]
   );
 
   const handleNewChildSave = useCallback(
@@ -548,7 +542,7 @@ export function LocationTreePage() {
         parentId: addingChildOf,
       });
     },
-    [addingChildOf, createMutation],
+    [addingChildOf, createMutation]
   );
 
   const handleNewChildCancel = useCallback(() => {
@@ -559,7 +553,7 @@ export function LocationTreePage() {
     (name: string) => {
       createMutation.mutate({ name, parentId: null });
     },
-    [createMutation],
+    [createMutation]
   );
 
   const handleNewRootCancel = useCallback(() => {
@@ -574,7 +568,7 @@ export function LocationTreePage() {
       // Try without force first — server will return requiresConfirmation if non-empty
       deleteMutation.mutate({ id });
     },
-    [nodeMap, deleteMutation],
+    [nodeMap, deleteMutation]
   );
 
   const handleDeleteConfirm = useCallback(() => {
@@ -591,10 +585,10 @@ export function LocationTreePage() {
       if (!movingId) return;
       updateMutation.mutate(
         { id: movingId, data: { parentId: newParentId } },
-        { onSuccess: () => setMovingId(null) },
+        { onSuccess: () => setMovingId(null) }
       );
     },
-    [movingId, updateMutation],
+    [movingId, updateMutation]
   );
 
   const handleReorder = useCallback(
@@ -619,7 +613,7 @@ export function LocationTreePage() {
         data: { sortOrder: current.sortOrder },
       });
     },
-    [treeNodes, nodeMap, updateMutation],
+    [treeNodes, nodeMap, updateMutation]
   );
 
   const movingNode = movingId ? nodeMap.get(movingId) : null;
@@ -676,11 +670,7 @@ export function LocationTreePage() {
         </div>
       ) : (
         <div className="flex flex-col md:flex-row gap-6">
-          <div
-            className="md:w-2/5 border rounded-lg py-2"
-            role="tree"
-            aria-label="Location tree"
-          >
+          <div className="md:w-2/5 border rounded-lg py-2" role="tree" aria-label="Location tree">
             {treeNodes.map((node, i) => (
               <LocationNode
                 key={node.id}
@@ -701,10 +691,7 @@ export function LocationTreePage() {
               />
             ))}
             {addingRoot && (
-              <div
-                className="flex items-center gap-1.5 py-1.5 px-2"
-                style={{ paddingLeft: "8px" }}
-              >
+              <div className="flex items-center gap-1.5 py-1.5 px-2" style={{ paddingLeft: "8px" }}>
                 <span className="w-[22px]" />
                 <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
                 <InlineInput
@@ -734,10 +721,7 @@ export function LocationTreePage() {
       )}
 
       {/* Move To dialog */}
-      <Dialog
-        open={!!movingId}
-        onOpenChange={(open) => !open && setMovingId(null)}
-      >
+      <Dialog open={!!movingId} onOpenChange={(open) => !open && setMovingId(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Move &ldquo;{movingNode?.name}&rdquo;</DialogTitle>
@@ -768,28 +752,19 @@ export function LocationTreePage() {
       </Dialog>
 
       {/* Delete confirmation dialog */}
-      <Dialog
-        open={!!deleteConfirm}
-        onOpenChange={(open) => !open && setDeleteConfirm(null)}
-      >
+      <Dialog open={!!deleteConfirm} onOpenChange={(open) => !open && setDeleteConfirm(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              Delete &ldquo;{deleteConfirm?.name}&rdquo;?
-            </DialogTitle>
+            <DialogTitle>Delete &ldquo;{deleteConfirm?.name}&rdquo;?</DialogTitle>
             <DialogDescription>This action cannot be undone.</DialogDescription>
           </DialogHeader>
           {deleteConfirm && (
             <div className="space-y-2 text-sm">
               {deleteConfirm.stats.childCount > 0 && (
                 <p>
-                  This location has{" "}
-                  <strong>{deleteConfirm.stats.childCount}</strong> direct{" "}
-                  {deleteConfirm.stats.childCount === 1
-                    ? "sub-location"
-                    : "sub-locations"}
-                  {deleteConfirm.stats.descendantCount >
-                    deleteConfirm.stats.childCount &&
+                  This location has <strong>{deleteConfirm.stats.childCount}</strong> direct{" "}
+                  {deleteConfirm.stats.childCount === 1 ? "sub-location" : "sub-locations"}
+                  {deleteConfirm.stats.descendantCount > deleteConfirm.stats.childCount &&
                     ` (${deleteConfirm.stats.descendantCount} total)`}
                   . They will all be deleted.
                 </p>
@@ -797,8 +772,8 @@ export function LocationTreePage() {
               {deleteConfirm.stats.totalItemCount > 0 && (
                 <p>
                   <strong>{deleteConfirm.stats.totalItemCount}</strong>{" "}
-                  {deleteConfirm.stats.totalItemCount === 1 ? "item" : "items"}{" "}
-                  will become unlocated.
+                  {deleteConfirm.stats.totalItemCount === 1 ? "item" : "items"} will become
+                  unlocated.
                 </p>
               )}
             </div>

@@ -29,29 +29,18 @@ const generateTransactions = (count: number, offset: number): Transaction[] => {
   return Array.from({ length: count }, (_, i) => ({
     id: `txn-${offset + i + 1}`,
     date: new Date(2024, 0, offset + i + 1).toISOString().split("T")[0],
-    description: [
-      "Woolworths",
-      "Coles",
-      "Amazon",
-      "Netflix",
-      "Uber",
-      "Spotify",
-      "Apple",
-      "Google",
-    ][(offset + i) % 8],
-    amount: Math.random() * 200 - 100,
-    category: ["Food", "Shopping", "Entertainment", "Transport"][
-      (offset + i) % 4
+    description: ["Woolworths", "Coles", "Amazon", "Netflix", "Uber", "Spotify", "Apple", "Google"][
+      (offset + i) % 8
     ],
+    amount: Math.random() * 200 - 100,
+    category: ["Food", "Shopping", "Entertainment", "Transport"][(offset + i) % 4],
   }));
 };
 
 const transactionColumns: ColumnDef<Transaction>[] = [
   {
     accessorKey: "date",
-    header: ({ column }) => (
-      <SortableHeader column={column}>Date</SortableHeader>
-    ),
+    header: ({ column }) => <SortableHeader column={column}>Date</SortableHeader>,
   },
   {
     accessorKey: "description",
@@ -59,20 +48,14 @@ const transactionColumns: ColumnDef<Transaction>[] = [
   },
   {
     accessorKey: "amount",
-    header: ({ column }) => (
-      <SortableHeader column={column}>Amount</SortableHeader>
-    ),
+    header: ({ column }) => <SortableHeader column={column}>Amount</SortableHeader>,
     cell: ({ row }) => {
       const amount = row.getValue("amount") as number;
       const formatted = new Intl.NumberFormat("en-AU", {
         style: "currency",
         currency: "AUD",
       }).format(amount);
-      return (
-        <span className={amount < 0 ? "text-red-600" : "text-green-600"}>
-          {formatted}
-        </span>
-      );
+      return <span className={amount < 0 ? "text-red-600" : "text-green-600"}>{formatted}</span>;
     },
   },
   {
@@ -84,9 +67,7 @@ const transactionColumns: ColumnDef<Transaction>[] = [
 export const Default: Story = {
   args: {},
   render: () => {
-    const [transactions, setTransactions] = useState<Transaction[]>(
-      generateTransactions(20, 0)
-    );
+    const [transactions, setTransactions] = useState<Transaction[]>(generateTransactions(20, 0));
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
 
@@ -123,9 +104,7 @@ export const Default: Story = {
 export const WithSearch: Story = {
   args: {},
   render: () => {
-    const [transactions, setTransactions] = useState<Transaction[]>(
-      generateTransactions(20, 0)
-    );
+    const [transactions, setTransactions] = useState<Transaction[]>(generateTransactions(20, 0));
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
 
@@ -163,9 +142,7 @@ export const WithSearch: Story = {
 export const SmallBatches: Story = {
   args: {},
   render: () => {
-    const [transactions, setTransactions] = useState<Transaction[]>(
-      generateTransactions(5, 0)
-    );
+    const [transactions, setTransactions] = useState<Transaction[]>(generateTransactions(5, 0));
     const [hasMore, setHasMore] = useState(true);
     const [loading, setLoading] = useState(false);
 

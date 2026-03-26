@@ -39,9 +39,7 @@ export function AiUsagePage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">AI Usage</h1>
-          <p className="text-muted-foreground">
-            Track AI categorization costs and usage
-          </p>
+          <p className="text-muted-foreground">Track AI categorization costs and usage</p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -74,9 +72,7 @@ export function AiUsagePage() {
   const columns: ColumnDef<AiUsageRecord>[] = [
     {
       accessorKey: "date",
-      header: ({ column }) => (
-        <SortableHeader column={column}>Date</SortableHeader>
-      ),
+      header: ({ column }) => <SortableHeader column={column}>Date</SortableHeader>,
       cell: ({ row }) => {
         const date = new Date(row.original.date);
         return date.toLocaleDateString("en-AU", {
@@ -120,11 +116,7 @@ export function AiUsagePage() {
         const rate = total > 0 ? (row.original.cacheHits / total) * 100 : 0;
         return (
           <div className="text-right">
-            <Badge
-              variant={
-                rate > 80 ? "default" : rate > 50 ? "secondary" : "outline"
-              }
-            >
+            <Badge variant={rate > 80 ? "default" : rate > 50 ? "secondary" : "outline"}>
               {rate.toFixed(1)}%
             </Badge>
           </div>
@@ -173,8 +165,7 @@ export function AiUsagePage() {
   ];
 
   // Calculate cache hit rate
-  const totalRequests =
-    (stats?.totalApiCalls ?? 0) + (stats?.totalCacheHits ?? 0);
+  const totalRequests = (stats?.totalApiCalls ?? 0) + (stats?.totalCacheHits ?? 0);
   const cacheHitRate = totalRequests > 0 ? (stats?.cacheHitRate ?? 0) * 100 : 0;
 
   return (
@@ -192,14 +183,20 @@ export function AiUsagePage() {
         <StatCard
           title="Total Cost"
           value={`$${(stats?.totalCost ?? 0).toFixed(4)}`}
-          description={stats?.last30Days ? `$${stats.last30Days.cost.toFixed(4)} last 30 days` : undefined}
+          description={
+            stats?.last30Days ? `$${stats.last30Days.cost.toFixed(4)} last 30 days` : undefined
+          }
           color="amber"
         />
 
         <StatCard
           title="API Calls"
           value={(stats?.totalApiCalls ?? 0).toLocaleString()}
-          description={stats?.last30Days ? `${stats.last30Days.apiCalls.toLocaleString()} last 30 days` : undefined}
+          description={
+            stats?.last30Days
+              ? `${stats.last30Days.apiCalls.toLocaleString()} last 30 days`
+              : undefined
+          }
           color="indigo"
         />
 
@@ -224,8 +221,7 @@ export function AiUsagePage() {
           <div>
             <h2 className="text-xl font-semibold">Daily Usage History</h2>
             <p className="text-sm text-muted-foreground">
-              Showing {history.records.length} days • Total: $
-              {history.summary.totalCost.toFixed(4)}
+              Showing {history.records.length} days • Total: ${history.summary.totalCost.toFixed(4)}
             </p>
           </div>
           <DataTable columns={columns} data={history.records} />

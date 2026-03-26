@@ -1,10 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "./accordion";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./accordion";
 
 const meta: Meta = {
   title: "Layout/Accordion",
@@ -23,26 +18,24 @@ export const Single: Story = {
       <AccordionItem value="item-1">
         <AccordionTrigger>What is POPS?</AccordionTrigger>
         <AccordionContent>
-          POPS (Personal Operations System) is a self-hosted financial tracking
-          and automation platform that uses SQLite as the source of truth for
-          all data.
+          POPS (Personal Operations System) is a self-hosted financial tracking and automation
+          platform that uses SQLite as the source of truth for all data.
         </AccordionContent>
       </AccordionItem>
 
       <AccordionItem value="item-2">
         <AccordionTrigger>How does it work?</AccordionTrigger>
         <AccordionContent>
-          Bank data is imported via CSV or API, matched with entities using a
-          5-stage pipeline, and written directly to SQLite for fast queries.
+          Bank data is imported via CSV or API, matched with entities using a 5-stage pipeline, and
+          written directly to SQLite for fast queries.
         </AccordionContent>
       </AccordionItem>
 
       <AccordionItem value="item-3">
         <AccordionTrigger>Is my data secure?</AccordionTrigger>
         <AccordionContent>
-          Yes, POPS is self-hosted on your own infrastructure with Cloudflare
-          Access for authentication. All secrets are managed via Docker secrets
-          and Ansible Vault.
+          Yes, POPS is self-hosted on your own infrastructure with Cloudflare Access for
+          authentication. All secrets are managed via Docker secrets and Ansible Vault.
         </AccordionContent>
       </AccordionItem>
     </Accordion>
@@ -93,17 +86,11 @@ export const Multiple: Story = {
 
 export const DefaultOpen: Story = {
   render: () => (
-    <Accordion
-      type="single"
-      collapsible
-      defaultValue="item-1"
-      className="w-full max-w-2xl"
-    >
+    <Accordion type="single" collapsible defaultValue="item-1" className="w-full max-w-2xl">
       <AccordionItem value="item-1">
         <AccordionTrigger>Getting Started</AccordionTrigger>
         <AccordionContent>
-          This section is open by default. Follow the setup guide to configure
-          your POPS instance.
+          This section is open by default. Follow the setup guide to configure your POPS instance.
         </AccordionContent>
       </AccordionItem>
 
@@ -122,9 +109,7 @@ export const FAQ: Story = {
     <div className="w-full max-w-2xl space-y-6">
       <div>
         <h2 className="text-2xl font-bold">Frequently Asked Questions</h2>
-        <p className="text-muted-foreground">
-          Find answers to common questions about using POPS
-        </p>
+        <p className="text-muted-foreground">Find answers to common questions about using POPS</p>
       </div>
 
       <Accordion type="single" collapsible>
@@ -143,38 +128,33 @@ export const FAQ: Story = {
         <AccordionItem value="q2">
           <AccordionTrigger>Can I track multiple accounts?</AccordionTrigger>
           <AccordionContent>
-            Yes, POPS supports unlimited accounts including checking, savings,
-            credit cards, and investment accounts. Each transaction is tagged
-            with its source account.
+            Yes, POPS supports unlimited accounts including checking, savings, credit cards, and
+            investment accounts. Each transaction is tagged with its source account.
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem value="q3">
-          <AccordionTrigger>
-            How accurate is AI categorization?
-          </AccordionTrigger>
+          <AccordionTrigger>How accurate is AI categorization?</AccordionTrigger>
           <AccordionContent>
-            The AI categorization achieves 95-100% accuracy with the 5-stage
-            entity matching pipeline: manual aliases → exact match → prefix
-            match → contains match → AI fallback. Results are cached for
-            consistency.
+            The AI categorization achieves 95-100% accuracy with the 5-stage entity matching
+            pipeline: manual aliases → exact match → prefix match → contains match → AI fallback.
+            Results are cached for consistency.
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem value="q4">
           <AccordionTrigger>Can I export my data?</AccordionTrigger>
           <AccordionContent>
-            Yes, SQLite is the source of truth, so you can export your data at
-            any time in CSV or other formats via the API.
+            Yes, SQLite is the source of truth, so you can export your data at any time in CSV or
+            other formats via the API.
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem value="q5">
           <AccordionTrigger>Is there a mobile app?</AccordionTrigger>
           <AccordionContent>
-            POPS includes a Progressive Web App (PWA) that works on mobile
-            devices through your browser. You can install it to your home screen
-            for an app-like experience.
+            POPS includes a Progressive Web App (PWA) that works on mobile devices through your
+            browser. You can install it to your home screen for an app-like experience.
           </AccordionContent>
         </AccordionItem>
       </Accordion>
@@ -210,10 +190,7 @@ export const BudgetCategories: Story = {
                 <span className="font-medium">$150</span>
               </div>
               <div className="h-2 w-full rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-blue-600"
-                  style={{ width: "75%" }}
-                />
+                <div className="h-full rounded-full bg-blue-600" style={{ width: "75%" }} />
               </div>
             </div>
           </AccordionContent>
@@ -241,10 +218,7 @@ export const BudgetCategories: Story = {
                 <span className="font-medium">$60</span>
               </div>
               <div className="h-2 w-full rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-pink-600"
-                  style={{ width: "85%" }}
-                />
+                <div className="h-full rounded-full bg-pink-600" style={{ width: "85%" }} />
               </div>
             </div>
           </AccordionContent>
@@ -272,10 +246,7 @@ export const BudgetCategories: Story = {
                 <span className="font-medium text-red-600">$45</span>
               </div>
               <div className="h-2 w-full rounded-full bg-red-200">
-                <div
-                  className="h-full rounded-full bg-red-600"
-                  style={{ width: "100%" }}
-                />
+                <div className="h-full rounded-full bg-red-600" style={{ width: "100%" }} />
               </div>
             </div>
           </AccordionContent>

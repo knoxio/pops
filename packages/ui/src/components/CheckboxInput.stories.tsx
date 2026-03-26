@@ -127,25 +127,19 @@ export const MultipleCheckboxes: Story = {
           label="Email notifications"
           description="Receive updates via email"
           checked={preferences.email}
-          onCheckedChange={(checked) =>
-            setPreferences({ ...preferences, email: checked })
-          }
+          onCheckedChange={(checked) => setPreferences({ ...preferences, email: checked })}
         />
         <CheckboxInput
           label="SMS notifications"
           description="Receive updates via text message"
           checked={preferences.sms}
-          onCheckedChange={(checked) =>
-            setPreferences({ ...preferences, sms: checked })
-          }
+          onCheckedChange={(checked) => setPreferences({ ...preferences, sms: checked })}
         />
         <CheckboxInput
           label="Push notifications"
           description="Receive push notifications in your browser"
           checked={preferences.push}
-          onCheckedChange={(checked) =>
-            setPreferences({ ...preferences, push: checked })
-          }
+          onCheckedChange={(checked) => setPreferences({ ...preferences, push: checked })}
         />
       </div>
     );

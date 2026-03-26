@@ -7,31 +7,29 @@
 import { lazy } from "react";
 import type { RouteObject } from "react-router";
 
-const ItemsPage = lazy(() =>
-  import("./pages/ItemsPage").then((m) => ({ default: m.ItemsPage })),
-);
+const ItemsPage = lazy(() => import("./pages/ItemsPage").then((m) => ({ default: m.ItemsPage })));
 const ItemDetailPage = lazy(() =>
   import("./pages/ItemDetailPage").then((m) => ({
     default: m.ItemDetailPage,
-  })),
+  }))
 );
 const ItemFormPage = lazy(() =>
-  import("./pages/ItemFormPage").then((m) => ({ default: m.ItemFormPage })),
+  import("./pages/ItemFormPage").then((m) => ({ default: m.ItemFormPage }))
 );
 const WarrantiesPage = lazy(() =>
   import("./pages/WarrantiesPage").then((m) => ({
     default: m.WarrantiesPage,
-  })),
+  }))
 );
 const InsuranceReportPage = lazy(() =>
   import("./pages/InsuranceReportPage").then((m) => ({
     default: m.InsuranceReportPage,
-  })),
+  }))
 );
 const LocationTreePage = lazy(() =>
   import("./pages/LocationTreePage").then((m) => ({
     default: m.LocationTreePage,
-  })),
+  }))
 );
 
 /** Local type mirror for compile-time safety (shell owns the canonical types). */

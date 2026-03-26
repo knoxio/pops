@@ -59,16 +59,11 @@ export const BudgetTracking: Story = {
             <div key={budget.category} className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="font-medium">{budget.category}</span>
-                <span
-                  className={isOverBudget ? "text-destructive font-medium" : ""}
-                >
+                <span className={isOverBudget ? "text-destructive font-medium" : ""}>
                   ${budget.spent} / ${budget.total}
                 </span>
               </div>
-              <Progress
-                value={percentage}
-                className={isOverBudget ? "bg-red-200" : ""}
-              />
+              <Progress value={percentage} className={isOverBudget ? "bg-red-200" : ""} />
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>{percentage.toFixed(0)}% spent</span>
                 {isOverBudget && (
@@ -104,9 +99,7 @@ export const Animated: Story = {
     return (
       <div className="space-y-4">
         <Progress value={progress} />
-        <p className="text-center text-sm text-muted-foreground">
-          {progress}% complete
-        </p>
+        <p className="text-center text-sm text-muted-foreground">{progress}% complete</p>
       </div>
     );
   },
@@ -211,9 +204,7 @@ export const SavingsGoal: Story = {
         </div>
         <Progress value={percentage} className="h-3" />
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">
-            {percentage.toFixed(1)}% of goal
-          </span>
+          <span className="text-muted-foreground">{percentage.toFixed(1)}% of goal</span>
           <span className="font-medium">Goal: ${goal.toLocaleString()}</span>
         </div>
         <p className="text-sm text-muted-foreground">
@@ -253,14 +244,10 @@ export const MultipleGoals: Story = {
               <div className="flex justify-between text-sm">
                 <span className="font-medium">{goal.name}</span>
                 <span className="text-muted-foreground">
-                  ${goal.current.toLocaleString()} / $
-                  {goal.target.toLocaleString()}
+                  ${goal.current.toLocaleString()} / ${goal.target.toLocaleString()}
                 </span>
               </div>
-              <Progress
-                value={percentage}
-                className={`[&>div]:${goal.color}`}
-              />
+              <Progress value={percentage} className={`[&>div]:${goal.color}`} />
             </div>
           );
         })}

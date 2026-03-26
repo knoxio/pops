@@ -51,7 +51,7 @@ export function MovieDetailPage() {
 
   const { data, isLoading, error } = trpc.media.movies.get.useQuery(
     { id: movieId },
-    { enabled: !Number.isNaN(movieId) },
+    { enabled: !Number.isNaN(movieId) }
   );
 
   if (Number.isNaN(movieId)) {
@@ -76,15 +76,10 @@ export function MovieDetailPage() {
         <Alert variant="destructive">
           <AlertTitle>{is404 ? "Movie not found" : "Error"}</AlertTitle>
           <AlertDescription>
-            {is404
-              ? "This movie doesn't exist in your library."
-              : error.message}
+            {is404 ? "This movie doesn't exist in your library." : error.message}
           </AlertDescription>
         </Alert>
-        <Link
-          to="/media"
-          className="mt-4 inline-block text-sm text-primary underline"
-        >
+        <Link to="/media" className="mt-4 inline-block text-sm text-primary underline">
           Back to library
         </Link>
       </div>
@@ -94,9 +89,7 @@ export function MovieDetailPage() {
   const movie = data?.data;
   if (!movie) return null;
 
-  const year = movie.releaseDate
-    ? new Date(movie.releaseDate).getFullYear()
-    : null;
+  const year = movie.releaseDate ? new Date(movie.releaseDate).getFullYear() : null;
 
   const posterSrc = movie.posterUrl ?? "";
   const backdropSrc = movie.backdropUrl ?? "";
@@ -130,11 +123,7 @@ export function MovieDetailPage() {
       {/* Hero section — negative margins cancel shell padding for edge-to-edge */}
       <div className="-mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8 relative h-64 md:h-96 overflow-hidden bg-muted">
         {backdropSrc && (
-          <img
-            src={backdropSrc}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover"
-          />
+          <img src={backdropSrc} alt="" className="absolute inset-0 w-full h-full object-cover" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/20" />
 
@@ -151,9 +140,7 @@ export function MovieDetailPage() {
               </BreadcrumbItem>
               <BreadcrumbSeparator className="text-white/50" />
               <BreadcrumbItem>
-                <BreadcrumbPage className="text-white/90">
-                  {movie.title}
-                </BreadcrumbPage>
+                <BreadcrumbPage className="text-white/90">{movie.title}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -170,11 +157,7 @@ export function MovieDetailPage() {
             <h1 className="text-2xl md:text-4xl font-bold text-foreground">
               {logoSrc ? (
                 <>
-                  <img
-                    src={logoSrc}
-                    alt={movie.title}
-                    className="h-12 md:h-16 object-contain"
-                  />
+                  <img src={logoSrc} alt={movie.title} className="h-12 md:h-16 object-contain" />
                   <span className="sr-only">{movie.title}</span>
                 </>
               ) : (
@@ -209,9 +192,7 @@ export function MovieDetailPage() {
         {movie.overview && (
           <section>
             <h2 className="text-lg font-semibold mb-2">Overview</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              {movie.overview}
-            </p>
+            <p className="text-muted-foreground leading-relaxed">{movie.overview}</p>
           </section>
         )}
 
@@ -221,14 +202,8 @@ export function MovieDetailPage() {
             <h2 className="text-lg font-semibold mb-2">Genres</h2>
             <div className="flex flex-wrap gap-2">
               {movie.genres.map((genre) => (
-                <Link
-                  key={genre}
-                  to={`/media?genre=${encodeURIComponent(genre)}`}
-                >
-                  <Badge
-                    variant="secondary"
-                    className="cursor-pointer hover:bg-secondary/80"
-                  >
+                <Link key={genre} to={`/media?genre=${encodeURIComponent(genre)}`}>
+                  <Badge variant="secondary" className="cursor-pointer hover:bg-secondary/80">
                     {genre}
                   </Badge>
                 </Link>
@@ -247,9 +222,7 @@ export function MovieDetailPage() {
             <dl className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {metadataItems.map((item) => (
                 <div key={item.label}>
-                  <dt className="text-sm text-muted-foreground">
-                    {item.label}
-                  </dt>
+                  <dt className="text-sm text-muted-foreground">{item.label}</dt>
                   <dd className="text-sm font-medium">{item.value}</dd>
                 </div>
               ))}

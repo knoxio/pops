@@ -37,16 +37,12 @@ export const Basic: Story = {
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Transaction Details</DialogTitle>
-          <DialogDescription>
-            View the full details of this transaction.
-          </DialogDescription>
+          <DialogDescription>View the full details of this transaction.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div>
             <p className="text-sm font-medium">Description</p>
-            <p className="text-sm text-muted-foreground">
-              WOOLWORTHS 1234 SYDNEY AU
-            </p>
+            <p className="text-sm text-muted-foreground">WOOLWORTHS 1234 SYDNEY AU</p>
           </div>
           <div>
             <p className="text-sm font-medium">Amount</p>
@@ -76,8 +72,7 @@ export const Confirmation: Story = {
           <DialogHeader>
             <DialogTitle>Are you sure?</DialogTitle>
             <DialogDescription>
-              This will permanently delete this transaction. This action cannot
-              be undone.
+              This will permanently delete this transaction. This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -120,18 +115,14 @@ export const Form: Story = {
         <DialogContent className="sm:max-w-125">
           <DialogHeader>
             <DialogTitle>New Transaction</DialogTitle>
-            <DialogDescription>
-              Add a new transaction to your balance sheet.
-            </DialogDescription>
+            <DialogDescription>Add a new transaction to your balance sheet.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium">Description</label>
               <TextInput
                 value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Enter transaction description"
               />
             </div>
@@ -139,9 +130,7 @@ export const Form: Story = {
               <label className="text-sm font-medium">Amount</label>
               <NumberInput
                 value={formData.amount}
-                onChange={(e) =>
-                  setFormData({ ...formData, amount: Number(e.target.value) })
-                }
+                onChange={(e) => setFormData({ ...formData, amount: Number(e.target.value) })}
                 placeholder="0.00"
                 prefix="$"
               />
@@ -150,18 +139,14 @@ export const Form: Story = {
               <label className="text-sm font-medium">Date</label>
               <DateTimeInput
                 value={formData.date}
-                onChange={(e) =>
-                  setFormData({ ...formData, date: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
               />
             </div>
             <div>
               <label className="text-sm font-medium">Category</label>
               <Select
                 value={formData.category}
-                onChange={(e) =>
-                  setFormData({ ...formData, category: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                 options={[
                   { label: "Food", value: "food" },
                   { label: "Shopping", value: "shopping" },
@@ -176,9 +161,7 @@ export const Form: Story = {
               <label className="text-sm font-medium">Account</label>
               <Select
                 value={formData.account}
-                onChange={(e) =>
-                  setFormData({ ...formData, account: e.target.value })
-                }
+                onChange={(e) => setFormData({ ...formData, account: e.target.value })}
                 options={[
                   { label: "Checking", value: "checking" },
                   { label: "Savings", value: "savings" },
@@ -218,8 +201,7 @@ export const NoCloseButton: Story = {
         <DialogHeader>
           <DialogTitle>Processing Transaction</DialogTitle>
           <DialogDescription>
-            Please wait while we process your transaction. This may take a few
-            moments.
+            Please wait while we process your transaction. This may take a few moments.
           </DialogDescription>
         </DialogHeader>
         <div className="flex justify-center py-8">
@@ -240,36 +222,32 @@ export const LongContent: Story = {
       <DialogContent className="max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Terms and Conditions</DialogTitle>
-          <DialogDescription>
-            Please review our terms and conditions carefully.
-          </DialogDescription>
+          <DialogDescription>Please review our terms and conditions carefully.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 text-sm">
           <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam
-            euismod, nisl eget ultricies aliquam, nunc nisl aliquet nunc, vitae
-            aliquam nisl nunc vitae nisl. Nullam euismod, nisl eget ultricies
-            aliquam, nunc nisl aliquet nunc, vitae aliquam nisl nunc vitae nisl.
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nullam euismod, nisl eget
+            ultricies aliquam, nunc nisl aliquet nunc, vitae aliquam nisl nunc vitae nisl. Nullam
+            euismod, nisl eget ultricies aliquam, nunc nisl aliquet nunc, vitae aliquam nisl nunc
+            vitae nisl.
           </p>
           <p>
-            Sed ut perspiciatis unde omnis iste natus error sit voluptatem
-            accusantium doloremque laudantium, totam rem aperiam, eaque ipsa
-            quae ab illo inventore veritatis et quasi architecto beatae vitae
-            dicta sunt explicabo.
+            Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque
+            laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi
+            architecto beatae vitae dicta sunt explicabo.
           </p>
           <p>
-            Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut
-            fugit, sed quia consequuntur magni dolores eos qui ratione
-            voluptatem sequi nesciunt.
+            Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia
+            consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt.
           </p>
           <p>
-            Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet,
-            consectetur, adipisci velit, sed quia non numquam eius modi tempora
-            incidunt ut labore et dolore magnam aliquam quaerat voluptatem.
+            Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci
+            velit, sed quia non numquam eius modi tempora incidunt ut labore et dolore magnam
+            aliquam quaerat voluptatem.
           </p>
           <p>
-            Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis
-            suscipit laboriosam, nisi ut aliquid ex ea commodi consequatur?
+            Ut enim ad minima veniam, quis nostrum exercitationem ullam corporis suscipit
+            laboriosam, nisi ut aliquid ex ea commodi consequatur?
           </p>
         </div>
         <DialogFooter showCloseButton>
@@ -294,9 +272,7 @@ export const NestedDialog: Story = {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Outer Dialog</DialogTitle>
-            <DialogDescription>
-              This dialog contains another dialog.
-            </DialogDescription>
+            <DialogDescription>This dialog contains another dialog.</DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <Dialog open={innerOpen} onOpenChange={setInnerOpen}>
@@ -306,13 +282,10 @@ export const NestedDialog: Story = {
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Inner Dialog</DialogTitle>
-                  <DialogDescription>
-                    This is a nested dialog.
-                  </DialogDescription>
+                  <DialogDescription>This is a nested dialog.</DialogDescription>
                 </DialogHeader>
                 <p className="text-sm">
-                  Dialogs can be nested when needed, though it should be used
-                  sparingly.
+                  Dialogs can be nested when needed, though it should be used sparingly.
                 </p>
                 <DialogFooter>
                   <Button onClick={() => setInnerOpen(false)}>Close</Button>

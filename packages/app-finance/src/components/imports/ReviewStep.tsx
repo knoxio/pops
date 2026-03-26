@@ -1,12 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import {
-  CheckCircle,
-  AlertTriangle,
-  XCircle,
-  AlertCircle,
-  List,
-  Layers,
-} from "lucide-react";
+import { CheckCircle, AlertTriangle, XCircle, AlertCircle, List, Layers } from "lucide-react";
 import { useImportStore } from "../../store/importStore";
 import type { ProcessedTransaction } from "../../store/importStore";
 import { trpc } from "../../lib/trpc";
@@ -26,25 +19,16 @@ type ViewMode = "list" | "grouped";
  * Step 4: Review transactions and resolve uncertain/failed matches
  */
 export function ReviewStep() {
-  const {
-    processedTransactions,
-    setConfirmedTransactions,
-    nextStep,
-    prevStep,
-    findSimilar,
-  } = useImportStore();
+  const { processedTransactions, setConfirmedTransactions, nextStep, prevStep, findSimilar } =
+    useImportStore();
 
-  const [localTransactions, setLocalTransactions] = useState(
-    processedTransactions
-  );
+  const [localTransactions, setLocalTransactions] = useState(processedTransactions);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] =
-    useState<ProcessedTransaction | null>(null);
+  const [selectedTransaction, setSelectedTransaction] = useState<ProcessedTransaction | null>(null);
   const [pendingBulkTransactions, setPendingBulkTransactions] = useState<
     ProcessedTransaction[] | null
   >(null);
-  const [editingTransaction, setEditingTransaction] =
-    useState<ProcessedTransaction | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<ProcessedTransaction | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("grouped");
 
   const { data: entities } = trpc.core.entities.list.useQuery({});
@@ -67,22 +51,14 @@ export function ReviewStep() {
    * Auto-match similar transactions
    */
   const handleAutoMatchSimilar = useCallback(
-    (
-      transactions: ProcessedTransaction[],
-      entityId: string,
-      entityName: string
-    ) => {
+    (transactions: ProcessedTransaction[], entityId: string, entityName: string) => {
       setLocalTransactions((prev) => {
         let updated = { ...prev };
         for (const transaction of transactions) {
           updated = {
             ...updated,
-            uncertain: updated.uncertain.filter(
-              (t: ProcessedTransaction) => t !== transaction
-            ),
-            failed: updated.failed.filter(
-              (t: ProcessedTransaction) => t !== transaction
-            ),
+            uncertain: updated.uncertain.filter((t: ProcessedTransaction) => t !== transaction),
+            failed: updated.failed.filter((t: ProcessedTransaction) => t !== transaction),
             matched: [
               ...updated.matched,
               {
@@ -111,23 +87,15 @@ export function ReviewStep() {
    * Handle entity selection with auto-matching for similar transactions
    */
   const handleEntitySelect = useCallback(
-    (
-      transaction: ProcessedTransaction,
-      entityId: string,
-      entityName: string
-    ) => {
+    (transaction: ProcessedTransaction, entityId: string, entityName: string) => {
       // Find similar transactions before updating
       const similar = findSimilar(transaction);
 
       // Move transaction from uncertain/failed to matched (functional setState avoids stale closure)
       setLocalTransactions((prev) => ({
         ...prev,
-        uncertain: prev.uncertain.filter(
-          (t: ProcessedTransaction) => t !== transaction
-        ),
-        failed: prev.failed.filter(
-          (t: ProcessedTransaction) => t !== transaction
-        ),
+        uncertain: prev.uncertain.filter((t: ProcessedTransaction) => t !== transaction),
+        failed: prev.failed.filter((t: ProcessedTransaction) => t !== transaction),
         matched: [
           ...prev.matched,
           {
@@ -148,8 +116,7 @@ export function ReviewStep() {
         toast.info(
           `Found ${similar.length} similar transaction${similar.length !== 1 ? "s" : ""}`,
           {
-            description:
-              "Would you like to apply this entity to all similar transactions?",
+            description: "Would you like to apply this entity to all similar transactions?",
             action: {
               label: "Apply to All",
               onClick: () => {
@@ -163,13 +130,10 @@ export function ReviewStep() {
     [findSimilar, handleAutoMatchSimilar]
   );
 
-  const handleCreateEntity = useCallback(
-    (transaction: ProcessedTransaction) => {
-      setSelectedTransaction(transaction);
-      setShowCreateDialog(true);
-    },
-    []
-  );
+  const handleCreateEntity = useCallback((transaction: ProcessedTransaction) => {
+    setSelectedTransaction(transaction);
+    setShowCreateDialog(true);
+  }, []);
 
   /**
    * Accept AI suggestion for a single transaction
@@ -182,9 +146,7 @@ export function ReviewStep() {
       let entityId = transaction.entity.entityId;
       if (!entityId && entities?.data) {
         const matchingEntity = entities.data.find(
-          (e) =>
-            e.name.toLowerCase() ===
-            transaction.entity?.entityName?.toLowerCase()
+          (e) => e.name.toLowerCase() === transaction.entity?.entityName?.toLowerCase()
         );
         if (matchingEntity) {
           entityId = matchingEntity.id;
@@ -237,12 +199,8 @@ export function ReviewStep() {
           for (const transaction of transactions) {
             updated = {
               ...updated,
-              uncertain: updated.uncertain.filter(
-                (t: ProcessedTransaction) => t !== transaction
-              ),
-              failed: updated.failed.filter(
-                (t: ProcessedTransaction) => t !== transaction
-              ),
+              uncertain: updated.uncertain.filter((t: ProcessedTransaction) => t !== transaction),
+              failed: updated.failed.filter((t: ProcessedTransaction) => t !== transaction),
               matched: [
                 ...updated.matched,
                 {
@@ -296,12 +254,8 @@ export function ReviewStep() {
           for (const transaction of pendingBulkTransactions) {
             updated = {
               ...updated,
-              uncertain: updated.uncertain.filter(
-                (t: ProcessedTransaction) => t !== transaction
-              ),
-              failed: updated.failed.filter(
-                (t: ProcessedTransaction) => t !== transaction
-              ),
+              uncertain: updated.uncertain.filter((t: ProcessedTransaction) => t !== transaction),
+              failed: updated.failed.filter((t: ProcessedTransaction) => t !== transaction),
               matched: [
                 ...updated.matched,
                 {
@@ -326,11 +280,7 @@ export function ReviewStep() {
         );
       } else if (selectedTransaction) {
         // Handle single transaction assignment
-        handleEntitySelect(
-          selectedTransaction,
-          entity.entityId,
-          entity.entityName
-        );
+        handleEntitySelect(selectedTransaction, entity.entityId, entity.entityName);
         setSelectedTransaction(null);
       }
     },
@@ -341,8 +291,7 @@ export function ReviewStep() {
     setEditingTransaction(transaction);
   }, []);
 
-  const createCorrectionMutation =
-    trpc.core.corrections.createOrUpdate.useMutation();
+  const createCorrectionMutation = trpc.core.corrections.createOrUpdate.useMutation();
 
   const handleSaveEdit = useCallback(
     (
@@ -356,8 +305,7 @@ export function ReviewStep() {
         manuallyEdited: true,
       };
       const isNoEntityType =
-        updatedTx.transactionType === "transfer" ||
-        updatedTx.transactionType === "income";
+        updatedTx.transactionType === "transfer" || updatedTx.transactionType === "income";
 
       setLocalTransactions((prev) => {
         // Transfers and income don't need an entity — promote them straight to matched.
@@ -366,9 +314,7 @@ export function ReviewStep() {
             ...prev,
             matched: prev.matched.some((t) => t === transaction)
               ? prev.matched.map((t) =>
-                  t === transaction
-                    ? { ...updatedTx, status: "matched" as const }
-                    : t
+                  t === transaction ? { ...updatedTx, status: "matched" as const } : t
                 )
               : [...prev.matched, { ...updatedTx, status: "matched" as const }],
             uncertain: prev.uncertain.filter((t) => t !== transaction),
@@ -380,24 +326,16 @@ export function ReviewStep() {
         return {
           ...prev,
           matched: prev.matched.map((t: ProcessedTransaction) =>
-            t === transaction
-              ? { ...t, ...editedFields, manuallyEdited: true }
-              : t
+            t === transaction ? { ...t, ...editedFields, manuallyEdited: true } : t
           ),
           uncertain: prev.uncertain.map((t: ProcessedTransaction) =>
-            t === transaction
-              ? { ...t, ...editedFields, manuallyEdited: true }
-              : t
+            t === transaction ? { ...t, ...editedFields, manuallyEdited: true } : t
           ),
           failed: prev.failed.map((t: ProcessedTransaction) =>
-            t === transaction
-              ? { ...t, ...editedFields, manuallyEdited: true }
-              : t
+            t === transaction ? { ...t, ...editedFields, manuallyEdited: true } : t
           ),
           skipped: prev.skipped.map((t: ProcessedTransaction) =>
-            t === transaction
-              ? { ...t, ...editedFields, manuallyEdited: true }
-              : t
+            t === transaction ? { ...t, ...editedFields, manuallyEdited: true } : t
           ),
         };
       });
@@ -416,29 +354,23 @@ export function ReviewStep() {
         createCorrectionMutation.mutate({
           descriptionPattern: transaction.description,
           matchType: "exact",
-          entityId:
-            editedFields.entity?.entityId ?? transaction.entity?.entityId,
-          entityName:
-            editedFields.entity?.entityName ?? transaction.entity?.entityName,
+          entityId: editedFields.entity?.entityId ?? transaction.entity?.entityId,
+          entityName: editedFields.entity?.entityName ?? transaction.entity?.entityName,
           location: editedFields.location ?? transaction.location,
         });
         toast.success("Correction saved!");
       } else if (hasChanges && !shouldLearn) {
         // Show toast asking if they want to learn
         toast.info("Apply this correction to future imports?", {
-          description:
-            "This will help auto-match similar transactions next time.",
+          description: "This will help auto-match similar transactions next time.",
           action: {
             label: "Learn Pattern",
             onClick: () => {
               createCorrectionMutation.mutate({
                 descriptionPattern: transaction.description,
                 matchType: "exact",
-                entityId:
-                  editedFields.entity?.entityId ?? transaction.entity?.entityId,
-                entityName:
-                  editedFields.entity?.entityName ??
-                  transaction.entity?.entityName,
+                entityId: editedFields.entity?.entityId ?? transaction.entity?.entityId,
+                entityName: editedFields.entity?.entityName ?? transaction.entity?.entityName,
                 location: editedFields.location ?? transaction.location,
               });
               toast.success("Pattern saved!");
@@ -460,8 +392,7 @@ export function ReviewStep() {
   const handleContinueToTagReview = useCallback(() => {
     const confirmed: ConfirmedTransaction[] = localTransactions.matched
       .filter((t: ProcessedTransaction) => {
-        const isNoEntityType =
-          t.transactionType === "transfer" || t.transactionType === "income";
+        const isNoEntityType = t.transactionType === "transfer" || t.transactionType === "income";
         return isNoEntityType || (t.entity?.entityId && t.entity?.entityName);
       })
       .map((t: ProcessedTransaction) => ({
@@ -509,45 +440,40 @@ export function ReviewStep() {
       </div>
 
       {/* Show warnings if present */}
-      {processedTransactions.warnings &&
-        processedTransactions.warnings.length > 0 && (
-          <div className="space-y-2">
-            {processedTransactions.warnings.map((warning, idx: number) => {
-              return (
-                <div
-                  key={idx}
-                  className="p-4 text-sm rounded-lg border text-amber-800 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-200 border-amber-200 dark:border-amber-800"
-                >
-                  <div className="flex items-start gap-3">
-                    <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-                    <div className="flex-1 space-y-1">
-                      <p className="font-medium">
-                        {warning.type === "AI_CATEGORIZATION_UNAVAILABLE"
-                          ? "AI Categorization Unavailable"
-                          : "AI API Error"}
+      {processedTransactions.warnings && processedTransactions.warnings.length > 0 && (
+        <div className="space-y-2">
+          {processedTransactions.warnings.map((warning, idx: number) => {
+            return (
+              <div
+                key={idx}
+                className="p-4 text-sm rounded-lg border text-amber-800 bg-amber-50 dark:bg-amber-900/20 dark:text-amber-200 border-amber-200 dark:border-amber-800"
+              >
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1 space-y-1">
+                    <p className="font-medium">
+                      {warning.type === "AI_CATEGORIZATION_UNAVAILABLE"
+                        ? "AI Categorization Unavailable"
+                        : "AI API Error"}
+                    </p>
+                    <p className="text-xs">{warning.message}</p>
+                    {warning.details && (
+                      <p className="text-xs opacity-70 font-mono">{warning.details}</p>
+                    )}
+                    {warning.affectedCount && (
+                      <p className="text-xs opacity-80">
+                        {warning.affectedCount} transaction
+                        {warning.affectedCount !== 1 ? "s" : ""} could not be automatically
+                        categorized and may appear in the Uncertain or Failed tabs.
                       </p>
-                      <p className="text-xs">{warning.message}</p>
-                      {warning.details && (
-                        <p className="text-xs opacity-70 font-mono">
-                          {warning.details}
-                        </p>
-                      )}
-                      {warning.affectedCount && (
-                        <p className="text-xs opacity-80">
-                          {warning.affectedCount} transaction
-                          {warning.affectedCount !== 1 ? "s" : ""} could not be
-                          automatically categorized and may appear in the
-                          Uncertain or Failed tabs.
-                        </p>
-                      )}
-
-                    </div>
+                    )}
                   </div>
                 </div>
-              );
-            })}
-          </div>
-        )}
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <Tabs defaultValue="matched" className="w-full">
         <TabsList className="grid w-full grid-cols-4">
@@ -635,10 +561,7 @@ export function ReviewStep() {
               Resolve all uncertain/failed transactions to continue
             </p>
           )}
-          <Button
-            onClick={handleContinueToTagReview}
-            disabled={unresolvedCount > 0}
-          >
+          <Button onClick={handleContinueToTagReview} disabled={unresolvedCount > 0}>
             {`Continue to Tag Review (${localTransactions.matched.length})`}
           </Button>
         </div>
@@ -676,26 +599,15 @@ function MatchedTab({
 }: {
   transactions: ProcessedTransaction[];
   onEdit: (t: ProcessedTransaction) => void;
-  onEntitySelect: (
-    t: ProcessedTransaction,
-    entityId: string,
-    entityName: string
-  ) => void;
+  onEntitySelect: (t: ProcessedTransaction, entityId: string, entityName: string) => void;
   onCreateEntity: (t: ProcessedTransaction) => void;
   editingTransaction: ProcessedTransaction | null;
-  onSaveEdit: (
-    t: ProcessedTransaction,
-    edited: Partial<ProcessedTransaction>
-  ) => void;
+  onSaveEdit: (t: ProcessedTransaction, edited: Partial<ProcessedTransaction>) => void;
   onCancelEdit: () => void;
   entities?: Array<{ id: string; name: string }>;
 }) {
   if (transactions.length === 0) {
-    return (
-      <div className="text-center py-12 text-gray-500">
-        No matched transactions
-      </div>
-    );
+    return <div className="text-center py-12 text-gray-500">No matched transactions</div>;
   }
 
   return (
@@ -750,33 +662,19 @@ function UncertainTab({
   groups: ReturnType<typeof groupTransactionsByEntity>;
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
-  onEntitySelect: (
-    t: ProcessedTransaction,
-    entityId: string,
-    entityName: string
-  ) => void;
+  onEntitySelect: (t: ProcessedTransaction, entityId: string, entityName: string) => void;
   onCreateEntity: (t: ProcessedTransaction) => void;
   onAcceptAiSuggestion: (t: ProcessedTransaction) => void;
   onAcceptAll: (transactions: ProcessedTransaction[]) => void;
-  onCreateAndAssignAll: (
-    transactions: ProcessedTransaction[],
-    entityName: string
-  ) => void;
+  onCreateAndAssignAll: (transactions: ProcessedTransaction[], entityName: string) => void;
   onEdit: (t: ProcessedTransaction) => void;
   editingTransaction: ProcessedTransaction | null;
-  onSaveEdit: (
-    t: ProcessedTransaction,
-    edited: Partial<ProcessedTransaction>
-  ) => void;
+  onSaveEdit: (t: ProcessedTransaction, edited: Partial<ProcessedTransaction>) => void;
   onCancelEdit: () => void;
   entities?: Array<{ id: string; name: string }>;
 }) {
   if (transactions.length === 0) {
-    return (
-      <div className="text-center py-12 text-gray-500">
-        No uncertain transactions
-      </div>
-    );
+    return <div className="text-center py-12 text-gray-500">No uncertain transactions</div>;
   }
 
   return (
@@ -878,33 +776,19 @@ function FailedTab({
   groups: ReturnType<typeof groupTransactionsByEntity>;
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
-  onEntitySelect: (
-    t: ProcessedTransaction,
-    entityId: string,
-    entityName: string
-  ) => void;
+  onEntitySelect: (t: ProcessedTransaction, entityId: string, entityName: string) => void;
   onCreateEntity: (t: ProcessedTransaction) => void;
   onAcceptAiSuggestion: (t: ProcessedTransaction) => void;
   onAcceptAll: (transactions: ProcessedTransaction[]) => void;
-  onCreateAndAssignAll: (
-    transactions: ProcessedTransaction[],
-    entityName: string
-  ) => void;
+  onCreateAndAssignAll: (transactions: ProcessedTransaction[], entityName: string) => void;
   onEdit: (t: ProcessedTransaction) => void;
   editingTransaction: ProcessedTransaction | null;
-  onSaveEdit: (
-    t: ProcessedTransaction,
-    edited: Partial<ProcessedTransaction>
-  ) => void;
+  onSaveEdit: (t: ProcessedTransaction, edited: Partial<ProcessedTransaction>) => void;
   onCancelEdit: () => void;
   entities?: Array<{ id: string; name: string }>;
 }) {
   if (transactions.length === 0) {
-    return (
-      <div className="text-center py-12 text-gray-500">
-        No failed transactions
-      </div>
-    );
+    return <div className="text-center py-12 text-gray-500">No failed transactions</div>;
   }
 
   return (
@@ -986,17 +870,9 @@ function FailedTab({
 /**
  * Skipped tab - read-only list
  */
-function SkippedTab({
-  transactions,
-}: {
-  transactions: ProcessedTransaction[];
-}) {
+function SkippedTab({ transactions }: { transactions: ProcessedTransaction[] }) {
   if (transactions.length === 0) {
-    return (
-      <div className="text-center py-12 text-gray-500">
-        No skipped transactions
-      </div>
-    );
+    return <div className="text-center py-12 text-gray-500">No skipped transactions</div>;
   }
 
   return (

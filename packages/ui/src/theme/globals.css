@@ -113,9 +113,7 @@
   --background: oklch(
     0.975 0.01 260
   ); /* Slightly deeper background for better contrast with cards */
-  --foreground: oklch(
-    0.2 0.02 260
-  ); /* Darker foreground for better text contrast */
+  --foreground: oklch(0.2 0.02 260); /* Darker foreground for better text contrast */
 
   --card: oklch(1 0 0); /* Pure white cards to pop */
   --card-foreground: oklch(0.2 0.02 260);

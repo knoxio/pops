@@ -28,32 +28,22 @@ interface PaperlessDocResult {
   thumbnailUrl: string;
 }
 
-const DOCUMENT_TYPES = [
-  "receipt",
-  "warranty",
-  "manual",
-  "invoice",
-  "other",
-] as const;
+const DOCUMENT_TYPES = ["receipt", "warranty", "manual", "invoice", "other"] as const;
 
 interface LinkDocumentDialogProps {
   itemId: string;
   onLinked: () => void;
 }
 
-export function LinkDocumentDialog({
-  itemId,
-  onLinked,
-}: LinkDocumentDialogProps) {
+export function LinkDocumentDialog({ itemId, onLinked }: LinkDocumentDialogProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
-  const [docType, setDocType] =
-    useState<(typeof DOCUMENT_TYPES)[number]>("receipt");
+  const [docType, setDocType] = useState<(typeof DOCUMENT_TYPES)[number]>("receipt");
   const [linkingId, setLinkingId] = useState<number | null>(null);
 
   const { data, isLoading } = trpc.inventory.paperless.search.useQuery(
     { query: search },
-    { enabled: open && search.length >= 2 },
+    { enabled: open && search.length >= 2 }
   );
 
   const linkMutation = trpc.inventory.documents.link.useMutation({
@@ -147,9 +137,7 @@ export function LinkDocumentDialog({
               <Skeleton className="h-14 w-full" />
             </div>
           ) : results.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">
-              No documents found
-            </p>
+            <p className="text-sm text-muted-foreground py-4 text-center">No documents found</p>
           ) : (
             results.map((doc) => (
               <div
@@ -168,13 +156,9 @@ export function LinkDocumentDialog({
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm truncate">
-                    {doc.title}
-                  </div>
+                  <div className="font-medium text-sm truncate">{doc.title}</div>
                   <div className="text-xs text-muted-foreground">
-                    {doc.created
-                      ? new Date(doc.created).toLocaleDateString()
-                      : "No date"}
+                    {doc.created ? new Date(doc.created).toLocaleDateString() : "No date"}
                     {doc.originalFileName ? ` · ${doc.originalFileName}` : ""}
                   </div>
                 </div>

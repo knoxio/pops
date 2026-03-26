@@ -8,14 +8,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { Package, Plus } from "lucide-react";
-import {
-  Skeleton,
-  Button,
-  Switch,
-  Label,
-  AssetIdBadge,
-  TypeBadge,
-} from "@pops/ui";
+import { Skeleton, Button, Switch, Label, AssetIdBadge, TypeBadge } from "@pops/ui";
 import { trpc } from "../lib/trpc";
 
 interface LocationTreeNode {
@@ -65,19 +58,16 @@ export function LocationContentsPanel({
   const hasSubLocations = descendantIds.length > 0;
 
   // Query items for this location
-  const { data: directData, isLoading: directLoading } =
-    trpc.inventory.items.list.useQuery({
-      locationId,
-      limit: 200,
-    });
+  const { data: directData, isLoading: directLoading } = trpc.inventory.items.list.useQuery({
+    locationId,
+    limit: 200,
+  });
 
   // Query items for sub-locations (only when toggled on and sub-locations exist)
   const subLocationQueries = trpc.useQueries((t) =>
     includeSubLocations && hasSubLocations
-      ? descendantIds.map((id) =>
-          t.inventory.items.list({ locationId: id, limit: 200 }),
-        )
-      : [],
+      ? descendantIds.map((id) => t.inventory.items.list({ locationId: id, limit: 200 }))
+      : []
   );
 
   const subLocationItems = useMemo(() => {
@@ -87,9 +77,7 @@ export function LocationContentsPanel({
 
   const isLoading =
     directLoading ||
-    (includeSubLocations &&
-      hasSubLocations &&
-      subLocationQueries.some((q) => q.isLoading));
+    (includeSubLocations && hasSubLocations && subLocationQueries.some((q) => q.isLoading));
 
   const allItems = useMemo(() => {
     const direct = directData?.data ?? [];
@@ -99,16 +87,14 @@ export function LocationContentsPanel({
 
   const totalValue = useMemo(
     () => allItems.reduce((sum, item) => sum + (item.replacementValue ?? 0), 0),
-    [allItems],
+    [allItems]
   );
 
   return (
     <div className="border rounded-lg p-4 space-y-4">
       {/* Header */}
       <div>
-        <p className="text-xs text-muted-foreground">
-          {breadcrumb.join(" / ")}
-        </p>
+        <p className="text-xs text-muted-foreground">{breadcrumb.join(" / ")}</p>
         <h2 className="text-lg font-semibold mt-1">{locationName}</h2>
       </div>
 
@@ -159,9 +145,7 @@ export function LocationContentsPanel({
                 className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted/50"
                 onClick={() => navigate(`/inventory/items/${item.id}`)}
               >
-                <span className="font-medium truncate flex-1">
-                  {item.itemName}
-                </span>
+                <span className="font-medium truncate flex-1">{item.itemName}</span>
                 {item.assetId && <AssetIdBadge assetId={item.assetId} />}
                 {item.type && <TypeBadge type={item.type} />}
               </button>
@@ -176,9 +160,7 @@ export function LocationContentsPanel({
         size="sm"
         className="w-full"
         onClick={() =>
-          navigate(
-            `/inventory/items/new?locationId=${encodeURIComponent(locationId)}`,
-          )
+          navigate(`/inventory/items/new?locationId=${encodeURIComponent(locationId)}`)
         }
       >
         <Plus className="h-4 w-4 mr-1.5" />

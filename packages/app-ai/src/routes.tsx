@@ -36,6 +36,4 @@ export const navConfig: AppNavConfig = {
   items: [{ path: "", label: "AI Usage", icon: "BarChart3" }],
 };
 
-export const routes: RouteObject[] = [
-  { index: true, element: <AiUsagePage /> },
-];
+export const routes: RouteObject[] = [{ index: true, element: <AiUsagePage /> }];

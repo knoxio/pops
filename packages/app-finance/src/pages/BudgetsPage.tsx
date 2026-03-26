@@ -27,21 +27,15 @@ export function BudgetsPage() {
   const columns: ColumnDef<Budget>[] = [
     {
       accessorKey: "category",
-      header: ({ column }) => (
-        <SortableHeader column={column}>Category</SortableHeader>
-      ),
-      cell: ({ row }) => (
-        <div className="font-medium">{row.original.category}</div>
-      ),
+      header: ({ column }) => <SortableHeader column={column}>Category</SortableHeader>,
+      cell: ({ row }) => <div className="font-medium">{row.original.category}</div>,
     },
     {
       accessorKey: "period",
       header: "Period",
       cell: ({ row }) => (
         <span className="text-sm">
-          {row.original.period || (
-            <span className="text-muted-foreground">—</span>
-          )}
+          {row.original.period || <span className="text-muted-foreground">—</span>}
         </span>
       ),
     },
@@ -58,9 +52,7 @@ export function BudgetsPage() {
           return <div className="text-right text-muted-foreground">—</div>;
         }
         return (
-          <div className="text-right font-mono font-medium tabular-nums">
-            ${amount.toFixed(2)}
-          </div>
+          <div className="text-right font-mono font-medium tabular-nums">${amount.toFixed(2)}</div>
         );
       },
     },
@@ -68,19 +60,12 @@ export function BudgetsPage() {
       accessorKey: "active",
       header: "Status",
       cell: ({ row }) => (
-        <Badge
-          variant={row.original.active ? "default" : "secondary"}
-          className="text-xs"
-        >
+        <Badge variant={row.original.active ? "default" : "secondary"} className="text-xs">
           {row.original.active ? "Active" : "Inactive"}
         </Badge>
       ),
       filterFn: (row, columnId, filterValue) => {
-        if (
-          filterValue === undefined ||
-          filterValue === null ||
-          filterValue === ""
-        ) {
+        if (filterValue === undefined || filterValue === null || filterValue === "") {
           return true;
         }
         const value = row.getValue<boolean>(columnId);
@@ -96,11 +81,7 @@ export function BudgetsPage() {
         if (!notes) {
           return <span className="text-muted-foreground">—</span>;
         }
-        return (
-          <div className="max-w-md text-sm truncate text-muted-foreground">
-            {notes}
-          </div>
-        );
+        return <div className="max-w-md text-sm truncate text-muted-foreground">{notes}</div>;
       },
     },
   ];

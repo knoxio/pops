@@ -2,12 +2,7 @@
  * DateTime input components using native HTML date/time inputs
  * Includes DateInput, TimeInput, and DateTimeInput
  */
-import {
-  forwardRef,
-  useState,
-  type InputHTMLAttributes,
-  type ReactNode,
-} from "react";
+import { forwardRef, useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../lib/utils";
 
@@ -133,9 +128,7 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
         )}
         style={isFocused ? { borderColor: "rgb(55, 65, 81)" } : undefined}
       >
-        {prefix && (
-          <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>
-        )}
+        {prefix && <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>}
         <input
           ref={ref}
           type="date"
@@ -146,9 +139,7 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
           disabled={disabled}
           {...props}
         />
-        {suffix && (
-          <span className="flex-shrink-0 text-muted-foreground">{suffix}</span>
-        )}
+        {suffix && <span className="flex-shrink-0 text-muted-foreground">{suffix}</span>}
       </div>
     );
   }
@@ -201,9 +192,7 @@ export const TimeInput = forwardRef<HTMLInputElement, TimeInputProps>(
         )}
         style={isFocused ? { borderColor: "rgb(55, 65, 81)" } : undefined}
       >
-        {prefix && (
-          <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>
-        )}
+        {prefix && <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>}
         <input
           ref={ref}
           type="time"
@@ -214,9 +203,7 @@ export const TimeInput = forwardRef<HTMLInputElement, TimeInputProps>(
           disabled={disabled}
           {...props}
         />
-        {suffix && (
-          <span className="flex-shrink-0 text-muted-foreground">{suffix}</span>
-        )}
+        {suffix && <span className="flex-shrink-0 text-muted-foreground">{suffix}</span>}
       </div>
     );
   }
@@ -269,9 +256,7 @@ export const DateTimeInput = forwardRef<HTMLInputElement, DateTimeInputProps>(
         )}
         style={isFocused ? { borderColor: "rgb(55, 65, 81)" } : undefined}
       >
-        {prefix && (
-          <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>
-        )}
+        {prefix && <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>}
         <input
           ref={ref}
           type="datetime-local"
@@ -282,9 +267,7 @@ export const DateTimeInput = forwardRef<HTMLInputElement, DateTimeInputProps>(
           disabled={disabled}
           {...props}
         />
-        {suffix && (
-          <span className="flex-shrink-0 text-muted-foreground">{suffix}</span>
-        )}
+        {suffix && <span className="flex-shrink-0 text-muted-foreground">{suffix}</span>}
       </div>
     );
   }

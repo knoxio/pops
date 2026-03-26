@@ -26,8 +26,9 @@ export interface ComparisonScoresProps {
 }
 
 export function ComparisonScores({ mediaType, mediaId }: ComparisonScoresProps) {
-  const { data: scoresResponse, isLoading: scoresLoading } =
-    trpc.media.comparisons.scores.useQuery({ mediaType, mediaId });
+  const { data: scoresResponse, isLoading: scoresLoading } = trpc.media.comparisons.scores.useQuery(
+    { mediaType, mediaId }
+  );
 
   const { data: dimensionsResponse, isLoading: dimensionsLoading } =
     trpc.media.comparisons.listDimensions.useQuery();

@@ -28,14 +28,8 @@ export function DownloadQueue() {
       </h2>
       <div className="space-y-1.5">
         {items.map((item) => (
-          <div
-            key={item.id}
-            className="flex items-center gap-3 rounded-lg border bg-card p-3"
-          >
-            <Badge
-              variant="outline"
-              className="text-[10px] uppercase shrink-0"
-            >
+          <div key={item.id} className="flex items-center gap-3 rounded-lg border bg-card p-3">
+            <Badge variant="outline" className="text-[10px] uppercase shrink-0">
               {item.mediaType === "movie" ? "Movie" : "Episode"}
             </Badge>
 
@@ -43,9 +37,7 @@ export function DownloadQueue() {
               <p className="text-sm font-medium truncate">
                 {item.title}
                 {item.episodeLabel && (
-                  <span className="text-muted-foreground ml-1.5">
-                    {item.episodeLabel}
-                  </span>
+                  <span className="text-muted-foreground ml-1.5">{item.episodeLabel}</span>
                 )}
               </p>
 

@@ -1,10 +1,4 @@
-import {
-  sqliteTable,
-  text,
-  integer,
-  index,
-  unique,
-} from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, index, unique } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 import { homeInventory } from "./inventory.js";
 
@@ -23,11 +17,8 @@ export const itemDocuments = sqliteTable(
       .default(sql`(datetime('now'))`),
   },
   (table) => [
-    unique("uq_item_documents_pair").on(
-      table.itemId,
-      table.paperlessDocumentId,
-    ),
+    unique("uq_item_documents_pair").on(table.itemId, table.paperlessDocumentId),
     index("idx_item_documents_item").on(table.itemId),
     index("idx_item_documents_doc").on(table.paperlessDocumentId),
-  ],
+  ]
 );

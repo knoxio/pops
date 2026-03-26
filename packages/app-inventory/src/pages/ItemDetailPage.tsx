@@ -22,15 +22,7 @@ import {
   BreadcrumbPage,
   type Condition,
 } from "@pops/ui";
-import {
-  Pencil,
-  Link2,
-  Unlink,
-  GitBranch,
-  FileText,
-  X,
-  Network,
-} from "lucide-react";
+import { Pencil, Link2, Unlink, GitBranch, FileText, X, Network } from "lucide-react";
 import { trpc } from "../lib/trpc";
 
 const DOCUMENT_TYPE_LABELS: Record<string, string> = {
@@ -56,10 +48,7 @@ export function ItemDetailPage() {
   } = trpc.inventory.items.get.useQuery({ id: id! }, { enabled: !!id });
 
   const { data: connectionsData, isLoading: connectionsLoading } =
-    trpc.inventory.connections.listForItem.useQuery(
-      { itemId: id! },
-      { enabled: !!id },
-    );
+    trpc.inventory.connections.listForItem.useQuery({ itemId: id! }, { enabled: !!id });
 
   const [showGraph, setShowGraph] = useState(false);
 
@@ -94,9 +83,7 @@ export function ItemDetailPage() {
       <div>
         <Alert variant="destructive">
           <AlertTitle>{is404 ? "Item not found" : "Error"}</AlertTitle>
-          <AlertDescription>
-            {is404 ? "This item doesn't exist." : error.message}
-          </AlertDescription>
+          <AlertDescription>{is404 ? "This item doesn't exist." : error.message}</AlertDescription>
         </Alert>
         <Link
           to="/inventory"
@@ -140,7 +127,11 @@ export function ItemDetailPage() {
           )}
         </div>
         <Link to={`/inventory/items/${id}/edit`}>
-          <Button variant="outline" size="sm" className="font-bold border-amber-500/20 hover:border-amber-500/50 hover:bg-amber-500/5 transition-colors">
+          <Button
+            variant="outline"
+            size="sm"
+            className="font-bold border-amber-500/20 hover:border-amber-500/50 hover:bg-amber-500/5 transition-colors"
+          >
             <Pencil className="h-4 w-4 mr-2 text-amber-600 dark:text-amber-400" />
             Edit
           </Button>
@@ -158,18 +149,43 @@ export function ItemDetailPage() {
             />
           )}
           {item.room && <DetailField label="Room" value={item.room} />}
-          {item.assetId && <DetailField label="Asset ID" value={<Badge variant="outline" className="font-mono bg-muted/50">{item.assetId}</Badge>} />}
-          <DetailField label="Status" value={item.inUse ? 
-            <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-500/20 hover:bg-emerald-500/15">In Use</Badge> : 
-            <Badge variant="secondary">Stored</Badge>
-          } />
+          {item.assetId && (
+            <DetailField
+              label="Asset ID"
+              value={
+                <Badge variant="outline" className="font-mono bg-muted/50">
+                  {item.assetId}
+                </Badge>
+              }
+            />
+          )}
+          <DetailField
+            label="Status"
+            value={
+              item.inUse ? (
+                <Badge className="bg-emerald-500/10 text-emerald-700 border-emerald-500/20 hover:bg-emerald-500/15">
+                  In Use
+                </Badge>
+              ) : (
+                <Badge variant="secondary">Stored</Badge>
+              )
+            }
+          />
           {item.purchaseDate && (
-            <DetailField label="Purchased" value={new Date(item.purchaseDate).toLocaleDateString("en-AU", { year: 'numeric', month: 'short' })} />
+            <DetailField
+              label="Purchased"
+              value={new Date(item.purchaseDate).toLocaleDateString("en-AU", {
+                year: "numeric",
+                month: "short",
+              })}
+            />
           )}
           {item.replacementValue !== null && (
             <DetailField
               label="Replacement"
-              value={<span className="text-amber-700 dark:text-amber-300 font-bold">{`$${item.replacementValue.toLocaleString()}`}</span>}
+              value={
+                <span className="text-amber-700 dark:text-amber-300 font-bold">{`$${item.replacementValue.toLocaleString()}`}</span>
+              }
             />
           )}
         </div>
@@ -178,9 +194,7 @@ export function ItemDetailPage() {
       {item.notes && (
         <div className="mb-8">
           <h2 className="text-lg font-semibold mb-2">Notes</h2>
-          <p className="text-muted-foreground whitespace-pre-wrap">
-            {item.notes}
-          </p>
+          <p className="text-muted-foreground whitespace-pre-wrap">{item.notes}</p>
         </div>
       )}
 
@@ -211,18 +225,14 @@ export function ItemDetailPage() {
             {connectionsData.data.map((conn) => (
               <ConnectionRow
                 key={conn.id}
-                connectedItemId={
-                  conn.itemAId === id ? conn.itemBId : conn.itemAId
-                }
+                connectedItemId={conn.itemAId === id ? conn.itemBId : conn.itemAId}
                 onDisconnect={() => disconnectMutation.mutate({ id: conn.id })}
                 isDisconnecting={disconnectMutation.isPending}
               />
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground text-sm">
-            No connected items yet.
-          </p>
+          <p className="text-muted-foreground text-sm">No connected items yet.</p>
         )}
       </section>
 
@@ -234,20 +244,12 @@ export function ItemDetailPage() {
               <GitBranch className="h-5 w-5" />
               Connection Chain
             </h2>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowGraph((v) => !v)}
-            >
+            <Button variant="outline" size="sm" onClick={() => setShowGraph((v) => !v)}>
               <Network className="h-4 w-4 mr-1.5" />
               {showGraph ? "Hide Graph" : "View Graph"}
             </Button>
           </div>
-          {showGraph ? (
-            <ConnectionGraph itemId={id!} />
-          ) : (
-            <ConnectionTracePanel itemId={id!} />
-          )}
+          {showGraph ? <ConnectionGraph itemId={id!} /> : <ConnectionTracePanel itemId={id!} />}
         </section>
       ) : null}
 
@@ -257,24 +259,19 @@ export function ItemDetailPage() {
   );
 }
 
-function DetailField({
-  label,
-  value,
-}: {
-  label: string;
-  value: React.ReactNode;
-}) {
+function DetailField({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-xs font-bold text-amber-900/60 dark:text-amber-100/60 uppercase tracking-widest mb-1">{label}</dt>
+      <dt className="text-xs font-bold text-amber-900/60 dark:text-amber-100/60 uppercase tracking-widest mb-1">
+        {label}
+      </dt>
       <dd className="font-semibold text-foreground">{value}</dd>
     </div>
   );
 }
 
 function DocumentsSection({ itemId }: { itemId: string }) {
-  const { data: statusData, isLoading: statusLoading } =
-    trpc.inventory.paperless.status.useQuery();
+  const { data: statusData, isLoading: statusLoading } = trpc.inventory.paperless.status.useQuery();
 
   const status = statusData?.data;
 
@@ -302,9 +299,7 @@ function DocumentsSection({ itemId }: { itemId: string }) {
           <FileText className="h-5 w-5" />
           Documents
         </h2>
-        <p className="text-sm text-muted-foreground">
-          Paperless-ngx unavailable
-        </p>
+        <p className="text-sm text-muted-foreground">Paperless-ngx unavailable</p>
       </section>
     );
   }
@@ -340,7 +335,7 @@ function DocumentsList({ itemId }: { itemId: string }) {
 
   const typeOrder = ["receipt", "warranty", "manual", "invoice", "other"];
   const sortedTypes = [...grouped.keys()].sort(
-    (a, b) => (typeOrder.indexOf(a) ?? 99) - (typeOrder.indexOf(b) ?? 99),
+    (a, b) => (typeOrder.indexOf(a) ?? 99) - (typeOrder.indexOf(b) ?? 99)
   );
 
   return (
@@ -350,9 +345,7 @@ function DocumentsList({ itemId }: { itemId: string }) {
           <FileText className="h-5 w-5" />
           Documents
           {docs.length ? (
-            <span className="text-sm font-normal text-muted-foreground">
-              ({docs.length})
-            </span>
+            <span className="text-sm font-normal text-muted-foreground">({docs.length})</span>
           ) : null}
         </h2>
         <LinkDocumentDialog
@@ -409,9 +402,7 @@ function DocumentsList({ itemId }: { itemId: string }) {
           ))}
         </div>
       ) : (
-        <p className="text-muted-foreground text-sm">
-          No documents linked yet.
-        </p>
+        <p className="text-muted-foreground text-sm">No documents linked yet.</p>
       )}
     </section>
   );
@@ -431,16 +422,9 @@ function ConnectionRow({
 
   return (
     <div className="flex items-center justify-between p-3 rounded-lg border">
-      <Link
-        to={`/inventory/items/${connectedItemId}`}
-        className="flex-1 hover:underline"
-      >
+      <Link to={`/inventory/items/${connectedItemId}`} className="flex-1 hover:underline">
         <span className="font-medium">{item?.itemName ?? connectedItemId}</span>
-        {item?.brand && (
-          <span className="text-muted-foreground text-sm ml-2">
-            {item.brand}
-          </span>
-        )}
+        {item?.brand && <span className="text-muted-foreground text-sm ml-2">{item.brand}</span>}
       </Link>
       <Button
         variant="ghost"

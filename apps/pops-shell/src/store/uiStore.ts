@@ -19,8 +19,7 @@ export const useUIStore = create<UIState>()(
     (set) => ({
       sidebarOpen: true,
       railOpen: true,
-      toggleSidebar: () =>
-        set((state) => ({ sidebarOpen: !state.sidebarOpen })),
+      toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
       toggleRail: () => set((state) => ({ railOpen: !state.railOpen })),
       setRailOpen: (open) => set({ railOpen: open }),

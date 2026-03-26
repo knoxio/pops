@@ -181,9 +181,7 @@ export function TagEditor({
         <button
           className={cn(
             "flex flex-wrap gap-1 min-h-10 text-left w-full rounded px-2 py-1.5 transition-colors items-center",
-            disabled
-              ? "cursor-default"
-              : "hover:bg-accent/50 cursor-pointer"
+            disabled ? "cursor-default" : "hover:bg-accent/50 cursor-pointer"
           )}
           aria-label="Edit tags"
           disabled={disabled}
@@ -193,11 +191,12 @@ export function TagEditor({
           ) : (
             tags.slice(0, 3).map((tag) => {
               const meta = tagMeta?.get(tag);
-              const tooltipText = meta?.source === "rule" && meta?.pattern
-                ? `Rule: "${meta.pattern}"`
-                : meta?.source
-                ? `${meta.source} suggestion`
-                : undefined;
+              const tooltipText =
+                meta?.source === "rule" && meta?.pattern
+                  ? `Rule: "${meta.pattern}"`
+                  : meta?.source
+                    ? `${meta.source} suggestion`
+                    : undefined;
               const style = getTagStyle(tag);
               return (
                 <Badge

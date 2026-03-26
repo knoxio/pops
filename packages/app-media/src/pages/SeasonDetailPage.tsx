@@ -49,23 +49,19 @@ export function SeasonDetailPage() {
     data: showData,
     isLoading: showLoading,
     error: showError,
-  } = trpc.media.tvShows.get.useQuery(
-    { id: showId },
-    { enabled: !Number.isNaN(showId) },
-  );
+  } = trpc.media.tvShows.get.useQuery({ id: showId }, { enabled: !Number.isNaN(showId) });
 
-  const { data: seasonsData, isLoading: seasonsLoading } =
-    trpc.media.tvShows.listSeasons.useQuery(
-      { tvShowId: showId },
-      { enabled: !Number.isNaN(showId) },
-    );
+  const { data: seasonsData, isLoading: seasonsLoading } = trpc.media.tvShows.listSeasons.useQuery(
+    { tvShowId: showId },
+    { enabled: !Number.isNaN(showId) }
+  );
 
   const season = seasonsData?.data?.find((s) => s.seasonNumber === seasonNum);
 
   const { data: episodesData, isLoading: episodesLoading } =
     trpc.media.tvShows.listEpisodes.useQuery(
       { seasonId: season?.id ?? 0 },
-      { enabled: !!season?.id },
+      { enabled: !!season?.id }
     );
 
   const episodes = episodesData?.data ?? [];
@@ -74,7 +70,7 @@ export function SeasonDetailPage() {
   // Query watch history for all episodes in this season
   const { data: watchHistoryData } = trpc.media.watchHistory.list.useQuery(
     { mediaType: "episode", limit: 500 },
-    { enabled: episodeIds.length > 0 },
+    { enabled: episodeIds.length > 0 }
   );
 
   const watchedEpisodeIds = useMemo(() => {
@@ -83,7 +79,7 @@ export function SeasonDetailPage() {
     return new Set(
       watchHistoryData.data
         .filter((entry) => episodeIdSet.has(entry.mediaId))
-        .map((entry) => entry.mediaId),
+        .map((entry) => entry.mediaId)
     );
   }, [watchHistoryData, episodeIds]);
 
@@ -138,9 +134,7 @@ export function SeasonDetailPage() {
         logMutation.mutate({ mediaType: "episode", mediaId: episodeId });
       } else {
         // Find the watch history entry to delete
-        const entry = watchHistoryData?.data?.find(
-          (e) => e.mediaId === episodeId,
-        );
+        const entry = watchHistoryData?.data?.find((e) => e.mediaId === episodeId);
         if (entry) {
           deleteEntryToEpisode.current.set(entry.id, episodeId);
           deleteMutation.mutate({ id: entry.id });
@@ -153,23 +147,23 @@ export function SeasonDetailPage() {
         }
       }
     },
-    [logMutation, deleteMutation, watchHistoryData],
+    [logMutation, deleteMutation, watchHistoryData]
   );
 
   const { data: progressData } = trpc.media.watchHistory.progress.useQuery(
     { tvShowId: showId },
-    { enabled: !Number.isNaN(showId) },
+    { enabled: !Number.isNaN(showId) }
   );
 
   const seasonProgress = progressData?.data?.seasons?.find(
-    (s: { seasonNumber: number }) => s.seasonNumber === seasonNum,
+    (s: { seasonNumber: number }) => s.seasonNumber === seasonNum
   );
 
   const batchLogMutation = trpc.media.watchHistory.batchLog.useMutation({
     onSuccess: (result) => {
       utils.media.watchHistory.invalidate();
       toast.success(
-        `Marked ${result.data.logged} episode${result.data.logged !== 1 ? "s" : ""} as watched`,
+        `Marked ${result.data.logged} episode${result.data.logged !== 1 ? "s" : ""} as watched`
       );
     },
     onError: (err) => toast.error(`Failed to mark season: ${err.message}`),
@@ -184,9 +178,7 @@ export function SeasonDetailPage() {
       <div className="p-6">
         <Alert variant="destructive">
           <AlertTitle>Invalid parameters</AlertTitle>
-          <AlertDescription>
-            Show ID and season number must be valid numbers.
-          </AlertDescription>
+          <AlertDescription>Show ID and season number must be valid numbers.</AlertDescription>
         </Alert>
       </div>
     );
@@ -203,15 +195,10 @@ export function SeasonDetailPage() {
         <Alert variant="destructive">
           <AlertTitle>{is404 ? "Show not found" : "Error"}</AlertTitle>
           <AlertDescription>
-            {is404
-              ? "This TV show doesn't exist in your library."
-              : showError.message}
+            {is404 ? "This TV show doesn't exist in your library." : showError.message}
           </AlertDescription>
         </Alert>
-        <Link
-          to="/media"
-          className="mt-4 inline-block text-sm text-primary underline"
-        >
+        <Link to="/media" className="mt-4 inline-block text-sm text-primary underline">
           Back to library
         </Link>
       </div>
@@ -280,25 +267,18 @@ export function SeasonDetailPage() {
           <h1 className="text-2xl font-bold">{season.name ?? seasonLabel}</h1>
 
           <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-            {season.episodeCount != null && (
-              <span>{season.episodeCount} episodes</span>
-            )}
+            {season.episodeCount != null && <span>{season.episodeCount} episodes</span>}
             {season.episodeCount != null && season.airDate && <span>·</span>}
             {season.airDate && <span>First aired {season.airDate}</span>}
           </div>
 
           {season.overview && (
-            <p className="mt-3 text-sm text-muted-foreground leading-relaxed">
-              {season.overview}
-            </p>
+            <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{season.overview}</p>
           )}
 
           {seasonProgress && seasonProgress.total > 0 && (
             <div className="mt-3">
-              <ProgressBar
-                watched={seasonProgress.watched}
-                total={seasonProgress.total}
-              />
+              <ProgressBar watched={seasonProgress.watched} total={seasonProgress.total} />
             </div>
           )}
 
@@ -320,11 +300,7 @@ export function SeasonDetailPage() {
                 </Button>
               ) : (
                 <span className="inline-flex items-center gap-1.5 text-sm text-green-500 font-medium">
-                  <svg
-                    className="w-4 h-4"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
+                  <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
                     <path
                       fillRule="evenodd"
                       d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"

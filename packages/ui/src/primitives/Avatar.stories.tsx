@@ -283,9 +283,7 @@ export const InTable: Story = {
                 </Avatar>
                 <div>
                   <p className="text-sm font-medium">John Doe</p>
-                  <p className="text-xs text-muted-foreground">
-                    john@example.com
-                  </p>
+                  <p className="text-xs text-muted-foreground">john@example.com</p>
                 </div>
               </div>
             </td>
@@ -305,9 +303,7 @@ export const InTable: Story = {
                 </Avatar>
                 <div>
                   <p className="text-sm font-medium">Alice Brown</p>
-                  <p className="text-xs text-muted-foreground">
-                    alice@example.com
-                  </p>
+                  <p className="text-xs text-muted-foreground">alice@example.com</p>
                 </div>
               </div>
             </td>
@@ -323,9 +319,7 @@ export const InTable: Story = {
                 </Avatar>
                 <div>
                   <p className="text-sm font-medium">Charlie Davis</p>
-                  <p className="text-xs text-muted-foreground">
-                    charlie@example.com
-                  </p>
+                  <p className="text-xs text-muted-foreground">charlie@example.com</p>
                 </div>
               </div>
             </td>

@@ -274,9 +274,7 @@ export const AllRemovableVariants: Story = {
             key={chip.id}
             variant={chip.variant}
             removable
-            onRemove={() =>
-              setChips((prev) => prev.filter((c) => c.id !== chip.id))
-            }
+            onRemove={() => setChips((prev) => prev.filter((c) => c.id !== chip.id))}
           >
             {chip.label}
           </Chip>
@@ -333,9 +331,7 @@ export const FilterChips: Story = {
               key={filter}
               variant="primary"
               removable
-              onRemove={() =>
-                setActiveFilters((prev) => prev.filter((f) => f !== filter))
-              }
+              onRemove={() => setActiveFilters((prev) => prev.filter((f) => f !== filter))}
             >
               {filter}
             </Chip>

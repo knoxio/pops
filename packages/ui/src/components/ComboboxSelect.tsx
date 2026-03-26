@@ -174,16 +174,11 @@ export function ComboboxSelect({
                     >
                       {multiple && (
                         <Check
-                          className={cn(
-                            "mr-2 h-4 w-4",
-                            isSelected ? "opacity-100" : "opacity-0"
-                          )}
+                          className={cn("mr-2 h-4 w-4", isSelected ? "opacity-100" : "opacity-0")}
                         />
                       )}
                       {option.label}
-                      {!multiple && isSelected && (
-                        <Check className="ml-auto h-4 w-4" />
-                      )}
+                      {!multiple && isSelected && <Check className="ml-auto h-4 w-4" />}
                     </CommandItem>
                   );
                 })}
@@ -195,13 +190,7 @@ export function ComboboxSelect({
       {multiple && selectedValues.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {selectedValues.map((val) => (
-            <Chip
-              key={val}
-              variant="default"
-              size="sm"
-              removable
-              onRemove={() => removeValue(val)}
-            >
+            <Chip key={val} variant="default" size="sm" removable onRemove={() => removeValue(val)}>
               {getOptionLabel(val)}
             </Chip>
           ))}

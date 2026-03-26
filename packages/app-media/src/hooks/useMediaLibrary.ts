@@ -23,29 +23,26 @@ export function useMediaLibrary() {
   const [genreFilter, setGenreFilter] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("dateAdded");
 
-  const { data: moviesData, isLoading: moviesLoading } =
-    trpc.media.movies.list.useQuery({ limit: 500 });
+  const { data: moviesData, isLoading: moviesLoading } = trpc.media.movies.list.useQuery({
+    limit: 500,
+  });
 
-  const { data: tvShowsData, isLoading: tvShowsLoading } =
-    trpc.media.tvShows.list.useQuery({ limit: 500 });
+  const { data: tvShowsData, isLoading: tvShowsLoading } = trpc.media.tvShows.list.useQuery({
+    limit: 500,
+  });
 
   // Fetch batch progress for all TV shows
-  const tvShowIds = useMemo(
-    () => (tvShowsData?.data ?? []).map((s) => s.id),
-    [tvShowsData],
-  );
+  const tvShowIds = useMemo(() => (tvShowsData?.data ?? []).map((s) => s.id), [tvShowsData]);
 
   const { data: progressData } = trpc.media.watchHistory.batchProgress.useQuery(
     { tvShowIds },
-    { enabled: tvShowIds.length > 0 },
+    { enabled: tvShowIds.length > 0 }
   );
 
   const isLoading = moviesLoading || tvShowsLoading;
 
   const allItems = useMemo<MediaItem[]>(() => {
-    const progressMap = new Map(
-      (progressData?.data ?? []).map((p) => [p.tvShowId, p.percentage]),
-    );
+    const progressMap = new Map((progressData?.data ?? []).map((p) => [p.tvShowId, p.percentage]));
 
     const movieItems: MediaItem[] = (moviesData?.data ?? []).map((m) => ({
       id: m.id,

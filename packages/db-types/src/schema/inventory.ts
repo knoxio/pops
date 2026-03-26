@@ -24,10 +24,9 @@ export const homeInventory = sqliteTable(
     warrantyExpires: text("warranty_expires"),
     replacementValue: real("replacement_value"),
     resaleValue: real("resale_value"),
-    purchaseTransactionId: text("purchase_transaction_id").references(
-      () => transactions.id,
-      { onDelete: "set null" }
-    ),
+    purchaseTransactionId: text("purchase_transaction_id").references(() => transactions.id, {
+      onDelete: "set null",
+    }),
     purchasedFromId: text("purchased_from_id").references(() => entities.id, {
       onDelete: "set null",
     }),

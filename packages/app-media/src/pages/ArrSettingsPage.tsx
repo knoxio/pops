@@ -81,16 +81,12 @@ function ServiceCard({
       <div className="flex items-center gap-2">
         <Icon className="h-5 w-5 text-muted-foreground" />
         <h2 className="text-lg font-semibold">{label}</h2>
-        {testResult && configured && (
-          <ConnectionBadge connected={testResult.connected} />
-        )}
+        {testResult && configured && <ConnectionBadge connected={testResult.connected} />}
       </div>
 
       <div className="space-y-3">
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-muted-foreground">
-            Server URL
-          </label>
+          <label className="text-sm font-medium text-muted-foreground">Server URL</label>
           <Input
             placeholder="http://192.168.1.100:7878"
             value={url}
@@ -100,9 +96,7 @@ function ServiceCard({
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-muted-foreground">
-            API Key
-          </label>
+          <label className="text-sm font-medium text-muted-foreground">API Key</label>
           <div className="flex gap-2">
             <Input
               type={showKey ? "text" : "password"}
@@ -119,23 +113,14 @@ function ServiceCard({
               onClick={() => setShowKey(!showKey)}
               aria-label={showKey ? "Hide API key" : "Show API key"}
             >
-              {showKey ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
+              {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
             </Button>
           </div>
         </div>
       </div>
 
       <div className="flex gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onSave}
-          disabled={saving}
-        >
+        <Button variant="outline" size="sm" onClick={onSave} disabled={saving}>
           {saving ? (
             <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
           ) : (
@@ -143,12 +128,7 @@ function ServiceCard({
           )}
           Save
         </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onTest}
-          disabled={testing || !configured}
-        >
+        <Button variant="outline" size="sm" onClick={onTest} disabled={testing || !configured}>
           {testing ? (
             <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
           ) : (
@@ -159,9 +139,7 @@ function ServiceCard({
       </div>
 
       {testResult?.connected && testResult.version && (
-        <p className="text-xs text-emerald-400">
-          Connected — v{testResult.version}
-        </p>
+        <p className="text-xs text-emerald-400">Connected — v{testResult.version}</p>
       )}
       {testResult && !testResult.connected && testResult.error && (
         <p className="text-xs text-red-400">{testResult.error}</p>
@@ -239,14 +217,12 @@ export function ArrSettingsPage() {
         >
           <ArrowLeft className="h-4 w-4" />
         </Link>
-        <h1 className="text-2xl font-bold tracking-tight">
-          Radarr & Sonarr Settings
-        </h1>
+        <h1 className="text-2xl font-bold tracking-tight">Radarr & Sonarr Settings</h1>
       </div>
 
       <p className="text-sm text-muted-foreground">
-        Configure your Radarr and Sonarr connections to see download status
-        badges on movie and TV show pages.
+        Configure your Radarr and Sonarr connections to see download status badges on movie and TV
+        show pages.
       </p>
 
       <div className="grid gap-6">

@@ -9,17 +9,14 @@ export interface MarkAsWatchedButtonProps {
   className?: string;
 }
 
-export function MarkAsWatchedButton({
-  mediaId,
-  className,
-}: MarkAsWatchedButtonProps) {
+export function MarkAsWatchedButton({ mediaId, className }: MarkAsWatchedButtonProps) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [customDate, setCustomDate] = useState("");
   const utils = trpc.useUtils();
 
   const { data: historyData } = trpc.media.watchHistory.list.useQuery(
     { mediaType: "movie", mediaId, limit: 100 },
-    { staleTime: 30_000 },
+    { staleTime: 30_000 }
   );
 
   const watchCount = historyData?.data?.length ?? 0;
@@ -91,11 +88,7 @@ export function MarkAsWatchedButton({
           loading={logMutation.isPending && !showDatePicker}
           loadingText="Logging"
           prefix={
-            watchCount > 0 ? (
-              <CircleCheck className="h-4 w-4" />
-            ) : (
-              <Eye className="h-4 w-4" />
-            )
+            watchCount > 0 ? <CircleCheck className="h-4 w-4" /> : <Eye className="h-4 w-4" />
           }
           aria-label="Mark as watched"
         >
@@ -136,9 +129,7 @@ export function MarkAsWatchedButton({
       )}
 
       {watchCount > 0 && lastWatched && (
-        <p className="text-xs text-muted-foreground mt-1">
-          Last watched {formatDate(lastWatched)}
-        </p>
+        <p className="text-xs text-muted-foreground mt-1">Last watched {formatDate(lastWatched)}</p>
       )}
     </div>
   );

@@ -54,10 +54,7 @@ function TraceNodeRow({ node, depth, currentItemId }: TraceNodeRowProps) {
         aria-expanded={hasChildren ? open : undefined}
       >
         {hasChildren ? (
-          <CollapsibleTrigger
-            asChild
-            onClick={(e: React.MouseEvent) => e.stopPropagation()}
-          >
+          <CollapsibleTrigger asChild onClick={(e: React.MouseEvent) => e.stopPropagation()}>
             <button
               type="button"
               className="p-0.5 rounded hover:bg-muted"
@@ -131,26 +128,18 @@ export interface ConnectionTracePanelProps {
 export function ConnectionTracePanel({ itemId }: ConnectionTracePanelProps) {
   const { data, isLoading, error } = trpc.inventory.connections.trace.useQuery(
     { itemId },
-    { enabled: !!itemId },
+    { enabled: !!itemId }
   );
 
   if (isLoading) return <TraceSkeleton />;
 
   if (error) {
-    return (
-      <p className="text-sm text-destructive">
-        Failed to load connection trace.
-      </p>
-    );
+    return <p className="text-sm text-destructive">Failed to load connection trace.</p>;
   }
 
   const tree = data?.data;
   if (!tree || tree.children.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        No connection chain found.
-      </p>
-    );
+    return <p className="text-sm text-muted-foreground">No connection chain found.</p>;
   }
 
   const totalNodes = countNodes(tree) - 1; // Exclude root

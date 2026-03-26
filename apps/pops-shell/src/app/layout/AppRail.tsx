@@ -78,7 +78,9 @@ export function AppRail({ className }: AppRailProps) {
                 <span
                   className={cn(
                     "absolute left-0 top-1/2 -translate-y-1/2 w-1 rounded-r-full transition-all duration-300",
-                    isActive ? cn("h-8", appColor) : "h-0 bg-transparent group-hover:h-4 group-hover:bg-muted-foreground/40"
+                    isActive
+                      ? cn("h-8", appColor)
+                      : "h-0 bg-transparent group-hover:h-4 group-hover:bg-muted-foreground/40"
                   )}
                 />
 
@@ -93,9 +95,7 @@ export function AppRail({ className }: AppRailProps) {
                   {Icon ? (
                     <Icon className="h-6 w-6" />
                   ) : (
-                    <span className="text-lg font-semibold">
-                      {app.label[0]}
-                    </span>
+                    <span className="text-lg font-semibold">{app.label[0]}</span>
                   )}
                 </span>
               </button>

@@ -40,9 +40,7 @@ export const router = createBrowserRouter([
     errorElement: (
       <div className="flex flex-col items-center justify-center min-h-screen text-center px-4">
         <h1 className="text-2xl font-bold mb-2">Something went wrong</h1>
-        <p className="text-muted-foreground mb-6">
-          An unexpected error occurred.
-        </p>
+        <p className="text-muted-foreground mb-6">An unexpected error occurred.</p>
         <Link
           to="/"
           className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"

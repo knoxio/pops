@@ -2,12 +2,7 @@
  * Select component - styled dropdown for choosing from options
  * Native select with custom styling to match design system
  */
-import {
-  forwardRef,
-  useState,
-  type SelectHTMLAttributes,
-  type ReactNode,
-} from "react";
+import { forwardRef, useState, type SelectHTMLAttributes, type ReactNode } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../lib/utils";
 
@@ -168,9 +163,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           )}
           style={isFocused && !error ? { borderColor: "rgb(55, 65, 81)" } : undefined}
         >
-          {prefix && (
-            <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>
-          )}
+          {prefix && <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>}
           <select
             ref={ref}
             className={cn(selectVariants({ size, centered, className }))}
@@ -187,22 +180,14 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
               </option>
             )}
             {options.map((option) => (
-              <option
-                key={option.value}
-                value={option.value}
-                disabled={option.disabled}
-              >
+              <option key={option.value} value={option.value} disabled={option.disabled}>
                 {option.label}
               </option>
             ))}
           </select>
           <ChevronDownIcon />
         </div>
-        {error && (
-          <p className="text-[10px] font-medium text-destructive ml-1">
-            {error}
-          </p>
-        )}
+        {error && <p className="text-[10px] font-medium text-destructive ml-1">{error}</p>}
       </div>
     );
   }

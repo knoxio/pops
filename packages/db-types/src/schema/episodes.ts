@@ -17,7 +17,9 @@ export const episodes = sqliteTable(
     stillPath: text("still_path"),
     voteAverage: real("vote_average"),
     runtime: integer("runtime"),
-    createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
   },
   (table) => [
     uniqueIndex("idx_episodes_tvdb_id").on(table.tvdbId),

@@ -16,7 +16,9 @@ export const seasons = sqliteTable(
     posterPath: text("poster_path"),
     airDate: text("air_date"),
     episodeCount: integer("episode_count"),
-    createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
   },
   (table) => [
     uniqueIndex("idx_seasons_tvdb_id").on(table.tvdbId),

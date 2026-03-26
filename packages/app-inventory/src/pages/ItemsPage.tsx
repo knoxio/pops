@@ -4,15 +4,7 @@
  */
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router";
-import {
-  Package,
-  LayoutGrid,
-  LayoutList,
-  Search,
-  DollarSign,
-  Shield,
-  Clock,
-} from "lucide-react";
+import { Package, LayoutGrid, LayoutList, Search, DollarSign, Shield, Clock } from "lucide-react";
 import {
   Skeleton,
   Select,
@@ -140,9 +132,7 @@ function DashboardWidgets() {
             <DollarSign className="h-4 w-4" />
             <span className="text-xs font-medium">Resale</span>
           </div>
-          <div className="text-2xl font-bold tabular-nums">
-            {formatCurrency(totalResaleValue)}
-          </div>
+          <div className="text-2xl font-bold tabular-nums">{formatCurrency(totalResaleValue)}</div>
         </CardContent>
       </Card>
 
@@ -154,9 +144,7 @@ function DashboardWidgets() {
           </div>
           <div className="text-2xl font-bold tabular-nums">
             {warrantiesExpiringSoon}
-            <span className="text-sm font-normal text-muted-foreground ml-1">
-              expiring
-            </span>
+            <span className="text-sm font-normal text-muted-foreground ml-1">expiring</span>
           </div>
         </CardContent>
       </Card>
@@ -186,9 +174,7 @@ function DashboardWidgets() {
                   <span className="font-medium truncate">{item.itemName}</span>
                   {item.type && <TypeBadge type={item.type} />}
                   {item.assetId && (
-                    <span className="text-xs text-muted-foreground shrink-0">
-                      {item.assetId}
-                    </span>
+                    <span className="text-xs text-muted-foreground shrink-0">{item.assetId}</span>
                   )}
                   <span className="text-xs text-muted-foreground shrink-0 ml-auto">
                     {timeAgo(item.lastEditedTime)}
@@ -238,7 +224,7 @@ export function ItemsPage() {
       inUse: (inUseFilter || undefined) as "true" | "false" | undefined,
       limit: 200,
     }),
-    [search, typeFilter, conditionFilter, inUseFilter],
+    [search, typeFilter, conditionFilter, inUseFilter]
   );
 
   const { data, isLoading } = trpc.inventory.items.list.useQuery(queryInput);
@@ -323,14 +309,9 @@ export function ItemsPage() {
             <p className="text-xs font-semibold text-amber-900 dark:text-amber-200 uppercase tracking-wider">
               {totalCount} {totalCount === 1 ? "item" : "items"}
               {totalReplacementValue > 0 && (
-                <span>
-                  {" "}
-                  — {formatCurrency(totalReplacementValue)} replacement
-                </span>
+                <span> — {formatCurrency(totalReplacementValue)} replacement</span>
               )}
-              {totalResaleValue > 0 && (
-                <span> — {formatCurrency(totalResaleValue)} resale</span>
-              )}
+              {totalResaleValue > 0 && <span> — {formatCurrency(totalResaleValue)} resale</span>}
             </p>
           </div>
           <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5 ml-auto">

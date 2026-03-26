@@ -57,7 +57,9 @@ export function PageNav() {
       aria-label={`${activeApp.label} pages`}
     >
       <div className="px-4 py-4 border-b border-border">
-        <span className={`text-[10px] font-bold uppercase tracking-[0.15em] ${appColors?.text || "text-muted-foreground"}`}>
+        <span
+          className={`text-[10px] font-bold uppercase tracking-[0.15em] ${appColors?.text || "text-muted-foreground"}`}
+        >
           {activeApp.label}
         </span>
       </div>
@@ -65,11 +67,7 @@ export function PageNav() {
       <div className="p-2 space-y-0.5">
         {activeApp.items.map((item) => {
           const fullPath = `${activeApp.basePath}${item.path}`;
-          const active = isPageActive(
-            location.pathname,
-            activeApp.basePath,
-            item.path,
-          );
+          const active = isPageActive(location.pathname, activeApp.basePath, item.path);
           const Icon = iconMap[item.icon];
 
           return (
@@ -83,9 +81,13 @@ export function PageNav() {
               }`}
             >
               {Icon && (
-                <Icon className={`h-4 w-4 shrink-0 transition-colors ${
-                  active ? "text-white" : `${appColors?.muted || "text-muted-foreground"} group-hover:text-foreground`
-                }`} />
+                <Icon
+                  className={`h-4 w-4 shrink-0 transition-colors ${
+                    active
+                      ? "text-white"
+                      : `${appColors?.muted || "text-muted-foreground"} group-hover:text-foreground`
+                  }`}
+                />
               )}
               <span>{item.label}</span>
             </Link>

@@ -8,13 +8,7 @@
 import { useMemo } from "react";
 import { useSearchParams, useNavigate } from "react-router";
 import { FileText, Printer } from "lucide-react";
-import {
-  Skeleton,
-  AssetIdBadge,
-  ConditionBadge,
-  Badge,
-  type Condition,
-} from "@pops/ui";
+import { Skeleton, AssetIdBadge, ConditionBadge, Badge, type Condition } from "@pops/ui";
 import { trpc } from "../lib/trpc";
 
 function formatCurrency(value: number): string {
@@ -42,9 +36,7 @@ function warrantyStatus(expiryStr: string | null): {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   const expiry = new Date(expiryStr);
-  const days = Math.ceil(
-    (expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
-  );
+  const days = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
   if (days < 0) return { label: "Expired", variant: "destructive" };
   if (days <= 90) return { label: `${days}d left`, variant: "default" };
   return { label: formatDate(expiryStr), variant: "secondary" };
@@ -56,7 +48,7 @@ export function InsuranceReportPage(): React.ReactElement {
   const locationId = searchParams.get("locationId") ?? undefined;
 
   const { data, isLoading } = trpc.inventory.reports.insuranceReport.useQuery(
-    locationId ? { locationId } : undefined,
+    locationId ? { locationId } : undefined
   );
 
   const report = data?.data;
@@ -98,9 +90,7 @@ export function InsuranceReportPage(): React.ReactElement {
           </div>
           <p className="text-sm text-muted-foreground">
             Generated {today}
-            {locationId && report.groups.length === 1 && (
-              <> — {report.groups[0].locationName}</>
-            )}
+            {locationId && report.groups.length === 1 && <> — {report.groups[0].locationName}</>}
           </p>
         </div>
         <button
@@ -115,8 +105,12 @@ export function InsuranceReportPage(): React.ReactElement {
       {/* Summary */}
       <div className="grid grid-cols-2 gap-6 mb-8 p-6 rounded-2xl bg-amber-500/10 border-2 border-amber-500/10 print:bg-transparent print:border print:border-gray-300 print:rounded-none">
         <div>
-          <p className="text-xs font-bold text-amber-900/60 dark:text-amber-100/60 uppercase tracking-widest mb-1">Total Items</p>
-          <p className="text-3xl font-black text-amber-900 dark:text-amber-50">{report.totalItems}</p>
+          <p className="text-xs font-bold text-amber-900/60 dark:text-amber-100/60 uppercase tracking-widest mb-1">
+            Total Items
+          </p>
+          <p className="text-3xl font-black text-amber-900 dark:text-amber-50">
+            {report.totalItems}
+          </p>
         </div>
         <div className="text-right">
           <p className="text-xs font-bold text-amber-900/60 dark:text-amber-100/60 uppercase tracking-widest mb-1">
@@ -137,8 +131,7 @@ export function InsuranceReportPage(): React.ReactElement {
           <h2 className="text-lg font-semibold mb-3 pb-1 border-b">
             {group.locationName}
             <span className="ml-2 text-sm font-normal text-muted-foreground">
-              ({group.items.length}{" "}
-              {group.items.length === 1 ? "item" : "items"})
+              ({group.items.length} {group.items.length === 1 ? "item" : "items"})
             </span>
           </h2>
 
@@ -186,22 +179,16 @@ export function InsuranceReportPage(): React.ReactElement {
                       <td className="py-2 pr-3">{item.brand ?? "—"}</td>
                       <td className="py-2 pr-3">
                         {item.condition ? (
-                          <ConditionBadge
-                            condition={item.condition as Condition}
-                          />
+                          <ConditionBadge condition={item.condition as Condition} />
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
                       </td>
                       <td className="py-2 pr-3">
-                        <Badge variant={warranty.variant}>
-                          {warranty.label}
-                        </Badge>
+                        <Badge variant={warranty.variant}>{warranty.label}</Badge>
                       </td>
                       <td className="py-2 pr-3 text-right tabular-nums">
-                        {item.replacementValue
-                          ? formatCurrency(item.replacementValue)
-                          : "—"}
+                        {item.replacementValue ? formatCurrency(item.replacementValue) : "—"}
                       </td>
                     </tr>
                   );
@@ -215,10 +202,7 @@ export function InsuranceReportPage(): React.ReactElement {
                     </td>
                     <td className="py-2 pr-3 text-right tabular-nums">
                       {formatCurrency(
-                        group.items.reduce(
-                          (sum, i) => sum + (i.replacementValue ?? 0),
-                          0,
-                        ),
+                        group.items.reduce((sum, i) => sum + (i.replacementValue ?? 0), 0)
                       )}
                     </td>
                   </tr>

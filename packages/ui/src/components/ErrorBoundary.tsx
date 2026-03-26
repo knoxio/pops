@@ -34,12 +34,8 @@ export class ErrorBoundary extends Component<Props, State> {
         this.props.fallback(this.state.error, this.reset)
       ) : (
         <div className="p-6">
-          <h1 className="text-2xl font-bold text-red-600">
-            Something went wrong
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            {this.state.error.message}
-          </p>
+          <h1 className="text-2xl font-bold text-red-600">Something went wrong</h1>
+          <p className="mt-2 text-muted-foreground">{this.state.error.message}</p>
           <button
             onClick={this.reset}
             className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90"

@@ -105,9 +105,7 @@ export const PromiseToast: Story = {
   render: () => (
     <Button
       onClick={() => {
-        const promise = new Promise<void>((resolve) =>
-          setTimeout(resolve, 2000)
-        );
+        const promise = new Promise<void>((resolve) => setTimeout(resolve, 2000));
 
         toast.promise(promise, {
           loading: "Saving transaction...",

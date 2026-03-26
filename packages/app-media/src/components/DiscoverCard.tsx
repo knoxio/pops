@@ -53,30 +53,19 @@ export function DiscoverCard({
   const year = releaseDate ? releaseDate.slice(0, 4) : null;
 
   return (
-    <div
-      className={cn(
-        "group flex w-36 shrink-0 flex-col gap-1.5 sm:w-40",
-        className,
-      )}
-    >
+    <div className={cn("group flex w-36 shrink-0 flex-col gap-1.5 sm:w-40", className)}>
       {/* Poster */}
       <div className="relative w-full overflow-hidden rounded-md bg-muted aspect-[2/3]">
         {/* Rating badge */}
         {voteAverage > 0 && (
-          <Badge
-            variant="default"
-            className="absolute top-2 left-2 z-10 text-xs"
-          >
+          <Badge variant="default" className="absolute top-2 left-2 z-10 text-xs">
             {voteAverage.toFixed(1)}
           </Badge>
         )}
 
         {/* In Library badge */}
         {inLibrary && (
-          <Badge
-            variant="secondary"
-            className="absolute top-2 right-2 z-10 gap-0.5 text-xs"
-          >
+          <Badge variant="secondary" className="absolute top-2 right-2 z-10 gap-0.5 text-xs">
             <Check className="h-3 w-3" />
             Owned
           </Badge>
@@ -91,7 +80,7 @@ export function DiscoverCard({
             className={cn(
               "h-full w-full object-cover transition-opacity duration-200",
               "group-hover:opacity-80",
-              imageLoaded ? "opacity-100" : "opacity-0",
+              imageLoaded ? "opacity-100" : "opacity-0"
             )}
             onLoad={() => setImageLoaded(true)}
             onError={() => setImageError(true)}
@@ -160,9 +149,7 @@ export function DiscoverCard({
 
       {/* Title + Year + Match info */}
       <div className="space-y-0.5 px-0.5">
-        <h3 className="text-sm font-medium leading-tight line-clamp-2">
-          {title}
-        </h3>
+        <h3 className="text-sm font-medium leading-tight line-clamp-2">{title}</h3>
         {year && <p className="text-xs text-muted-foreground">{year}</p>}
         {matchPercentage != null && matchPercentage > 0 && (
           <div className="flex items-center gap-1">
@@ -173,15 +160,13 @@ export function DiscoverCard({
                   ? "text-green-500"
                   : matchPercentage >= 70
                     ? "text-emerald-500"
-                    : "text-muted-foreground",
+                    : "text-muted-foreground"
               )}
             >
               {matchPercentage}% Match
             </span>
             {matchReason && (
-              <span className="text-xs text-muted-foreground truncate">
-                · {matchReason}
-              </span>
+              <span className="text-xs text-muted-foreground truncate">· {matchReason}</span>
             )}
           </div>
         )}

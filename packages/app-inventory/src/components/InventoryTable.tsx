@@ -52,18 +52,12 @@ function createColumns(): ColumnDef<InventoryTableItem>[] {
     },
     {
       accessorKey: "itemName",
-      header: ({ column }) => (
-        <SortableHeader column={column}>Name</SortableHeader>
-      ),
-      cell: ({ row }) => (
-        <span className="font-medium">{row.original.itemName}</span>
-      ),
+      header: ({ column }) => <SortableHeader column={column}>Name</SortableHeader>,
+      cell: ({ row }) => <span className="font-medium">{row.original.itemName}</span>,
     },
     {
       accessorKey: "brand",
-      header: ({ column }) => (
-        <SortableHeader column={column}>Brand</SortableHeader>
-      ),
+      header: ({ column }) => <SortableHeader column={column}>Brand</SortableHeader>,
       cell: ({ row }) => row.original.brand ?? "—",
     },
     {
@@ -79,27 +73,20 @@ function createColumns(): ColumnDef<InventoryTableItem>[] {
       header: "Condition",
       cell: ({ row }) => {
         const condition = row.original.condition;
-        if (!condition || !VALID_CONDITIONS.has(condition))
-          return condition ?? "—";
+        if (!condition || !VALID_CONDITIONS.has(condition)) return condition ?? "—";
         return <ConditionBadge condition={condition as Condition} />;
       },
     },
     {
       accessorKey: "location",
-      header: ({ column }) => (
-        <SortableHeader column={column}>Location</SortableHeader>
-      ),
+      header: ({ column }) => <SortableHeader column={column}>Location</SortableHeader>,
       cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {row.original.location ?? "—"}
-        </span>
+        <span className="text-muted-foreground">{row.original.location ?? "—"}</span>
       ),
     },
     {
       accessorKey: "replacementValue",
-      header: ({ column }) => (
-        <SortableHeader column={column}>Value</SortableHeader>
-      ),
+      header: ({ column }) => <SortableHeader column={column}>Value</SortableHeader>,
       cell: ({ row }) => {
         const value = row.original.replacementValue;
         return value != null ? formatCurrency(value) : "—";
@@ -125,11 +112,7 @@ export interface InventoryTableProps {
   searchable?: boolean;
 }
 
-export function InventoryTable({
-  items,
-  loading,
-  searchable = false,
-}: InventoryTableProps) {
+export function InventoryTable({ items, loading, searchable = false }: InventoryTableProps) {
   const navigate = useNavigate();
   const columns = useMemo(() => createColumns(), []);
 

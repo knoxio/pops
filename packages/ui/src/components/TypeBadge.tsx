@@ -2,8 +2,7 @@ import type { ComponentProps } from "react";
 import { Badge } from "../primitives/badge";
 import { cn } from "../lib/utils";
 
-export interface TypeBadgeProps
-  extends Omit<ComponentProps<typeof Badge>, "variant" | "children"> {
+export interface TypeBadgeProps extends Omit<ComponentProps<typeof Badge>, "variant" | "children"> {
   type: string;
 }
 
@@ -18,7 +17,7 @@ const typeStyles: Record<string, string> = {
 
 export function TypeBadge({ type, className, ...props }: TypeBadgeProps) {
   const style = typeStyles[type] || "bg-muted text-muted-foreground border-transparent";
-  
+
   return (
     <Badge
       variant="outline"

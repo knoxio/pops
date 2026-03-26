@@ -99,9 +99,7 @@ function EpisodeRow({
       </div>
 
       {isExpanded && hasOverview && (
-        <p className="mt-2 ml-7 text-sm text-muted-foreground leading-relaxed">
-          {ep.overview}
-        </p>
+        <p className="mt-2 ml-7 text-sm text-muted-foreground leading-relaxed">{ep.overview}</p>
       )}
     </div>
   );
@@ -130,9 +128,7 @@ export function EpisodeList({
   };
 
   if (episodes.length === 0) {
-    return (
-      <p className="text-muted-foreground text-sm">No episodes available.</p>
-    );
+    return <p className="text-muted-foreground text-sm">No episodes available.</p>;
   }
 
   return (

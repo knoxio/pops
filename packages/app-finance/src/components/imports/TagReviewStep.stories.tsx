@@ -69,9 +69,7 @@ const shellTransactions: ConfirmedTransaction[] = [
     entityName: "Shell",
     entityId: "shell-id",
     tags: ["Transport"],
-    suggestedTags: [
-      { tag: "Transport", source: "rule", pattern: "shell" },
-    ],
+    suggestedTags: [{ tag: "Transport", source: "rule", pattern: "shell" }],
   }),
   makeTransaction({
     description: "SHELL SERVICE STATION",
@@ -127,8 +125,7 @@ const meta: Meta<typeof TagReviewStep> = {
   },
   decorators: [
     (Story, context) => {
-      const transactions =
-        (context.parameters.transactions as ConfirmedTransaction[]) ?? [];
+      const transactions = (context.parameters.transactions as ConfirmedTransaction[]) ?? [];
       return (
         <StoreSeeder transactions={transactions}>
           <div className="max-w-3xl mx-auto p-6 bg-white dark:bg-gray-900 rounded-lg border shadow-sm">
@@ -150,22 +147,14 @@ type Story = StoryObj<typeof TagReviewStep>;
 /** All transactions have pre-suggested tags with source attribution */
 export const WithSuggestedTags: Story = {
   parameters: {
-    transactions: [
-      ...woolworthsTransactions,
-      ...netflixTransactions,
-      ...shellTransactions,
-    ],
+    transactions: [...woolworthsTransactions, ...netflixTransactions, ...shellTransactions],
   },
 };
 
 /** Some transactions have tags (with sources), one group has none */
 export const Mixed: Story = {
   parameters: {
-    transactions: [
-      ...woolworthsTransactions,
-      ...noTagTransactions,
-      ...netflixTransactions,
-    ],
+    transactions: [...woolworthsTransactions, ...noTagTransactions, ...netflixTransactions],
   },
 };
 

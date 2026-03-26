@@ -5,11 +5,7 @@ import { Sparkles, Settings } from "lucide-react";
 import { MediaGrid } from "../components/MediaGrid";
 import { DownloadQueue } from "../components/DownloadQueue";
 import { QuickPickDialog } from "../components/QuickPickDialog";
-import {
-  useMediaLibrary,
-  type MediaType,
-  type SortOption,
-} from "../hooks/useMediaLibrary";
+import { useMediaLibrary, type MediaType, type SortOption } from "../hooks/useMediaLibrary";
 
 const TYPE_OPTIONS: { value: MediaType; label: string }[] = [
   { value: "all", label: "All" },
@@ -50,8 +46,7 @@ function MediaCard({
     progress: number | null;
   };
 }) {
-  const href =
-    item.type === "movie" ? `/media/movies/${item.id}` : `/media/tv/${item.id}`;
+  const href = item.type === "movie" ? `/media/movies/${item.id}` : `/media/tv/${item.id}`;
   const posterSrc = item.posterUrl ?? "";
 
   return (
@@ -89,9 +84,7 @@ function MediaCard({
       <h3 className="mt-2 text-sm font-medium line-clamp-2 transition-colors group-hover:text-indigo-400">
         {item.title}
       </h3>
-      {item.year && (
-        <p className="text-xs text-muted-foreground">{item.year}</p>
-      )}
+      {item.year && <p className="text-xs text-muted-foreground">{item.year}</p>}
     </Link>
   );
 }
@@ -221,18 +214,13 @@ export function LibraryPage() {
           <p className="text-muted-foreground">
             Your library is empty. Search for movies and shows to get started.
           </p>
-          <Link
-            to="/media/search"
-            className="mt-4 inline-block text-sm text-primary underline"
-          >
+          <Link to="/media/search" className="mt-4 inline-block text-sm text-primary underline">
             Search for media
           </Link>
         </div>
       ) : items.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-muted-foreground">
-            No results match your filters.
-          </p>
+          <p className="text-muted-foreground">No results match your filters.</p>
         </div>
       ) : (
         <MediaGrid>

@@ -116,10 +116,7 @@ export const BetweenSections: Story = {
             { desc: "Netflix Subscription", date: "Feb 09", amount: "-$22.99" },
             { desc: "Salary Deposit", date: "Feb 05", amount: "+$3,500.00" },
           ].map((txn, i) => (
-            <div
-              key={i}
-              className="flex items-center justify-between rounded-lg border p-3"
-            >
+            <div key={i} className="flex items-center justify-between rounded-lg border p-3">
               <div>
                 <p className="text-sm font-medium">{txn.desc}</p>
                 <p className="text-xs text-muted-foreground">{txn.date}</p>
@@ -201,9 +198,7 @@ export const WithLabel: Story = {
           <Separator />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">
-            Account Settings
-          </span>
+          <span className="bg-background px-2 text-muted-foreground">Account Settings</span>
         </div>
       </div>
 

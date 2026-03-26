@@ -15,10 +15,9 @@ export function DashboardPage() {
   });
 
   // Fetch budgets
-  const { data: budgets, isLoading: budgetsLoading } =
-    trpc.finance.budgets.list.useQuery({
-      limit: 5,
-    });
+  const { data: budgets, isLoading: budgetsLoading } = trpc.finance.budgets.list.useQuery({
+    limit: 5,
+  });
 
   // Calculate stats from transactions
   const stats = transactions?.data
@@ -42,8 +41,7 @@ export function DashboardPage() {
           <AlertTitle>Unable to load dashboard</AlertTitle>
           <AlertDescription>
             <p className="mb-2">
-              The backend API is not responding. Make sure the pops-api
-              server is running.
+              The backend API is not responding. Make sure the pops-api server is running.
             </p>
             <details className="mt-3">
               <summary className="cursor-pointer hover:underline font-medium text-sm">
@@ -63,9 +61,7 @@ export function DashboardPage() {
     <div className="max-w-7xl mx-auto space-y-8 pb-10">
       <header>
         <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">
-          Welcome back! Here's your financial overview.
-        </p>
+        <p className="text-muted-foreground mt-1">Welcome back! Here's your financial overview.</p>
       </header>
 
       {/* Stats Grid */}
@@ -128,11 +124,12 @@ export function DashboardPage() {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-medium truncate text-base">
-                        {transaction.description}
-                      </p>
+                      <p className="font-medium truncate text-base">{transaction.description}</p>
                       {transaction.tags.includes("Online") && (
-                        <Badge variant="secondary" className="hidden sm:inline-flex text-[10px] uppercase tracking-wider px-1.5 py-0">
+                        <Badge
+                          variant="secondary"
+                          className="hidden sm:inline-flex text-[10px] uppercase tracking-wider px-1.5 py-0"
+                        >
                           Online
                         </Badge>
                       )}
@@ -152,7 +149,10 @@ export function DashboardPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-4 shrink-0">
-                    <Badge variant="outline" className="hidden sm:inline-flex text-[10px] uppercase tracking-wider px-1.5 py-0 text-muted-foreground font-normal">
+                    <Badge
+                      variant="outline"
+                      className="hidden sm:inline-flex text-[10px] uppercase tracking-wider px-1.5 py-0 text-muted-foreground font-normal"
+                    >
                       {transaction.account}
                     </Badge>
                     <p
@@ -162,8 +162,7 @@ export function DashboardPage() {
                           : "text-green-600 dark:text-green-400"
                       }`}
                     >
-                      {transaction.amount < 0 ? "-" : "+"}$
-                      {Math.abs(transaction.amount).toFixed(2)}
+                      {transaction.amount < 0 ? "-" : "+"}${Math.abs(transaction.amount).toFixed(2)}
                     </p>
                   </div>
                 </div>
@@ -192,13 +191,20 @@ export function DashboardPage() {
               <Card key={budget.id} className="p-5 flex flex-col justify-between h-full">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-medium text-muted-foreground uppercase text-[10px] tracking-widest">{budget.category}</h3>
-                    <Badge variant={budget.active ? "default" : "secondary"} className="text-[10px] h-5">
+                    <h3 className="font-medium text-muted-foreground uppercase text-[10px] tracking-widest">
+                      {budget.category}
+                    </h3>
+                    <Badge
+                      variant={budget.active ? "default" : "secondary"}
+                      className="text-[10px] h-5"
+                    >
                       {budget.active ? "Active" : "Inactive"}
                     </Badge>
                   </div>
                   <div className="flex items-baseline gap-1">
-                    <span className="text-2xl font-bold">${budget.amount ? budget.amount.toFixed(2) : "0.00"}</span>
+                    <span className="text-2xl font-bold">
+                      ${budget.amount ? budget.amount.toFixed(2) : "0.00"}
+                    </span>
                     <span className="text-xs text-muted-foreground">/ {budget.period}</span>
                   </div>
                 </div>

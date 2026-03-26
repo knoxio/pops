@@ -71,14 +71,8 @@ export const WithError: Story = {
   render: () => (
     <div className="space-y-2 w-96">
       <label className="text-sm font-medium">Message</label>
-      <Textarea
-        placeholder="Enter your message..."
-        aria-invalid="true"
-        defaultValue="Too short"
-      />
-      <p className="text-xs text-destructive">
-        Message must be at least 10 characters
-      </p>
+      <Textarea placeholder="Enter your message..." aria-invalid="true" defaultValue="Too short" />
+      <p className="text-xs text-destructive">Message must be at least 10 characters</p>
     </div>
   ),
 };
@@ -92,9 +86,7 @@ export const TransactionNote: Story = {
       <div className="space-y-4 w-96 rounded-lg border p-6">
         <div>
           <h3 className="text-sm font-semibold">Transaction Details</h3>
-          <p className="text-xs text-muted-foreground">
-            Woolworths Sydney • $87.45
-          </p>
+          <p className="text-xs text-muted-foreground">Woolworths Sydney • $87.45</p>
         </div>
 
         <div className="space-y-2">
@@ -155,9 +147,7 @@ export const Feedback: Story = {
       <div className="space-y-4 w-96 rounded-lg border p-6">
         <div>
           <h3 className="text-lg font-semibold">Send Feedback</h3>
-          <p className="text-sm text-muted-foreground">
-            We'd love to hear your thoughts
-          </p>
+          <p className="text-sm text-muted-foreground">We'd love to hear your thoughts</p>
         </div>
 
         <div className="space-y-2">
@@ -203,9 +193,7 @@ export const AutoGrowing: Story = {
           rows={2}
           className="resize-none"
         />
-        <p className="text-xs text-muted-foreground">
-          Uses field-sizing: content (CSS feature)
-        </p>
+        <p className="text-xs text-muted-foreground">Uses field-sizing: content (CSS feature)</p>
       </div>
     );
   },
@@ -253,9 +241,7 @@ export const Form: Story = {
             className="w-full rounded-md border px-3 py-2 text-sm"
             placeholder="e.g., Emergency Fund"
             value={formData.title}
-            onChange={(e) =>
-              setFormData({ ...formData, title: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           />
         </div>
 
@@ -264,9 +250,7 @@ export const Form: Story = {
           <Textarea
             placeholder="What is this goal for?"
             value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             rows={3}
           />
         </div>
@@ -276,17 +260,13 @@ export const Form: Story = {
           <Textarea
             placeholder="Any other details... (optional)"
             value={formData.notes}
-            onChange={(e) =>
-              setFormData({ ...formData, notes: e.target.value })
-            }
+            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             rows={2}
           />
         </div>
 
         <div className="flex gap-2">
-          <button className="flex-1 rounded-md border px-4 py-2 text-sm font-medium">
-            Cancel
-          </button>
+          <button className="flex-1 rounded-md border px-4 py-2 text-sm font-medium">Cancel</button>
           <button className="flex-1 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
             Create Goal
           </button>

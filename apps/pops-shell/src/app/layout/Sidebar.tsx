@@ -52,11 +52,7 @@ export function Sidebar({ open }: SidebarProps) {
           {registeredApps.map((app) =>
             app.items.map((item) => {
               const fullPath = `${app.basePath}${item.path}`;
-              const isActive = isPageActive(
-                location.pathname,
-                app.basePath,
-                item.path,
-              );
+              const isActive = isPageActive(location.pathname, app.basePath, item.path);
               const Icon = iconMap[item.icon];
 
               return (
@@ -74,7 +70,7 @@ export function Sidebar({ open }: SidebarProps) {
                   <span>{item.label}</span>
                 </Link>
               );
-            }),
+            })
           )}
         </nav>
       </aside>

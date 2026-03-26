@@ -2,11 +2,7 @@ import { useState } from "react";
 import { ChevronRight, Globe, Store, Sparkles, Zap, Pencil } from "lucide-react";
 import { Badge } from "@pops/ui";
 import { Button } from "@pops/ui";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@pops/ui";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@pops/ui";
 import { LocationField } from "./LocationField";
 import type { ProcessedTransaction } from "@pops/api/modules/finance/imports";
 
@@ -42,22 +38,16 @@ export function TransactionCard({
 }: TransactionCardProps) {
   const [isRawDataExpanded, setIsRawDataExpanded] = useState(false);
 
-  const hasAiSuggestion =
-    transaction.entity?.matchType === "ai" && transaction.entity?.entityName;
+  const hasAiSuggestion = transaction.entity?.matchType === "ai" && transaction.entity?.entityName;
 
   // Check if AI-suggested entity actually exists in the entities list
   const aiSuggestedEntityExists =
     hasAiSuggestion &&
-    entities?.some(
-      (e) =>
-        e.name.toLowerCase() === transaction.entity?.entityName?.toLowerCase()
-    );
+    entities?.some((e) => e.name.toLowerCase() === transaction.entity?.entityName?.toLowerCase());
 
-  const isAutoMatched =
-    transaction.entity?.matchType === ("auto-matched" as never);
-  const isEdited = (
-    transaction as ProcessedTransaction & { manuallyEdited?: boolean }
-  ).manuallyEdited;
+  const isAutoMatched = transaction.entity?.matchType === ("auto-matched" as never);
+  const isEdited = (transaction as ProcessedTransaction & { manuallyEdited?: boolean })
+    .manuallyEdited;
 
   // Parse raw row for display
   let rawData: Record<string, string> = {};
@@ -99,10 +89,7 @@ export function TransactionCard({
               </Badge>
             )}
             {isAutoMatched && (
-              <Badge
-                variant="secondary"
-                className="text-xs flex items-center gap-1"
-              >
+              <Badge variant="secondary" className="text-xs flex items-center gap-1">
                 <Zap className="w-3 h-3" />
                 Auto-matched
               </Badge>
@@ -174,8 +161,7 @@ export function TransactionCard({
                     onClick={() => onAcceptAiSuggestion(transaction)}
                     className="bg-purple-600 hover:bg-purple-700 flex-1"
                   >
-                    {aiSuggestedEntityExists ? "✓" : "+"} Accept "
-                    {transaction.entity.entityName}"
+                    {aiSuggestedEntityExists ? "✓" : "+"} Accept "{transaction.entity.entityName}"
                   </Button>
                 )}
                 {onCreateEntity && (
@@ -207,9 +193,7 @@ export function TransactionCard({
             className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-800"
             value={transaction.entity?.entityId || ""}
             onChange={(e) => {
-              const entity = entities?.find(
-                (ent) => ent.id === e.target.value
-              );
+              const entity = entities?.find((ent) => ent.id === e.target.value);
               if (entity && onEntitySelect) {
                 onEntitySelect(transaction, entity.id, entity.name);
               }
@@ -246,9 +230,7 @@ export function TransactionCard({
 
       {/* Error display */}
       {transaction.error && (
-        <div className="text-sm text-red-700 dark:text-red-300 mb-3">
-          {transaction.error}
-        </div>
+        <div className="text-sm text-red-700 dark:text-red-300 mb-3">{transaction.error}</div>
       )}
 
       {/* Collapsible raw data section */}

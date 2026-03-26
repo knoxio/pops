@@ -100,8 +100,7 @@ export const WithSaveLatency: Story = {
         console.log("Saving:", tags);
         setTimeout(resolve, 1200);
       }),
-    onSuggest: () =>
-      new Promise((resolve) => setTimeout(() => resolve(["Subscriptions"]), 800)),
+    onSuggest: () => new Promise((resolve) => setTimeout(() => resolve(["Subscriptions"]), 800)),
   },
 };
 

@@ -24,8 +24,12 @@ export const tvShows = sqliteTable(
     voteCount: integer("vote_count"),
     genres: text("genres"), // JSON array
     networks: text("networks"), // JSON array
-    createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
-    updatedAt: text("updated_at").notNull().default(sql`(datetime('now'))`),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
   },
   (table) => [
     uniqueIndex("idx_tv_shows_tvdb_id").on(table.tvdbId),

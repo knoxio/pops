@@ -1,10 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "./tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./tooltip";
 import { Button } from "../components/Button";
 import { InfoIcon, HelpCircleIcon } from "lucide-react";
 
@@ -110,9 +105,7 @@ export const FormField: Story = {
           <HelpCircleIcon className="h-4 w-4 text-muted-foreground cursor-help" />
         </TooltipTrigger>
         <TooltipContent>
-          <p>
-            The current balance of your account including pending transactions
-          </p>
+          <p>The current balance of your account including pending transactions</p>
         </TooltipContent>
       </Tooltip>
     </div>
@@ -128,9 +121,9 @@ export const LongText: Story = {
       </TooltipTrigger>
       <TooltipContent className="max-w-xs">
         <p>
-          Entity matching uses a 5-stage pipeline: manual aliases, exact match,
-          prefix match, contains match, and punctuation stripping. Achieves
-          95-100% hit rate with aliases, with AI fallback for remaining cases.
+          Entity matching uses a 5-stage pipeline: manual aliases, exact match, prefix match,
+          contains match, and punctuation stripping. Achieves 95-100% hit rate with aliases, with AI
+          fallback for remaining cases.
         </p>
       </TooltipContent>
     </Tooltip>
@@ -243,20 +236,18 @@ export const Multiple: Story = {
   args: {},
   render: () => (
     <div className="flex flex-wrap gap-2">
-      {["Food", "Shopping", "Entertainment", "Transport", "Bills"].map(
-        (category) => (
-          <Tooltip key={category}>
-            <TooltipTrigger asChild>
-              <Button variant="outline" size="sm">
-                {category}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Filter transactions by {category.toLowerCase()} category</p>
-            </TooltipContent>
-          </Tooltip>
-        )
-      )}
+      {["Food", "Shopping", "Entertainment", "Transport", "Bills"].map((category) => (
+        <Tooltip key={category}>
+          <TooltipTrigger asChild>
+            <Button variant="outline" size="sm">
+              {category}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Filter transactions by {category.toLowerCase()} category</p>
+          </TooltipContent>
+        </Tooltip>
+      ))}
     </div>
   ),
 };

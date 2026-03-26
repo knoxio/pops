@@ -30,9 +30,7 @@ const mockApps: AppNavConfig[] = [
 
 describe("findActiveApp", () => {
   it("returns the app matching the pathname", () => {
-    expect(findActiveApp("/finance/transactions", mockApps)?.id).toBe(
-      "finance",
-    );
+    expect(findActiveApp("/finance/transactions", mockApps)?.id).toBe("finance");
     expect(findActiveApp("/media/watchlist", mockApps)?.id).toBe("media");
   });
 
@@ -64,30 +62,18 @@ describe("isPageActive", () => {
   });
 
   it("matches sub-page by prefix", () => {
-    expect(
-      isPageActive("/finance/transactions", "/finance", "/transactions"),
-    ).toBe(true);
+    expect(isPageActive("/finance/transactions", "/finance", "/transactions")).toBe(true);
   });
 
   it("matches sub-page with deeper path", () => {
-    expect(
-      isPageActive("/finance/transactions/123", "/finance", "/transactions"),
-    ).toBe(true);
+    expect(isPageActive("/finance/transactions/123", "/finance", "/transactions")).toBe(true);
   });
 
   it("does not match unrelated page", () => {
-    expect(isPageActive("/finance/budgets", "/finance", "/transactions")).toBe(
-      false,
-    );
+    expect(isPageActive("/finance/budgets", "/finance", "/transactions")).toBe(false);
   });
 
   it("does not match prefix collisions on sub-pages", () => {
-    expect(
-      isPageActive(
-        "/finance/transactions-pending",
-        "/finance",
-        "/transactions",
-      ),
-    ).toBe(false);
+    expect(isPageActive("/finance/transactions-pending", "/finance", "/transactions")).toBe(false);
   });
 });

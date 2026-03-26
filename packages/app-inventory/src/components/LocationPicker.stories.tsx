@@ -30,9 +30,7 @@ const mockLocations: LocationTreeNode[] = [
         id: "4",
         name: "Kitchen",
         parentId: "1",
-        children: [
-          { id: "10", name: "Pantry", parentId: "4", children: [] },
-        ],
+        children: [{ id: "10", name: "Pantry", parentId: "4", children: [] }],
       },
       { id: "5", name: "Bedroom", parentId: "1", children: [] },
     ],
@@ -95,9 +93,7 @@ export const Interactive: Story = {
         locations={mockLocations}
         value={value}
         onChange={setValue}
-        onCreateLocation={(name, parentId) =>
-          alert(`Create "${name}" under ${parentId ?? "root"}`)
-        }
+        onCreateLocation={(name, parentId) => alert(`Create "${name}" under ${parentId ?? "root"}`)}
       />
     );
   },
@@ -122,7 +118,6 @@ export const WithAddLocation: Story = {
   args: {
     locations: mockLocations,
     value: null,
-    onCreateLocation: (name, parentId) =>
-      alert(`Create "${name}" under ${parentId ?? "root"}`),
+    onCreateLocation: (name, parentId) => alert(`Create "${name}" under ${parentId ?? "root"}`),
   },
 };

@@ -145,9 +145,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
     },
     ref
   ) => {
-    const [internalValue, setInternalValue] = useState<number>(
-      Number(defaultValue) || 0
-    );
+    const [internalValue, setInternalValue] = useState<number>(Number(defaultValue) || 0);
     const [isFocused, setIsFocused] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const dragStartY = useRef<number>(0);
@@ -258,9 +256,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
         style={isFocused ? { borderColor: "rgb(55, 65, 81)" } : undefined}
         onMouseDown={handleMouseDown}
       >
-        {prefix && (
-          <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>
-        )}
+        {prefix && <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>}
         {showSteppers && (
           <button
             type="button"
@@ -298,9 +294,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
             <ChevronUpIcon />
           </button>
         )}
-        {suffix && (
-          <span className="flex-shrink-0 text-muted-foreground">{suffix}</span>
-        )}
+        {suffix && <span className="flex-shrink-0 text-muted-foreground">{suffix}</span>}
       </div>
     );
   }

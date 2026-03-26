@@ -49,17 +49,17 @@ export function TvShowDetailPage() {
 
   const { data, isLoading, error } = trpc.media.tvShows.get.useQuery(
     { id: showId },
-    { enabled: !Number.isNaN(showId) },
+    { enabled: !Number.isNaN(showId) }
   );
 
   const { data: seasonsData } = trpc.media.tvShows.listSeasons.useQuery(
     { tvShowId: showId },
-    { enabled: !Number.isNaN(showId) },
+    { enabled: !Number.isNaN(showId) }
   );
 
   const { data: progressData } = trpc.media.watchHistory.progress.useQuery(
     { tvShowId: showId },
-    { enabled: !Number.isNaN(showId) },
+    { enabled: !Number.isNaN(showId) }
   );
 
   const utils = trpc.useUtils();
@@ -92,15 +92,10 @@ export function TvShowDetailPage() {
         <Alert variant="destructive">
           <AlertTitle>{is404 ? "Show not found" : "Error"}</AlertTitle>
           <AlertDescription>
-            {is404
-              ? "This TV show doesn't exist in your library."
-              : error.message}
+            {is404 ? "This TV show doesn't exist in your library." : error.message}
           </AlertDescription>
         </Alert>
-        <Link
-          to="/media"
-          className="mt-4 inline-block text-sm text-primary underline"
-        >
+        <Link to="/media" className="mt-4 inline-block text-sm text-primary underline">
           Back to library
         </Link>
       </div>
@@ -110,9 +105,7 @@ export function TvShowDetailPage() {
   const show = data?.data;
   if (!show) return null;
 
-  const year = show.firstAirDate
-    ? new Date(show.firstAirDate).getFullYear()
-    : null;
+  const year = show.firstAirDate ? new Date(show.firstAirDate).getFullYear() : null;
 
   const posterSrc = show.posterUrl ?? "";
   const backdropSrc = show.backdropUrl ?? null;
@@ -127,9 +120,7 @@ export function TvShowDetailPage() {
     { label: "Language", value: show.originalLanguage?.toUpperCase() },
     {
       label: "TMDB Rating",
-      value: show.voteAverage
-        ? `${show.voteAverage.toFixed(1)} (${show.voteCount} votes)`
-        : null,
+      value: show.voteAverage ? `${show.voteAverage.toFixed(1)} (${show.voteCount} votes)` : null,
     },
     {
       label: "Seasons",
@@ -142,11 +133,7 @@ export function TvShowDetailPage() {
       {/* Hero section — negative margins cancel shell padding for edge-to-edge */}
       <div className="-mx-4 md:-mx-6 lg:-mx-8 -mt-4 md:-mt-6 lg:-mt-8 relative h-64 md:h-96 overflow-hidden bg-muted">
         {backdropSrc && (
-          <img
-            src={backdropSrc}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover"
-          />
+          <img src={backdropSrc} alt="" className="absolute inset-0 w-full h-full object-cover" />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-background/20" />
 
@@ -163,9 +150,7 @@ export function TvShowDetailPage() {
               </BreadcrumbItem>
               <BreadcrumbSeparator className="text-white/50" />
               <BreadcrumbItem>
-                <BreadcrumbPage className="text-white/90">
-                  {show.name}
-                </BreadcrumbPage>
+                <BreadcrumbPage className="text-white/90">{show.name}</BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
           </Breadcrumb>
@@ -179,9 +164,7 @@ export function TvShowDetailPage() {
           />
 
           <div className="flex-1 pb-1">
-            <h1 className="text-2xl md:text-4xl font-bold text-foreground">
-              {show.name}
-            </h1>
+            <h1 className="text-2xl md:text-4xl font-bold text-foreground">{show.name}</h1>
 
             <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
               {year && <span>{year}</span>}
@@ -197,10 +180,7 @@ export function TvShowDetailPage() {
             {/* Overall progress */}
             {progress && progress.overall.total > 0 && (
               <div className="mt-3 max-w-xs">
-                <ProgressBar
-                  watched={progress.overall.watched}
-                  total={progress.overall.total}
-                />
+                <ProgressBar watched={progress.overall.watched} total={progress.overall.total} />
               </div>
             )}
 
@@ -210,8 +190,7 @@ export function TvShowDetailPage() {
                 to={`/media/tv/${show.id}/season/${nextEpisode.seasonNumber}`}
                 className="inline-block mt-2 text-sm text-primary hover:underline"
               >
-                Continue watching: S
-                {String(nextEpisode.seasonNumber).padStart(2, "0")}E
+                Continue watching: S{String(nextEpisode.seasonNumber).padStart(2, "0")}E
                 {String(nextEpisode.episodeNumber).padStart(2, "0")}
                 {nextEpisode.episodeName ? ` — ${nextEpisode.episodeName}` : ""}
               </Link>
@@ -236,11 +215,7 @@ export function TvShowDetailPage() {
                   </Button>
                 ) : (
                   <span className="inline-flex items-center gap-1.5 text-sm text-green-500 font-medium">
-                    <svg
-                      className="w-4 h-4"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                    >
+                    <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
                       <path
                         fillRule="evenodd"
                         d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
@@ -262,9 +237,7 @@ export function TvShowDetailPage() {
         {show.overview && (
           <section>
             <h2 className="text-lg font-semibold mb-2">Overview</h2>
-            <p className="text-muted-foreground leading-relaxed">
-              {show.overview}
-            </p>
+            <p className="text-muted-foreground leading-relaxed">{show.overview}</p>
           </section>
         )}
 
@@ -289,9 +262,7 @@ export function TvShowDetailPage() {
             <dl className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {metadataItems.map((item) => (
                 <div key={item.label}>
-                  <dt className="text-sm text-muted-foreground">
-                    {item.label}
-                  </dt>
+                  <dt className="text-sm text-muted-foreground">{item.label}</dt>
                   <dd className="text-sm font-medium">{item.value}</dd>
                 </div>
               ))}
@@ -312,8 +283,7 @@ export function TvShowDetailPage() {
                   episodeCount: number | null;
                 }) => {
                   const seasonProg = progress?.seasons?.find(
-                    (s: { seasonNumber: number }) =>
-                      s.seasonNumber === season.seasonNumber,
+                    (s: { seasonNumber: number }) => s.seasonNumber === season.seasonNumber
                   );
                   const label =
                     season.seasonNumber === 0
@@ -326,9 +296,7 @@ export function TvShowDetailPage() {
                       to={`/media/tv/${show.id}/season/${season.seasonNumber}`}
                       className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors"
                     >
-                      <span className="text-sm font-medium flex-1">
-                        {label}
-                      </span>
+                      <span className="text-sm font-medium flex-1">{label}</span>
                       {season.episodeCount != null && (
                         <span className="text-xs text-muted-foreground">
                           {season.episodeCount} episodes
@@ -345,7 +313,7 @@ export function TvShowDetailPage() {
                       )}
                     </Link>
                   );
-                },
+                }
               )}
             </div>
           </section>

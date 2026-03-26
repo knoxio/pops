@@ -33,17 +33,13 @@ export function ConnectionsList({
         <h4 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
           <Link2 className="h-4 w-4 text-muted-foreground" />
           Connections
-          <span className="text-xs font-normal text-muted-foreground">
-            ({connections.length})
-          </span>
+          <span className="text-xs font-normal text-muted-foreground">({connections.length})</span>
         </h4>
       </div>
 
       {/* List */}
       {connections.length === 0 ? (
-        <p className="py-3 text-center text-sm text-muted-foreground">
-          No connected items
-        </p>
+        <p className="py-3 text-center text-sm text-muted-foreground">No connected items</p>
       ) : (
         <ul className="divide-y divide-border rounded-md border">
           {connections.map((item) => (
@@ -53,14 +49,12 @@ export function ConnectionsList({
                 className={cn(
                   "flex w-full items-center gap-2 px-3 py-2 text-left text-sm",
                   "transition-colors hover:bg-accent/50",
-                  onItemClick && "cursor-pointer",
+                  onItemClick && "cursor-pointer"
                 )}
                 onClick={() => onItemClick?.(item.id)}
                 disabled={!onItemClick}
               >
-                <span className="flex-1 truncate font-medium">
-                  {item.itemName}
-                </span>
+                <span className="flex-1 truncate font-medium">{item.itemName}</span>
                 <div className="flex shrink-0 items-center gap-1">
                   {item.assetId && <AssetIdBadge assetId={item.assetId} />}
                   {item.type && <TypeBadge type={item.type} />}

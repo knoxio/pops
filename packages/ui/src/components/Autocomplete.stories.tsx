@@ -159,13 +159,6 @@ export const CustomEmpty: Story = {
 export const Disabled: Story = {
   args: {},
   render: () => {
-    return (
-      <Autocomplete
-        suggestions={cities}
-        value="Sydney"
-        disabled
-        placeholder="Disabled..."
-      />
-    );
+    return <Autocomplete suggestions={cities} value="Sydney" disabled placeholder="Disabled..." />;
   },
 };

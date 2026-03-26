@@ -46,9 +46,7 @@ export function HorizontalScrollRow({
       <div className="flex items-end justify-between gap-2 px-1">
         <div>
           <h2 className="text-lg font-semibold">{title}</h2>
-          {subtitle && (
-            <p className="text-sm text-muted-foreground">{subtitle}</p>
-          )}
+          {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
         </div>
         <div className="flex gap-1">
           <Button
@@ -73,10 +71,7 @@ export function HorizontalScrollRow({
       </div>
 
       {/* Scrollable content */}
-      <div
-        ref={scrollRef}
-        className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin"
-      >
+      <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin">
         {isLoading
           ? Array.from({ length: skeletonCount }, (_, i) => (
               <div key={i} className="w-36 shrink-0 space-y-2 sm:w-40">

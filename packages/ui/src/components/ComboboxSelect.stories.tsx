@@ -166,13 +166,6 @@ export const DefaultVariant: Story = {
 export const Disabled: Story = {
   args: {},
   render: () => {
-    return (
-      <ComboboxSelect
-        options={countries}
-        value="us"
-        disabled
-        placeholder="Disabled..."
-      />
-    );
+    return <ComboboxSelect options={countries} value="us" disabled placeholder="Disabled..." />;
   },
 };

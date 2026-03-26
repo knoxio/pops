@@ -261,19 +261,12 @@ export const SearchBar: Story = {
 
 export const EmailInput: Story = {
   render: () => (
-    <TextInput
-      type="email"
-      placeholder="Enter your email"
-      prefix={<MailIcon />}
-      clearable
-    />
+    <TextInput type="email" placeholder="Enter your email" prefix={<MailIcon />} clearable />
   ),
 };
 
 export const AmountInput: Story = {
-  render: () => (
-    <TextInput type="number" placeholder="0.00" prefix={<DollarIcon />} />
-  ),
+  render: () => <TextInput type="number" placeholder="0.00" prefix={<DollarIcon />} />,
 };
 
 export const DatePicker: Story = {
@@ -285,21 +278,11 @@ export const FormFields: Story = {
     <div className="space-y-4 max-w-md">
       <div>
         <label className="block text-sm font-medium mb-1">Email</label>
-        <TextInput
-          type="email"
-          placeholder="you@example.com"
-          prefix={<MailIcon />}
-          clearable
-        />
+        <TextInput type="email" placeholder="you@example.com" prefix={<MailIcon />} clearable />
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">Search</label>
-        <TextInput
-          placeholder="Search..."
-          prefix={<SearchIcon />}
-          variant="ghost"
-          clearable
-        />
+        <TextInput placeholder="Search..." prefix={<SearchIcon />} variant="ghost" clearable />
       </div>
       <div>
         <label className="block text-sm font-medium mb-1">Amount</label>
@@ -378,34 +361,16 @@ export const VariantComparison: Story = {
         <p className="text-sm font-medium mb-2">Ghost</p>
         <div className="space-y-2">
           <TextInput placeholder="No icons" variant="ghost" />
-          <TextInput
-            placeholder="With prefix"
-            prefix={<SearchIcon />}
-            variant="ghost"
-          />
-          <TextInput
-            placeholder="Clearable"
-            clearable
-            defaultValue="Text"
-            variant="ghost"
-          />
+          <TextInput placeholder="With prefix" prefix={<SearchIcon />} variant="ghost" />
+          <TextInput placeholder="Clearable" clearable defaultValue="Text" variant="ghost" />
         </div>
       </div>
       <div>
         <p className="text-sm font-medium mb-2">Underline</p>
         <div className="space-y-2">
           <TextInput placeholder="No icons" variant="underline" />
-          <TextInput
-            placeholder="With prefix"
-            prefix={<SearchIcon />}
-            variant="underline"
-          />
-          <TextInput
-            placeholder="Clearable"
-            clearable
-            defaultValue="Text"
-            variant="underline"
-          />
+          <TextInput placeholder="With prefix" prefix={<SearchIcon />} variant="underline" />
+          <TextInput placeholder="Clearable" clearable defaultValue="Text" variant="underline" />
         </div>
       </div>
     </div>

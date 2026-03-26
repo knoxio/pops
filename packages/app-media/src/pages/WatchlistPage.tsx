@@ -7,14 +7,7 @@
  */
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Link, useNavigate } from "react-router";
-import {
-  Alert,
-  AlertTitle,
-  AlertDescription,
-  Badge,
-  Skeleton,
-  Textarea,
-} from "@pops/ui";
+import { Alert, AlertTitle, AlertDescription, Badge, Skeleton, Textarea } from "@pops/ui";
 import { Button } from "@pops/ui";
 import { ArrowUp, ArrowDown, Trash2, Film } from "lucide-react";
 import { toast } from "sonner";
@@ -104,9 +97,7 @@ function WatchlistItem({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const href =
-    entry.mediaType === "movie"
-      ? `/media/movies/${entry.mediaId}`
-      : `/media/tv/${entry.mediaId}`;
+    entry.mediaType === "movie" ? `/media/movies/${entry.mediaId}` : `/media/tv/${entry.mediaId}`;
   const posterSrc = posterUrl ?? "";
 
   // Sync draft when server data changes
@@ -197,9 +188,7 @@ function WatchlistItem({
               <Badge variant="secondary" className="text-xs">
                 {entry.mediaType === "movie" ? "Movie" : "TV"}
               </Badge>
-              {year && (
-                <span className="text-xs text-muted-foreground">{year}</span>
-              )}
+              {year && <span className="text-xs text-muted-foreground">{year}</span>}
             </div>
           </div>
 
@@ -251,9 +240,7 @@ function WatchlistItem({
                 {draft.length}/500 · Ctrl+Enter to save
               </span>
             </div>
-            {updateError && (
-              <p className="text-xs text-destructive">{updateError}</p>
-            )}
+            {updateError && <p className="text-xs text-destructive">{updateError}</p>}
           </div>
         ) : entry.notes ? (
           <button
@@ -302,9 +289,7 @@ function WatchlistCard({
   const [imageError, setImageError] = useState(false);
 
   const href =
-    entry.mediaType === "movie"
-      ? `/media/movies/${entry.mediaId}`
-      : `/media/tv/${entry.mediaId}`;
+    entry.mediaType === "movie" ? `/media/movies/${entry.mediaId}` : `/media/tv/${entry.mediaId}`;
   const posterSrc = posterUrl;
 
   return (
@@ -367,16 +352,10 @@ function WatchlistCard({
       {/* Title + year + notes */}
       <div className="space-y-0.5 px-0.5">
         <Link to={href} className="hover:underline">
-          <h3 className="text-sm font-medium leading-tight line-clamp-2">
-            {title}
-          </h3>
+          <h3 className="text-sm font-medium leading-tight line-clamp-2">{title}</h3>
         </Link>
         {year && <p className="text-xs text-muted-foreground">{year}</p>}
-        {entry.notes && (
-          <p className="text-xs text-muted-foreground line-clamp-1">
-            {entry.notes}
-          </p>
-        )}
+        {entry.notes && <p className="text-xs text-muted-foreground line-clamp-1">{entry.notes}</p>}
       </div>
     </div>
   );
@@ -394,11 +373,13 @@ export function WatchlistPage() {
     error: watchlistError,
   } = trpc.media.watchlist.list.useQuery({ limit: 500 });
 
-  const { data: moviesData, isLoading: moviesLoading } =
-    trpc.media.movies.list.useQuery({ limit: 500 });
+  const { data: moviesData, isLoading: moviesLoading } = trpc.media.movies.list.useQuery({
+    limit: 500,
+  });
 
-  const { data: tvShowsData, isLoading: tvShowsLoading } =
-    trpc.media.tvShows.list.useQuery({ limit: 500 });
+  const { data: tvShowsData, isLoading: tvShowsLoading } = trpc.media.tvShows.list.useQuery({
+    limit: 500,
+  });
 
   const utils = trpc.useUtils();
 
@@ -456,15 +437,13 @@ export function WatchlistPage() {
             m.id,
             {
               title: m.title,
-              year: m.releaseDate
-                ? new Date(m.releaseDate).getFullYear()
-                : null,
+              year: m.releaseDate ? new Date(m.releaseDate).getFullYear() : null,
               posterUrl: m.posterUrl,
             },
-          ],
-        ),
+          ]
+        )
       ),
-    [moviesData?.data],
+    [moviesData?.data]
   );
 
   const tvMap = useMemo(
@@ -480,15 +459,13 @@ export function WatchlistPage() {
             s.id,
             {
               title: s.name,
-              year: s.firstAirDate
-                ? new Date(s.firstAirDate).getFullYear()
-                : null,
+              year: s.firstAirDate ? new Date(s.firstAirDate).getFullYear() : null,
               posterUrl: s.posterUrl,
             },
-          ],
-        ),
+          ]
+        )
       ),
-    [tvShowsData?.data],
+    [tvShowsData?.data]
   );
 
   // Already sorted by priority ASC from the API
@@ -514,16 +491,14 @@ export function WatchlistPage() {
       setIsReordering(true);
       reorderMutation.mutate({ items });
     },
-    [sortedEntries, reorderMutation, isReordering],
+    [sortedEntries, reorderMutation, isReordering]
   );
 
   if (watchlistError) {
     return (
       <Alert variant="destructive">
         <AlertTitle>Error</AlertTitle>
-        <AlertDescription>
-          Failed to load watchlist. Please try again.
-        </AlertDescription>
+        <AlertDescription>Failed to load watchlist. Please try again.</AlertDescription>
       </Alert>
     );
   }
@@ -537,8 +512,7 @@ export function WatchlistPage() {
       ) : entries.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-muted-foreground">
-            Your watchlist is empty. Browse your library or search for something
-            to watch.
+            Your watchlist is empty. Browse your library or search for something to watch.
           </p>
           <div className="flex justify-center gap-4 mt-4">
             <Link to="/media" className="text-sm text-primary underline">
@@ -552,11 +526,7 @@ export function WatchlistPage() {
       ) : (
         <>
           {/* Mobile: compact list with reorder */}
-          <div
-            className="space-y-3 md:hidden"
-            role="list"
-            aria-label="Watchlist items"
-          >
+          <div className="space-y-3 md:hidden" role="list" aria-label="Watchlist items">
             {sortedEntries.map((entry: WatchlistEntry, index: number) => {
               const meta =
                 entry.mediaType === "movie"
@@ -585,13 +555,8 @@ export function WatchlistPage() {
                     setUpdateErrorMsg(null);
                     updateMutation.mutate({ id, data: { notes } });
                   }}
-                  isUpdating={
-                    updateMutation.isPending &&
-                    updateMutation.variables?.id === entry.id
-                  }
-                  updateError={
-                    updateErrorId === entry.id ? updateErrorMsg : null
-                  }
+                  isUpdating={updateMutation.isPending && updateMutation.variables?.id === entry.id}
+                  updateError={updateErrorId === entry.id ? updateErrorMsg : null}
                 />
               );
             })}

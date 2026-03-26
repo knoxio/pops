@@ -78,11 +78,7 @@ export const WithLabel: Story = {
     const [checked, setChecked] = useState(false);
     return (
       <div className="flex items-center space-x-2">
-        <Switch
-          id="airplane-mode"
-          checked={checked}
-          onCheckedChange={setChecked}
-        />
+        <Switch id="airplane-mode" checked={checked} onCheckedChange={setChecked} />
         <label
           htmlFor="airplane-mode"
           className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
@@ -113,10 +109,7 @@ export const Settings: Story = {
                 Receive notifications about account activity
               </p>
             </div>
-            <Switch
-              checked={notifications}
-              onCheckedChange={setNotifications}
-            />
+            <Switch checked={notifications} onCheckedChange={setNotifications} />
           </div>
 
           <div className="flex items-center justify-between">
@@ -132,9 +125,7 @@ export const Settings: Story = {
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
               <label className="text-sm font-medium">Security Alerts</label>
-              <p className="text-xs text-muted-foreground">
-                Get notified about security events
-              </p>
+              <p className="text-xs text-muted-foreground">Get notified about security events</p>
             </div>
             <Switch checked={security} onCheckedChange={setSecurity} />
           </div>
@@ -178,10 +169,7 @@ export const BudgetToggles: Story = {
               <div className="h-3 w-3 rounded-full bg-orange-600" />
               <span className="text-sm font-medium">Entertainment</span>
             </div>
-            <Switch
-              checked={entertainment}
-              onCheckedChange={setEntertainment}
-            />
+            <Switch checked={entertainment} onCheckedChange={setEntertainment} />
           </div>
 
           <div className="flex items-center justify-between rounded-lg border p-3">
@@ -209,9 +197,7 @@ export const AccountFeatures: Story = {
       <div className="space-y-6 w-96">
         <div>
           <h3 className="text-lg font-semibold">Smart Features</h3>
-          <p className="text-sm text-muted-foreground">
-            Automate your financial tracking
-          </p>
+          <p className="text-sm text-muted-foreground">Automate your financial tracking</p>
         </div>
 
         <div className="space-y-4">
@@ -222,23 +208,15 @@ export const AccountFeatures: Story = {
                 Automatically categorize transactions using AI
               </p>
             </div>
-            <Switch
-              checked={autoCategorize}
-              onCheckedChange={setAutoCategorize}
-            />
+            <Switch checked={autoCategorize} onCheckedChange={setAutoCategorize} />
           </div>
 
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1">
               <label className="text-sm font-medium">Recurring Detection</label>
-              <p className="text-xs text-muted-foreground">
-                Identify and track recurring expenses
-              </p>
+              <p className="text-xs text-muted-foreground">Identify and track recurring expenses</p>
             </div>
-            <Switch
-              checked={recurringDetect}
-              onCheckedChange={setRecurringDetect}
-            />
+            <Switch checked={recurringDetect} onCheckedChange={setRecurringDetect} />
           </div>
 
           <div className="flex items-start justify-between gap-4">
@@ -258,10 +236,7 @@ export const AccountFeatures: Story = {
                 Receive personalized savings suggestions
               </p>
             </div>
-            <Switch
-              checked={aiSuggestions}
-              onCheckedChange={setAiSuggestions}
-            />
+            <Switch checked={aiSuggestions} onCheckedChange={setAiSuggestions} />
           </div>
         </div>
       </div>
@@ -290,9 +265,7 @@ export const InForm: Story = {
               type="text"
               className="w-full rounded-md border px-3 py-2 text-sm"
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             />
           </div>
 
@@ -302,33 +275,23 @@ export const InForm: Story = {
               type="email"
               className="w-full rounded-md border px-3 py-2 text-sm"
               value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
             />
           </div>
 
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium">
-              Subscribe to newsletter
-            </label>
+            <label className="text-sm font-medium">Subscribe to newsletter</label>
             <Switch
               checked={formData.subscribe}
-              onCheckedChange={(checked) =>
-                setFormData({ ...formData, subscribe: checked })
-              }
+              onCheckedChange={(checked) => setFormData({ ...formData, subscribe: checked })}
             />
           </div>
 
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium">
-              Accept terms & conditions
-            </label>
+            <label className="text-sm font-medium">Accept terms & conditions</label>
             <Switch
               checked={formData.terms}
-              onCheckedChange={(checked) =>
-                setFormData({ ...formData, terms: checked })
-              }
+              onCheckedChange={(checked) => setFormData({ ...formData, terms: checked })}
             />
           </div>
         </div>

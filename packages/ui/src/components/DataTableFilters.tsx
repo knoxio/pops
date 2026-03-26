@@ -43,11 +43,7 @@ interface SelectFilterProps {
   placeholder?: string;
 }
 
-export function SelectFilter({
-  column,
-  options,
-  placeholder,
-}: SelectFilterProps) {
+export function SelectFilter({ column, options, placeholder }: SelectFilterProps) {
   return (
     <Select
       value={(column.getFilterValue() as string) ?? ""}
@@ -65,11 +61,7 @@ interface MultiSelectFilterProps {
   placeholder?: string;
 }
 
-export function MultiSelectFilter({
-  column,
-  options,
-  placeholder,
-}: MultiSelectFilterProps) {
+export function MultiSelectFilter({ column, options, placeholder }: MultiSelectFilterProps) {
   const filterValue = (column.getFilterValue() as string[]) ?? [];
 
   return (
@@ -77,9 +69,7 @@ export function MultiSelectFilter({
       options={options.map((opt) => ({ label: opt.label, value: opt.value }))}
       value={filterValue}
       onChange={(value) =>
-        column.setFilterValue(
-          Array.isArray(value) && value.length > 0 ? value : undefined
-        )
+        column.setFilterValue(Array.isArray(value) && value.length > 0 ? value : undefined)
       }
       multiple
       placeholder={placeholder || "Select..."}
@@ -100,9 +90,7 @@ export function DateRangeFilter({ column }: DateRangeFilterProps) {
       <TextInput
         type="date"
         value={filterValue[0]}
-        onChange={(e) =>
-          column.setFilterValue([e.target.value, filterValue[1]])
-        }
+        onChange={(e) => column.setFilterValue([e.target.value, filterValue[1]])}
         placeholder="From"
         className="w-full sm:w-38"
       />
@@ -110,9 +98,7 @@ export function DateRangeFilter({ column }: DateRangeFilterProps) {
       <TextInput
         type="date"
         value={filterValue[1]}
-        onChange={(e) =>
-          column.setFilterValue([filterValue[0], e.target.value])
-        }
+        onChange={(e) => column.setFilterValue([filterValue[0], e.target.value])}
         placeholder="To"
         className="w-full sm:w-38"
       />
@@ -131,10 +117,7 @@ export function NumberRangeFilter({
   minPlaceholder = "Min",
   maxPlaceholder = "Max",
 }: NumberRangeFilterProps) {
-  const filterValue = (column.getFilterValue() as [number, number]) ?? [
-    undefined,
-    undefined,
-  ];
+  const filterValue = (column.getFilterValue() as [number, number]) ?? [undefined, undefined];
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
@@ -194,7 +177,9 @@ export function FilterBar({ filters, table, onClearAll }: FilterBarProps) {
             </span>
           )}
         </Button>
-        <h3 className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/80 hidden md:block">Filters</h3>
+        <h3 className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/80 hidden md:block">
+          Filters
+        </h3>
         {activeFiltersCount > 0 && (
           <Button
             variant="ghost"
@@ -207,7 +192,9 @@ export function FilterBar({ filters, table, onClearAll }: FilterBarProps) {
           </Button>
         )}
       </div>
-      <div className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 ${mobileOpen ? "grid" : "hidden"} md:grid`}>
+      <div
+        className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 ${mobileOpen ? "grid" : "hidden"} md:grid`}
+      >
         {filters.map((filter) => {
           const column = table.getColumn(filter.id);
           if (!column) return null;
@@ -234,20 +221,15 @@ export function FilterBar({ filters, table, onClearAll }: FilterBarProps) {
                   placeholder={filter.placeholder}
                 />
               )}
-              {filter.type === "daterange" && (
-                <DateRangeFilter column={column} />
-              )}
-              {filter.type === "numberrange" && (
-                <NumberRangeFilter column={column} />
-              )}
+              {filter.type === "daterange" && <DateRangeFilter column={column} />}
+              {filter.type === "numberrange" && <NumberRangeFilter column={column} />}
             </div>
           );
         })}
       </div>
       {activeFiltersCount > 0 && (
         <div className="text-sm text-muted-foreground">
-          {activeFiltersCount} filter{activeFiltersCount !== 1 ? "s" : ""}{" "}
-          active
+          {activeFiltersCount} filter{activeFiltersCount !== 1 ? "s" : ""} active
         </div>
       )}
     </div>
@@ -255,11 +237,7 @@ export function FilterBar({ filters, table, onClearAll }: FilterBarProps) {
 }
 
 // Custom filter functions for TanStack Table
-export const dateRangeFilter = <TData,>(
-  row: TData,
-  columnId: string,
-  filterValue: unknown
-) => {
+export const dateRangeFilter = <TData,>(row: TData, columnId: string, filterValue: unknown) => {
   const [start, end] = filterValue as [string, string];
   const cellValue = (row as Row<unknown>).getValue(columnId) as string;
 
@@ -276,11 +254,7 @@ export const dateRangeFilter = <TData,>(
   return true;
 };
 
-export const numberRangeFilter = <TData,>(
-  row: TData,
-  columnId: string,
-  filterValue: unknown
-) => {
+export const numberRangeFilter = <TData,>(row: TData, columnId: string, filterValue: unknown) => {
   const [min, max] = filterValue as [number, number];
   const cellValue = (row as Row<unknown>).getValue(columnId) as number;
 
@@ -293,11 +267,7 @@ export const numberRangeFilter = <TData,>(
   return true;
 };
 
-export const multiSelectFilter = <TData,>(
-  row: TData,
-  columnId: string,
-  filterValue: unknown
-) => {
+export const multiSelectFilter = <TData,>(row: TData, columnId: string, filterValue: unknown) => {
   const values = filterValue as string[];
   if (!values || values.length === 0) return true;
   const cellValue = (row as Row<unknown>).getValue(columnId);

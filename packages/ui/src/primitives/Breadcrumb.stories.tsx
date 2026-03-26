@@ -130,9 +130,7 @@ export const TransactionDetail: Story = {
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink href="/transactions/2026/02">
-            February 2026
-          </BreadcrumbLink>
+          <BreadcrumbLink href="/transactions/2026/02">February 2026</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
@@ -184,9 +182,7 @@ export const AccountHierarchy: Story = {
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink href="/accounts/anz/checking">
-            Everyday Account
-          </BreadcrumbLink>
+          <BreadcrumbLink href="/accounts/anz/checking">Everyday Account</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
@@ -210,9 +206,7 @@ export const ReportsNavigation: Story = {
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink href="/reports/spending">
-            Spending Analysis
-          </BreadcrumbLink>
+          <BreadcrumbLink href="/reports/spending">Spending Analysis</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
@@ -238,9 +232,7 @@ export const SettingsPath: Story = {
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink href="/settings/notifications">
-            Notifications
-          </BreadcrumbLink>
+          <BreadcrumbLink href="/settings/notifications">Notifications</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
@@ -270,15 +262,11 @@ export const DeepHierarchy: Story = {
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink href="/inventory/electronics">
-            Electronics
-          </BreadcrumbLink>
+          <BreadcrumbLink href="/inventory/electronics">Electronics</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
-          <BreadcrumbLink href="/inventory/electronics/computers">
-            Computers
-          </BreadcrumbLink>
+          <BreadcrumbLink href="/inventory/electronics/computers">Computers</BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator />
         <BreadcrumbItem>
@@ -311,9 +299,7 @@ export const InPageHeader: Story = {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">February 2026 Transactions</h1>
-          <p className="text-muted-foreground">
-            Review and manage your transactions
-          </p>
+          <p className="text-muted-foreground">Review and manage your transactions</p>
         </div>
         <button className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground">
           Add Transaction
@@ -321,9 +307,7 @@ export const InPageHeader: Story = {
       </div>
 
       <div className="rounded-lg border p-4">
-        <p className="text-sm text-muted-foreground">
-          Transaction list would appear here
-        </p>
+        <p className="text-sm text-muted-foreground">Transaction list would appear here</p>
       </div>
     </div>
   ),
@@ -350,9 +334,7 @@ export const WithActions: Story = {
 
       <div className="flex gap-2">
         <button className="rounded-md border px-3 py-1 text-sm">Edit</button>
-        <button className="rounded-md border px-3 py-1 text-sm text-red-600">
-          Delete
-        </button>
+        <button className="rounded-md border px-3 py-1 text-sm text-red-600">Delete</button>
       </div>
     </div>
   ),
@@ -375,9 +357,7 @@ export const Responsive: Story = {
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbLink href="/accounts/anz">
-              ANZ Banking Group
-            </BreadcrumbLink>
+            <BreadcrumbLink href="/accounts/anz">ANZ Banking Group</BreadcrumbLink>
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>

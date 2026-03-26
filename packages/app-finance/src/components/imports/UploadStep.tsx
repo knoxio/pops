@@ -34,9 +34,7 @@ export function UploadStep() {
       skipEmptyLines: true,
       complete: (results) => {
         if (results.errors.length > 0) {
-          setError(
-            `CSV parsing error: ${results.errors[0]?.message ?? "Unknown error"}`
-          );
+          setError(`CSV parsing error: ${results.errors[0]?.message ?? "Unknown error"}`);
           setIsProcessing(false);
           return;
         }
@@ -87,8 +85,7 @@ export function UploadStep() {
           Bank: American Express (Amex)
         </h3>
         <p className="text-xs text-blue-700 dark:text-blue-300">
-          Download your Amex transactions as CSV from your online banking
-          portal.
+          Download your Amex transactions as CSV from your online banking portal.
         </p>
       </div>
 

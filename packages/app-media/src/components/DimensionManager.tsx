@@ -45,10 +45,12 @@ export function DimensionManager() {
 
   const utils = trpc.useUtils();
 
-  const { data: dimensionsData, isLoading } =
-    trpc.media.comparisons.listDimensions.useQuery(undefined, {
+  const { data: dimensionsData, isLoading } = trpc.media.comparisons.listDimensions.useQuery(
+    undefined,
+    {
       enabled: open,
-    });
+    }
+  );
 
   const dimensions: Dimension[] = (dimensionsData?.data ?? []).map((d) => ({
     ...d,
@@ -91,7 +93,7 @@ export function DimensionManager() {
         data: { active: !dim.active },
       });
     },
-    [updateMutation],
+    [updateMutation]
   );
 
   const handleStartEdit = useCallback((dim: Dimension) => {
@@ -133,10 +135,10 @@ export function DimensionManager() {
               data: { sortOrder: dim.sortOrder },
             });
           },
-        },
+        }
       );
     },
-    [dimensions, updateMutation],
+    [dimensions, updateMutation]
   );
 
   const sorted = [...dimensions].sort((a, b) => a.sortOrder - b.sortOrder);
@@ -184,9 +186,7 @@ export function DimensionManager() {
 
         {/* Dimension list */}
         {isLoading ? (
-          <p className="text-sm text-muted-foreground py-4 text-center">
-            Loading...
-          </p>
+          <p className="text-sm text-muted-foreground py-4 text-center">Loading...</p>
         ) : sorted.length === 0 ? (
           <p className="text-sm text-muted-foreground py-4 text-center">
             No dimensions yet. Add one above.
@@ -226,9 +226,7 @@ export function DimensionManager() {
                     <div className="space-y-1">
                       <Input
                         value={editing.name}
-                        onChange={(e) =>
-                          setEditing({ ...editing, name: e.target.value })
-                        }
+                        onChange={(e) => setEditing({ ...editing, name: e.target.value })}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") handleSaveEdit();
                           if (e.key === "Escape") setEditing(null);
@@ -238,9 +236,7 @@ export function DimensionManager() {
                       />
                       <Textarea
                         value={editing.description}
-                        onChange={(e) =>
-                          setEditing({ ...editing, description: e.target.value })
-                        }
+                        onChange={(e) => setEditing({ ...editing, description: e.target.value })}
                         rows={1}
                         className="resize-none text-sm"
                         placeholder="Description"
@@ -268,9 +264,7 @@ export function DimensionManager() {
                   ) : (
                     <div>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-sm font-medium truncate">
-                          {dim.name}
-                        </span>
+                        <span className="text-sm font-medium truncate">{dim.name}</span>
                         {!dim.active && (
                           <Badge variant="secondary" className="text-xs">
                             Inactive
@@ -278,9 +272,7 @@ export function DimensionManager() {
                         )}
                       </div>
                       {dim.description && (
-                        <p className="text-xs text-muted-foreground truncate">
-                          {dim.description}
-                        </p>
+                        <p className="text-xs text-muted-foreground truncate">{dim.description}</p>
                       )}
                     </div>
                   )}

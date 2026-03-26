@@ -61,9 +61,7 @@ export type EntityRow = InferSelectModel<typeof entities>;
 export type BudgetRow = InferSelectModel<typeof budgets>;
 export type InventoryRow = InferSelectModel<typeof homeInventory>;
 export type WishListRow = InferSelectModel<typeof wishList>;
-export type TransactionCorrectionRow = InferSelectModel<
-  typeof transactionCorrections
->;
+export type TransactionCorrectionRow = InferSelectModel<typeof transactionCorrections>;
 export type AiUsageRow = InferSelectModel<typeof aiUsage>;
 export type EnvironmentRow = InferSelectModel<typeof environments>;
 export type MovieRow = InferSelectModel<typeof movies>;
@@ -72,9 +70,7 @@ export type SeasonRow = InferSelectModel<typeof seasons>;
 export type EpisodeRow = InferSelectModel<typeof episodes>;
 export type MediaWatchlistRow = InferSelectModel<typeof mediaWatchlist>;
 export type WatchHistoryRow = InferSelectModel<typeof watchHistory>;
-export type ComparisonDimensionRow = InferSelectModel<
-  typeof comparisonDimensions
->;
+export type ComparisonDimensionRow = InferSelectModel<typeof comparisonDimensions>;
 export type ComparisonRow = InferSelectModel<typeof comparisons>;
 export type MediaScoreRow = InferSelectModel<typeof mediaScores>;
 export type LocationRow = InferSelectModel<typeof locations>;
@@ -89,9 +85,7 @@ export type EntityInsert = InferInsertModel<typeof entities>;
 export type BudgetInsert = InferInsertModel<typeof budgets>;
 export type InventoryInsert = InferInsertModel<typeof homeInventory>;
 export type WishListInsert = InferInsertModel<typeof wishList>;
-export type TransactionCorrectionInsert = InferInsertModel<
-  typeof transactionCorrections
->;
+export type TransactionCorrectionInsert = InferInsertModel<typeof transactionCorrections>;
 export type AiUsageInsert = InferInsertModel<typeof aiUsage>;
 export type EnvironmentInsert = InferInsertModel<typeof environments>;
 export type MovieInsert = InferInsertModel<typeof movies>;
@@ -100,9 +94,7 @@ export type SeasonInsert = InferInsertModel<typeof seasons>;
 export type EpisodeInsert = InferInsertModel<typeof episodes>;
 export type MediaWatchlistInsert = InferInsertModel<typeof mediaWatchlist>;
 export type WatchHistoryInsert = InferInsertModel<typeof watchHistory>;
-export type ComparisonDimensionInsert = InferInsertModel<
-  typeof comparisonDimensions
->;
+export type ComparisonDimensionInsert = InferInsertModel<typeof comparisonDimensions>;
 export type ComparisonInsert = InferInsertModel<typeof comparisons>;
 export type MediaScoreInsert = InferInsertModel<typeof mediaScores>;
 export type LocationInsert = InferInsertModel<typeof locations>;
@@ -112,21 +104,10 @@ export type ItemDocumentInsert = InferInsertModel<typeof itemDocuments>;
 export type SettingInsert = InferInsertModel<typeof settings>;
 
 // Constants
-export const ENTITY_TYPES = [
-  "company",
-  "person",
-  "place",
-  "brand",
-  "organisation",
-] as const;
+export const ENTITY_TYPES = ["company", "person", "place", "brand", "organisation"] as const;
 export type EntityType = (typeof ENTITY_TYPES)[number];
 
-export const WISH_LIST_PRIORITIES = [
-  "Needing",
-  "Soon",
-  "One Day",
-  "Dreaming",
-] as const;
+export const WISH_LIST_PRIORITIES = ["Needing", "Soon", "One Day", "Dreaming"] as const;
 export type WishListPriority = (typeof WISH_LIST_PRIORITIES)[number];
 
 export const MEDIA_TYPES = ["movie", "tv_show"] as const;

@@ -18,7 +18,7 @@ export function QuickPickPage() {
 
   const { data, isLoading, refetch } = trpc.media.library.quickPick.useQuery(
     { count: 10 },
-    { refetchOnWindowFocus: false },
+    { refetchOnWindowFocus: false }
   );
 
   const addToWatchlist = trpc.media.watchlist.add.useMutation({
@@ -53,7 +53,7 @@ export function QuickPickPage() {
           setAddedIds((prev) => new Set(prev).add(currentPick.id));
           goNext();
         },
-      },
+      }
     );
   }, [currentPick, addedIds, addToWatchlist, goNext]);
 
@@ -114,12 +114,9 @@ export function QuickPickPage() {
         <Sparkles className="h-10 w-10 text-muted-foreground" />
         <h2 className="text-xl font-semibold">No unwatched movies</h2>
         <p className="text-muted-foreground text-sm max-w-xs">
-          Add more movies to your library or mark some as unwatched to get
-          picks.
+          Add more movies to your library or mark some as unwatched to get picks.
         </p>
-        <Button onClick={() => navigate("/media/search")}>
-          Search for movies
-        </Button>
+        <Button onClick={() => navigate("/media/search")}>Search for movies</Button>
       </div>
     );
   }
@@ -175,16 +172,12 @@ export function QuickPickPage() {
         {/* Swipe indicators */}
         {swipeOffset > 40 && (
           <div className="absolute top-4 left-4 z-10">
-            <Badge className="bg-emerald-500 text-white text-sm px-3 py-1">
-              + Watchlist
-            </Badge>
+            <Badge className="bg-emerald-500 text-white text-sm px-3 py-1">+ Watchlist</Badge>
           </div>
         )}
         {swipeOffset < -40 && (
           <div className="absolute top-4 right-4 z-10">
-            <Badge className="bg-rose-500 text-white text-sm px-3 py-1">
-              Skip
-            </Badge>
+            <Badge className="bg-rose-500 text-white text-sm px-3 py-1">Skip</Badge>
           </div>
         )}
 
@@ -207,9 +200,7 @@ export function QuickPickPage() {
         {/* Info */}
         <div className="p-4 space-y-3">
           <div>
-            <h2 className="text-lg font-semibold line-clamp-2">
-              {movie.title}
-            </h2>
+            <h2 className="text-lg font-semibold line-clamp-2">{movie.title}</h2>
             <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
               {year && <span>{year}</span>}
               {movie.runtime && (
@@ -240,9 +231,7 @@ export function QuickPickPage() {
 
           {/* Overview */}
           {movie.overview && (
-            <p className="text-sm text-muted-foreground line-clamp-3">
-              {movie.overview}
-            </p>
+            <p className="text-sm text-muted-foreground line-clamp-3">{movie.overview}</p>
           )}
         </div>
       </div>

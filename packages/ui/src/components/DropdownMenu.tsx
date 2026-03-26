@@ -97,9 +97,7 @@ export function DropdownMenu({
           (groups
             ? groups.map((group, groupIndex) => (
                 <div key={groupIndex}>
-                  {group.label && (
-                    <DropdownMenuLabel>{group.label}</DropdownMenuLabel>
-                  )}
+                  {group.label && <DropdownMenuLabel>{group.label}</DropdownMenuLabel>}
                   {group.items.map((item) => (
                     <DropdownMenuItem
                       key={item.value}

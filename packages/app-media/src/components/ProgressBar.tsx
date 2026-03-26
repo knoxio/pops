@@ -19,7 +19,7 @@ export function ProgressBar({ watched, total, className, showLabel = true }: Pro
         <div
           className={cn(
             "h-full rounded-full transition-all",
-            isComplete ? "bg-green-500" : "bg-primary",
+            isComplete ? "bg-green-500" : "bg-primary"
           )}
           style={{ width: `${Math.min(percentage, 100)}%` }}
         />

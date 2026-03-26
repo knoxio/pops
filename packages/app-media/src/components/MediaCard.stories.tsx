@@ -65,8 +65,7 @@ export const LongTitle: Story = {
   args: {
     id: 3,
     type: "movie",
-    title:
-      "Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb",
+    title: "Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb",
     year: "1964",
     posterUrl: "/media/images/movie/3/poster.jpg",
     onClick: (id, type) => console.log("Navigate:", type, id),

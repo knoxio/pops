@@ -137,18 +137,10 @@ export const Controlled: Story = {
     const [values, setValues] = useState(["tag1", "tag2"]);
     return (
       <div className="space-y-4">
-        <ChipInput
-          {...args}
-          value={values}
-          onChange={setValues}
-          placeholder="Add tags..."
-        />
+        <ChipInput {...args} value={values} onChange={setValues} placeholder="Add tags..." />
         <div className="text-sm text-muted-foreground">
           <p>Current values: {values.join(", ")}</p>
-          <button
-            onClick={() => setValues([])}
-            className="mt-2 text-xs underline"
-          >
+          <button onClick={() => setValues([])} className="mt-2 text-xs underline">
             Clear all
           </button>
         </div>
@@ -207,11 +199,7 @@ export const TagEditor: Story = {
       <div className="space-y-4 max-w-lg">
         <div>
           <h3 className="text-lg font-semibold mb-2">Post Tags</h3>
-          <ChipInput
-            value={tags}
-            onChange={setTags}
-            placeholder="Add tags..."
-          />
+          <ChipInput value={tags} onChange={setTags} placeholder="Add tags..." />
         </div>
         <div className="text-sm text-muted-foreground">
           <p>Popular tags:</p>
@@ -238,10 +226,7 @@ export const TagEditor: Story = {
 
 export const CategorySelector: Story = {
   render: () => {
-    const [categories, setCategories] = useState<string[]>([
-      "Food & Dining",
-      "Transportation",
-    ]);
+    const [categories, setCategories] = useState<string[]>(["Food & Dining", "Transportation"]);
 
     const suggestions = [
       "Food & Dining",
@@ -257,9 +242,7 @@ export const CategorySelector: Story = {
     return (
       <div className="space-y-4 max-w-lg">
         <div>
-          <label className="block text-sm font-medium mb-2">
-            Transaction Categories
-          </label>
+          <label className="block text-sm font-medium mb-2">Transaction Categories</label>
           <ChipInput
             value={categories}
             onChange={setCategories}
@@ -296,9 +279,7 @@ export const KeywordInput: Story = {
     return (
       <div className="space-y-4 max-w-lg">
         <div>
-          <label className="block text-sm font-medium mb-2">
-            Search Keywords
-          </label>
+          <label className="block text-sm font-medium mb-2">Search Keywords</label>
           <ChipInput
             value={keywords}
             onChange={setKeywords}
@@ -334,16 +315,7 @@ export const States: Story = {
       <div>
         <p className="text-sm font-medium mb-1">Many values</p>
         <ChipInput
-          defaultValue={[
-            "apple",
-            "banana",
-            "orange",
-            "grape",
-            "kiwi",
-            "mango",
-            "pear",
-            "peach",
-          ]}
+          defaultValue={["apple", "banana", "orange", "grape", "kiwi", "mango", "pear", "peach"]}
         />
       </div>
       <div>
@@ -358,15 +330,8 @@ export const States: Story = {
 export const AllVariants: Story = {
   render: () => (
     <div className="space-y-4">
-      <ChipInput
-        defaultValue={["tag1", "tag2"]}
-        placeholder="Default variant"
-      />
-      <ChipInput
-        defaultValue={["tag1", "tag2"]}
-        placeholder="Ghost variant"
-        variant="ghost"
-      />
+      <ChipInput defaultValue={["tag1", "tag2"]} placeholder="Default variant" />
+      <ChipInput defaultValue={["tag1", "tag2"]} placeholder="Ghost variant" variant="ghost" />
       <ChipInput
         defaultValue={["tag1", "tag2"]}
         placeholder="Underline variant"
@@ -384,9 +349,7 @@ export const PasteMultipleValues: Story = {
     return (
       <div className="space-y-4 max-w-lg">
         <div>
-          <label className="block text-sm font-medium mb-2">
-            Paste Multiple Emails
-          </label>
+          <label className="block text-sm font-medium mb-2">Paste Multiple Emails</label>
           <ChipInput
             value={values}
             onChange={setValues}

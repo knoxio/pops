@@ -5,14 +5,7 @@
  */
 import { useState } from "react";
 import { Link, useNavigate } from "react-router";
-import {
-  Alert,
-  AlertTitle,
-  AlertDescription,
-  Badge,
-  Button,
-  Skeleton,
-} from "@pops/ui";
+import { Alert, AlertTitle, AlertDescription, Badge, Button, Skeleton } from "@pops/ui";
 import { Film } from "lucide-react";
 import { trpc } from "../lib/trpc";
 
@@ -131,19 +124,13 @@ function HistoryItem({ entry }: { entry: HistoryEntry }) {
             <Link to={href} className="hover:underline">
               <h3 className="text-sm font-medium truncate">{title}</h3>
             </Link>
-            {subtitle && (
-              <p className="text-xs text-muted-foreground truncate">
-                {subtitle}
-              </p>
-            )}
+            {subtitle && <p className="text-xs text-muted-foreground truncate">{subtitle}</p>}
           </div>
           <Badge variant="secondary" className="text-xs shrink-0">
             {isEpisode ? "Episode" : "Movie"}
           </Badge>
         </div>
-        <p className="text-xs text-muted-foreground mt-1">
-          {formatWatchDate(entry.watchedAt)}
-        </p>
+        <p className="text-xs text-muted-foreground mt-1">{formatWatchDate(entry.watchedAt)}</p>
       </div>
     </div>
   );
@@ -177,10 +164,7 @@ function HistoryCard({ entry }: { entry: HistoryEntry }) {
         }}
       >
         {/* Type badge */}
-        <Badge
-          variant={isEpisode ? "secondary" : "default"}
-          className="absolute top-2 left-2 z-10"
-        >
+        <Badge variant={isEpisode ? "secondary" : "default"} className="absolute top-2 left-2 z-10">
           {isEpisode ? "Episode" : "Movie"}
         </Badge>
 
@@ -208,9 +192,7 @@ function HistoryCard({ entry }: { entry: HistoryEntry }) {
         <Link to={href} className="hover:underline">
           <h3 className="text-sm font-medium leading-tight line-clamp-2">{title}</h3>
         </Link>
-        {subtitle && (
-          <p className="text-xs text-muted-foreground line-clamp-1">{subtitle}</p>
-        )}
+        {subtitle && <p className="text-xs text-muted-foreground line-clamp-1">{subtitle}</p>}
       </div>
     </div>
   );
@@ -226,8 +208,7 @@ export function HistoryPage() {
     offset,
   };
 
-  const { data, isLoading, error } =
-    trpc.media.watchHistory.listRecent.useQuery(queryInput);
+  const { data, isLoading, error } = trpc.media.watchHistory.listRecent.useQuery(queryInput);
 
   const entries = data?.data ?? [];
   const total = data?.pagination?.total ?? 0;
@@ -272,10 +253,7 @@ export function HistoryPage() {
               ? "No watch history yet. Start watching something!"
               : `No ${filter === "movie" ? "movies" : "episodes"} in your history.`}
           </p>
-          <Link
-            to="/media"
-            className="mt-4 inline-block text-sm text-primary underline"
-          >
+          <Link to="/media" className="mt-4 inline-block text-sm text-primary underline">
             Browse library
           </Link>
         </div>
@@ -311,11 +289,7 @@ export function HistoryPage() {
                 </Button>
               )}
               {hasMore && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setOffset(offset + PAGE_SIZE)}
-                >
+                <Button variant="outline" size="sm" onClick={() => setOffset(offset + PAGE_SIZE)}>
                   Next
                 </Button>
               )}

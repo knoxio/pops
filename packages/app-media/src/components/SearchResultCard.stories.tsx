@@ -51,8 +51,7 @@ export const TvShow: Story = {
 export const LongTitle: Story = {
   args: {
     type: "movie",
-    title:
-      "The Lord of the Rings: The Return of the King — Extended Edition Director's Cut",
+    title: "The Lord of the Rings: The Return of the King — Extended Edition Director's Cut",
     year: "2003",
     overview: "Gandalf and Aragorn lead the World of Men against Sauron.",
     voteAverage: 9.0,

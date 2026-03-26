@@ -149,9 +149,7 @@ export function WishlistPage() {
   const columns: ColumnDef<WishlistItem>[] = [
     {
       accessorKey: "item",
-      header: ({ column }) => (
-        <SortableHeader column={column}>Item</SortableHeader>
-      ),
+      header: ({ column }) => <SortableHeader column={column}>Item</SortableHeader>,
       cell: ({ row }) => (
         <div className="flex flex-col">
           <span className="font-medium">{row.original.item}</span>
@@ -177,11 +175,7 @@ export function WishlistPage() {
         return (
           <Badge
             variant={
-              priority === "Needing"
-                ? "default"
-                : priority === "Soon"
-                  ? "secondary"
-                  : "outline"
+              priority === "Needing" ? "default" : priority === "Soon" ? "secondary" : "outline"
             }
           >
             {priority}
@@ -201,7 +195,11 @@ export function WishlistPage() {
         if (amount === null) return <div className="text-right text-muted-foreground">—</div>;
         return (
           <div className="text-right font-mono font-medium tabular-nums">
-            ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            $
+            {amount.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </div>
         );
       },
@@ -218,7 +216,11 @@ export function WishlistPage() {
         if (amount === null) return <div className="text-right text-muted-foreground">—</div>;
         return (
           <div className="text-right font-mono font-medium tabular-nums text-emerald-600 dark:text-emerald-400">
-            ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            $
+            {amount.toLocaleString(undefined, {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}
           </div>
         );
       },
@@ -235,9 +237,7 @@ export function WishlistPage() {
         return (
           <div className="flex items-center gap-2 min-w-[120px]">
             <Progress value={percentage} className="h-2 flex-1" />
-            <span className="text-xs font-medium tabular-nums w-10 text-right">
-              {percentage}%
-            </span>
+            <span className="text-xs font-medium tabular-nums w-10 text-right">{percentage}%</span>
           </div>
         );
       },
@@ -258,7 +258,7 @@ export function WishlistPage() {
               <Pencil className="mr-2 h-4 w-4" /> Edit
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem 
+            <DropdownMenuItem
               className="text-destructive focus:text-destructive"
               onClick={() => setDeletingId(row.original.id)}
             >
@@ -399,9 +399,9 @@ export function WishlistPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 onClick={() => setIsDialogOpen(false)}
                 disabled={isSubmitting}
               >

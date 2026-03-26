@@ -2,12 +2,7 @@
  * TextInput component with variants, prefix/suffix, and clear functionality
  * Supports controlled and uncontrolled modes
  */
-import {
-  forwardRef,
-  useState,
-  type InputHTMLAttributes,
-  type ReactNode,
-} from "react";
+import { forwardRef, useState, type InputHTMLAttributes, type ReactNode } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "../lib/utils";
 
@@ -198,9 +193,7 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
           )}
           style={isFocused && !error ? { borderColor: "rgb(55, 65, 81)" } : undefined}
         >
-          {prefix && (
-            <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>
-          )}
+          {prefix && <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>}
           <input
             ref={ref}
             className={cn(inputVariants({ size, centered, className }))}
@@ -228,11 +221,7 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
             <span className="flex-shrink-0 text-muted-foreground">{suffix}</span>
           )}
         </div>
-        {error && (
-          <p className="text-[10px] font-medium text-destructive ml-1">
-            {error}
-          </p>
-        )}
+        {error && <p className="text-[10px] font-medium text-destructive ml-1">{error}</p>}
       </div>
     );
   }

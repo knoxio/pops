@@ -60,37 +60,35 @@ export function SearchPage() {
   // Track items successfully added this session
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
 
-  const shouldSearchMovies =
-    debouncedQuery.length > 0 && (mode === "movies" || mode === "both");
-  const shouldSearchTv =
-    debouncedQuery.length > 0 && (mode === "tv" || mode === "both");
+  const shouldSearchMovies = debouncedQuery.length > 0 && (mode === "movies" || mode === "both");
+  const shouldSearchTv = debouncedQuery.length > 0 && (mode === "tv" || mode === "both");
 
   // Search queries
   const movieSearch = trpc.media.search.movies.useQuery(
     { query: debouncedQuery },
-    { enabled: shouldSearchMovies, staleTime: 60_000 },
+    { enabled: shouldSearchMovies, staleTime: 60_000 }
   );
   const tvSearch = trpc.media.search.tvShows.useQuery(
     { query: debouncedQuery },
-    { enabled: shouldSearchTv, staleTime: 60_000 },
+    { enabled: shouldSearchTv, staleTime: 60_000 }
   );
 
   // Library lookups for "In Library" detection
   const libraryMovies = trpc.media.movies.list.useQuery(
     { limit: 1000 },
-    { enabled: shouldSearchMovies, staleTime: 30_000 },
+    { enabled: shouldSearchMovies, staleTime: 30_000 }
   );
   const libraryTvShows = trpc.media.tvShows.list.useQuery(
     { limit: 1000 },
-    { enabled: shouldSearchTv, staleTime: 30_000 },
+    { enabled: shouldSearchTv, staleTime: 30_000 }
   );
 
   // Build lookup sets
   const movieTmdbIds = new Set(
-    (libraryMovies.data?.data ?? []).map((m: { tmdbId: number }) => m.tmdbId),
+    (libraryMovies.data?.data ?? []).map((m: { tmdbId: number }) => m.tmdbId)
   );
   const tvTvdbIds = new Set(
-    (libraryTvShows.data?.data ?? []).map((s: { tvdbId: number }) => s.tvdbId),
+    (libraryTvShows.data?.data ?? []).map((s: { tvdbId: number }) => s.tvdbId)
   );
 
   // Mutations
@@ -120,10 +118,10 @@ export function SearchPage() {
               return next;
             });
           },
-        },
+        }
       );
     },
-    [addMovieMutation],
+    [addMovieMutation]
   );
 
   const handleAddTvShow = useCallback(
@@ -147,15 +145,14 @@ export function SearchPage() {
               return next;
             });
           },
-        },
+        }
       );
     },
-    [addTvShowMutation],
+    [addTvShowMutation]
   );
 
   const isSearching =
-    (shouldSearchMovies && movieSearch.isLoading) ||
-    (shouldSearchTv && tvSearch.isLoading);
+    (shouldSearchMovies && movieSearch.isLoading) || (shouldSearchTv && tvSearch.isLoading);
   const hasQuery = debouncedQuery.length > 0;
   const hasError = movieSearch.error || tvSearch.error;
 
@@ -170,9 +167,7 @@ export function SearchPage() {
   }, [movieSearch.error, tvSearch.error]);
 
   // Merge results
-  const movieResults = shouldSearchMovies
-    ? (movieSearch.data?.results ?? [])
-    : [];
+  const movieResults = shouldSearchMovies ? (movieSearch.data?.results ?? []) : [];
   const tvResults = shouldSearchTv ? (tvSearch.data?.results ?? []) : [];
   const totalResults = movieResults.length + tvResults.length;
   const noResults = hasQuery && !isSearching && totalResults === 0 && !hasError;
@@ -199,10 +194,7 @@ export function SearchPage() {
       </div>
 
       {/* Type toggle */}
-      <Tabs
-        value={mode}
-        onValueChange={(v: string) => setMode(v as SearchMode)}
-      >
+      <Tabs value={mode} onValueChange={(v: string) => setMode(v as SearchMode)}>
         <TabsList>
           <TabsTrigger value="both">Both</TabsTrigger>
           <TabsTrigger value="movies">Movies</TabsTrigger>
@@ -236,10 +228,7 @@ export function SearchPage() {
       {isSearching && (
         <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="flex gap-4 rounded-lg border bg-card p-3"
-            >
+            <div key={i} className="flex gap-4 rounded-lg border bg-card p-3">
               <Skeleton className="w-20 shrink-0 rounded-md aspect-[2/3]" />
               <div className="flex flex-1 flex-col gap-2">
                 <Skeleton className="h-4 w-3/4" />
@@ -273,8 +262,7 @@ export function SearchPage() {
               <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {movieResults.map((movie: MovieSearchResult) => {
                   const key = makeKey("movie", movie.tmdbId);
-                  const inLibrary =
-                    movieTmdbIds.has(movie.tmdbId) || addedIds.has(key);
+                  const inLibrary = movieTmdbIds.has(movie.tmdbId) || addedIds.has(key);
                   return (
                     <SearchResultCard
                       key={movie.tmdbId}
@@ -305,8 +293,7 @@ export function SearchPage() {
               <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
                 {tvResults.map((show: TvSearchResult) => {
                   const key = makeKey("tv", show.tvdbId);
-                  const inLibrary =
-                    tvTvdbIds.has(show.tvdbId) || addedIds.has(key);
+                  const inLibrary = tvTvdbIds.has(show.tvdbId) || addedIds.has(key);
                   return (
                     <SearchResultCard
                       key={show.tvdbId}
@@ -332,9 +319,7 @@ export function SearchPage() {
       {!hasQuery && (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <Search className="h-12 w-12 opacity-20 mb-4" />
-          <p className="text-sm">
-            Start typing to search for movies and TV shows.
-          </p>
+          <p className="text-sm">Start typing to search for movies and TV shows.</p>
         </div>
       )}
     </div>
