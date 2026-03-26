@@ -1,7 +1,7 @@
 # US-04: Prompt template viewer
 
 > PRD: [053 — AI Configuration & Rules](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

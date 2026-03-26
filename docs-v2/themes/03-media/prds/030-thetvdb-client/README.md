@@ -97,11 +97,11 @@ No new tables — uses the `tv_shows`, `seasons`, and `episodes` tables from PRD
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-thetvdb-http-client](us-01-thetvdb-http-client.md) | HTTP client with JWT auth, auto-refresh, search endpoint | Yes |
-| 02 | [us-02-image-cache](us-02-image-cache.md) | Poster download for shows/seasons, local storage, serving | Yes |
-| 03 | [us-03-add-to-library](us-03-add-to-library.md) | addTvShow flow (fetch show + seasons + episodes, create all, download images), refreshTvShow with diff reporting | Blocked by us-01, us-02 |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-thetvdb-http-client](us-01-thetvdb-http-client.md) | HTTP client with JWT auth, auto-refresh, search endpoint | Partial | Yes |
+| 02 | [us-02-image-cache](us-02-image-cache.md) | Poster download for shows/seasons, local storage, serving | Partial | Yes |
+| 03 | [us-03-add-to-library](us-03-add-to-library.md) | addTvShow flow (fetch show + seasons + episodes, create all, download images), refreshTvShow with diff reporting | Partial | Blocked by us-01, us-02 |
 
 US-01 and US-02 can run in parallel. US-03 composes them into the add-to-library and refresh flows.
 

@@ -45,9 +45,9 @@ Build the wishlist — savings goals with target amounts, progress tracking, and
 
 | # | Story | Summary | Parallelisable |
 |---|-------|---------|----------------|
-| 01 | [us-01-schema-api](us-01-schema-api.md) | Wishlist table, CRUD procedures, URL validation, remaining calculation ✅ | No (first) |
-| 02 | [us-02-wishlist-page](us-02-wishlist-page.md) | DataTable with progress bars, priority badges, external links ✅ | Blocked by us-01 |
-| 03 | [us-03-wishlist-crud-ui](us-03-wishlist-crud-ui.md) | Create/edit/delete dialogs with form validation ✅ | Blocked by us-02 |
+| 01 | [us-01-schema-api](us-01-schema-api.md) | Wishlist table, CRUD procedures, URL validation, remaining calculation | Done |
+| 02 | [us-02-wishlist-page](us-02-wishlist-page.md) | DataTable with progress bars, priority badges, external links | Done |
+| 03 | [us-03-wishlist-crud-ui](us-03-wishlist-crud-ui.md) | Create/edit/delete dialogs with form validation | Done |
 
 ## Out of Scope
 

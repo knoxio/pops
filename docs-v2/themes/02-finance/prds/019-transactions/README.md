@@ -80,12 +80,12 @@ Build the transaction ledger — the core of the finance app. Every financial tr
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-schema-api](us-01-schema-api.md) | Transaction table, indexes, CRUD procedures, tag suggestion | No (first) | Done |
-| 02 | [us-02-transactions-page](us-02-transactions-page.md) | DataTable with filters, sorting, pagination | Blocked by us-01 | Done |
-| 03 | [us-03-tag-editor](us-03-tag-editor.md) | Inline tag editing with popover, autocomplete, source badges | Blocked by us-01 | Done |
-| 04 | [us-04-dashboard](us-04-dashboard.md) | Dashboard with stats cards and recent transactions | Blocked by us-01 | Done |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-schema-api](us-01-schema-api.md) | Transaction table, indexes, CRUD procedures, tag suggestion | Done | No (first) |
+| 02 | [us-02-transactions-page](us-02-transactions-page.md) | DataTable with filters, sorting, pagination | Done | Blocked by us-01 |
+| 03 | [us-03-tag-editor](us-03-tag-editor.md) | Inline tag editing with popover, autocomplete, source badges | Done | Blocked by us-01 |
+| 04 | [us-04-dashboard](us-04-dashboard.md) | Dashboard with stats cards and recent transactions | Done | Blocked by us-01 |
 
 US-02 and US-03 can parallelise after US-01. US-04 can parallelise with US-02.
 
