@@ -13,7 +13,7 @@ import {
   BreadcrumbPage,
 } from "@pops/ui";
 import { trpc } from "../lib/trpc";
-import { formatCurrency, formatRuntime } from "../lib/format";
+import { formatCurrency, formatRuntime, languageName } from "../lib/format";
 import { WatchlistToggle } from "../components/WatchlistToggle";
 import { ComparisonScores } from "../components/ComparisonScores";
 import { MarkAsWatchedButton } from "../components/MarkAsWatchedButton";
@@ -51,6 +51,11 @@ export function MovieDetailPage() {
 
   const { data, isLoading, error } = trpc.media.movies.get.useQuery(
     { id: movieId },
+    { enabled: !Number.isNaN(movieId) }
+  );
+
+  const { data: watchHistoryData } = trpc.media.watchHistory.list.useQuery(
+    { mediaType: "movie", mediaId: movieId },
     { enabled: !Number.isNaN(movieId) }
   );
 
@@ -97,7 +102,7 @@ export function MovieDetailPage() {
 
   const metadataItems = [
     { label: "Status", value: movie.status },
-    { label: "Language", value: movie.originalLanguage?.toUpperCase() },
+    { label: "Language", value: languageName(movie.originalLanguage) },
     {
       label: "Budget",
       value: movie.budget ? formatCurrency(movie.budget) : null,
@@ -229,6 +234,28 @@ export function MovieDetailPage() {
             </dl>
           </section>
         )}
+
+        {/* Watch history */}
+        <section>
+          <h2 className="text-lg font-semibold mb-2">Watch History</h2>
+          {watchHistoryData && watchHistoryData.data.length > 0 ? (
+            <ul className="space-y-2">
+              {watchHistoryData.data.map((entry) => (
+                <li key={entry.id} className="flex items-center gap-2 text-sm">
+                  <span className="text-muted-foreground">
+                    {new Date(entry.watchedAt).toLocaleDateString(undefined, {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">Not watched yet</p>
+          )}
+        </section>
       </div>
     </div>
   );
