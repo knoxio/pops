@@ -1,7 +1,7 @@
 # US-13: Edit transaction dialog
 
 > PRD: [020 — Import Wizard UI](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,12 +9,12 @@ As a user, I want to edit a transaction's details during review so that I can fi
 
 ## Acceptance Criteria
 
-- [ ] Edit button on each transaction card opens a dialog
-- [ ] Editable fields: description, amount, account, entity (dropdown), location, type (purchase/transfer/income)
-- [ ] Pre-filled with current values
-- [ ] Save updates the transaction in Zustand store (not yet in database)
-- [ ] Cancel closes dialog without changes
-- [ ] Changing type to transfer/income makes entity optional (links to US-15)
+- [x] Edit button on each transaction card opens a dialog
+- [x] Editable fields: description, amount, account, entity (dropdown), location, type (purchase/transfer/income)
+- [x] Pre-filled with current values
+- [x] Save updates the transaction in Zustand store (not yet in database)
+- [x] Cancel closes dialog without changes
+- [x] Changing type to transfer/income makes entity optional (links to US-15)
 
 ## Notes
 

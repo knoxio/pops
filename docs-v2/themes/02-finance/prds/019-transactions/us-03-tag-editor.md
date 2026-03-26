@@ -1,7 +1,7 @@
 # US-03: Inline tag editor
 
 > PRD: [019 — Transactions](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,16 +9,16 @@ As a user, I want to edit transaction tags inline via a popover so that I can ca
 
 ## Acceptance Criteria
 
-- [ ] Clicking the tags cell opens a popover with the TagEditor
-- [ ] Current tags shown as removable chips with deterministic colours (oklch hash-based)
-- [ ] Text input with autocomplete — suggests from all known tags (server + session)
-- [ ] Autocomplete: starts-with matches first, then contains matches, max 8 suggestions
-- [ ] Keyboard: Enter/comma adds tag, Tab adds first suggestion, Backspace removes last, Escape cancels
-- [ ] "Suggest" button triggers `suggestTags` API call — shows loading state while fetching
-- [ ] Source badges when tag metadata available: rule (pattern tooltip), AI, entity
-- [ ] Save/Cancel buttons — Save calls `transactions.update` mutation
-- [ ] Toast confirmation on save
-- [ ] Tag changes reflect immediately in the DataTable row
+- [x] Clicking the tags cell opens a popover with the TagEditor
+- [x] Current tags shown as removable chips with deterministic colours (oklch hash-based)
+- [x] Text input with autocomplete — suggests from all known tags (server + session)
+- [x] Autocomplete: starts-with matches first, then contains matches, max 8 suggestions
+- [x] Keyboard: Enter/comma adds tag, Tab adds first suggestion, Backspace removes last, Escape cancels
+- [x] "Suggest" button triggers `suggestTags` API call — shows loading state while fetching
+- [x] Source badges when tag metadata available: rule (pattern tooltip), AI, entity
+- [x] Save/Cancel buttons — Save calls `transactions.update` mutation
+- [x] Toast confirmation on save
+- [x] Tag changes reflect immediately in the DataTable row
 
 ## Notes
 

@@ -1,7 +1,7 @@
 # US-16: Review validation gate
 
 > PRD: [020 — Import Wizard UI](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,11 +9,11 @@ As a user, I want the wizard to prevent me from advancing until all uncertain an
 
 ## Acceptance Criteria
 
-- [ ] "Continue to Tag Review" button disabled while uncertain or failed count > 0
-- [ ] Button shows remaining count: "Resolve N remaining"
-- [ ] Tooltip explains why button is disabled
-- [ ] Once all resolved (moved to matched or skipped via type override), button enables
-- [ ] If only skipped transactions remain (no matched), show appropriate messaging
+- [x] "Continue to Tag Review" button disabled while uncertain or failed count > 0
+- [x] Button shows remaining count: "Resolve N remaining"
+- [x] Tooltip explains why button is disabled
+- [x] Once all resolved (moved to matched or skipped via type override), button enables
+- [x] If only skipped transactions remain (no matched), show appropriate messaging
 
 ## Notes
 
