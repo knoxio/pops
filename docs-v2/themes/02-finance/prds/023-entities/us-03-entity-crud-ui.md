@@ -1,7 +1,7 @@
 # US-03: Entity CRUD UI
 
 > PRD: [023 — Entities](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,13 +9,13 @@ As a user, I want to create, edit, and delete entities from the entities page so
 
 ## Acceptance Criteria
 
-- [ ] "Add Entity" button opens create dialog
-- [ ] Create form: name (required), type (select), ABN (text), aliases (chip input), default transaction type (select), default tags (chip input), notes (textarea)
-- [ ] Edit: row action opens same form pre-filled
-- [ ] Delete: row action with confirmation dialog
-- [ ] Duplicate name shows error message suggesting the existing entity
-- [ ] Toast confirmation on create/update/delete
-- [ ] DataTable refreshes after mutations
+- [x] "Add Entity" button opens create dialog
+- [x] Create form: name (required), type (select), ABN (text), aliases (chip input), default transaction type (select), default tags (chip input), notes (textarea)
+- [x] Edit: row action opens same form pre-filled
+- [x] Delete: row action with confirmation dialog
+- [x] Duplicate name shows error message suggesting the existing entity
+- [x] Toast confirmation on create/update/delete
+- [x] DataTable refreshes after mutations
 
 ## Notes
 

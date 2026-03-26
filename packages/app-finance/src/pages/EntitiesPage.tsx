@@ -1,13 +1,43 @@
 /**
- * Entities page - manage merchants/payees
+ * Entities page - manage merchants/payees with CRUD
  */
+import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { trpc } from "../lib/trpc";
-import { DataTable, SortableHeader } from "@pops/ui";
-import { Badge } from "@pops/ui";
-import { Alert } from "@pops/ui";
-import { Skeleton } from "@pops/ui";
+import {
+  DataTable,
+  SortableHeader,
+  Badge,
+  Alert,
+  Skeleton,
+  Button,
+  TextInput,
+  Textarea,
+  Select,
+  ChipInput,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@pops/ui";
 import type { ColumnFilter } from "@pops/ui";
+import { MoreHorizontal, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 interface Entity {
   id: string;
@@ -21,10 +51,117 @@ interface Entity {
   lastEditedTime: string;
 }
 
+const ENTITY_TYPES = ["company", "person", "place", "brand", "organisation"] as const;
+
+const TRANSACTION_TYPES = [
+  { label: "None", value: "" },
+  { label: "Purchase", value: "purchase" },
+  { label: "Transfer", value: "transfer" },
+  { label: "Income", value: "income" },
+];
+
+const EntityFormSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  type: z.string(),
+  abn: z.string(),
+  aliases: z.array(z.string()),
+  defaultTransactionType: z.string(),
+  defaultTags: z.array(z.string()),
+  notes: z.string(),
+});
+
+type EntityFormValues = z.infer<typeof EntityFormSchema>;
+
+const DEFAULT_FORM_VALUES: EntityFormValues = {
+  name: "",
+  type: "company",
+  abn: "",
+  aliases: [],
+  defaultTransactionType: "",
+  defaultTags: [],
+  notes: "",
+};
+
 export function EntitiesPage() {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingEntity, setEditingEntity] = useState<Entity | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const utils = trpc.useUtils();
   const { data, isLoading, error, refetch } = trpc.core.entities.list.useQuery({
     limit: 100,
   });
+
+  const createMutation = trpc.core.entities.create.useMutation({
+    onSuccess: () => {
+      toast.success("Entity created");
+      utils.core.entities.list.invalidate();
+      setIsDialogOpen(false);
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const updateMutation = trpc.core.entities.update.useMutation({
+    onSuccess: () => {
+      toast.success("Entity updated");
+      utils.core.entities.list.invalidate();
+      setIsDialogOpen(false);
+      setEditingEntity(null);
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const deleteMutation = trpc.core.entities.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Entity deleted");
+      utils.core.entities.list.invalidate();
+      setDeletingId(null);
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const form = useForm<EntityFormValues>({
+    resolver: zodResolver(EntityFormSchema),
+    defaultValues: DEFAULT_FORM_VALUES,
+  });
+
+  const handleAdd = () => {
+    setEditingEntity(null);
+    form.reset(DEFAULT_FORM_VALUES);
+    setIsDialogOpen(true);
+  };
+
+  const handleEdit = (entity: Entity) => {
+    setEditingEntity(entity);
+    form.reset({
+      name: entity.name,
+      type: entity.type || "company",
+      abn: entity.abn || "",
+      aliases: entity.aliases,
+      defaultTransactionType: entity.defaultTransactionType || "",
+      defaultTags: entity.defaultTags,
+      notes: entity.notes || "",
+    });
+    setIsDialogOpen(true);
+  };
+
+  const onSubmit = (values: EntityFormValues) => {
+    const payload = {
+      name: values.name,
+      type: values.type as (typeof ENTITY_TYPES)[number],
+      abn: values.abn || null,
+      aliases: values.aliases,
+      defaultTransactionType: values.defaultTransactionType || null,
+      defaultTags: values.defaultTags,
+      notes: values.notes || null,
+    };
+
+    if (editingEntity) {
+      updateMutation.mutate({ id: editingEntity.id, data: payload });
+    } else {
+      createMutation.mutate(payload);
+    }
+  };
 
   const columns: ColumnDef<Entity>[] = [
     {
@@ -41,7 +178,7 @@ export function EntitiesPage() {
           return <span className="text-muted-foreground">—</span>;
         }
         return (
-          <Badge variant="outline" className="text-xs">
+          <Badge variant="outline" className="text-xs capitalize">
             {type}
           </Badge>
         );
@@ -125,6 +262,32 @@ export function EntitiesPage() {
         );
       },
     },
+    {
+      id: "actions",
+      cell: ({ row }) => (
+        <div className="text-right">
+          <DropdownMenu
+            trigger={
+              <Button variant="ghost" size="icon" className="h-8 w-8 p-0" aria-label="Actions">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            }
+            align="end"
+          >
+            <DropdownMenuItem onClick={() => handleEdit(row.original)}>
+              <Pencil className="mr-2 h-4 w-4" /> Edit
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onClick={() => setDeletingId(row.original.id)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" /> Delete
+            </DropdownMenuItem>
+          </DropdownMenu>
+        </div>
+      ),
+    },
   ];
 
   const tableFilters: ColumnFilter[] = [
@@ -134,13 +297,7 @@ export function EntitiesPage() {
       label: "Type",
       options: [
         { label: "All Types", value: "" },
-        { label: "Supermarket", value: "Supermarket" },
-        { label: "Subscription", value: "Subscription" },
-        { label: "Fuel Station", value: "Fuel Station" },
-        { label: "Retailer", value: "Retailer" },
-        { label: "Employer", value: "Employer" },
-        { label: "Technology", value: "Technology" },
-        { label: "Hardware", value: "Hardware" },
+        ...ENTITY_TYPES.map((t) => ({ label: t.charAt(0).toUpperCase() + t.slice(1), value: t })),
       ],
     },
   ];
@@ -152,23 +309,28 @@ export function EntitiesPage() {
         <Alert variant="destructive">
           <p className="font-semibold">Failed to load entities</p>
           <p className="text-sm">{error.message}</p>
-          <button onClick={() => refetch()} className="mt-2 text-sm underline">
+          <Button variant="outline" size="sm" onClick={() => refetch()} className="mt-4">
             Try again
-          </button>
+          </Button>
         </Alert>
       </div>
     );
   }
 
+  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">Entities</h1>
-          <p className="text-muted-foreground">
-            {data && `${data.pagination.total} total entities`}
+          <p className="text-muted-foreground text-sm">
+            {data ? `${data.pagination.total} total entities` : "Manage merchants and payees"}
           </p>
         </div>
+        <Button onClick={handleAdd}>
+          <Plus className="mr-2 h-4 w-4" /> Add Entity
+        </Button>
       </div>
 
       {isLoading ? (
@@ -176,10 +338,10 @@ export function EntitiesPage() {
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-64 w-full" />
         </div>
-      ) : data ? (
+      ) : (
         <DataTable
           columns={columns}
-          data={data.data}
+          data={data?.data ?? []}
           searchable
           searchColumn="name"
           searchPlaceholder="Search entities..."
@@ -188,7 +350,115 @@ export function EntitiesPage() {
           pageSizeOptions={[25, 50, 100]}
           filters={tableFilters}
         />
-      ) : null}
+      )}
+
+      {/* Add/Edit Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={(open) => !isSubmitting && setIsDialogOpen(open)}>
+        <DialogContent className="sm:max-w-[500px]">
+          <form onSubmit={form.handleSubmit(onSubmit)}>
+            <DialogHeader>
+              <DialogTitle>{editingEntity ? "Edit Entity" : "New Entity"}</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <TextInput
+                label="Name"
+                placeholder="e.g. Woolworths, Netflix"
+                {...form.register("name")}
+                error={form.formState.errors.name?.message}
+              />
+              <div className="grid grid-cols-2 gap-4">
+                <Select
+                  label="Type"
+                  options={ENTITY_TYPES.map((t) => ({
+                    label: t.charAt(0).toUpperCase() + t.slice(1),
+                    value: t,
+                  }))}
+                  {...form.register("type")}
+                />
+                <TextInput
+                  label="ABN (Optional)"
+                  placeholder="00 000 000 000"
+                  {...form.register("abn")}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Aliases</label>
+                <Controller
+                  control={form.control}
+                  name="aliases"
+                  render={({ field }) => (
+                    <ChipInput
+                      placeholder="Type and press Enter..."
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
+              </div>
+              <Select
+                label="Default Transaction Type (Optional)"
+                options={TRANSACTION_TYPES}
+                {...form.register("defaultTransactionType")}
+              />
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Default Tags</label>
+                <Controller
+                  control={form.control}
+                  name="defaultTags"
+                  render={({ field }) => (
+                    <ChipInput
+                      placeholder="Type and press Enter..."
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  )}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Notes (Optional)</label>
+                <Textarea placeholder="Additional details..." {...form.register("notes")} />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsDialogOpen(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {editingEntity ? "Update" : "Create"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deletingId} onOpenChange={() => setDeletingId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this entity. Transactions referencing it will retain the
+              entity name but lose the link.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deletingId && deleteMutation.mutate({ id: deletingId })}
+              disabled={deleteMutation.isPending}
+            >
+              {deleteMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

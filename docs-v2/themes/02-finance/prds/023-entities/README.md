@@ -64,7 +64,7 @@ Build the entity registry — the merchant/payee database that transactions and 
 |---|-------|---------|----------------|
 | 01 | [us-01-schema-api](us-01-schema-api.md) | Entity table, CRUD procedures, alias/tag serialization | No (first) |
 | 02 | [us-02-entities-page](us-02-entities-page.md) | DataTable with search, type filter, alias/tag display | Blocked by us-01 |
-| 03 | [us-03-entity-crud-ui](us-03-entity-crud-ui.md) | Create/edit/delete dialogs on the entities page | Blocked by us-02 |
+| 03 | [us-03-entity-crud-ui](us-03-entity-crud-ui.md) | Create/edit/delete dialogs on the entities page | Done |
 
 ## Verification
 
