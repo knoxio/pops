@@ -1,5 +1,6 @@
 import { TmdbClient } from "./client.js";
 import { TokenBucketRateLimiter } from "./rate-limiter.js";
+import { getEnv } from "../../../env.js";
 
 export { GenreCache, getGenreCache, setGenreCache } from "./genre-cache.js";
 export { TmdbClient } from "./client.js";
@@ -15,7 +16,7 @@ const tmdbRateLimiter = new TokenBucketRateLimiter(40, 4);
  * Returns null if TMDB_API_KEY is not set.
  */
 export function getTmdbClient(): TmdbClient | null {
-  const apiKey = process.env["TMDB_API_KEY"];
+  const apiKey = getEnv("TMDB_API_KEY");
   if (!apiKey) return null;
   return new TmdbClient(apiKey, tmdbRateLimiter);
 }
