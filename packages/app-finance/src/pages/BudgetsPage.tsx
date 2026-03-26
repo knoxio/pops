@@ -33,11 +33,22 @@ export function BudgetsPage() {
     {
       accessorKey: "period",
       header: "Period",
-      cell: ({ row }) => (
-        <span className="text-sm">
-          {row.original.period || <span className="text-muted-foreground">—</span>}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const period = row.original.period;
+        if (!period) return <span className="text-muted-foreground">—</span>;
+        return (
+          <Badge
+            variant="outline"
+            className={
+              period === "Monthly"
+                ? "bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400"
+                : "bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400"
+            }
+          >
+            {period}
+          </Badge>
+        );
+      },
     },
     {
       accessorKey: "amount",
