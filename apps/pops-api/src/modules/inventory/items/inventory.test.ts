@@ -438,3 +438,61 @@ describe("inventory.delete", () => {
     });
   });
 });
+
+describe("inventory.searchByAssetId", () => {
+  it("returns item when exact asset ID matches", async () => {
+    seedInventoryItem(db, { item_name: "MacBook Pro", asset_id: "ASSET-001" });
+    seedInventoryItem(db, { item_name: "Desk", asset_id: "ASSET-002" });
+
+    const result = await caller.inventory.items.searchByAssetId({ assetId: "ASSET-001" });
+    expect(result.data).not.toBeNull();
+    expect(result.data!.itemName).toBe("MacBook Pro");
+    expect(result.data!.assetId).toBe("ASSET-001");
+  });
+
+  it("returns null when no asset ID matches", async () => {
+    seedInventoryItem(db, { item_name: "MacBook Pro", asset_id: "ASSET-001" });
+
+    const result = await caller.inventory.items.searchByAssetId({ assetId: "NONEXISTENT" });
+    expect(result.data).toBeNull();
+  });
+
+  it("matches case-insensitively", async () => {
+    seedInventoryItem(db, { item_name: "MacBook Pro", asset_id: "HDMI-01" });
+
+    const result = await caller.inventory.items.searchByAssetId({ assetId: "hdmi-01" });
+    expect(result.data).not.toBeNull();
+    expect(result.data!.itemName).toBe("MacBook Pro");
+  });
+
+  it("rejects empty asset ID", async () => {
+    await expect(caller.inventory.items.searchByAssetId({ assetId: "" })).rejects.toThrow(
+      TRPCError
+    );
+  });
+});
+
+describe("inventory.distinctTypes", () => {
+  it("returns empty array when no items exist", async () => {
+    const result = await caller.inventory.items.distinctTypes();
+    expect(result.data).toEqual([]);
+  });
+
+  it("returns distinct types sorted alphabetically", async () => {
+    seedInventoryItem(db, { item_name: "MacBook", type: "Electronics" });
+    seedInventoryItem(db, { item_name: "iPhone", type: "Electronics" });
+    seedInventoryItem(db, { item_name: "Desk", type: "Furniture" });
+    seedInventoryItem(db, { item_name: "Jacket", type: "Clothing" });
+
+    const result = await caller.inventory.items.distinctTypes();
+    expect(result.data).toEqual(["Clothing", "Electronics", "Furniture"]);
+  });
+
+  it("excludes items with null type", async () => {
+    seedInventoryItem(db, { item_name: "MacBook", type: "Electronics" });
+    seedInventoryItem(db, { item_name: "Mystery Item", type: null });
+
+    const result = await caller.inventory.items.distinctTypes();
+    expect(result.data).toEqual(["Electronics"]);
+  });
+});

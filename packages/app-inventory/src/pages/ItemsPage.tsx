@@ -2,9 +2,18 @@
  * ItemsPage — inventory item list with search, filters, table/grid toggle,
  * and summary statistics. PRD-019/US-2.
  */
-import { useState, useMemo } from "react";
-import { useNavigate } from "react-router";
-import { Package, LayoutGrid, LayoutList, Search, DollarSign, Shield, Clock } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
+import { useNavigate, useSearchParams } from "react-router";
+import {
+  Package,
+  LayoutGrid,
+  LayoutList,
+  Search,
+  DollarSign,
+  Shield,
+  Clock,
+  Plus,
+} from "lucide-react";
 import {
   Skeleton,
   Select,
@@ -40,17 +49,6 @@ function getInitialView(): ViewMode {
   }
   return "table";
 }
-
-const TYPE_OPTIONS: SelectOption[] = [
-  { value: "", label: "All Types" },
-  { value: "Electronics", label: "Electronics" },
-  { value: "Furniture", label: "Furniture" },
-  { value: "Appliance", label: "Appliance" },
-  { value: "Clothing", label: "Clothing" },
-  { value: "Tools", label: "Tools" },
-  { value: "Sports", label: "Sports" },
-  { value: "Other", label: "Other" },
-];
 
 const CONDITION_OPTIONS: SelectOption[] = [
   { value: "", label: "All Conditions" },
@@ -216,11 +214,89 @@ function ItemsPageSkeleton() {
 
 export function ItemsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState<ViewMode>(getInitialView);
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
-  const [conditionFilter, setConditionFilter] = useState("");
-  const [inUseFilter, setInUseFilter] = useState("");
+
+  const search = searchParams.get("q") ?? "";
+  const typeFilter = searchParams.get("type") ?? "";
+  const conditionFilter = searchParams.get("condition") ?? "";
+  const inUseFilter = searchParams.get("inUse") ?? "";
+  const locationFilter = searchParams.get("locationId") ?? "";
+
+  const setParam = useCallback(
+    (key: string, value: string) => {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        if (value) {
+          next.set(key, value);
+        } else {
+          next.delete(key);
+        }
+        return next;
+      });
+    },
+    [setSearchParams]
+  );
+
+  const clearFilters = useCallback(() => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      next.delete("type");
+      next.delete("condition");
+      next.delete("inUse");
+      next.delete("locationId");
+      return next;
+    });
+  }, [setSearchParams]);
+
+  /** Dynamic type options from the database. */
+  const { data: typesData } = trpc.inventory.items.distinctTypes.useQuery();
+  const typeOptions = useMemo<SelectOption[]>(() => {
+    const opts: SelectOption[] = [{ value: "", label: "All Types" }];
+    for (const t of typesData?.data ?? []) {
+      opts.push({ value: t, label: t });
+    }
+    return opts;
+  }, [typesData]);
+
+  /** Location options from the tree endpoint — indented to show hierarchy. */
+  const { data: locationsData } = trpc.inventory.locations.tree.useQuery();
+  const locationOptions = useMemo<SelectOption[]>(() => {
+    const opts: SelectOption[] = [{ value: "", label: "All Locations" }];
+    function flatten(
+      nodes: Array<{ id: string; name: string; children: Array<unknown> }>,
+      depth: number
+    ) {
+      for (const node of nodes) {
+        const indent = depth > 0 ? "\u00A0\u00A0".repeat(depth) + "└ " : "";
+        opts.push({ value: node.id, label: `${indent}${node.name}` });
+        flatten(node.children as typeof nodes, depth + 1);
+      }
+    }
+    flatten(locationsData?.data ?? [], 0);
+    return opts;
+  }, [locationsData]);
+
+  /** Asset ID exact-match search on Enter key. */
+  const utils = trpc.useUtils();
+  const [assetIdSearching, setAssetIdSearching] = useState(false);
+  const handleSearchKeyDown = useCallback(
+    async (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key !== "Enter" || !search.trim()) return;
+      setAssetIdSearching(true);
+      try {
+        const result = await utils.inventory.items.searchByAssetId.fetch({
+          assetId: search.trim(),
+        });
+        if (result.data) {
+          navigate(`/inventory/items/${result.data.id}`);
+        }
+      } finally {
+        setAssetIdSearching(false);
+      }
+    },
+    [search, utils, navigate]
+  );
 
   const queryInput = useMemo(
     () => ({
@@ -228,9 +304,10 @@ export function ItemsPage() {
       type: typeFilter || undefined,
       condition: conditionFilter || undefined,
       inUse: (inUseFilter || undefined) as "true" | "false" | undefined,
+      locationId: locationFilter || undefined,
       limit: 200,
     }),
-    [search, typeFilter, conditionFilter, inUseFilter]
+    [search, typeFilter, conditionFilter, inUseFilter, locationFilter]
   );
 
   const { data, isLoading } = trpc.inventory.items.list.useQuery(queryInput);
@@ -242,7 +319,7 @@ export function ItemsPage() {
 
   const handleViewChange = (mode: ViewMode) => setViewMode(mode);
 
-  const hasActiveFilters = !!(typeFilter || conditionFilter || inUseFilter);
+  const hasActiveFilters = !!(typeFilter || conditionFilter || inUseFilter || locationFilter);
 
   return (
     <div className="space-y-6">
@@ -259,42 +336,42 @@ export function ItemsPage() {
           placeholder="Search items or asset IDs..."
           prefix={<Search className="h-4 w-4" />}
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => setParam("q", e.target.value)}
+          onKeyDown={handleSearchKeyDown}
           clearable
-          onClear={() => setSearch("")}
+          onClear={() => setParam("q", "")}
           className="w-full sm:max-w-xs"
         />
         <Select
           value={typeFilter}
-          onChange={(e) => setTypeFilter(e.target.value)}
-          options={TYPE_OPTIONS}
+          onChange={(e) => setParam("type", e.target.value)}
+          options={typeOptions}
           placeholder="All Types"
           className="w-36"
         />
         <Select
           value={conditionFilter}
-          onChange={(e) => setConditionFilter(e.target.value)}
+          onChange={(e) => setParam("condition", e.target.value)}
           options={CONDITION_OPTIONS}
           placeholder="All Conditions"
           className="w-40"
         />
         <Select
           value={inUseFilter}
-          onChange={(e) => setInUseFilter(e.target.value)}
+          onChange={(e) => setParam("inUse", e.target.value)}
           options={IN_USE_OPTIONS}
           placeholder="All"
           className="w-28"
         />
+        <Select
+          value={locationFilter}
+          onChange={(e) => setParam("locationId", e.target.value)}
+          options={locationOptions}
+          placeholder="All Locations"
+          className="w-40"
+        />
         {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              setTypeFilter("");
-              setConditionFilter("");
-              setInUseFilter("");
-            }}
-          >
+          <Button variant="ghost" size="sm" onClick={clearFilters}>
             Clear filters
           </Button>
         )}
@@ -329,11 +406,19 @@ export function ItemsPage() {
       ) : items.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-64 text-muted-foreground gap-4">
           <Package className="h-12 w-12 opacity-40" />
-          <p>
-            {search || hasActiveFilters
-              ? "No items match your filters."
-              : "No inventory items yet."}
-          </p>
+          {search || hasActiveFilters ? (
+            <p>No items match your filters.</p>
+          ) : (
+            <>
+              <p>No inventory items yet.</p>
+              <Button
+                prefix={<Plus className="h-4 w-4" />}
+                onClick={() => navigate("/inventory/items/new")}
+              >
+                Add your first item
+              </Button>
+            </>
+          )}
         </div>
       ) : viewMode === "table" ? (
         <InventoryTable items={items} />
