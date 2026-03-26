@@ -74,7 +74,7 @@ export const WithAction: Story = {
         <CardTitle>Recent Transactions</CardTitle>
         <CardDescription>Last 7 days</CardDescription>
         <CardAction>
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" aria-label="More actions">
             <MoreVerticalIcon className="h-4 w-4" />
           </Button>
         </CardAction>
@@ -277,7 +277,7 @@ export const NotificationCard: Story = {
         <CardTitle>Budget Alert</CardTitle>
         <CardDescription>2 hours ago</CardDescription>
         <CardAction>
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" aria-label="More actions">
             <MoreVerticalIcon className="h-4 w-4" />
           </Button>
         </CardAction>

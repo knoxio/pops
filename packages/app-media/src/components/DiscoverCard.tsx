@@ -118,6 +118,7 @@ export function DiscoverCard({
               onClick={() => onAddToLibrary?.(tmdbId)}
               disabled={isAddingToLibrary}
               title="Add to Library"
+              aria-label="Add to Library"
             >
               {isAddingToLibrary ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -133,6 +134,7 @@ export function DiscoverCard({
             onClick={() => onAddToWatchlist?.(tmdbId)}
             disabled={isAddingToWatchlist}
             title="Add to Watchlist"
+            aria-label="Add to Watchlist"
           >
             {isAddingToWatchlist ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -149,6 +151,7 @@ export function DiscoverCard({
               onNotInterested?.(tmdbId);
             }}
             title="Not Interested"
+            aria-label="Not Interested"
           >
             <X className="h-3.5 w-3.5" />
           </Button>

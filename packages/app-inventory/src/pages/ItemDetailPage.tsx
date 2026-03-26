@@ -398,6 +398,7 @@ function DocumentsList({ itemId }: { itemId: string }) {
                       onClick={() => unlinkMutation.mutate({ id: doc.id })}
                       disabled={unlinkMutation.isPending}
                       title="Unlink document"
+                      aria-label="Unlink document"
                     >
                       <X className="h-4 w-4" />
                     </Button>
@@ -448,6 +449,7 @@ function ConnectionRow({
         onClick={onDisconnect}
         disabled={isDisconnecting}
         title="Disconnect"
+        aria-label="Disconnect"
       >
         <Unlink className="h-4 w-4" />
       </Button>
