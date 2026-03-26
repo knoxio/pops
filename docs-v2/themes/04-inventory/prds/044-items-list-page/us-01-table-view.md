@@ -18,7 +18,7 @@ As a user, I want a table view of my inventory items with sortable columns so th
 - [ ] Location column shows breadcrumb path (e.g., "Home > Living Room > TV Unit"); truncated with ellipsis if long, full path in tooltip
 - [x] Asset ID column shows the ID or a dash if null
 - [x] Replacement Value column formats as currency; shows dash if null
-- [ ] Purchase Date column formats as locale date; shows dash if null
+- [x] Purchase Date column formats as locale date; shows dash if null
 - [x] Pagination controls below the table with page size selector and page navigation
 - [x] Table calls `inventory.items.list` with current sort, filters, page, and page size
 - [ ] Tests cover: column rendering, sort toggle per column, row click navigation, badge colour mapping, breadcrumb truncation, null field handling, pagination

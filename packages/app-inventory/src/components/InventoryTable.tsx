@@ -25,6 +25,7 @@ export interface InventoryTableItem {
   condition: string | null;
   location: string | null;
   replacementValue: number | null;
+  purchaseDate: string | null;
   inUse: boolean;
   assetId: string | null;
 }
@@ -90,6 +91,15 @@ function createColumns(): ColumnDef<InventoryTableItem>[] {
       cell: ({ row }) => {
         const value = row.original.replacementValue;
         return value != null ? formatCurrency(value) : "—";
+      },
+    },
+    {
+      accessorKey: "purchaseDate",
+      header: ({ column }) => <SortableHeader column={column}>Purchased</SortableHeader>,
+      cell: ({ row }) => {
+        const date = row.original.purchaseDate;
+        if (!date) return <span className="text-muted-foreground">—</span>;
+        return <span className="text-sm tabular-nums">{new Date(date).toLocaleDateString()}</span>;
       },
     },
     {
