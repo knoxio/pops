@@ -6,7 +6,8 @@
  * "In Library" badge for items already in the collection.
  */
 import { useState, useEffect, useCallback } from "react";
-import { Button, Input, Skeleton, Tabs, TabsList, TabsTrigger } from "@pops/ui";
+import { useSearchParams } from "react-router";
+import { Button, TextInput, Skeleton, Tabs, TabsList, TabsTrigger } from "@pops/ui";
 import { AlertTriangle, Search } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
@@ -51,9 +52,26 @@ function useDebouncedValue(value: string, delay: number): string {
 }
 
 export function SearchPage() {
-  const [query, setQuery] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get("q") ?? "");
   const [mode, setMode] = useState<SearchMode>("both");
   const debouncedQuery = useDebouncedValue(query, 300);
+
+  // Sync debounced query to URL ?q= param
+  useEffect(() => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (debouncedQuery) {
+          next.set("q", debouncedQuery);
+        } else {
+          next.delete("q");
+        }
+        return next;
+      },
+      { replace: true }
+    );
+  }, [debouncedQuery, setSearchParams]);
 
   // Track which items are being added (by external ID)
   const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
@@ -182,16 +200,15 @@ export function SearchPage() {
       </div>
 
       {/* Search input */}
-      <div className="relative max-w-xl">
-        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          type="search"
-          placeholder="Search movies and TV shows…"
-          value={query}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
-          className="pl-9"
-        />
-      </div>
+      <TextInput
+        placeholder="Search movies and TV shows…"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        prefix={<Search className="h-4 w-4" />}
+        clearable
+        onClear={() => setQuery("")}
+        autoFocus
+      />
 
       {/* Type toggle */}
       <Tabs value={mode} onValueChange={(v: string) => setMode(v as SearchMode)}>
