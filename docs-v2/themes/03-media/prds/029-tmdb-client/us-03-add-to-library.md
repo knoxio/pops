@@ -1,7 +1,7 @@
 # US-03: Add movie to library flow
 
 > PRD: [029 — TMDB Client](README.md)
-> Status: Done
+> Status: Partial
 
 ## Description
 
@@ -14,19 +14,19 @@ As a user, I want to add a movie to my library by TMDB ID so that full metadata 
 - [x] `media.library.addMovie(tmdbId)` tRPC procedure orchestrates: fetch metadata from TMDB, create movie record in database, download and cache images
 - [x] Idempotent: if a movie with the given tmdbId already exists in the database, return the existing record without re-fetching metadata or re-downloading images
 - [x] Movie record created with all fields from TMDB details: tmdbId, imdbId, title, originalTitle, overview, tagline, releaseDate, runtime, status, originalLanguage, budget, revenue, voteAverage, voteCount, genres
-- [x] `posterPath` and `backdropPath` set to local cache paths after successful download
+- [ ] `posterPath` and `backdropPath` set to local cache paths after successful download — **stored as TMDB CDN paths, not local cache paths; image download deferred (TODO comment in service.ts)**
 - [x] If image download fails, movie record is still created with null image paths
 - [x] `createdAt` and `updatedAt` set to current timestamp
 - [x] Returns the complete movie record
 
 ### refreshMovie
 
-- [x] `media.library.refreshMovie(id, redownloadImages?)` tRPC procedure re-fetches metadata from TMDB and updates the database record
+- [ ] `media.library.refreshMovie(id, redownloadImages?)` tRPC procedure re-fetches metadata from TMDB and updates the database record — **`redownloadImages` param not exposed; `RefreshMovieSchema` only has `id`**
 - [x] Looks up the movie's tmdbId from the existing record, then fetches fresh details from TMDB
 - [x] Updates all metadata fields from the fresh TMDB response
 - [x] `updatedAt` set to current timestamp; `createdAt` unchanged
-- [x] When `redownloadImages` is true, re-downloads poster and backdrop regardless of existing cache
-- [x] When `redownloadImages` is false (default), existing cached images are preserved
+- [ ] When `redownloadImages` is true, re-downloads poster and backdrop regardless of existing cache — **not implemented**
+- [ ] When `redownloadImages` is false (default), existing cached images are preserved — **not implemented**
 - [x] Returns 404 if movie id does not exist in the database
 
 ### Cross-cutting

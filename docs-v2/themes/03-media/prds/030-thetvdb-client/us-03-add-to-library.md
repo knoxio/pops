@@ -1,7 +1,7 @@
 # US-03: Add TV show to library flow
 
 > PRD: [030 — TheTVDB Client](README.md)
-> Status: Done
+> Status: Partial
 
 ## Description
 
@@ -18,7 +18,7 @@ As a user, I want to add a TV show to my library by TheTVDB ID so that the full 
 - [x] Specials season (seasonNumber 0) included when present
 - [x] All episodes created with: seasonId (FK), tvdbId, episodeNumber, name, overview, airDate, voteAverage, runtime
 - [x] Episodes without an air date are still created (upcoming episodes)
-- [x] Show poster and all season posters downloaded to local cache
+- [ ] Show poster and all season posters downloaded to local cache — **not downloaded; CDN URLs stored directly in posterPath/backdropPath columns**
 - [x] If any image download fails, records are still created with null image paths
 - [x] `createdAt` set on show, all seasons, and all episodes
 - [x] Returns the complete TV show record
@@ -34,7 +34,7 @@ As a user, I want to add a TV show to my library by TheTVDB ID so that the full 
 - [x] New episodes are inserted (not present in DB by tvdbId)
 - [x] Existing episodes are updated with fresh metadata
 - [x] No records are deleted during refresh — existing seasons/episodes are preserved to maintain watch history references
-- [x] When `redownloadImages` is true, re-downloads show and season posters
+- [ ] When `redownloadImages` is true, re-downloads show and season posters — **param accepted but has no effect; no image download logic in refresh**
 - [x] Returns `{ data: TvShow, diff: RefreshDiff }` where diff reports seasonsAdded, seasonsUpdated, episodesAdded, episodesUpdated
 - [x] Returns 404 if show id does not exist in the database
 
