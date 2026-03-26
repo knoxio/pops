@@ -29,6 +29,7 @@ const INCLUDED_MIGRATIONS = [
   "20260324140000_watch_history_unique_index.sql",
   "20260325150000_locations_last_edited_time.sql",
   "20260326150000_budgets_unique_category_period.sql",
+  "20260326160000_items_locations_schema.sql",
 ];
 
 /**
@@ -105,6 +106,7 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     );
 
     CREATE INDEX IF NOT EXISTS idx_locations_parent ON locations(parent_id);
+    CREATE INDEX IF NOT EXISTS idx_locations_parent_sort ON locations(parent_id, sort_order);
 
     CREATE TABLE IF NOT EXISTS home_inventory (
       id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
@@ -116,7 +118,7 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       room TEXT,
       location TEXT,
       type TEXT,
-      condition TEXT,
+      condition TEXT DEFAULT 'good',
       in_use INTEGER,
       deductible INTEGER,
       purchase_date TEXT,
@@ -129,7 +131,10 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       last_edited_time TEXT NOT NULL,
       asset_id TEXT UNIQUE,
       notes TEXT,
+      purchase_price REAL,
       location_id TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (purchase_transaction_id) REFERENCES transactions(id) ON DELETE SET NULL,
       FOREIGN KEY (purchased_from_id) REFERENCES entities(id) ON DELETE SET NULL,
       FOREIGN KEY (location_id) REFERENCES locations(id) ON DELETE SET NULL
@@ -139,6 +144,7 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     CREATE INDEX IF NOT EXISTS idx_inventory_name ON home_inventory(item_name);
     CREATE INDEX IF NOT EXISTS idx_inventory_location ON home_inventory(location_id);
     CREATE INDEX IF NOT EXISTS idx_inventory_type ON home_inventory(type);
+    CREATE INDEX IF NOT EXISTS idx_inventory_warranty ON home_inventory(warranty_expires);
 
     CREATE TABLE IF NOT EXISTS item_connections (
       id         INTEGER PRIMARY KEY AUTOINCREMENT,
