@@ -175,8 +175,8 @@ describe("items and locations schema", () => {
       }[];
 
       expect(cols).toHaveLength(2);
-      expect(cols[0].name).toBe("parent_id");
-      expect(cols[1].name).toBe("sort_order");
+      expect(cols[0]!.name).toBe("parent_id");
+      expect(cols[1]!.name).toBe("sort_order");
     });
   });
 });

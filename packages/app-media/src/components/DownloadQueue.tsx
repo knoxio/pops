@@ -48,12 +48,13 @@ export function DownloadQueue() {
                   )}
                 </p>
 
-              {/* Progress bar */}
-              <div className="mt-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-app-accent transition-all duration-500"
-                  style={{ width: `${item.progress}%` }}
-                />
+                {/* Progress bar */}
+                <div className="mt-1 h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-app-accent transition-all duration-500"
+                    style={{ width: `${item.progress}%` }}
+                  />
+                </div>
               </div>
 
               <span className="text-xs text-muted-foreground tabular-nums shrink-0">
