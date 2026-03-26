@@ -333,6 +333,11 @@ export function createTestDb(): Database {
     CREATE UNIQUE INDEX IF NOT EXISTS uq_item_documents_pair ON item_documents(item_id, paperless_document_id);
     CREATE INDEX IF NOT EXISTS idx_item_documents_item ON item_documents(item_id);
     CREATE INDEX IF NOT EXISTS idx_item_documents_doc ON item_documents(paperless_document_id);
+
+    CREATE TABLE IF NOT EXISTS settings (
+      key TEXT PRIMARY KEY NOT NULL,
+      value TEXT NOT NULL
+    );
   `);
 
   return db;
@@ -657,6 +662,24 @@ export function seedBudget(
   });
 
   return id;
+}
+
+/**
+ * Seed a single setting row into the test DB.
+ * Returns the key.
+ */
+export function seedSetting(
+  db: Database,
+  overrides: Partial<{ key: string; value: string }> = {}
+): string {
+  const key = overrides.key ?? "test_key";
+
+  db.prepare(`INSERT INTO settings (key, value) VALUES (@key, @value)`).run({
+    key,
+    value: overrides.value ?? "test_value",
+  });
+
+  return key;
 }
 
 /**
