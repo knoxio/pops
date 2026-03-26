@@ -58,6 +58,7 @@
     "@typescript-eslint/parser": "^8.0.0",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9.0.0",
+    "msw": "^2.12.14",
     "papaparse": "^5.5.3",
     "prettier": "^3.0.0",
     "supertest": "^7.2.2",
