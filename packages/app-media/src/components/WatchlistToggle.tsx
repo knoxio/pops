@@ -29,27 +29,70 @@ export function WatchlistToggle({ mediaType, mediaId, className }: WatchlistTogg
   const isOnWatchlist = !!watchlistEntry;
 
   const addMutation = trpc.media.watchlist.add.useMutation({
+    onMutate: async () => {
+      await utils.media.watchlist.list.cancel();
+      const previous = utils.media.watchlist.list.getData({ mediaType: apiMediaType });
+      utils.media.watchlist.list.setData({ mediaType: apiMediaType }, (old) => {
+        if (!old) return old;
+        const optimisticEntry = {
+          id: -1,
+          mediaType: apiMediaType,
+          mediaId,
+          priority: null,
+          notes: null,
+          addedAt: new Date().toISOString(),
+        };
+        return {
+          ...old,
+          data: [...old.data, optimisticEntry],
+          pagination: { ...old.pagination, total: old.pagination.total + 1 },
+        };
+      });
+      return { previous };
+    },
     onSuccess: () => {
       toast.success("Added to watchlist");
-      void utils.media.watchlist.list.invalidate();
     },
-    onError: (err: { message: string; data?: { code?: string } | null }) => {
+    onError: (err: { message: string; data?: { code?: string } | null }, _vars, context) => {
+      if (context?.previous !== undefined) {
+        utils.media.watchlist.list.setData({ mediaType: apiMediaType }, context.previous);
+      }
       if (err.data?.code === "CONFLICT") {
         toast.info("Already on watchlist");
-        void utils.media.watchlist.list.invalidate();
       } else {
         toast.error(`Failed to add: ${err.message}`);
       }
     },
+    onSettled: () => {
+      void utils.media.watchlist.list.invalidate();
+    },
   });
 
   const removeMutation = trpc.media.watchlist.remove.useMutation({
+    onMutate: async () => {
+      await utils.media.watchlist.list.cancel();
+      const previous = utils.media.watchlist.list.getData({ mediaType: apiMediaType });
+      utils.media.watchlist.list.setData({ mediaType: apiMediaType }, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data.filter((entry) => entry.mediaId !== mediaId),
+          pagination: { ...old.pagination, total: Math.max(0, old.pagination.total - 1) },
+        };
+      });
+      return { previous };
+    },
     onSuccess: () => {
       toast.success("Removed from watchlist");
-      void utils.media.watchlist.list.invalidate();
     },
-    onError: (err: { message: string }) => {
+    onError: (err: { message: string }, _vars, context) => {
+      if (context?.previous !== undefined) {
+        utils.media.watchlist.list.setData({ mediaType: apiMediaType }, context.previous);
+      }
       toast.error(`Failed to remove: ${err.message}`);
+    },
+    onSettled: () => {
+      void utils.media.watchlist.list.invalidate();
     },
   });
 
