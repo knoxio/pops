@@ -8,7 +8,7 @@ import { getTmdbClient, TmdbClient, TmdbApiError } from "../tmdb/index.js";
 import { NotFoundError } from "../../../shared/errors.js";
 import { toMovie } from "../movies/types.js";
 import { toTvShow, toSeason } from "../tv-shows/types.js";
-import { RefreshMovieSchema, QuickPickSchema } from "./types.js";
+import { RefreshMovieSchema, QuickPickSchema, LibraryListSchema } from "./types.js";
 import * as libraryService from "./service.js";
 import { getTvdbClient } from "../thetvdb/index.js";
 import { TvdbApiError } from "../thetvdb/types.js";
@@ -20,6 +20,29 @@ function requireTmdbClient(): TmdbClient {
 }
 
 export const libraryRouter = router({
+  /**
+   * List all library items (movies + TV shows) with filtering, sorting, and pagination.
+   */
+  list: protectedProcedure.input(LibraryListSchema).query(({ input }) => {
+    const { items, total } = libraryService.listLibrary(input);
+    const totalPages = Math.ceil(total / input.pageSize);
+    return {
+      data: items,
+      pagination: {
+        page: input.page,
+        pageSize: input.pageSize,
+        total,
+        totalPages,
+        hasMore: input.page < totalPages,
+      },
+    };
+  }),
+
+  /** Get all unique genres across the library. */
+  genres: protectedProcedure.query(() => {
+    return { data: libraryService.listLibraryGenres() };
+  }),
+
   /**
    * Add a movie to the library by TMDB ID.
    * Idempotent — returns existing record if already in library.

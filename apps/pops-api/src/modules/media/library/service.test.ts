@@ -3,7 +3,8 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type { Database } from "better-sqlite3";
-import { setupTestContext, createCaller, seedMovie } from "../../../shared/test-utils.js";
+import { setupTestContext, createCaller, seedMovie, seedTvShow } from "../../../shared/test-utils.js";
+import { listLibrary, listLibraryGenres } from "./service.js";
 import type { TmdbMovieDetail } from "../tmdb/types.js";
 import { TRPCError } from "@trpc/server";
 
@@ -255,5 +256,213 @@ describe("media.library.refreshMovie", () => {
     expect(result.data.imdbId).toBeNull();
     expect(result.data.posterPath).toBeNull();
     expect(result.data.backdropPath).toBeNull();
+  });
+});
+
+describe("listLibrary", () => {
+  function seedLibrary() {
+    seedMovie(db, {
+      tmdb_id: 1,
+      title: "The Shawshank Redemption",
+      release_date: "1994-09-23",
+      vote_average: 8.7,
+      genres: JSON.stringify(["Drama"]),
+    });
+    seedMovie(db, {
+      tmdb_id: 2,
+      title: "Inception",
+      release_date: "2010-07-16",
+      vote_average: 8.4,
+      genres: JSON.stringify(["Action", "Sci-Fi"]),
+    });
+    seedMovie(db, {
+      tmdb_id: 3,
+      title: "Amélie",
+      release_date: "2001-04-25",
+      vote_average: 8.0,
+      genres: JSON.stringify(["Comedy", "Romance"]),
+    });
+    seedTvShow(db, {
+      tvdb_id: 100,
+      name: "Breaking Bad",
+      first_air_date: "2008-01-20",
+      vote_average: 9.5,
+      genres: JSON.stringify(["Drama", "Thriller"]),
+    });
+    seedTvShow(db, {
+      tvdb_id: 101,
+      name: "Severance",
+      first_air_date: "2022-02-18",
+      vote_average: 8.8,
+      genres: JSON.stringify(["Sci-Fi", "Thriller"]),
+    });
+  }
+
+  it("returns all items when type=all", () => {
+    seedLibrary();
+    const result = listLibrary({ type: "all", sort: "dateAdded", page: 1, pageSize: 24 });
+    expect(result.items).toHaveLength(5);
+    expect(result.total).toBe(5);
+  });
+
+  it("filters by type=movie", () => {
+    seedLibrary();
+    const result = listLibrary({ type: "movie", sort: "dateAdded", page: 1, pageSize: 24 });
+    expect(result.items).toHaveLength(3);
+    expect(result.items.every((i) => i.type === "movie")).toBe(true);
+  });
+
+  it("filters by type=tv", () => {
+    seedLibrary();
+    const result = listLibrary({ type: "tv", sort: "dateAdded", page: 1, pageSize: 24 });
+    expect(result.items).toHaveLength(2);
+    expect(result.items.every((i) => i.type === "tv")).toBe(true);
+  });
+
+  it("filters by search (case-insensitive)", () => {
+    seedLibrary();
+    const result = listLibrary({
+      type: "all",
+      sort: "dateAdded",
+      search: "breaking",
+      page: 1,
+      pageSize: 24,
+    });
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]!.title).toBe("Breaking Bad");
+  });
+
+  it("filters by genre", () => {
+    seedLibrary();
+    const result = listLibrary({
+      type: "all",
+      sort: "dateAdded",
+      genre: "Thriller",
+      page: 1,
+      pageSize: 24,
+    });
+    expect(result.items).toHaveLength(2);
+    const titles = result.items.map((i) => i.title).sort();
+    expect(titles).toEqual(["Breaking Bad", "Severance"]);
+  });
+
+  it("sorts by title", () => {
+    seedLibrary();
+    const result = listLibrary({ type: "all", sort: "title", page: 1, pageSize: 24 });
+    const titles = result.items.map((i) => i.title);
+    expect(titles).toEqual([
+      "Amélie",
+      "Breaking Bad",
+      "Inception",
+      "Severance",
+      "The Shawshank Redemption",
+    ]);
+  });
+
+  it("sorts by rating descending", () => {
+    seedLibrary();
+    const result = listLibrary({ type: "all", sort: "rating", page: 1, pageSize: 24 });
+    const ratings = result.items.map((i) => i.voteAverage);
+    for (let i = 1; i < ratings.length; i++) {
+      expect(ratings[i - 1]!).toBeGreaterThanOrEqual(ratings[i]!);
+    }
+  });
+
+  it("sorts by releaseDate descending", () => {
+    seedLibrary();
+    const result = listLibrary({ type: "all", sort: "releaseDate", page: 1, pageSize: 24 });
+    const dates = result.items.map((i) => i.releaseDate ?? "");
+    for (let i = 1; i < dates.length; i++) {
+      expect(dates[i - 1]! >= dates[i]!).toBe(true);
+    }
+  });
+
+  it("paginates correctly", () => {
+    seedLibrary();
+    const page1 = listLibrary({ type: "all", sort: "title", page: 1, pageSize: 2 });
+    expect(page1.items).toHaveLength(2);
+    expect(page1.total).toBe(5);
+
+    const page2 = listLibrary({ type: "all", sort: "title", page: 2, pageSize: 2 });
+    expect(page2.items).toHaveLength(2);
+
+    const page3 = listLibrary({ type: "all", sort: "title", page: 3, pageSize: 2 });
+    expect(page3.items).toHaveLength(1);
+
+    // No overlap between pages
+    const allTitles = [...page1.items, ...page2.items, ...page3.items].map((i) => i.title);
+    expect(new Set(allTitles).size).toBe(5);
+  });
+
+  it("returns correct year from release date", () => {
+    seedLibrary();
+    const result = listLibrary({ type: "movie", sort: "title", page: 1, pageSize: 24 });
+    const inception = result.items.find((i) => i.title === "Inception");
+    expect(inception?.year).toBe(2010);
+  });
+
+  it("builds poster URL for movies", () => {
+    seedMovie(db, { tmdb_id: 99, title: "With Poster", poster_path: "/poster.jpg" });
+    const result = listLibrary({
+      type: "movie",
+      sort: "title",
+      search: "With Poster",
+      page: 1,
+      pageSize: 24,
+    });
+    expect(result.items[0]!.posterUrl).toBe("/media/images/movie/99/poster.jpg");
+  });
+
+  it("builds poster URL for TV shows", () => {
+    seedTvShow(db, { tvdb_id: 999, name: "Show With Poster", poster_path: "/poster.jpg" });
+    const result = listLibrary({
+      type: "tv",
+      sort: "title",
+      search: "Show With Poster",
+      page: 1,
+      pageSize: 24,
+    });
+    expect(result.items[0]!.posterUrl).toBe("/media/images/tv/999/poster.jpg");
+  });
+
+  it("combines type and search filters", () => {
+    seedLibrary();
+    const result = listLibrary({
+      type: "movie",
+      sort: "title",
+      search: "shawshank",
+      page: 1,
+      pageSize: 24,
+    });
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]!.title).toBe("The Shawshank Redemption");
+  });
+
+  it("returns empty when no items match", () => {
+    seedLibrary();
+    const result = listLibrary({
+      type: "all",
+      sort: "title",
+      search: "nonexistent",
+      page: 1,
+      pageSize: 24,
+    });
+    expect(result.items).toHaveLength(0);
+    expect(result.total).toBe(0);
+  });
+});
+
+describe("listLibraryGenres", () => {
+  it("returns all unique genres sorted", () => {
+    seedMovie(db, { tmdb_id: 1, title: "M1", genres: JSON.stringify(["Drama", "Action"]) });
+    seedTvShow(db, { tvdb_id: 1, name: "S1", genres: JSON.stringify(["Drama", "Thriller"]) });
+
+    const genres = listLibraryGenres();
+    expect(genres).toEqual(["Action", "Drama", "Thriller"]);
+  });
+
+  it("returns empty array when no media exists", () => {
+    const genres = listLibraryGenres();
+    expect(genres).toEqual([]);
   });
 });

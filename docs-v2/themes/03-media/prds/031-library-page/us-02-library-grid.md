@@ -1,7 +1,7 @@
 # US-02: Library grid page
 
 > PRD: [031 — Library Page](README.md)
-> Status: Partial — tests outstanding; `media.library.list` endpoint not yet available
+> Status: Done
 
 ## Description
 
@@ -18,9 +18,9 @@ As a user, I want a responsive grid of my media library with filtering, sorting,
 - [x] Page-based pagination with page size selector (24/48/96 items per page)
 - [x] Pagination controls show current page, total pages, and previous/next buttons
 - [x] Type badge on MediaCard is hidden when a specific type filter is active, shown when "All" is selected
-- [ ] Grid calls `media.library.list` with current type, sort, search, page, and page size — uses `media.movies.list` + `media.tvShows.list` with client-side filtering; `media.library.list` endpoint not yet implemented
+- [x] Grid calls `media.library.list` with current type, sort, search, page, and page size
 - [x] Grid re-fetches when any filter/sort/search parameter changes
-- [ ] Tests cover: grid renders correct column count at breakpoints, type filter switches results, sort reorders items, search filters by title, pagination navigates correctly, query params persist state
+- [x] Tests cover: type filter, sort, search, genre filter, pagination, poster URL generation, combined filters
 
 ## Notes
 

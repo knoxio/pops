@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router";
 import { Badge, Button, Skeleton, TextInput } from "@pops/ui";
 import { Sparkles, Settings, Search, ChevronLeft, ChevronRight } from "lucide-react";
@@ -78,15 +78,6 @@ function MediaCard({ item, showTypeBadge = true }: { item: MediaItem; showTypeBa
           >
             {item.type === "movie" ? "Movie" : "TV"}
           </Badge>
-        )}
-        {/* Progress bar for TV shows */}
-        {item.progress != null && item.progress > 0 && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/30">
-            <div
-              className={`h-full transition-all ${item.progress >= 100 ? "bg-green-500" : "bg-app-accent"}`}
-              style={{ width: `${Math.min(item.progress, 100)}%` }}
-            />
-          </div>
         )}
       </div>
       <h3 className="mt-2 text-sm font-medium line-clamp-2 transition-colors group-hover:text-app-accent">
@@ -222,21 +213,18 @@ export function LibraryPage() {
     );
   };
 
-  const { items, isLoading, isEmpty, allGenres } = useMediaLibrary({
+  const { items, isLoading, isEmpty, allGenres, pagination } = useMediaLibrary({
     typeFilter,
     genreFilter,
     sortBy,
     search: debouncedSearch,
+    page,
+    pageSize,
   });
 
-  // Paginate
-  const totalItems = items.length;
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  const clampedPage = Math.min(page, totalPages);
-  const paginatedItems = useMemo(
-    () => items.slice((clampedPage - 1) * pageSize, clampedPage * pageSize),
-    [items, clampedPage, pageSize]
-  );
+  const totalItems = pagination.total;
+  const totalPages = pagination.totalPages;
+  const clampedPage = Math.min(page, Math.max(1, totalPages));
 
   const showTypeBadge = typeFilter === "all";
 
@@ -358,14 +346,14 @@ export function LibraryPage() {
             Search for media
           </Link>
         </div>
-      ) : paginatedItems.length === 0 ? (
+      ) : items.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-muted-foreground">No results match your filters.</p>
         </div>
       ) : (
         <>
           <MediaGrid>
-            {paginatedItems.map((item) => (
+            {items.map((item) => (
               <MediaCard
                 key={`${item.type}-${item.id}`}
                 item={item}

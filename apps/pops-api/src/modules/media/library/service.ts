@@ -4,6 +4,7 @@
  */
 import { sql } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
+import { getDb } from "../../../db.js";
 import { movies, watchHistory } from "@pops/db-types";
 import type { TmdbClient } from "../tmdb/client.js";
 import type { TmdbMovieDetail } from "../tmdb/types.js";
@@ -11,6 +12,7 @@ import { getMovieByTmdbId, getMovie, createMovie, updateMovie } from "../movies/
 import { toMovie } from "../movies/types.js";
 import type { Movie, UpdateMovieInput } from "../movies/types.js";
 import type { MovieRow } from "@pops/db-types";
+import type { LibraryListInput, LibraryItem, LibrarySortOption } from "./types.js";
 
 /**
  * Add a movie to the library by TMDB ID.
@@ -100,6 +102,148 @@ export async function refreshMovie(id: number, tmdbClient: TmdbClient): Promise<
 
   // Update the local record
   return updateMovie(id, updateInput);
+}
+
+/** Map a sort option to SQL ORDER BY clause. */
+function sortClause(sort: LibrarySortOption): string {
+  switch (sort) {
+    case "title":
+      return "title COLLATE NOCASE ASC";
+    case "dateAdded":
+      return "created_at DESC";
+    case "releaseDate":
+      return "release_date DESC";
+    case "rating":
+      return "vote_average DESC";
+    default:
+      return "created_at DESC";
+  }
+}
+
+/** Parse a JSON genres string into a string array. */
+function parseGenres(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((g): g is string => typeof g === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Build a poster URL for a movie row. */
+function moviePosterUrl(row: LibraryRawRow): string | null {
+  if (row.poster_override_path) return row.poster_override_path;
+  if (row.poster_path) return `/media/images/movie/${row.external_id}/poster.jpg`;
+  return null;
+}
+
+/** Build a poster URL for a TV show row. */
+function tvPosterUrl(row: LibraryRawRow): string | null {
+  if (row.poster_override_path) return row.poster_override_path;
+  if (row.poster_path) return `/media/images/tv/${row.external_id}/poster.jpg`;
+  return null;
+}
+
+/** Raw row shape from the UNION query. */
+interface LibraryRawRow {
+  id: number;
+  type: string;
+  title: string;
+  release_date: string | null;
+  poster_path: string | null;
+  poster_override_path: string | null;
+  external_id: number;
+  vote_average: number | null;
+  genres: string | null;
+  created_at: string;
+}
+
+/**
+ * List all library items (movies + TV shows) with filtering, sorting, and pagination.
+ * Uses a SQL UNION ALL query for efficiency.
+ */
+export function listLibrary(input: LibraryListInput): { items: LibraryItem[]; total: number } {
+  const db = getDb();
+
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+
+  if (input.type !== "all") {
+    conditions.push("type = ?");
+    params.push(input.type);
+  }
+
+  if (input.search) {
+    conditions.push("title LIKE ?");
+    params.push(`%${input.search}%`);
+  }
+
+  if (input.genre) {
+    conditions.push("EXISTS (SELECT 1 FROM json_each(genres) WHERE json_each.value = ?)");
+    params.push(input.genre);
+  }
+
+  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const orderBy = sortClause(input.sort);
+  const limit = input.pageSize;
+  const offset = (input.page - 1) * input.pageSize;
+
+  const baseSql = `
+    SELECT id, 'movie' AS type, title, release_date, poster_path, poster_override_path,
+           tmdb_id AS external_id, vote_average, genres, created_at
+    FROM movies
+    UNION ALL
+    SELECT id, 'tv' AS type, name AS title, first_air_date AS release_date, poster_path,
+           poster_override_path, tvdb_id AS external_id, vote_average, genres, created_at
+    FROM tv_shows
+  `;
+
+  const countSql = `SELECT COUNT(*) AS total FROM (${baseSql}) AS library ${whereClause}`;
+  const countRow = db.prepare(countSql).get(...params) as { total: number } | undefined;
+  const total = countRow?.total ?? 0;
+
+  const dataSql = `
+    SELECT * FROM (${baseSql}) AS library
+    ${whereClause}
+    ORDER BY ${orderBy}
+    LIMIT ? OFFSET ?
+  `;
+
+  const rows = db.prepare(dataSql).all(...params, limit, offset) as LibraryRawRow[];
+
+  const items: LibraryItem[] = rows.map((row) => ({
+    id: row.id,
+    type: row.type as "movie" | "tv",
+    title: row.title,
+    year: row.release_date ? new Date(row.release_date).getFullYear() : null,
+    posterUrl: row.type === "movie" ? moviePosterUrl(row) : tvPosterUrl(row),
+    genres: parseGenres(row.genres),
+    voteAverage: row.vote_average,
+    createdAt: row.created_at,
+    releaseDate: row.release_date,
+  }));
+
+  return { items, total };
+}
+
+/**
+ * Get all unique genres across movies and TV shows.
+ */
+export function listLibraryGenres(): string[] {
+  const db = getDb();
+  const sql = `
+    SELECT DISTINCT je.value AS genre
+    FROM (
+      SELECT genres FROM movies
+      UNION ALL
+      SELECT genres FROM tv_shows
+    ) AS combined, json_each(combined.genres) AS je
+    WHERE je.value IS NOT NULL
+    ORDER BY je.value COLLATE NOCASE
+  `;
+  const rows = db.prepare(sql).all() as { genre: string }[];
+  return rows.map((r) => r.genre);
 }
 
 /**
