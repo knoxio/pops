@@ -40,7 +40,7 @@ export function RootLayout() {
           {/* Mobile: overlay sidebar */}
           <Sidebar open={sidebarOpen} />
 
-          <main className="flex-1 min-w-0 overflow-x-hidden p-4 md:p-6 lg:p-8">
+          <main className="flex-1 min-w-0 overflow-x-hidden p-4 md:p-6 lg:p-8 max-w-screen-2xl mx-auto transition-all duration-200">
             <ErrorBoundary>
               <Outlet />
             </ErrorBoundary>
