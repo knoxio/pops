@@ -1,7 +1,7 @@
 # US-05: Fan-out and ranking
 
 > PRD: [057 — Search Engine](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

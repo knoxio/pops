@@ -1,7 +1,7 @@
 # US-06: Structured query syntax
 
 > PRD: [057 — Search Engine](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

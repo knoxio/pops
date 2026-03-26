@@ -1,7 +1,7 @@
 # US-01: Context provider
 
 > PRD: [058 — Contextual Intelligence](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

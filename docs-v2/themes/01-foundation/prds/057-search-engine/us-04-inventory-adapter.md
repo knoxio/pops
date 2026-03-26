@@ -1,7 +1,7 @@
 # US-04: Inventory search adapter
 
 > PRD: [057 — Search Engine](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 
