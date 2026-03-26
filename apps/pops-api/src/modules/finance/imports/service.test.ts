@@ -453,6 +453,11 @@ describe("executeImport", () => {
     entityName: "Woolworths",
   };
 
+  beforeEach(() => {
+    // FK constraint on entity_id requires entity to exist before inserting transactions
+    seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
+  });
+
   it("returns empty result for empty input", () => {
     const result = executeImport([]);
 
@@ -585,6 +590,24 @@ describe("executeImport", () => {
 
     const count = db.prepare("SELECT COUNT(*) as cnt FROM transactions").get() as { cnt: number };
     expect(count.cnt).toBe(30);
+  });
+
+  it("sets entity_id to NULL when referenced entity is deleted (ON DELETE SET NULL)", () => {
+    executeImport([baseConfirmedTransaction]);
+
+    // Verify entity_id is set before deletion
+    const before = db
+      .prepare("SELECT entity_id FROM transactions WHERE checksum = ?")
+      .get("abc123") as { entity_id: string | null };
+    expect(before.entity_id).toBe("woolworths-id");
+
+    // Delete the entity — FK SET NULL should nullify entity_id
+    db.prepare("DELETE FROM entities WHERE id = ?").run("woolworths-id");
+
+    const after = db
+      .prepare("SELECT entity_id FROM transactions WHERE checksum = ?")
+      .get("abc123") as { entity_id: string | null };
+    expect(after.entity_id).toBeNull();
   });
 });
 
