@@ -48,6 +48,9 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
 
+  --color-app-accent: var(--app-accent);
+  --color-app-accent-foreground: var(--app-accent-foreground);
+
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -145,6 +148,10 @@
   --chart-4: oklch(0.8 0.15 80);
   --chart-5: oklch(0.6 0.15 330);
 
+  /* App accent — defaults to primary when no app colour class is applied */
+  --app-accent: var(--primary);
+  --app-accent-foreground: var(--primary-foreground);
+
   --sidebar: oklch(0.98 0.005 260); /* Matches background */
   --sidebar-foreground: oklch(0.35 0.02 260);
   --sidebar-primary: oklch(0.35 0.05 260);
@@ -185,6 +192,10 @@
   --input: oklch(0.25 0.04 260);
   --ring: oklch(0.6 0.12 260);
 
+  /* App accent — defaults to primary in dark mode too */
+  --app-accent: var(--primary);
+  --app-accent-foreground: var(--primary-foreground);
+
   --sidebar: oklch(0.16 0.02 260);
   --sidebar-foreground: oklch(0.85 0.01 260);
   --sidebar-primary: oklch(0.6 0.12 260);
@@ -193,6 +204,72 @@
   --sidebar-accent-foreground: oklch(0.92 0.01 260);
   --sidebar-border: oklch(0.25 0.04 260);
   --sidebar-ring: oklch(0.6 0.12 260);
+}
+
+/* ── App colour classes ─────────────────────────────────────────────
+ * Apply one of these classes to an ancestor element to theme all
+ * descendant components using bg-app-accent, text-app-accent, etc.
+ * Each class sets --app-accent and --app-accent-foreground with
+ * light and dark mode values in oklch colour space.
+ */
+.app-emerald {
+  --app-accent: oklch(0.52 0.14 155);
+  --app-accent-foreground: oklch(0.98 0.01 155);
+}
+.dark .app-emerald,
+.app-emerald:is(.dark *) {
+  --app-accent: oklch(0.65 0.17 155);
+  --app-accent-foreground: oklch(0.14 0.02 155);
+}
+
+.app-indigo {
+  --app-accent: oklch(0.45 0.15 270);
+  --app-accent-foreground: oklch(0.98 0.01 270);
+}
+.dark .app-indigo,
+.app-indigo:is(.dark *) {
+  --app-accent: oklch(0.6 0.17 270);
+  --app-accent-foreground: oklch(0.14 0.02 270);
+}
+
+.app-amber {
+  --app-accent: oklch(0.7 0.16 75);
+  --app-accent-foreground: oklch(0.2 0.04 75);
+}
+.dark .app-amber,
+.app-amber:is(.dark *) {
+  --app-accent: oklch(0.75 0.15 75);
+  --app-accent-foreground: oklch(0.14 0.03 75);
+}
+
+.app-rose {
+  --app-accent: oklch(0.55 0.18 12);
+  --app-accent-foreground: oklch(0.98 0.01 12);
+}
+.dark .app-rose,
+.app-rose:is(.dark *) {
+  --app-accent: oklch(0.65 0.18 12);
+  --app-accent-foreground: oklch(0.14 0.02 12);
+}
+
+.app-sky {
+  --app-accent: oklch(0.55 0.14 230);
+  --app-accent-foreground: oklch(0.98 0.01 230);
+}
+.dark .app-sky,
+.app-sky:is(.dark *) {
+  --app-accent: oklch(0.65 0.15 230);
+  --app-accent-foreground: oklch(0.14 0.02 230);
+}
+
+.app-violet {
+  --app-accent: oklch(0.5 0.18 300);
+  --app-accent-foreground: oklch(0.98 0.01 300);
+}
+.dark .app-violet,
+.app-violet:is(.dark *) {
+  --app-accent: oklch(0.62 0.18 300);
+  --app-accent-foreground: oklch(0.14 0.02 300);
 }
 
 /* Base styles */
