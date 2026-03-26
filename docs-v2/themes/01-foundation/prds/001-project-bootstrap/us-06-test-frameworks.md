@@ -1,7 +1,7 @@
 # US-06: Set up Vitest and Playwright
 
 > PRD: [001 — Project Bootstrap](README.md)
-> Status: To Review
+> Status: Partial — MSW not installed
 
 ## Description
 
@@ -9,11 +9,11 @@ As a developer, I want Vitest for unit/integration tests and Playwright for e2e 
 
 ## Acceptance Criteria
 
-- [ ] Vitest configured in each package/app that has tests
-- [ ] `pnpm test` / `mise test` runs all unit/integration tests across packages
-- [ ] `mise test:watch` runs tests in watch mode
-- [ ] Playwright configured for e2e tests
-- [ ] E2e tests can run against dev servers
+- [x] Vitest configured in each package/app that has tests
+- [x] `pnpm test` / `mise test` runs all unit/integration tests across packages
+- [x] `mise test:watch` runs tests in watch mode
+- [x] Playwright configured for e2e tests
+- [x] E2e tests can run against dev servers
 - [ ] MSW (Mock Service Worker) available for API mocking in tests
 
 ## Notes
