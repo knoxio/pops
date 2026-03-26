@@ -2,7 +2,7 @@
  * ItemsPage — inventory item list with search, filters, table/grid toggle,
  * and summary statistics. PRD-019/US-2.
  */
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router";
 import { Package, LayoutGrid, LayoutList, Search, DollarSign, Shield, Clock } from "lucide-react";
 import {
@@ -14,6 +14,7 @@ import {
   Card,
   CardContent,
   TypeBadge,
+  ViewToggleGroup,
 } from "@pops/ui";
 import type { Condition } from "@pops/ui";
 import { trpc } from "../lib/trpc";
@@ -23,17 +24,10 @@ import { ValueByTypeCard } from "../components/ValueBreakdown";
 import { formatCurrency } from "../lib/utils";
 type ViewMode = "table" | "grid";
 
-const STORAGE_KEY = "inventory-view-mode";
-
-function getInitialView(): ViewMode {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored === "grid" || stored === "table") return stored;
-  } catch {
-    // SSR or no localStorage
-  }
-  return "table";
-}
+const VIEW_OPTIONS = [
+  { value: "table" as const, label: "Table view", icon: <LayoutList className="h-4 w-4" /> },
+  { value: "grid" as const, label: "Grid view", icon: <LayoutGrid className="h-4 w-4" /> },
+];
 
 const TYPE_OPTIONS: SelectOption[] = [
   { value: "", label: "All Types" },
@@ -210,7 +204,7 @@ function ItemsPageSkeleton() {
 
 export function ItemsPage() {
   const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState<ViewMode>(getInitialView);
+  const [viewMode, setViewMode] = useState<ViewMode>("table");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [conditionFilter, setConditionFilter] = useState("");
@@ -234,14 +228,7 @@ export function ItemsPage() {
   const totalReplacementValue = data?.totals?.totalReplacementValue ?? 0;
   const totalResaleValue = data?.totals?.totalResaleValue ?? 0;
 
-  const handleViewChange = useCallback((mode: ViewMode) => {
-    setViewMode(mode);
-    try {
-      localStorage.setItem(STORAGE_KEY, mode);
-    } catch {
-      // ignore
-    }
-  }, []);
+  const handleViewChange = (mode: ViewMode) => setViewMode(mode);
 
   const hasActiveFilters = !!(typeFilter || conditionFilter || inUseFilter);
 
@@ -314,34 +301,13 @@ export function ItemsPage() {
               {totalResaleValue > 0 && <span> — {formatCurrency(totalResaleValue)} resale</span>}
             </p>
           </div>
-          <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5 ml-auto">
-            <button
-              type="button"
-              onClick={() => handleViewChange("table")}
-              aria-label="Table view"
-              aria-pressed={viewMode === "table"}
-              className={`rounded-md p-1.5 transition-all ${
-                viewMode === "table"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <LayoutList className="h-4 w-4" />
-            </button>
-            <button
-              type="button"
-              onClick={() => handleViewChange("grid")}
-              aria-label="Grid view"
-              aria-pressed={viewMode === "grid"}
-              className={`rounded-md p-1.5 transition-all ${
-                viewMode === "grid"
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <LayoutGrid className="h-4 w-4" />
-            </button>
-          </div>
+          <ViewToggleGroup
+            options={VIEW_OPTIONS}
+            value={viewMode}
+            onChange={handleViewChange}
+            storageKey="inventory-view-mode"
+            className="ml-auto"
+          />
         </div>
       )}
 

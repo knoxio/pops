@@ -14,8 +14,8 @@
 - `EditableCell.tsx` — inline cell editing
 - `StatCard.tsx` — metric card with oklch color variants and trend support; all using design tokens
 
-**Missing:**
-- `ViewToggleGroup` — table/grid toggle persisting to localStorage is not implemented; apps use their own ad-hoc patterns
+**Implemented:**
+- `ViewToggleGroup` — segmented button toggle with localStorage persistence, generic value type, Storybook stories
 
 ## Description
 
@@ -27,7 +27,7 @@ As a developer, I want data display components (DataTable, filters, view toggle)
 - [ ] DataTableFilters — filter bar with column-specific filter inputs
 - [ ] InfiniteScrollTable — DataTable variant with scroll-based pagination
 - [ ] EditableCell — inline cell editing with save/cancel
-- [ ] ViewToggleGroup — table/grid toggle, segmented button style, persists to localStorage
+- [x] ViewToggleGroup — table/grid toggle, segmented button style, persists to localStorage
 - [ ] StatCard — metric display card with label, value, optional trend indicator
 - [ ] Each component has co-located `.stories.tsx`
 - [ ] All exported from barrel `index.ts`
