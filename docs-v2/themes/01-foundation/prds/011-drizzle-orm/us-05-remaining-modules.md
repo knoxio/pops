@@ -1,7 +1,7 @@
 # US-05: Migrate media and inventory modules to Drizzle
 
 > PRD: [011 — Drizzle ORM](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,12 +9,12 @@ As a developer, I want the media and inventory modules using Drizzle queries so 
 
 ## Acceptance Criteria
 
-- [ ] All raw SQL in media services replaced with Drizzle
-- [ ] All raw SQL in inventory services replaced with Drizzle
-- [ ] No `as Row[]` type casts remain in any module
-- [ ] All media tests pass (comparisons, watch history, plex sync)
-- [ ] All inventory tests pass (items, locations, connections, documents)
-- [ ] Complex queries: connection chain tracing (recursive CTE), comparison scoring, media search — all produce correct results
+- [x] All raw SQL in media services replaced with Drizzle
+- [x] All raw SQL in inventory services replaced with Drizzle
+- [x] No `as Row[]` type casts remain in any module
+- [x] All media tests pass (comparisons, watch history, plex sync)
+- [x] All inventory tests pass (items, locations, connections, documents)
+- [x] Complex queries: connection chain tracing (recursive CTE), comparison scoring, media search — all produce correct results
 
 ## Notes
 

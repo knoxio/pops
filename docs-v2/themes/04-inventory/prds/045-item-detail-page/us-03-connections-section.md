@@ -1,7 +1,7 @@
 # US-03: Connections section
 
 > PRD: [045 — Item Detail Page](README.md)
-> Status: To Review
+> Status: Partial
 
 ## Description
 
@@ -9,17 +9,17 @@ As a user, I want to see all items connected to the current item and trace the f
 
 ## Acceptance Criteria
 
-- [ ] Connections section displays a list of connected items fetched from `inventory.connections.listForItem`
-- [ ] Each connected item shows: name, asset ID (if present), and type
-- [ ] Clicking a connected item navigates to its detail page (`/inventory/items/:id`)
-- [ ] "Trace Chain" button is visible when the item has at least one connection
-- [ ] Clicking "Trace Chain" calls `inventory.connections.traceChain` and renders the result
-- [ ] Chain visualisation displays items as a list or tree with depth indication (indentation or nesting)
-- [ ] Each item in the chain is clickable, navigating to its detail page
-- [ ] Chain visualisation shows the current item highlighted or marked as the starting point
-- [ ] "Trace Chain" button is hidden when the item has no connections
-- [ ] When no connections exist, the section shows "No connections" text
-- [ ] Tests cover: connected items list rendering, click navigation, trace chain trigger, chain depth display, empty state, trace chain with current item highlighted
+- [x] Connections section displays a list of connected items fetched from `inventory.connections.listForItem`
+- [x] Each connected item shows: name, asset ID (if present), and type
+- [x] Clicking a connected item navigates to its detail page (`/inventory/items/:id`)
+- [x] "Trace Chain" button is visible when the item has at least one connection
+- [x] Clicking "Trace Chain" calls `inventory.connections.traceChain` and renders the result
+- [x] Chain visualisation displays items as a list or tree with depth indication (indentation or nesting)
+- [x] Each item in the chain is clickable, navigating to its detail page
+- [x] Chain visualisation shows the current item highlighted or marked as the starting point
+- [x] "Trace Chain" button is hidden when the item has no connections
+- [x] When no connections exist, the section shows "No connections" text
+- [ ] Tests cover: connected items list rendering, click navigation, trace chain trigger, chain depth display, empty state, trace chain with current item highlighted — no tests
 
 ## Notes
 

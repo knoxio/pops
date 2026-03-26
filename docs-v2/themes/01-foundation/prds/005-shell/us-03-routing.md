@@ -1,7 +1,23 @@
 # US-03: Build router with lazy-loaded app registration
 
 > PRD: [005 — Shell](README.md)
-> Status: To Review
+> Status: Done
+
+**GH Issue:** #404
+
+## Audit Findings
+
+`apps/pops-shell/src/app/router.tsx` implements the full routing setup:
+
+- `createBrowserRouter` from React Router v7
+- Root route uses `<RootLayout />` as the wrapper, with a custom `errorElement` for crash recovery
+- `/` redirects to `/finance` via `<Navigate to="/finance" replace />`
+- Registered apps: `/finance/*`, `/media/*`, `/inventory/*`, `/ai/*`
+- Each app exports a `routes` array; page components inside each app use `React.lazy()` for code splitting
+- `withSuspense` helper wraps each route element in `<Suspense>` with a loading fallback
+- `NotFoundPage` rendered inside the root route (within shell layout) for unmatched paths
+
+**Note:** The shell statically imports each app's route registry (`import { routes } from "@pops/app-finance"`), but all page elements within those routes are `React.lazy()` — code splitting happens at the page level.
 
 ## Description
 

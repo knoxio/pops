@@ -1,7 +1,7 @@
 # US-01: TheTVDB HTTP client with JWT auth
 
 > PRD: [030 — TheTVDB Client](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,21 +9,21 @@ As a developer, I want an HTTP client for the TheTVDB API with JWT authenticatio
 
 ## Acceptance Criteria
 
-- [ ] TheTVDB HTTP client module that wraps TheTVDB REST API v4 calls
-- [ ] JWT authentication: calls `/login` with API key to obtain a token
-- [ ] Token cached in memory after initial login — subsequent requests reuse it
-- [ ] On 401 response, automatically re-authenticates (calls `/login` again) and retries the failed request once
-- [ ] If retry after re-auth also fails, returns an error — no infinite retry loop
-- [ ] `THETVDB_API_KEY` read from environment; startup validation fails with a clear error if missing
-- [ ] `media.search.tvShows(query)` tRPC procedure calls TheTVDB's `/search` endpoint filtered to series type
-- [ ] Search returns `{ results: TvdbSearchResult[] }` with fields mapped from TheTVDB response
-- [ ] Internal `fetchShowDetails(tvdbId)` method calls TheTVDB's `/series/{id}/extended` endpoint
-- [ ] Show details response includes: tvdbId, name, originalName, overview, firstAirDate, lastAirDate, status, originalLanguage, numberOfSeasons, numberOfEpisodes, episodeRunTime, voteAverage, voteCount, genres, networks, poster URL
-- [ ] Internal `fetchSeasons(tvdbId)` method returns all seasons for a show (including specials at seasonNumber 0)
-- [ ] Internal `fetchEpisodes(seasonId)` method returns all episodes for a season with: tvdbId, episodeNumber, name, overview, airDate, runtime, voteAverage
-- [ ] Genres and networks mapped to plain string arrays
-- [ ] HTTP errors (4xx, 5xx) from TheTVDB are caught and returned as typed errors
-- [ ] Tests cover: successful auth, token refresh on 401, search, show details fetch, season/episode fetch, missing API key validation
+- [x] TheTVDB HTTP client module that wraps TheTVDB REST API v4 calls
+- [x] JWT authentication: calls `/login` with API key to obtain a token
+- [x] Token cached in memory after initial login — subsequent requests reuse it
+- [x] On 401 response, automatically re-authenticates (calls `/login` again) and retries the failed request once
+- [x] If retry after re-auth also fails, returns an error — no infinite retry loop
+- [x] `THETVDB_API_KEY` read from environment; startup validation fails with a clear error if missing
+- [x] `media.search.tvShows(query)` tRPC procedure calls TheTVDB's `/search` endpoint filtered to series type
+- [x] Search returns `{ results: TvdbSearchResult[] }` with fields mapped from TheTVDB response
+- [x] Internal `fetchShowDetails(tvdbId)` method calls TheTVDB's `/series/{id}/extended` endpoint
+- [x] Show details response includes: tvdbId, name, originalName, overview, firstAirDate, lastAirDate, status, originalLanguage, numberOfSeasons, numberOfEpisodes, episodeRunTime, voteAverage, voteCount, genres, networks, poster URL
+- [x] Internal `fetchSeasons(tvdbId)` method returns all seasons for a show (including specials at seasonNumber 0)
+- [x] Internal `fetchEpisodes(seasonId)` method returns all episodes for a season with: tvdbId, episodeNumber, name, overview, airDate, runtime, voteAverage
+- [x] Genres and networks mapped to plain string arrays
+- [x] HTTP errors (4xx, 5xx) from TheTVDB are caught and returned as typed errors
+- [x] Tests cover: successful auth, token refresh on 401, search, show details fetch, season/episode fetch, missing API key validation
 
 ## Notes
 

@@ -1,7 +1,7 @@
 # US-01: Load entity lookup and alias maps
 
 > PRD: [021 — Entity Matching Engine](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

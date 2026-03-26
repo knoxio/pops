@@ -1,7 +1,7 @@
 # US-04: Description normalization
 
 > PRD: [024 — Corrections](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,11 +9,11 @@ As a developer, I want descriptions normalized consistently so that pattern matc
 
 ## Acceptance Criteria
 
-- [ ] Normalization: uppercase, remove all digits, collapse multiple spaces to single, trim
-- [ ] Applied on both storage (createOrUpdate) and query (findMatch)
-- [ ] "McDonald's North Sydney 2060" → "MCDONALD'S NORTH SYDNEY"
-- [ ] "IKEA TEMPE" and "ikea tempe" produce the same normalized form
-- [ ] Test with various inputs: mixed case, numbers, extra whitespace, special characters
+- [x] Normalization: uppercase, remove all digits, collapse multiple spaces to single, trim
+- [x] Applied on both storage (createOrUpdate) and query (findMatch)
+- [x] "McDonald's North Sydney 2060" → "MCDONALD'S NORTH SYDNEY"
+- [x] "IKEA TEMPE" and "ikea tempe" produce the same normalized form
+- [x] Test with various inputs: mixed case, numbers, extra whitespace, special characters
 
 ## Notes
 

@@ -1,7 +1,7 @@
 # US-03: Migrate core module to Drizzle
 
 > PRD: [011 — Drizzle ORM](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,11 +9,11 @@ As a developer, I want the core module (entities, ai-usage, settings, correction
 
 ## Acceptance Criteria
 
-- [ ] All `db.prepare(sql).all()` calls in core services replaced with Drizzle query builder
-- [ ] No `as Row[]` type casts remain in core module
-- [ ] All core module tests pass with Drizzle queries
-- [ ] Types come from Drizzle inference, not manual definitions
-- [ ] Core serves as the reference pattern for other module migrations
+- [x] All `db.prepare(sql).all()` calls in core services replaced with Drizzle query builder
+- [x] No `as Row[]` type casts remain in core module
+- [x] All core module tests pass with Drizzle queries
+- [x] Types come from Drizzle inference, not manual definitions
+- [x] Core serves as the reference pattern for other module migrations
 
 ## Notes
 

@@ -1,7 +1,7 @@
 # US-02: Scheduled analysis
 
 > PRD: [055 — AI Inference & Monitoring](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

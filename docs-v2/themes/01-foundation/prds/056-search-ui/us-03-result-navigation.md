@@ -1,7 +1,7 @@
 # US-03: Result navigation via URIs
 
 > PRD: [056 — Search UI](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

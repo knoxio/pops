@@ -1,7 +1,7 @@
 # US-01: Define nav types and app registry
 
 > PRD: [006 — App Switcher](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,11 +9,11 @@ As a developer, I want typed nav config interfaces and a central app registry so
 
 ## Acceptance Criteria
 
-- [ ] `AppNavConfig` and `AppNavItem` TypeScript interfaces defined (in shell or shared package)
-- [ ] App registry array in the shell holds all registered app configs
-- [ ] Registry is the single source of truth — sidebar/rail reads from it, no hardcoded nav lists
-- [ ] At least one app (finance) registered with Lucide icon references (not emoji)
-- [ ] Adding a new app to the registry is a one-line import + array push
+- [x] `AppNavConfig` and `AppNavItem` TypeScript interfaces defined (in shell or shared package)
+- [x] App registry array in the shell holds all registered app configs
+- [x] Registry is the single source of truth — sidebar/rail reads from it, no hardcoded nav lists
+- [x] At least one app (finance) registered with Lucide icon references (not emoji)
+- [x] Adding a new app to the registry is a one-line import + array push
 
 ## Notes
 

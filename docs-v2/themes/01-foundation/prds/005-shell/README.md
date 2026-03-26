@@ -182,13 +182,13 @@ The key rule: app packages depend on `@pops/ui` and shared packages, never on ot
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-shell-scaffold](us-01-shell-scaffold.md) | Create pops-shell with entry point, Vite config, provider stack | No (first) |
-| 02 | [us-02-layout](us-02-layout.md) | Build RootLayout, TopBar with fixed positioning, content area with independent scroll | Blocked by us-01 |
-| 03 | [us-03-routing](us-03-routing.md) | Build router with lazy-loaded app registration, namespaced routes, error handling, NotFoundPage | Blocked by us-01 |
-| 04 | [us-04-breadcrumbs](us-04-breadcrumbs.md) | Build page-level navigation pattern: back button + breadcrumbs for drill-down pages, mobile truncation | Blocked by us-02 |
-| 05 | [us-05-trpc-access](us-05-trpc-access.md) | Set up tRPC client in shell and establish the import pattern for app packages | Blocked by us-01 |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-shell-scaffold](us-01-shell-scaffold.md) | Create pops-shell with entry point, Vite config, provider stack | Done | No (first) |
+| 02 | [us-02-layout](us-02-layout.md) | Build RootLayout, TopBar with fixed positioning, content area with independent scroll | To Review | Blocked by us-01 |
+| 03 | [us-03-routing](us-03-routing.md) | Build router with lazy-loaded app registration, namespaced routes, error handling, NotFoundPage | To Review | Blocked by us-01 |
+| 04 | [us-04-breadcrumbs](us-04-breadcrumbs.md) | Build page-level navigation pattern: back button + breadcrumbs for drill-down pages, mobile truncation | To Review | Blocked by us-02 |
+| 05 | [us-05-trpc-access](us-05-trpc-access.md) | Set up tRPC client in shell and establish the import pattern for app packages | To Review | Blocked by us-01 |
 
 US-02 and US-03 can parallelise after US-01. US-04 depends on layout. US-05 can parallelise with US-02/US-03.
 

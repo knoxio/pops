@@ -18,8 +18,8 @@ Set up monitoring so that service failures are detected without manual checking.
 
 | # | Story | Summary | Parallelisable |
 |---|-------|---------|----------------|
-| 01 | [us-01-health-checks](us-01-health-checks.md) | Docker health checks on API and shell, restart policies | No (first) |
-| 02 | [us-02-log-access](us-02-log-access.md) | Centralised log access via docker compose logs and mise tasks | Yes |
+| 01 | [us-01-health-checks](us-01-health-checks.md) | Docker health checks on API and shell, restart policies | Done |
+| 02 | [us-02-log-access](us-02-log-access.md) | Centralised log access via docker compose logs and mise tasks | Done |
 
 ## Verification
 

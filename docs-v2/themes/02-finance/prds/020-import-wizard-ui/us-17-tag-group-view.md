@@ -1,7 +1,7 @@
 # US-17: Tag review grouped view
 
 > PRD: [020 — Import Wizard UI](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,11 +9,11 @@ As a user, I want transactions grouped by entity in the tag review step so that 
 
 ## Acceptance Criteria
 
-- [ ] Transactions grouped by entity name
-- [ ] Each group is a collapsible section with entity name header and count
-- [ ] All groups expanded by default
-- [ ] Groups sorted by: AI-matched first, then by transaction count descending
-- [ ] Each transaction within a group shows: description, amount, date
+- [x] Transactions grouped by entity name
+- [x] Each group is a collapsible section with entity name header and count
+- [x] All groups expanded by default
+- [x] Groups sorted by: AI-matched first, then by transaction count descending
+- [x] Each transaction within a group shows: description, amount, date
 
 ## Notes
 

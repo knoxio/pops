@@ -1,7 +1,7 @@
 # US-05: Up Bank API batch import
 
 > PRD: [022 — Deduplication & Parsers](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

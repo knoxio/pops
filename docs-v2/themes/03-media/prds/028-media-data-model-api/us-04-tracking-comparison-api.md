@@ -1,7 +1,7 @@
 # US-04: Tracking and comparison API
 
 > PRD: [028 — Media Data Model & API](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -11,54 +11,54 @@ As a developer, I want tRPC procedures for watchlist management, watch history l
 
 ### Watchlist
 
-- [ ] `media.watchlist.list` — returns all entries ordered by priority ASC then addedAt DESC, enriched with media metadata (title, poster)
-- [ ] `media.watchlist.get` — returns single entry by id
-- [ ] `media.watchlist.add` — creates entry with mediaType + mediaId; on CONFLICT (duplicate), returns existing entry unchanged
-- [ ] `media.watchlist.update` — updates priority and/or notes by id
-- [ ] `media.watchlist.reorder` — accepts array of { id, priority }, updates all in a single transaction
-- [ ] `media.watchlist.remove` — deletes entry by id
-- [ ] Watchlist validates mediaType is "movie" or "tv_show"
-- [ ] Watchlist validates that the referenced media item exists
+- [x] `media.watchlist.list` — returns all entries ordered by priority ASC then addedAt DESC, enriched with media metadata (title, poster)
+- [x] `media.watchlist.get` — returns single entry by id
+- [x] `media.watchlist.add` — creates entry with mediaType + mediaId; on CONFLICT (duplicate), returns existing entry unchanged
+- [x] `media.watchlist.update` — updates priority and/or notes by id
+- [x] `media.watchlist.reorder` — accepts array of { id, priority }, updates all in a single transaction
+- [x] `media.watchlist.remove` — deletes entry by id
+- [x] Watchlist validates mediaType is "movie" or "tv_show"
+- [x] Watchlist validates that the referenced media item exists
 
 ### Watch History
 
-- [ ] `media.watchHistory.list` — paginated, filterable by mediaType
-- [ ] `media.watchHistory.listRecent` — returns last N entries enriched with metadata; for episodes includes show name and show poster
-- [ ] `media.watchHistory.get` — returns single entry by id
-- [ ] `media.watchHistory.log` — creates watch history entry; when completed=1 for a movie, auto-removes that movie from watchlist; when completed=1 for an episode, checks if ALL show episodes are watched and auto-removes show from watchlist if so
-- [ ] `media.watchHistory.progress` — for a tvShowId, returns overall completion percentage and per-season completion percentages
-- [ ] `media.watchHistory.batchProgress` — batch version of progress for multiple tvShowIds
-- [ ] `media.watchHistory.batchLog` — marks all episodes in a season or show as watched in one operation
-- [ ] `media.watchHistory.delete` — removes entry by id
-- [ ] Watch history validates mediaType is "movie" or "episode"
+- [x] `media.watchHistory.list` — paginated, filterable by mediaType
+- [x] `media.watchHistory.listRecent` — returns last N entries enriched with metadata; for episodes includes show name and show poster
+- [x] `media.watchHistory.get` — returns single entry by id
+- [x] `media.watchHistory.log` — creates watch history entry; when completed=1 for a movie, auto-removes that movie from watchlist; when completed=1 for an episode, checks if ALL show episodes are watched and auto-removes show from watchlist if so
+- [x] `media.watchHistory.progress` — for a tvShowId, returns overall completion percentage and per-season completion percentages
+- [x] `media.watchHistory.batchProgress` — batch version of progress for multiple tvShowIds
+- [x] `media.watchHistory.batchLog` — marks all episodes in a season or show as watched in one operation
+- [x] `media.watchHistory.delete` — removes entry by id
+- [x] Watch history validates mediaType is "movie" or "episode"
 
 ### Comparisons
 
-- [ ] `media.comparisons.listDimensions` — returns all dimensions ordered by sortOrder
-- [ ] `media.comparisons.createDimension` — creates dimension with name, description, sortOrder
-- [ ] `media.comparisons.updateDimension` — updates dimension fields (name, description, active, sortOrder)
-- [ ] `media.comparisons.record` — validates winnerId matches either A or B; inserts comparison record and updates both items' Elo scores in a single transaction using K=32
-- [ ] `media.comparisons.listForMedia` — returns all comparisons involving a specific media item
-- [ ] `media.comparisons.getRandomPair` — returns two watched movies for a given dimension, avoids recently compared pairs, returns null if fewer than 2 watched movies exist
-- [ ] `media.comparisons.scores` — returns all dimension scores for a specific media item
-- [ ] `media.comparisons.rankings` — returns ranked list per dimension, or overall ranking (average across active dimensions) when no dimension specified
+- [x] `media.comparisons.listDimensions` — returns all dimensions ordered by sortOrder
+- [x] `media.comparisons.createDimension` — creates dimension with name, description, sortOrder
+- [x] `media.comparisons.updateDimension` — updates dimension fields (name, description, active, sortOrder)
+- [x] `media.comparisons.record` — validates winnerId matches either A or B; inserts comparison record and updates both items' Elo scores in a single transaction using K=32
+- [x] `media.comparisons.listForMedia` — returns all comparisons involving a specific media item
+- [x] `media.comparisons.getRandomPair` — returns two watched movies for a given dimension, avoids recently compared pairs, returns null if fewer than 2 watched movies exist
+- [x] `media.comparisons.scores` — returns all dimension scores for a specific media item
+- [x] `media.comparisons.rankings` — returns ranked list per dimension, or overall ranking (average across active dimensions) when no dimension specified
 
 ### Elo Scoring
 
-- [ ] Starting score is 1500.0 for new items
-- [ ] K-factor is 32
-- [ ] Both winner and loser scores update atomically in the same transaction
-- [ ] `comparisonCount` increments for both items on each comparison
-- [ ] Overall ranking averages scores across all active dimensions only
+- [x] Starting score is 1500.0 for new items
+- [x] K-factor is 32
+- [x] Both winner and loser scores update atomically in the same transaction
+- [x] `comparisonCount` increments for both items on each comparison
+- [x] Overall ranking averages scores across all active dimensions only
 
 ### Cross-cutting
 
-- [ ] Input validation via zod schemas on all procedures
-- [ ] Tests cover auto-removal from watchlist on movie completion
-- [ ] Tests cover auto-removal from watchlist when all show episodes are completed
-- [ ] Tests cover Elo score calculation correctness
-- [ ] Tests cover getRandomPair edge cases (no movies, one movie, recently compared)
-- [ ] Tests cover batch operations (reorder, batchLog, batchProgress)
+- [x] Input validation via zod schemas on all procedures
+- [x] Tests cover auto-removal from watchlist on movie completion
+- [x] Tests cover auto-removal from watchlist when all show episodes are completed
+- [x] Tests cover Elo score calculation correctness
+- [x] Tests cover getRandomPair edge cases (no movies, one movie, recently compared)
+- [x] Tests cover batch operations (reorder, batchLog, batchProgress)
 
 ## Notes
 

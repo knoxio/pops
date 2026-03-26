@@ -1,7 +1,21 @@
 # US-02: Build shell layout
 
 > PRD: [005 — Shell](README.md)
-> Status: To Review
+> Status: Done
+
+**GH Issue:** #403
+
+## Audit Findings
+
+Full layout implemented in `apps/pops-shell/src/app/layout/`:
+
+- `RootLayout.tsx` — wraps TopBar + AppRail + PageNav (desktop) + Sidebar (mobile) + `<main>` with `<ErrorBoundary>`; `<Outlet />` renders inside ErrorBoundary
+- `TopBar.tsx` — POPS branding with gradient text, theme toggle (Sun/Moon icons), hamburger for mobile; `fixed top-0 w-full z-40`
+- `AppRail.tsx` — icon-only app switcher for desktop (hidden on mobile)
+- `PageNav.tsx` — page-level nav links for the active app (desktop)
+- `Sidebar.tsx` — mobile overlay with hamburger toggle; controlled via `uiStore`
+
+Content area uses `<main>` with padding, rendered below the fixed TopBar via `pt-14 md:pt-16`. No ancestor has `overflow: hidden` that would trap the fixed TopBar.
 
 ## Description
 

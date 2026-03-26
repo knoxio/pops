@@ -1,7 +1,7 @@
 # US-01: Checksum-based deduplication
 
 > PRD: [022 — Deduplication & Parsers](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,12 +9,12 @@ As a developer, I want checksum-based deduplication so that re-importing the sam
 
 ## Acceptance Criteria
 
-- [ ] Each ParsedTransaction has a SHA-256 checksum of its raw CSV row (JSON stringified)
-- [ ] Batch query: `SELECT checksum FROM transactions WHERE checksum IN (?)`, batched in groups of 500
-- [ ] Matching checksums → transaction marked as "skipped" with reason "Duplicate transaction (checksum match)"
-- [ ] New checksums → transaction proceeds to entity matching
-- [ ] `transactions.checksum` column has UNIQUE constraint
-- [ ] Test: importing same CSV twice → second import skips all rows
+- [x] Each ParsedTransaction has a SHA-256 checksum of its raw CSV row (JSON stringified)
+- [x] Batch query: `SELECT checksum FROM transactions WHERE checksum IN (?)`, batched in groups of 500
+- [x] Matching checksums → transaction marked as "skipped" with reason "Duplicate transaction (checksum match)"
+- [x] New checksums → transaction proceeds to entity matching
+- [x] `transactions.checksum` column has UNIQUE constraint
+- [x] Test: importing same CSV twice → second import skips all rows
 
 ## Notes
 

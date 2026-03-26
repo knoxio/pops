@@ -1,7 +1,7 @@
 # US-22: Summary step
 
 > PRD: [020 — Import Wizard UI](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,12 +9,12 @@ As a user, I want to see the final import results so that I know what was import
 
 ## Acceptance Criteria
 
-- [ ] Imported count with ✅ icon
-- [ ] Failed count with ❌ icon — expandable list with error details per transaction
-- [ ] Skipped count with ⏸️ icon
-- [ ] "New Import" button resets the wizard
-- [ ] "View Transactions" button navigates to the transactions page
-- [ ] No further data entry or edits — this is a completion confirmation
+- [x] Imported count with ✅ icon
+- [x] Failed count with ❌ icon — expandable list with error details per transaction
+- [x] Skipped count with ⏸️ icon
+- [x] "New Import" button resets the wizard
+- [x] "View Transactions" button navigates to the transactions page
+- [x] No further data entry or edits — this is a completion confirmation
 
 ## Notes
 

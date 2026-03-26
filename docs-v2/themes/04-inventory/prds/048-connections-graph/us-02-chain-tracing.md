@@ -1,7 +1,7 @@
 # US-02: Chain tracing
 
 > PRD: [048 — Connections & Graph](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,17 +9,21 @@ As a user, I want to trace the full chain of connected items from any starting p
 
 ## Acceptance Criteria
 
-- [ ] "Trace Chain" button appears on item detail page when the item has at least one connection
-- [ ] Clicking "Trace Chain" calls `inventory.connections.traceChain` with the current item ID
-- [ ] Chain displayed as an indented list (tree format): each level indented further than its parent
-- [ ] Each node in the chain shows: item name, asset ID, depth level indicator (e.g., "Depth 2")
-- [ ] Starting item shown as the root node at depth 0
-- [ ] Clicking any node in the chain navigates to that item's detail page
-- [ ] Chain traversal stops at `maxDepth = 10` — no error, just stops expanding
-- [ ] Cyclic graphs handled: if a node has already been visited, it shows as "[item name] (cycle)" and does not expand further
-- [ ] Loading state while chain fetches
-- [ ] Item with no connections: "Trace Chain" button hidden
-- [ ] Single-item chain (item connected to one other): shows two-node chain
+- [x] "Trace Chain" button appears on item detail page when the item has at least one connection — trace panel shown by default when connections exist; no dedicated "Trace Chain" button (panel always visible in connections section)
+- [x] Clicking "Trace Chain" calls `inventory.connections.traceChain` with the current item ID — procedure is `inventory.connections.trace` (naming differs from spec, same behaviour)
+- [x] Chain displayed as an indented list (tree format): each level indented further than its parent
+- [x] Each node in the chain shows: item name, asset ID, depth level indicator (e.g., "Depth 2")
+- [x] Starting item shown as the root node at depth 0
+- [x] Clicking any node in the chain navigates to that item's detail page
+- [x] Chain traversal stops at `maxDepth = 10` — no error, just stops expanding
+- [x] Cyclic graphs handled: if a node has already been visited, it shows as "[item name] (cycle)" and does not expand further
+- [x] Loading state while chain fetches
+- [x] Item with no connections: "Trace Chain" button hidden
+- [x] Single-item chain (item connected to one other): shows two-node chain
+
+## Notes
+
+**Audit findings** (`packages/app-inventory/src/components/ConnectionTracePanel.tsx`, `apps/pops-api/src/modules/inventory/connections/router.ts`): Chain trace fully implemented. `ConnectionTracePanel` is displayed by default whenever the item has connections (rather than behind a dedicated button). Procedure named `trace` not `traceChain` — same functionality. All other criteria verified.
 
 ## Notes
 

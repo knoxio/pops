@@ -10,7 +10,7 @@ Build bidirectional item connections and connection chain tracing. One row in th
 
 | # | PRD | Summary | Status |
 |---|-----|---------|--------|
-| 048 | [Connections & Graph](../prds/048-connections-graph/README.md) | Connect dialog, connections list on detail page, chain tracing with recursive CTE, graph visualisation (stretch goal) | Done |
+| 048 | [Connections & Graph](../prds/048-connections-graph/README.md) | Connect dialog, connections list on detail page, chain tracing with recursive CTE, graph visualisation (stretch goal) | Partial |
 
 ## Dependencies
 

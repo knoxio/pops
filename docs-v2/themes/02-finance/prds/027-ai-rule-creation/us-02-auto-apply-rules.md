@@ -16,6 +16,10 @@ As a user, I want high-confidence AI rules automatically applied to remaining im
 - [ ] Tab counts update immediately
 - [x] Rule is persistent — applies to future imports too
 
+## Missing
+
+Backend uses confidence >= 0.9 threshold (not 0.8 as specified). No toast notification after a rule is created. No real-time re-evaluation of uncertain/failed tab after saving a rule. The UI does not show tab count decreasing as rules are applied.
+
 ## Notes
 
 This is the core learning loop. Correct one → AI creates rule → others match immediately. The user should see the uncertain count decrease in real-time as they work through corrections.

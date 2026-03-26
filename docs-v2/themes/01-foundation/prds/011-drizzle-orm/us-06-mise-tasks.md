@@ -1,7 +1,7 @@
 # US-06: Add mise tasks for Drizzle
 
 > PRD: [011 — Drizzle ORM](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,11 +9,11 @@ As a developer, I want mise tasks for Drizzle operations so that schema changes 
 
 ## Acceptance Criteria
 
-- [ ] `mise drizzle:generate` runs `drizzle-kit generate` to create migrations from schema changes
-- [ ] `mise drizzle:migrate` runs `drizzle-kit migrate` to apply pending migrations
-- [ ] `mise drizzle:studio` runs `drizzle-kit studio` for visual DB browser (dev only)
-- [ ] Tasks documented in `mise tasks` output
-- [ ] Tasks work from repo root
+- [x] `mise drizzle:generate` runs `drizzle-kit generate` to create migrations from schema changes
+- [x] `mise drizzle:migrate` runs `drizzle-kit migrate` to apply pending migrations
+- [x] `mise drizzle:studio` runs `drizzle-kit studio` for visual DB browser (dev only)
+- [x] Tasks documented in `mise tasks` output
+- [x] Tasks work from repo root
 
 ## Notes
 

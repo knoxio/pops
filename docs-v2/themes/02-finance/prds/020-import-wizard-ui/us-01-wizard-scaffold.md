@@ -1,7 +1,7 @@
 # US-01: Wizard scaffold
 
 > PRD: [020 — Import Wizard UI](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,13 +9,13 @@ As a developer, I want the ImportWizard component with step navigation and Zusta
 
 ## Acceptance Criteria
 
-- [ ] ImportWizard component with visual step indicator (numbered circles + progress bar)
-- [ ] Zustand store (`importStore`) with all state fields and navigation actions
-- [ ] `nextStep()`, `prevStep()`, `goToStep(n)`, `reset()` navigation
-- [ ] Steps are sequential — Next button disabled until current step validates
-- [ ] Back button available on steps 2+
-- [ ] ImportPage wraps ImportWizard and calls `reset()` on mount
-- [ ] Step indicator shows current step, completed steps, and remaining steps
+- [x] ImportWizard component with visual step indicator (numbered circles + progress bar)
+- [x] Zustand store (`importStore`) with all state fields and navigation actions
+- [x] `nextStep()`, `prevStep()`, `goToStep(n)`, `reset()` navigation
+- [x] Steps are sequential — Next button disabled until current step validates
+- [x] Back button available on steps 2+
+- [x] ImportPage wraps ImportWizard and calls `reset()` on mount
+- [x] Step indicator shows current step, completed steps, and remaining steps
 
 ## Notes
 
