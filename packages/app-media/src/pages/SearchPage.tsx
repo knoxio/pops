@@ -197,9 +197,10 @@ export function SearchPage() {
 
       {/* Search input */}
       <TextInput
+        type="search"
         placeholder="Search movies and TV shows…"
         value={query}
-        onChange={(e) => setQuery(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
         prefix={<Search className="h-4 w-4" />}
         clearable
         onClear={() => setQuery("")}
