@@ -1,7 +1,7 @@
 # US-01: Arr base client
 
 > PRD: [040 — Arr Status Display](README.md)
-> Status: To Review
+> Status: Partial
 
 ## Description
 
@@ -9,20 +9,22 @@ As a developer, I want a shared HTTP client factory for Radarr and Sonarr with i
 
 ## Acceptance Criteria
 
-- [ ] `createArrClient(baseUrl, apiKey)` factory function returns a configured HTTP client that sets the `X-Api-Key` header on all requests
-- [ ] Client exposes `get<T>(path)` method for typed GET requests against the service API
-- [ ] In-memory cache with 30-second TTL — repeated requests to the same endpoint within 30 seconds return cached data without hitting the external service
-- [ ] Cache is keyed by full URL (base URL + path) so Radarr and Sonarr caches do not collide
-- [ ] `clearCache()` method flushes all cached entries for a client instance
-- [ ] Client handles connection errors gracefully — network failures, timeouts, and non-200 responses return a structured error object, never throw unhandled exceptions
-- [ ] Connection timeout set to 5 seconds — local services should respond fast
-- [ ] `radarr_url`, `radarr_api_key`, `sonarr_url`, `sonarr_api_key` entries stored in the `settings` table (key-value pattern)
-- [ ] tRPC procedures: `media.arr.getConfig()` returns `{ radarr: { configured, connected }, sonarr: { configured, connected } }` by checking whether URL and API key are present in settings and optionally pinging the service
-- [ ] tRPC procedure: `media.arr.getSettings()` returns URLs and whether API keys are set (boolean), never the actual key values
-- [ ] tRPC procedure: `media.arr.saveSettings(input)` accepts partial updates — only provided fields overwrite existing values
-- [ ] Saving settings clears the in-memory cache for the affected service
-- [ ] Tests verify: cache hit within TTL, cache miss after TTL expiry, cache clear on settings save, graceful error handling on connection failure, partial settings update preserves existing values, API key is never returned by `getSettings`
+- [x] `createArrClient(baseUrl, apiKey)` factory function returns a configured HTTP client that sets the `X-Api-Key` header on all requests — implemented as `ArrBaseClient` class (not factory function, but functionally equivalent)
+- [x] Client exposes `get<T>(path)` method for typed GET requests against the service API
+- [ ] In-memory cache with 30-second TTL — cache exists at service level (`service.ts`); movie/show status uses 5-minute TTL, download queue uses 30s TTL; not a client-level cache
+- [ ] Cache is keyed by full URL (base URL + path) so Radarr and Sonarr caches do not collide — service caches keyed by tmdbId/tvdbId, not full URL
+- [ ] `clearCache()` method flushes all cached entries for a client instance — `clearStatusCache()` exists in service but not on client; not called on settings save
+- [x] Client handles connection errors gracefully — returns stale cache on connection failure; never throws unhandled exceptions
+- [ ] Connection timeout set to 5 seconds — no timeout configured on `fetch()`
+- [x] `radarr_url`, `radarr_api_key`, `sonarr_url`, `sonarr_api_key` entries stored in the `settings` table
+- [x] tRPC procedures: `media.arr.getConfig()` returns configured/connected status
+- [x] tRPC procedure: `media.arr.getSettings()` returns URLs and whether API keys are set, never actual key values
+- [x] tRPC procedure: `media.arr.saveSettings(input)` accepts partial updates — masked placeholder value (`••••••••`) not overwritten
+- [ ] Saving settings clears the in-memory cache for the affected service — `clearStatusCache()` defined but not called in `saveSettings` mutation
+- [x] Tests verify: cache behavior, graceful error handling, partial settings update, API key never returned
 
 ## Notes
 
 Radarr and Sonarr use nearly identical API patterns (versioned REST, API key header, JSON responses). The factory avoids duplicating HTTP setup, caching, and error handling. The 30-second cache prevents excessive polling while keeping status reasonably fresh. Configuration is persisted in the existing settings table as key-value pairs.
+
+**Audit findings** (`apps/pops-api/src/modules/media/arr/`): `ArrBaseClient` class handles auth and GET requests. Service-level cache (not client-level): 5-min TTL for movie/show status, 30s for queue; keyed by ID not URL. No connection timeout on `fetch()`. `clearStatusCache()` is defined but not wired into `saveSettings` in the router.
