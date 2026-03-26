@@ -1,7 +1,7 @@
 # US-02: Build app rail
 
 > PRD: [006 — App Switcher](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -17,7 +17,7 @@ As a developer, I want a vertical app rail showing registered app icons so that 
 - [x] Rail is collapsible via toggle button
 - [x] Collapse state persisted in `uiStore` (survives page reload)
 - [x] Hidden on mobile (<768px)
-- [ ] All styling uses design tokens — no arbitrary values
+- [x] All styling uses design tokens — no arbitrary values
 
 ## Notes
 

@@ -17,15 +17,6 @@ interface AppRailProps {
   className?: string;
 }
 
-const colorMap = {
-  emerald: "bg-[oklch(0.65_0.15_150)]",
-  indigo: "bg-[oklch(0.6_0.15_260)]",
-  amber: "bg-[oklch(0.7_0.15_70)]",
-  rose: "bg-[oklch(0.65_0.15_25)]",
-  sky: "bg-[oklch(0.65_0.15_220)]",
-  violet: "bg-[oklch(0.65_0.15_290)]",
-} as const;
-
 export function AppRail({ className }: AppRailProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -43,7 +34,7 @@ export function AppRail({ className }: AppRailProps) {
       >
         <button
           onClick={toggleRail}
-          className="min-w-[36px] min-h-[36px] flex items-center justify-center hover:bg-muted rounded-lg"
+          className="min-w-9 min-h-9 flex items-center justify-center hover:bg-muted rounded-lg"
           aria-label="Expand app rail"
         >
           <PanelLeftOpen className="h-4 w-4 text-muted-foreground" />
@@ -63,14 +54,17 @@ export function AppRail({ className }: AppRailProps) {
       {registeredApps.map((app) => {
         const isActive = matchesAtBoundary(location.pathname, app.basePath);
         const Icon = iconMap[app.icon];
-        const appColor = app.color ? colorMap[app.color] : "bg-primary";
+        const appColorClass = app.color ? `app-${app.color}` : undefined;
 
         return (
           <Tooltip key={app.id}>
             <TooltipTrigger asChild>
               <button
                 onClick={() => navigate(app.basePath)}
-                className="relative w-full flex items-center justify-center py-1 transition-colors group"
+                className={cn(
+                  "relative w-full flex items-center justify-center py-1 transition-colors group",
+                  appColorClass
+                )}
                 aria-label={app.label}
                 aria-current={isActive ? "page" : undefined}
               >
@@ -79,7 +73,7 @@ export function AppRail({ className }: AppRailProps) {
                   className={cn(
                     "absolute left-0 top-1/2 -translate-y-1/2 w-1 rounded-r-full transition-all duration-300",
                     isActive
-                      ? cn("h-8", appColor)
+                      ? "h-8 bg-app-accent"
                       : "h-0 bg-transparent group-hover:h-4 group-hover:bg-muted-foreground/40"
                   )}
                 />
@@ -88,7 +82,7 @@ export function AppRail({ className }: AppRailProps) {
                   className={cn(
                     "flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300",
                     isActive
-                      ? cn(appColor, "text-white shadow-lg shadow-black/20 rounded-xl scale-100")
+                      ? "bg-app-accent text-app-accent-foreground shadow-lg shadow-black/20 rounded-xl scale-100"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground hover:rounded-xl scale-95 hover:scale-100"
                   )}
                 >
@@ -111,7 +105,7 @@ export function AppRail({ className }: AppRailProps) {
           <TooltipTrigger asChild>
             <button
               onClick={toggleRail}
-              className="min-w-[36px] min-h-[36px] flex items-center justify-center hover:bg-muted rounded-lg"
+              className="min-w-9 min-h-9 flex items-center justify-center hover:bg-muted rounded-lg"
               aria-label="Collapse app rail"
             >
               <PanelLeftClose className="h-4 w-4 text-muted-foreground" />
