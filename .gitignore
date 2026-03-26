@@ -26,6 +26,7 @@ ai_entity_cache.json
 # IDE
 .vscode/
 .idea/
+.obsidian/
 
 # Logs
 *.log
