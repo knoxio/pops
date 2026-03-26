@@ -187,7 +187,7 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           </select>
           <ChevronDownIcon />
         </div>
-        {error && <p className="text-[10px] font-medium text-destructive ml-1">{error}</p>}
+        {error && <p className="text-2xs font-medium text-destructive ml-1">{error}</p>}
       </div>
     );
   }

@@ -221,7 +221,7 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
             <span className="flex-shrink-0 text-muted-foreground">{suffix}</span>
           )}
         </div>
-        {error && <p className="text-[10px] font-medium text-destructive ml-1">{error}</p>}
+        {error && <p className="text-2xs font-medium text-destructive ml-1">{error}</p>}
       </div>
     );
   }

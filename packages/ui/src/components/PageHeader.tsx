@@ -181,7 +181,7 @@ export function PageHeader({
         {backHref && (
           <LinkComponent
             to={backHref}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+            className="min-w-11 min-h-11 flex items-center justify-center hover:bg-muted rounded-lg transition-colors text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-5 w-5" aria-hidden="true" />
             <span className="sr-only">Go back</span>

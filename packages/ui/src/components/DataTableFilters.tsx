@@ -177,7 +177,7 @@ export function FilterBar({ filters, table, onClearAll }: FilterBarProps) {
             </span>
           )}
         </Button>
-        <h3 className="text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/80 hidden md:block">
+        <h3 className="text-2xs font-bold uppercase tracking-widest text-muted-foreground/80 hidden md:block">
           Filters
         </h3>
         {activeFiltersCount > 0 && (
@@ -201,7 +201,7 @@ export function FilterBar({ filters, table, onClearAll }: FilterBarProps) {
 
           return (
             <div key={filter.id} className="space-y-1.5">
-              <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground px-0.5">
+              <label className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground px-0.5">
                 {filter.label}
               </label>
               {filter.type === "text" && (

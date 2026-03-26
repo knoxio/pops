@@ -162,7 +162,7 @@ export const Sizes: Story = {
   args: {},
   render: () => (
     <div className="flex flex-wrap items-center gap-2">
-      <Badge className="text-[10px] px-1.5 py-0">Tiny</Badge>
+      <Badge className="text-2xs px-1.5 py-0">Tiny</Badge>
       <Badge className="text-xs px-2 py-0.5">Small</Badge>
       <Badge className="text-sm px-2.5 py-1">Medium</Badge>
       <Badge className="text-base px-3 py-1.5">Large</Badge>

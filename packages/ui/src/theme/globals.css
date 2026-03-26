@@ -76,6 +76,10 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  /* Typography */
+  --font-size-2xs: 0.625rem;
+  --font-size-2xs--line-height: 0.75rem;
+
   /* Radius */
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

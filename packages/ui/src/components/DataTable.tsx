@@ -364,7 +364,7 @@ export function SortableHeader({
       variant="ghost"
       size="sm"
       onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      className="-ml-3 h-8 text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground"
+      className="-ml-3 h-8 text-2xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground"
     >
       {children}
       <ArrowUpDown className="ml-2 h-3.5 w-3.5" />

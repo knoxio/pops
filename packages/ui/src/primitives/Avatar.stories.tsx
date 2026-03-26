@@ -95,7 +95,7 @@ export const CustomSizes: Story = {
   render: () => (
     <div className="flex items-center gap-4">
       <Avatar className="h-6 w-6">
-        <AvatarFallback className="text-[10px]">XS</AvatarFallback>
+        <AvatarFallback className="text-2xs">XS</AvatarFallback>
       </Avatar>
       <Avatar className="h-12 w-12">
         <AvatarFallback>XL</AvatarFallback>

@@ -23,7 +23,7 @@ export function ConditionBadge({ condition, className, ...props }: ConditionBadg
     <Badge
       variant="outline"
       className={cn(
-        "text-[10px] uppercase tracking-wider font-semibold py-0 px-1.5 h-5",
+        "text-2xs uppercase tracking-wider font-semibold py-0 px-1.5 h-5",
         conditionStyles[condition],
         className
       )}
