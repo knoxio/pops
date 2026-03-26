@@ -1,7 +1,7 @@
 # US-03: Verify component rendering across all app colours
 
 > PRD: [007 — App Theme Colour Propagation](README.md)
-> Status: To Review
+> Status: Partial
 
 ## Description
 

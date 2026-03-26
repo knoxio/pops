@@ -139,13 +139,13 @@ Some endpoints don't fit the tRPC model:
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-express-trpc-setup](us-01-express-trpc-setup.md) | Set up Express app with tRPC adapter, health endpoint | No (first) |
-| 02 | [us-02-module-pattern](us-02-module-pattern.md) | Establish the module pattern (router/service/types/tests) with core/entities as the reference implementation | Blocked by us-01 |
-| 03 | [us-03-middleware](us-03-middleware.md) | Build middleware stack: auth, rate limiting, error handling, env context | Blocked by us-01 |
-| 04 | [us-04-router-composition](us-04-router-composition.md) | Compose domain sub-routers into the top-level appRouter | Blocked by us-02 |
-| 05 | [us-05-webhook-routes](us-05-webhook-routes.md) | Set up Express routes for webhooks and static file serving | Blocked by us-01 |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-express-trpc-setup](us-01-express-trpc-setup.md) | Set up Express app with tRPC adapter, health endpoint | Done | No (first) |
+| 02 | [us-02-module-pattern](us-02-module-pattern.md) | Establish the module pattern (router/service/types/tests) with core/entities as the reference implementation | Done | Blocked by us-01 |
+| 03 | [us-03-middleware](us-03-middleware.md) | Build middleware stack: auth, rate limiting, error handling, env context | To Review | Blocked by us-01 |
+| 04 | [us-04-router-composition](us-04-router-composition.md) | Compose domain sub-routers into the top-level appRouter | To Review | Blocked by us-02 |
+| 05 | [us-05-webhook-routes](us-05-webhook-routes.md) | Set up Express routes for webhooks and static file serving | To Review | Blocked by us-01 |
 
 US-02 and US-03 can parallelise after US-01. US-04 depends on US-02. US-05 can parallelise with US-02/US-03.
 
