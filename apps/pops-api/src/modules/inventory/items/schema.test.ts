@@ -16,9 +16,12 @@ afterEach(() => {
 describe("items and locations schema", () => {
   describe("table creation", () => {
     it("creates home_inventory table with all required columns", () => {
-      const columns = db
-        .prepare("PRAGMA table_info(home_inventory)")
-        .all() as { name: string; type: string; notnull: number; dflt_value: string | null }[];
+      const columns = db.prepare("PRAGMA table_info(home_inventory)").all() as {
+        name: string;
+        type: string;
+        notnull: number;
+        dflt_value: string | null;
+      }[];
       const columnNames = columns.map((c) => c.name);
 
       // All 18 target columns (plus legacy columns retained for migration compat)
@@ -43,9 +46,7 @@ describe("items and locations schema", () => {
     });
 
     it("creates locations table with required columns", () => {
-      const columns = db
-        .prepare("PRAGMA table_info(locations)")
-        .all() as { name: string }[];
+      const columns = db.prepare("PRAGMA table_info(locations)").all() as { name: string }[];
       const columnNames = columns.map((c) => c.name);
 
       expect(columnNames).toContain("id");
@@ -149,9 +150,7 @@ describe("items and locations schema", () => {
 
   describe("index existence", () => {
     it("has all required indexes on home_inventory", () => {
-      const indexes = db
-        .prepare("PRAGMA index_list(home_inventory)")
-        .all() as { name: string }[];
+      const indexes = db.prepare("PRAGMA index_list(home_inventory)").all() as { name: string }[];
       const indexNames = indexes.map((i) => i.name);
 
       expect(indexNames).toContain("idx_inventory_asset_id");
@@ -162,9 +161,7 @@ describe("items and locations schema", () => {
     });
 
     it("has all required indexes on locations", () => {
-      const indexes = db
-        .prepare("PRAGMA index_list(locations)")
-        .all() as { name: string }[];
+      const indexes = db.prepare("PRAGMA index_list(locations)").all() as { name: string }[];
       const indexNames = indexes.map((i) => i.name);
 
       expect(indexNames).toContain("idx_locations_parent");
@@ -172,9 +169,10 @@ describe("items and locations schema", () => {
     });
 
     it("idx_locations_parent_sort is a composite index on (parent_id, sort_order)", () => {
-      const cols = db
-        .prepare("PRAGMA index_info(idx_locations_parent_sort)")
-        .all() as { name: string; seqno: number }[];
+      const cols = db.prepare("PRAGMA index_info(idx_locations_parent_sort)").all() as {
+        name: string;
+        seqno: number;
+      }[];
 
       expect(cols).toHaveLength(2);
       expect(cols[0].name).toBe("parent_id");
