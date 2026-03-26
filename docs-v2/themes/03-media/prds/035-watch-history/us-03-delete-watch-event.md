@@ -1,7 +1,7 @@
 # US-03: Delete watch event
 
 > PRD: [035 — Watch History](README.md)
-> Status: To Review
+> Status: Partial
 
 ## Description
 
