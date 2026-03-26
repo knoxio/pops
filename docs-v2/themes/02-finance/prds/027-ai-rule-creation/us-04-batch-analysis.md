@@ -1,7 +1,7 @@
 # US-04: Batch correction analysis
 
 > PRD: [027 — AI Rule Creation](README.md)
-> Status: To Review
+> Status: Partial
 
 ## Description
 
@@ -9,12 +9,16 @@ As a developer, I want multiple corrections analyzed together so that the AI can
 
 ## Acceptance Criteria
 
-- [ ] `corrections.generateRules` accepts batch of 1-50 transactions with their corrections
-- [ ] Claude analyzes the batch and returns pattern proposals
-- [ ] Batch context helps: two corrections for "IKEA TEMPE" and "IKEA RHODES" → stronger "IKEA" prefix confidence
-- [ ] Proposals are not auto-saved — caller confirms via createOrUpdate
+- [x] `corrections.generateRules` accepts batch of 1-50 transactions with their corrections
+- [x] Claude analyzes the batch and returns pattern proposals
+- [x] Batch context helps: two corrections for "IKEA TEMPE" and "IKEA RHODES" → stronger "IKEA" prefix confidence
+- [x] Proposals are not auto-saved — caller confirms via createOrUpdate
 - [ ] Works alongside per-correction analysis (US-01) — batch runs periodically during review step
-- [ ] Cost tracked as single AI call, not per transaction
+- [x] Cost tracked as single AI call, not per transaction
+
+## Missing
+
+No frontend UI calls `corrections.generateRules`. No component triggers batch analysis from ReviewStep during the review step. Proposals cannot be confirmed through the UI — backend design is correct but UI integration is absent.
 
 ## Notes
 

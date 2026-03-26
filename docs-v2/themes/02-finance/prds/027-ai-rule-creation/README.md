@@ -1,7 +1,7 @@
 # PRD-027: AI Rule Creation
 
 > Epic: [06 — AI Rule Creation](../../epics/06-ai-categorisation.md)
-> Status: To Review
+> Status: Partial
 
 ## Overview
 
@@ -84,10 +84,10 @@ Each import makes the system smarter:
 
 | # | Story | Summary | Parallelisable |
 |---|-------|---------|----------------|
-| 01 | [us-01-correction-analysis](us-01-correction-analysis.md) | Send user correction to Claude, receive pattern suggestion | No (first) |
-| 02 | [us-02-auto-apply-rules](us-02-auto-apply-rules.md) | High-confidence AI rules auto-saved and applied to remaining import transactions | Blocked by us-01 |
-| 03 | [us-03-confirmation-flow](us-03-confirmation-flow.md) | Low-confidence AI rules shown to user for confirmation before saving | Blocked by us-01 |
-| 04 | [us-04-batch-analysis](us-04-batch-analysis.md) | Batch correction analysis for better pattern suggestions | Blocked by us-01 |
+| 01 | [us-01-correction-analysis](us-01-correction-analysis.md) | Send user correction to Claude, receive pattern suggestion | No (first) | Partial |
+| 02 | [us-02-auto-apply-rules](us-02-auto-apply-rules.md) | High-confidence AI rules auto-saved and applied to remaining import transactions | Blocked by us-01 | Partial |
+| 03 | [us-03-confirmation-flow](us-03-confirmation-flow.md) | Low-confidence AI rules shown to user for confirmation before saving | Blocked by us-01 | Not started |
+| 04 | [us-04-batch-analysis](us-04-batch-analysis.md) | Batch correction analysis for better pattern suggestions | Blocked by us-01 | Partial |
 
 US-02 and US-03 can parallelise after US-01.
 
