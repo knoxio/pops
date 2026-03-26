@@ -1,7 +1,7 @@
 # US-01: Connect dialog
 
 > PRD: [048 — Connections & Graph](README.md)
-> Status: To Review
+> Status: Partial
 
 ## Description
 
@@ -9,19 +9,23 @@ As a user, I want to connect items to each other and see existing connections on
 
 ## Acceptance Criteria
 
-- [ ] "Connect Item" button on the item detail page opens a search dialog
-- [ ] Search dialog: text input that searches items by name or asset ID via `inventory.items.list` with search filter
-- [ ] Search results show: item name, asset ID, type badge — one row per result
-- [ ] Selecting a result calls `inventory.connections.create` with the current item and selected item
-- [ ] Self-connection attempt shows inline validation error ("Cannot connect an item to itself")
-- [ ] Duplicate connection attempt shows toast error ("These items are already connected")
-- [ ] Connection list section on item detail page — fetched via `inventory.connections.listForItem`
-- [ ] Each connection row shows: connected item name, asset ID, type badge, "Disconnect" button
-- [ ] Clicking a connection row navigates to the connected item's detail page
-- [ ] "Disconnect" button opens confirmation: "Disconnect [item name]?" — confirming calls `inventory.connections.delete`
-- [ ] Connection list updates immediately after connect/disconnect (optimistic or refetch)
-- [ ] Empty state: "No connections — connect related items to track physical links"
-- [ ] Toast confirmation on successful connect and disconnect
+- [x] "Connect Item" button on the item detail page opens a search dialog
+- [x] Search dialog: text input that searches items by name or asset ID via `inventory.items.list` with search filter
+- [ ] Search results show: item name, asset ID, type badge — one row per result — search results show name/brand/model/assetId as text; no TypeBadge component
+- [x] Selecting a result calls `inventory.connections.create` with the current item and selected item — procedure is `inventory.connections.connect` (naming differs from spec, same behaviour)
+- [x] Self-connection attempt shows inline validation error ("Cannot connect an item to itself")
+- [x] Duplicate connection attempt shows toast error ("These items are already connected")
+- [x] Connection list section on item detail page — fetched via `inventory.connections.listForItem`
+- [ ] Each connection row shows: connected item name, asset ID, type badge, "Disconnect" button — row shows name/brand and disconnect icon; no AssetIdBadge, no TypeBadge
+- [x] Clicking a connection row navigates to the connected item's detail page
+- [ ] "Disconnect" button opens confirmation: "Disconnect [item name]?" — confirming calls `inventory.connections.delete` — no confirmation dialog; disconnect fires immediately on button click
+- [x] Connection list updates immediately after connect/disconnect (optimistic or refetch)
+- [x] Empty state: "No connections — connect related items to track physical links"
+- [x] Toast confirmation on successful connect and disconnect
+
+## Notes
+
+**Audit findings** (`packages/app-inventory/src/components/ConnectDialog.tsx`, `ConnectionsList.tsx`, `pages/ItemDetailPage.tsx`): Connect dialog and connection list are implemented. Procedure is named `connections.connect` (not `create`) and `connections.disconnect` (not `delete`). Connection rows in `ConnectionRow` component show item name and brand but omit AssetIdBadge and TypeBadge. No confirmation dialog before disconnect — fires immediately.
 
 ## Notes
 

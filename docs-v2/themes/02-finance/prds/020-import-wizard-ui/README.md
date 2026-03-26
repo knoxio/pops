@@ -146,28 +146,28 @@ interface ImportStore {
 | 08 | [us-08-review-tabs](us-08-review-tabs.md) | Tabbed view: Matched / Uncertain / Failed / Skipped with counts | Blocked by us-07 |
 | 09 | [us-09-transaction-card](us-09-transaction-card.md) | TransactionCard component: description, amount, date, entity, match type badge | Blocked by us-08 |
 | 10 | [us-10-entity-dropdown](us-10-entity-dropdown.md) | Entity selection dropdown on uncertain/failed cards | Blocked by us-09 |
-| 11 | [us-11-auto-match-similar](us-11-auto-match-similar.md) | When entity assigned, find similar transactions and offer "Apply to N similar?" toast | Blocked by us-10 |
-| 12 | [us-12-entity-creation](us-12-entity-creation.md) | "Create Entity" dialog for on-the-fly entity creation during review | Blocked by us-10 |
-| 13 | [us-13-edit-transaction](us-13-edit-transaction.md) | Edit dialog: modify description, amount, account, entity, location, type | Blocked by us-09 |
-| 14 | [us-14-save-and-learn](us-14-save-and-learn.md) | "Save & Learn" action: create correction pattern from manual entity assignment | Blocked by us-10 |
-| 15 | [us-15-type-override](us-15-type-override.md) | Override type to transfer/income — makes entity optional, bypasses entity validation | Blocked by us-09 |
-| 16 | [us-16-review-gate](us-16-review-gate.md) | Validation gate: all uncertain/failed must be resolved before advancing to Step 5 | Blocked by us-10 |
+| 11 | [us-11-auto-match-similar](us-11-auto-match-similar.md) | When entity assigned, find similar transactions and offer "Apply to N similar?" toast | Blocked by us-10 | Done |
+| 12 | [us-12-entity-creation](us-12-entity-creation.md) | "Create Entity" dialog for on-the-fly entity creation during review | Blocked by us-10 | Done |
+| 13 | [us-13-edit-transaction](us-13-edit-transaction.md) | Edit dialog: modify description, amount, account, entity, location, type | Blocked by us-09 | Done |
+| 14 | [us-14-save-and-learn](us-14-save-and-learn.md) | "Save & Learn" action: create correction pattern from manual entity assignment | Blocked by us-10 | Done |
+| 15 | [us-15-type-override](us-15-type-override.md) | Override type to transfer/income — makes entity optional, bypasses entity validation | Blocked by us-09 | Done |
+| 16 | [us-16-review-gate](us-16-review-gate.md) | Validation gate: all uncertain/failed must be resolved before advancing to Step 5 | Blocked by us-10 | Done |
 
 ### Tag Review (Step 5)
 
 | # | Story | Summary | Parallelisable |
 |---|-------|---------|----------------|
-| 17 | [us-17-tag-group-view](us-17-tag-group-view.md) | Group transactions by entity name, collapsible sections | Blocked by us-16 |
-| 18 | [us-18-tag-source-badges](us-18-tag-source-badges.md) | Source badges on suggested tags: rule (with pattern tooltip), AI, entity | Blocked by us-17 |
-| 19 | [us-19-per-transaction-tags](us-19-per-transaction-tags.md) | Per-transaction TagEditor with autocomplete (server + session tags) | Blocked by us-17 |
-| 20 | [us-20-bulk-tag-apply](us-20-bulk-tag-apply.md) | Group-level bulk tag application (merge semantics, never replaces individual edits) | Blocked by us-19 |
-| 21 | [us-21-execute-import](us-21-execute-import.md) | Call executeImport, poll progress every 1.5s, show write status | Blocked by us-19 |
+| 17 | [us-17-tag-group-view](us-17-tag-group-view.md) | Group transactions by entity name, collapsible sections | Blocked by us-16 | Done |
+| 18 | [us-18-tag-source-badges](us-18-tag-source-badges.md) | Source badges on suggested tags: rule (with pattern tooltip), AI, entity | Blocked by us-17 | Done |
+| 19 | [us-19-per-transaction-tags](us-19-per-transaction-tags.md) | Per-transaction TagEditor with autocomplete (server + session tags) | Blocked by us-17 | Done |
+| 20 | [us-20-bulk-tag-apply](us-20-bulk-tag-apply.md) | Group-level bulk tag application (merge semantics, never replaces individual edits) | Blocked by us-19 | Done |
+| 21 | [us-21-execute-import](us-21-execute-import.md) | Call executeImport, poll progress every 1.5s, show write status | Blocked by us-19 | Done |
 
 ### Summary (Step 6)
 
 | # | Story | Summary | Parallelisable |
 |---|-------|---------|----------------|
-| 22 | [us-22-summary](us-22-summary.md) | Display import results (imported/failed/skipped counts), "New Import" and "View Transactions" buttons | Blocked by us-21 |
+| 22 | [us-22-summary](us-22-summary.md) | Display import results (imported/failed/skipped counts), "New Import" and "View Transactions" buttons | Blocked by us-21 | Done |
 
 US-03 and US-04 can parallelise. US-11, US-12, US-13, US-14, US-15 can parallelise after US-10. US-18 and US-19 can parallelise after US-17.
 

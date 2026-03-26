@@ -1,7 +1,7 @@
 # US-02: Context-aware results panel
 
 > PRD: [056 — Search UI](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

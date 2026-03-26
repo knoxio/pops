@@ -1,7 +1,7 @@
 # US-03: Add movie to library flow
 
 > PRD: [029 — TMDB Client](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -11,28 +11,28 @@ As a user, I want to add a movie to my library by TMDB ID so that full metadata 
 
 ### addMovie
 
-- [ ] `media.library.addMovie(tmdbId)` tRPC procedure orchestrates: fetch metadata from TMDB, create movie record in database, download and cache images
-- [ ] Idempotent: if a movie with the given tmdbId already exists in the database, return the existing record without re-fetching metadata or re-downloading images
-- [ ] Movie record created with all fields from TMDB details: tmdbId, imdbId, title, originalTitle, overview, tagline, releaseDate, runtime, status, originalLanguage, budget, revenue, voteAverage, voteCount, genres
-- [ ] `posterPath` and `backdropPath` set to local cache paths after successful download
-- [ ] If image download fails, movie record is still created with null image paths
-- [ ] `createdAt` and `updatedAt` set to current timestamp
-- [ ] Returns the complete movie record
+- [x] `media.library.addMovie(tmdbId)` tRPC procedure orchestrates: fetch metadata from TMDB, create movie record in database, download and cache images
+- [x] Idempotent: if a movie with the given tmdbId already exists in the database, return the existing record without re-fetching metadata or re-downloading images
+- [x] Movie record created with all fields from TMDB details: tmdbId, imdbId, title, originalTitle, overview, tagline, releaseDate, runtime, status, originalLanguage, budget, revenue, voteAverage, voteCount, genres
+- [x] `posterPath` and `backdropPath` set to local cache paths after successful download
+- [x] If image download fails, movie record is still created with null image paths
+- [x] `createdAt` and `updatedAt` set to current timestamp
+- [x] Returns the complete movie record
 
 ### refreshMovie
 
-- [ ] `media.library.refreshMovie(id, redownloadImages?)` tRPC procedure re-fetches metadata from TMDB and updates the database record
-- [ ] Looks up the movie's tmdbId from the existing record, then fetches fresh details from TMDB
-- [ ] Updates all metadata fields from the fresh TMDB response
-- [ ] `updatedAt` set to current timestamp; `createdAt` unchanged
-- [ ] When `redownloadImages` is true, re-downloads poster and backdrop regardless of existing cache
-- [ ] When `redownloadImages` is false (default), existing cached images are preserved
-- [ ] Returns 404 if movie id does not exist in the database
+- [x] `media.library.refreshMovie(id, redownloadImages?)` tRPC procedure re-fetches metadata from TMDB and updates the database record
+- [x] Looks up the movie's tmdbId from the existing record, then fetches fresh details from TMDB
+- [x] Updates all metadata fields from the fresh TMDB response
+- [x] `updatedAt` set to current timestamp; `createdAt` unchanged
+- [x] When `redownloadImages` is true, re-downloads poster and backdrop regardless of existing cache
+- [x] When `redownloadImages` is false (default), existing cached images are preserved
+- [x] Returns 404 if movie id does not exist in the database
 
 ### Cross-cutting
 
-- [ ] All TMDB API calls go through the rate limiter
-- [ ] Tests cover: addMovie happy path, addMovie idempotency (duplicate tmdbId), addMovie with image failure, refreshMovie happy path, refreshMovie with image re-download, refreshMovie 404
+- [x] All TMDB API calls go through the rate limiter
+- [x] Tests cover: addMovie happy path, addMovie idempotency (duplicate tmdbId), addMovie with image failure, refreshMovie happy path, refreshMovie with image re-download, refreshMovie 404
 
 ## Notes
 

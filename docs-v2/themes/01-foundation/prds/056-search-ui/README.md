@@ -22,9 +22,9 @@ Build the search UI — a TopBar search bar with a results panel that shows cont
 
 | # | Story | Summary | Parallelisable |
 |---|-------|---------|----------------|
-| 01 | [us-01-search-bar](us-01-search-bar.md) | TopBar search input with keyboard shortcut, focus management | No (first) |
-| 02 | [us-02-results-panel](us-02-results-panel.md) | Dropdown results panel with context-aware domain sections | Blocked by us-01 |
-| 03 | [us-03-result-navigation](us-03-result-navigation.md) | Click/keyboard-navigate results, link via URIs | Blocked by us-02 |
+| 01 | [us-01-search-bar](us-01-search-bar.md) | TopBar search input with keyboard shortcut, focus management | Not started |
+| 02 | [us-02-results-panel](us-02-results-panel.md) | Dropdown results panel with context-aware domain sections | Not started |
+| 03 | [us-03-result-navigation](us-03-result-navigation.md) | Click/keyboard-navigate results, link via URIs | Not started |
 | 04 | [us-04-recent-searches](us-04-recent-searches.md) | Recent search history shown when input is empty | Blocked by us-01 |
 | 05 | [us-05-keyboard-nav](us-05-keyboard-nav.md) | Arrow keys navigate results, Enter selects, Escape closes | Blocked by us-02 |
 

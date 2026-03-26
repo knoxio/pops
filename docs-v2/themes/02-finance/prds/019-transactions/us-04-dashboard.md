@@ -1,7 +1,7 @@
 # US-04: Finance dashboard
 
 > PRD: [019 — Transactions](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,14 +9,14 @@ As a user, I want a dashboard page showing key financial stats and recent transa
 
 ## Acceptance Criteria
 
-- [ ] Stats cards: total transaction count, recent income (last 10), recent expenses (last 10), net balance
-- [ ] Recent transactions list (last 10) with date, description, amount (colour-coded), entity name, account badge
-- [ ] Active budgets section (first 3) — links to budgets page
-- [ ] Loading skeletons for stats and transaction rows
-- [ ] Error state with expandable technical details
-- [ ] Empty state when no transactions exist
-- [ ] Read-only — no CRUD operations from dashboard
-- [ ] Transaction rows have hover effect and link to transactions page with filter applied
+- [x] Stats cards: total transaction count, recent income (last 10), recent expenses (last 10), net balance
+- [x] Recent transactions list (last 10) with date, description, amount (colour-coded), entity name, account badge
+- [x] Active budgets section (first 3) — links to budgets page
+- [x] Loading skeletons for stats and transaction rows
+- [x] Error state with expandable technical details
+- [x] Empty state when no transactions exist
+- [x] Read-only — no CRUD operations from dashboard
+- [x] Transaction rows have hover effect and link to transactions page with filter applied
 
 ## Notes
 

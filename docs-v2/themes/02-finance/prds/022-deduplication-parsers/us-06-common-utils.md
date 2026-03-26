@@ -1,7 +1,7 @@
 # US-06: Common parsing utilities
 
 > PRD: [022 — Deduplication & Parsers](README.md)
-> Status: To Review
+> Status: Partial — extractLocation, online detection, and checksum generation not exposed as shared utilities
 
 ## Description
 
@@ -9,13 +9,13 @@ As a developer, I want shared utility functions for date normalization, amount p
 
 ## Acceptance Criteria
 
-- [ ] `normaliseDate(dateStr)`: DD/MM/YYYY → YYYY-MM-DD, validates format
-- [ ] `normaliseAmount(amountStr)`: strip currency symbols ($, AUD), parse float
+- [x] `normaliseDate(dateStr)`: DD/MM/YYYY → YYYY-MM-DD, validates format
+- [x] `normaliseAmount(amountStr)`: strip currency symbols ($, AUD), parse float
 - [ ] `extractLocation(locationStr)`: first line of multiline, title-case
 - [ ] Online detection: checks for keywords (AMAZON, PAYPAL, .COM.AU, NETFLIX, etc.)
 - [ ] Checksum generation: SHA-256 of JSON-stringified raw row
-- [ ] All functions handle edge cases (empty strings, null, malformed input)
-- [ ] Tests for each utility with edge cases
+- [x] All functions handle edge cases (empty strings, null, malformed input)
+- [x] Tests for each utility with edge cases
 
 ## Notes
 

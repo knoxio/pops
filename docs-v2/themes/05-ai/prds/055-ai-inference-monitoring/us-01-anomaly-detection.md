@@ -1,7 +1,7 @@
 # US-01: Anomaly detection
 
 > PRD: [055 — AI Inference & Monitoring](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

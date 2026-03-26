@@ -1,7 +1,23 @@
 # US-06: Enforce action icon standards
 
 > PRD: [003 — Components](README.md)
-> Status: To Review
+> Status: Partial
+
+**GH Issue:** #399
+
+## Audit Findings
+
+**Present:**
+- All apps use Lucide React as the single icon library (no mixing with other icon sets)
+- `apps/pops-shell/src/app/nav/icon-map.ts` defines a shared icon registry for navigation icons (Lucide only)
+- No banned icon names (`Edit2`, `Trash`, `PenLine`) found in app packages or `@pops/ui`
+- Destructive actions consistently use `Trash2`
+
+**Missing:**
+- No formal icon standard is documented or enforced in `@pops/ui` (icon choices live in individual app components)
+- Icon-only buttons in table rows/list items are inconsistently labelled — not all have `aria-label`
+- Text-only action labels still exist in some areas (no icon)
+- Full sweep across all packages to verify consistent use of `Plus`, `Pencil`, `X` patterns has not been completed
 
 ## Description
 

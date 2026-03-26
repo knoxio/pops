@@ -1,7 +1,7 @@
 # US-04: Alert threshold configuration
 
 > PRD: [055 — AI Inference & Monitoring](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

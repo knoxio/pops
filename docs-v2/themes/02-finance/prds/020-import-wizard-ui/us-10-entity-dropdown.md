@@ -1,7 +1,7 @@
 # US-10: Entity selection dropdown
 
 > PRD: [020 — Import Wizard UI](README.md)
-> Status: To Review
+> Status: Partial — entity type badge missing in dropdown options
 
 ## Description
 
@@ -9,12 +9,12 @@ As a user, I want to select an entity from a dropdown on uncertain/failed transa
 
 ## Acceptance Criteria
 
-- [ ] Searchable dropdown showing all entities from `core.entities.list`
-- [ ] Appears on uncertain and failed transaction cards
-- [ ] Selecting an entity moves the transaction to the matched list
-- [ ] If AI suggested an entity, show "Accept" shortcut button alongside the dropdown
+- [x] Searchable dropdown showing all entities from `core.entities.list`
+- [x] Appears on uncertain and failed transaction cards
+- [x] Selecting an entity moves the transaction to the matched list
+- [x] If AI suggested an entity, show "Accept" shortcut button alongside the dropdown
 - [ ] Dropdown shows entity name + type badge
-- [ ] "Create Entity" option at bottom of dropdown (links to US-12)
+- [x] "Create Entity" option at bottom of dropdown (links to US-12)
 
 ## Notes
 

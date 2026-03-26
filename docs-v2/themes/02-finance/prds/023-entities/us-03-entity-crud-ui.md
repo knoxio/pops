@@ -1,7 +1,7 @@
 # US-03: Entity CRUD UI
 
 > PRD: [023 — Entities](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

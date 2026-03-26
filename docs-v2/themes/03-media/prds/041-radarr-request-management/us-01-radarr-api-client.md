@@ -1,7 +1,7 @@
 # US-01: Radarr API client
 
 > PRD: [041 — Radarr Request Management](README.md)
-> Status: Not started
+> Status: Partial — RadarrClient extends ArrBaseClient (criteria 1 ✓); request management methods (getQualityProfiles, getRootFolders, checkMovie, addMovie, updateMonitoring, triggerSearch) not implemented
 
 ## Description
 
@@ -9,7 +9,7 @@ As a developer, I want a Radarr v3 API client built on the shared arr base clien
 
 ## Acceptance Criteria
 
-- [ ] Radarr client extends the base arr client factory from PRD-040
+- [x] Radarr client extends the base arr client factory from PRD-040
 - [ ] `media.radarr.getQualityProfiles()` returns a typed array of quality profiles from Radarr's `GET /api/v3/qualityprofile` endpoint
 - [ ] Each quality profile includes at minimum: `id`, `name`
 - [ ] `media.radarr.getRootFolders()` returns a typed array of root folders from Radarr's `GET /api/v3/rootfolder` endpoint

@@ -33,3 +33,5 @@ As a user, I want a modal to request TV series through Sonarr so that I can sele
 ## Notes
 
 The season monitoring defaults are the most important UX decision in this modal. A show like The Simpsons has 35+ seasons — defaulting all to monitored would trigger a massive download. Future=on, past=off is the safe default. The "Select All" shortcut lets power users override when they do want a full back catalogue.
+
+Audited — no RequestSeriesModal component or Sonarr request UI found in codebase; status confirmed Not started.

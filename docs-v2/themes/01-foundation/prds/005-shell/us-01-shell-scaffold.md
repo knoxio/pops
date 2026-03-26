@@ -1,7 +1,7 @@
 # US-01: Create shell scaffold
 
 > PRD: [005 — Shell](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,13 +9,13 @@ As a developer, I want `pops-shell` to exist with an entry point, Vite config, a
 
 ## Acceptance Criteria
 
-- [ ] `apps/pops-shell/package.json` exists
-- [ ] `apps/pops-shell/vite.config.ts` configured (react plugin, tailwindcss, proxy `/trpc` → localhost:3000, port 5566)
-- [ ] `apps/pops-shell/index.html` exists
-- [ ] `apps/pops-shell/src/main.tsx` mounts the App component
-- [ ] `apps/pops-shell/src/app/App.tsx` has provider stack: tRPC, React Query, theme, Toaster (Sonner)
-- [ ] `pnpm dev` starts the shell and renders a blank page (no layout yet)
-- [ ] Workspace packages (`@pops/ui`) resolve correctly from the shell
+- [x] `apps/pops-shell/package.json` exists
+- [x] `apps/pops-shell/vite.config.ts` configured (react plugin, tailwindcss, proxy `/trpc` → localhost:3000, port 5566)
+- [x] `apps/pops-shell/index.html` exists
+- [x] `apps/pops-shell/src/main.tsx` mounts the App component
+- [x] `apps/pops-shell/src/app/App.tsx` has provider stack: tRPC, React Query, theme, Toaster (Sonner)
+- [x] `pnpm dev` starts the shell and renders a blank page (no layout yet)
+- [x] Workspace packages (`@pops/ui`) resolve correctly from the shell
 
 ## Notes
 

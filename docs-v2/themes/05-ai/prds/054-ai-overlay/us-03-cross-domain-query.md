@@ -1,7 +1,7 @@
 # US-03: Cross-domain queries
 
 > PRD: [054 — AI Overlay](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

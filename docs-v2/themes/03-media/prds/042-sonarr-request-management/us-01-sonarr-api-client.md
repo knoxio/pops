@@ -1,7 +1,7 @@
 # US-01: Sonarr API client
 
 > PRD: [042 — Sonarr Request Management](README.md)
-> Status: Not started
+> Status: Partial — SonarrClient extends ArrBaseClient (criteria 1 ✓); request management methods (getQualityProfiles, getRootFolders, getLanguageProfiles, checkSeries, addSeries, updateMonitoring, updateSeasonMonitoring, updateEpisodeMonitoring, getCalendar, triggerSearch) not implemented
 
 ## Description
 
@@ -9,7 +9,7 @@ As a developer, I want a Sonarr v3 API client built on the shared arr base clien
 
 ## Acceptance Criteria
 
-- [ ] Sonarr client extends the base arr client factory from PRD-040
+- [x] Sonarr client extends the base arr client factory from PRD-040
 - [ ] `media.sonarr.getQualityProfiles()` returns a typed array of quality profiles from Sonarr's `GET /api/v3/qualityprofile` endpoint, each with at minimum `id` and `name`
 - [ ] `media.sonarr.getRootFolders()` returns a typed array of root folders from `GET /api/v3/rootfolder`, each with `id`, `path`, `freeSpace`
 - [ ] `media.sonarr.getLanguageProfiles()` returns a typed array of language profiles from `GET /api/v3/languageprofile`, each with `id` and `name`
