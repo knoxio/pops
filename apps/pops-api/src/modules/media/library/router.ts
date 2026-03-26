@@ -8,7 +8,7 @@ import { getTmdbClient, TmdbClient, TmdbApiError } from "../tmdb/index.js";
 import { NotFoundError } from "../../../shared/errors.js";
 import { toMovie } from "../movies/types.js";
 import { toTvShow, toSeason } from "../tv-shows/types.js";
-import { RefreshMovieSchema, QuickPickSchema } from "./types.js";
+import { RefreshMovieSchema, QuickPickSchema, LibraryListSchema } from "./types.js";
 import * as libraryService from "./service.js";
 import { getTvdbClient } from "../thetvdb/index.js";
 import { TvdbApiError } from "../thetvdb/types.js";
@@ -27,6 +27,11 @@ function requireTmdbClient(): TmdbClient {
 }
 
 export const libraryRouter = router({
+  /** Unified library list — movies + TV shows with filtering, sorting, pagination. */
+  list: protectedProcedure.input(LibraryListSchema).query(({ input }) => {
+    return libraryService.listLibrary(input);
+  }),
+
   /**
    * Add a movie to the library by TMDB ID.
    * Idempotent — returns existing record if already in library.

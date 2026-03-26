@@ -1,143 +1,126 @@
-import { useMemo, useState } from "react";
+import { useCallback } from "react";
+import { useSearchParams } from "react-router";
 import { trpc } from "../lib/trpc";
 
 export type MediaType = "all" | "movie" | "tv";
 export type SortOption = "title" | "dateAdded" | "releaseDate" | "rating";
+export type PageSize = 24 | 48 | 96;
 
-interface MediaItem {
-  id: number;
-  type: "movie" | "tv";
-  title: string;
-  year: number | null;
-  posterUrl: string | null;
-  genres: string[];
-  voteAverage: number | null;
-  createdAt: string;
-  releaseDate: string | null;
-  /** Watch progress percentage for TV shows (0–100). */
-  progress: number | null;
+const VALID_TYPES: MediaType[] = ["all", "movie", "tv"];
+const VALID_SORTS: SortOption[] = ["title", "dateAdded", "releaseDate", "rating"];
+const VALID_PAGE_SIZES: PageSize[] = [24, 48, 96];
+
+function parseType(val: string | null): MediaType {
+  return VALID_TYPES.includes(val as MediaType) ? (val as MediaType) : "all";
+}
+
+function parseSort(val: string | null): SortOption {
+  return VALID_SORTS.includes(val as SortOption) ? (val as SortOption) : "dateAdded";
+}
+
+function parsePageSize(val: string | null): PageSize {
+  const num = Number(val);
+  return VALID_PAGE_SIZES.includes(num as PageSize) ? (num as PageSize) : 24;
+}
+
+function parsePage(val: string | null): number {
+  const num = Number(val);
+  return Number.isInteger(num) && num > 0 ? num : 1;
 }
 
 export function useMediaLibrary() {
-  const [typeFilter, setTypeFilter] = useState<MediaType>("all");
-  const [genreFilter, setGenreFilter] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<SortOption>("dateAdded");
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  const { data: moviesData, isLoading: moviesLoading } = trpc.media.movies.list.useQuery({
-    limit: 500,
-  });
+  const typeFilter = parseType(searchParams.get("type"));
+  const sortBy = parseSort(searchParams.get("sort"));
+  const search = searchParams.get("q") ?? "";
+  const genreFilter = searchParams.get("genre") ?? null;
+  const page = parsePage(searchParams.get("page"));
+  const pageSize = parsePageSize(searchParams.get("pageSize"));
 
-  const { data: tvShowsData, isLoading: tvShowsLoading } = trpc.media.tvShows.list.useQuery({
-    limit: 500,
-  });
-
-  // Fetch batch progress for all TV shows
-  const tvShowIds = useMemo(
-    () => (tvShowsData?.data ?? []).map((s: { id: number }) => s.id),
-    [tvShowsData]
+  const setParam = useCallback(
+    (key: string, value: string | null) => {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        if (value === null || value === "" || value === "all" || value === "dateAdded") {
+          next.delete(key);
+        } else {
+          next.set(key, value);
+        }
+        // Reset to page 1 when changing filters/sort
+        if (key !== "page") {
+          next.delete("page");
+        }
+        return next;
+      });
+    },
+    [setSearchParams]
   );
 
-  const { data: progressData } = trpc.media.watchHistory.batchProgress.useQuery(
-    { tvShowIds },
-    { enabled: tvShowIds.length > 0 }
+  const setTypeFilter = useCallback((type: MediaType) => setParam("type", type), [setParam]);
+
+  const setSortBy = useCallback((sort: SortOption) => setParam("sort", sort), [setParam]);
+
+  const setSearch = useCallback((q: string) => setParam("q", q || null), [setParam]);
+
+  const setGenreFilter = useCallback(
+    (genre: string | null) => setParam("genre", genre),
+    [setParam]
   );
 
-  const isLoading = moviesLoading || tvShowsLoading;
+  const setPage = useCallback(
+    (p: number) => setParam("page", p > 1 ? String(p) : null),
+    [setParam]
+  );
 
-  const allItems = useMemo<MediaItem[]>(() => {
-    const progressMap = new Map(
-      (progressData?.data ?? []).map((p: { tvShowId: number; percentage: number }) => [
-        p.tvShowId,
-        p.percentage,
-      ])
-    );
+  const setPageSize = useCallback(
+    (size: PageSize) => {
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        if (size === 24) {
+          next.delete("pageSize");
+        } else {
+          next.set("pageSize", String(size));
+        }
+        next.delete("page");
+        return next;
+      });
+    },
+    [setSearchParams]
+  );
 
-    const movieItems: MediaItem[] = (moviesData?.data ?? []).map(
-      (m: {
-        id: number;
-        title: string;
-        releaseDate: string | null;
-        posterUrl: string | null;
-        genres: string[];
-        voteAverage: number | null;
-        createdAt: string;
-      }) => ({
-        id: m.id,
-        type: "movie" as const,
-        title: m.title,
-        year: m.releaseDate ? new Date(m.releaseDate).getFullYear() : null,
-        posterUrl: m.posterUrl,
-        genres: m.genres,
-        voteAverage: m.voteAverage,
-        createdAt: m.createdAt,
-        releaseDate: m.releaseDate,
-        progress: null,
-      })
-    );
+  const { data, isLoading } = trpc.media.library.list.useQuery({
+    type: typeFilter,
+    sort: sortBy,
+    search: search || undefined,
+    genre: genreFilter ?? undefined,
+    page,
+    pageSize,
+  });
 
-    const shows: MediaItem[] = (tvShowsData?.data ?? []).map(
-      (s: {
-        id: number;
-        name: string;
-        firstAirDate: string | null;
-        posterUrl: string | null;
-        genres: string[];
-        voteAverage: number | null;
-        createdAt: string;
-      }) => ({
-        id: s.id,
-        type: "tv" as const,
-        title: s.name,
-        year: s.firstAirDate ? new Date(s.firstAirDate).getFullYear() : null,
-        posterUrl: s.posterUrl,
-        genres: s.genres,
-        voteAverage: s.voteAverage,
-        createdAt: s.createdAt,
-        releaseDate: s.firstAirDate,
-        progress: progressMap.get(s.id) ?? null,
-      })
-    );
+  // Extract unique genres from current page (for the genre dropdown, we fetch all items)
+  const { data: allMoviesData } = trpc.media.movies.list.useQuery({ limit: 500 });
+  const { data: allTvData } = trpc.media.tvShows.list.useQuery({ limit: 500 });
 
-    return [...movieItems, ...shows];
-  }, [moviesData, tvShowsData, progressData]);
-
-  const allGenres = useMemo(() => {
+  const allGenres = (() => {
     const genres = new Set<string>();
-    allItems.forEach((item) => item.genres.forEach((g) => genres.add(g)));
+    for (const m of allMoviesData?.data ?? []) {
+      for (const g of (m as { genres: string[] }).genres) genres.add(g);
+    }
+    for (const s of allTvData?.data ?? []) {
+      for (const g of (s as { genres: string[] }).genres) genres.add(g);
+    }
     return Array.from(genres).sort();
-  }, [allItems]);
-
-  const filteredItems = useMemo(() => {
-    let items = allItems;
-
-    if (typeFilter !== "all") {
-      items = items.filter((item) => item.type === typeFilter);
-    }
-
-    if (genreFilter) {
-      items = items.filter((item) => item.genres.includes(genreFilter));
-    }
-
-    return [...items].sort((a, b) => {
-      switch (sortBy) {
-        case "title":
-          return a.title.localeCompare(b.title);
-        case "dateAdded":
-          return b.createdAt.localeCompare(a.createdAt);
-        case "releaseDate":
-          return (b.releaseDate ?? "").localeCompare(a.releaseDate ?? "");
-        case "rating":
-          return (b.voteAverage ?? 0) - (a.voteAverage ?? 0);
-        default:
-          return 0;
-      }
-    });
-  }, [allItems, typeFilter, genreFilter, sortBy]);
+  })();
 
   return {
-    items: filteredItems,
+    items: data?.items ?? [],
     isLoading,
-    isEmpty: !isLoading && allItems.length === 0,
+    isEmpty: !isLoading && (data?.total ?? 0) === 0,
+    total: data?.total ?? 0,
+    page: data?.page ?? page,
+    pageSize: data?.pageSize ?? pageSize,
+    totalPages: data?.totalPages ?? 1,
     allGenres,
     typeFilter,
     setTypeFilter,
@@ -145,5 +128,9 @@ export function useMediaLibrary() {
     setGenreFilter,
     sortBy,
     setSortBy,
+    search,
+    setSearch,
+    setPage,
+    setPageSize,
   };
 }

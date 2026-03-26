@@ -3,7 +3,7 @@
  * by fetching metadata from external APIs and inserting records.
  */
 import { sql } from "drizzle-orm";
-import { getDrizzle } from "../../../db.js";
+import { getDb, getDrizzle } from "../../../db.js";
 import { movies, watchHistory } from "@pops/db-types";
 import type { TmdbClient } from "../tmdb/client.js";
 import type { TmdbMovieDetail } from "../tmdb/types.js";
@@ -11,6 +11,7 @@ import { getMovieByTmdbId, getMovie, createMovie, updateMovie } from "../movies/
 import { toMovie } from "../movies/types.js";
 import type { Movie, UpdateMovieInput } from "../movies/types.js";
 import type { MovieRow } from "@pops/db-types";
+import type { LibraryItem, LibraryListInput } from "./types.js";
 
 /**
  * Add a movie to the library by TMDB ID.
@@ -127,4 +128,139 @@ export function getQuickPicks(count: number): Movie[] {
     .all();
 
   return rows.map(toMovie);
+}
+
+// ── Unified Library List ──
+
+const SORT_MAP: Record<string, string> = {
+  dateAdded: "created_at DESC",
+  title: "title COLLATE NOCASE ASC",
+  releaseDate: "release_date DESC",
+  rating: "vote_average DESC",
+};
+
+interface RawLibraryRow {
+  id: number;
+  type: string;
+  title: string;
+  release_date: string | null;
+  poster_path: string | null;
+  poster_override_path: string | null;
+  external_id: number;
+  genres: string | null;
+  vote_average: number | null;
+  created_at: string;
+}
+
+function parseGenres(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * List library items (movies + TV shows) with unified filtering, sorting,
+ * and pagination. Uses raw SQL UNION to combine both tables efficiently.
+ */
+export function listLibrary(input: LibraryListInput): {
+  items: LibraryItem[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+} {
+  const db = getDb();
+  const movieParams: unknown[] = [];
+  const tvParams: unknown[] = [];
+
+  // Build conditional clauses for movies
+  let movieWhere = "WHERE 1=1";
+  if (input.search) {
+    movieWhere += " AND title LIKE ?";
+    movieParams.push(`%${input.search}%`);
+  }
+  if (input.genre) {
+    movieWhere += " AND EXISTS (SELECT 1 FROM json_each(genres) WHERE json_each.value = ?)";
+    movieParams.push(input.genre);
+  }
+
+  // Build conditional clauses for TV shows
+  let tvWhere = "WHERE 1=1";
+  if (input.search) {
+    tvWhere += " AND name LIKE ?";
+    tvParams.push(`%${input.search}%`);
+  }
+  if (input.genre) {
+    tvWhere += " AND EXISTS (SELECT 1 FROM json_each(genres) WHERE json_each.value = ?)";
+    tvParams.push(input.genre);
+  }
+
+  const movieSql = `
+    SELECT id, 'movie' as type, title, release_date, poster_path,
+           poster_override_path, tmdb_id as external_id, genres, vote_average, created_at
+    FROM movies ${movieWhere}`;
+
+  const tvSql = `
+    SELECT id, 'tv' as type, name as title, first_air_date as release_date,
+           poster_path, poster_override_path, tvdb_id as external_id,
+           genres, vote_average, created_at
+    FROM tv_shows ${tvWhere}`;
+
+  let unionSql: string;
+  let allParams: unknown[];
+
+  if (input.type === "movie") {
+    unionSql = movieSql;
+    allParams = movieParams;
+  } else if (input.type === "tv") {
+    unionSql = tvSql;
+    allParams = tvParams;
+  } else {
+    unionSql = `${movieSql} UNION ALL ${tvSql}`;
+    allParams = [...movieParams, ...tvParams];
+  }
+
+  const orderBy = SORT_MAP[input.sort] ?? "created_at DESC";
+  const offset = (input.page - 1) * input.pageSize;
+
+  const totalRow = db.prepare(`SELECT COUNT(*) as total FROM (${unionSql})`).get(...allParams) as {
+    total: number;
+  };
+
+  const rows = db
+    .prepare(`SELECT * FROM (${unionSql}) ORDER BY ${orderBy} LIMIT ? OFFSET ?`)
+    .all(...allParams, input.pageSize, offset) as RawLibraryRow[];
+
+  const total = totalRow.total;
+  const totalPages = Math.ceil(total / input.pageSize);
+
+  const items: LibraryItem[] = rows.map((row) => {
+    let posterUrl: string | null = null;
+    if (row.poster_override_path) {
+      posterUrl = row.poster_override_path;
+    } else if (row.poster_path) {
+      const prefix = row.type === "movie" ? "movie" : "tv";
+      posterUrl = `/media/images/${prefix}/${row.external_id}/poster.jpg`;
+    }
+
+    return {
+      id: row.id,
+      type: row.type as "movie" | "tv",
+      title: row.title,
+      year: row.release_date ? new Date(row.release_date).getFullYear() : null,
+      posterUrl,
+      genres: parseGenres(row.genres),
+      voteAverage: row.vote_average,
+      createdAt: row.created_at,
+      releaseDate: row.release_date,
+    };
+  });
+
+  return { items, total, page: input.page, pageSize: input.pageSize, totalPages };
 }

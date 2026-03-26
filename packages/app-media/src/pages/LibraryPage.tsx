@@ -1,11 +1,16 @@
-import { useSearchParams, Link } from "react-router";
+import { Link } from "react-router";
 import { Badge, Button, Skeleton } from "@pops/ui";
-import { useEffect } from "react";
-import { Sparkles, Settings } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Sparkles, Settings, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { MediaGrid } from "../components/MediaGrid";
 import { DownloadQueue } from "../components/DownloadQueue";
 import { QuickPickDialog } from "../components/QuickPickDialog";
-import { useMediaLibrary, type MediaType, type SortOption } from "../hooks/useMediaLibrary";
+import {
+  useMediaLibrary,
+  type MediaType,
+  type SortOption,
+  type PageSize,
+} from "../hooks/useMediaLibrary";
 
 const TYPE_OPTIONS: { value: MediaType; label: string }[] = [
   { value: "all", label: "All" },
@@ -19,6 +24,8 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: "releaseDate", label: "Release Date" },
   { value: "rating", label: "Rating" },
 ];
+
+const PAGE_SIZE_OPTIONS: PageSize[] = [24, 48, 96];
 
 function LibrarySkeleton() {
   return (
@@ -36,6 +43,7 @@ function LibrarySkeleton() {
 
 function MediaCard({
   item,
+  showTypeBadge,
 }: {
   item: {
     id: number;
@@ -43,8 +51,8 @@ function MediaCard({
     title: string;
     year: number | null;
     posterUrl: string | null;
-    progress: number | null;
   };
+  showTypeBadge: boolean;
 }) {
   const href = item.type === "movie" ? `/media/movies/${item.id}` : `/media/tv/${item.id}`;
   const posterSrc = item.posterUrl ?? "";
@@ -65,20 +73,13 @@ function MediaCard({
           </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        <Badge
-          variant="secondary"
-          className="absolute top-2 right-2 text-[10px] uppercase tracking-wider px-1.5 py-0 bg-app-accent/10 text-app-accent border-app-accent/20 backdrop-blur-md"
-        >
-          {item.type === "movie" ? "Movie" : "TV"}
-        </Badge>
-        {/* Progress bar for TV shows */}
-        {item.progress != null && item.progress > 0 && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/30">
-            <div
-              className={`h-full transition-all ${item.progress >= 100 ? "bg-green-500" : "bg-app-accent"}`}
-              style={{ width: `${Math.min(item.progress, 100)}%` }}
-            />
-          </div>
+        {showTypeBadge && (
+          <Badge
+            variant="secondary"
+            className="absolute top-2 right-2 text-[10px] uppercase tracking-wider px-1.5 py-0 bg-app-accent/10 text-app-accent border-app-accent/20 backdrop-blur-md"
+          >
+            {item.type === "movie" ? "Movie" : "TV"}
+          </Badge>
         )}
       </div>
       <h3 className="mt-2 text-sm font-medium line-clamp-2 transition-colors group-hover:text-app-accent">
@@ -89,14 +90,121 @@ function MediaCard({
   );
 }
 
-export function LibraryPage() {
-  const [searchParams] = useSearchParams();
-  const genreParam = searchParams.get("genre");
+function DebouncedSearchInput({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [local, setLocal] = useState(value);
+  const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
+  useEffect(() => {
+    setLocal(value);
+  }, [value]);
+
+  const handleChange = (newValue: string) => {
+    setLocal(newValue);
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => onChange(newValue), 300);
+  };
+
+  useEffect(() => {
+    return () => clearTimeout(timerRef.current);
+  }, []);
+
+  return (
+    <div className="relative">
+      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <input
+        type="text"
+        value={local}
+        onChange={(e) => handleChange(e.target.value)}
+        placeholder="Search library..."
+        aria-label="Search library"
+        className="h-8 w-48 rounded-md border bg-background pl-8 pr-2 text-sm placeholder:text-muted-foreground"
+      />
+    </div>
+  );
+}
+
+function PaginationControls({
+  page,
+  totalPages,
+  total,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+}: {
+  page: number;
+  totalPages: number;
+  total: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: PageSize) => void;
+}) {
+  if (total === 0) return null;
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <span>
+          {total} {total === 1 ? "item" : "items"}
+        </span>
+        <span>·</span>
+        <select
+          value={pageSize}
+          onChange={(e) => onPageSizeChange(Number(e.target.value) as PageSize)}
+          aria-label="Items per page"
+          className="h-7 rounded border bg-background px-1.5 text-sm"
+        >
+          {PAGE_SIZE_OPTIONS.map((size) => (
+            <option key={size} value={size}>
+              {size} / page
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page <= 1}
+            onClick={() => onPageChange(page - 1)}
+            aria-label="Previous page"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm tabular-nums">
+            {page} / {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= totalPages}
+            onClick={() => onPageChange(page + 1)}
+            aria-label="Next page"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function LibraryPage() {
   const {
     items,
     isLoading,
     isEmpty,
+    total,
+    page,
+    pageSize,
+    totalPages,
     allGenres,
     typeFilter,
     setTypeFilter,
@@ -104,13 +212,13 @@ export function LibraryPage() {
     setGenreFilter,
     sortBy,
     setSortBy,
+    search,
+    setSearch,
+    setPage,
+    setPageSize,
   } = useMediaLibrary();
 
-  useEffect(() => {
-    if (genreParam) {
-      setGenreFilter(genreParam);
-    }
-  }, [genreParam, setGenreFilter]);
+  const showTypeBadge = typeFilter === "all";
 
   return (
     <div className="space-y-6">
@@ -204,6 +312,9 @@ export function LibraryPage() {
             </option>
           ))}
         </select>
+
+        {/* Search */}
+        <DebouncedSearchInput value={search} onChange={setSearch} />
       </div>
 
       {/* Content */}
@@ -225,10 +336,20 @@ export function LibraryPage() {
       ) : (
         <MediaGrid>
           {items.map((item) => (
-            <MediaCard key={`${item.type}-${item.id}`} item={item} />
+            <MediaCard key={`${item.type}-${item.id}`} item={item} showTypeBadge={showTypeBadge} />
           ))}
         </MediaGrid>
       )}
+
+      {/* Pagination */}
+      <PaginationControls
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        pageSize={pageSize}
+        onPageChange={setPage}
+        onPageSizeChange={setPageSize}
+      />
 
       {/* Quick Pick FAB */}
       <Link

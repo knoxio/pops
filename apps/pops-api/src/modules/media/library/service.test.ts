@@ -3,7 +3,12 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type { Database } from "better-sqlite3";
-import { setupTestContext, createCaller, seedMovie } from "../../../shared/test-utils.js";
+import {
+  setupTestContext,
+  createCaller,
+  seedMovie,
+  seedTvShow,
+} from "../../../shared/test-utils.js";
 import type { TmdbMovieDetail } from "../tmdb/types.js";
 import { TRPCError } from "@trpc/server";
 
@@ -255,5 +260,146 @@ describe("media.library.refreshMovie", () => {
     expect(result.data.imdbId).toBeNull();
     expect(result.data.posterPath).toBeNull();
     expect(result.data.backdropPath).toBeNull();
+  });
+});
+
+describe("media.library.list", () => {
+  it("returns combined movies and TV shows", async () => {
+    seedMovie(db, { tmdb_id: 1, title: "Inception", genres: '["Sci-Fi"]' });
+    seedTvShow(db, { tvdb_id: 1, name: "Breaking Bad", genres: '["Drama"]' });
+
+    const result = await caller.media.library.list({});
+
+    expect(result.items).toHaveLength(2);
+    const types = result.items.map((i: { type: string }) => i.type).sort();
+    expect(types).toEqual(["movie", "tv"]);
+  });
+
+  it("filters by type=movie", async () => {
+    seedMovie(db, { tmdb_id: 1, title: "Inception" });
+    seedTvShow(db, { tvdb_id: 1, name: "Breaking Bad" });
+
+    const result = await caller.media.library.list({ type: "movie" });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]!.type).toBe("movie");
+    expect(result.items[0]!.title).toBe("Inception");
+  });
+
+  it("filters by type=tv", async () => {
+    seedMovie(db, { tmdb_id: 1, title: "Inception" });
+    seedTvShow(db, { tvdb_id: 1, name: "Breaking Bad" });
+
+    const result = await caller.media.library.list({ type: "tv" });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]!.type).toBe("tv");
+    expect(result.items[0]!.title).toBe("Breaking Bad");
+  });
+
+  it("filters by search query", async () => {
+    seedMovie(db, { tmdb_id: 1, title: "Inception" });
+    seedMovie(db, { tmdb_id: 2, title: "Interstellar" });
+    seedTvShow(db, { tvdb_id: 1, name: "Breaking Bad" });
+
+    const result = await caller.media.library.list({ search: "Inter" });
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]!.title).toBe("Interstellar");
+  });
+
+  it("filters by genre", async () => {
+    seedMovie(db, { tmdb_id: 1, title: "Inception", genres: '["Sci-Fi","Action"]' });
+    seedMovie(db, { tmdb_id: 2, title: "The Notebook", genres: '["Romance"]' });
+    seedTvShow(db, { tvdb_id: 1, name: "Stranger Things", genres: '["Sci-Fi","Horror"]' });
+
+    const result = await caller.media.library.list({ genre: "Sci-Fi" });
+
+    expect(result.items).toHaveLength(2);
+    const titles = result.items.map((i: { title: string }) => i.title).sort();
+    expect(titles).toEqual(["Inception", "Stranger Things"]);
+  });
+
+  it("sorts by title", async () => {
+    seedMovie(db, { tmdb_id: 1, title: "Zodiac" });
+    seedMovie(db, { tmdb_id: 2, title: "Alien" });
+    seedTvShow(db, { tvdb_id: 1, name: "Better Call Saul" });
+
+    const result = await caller.media.library.list({ sort: "title" });
+
+    const titles = result.items.map((i: { title: string }) => i.title);
+    expect(titles).toEqual(["Alien", "Better Call Saul", "Zodiac"]);
+  });
+
+  it("sorts by rating descending", async () => {
+    seedMovie(db, { tmdb_id: 1, title: "Average", vote_average: 5.0 });
+    seedMovie(db, { tmdb_id: 2, title: "Great", vote_average: 9.0 });
+    seedMovie(db, { tmdb_id: 3, title: "Good", vote_average: 7.0 });
+
+    const result = await caller.media.library.list({ sort: "rating" });
+
+    const titles = result.items.map((i: { title: string }) => i.title);
+    expect(titles).toEqual(["Great", "Good", "Average"]);
+  });
+
+  it("paginates results", async () => {
+    for (let i = 1; i <= 5; i++) {
+      seedMovie(db, { tmdb_id: i, title: `Movie ${i}` });
+    }
+
+    const page1 = await caller.media.library.list({ page: 1, pageSize: 2 });
+    expect(page1.items).toHaveLength(2);
+    expect(page1.total).toBe(5);
+    expect(page1.totalPages).toBe(3);
+    expect(page1.page).toBe(1);
+
+    const page3 = await caller.media.library.list({ page: 3, pageSize: 2 });
+    expect(page3.items).toHaveLength(1);
+    expect(page3.page).toBe(3);
+  });
+
+  it("returns correct posterUrl for movies", async () => {
+    seedMovie(db, { tmdb_id: 42, title: "Test Movie", poster_path: "/poster.jpg" });
+
+    const result = await caller.media.library.list({ type: "movie" });
+
+    expect(result.items[0]!.posterUrl).toBe("/media/images/movie/42/poster.jpg");
+  });
+
+  it("returns correct posterUrl for TV shows", async () => {
+    seedTvShow(db, { tvdb_id: 99, name: "Test Show", poster_path: "/poster.jpg" });
+
+    const result = await caller.media.library.list({ type: "tv" });
+
+    expect(result.items[0]!.posterUrl).toBe("/media/images/tv/99/poster.jpg");
+  });
+
+  it("prefers poster_override_path over poster_path", async () => {
+    seedMovie(db, {
+      tmdb_id: 42,
+      title: "Test",
+      poster_path: "/poster.jpg",
+      poster_override_path: "/custom.jpg",
+    });
+
+    const result = await caller.media.library.list({ type: "movie" });
+
+    expect(result.items[0]!.posterUrl).toBe("/custom.jpg");
+  });
+
+  it("extracts year from release date", async () => {
+    seedMovie(db, { tmdb_id: 1, title: "Test", release_date: "2024-06-15" });
+
+    const result = await caller.media.library.list({});
+
+    expect(result.items[0]!.year).toBe(2024);
+  });
+
+  it("returns empty items when library is empty", async () => {
+    const result = await caller.media.library.list({});
+
+    expect(result.items).toHaveLength(0);
+    expect(result.total).toBe(0);
+    expect(result.totalPages).toBe(0);
   });
 });
