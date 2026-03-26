@@ -8,6 +8,14 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
 type SearchMode = "movies" | "tv" | "both";
 
+function shouldSearchMovies(query: string, mode: SearchMode): boolean {
+  return query.length > 0 && (mode === "movies" || mode === "both");
+}
+
+function shouldSearchTv(query: string, mode: SearchMode): boolean {
+  return query.length > 0 && (mode === "tv" || mode === "both");
+}
+
 // ── useDebouncedValue logic (extracted for testability) ──────────────
 
 /**
@@ -144,46 +152,27 @@ describe("SearchPage clear button logic", () => {
 
 describe("SearchPage empty query behavior", () => {
   it("should not enable search when query is empty", () => {
-    const debouncedQuery = "";
-    const mode: SearchMode = "both";
-    const shouldSearchMovies = debouncedQuery.length > 0 && (mode === "movies" || mode === "both");
-    const shouldSearchTv = debouncedQuery.length > 0 && (mode === "tv" || mode === "both");
-    expect(shouldSearchMovies).toBe(false);
-    expect(shouldSearchTv).toBe(false);
+    expect(shouldSearchMovies("", "both")).toBe(false);
+    expect(shouldSearchTv("", "both")).toBe(false);
   });
 
   it("should not enable search when query is whitespace-only", () => {
-    const debouncedQuery = "   ".trim();
-    const mode: SearchMode = "both";
-    const shouldSearchMovies = debouncedQuery.length > 0 && (mode === "movies" || mode === "both");
-    expect(shouldSearchMovies).toBe(false);
+    expect(shouldSearchMovies("   ".trim(), "both")).toBe(false);
   });
 
   it("should enable both searches in 'both' mode with a query", () => {
-    const debouncedQuery = "batman";
-    const mode: SearchMode = "both";
-    const shouldSearchMovies = debouncedQuery.length > 0 && (mode === "movies" || mode === "both");
-    const shouldSearchTv = debouncedQuery.length > 0 && (mode === "tv" || mode === "both");
-    expect(shouldSearchMovies).toBe(true);
-    expect(shouldSearchTv).toBe(true);
+    expect(shouldSearchMovies("batman", "both")).toBe(true);
+    expect(shouldSearchTv("batman", "both")).toBe(true);
   });
 
   it("should only enable movie search in 'movies' mode", () => {
-    const debouncedQuery = "batman";
-    const mode: SearchMode = "movies";
-    const shouldSearchMovies = debouncedQuery.length > 0 && (mode === "movies" || mode === "both");
-    const shouldSearchTv = debouncedQuery.length > 0 && (mode === "tv" || mode === "both");
-    expect(shouldSearchMovies).toBe(true);
-    expect(shouldSearchTv).toBe(false);
+    expect(shouldSearchMovies("batman", "movies")).toBe(true);
+    expect(shouldSearchTv("batman", "movies")).toBe(false);
   });
 
   it("should only enable TV search in 'tv' mode", () => {
-    const debouncedQuery = "batman";
-    const mode: SearchMode = "tv";
-    const shouldSearchMovies = debouncedQuery.length > 0 && (mode === "movies" || mode === "both");
-    const shouldSearchTv = debouncedQuery.length > 0 && (mode === "tv" || mode === "both");
-    expect(shouldSearchMovies).toBe(false);
-    expect(shouldSearchTv).toBe(true);
+    expect(shouldSearchMovies("batman", "tv")).toBe(false);
+    expect(shouldSearchTv("batman", "tv")).toBe(true);
   });
 });
 
