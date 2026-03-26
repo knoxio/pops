@@ -18,8 +18,10 @@ export function WatchlistToggle({ mediaType, mediaId, className }: WatchlistTogg
   const utils = trpc.useUtils();
   const apiMediaType = toApiMediaType(mediaType);
 
+  const queryKey = { mediaType: apiMediaType };
+
   const { data: watchlistData, isLoading: isChecking } = trpc.media.watchlist.list.useQuery(
-    { mediaType: apiMediaType },
+    queryKey,
     { staleTime: 30_000 }
   );
 
@@ -29,27 +31,77 @@ export function WatchlistToggle({ mediaType, mediaId, className }: WatchlistTogg
   const isOnWatchlist = !!watchlistEntry;
 
   const addMutation = trpc.media.watchlist.add.useMutation({
+    onMutate: async () => {
+      // Cancel outgoing refetches so they don't overwrite our optimistic update
+      await utils.media.watchlist.list.cancel(queryKey);
+
+      // Snapshot the previous value
+      const previousData = utils.media.watchlist.list.getData(queryKey);
+
+      // Optimistically add a placeholder entry to the cache
+      utils.media.watchlist.list.setData(queryKey, (old) => {
+        if (!old) return old;
+        const placeholder = {
+          id: -1,
+          mediaType: apiMediaType,
+          mediaId,
+          priority: null,
+          notes: null,
+          addedAt: new Date().toISOString(),
+        };
+        return { ...old, data: [...old.data, placeholder] };
+      });
+
+      return { previousData };
+    },
     onSuccess: () => {
       toast.success("Added to watchlist");
-      void utils.media.watchlist.list.invalidate();
     },
-    onError: (err: { message: string; data?: { code?: string } | null }) => {
-      if (err.data?.code === "CONFLICT") {
+    onError: (err, _vars, context) => {
+      // Revert optimistic update
+      if (context?.previousData) {
+        utils.media.watchlist.list.setData(queryKey, context.previousData);
+      }
+      if ((err as { data?: { code?: string } | null }).data?.code === "CONFLICT") {
         toast.info("Already on watchlist");
-        void utils.media.watchlist.list.invalidate();
       } else {
         toast.error(`Failed to add: ${err.message}`);
       }
     },
+    onSettled: () => {
+      void utils.media.watchlist.list.invalidate(queryKey);
+    },
   });
 
   const removeMutation = trpc.media.watchlist.remove.useMutation({
+    onMutate: async () => {
+      await utils.media.watchlist.list.cancel(queryKey);
+
+      const previousData = utils.media.watchlist.list.getData(queryKey);
+
+      // Optimistically remove the entry from cache
+      utils.media.watchlist.list.setData(queryKey, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          data: old.data.filter((entry: { mediaId: number }) => entry.mediaId !== mediaId),
+        };
+      });
+
+      return { previousData };
+    },
     onSuccess: () => {
       toast.success("Removed from watchlist");
-      void utils.media.watchlist.list.invalidate();
     },
-    onError: (err: { message: string }) => {
+    onError: (err, _vars, context) => {
+      // Revert optimistic update
+      if (context?.previousData) {
+        utils.media.watchlist.list.setData(queryKey, context.previousData);
+      }
       toast.error(`Failed to remove: ${err.message}`);
+    },
+    onSettled: () => {
+      void utils.media.watchlist.list.invalidate(queryKey);
     },
   });
 
