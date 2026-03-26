@@ -1,7 +1,7 @@
 # US-03: Context consumer API
 
 > PRD: [058 — Contextual Intelligence](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

@@ -1,7 +1,7 @@
 # US-01: Search adapter interface
 
 > PRD: [057 — Search Engine](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

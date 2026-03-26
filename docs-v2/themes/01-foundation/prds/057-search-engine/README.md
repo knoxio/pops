@@ -47,14 +47,14 @@ v1 is plain text only. Structured syntax added as v2 USs.
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-adapter-interface](us-01-adapter-interface.md) | Define SearchAdapter interface and registration pattern | No (first) |
-| 02 | [us-02-finance-adapter](us-02-finance-adapter.md) | Finance search adapter: transactions, entities, budgets | Blocked by us-01 |
-| 03 | [us-03-media-adapter](us-03-media-adapter.md) | Media search adapter: movies, TV shows | Blocked by us-01 |
-| 04 | [us-04-inventory-adapter](us-04-inventory-adapter.md) | Inventory search adapter: items by name, asset ID, type | Blocked by us-01 |
-| 05 | [us-05-fan-out-ranking](us-05-fan-out-ranking.md) | Query fan-out to all adapters, result collection, relevance ranking, context ordering | Blocked by us-02, us-03, us-04 |
-| 06 | [us-06-structured-syntax](us-06-structured-syntax.md) | Parse structured query syntax (type:, domain:, year:, value:) and apply filters | Blocked by us-05 |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-adapter-interface](us-01-adapter-interface.md) | Define SearchAdapter interface and registration pattern | Not started | No (first) |
+| 02 | [us-02-finance-adapter](us-02-finance-adapter.md) | Finance search adapter: transactions, entities, budgets | Not started | Blocked by us-01 |
+| 03 | [us-03-media-adapter](us-03-media-adapter.md) | Media search adapter: movies, TV shows | Not started | Blocked by us-01 |
+| 04 | [us-04-inventory-adapter](us-04-inventory-adapter.md) | Inventory search adapter: items by name, asset ID, type | Not started | Blocked by us-01 |
+| 05 | [us-05-fan-out-ranking](us-05-fan-out-ranking.md) | Query fan-out to all adapters, result collection, relevance ranking, context ordering | Not started | Blocked by us-02, us-03, us-04 |
+| 06 | [us-06-structured-syntax](us-06-structured-syntax.md) | Parse structured query syntax (type:, domain:, year:, value:) and apply filters | Not started | Blocked by us-05 |
 
 US-02, US-03, US-04 can parallelise (independent adapters).
 

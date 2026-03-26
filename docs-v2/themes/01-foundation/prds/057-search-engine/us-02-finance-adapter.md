@@ -1,7 +1,7 @@
 # US-02: Finance search adapter
 
 > PRD: [057 — Search Engine](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 
