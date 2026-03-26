@@ -14,12 +14,7 @@ import {
   Skeleton,
   TypeBadge,
   ConditionBadge,
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbSeparator,
-  BreadcrumbPage,
+  PageHeader,
   type Condition,
 } from "@pops/ui";
 import { Pencil, Link2, Unlink, GitBranch, FileText, X, Network } from "lucide-react";
@@ -101,42 +96,33 @@ export function ItemDetailPage() {
 
   return (
     <div className="max-w-3xl">
-      {/* Breadcrumb */}
-      <Breadcrumb className="mb-4">
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/inventory">Inventory</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{item.itemName}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <div className="flex-1">
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">{item.itemName}</h1>
-          {(item.brand || item.model) && (
-            <p className="text-muted-foreground font-medium uppercase text-xs tracking-widest opacity-80 mt-1">
-              {[item.brand, item.model].filter(Boolean).join(" • ")}
-            </p>
-          )}
-        </div>
-        <Link to={`/inventory/items/${id}/edit`}>
-          <Button
-            variant="outline"
-            size="sm"
-            className="font-bold border-amber-500/20 hover:border-amber-500/50 hover:bg-amber-500/5 transition-colors"
-          >
-            <Pencil className="h-4 w-4 mr-2 text-amber-600 dark:text-amber-400" />
-            Edit
-          </Button>
-        </Link>
-      </div>
+      <PageHeader
+        title={
+          <div>
+            <span className="text-2xl md:text-3xl font-extrabold tracking-tight">{item.itemName}</span>
+            {(item.brand || item.model) && (
+              <p className="text-muted-foreground font-medium uppercase text-xs tracking-widest opacity-80 mt-1">
+                {[item.brand, item.model].filter(Boolean).join(" • ")}
+              </p>
+            )}
+          </div>
+        }
+        backHref="/inventory"
+        breadcrumbs={[
+          { label: "Inventory", href: "/inventory" },
+          { label: item.itemName },
+        ]}
+        actions={
+          <Link to={`/inventory/items/${id}/edit`}>
+            <Button variant="outline" size="sm" className="font-bold border-amber-500/20 hover:border-amber-500/50 hover:bg-amber-500/5 transition-colors">
+              <Pencil className="h-4 w-4 mr-2 text-amber-600 dark:text-amber-400" />
+              Edit
+            </Button>
+          </Link>
+        }
+        renderLink={Link}
+        className="mb-8"
+      />
 
       {/* Details Grid */}
       <div className="bg-card border-2 border-amber-500/10 rounded-2xl overflow-hidden mb-8 shadow-sm shadow-amber-500/5">

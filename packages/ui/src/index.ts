@@ -83,6 +83,9 @@ export * from "./components/Select";
 export * from "./components/StatCard";
 export * from "./components/TextInput";
 
+// Layout composites
+export * from "./components/PageHeader";
+
 // Inventory composites
 export * from "./components/AssetIdBadge";
 export * from "./components/ConditionBadge";

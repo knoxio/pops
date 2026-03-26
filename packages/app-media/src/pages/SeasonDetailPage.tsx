@@ -4,12 +4,7 @@ import {
   Alert,
   AlertTitle,
   AlertDescription,
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
+  PageHeader,
   Button,
   Skeleton,
 } from "@pops/ui";
@@ -232,26 +227,16 @@ export function SeasonDetailPage() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      {/* Breadcrumb */}
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/media">Media</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to={`/media/tv/${show.id}`}>{show.name}</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{seasonLabel}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      <PageHeader
+        title={seasonLabel}
+        backHref={`/media/tv/${show.id}`}
+        breadcrumbs={[
+          { label: "Media", href: "/media" },
+          { label: show.name, href: `/media/tv/${show.id}` },
+          { label: seasonLabel },
+        ]}
+        renderLink={Link}
+      />
 
       {/* Season header */}
       <div className="flex flex-col sm:flex-row gap-4">

@@ -18,12 +18,7 @@ import {
   AlertDescription,
   Skeleton,
   Badge,
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbSeparator,
-  BreadcrumbPage,
+  PageHeader,
 } from "@pops/ui";
 import { Save, Link2, X, Search } from "lucide-react";
 import { trpc } from "../lib/trpc";
@@ -279,38 +274,24 @@ export function ItemFormPage() {
 
   return (
     <div className="p-6 max-w-2xl">
-      {/* Breadcrumb */}
-      <Breadcrumb className="mb-4">
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/inventory">Inventory</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          {isEditMode && editItemName ? (
-            <>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link to={`/inventory/items/${id}`}>{editItemName}</Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>Edit</BreadcrumbPage>
-              </BreadcrumbItem>
-            </>
-          ) : (
-            <BreadcrumbItem>
-              <BreadcrumbPage>New Item</BreadcrumbPage>
-            </BreadcrumbItem>
-          )}
-        </BreadcrumbList>
-      </Breadcrumb>
-
-      <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight mb-8">
-        {isEditMode ? "Edit Item" : "New Item"}
-      </h1>
+      <PageHeader
+        title={isEditMode ? "Edit Item" : "New Item"}
+        backHref={isEditMode && id ? `/inventory/items/${id}` : "/inventory"}
+        breadcrumbs={
+          isEditMode && editItemName
+            ? [
+                { label: "Inventory", href: "/inventory" },
+                { label: editItemName, href: `/inventory/items/${id}` },
+                { label: "Edit" },
+              ]
+            : [
+                { label: "Inventory", href: "/inventory" },
+                { label: "New Item" },
+              ]
+        }
+        renderLink={Link}
+        className="mb-8"
+      />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
         {/* Basic Info */}
