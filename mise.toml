@@ -35,7 +35,7 @@ run = "pnpm dev"
 
 [tasks."dev:storybook"]
 description = "Run unified Storybook for all packages and apps"
-dir = "packages/ui"
+dir = "apps/pops-storybook"
 run = "pnpm storybook"
 
 # ============================================================================

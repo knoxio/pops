@@ -1,0 +1,28 @@
+{
+  "name": "@pops/storybook",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "dependencies": {
+    "@pops/ui": "workspace:*",
+    "@pops/app-finance": "workspace:*",
+    "@pops/app-media": "workspace:*",
+    "@pops/app-inventory": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@chromatic-com/storybook": "^5.0.2",
+    "@storybook/addon-a11y": "^10.3.1",
+    "@storybook/react-vite": "^10.3.1",
+    "@tailwindcss/vite": "4.2.2",
+    "eslint-plugin-storybook": "^0.12.0",
+    "storybook": "^10.3.1",
+    "typescript": "^5.7.0",
+    "vite": "^8.0.1"
+  }
+}
