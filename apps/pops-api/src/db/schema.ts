@@ -28,6 +28,7 @@ const INCLUDED_MIGRATIONS = [
   "20260322120000_settings.sql",
   "20260324140000_watch_history_unique_index.sql",
   "20260325150000_locations_last_edited_time.sql",
+  "20260326150000_budgets_unique_category_period.sql",
 ];
 
 /**
@@ -91,6 +92,8 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       notes TEXT,
       last_edited_time TEXT NOT NULL
     );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_budgets_category_period
+      ON budgets(category, COALESCE(period, '__NULL__'));
 
     CREATE TABLE IF NOT EXISTS locations (
       id         TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),

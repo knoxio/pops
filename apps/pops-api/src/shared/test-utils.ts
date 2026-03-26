@@ -122,6 +122,8 @@ export function createTestDb(): Database {
       last_edited_time TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_budgets_category ON budgets(category);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_budgets_category_period
+      ON budgets(category, COALESCE(period, '__NULL__'));
 
     CREATE TABLE IF NOT EXISTS wish_list (
       id               TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
