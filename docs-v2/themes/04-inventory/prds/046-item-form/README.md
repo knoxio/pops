@@ -1,7 +1,7 @@
 # PRD-046: Item Create/Edit Form
 
 > Epic: [01 — App Package & CRUD UI](../../epics/01-app-package-crud-ui.md)
-> Status: To Review
+> Status: Partial
 
 ## Overview
 
@@ -115,10 +115,10 @@ Build a dual-mode form for creating and editing inventory items. The form includ
 
 | # | Story | Summary | Parallelisable |
 |---|-------|---------|----------------|
-| 01 | [us-01-form-layout](us-01-form-layout.md) | Form with all fields, validation rules, create/edit modes, submit handlers | Yes |
-| 02 | [us-02-location-picker](us-02-location-picker.md) | Location picker with breadcrumb display, tree overlay, search, inline quick-add | Yes |
-| 03 | [us-03-photo-upload](us-03-photo-upload.md) | Photo upload with drag-and-drop, camera, compression, reorder, delete | Yes |
-| 04 | [us-04-asset-id-generation](us-04-asset-id-generation.md) | Auto-generate asset ID from type prefix + sequential number, uniqueness validation on blur | Yes |
+| 01 | [us-01-form-layout](us-01-form-layout.md) | Form with all fields, validation rules, create/edit modes, submit handlers | Partial |
+| 02 | [us-02-location-picker](us-02-location-picker.md) | Location picker with breadcrumb display, tree overlay, search, inline quick-add | Partial |
+| 03 | [us-03-photo-upload](us-03-photo-upload.md) | Photo upload with drag-and-drop, camera, compression, reorder, delete | Partial |
+| 04 | [us-04-asset-id-generation](us-04-asset-id-generation.md) | Auto-generate asset ID from type prefix + sequential number, uniqueness validation on blur | Not started |
 
 All four stories can be built in parallel. US-01 provides the form shell; US-02, US-03, and US-04 are self-contained components that plug into the form.
 

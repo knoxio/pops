@@ -11,7 +11,7 @@ Build `@pops/app-ai` — the central hub for AI visibility and control across al
 | # | PRD | Summary | Status |
 |---|-----|---------|--------|
 | 052 | [AI Usage & Cost Tracking](../prds/052-ai-usage-cost-tracking/README.md) | Usage page — token counts, cost per domain, cache hit rates, cost trends over time | Partial (basic usage page exists) |
-| 053 | [AI Configuration & Rules](../prds/053-ai-configuration-rules/README.md) | Model selection, token budgets, prompt templates, categorisation rule viewer, cache management | Not started |
+| 053 | [AI Configuration & Rules](../prds/053-ai-configuration-rules/README.md) | Model selection, token budgets, prompt templates, categorisation rule viewer, cache management | Partial |
 
 PRD-052 can be built independently. PRD-053 depends on having usage data to configure against.
 
