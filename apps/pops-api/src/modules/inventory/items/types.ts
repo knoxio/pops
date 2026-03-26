@@ -116,6 +116,7 @@ export const InventoryQuerySchema = z.object({
   inUse: z.enum(["true", "false"]).optional(),
   deductible: z.enum(["true", "false"]).optional(),
   locationId: z.string().optional(),
+  includeChildren: z.boolean().optional().default(false),
   assetId: z.string().optional(),
   limit: z.coerce.number().positive().optional(),
   offset: z.coerce.number().nonnegative().optional(),

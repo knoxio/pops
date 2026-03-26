@@ -38,7 +38,8 @@ export const inventoryRouter = router({
       limit,
       offset,
       input.locationId,
-      input.assetId
+      input.assetId,
+      input.includeChildren
     );
 
     return {
@@ -91,6 +92,14 @@ export const inventoryRouter = router({
         }
         throw err;
       }
+    }),
+
+  /** Search for an item by asset ID (case-insensitive exact match). */
+  searchByAssetId: protectedProcedure
+    .input(z.object({ assetId: z.string().min(1) }))
+    .query(({ input }) => {
+      const row = service.searchByAssetId(input.assetId);
+      return { data: row ? toInventoryItem(row) : null };
     }),
 
   /** Delete an inventory item. */

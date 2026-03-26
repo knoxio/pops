@@ -5,6 +5,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../../../trpc.js";
 import { CreateLocationSchema, UpdateLocationSchema, toLocation } from "./types.js";
+import { toInventoryItem } from "../items/types.js";
 import * as service from "./service.js";
 import { NotFoundError, ConflictError } from "../../../shared/errors.js";
 
@@ -35,6 +36,49 @@ export const locationsRouter = router({
       throw err;
     }
   }),
+
+  /** Get breadcrumb path from root to specified location (root-first). */
+  getPath: protectedProcedure.input(z.object({ id: z.string() })).query(({ input }) => {
+    try {
+      const rows = service.getLocationPath(input.id);
+      return { data: rows.map(toLocation) };
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+      }
+      throw err;
+    }
+  }),
+
+  /** Get items at a location, optionally including descendant locations. */
+  getItems: protectedProcedure
+    .input(
+      z.object({
+        locationId: z.string(),
+        includeChildren: z.boolean().optional().default(false),
+        limit: z.coerce.number().positive().optional().default(50),
+        offset: z.coerce.number().nonnegative().optional().default(0),
+      })
+    )
+    .query(({ input }) => {
+      try {
+        const { rows, total } = service.getLocationItems(
+          input.locationId,
+          input.includeChildren,
+          input.limit,
+          input.offset
+        );
+        return {
+          data: rows.map(toInventoryItem),
+          total,
+        };
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+        }
+        throw err;
+      }
+    }),
 
   /** Get children of a location (one level deep). */
   children: protectedProcedure.input(z.object({ parentId: z.string() })).query(({ input }) => {

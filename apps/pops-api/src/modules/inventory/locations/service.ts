@@ -2,7 +2,7 @@
  * Location service — CRUD operations for the location tree.
  * SQLite is the source of truth. All operations are local.
  */
-import { eq, asc, count } from "drizzle-orm";
+import { eq, asc, count, inArray } from "drizzle-orm";
 import { locations, homeInventory } from "@pops/db-types";
 import { getDrizzle } from "../../../db.js";
 import { NotFoundError, ConflictError } from "../../../shared/errors.js";
@@ -257,4 +257,91 @@ export function deleteLocation(id: string): void {
   const db = getDrizzle();
   const result = db.delete(locations).where(eq(locations.id, id)).run();
   if (result.changes === 0) throw new NotFoundError("Location", id);
+}
+
+/**
+ * Collect all descendant location IDs via BFS.
+ * Does NOT include the given id itself.
+ */
+export function getDescendantLocationIds(id: string): string[] {
+  const db = getDrizzle();
+  const descendantIds: string[] = [];
+  const queue = [id];
+  let current: string | undefined;
+  while ((current = queue.shift()) !== undefined) {
+    const children = db
+      .select({ id: locations.id })
+      .from(locations)
+      .where(eq(locations.parentId, current))
+      .all();
+    for (const child of children) {
+      descendantIds.push(child.id);
+      queue.push(child.id);
+    }
+  }
+  return descendantIds;
+}
+
+/**
+ * Get the breadcrumb path from root to the specified location (root-first).
+ * Throws NotFoundError if the location doesn't exist.
+ */
+export function getLocationPath(id: string): LocationRow[] {
+  const path: LocationRow[] = [];
+  let current: LocationRow | undefined = getLocation(id);
+
+  while (current) {
+    path.push(current);
+    if (current.parentId) {
+      const db = getDrizzle();
+      const parent = db.select().from(locations).where(eq(locations.id, current.parentId)).get();
+      current = parent;
+    } else {
+      current = undefined;
+    }
+  }
+
+  return path.reverse();
+}
+
+/** Items at a location, optionally including descendant locations. */
+export interface LocationItemsResult {
+  rows: (typeof homeInventory.$inferSelect)[];
+  total: number;
+}
+
+/**
+ * Get items at a location, optionally including items at all descendant locations.
+ */
+export function getLocationItems(
+  locationId: string,
+  includeChildren: boolean,
+  limit: number,
+  offset: number
+): LocationItemsResult {
+  // Verify location exists
+  getLocation(locationId);
+
+  const db = getDrizzle();
+  const locationIds = [locationId];
+  if (includeChildren) {
+    locationIds.push(...getDescendantLocationIds(locationId));
+  }
+
+  const rows = db
+    .select()
+    .from(homeInventory)
+    .where(inArray(homeInventory.locationId, locationIds))
+    .orderBy(homeInventory.itemName)
+    .limit(limit)
+    .offset(offset)
+    .all();
+
+  const [countResult] = db
+    .select({ total: count() })
+    .from(homeInventory)
+    .where(inArray(homeInventory.locationId, locationIds))
+    .all();
+
+  return { rows, total: countResult?.total ?? 0 };
 }
