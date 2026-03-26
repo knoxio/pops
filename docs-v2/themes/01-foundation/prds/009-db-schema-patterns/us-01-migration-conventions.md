@@ -1,7 +1,20 @@
 # US-01: Establish migration conventions
 
 > PRD: [009 — DB Schema Patterns](README.md)
-> Status: To Review
+> Status: Done
+
+**GH Issue:** #419
+
+## Audit Findings
+
+**Present:**
+- Timestamp-based naming convention in use for all recent migrations (`YYYYMMDDHHMMSS_domain_description.sql`)
+- Template at `apps/pops-api/src/db/migration-template.sql` with header, forward migration section, and rollback documentation
+- `runMigrations()` in `db.ts` creates `schema_migrations` table, reads flat migrations directory sorted alphabetically, applies unapplied migrations in transactions
+- `initializeSchema()` in `db/schema.ts` creates all tables with `CREATE TABLE IF NOT EXISTS`
+- `INCLUDED_MIGRATIONS` array in `db/schema.ts` lists all migration filenames; pre-marks them as applied on fresh DBs
+- `db.pragma('foreign_keys = ON')` called in `openDatabase()` for every connection
+- Flat migrations directory at `apps/pops-api/src/db/migrations/`
 
 ## Description
 
@@ -9,13 +22,13 @@ As a developer, I want documented migration conventions, a template file, and a 
 
 ## Acceptance Criteria
 
-- [ ] Timestamp-based naming convention established (`YYYYMMDDHHMMSS_domain_description.sql`)
-- [ ] Template migration file created at `apps/pops-api/src/db/migration-template.sql` with header format and rollback section
-- [ ] Migration runner in `db.ts` creates `schema_migrations` table, reads migration directory, applies unapplied migrations in order
-- [ ] `initializeSchema()` creates all tables from scratch for fresh databases
-- [ ] `INCLUDED_MIGRATIONS` array pre-marks migrations as applied for fresh DBs
-- [ ] `PRAGMA foreign_keys = ON` set on every database connection
-- [ ] Flat migration directory at `apps/pops-api/src/db/migrations/`
+- [x] Timestamp-based naming convention established (`YYYYMMDDHHMMSS_domain_description.sql`)
+- [x] Template migration file created at `apps/pops-api/src/db/migration-template.sql` with header format and rollback section
+- [x] Migration runner in `db.ts` creates `schema_migrations` table, reads migration directory, applies unapplied migrations in order
+- [x] `initializeSchema()` creates all tables from scratch for fresh databases
+- [x] `INCLUDED_MIGRATIONS` array pre-marks migrations as applied for fresh DBs
+- [x] `PRAGMA foreign_keys = ON` set on every database connection
+- [x] Flat migration directory at `apps/pops-api/src/db/migrations/`
 
 ## Notes
 
