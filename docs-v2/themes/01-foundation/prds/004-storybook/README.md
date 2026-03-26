@@ -62,7 +62,7 @@ packages/ui/src/components/
 
 | # | Story | Summary | Parallelisable |
 |---|-------|---------|----------------|
-| 01 | [us-01-storybook-config](us-01-storybook-config.md) | Set up Storybook app with config, story discovery globs, global decorators | No (first) |
+| 01 | [us-01-storybook-config](us-01-storybook-config.md) | Set up Storybook app with config, story discovery globs, global decorators | Partial |
 | 02 | [us-02-theme-decorator](us-02-theme-decorator.md) | Global decorator for light/dark mode toggle and app colour variable | Blocked by us-01 |
 
 ## Verification

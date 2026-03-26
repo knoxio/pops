@@ -10,7 +10,7 @@ Adopt Drizzle ORM for type-safe database access and schema-as-code. Define all t
 
 | # | PRD | Summary | Status |
 |---|-----|---------|--------|
-| 011 | [Drizzle ORM](../prds/011-drizzle-orm/README.md) | Schema files, type-safe queries, migration generation, type inference | Not started |
+| 011 | [Drizzle ORM](../prds/011-drizzle-orm/README.md) | Schema files, type-safe queries, migration generation, type inference | Partial |
 
 ## Dependencies
 
