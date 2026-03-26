@@ -1,7 +1,7 @@
 # US-01: Model configuration
 
 > PRD: [053 — AI Configuration & Rules](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

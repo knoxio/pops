@@ -1,7 +1,7 @@
 # PRD-053: AI Configuration & Rules
 
 > Epic: [00 — AI Operations App](../../epics/00-ai-operations-app.md)
-> Status: To Review
+> Status: Partial
 
 ## Overview
 
@@ -34,10 +34,10 @@ Add configuration and rule management pages to the AI operations app. Model sele
 
 | # | Story | Summary | Parallelisable |
 |---|-------|---------|----------------|
-| 01 | [us-01-model-config](us-01-model-config.md) | Model selection, token budget, fallback behaviour settings | Yes |
-| 02 | [us-02-rules-browser](us-02-rules-browser.md) | Corrections table browser with filters, sorting, inline confidence adjustment | Yes |
-| 03 | [us-03-cache-management](us-03-cache-management.md) | Cache stats, clear stale/all, confirmation dialogs | Yes |
-| 04 | [us-04-prompt-viewer](us-04-prompt-viewer.md) | Read-only prompt template display | Yes |
+| 01 | [us-01-model-config](us-01-model-config.md) | Model selection, token budget, fallback behaviour settings | Not started |
+| 02 | [us-02-rules-browser](us-02-rules-browser.md) | Corrections table browser with filters, sorting, inline confidence adjustment | Partial |
+| 03 | [us-03-cache-management](us-03-cache-management.md) | Cache stats, clear stale/all, confirmation dialogs | Partial |
+| 04 | [us-04-prompt-viewer](us-04-prompt-viewer.md) | Read-only prompt template display | Not started |
 
 All USs can parallelise — independent pages.
 

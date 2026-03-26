@@ -84,11 +84,11 @@ No new tables — uses the `movies` table from PRD-028. Image paths written to `
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-tmdb-http-client](us-01-tmdb-http-client.md) | HTTP client with token bucket rate limiter, search endpoint, metadata fetch | Yes |
-| 02 | [us-02-image-cache](us-02-image-cache.md) | Poster/backdrop download, local storage, serving endpoint, fallback chain | Yes |
-| 03 | [us-03-add-to-library](us-03-add-to-library.md) | addMovie flow (fetch + create + download), refreshMovie, idempotency | Blocked by us-01, us-02 |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-tmdb-http-client](us-01-tmdb-http-client.md) | HTTP client with token bucket rate limiter, search endpoint, metadata fetch | Partial | Yes |
+| 02 | [us-02-image-cache](us-02-image-cache.md) | Poster/backdrop download, local storage, serving endpoint, fallback chain | Partial | Yes |
+| 03 | [us-03-add-to-library](us-03-add-to-library.md) | addMovie flow (fetch + create + download), refreshMovie, idempotency | Partial | Blocked by us-01, us-02 |
 
 US-01 and US-02 can run in parallel. US-03 composes them into the add-to-library flow.
 

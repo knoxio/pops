@@ -1,7 +1,7 @@
 # US-02: Location picker
 
 > PRD: [046 — Item Create/Edit Form](README.md)
-> Status: To Review
+> Status: Partial
 
 ## Description
 
@@ -9,20 +9,21 @@ As a user, I want a location picker that shows my location hierarchy as a browsa
 
 ## Acceptance Criteria
 
-- [ ] Location picker trigger button displays the current selection as a breadcrumb (e.g., "Home > Bedroom > Wardrobe")
-- [ ] When no location is selected, the trigger button shows placeholder text (e.g., "Select location")
-- [ ] Clicking the trigger opens an overlay/modal with the full location tree
-- [ ] Location tree is fetched from `inventory.locations.getTree` and displayed with expand/collapse for each parent node
-- [ ] Tree nodes show location name and item count
-- [ ] Clicking a tree node selects that location, closes the overlay, and updates the trigger button breadcrumb
-- [ ] Search input within the overlay filters locations by name (client-side filter)
-- [ ] "Add Location" button within the overlay opens an inline form: name input + optional parent select
-- [ ] Inline quick-add calls `inventory.locations.create`, adds the new location to the tree, and selects it
-- [ ] Quick-add supports creating root locations (no parent) or child locations (parent selected)
-- [ ] A "Clear" option allows deselecting the current location (set to null)
-- [ ] Overlay can be closed without selecting (Escape key, click outside, close button)
-- [ ] When the location tree is empty, the overlay shows "No locations — create one" with the quick-add form
+- [x] Location picker trigger button displays the current selection as a breadcrumb (e.g., "Home > Bedroom > Wardrobe")
+- [x] When no location is selected, the trigger button shows placeholder text (e.g., "Select location")
+- [x] Clicking the trigger opens an overlay/modal with the full location tree
+- [x] Location tree is fetched from `inventory.locations.getTree` and displayed with expand/collapse for each parent node
+- [x] Tree nodes show location name and item count
+- [x] Clicking a tree node selects that location, closes the overlay, and updates the trigger button breadcrumb
+- [x] Search input within the overlay filters locations by name (client-side filter)
+- [x] "Add Location" button within the overlay opens an inline form: name input + optional parent select
+- [x] Inline quick-add calls `inventory.locations.create`, adds the new location to the tree, and selects it
+- [x] Quick-add supports creating root locations (no parent) or child locations (parent selected)
+- [x] A "Clear" option allows deselecting the current location (set to null)
+- [x] Overlay can be closed without selecting (Escape key, click outside, close button)
+- [x] When the location tree is empty, the overlay shows "No locations — create one" with the quick-add form
 - [ ] Tests cover: trigger breadcrumb display, tree rendering with expand/collapse, node selection, search filtering, quick-add location creation, clear selection, empty tree state, overlay close without selection
+- [ ] LocationPicker component NOT integrated into ItemFormPage — form uses plain text room field instead
 
 ## Notes
 

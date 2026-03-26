@@ -1,7 +1,7 @@
 # US-01: TheTVDB HTTP client with JWT auth
 
 > PRD: [030 — TheTVDB Client](README.md)
-> Status: Done
+> Status: Partial
 
 ## Description
 
@@ -14,7 +14,7 @@ As a developer, I want an HTTP client for the TheTVDB API with JWT authenticatio
 - [x] Token cached in memory after initial login — subsequent requests reuse it
 - [x] On 401 response, automatically re-authenticates (calls `/login` again) and retries the failed request once
 - [x] If retry after re-auth also fails, returns an error — no infinite retry loop
-- [x] `THETVDB_API_KEY` read from environment; startup validation fails with a clear error if missing
+- [ ] `THETVDB_API_KEY` read from environment; startup validation fails with a clear error if missing — **validation is lazy init (returns null on missing key), not a hard startup failure**
 - [x] `media.search.tvShows(query)` tRPC procedure calls TheTVDB's `/search` endpoint filtered to series type
 - [x] Search returns `{ results: TvdbSearchResult[] }` with fields mapped from TheTVDB response
 - [x] Internal `fetchShowDetails(tvdbId)` method calls TheTVDB's `/series/{id}/extended` endpoint

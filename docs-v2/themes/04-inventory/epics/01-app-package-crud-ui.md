@@ -12,7 +12,7 @@ Build `@pops/app-inventory` — the workspace package with core inventory pages.
 |---|-----|---------|--------|
 | 044 | [Items List Page](../prds/044-items-list-page/README.md) | Grid/table view of all items, filtering (type, location, condition), search by name and asset ID, view toggle | Done |
 | 045 | [Item Detail Page](../prds/045-item-detail-page/README.md) | Item metadata display, photo gallery, connections list, linked documents, purchase transaction link, location breadcrumb | Done |
-| 046 | [Item Create/Edit Form](../prds/046-item-form/README.md) | Dual-mode form (create/edit), location picker, photo upload with compression, asset ID generation, markdown notes | Done |
+| 046 | [Item Create/Edit Form](../prds/046-item-form/README.md) | Dual-mode form (create/edit), location picker, photo upload with compression, asset ID generation, markdown notes | Partial |
 
 PRD-044 can be built independently. PRD-045 and PRD-046 can be built in parallel.
 

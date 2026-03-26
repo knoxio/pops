@@ -1,7 +1,7 @@
 # US-03: Photo upload
 
 > PRD: [046 — Item Create/Edit Form](README.md)
-> Status: To Review
+> Status: Partial
 
 ## Description
 
@@ -9,16 +9,16 @@ As a user, I want to upload photos of my inventory items with drag-and-drop on d
 
 ## Acceptance Criteria
 
-- [ ] Desktop: drag-and-drop zone accepts image files; visual feedback on drag-over (border highlight)
-- [ ] Desktop: file picker button as alternative to drag-and-drop
-- [ ] Mobile: file input with `accept="image/*" capture="environment"` triggers camera
-- [ ] Accepted file types: JPEG, PNG, HEIC/HEIF, WebP
-- [ ] On file selection, image is compressed client-side before upload: resize to fit within 1920x1920px bounding box (preserve aspect ratio), convert HEIC/HEIF to JPEG, strip EXIF metadata
-- [ ] Upload calls `inventory.photos.upload` with the compressed image
+- [x] Desktop: drag-and-drop zone accepts image files; visual feedback on drag-over (border highlight)
+- [x] Desktop: file picker button as alternative to drag-and-drop
+- [x] Mobile: file input with `accept="image/*" capture="environment"` triggers camera
+- [x] Accepted file types: JPEG, PNG, HEIC/HEIF, WebP
+- [ ] On file selection, image is compressed client-side before upload: resize to fit within 1920x1920px bounding box (preserve aspect ratio), convert HEIC/HEIF to JPEG, strip EXIF metadata — no compression logic implemented
+- [ ] Upload calls `inventory.photos.upload` with the compressed image — PhotoUpload component not integrated into ItemFormPage
 - [ ] Upload progress indicator shows during transmission
-- [ ] Uploaded photos appear as thumbnails in a grid below the upload zone
+- [ ] Uploaded photos appear as thumbnails in a grid below the upload zone — not integrated into form
 - [ ] In edit mode, existing photos are loaded from `inventory.photos.listForItem` and displayed in the thumbnail grid
-- [ ] Photos can be reordered via drag in the thumbnail grid; new order is saved via `inventory.photos.reorder`
+- [ ] Photos can be reordered via drag in the thumbnail grid; new order is saved via `inventory.photos.reorder` — no reorder UI
 - [ ] Each photo thumbnail has a delete button; clicking it shows a confirmation prompt, then calls `inventory.photos.delete`
 - [ ] Failed uploads show an error toast; the photo is not added to the grid
 - [ ] Multiple files can be uploaded at once (batch selection)

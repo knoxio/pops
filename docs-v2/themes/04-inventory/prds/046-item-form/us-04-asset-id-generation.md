@@ -1,7 +1,7 @@
 # US-04: Asset ID generation
 
 > PRD: [046 — Item Create/Edit Form](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 
