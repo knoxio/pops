@@ -14,5 +14,6 @@ export const locations = sqliteTable(
   (table) => [
     index("idx_locations_parent").on(table.parentId),
     index("idx_locations_name").on(table.name),
+    index("idx_locations_parent_sort").on(table.parentId, table.sortOrder),
   ]
 );

@@ -1,4 +1,5 @@
 import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
+import { sql } from "drizzle-orm";
 import { transactions } from "./transactions.js";
 import { entities } from "./entities.js";
 import { locations } from "./locations.js";
@@ -17,7 +18,7 @@ export const homeInventory = sqliteTable(
     room: text("room"),
     location: text("location"),
     type: text("type"),
-    condition: text("condition"),
+    condition: text("condition").default("good"),
     inUse: integer("in_use"),
     deductible: integer("deductible"),
     purchaseDate: text("purchase_date"),
@@ -31,11 +32,18 @@ export const homeInventory = sqliteTable(
       onDelete: "set null",
     }),
     purchasedFromName: text("purchased_from_name"),
+    purchasePrice: real("purchase_price"),
     assetId: text("asset_id").unique(),
     notes: text("notes"),
     locationId: text("location_id").references(() => locations.id, {
       onDelete: "set null",
     }),
+    createdAt: text("created_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
+    updatedAt: text("updated_at")
+      .notNull()
+      .default(sql`(datetime('now'))`),
     lastEditedTime: text("last_edited_time").notNull(),
   },
   (table) => [
@@ -43,5 +51,6 @@ export const homeInventory = sqliteTable(
     index("idx_inventory_name").on(table.itemName),
     index("idx_inventory_location").on(table.locationId),
     index("idx_inventory_type").on(table.type),
+    index("idx_inventory_warranty").on(table.warrantyExpires),
   ]
 );
