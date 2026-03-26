@@ -200,17 +200,15 @@ export function SearchPage() {
       </div>
 
       {/* Search input */}
-      <div className="max-w-xl">
-        <TextInput
-          placeholder="Search movies and TV shows…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          prefix={<Search className="h-4 w-4" />}
-          clearable
-          onClear={() => setQuery("")}
-          autoFocus
-        />
-      </div>
+      <TextInput
+        placeholder="Search movies and TV shows…"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        prefix={<Search className="h-4 w-4" />}
+        clearable
+        onClear={() => setQuery("")}
+        autoFocus
+      />
 
       {/* Type toggle */}
       <Tabs value={mode} onValueChange={(v: string) => setMode(v as SearchMode)}>
