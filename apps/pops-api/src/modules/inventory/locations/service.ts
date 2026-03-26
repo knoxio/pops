@@ -343,5 +343,5 @@ export function getLocationItems(
     .where(inArray(homeInventory.locationId, locationIds))
     .all();
 
-  return { rows, total: countResult.total };
+  return { rows, total: countResult?.total ?? 0 };
 }
