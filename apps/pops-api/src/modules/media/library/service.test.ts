@@ -3,7 +3,12 @@
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import type { Database } from "better-sqlite3";
-import { setupTestContext, createCaller, seedMovie, seedTvShow } from "../../../shared/test-utils.js";
+import {
+  setupTestContext,
+  createCaller,
+  seedMovie,
+  seedTvShow,
+} from "../../../shared/test-utils.js";
 import { listLibrary, listLibraryGenres } from "./service.js";
 import type { TmdbMovieDetail } from "../tmdb/types.js";
 import { TRPCError } from "@trpc/server";
