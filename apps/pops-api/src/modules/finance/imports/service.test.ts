@@ -4,31 +4,19 @@ import type { ParsedTransaction, ConfirmedTransaction } from "./types.js";
 import { createTestDb, seedEntity, seedTransaction } from "../../../shared/test-utils.js";
 import { setDb, closeDb } from "../../../db.js";
 import type { Database } from "better-sqlite3";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import { eq, count } from "drizzle-orm";
+import {
+  transactions as transactionsTable,
+  entities as entitiesTable,
+  transactionCorrections,
+} from "@pops/db-types";
 import { clearCache } from "./lib/ai-categorizer.js";
 
 /**
  * Unit tests for import service with SQLite-only writes.
  * ALL tests are 100% offline - zero actual API calls.
  */
-
-/** Shape of a row returned from the entities SQLite table. */
-type EntityRow = { name: string; id: string; notion_id: string | null; last_edited_time: string };
-
-/** Shape of a transaction row for asserting SQLite writes. */
-type TransactionRow = {
-  id: string;
-  description: string;
-  account: string;
-  amount: number;
-  date: string;
-  type: string;
-  tags: string;
-  entity_id: string | null;
-  entity_name: string | null;
-  location: string | null;
-  checksum: string | null;
-  raw_row: string | null;
-};
 
 // Mock AI categorizer with smart lookup-based responses
 vi.mock("./lib/ai-categorizer.js", async (importOriginal) => {
@@ -43,6 +31,7 @@ vi.mock("./lib/ai-categorizer.js", async (importOriginal) => {
 import { resetMockAi, mockConfig } from "./lib/ai-categorizer.mock.js";
 
 let db: Database;
+const orm = () => drizzle(db);
 
 beforeEach(() => {
   db = createTestDb();
@@ -401,10 +390,18 @@ describe("suggestedTags", () => {
   it("includes correction rule tags as source='rule'", async () => {
     seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
     // Seed a correction that matches the description (entity must exist first -- FK constraint)
-    db.prepare(
-      `INSERT INTO transaction_corrections (id, description_pattern, match_type, entity_id, entity_name, tags, confidence)
-       VALUES ('corr-1', 'woolworths', 'contains', 'woolworths-id', 'Woolworths', '["Groceries","Weekly Shop"]', 0.95)`
-    ).run();
+    orm()
+      .insert(transactionCorrections)
+      .values({
+        id: "corr-1",
+        descriptionPattern: "woolworths",
+        matchType: "contains",
+        entityId: "woolworths-id",
+        entityName: "Woolworths",
+        tags: '["Groceries","Weekly Shop"]',
+        confidence: 0.95,
+      })
+      .run();
 
     const result = await processImport([baseParsedTransaction], "Amex");
 
@@ -426,10 +423,18 @@ describe("suggestedTags", () => {
       default_tags: '["Groceries"]', // same tag as correction
     });
     // Entity must exist before inserting correction (FK constraint)
-    db.prepare(
-      `INSERT INTO transaction_corrections (id, description_pattern, match_type, entity_id, entity_name, tags, confidence)
-       VALUES ('corr-2', 'woolworths', 'contains', 'woolworths-id', 'Woolworths', '["Groceries"]', 0.95)`
-    ).run();
+    orm()
+      .insert(transactionCorrections)
+      .values({
+        id: "corr-2",
+        descriptionPattern: "woolworths",
+        matchType: "contains",
+        entityId: "woolworths-id",
+        entityName: "Woolworths",
+        tags: '["Groceries"]',
+        confidence: 0.95,
+      })
+      .run();
 
     const result = await processImport([baseParsedTransaction], "Amex");
 
@@ -468,9 +473,11 @@ describe("executeImport", () => {
     expect(result.failed).toEqual([]);
 
     // Verify the row exists in SQLite
-    const rows = db
-      .prepare("SELECT * FROM transactions WHERE checksum = ?")
-      .all("abc123") as TransactionRow[];
+    const rows = orm()
+      .select()
+      .from(transactionsTable)
+      .where(eq(transactionsTable.checksum, "abc123"))
+      .all();
     expect(rows).toHaveLength(1);
     expect(rows[0].description).toBe("WOOLWORTHS 1234");
     expect(rows[0].amount).toBe(-125.5);
@@ -488,8 +495,8 @@ describe("executeImport", () => {
     expect(result.imported).toBe(10);
 
     // Verify all rows in SQLite
-    const count = db.prepare("SELECT COUNT(*) as cnt FROM transactions").get() as { cnt: number };
-    expect(count.cnt).toBe(10);
+    const [row] = orm().select({ cnt: count() }).from(transactionsTable).all();
+    expect(row.cnt).toBe(10);
   });
 
   it("returns pageId in successful results", () => {
@@ -499,9 +506,11 @@ describe("executeImport", () => {
     expect(result.failed).toEqual([]);
 
     // Verify the transaction was inserted with a UUID
-    const row = db.prepare("SELECT id FROM transactions WHERE checksum = ?").get("abc123") as
-      | { id: string }
-      | undefined;
+    const row = orm()
+      .select({ id: transactionsTable.id })
+      .from(transactionsTable)
+      .where(eq(transactionsTable.checksum, "abc123"))
+      .get();
     expect(row).toBeDefined();
     expect(row?.id).toMatch(/^[0-9a-f-]{36}$/); // UUID format
   });
@@ -513,28 +522,34 @@ describe("executeImport", () => {
     };
     executeImport([transaction]);
 
-    const row = db.prepare("SELECT tags FROM transactions WHERE checksum = ?").get("abc123") as {
-      tags: string;
-    };
-    expect(JSON.parse(row.tags)).toEqual(["Groceries", "Weekly Shop"]);
+    const row = orm()
+      .select({ tags: transactionsTable.tags })
+      .from(transactionsTable)
+      .where(eq(transactionsTable.checksum, "abc123"))
+      .get();
+    expect(JSON.parse(row!.tags)).toEqual(["Groceries", "Weekly Shop"]);
   });
 
   it("defaults to empty tags when not provided", () => {
     executeImport([baseConfirmedTransaction]); // tags field absent
 
-    const row = db.prepare("SELECT tags FROM transactions WHERE checksum = ?").get("abc123") as {
-      tags: string;
-    };
-    expect(JSON.parse(row.tags)).toEqual([]);
+    const row = orm()
+      .select({ tags: transactionsTable.tags })
+      .from(transactionsTable)
+      .where(eq(transactionsTable.checksum, "abc123"))
+      .get();
+    expect(JSON.parse(row!.tags)).toEqual([]);
   });
 
   it("stores location when present", () => {
     executeImport([baseConfirmedTransaction]);
 
-    const row = db
-      .prepare("SELECT location FROM transactions WHERE checksum = ?")
-      .get("abc123") as { location: string | null };
-    expect(row.location).toBe("North Sydney");
+    const row = orm()
+      .select({ location: transactionsTable.location })
+      .from(transactionsTable)
+      .where(eq(transactionsTable.checksum, "abc123"))
+      .get();
+    expect(row!.location).toBe("North Sydney");
   });
 
   it("stores null location when undefined", () => {
@@ -545,32 +560,35 @@ describe("executeImport", () => {
     };
     executeImport([transaction]);
 
-    const row = db
-      .prepare("SELECT location FROM transactions WHERE checksum = ?")
-      .get("no-loc-123") as { location: string | null };
-    expect(row.location).toBeNull();
+    const row = orm()
+      .select({ location: transactionsTable.location })
+      .from(transactionsTable)
+      .where(eq(transactionsTable.checksum, "no-loc-123"))
+      .get();
+    expect(row!.location).toBeNull();
   });
 
   it("stores rawRow in SQLite", () => {
     executeImport([baseConfirmedTransaction]);
 
-    const row = db.prepare("SELECT raw_row FROM transactions WHERE checksum = ?").get("abc123") as {
-      raw_row: string | null;
-    };
-    expect(row.raw_row).toBe('{"Date":"13/02/2026"}');
+    const row = orm()
+      .select({ rawRow: transactionsTable.rawRow })
+      .from(transactionsTable)
+      .where(eq(transactionsTable.checksum, "abc123"))
+      .get();
+    expect(row!.rawRow).toBe('{"Date":"13/02/2026"}');
   });
 
   it("stores entity_id and entity_name in SQLite", () => {
     executeImport([baseConfirmedTransaction]);
 
-    const row = db
-      .prepare("SELECT entity_id, entity_name FROM transactions WHERE checksum = ?")
-      .get("abc123") as {
-      entity_id: string | null;
-      entity_name: string | null;
-    };
-    expect(row.entity_id).toBe("woolworths-id");
-    expect(row.entity_name).toBe("Woolworths");
+    const row = orm()
+      .select({ entityId: transactionsTable.entityId, entityName: transactionsTable.entityName })
+      .from(transactionsTable)
+      .where(eq(transactionsTable.checksum, "abc123"))
+      .get();
+    expect(row!.entityId).toBe("woolworths-id");
+    expect(row!.entityName).toBe("Woolworths");
   });
 
   it("handles large batch (30 transactions)", () => {
@@ -583,8 +601,8 @@ describe("executeImport", () => {
 
     expect(result.imported).toBe(30);
 
-    const count = db.prepare("SELECT COUNT(*) as cnt FROM transactions").get() as { cnt: number };
-    expect(count.cnt).toBe(30);
+    const [row] = orm().select({ cnt: count() }).from(transactionsTable).all();
+    expect(row.cnt).toBe(30);
   });
 });
 
@@ -597,8 +615,12 @@ describe("createEntity", () => {
     expect(result.entityName).toBe("New Entity");
 
     // Verify SQLite insert
-    const row = db.prepare("SELECT * FROM entities WHERE id = ?").get(result.entityId) as EntityRow;
-    expect(row.name).toBe("New Entity");
+    const row = orm()
+      .select()
+      .from(entitiesTable)
+      .where(eq(entitiesTable.id, result.entityId))
+      .get();
+    expect(row!.name).toBe("New Entity");
   });
 
   it("handles entity name with special characters", () => {
@@ -606,10 +628,12 @@ describe("createEntity", () => {
 
     expect(result.entityName).toBe("McDonald's");
 
-    const row = db.prepare("SELECT name FROM entities WHERE id = ?").get(result.entityId) as {
-      name: string;
-    };
-    expect(row.name).toBe("McDonald's");
+    const row = orm()
+      .select({ name: entitiesTable.name })
+      .from(entitiesTable)
+      .where(eq(entitiesTable.id, result.entityId))
+      .get();
+    expect(row!.name).toBe("McDonald's");
   });
 
   it("handles very long entity name (200 chars)", () => {
@@ -625,8 +649,8 @@ describe("createEntity", () => {
 
     expect(result1.entityId).not.toBe(result2.entityId);
 
-    const count = db.prepare("SELECT COUNT(*) as cnt FROM entities").get() as { cnt: number };
-    expect(count.cnt).toBe(2);
+    const [result] = orm().select({ cnt: count() }).from(entitiesTable).all();
+    expect(result.cnt).toBe(2);
   });
 
   it("sets current timestamp for last_edited_time", () => {
@@ -634,11 +658,13 @@ describe("createEntity", () => {
     const result = createEntity("Test Entity");
     const after = new Date().toISOString();
 
-    const row = db
-      .prepare("SELECT last_edited_time FROM entities WHERE id = ?")
-      .get(result.entityId) as EntityRow;
-    expect(row.last_edited_time >= before).toBe(true);
-    expect(row.last_edited_time <= after).toBe(true);
+    const row = orm()
+      .select({ lastEditedTime: entitiesTable.lastEditedTime })
+      .from(entitiesTable)
+      .where(eq(entitiesTable.id, result.entityId))
+      .get();
+    expect(row!.lastEditedTime >= before).toBe(true);
+    expect(row!.lastEditedTime <= after).toBe(true);
   });
 });
 
@@ -669,11 +695,14 @@ describe("loadEntityLookup", () => {
   });
 
   it("handles entity with empty id gracefully", async () => {
-    db.prepare("INSERT INTO entities (id, name, last_edited_time) VALUES (?, ?, ?)").run(
-      "",
-      "Invalid Entity",
-      "2026-01-01T00:00:00Z"
-    );
+    orm()
+      .insert(entitiesTable)
+      .values({
+        id: "",
+        name: "Invalid Entity",
+        lastEditedTime: "2026-01-01T00:00:00Z",
+      })
+      .run();
 
     // Should not crash when entity lookup encounters an empty-string id
     const result = await processImport([], "Amex");

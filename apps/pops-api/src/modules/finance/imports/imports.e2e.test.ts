@@ -5,6 +5,9 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import Papa from "papaparse";
 import type { Database } from "better-sqlite3";
+import { drizzle } from "drizzle-orm/better-sqlite3";
+import { eq, count, isNull } from "drizzle-orm";
+import { transactions as transactionsTable } from "@pops/db-types";
 import {
   seedEntity,
   seedTransaction,
@@ -46,6 +49,7 @@ import { setDb, closeDb } from "../../../db.js";
 
 let caller: ReturnType<typeof createCaller>;
 let db: Database;
+const orm = () => drizzle(db);
 
 /**
  * Helper to poll for import progress until completion
@@ -195,26 +199,20 @@ describe("E2E: Complete Import Flow", () => {
     expect(result.failed.length).toBe(0);
 
     // Verify rows were written to SQLite (excluding the 1 seeded duplicate)
-    const transactionCount = db.prepare("SELECT COUNT(*) as cnt FROM transactions").get() as {
-      cnt: number;
-    };
+    const [transactionCount] = orm().select({ cnt: count() }).from(transactionsTable).all();
     // 1 seeded duplicate + confirmed.length newly imported
     expect(transactionCount.cnt).toBe(1 + confirmed.length);
 
     // Verify data integrity of a specific row
     if (woolworthsMatch) {
-      const row = db
-        .prepare("SELECT * FROM transactions WHERE checksum = ?")
-        .get(woolworthsMatch.checksum) as
-        | {
-            description: string;
-            entity_name: string | null;
-            account: string;
-          }
-        | undefined;
+      const row = orm()
+        .select()
+        .from(transactionsTable)
+        .where(eq(transactionsTable.checksum, woolworthsMatch.checksum))
+        .get();
       expect(row).toBeDefined();
       expect(row?.description).toBe(woolworthsMatch.description);
-      expect(row?.entity_name).toBe("Woolworths");
+      expect(row?.entityName).toBe("Woolworths");
       expect(row?.account).toBe("Amex");
     }
   }, 30000); // 30 second timeout
@@ -277,11 +275,13 @@ describe("E2E: Complete Import Flow", () => {
     seedTransaction(db, { checksum: undefined });
     seedTransaction(db, { checksum: undefined });
 
-    const count = db
-      .prepare("SELECT COUNT(*) AS cnt FROM transactions WHERE checksum IS NULL")
-      .get() as { cnt: number };
+    const [result] = orm()
+      .select({ cnt: count() })
+      .from(transactionsTable)
+      .where(isNull(transactionsTable.checksum))
+      .all();
 
-    expect(count.cnt).toBe(2);
+    expect(result.cnt).toBe(2);
   });
 
   it("deduplicates correctly across multiple imports", async () => {
@@ -414,17 +414,11 @@ describe("E2E: Complete Import Flow", () => {
     await waitForCompletion<ExecuteImportOutput>(executeSessionId, 500);
 
     // Verify data preservation in SQLite
-    const row = db.prepare("SELECT * FROM transactions WHERE checksum = ?").get("preserve123") as
-      | {
-          description: string;
-          amount: number;
-          date: string;
-          location: string | null;
-          tags: string;
-          checksum: string;
-          raw_row: string | null;
-        }
-      | undefined;
+    const row = orm()
+      .select()
+      .from(transactionsTable)
+      .where(eq(transactionsTable.checksum, "preserve123"))
+      .get();
 
     expect(row).toBeDefined();
     expect(row?.description).toBe("WOOLWORTHS 1234");
