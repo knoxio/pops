@@ -1,8 +1,9 @@
 /**
  * MediaCard component stories
- * Demonstrates movie, TV show, long title, and no poster variants
+ * Demonstrates movie, TV show, long title, no poster, and fallback variants
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { MemoryRouter } from "react-router";
 import { MediaCard } from "./MediaCard";
 
 const meta: Meta<typeof MediaCard> = {
@@ -24,14 +25,20 @@ const meta: Meta<typeof MediaCard> = {
     },
     posterUrl: {
       control: "text",
-      description: "Poster image URL",
+      description: "Primary poster image URL",
+    },
+    fallbackPosterUrl: {
+      control: "text",
+      description: "Fallback poster image URL",
     },
   },
   decorators: [
     (Story) => (
-      <div style={{ maxWidth: "180px" }}>
-        <Story />
-      </div>
+      <MemoryRouter>
+        <div style={{ maxWidth: "180px" }}>
+          <Story />
+        </div>
+      </MemoryRouter>
     ),
   ],
 };
@@ -46,7 +53,6 @@ export const Movie: Story = {
     title: "The Shawshank Redemption",
     year: "1994",
     posterUrl: "/media/images/movie/1/poster.jpg",
-    onClick: (id, type) => console.log("Navigate:", type, id),
   },
 };
 
@@ -57,7 +63,6 @@ export const TvShow: Story = {
     title: "Breaking Bad",
     year: "2008",
     posterUrl: "/media/images/tv/81189/poster.jpg",
-    onClick: (id, type) => console.log("Navigate:", type, id),
   },
 };
 
@@ -68,7 +73,6 @@ export const LongTitle: Story = {
     title: "Dr. Strangelove or: How I Learned to Stop Worrying and Love the Bomb",
     year: "1964",
     posterUrl: "/media/images/movie/3/poster.jpg",
-    onClick: (id, type) => console.log("Navigate:", type, id),
   },
 };
 
@@ -79,6 +83,38 @@ export const NoPoster: Story = {
     title: "Upcoming Show",
     year: "2026",
     posterUrl: null,
-    onClick: (id, type) => console.log("Navigate:", type, id),
+  },
+};
+
+export const FallbackOnly: Story = {
+  args: {
+    id: 5,
+    type: "movie",
+    title: "Fallback Poster Movie",
+    year: "2025",
+    posterUrl: null,
+    fallbackPosterUrl: "/media/images/movie/5/poster.jpg",
+  },
+};
+
+export const NoBadge: Story = {
+  args: {
+    id: 6,
+    type: "movie",
+    title: "No Badge Card",
+    year: "2024",
+    posterUrl: "/media/images/movie/6/poster.jpg",
+    showTypeBadge: false,
+  },
+};
+
+export const WithProgress: Story = {
+  args: {
+    id: 7,
+    type: "tv",
+    title: "In Progress Show",
+    year: "2024",
+    posterUrl: "/media/images/tv/7/poster.jpg",
+    progress: 65,
   },
 };
