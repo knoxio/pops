@@ -1,7 +1,21 @@
 # US-04: Build page-level navigation (back button + breadcrumbs)
 
 > PRD: [005 — Shell](README.md)
-> Status: To Review
+> Status: Partial
+
+**GH Issue:** #405
+
+## Audit Findings
+
+**Present:**
+- `Breadcrumb` primitive available in `@pops/ui` (shadcn-based, at `packages/ui/src/primitives/breadcrumb.tsx`)
+- `LocationBreadcrumb.tsx` composite in `@pops/ui` for inventory location hierarchies (with click handlers and segments)
+
+**Missing:**
+- No shared `PageHeader` component or standard page header pattern in `@pops/ui` combining a back button + breadcrumb
+- No drill-down pages in the codebase implement the `ArrowLeft + Breadcrumb` pattern from the spec
+- The `TopBar` does not include a contextual breadcrumb area
+- Mobile collapse behaviour (`…` for middle segments) is not implemented
 
 ## Description
 

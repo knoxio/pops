@@ -85,12 +85,12 @@ With only one app registered, the switcher should not feel empty:
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-nav-types-registry](us-01-nav-types-registry.md) | Define AppNavConfig/AppNavItem types and app registry in the shell | No (first) |
-| 02 | [us-02-app-rail](us-02-app-rail.md) | Build vertical app rail with icons, active indicator, collapse toggle | Blocked by us-01 |
-| 03 | [us-03-page-nav](us-03-page-nav.md) | Build page nav panel showing active app's pages | Blocked by us-01 |
-| 04 | [us-04-layout-integration](us-04-layout-integration.md) | Integrate app rail + page nav into RootLayout, replace basic sidebar | Blocked by us-02, us-03 |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-nav-types-registry](us-01-nav-types-registry.md) | Define AppNavConfig/AppNavItem types and app registry in the shell | Done | No (first) |
+| 02 | [us-02-app-rail](us-02-app-rail.md) | Build vertical app rail with icons, active indicator, collapse toggle | Partial | Blocked by us-01 |
+| 03 | [us-03-page-nav](us-03-page-nav.md) | Build page nav panel showing active app's pages | Partial | Blocked by us-01 |
+| 04 | [us-04-layout-integration](us-04-layout-integration.md) | Integrate app rail + page nav into RootLayout, replace basic sidebar | Partial | Blocked by us-02, us-03 |
 
 ## Verification
 

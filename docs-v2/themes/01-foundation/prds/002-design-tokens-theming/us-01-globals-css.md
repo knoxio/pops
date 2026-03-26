@@ -1,7 +1,7 @@
 # US-01: Create globals.css with design tokens
 
 > PRD: [002 — Design Tokens & Theming](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,14 +9,14 @@ As a developer, I want a single `globals.css` file in `@pops/ui/theme` that defi
 
 ## Acceptance Criteria
 
-- [ ] `packages/ui/src/theme/globals.css` exists
-- [ ] Contains `@import "tailwindcss"`
-- [ ] Contains `@theme` block with breakpoints, shadows, radii, and any custom spacing tokens
-- [ ] Contains CSS variables for all colours in `:root` (light mode) and `.dark` (dark mode)
-- [ ] Uses oklch colour space for all colour values
-- [ ] Shell entry point imports `@pops/ui/theme`
-- [ ] Light mode and dark mode both render correctly
-- [ ] No theme-related CSS exists outside this file
+- [x] `packages/ui/src/theme/globals.css` exists
+- [x] Contains `@import "tailwindcss"`
+- [x] Contains `@theme` block with breakpoints, shadows, radii, and any custom spacing tokens
+- [x] Contains CSS variables for all colours in `:root` (light mode) and `.dark` (dark mode)
+- [x] Uses oklch colour space for all colour values
+- [x] Shell entry point imports `@pops/ui/theme`
+- [x] Light mode and dark mode both render correctly
+- [x] No theme-related CSS exists outside this file
 
 ## Notes
 

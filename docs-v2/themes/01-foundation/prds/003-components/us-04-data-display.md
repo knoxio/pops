@@ -1,7 +1,21 @@
 # US-04: Build data display composites
 
 > PRD: [003 — Components](README.md)
-> Status: To Review
+> Status: Partial
+
+**GH Issue:** #397
+
+## Audit Findings
+
+**Present:**
+- `DataTable.tsx` — TanStack Table with sorting, filtering, pagination; stories at `DataTable.stories.tsx` and `DataTable.filtering.stories.tsx`
+- `DataTableFilters.tsx` — filter bar component
+- `InfiniteScrollTable.tsx` — scroll-based pagination variant; story at `InfiniteScrollTable.stories.tsx`
+- `EditableCell.tsx` — inline cell editing
+- `StatCard.tsx` — metric card with oklch color variants and trend support; all using design tokens
+
+**Missing:**
+- `ViewToggleGroup` — table/grid toggle persisting to localStorage is not implemented; apps use their own ad-hoc patterns
 
 ## Description
 

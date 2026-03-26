@@ -1,7 +1,7 @@
 # US-02: Centralised log access
 
 > PRD: [018 — Monitoring](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,11 +9,11 @@ As an operator, I want easy access to service logs so that I can diagnose issues
 
 ## Acceptance Criteria
 
-- [ ] `docker compose logs` shows combined output from all services
-- [ ] `docker compose logs <service>` shows individual service output
-- [ ] `mise docker:logs` task available for quick access
-- [ ] Log output includes timestamps and service name prefix
-- [ ] Logs persist across container restarts (Docker default logging driver)
+- [x] `docker compose logs` shows combined output from all services
+- [x] `docker compose logs <service>` shows individual service output
+- [x] `mise docker:logs` task available for quick access
+- [x] Log output includes timestamps and service name prefix
+- [x] Logs persist across container restarts (Docker default logging driver)
 
 ## Notes
 

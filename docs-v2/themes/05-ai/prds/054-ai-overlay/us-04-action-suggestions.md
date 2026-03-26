@@ -1,7 +1,7 @@
 # US-04: Contextual action suggestions
 
 > PRD: [054 — AI Overlay](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

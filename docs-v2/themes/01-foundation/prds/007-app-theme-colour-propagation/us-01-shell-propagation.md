@@ -1,7 +1,7 @@
 # US-01: Shell reads active app colour and sets CSS variables
 
 > PRD: [007 — App Theme Colour Propagation](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

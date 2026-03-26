@@ -66,12 +66,12 @@ apps/pops-api/src/db/
 
 | # | Story | Summary | Parallelisable |
 |---|-------|---------|----------------|
-| 01 | [us-01-drizzle-setup](us-01-drizzle-setup.md) | Install drizzle-orm + drizzle-kit, create config, set up db connection wrapper | No (first) |
-| 02 | [us-02-schema-definitions](us-02-schema-definitions.md) | Define Drizzle schema files for all existing tables | Blocked by us-01 |
-| 03 | [us-03-core-module-migration](us-03-core-module-migration.md) | Migrate core module queries (entities, ai-usage, settings) to Drizzle | Blocked by us-02 |
-| 04 | [us-04-finance-module-migration](us-04-finance-module-migration.md) | Migrate finance module queries (transactions, budgets, imports, wishlist) to Drizzle | Blocked by us-02 |
-| 05 | [us-05-remaining-modules](us-05-remaining-modules.md) | Migrate media and inventory module queries to Drizzle | Blocked by us-02 |
-| 06 | [us-06-mise-tasks](us-06-mise-tasks.md) | Add mise tasks for drizzle-kit generate and migrate | Blocked by us-01 |
+| 01 | [us-01-drizzle-setup](us-01-drizzle-setup.md) | Install drizzle-orm + drizzle-kit, create config, set up db connection wrapper | Done |
+| 02 | [us-02-schema-definitions](us-02-schema-definitions.md) | Define Drizzle schema files for all existing tables | Done |
+| 03 | [us-03-core-module-migration](us-03-core-module-migration.md) | Migrate core module queries (entities, ai-usage, settings) to Drizzle | Done |
+| 04 | [us-04-finance-module-migration](us-04-finance-module-migration.md) | Migrate finance module queries (transactions, budgets, imports, wishlist) to Drizzle | Partial |
+| 05 | [us-05-remaining-modules](us-05-remaining-modules.md) | Migrate media and inventory module queries to Drizzle | Done |
+| 06 | [us-06-mise-tasks](us-06-mise-tasks.md) | Add mise tasks for drizzle-kit generate and migrate | Done |
 
 US-03, US-04, US-05 can parallelise after US-02. US-06 can parallelise with US-02.
 

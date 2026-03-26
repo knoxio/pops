@@ -1,7 +1,7 @@
 # US-02: Auto-apply high-confidence rules during import
 
 > PRD: [027 — AI Rule Creation](README.md)
-> Status: To Review
+> Status: Partial
 
 ## Description
 
@@ -14,7 +14,11 @@ As a user, I want high-confidence AI rules automatically applied to remaining im
 - [ ] Newly matched transactions move from uncertain → matched
 - [ ] Toast notification: "Rule created: [pattern]. Applied to N more transactions"
 - [ ] Tab counts update immediately
-- [ ] Rule is persistent — applies to future imports too
+- [x] Rule is persistent — applies to future imports too
+
+## Missing
+
+Backend uses confidence >= 0.9 threshold (not 0.8 as specified). No toast notification after a rule is created. No real-time re-evaluation of uncertain/failed tab after saving a rule. The UI does not show tab count decreasing as rules are applied.
 
 ## Notes
 

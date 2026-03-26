@@ -1,7 +1,7 @@
 # US-01: Overlay UI panel
 
 > PRD: [054 — AI Overlay](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

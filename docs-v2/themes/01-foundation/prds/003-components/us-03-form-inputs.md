@@ -1,7 +1,7 @@
 # US-03: Build composite form inputs
 
 > PRD: [003 — Components](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,20 +9,20 @@ As a developer, I want a complete set of form input components in `@pops/ui` so 
 
 ## Acceptance Criteria
 
-- [ ] TextInput — text field with label, error state, helper text
-- [ ] NumberInput — numeric input with increment/decrement, min/max
-- [ ] DateTimeInput — date and optional time picker
-- [ ] CheckboxInput — checkbox with label
-- [ ] RadioInput — radio group with options
-- [ ] ChipInput — tag/chip entry with add/remove
-- [ ] Autocomplete — text input with dropdown suggestions, async loading
-- [ ] ComboboxSelect — searchable dropdown selection
-- [ ] Each component has co-located `.stories.tsx`
-- [ ] All exported from barrel `index.ts`
-- [ ] All use design tokens — no arbitrary values or hardcoded colours
-- [ ] All meet 44x44px touch target minimum
-- [ ] All work in light and dark mode
-- [ ] Form inputs stack vertically on mobile viewports
+- [x] TextInput — text field with label, error state, helper text
+- [x] NumberInput — numeric input with increment/decrement, min/max
+- [x] DateTimeInput — date and optional time picker
+- [x] CheckboxInput — checkbox with label
+- [x] RadioInput — radio group with options
+- [x] ChipInput — tag/chip entry with add/remove
+- [x] Autocomplete — text input with dropdown suggestions, async loading
+- [x] ComboboxSelect — searchable dropdown selection
+- [x] Each component has co-located `.stories.tsx`
+- [x] All exported from barrel `index.ts`
+- [x] All use design tokens — no arbitrary values or hardcoded colours
+- [x] All meet 44x44px touch target minimum
+- [x] All work in light and dark mode
+- [x] Form inputs stack vertically on mobile viewports
 
 ## Notes
 

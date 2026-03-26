@@ -25,3 +25,5 @@ As a user, I want a "Request" button on movie detail pages, search results, and 
 ## Notes
 
 The button's visibility depends on three states: Radarr configured, Radarr reachable, and movie not already in Radarr. All three must be true for the button to appear. This mirrors the graceful degradation pattern from the status badges — if anything is wrong with the Radarr connection, the request feature is simply absent rather than showing errors. After a successful request, invalidate the `checkMovie` cache entry for this TMDB ID so the button disappears immediately.
+
+Audited — no RequestMovieButton component or request button integration found in codebase; status confirmed Not started.

@@ -1,7 +1,7 @@
 # US-03: Document FK patterns and create schema registry
 
 > PRD: [009 — DB Schema Patterns](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

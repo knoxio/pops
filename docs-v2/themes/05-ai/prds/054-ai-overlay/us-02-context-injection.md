@@ -1,7 +1,7 @@
 # US-02: Context injection into AI prompts
 
 > PRD: [054 — AI Overlay](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

@@ -1,7 +1,7 @@
 # PRD-052: AI Usage & Cost Tracking
 
 > Epic: [00 — AI Operations App](../../epics/00-ai-operations-app.md)
-> Status: To Review
+> Status: Partial
 
 ## Overview
 
@@ -41,11 +41,11 @@ Uses the existing `ai_usage` table (created in PRD-009):
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-stats-api](us-01-stats-api.md) | getStats and getHistory procedures with aggregation | No (first) |
-| 02 | [us-02-usage-page](us-02-usage-page.md) | Stats cards, daily chart, date range filter | Blocked by us-01 |
-| 03 | [us-03-app-scaffold](us-03-app-scaffold.md) | `@pops/app-ai` workspace package, shell registration, route at /ai | Yes (parallel with us-01) |
+| # | Story | Summary | Parallelisable | Status |
+|---|-------|---------|----------------|--------|
+| 01 | [us-01-stats-api](us-01-stats-api.md) | getStats and getHistory procedures with aggregation | No (first) | Partial |
+| 02 | [us-02-usage-page](us-02-usage-page.md) | Stats cards, daily chart, date range filter | Blocked by us-01 | Partial |
+| 03 | [us-03-app-scaffold](us-03-app-scaffold.md) | `@pops/app-ai` workspace package, shell registration, route at /ai | Yes (parallel with us-01) | Partial |
 
 ## Out of Scope
 

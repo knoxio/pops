@@ -1,7 +1,22 @@
 # US-05: Set up tRPC client and app package access pattern
 
 > PRD: [005 — Shell](README.md)
-> Status: To Review
+> Status: Partial
+
+**GH Issue:** #406
+
+## Audit Findings
+
+**Present:**
+- `apps/pops-shell/src/lib/trpc.ts` — `createTRPCReact<AppRouter>()` with `httpBatchLink` pointing to `/trpc` (proxied to `localhost:3000` in dev)
+- `trpc.Provider` + `QueryClientProvider` wrap the entire app in `App.tsx`
+- `ReactQueryDevtools` available in development (gated by `!VITE_E2E`)
+- TypeScript resolves `AppRouter` from `@pops/api` — procedure names autocomplete
+- App packages (e.g., `app-finance`) each have their own `lib/trpc.ts` re-creating `createTRPCReact<AppRouter>()` for local `@/` alias resolution
+
+**Missing:**
+- Each app package creates a separate `createTRPCReact` instance rather than sharing the shell's instance; this is architecturally fragile (separate React contexts) — noted in `app-finance/src/lib/trpc.ts` as needing consolidation
+- No shared `@pops/api-client` package as suggested in the notes — tRPC config is duplicated across packages
 
 ## Description
 

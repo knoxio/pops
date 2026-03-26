@@ -1,7 +1,7 @@
 # PRD-014: Networking & Access
 
 > Epic: [02 — Networking & Access](../../epics/02-networking-access.md)
-> Status: To Review
+> Status: Done
 
 ## Overview
 
@@ -39,9 +39,9 @@ The `cloudflared` container maintains an outbound connection to Cloudflare. No i
 
 | # | Story | Summary | Parallelisable |
 |---|-------|---------|----------------|
-| 01 | [us-01-tunnel-setup](us-01-tunnel-setup.md) | Install cloudflared, create tunnel, configure routes to services | No (first) |
-| 02 | [us-02-access-policies](us-02-access-policies.md) | Configure Cloudflare Access policies per service | Blocked by us-01 |
-| 03 | [us-03-dns-config](us-03-dns-config.md) | Set up DNS records pointing to tunnel | Blocked by us-01 |
+| 01 | [us-01-tunnel-setup](us-01-tunnel-setup.md) | Install cloudflared, create tunnel, configure routes to services ✅ | No (first) |
+| 02 | [us-02-access-policies](us-02-access-policies.md) | Configure Cloudflare Access policies per service ✅ | Blocked by us-01 |
+| 03 | [us-03-dns-config](us-03-dns-config.md) | Set up DNS records pointing to tunnel ✅ | Blocked by us-01 |
 
 ## Verification
 

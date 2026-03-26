@@ -52,11 +52,11 @@ No database changes. The colour is declared in the app's `navConfig` (already pa
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-shell-propagation](us-01-shell-propagation.md) | Shell reads active app's colour from navConfig and sets CSS variables on the app container | No (first) |
-| 02 | [us-02-rail-accent](us-02-rail-accent.md) | App rail active indicator uses the active app's accent colour | Blocked by us-01 |
-| 03 | [us-03-verify-components](us-03-verify-components.md) | Verify all components using app-accent tokens render correctly across all app colours | Blocked by us-01 |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-shell-propagation](us-01-shell-propagation.md) | Shell reads active app's colour from navConfig and sets CSS variables on the app container | To Review | No (first) |
+| 02 | [us-02-rail-accent](us-02-rail-accent.md) | App rail active indicator uses the active app's accent colour | Partial | Blocked by us-01 |
+| 03 | [us-03-verify-components](us-03-verify-components.md) | Verify all components using app-accent tokens render correctly across all app colours | Partial | Blocked by us-01 |
 
 ## Verification
 

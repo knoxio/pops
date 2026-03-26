@@ -100,10 +100,10 @@ Per Apple HIG and WCAG:
 
 | # | Story | Summary | Parallelisable |
 |---|-------|---------|----------------|
-| 01 | [us-01-mobile-shell](us-01-mobile-shell.md) | Shell layout works on mobile: compact TopBar, mobile nav pattern, full-width content | No (first) |
-| 02 | [us-02-component-audit](us-02-component-audit.md) | All @pops/ui components render without overflow at 375px: DataTable, forms, dialogs, filters | Yes |
+| 01 | [us-01-mobile-shell](us-01-mobile-shell.md) | Shell layout works on mobile: compact TopBar, mobile nav pattern, full-width content | Done |
+| 02 | [us-02-component-audit](us-02-component-audit.md) | All @pops/ui components render without overflow at 375px: DataTable, forms, dialogs, filters | Partial |
 | 03 | [us-03-touch-targets](us-03-touch-targets.md) | All interactive elements meet 44x44px minimum with 8px spacing | Yes |
-| 04 | [us-04-page-conventions](us-04-page-conventions.md) | Page width, padding, empty state, error state, and title icon conventions established and documented | Yes |
+| 04 | [us-04-page-conventions](us-04-page-conventions.md) | Page width, padding, empty state, error state, and title icon conventions established and documented | Done |
 
 US-02, US-03, US-04 can parallelise after US-01.
 

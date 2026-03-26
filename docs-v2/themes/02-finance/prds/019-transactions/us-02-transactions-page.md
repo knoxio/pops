@@ -1,7 +1,7 @@
 # US-02: Transactions page
 
 > PRD: [019 — Transactions](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,14 +9,14 @@ As a user, I want a transaction list page with filtering and sorting so that I c
 
 ## Acceptance Criteria
 
-- [ ] DataTable displays: Date (sortable), Description + Entity name (sub-text), Account, Amount (sortable, red for expenses, green for income), Type badge, Tags column
-- [ ] Search by description (full-text LIKE)
-- [ ] Filter by: Account (select dropdown), Type (Income/Expense/Transfer), Tags (text search)
-- [ ] Column sorting: Date and Amount, ascending/descending
-- [ ] Pagination: 25/50/100 rows per page
-- [ ] Loading skeleton while data fetches
-- [ ] Empty state when no transactions match filters
-- [ ] Amount formatting: currency symbol, 2 decimal places, colour-coded
+- [x] DataTable displays: Date (sortable), Description + Entity name (sub-text), Account, Amount (sortable, red for expenses, green for income), Type badge, Tags column
+- [x] Search by description (full-text LIKE)
+- [x] Filter by: Account (select dropdown), Type (Income/Expense/Transfer), Tags (text search)
+- [x] Column sorting: Date and Amount, ascending/descending
+- [x] Pagination: 25/50/100 rows per page
+- [x] Loading skeleton while data fetches
+- [x] Empty state when no transactions match filters
+- [x] Amount formatting: currency symbol, 2 decimal places, colour-coded
 
 ## Notes
 

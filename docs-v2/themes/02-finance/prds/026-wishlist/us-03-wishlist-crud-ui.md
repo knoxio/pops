@@ -1,7 +1,7 @@
 # US-03: Wishlist CRUD UI
 
 > PRD: [026 — Wishlist](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,13 +9,13 @@ As a user, I want to create, edit, and delete wishlist items so that I can manag
 
 ## Acceptance Criteria
 
-- [ ] "Add Item" button opens create dialog
-- [ ] Form: item name (required), target amount (number), saved amount (number), priority (select: Needing/Soon/One Day/Dreaming), URL (text, validated), notes (textarea)
-- [ ] Edit: dropdown action opens same form pre-filled
-- [ ] Delete: dropdown action with confirmation dialog
-- [ ] Toast confirmation on create/update/delete
-- [ ] Loading state on buttons during mutation
-- [ ] DataTable refreshes after mutations
+- [x] "Add Item" button opens create dialog
+- [x] Form: item name (required), target amount (number), saved amount (number), priority (select: Needing/Soon/One Day/Dreaming), URL (text, validated), notes (textarea)
+- [x] Edit: dropdown action opens same form pre-filled
+- [x] Delete: dropdown action with confirmation dialog
+- [x] Toast confirmation on create/update/delete
+- [x] Loading state on buttons during mutation
+- [x] DataTable refreshes after mutations
 
 ## Notes
 

@@ -1,7 +1,7 @@
 # US-03: Confirmation flow for low-confidence rules
 
 > PRD: [027 — AI Rule Creation](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

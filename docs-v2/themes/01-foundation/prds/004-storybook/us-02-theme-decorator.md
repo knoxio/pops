@@ -1,7 +1,21 @@
 # US-02: Global theme decorator
 
 > PRD: [004 — Storybook](README.md)
-> Status: To Review
+> Status: Partial
+
+**GH Issue:** #401
+
+## Audit Findings
+
+**Present:**
+- `packages/ui/.storybook/preview.ts` imports `../src/theme/globals.css`, so all stories render with the correct design tokens
+- Storybook controls (color matchers, date matchers) configured
+
+**Missing:**
+- No global decorator wrapping stories with a theme provider or dark mode class toggle
+- No Storybook toolbar addon for light/dark mode switching — dark mode can't be previewed without manually setting the `dark` class on `<html>`
+- No app colour variable dropdown (e.g., switching between emerald, indigo, amber themes)
+- The `@storybook/addon-backgrounds` dark background option is not wired to the CSS `dark` class
 
 ## Description
 
