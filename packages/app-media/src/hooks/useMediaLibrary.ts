@@ -1,10 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { trpc } from "../lib/trpc";
 
 export type MediaType = "all" | "movie" | "tv";
 export type SortOption = "title" | "dateAdded" | "releaseDate" | "rating";
 
-interface MediaItem {
+export interface MediaItem {
   id: number;
   type: "movie" | "tv";
   title: string;
@@ -18,11 +18,19 @@ interface MediaItem {
   progress: number | null;
 }
 
-export function useMediaLibrary() {
-  const [typeFilter, setTypeFilter] = useState<MediaType>("all");
-  const [genreFilter, setGenreFilter] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<SortOption>("dateAdded");
+export interface UseMediaLibraryParams {
+  typeFilter: MediaType;
+  genreFilter: string | null;
+  sortBy: SortOption;
+  search: string;
+}
 
+export function useMediaLibrary({
+  typeFilter,
+  genreFilter,
+  sortBy,
+  search,
+}: UseMediaLibraryParams) {
   const { data: moviesData, isLoading: moviesLoading } = trpc.media.movies.list.useQuery({
     limit: 500,
   });
@@ -118,6 +126,11 @@ export function useMediaLibrary() {
       items = items.filter((item) => item.genres.includes(genreFilter));
     }
 
+    if (search) {
+      const q = search.toLowerCase();
+      items = items.filter((item) => item.title.toLowerCase().includes(q));
+    }
+
     return [...items].sort((a, b) => {
       switch (sortBy) {
         case "title":
@@ -132,18 +145,12 @@ export function useMediaLibrary() {
           return 0;
       }
     });
-  }, [allItems, typeFilter, genreFilter, sortBy]);
+  }, [allItems, typeFilter, genreFilter, sortBy, search]);
 
   return {
     items: filteredItems,
     isLoading,
     isEmpty: !isLoading && allItems.length === 0,
     allGenres,
-    typeFilter,
-    setTypeFilter,
-    genreFilter,
-    setGenreFilter,
-    sortBy,
-    setSortBy,
   };
 }

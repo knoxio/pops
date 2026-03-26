@@ -23,6 +23,8 @@ export interface MediaCardProps {
   progress?: number | null;
   /** Click handler — typically navigates to detail page. */
   onClick?: (id: number, type: MediaType) => void;
+  /** Whether to show the type badge (default: true). */
+  showTypeBadge?: boolean;
   /** Additional CSS classes for the root element. */
   className?: string;
 }
@@ -40,6 +42,7 @@ export function MediaCard({
   posterUrl,
   progress,
   onClick,
+  showTypeBadge = true,
   className,
 }: MediaCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -65,12 +68,14 @@ export function MediaCard({
       {/* Poster container with 2:3 aspect ratio */}
       <div className="relative w-full overflow-hidden rounded-md bg-muted aspect-[2/3]">
         {/* Type badge */}
-        <Badge
-          variant={type === "movie" ? "default" : "secondary"}
-          className="absolute top-2 left-2 z-10"
-        >
-          {TYPE_LABELS[type]}
-        </Badge>
+        {showTypeBadge && (
+          <Badge
+            variant={type === "movie" ? "default" : "secondary"}
+            className="absolute top-2 left-2 z-10"
+          >
+            {TYPE_LABELS[type]}
+          </Badge>
+        )}
 
         {/* Poster image */}
         {!showPlaceholder && (
