@@ -1,7 +1,7 @@
 # US-02: Search results display
 
 > PRD: [032 — Search Page](README.md)
-> Status: To Review
+> Status: Partial
 
 ## Description
 
@@ -9,15 +9,15 @@ As a user, I want to see search results from both TMDB and TheTVDB displayed cle
 
 ## Acceptance Criteria
 
-- [ ] Results are displayed in two sections (or tabs): "Movies" and "TV Shows"
-- [ ] Each result card shows: poster thumbnail, title, release year, overview snippet (truncated to 2-3 lines)
-- [ ] Poster thumbnail uses a fallback placeholder if the API returns no image URL
-- [ ] Each section has its own independent loading state (spinner or skeleton cards) — one section can show results while the other is still loading
-- [ ] Each section has its own empty state: "No [movies/shows] found for [query]"
-- [ ] Each section has its own error state with a "Retry" button that re-fires only that section's API call
-- [ ] Results that already exist in the local library display an "In Library" badge instead of an "Add" button
-- [ ] "In Library" detection calls `media.library.list` (or checks a local cache of existing tmdbIds/tvdbIds) to compare against result IDs
-- [ ] Result list is scrollable; results are capped at a reasonable limit (e.g., 20 per section) matching API response size
+- [x] Results are displayed in two sections (or tabs): "Movies" and "TV Shows"
+- [x] Each result card shows: poster thumbnail, title, release year, overview snippet (truncated to 2-3 lines)
+- [x] Poster thumbnail uses a fallback placeholder if the API returns no image URL
+- [x] Each section has its own independent loading state (spinner or skeleton cards) — one section can show results while the other is still loading
+- [x] Each section has its own empty state: "No [movies/shows] found for [query]"
+- [ ] Each section has its own error state with a "Retry" button that re-fires only that section's API call — single combined error state covers both sections; not per-section
+- [x] Results that already exist in the local library display an "In Library" badge instead of an "Add" button
+- [x] "In Library" detection calls `media.library.list` (or checks a local cache of existing tmdbIds/tvdbIds) to compare against result IDs
+- [ ] Result list is scrollable; results are capped at a reasonable limit (e.g., 20 per section) matching API response size — no per-section result cap enforced
 - [ ] Tests cover: both sections render independently, poster fallback, "In Library" badge appears for existing items, per-section loading/empty/error states, overview truncation
 
 ## Notes
