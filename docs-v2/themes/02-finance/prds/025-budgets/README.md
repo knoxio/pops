@@ -46,7 +46,7 @@ Build budget tracking — spending categories with monthly or yearly limits. Sho
 | # | Story | Summary | Parallelisable |
 |---|-------|---------|----------------|
 | 01 | [us-01-schema-api](us-01-schema-api.md) | Budget table, unique constraint, CRUD procedures | Partial |
-| 02 | [us-02-budgets-page](us-02-budgets-page.md) | DataTable with search, period/status filters, sorting | Partial |
+| 02 | [us-02-budgets-page](us-02-budgets-page.md) | DataTable with search, period/status filters, sorting | Done |
 | 03 | [us-03-budget-crud-ui](us-03-budget-crud-ui.md) | Create/edit/delete dialogs with form validation | Not started |
 
 ## Out of Scope
