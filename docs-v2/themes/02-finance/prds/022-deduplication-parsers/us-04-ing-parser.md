@@ -1,7 +1,7 @@
 # US-04: ING CSV parser
 
 > PRD: [022 — Deduplication & Parsers](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 
