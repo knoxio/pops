@@ -1,7 +1,7 @@
 # US-03: Add to library flow
 
 > PRD: [032 — Search Page](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -18,7 +18,7 @@ As a user, I want to add a movie or TV show from search results to my library wi
 - [x] If the item already exists in the library (race condition or idempotent re-add), the API returns success and the badge renders normally — no duplicate rows created
 - [x] The "In Library" state persists across searches within the same session (the local library cache is updated after a successful add)
 - [x] Multiple items can be added in sequence without waiting for each to complete (non-blocking)
-- [ ] Tests cover: button spinner during add, success transitions to badge, failure reverts to button, toast messages, idempotent add (no error on duplicate), cache update after add
+- [x] Tests cover: button spinner during add, success transitions to badge, failure reverts to button, toast messages, idempotent add (no error on duplicate), cache update after add
 
 ## Notes
 
