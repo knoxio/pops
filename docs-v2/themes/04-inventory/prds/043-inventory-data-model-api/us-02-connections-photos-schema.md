@@ -1,7 +1,7 @@
 # US-02: Connections and photos schema
 
 > PRD: [043 — Inventory Data Model & API](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,18 +9,18 @@ As a developer, I want the item_connections and item_photos tables with proper i
 
 ## Acceptance Criteria
 
-- [ ] `item_connections` table created with all columns per the data model (id, itemAId, itemBId, createdAt)
-- [ ] `item_connections.itemAId` is FK → items(id) ON DELETE CASCADE
-- [ ] `item_connections.itemBId` is FK → items(id) ON DELETE CASCADE
-- [ ] `item_connections` has a UNIQUE composite index on (itemAId + itemBId)
-- [ ] `item_connections` has an index on itemBId (for reverse lookups)
-- [ ] Application-level constraint: itemAId < itemBId is documented and enforced in API layer (not database) to prevent duplicate bidirectional entries
-- [ ] `item_photos` table created with all columns per the data model (id, itemId, filename, sortOrder, createdAt)
-- [ ] `item_photos.itemId` is FK → items(id) ON DELETE CASCADE
-- [ ] `item_photos.sortOrder` defaults to 0
-- [ ] `item_photos` has an index on itemId
-- [ ] Deleting an item cascades to all its connections and photos
-- [ ] Tests verify table creation, FK cascade behaviour (item delete removes connections and photos), unique constraint on (itemAId + itemBId), and index existence
+- [x] `item_connections` table created with all columns per the data model (id, itemAId, itemBId, createdAt)
+- [x] `item_connections.itemAId` is FK → items(id) ON DELETE CASCADE
+- [x] `item_connections.itemBId` is FK → items(id) ON DELETE CASCADE
+- [x] `item_connections` has a UNIQUE composite index on (itemAId + itemBId)
+- [x] `item_connections` has an index on itemBId (for reverse lookups)
+- [x] Application-level constraint: itemAId < itemBId is documented and enforced in API layer (not database) to prevent duplicate bidirectional entries
+- [x] `item_photos` table created with all columns per the data model (id, itemId, filename, sortOrder, createdAt)
+- [x] `item_photos.itemId` is FK → items(id) ON DELETE CASCADE
+- [x] `item_photos.sortOrder` defaults to 0
+- [x] `item_photos` has an index on itemId
+- [x] Deleting an item cascades to all its connections and photos
+- [x] Tests verify table creation, FK cascade behaviour (item delete removes connections and photos), unique constraint on (itemAId + itemBId), and index existence
 
 ## Notes
 
