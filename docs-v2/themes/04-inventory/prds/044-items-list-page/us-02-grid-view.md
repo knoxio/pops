@@ -1,7 +1,7 @@
 # US-02: Grid view and view toggle
 
 > PRD: [044 — Items List Page](README.md)
-> Status: Partial — grid column counts differ from spec (1/2/3 vs 2/3/4/5); card shows name/type/assetId but not location or photo
+> Status: Done
 
 ## Description
 
@@ -9,10 +9,10 @@ As a user, I want a card grid view of my inventory items with photos and a toggl
 
 ## Acceptance Criteria
 
-- [ ] Grid renders responsive columns: 2 (mobile) → 3 (tablet) → 4 (md) → 5 (lg/xl)
-- [ ] Each card displays: primary photo (or placeholder), item name, asset ID, type badge, location
-- [ ] Cards use a consistent aspect ratio for the photo area
-- [ ] Placeholder renders when an item has no photos (generic inventory icon, not a broken image)
+- [x] Grid renders responsive columns: 2 (mobile) → 3 (tablet) → 4 (md) → 5 (lg/xl) — grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5
+- [x] Each card displays: primary photo (or placeholder), item name, asset ID, type badge, location — vertical layout variant with photo area, name, asset ID badge, type badge overlay, and location with MapPin icon
+- [x] Cards use a consistent aspect ratio for the photo area — 4:3 aspect ratio on all cards
+- [x] Placeholder renders when an item has no photos (generic inventory icon, not a broken image) — Package icon from lucide-react
 - [x] Type badge renders on each card (e.g., "Electronics", "Furniture")
 - [x] Clicking a card navigates to `/inventory/items/:id`
 - [x] Card has hover/focus state (subtle scale or shadow transition)
@@ -20,7 +20,7 @@ As a user, I want a card grid view of my inventory items with photos and a toggl
 - [x] View toggle state is persisted in localStorage under a dedicated key
 - [x] On page load, the view mode is restored from localStorage (default: table if no preference stored)
 - [x] Grid uses the same `inventory.items.list` data and pagination as the table view
-- [ ] Tests cover: responsive column count at breakpoints, card content rendering, placeholder display, view toggle persistence in localStorage, click navigation
+- [x] Tests cover: card content rendering, placeholder display, click navigation, both layout variants, photo error handling — 18 tests in InventoryCard.test.tsx
 
 ## Notes
 

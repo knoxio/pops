@@ -1,7 +1,11 @@
 /**
  * InventoryCard — card for an inventory item in a grid or list view.
- * Shows photo thumbnail (or placeholder), item name, brand/model,
- * asset ID badge, type badge, condition badge, and location breadcrumb.
+ * Shows photo (or placeholder), item name, brand/model,
+ * asset ID badge, type badge, condition badge, and location.
+ *
+ * Supports two layouts:
+ * - "horizontal" (default): compact row with small thumbnail — used in list views
+ * - "vertical": photo on top with consistent aspect ratio — used in grid views
  */
 import { useState } from "react";
 import {
@@ -13,7 +17,7 @@ import {
   LocationBreadcrumb,
 } from "@pops/ui";
 import type { Condition, LocationSegment } from "@pops/ui";
-import { Package } from "lucide-react";
+import { Package, MapPin } from "lucide-react";
 
 export interface InventoryCardProps {
   id: string;
@@ -24,7 +28,11 @@ export interface InventoryCardProps {
   type?: string | null;
   condition?: Condition | null;
   locationSegments?: LocationSegment[];
+  /** Flat location name — used when locationSegments are not available. */
+  locationName?: string | null;
   photoUrl?: string | null;
+  /** Card layout: "horizontal" for list, "vertical" for grid. */
+  layout?: "horizontal" | "vertical";
   onClick?: (id: string) => void;
   onLocationNavigate?: (segment: LocationSegment) => void;
   className?: string;
@@ -39,7 +47,9 @@ export function InventoryCard({
   type,
   condition,
   locationSegments = [],
+  locationName,
   photoUrl,
+  layout = "horizontal",
   onClick,
   onLocationNavigate,
   className,
@@ -49,7 +59,82 @@ export function InventoryCard({
 
   const showPlaceholder = !photoUrl || imageError;
   const hasBadges = assetId || type || condition;
+  const hasLocation = locationSegments.length > 0 || locationName;
 
+  if (layout === "vertical") {
+    return (
+      <button
+        type="button"
+        aria-label={itemName}
+        className={cn(
+          "group flex w-full cursor-pointer flex-col rounded-lg border border-border bg-card text-left",
+          "transition-all hover:bg-accent/50 hover:shadow-md",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          className
+        )}
+        onClick={() => onClick?.(id)}
+      >
+        {/* Photo area with 4:3 aspect ratio */}
+        <div className="relative w-full overflow-hidden rounded-t-lg bg-muted aspect-[4/3]">
+          {!showPlaceholder && (
+            <img
+              src={photoUrl}
+              alt={`${itemName} photo`}
+              loading="lazy"
+              className={cn(
+                "h-full w-full object-cover transition-opacity duration-200",
+                "group-hover:opacity-90",
+                imageLoaded ? "opacity-100" : "opacity-0"
+              )}
+              onLoad={() => setImageLoaded(true)}
+              onError={() => setImageError(true)}
+            />
+          )}
+
+          {!showPlaceholder && !imageLoaded && (
+            <Skeleton className="absolute inset-0 h-full w-full rounded-none" />
+          )}
+
+          {showPlaceholder && (
+            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+              <Package className="h-10 w-10 opacity-40" />
+            </div>
+          )}
+
+          {/* Type badge overlay */}
+          {type && (
+            <div className="absolute top-2 left-2">
+              <TypeBadge type={type} />
+            </div>
+          )}
+        </div>
+
+        {/* Content */}
+        <div className="flex min-w-0 flex-1 flex-col gap-1 p-3">
+          <h3 className="text-sm font-semibold leading-tight line-clamp-2">{itemName}</h3>
+
+          {assetId && (
+            <div className="flex items-center">
+              <AssetIdBadge assetId={assetId} />
+            </div>
+          )}
+
+          {hasLocation && (
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <MapPin className="h-3 w-3 shrink-0" />
+              {locationSegments.length > 0 ? (
+                <LocationBreadcrumb segments={locationSegments} onNavigate={onLocationNavigate} />
+              ) : (
+                <span className="truncate">{locationName}</span>
+              )}
+            </div>
+          )}
+        </div>
+      </button>
+    );
+  }
+
+  // Horizontal layout (default — existing behavior)
   return (
     <button
       type="button"
