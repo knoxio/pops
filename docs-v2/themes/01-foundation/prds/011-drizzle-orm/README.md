@@ -1,7 +1,7 @@
 # PRD-011: Drizzle ORM
 
 > Epic: [06 — Drizzle ORM](../../epics/06-drizzle-orm.md)
-> Status: To Review
+> Status: Partial
 
 ## Overview
 
