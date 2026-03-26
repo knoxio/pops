@@ -1,7 +1,7 @@
 # US-03: Eliminate arbitrary Tailwind values
 
 > PRD: [002 — Design Tokens & Theming](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

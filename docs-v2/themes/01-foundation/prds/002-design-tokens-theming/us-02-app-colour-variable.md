@@ -1,7 +1,7 @@
 # US-02: Define app colour variable system
 
 > PRD: [002 — Design Tokens & Theming](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 

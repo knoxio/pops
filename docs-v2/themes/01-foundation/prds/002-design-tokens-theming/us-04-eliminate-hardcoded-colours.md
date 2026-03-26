@@ -1,7 +1,7 @@
 # US-04: Eliminate hardcoded app colours
 
 > PRD: [002 — Design Tokens & Theming](README.md)
-> Status: To Review
+> Status: Not started
 
 ## Description
 
