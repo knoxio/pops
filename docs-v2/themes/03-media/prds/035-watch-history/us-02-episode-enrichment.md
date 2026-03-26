@@ -1,7 +1,7 @@
 # US-02: Episode enrichment
 
 > PRD: [035 — Watch History](README.md)
-> Status: To Review
+> Status: Partial
 
 ## Description
 
@@ -9,13 +9,13 @@ As a user, I want episode entries in my watch history to show the parent show na
 
 ## Acceptance Criteria
 
-- [ ] Episode entries display the show name above or alongside the episode title
+- [x] Episode entries display the show name above or alongside the episode title
 - [ ] Season and episode numbers render in standard format: "S01E03" (zero-padded to 2 digits)
 - [ ] Subtitle line reads: "{Show Name} — S{XX}E{XX}" (e.g., "Breaking Bad — S02E10")
 - [ ] Show name links to the show detail page (`/media/tv/:showId`)
 - [ ] Season identifier links to the season detail within the show page (`/media/tv/:showId?season=:seasonNumber`)
-- [ ] Movie entries are unaffected — they render title only with no subtitle
-- [ ] When show metadata is missing from the enriched response, the episode renders with its own title only (graceful degradation)
+- [x] Movie entries are unaffected — they render title only with no subtitle
+- [x] When show metadata is missing from the enriched response, the episode renders with its own title only (graceful degradation)
 - [ ] Tests cover: episode subtitle format, show name link URL, season link URL, fallback when show data is missing, movie entries have no subtitle
 
 ## Notes
