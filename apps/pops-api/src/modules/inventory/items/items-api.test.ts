@@ -22,7 +22,12 @@ function insertLocation(id: string, name: string, parentId: string | null = null
 }
 
 /** Helper: insert an item at a location. */
-function insertItem(id: string, name: string, locationId: string | null = null, assetId: string | null = null) {
+function insertItem(
+  id: string,
+  name: string,
+  locationId: string | null = null,
+  assetId: string | null = null
+) {
   db.prepare(
     "INSERT INTO home_inventory (id, item_name, location_id, asset_id, last_edited_time) VALUES (?, ?, ?, ?, ?)"
   ).run(id, name, locationId, assetId, "2026-01-01");
@@ -35,9 +40,7 @@ describe("items.list with includeChildren", () => {
     insertItem("item-1", "Blender", "loc-kitchen");
     insertItem("item-2", "Fridge", "loc-house");
 
-    const rows = db
-      .prepare("SELECT * FROM home_inventory WHERE location_id = ?")
-      .all("loc-house");
+    const rows = db.prepare("SELECT * FROM home_inventory WHERE location_id = ?").all("loc-house");
     expect(rows).toHaveLength(1);
   });
 
@@ -142,9 +145,9 @@ describe("locations.getItems", () => {
     const queue = ["loc-house"];
     while (queue.length > 0) {
       const current = queue.shift()!;
-      const children = db
-        .prepare("SELECT id FROM locations WHERE parent_id = ?")
-        .all(current) as { id: string }[];
+      const children = db.prepare("SELECT id FROM locations WHERE parent_id = ?").all(current) as {
+        id: string;
+      }[];
       for (const child of children) {
         descendantIds.push(child.id);
         queue.push(child.id);

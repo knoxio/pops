@@ -294,11 +294,7 @@ export function getLocationPath(id: string): LocationRow[] {
     path.push(current);
     if (current.parentId) {
       const db = getDrizzle();
-      const parent = db
-        .select()
-        .from(locations)
-        .where(eq(locations.id, current.parentId))
-        .get();
+      const parent = db.select().from(locations).where(eq(locations.id, current.parentId)).get();
       current = parent;
     } else {
       current = undefined;
@@ -310,7 +306,7 @@ export function getLocationPath(id: string): LocationRow[] {
 
 /** Items at a location, optionally including descendant locations. */
 export interface LocationItemsResult {
-  rows: typeof homeInventory.$inferSelect[];
+  rows: (typeof homeInventory.$inferSelect)[];
   total: number;
 }
 
