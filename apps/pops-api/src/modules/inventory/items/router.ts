@@ -48,6 +48,19 @@ export const inventoryRouter = router({
     };
   }),
 
+  /** Search for an item by exact asset ID (case-insensitive). Returns null if not found. */
+  searchByAssetId: protectedProcedure
+    .input(z.object({ assetId: z.string().min(1) }))
+    .query(({ input }) => {
+      const row = service.searchByAssetId(input.assetId);
+      return { data: row ? toInventoryItem(row) : null };
+    }),
+
+  /** Return distinct item types from the database. */
+  distinctTypes: protectedProcedure.query(() => {
+    return { data: service.getDistinctTypes() };
+  }),
+
   /** Get a single inventory item by ID. */
   get: protectedProcedure.input(z.object({ id: z.string() })).query(({ input }) => {
     try {
