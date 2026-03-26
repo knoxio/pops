@@ -12,6 +12,6 @@
     "isolatedModules": true,
     "noEmit": true
   },
-  "include": [".storybook/**/*.ts"],
+  "include": [".storybook/**/*.ts", ".storybook/**/*.tsx"],
   "exclude": ["node_modules"]
 }
