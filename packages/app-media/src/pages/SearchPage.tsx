@@ -151,26 +151,22 @@ export function SearchPage() {
     [addTvShowMutation]
   );
 
-  const isSearching =
-    (shouldSearchMovies && movieSearch.isLoading) || (shouldSearchTv && tvSearch.isLoading);
   const hasQuery = debouncedQuery.length > 0;
-  const hasError = movieSearch.error || tvSearch.error;
 
-  // Toast actual error message on failure
-  useEffect(() => {
-    if (movieSearch.error) {
-      toast.error(`Movie search failed: ${movieSearch.error.message}`);
-    }
-    if (tvSearch.error) {
-      toast.error(`TV search failed: ${tvSearch.error.message}`);
-    }
-  }, [movieSearch.error, tvSearch.error]);
+  const MAX_RESULTS_PER_SECTION = 20;
 
-  // Merge results
-  const movieResults = shouldSearchMovies ? (movieSearch.data?.results ?? []) : [];
-  const tvResults = shouldSearchTv ? (tvSearch.data?.results ?? []) : [];
+  // Per-section results (capped)
+  const movieResults = shouldSearchMovies
+    ? (movieSearch.data?.results ?? []).slice(0, MAX_RESULTS_PER_SECTION)
+    : [];
+  const tvResults = shouldSearchTv
+    ? (tvSearch.data?.results ?? []).slice(0, MAX_RESULTS_PER_SECTION)
+    : [];
+
+  const moviesSettled = !shouldSearchMovies || (!movieSearch.isLoading && !movieSearch.error);
+  const tvSettled = !shouldSearchTv || (!tvSearch.isLoading && !tvSearch.error);
   const totalResults = movieResults.length + tvResults.length;
-  const noResults = hasQuery && !isSearching && totalResults === 0 && !hasError;
+  const noResults = hasQuery && moviesSettled && tvSettled && totalResults === 0;
 
   return (
     <div className="space-y-4">
@@ -202,117 +198,131 @@ export function SearchPage() {
         </TabsList>
       </Tabs>
 
-      {/* Error state */}
-      {hasError && (
-        <div className="flex flex-col items-center justify-center py-12 space-y-4">
-          <AlertTriangle className="h-10 w-10 text-destructive opacity-60" />
-          <div className="text-center space-y-1">
-            <p className="font-semibold">Search failed</p>
-            <p className="text-sm text-muted-foreground">
-              Something went wrong. Check your connection and try again.
-            </p>
-          </div>
-          <Button
-            variant="outline"
-            onClick={() => {
-              if (movieSearch.error) movieSearch.refetch();
-              if (tvSearch.error) tvSearch.refetch();
-            }}
-          >
-            Retry
-          </Button>
-        </div>
-      )}
-
-      {/* Loading skeletons */}
-      {isSearching && (
-        <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="flex gap-4 rounded-lg border bg-card p-3">
-              <Skeleton className="w-20 shrink-0 rounded-md aspect-[2/3]" />
-              <div className="flex flex-1 flex-col gap-2">
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-3 w-1/2" />
-                <Skeleton className="h-3 w-full" />
-                <Skeleton className="h-7 w-28 mt-auto" />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
       {/* No results */}
       {noResults && (
         <p className="text-sm text-muted-foreground py-8 text-center">
-          No results found for "{debouncedQuery}". Try a different search term.
+          No results found for &ldquo;{debouncedQuery}&rdquo;. Try a different search term.
         </p>
       )}
 
-      {/* Results */}
-      {!isSearching && totalResults > 0 && (
-        <div className="space-y-4">
-          {/* Movie results */}
-          {movieResults.length > 0 && (
-            <section>
-              {mode === "both" && (
-                <h2 className="text-sm font-semibold text-muted-foreground mb-2">
-                  Movies ({movieResults.length})
-                </h2>
-              )}
-              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                {movieResults.map((movie: MovieSearchResult) => {
-                  const key = makeKey("movie", movie.tmdbId);
-                  const inLibrary = movieTmdbIds.has(movie.tmdbId) || addedIds.has(key);
-                  return (
-                    <SearchResultCard
-                      key={movie.tmdbId}
-                      type="movie"
-                      title={movie.title}
-                      year={movie.releaseDate?.slice(0, 4) ?? null}
-                      overview={movie.overview}
-                      posterUrl={buildPosterUrl(movie.posterPath, "movie")}
-                      voteAverage={movie.voteAverage}
-                      inLibrary={inLibrary}
-                      isAdding={addingIds.has(key)}
-                      onAdd={() => handleAddMovie(movie.tmdbId)}
-                    />
-                  );
-                })}
-              </div>
-            </section>
+      {/* Movie section — independent loading/error/results */}
+      {shouldSearchMovies && (
+        <section>
+          {mode === "both" && (
+            <h2 className="text-sm font-semibold text-muted-foreground mb-2">
+              Movies{movieResults.length > 0 ? ` (${movieResults.length})` : ""}
+            </h2>
           )}
+          {movieSearch.isLoading && (
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex gap-4 rounded-lg border bg-card p-3">
+                  <Skeleton className="w-20 shrink-0 rounded-md aspect-[2/3]" />
+                  <div className="flex flex-1 flex-col gap-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-7 w-28 mt-auto" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {movieSearch.error && (
+            <div className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+              <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium">Movie search failed</p>
+                <p className="text-xs text-muted-foreground">{movieSearch.error.message}</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => movieSearch.refetch()}>
+                Retry
+              </Button>
+            </div>
+          )}
+          {!movieSearch.isLoading && !movieSearch.error && movieResults.length > 0 && (
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {movieResults.map((movie: MovieSearchResult) => {
+                const key = makeKey("movie", movie.tmdbId);
+                const inLibrary = movieTmdbIds.has(movie.tmdbId) || addedIds.has(key);
+                return (
+                  <SearchResultCard
+                    key={movie.tmdbId}
+                    type="movie"
+                    title={movie.title}
+                    year={movie.releaseDate?.slice(0, 4) ?? null}
+                    overview={movie.overview}
+                    posterUrl={buildPosterUrl(movie.posterPath, "movie")}
+                    voteAverage={movie.voteAverage}
+                    inLibrary={inLibrary}
+                    isAdding={addingIds.has(key)}
+                    onAdd={() => handleAddMovie(movie.tmdbId)}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </section>
+      )}
 
-          {/* TV results */}
-          {tvResults.length > 0 && (
-            <section>
-              {mode === "both" && (
-                <h2 className="text-sm font-semibold text-muted-foreground mb-2">
-                  TV Shows ({tvResults.length})
-                </h2>
-              )}
-              <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                {tvResults.map((show: TvSearchResult) => {
-                  const key = makeKey("tv", show.tvdbId);
-                  const inLibrary = tvTvdbIds.has(show.tvdbId) || addedIds.has(key);
-                  return (
-                    <SearchResultCard
-                      key={show.tvdbId}
-                      type="tv"
-                      title={show.name}
-                      year={show.year ?? show.firstAirDate?.slice(0, 4) ?? null}
-                      overview={show.overview}
-                      posterUrl={buildPosterUrl(show.posterPath, "tv")}
-                      genres={show.genres}
-                      inLibrary={inLibrary}
-                      isAdding={addingIds.has(key)}
-                      onAdd={() => handleAddTvShow(show.tvdbId)}
-                    />
-                  );
-                })}
-              </div>
-            </section>
+      {/* TV section — independent loading/error/results */}
+      {shouldSearchTv && (
+        <section>
+          {mode === "both" && (
+            <h2 className="text-sm font-semibold text-muted-foreground mb-2">
+              TV Shows{tvResults.length > 0 ? ` (${tvResults.length})` : ""}
+            </h2>
           )}
-        </div>
+          {tvSearch.isLoading && (
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="flex gap-4 rounded-lg border bg-card p-3">
+                  <Skeleton className="w-20 shrink-0 rounded-md aspect-[2/3]" />
+                  <div className="flex flex-1 flex-col gap-2">
+                    <Skeleton className="h-4 w-3/4" />
+                    <Skeleton className="h-3 w-1/2" />
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-7 w-28 mt-auto" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {tvSearch.error && (
+            <div className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
+              <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium">TV search failed</p>
+                <p className="text-xs text-muted-foreground">{tvSearch.error.message}</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => tvSearch.refetch()}>
+                Retry
+              </Button>
+            </div>
+          )}
+          {!tvSearch.isLoading && !tvSearch.error && tvResults.length > 0 && (
+            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+              {tvResults.map((show: TvSearchResult) => {
+                const key = makeKey("tv", show.tvdbId);
+                const inLibrary = tvTvdbIds.has(show.tvdbId) || addedIds.has(key);
+                return (
+                  <SearchResultCard
+                    key={show.tvdbId}
+                    type="tv"
+                    title={show.name}
+                    year={show.year ?? show.firstAirDate?.slice(0, 4) ?? null}
+                    overview={show.overview}
+                    posterUrl={buildPosterUrl(show.posterPath, "tv")}
+                    genres={show.genres}
+                    inLibrary={inLibrary}
+                    isAdding={addingIds.has(key)}
+                    onAdd={() => handleAddTvShow(show.tvdbId)}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </section>
       )}
 
       {/* Empty state before search */}
