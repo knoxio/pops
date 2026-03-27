@@ -12,6 +12,7 @@ import {
 import { refreshTvShow } from "./service.js";
 import type { TheTvdbClient } from "./client.js";
 import type { TvdbShowDetail, TvdbEpisode } from "./types.js";
+import type { ImageCacheService } from "../tmdb/image-cache.js";
 
 const ctx = setupTestContext();
 let db: Database;
@@ -437,7 +438,7 @@ describe("refreshTvShow", () => {
       id: showId,
       redownloadImages: true,
       refreshEpisodes: false,
-      imageCache: mockImageCache as any,
+      imageCache: mockImageCache as unknown as ImageCacheService,
     });
 
     expect(mockImageCache.deleteTvShowImages).toHaveBeenCalledWith(81189);
@@ -463,7 +464,7 @@ describe("refreshTvShow", () => {
       id: showId,
       redownloadImages: false,
       refreshEpisodes: false,
-      imageCache: mockImageCache as any,
+      imageCache: mockImageCache as unknown as ImageCacheService,
     });
 
     expect(mockImageCache.deleteTvShowImages).not.toHaveBeenCalled();

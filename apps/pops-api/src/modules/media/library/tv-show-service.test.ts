@@ -3,6 +3,7 @@ import { setupTestContext, seedTvShow } from "../../../shared/test-utils.js";
 import type { TheTvdbClient } from "../thetvdb/client.js";
 import type { TvdbShowDetail, TvdbEpisode, TvdbArtwork } from "../thetvdb/types.js";
 import { addTvShow, selectBestArtwork } from "./tv-show-service.js";
+import type { ImageCacheService } from "../tmdb/image-cache.js";
 import type { Database } from "better-sqlite3";
 
 const ctx = setupTestContext();
@@ -294,7 +295,7 @@ describe("addTvShow", () => {
       downloadTvShowImages: vi.fn().mockResolvedValue(undefined),
     };
 
-    const result = await addTvShow(81189, client, mockImageCache as any);
+    const result = await addTvShow(81189, client, mockImageCache as unknown as ImageCacheService);
 
     expect(result.created).toBe(true);
     expect(mockImageCache.downloadTvShowImages).toHaveBeenCalledWith(
@@ -312,7 +313,7 @@ describe("addTvShow", () => {
       downloadTvShowImages: vi.fn().mockResolvedValue(undefined),
     };
 
-    const result = await addTvShow(81189, client, mockImageCache as any);
+    const result = await addTvShow(81189, client, mockImageCache as unknown as ImageCacheService);
 
     expect(result.created).toBe(false);
     expect(mockImageCache.downloadTvShowImages).not.toHaveBeenCalled();
