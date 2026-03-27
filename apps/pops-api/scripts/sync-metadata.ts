@@ -8,6 +8,7 @@
 import "dotenv/config";
 import { getDb } from "../src/db.js";
 import { getTmdbClient, ImageCacheService } from "../src/modules/media/tmdb/index.js";
+import { TokenBucketRateLimiter } from "../src/modules/media/tmdb/rate-limiter.js";
 import { getTvdbClient } from "../src/modules/media/thetvdb/index.js";
 import { selectBestArtwork } from "../src/modules/media/library/tv-show-service.js";
 
@@ -17,7 +18,8 @@ async function main() {
   const tvdbClient = getTvdbClient();
 
   const imagesDir = process.env.MEDIA_IMAGES_DIR ?? "./data/media/images";
-  const cacheService = new ImageCacheService(imagesDir);
+  const rateLimiter = new TokenBucketRateLimiter(40, 4);
+  const cacheService = new ImageCacheService(imagesDir, rateLimiter);
 
   if (!tmdbClient) {
     console.error("❌ TMDB_API_KEY not set in environment");

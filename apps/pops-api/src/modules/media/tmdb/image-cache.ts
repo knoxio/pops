@@ -24,7 +24,7 @@ export const MEDIA_DIR_NAMES: Record<string, string> = {
 const IMAGE_SIZES = {
   poster: "w780",
   backdrop: "w1280",
-  logo: "w500",
+  logo: "original",
 } as const;
 
 const IMAGE_FILENAMES = {
@@ -36,8 +36,23 @@ const IMAGE_FILENAMES = {
 
 export type ImageType = keyof typeof IMAGE_FILENAMES;
 
+/** Interface for rate limiters — call acquire() before each network request. */
+export interface RateLimiter {
+  acquire(): Promise<void>;
+}
+
 export class ImageCacheService {
-  constructor(private readonly imagesDir: string) {}
+  private readonly rateLimiter?: RateLimiter;
+
+  constructor(imagesDir: string, rateLimiter?: RateLimiter);
+  /** @internal Legacy signature without rate limiter. */
+  constructor(imagesDir: string);
+  constructor(
+    private readonly imagesDir: string,
+    rateLimiter?: RateLimiter
+  ) {
+    this.rateLimiter = rateLimiter;
+  }
 
   /**
    * Download movie images from TMDB to local cache.
@@ -155,6 +170,45 @@ export class ImageCacheService {
     return join(this.imagesDir, "tv", String(tvdbId));
   }
 
+  /**
+   * Generate an SVG placeholder poster for a movie that has no poster image.
+   * Creates a coloured background with the movie title centred.
+   * Saves to the poster.jpg path in the movie's cache directory.
+   */
+  async generatePlaceholder(tmdbId: number, title: string): Promise<void> {
+    const movieDir = this.movieDir(tmdbId);
+    await mkdir(movieDir, { recursive: true });
+
+    const destPath = join(movieDir, IMAGE_FILENAMES.poster);
+
+    // Skip if poster already exists
+    try {
+      await stat(destPath);
+      return;
+    } catch {
+      // File doesn't exist — generate placeholder
+    }
+
+    // Deterministic colour from tmdbId
+    const hue = (tmdbId * 137) % 360;
+    const escapedTitle = title
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="780" height="1170" viewBox="0 0 780 1170">
+  <rect width="780" height="1170" fill="hsl(${hue}, 40%, 30%)" />
+  <text x="390" y="585" text-anchor="middle" dominant-baseline="central"
+    font-family="system-ui, sans-serif" font-size="48" font-weight="bold"
+    fill="white" opacity="0.9">
+    <tspan>${escapedTitle}</tspan>
+  </text>
+</svg>`;
+
+    await writeFile(destPath, svg, "utf-8");
+  }
+
   private async downloadImage(url: string, destPath: string): Promise<void> {
     // Validate URL hostname against allowlist (SSRF defense)
     try {
@@ -177,6 +231,10 @@ export class ImageCacheService {
     }
 
     try {
+      if (this.rateLimiter) {
+        await this.rateLimiter.acquire();
+      }
+
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error(`HTTP ${response.status} ${response.statusText}`);

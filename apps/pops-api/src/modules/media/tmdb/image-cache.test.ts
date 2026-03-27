@@ -64,7 +64,7 @@ describe("downloadMovieImages", () => {
     const urls = fetchMock.mock.calls.map((c: unknown[]) => c[0] as string);
     expect(urls).toContainEqual("https://image.tmdb.org/t/p/w780/poster123.jpg");
     expect(urls).toContainEqual("https://image.tmdb.org/t/p/w1280/backdrop456.jpg");
-    expect(urls).toContainEqual("https://image.tmdb.org/t/p/w500/logo789.png");
+    expect(urls).toContainEqual("https://image.tmdb.org/t/p/original/logo789.png");
 
     // Verify correct local paths
     const paths = vi.mocked(fs.writeFile).mock.calls.map((c) => c[0]);
@@ -303,5 +303,89 @@ describe("deleteTvShowImages", () => {
       recursive: true,
       force: true,
     });
+  });
+});
+
+describe("rate limiter integration", () => {
+  it("calls rateLimiter.acquire() before each fetch", async () => {
+    const mockAcquire = vi.fn().mockResolvedValue(undefined);
+    const rateLimitedService = new ImageCacheService(IMAGES_DIR, { acquire: mockAcquire });
+
+    fetchMock.mockResolvedValue(mockImageResponse());
+
+    await rateLimitedService.downloadMovieImages(550, "/poster.jpg", "/backdrop.jpg", null);
+
+    expect(mockAcquire).toHaveBeenCalledTimes(2);
+    // acquire is called before each fetch
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not call acquire when no rate limiter is provided", async () => {
+    fetchMock.mockResolvedValue(mockImageResponse());
+
+    await service.downloadMovieImages(550, "/poster.jpg", null, null);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips fetch if acquire rejects", async () => {
+    const mockAcquire = vi.fn().mockRejectedValue(new Error("Rate limit destroyed"));
+    const rateLimitedService = new ImageCacheService(IMAGES_DIR, { acquire: mockAcquire });
+    const consoleSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await rateLimitedService.downloadMovieImages(550, "/poster.jpg", null, null);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fs.writeFile).not.toHaveBeenCalled();
+    consoleSpy.mockRestore();
+  });
+});
+
+describe("generatePlaceholder", () => {
+  it("creates SVG placeholder with movie title", async () => {
+    await service.generatePlaceholder(550, "Fight Club");
+
+    const movieDir = path.join(IMAGES_DIR, "movies", "550");
+    expect(fs.mkdir).toHaveBeenCalledWith(movieDir, { recursive: true });
+    expect(fs.writeFile).toHaveBeenCalledTimes(1);
+
+    const [destPath, content] = vi.mocked(fs.writeFile).mock.calls[0]!;
+    expect(destPath).toBe(path.join(movieDir, "poster.jpg"));
+    expect(content).toContain("<svg");
+    expect(content).toContain("Fight Club");
+  });
+
+  it("skips generation if poster already exists", async () => {
+    vi.mocked(fs.stat).mockResolvedValueOnce({} as Awaited<ReturnType<typeof fs.stat>>);
+
+    await service.generatePlaceholder(550, "Fight Club");
+
+    expect(fs.writeFile).not.toHaveBeenCalled();
+  });
+
+  it("escapes HTML entities in title", async () => {
+    await service.generatePlaceholder(999, "Tom & Jerry <3");
+
+    const [, content] = vi.mocked(fs.writeFile).mock.calls[0]!;
+    expect(content).toContain("Tom &amp; Jerry &lt;3");
+    expect(content).not.toContain("Tom & Jerry <3");
+  });
+
+  it("generates deterministic colour from tmdbId", async () => {
+    await service.generatePlaceholder(550, "Movie A");
+    const [, content1] = vi.mocked(fs.writeFile).mock.calls[0]!;
+
+    vi.mocked(fs.writeFile).mockClear();
+    vi.mocked(fs.stat).mockRejectedValue(new Error("ENOENT"));
+
+    await service.generatePlaceholder(551, "Movie B");
+    const [, content2] = vi.mocked(fs.writeFile).mock.calls[0]!;
+
+    // Different tmdbIds should produce different hues
+    const hue1 = (content1 as string).match(/hsl\((\d+)/)?.[1];
+    const hue2 = (content2 as string).match(/hsl\((\d+)/)?.[1];
+    expect(hue1).toBeDefined();
+    expect(hue2).toBeDefined();
+    expect(hue1).not.toBe(hue2);
   });
 });

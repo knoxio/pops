@@ -8,12 +8,14 @@
 import "dotenv/config";
 import { getDb } from "../src/db.js";
 import { ImageCacheService } from "../src/modules/media/tmdb/index.js";
+import { TokenBucketRateLimiter } from "../src/modules/media/tmdb/rate-limiter.js";
 import { join } from "node:path";
 
 async function main() {
   const db = getDb();
   const imagesDir = process.env.MEDIA_IMAGES_DIR ?? "./data/media/images";
-  const cacheService = new ImageCacheService(imagesDir);
+  const rateLimiter = new TokenBucketRateLimiter(40, 4);
+  const cacheService = new ImageCacheService(imagesDir, rateLimiter);
 
   console.log(`\n🖼️  Media Image Sync`);
   console.log(`📂 Cache directory: ${imagesDir}`);
