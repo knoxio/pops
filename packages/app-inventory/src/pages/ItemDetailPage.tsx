@@ -583,7 +583,7 @@ function PhotosSection({ itemId }: { itemId: string }) {
   if (photos.length === 0) return null;
 
   const sorted = [...photos].sort((a, b) => a.sortOrder - b.sortOrder);
-  const primaryPhoto = sorted[0];
+  const primaryPhoto = sorted[0]!;
   const baseUrl = "/api/inventory/photos";
 
   return (
