@@ -6,7 +6,7 @@
  * Desktop (md+): responsive poster card grid with priority badges.
  */
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { Alert, AlertTitle, AlertDescription, Badge, Skeleton, Textarea } from "@pops/ui";
 import { Button } from "@pops/ui";
 import { ArrowUp, ArrowDown, Trash2, Film, GripVertical } from "lucide-react";
@@ -31,6 +31,19 @@ import {
   arrayMove,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+
+type WatchlistFilter = "all" | "movie" | "tv_show";
+
+const FILTER_OPTIONS: { value: WatchlistFilter; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "movie", label: "Movies" },
+  { value: "tv_show", label: "TV Shows" },
+];
+
+function parseTypeParam(param: string | null): WatchlistFilter {
+  if (param === "movie" || param === "tv_show") return param;
+  return "all";
+}
 
 interface WatchlistEntry {
   id: number;
@@ -421,6 +434,8 @@ function SortableWatchlistCard(props: WatchlistCardProps) {
 }
 
 export function WatchlistPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const filter = parseTypeParam(searchParams.get("type"));
   const [isReordering, setIsReordering] = useState(false);
   const [removingId, setRemovingId] = useState<number | null>(null);
   const [updateErrorId, setUpdateErrorId] = useState<number | null>(null);
@@ -428,11 +443,21 @@ export function WatchlistPage() {
   const [optimisticOrder, setOptimisticOrder] = useState<WatchlistEntry[] | null>(null);
   const [activeId, setActiveId] = useState<number | null>(null);
 
+  const setFilter = useCallback(
+    (value: WatchlistFilter) => {
+      setSearchParams(value === "all" ? {} : { type: value }, { replace: true });
+    },
+    [setSearchParams]
+  );
+
   const {
     data: watchlistData,
     isLoading,
     error: watchlistError,
-  } = trpc.media.watchlist.list.useQuery({ limit: 500 });
+  } = trpc.media.watchlist.list.useQuery({
+    ...(filter !== "all" ? { mediaType: filter } : {}),
+    limit: 500,
+  });
 
   const { data: moviesData, isLoading: moviesLoading } = trpc.media.movies.list.useQuery({
     limit: 500,
@@ -628,12 +653,36 @@ export function WatchlistPage() {
     <div className="space-y-6 max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold">Watchlist</h1>
 
+      {/* Filter tabs */}
+      <div className="flex gap-2" role="tablist" aria-label="Filter watchlist">
+        {FILTER_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            role="tab"
+            aria-selected={filter === opt.value}
+            onClick={() => setFilter(opt.value)}
+            className={`px-3 py-1.5 text-sm rounded-full transition-colors ${
+              filter === opt.value
+                ? "bg-primary text-primary-foreground"
+                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+      </div>
+
       {loading ? (
         <WatchlistSkeleton />
       ) : entries.length === 0 ? (
         <div className="text-center py-16">
           <p className="text-muted-foreground">
-            Your watchlist is empty. Browse your library or search for something to watch.
+            {filter === "all"
+              ? "Your watchlist is empty. Browse your library or search for something to watch."
+              : filter === "movie"
+                ? "No movies on your watchlist."
+                : "No TV shows on your watchlist."}
           </p>
           <div className="flex justify-center gap-4 mt-4">
             <Link to="/media" className="text-sm text-primary underline">

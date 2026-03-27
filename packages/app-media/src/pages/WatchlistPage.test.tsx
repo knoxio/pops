@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 
 const mockWatchlistQuery = vi.fn();
@@ -59,7 +60,7 @@ function renderPage() {
   return render(
     <MemoryRouter>
       <WatchlistPage />
-    </MemoryRouter>,
+    </MemoryRouter>
   );
 }
 
@@ -206,5 +207,91 @@ describe("WatchlistPage", () => {
     expect(screen.getAllByText("#1").length).toBeGreaterThan(0);
     expect(screen.getAllByText("#2").length).toBeGreaterThan(0);
     expect(screen.getAllByText("#3").length).toBeGreaterThan(0);
+  });
+
+  describe("filter tabs", () => {
+    it("renders All, Movies, TV Shows filter tabs", () => {
+      setupMultipleEntries();
+      renderPage();
+      expect(screen.getByRole("tab", { name: "All" })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "Movies" })).toBeInTheDocument();
+      expect(screen.getByRole("tab", { name: "TV Shows" })).toBeInTheDocument();
+    });
+
+    it("All tab is selected by default", () => {
+      setupMultipleEntries();
+      renderPage();
+      expect(screen.getByRole("tab", { name: "All" })).toHaveAttribute("aria-selected", "true");
+      expect(screen.getByRole("tab", { name: "Movies" })).toHaveAttribute("aria-selected", "false");
+    });
+
+    it("clicking Movies tab calls API with mediaType filter", async () => {
+      setupMultipleEntries();
+      const user = userEvent.setup();
+      renderPage();
+
+      await user.click(screen.getByRole("tab", { name: "Movies" }));
+
+      const calls = mockWatchlistQuery.mock.calls;
+      const lastCall = calls[calls.length - 1]!;
+      expect(lastCall[0]).toEqual(expect.objectContaining({ mediaType: "movie" }));
+    });
+
+    it("clicking TV Shows tab calls API with tv_show filter", async () => {
+      setupMultipleEntries();
+      const user = userEvent.setup();
+      renderPage();
+
+      await user.click(screen.getByRole("tab", { name: "TV Shows" }));
+
+      const calls = mockWatchlistQuery.mock.calls;
+      const lastCall = calls[calls.length - 1]!;
+      expect(lastCall[0]).toEqual(expect.objectContaining({ mediaType: "tv_show" }));
+    });
+
+    it("clicking All tab removes mediaType filter", async () => {
+      setupMultipleEntries();
+      const user = userEvent.setup();
+      renderPage();
+
+      await user.click(screen.getByRole("tab", { name: "Movies" }));
+      await user.click(screen.getByRole("tab", { name: "All" }));
+
+      const calls = mockWatchlistQuery.mock.calls;
+      const lastCall = calls[calls.length - 1]!;
+      expect(lastCall[0]).not.toHaveProperty("mediaType");
+    });
+
+    it("shows filter-specific empty state for movies", async () => {
+      setupMultipleEntries();
+      const user = userEvent.setup();
+      renderPage();
+
+      mockWatchlistQuery.mockReturnValue({
+        data: { data: [] },
+        isLoading: false,
+        error: null,
+      });
+
+      await user.click(screen.getByRole("tab", { name: "Movies" }));
+
+      expect(screen.getByText("No movies on your watchlist.")).toBeInTheDocument();
+    });
+
+    it("shows filter-specific empty state for TV shows", async () => {
+      setupMultipleEntries();
+      const user = userEvent.setup();
+      renderPage();
+
+      mockWatchlistQuery.mockReturnValue({
+        data: { data: [] },
+        isLoading: false,
+        error: null,
+      });
+
+      await user.click(screen.getByRole("tab", { name: "TV Shows" }));
+
+      expect(screen.getByText("No TV shows on your watchlist.")).toBeInTheDocument();
+    });
   });
 });
