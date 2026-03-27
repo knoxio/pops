@@ -7,6 +7,10 @@ import type {
   SonarrQueueResponse,
   ArrStatusResult,
   SonarrCalendarEpisode,
+  SonarrQualityProfile,
+  SonarrRootFolder,
+  SonarrLanguageProfile,
+  SonarrCheckResult,
 } from "./types.js";
 
 export class SonarrClient extends ArrBaseClient {
@@ -78,4 +82,30 @@ export class SonarrClient extends ArrBaseClient {
 
     return { status: "monitored", label: "Monitored" };
   }
+
+  /** Fetch available quality profiles. */
+  async getQualityProfiles(): Promise<SonarrQualityProfile[]> {
+    return this.get<SonarrQualityProfile[]>("/qualityprofile");
+  }
+
+  /** Fetch available root folders. */
+  async getRootFolders(): Promise<SonarrRootFolder[]> {
+    return this.get<SonarrRootFolder[]>("/rootfolder");
+  }
+
+  /** Fetch available language profiles. */
+  async getLanguageProfiles(): Promise<SonarrLanguageProfile[]> {
+    return this.get<SonarrLanguageProfile[]>("/languageprofile");
+  }
+
+  /** Check if a series exists in Sonarr by TVDB ID. */
+  async checkSeries(tvdbId: number): Promise<SonarrCheckResult> {
+    const results = await this.get<SonarrSeries[]>(`/series?tvdbId=${tvdbId}`);
+    if (results.length === 0) {
+      return { exists: false };
+    }
+    const series = results[0] as SonarrSeries;
+    return { exists: true, sonarrId: series.id, monitored: series.monitored };
+  }
+
 }

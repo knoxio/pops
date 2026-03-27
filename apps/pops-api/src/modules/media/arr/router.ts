@@ -306,4 +306,93 @@ export const arrRouter = router({
         throw err;
       }
     }),
+
+  /** Get Sonarr quality profiles. */
+  getSonarrQualityProfiles: protectedProcedure.query(async () => {
+    const client = arrService.getSonarrClient();
+    if (!client) {
+      throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Sonarr not configured" });
+    }
+    try {
+      return { data: await client.getQualityProfiles() };
+    } catch (err) {
+      if (err instanceof ArrApiError) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Sonarr error: ${err.message}` });
+      }
+      throw err;
+    }
+  }),
+
+  /** Get Sonarr root folders. */
+  getSonarrRootFolders: protectedProcedure.query(async () => {
+    const client = arrService.getSonarrClient();
+    if (!client) {
+      throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Sonarr not configured" });
+    }
+    try {
+      return { data: await client.getRootFolders() };
+    } catch (err) {
+      if (err instanceof ArrApiError) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Sonarr error: ${err.message}` });
+      }
+      throw err;
+    }
+  }),
+
+  /** Get Sonarr language profiles. */
+  getSonarrLanguageProfiles: protectedProcedure.query(async () => {
+    const client = arrService.getSonarrClient();
+    if (!client) {
+      throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Sonarr not configured" });
+    }
+    try {
+      return { data: await client.getLanguageProfiles() };
+    } catch (err) {
+      if (err instanceof ArrApiError) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Sonarr error: ${err.message}` });
+      }
+      throw err;
+    }
+  }),
+
+  /** Check if a series exists in Sonarr by TVDB ID. */
+  checkSeries: protectedProcedure
+    .input(z.object({ tvdbId: z.number().int().positive() }))
+    .query(async ({ input }) => {
+      const client = arrService.getSonarrClient();
+      if (!client) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Sonarr not configured" });
+      }
+      try {
+        return { data: await client.checkSeries(input.tvdbId) };
+      } catch (err) {
+        if (err instanceof ArrApiError) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Sonarr error: ${err.message}` });
+        }
+        throw err;
+      }
+    }),
+
+  /** Get Sonarr calendar entries for a date range. */
+  getSonarrCalendar: protectedProcedure
+    .input(
+      z.object({
+        start: z.string(),
+        end: z.string(),
+      })
+    )
+    .query(async ({ input }) => {
+      const client = arrService.getSonarrClient();
+      if (!client) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Sonarr not configured" });
+      }
+      try {
+        return { data: await client.getCalendar(input.start, input.end) };
+      } catch (err) {
+        if (err instanceof ArrApiError) {
+          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Sonarr error: ${err.message}` });
+        }
+        throw err;
+      }
+    }),
 });

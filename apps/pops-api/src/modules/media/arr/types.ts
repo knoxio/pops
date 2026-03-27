@@ -173,6 +173,38 @@ export interface ArrSystemStatus {
   appName: string;
 }
 
+export interface SonarrQualityProfile {
+  id: number;
+  name: string;
+}
+
+export interface SonarrRootFolder {
+  id: number;
+  path: string;
+  freeSpace: number;
+}
+
+export interface SonarrLanguageProfile {
+  id: number;
+  name: string;
+}
+
+export interface SonarrCalendarEntry {
+  seriesId: number;
+  seriesTitle: string;
+  episodeTitle: string;
+  seasonNumber: number;
+  episodeNumber: number;
+  airDateUtc: string;
+  hasFile: boolean;
+}
+
+export interface SonarrCheckResult {
+  exists: boolean;
+  sonarrId?: number;
+  monitored?: boolean;
+}
+
 /** Unified download queue item for the frontend. */
 export interface DownloadQueueItem {
   id: string;
