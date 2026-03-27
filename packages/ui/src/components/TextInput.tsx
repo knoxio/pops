@@ -17,8 +17,8 @@ const containerVariants = cva(
       },
       size: {
         sm: "h-9 px-3 py-1 text-xs",
-        default: "h-10 px-3 py-2 text-sm",
-        lg: "h-11 px-4 py-2 text-base",
+        default: "h-11 px-3 py-2 text-sm",
+        lg: "h-12 px-4 py-2 text-base",
       },
       shape: {
         default: "rounded-md",
@@ -210,7 +210,7 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
             <button
               type="button"
               onClick={handleClear}
-              className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm p-1"
+              className="flex-shrink-0 text-muted-foreground hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm p-1 min-w-11 min-h-11 inline-flex items-center justify-center"
               aria-label="Clear input"
               tabIndex={-1}
             >

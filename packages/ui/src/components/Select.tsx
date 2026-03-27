@@ -17,8 +17,8 @@ const containerVariants = cva(
       },
       size: {
         sm: "h-9 px-3 py-1 text-xs",
-        default: "h-10 px-3 py-2 text-sm",
-        lg: "h-11 px-4 py-2 text-base",
+        default: "h-11 px-3 py-2 text-sm",
+        lg: "h-12 px-4 py-2 text-base",
       },
       shape: {
         default: "rounded-md",

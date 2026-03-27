@@ -24,8 +24,8 @@ const containerVariants = cva(
       },
       size: {
         sm: "h-9 px-3 py-1 text-xs",
-        default: "h-10 px-3 py-2 text-sm",
-        lg: "h-11 px-4 py-2 text-base",
+        default: "h-11 px-3 py-2 text-sm",
+        lg: "h-12 px-4 py-2 text-base",
       },
       shape: {
         default: "rounded-md",
@@ -263,7 +263,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
             type="button"
             onClick={decrement}
             disabled={disabled || (min !== undefined && value <= min)}
-            className="flex-shrink-0 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors p-2"
+            className="flex-shrink-0 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors p-2 min-w-11 min-h-11 inline-flex items-center justify-center"
             tabIndex={-1}
           >
             <ChevronDownIcon />
@@ -289,7 +289,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
             type="button"
             onClick={increment}
             disabled={disabled || (max !== undefined && value >= max)}
-            className="flex-shrink-0 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors p-2"
+            className="flex-shrink-0 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors p-2 min-w-11 min-h-11 inline-flex items-center justify-center"
             tabIndex={-1}
           >
             <ChevronUpIcon />

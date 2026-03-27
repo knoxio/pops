@@ -8,7 +8,7 @@ import { cn } from "../lib/utils";
 import { Chip } from "./Chip";
 
 const containerVariants = cva(
-  "flex flex-wrap items-center gap-2 w-full bg-background text-foreground transition-all outline-0 focus-within:outline-0 ring-0 focus-within:ring-0 p-2 min-h-10",
+  "flex flex-wrap items-center gap-2 w-full bg-background text-foreground transition-all outline-0 focus-within:outline-0 ring-0 focus-within:ring-0 p-2 min-h-11",
   {
     variants: {
       variant: {
