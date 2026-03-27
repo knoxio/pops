@@ -10,6 +10,13 @@ import { Select, type SelectOption } from "./Select";
 import { Button } from "./Button";
 import { NumberInput } from "./NumberInput";
 import { ComboboxSelect } from "./ComboboxSelect";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "../primitives/dialog";
 
 export interface ColumnFilter {
   id: string;
@@ -50,7 +57,7 @@ export function SelectFilter({ column, options, placeholder }: SelectFilterProps
       onChange={(e) => column.setFilterValue(e.target.value || undefined)}
       options={options}
       placeholder={placeholder || "Select..."}
-      className="w-45"
+      className="w-full sm:w-45"
     />
   );
 }
@@ -73,7 +80,7 @@ export function MultiSelectFilter({ column, options, placeholder }: MultiSelectF
       }
       multiple
       placeholder={placeholder || "Select..."}
-      className="min-w-50"
+      className="w-full sm:min-w-50"
     />
   );
 }
@@ -144,6 +151,44 @@ interface FilterBarProps {
   onClearAll?: () => void;
 }
 
+function FilterGrid({ filters, table }: { filters: ColumnFilter[]; table: Table<unknown> }) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {filters.map((filter) => {
+        const column = table.getColumn(filter.id);
+        if (!column) return null;
+
+        return (
+          <div key={filter.id} className="space-y-1.5">
+            <label className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground px-0.5">
+              {filter.label}
+            </label>
+            {filter.type === "text" && (
+              <TextFilter column={column} placeholder={filter.placeholder} />
+            )}
+            {filter.type === "select" && filter.options && (
+              <SelectFilter
+                column={column}
+                options={filter.options}
+                placeholder={filter.placeholder}
+              />
+            )}
+            {filter.type === "multiselect" && filter.options && (
+              <MultiSelectFilter
+                column={column}
+                options={filter.options}
+                placeholder={filter.placeholder}
+              />
+            )}
+            {filter.type === "daterange" && <DateRangeFilter column={column} />}
+            {filter.type === "numberrange" && <NumberRangeFilter column={column} />}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function FilterBar({ filters, table, onClearAll }: FilterBarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const activeFiltersCount = table.getState().columnFilters.filter((f) => {
@@ -162,11 +207,11 @@ export function FilterBar({ filters, table, onClearAll }: FilterBarProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        {/* Mobile: toggle button; Desktop: heading */}
+        {/* Mobile: open filter dialog; Desktop: heading */}
         <Button
           variant="outline"
           size="default"
-          onClick={() => setMobileOpen((prev) => !prev)}
+          onClick={() => setMobileOpen(true)}
           className="md:hidden"
         >
           <SlidersHorizontal className="h-4 w-4 mr-2" />
@@ -192,41 +237,32 @@ export function FilterBar({ filters, table, onClearAll }: FilterBarProps) {
           </Button>
         )}
       </div>
-      <div
-        className={`grid gap-4 sm:grid-cols-2 lg:grid-cols-3 ${mobileOpen ? "grid" : "hidden"} md:grid`}
-      >
-        {filters.map((filter) => {
-          const column = table.getColumn(filter.id);
-          if (!column) return null;
 
-          return (
-            <div key={filter.id} className="space-y-1.5">
-              <label className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground px-0.5">
-                {filter.label}
-              </label>
-              {filter.type === "text" && (
-                <TextFilter column={column} placeholder={filter.placeholder} />
-              )}
-              {filter.type === "select" && filter.options && (
-                <SelectFilter
-                  column={column}
-                  options={filter.options}
-                  placeholder={filter.placeholder}
-                />
-              )}
-              {filter.type === "multiselect" && filter.options && (
-                <MultiSelectFilter
-                  column={column}
-                  options={filter.options}
-                  placeholder={filter.placeholder}
-                />
-              )}
-              {filter.type === "daterange" && <DateRangeFilter column={column} />}
-              {filter.type === "numberrange" && <NumberRangeFilter column={column} />}
-            </div>
-          );
-        })}
+      {/* Mobile: Dialog overlay */}
+      <Dialog open={mobileOpen} onOpenChange={setMobileOpen}>
+        <DialogContent className="md:hidden max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Filters</DialogTitle>
+          </DialogHeader>
+          <FilterGrid filters={filters} table={table} />
+          <DialogFooter className="flex-row gap-2">
+            {activeFiltersCount > 0 && (
+              <Button variant="ghost" size="sm" onClick={handleClearAll}>
+                Clear all
+              </Button>
+            )}
+            <Button size="sm" onClick={() => setMobileOpen(false)}>
+              Apply
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Desktop: inline filter grid */}
+      <div className="hidden md:grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <FilterGrid filters={filters} table={table} />
       </div>
+
       {activeFiltersCount > 0 && (
         <div className="text-sm text-muted-foreground">
           {activeFiltersCount} filter{activeFiltersCount !== 1 ? "s" : ""} active
