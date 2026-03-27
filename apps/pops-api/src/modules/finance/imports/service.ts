@@ -92,38 +92,14 @@ function buildSuggestedTags(
   knownTags: string[],
   correctionPattern?: string
 ): SuggestedTag[] {
-  const seen = new Set<string>();
-  const result: SuggestedTag[] = [];
-
-  // 1. Correction rule tags
-  for (const tag of correctionTags) {
-    if (!seen.has(tag)) {
-      seen.add(tag);
-      result.push({ tag, source: "rule", pattern: correctionPattern });
-    }
-  }
-
-  // 2. AI category — only if it case-insensitively matches a tag already in the DB.
-  //    knownTags is loaded once per import batch (not per-transaction).
-  if (aiCategory) {
-    const lowerCategory = aiCategory.toLowerCase();
-    const matched = knownTags.find((t) => t.toLowerCase() === lowerCategory) ?? null;
-    if (matched && !seen.has(matched)) {
-      seen.add(matched);
-      result.push({ tag: matched, source: "ai" });
-    }
-  }
-
-  // 3. Entity default tags + correction tags via suggestTags — anything not already attributed
-  const entitySuggestions = suggestTags(description, entityId);
-  for (const tag of entitySuggestions) {
-    if (!seen.has(tag)) {
-      seen.add(tag);
-      result.push({ tag, source: "entity" });
-    }
-  }
-
-  return result;
+  return suggestTags({
+    description,
+    entityId,
+    aiCategory,
+    knownTags,
+    correctionTags,
+    correctionPattern,
+  });
 }
 
 /**

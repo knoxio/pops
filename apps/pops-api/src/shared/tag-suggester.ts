@@ -1,25 +1,70 @@
 /**
- * Suggest tags for a transaction using entity defaults + correction rules.
- * Pure rule-based, synchronous — no LLM call.
+ * Suggest tags for a transaction with source attribution.
+ *
+ * Strategy (order = priority for deduplication):
+ * 1. Correction rules — tags from matching corrections (source: "rule")
+ * 2. AI category — validated against knownTags (source: "ai")
+ * 3. Entity defaults — from entity.default_tags (source: "entity")
+ *
+ * Returns SuggestedTag[] with source attribution and optional pattern.
  */
 import { eq } from "drizzle-orm";
 import { getDrizzle } from "../db.js";
 import { entities } from "@pops/db-types";
 import { findAllMatchingCorrections } from "../modules/core/corrections/service.js";
+import type { SuggestedTag } from "../modules/finance/imports/types.js";
 
-/**
- * Suggest tags for a transaction.
- *
- * Strategy:
- * 1. If entityId provided: look up entity default_tags
- * 2. Run findAllMatchingCorrections for the description → union all tags arrays
- * 3. Return deduplicated, sorted result
- */
-export function suggestTags(description: string, entityId: string | null): string[] {
+export interface SuggestTagsOptions {
+  description: string;
+  entityId: string | null;
+  /** AI-suggested category string (validated against knownTags). */
+  aiCategory?: string | null;
+  /** All tag strings currently in the transactions table (for AI validation). */
+  knownTags?: string[];
+  /** Pre-parsed correction tags (skips DB lookup when caller already has them). */
+  correctionTags?: string[];
+  /** The description_pattern from the matched correction (for attribution). */
+  correctionPattern?: string;
+}
+
+export function suggestTags(opts: SuggestTagsOptions): SuggestedTag[] {
+  const { description, entityId, aiCategory, knownTags, correctionTags, correctionPattern } = opts;
   const db = getDrizzle();
-  const tagSet = new Set<string>();
+  const seen = new Set<string>();
+  const result: SuggestedTag[] = [];
 
-  // 1. Entity default tags
+  // 1. Correction rule tags (pre-parsed or from DB)
+  if (correctionTags && correctionTags.length > 0) {
+    for (const tag of correctionTags) {
+      if (!seen.has(tag)) {
+        seen.add(tag);
+        result.push({ tag, source: "rule", pattern: correctionPattern });
+      }
+    }
+  } else {
+    const corrections = findAllMatchingCorrections(description);
+    for (const correction of corrections) {
+      const tags = parseJsonTags(correction.tags);
+      for (const tag of tags) {
+        if (!seen.has(tag)) {
+          seen.add(tag);
+          result.push({ tag, source: "rule", pattern: correction.descriptionPattern ?? undefined });
+        }
+      }
+    }
+  }
+
+  // 2. AI category — only if it case-insensitively matches a known tag
+  if (aiCategory && knownTags) {
+    const lowerCategory = aiCategory.toLowerCase();
+    const matched = knownTags.find((t) => t.toLowerCase() === lowerCategory) ?? null;
+    if (matched && !seen.has(matched)) {
+      seen.add(matched);
+      result.push({ tag: matched, source: "ai" });
+    }
+  }
+
+  // 3. Entity default tags
   if (entityId) {
     const entity = db
       .select({ defaultTags: entities.defaultTags })
@@ -28,33 +73,29 @@ export function suggestTags(description: string, entityId: string | null): strin
       .get();
 
     if (entity?.defaultTags) {
-      try {
-        const parsed = JSON.parse(entity.defaultTags) as unknown;
-        if (Array.isArray(parsed)) {
-          for (const tag of parsed) {
-            if (typeof tag === "string") tagSet.add(tag);
-          }
+      const tags = parseJsonTags(entity.defaultTags);
+      for (const tag of tags) {
+        if (!seen.has(tag)) {
+          seen.add(tag);
+          result.push({ tag, source: "entity" });
         }
-      } catch {
-        // malformed JSON — ignore
       }
     }
   }
 
-  // 2. Correction rule tags
-  const corrections = findAllMatchingCorrections(description);
-  for (const correction of corrections) {
-    try {
-      const parsed = JSON.parse(correction.tags) as unknown;
-      if (Array.isArray(parsed)) {
-        for (const tag of parsed) {
-          if (typeof tag === "string") tagSet.add(tag);
-        }
-      }
-    } catch {
-      // malformed JSON — ignore
-    }
-  }
+  return result;
+}
 
-  return [...tagSet].sort();
+/** Parse a JSON string expected to be a string array. Returns [] on failure. */
+function parseJsonTags(json: string | null | undefined): string[] {
+  if (!json) return [];
+  try {
+    const parsed = JSON.parse(json) as unknown;
+    if (Array.isArray(parsed)) {
+      return parsed.filter((t): t is string => typeof t === "string");
+    }
+  } catch {
+    // malformed JSON — ignore
+  }
+  return [];
 }

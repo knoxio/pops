@@ -115,8 +115,11 @@ export const transactionsRouter = router({
       })
     )
     .query(({ input }) => {
-      const tags = suggestTags(input.description, input.entityId ?? null);
-      return { tags };
+      const suggested = suggestTags({
+        description: input.description,
+        entityId: input.entityId ?? null,
+      });
+      return { tags: suggested.map((s) => s.tag) };
     }),
 
   /**
