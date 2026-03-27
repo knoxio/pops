@@ -5,8 +5,8 @@
  * Color-coded urgency for expiring items. PRD-023/US-2.
  */
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router";
-import { ShieldCheck, ChevronDown, ChevronRight } from "lucide-react";
+import { useNavigate, Link } from "react-router";
+import { ShieldCheck, ChevronDown, ChevronRight, AlertCircle } from "lucide-react";
 import { Skeleton, AssetIdBadge, Badge } from "@pops/ui";
 import { trpc } from "../lib/trpc";
 
@@ -137,7 +137,7 @@ function CollapsibleSection({
 
 export function WarrantiesPage() {
   const navigate = useNavigate();
-  const { data, isLoading } = trpc.inventory.reports.warranties.useQuery();
+  const { data, isLoading, isError, refetch } = trpc.inventory.reports.warranties.useQuery();
 
   const { expiringSoon, expired, active } = useMemo(() => {
     const items = data?.data ?? [];
@@ -183,13 +183,31 @@ export function WarrantiesPage() {
 
       {isLoading ? (
         <WarrantySkeleton />
+      ) : isError ? (
+        <div className="text-center py-16">
+          <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground/40 mb-4" />
+          <p className="text-muted-foreground mb-4">Could not load warranties — try again</p>
+          <button
+            type="button"
+            className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+            onClick={() => refetch()}
+          >
+            Retry
+          </button>
+        </div>
       ) : totalItems === 0 ? (
         <div className="text-center py-16">
           <ShieldCheck className="h-12 w-12 mx-auto text-muted-foreground/40 mb-4" />
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mb-4">
             No items with warranty dates. Add warranty expiry dates to your inventory items to track
             them here.
           </p>
+          <Link
+            to="/inventory/items"
+            className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+          >
+            Browse Items
+          </Link>
         </div>
       ) : (
         <div className="space-y-4">
@@ -235,7 +253,11 @@ export function WarrantiesPage() {
 
           {/* Expired — collapsible */}
           {expired.length > 0 && (
-            <CollapsibleSection title="Expired" count={expired.length}>
+            <CollapsibleSection
+              title="Expired"
+              count={expired.length}
+              defaultOpen={expiringSoon.length === 0 && active.length === 0}
+            >
               {expired.map((item) => (
                 <WarrantyRow
                   key={item.id}
