@@ -1,16 +1,12 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router";
-import { Badge, Button, Skeleton, TextInput } from "@pops/ui";
+import { Button, Skeleton, TextInput } from "@pops/ui";
 import { Sparkles, Settings, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { MediaGrid } from "../components/MediaGrid";
+import { MediaCard } from "../components/MediaCard";
 import { DownloadQueue } from "../components/DownloadQueue";
 import { QuickPickDialog } from "../components/QuickPickDialog";
-import {
-  useMediaLibrary,
-  type MediaType,
-  type SortOption,
-  type MediaItem,
-} from "../hooks/useMediaLibrary";
+import { useMediaLibrary, type MediaType, type SortOption } from "../hooks/useMediaLibrary";
 
 const TYPE_OPTIONS: { value: MediaType; label: string }[] = [
   { value: "all", label: "All" },
@@ -48,43 +44,6 @@ function LibrarySkeleton() {
         </div>
       ))}
     </MediaGrid>
-  );
-}
-
-function MediaCard({ item, showTypeBadge = true }: { item: MediaItem; showTypeBadge?: boolean }) {
-  const href = item.type === "movie" ? `/media/movies/${item.id}` : `/media/tv/${item.id}`;
-  const posterSrc = item.posterUrl ?? "";
-
-  return (
-    <Link to={href} className="group block outline-none">
-      <div className="relative aspect-[2/3] rounded-lg overflow-hidden bg-muted transition-all duration-300 group-hover:shadow-lg group-hover:shadow-app-accent/20 group-hover:ring-1 group-hover:ring-app-accent/30 group-focus-visible:ring-2 group-focus-visible:ring-app-accent">
-        {posterSrc ? (
-          <img
-            src={posterSrc}
-            alt={item.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-            loading="lazy"
-          />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-muted/50">
-            No Poster
-          </div>
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-        {showTypeBadge && (
-          <Badge
-            variant="secondary"
-            className="absolute top-2 right-2 text-[10px] uppercase tracking-wider px-1.5 py-0 bg-app-accent/10 text-app-accent border-app-accent/20 backdrop-blur-md"
-          >
-            {item.type === "movie" ? "Movie" : "TV"}
-          </Badge>
-        )}
-      </div>
-      <h3 className="mt-2 text-sm font-medium line-clamp-2 transition-colors group-hover:text-app-accent">
-        {item.title}
-      </h3>
-      {item.year && <p className="text-xs text-muted-foreground">{item.year}</p>}
-    </Link>
   );
 }
 
@@ -356,7 +315,11 @@ export function LibraryPage() {
             {items.map((item) => (
               <MediaCard
                 key={`${item.type}-${item.id}`}
-                item={item}
+                id={item.id}
+                type={item.type}
+                title={item.title}
+                year={item.year}
+                posterUrl={item.posterUrl}
                 showTypeBadge={showTypeBadge}
               />
             ))}
