@@ -4,7 +4,9 @@ import { MemoryRouter } from "react-router";
 
 const mockDimensionsQuery = vi.fn();
 const mockPairQuery = vi.fn();
-const mockRecordMutate = vi.fn();
+const mockRecordMutate = vi.fn() as ReturnType<typeof vi.fn> & {
+  _opts?: Record<string, unknown>;
+};
 const mockRefetchPair = vi.fn();
 const mockScoresFetch = vi.fn();
 
@@ -57,7 +59,7 @@ function renderPage() {
   return render(
     <MemoryRouter>
       <CompareArenaPage />
-    </MemoryRouter>,
+    </MemoryRouter>
   );
 }
 
@@ -115,7 +117,7 @@ describe("CompareArenaPage", () => {
         mediaAId: 10,
         mediaBId: 20,
         winnerId: 10,
-      }),
+      })
     );
   });
 
@@ -170,7 +172,7 @@ describe("CompareArenaPage", () => {
     const { unmount } = render(
       <MemoryRouter>
         <CompareArenaPage />
-      </MemoryRouter>,
+      </MemoryRouter>
     );
 
     // Simulate pending state by re-mocking
@@ -216,9 +218,7 @@ describe("CompareArenaPage", () => {
 
     // The onSuccess callback advances the dimension
     // We can verify the mutation was called with the first dimension
-    expect(mockRecordMutate).toHaveBeenCalledWith(
-      expect.objectContaining({ dimensionId: 1 }),
-    );
+    expect(mockRecordMutate).toHaveBeenCalledWith(expect.objectContaining({ dimensionId: 1 }));
   });
 
   it("renders loading skeletons when pair is loading", () => {

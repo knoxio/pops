@@ -43,12 +43,14 @@ const folders = [
   { id: 2, path: "/movies2", freeSpace: 100 * 1024 * 1024 * 1024 },
 ];
 
-function setupDefaults(overrides: {
-  profilesLoading?: boolean;
-  foldersLoading?: boolean;
-  profileList?: typeof profiles;
-  folderList?: typeof folders;
-} = {}) {
+function setupDefaults(
+  overrides: {
+    profilesLoading?: boolean;
+    foldersLoading?: boolean;
+    profileList?: typeof profiles;
+    folderList?: typeof folders;
+  } = {}
+) {
   const {
     profilesLoading = false,
     foldersLoading = false,
@@ -105,8 +107,8 @@ describe("RequestMovieModal", () => {
 
     const options = select.querySelectorAll("option");
     expect(options).toHaveLength(2);
-    expect(options[0].textContent).toBe("HD - 720p/1080p");
-    expect(options[1].textContent).toBe("Ultra-HD");
+    expect(options[0]!.textContent).toBe("HD - 720p/1080p");
+    expect(options[1]!.textContent).toBe("Ultra-HD");
   });
 
   it("populates root folder dropdown with free space", () => {
@@ -118,8 +120,8 @@ describe("RequestMovieModal", () => {
 
     const options = select.querySelectorAll("option");
     expect(options).toHaveLength(2);
-    expect(options[0].textContent).toContain("/movies");
-    expect(options[0].textContent).toContain("GB free");
+    expect(options[0]!.textContent).toContain("/movies");
+    expect(options[0]!.textContent).toContain("GB free");
   });
 
   it("sends correct addMovie payload on confirm", () => {

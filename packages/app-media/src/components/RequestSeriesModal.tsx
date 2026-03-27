@@ -67,19 +67,19 @@ export function RequestSeriesModal({
   // Default to first option once loaded
   useEffect(() => {
     if (profiles.data?.data?.length && qualityProfileId === null) {
-      setQualityProfileId(profiles.data.data[0].id);
+      setQualityProfileId(profiles.data.data[0]!.id);
     }
   }, [profiles.data?.data, qualityProfileId]);
 
   useEffect(() => {
     if (folders.data?.data?.length && !rootFolderPath) {
-      setRootFolderPath(folders.data.data[0].path);
+      setRootFolderPath(folders.data.data[0]!.path);
     }
   }, [folders.data?.data, rootFolderPath]);
 
   useEffect(() => {
     if (languages.data?.data?.length && languageProfileId === null) {
-      setLanguageProfileId(languages.data.data[0].id);
+      setLanguageProfileId(languages.data.data[0]!.id);
     }
   }, [languages.data?.data, languageProfileId]);
 

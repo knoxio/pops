@@ -137,8 +137,8 @@ describe("RequestSeriesModal", () => {
     const select = screen.getByLabelText("Quality Profile") as HTMLSelectElement;
     const options = select.querySelectorAll("option");
     expect(options).toHaveLength(2);
-    expect(options[0].textContent).toBe("HD - 720p/1080p");
-    expect(options[1].textContent).toBe("Ultra-HD");
+    expect(options[0]!.textContent).toBe("HD - 720p/1080p");
+    expect(options[1]!.textContent).toBe("Ultra-HD");
   });
 
   it("populates root folder dropdown with free space", () => {
@@ -148,8 +148,8 @@ describe("RequestSeriesModal", () => {
     const select = screen.getByLabelText("Root Folder") as HTMLSelectElement;
     const options = select.querySelectorAll("option");
     expect(options).toHaveLength(2);
-    expect(options[0].textContent).toContain("/tv");
-    expect(options[0].textContent).toContain("GB free");
+    expect(options[0]!.textContent).toContain("/tv");
+    expect(options[0]!.textContent).toContain("GB free");
   });
 
   it("populates language profile dropdown from API", () => {
@@ -159,8 +159,8 @@ describe("RequestSeriesModal", () => {
     const select = screen.getByLabelText("Language Profile") as HTMLSelectElement;
     const options = select.querySelectorAll("option");
     expect(options).toHaveLength(2);
-    expect(options[0].textContent).toBe("English");
-    expect(options[1].textContent).toBe("Any");
+    expect(options[0]!.textContent).toBe("English");
+    expect(options[1]!.textContent).toBe("Any");
   });
 
   it("defaults to first quality profile, root folder, and language profile", () => {
@@ -191,11 +191,11 @@ describe("RequestSeriesModal", () => {
 
     const checkboxes = screen.getAllByRole("checkbox");
     // Toggle Season 1 on
-    fireEvent.click(checkboxes[0]);
-    expect(checkboxes[0]).toBeChecked();
+    fireEvent.click(checkboxes[0]!);
+    expect(checkboxes[0]!).toBeChecked();
     // Toggle Season 3 off
-    fireEvent.click(checkboxes[2]);
-    expect(checkboxes[2]).not.toBeChecked();
+    fireEvent.click(checkboxes[2]!);
+    expect(checkboxes[2]!).not.toBeChecked();
   });
 
   it("shows Select All / Deselect All when more than 3 seasons", () => {

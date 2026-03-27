@@ -5,13 +5,7 @@
  * then submits to Radarr's addMovie endpoint.
  */
 import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@pops/ui";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@pops/ui";
 import { Button } from "@pops/ui";
 import { RefreshCw, CheckCircle2 } from "lucide-react";
 import { trpc } from "../lib/trpc";
@@ -47,13 +41,13 @@ export function RequestMovieModal({ open, onClose, tmdbId, title, year }: Reques
   // Default to first option once loaded
   useEffect(() => {
     if (profiles.data?.data?.length && qualityProfileId === null) {
-      setQualityProfileId(profiles.data.data[0].id);
+      setQualityProfileId(profiles.data.data[0]!.id);
     }
   }, [profiles.data?.data, qualityProfileId]);
 
   useEffect(() => {
     if (folders.data?.data?.length && !rootFolderPath) {
-      setRootFolderPath(folders.data.data[0].path);
+      setRootFolderPath(folders.data.data[0]!.path);
     }
   }, [folders.data?.data, rootFolderPath]);
 
