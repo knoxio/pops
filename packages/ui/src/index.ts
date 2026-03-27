@@ -91,4 +91,5 @@ export * from "./components/ViewToggleGroup";
 export * from "./components/AssetIdBadge";
 export * from "./components/ConditionBadge";
 export * from "./components/TypeBadge";
+export * from "./components/WarrantyBadge";
 export * from "./components/LocationBreadcrumb";
