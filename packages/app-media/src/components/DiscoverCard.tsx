@@ -5,6 +5,7 @@
 import { useState } from "react";
 import { cn, Badge, Button, Skeleton } from "@pops/ui";
 import { Film, Plus, Bookmark, Check, Loader2, X } from "lucide-react";
+import { RequestMovieButton } from "./RequestMovieButton";
 
 export interface DiscoverCardProps {
   tmdbId: number;
@@ -131,6 +132,7 @@ export function DiscoverCard({
               <Bookmark className="h-3.5 w-3.5" />
             )}
           </Button>
+          <RequestMovieButton tmdbId={tmdbId} title={title} variant="compact" />
           <Button
             size="icon"
             variant="ghost"

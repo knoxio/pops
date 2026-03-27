@@ -18,6 +18,7 @@ import { WatchlistToggle } from "../components/WatchlistToggle";
 import { ComparisonScores } from "../components/ComparisonScores";
 import { MarkAsWatchedButton } from "../components/MarkAsWatchedButton";
 import { ArrStatusBadge } from "../components/ArrStatusBadge";
+import { RequestMovieButton } from "../components/RequestMovieButton";
 
 function MovieDetailSkeleton() {
   return (
@@ -186,6 +187,7 @@ export function MovieDetailPage() {
               <WatchlistToggle mediaType="movie" mediaId={movie.id} />
               <MarkAsWatchedButton mediaId={movie.id} />
               <ArrStatusBadge kind="movie" externalId={movie.tmdbId} />
+              <RequestMovieButton tmdbId={movie.tmdbId} title={movie.title} />
             </div>
           </div>
         </div>

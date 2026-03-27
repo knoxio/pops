@@ -6,6 +6,7 @@
 import { useState } from "react";
 import { cn, Badge, Button, Skeleton } from "@pops/ui";
 import { Film, Tv, Loader2, Check, Plus } from "lucide-react";
+import { RequestMovieButton } from "./RequestMovieButton";
 
 const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w342";
 
@@ -14,6 +15,8 @@ export type SearchResultType = "movie" | "tv";
 export interface SearchResultCardProps {
   type: SearchResultType;
   title: string;
+  /** TMDB ID — required for movie request button. */
+  tmdbId?: number;
   year?: string | null;
   overview?: string | null;
   posterUrl?: string | null;
@@ -45,6 +48,7 @@ export function buildPosterUrl(
 export function SearchResultCard({
   type,
   title,
+  tmdbId,
   year,
   overview,
   posterUrl,
@@ -122,8 +126,8 @@ export function SearchResultCard({
           </div>
         )}
 
-        {/* Action button */}
-        <div className="mt-auto pt-1">
+        {/* Action buttons */}
+        <div className="mt-auto flex items-center gap-2 pt-1">
           {inLibrary ? (
             <Badge variant="secondary" className="gap-1">
               <Check className="h-3 w-3" />
@@ -145,6 +149,9 @@ export function SearchResultCard({
               )}
               {isAdding ? "Adding…" : "Add to Library"}
             </Button>
+          )}
+          {type === "movie" && tmdbId != null && (
+            <RequestMovieButton tmdbId={tmdbId} title={title} />
           )}
         </div>
       </div>
