@@ -231,7 +231,7 @@ describe("PlexSettingsPage", () => {
     renderPage();
     // Simulate sync success
     syncMoviesOnSuccess?.({
-      data: { synced: 50, skipped: 5, errors: [{ title: "Bad Movie", error: "Missing TMDB ID" }] },
+      data: { synced: 50, skipped: 5, errors: [{ title: "Bad Movie", reason: "Missing TMDB ID", year: 2020 }] },
     });
     renderPage(); // re-render
   });
