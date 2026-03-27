@@ -18,17 +18,19 @@
     "@tanstack/react-table": "8.21.3",
     "lucide-react": "^0.563.0",
     "react": "^19.0.0",
-    "react-router": "^7.13.1"
+    "react-router": "^7.13.1",
+    "sonner": "^2.0.3"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "eslint": "^10.0.3",
+    "jsdom": "^29.0.1",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.57.1",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "jsdom": "^29.0.1",
     "vitest": "^3.2.4"
   }
 }

@@ -15,6 +15,10 @@ const PromptViewerPage = lazy(() =>
   import("./pages/PromptViewerPage").then((m) => ({ default: m.PromptViewerPage }))
 );
 
+const ModelConfigPage = lazy(() =>
+  import("./pages/ModelConfigPage").then((m) => ({ default: m.ModelConfigPage }))
+);
+
 /** Shared navigation types (mirrored from shell to avoid circular dependency) */
 export interface AppNavItem {
   path: string;
@@ -40,10 +44,12 @@ export const navConfig: AppNavConfig = {
   items: [
     { path: "", label: "AI Usage", icon: "BarChart3" },
     { path: "prompts", label: "Prompt Templates", icon: "FileText" },
+    { path: "config", label: "Model Config", icon: "Settings" },
   ],
 };
 
 export const routes: RouteObject[] = [
   { index: true, element: <AiUsagePage /> },
   { path: "prompts", element: <PromptViewerPage /> },
+  { path: "config", element: <ModelConfigPage /> },
 ];
