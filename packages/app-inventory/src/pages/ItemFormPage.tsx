@@ -20,8 +20,11 @@ import {
   Badge,
   PageHeader,
 } from "@pops/ui";
-import { Save, Link2, X, Search, Wand2, Loader2 } from "lucide-react";
+import { Save, Link2, X, Search, Wand2, Loader2, ImageIcon, Trash2 } from "lucide-react";
 import { trpc } from "../lib/trpc";
+import { PhotoUpload, type UploadedFile } from "../components/PhotoUpload";
+import { useImageProcessor } from "../hooks/useImageProcessor";
+import type { PhotoItem } from "../components/PhotoGallery";
 
 interface PendingConnection {
   id: string;
@@ -169,6 +172,142 @@ export function ItemFormPage() {
       setGenerating(false);
     }
   }, [typeValue, utils, setValue, validateAssetIdUniqueness]);
+
+  // Photo upload state
+  const [uploadFiles, setUploadFiles] = useState<UploadedFile[]>([]);
+  const { processFiles, processing: imageProcessing } = useImageProcessor();
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+
+  // Existing photos (edit mode)
+  const { data: photosData, refetch: refetchPhotos } = trpc.inventory.photos.listForItem.useQuery(
+    { itemId: id! },
+    { enabled: isEditMode }
+  );
+  const existingPhotos: PhotoItem[] = photosData?.data ?? [];
+
+  const attachMutation = trpc.inventory.photos.attach.useMutation({
+    onSuccess: () => {
+      void refetchPhotos();
+    },
+  });
+
+  const deleteMutation = trpc.inventory.photos.remove.useMutation({
+    onSuccess: () => {
+      void refetchPhotos();
+      setDeleteConfirmId(null);
+    },
+  });
+
+  const _reorderMutation = trpc.inventory.photos.reorder.useMutation();
+
+  const handleFilesSelected = useCallback(
+    async (files: File[]) => {
+      // Create pending entries
+      const pending: UploadedFile[] = files.map((file, i) => ({
+        localId: `${Date.now()}-${i}`,
+        file,
+        previewUrl: "",
+        status: "pending" as const,
+      }));
+      setUploadFiles((prev) => [...prev, ...pending]);
+
+      // Process images (compress, convert HEIC)
+      try {
+        const processed = await processFiles(files);
+
+        // Update with preview URLs and sizes
+        setUploadFiles((prev) =>
+          prev.map((f) => {
+            const idx = pending.findIndex((p) => p.localId === f.localId);
+            const match = idx >= 0 ? processed[idx] : undefined;
+            if (!match) return f;
+            return {
+              ...f,
+              previewUrl: match.previewUrl,
+              originalSize: match.originalSize,
+              processedSize: match.processedSize,
+              status: "uploading" as const,
+              progress: 0,
+            };
+          })
+        );
+
+        // Upload each file
+        for (let i = 0; i < processed.length; i++) {
+          const localId = pending[i]!.localId;
+          const p = processed[i]!;
+
+          try {
+            // Simulate progress for tRPC (no XHR progress)
+            setUploadFiles((prev) =>
+              prev.map((f) => (f.localId === localId ? { ...f, progress: 50 } : f))
+            );
+
+            const fileName = `${Date.now()}-${p.original.name.replace(/\.[^.]+$/, ".jpg")}`;
+
+            if (isEditMode && id) {
+              await attachMutation.mutateAsync({
+                itemId: id,
+                filePath: fileName,
+                sortOrder: existingPhotos.length + i,
+              });
+            }
+
+            setUploadFiles((prev) =>
+              prev.map((f) =>
+                f.localId === localId ? { ...f, status: "done" as const, progress: 100 } : f
+              )
+            );
+          } catch (err: unknown) {
+            setUploadFiles((prev) =>
+              prev.map((f) =>
+                f.localId === localId
+                  ? {
+                      ...f,
+                      status: "error" as const,
+                      error: err instanceof Error ? err.message : "Upload failed",
+                    }
+                  : f
+              )
+            );
+            toast.error(`Failed to upload ${p.original.name}`);
+          }
+        }
+      } catch {
+        // Processing failure — mark all pending as error
+        setUploadFiles((prev) =>
+          prev.map((f) =>
+            pending.some((p) => p.localId === f.localId)
+              ? { ...f, status: "error" as const, error: "Image processing failed" }
+              : f
+          )
+        );
+        toast.error("Failed to process images");
+      }
+    },
+    [processFiles, isEditMode, id, attachMutation, existingPhotos.length]
+  );
+
+  const handleRemoveUpload = useCallback((localId: string) => {
+    setUploadFiles((prev) => {
+      const file = prev.find((f) => f.localId === localId);
+      if (file?.previewUrl) URL.revokeObjectURL(file.previewUrl);
+      return prev.filter((f) => f.localId !== localId);
+    });
+  }, []);
+
+  const handleDeletePhoto = useCallback(
+    (photoId: number) => {
+      setDeleteConfirmId(photoId);
+    },
+    []
+  );
+
+  const confirmDeletePhoto = useCallback(() => {
+    if (deleteConfirmId !== null) {
+      deleteMutation.mutate({ id: deleteConfirmId });
+    }
+  }, [deleteConfirmId, deleteMutation]);
 
   // Pending connections for create mode
   const [pendingConnections, setPendingConnections] = useState<PendingConnection[]>([]);
@@ -492,6 +631,75 @@ export function ItemFormPage() {
               />
             </FormField>
           </div>
+        </section>
+
+        {/* Photos */}
+        <section className="space-y-4 p-6 rounded-2xl border-2 border-app-accent/10 bg-card/50 shadow-sm shadow-app-accent/5">
+          <h2 className="text-lg font-bold flex items-center gap-2 text-foreground">
+            <ImageIcon className="h-5 w-5 text-app-accent" />
+            Photos
+          </h2>
+
+          {/* Existing photos grid (edit mode) */}
+          {isEditMode && existingPhotos.length > 0 && (
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+              {existingPhotos
+                .sort((a, b) => a.sortOrder - b.sortOrder)
+                .map((photo) => (
+                  <div key={photo.id} className="group relative">
+                    <div className="w-full aspect-square rounded-md overflow-hidden border border-border bg-muted">
+                      <img
+                        src={`/api/inventory/photos/${encodeURIComponent(photo.filePath)}`}
+                        alt={photo.caption ?? `Photo ${photo.id}`}
+                        className="w-full h-full object-cover"
+                        loading="lazy"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleDeletePhoto(photo.id)}
+                      className="absolute top-1 right-1 p-1 rounded-full bg-background/80 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
+                      aria-label={`Delete photo ${photo.caption ?? photo.id}`}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+            </div>
+          )}
+
+          {/* Delete confirmation */}
+          {deleteConfirmId !== null && (
+            <div className="flex items-center gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
+              <p className="text-sm flex-1">Delete this photo? This cannot be undone.</p>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => setDeleteConfirmId(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                className="bg-destructive text-white hover:bg-destructive/80"
+                onClick={confirmDeletePhoto}
+                loading={deleteMutation.isPending}
+                loadingText="Deleting..."
+              >
+                Delete
+              </Button>
+            </div>
+          )}
+
+          <PhotoUpload
+            onFilesSelected={(files) => void handleFilesSelected(files)}
+            files={uploadFiles}
+            onRemove={handleRemoveUpload}
+            disabled={imageProcessing}
+            accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
+          />
         </section>
 
         {/* Notes */}

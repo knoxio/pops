@@ -5,8 +5,8 @@
  * and allows deleting individual queued/uploaded photos.
  */
 import { useState, useCallback, useRef } from "react";
-import { Upload, X, ImageIcon, Loader2, Camera } from "lucide-react";
-import { Button } from "@pops/ui";
+import { Upload, X, ImageIcon, Camera } from "lucide-react";
+import { Button, Progress } from "@pops/ui";
 import { cn } from "../lib/utils";
 
 export interface UploadedFile {
@@ -16,8 +16,14 @@ export interface UploadedFile {
   /** Preview URL created via URL.createObjectURL */
   previewUrl: string;
   status: "pending" | "uploading" | "done" | "error";
+  /** Upload progress 0–100 */
+  progress?: number;
   /** Error message if status is "error" */
   error?: string;
+  /** Original file size before compression */
+  originalSize?: number;
+  /** Processed file size after compression */
+  processedSize?: number;
 }
 
 interface PhotoUploadProps {
@@ -38,6 +44,12 @@ interface PhotoUploadProps {
 
 const DEFAULT_MAX_SIZE_MB = 10;
 const DEFAULT_ACCEPT = "image/*";
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)}KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)}MB`;
+}
 
 export function PhotoUpload({
   onFilesSelected,
@@ -60,7 +72,9 @@ export function PhotoUpload({
       const errors: string[] = [];
 
       for (const file of fileList) {
-        if (!file.type.startsWith("image/")) {
+        const isImage = file.type.startsWith("image/");
+        const isHeic = /\.heic$/i.test(file.name) || /\.heif$/i.test(file.name);
+        if (!isImage && !isHeic) {
           errors.push(`${file.name}: not an image`);
           continue;
         }
@@ -227,21 +241,30 @@ export function PhotoUpload({
               {/* File info */}
               <div className="flex-1 min-w-0">
                 <p className="text-sm truncate">{f.file.name}</p>
-                <div className="flex items-center gap-2">
-                  {f.status === "uploading" && (
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Uploading…
+                {f.status === "uploading" && (
+                  <div className="mt-1 space-y-1">
+                    <Progress value={f.progress ?? 0} className="h-1.5" />
+                    <span className="text-xs text-muted-foreground">
+                      {f.progress ?? 0}%
                     </span>
-                  )}
-                  {f.status === "done" && <span className="text-xs text-green-600">Uploaded</span>}
-                  {f.status === "error" && (
-                    <span className="text-xs text-destructive">{f.error ?? "Upload failed"}</span>
-                  )}
-                  {f.status === "pending" && (
-                    <span className="text-xs text-muted-foreground">Ready</span>
-                  )}
-                </div>
+                  </div>
+                )}
+                {f.status !== "uploading" && (
+                  <div className="flex items-center gap-2">
+                    {f.status === "done" && <span className="text-xs text-green-600">Uploaded</span>}
+                    {f.status === "error" && (
+                      <span className="text-xs text-destructive">{f.error ?? "Upload failed"}</span>
+                    )}
+                    {f.status === "pending" && (
+                      <span className="text-xs text-muted-foreground">Ready</span>
+                    )}
+                    {f.originalSize != null && f.processedSize != null && (
+                      <span className="text-xs text-muted-foreground">
+                        {formatBytes(f.originalSize)} → {formatBytes(f.processedSize)}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Remove button */}

@@ -72,6 +72,11 @@ const mockCountByAssetPrefixFetch = vi.fn();
 const mockCreateMutate = vi.fn();
 const mockUpdateMutate = vi.fn();
 const mockConnectMutate = vi.fn();
+const mockPhotosListQuery = vi.fn();
+const mockAttachMutate = vi.fn();
+const mockRemoveMutate = vi.fn();
+const mockReorderMutate = vi.fn();
+const mockRefetchPhotos = vi.fn();
 
 vi.mock("../lib/trpc", () => ({
   trpc: {
@@ -105,6 +110,34 @@ vi.mock("../lib/trpc", () => ({
           useMutation: () => ({ mutateAsync: mockConnectMutate }),
         },
       },
+      photos: {
+        listForItem: {
+          useQuery: (...args: unknown[]) => {
+            const result = mockPhotosListQuery(...args);
+            return { ...result, refetch: mockRefetchPhotos };
+          },
+        },
+        attach: {
+          useMutation: (opts?: Record<string, unknown>) => ({
+            mutateAsync: mockAttachMutate,
+            isPending: false,
+            ...(opts || {}),
+          }),
+        },
+        remove: {
+          useMutation: (opts?: Record<string, unknown>) => ({
+            mutate: (...args: unknown[]) => {
+              mockRemoveMutate(...args);
+              if (typeof opts?.onSuccess === "function")
+                (opts.onSuccess as (...args: unknown[]) => void)();
+            },
+            isPending: false,
+          }),
+        },
+        reorder: {
+          useMutation: () => ({ mutate: mockReorderMutate, isPending: false }),
+        },
+      },
     },
     useUtils: () => ({
       inventory: {
@@ -117,6 +150,22 @@ vi.mock("../lib/trpc", () => ({
       },
     }),
   },
+}));
+
+// Mock useImageProcessor
+vi.mock("../hooks/useImageProcessor", () => ({
+  useImageProcessor: () => ({
+    processFiles: vi.fn(async (files: File[]) =>
+      files.map((f) => ({
+        original: f,
+        processed: new Blob([new Uint8Array(100)], { type: "image/jpeg" }),
+        previewUrl: "blob:mock-preview",
+        originalSize: f.size,
+        processedSize: 100,
+      }))
+    ),
+    processing: false,
+  }),
 }));
 
 import { ItemFormPage } from "./ItemFormPage";
@@ -157,6 +206,11 @@ beforeEach(() => {
 
   mockSearchByAssetIdFetch.mockResolvedValue({ data: null });
   mockCountByAssetPrefixFetch.mockResolvedValue({ data: 0 });
+
+  mockPhotosListQuery.mockReturnValue({
+    data: { data: [] },
+    isLoading: false,
+  });
 });
 
 describe("ItemFormPage — Asset ID generation", () => {
@@ -246,5 +300,162 @@ describe("ItemFormPage — Asset ID generation", () => {
     const assetInput = screen.getByRole("textbox", { name: /asset id/i });
     fireEvent.blur(assetInput);
     expect(mockSearchByAssetIdFetch).not.toHaveBeenCalled();
+  });
+});
+
+describe("ItemFormPage — Photos section", () => {
+  it("renders Photos section heading", () => {
+    renderCreate();
+    expect(screen.getByText("Photos")).toBeInTheDocument();
+  });
+
+  it("renders PhotoUpload component with upload zone", () => {
+    renderCreate();
+    expect(screen.getByRole("button", { name: /upload photos/i })).toBeInTheDocument();
+  });
+
+  it("renders existing photos in edit mode", () => {
+    mockItemQuery.mockReturnValue({
+      data: {
+        data: {
+          id: "item-1",
+          itemName: "Camera",
+          brand: null,
+          model: null,
+          itemId: null,
+          type: null,
+          condition: null,
+          room: null,
+          inUse: false,
+          deductible: false,
+          purchaseDate: null,
+          warrantyExpires: null,
+          replacementValue: null,
+          resaleValue: null,
+          assetId: null,
+          notes: null,
+          locationId: null,
+          lastEditedTime: "2026-01-01",
+          purchasedFromId: null,
+          purchasedFromName: null,
+          purchaseTransactionId: null,
+        },
+      },
+      isLoading: false,
+      error: null,
+    });
+
+    mockPhotosListQuery.mockReturnValue({
+      data: {
+        data: [
+          { id: 1, filePath: "photo1.jpg", caption: "Front view", sortOrder: 0 },
+          { id: 2, filePath: "photo2.jpg", caption: "Back view", sortOrder: 1 },
+        ],
+      },
+      isLoading: false,
+    });
+
+    renderEdit("item-1");
+
+    expect(screen.getByAltText("Front view")).toBeInTheDocument();
+    expect(screen.getByAltText("Back view")).toBeInTheDocument();
+  });
+
+  it("shows delete confirmation when delete button is clicked", () => {
+    mockItemQuery.mockReturnValue({
+      data: {
+        data: {
+          id: "item-1",
+          itemName: "Camera",
+          brand: null,
+          model: null,
+          itemId: null,
+          type: null,
+          condition: null,
+          room: null,
+          inUse: false,
+          deductible: false,
+          purchaseDate: null,
+          warrantyExpires: null,
+          replacementValue: null,
+          resaleValue: null,
+          assetId: null,
+          notes: null,
+          locationId: null,
+          lastEditedTime: "2026-01-01",
+          purchasedFromId: null,
+          purchasedFromName: null,
+          purchaseTransactionId: null,
+        },
+      },
+      isLoading: false,
+      error: null,
+    });
+
+    mockPhotosListQuery.mockReturnValue({
+      data: {
+        data: [{ id: 1, filePath: "photo1.jpg", caption: "Front", sortOrder: 0 }],
+      },
+      isLoading: false,
+    });
+
+    renderEdit("item-1");
+
+    fireEvent.click(screen.getByLabelText(/delete photo front/i));
+    expect(screen.getByText(/delete this photo/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^delete$/i })).toBeInTheDocument();
+  });
+
+  it("dismisses delete confirmation on cancel", () => {
+    mockItemQuery.mockReturnValue({
+      data: {
+        data: {
+          id: "item-1",
+          itemName: "Camera",
+          brand: null,
+          model: null,
+          itemId: null,
+          type: null,
+          condition: null,
+          room: null,
+          inUse: false,
+          deductible: false,
+          purchaseDate: null,
+          warrantyExpires: null,
+          replacementValue: null,
+          resaleValue: null,
+          assetId: null,
+          notes: null,
+          locationId: null,
+          lastEditedTime: "2026-01-01",
+          purchasedFromId: null,
+          purchasedFromName: null,
+          purchaseTransactionId: null,
+        },
+      },
+      isLoading: false,
+      error: null,
+    });
+
+    mockPhotosListQuery.mockReturnValue({
+      data: {
+        data: [{ id: 1, filePath: "photo1.jpg", caption: "Front", sortOrder: 0 }],
+      },
+      isLoading: false,
+    });
+
+    renderEdit("item-1");
+
+    fireEvent.click(screen.getByLabelText(/delete photo front/i));
+    expect(screen.getByText(/delete this photo/i)).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+    expect(screen.queryByText(/delete this photo/i)).not.toBeInTheDocument();
+  });
+
+  it("renders camera button for mobile photo capture", () => {
+    renderCreate();
+    expect(screen.getByRole("button", { name: /take photo/i })).toBeInTheDocument();
   });
 });
