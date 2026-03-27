@@ -3,7 +3,7 @@
  */
 import { isNotNull, asc, sql, desc, and, gte, lte, count, eq } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
-import { homeInventory, locations, itemPhotos } from "@pops/db-types";
+import { homeInventory, locations, itemPhotos, itemDocuments } from "@pops/db-types";
 import type { InventoryRow } from "../items/types.js";
 import type { ValueBreakdownEntry, DashboardSummary, RecentItem } from "./types.js";
 
@@ -85,12 +85,14 @@ export interface InsuranceReportItem {
   itemName: string;
   assetId: string | null;
   brand: string | null;
+  type: string | null;
   condition: string | null;
   warrantyExpires: string | null;
   replacementValue: number | null;
   photoPath: string | null;
   locationId: string | null;
   locationName: string | null;
+  receiptDocumentIds: number[];
 }
 
 export interface InsuranceReportGroup {
@@ -105,21 +107,28 @@ export interface InsuranceReportResult {
   totalValue: number;
 }
 
+interface InsuranceReportOptions {
+  locationId?: string;
+  includeChildren?: boolean;
+  sortBy?: "value" | "name" | "type";
+}
+
 /**
- * Get insurance report data, optionally filtered to a location subtree.
- * Items are grouped by location. Each item includes its first photo path.
+ * Get insurance report data, optionally filtered to a location (with or without subtree).
+ * Items are grouped by location. Each item includes its first photo path and receipt IDs.
  */
-export function getInsuranceReport(locationId?: string): InsuranceReportResult {
+export function getInsuranceReport(options: InsuranceReportOptions = {}): InsuranceReportResult {
+  const { locationId, includeChildren = true, sortBy = "value" } = options;
   const db = getDrizzle();
 
-  // Get all location IDs in the subtree if filtering
+  // Get location IDs to filter by
   let locationIds: Set<string> | null = null;
   if (locationId) {
-    locationIds = getLocationSubtreeIds(locationId);
+    locationIds = includeChildren ? getLocationSubtreeIds(locationId) : new Set([locationId]);
   }
 
-  // Get all items with their location names
-  const allItems = db.select().from(homeInventory).orderBy(asc(homeInventory.itemName)).all();
+  // Get all items
+  const allItems = db.select().from(homeInventory).all();
 
   // Build location name map
   const locationRows = db.select().from(locations).all();
@@ -137,10 +146,37 @@ export function getInsuranceReport(locationId?: string): InsuranceReportResult {
     }
   }
 
+  // Get receipt document IDs per item
+  const docs = db
+    .select()
+    .from(itemDocuments)
+    .where(eq(itemDocuments.documentType, "receipt"))
+    .all();
+  const receiptMap = new Map<string, number[]>();
+  for (const doc of docs) {
+    const existing = receiptMap.get(doc.itemId) ?? [];
+    if (!receiptMap.has(doc.itemId)) {
+      receiptMap.set(doc.itemId, existing);
+    }
+    existing.push(doc.paperlessDocumentId);
+  }
+
   // Filter items
   const filteredItems = allItems.filter((item) => {
     if (!locationIds) return true;
     return item.locationId !== null && locationIds.has(item.locationId);
+  });
+
+  // Sort items
+  filteredItems.sort((a, b) => {
+    switch (sortBy) {
+      case "value":
+        return (b.replacementValue ?? 0) - (a.replacementValue ?? 0);
+      case "name":
+        return a.itemName.localeCompare(b.itemName);
+      case "type":
+        return (a.type ?? "").localeCompare(b.type ?? "");
+    }
   });
 
   // Group by location
@@ -158,14 +194,16 @@ export function getInsuranceReport(locationId?: string): InsuranceReportResult {
       itemName: item.itemName,
       assetId: item.assetId,
       brand: item.brand,
+      type: item.type,
       condition: item.condition,
       warrantyExpires: item.warrantyExpires,
       replacementValue: item.replacementValue,
       photoPath: firstPhotoMap.get(item.id) ?? null,
       locationId: item.locationId,
       locationName: item.locationId ? (locationNameMap.get(item.locationId) ?? "Unknown") : null,
+      receiptDocumentIds: receiptMap.get(item.id) ?? [],
     });
-    if (item.replacementValue) {
+    if (item.replacementValue != null) {
       totalValue += item.replacementValue;
     }
   }

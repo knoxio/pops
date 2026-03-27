@@ -21,10 +21,22 @@ export const reportsRouter = router({
 
   /** Insurance report: items grouped by location with photo thumbnails and totals. */
   insuranceReport: protectedProcedure
-    .input(z.object({ locationId: z.string().optional() }).optional())
+    .input(
+      z
+        .object({
+          locationId: z.string().optional(),
+          includeChildren: z.boolean().optional(),
+          sortBy: z.enum(["value", "name", "type"]).optional(),
+        })
+        .optional()
+    )
     .query(({ input }) => {
       try {
-        const result = service.getInsuranceReport(input?.locationId);
+        const result = service.getInsuranceReport({
+          locationId: input?.locationId,
+          includeChildren: input?.includeChildren ?? true,
+          sortBy: input?.sortBy ?? "value",
+        });
         return { data: result };
       } catch (err) {
         throw new TRPCError({

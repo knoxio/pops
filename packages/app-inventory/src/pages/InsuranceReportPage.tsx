@@ -12,6 +12,8 @@ import { Skeleton, AssetIdBadge, ConditionBadge, Badge, type Condition } from "@
 import { trpc } from "../lib/trpc";
 import { LocationPicker } from "../components/LocationPicker";
 
+type SortBy = "value" | "name" | "type";
+
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-AU", {
     style: "currency",
@@ -54,6 +56,7 @@ interface ReportItem {
   photoPath: string | null;
   locationId: string | null;
   locationName: string | null;
+  receiptDocumentIds: number[];
 }
 
 interface ReportGroup {
@@ -72,6 +75,7 @@ function buildCsvContent(groups: ReportGroup[]): string {
     "Warranty Expires",
     "Replacement Value",
     "Photo",
+    "Receipts",
   ];
   const rows: string[][] = [headers];
 
@@ -86,6 +90,7 @@ function buildCsvContent(groups: ReportGroup[]): string {
         item.warrantyExpires ?? "",
         item.replacementValue != null ? String(item.replacementValue) : "",
         item.photoPath ? "Yes" : "No",
+        item.receiptDocumentIds.map((id) => `#${id}`).join(", "),
       ]);
     }
   }
@@ -97,10 +102,14 @@ export function InsuranceReportPage(): React.ReactElement {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const locationId = searchParams.get("locationId") ?? undefined;
+  const includeChildren = searchParams.get("includeChildren") !== "false";
+  const sortBy = (searchParams.get("sortBy") as SortBy) || "value";
 
-  const { data, isLoading } = trpc.inventory.reports.insuranceReport.useQuery(
-    locationId ? { locationId } : undefined
-  );
+  const { data, isLoading } = trpc.inventory.reports.insuranceReport.useQuery({
+    locationId,
+    includeChildren: locationId ? includeChildren : undefined,
+    sortBy,
+  });
 
   const { data: locationsData } = trpc.inventory.locations.tree.useQuery();
   const locationTree = locationsData?.data ?? [];
@@ -115,6 +124,24 @@ export function InsuranceReportPage(): React.ReactElement {
     });
   }, []);
 
+  const updateParam = useCallback(
+    (key: string, value: string | null) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (value) {
+            next.set(key, value);
+          } else {
+            next.delete(key);
+          }
+          return next;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
+
   const handleLocationChange = useCallback(
     (id: string | null) => {
       setSearchParams(
@@ -124,6 +151,7 @@ export function InsuranceReportPage(): React.ReactElement {
             next.set("locationId", id);
           } else {
             next.delete("locationId");
+            next.delete("includeChildren");
           }
           return next;
         },
@@ -199,15 +227,42 @@ export function InsuranceReportPage(): React.ReactElement {
         </div>
       </div>
 
-      {/* Location filter */}
-      <div className="mb-6 max-w-xs print:hidden">
-        <label className="block text-sm font-medium mb-1">Filter by location</label>
-        <LocationPicker
-          value={locationId ?? null}
-          onChange={handleLocationChange}
-          locations={locationTree}
-          placeholder="All locations"
-        />
+      {/* Filters */}
+      <div className="flex flex-wrap items-end gap-4 mb-6 print:hidden">
+        <div className="w-64">
+          <label className="block text-sm font-medium mb-1">Filter by location</label>
+          <LocationPicker
+            value={locationId ?? null}
+            onChange={handleLocationChange}
+            locations={locationTree}
+            placeholder="All locations"
+          />
+        </div>
+        {locationId && (
+          <label className="flex items-center gap-2 text-sm cursor-pointer">
+            <input
+              type="checkbox"
+              checked={includeChildren}
+              onChange={(e) => updateParam("includeChildren", e.target.checked ? null : "false")}
+              className="rounded border-border"
+            />
+            Include sub-locations
+          </label>
+        )}
+        <div>
+          <label className="block text-sm font-medium mb-1">Sort by</label>
+          <select
+            value={sortBy}
+            onChange={(e) =>
+              updateParam("sortBy", e.target.value === "value" ? null : e.target.value)
+            }
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
+          >
+            <option value="value">Value (high first)</option>
+            <option value="name">Name</option>
+            <option value="type">Type</option>
+          </select>
+        </div>
       </div>
 
       {/* Summary */}
@@ -245,13 +300,26 @@ export function InsuranceReportPage(): React.ReactElement {
             <table className="w-full text-sm print:text-[11pt] print:border-collapse print:border print:border-gray-300">
               <thead>
                 <tr className="border-b text-left text-muted-foreground print:border-gray-300">
-                  <th className="py-2 pr-3 w-10 print:border print:border-gray-300 print:p-1">Photo</th>
+                  <th className="py-2 pr-3 w-10 print:border print:border-gray-300 print:p-1">
+                    Photo
+                  </th>
                   <th className="py-2 pr-3 print:border print:border-gray-300 print:p-1">Name</th>
-                  <th className="py-2 pr-3 print:border print:border-gray-300 print:p-1">Asset ID</th>
+                  <th className="py-2 pr-3 print:border print:border-gray-300 print:p-1">
+                    Asset ID
+                  </th>
                   <th className="py-2 pr-3 print:border print:border-gray-300 print:p-1">Brand</th>
-                  <th className="py-2 pr-3 print:border print:border-gray-300 print:p-1">Condition</th>
-                  <th className="py-2 pr-3 print:border print:border-gray-300 print:p-1">Warranty</th>
-                  <th className="py-2 pr-3 text-right print:border print:border-gray-300 print:p-1">Value</th>
+                  <th className="py-2 pr-3 print:border print:border-gray-300 print:p-1">
+                    Condition
+                  </th>
+                  <th className="py-2 pr-3 print:border print:border-gray-300 print:p-1">
+                    Warranty
+                  </th>
+                  <th className="py-2 pr-3 text-right print:border print:border-gray-300 print:p-1">
+                    Value
+                  </th>
+                  <th className="py-2 pr-3 print:border print:border-gray-300 print:p-1">
+                    Receipts
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -278,7 +346,9 @@ export function InsuranceReportPage(): React.ReactElement {
                           />
                         )}
                       </td>
-                      <td className="py-2 pr-3 font-medium print:border print:border-gray-300 print:p-1 print:text-[12pt]">{item.itemName}</td>
+                      <td className="py-2 pr-3 font-medium print:border print:border-gray-300 print:p-1 print:text-[12pt]">
+                        {item.itemName}
+                      </td>
                       <td className="py-2 pr-3 print:border print:border-gray-300 print:p-1 [&_span]:print:bg-transparent [&_span]:print:text-black">
                         {item.assetId ? (
                           <AssetIdBadge assetId={item.assetId} />
@@ -286,7 +356,9 @@ export function InsuranceReportPage(): React.ReactElement {
                           <span className="text-muted-foreground">—</span>
                         )}
                       </td>
-                      <td className="py-2 pr-3 print:border print:border-gray-300 print:p-1">{item.brand ?? "—"}</td>
+                      <td className="py-2 pr-3 print:border print:border-gray-300 print:p-1">
+                        {item.brand ?? "—"}
+                      </td>
                       <td className="py-2 pr-3 print:border print:border-gray-300 print:p-1 [&_span]:print:bg-transparent [&_span]:print:text-black">
                         {item.condition ? (
                           <ConditionBadge condition={item.condition as Condition} />
@@ -295,10 +367,22 @@ export function InsuranceReportPage(): React.ReactElement {
                         )}
                       </td>
                       <td className="py-2 pr-3 print:border print:border-gray-300 print:p-1">
-                        <Badge variant={warranty.variant} className="print:bg-transparent print:border print:border-gray-400 print:text-black">{warranty.label}</Badge>
+                        <Badge
+                          variant={warranty.variant}
+                          className="print:bg-transparent print:border print:border-gray-400 print:text-black"
+                        >
+                          {warranty.label}
+                        </Badge>
                       </td>
                       <td className="py-2 pr-3 text-right tabular-nums print:border print:border-gray-300 print:p-1">
-                        {item.replacementValue != null ? formatCurrency(item.replacementValue) : "—"}
+                        {item.replacementValue != null
+                          ? formatCurrency(item.replacementValue)
+                          : "—"}
+                      </td>
+                      <td className="py-2 pr-3 text-sm text-muted-foreground print:border print:border-gray-300 print:p-1">
+                        {item.receiptDocumentIds.length > 0
+                          ? item.receiptDocumentIds.map((id) => `#${id}`).join(", ")
+                          : "—"}
                       </td>
                     </tr>
                   );
@@ -307,7 +391,7 @@ export function InsuranceReportPage(): React.ReactElement {
               {group.items.some((i) => i.replacementValue != null) && (
                 <tfoot>
                   <tr className="font-semibold">
-                    <td colSpan={6} className="py-2 pr-3 text-right">
+                    <td colSpan={7} className="py-2 pr-3 text-right">
                       Subtotal
                     </td>
                     <td className="py-2 pr-3 text-right tabular-nums">

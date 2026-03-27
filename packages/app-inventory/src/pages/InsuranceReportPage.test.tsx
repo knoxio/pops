@@ -33,13 +33,26 @@ vi.mock("../lib/trpc", () => ({
 
 // Mock UI badge components to avoid complex dependency chain
 vi.mock("@pops/ui", () => ({
-  Skeleton: ({ className }: { className?: string }) => <div className={`animate-pulse ${className ?? ""}`} />,
-  AssetIdBadge: ({ assetId }: { assetId: string }) => <span data-testid="asset-id-badge">{assetId}</span>,
+  Skeleton: ({ className }: { className?: string }) => (
+    <div className={`animate-pulse ${className ?? ""}`} />
+  ),
+  AssetIdBadge: ({ assetId }: { assetId: string }) => (
+    <span data-testid="asset-id-badge">{assetId}</span>
+  ),
   ConditionBadge: ({ condition }: { condition: string }) => (
     <span data-testid="condition-badge">{condition}</span>
   ),
-  Badge: ({ children, className }: { children: React.ReactNode; variant?: string; className?: string }) => (
-    <span data-testid="badge" className={className}>{children}</span>
+  Badge: ({
+    children,
+    className,
+  }: {
+    children: React.ReactNode;
+    variant?: string;
+    className?: string;
+  }) => (
+    <span data-testid="badge" className={className}>
+      {children}
+    </span>
   ),
 }));
 
@@ -90,6 +103,7 @@ const sampleReport = {
           photoPath: "tv.jpg",
           locationId: "loc-1",
           locationName: "Living Room",
+          receiptDocumentIds: [1234, 5678],
         },
         {
           id: "item-2",
@@ -102,6 +116,7 @@ const sampleReport = {
           photoPath: null,
           locationId: "loc-1",
           locationName: "Living Room",
+          receiptDocumentIds: [],
         },
       ],
     },
@@ -120,6 +135,7 @@ const sampleReport = {
           photoPath: "toaster.jpg",
           locationId: "loc-2",
           locationName: "Kitchen",
+          receiptDocumentIds: [9999],
         },
       ],
     },
@@ -434,5 +450,68 @@ describe("InsuranceReportPage", () => {
     fireEvent.click(csvBtn);
     expect(createObjectURLSpy).toHaveBeenCalled();
     expect(revokeObjectURLSpy).toHaveBeenCalled();
+  });
+
+  it("shows include sub-locations toggle when location is selected", () => {
+    mockInsuranceReportQuery.mockReturnValue({
+      data: { data: sampleReport },
+      isLoading: false,
+    });
+    renderPage("/inventory/insurance-report?locationId=loc-1");
+    expect(screen.getByLabelText("Include sub-locations")).toBeInTheDocument();
+  });
+
+  it("hides include sub-locations toggle when no location selected", () => {
+    mockInsuranceReportQuery.mockReturnValue({
+      data: { data: sampleReport },
+      isLoading: false,
+    });
+    renderPage();
+    expect(screen.queryByLabelText("Include sub-locations")).not.toBeInTheDocument();
+  });
+
+  it("renders sort selector with default value", () => {
+    mockInsuranceReportQuery.mockReturnValue({
+      data: { data: sampleReport },
+      isLoading: false,
+    });
+    renderPage();
+    const select = screen.getByDisplayValue("Value (high first)");
+    expect(select).toBeInTheDocument();
+  });
+
+  it("renders sort selector with URL param value", () => {
+    mockInsuranceReportQuery.mockReturnValue({
+      data: { data: sampleReport },
+      isLoading: false,
+    });
+    renderPage("/inventory/insurance-report?sortBy=name");
+    const select = screen.getByDisplayValue("Name");
+    expect(select).toBeInTheDocument();
+  });
+
+  it("renders receipt document IDs for items that have them", () => {
+    mockInsuranceReportQuery.mockReturnValue({
+      data: { data: sampleReport },
+      isLoading: false,
+    });
+    renderPage();
+    expect(screen.getByText("#1234, #5678")).toBeInTheDocument();
+    expect(screen.getByText("#9999")).toBeInTheDocument();
+  });
+
+  it("passes sortBy and includeChildren to query", () => {
+    mockInsuranceReportQuery.mockReturnValue({
+      data: { data: sampleReport },
+      isLoading: false,
+    });
+    renderPage("/inventory/insurance-report?locationId=loc-1&sortBy=name&includeChildren=false");
+    expect(mockInsuranceReportQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        locationId: "loc-1",
+        sortBy: "name",
+        includeChildren: false,
+      })
+    );
   });
 });
