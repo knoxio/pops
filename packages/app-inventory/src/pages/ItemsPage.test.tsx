@@ -201,7 +201,7 @@ describe("ItemsPage", () => {
       });
       renderPage();
 
-      const typeSelect = screen.getAllByRole("combobox")[0];
+      const typeSelect = screen.getAllByRole("combobox")[0]!;
       expect(typeSelect).toBeInTheDocument();
       // Options include: placeholder + "All Types" + 3 dynamic types = 5
       const options = typeSelect.querySelectorAll("option");
@@ -224,7 +224,7 @@ describe("ItemsPage", () => {
 
       // Location select should have: All Locations, Home, └ Office
       const selects = screen.getAllByRole("combobox");
-      const locationSelect = selects[selects.length - 1]; // last select
+      const locationSelect = selects[selects.length - 1]!; // last select
       const options = locationSelect.querySelectorAll("option");
       expect(options.length).toBeGreaterThanOrEqual(3);
     });
@@ -234,7 +234,7 @@ describe("ItemsPage", () => {
 
       const selects = screen.getAllByRole("combobox");
       // Condition select: placeholder + All Conditions + Excellent + Good + Fair + Poor = 6
-      const conditionSelect = selects[1]; // second select
+      const conditionSelect = selects[1]!; // second select
       const options = conditionSelect.querySelectorAll("option");
       expect(options.length).toBe(6);
     });

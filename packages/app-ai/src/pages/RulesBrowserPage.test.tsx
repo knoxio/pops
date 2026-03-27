@@ -177,7 +177,8 @@ vi.mock("@pops/ui", async () => {
         return React.cloneElement(child, {
           onClick: (...args: unknown[]) => {
             dialogCloseRef?.();
-            (child.props as Record<string, unknown>).onClick?.(...args);
+            const onClick = (child.props as Record<string, (...a: unknown[]) => void>).onClick;
+            onClick?.(...args);
           },
         } as Record<string, unknown>);
       }
@@ -368,7 +369,7 @@ describe("RulesBrowserPage", () => {
     await user.selectOptions(select, "exact");
     // Verify the query was called with matchType param (server-side filter)
     const lastCall = mockListQuery.mock.calls[mockListQuery.mock.calls.length - 1];
-    expect(lastCall[0]).toMatchObject({ matchType: "exact" });
+    expect(lastCall![0]).toMatchObject({ matchType: "exact" });
   });
 
   it("renders clear filters button when filter active", async () => {

@@ -5,6 +5,7 @@ import type { CorrectionEntry } from "./useBatchAnalysis";
 
 // Mock trpc
 const mockMutate = vi.fn();
+let capturedOnSuccess: ((data: { proposals: unknown[] }) => void) | undefined;
 vi.mock("./trpc", () => ({
   trpc: {
     core: {
@@ -12,7 +13,7 @@ vi.mock("./trpc", () => ({
         generateRules: {
           useMutation: (opts: { onSuccess?: (data: { proposals: unknown[] }) => void }) => {
             // Store onSuccess so tests can trigger it
-            mockMutate._onSuccess = opts.onSuccess;
+            capturedOnSuccess = opts.onSuccess;
             return {
               mutate: mockMutate,
               isPending: false,
@@ -139,7 +140,7 @@ describe("useBatchAnalysis", () => {
 
     // Simulate proposals arriving via onSuccess callback
     act(() => {
-      mockMutate._onSuccess?.({
+      capturedOnSuccess?.({
         proposals: [
           {
             descriptionPattern: "WOOLWORTHS",
@@ -171,7 +172,7 @@ describe("useBatchAnalysis", () => {
     const { result } = renderHook(() => useBatchAnalysis());
 
     act(() => {
-      mockMutate._onSuccess?.({
+      capturedOnSuccess?.({
         proposals: [
           {
             descriptionPattern: "WOOLWORTHS",

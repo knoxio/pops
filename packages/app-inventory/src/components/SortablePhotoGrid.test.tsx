@@ -38,7 +38,7 @@ describe("SortablePhotoGrid", () => {
   });
 
   it("does not render when only one photo", () => {
-    const { container } = render(<SortablePhotoGrid photos={[photos[0]]} onReorder={vi.fn()} />);
+    const { container } = render(<SortablePhotoGrid photos={[photos[0]!]} onReorder={vi.fn()} />);
     expect(container.innerHTML).toBe("");
   });
 
@@ -53,9 +53,9 @@ describe("SortablePhotoGrid", () => {
     const items = screen.getAllByRole("listitem");
 
     // Drag item 0 to position 2
-    fireEvent.dragStart(items[0]);
-    fireEvent.dragOver(items[2], { preventDefault: vi.fn() });
-    fireEvent.drop(items[2], { preventDefault: vi.fn() });
+    fireEvent.dragStart(items[0]!);
+    fireEvent.dragOver(items[2]!, { preventDefault: vi.fn() });
+    fireEvent.drop(items[2]!, { preventDefault: vi.fn() });
 
     expect(onReorder).toHaveBeenCalledWith([2, 3, 1]);
   });
@@ -65,9 +65,9 @@ describe("SortablePhotoGrid", () => {
     render(<SortablePhotoGrid photos={photos} onReorder={onReorder} />);
     const items = screen.getAllByRole("listitem");
 
-    fireEvent.dragStart(items[1]);
-    fireEvent.dragOver(items[1], { preventDefault: vi.fn() });
-    fireEvent.drop(items[1], { preventDefault: vi.fn() });
+    fireEvent.dragStart(items[1]!);
+    fireEvent.dragOver(items[1]!, { preventDefault: vi.fn() });
+    fireEvent.drop(items[1]!, { preventDefault: vi.fn() });
 
     expect(onReorder).not.toHaveBeenCalled();
   });
@@ -91,10 +91,10 @@ describe("SortablePhotoGrid", () => {
     render(<SortablePhotoGrid photos={photos} onReorder={onReorder} />);
     const items = screen.getAllByRole("listitem");
 
-    fireEvent.dragStart(items[0]);
-    expect(items[0].className).toContain("opacity-40");
+    fireEvent.dragStart(items[0]!);
+    expect(items[0]!.className).toContain("opacity-40");
 
-    fireEvent.dragEnd(items[0]);
-    expect(items[0].className).not.toContain("opacity-40");
+    fireEvent.dragEnd(items[0]!);
+    expect(items[0]!.className).not.toContain("opacity-40");
   });
 });
