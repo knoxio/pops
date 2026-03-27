@@ -1,7 +1,7 @@
 # PRD-004: Storybook
 
 > Epic: [01 — UI Component Library](../../epics/01-ui-component-library.md)
-> Status: To Review
+> Status: Done
 
 ## Overview
 
@@ -13,7 +13,7 @@ Set up a single Storybook instance that discovers and renders stories from all w
 apps/pops-storybook/
   .storybook/
     main.ts             (config — story discovery globs, addons)
-    preview.ts          (global decorators, theme provider)
+    preview.tsx         (global decorators, theme provider)
   package.json          (dependencies: storybook, addons)
 ```
 
