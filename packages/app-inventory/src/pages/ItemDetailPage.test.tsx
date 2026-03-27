@@ -309,6 +309,131 @@ describe("ItemDetailPage", () => {
     });
   });
 
+  describe("connections section", () => {
+    const connectedItemA = {
+      ...baseItem,
+      id: "item-2",
+      itemName: "USB-C Hub",
+      brand: "CalDigit",
+      model: "TS4",
+    };
+    const connectedItemB = {
+      ...baseItem,
+      id: "item-3",
+      itemName: "Monitor",
+      brand: "Dell",
+      model: "U2723QE",
+    };
+
+    function setupWithConnections() {
+      mockItemQuery.mockImplementation(({ id }: { id: string }) => {
+        if (id === "item-2") {
+          return { data: { data: connectedItemA }, isLoading: false, error: null };
+        }
+        if (id === "item-3") {
+          return { data: { data: connectedItemB }, isLoading: false, error: null };
+        }
+        return { data: { data: baseItem }, isLoading: false, error: null };
+      });
+
+      mockConnectionsQuery.mockReturnValue({
+        data: {
+          data: [
+            { id: "c1", itemAId: "item-1", itemBId: "item-2" },
+            { id: "c2", itemAId: "item-3", itemBId: "item-1" },
+          ],
+        },
+        isLoading: false,
+      });
+    }
+
+    it("renders connected items with names and brands", () => {
+      setupWithConnections();
+      renderAtRoute("/inventory/items/item-1");
+
+      expect(screen.getByText("USB-C Hub")).toBeInTheDocument();
+      expect(screen.getByText("CalDigit")).toBeInTheDocument();
+      expect(screen.getByText("Monitor")).toBeInTheDocument();
+      expect(screen.getByText("Dell")).toBeInTheDocument();
+    });
+
+    it("renders connected item links navigating to item detail", () => {
+      setupWithConnections();
+      renderAtRoute("/inventory/items/item-1");
+
+      const hubLink = screen.getByText("USB-C Hub").closest("a");
+      expect(hubLink).toHaveAttribute("href", "/inventory/items/item-2");
+
+      const monitorLink = screen.getByText("Monitor").closest("a");
+      expect(monitorLink).toHaveAttribute("href", "/inventory/items/item-3");
+    });
+
+    it("shows Connection Chain section only when connections exist", () => {
+      setupWithConnections();
+      renderAtRoute("/inventory/items/item-1");
+
+      expect(screen.getByText("Connection Chain")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /view graph/i })).toBeInTheDocument();
+    });
+
+    it("hides Connection Chain section when no connections", () => {
+      renderAtRoute("/inventory/items/item-1");
+      expect(screen.queryByText("Connection Chain")).not.toBeInTheDocument();
+    });
+
+    it("toggles between trace panel and graph view", () => {
+      setupWithConnections();
+      renderAtRoute("/inventory/items/item-1");
+
+      // Trace panel shown by default
+      expect(screen.getByTestId("trace-panel")).toBeInTheDocument();
+      expect(screen.queryByTestId("connection-graph")).not.toBeInTheDocument();
+
+      // Click View Graph
+      fireEvent.click(screen.getByRole("button", { name: /view graph/i }));
+      expect(screen.getByTestId("connection-graph")).toBeInTheDocument();
+      expect(screen.queryByTestId("trace-panel")).not.toBeInTheDocument();
+
+      // Click Hide Graph
+      fireEvent.click(screen.getByRole("button", { name: /hide graph/i }));
+      expect(screen.getByTestId("trace-panel")).toBeInTheDocument();
+      expect(screen.queryByTestId("connection-graph")).not.toBeInTheDocument();
+    });
+
+    it("shows empty state when no connected items", () => {
+      renderAtRoute("/inventory/items/item-1");
+      expect(screen.getByText("No connected items yet.")).toBeInTheDocument();
+    });
+
+    it("renders disconnect button for each connection", () => {
+      setupWithConnections();
+      renderAtRoute("/inventory/items/item-1");
+
+      const disconnectButtons = screen.getAllByRole("button", { name: /disconnect/i });
+      expect(disconnectButtons).toHaveLength(2);
+    });
+
+    it("calls disconnect mutation when clicking disconnect", () => {
+      const mockDisconnectMutate = vi.fn();
+      mockDisconnectMutation.mockReturnValue({
+        mutate: mockDisconnectMutate,
+        isPending: false,
+      });
+      setupWithConnections();
+      renderAtRoute("/inventory/items/item-1");
+
+      const disconnectButtons = screen.getAllByRole("button", { name: /disconnect/i });
+      fireEvent.click(disconnectButtons[0]!);
+
+      expect(mockDisconnectMutate).toHaveBeenCalledWith({ id: "c1" });
+    });
+
+    it("renders Connected Items heading with icon", () => {
+      renderAtRoute("/inventory/items/item-1");
+      expect(screen.getByText("Connected Items")).toBeInTheDocument();
+    });
+  });
+
   describe("purchase link section", () => {
     it("shows transaction link when purchaseTransactionId set", () => {
       mockItemQuery.mockReturnValue({
