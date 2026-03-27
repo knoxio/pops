@@ -599,6 +599,91 @@ describe("auto-remove from watchlist (PRD-011 R6)", () => {
   });
 });
 
+describe("priority re-sequencing after auto-removal", () => {
+  it("re-sequences priorities after movie auto-removal", () => {
+    seedWatchlistEntry(db, { media_type: "movie", media_id: 100, priority: 0 });
+    seedWatchlistEntry(db, { media_type: "movie", media_id: 200, priority: 1 });
+    seedWatchlistEntry(db, { media_type: "movie", media_id: 300, priority: 2 });
+
+    service.logWatch({ mediaType: "movie", mediaId: 200, completed: 1 });
+
+    const remaining = watchlistService.listWatchlist({}, 50, 0);
+    expect(remaining.rows).toHaveLength(2);
+    expect(remaining.rows[0]!.mediaId).toBe(100);
+    expect(remaining.rows[0]!.priority).toBe(0);
+    expect(remaining.rows[1]!.mediaId).toBe(300);
+    expect(remaining.rows[1]!.priority).toBe(1);
+  });
+
+  it("re-sequences priorities after TV show auto-removal", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    const ep1 = seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
+
+    seedWatchlistEntry(db, { media_type: "movie", media_id: 999, priority: 0 });
+    seedWatchlistEntry(db, { media_type: "tv_show", media_id: showId, priority: 1 });
+    seedWatchlistEntry(db, { media_type: "movie", media_id: 888, priority: 2 });
+
+    service.logWatch({ mediaType: "episode", mediaId: ep1, completed: 1 });
+
+    const remaining = watchlistService.listWatchlist({}, 50, 0);
+    expect(remaining.rows).toHaveLength(2);
+    expect(remaining.rows[0]!.priority).toBe(0);
+    expect(remaining.rows[1]!.priority).toBe(1);
+  });
+
+  it("does not re-sequence when plex_sync source", () => {
+    seedWatchlistEntry(db, { media_type: "movie", media_id: 100, priority: 0 });
+    seedWatchlistEntry(db, { media_type: "movie", media_id: 200, priority: 1 });
+    seedWatchlistEntry(db, { media_type: "movie", media_id: 300, priority: 2 });
+
+    service.logWatch({ mediaType: "movie", mediaId: 200, completed: 1, source: "plex_sync" });
+
+    const remaining = watchlistService.listWatchlist({}, 50, 0);
+    expect(remaining.rows).toHaveLength(3);
+    expect(remaining.rows[1]!.priority).toBe(1);
+  });
+
+  it("does not re-sequence when TV show is partially watched", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    const ep1 = seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
+
+    seedWatchlistEntry(db, { media_type: "movie", media_id: 999, priority: 0 });
+    seedWatchlistEntry(db, { media_type: "tv_show", media_id: showId, priority: 1 });
+    seedWatchlistEntry(db, { media_type: "movie", media_id: 888, priority: 2 });
+
+    service.logWatch({ mediaType: "episode", mediaId: ep1, completed: 1 });
+
+    const remaining = watchlistService.listWatchlist({}, 50, 0);
+    expect(remaining.rows).toHaveLength(3);
+    expect(remaining.rows[0]!.priority).toBe(0);
+    expect(remaining.rows[1]!.priority).toBe(1);
+    expect(remaining.rows[2]!.priority).toBe(2);
+  });
+
+  it("re-sequences priorities after batch auto-removal", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
+
+    seedWatchlistEntry(db, { media_type: "movie", media_id: 100, priority: 0 });
+    seedWatchlistEntry(db, { media_type: "tv_show", media_id: showId, priority: 1 });
+    seedWatchlistEntry(db, { media_type: "movie", media_id: 200, priority: 2 });
+
+    service.batchLogWatch({ mediaType: "show", mediaId: showId, completed: 1 });
+
+    const remaining = watchlistService.listWatchlist({}, 50, 0);
+    expect(remaining.rows).toHaveLength(2);
+    expect(remaining.rows[0]!.mediaId).toBe(100);
+    expect(remaining.rows[0]!.priority).toBe(0);
+    expect(remaining.rows[1]!.mediaId).toBe(200);
+    expect(remaining.rows[1]!.priority).toBe(1);
+  });
+});
+
 describe("batchLogWatch", () => {
   it("logs all episodes in a season", () => {
     const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });

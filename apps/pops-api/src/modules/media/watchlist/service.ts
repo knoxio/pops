@@ -144,3 +144,20 @@ export function removeByMedia(mediaType: "movie" | "tv_show", mediaId: number): 
     .run();
   return result.changes > 0;
 }
+
+/**
+ * Re-sequence all watchlist priorities to eliminate gaps (0, 1, 2, ...).
+ * Accepts an optional drizzle-compatible instance to run inside an existing transaction.
+ */
+export function resequencePriorities(drizzleInstance?: ReturnType<typeof getDrizzle>): void {
+  const db = drizzleInstance ?? getDrizzle();
+  const rows = db
+    .select({ id: mediaWatchlist.id })
+    .from(mediaWatchlist)
+    .orderBy(asc(mediaWatchlist.priority), desc(mediaWatchlist.addedAt))
+    .all();
+
+  for (let i = 0; i < rows.length; i++) {
+    db.update(mediaWatchlist).set({ priority: i }).where(eq(mediaWatchlist.id, rows[i]!.id)).run();
+  }
+}
