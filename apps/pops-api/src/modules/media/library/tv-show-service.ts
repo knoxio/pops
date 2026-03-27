@@ -149,8 +149,12 @@ export async function addTvShow(
 
   // Download images to local cache (non-blocking — failures are logged)
   if (result.created && imageCache) {
+    const seasonPosters = detail.seasons
+      .filter((s) => s.imageUrl != null)
+      .map((s) => ({ seasonNumber: s.seasonNumber, posterUrl: s.imageUrl }));
+
     imageCache
-      .downloadTvShowImages(tvdbId, posterUrl, backdropUrl)
+      .downloadTvShowImages(tvdbId, posterUrl, backdropUrl, seasonPosters)
       .catch((err) =>
         console.warn(
           `[addTvShow] Image download failed for tvdbId ${tvdbId}: ${err instanceof Error ? err.message : String(err)}`

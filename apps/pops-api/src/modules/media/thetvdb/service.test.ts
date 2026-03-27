@@ -423,6 +423,16 @@ describe("refreshTvShow", () => {
     seedSeason(db, { tv_show_id: showId, tvdb_id: 30001, season_number: 1 });
 
     const detail = makeShowDetail({
+      seasons: [
+        {
+          tvdbId: 30001,
+          seasonNumber: 1,
+          name: "Season 1",
+          overview: null,
+          imageUrl: "https://artworks.thetvdb.com/s1.jpg",
+          episodeCount: 7,
+        },
+      ],
       artworks: [
         {
           id: 1,
@@ -457,7 +467,8 @@ describe("refreshTvShow", () => {
     expect(mockImageCache.downloadTvShowImages).toHaveBeenCalledWith(
       81189,
       "https://artworks.thetvdb.com/poster.jpg",
-      "https://artworks.thetvdb.com/backdrop.jpg"
+      "https://artworks.thetvdb.com/backdrop.jpg",
+      [{ seasonNumber: 1, posterUrl: "https://artworks.thetvdb.com/s1.jpg" }]
     );
   });
 

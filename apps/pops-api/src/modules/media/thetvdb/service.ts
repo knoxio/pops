@@ -194,8 +194,12 @@ export async function refreshTvShow(
   // 6. Re-download images if requested
   if (redownloadImages && imageCache) {
     const { posterUrl, backdropUrl } = selectBestArtwork(detail.artworks);
+    const seasonPosters = detail.seasons
+      .filter((s) => s.imageUrl != null)
+      .map((s) => ({ seasonNumber: s.seasonNumber, posterUrl: s.imageUrl }));
+
     await imageCache.deleteTvShowImages(tvdbId);
-    await imageCache.downloadTvShowImages(tvdbId, posterUrl, backdropUrl);
+    await imageCache.downloadTvShowImages(tvdbId, posterUrl, backdropUrl, seasonPosters);
   }
 
   // 7. Return updated show with seasons

@@ -301,7 +301,8 @@ describe("addTvShow", () => {
     expect(mockImageCache.downloadTvShowImages).toHaveBeenCalledWith(
       81189,
       "https://artworks.thetvdb.com/poster.jpg",
-      "https://artworks.thetvdb.com/backdrop.jpg"
+      "https://artworks.thetvdb.com/backdrop.jpg",
+      [{ seasonNumber: 1, posterUrl: "https://artworks.thetvdb.com/s1.jpg" }]
     );
   });
 
