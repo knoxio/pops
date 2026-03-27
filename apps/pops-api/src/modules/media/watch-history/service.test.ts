@@ -351,7 +351,6 @@ describe("logWatch", () => {
 
     expect(watchlistRemoved).toBe(false);
   });
-
 });
 
 describe("deleteWatchHistoryEntry", () => {

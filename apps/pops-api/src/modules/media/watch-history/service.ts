@@ -277,7 +277,8 @@ export function logWatch(input: LogWatchInput): LogWatchResult {
     let watchlistRemoved = false;
     if (completed === 1 && input.source !== "plex_sync") {
       if (input.mediaType === "movie") {
-        const deleteResult = tx.delete(mediaWatchlist)
+        const deleteResult = tx
+          .delete(mediaWatchlist)
           .where(
             and(eq(mediaWatchlist.mediaType, "movie"), eq(mediaWatchlist.mediaId, input.mediaId))
           )
@@ -346,7 +347,8 @@ function autoRemoveTvShowIfFullyWatched(
   const watched = watchedRow?.watched ?? 0;
 
   if (watched >= showEpisodeIds.length) {
-    const deleteResult = tx.delete(mediaWatchlist)
+    const deleteResult = tx
+      .delete(mediaWatchlist)
       .where(and(eq(mediaWatchlist.mediaType, "tv_show"), eq(mediaWatchlist.mediaId, tvShowId)))
       .run();
     return deleteResult.changes > 0;
