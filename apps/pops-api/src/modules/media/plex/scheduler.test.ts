@@ -33,7 +33,7 @@ vi.mock("../../../db.js", () => ({
         }),
         orderBy: () => ({
           limit: () => ({
-            all: () => mockSelectSyncLogs(),
+            all: (): unknown[] => mockSelectSyncLogs() as unknown[],
           }),
         }),
       }),
