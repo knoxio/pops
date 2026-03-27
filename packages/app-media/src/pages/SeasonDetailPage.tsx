@@ -183,13 +183,49 @@ export function SeasonDetailPage() {
   );
 
   const batchLogMutation = trpc.media.watchHistory.batchLog.useMutation({
+    onMutate: async () => {
+      await utils.media.watchHistory.list.cancel();
+      const previousData = utils.media.watchHistory.list.getData({
+        mediaType: "episode",
+        limit: 500,
+      });
+      // Optimistically add all episode IDs as watched
+      if (previousData?.data) {
+        const existingIds = new Set(previousData.data.map((e: { mediaId: number }) => e.mediaId));
+        const newEntries = episodeIds
+          .filter((id: number) => !existingIds.has(id))
+          .map((id: number, i: number) => ({
+            id: -(i + 1),
+            mediaId: id,
+            mediaType: "episode" as const,
+            watchedAt: new Date().toISOString(),
+          }));
+        utils.media.watchHistory.list.setData(
+          { mediaType: "episode", limit: 500 },
+          { ...previousData, data: [...previousData.data, ...newEntries] }
+        );
+      }
+      return { previousData };
+    },
     onSuccess: (result: { data: { logged: number } }) => {
       utils.media.watchHistory.invalidate();
       toast.success(
         `Marked ${result.data.logged} episode${result.data.logged !== 1 ? "s" : ""} as watched`
       );
     },
-    onError: (err: { message: string }) => toast.error(`Failed to mark season: ${err.message}`),
+    onError: (
+      err: { message: string },
+      _variables: unknown,
+      context: { previousData?: unknown } | undefined
+    ) => {
+      if (context?.previousData) {
+        utils.media.watchHistory.list.setData(
+          { mediaType: "episode", limit: 500 },
+          context.previousData
+        );
+      }
+      toast.error(`Failed to mark season: ${err.message}`);
+    },
   });
 
   const isSeasonWatched = seasonProgress

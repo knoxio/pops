@@ -17,6 +17,9 @@ const {
   mockDeleteMutation,
   mockSeasonMonitorMutation,
   mockInvalidate,
+  mockCancel,
+  mockGetData,
+  mockSetData,
 } = vi.hoisted(() => ({
   mockShowQuery: vi.fn(),
   mockSeasonsQuery: vi.fn(),
@@ -29,7 +32,12 @@ const {
   mockDeleteMutation: vi.fn(),
   mockSeasonMonitorMutation: vi.fn(),
   mockInvalidate: vi.fn(),
+  mockCancel: vi.fn().mockResolvedValue(undefined),
+  mockGetData: vi.fn(),
+  mockSetData: vi.fn(),
 }));
+
+let batchLogOpts: Record<string, unknown> = {};
 
 vi.mock("../lib/trpc", () => ({
   trpc: {
@@ -70,6 +78,7 @@ vi.mock("../lib/trpc", () => ({
         },
         batchLog: {
           useMutation: (opts: Record<string, unknown>) => {
+            batchLogOpts = opts;
             mockBatchLogMutation.mockImplementation(() => {
               if (typeof opts.onSuccess === "function")
                 (opts.onSuccess as (r: unknown) => void)({ data: { logged: 5 } });
@@ -96,7 +105,12 @@ vi.mock("../lib/trpc", () => ({
     useUtils: () => ({
       media: {
         watchHistory: {
-          list: { invalidate: mockInvalidate },
+          list: {
+            invalidate: mockInvalidate,
+            cancel: mockCancel,
+            getData: mockGetData,
+            setData: mockSetData,
+          },
           invalidate: mockInvalidate,
         },
         arr: {
@@ -175,6 +189,14 @@ const EPISODES = [
     overview: null,
     airDate: "2008-02-10",
     runtime: 48,
+  },
+  {
+    id: 104,
+    episodeNumber: 4,
+    name: "Future Episode",
+    overview: null,
+    airDate: "2099-12-31",
+    runtime: 50,
   },
 ];
 
@@ -258,6 +280,7 @@ function setupQueries(
 
 beforeEach(() => {
   vi.clearAllMocks();
+  batchLogOpts = {};
   mockShowQuery.mockReturnValue({ data: null, isLoading: false, error: null });
   mockSeasonsQuery.mockReturnValue({ data: { data: [] }, isLoading: false });
   mockEpisodesQuery.mockReturnValue({ data: { data: [] }, isLoading: false });
@@ -336,6 +359,82 @@ describe("SeasonDetailPage — monitoring", () => {
       const { container } = renderPage();
       const bar = container.querySelector("[style*='width: 67%']");
       expect(bar).toBeInTheDocument();
+    });
+  });
+
+  describe("upcoming episodes", () => {
+    it("dims future episodes and shows Upcoming label", () => {
+      setupQueries();
+      renderPage();
+      expect(screen.getByText("Upcoming")).toBeInTheDocument();
+    });
+
+    it("disables watch toggle for upcoming episodes", () => {
+      setupQueries();
+      renderPage();
+      const upcomingButton = screen.getByLabelText("Episode 4 upcoming");
+      expect(upcomingButton).toBeDisabled();
+    });
+  });
+
+  describe("batch mark watched", () => {
+    it("shows Mark Season Watched button when not all watched", () => {
+      setupQueries();
+      renderPage();
+      expect(screen.getByText("Mark Season Watched")).toBeInTheDocument();
+    });
+
+    it("calls batchLogMutation on Mark Season Watched click", () => {
+      setupQueries();
+      renderPage();
+      fireEvent.click(screen.getByText("Mark Season Watched"));
+      expect(mockBatchLogMutation).toHaveBeenCalledWith({
+        mediaType: "season",
+        mediaId: 11,
+      });
+    });
+
+    it("shows All Watched when season is complete", () => {
+      setupQueries({
+        progress: {
+          tvShowId: 1,
+          overall: { watched: 3, total: 3, percentage: 100 },
+          seasons: [{ seasonId: 11, seasonNumber: 1, watched: 3, total: 3, percentage: 100 }],
+          nextEpisode: null,
+        },
+      });
+      renderPage();
+      expect(screen.getByText("All Watched")).toBeInTheDocument();
+      expect(screen.queryByText("Mark Season Watched")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("optimistic updates", () => {
+    it("batchLog optimistic update calls setData and reverts on error", async () => {
+      const previousData = {
+        data: [
+          { id: 1001, mediaId: 101 },
+          { id: 1002, mediaId: 102 },
+        ],
+      };
+      mockGetData.mockReturnValue(previousData);
+      setupQueries();
+      renderPage();
+
+      fireEvent.click(screen.getByText("Mark Season Watched"));
+
+      const onMutate = batchLogOpts.onMutate as () => Promise<{ previousData: unknown }>;
+      const context = await onMutate();
+      expect(mockCancel).toHaveBeenCalled();
+      expect(mockSetData).toHaveBeenCalled();
+
+      const onError = batchLogOpts.onError as (
+        err: { message: string },
+        vars: unknown,
+        ctx: { previousData: unknown }
+      ) => void;
+      onError({ message: "Server error" }, {}, context);
+      expect(mockSetData).toHaveBeenCalledWith({ mediaType: "episode", limit: 500 }, previousData);
     });
   });
 

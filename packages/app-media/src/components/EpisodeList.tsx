@@ -21,6 +21,13 @@ export interface EpisodeListProps {
   togglingIds?: Set<number>;
 }
 
+function isUpcoming(airDate: string | null): boolean {
+  if (!airDate) return false;
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return new Date(airDate) > today;
+}
+
 function EpisodeRow({
   ep,
   isExpanded,
@@ -37,22 +44,25 @@ function EpisodeRow({
   onToggleWatched?: (episodeId: number, watched: boolean) => void;
 }) {
   const hasOverview = ep.overview && ep.overview.length > 0;
+  const upcoming = isUpcoming(ep.airDate);
 
   return (
-    <div className="px-4 py-3">
+    <div className={`px-4 py-3${upcoming ? " opacity-50" : ""}`}>
       <div className="flex items-start gap-3">
         {onToggleWatched && (
           <button
             type="button"
             onClick={() => onToggleWatched(ep.id, !isWatched)}
-            disabled={isToggling}
+            disabled={isToggling || upcoming}
             aria-label={
-              isWatched
-                ? `Mark episode ${ep.episodeNumber} as unwatched`
-                : `Mark episode ${ep.episodeNumber} as watched`
+              upcoming
+                ? `Episode ${ep.episodeNumber} upcoming`
+                : isWatched
+                  ? `Mark episode ${ep.episodeNumber} as unwatched`
+                  : `Mark episode ${ep.episodeNumber} as watched`
             }
             className={`mt-0.5 shrink-0 flex items-center justify-center h-5 w-5 rounded border transition-colors ${
-              isToggling
+              isToggling || upcoming
                 ? "opacity-50 cursor-not-allowed border-muted"
                 : isWatched
                   ? "bg-primary border-primary text-primary-foreground"
@@ -88,6 +98,9 @@ function EpisodeRow({
             >
               {ep.name ?? `Episode ${ep.episodeNumber}`}
             </span>
+            {upcoming && (
+              <span className="text-xs text-yellow-500 font-medium shrink-0">Upcoming</span>
+            )}
           </div>
 
           <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
