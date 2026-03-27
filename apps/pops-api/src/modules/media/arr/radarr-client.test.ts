@@ -72,7 +72,9 @@ describe("RadarrClient", () => {
   describe("checkMovie", () => {
     it("returns exists: true with radarrId and monitored when found", async () => {
       mockFetch.mockResolvedValueOnce(
-        jsonResponse([{ id: 42, title: "Test Movie", tmdbId: 12345, monitored: true, hasFile: false }])
+        jsonResponse([
+          { id: 42, title: "Test Movie", tmdbId: 12345, monitored: true, hasFile: false },
+        ])
       );
 
       const result = await client.checkMovie(12345);
@@ -101,7 +103,13 @@ describe("RadarrClient", () => {
 
   describe("addMovie", () => {
     it("sends correct payload and returns created movie", async () => {
-      const createdMovie = { id: 42, title: "Test Movie", tmdbId: 12345, monitored: true, hasFile: false };
+      const createdMovie = {
+        id: 42,
+        title: "Test Movie",
+        tmdbId: 12345,
+        monitored: true,
+        hasFile: false,
+      };
       mockFetch.mockResolvedValueOnce(jsonResponse(createdMovie));
 
       const result = await client.addMovie({

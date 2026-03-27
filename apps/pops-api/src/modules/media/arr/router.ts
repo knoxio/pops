@@ -102,7 +102,10 @@ export const arrRouter = router({
       return { data: profiles };
     } catch (err) {
       if (err instanceof ArrApiError) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Radarr error: ${err.message}` });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Radarr error: ${err.message}`,
+        });
       }
       throw err;
     }
@@ -119,7 +122,10 @@ export const arrRouter = router({
       return { data: folders };
     } catch (err) {
       if (err instanceof ArrApiError) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Radarr error: ${err.message}` });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Radarr error: ${err.message}`,
+        });
       }
       throw err;
     }
@@ -138,7 +144,10 @@ export const arrRouter = router({
         return { data: result };
       } catch (err) {
         if (err instanceof ArrApiError) {
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Radarr error: ${err.message}` });
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Radarr error: ${err.message}`,
+          });
         }
         throw err;
       }
@@ -164,7 +173,10 @@ export const arrRouter = router({
         return { data: movie };
       } catch (err) {
         if (err instanceof ArrApiError) {
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Radarr error: ${err.message}` });
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Radarr error: ${err.message}`,
+          });
         }
         throw err;
       }
@@ -188,7 +200,10 @@ export const arrRouter = router({
         return { data: movie };
       } catch (err) {
         if (err instanceof ArrApiError) {
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Radarr error: ${err.message}` });
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Radarr error: ${err.message}`,
+          });
         }
         throw err;
       }
@@ -207,7 +222,10 @@ export const arrRouter = router({
         return { data: result };
       } catch (err) {
         if (err instanceof ArrApiError) {
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Radarr error: ${err.message}` });
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Radarr error: ${err.message}`,
+          });
         }
         throw err;
       }
