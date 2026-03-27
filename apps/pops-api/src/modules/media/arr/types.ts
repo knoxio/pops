@@ -190,6 +190,33 @@ export interface CalendarEpisode {
   posterUrl: string | null;
 }
 
+// -- Sonarr add-series types --
+
+export interface SonarrQualityProfile {
+  id: number;
+  name: string;
+}
+
+export interface SonarrRootFolder {
+  id: number;
+  path: string;
+  freeSpace: number;
+}
+
+export interface SonarrLanguageProfile {
+  id: number;
+  name: string;
+}
+
+export interface SonarrAddSeriesInput {
+  tvdbId: number;
+  title: string;
+  qualityProfileId: number;
+  rootFolderPath: string;
+  languageProfileId: number;
+  seasons: Array<{ seasonNumber: number; monitored: boolean }>;
+}
+
 /** System status response shared by Radarr and Sonarr. */
 export interface ArrSystemStatus {
   version: string;
