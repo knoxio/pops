@@ -55,16 +55,6 @@ export async function importTvShowsFromPlex(
   options: TvSyncOptions = {}
 ): Promise<TvSyncProgress> {
   const tvdbClient = getTvdbClient();
-  if (!tvdbClient) {
-    return {
-      total: 0,
-      processed: 0,
-      synced: 0,
-      skipped: 0,
-      episodesMatched: 0,
-      errors: [{ title: "Configuration", year: null, reason: "THETVDB_API_KEY not configured" }],
-    };
-  }
 
   const items = await plexClient.getAllItems(sectionId);
 

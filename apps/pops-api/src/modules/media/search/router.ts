@@ -46,14 +46,8 @@ export const searchRouter = router({
 
   /** Search TV shows via TheTVDB. */
   tvShows: protectedProcedure.input(SearchTvShowsSchema).query(async ({ input }) => {
-    const client = getTvdbClient();
-    if (!client) {
-      throw new TRPCError({
-        code: "INTERNAL_SERVER_ERROR",
-        message: "THETVDB_API_KEY is not configured",
-      });
-    }
     try {
+      const client = getTvdbClient();
       const results = await client.searchSeries(input.query);
       return { results };
     } catch (err) {

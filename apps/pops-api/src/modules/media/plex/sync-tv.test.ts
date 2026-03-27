@@ -133,15 +133,13 @@ beforeEach(() => {
 });
 
 describe("importTvShowsFromPlex", () => {
-  it("returns error when TVDB client is not configured", async () => {
-    mockGetTvdbClient.mockReturnValue(null);
+  it("throws when TVDB client is not configured", async () => {
+    mockGetTvdbClient.mockImplementation(() => {
+      throw new Error("THETVDB_API_KEY is not configured");
+    });
     const client = makePlexClient([]);
 
-    const result = await importTvShowsFromPlex(client, "2");
-
-    expect(result.total).toBe(0);
-    expect(result.errors).toHaveLength(1);
-    expect(result.errors[0]!.reason).toContain("THETVDB_API_KEY");
+    await expect(importTvShowsFromPlex(client, "2")).rejects.toThrow("THETVDB_API_KEY");
     expect(client.getAllItems).not.toHaveBeenCalled();
   });
 

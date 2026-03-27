@@ -19,6 +19,11 @@ async function main() {
   const imagesDir = process.env.MEDIA_IMAGES_DIR ?? "./data/media/images";
   const cacheService = new ImageCacheService(imagesDir);
 
+  if (!tmdbClient) {
+    console.error("❌ TMDB_API_KEY not set in environment");
+    process.exit(1);
+  }
+
   if (!tvdbClient) {
     console.error("❌ THETVDB_API_KEY not set in environment");
     process.exit(1);

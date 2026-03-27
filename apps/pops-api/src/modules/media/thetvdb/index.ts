@@ -16,14 +16,18 @@ export type {
 
 /**
  * Shared TheTVDB client singleton — reuses JWT token across requests.
- * Returns null if THETVDB_API_KEY is not set (checks Docker secrets then env vars).
+ * Throws if THETVDB_API_KEY is not set (checks Docker secrets then env vars).
  */
 let _tvdbClient: TheTvdbClient | null = null;
 
-export function getTvdbClient(): TheTvdbClient | null {
+export function getTvdbClient(): TheTvdbClient {
   if (_tvdbClient) return _tvdbClient;
   const apiKey = getEnv("THETVDB_API_KEY");
-  if (!apiKey) return null;
+  if (!apiKey) {
+    throw new Error(
+      "THETVDB_API_KEY is not configured. Set it in .env (development) or Docker secrets (production)."
+    );
+  }
   _tvdbClient = new TheTvdbClient(new TheTvdbAuth(apiKey));
   return _tvdbClient;
 }

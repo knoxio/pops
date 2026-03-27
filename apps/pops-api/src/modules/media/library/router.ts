@@ -104,12 +104,6 @@ export const libraryRouter = router({
     .mutation(async ({ input }) => {
       try {
         const client = getTvdbClient();
-        if (!client) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "THETVDB_API_KEY environment variable is not set",
-          });
-        }
         const result = await tvShowService.addTvShow(input.tvdbId, client);
         return {
           data: {
@@ -149,15 +143,8 @@ export const libraryRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const client = getTvdbClient();
-      if (!client) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "THETVDB_API_KEY environment variable is not set",
-        });
-      }
-
       try {
+        const client = getTvdbClient();
         const result = await refreshTvShow(client, input);
         return {
           data: {
