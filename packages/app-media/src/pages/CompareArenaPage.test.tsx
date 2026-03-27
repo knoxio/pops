@@ -119,14 +119,23 @@ describe("CompareArenaPage", () => {
     );
   });
 
-  it("skip button refetches pair without recording", () => {
+  it("skip button advances dimension without recording", () => {
     setupArena();
     renderPage();
 
+    // Initially on Cinematography (dim1)
+    const tabsBefore = screen.getAllByRole("tab");
+    expect(tabsBefore[0]?.getAttribute("aria-selected")).toBe("true");
+
     fireEvent.click(screen.getByText("Skip this pair"));
 
-    expect(mockRefetchPair).toHaveBeenCalled();
+    // No recording should be made
     expect(mockRecordMutate).not.toHaveBeenCalled();
+    // refetchPair should NOT be called — dimension index change triggers automatic refetch
+    expect(mockRefetchPair).not.toHaveBeenCalled();
+    // Dimension should advance to Entertainment (dim2)
+    const tabsAfter = screen.getAllByRole("tab");
+    expect(tabsAfter[1]?.getAttribute("aria-selected")).toBe("true");
   });
 
   it("shows minimum threshold message when pair data is null", () => {

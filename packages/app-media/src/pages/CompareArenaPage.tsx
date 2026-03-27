@@ -86,10 +86,9 @@ export function CompareArenaPage() {
       setSessionCount((c) => c + 1);
       setDimensionIndex((i) => i + 1);
 
-      // Show delta briefly, then load next pair
+      // Show delta briefly, then clear it (next pair loads via dimension rotation query key change)
       setTimeout(() => {
         setScoreDelta(null);
-        refetchPair();
       }, 1500);
     },
   });
@@ -227,7 +226,7 @@ export function CompareArenaPage() {
       {/* Skip + Done buttons */}
       {pairData?.data && !recordMutation.isPending && !scoreDelta && (
         <div className="flex justify-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => { setDimensionIndex((i) => i + 1); refetchPair(); }}>
+          <Button variant="outline" size="sm" onClick={() => setDimensionIndex((i) => i + 1)}>
             Skip this pair
           </Button>
           <Button variant="ghost" size="sm" onClick={() => navigate("/media")}>
