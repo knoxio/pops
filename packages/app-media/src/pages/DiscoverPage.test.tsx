@@ -4,6 +4,7 @@ import { MemoryRouter } from "react-router";
 
 const mockTrendingQuery = vi.fn();
 const mockRecommendationsQuery = vi.fn();
+const mockProfileQuery = vi.fn();
 const mockAddMovieMutateAsync = vi.fn();
 const mockAddWatchlistMutateAsync = vi.fn();
 const mockTrendingRefetch = vi.fn();
@@ -24,6 +25,9 @@ vi.mock("../lib/trpc", () => ({
             const result = mockRecommendationsQuery(...args);
             return { ...result, refetch: mockRecommendationsRefetch };
           },
+        },
+        profile: {
+          useQuery: (...args: unknown[]) => mockProfileQuery(...args),
         },
       },
       library: {
@@ -65,15 +69,21 @@ vi.mock("../components/DiscoverCard", () => ({
     inLibrary,
     onAddToLibrary,
     tmdbId,
+    matchPercentage,
+    matchReason,
   }: {
     title: string;
     inLibrary: boolean;
     onAddToLibrary?: (id: number) => void;
     tmdbId: number;
+    matchPercentage?: number;
+    matchReason?: string;
   }) => (
     <div data-testid={`card-${tmdbId}`}>
       <span>{title}</span>
       {inLibrary && <span>Owned</span>}
+      {matchPercentage != null && <span>{matchPercentage}% Match</span>}
+      {matchReason && <span>{matchReason}</span>}
       {!inLibrary && onAddToLibrary && (
         <button onClick={() => onAddToLibrary(tmdbId)}>Add to Library</button>
       )}
@@ -93,19 +103,52 @@ const trendingMovies = [
   { tmdbId: 300, title: "Barbie", releaseDate: "2023-07-21", posterPath: null, posterUrl: null, voteAverage: 7.0, inLibrary: false },
 ];
 
+const recommendedMovies = [
+  { tmdbId: 400, title: "Blade Runner 2049", releaseDate: "2017-10-06", posterPath: null, posterUrl: null, voteAverage: 7.9, inLibrary: false, matchPercentage: 92, matchReason: "Sci-Fi, Action" },
+  { tmdbId: 500, title: "Arrival", releaseDate: "2016-11-11", posterPath: null, posterUrl: null, voteAverage: 7.6, inLibrary: false, matchPercentage: 85, matchReason: "Sci-Fi" },
+];
+
 const emptyRecommendations = {
   data: { results: [], sourceMovies: [] },
   isLoading: false,
   error: null,
 };
 
-function setupDefaults() {
+function defaultTrending() {
   mockTrendingQuery.mockReturnValue({
     data: { results: trendingMovies, totalResults: 3, page: 1 },
     isLoading: false,
     error: null,
   });
+}
+
+function defaultRecommendations() {
+  mockRecommendationsQuery.mockReturnValue({
+    data: { results: recommendedMovies, sourceMovies: ["Interstellar", "The Matrix"] },
+    isLoading: false,
+    error: null,
+  });
+}
+
+function defaultProfile(totalComparisons: number) {
+  mockProfileQuery.mockReturnValue({
+    data: {
+      data: {
+        totalComparisons,
+        totalMoviesWatched: 10,
+        genreAffinities: [],
+        dimensionWeights: [],
+        genreDistribution: [],
+      },
+    },
+    isLoading: false,
+  });
+}
+
+function setupDefaults() {
+  defaultTrending();
   mockRecommendationsQuery.mockReturnValue(emptyRecommendations);
+  defaultProfile(10);
 }
 
 function renderPage(initialEntry = "/media/discover") {
@@ -188,12 +231,13 @@ describe("DiscoverPage", () => {
   });
 
   it("shows error state with retry button", () => {
+    defaultProfile(10);
+    defaultRecommendations();
     mockTrendingQuery.mockReturnValue({
       data: undefined,
       isLoading: false,
       error: { message: "TMDB API error" },
     });
-    mockRecommendationsQuery.mockReturnValue(emptyRecommendations);
     renderPage();
 
     expect(screen.getByText("TMDB API error")).toBeTruthy();
@@ -202,12 +246,13 @@ describe("DiscoverPage", () => {
   });
 
   it("shows Load More button when more results available", () => {
+    defaultProfile(10);
+    mockRecommendationsQuery.mockReturnValue(emptyRecommendations);
     mockTrendingQuery.mockReturnValue({
       data: { results: trendingMovies, totalResults: 60, page: 1 },
       isLoading: false,
       error: null,
     });
-    mockRecommendationsQuery.mockReturnValue(emptyRecommendations);
     renderPage();
 
     expect(screen.getByText("Load More")).toBeTruthy();
@@ -221,5 +266,68 @@ describe("DiscoverPage", () => {
       expect.objectContaining({ timeWindow: "day" }),
       expect.anything(),
     );
+  });
+});
+
+describe("DiscoverPage — recommendations", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    defaultTrending();
+  });
+
+  it("shows cold start CTA when totalComparisons < 5", () => {
+    defaultProfile(2);
+    defaultRecommendations();
+    renderPage();
+
+    expect(screen.getByText("Compare more movies to unlock recommendations")).toBeTruthy();
+    expect(screen.getByText(/you have 2 so far/)).toBeTruthy();
+    expect(screen.queryByText("Recommended for You")).toBeNull();
+  });
+
+  it("CTA links to /media/compare", () => {
+    defaultProfile(0);
+    defaultRecommendations();
+    renderPage();
+
+    const link = screen.getByText("Start Comparing");
+    expect(link.closest("a")?.getAttribute("href")).toBe("/media/compare");
+  });
+
+  it("renders recommendations with attribution when above threshold", () => {
+    defaultProfile(10);
+    defaultRecommendations();
+    renderPage();
+
+    expect(screen.getByText("Recommended for You")).toBeTruthy();
+    expect(screen.getAllByText("Blade Runner 2049").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("92% Match").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("shows 'no new recommendations' when results empty but above threshold", () => {
+    defaultProfile(10);
+    mockRecommendationsQuery.mockReturnValue({
+      data: { results: [], sourceMovies: [] },
+      isLoading: false,
+      error: null,
+    });
+    renderPage();
+
+    expect(screen.getByText(/No new recommendations/)).toBeTruthy();
+  });
+
+  it("calls add to library on recommendation card", () => {
+    defaultProfile(10);
+    defaultRecommendations();
+    mockAddMovieMutateAsync.mockResolvedValue({
+      created: true,
+      data: { id: 1, title: "Blade Runner 2049" },
+    });
+    renderPage();
+
+    const addButtons = screen.getAllByText("Add to Library");
+    fireEvent.click(addButtons[addButtons.length - 2]!);
+
+    expect(mockAddMovieMutateAsync).toHaveBeenCalledWith({ tmdbId: 400 });
   });
 });

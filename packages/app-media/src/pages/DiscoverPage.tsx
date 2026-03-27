@@ -3,13 +3,15 @@
  * Three horizontal scroll sections: Recommended for You, Trending, Similar to Top Rated.
  */
 import { useState, useCallback, useEffect } from "react";
-import { useSearchParams } from "react-router";
+import { Link, useSearchParams } from "react-router";
 import { Alert, Button } from "@pops/ui";
-import { Compass, AlertCircle, RefreshCw, Loader2 } from "lucide-react";
+import { Compass, AlertCircle, RefreshCw, Loader2, Swords } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
 import { HorizontalScrollRow } from "../components/HorizontalScrollRow";
 import { DiscoverCard } from "../components/DiscoverCard";
+
+const COMPARISON_THRESHOLD = 5;
 
 export function DiscoverPage() {
   const utils = trpc.useUtils();
@@ -80,6 +82,13 @@ export function DiscoverPage() {
     { sampleSize: 5 },
     { staleTime: 5 * 60 * 1000 }
   );
+
+  const profile = trpc.media.discovery.profile.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const totalComparisons = profile.data?.data?.totalComparisons ?? 0;
+  const hasEnoughComparisons = totalComparisons >= COMPARISON_THRESHOLD;
 
   // Track in-progress mutations per tmdbId
   const [addingToLibrary, setAddingToLibrary] = useState<Set<number>>(new Set());
@@ -163,63 +172,79 @@ export function DiscoverPage() {
         </div>
       </div>
 
-      {/* Recommended for You */}
-      <HorizontalScrollRow
-        title="Recommended for You"
-        subtitle={
-          recommendations.data?.sourceMovies.length
-            ? `Based on ${recommendations.data.sourceMovies.join(", ")}`
-            : undefined
-        }
-        isLoading={recommendations.isLoading}
-      >
-        {recommendations.error && (
-          <Alert variant="destructive" className="flex items-center gap-3">
-            <AlertCircle className="h-4 w-4 shrink-0" />
-            <p className="flex-1 text-sm">{recommendations.error.message}</p>
-            <Button variant="outline" size="sm" onClick={() => recommendations.refetch()}>
-              <RefreshCw className="mr-1 h-3 w-3" /> Retry
-            </Button>
-          </Alert>
-        )}
-        {!recommendations.error && recommendations.data?.results.length === 0 && (
-          <p className="py-8 text-sm text-muted-foreground">
-            Add movies to your library to get personalized recommendations.
+      {/* Recommended for You — hidden below comparison threshold */}
+      {!hasEnoughComparisons && !profile.isLoading ? (
+        <section className="rounded-lg border border-dashed border-border p-8 text-center">
+          <Swords className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
+          <p className="text-sm font-medium">Compare more movies to unlock recommendations</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            You need at least {COMPARISON_THRESHOLD} comparisons — you have {totalComparisons} so far.
           </p>
-        )}
-        {recommendations.data?.results
-          .slice(0, 20)
-          .map(
-            (item: {
-              tmdbId: number;
-              title: string;
-              releaseDate: string | null;
-              posterPath: string | null;
-              posterUrl: string | null;
-              voteAverage: number | null;
-              inLibrary: boolean;
-              matchPercentage?: number;
-              matchReason?: string;
-            }) => (
-              <DiscoverCard
-                key={item.tmdbId}
-                tmdbId={item.tmdbId}
-                title={item.title}
-                releaseDate={item.releaseDate ?? ""}
-                posterPath={item.posterPath}
-                posterUrl={item.posterUrl}
-                voteAverage={item.voteAverage ?? 0}
-                inLibrary={item.inLibrary}
-                isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
-                isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
-                onAddToLibrary={handleAddToLibrary}
-                onAddToWatchlist={handleAddToWatchlist}
-                matchPercentage={item.matchPercentage}
-                matchReason={item.matchReason}
-              />
-            )
+          <Link
+            to="/media/compare"
+            className="mt-4 inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground"
+          >
+            Start Comparing
+          </Link>
+        </section>
+      ) : (
+        <HorizontalScrollRow
+          title="Recommended for You"
+          subtitle={
+            recommendations.data?.sourceMovies.length
+              ? `Based on ${recommendations.data.sourceMovies.join(", ")}`
+              : undefined
+          }
+          isLoading={recommendations.isLoading || profile.isLoading}
+        >
+          {recommendations.error && (
+            <Alert variant="destructive" className="flex items-center gap-3">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <p className="flex-1 text-sm">{recommendations.error.message}</p>
+              <Button variant="outline" size="sm" onClick={() => recommendations.refetch()}>
+                <RefreshCw className="mr-1 h-3 w-3" /> Retry
+              </Button>
+            </Alert>
           )}
-      </HorizontalScrollRow>
+          {!recommendations.error && recommendations.data?.results.length === 0 && (
+            <p className="py-8 text-sm text-muted-foreground">
+              No new recommendations — keep comparing to discover more.
+            </p>
+          )}
+          {recommendations.data?.results
+            .slice(0, 20)
+            .map(
+              (item: {
+                tmdbId: number;
+                title: string;
+                releaseDate: string | null;
+                posterPath: string | null;
+                posterUrl: string | null;
+                voteAverage: number | null;
+                inLibrary: boolean;
+                matchPercentage?: number;
+                matchReason?: string;
+              }) => (
+                <DiscoverCard
+                  key={item.tmdbId}
+                  tmdbId={item.tmdbId}
+                  title={item.title}
+                  releaseDate={item.releaseDate ?? ""}
+                  posterPath={item.posterPath}
+                  posterUrl={item.posterUrl}
+                  voteAverage={item.voteAverage ?? 0}
+                  inLibrary={item.inLibrary}
+                  isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
+                  isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
+                  onAddToLibrary={handleAddToLibrary}
+                  onAddToWatchlist={handleAddToWatchlist}
+                  matchPercentage={item.matchPercentage}
+                  matchReason={item.matchReason}
+                />
+              )
+            )}
+        </HorizontalScrollRow>
+      )}
 
       {/* Trending */}
       <div className="space-y-3">
