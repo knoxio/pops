@@ -140,7 +140,18 @@ function DashboardWidgets() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card
+        role="button"
+        tabIndex={0}
+        className="cursor-pointer hover:bg-muted/50 transition-colors"
+        onClick={() => navigate("/inventory/warranties")}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            navigate("/inventory/warranties");
+          }
+        }}
+      >
         <CardContent className="p-4">
           <div className="flex items-center gap-2 text-muted-foreground mb-1">
             <Shield className="h-4 w-4" />
@@ -153,13 +164,13 @@ function DashboardWidgets() {
         </CardContent>
       </Card>
 
-      {recentlyAdded.length > 0 && (
-        <Card className="col-span-2">
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2 text-muted-foreground mb-3">
-              <Clock className="h-4 w-4" />
-              <span className="text-xs font-medium">Recently Added</span>
-            </div>
+      <Card className="col-span-2">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-2 text-muted-foreground mb-3">
+            <Clock className="h-4 w-4" />
+            <span className="text-xs font-medium">Recently Added</span>
+          </div>
+          {recentlyAdded.length > 0 ? (
             <ul className="space-y-1.5">
               {recentlyAdded.map((item) => (
                 <li
@@ -186,9 +197,11 @@ function DashboardWidgets() {
                 </li>
               ))}
             </ul>
-          </CardContent>
-        </Card>
-      )}
+          ) : (
+            <p className="text-sm text-muted-foreground">No items yet</p>
+          )}
+        </CardContent>
+      </Card>
 
       <ValueByTypeCard className="col-span-2" />
       <ValueByLocationCard className="col-span-2" />
@@ -280,7 +293,7 @@ export function ItemsPage() {
 
   /** Asset ID exact-match search on Enter key. */
   const utils = trpc.useUtils();
-  const [assetIdSearching, setAssetIdSearching] = useState(false);
+  const [_assetIdSearching, setAssetIdSearching] = useState(false);
   const handleSearchKeyDown = useCallback(
     async (e: React.KeyboardEvent<HTMLInputElement>) => {
       if (e.key !== "Enter" || !search.trim()) return;
