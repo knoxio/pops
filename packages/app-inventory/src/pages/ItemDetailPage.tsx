@@ -42,8 +42,11 @@ import {
   ChevronRight,
   ExternalLink,
   Store,
+  Camera,
 } from "lucide-react";
 import { trpc } from "../lib/trpc";
+import { PhotoGallery } from "../components/PhotoGallery";
+import { SortablePhotoGrid } from "../components/SortablePhotoGrid";
 
 const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   receipt: "Receipts",
@@ -274,6 +277,9 @@ export function ItemDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Photos */}
+      <PhotosSection itemId={id!} />
 
       {/* Connections */}
       <section>
@@ -542,6 +548,81 @@ function DocumentsList({ itemId }: { itemId: string }) {
         </div>
       ) : (
         <p className="text-muted-foreground text-sm">No documents linked yet.</p>
+      )}
+    </section>
+  );
+}
+
+function PhotosSection({ itemId }: { itemId: string }) {
+  const utils = trpc.useUtils();
+  const { data, isLoading } = trpc.inventory.photos.listForItem.useQuery({ itemId });
+
+  const reorderMutation = trpc.inventory.photos.reorder.useMutation({
+    onSuccess: () => {
+      void utils.inventory.photos.listForItem.invalidate({ itemId });
+    },
+    onError: (err) => {
+      toast.error(`Failed to reorder photos: ${err.message}`);
+    },
+  });
+
+  const photos = data?.data ?? [];
+
+  if (isLoading) {
+    return (
+      <section className="mb-8">
+        <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+          <Camera className="h-5 w-5" />
+          Photos
+        </h2>
+        <Skeleton className="h-48 w-full rounded-lg" />
+      </section>
+    );
+  }
+
+  if (photos.length === 0) return null;
+
+  const sorted = [...photos].sort((a, b) => a.sortOrder - b.sortOrder);
+  const primaryPhoto = sorted[0]!;
+  const baseUrl = "/api/inventory/photos";
+
+  return (
+    <section className="mb-8">
+      <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+        <Camera className="h-5 w-5" />
+        Photos
+        <span className="text-sm font-normal text-muted-foreground">({photos.length})</span>
+      </h2>
+
+      {/* Primary photo display */}
+      <div className="mb-4">
+        <img
+          src={`${baseUrl}/${encodeURIComponent(primaryPhoto.filePath)}`}
+          alt={primaryPhoto.caption ?? "Primary photo"}
+          className="w-full max-h-96 object-contain rounded-lg border bg-muted"
+          data-testid="primary-photo"
+        />
+        {primaryPhoto.caption && (
+          <p className="text-sm text-muted-foreground mt-1">{primaryPhoto.caption}</p>
+        )}
+      </div>
+
+      {/* Thumbnail gallery with lightbox */}
+      <PhotoGallery photos={photos} baseUrl={baseUrl} />
+
+      {/* Drag-and-drop reorder */}
+      {photos.length > 1 && (
+        <div className="mt-4">
+          <p className="text-xs text-muted-foreground mb-2">Drag to reorder</p>
+          <SortablePhotoGrid
+            photos={photos}
+            baseUrl={baseUrl}
+            isReordering={reorderMutation.isPending}
+            onReorder={(orderedIds) => {
+              reorderMutation.mutate({ itemId, orderedIds });
+            }}
+          />
+        </div>
       )}
     </section>
   );
