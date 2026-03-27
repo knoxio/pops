@@ -11,9 +11,16 @@
  * Hit rate: ~95-100% with aliases.
  */
 
+/** @deprecated Use Map-based EntityLookupMap instead */
 export interface EntityLookup {
   [name: string]: string;
 }
+
+/** Map-based entity lookup: name → entity ID */
+export type EntityLookupMap = Map<string, string>;
+
+/** Map-based alias map: alias → entity name */
+export type AliasMap = Map<string, string>;
 
 export interface EntityMatch {
   entityName: string;
@@ -21,31 +28,41 @@ export interface EntityMatch {
   matchType: "alias" | "exact" | "prefix" | "contains";
 }
 
+/**
+ * Match a transaction description to an entity.
+ *
+ * Accepts either Map-based lookups (preferred) or plain objects (legacy).
+ */
 export function matchEntity(
   description: string,
-  entityLookup: EntityLookup,
-  aliases: Record<string, string>
+  entityLookup: EntityLookupMap | EntityLookup,
+  aliases: AliasMap | Record<string, string>
 ): EntityMatch | null {
   const normalized = description.toUpperCase().trim();
 
+  // Normalize to iterables
+  const aliasEntries: Iterable<[string, string]> =
+    aliases instanceof Map ? aliases : Object.entries(aliases);
+  const lookupEntries: Iterable<[string, string]> =
+    entityLookup instanceof Map ? entityLookup : Object.entries(entityLookup);
+
   // Stage 1: Manual aliases
-  const aliasKey = Object.keys(aliases).find((key) => normalized.includes(key.toUpperCase()));
-  if (aliasKey) {
-    const entityName = aliases[aliasKey];
-    if (entityName === undefined) return null;
-    const entityId = findInLookup(entityName, entityLookup);
-    if (entityId) {
-      return { entityName, entityId, matchType: "alias" };
+  for (const [key, entityName] of aliasEntries) {
+    if (normalized.includes(key.toUpperCase())) {
+      const entityId = findInEntries(entityName, lookupEntries);
+      if (entityId) {
+        return { entityName, entityId, matchType: "alias" };
+      }
     }
   }
 
   // Try matching with original names, then with stripped punctuation
-  const result = tryMatch(normalized, entityLookup);
+  const result = tryMatch(normalized, lookupEntries);
   if (result) return result;
 
   // Stage 5: Strip punctuation and retry
   const stripped = normalized.replace(/[''`]/g, "");
-  const strippedResult = tryMatch(stripped, entityLookup, true);
+  const strippedResult = tryMatch(stripped, lookupEntries, true);
   if (strippedResult) return strippedResult;
 
   return null;
@@ -53,10 +70,10 @@ export function matchEntity(
 
 function tryMatch(
   normalized: string,
-  entityLookup: EntityLookup,
+  lookupEntries: Iterable<[string, string]>,
   stripPunctuation = false
 ): EntityMatch | null {
-  const entries = Object.entries(entityLookup);
+  const entries = Array.from(lookupEntries);
 
   // Stage 2: Exact match (case-insensitive)
   for (const [name, id] of entries) {
@@ -96,8 +113,13 @@ function tryMatch(
   return null;
 }
 
-function findInLookup(entityName: string, lookup: EntityLookup): string | undefined {
-  // Case-insensitive lookup
-  const key = Object.keys(lookup).find((k) => k.toUpperCase() === entityName.toUpperCase());
-  return key ? lookup[key] : undefined;
+function findInEntries(
+  entityName: string,
+  lookupEntries: Iterable<[string, string]>
+): string | undefined {
+  const upper = entityName.toUpperCase();
+  for (const [key, value] of lookupEntries) {
+    if (key.toUpperCase() === upper) return value;
+  }
+  return undefined;
 }

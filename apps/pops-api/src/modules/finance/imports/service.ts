@@ -13,6 +13,7 @@ import { transactions, entities } from "@pops/db-types";
 import { logger } from "../../../lib/logger.js";
 import { formatImportError } from "../../../lib/errors.js";
 import { matchEntity } from "./lib/entity-matcher.js";
+import { loadEntityMaps } from "./lib/entity-lookup.js";
 import { categorizeWithAi, AiCategorizationError } from "./lib/ai-categorizer.js";
 import { updateProgress } from "./progress-store.js";
 import { findMatchingCorrection } from "../../core/corrections/service.js";
@@ -126,42 +127,7 @@ function buildSuggestedTags(
   return result;
 }
 
-/**
- * Load entity lookup from SQLite: name → id
- */
-function loadEntityLookup(): Record<string, string> {
-  const db = getDrizzle();
-  const rows = db.select({ name: entities.name, id: entities.id }).from(entities).all();
-
-  const lookup: Record<string, string> = {};
-  for (const row of rows) {
-    lookup[row.name] = row.id;
-  }
-  return lookup;
-}
-
-/**
- * Load aliases from SQLite: alias → entity name
- * Aliases are stored as comma-separated strings in the aliases column
- */
-function loadAliases(): Record<string, string> {
-  const db = getDrizzle();
-  const rows = db
-    .select({ name: entities.name, aliases: entities.aliases })
-    .from(entities)
-    .where(isNotNull(entities.aliases))
-    .all();
-
-  const aliasMap: Record<string, string> = {};
-  for (const row of rows) {
-    if (!row.aliases) continue;
-    const aliasList = row.aliases.split(",").map((a) => a.trim());
-    for (const alias of aliasList) {
-      aliasMap[alias] = row.name;
-    }
-  }
-  return aliasMap;
-}
+// Entity lookup and alias loading moved to lib/entity-lookup.ts
 
 /**
  * Query SQLite for existing checksums.
@@ -267,8 +233,7 @@ export async function processImport(
   const duplicates = transactions.filter((t) => existingChecksums.has(t.checksum));
 
   // Step 2: Load entity lookup, aliases, and known tags (once per batch)
-  const entityLookup = loadEntityLookup();
-  const aliases = loadAliases();
+  const { entityLookup, aliasMap: aliases } = loadEntityMaps();
   const knownTags = loadKnownTags();
 
   // Step 3: Match entities for each transaction
@@ -645,8 +610,7 @@ export async function processImportWithProgress(
     // Step 2: Entity matching
     updateProgress(sessionId, { currentStep: "matching", processedCount: 0 });
 
-    const entityLookup = loadEntityLookup();
-    const aliases = loadAliases();
+    const { entityLookup, aliasMap: aliases } = loadEntityMaps();
     const knownTags = loadKnownTags();
 
     const matched: ProcessedTransaction[] = [];
