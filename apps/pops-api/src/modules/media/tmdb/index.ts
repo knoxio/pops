@@ -34,7 +34,7 @@ let imageCache: ImageCacheService | null = null;
 export function getImageCache(): ImageCacheService {
   if (!imageCache) {
     const dir = process.env.MEDIA_IMAGES_DIR ?? DEFAULT_IMAGES_DIR;
-    imageCache = new ImageCacheService(dir);
+    imageCache = new ImageCacheService(dir, tmdbRateLimiter);
   }
   return imageCache;
 }
