@@ -1,7 +1,7 @@
 # US-03: Watchlist auto-removal
 
 > PRD: [036 — Watchlist](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -14,11 +14,11 @@ As a user, I want items to auto-remove from my watchlist when I've finished watc
 - [x] If all episodes of a TV show are completed, the TV show is removed from the watchlist
 - [x] If any episode of a TV show remains unwatched, the TV show stays on the watchlist
 - [x] Watch events with `source="plex_sync"` do NOT trigger auto-removal — the watchlist entry is preserved
-- [ ] After auto-removal, remaining watchlist items re-sequence priorities (no gaps)
+- [x] After auto-removal, remaining watchlist items re-sequence priorities (no gaps)
 - [x] Undo of a mark-as-watched action deletes the watch event but does NOT re-add the item to the watchlist
 - [x] Auto-removal and watch event logging happen in the same database transaction
 - [x] If the item is not on the watchlist when marked as watched, no error occurs (no-op for removal)
-- [ ] Tests cover: movie auto-removal on watch, TV show removal when all episodes watched, TV show retained when partially watched, plex_sync skips removal, priority re-sequencing after removal, undo does not re-add, no-op when item not on watchlist
+- [x] Tests cover: movie auto-removal on watch, TV show removal when all episodes watched, TV show retained when partially watched, plex_sync skips removal, priority re-sequencing after removal, undo does not re-add, no-op when item not on watchlist
 
 ## Notes
 

@@ -9,6 +9,7 @@ import { count, countDistinct, desc, eq, and, inArray, gte, lte, type SQL } from
 import { getDrizzle } from "../../../db.js";
 import { watchHistory, mediaWatchlist, episodes, seasons, movies, tvShows } from "@pops/db-types";
 import { NotFoundError } from "../../../shared/errors.js";
+import { resequencePriorities } from "../watchlist/service.js";
 import type {
   WatchHistoryRow,
   LogWatchInput,
@@ -286,6 +287,9 @@ export function logWatch(input: LogWatchInput): LogWatchResult {
         watchlistRemoved = deleteResult.changes > 0;
       } else if (input.mediaType === "episode") {
         watchlistRemoved = autoRemoveTvShowIfFullyWatched(tx, input.mediaId);
+      }
+      if (watchlistRemoved) {
+        resequencePriorities(tx);
       }
     }
 
@@ -607,11 +611,15 @@ export function batchLogWatch(input: BatchLogWatchInput): BatchLogResult {
           const watched = watchedRow2?.watched ?? 0;
 
           if (watched >= allShowEpisodeIds.length) {
-            tx.delete(mediaWatchlist)
+            const removeResult = tx
+              .delete(mediaWatchlist)
               .where(
                 and(eq(mediaWatchlist.mediaType, "tv_show"), eq(mediaWatchlist.mediaId, tvShowId))
               )
               .run();
+            if (removeResult.changes > 0) {
+              resequencePriorities(tx);
+            }
           }
         }
       }
