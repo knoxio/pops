@@ -48,7 +48,9 @@ describe("PaperlessClient constructor", () => {
   });
 
   it("throws if token is empty", () => {
-    expect(() => new PaperlessClient(PAPERLESS_BASE_URL, "")).toThrow("Paperless token is required");
+    expect(() => new PaperlessClient(PAPERLESS_BASE_URL, "")).toThrow(
+      "Paperless token is required"
+    );
   });
 
   it("strips trailing slash from base URL", () => {
