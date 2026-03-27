@@ -26,8 +26,8 @@ function mockResponse(body: unknown, status = 200, statusText = "OK"): Response 
   } as Response;
 }
 
-const PAPERLESS_URL = "http://paperless:8000";
-const PAPERLESS_TOKEN = "test-paperless-token";
+const PAPERLESS_BASE_URL = "http://paperless:8000";
+const PAPERLESS_API_TOKEN = "test-paperless-token";
 
 let client: PaperlessClient;
 let fetchMock: ReturnType<typeof vi.fn>;
@@ -35,7 +35,7 @@ let fetchMock: ReturnType<typeof vi.fn>;
 beforeEach(() => {
   fetchMock = vi.fn();
   vi.stubGlobal("fetch", fetchMock);
-  client = new PaperlessClient(PAPERLESS_URL, PAPERLESS_TOKEN);
+  client = new PaperlessClient(PAPERLESS_BASE_URL, PAPERLESS_API_TOKEN);
 });
 
 afterEach(() => {
@@ -44,15 +44,17 @@ afterEach(() => {
 
 describe("PaperlessClient constructor", () => {
   it("throws if base URL is empty", () => {
-    expect(() => new PaperlessClient("", PAPERLESS_TOKEN)).toThrow("Paperless URL is required");
+    expect(() => new PaperlessClient("", PAPERLESS_API_TOKEN)).toThrow("Paperless URL is required");
   });
 
   it("throws if token is empty", () => {
-    expect(() => new PaperlessClient(PAPERLESS_URL, "")).toThrow("Paperless token is required");
+    expect(() => new PaperlessClient(PAPERLESS_BASE_URL, "")).toThrow(
+      "Paperless token is required"
+    );
   });
 
   it("strips trailing slash from base URL", () => {
-    const c = new PaperlessClient("http://paperless:8000/", PAPERLESS_TOKEN);
+    const c = new PaperlessClient("http://paperless:8000/", PAPERLESS_API_TOKEN);
     fetchMock.mockResolvedValueOnce(
       mockResponse({ count: 0, next: null, previous: null, results: [] })
     );
@@ -72,7 +74,7 @@ describe("PaperlessClient authentication", () => {
 
     const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
     expect((options.headers as Record<string, string>).Authorization).toBe(
-      `Token ${PAPERLESS_TOKEN}`
+      `Token ${PAPERLESS_API_TOKEN}`
     );
   });
 
@@ -238,14 +240,14 @@ describe("getDocumentMetadata", () => {
 describe("getDocumentThumbnailUrl", () => {
   it("builds correct thumbnail URL", () => {
     const url = client.getDocumentThumbnailUrl(42);
-    expect(url).toBe(`${PAPERLESS_URL}/api/documents/42/thumb/`);
+    expect(url).toBe(`${PAPERLESS_BASE_URL}/api/documents/42/thumb/`);
   });
 });
 
 describe("getDocumentDownloadUrl", () => {
   it("builds correct download URL", () => {
     const url = client.getDocumentDownloadUrl(42);
-    expect(url).toBe(`${PAPERLESS_URL}/api/documents/42/download/`);
+    expect(url).toBe(`${PAPERLESS_BASE_URL}/api/documents/42/download/`);
   });
 });
 
@@ -403,6 +405,17 @@ describe("error handling", () => {
       expect((err as PaperlessApiError).message).toContain("Network error");
       expect((err as PaperlessApiError).message).toContain("ECONNREFUSED");
     }
+  });
+
+  it("passes AbortSignal.timeout to fetch for 5s timeout", async () => {
+    fetchMock.mockResolvedValueOnce(
+      mockResponse({ count: 0, next: null, previous: null, results: [] })
+    );
+
+    await client.searchDocuments("test");
+
+    const [, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(options.signal).toBeDefined();
   });
 
   it("uses fallback message when error has no detail", async () => {

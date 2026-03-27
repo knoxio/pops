@@ -152,6 +152,7 @@ export class PaperlessClient {
           Authorization: `Token ${this.token}`,
           Accept: "application/json",
         },
+        signal: AbortSignal.timeout(5_000),
       });
     } catch (err) {
       throw new PaperlessApiError(
