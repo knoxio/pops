@@ -4,10 +4,19 @@
  * Procedures:
  * - getStats: Get overall AI usage statistics
  * - getHistory: Get AI usage history over time
+ * - cacheStats: Get AI cache statistics (entry count, disk size)
+ * - clearStaleCache: Remove cache entries older than N days
+ * - clearAllCache: Clear entire AI cache
  */
+import { z } from "zod";
 import { router, protectedProcedure } from "../../../trpc.js";
 import { getStats, getHistory } from "./service.js";
 import { getHistoryInputSchema } from "./types.js";
+import {
+  getCacheStats,
+  clearStaleCache,
+  clearAllCache,
+} from "../../finance/imports/lib/ai-categorizer.js";
 
 export const aiUsageRouter = router({
   /**
@@ -23,5 +32,24 @@ export const aiUsageRouter = router({
    */
   getHistory: protectedProcedure.input(getHistoryInputSchema).query(({ input }) => {
     return getHistory(input.startDate, input.endDate);
+  }),
+
+  /** Get AI cache statistics */
+  cacheStats: protectedProcedure.query(() => {
+    return getCacheStats();
+  }),
+
+  /** Remove cache entries older than maxAgeDays */
+  clearStaleCache: protectedProcedure
+    .input(z.object({ maxAgeDays: z.number().int().positive().default(30) }))
+    .mutation(({ input }) => {
+      const removed = clearStaleCache(input.maxAgeDays);
+      return { removed };
+    }),
+
+  /** Clear entire AI cache */
+  clearAllCache: protectedProcedure.mutation(() => {
+    const removed = clearAllCache();
+    return { removed };
   }),
 });

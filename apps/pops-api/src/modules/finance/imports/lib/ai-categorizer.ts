@@ -7,7 +7,7 @@
  * card numbers, or personal identifiers.
  */
 import Anthropic from "@anthropic-ai/sdk";
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync, mkdirSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { getEnv } from "../../../../env.js";
 import { getDrizzle, isNamedEnvContext } from "../../../../db.js";
@@ -76,6 +76,45 @@ function saveCacheToDisk(): void {
 export function clearCache(): void {
   cache.clear();
   diskLoaded = false;
+}
+
+/** Get cache statistics: total entries and disk size in bytes. */
+export function getCacheStats(): { totalEntries: number; diskSizeBytes: number } {
+  loadCacheFromDisk();
+  const path = getCachePath();
+  let diskSizeBytes = 0;
+  try {
+    if (existsSync(path)) {
+      diskSizeBytes = statSync(path).size;
+    }
+  } catch {
+    // Ignore stat errors
+  }
+  return { totalEntries: cache.size, diskSizeBytes };
+}
+
+/** Remove cache entries older than maxAgeDays. Returns number of entries removed. */
+export function clearStaleCache(maxAgeDays: number): number {
+  loadCacheFromDisk();
+  const cutoff = Date.now() - maxAgeDays * 24 * 60 * 60 * 1000;
+  let removed = 0;
+  for (const [key, entry] of cache) {
+    if (new Date(entry.cachedAt).getTime() < cutoff) {
+      cache.delete(key);
+      removed++;
+    }
+  }
+  if (removed > 0) saveCacheToDisk();
+  return removed;
+}
+
+/** Clear entire cache. Returns number of entries removed. */
+export function clearAllCache(): number {
+  loadCacheFromDisk();
+  const count = cache.size;
+  cache.clear();
+  saveCacheToDisk();
+  return count;
 }
 
 import { AiCategorizationError } from "./ai-categorizer-error.js";

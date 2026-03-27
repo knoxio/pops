@@ -1,13 +1,138 @@
 /**
  * AI Usage page - view AI categorization costs and usage
  */
+import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
 import { DataTable, SortableHeader, StatCard } from "@pops/ui";
-import { Badge } from "@pops/ui";
+import { Badge, Button } from "@pops/ui";
 import { Alert } from "@pops/ui";
 import { Skeleton } from "@pops/ui";
 import { Card } from "@pops/ui";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@pops/ui";
+import { Database, Trash2 } from "lucide-react";
+
+function formatBytes(bytes: number): string {
+  if (bytes === 0) return "0 B";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function CacheManagement() {
+  const utils = trpc.useUtils();
+  const [staleDays, setStaleDays] = useState(30);
+
+  const { data: cacheStats, isLoading: cacheLoading } =
+    trpc.core.aiUsage.cacheStats.useQuery();
+
+  const clearStaleMutation = trpc.core.aiUsage.clearStaleCache.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Removed ${data.removed} stale cache entries`);
+      void utils.core.aiUsage.cacheStats.invalidate();
+    },
+    onError: () => {
+      toast.error("Failed to clear stale cache");
+    },
+  });
+
+  const clearAllMutation = trpc.core.aiUsage.clearAllCache.useMutation({
+    onSuccess: (data) => {
+      toast.success(`Cleared ${data.removed} cache entries`);
+      void utils.core.aiUsage.cacheStats.invalidate();
+    },
+    onError: () => {
+      toast.error("Failed to clear cache");
+    },
+  });
+
+  if (cacheLoading) {
+    return <Skeleton className="h-24" />;
+  }
+
+  return (
+    <Card className="p-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-center gap-3">
+          <Database className="h-5 w-5 text-muted-foreground" />
+          <div>
+            <h3 className="font-semibold">AI Cache</h3>
+            <p className="text-sm text-muted-foreground">
+              {cacheStats?.totalEntries.toLocaleString() ?? 0} entries
+              {cacheStats ? ` (${formatBytes(cacheStats.diskSizeBytes)})` : ""}
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            <label htmlFor="stale-days" className="text-sm text-muted-foreground whitespace-nowrap">
+              Older than
+            </label>
+            <input
+              id="stale-days"
+              type="number"
+              min={1}
+              max={365}
+              value={staleDays}
+              onChange={(e) => setStaleDays(Number(e.target.value) || 30)}
+              className="w-16 rounded-md border border-input bg-background px-2 py-1 text-sm text-center"
+            />
+            <span className="text-sm text-muted-foreground">days</span>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => clearStaleMutation.mutate({ maxAgeDays: staleDays })}
+            disabled={clearStaleMutation.isPending || (cacheStats?.totalEntries ?? 0) === 0}
+          >
+            Clear Stale
+          </Button>
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
+                size="sm"
+                disabled={clearAllMutation.isPending || (cacheStats?.totalEntries ?? 0) === 0}
+              >
+                <Trash2 className="mr-1 h-3.5 w-3.5" />
+                Clear All
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Clear entire AI cache?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will remove all {cacheStats?.totalEntries.toLocaleString() ?? 0} cached
+                  categorization results. Future transactions will require new API calls,
+                  which will incur additional costs.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => clearAllMutation.mutate()}>
+                  Clear All
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </div>
+    </Card>
+  );
+}
 
 interface AiUsageRecord {
   date: string;
@@ -214,6 +339,9 @@ export function AiUsagePage() {
           color="sky"
         />
       </div>
+
+      {/* Cache Management */}
+      <CacheManagement />
 
       {/* Usage History Table */}
       {history && history.records.length > 0 ? (
