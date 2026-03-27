@@ -72,7 +72,7 @@ let lastSyncResult: SyncRunResult | null = null;
 function persistSchedulerState(enabled: boolean): void {
   try {
     const db = getDrizzle();
-    const upsert = (key: string, value: string) =>
+    const upsert = (key: string, value: string): void =>
       db
         .insert(settings)
         .values({ key, value })
@@ -112,7 +112,7 @@ export function getPersistedSchedulerState(): {
 } {
   try {
     const db = getDrizzle();
-    const get = (key: string) =>
+    const get = (key: string): string | null =>
       db.select().from(settings).where(eq(settings.key, key)).get()?.value ?? null;
 
     const enabled = get("plex_scheduler_enabled") === "true";
