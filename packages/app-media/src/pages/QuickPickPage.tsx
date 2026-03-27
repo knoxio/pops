@@ -1,113 +1,46 @@
-import { useState, useCallback, useRef } from "react";
-import { useNavigate } from "react-router";
-import { Button, Badge, Skeleton } from "@pops/ui";
-import { SkipForward, Plus, X, RefreshCw, Sparkles } from "lucide-react";
-import { toast } from "sonner";
+import { useNavigate, useSearchParams } from "react-router";
+import { Button, Skeleton } from "@pops/ui";
+import { RefreshCw, Sparkles } from "lucide-react";
 import { trpc } from "../lib/trpc";
+import { MediaCard } from "../components/MediaCard";
+
+const COUNT_OPTIONS = [2, 3, 4, 5] as const;
+const DEFAULT_COUNT = 3;
+
+function parseCount(raw: string | null): number {
+  const n = Number(raw);
+  if (COUNT_OPTIONS.includes(n as (typeof COUNT_OPTIONS)[number])) return n;
+  return DEFAULT_COUNT;
+}
 
 export function QuickPickPage() {
   const navigate = useNavigate();
-  const utils = trpc.useUtils();
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [addedIds, setAddedIds] = useState<Set<number>>(new Set());
-
-  // Touch/swipe state
-  const touchStart = useRef<{ x: number; y: number } | null>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
-  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const count = parseCount(searchParams.get("count"));
 
   const { data, isLoading, refetch } = trpc.media.library.quickPick.useQuery(
-    { count: 10 },
+    { count },
     { refetchOnWindowFocus: false }
   );
 
-  const addToWatchlist = trpc.media.watchlist.add.useMutation({
-    onSuccess: () => {
-      toast.success("Added to watchlist");
-      utils.media.watchlist.list.invalidate();
-    },
-    onError: (err: { message: string }) => {
-      if (err.message.includes("already")) {
-        toast.info("Already on your watchlist");
-      } else {
-        toast.error("Failed to add to watchlist");
-      }
-    },
-  });
-
   const picks = data?.data ?? [];
-  const currentPick = picks[currentIndex];
-  const isFinished = !isLoading && currentIndex >= picks.length;
 
-  const goNext = useCallback(() => {
-    setCurrentIndex((i) => i + 1);
-    setSwipeOffset(0);
-  }, []);
-
-  const handleAddToWatchlist = useCallback(() => {
-    if (!currentPick || addedIds.has(currentPick.id)) return;
-    addToWatchlist.mutate(
-      { mediaType: "movie", mediaId: currentPick.id },
-      {
-        onSuccess: () => {
-          setAddedIds((prev) => new Set(prev).add(currentPick.id));
-          goNext();
-        },
-      }
-    );
-  }, [currentPick, addedIds, addToWatchlist, goNext]);
-
-  const handleRefresh = useCallback(() => {
-    setCurrentIndex(0);
-    setAddedIds(new Set());
-    refetch();
-  }, [refetch]);
-
-  // Touch handlers for swipe
-  const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    const touch = e.touches[0];
-    if (!touch) return;
-    touchStart.current = { x: touch.clientX, y: touch.clientY };
-  }, []);
-
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (!touchStart.current) return;
-    const touch = e.touches[0];
-    if (!touch) return;
-    const dx = touch.clientX - touchStart.current.x;
-    setSwipeOffset(dx);
-  }, []);
-
-  const handleTouchEnd = useCallback(() => {
-    if (!touchStart.current) return;
-    const threshold = 80;
-
-    if (swipeOffset > threshold) {
-      // Swipe right → add to watchlist
-      handleAddToWatchlist();
-    } else if (swipeOffset < -threshold) {
-      // Swipe left → skip
-      goNext();
-    }
-
-    touchStart.current = null;
-    setSwipeOffset(0);
-  }, [swipeOffset, handleAddToWatchlist, goNext]);
-
-  // Swipe indicator colors
-  const swipeIndicator =
-    swipeOffset > 40
-      ? "ring-2 ring-emerald-500/50"
-      : swipeOffset < -40
-        ? "ring-2 ring-rose-500/50"
-        : "";
+  function setCount(n: number) {
+    setSearchParams({ count: String(n) }, { replace: true });
+  }
 
   if (isLoading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <Sparkles className="h-8 w-8 text-app-accent animate-pulse" />
-        <Skeleton className="h-[400px] w-[280px] rounded-xl" />
-        <Skeleton className="h-4 w-40" />
+      <div className="space-y-6">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-5 w-5 text-app-accent animate-pulse" />
+          <Skeleton className="h-8 w-32" />
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+          {Array.from({ length: count }, (_, i) => (
+            <Skeleton key={i} className="aspect-[2/3] rounded-lg" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -116,7 +49,7 @@ export function QuickPickPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center">
         <Sparkles className="h-10 w-10 text-muted-foreground" />
-        <h2 className="text-xl font-semibold">No unwatched movies</h2>
+        <h2 className="text-xl font-semibold">Nothing unwatched in your library</h2>
         <p className="text-muted-foreground text-sm max-w-xs">
           Add more movies to your library or mark some as unwatched to get picks.
         </p>
@@ -125,153 +58,63 @@ export function QuickPickPage() {
     );
   }
 
-  if (isFinished) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center">
-        <Sparkles className="h-10 w-10 text-app-accent" />
-        <h2 className="text-xl font-semibold">That's all for now!</h2>
-        <p className="text-muted-foreground text-sm max-w-xs">
-          You've seen all the picks. Refresh for a new set of suggestions.
-        </p>
-        <div className="flex gap-3">
-          <Button onClick={handleRefresh}>
-            <RefreshCw className="h-4 w-4 mr-2" />
-            New picks
-          </Button>
-          <Button variant="outline" onClick={() => navigate("/media")}>
-            Back to Library
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  const movie = currentPick;
-  if (!movie) return null;
-  const year = movie.releaseDate?.slice(0, 4);
-
   return (
-    <div className="flex flex-col items-center gap-6 pb-8">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between w-full max-w-sm">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-lg font-semibold flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-app-accent" />
           Quick Pick
         </h1>
-        <span className="text-xs text-muted-foreground">
-          {currentIndex + 1} / {picks.length}
-        </span>
+        <div className="flex items-center gap-3">
+          {/* Count selector */}
+          <div className="flex items-center gap-1 rounded-lg border p-1" role="group" aria-label="Number of picks">
+            {COUNT_OPTIONS.map((n) => (
+              <button
+                key={n}
+                onClick={() => setCount(n)}
+                className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                  n === count
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted"
+                }`}
+                aria-pressed={n === count}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+          {/* Show me others */}
+          <Button variant="outline" size="sm" onClick={() => refetch()}>
+            <RefreshCw className="h-4 w-4 mr-1.5" />
+            Show me others
+          </Button>
+        </div>
       </div>
 
-      {/* Card */}
-      <div
-        ref={cardRef}
-        className={`relative w-full max-w-sm rounded-xl overflow-hidden bg-card border shadow-lg transition-transform duration-200 ${swipeIndicator}`}
-        style={{
-          transform: `translateX(${swipeOffset * 0.3}px) rotate(${swipeOffset * 0.05}deg)`,
-        }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
-      >
-        {/* Swipe indicators */}
-        {swipeOffset > 40 && (
-          <div className="absolute top-4 left-4 z-10">
-            <Badge className="bg-emerald-500 text-white text-sm px-3 py-1">+ Watchlist</Badge>
-          </div>
-        )}
-        {swipeOffset < -40 && (
-          <div className="absolute top-4 right-4 z-10">
-            <Badge className="bg-rose-500 text-white text-sm px-3 py-1">Skip</Badge>
-          </div>
-        )}
-
-        {/* Poster */}
-        <div className="aspect-[2/3] bg-muted">
-          {movie.posterUrl ? (
-            <img
-              src={movie.posterUrl}
-              alt={movie.title}
-              className="w-full h-full object-cover"
-              draggable={false}
+      {/* Poster grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        {picks.map((movie) => (
+          <div key={movie.id} className="space-y-2">
+            <MediaCard
+              id={movie.id}
+              type="movie"
+              title={movie.title}
+              year={movie.releaseDate}
+              posterUrl={movie.posterUrl}
+              showTypeBadge={false}
             />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-              No Poster
-            </div>
-          )}
-        </div>
-
-        {/* Info */}
-        <div className="p-4 space-y-3">
-          <div>
-            <h2 className="text-lg font-semibold line-clamp-2">{movie.title}</h2>
-            <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-              {year && <span>{year}</span>}
-              {movie.runtime && (
-                <>
-                  <span>·</span>
-                  <span>{movie.runtime} min</span>
-                </>
-              )}
-              {movie.voteAverage != null && (
-                <>
-                  <span>·</span>
-                  <span>★ {movie.voteAverage.toFixed(1)}</span>
-                </>
-              )}
-            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full font-medium"
+              onClick={() => navigate(`/media/movies/${movie.id}`)}
+            >
+              Watch This
+            </Button>
           </div>
-
-          {/* Genres */}
-          {movie.genres.length > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {movie.genres.slice(0, 4).map((genre: string) => (
-                <Badge key={genre} variant="secondary" className="text-xs">
-                  {genre}
-                </Badge>
-              ))}
-            </div>
-          )}
-
-          {/* Overview */}
-          {movie.overview && (
-            <p className="text-sm text-muted-foreground line-clamp-3">{movie.overview}</p>
-          )}
-        </div>
+        ))}
       </div>
-
-      {/* Swipe hint (mobile only) */}
-      <p className="text-xs text-muted-foreground sm:hidden">
-        Swipe right to add · Swipe left to skip
-      </p>
-
-      {/* Action buttons */}
-      <div className="flex items-center gap-3 w-full max-w-sm">
-        <Button variant="outline" className="flex-1" onClick={goNext}>
-          <SkipForward className="h-4 w-4 mr-2" />
-          Skip
-        </Button>
-        <Button
-          className="flex-1 bg-app-accent hover:bg-app-accent/90"
-          onClick={handleAddToWatchlist}
-          disabled={addToWatchlist.isPending || addedIds.has(movie.id)}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Watchlist
-        </Button>
-      </div>
-
-      {/* Close button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        className="text-muted-foreground"
-        onClick={() => navigate("/media")}
-      >
-        <X className="h-4 w-4 mr-1" />
-        Not tonight
-      </Button>
     </div>
   );
 }
