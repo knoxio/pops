@@ -26,8 +26,6 @@ import {
   Film,
   Tv,
   Save,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
@@ -73,8 +71,8 @@ function ServiceCard({
   testing: boolean;
   testResult: { configured: boolean; connected: boolean; version?: string; error?: string } | null;
 }) {
-  const [showKey, setShowKey] = useState(false);
   const configured = !!(url && (hasKey || (apiKey && apiKey !== "••••••••")));
+  const urlInvalid = url.length > 0 && !url.startsWith("http://") && !url.startsWith("https://");
 
   return (
     <div className="rounded-lg border bg-card p-6 space-y-4">
@@ -93,34 +91,25 @@ function ServiceCard({
             onChange={(e) => onUrlChange(e.target.value)}
             disabled={saving}
           />
+          {urlInvalid && (
+            <p className="text-xs text-red-400">URL must start with http:// or https://</p>
+          )}
         </div>
 
         <div className="space-y-1.5">
           <label className="text-sm font-medium text-muted-foreground">API Key</label>
-          <div className="flex gap-2">
-            <Input
-              type={showKey ? "text" : "password"}
-              placeholder="Enter API key"
-              value={apiKey}
-              onChange={(e) => onApiKeyChange(e.target.value)}
-              disabled={saving}
-              className="flex-1"
-            />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-9 w-9 shrink-0"
-              onClick={() => setShowKey(!showKey)}
-              aria-label={showKey ? "Hide API key" : "Show API key"}
-            >
-              {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
-          </div>
+          <Input
+            type="password"
+            placeholder="Enter API key"
+            value={apiKey}
+            onChange={(e) => onApiKeyChange(e.target.value)}
+            disabled={saving}
+          />
         </div>
       </div>
 
       <div className="flex gap-2">
-        <Button variant="outline" size="sm" onClick={onSave} disabled={saving}>
+        <Button variant="outline" size="sm" onClick={onSave} disabled={saving || urlInvalid}>
           {saving ? (
             <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
           ) : (
