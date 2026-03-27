@@ -60,11 +60,12 @@ const ITEM_TYPES = [
 ];
 
 const CONDITIONS = [
-  { value: "new", label: "New" },
-  { value: "good", label: "Good" },
-  { value: "fair", label: "Fair" },
-  { value: "poor", label: "Poor" },
-  { value: "broken", label: "Broken" },
+  { value: "New", label: "New" },
+  { value: "Excellent", label: "Excellent" },
+  { value: "Good", label: "Good" },
+  { value: "Fair", label: "Fair" },
+  { value: "Poor", label: "Poor" },
+  { value: "Broken", label: "Broken" },
 ];
 
 const defaultValues: ItemFormValues = {
@@ -73,7 +74,7 @@ const defaultValues: ItemFormValues = {
   model: "",
   itemId: "",
   type: "",
-  condition: "good",
+  condition: "Good",
   room: "",
   inUse: false,
   deductible: false,

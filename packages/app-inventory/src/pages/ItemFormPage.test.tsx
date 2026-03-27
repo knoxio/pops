@@ -138,7 +138,7 @@ const MOCK_ITEM = {
   room: "Office",
   location: null,
   type: "Electronics",
-  condition: "good",
+  condition: "Good",
   inUse: true,
   deductible: false,
   purchaseDate: "2024-06-15",
@@ -226,7 +226,7 @@ describe("ItemFormPage — Asset ID generation", () => {
   it("enables auto-generate when type is selected", () => {
     setupCreateMode();
     renderCreatePage();
-    const typeSelect = screen.getByRole("combobox", { name: /type/i });
+    const typeSelect = document.querySelector<HTMLSelectElement>("select[name='type']")!;
     fireEvent.change(typeSelect, { target: { value: "Electronics" } });
     const btn = screen.getByRole("button", { name: /auto-generate/i });
     expect(btn).not.toBeDisabled();
@@ -239,7 +239,7 @@ describe("ItemFormPage — Asset ID generation", () => {
 
     setupCreateMode();
     renderCreatePage();
-    const assetInput = screen.getByRole("textbox", { name: /asset id/i });
+    const assetInput = document.querySelector<HTMLInputElement>("input[name='assetId']")!;
     fireEvent.change(assetInput, { target: { value: "ELEC01" } });
     fireEvent.blur(assetInput);
 
@@ -273,7 +273,7 @@ describe("ItemFormPage — Asset ID generation", () => {
   it("skips uniqueness check when asset ID is empty", () => {
     setupCreateMode();
     renderCreatePage();
-    const assetInput = screen.getByRole("textbox", { name: /asset id/i });
+    const assetInput = document.querySelector<HTMLInputElement>("input[name='assetId']")!;
     fireEvent.blur(assetInput);
     expect(mockSearchByAssetIdFetch).not.toHaveBeenCalled();
   });
@@ -294,13 +294,13 @@ describe("ItemFormPage", () => {
       expect(nameInput).toHaveValue("");
     });
 
-    it("defaults condition to 'good'", () => {
+    it("defaults condition to 'Good'", () => {
       setupCreateMode();
       renderCreatePage();
       const conditionSelect = document.querySelector<HTMLSelectElement>(
         "select[name='condition']"
       )!;
-      expect(conditionSelect).toHaveValue("good");
+      expect(conditionSelect).toHaveValue("Good");
     });
 
     it("shows correct condition options", () => {
@@ -313,6 +313,7 @@ describe("ItemFormPage", () => {
         (o) => o.textContent
       );
       expect(options).toContain("New");
+      expect(options).toContain("Excellent");
       expect(options).toContain("Good");
       expect(options).toContain("Fair");
       expect(options).toContain("Poor");
@@ -359,7 +360,7 @@ describe("ItemFormPage", () => {
       const conditionSelect = document.querySelector<HTMLSelectElement>(
         "select[name='condition']"
       )!;
-      expect(conditionSelect).toHaveValue("good");
+      expect(conditionSelect).toHaveValue("Good");
     });
 
     it("populates purchase price", () => {
@@ -445,7 +446,7 @@ describe("ItemFormPage", () => {
           expect.objectContaining({
             itemName: "New Laptop",
             type: "Electronics",
-            condition: "good",
+            condition: "Good",
           })
         );
       });

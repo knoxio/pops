@@ -18,7 +18,7 @@ export const homeInventory = sqliteTable(
     room: text("room"),
     location: text("location"),
     type: text("type"),
-    condition: text("condition").default("good"),
+    condition: text("condition").default("Good"),
     inUse: integer("in_use"),
     deductible: integer("deductible"),
     purchaseDate: text("purchase_date"),
