@@ -22,4 +22,6 @@ export interface ValueBreakdownEntry {
   name: string;
   totalValue: number;
   itemCount: number;
+  /** Optional key for navigation (e.g. locationId) */
+  key?: string | null;
 }

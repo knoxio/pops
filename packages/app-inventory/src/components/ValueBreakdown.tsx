@@ -1,9 +1,9 @@
 /**
- * ValueByTypeCard — horizontal bar chart showing replacement value
- * grouped by item type.
+ * Value breakdown cards — horizontal bar charts showing replacement value
+ * grouped by item type or location.
  */
 import { Alert, AlertDescription, Button, Card, CardContent, Skeleton } from "@pops/ui";
-import { AlertCircle, RefreshCw, Tag } from "lucide-react";
+import { AlertCircle, MapPin, RefreshCw, Tag } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { useNavigate } from "react-router";
 import { trpc } from "../lib/trpc";
@@ -17,16 +17,23 @@ const BAR_COLORS = [
   "hsl(var(--primary) / 0.3)",
 ];
 
-interface BreakdownChartProps {
-  data: { name: string; totalValue: number; itemCount: number }[];
-  onBarClick?: (name: string) => void;
+export interface BreakdownEntry {
+  name: string;
+  totalValue: number;
+  itemCount: number;
+  key?: string | null;
 }
 
-function BreakdownChart({ data, onBarClick }: BreakdownChartProps) {
+interface BreakdownChartProps {
+  data: BreakdownEntry[];
+  onBarClick?: (entry: BreakdownEntry) => void;
+}
+
+export function BreakdownChart({ data, onBarClick }: BreakdownChartProps) {
   if (data.length === 0) {
     return (
       <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-        No data available
+        No items with replacement values
       </div>
     );
   }
@@ -56,12 +63,13 @@ function BreakdownChart({ data, onBarClick }: BreakdownChartProps) {
             if (!payload?.length) return null;
             const first = payload[0];
             if (!first) return null;
-            const entry = first.payload as BreakdownChartProps["data"][number];
+            const entry = first.payload as BreakdownEntry;
+            const valueDisplay = entry.totalValue > 0 ? formatCurrency(entry.totalValue) : "—";
             return (
               <div className="rounded-md border bg-popover px-3 py-2 text-sm shadow-md">
                 <p className="font-medium">{entry.name}</p>
                 <p className="text-muted-foreground">
-                  {formatCurrency(entry.totalValue)} ({entry.itemCount} items)
+                  {valueDisplay} ({entry.itemCount} items)
                 </p>
               </div>
             );
@@ -72,8 +80,8 @@ function BreakdownChart({ data, onBarClick }: BreakdownChartProps) {
           radius={[0, 4, 4, 0]}
           cursor={onBarClick ? "pointer" : undefined}
           onClick={(entry) => {
-            if (onBarClick && entry?.name) {
-              onBarClick(entry.name as string);
+            if (onBarClick && entry) {
+              onBarClick(entry as unknown as BreakdownEntry);
             }
           }}
         >
@@ -107,7 +115,7 @@ export function ValueByTypeCard({ className }: { className?: string }) {
     );
   }
 
-  const typeEntries = typeData?.data ?? [];
+  const typeEntries: BreakdownEntry[] = typeData?.data ?? [];
 
   return (
     <Card className={className}>
@@ -130,7 +138,63 @@ export function ValueByTypeCard({ className }: { className?: string }) {
         ) : (
           <BreakdownChart
             data={typeEntries}
-            onBarClick={(name) => navigate(`/inventory?type=${encodeURIComponent(name)}`)}
+            onBarClick={(entry) => navigate(`/inventory?type=${encodeURIComponent(entry.name)}`)}
+          />
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+export function ValueByLocationCard({ className }: { className?: string }) {
+  const navigate = useNavigate();
+
+  const {
+    data: locationData,
+    isLoading: locationLoading,
+    isError: locationError,
+    refetch: refetchLocation,
+  } = trpc.inventory.reports.valueByLocation.useQuery();
+
+  if (locationLoading) {
+    return (
+      <Card className={className}>
+        <CardContent className="p-4 space-y-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-40 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const locationEntries: BreakdownEntry[] = locationData?.data ?? [];
+
+  return (
+    <Card className={className}>
+      <CardContent className="p-4">
+        <div className="flex items-center gap-2 text-muted-foreground mb-3">
+          <MapPin className="h-4 w-4" />
+          <span className="text-xs font-medium">Value by Location</span>
+        </div>
+        {locationError ? (
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription className="flex items-center justify-between gap-2">
+              <span>Failed to load location breakdown</span>
+              <Button variant="outline" size="sm" onClick={() => refetchLocation()}>
+                <RefreshCw className="h-3 w-3 mr-1" />
+                Retry
+              </Button>
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <BreakdownChart
+            data={locationEntries}
+            onBarClick={(entry) => {
+              if (entry.key) {
+                navigate(`/inventory?locationId=${encodeURIComponent(entry.key)}`);
+              }
+            }}
           />
         )}
       </CardContent>
