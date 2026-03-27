@@ -424,8 +424,20 @@ describe("refreshTvShow", () => {
 
     const detail = makeShowDetail({
       artworks: [
-        { id: 1, type: 2, imageUrl: "https://artworks.thetvdb.com/poster.jpg", language: "eng", score: 100 },
-        { id: 2, type: 3, imageUrl: "https://artworks.thetvdb.com/backdrop.jpg", language: "eng", score: 90 },
+        {
+          id: 1,
+          type: 2,
+          imageUrl: "https://artworks.thetvdb.com/poster.jpg",
+          language: "eng",
+          score: 100,
+        },
+        {
+          id: 2,
+          type: 3,
+          imageUrl: "https://artworks.thetvdb.com/backdrop.jpg",
+          language: "eng",
+          score: 90,
+        },
       ],
     });
     const client = createMockClient(detail, {});
