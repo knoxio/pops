@@ -48,6 +48,19 @@ export interface ProposedRule {
   reasoning: string;
 }
 
+export interface CorrectionAnalysis {
+  matchType: "exact" | "prefix" | "contains";
+  pattern: string;
+  confidence: number;
+}
+
+interface CorrectionInput {
+  description: string;
+  entityName: string;
+  amount: number;
+  account: string;
+}
+
 interface TransactionInput {
   description: string;
   entityName: string | null;
@@ -199,4 +212,129 @@ Return ONLY the JSON array, no markdown, no explanation.`;
   );
 
   return proposals;
+}
+
+const MIN_PATTERN_LENGTH = 3;
+
+/**
+ * Analyze a single user correction to suggest a matching pattern.
+ * Returns null if AI is unavailable or the suggestion is invalid.
+ */
+export async function analyzeCorrection(
+  input: CorrectionInput
+): Promise<CorrectionAnalysis | null> {
+  const apiKey = getEnv("CLAUDE_API_KEY");
+  if (!apiKey) {
+    logger.warn("[RuleGen] CLAUDE_API_KEY not configured — skipping correction analysis");
+    return null;
+  }
+
+  const client = new Anthropic({ apiKey, maxRetries: 0 });
+
+  const prompt = `You are a bank transaction pattern analyzer. A user has corrected a transaction by assigning it to an entity. Analyze the description to suggest a reusable matching pattern.
+
+Transaction description: "${input.description}"
+Assigned entity: "${input.entityName}"
+Amount: ${input.amount}
+Account: ${input.account}
+
+Identify which part of the description is the entity/merchant name versus location, branch, reference numbers, or noise.
+
+Return a single JSON object:
+- "matchType": "exact" (full description matches), "prefix" (description starts with pattern), or "contains" (pattern found anywhere in description)
+- "pattern": the matching pattern string (min ${MIN_PATTERN_LENGTH} chars, uppercase)
+- "confidence": 0.0-1.0 (how confident you are this pattern will correctly match future transactions for this entity)
+
+Guidelines:
+- "IKEA TEMPE NSW" → entity is "IKEA", location is "TEMPE NSW" → prefix match on "IKEA"
+- "PAYMENT TO NETFLIX" → entity is "NETFLIX", prefix is "PAYMENT TO" → contains match on "NETFLIX"
+- "WOOLWORTHS 1234 SYDNEY" → entity is "WOOLWORTHS", rest is branch/location → prefix match on "WOOLWORTHS"
+- Prefer prefix over contains when the entity name starts the description
+- Prefer contains when the entity name appears after a generic prefix
+- Use exact only when the full description is a consistent identifier
+
+Return ONLY the JSON object, no markdown, no explanation.`;
+
+  let response;
+  try {
+    response = await withRateLimitRetry(
+      () =>
+        client.messages.create({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 200,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      "analyzeCorrection"
+    );
+  } catch (error) {
+    logger.error({ error }, "[RuleGen] AI call failed for correction analysis");
+    return null;
+  }
+
+  const text = response.content[0]?.type === "text" ? response.content[0].text : null;
+  if (!text) return null;
+
+  const cleanedText = text
+    .trim()
+    .replace(/^```(?:json)?\s*\n?/gm, "")
+    .replace(/\n?```\s*$/gm, "");
+
+  let result: CorrectionAnalysis | null = null;
+  try {
+    const parsed = JSON.parse(cleanedText) as Record<string, unknown>;
+
+    const matchType = String(parsed["matchType"]);
+    const pattern = String(parsed["pattern"] ?? "");
+    const confidence = Number(parsed["confidence"] ?? 0);
+
+    if (
+      !["exact", "prefix", "contains"].includes(matchType) ||
+      pattern.length < MIN_PATTERN_LENGTH ||
+      confidence < 0 ||
+      confidence > 1
+    ) {
+      logger.warn({ parsed }, "[RuleGen] Invalid correction analysis response");
+      return null;
+    }
+
+    result = {
+      matchType: matchType as "exact" | "prefix" | "contains",
+      pattern,
+      confidence,
+    };
+  } catch {
+    logger.error({ text: cleanedText }, "[RuleGen] Failed to parse correction analysis response");
+    return null;
+  }
+
+  // Track AI usage
+  const inputTokens = response.usage.input_tokens;
+  const outputTokens = response.usage.output_tokens;
+  const costUsd = (inputTokens / 1_000_000) * 1.0 + (outputTokens / 1_000_000) * 5.0;
+
+  try {
+    getDrizzle()
+      .insert(aiUsage)
+      .values({
+        description: `analyzeCorrection: "${input.description}" → "${input.entityName}"`,
+        entityName: input.entityName,
+        category: "correction-analysis",
+        inputTokens,
+        outputTokens,
+        costUsd,
+        cached: 0,
+        importBatchId: null,
+        createdAt: new Date().toISOString(),
+      })
+      .run();
+  } catch {
+    // ai_usage tracking is best-effort
+  }
+
+  logger.info(
+    { result, inputTokens, outputTokens, costUsd: costUsd.toFixed(6) },
+    "[RuleGen] Correction analysis complete"
+  );
+
+  return result;
 }

@@ -13,7 +13,7 @@ import {
 } from "./types.js";
 import * as service from "./service.js";
 import { NotFoundError } from "../../../shared/errors.js";
-import { generateRules } from "./lib/rule-generator.js";
+import { generateRules, analyzeCorrection } from "./lib/rule-generator.js";
 
 const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
@@ -133,6 +133,24 @@ export const correctionsRouter = router({
         }
         throw err;
       }
+    }),
+
+  /**
+   * Analyze a single correction via Claude to suggest a matching pattern.
+   * Returns { matchType, pattern, confidence } or null if AI unavailable.
+   */
+  analyzeCorrection: protectedProcedure
+    .input(
+      z.object({
+        description: z.string().min(1),
+        entityName: z.string().min(1),
+        amount: z.number(),
+        account: z.string(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const result = await analyzeCorrection(input);
+      return { data: result };
     }),
 
   /**
