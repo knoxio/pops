@@ -32,6 +32,9 @@ vi.mock("../components/ComparisonScores", () => ({
 vi.mock("../components/ArrStatusBadge", () => ({
   ArrStatusBadge: () => <span>Arr Status</span>,
 }));
+vi.mock("../components/RequestMovieButton", () => ({
+  RequestMovieButton: () => null,
+}));
 
 import { MovieDetailPage } from "./MovieDetailPage";
 
