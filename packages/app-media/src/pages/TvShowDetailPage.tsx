@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useParams, Link } from "react-router";
 import {
   Alert,
@@ -110,7 +111,17 @@ export function TvShowDetailPage() {
   const posterSrc = show.posterUrl ?? "";
   const backdropSrc = show.backdropUrl ?? null;
 
-  const seasons = seasonsData?.data ?? [];
+  const rawSeasons = seasonsData?.data ?? [];
+  // Sort seasons ascending by number, specials (season 0) last
+  const seasons = useMemo(
+    () =>
+      [...rawSeasons].sort((a: { seasonNumber: number }, b: { seasonNumber: number }) => {
+        if (a.seasonNumber === 0) return 1;
+        if (b.seasonNumber === 0) return -1;
+        return a.seasonNumber - b.seasonNumber;
+      }),
+    [rawSeasons]
+  );
   const progress = progressData?.data;
 
   const nextEpisode = progress?.nextEpisode ?? null;
@@ -271,9 +282,11 @@ export function TvShowDetailPage() {
         )}
 
         {/* Seasons list with progress */}
-        {seasons.length > 0 && (
-          <section>
-            <h2 className="text-lg font-semibold mb-3">Seasons</h2>
+        <section>
+          <h2 className="text-lg font-semibold mb-3">Seasons</h2>
+          {seasons.length === 0 ? (
+            <p className="text-muted-foreground">No seasons available</p>
+          ) : (
             <div className="space-y-2">
               {seasons.map(
                 (season: {
@@ -316,8 +329,8 @@ export function TvShowDetailPage() {
                 }
               )}
             </div>
-          </section>
-        )}
+          )}
+        </section>
       </div>
     </div>
   );

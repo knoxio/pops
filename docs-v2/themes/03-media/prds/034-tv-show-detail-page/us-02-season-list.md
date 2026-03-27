@@ -1,7 +1,7 @@
 # US-02: Season list
 
 > PRD: [034 — TV Show Detail Page](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -18,7 +18,7 @@ As a user, I want to see a list of seasons for a TV show with episode counts and
 - [x] Season progress data comes from `media.watchHistory.progress` (per-season breakdown)
 - [x] If the show has no seasons, a message renders: "No seasons available"
 - [x] Season cards have hover/focus state for interactivity feedback
-- [ ] Tests cover: season cards render with correct data, sort order (specials last), click navigation to season detail, progress bar at 0%/50%/100%, empty state when no seasons
+- [x] Tests cover: season cards render with correct data, sort order (specials last), click navigation to season detail, progress bar at 0%/50%/100%, empty state when no seasons
 
 ## Notes
 
