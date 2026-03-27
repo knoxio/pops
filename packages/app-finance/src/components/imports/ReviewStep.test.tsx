@@ -5,6 +5,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 const mockCreateCorrectionMutate = vi.fn();
 const mockCreateEntityMutateAsync = vi.fn();
+const mockAnalyzeCorrectionMutateAsync = vi.fn();
 const mockEntitiesQuery = vi.fn();
 
 vi.mock("../../lib/trpc", () => ({
@@ -29,6 +30,12 @@ vi.mock("../../lib/trpc", () => ({
         createOrUpdate: {
           useMutation: () => ({
             mutate: mockCreateCorrectionMutate,
+            isPending: false,
+          }),
+        },
+        analyzeCorrection: {
+          useMutation: () => ({
+            mutateAsync: mockAnalyzeCorrectionMutateAsync,
             isPending: false,
           }),
         },
@@ -227,6 +234,8 @@ beforeEach(() => {
       ],
     },
   });
+  // Default: AI analysis returns null (fallback to contains pattern)
+  mockAnalyzeCorrectionMutateAsync.mockResolvedValue({ data: null });
   mockProcessedTransactions = {
     matched: [],
     uncertain: [],
@@ -238,7 +247,7 @@ beforeEach(() => {
 // --- Tests ---
 
 describe("ReviewStep — auto-apply rules", () => {
-  it("saves correction when accepting AI suggestion", () => {
+  it("saves correction when accepting AI suggestion", async () => {
     mockProcessedTransactions = {
       matched: [],
       uncertain: [makeTx("WOOLWORTHS 1234 SYDNEY")],
@@ -250,13 +259,16 @@ describe("ReviewStep — auto-apply rules", () => {
     const acceptBtn = screen.getByTestId("accept-WOOLWORTHS 1234 SYDNEY");
     fireEvent.click(acceptBtn);
 
-    expect(mockCreateCorrectionMutate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        matchType: "contains",
-        entityId: "ent-1",
-        entityName: "Woolworths",
-      })
-    );
+    // Correction is saved after async AI analysis resolves
+    await vi.waitFor(() => {
+      expect(mockCreateCorrectionMutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          matchType: "contains",
+          entityId: "ent-1",
+          entityName: "Woolworths",
+        })
+      );
+    });
   });
 
   it("re-evaluates and moves matching uncertain transactions to matched", () => {
@@ -383,7 +395,7 @@ describe("ReviewStep — low-confidence confirmation flow", () => {
     expect(mockCreateCorrectionMutate).not.toHaveBeenCalled();
   });
 
-  it("auto-saves rule when confidence >= 0.8 (high confidence path)", () => {
+  it("auto-saves rule when confidence >= 0.8 (high confidence path)", async () => {
     const tx = makeTx("WOOLWORTHS 1234 SYDNEY", {
       entity: { entityId: "ent-1", entityName: "Woolworths", matchType: "ai", confidence: 0.85 },
     });
@@ -397,14 +409,16 @@ describe("ReviewStep — low-confidence confirmation flow", () => {
 
     fireEvent.click(screen.getByTestId("accept-WOOLWORTHS 1234 SYDNEY"));
 
-    // Should auto-save correction (high confidence path)
-    expect(mockCreateCorrectionMutate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        matchType: "contains",
-        entityId: "ent-1",
-        entityName: "Woolworths",
-      })
-    );
+    // Correction is saved after async AI analysis resolves
+    await vi.waitFor(() => {
+      expect(mockCreateCorrectionMutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          matchType: "contains",
+          entityId: "ent-1",
+          entityName: "Woolworths",
+        })
+      );
+    });
 
     // Should NOT show confirmation toast
     expect(mockToastInfo).not.toHaveBeenCalledWith(
@@ -442,7 +456,7 @@ describe("ReviewStep — low-confidence confirmation flow", () => {
     );
   });
 
-  it("accept button in confirmation toast saves the rule", () => {
+  it("accept button in confirmation toast saves the rule", async () => {
     const tx = makeTx("SPOTIFY PREMIUM", {
       entity: { entityId: "ent-3", entityName: "Spotify", matchType: "ai", confidence: 0.6 },
     });
@@ -466,14 +480,16 @@ describe("ReviewStep — low-confidence confirmation flow", () => {
     const actionOnClick = (infoCall[1] as { action: { onClick: () => void } }).action.onClick;
     actionOnClick();
 
-    // Now the correction should be saved
-    expect(mockCreateCorrectionMutate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        matchType: "contains",
-        entityId: "ent-3",
-        entityName: "Spotify",
-      })
-    );
+    // Correction is saved after async AI analysis resolves
+    await vi.waitFor(() => {
+      expect(mockCreateCorrectionMutate).toHaveBeenCalledWith(
+        expect.objectContaining({
+          matchType: "contains",
+          entityId: "ent-3",
+          entityName: "Spotify",
+        })
+      );
+    });
   });
 
   it("reject button prevents re-suggestion for same pattern", () => {
@@ -521,5 +537,117 @@ describe("ReviewStep — low-confidence confirmation flow", () => {
     expect(createRuleCalls).toHaveLength(0);
 
     unmount();
+  });
+});
+
+describe("ReviewStep — AI correction analysis", () => {
+  it("calls analyzeCorrection when accepting a high-confidence suggestion", async () => {
+    const tx = makeTx("WOOLWORTHS 1234 SYDNEY");
+    mockProcessedTransactions = {
+      matched: [],
+      uncertain: [tx],
+      failed: [],
+      skipped: [],
+    };
+    render(<ReviewStep />);
+
+    fireEvent.click(screen.getByTestId("accept-WOOLWORTHS 1234 SYDNEY"));
+
+    // Should call analyzeCorrection with transaction context (no account — PII rule)
+    expect(mockAnalyzeCorrectionMutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({
+        description: "WOOLWORTHS 1234 SYDNEY",
+        entityName: "Woolworths",
+        amount: -42.5,
+      })
+    );
+    // Verify account is NOT sent to AI
+    expect(mockAnalyzeCorrectionMutateAsync).not.toHaveBeenCalledWith(
+      expect.objectContaining({ account: expect.anything() })
+    );
+  });
+
+  it("uses AI-suggested pattern when analysis succeeds", async () => {
+    mockAnalyzeCorrectionMutateAsync.mockResolvedValue({
+      data: { matchType: "prefix", pattern: "WOOLWORTHS", confidence: 0.9 },
+    });
+    const tx = makeTx("WOOLWORTHS 1234 SYDNEY");
+    mockProcessedTransactions = {
+      matched: [],
+      uncertain: [tx],
+      failed: [],
+      skipped: [],
+    };
+    render(<ReviewStep />);
+
+    fireEvent.click(screen.getByTestId("accept-WOOLWORTHS 1234 SYDNEY"));
+
+    // Wait for the async AI analysis to resolve
+    await vi.waitFor(() => {
+      expect(mockCreateCorrectionMutate).toHaveBeenCalled();
+    });
+
+    // Should use AI-analyzed pattern (prefix mapped to contains)
+    expect(mockCreateCorrectionMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        descriptionPattern: "WOOLWORTHS",
+        matchType: "contains",
+        entityId: "ent-1",
+        entityName: "Woolworths",
+      })
+    );
+  });
+
+  it("falls back to hardcoded pattern when AI returns null", async () => {
+    mockAnalyzeCorrectionMutateAsync.mockResolvedValue({ data: null });
+    const tx = makeTx("WOOLWORTHS 1234 SYDNEY");
+    mockProcessedTransactions = {
+      matched: [],
+      uncertain: [tx],
+      failed: [],
+      skipped: [],
+    };
+    render(<ReviewStep />);
+
+    fireEvent.click(screen.getByTestId("accept-WOOLWORTHS 1234 SYDNEY"));
+
+    await vi.waitFor(() => {
+      expect(mockCreateCorrectionMutate).toHaveBeenCalled();
+    });
+
+    // Should use fallback contains pattern (digits stripped)
+    expect(mockCreateCorrectionMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        descriptionPattern: "WOOLWORTHS SYDNEY",
+        matchType: "contains",
+      })
+    );
+  });
+
+  it("falls back to hardcoded pattern when AI call fails", async () => {
+    mockAnalyzeCorrectionMutateAsync.mockRejectedValue(new Error("AI unavailable"));
+    const tx = makeTx("WOOLWORTHS 1234 SYDNEY");
+    mockProcessedTransactions = {
+      matched: [],
+      uncertain: [tx],
+      failed: [],
+      skipped: [],
+    };
+    render(<ReviewStep />);
+
+    fireEvent.click(screen.getByTestId("accept-WOOLWORTHS 1234 SYDNEY"));
+
+    await vi.waitFor(() => {
+      expect(mockCreateCorrectionMutate).toHaveBeenCalled();
+    });
+
+    // Should still save with fallback pattern
+    expect(mockCreateCorrectionMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        matchType: "contains",
+        entityId: "ent-1",
+        entityName: "Woolworths",
+      })
+    );
   });
 });

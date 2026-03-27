@@ -159,23 +159,57 @@ export function ReviewStep() {
   }, []);
 
   const createCorrectionMutation = trpc.core.corrections.createOrUpdate.useMutation();
+  const analyzeCorrectionMutation = trpc.core.corrections.analyzeCorrection.useMutation();
 
   /**
    * Auto-save a correction rule, re-evaluate remaining uncertain/failed transactions,
    * move matches to the matched tab, and show a toast with the result.
+   *
+   * Calls Claude to analyze the correction for a smarter pattern (matchType + pattern + confidence).
+   * Falls back to a simple contains-based pattern if AI is unavailable.
    */
   const autoSaveRuleAndReEvaluate = useCallback(
-    (description: string, entityId: string, entityName: string) => {
-      const pattern = description.toUpperCase().replace(/\d+/g, "").replace(/\s+/g, " ").trim();
+    (description: string, entityId: string, entityName: string, amount: number) => {
+      const fallbackPattern = description
+        .toUpperCase()
+        .replace(/\d+/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
 
-      createCorrectionMutation.mutate({
-        descriptionPattern: pattern,
-        matchType: "contains",
-        entityId,
-        entityName,
-      });
+      // Fire AI analysis in background — save correction with result or fallback
+      analyzeCorrectionMutation
+        .mutateAsync({ description, entityName, amount })
+        .then((res) => {
+          const analysis = res.data;
+          if (analysis && analysis.pattern.length >= 3) {
+            // Map "prefix" to "contains" for corrections table (prefix not a DB matchType)
+            const matchType = analysis.matchType === "prefix" ? "contains" : analysis.matchType;
+            createCorrectionMutation.mutate({
+              descriptionPattern: analysis.pattern,
+              matchType,
+              entityId,
+              entityName,
+            });
+          } else {
+            createCorrectionMutation.mutate({
+              descriptionPattern: fallbackPattern,
+              matchType: "contains",
+              entityId,
+              entityName,
+            });
+          }
+        })
+        .catch(() => {
+          // AI unavailable — use fallback pattern
+          createCorrectionMutation.mutate({
+            descriptionPattern: fallbackPattern,
+            matchType: "contains",
+            entityId,
+            entityName,
+          });
+        });
 
-      // Re-evaluate and move matching transactions in a single state update.
+      // Re-evaluate and move matching transactions immediately (don't wait for AI).
       // Toast is called inside the updater so it has access to the computed count.
       const normalizedEntityName = entityName.toUpperCase();
 
@@ -233,7 +267,7 @@ export function ReviewStep() {
         };
       });
     },
-    [createCorrectionMutation]
+    [createCorrectionMutation, analyzeCorrectionMutation]
   );
 
   /**
@@ -296,7 +330,12 @@ export function ReviewStep() {
 
       if (confidence >= 0.8) {
         // High confidence — auto-save rule
-        autoSaveRuleAndReEvaluate(transaction.description, entityId, entityName);
+        autoSaveRuleAndReEvaluate(
+          transaction.description,
+          entityId,
+          entityName,
+          transaction.amount
+        );
       } else if (!rejectedPatterns.current.has(pattern)) {
         // Low confidence — show confirmation toast
         const matchCount = countPatternMatches(entityName, transaction.checksum);
@@ -309,7 +348,12 @@ export function ReviewStep() {
           action: {
             label: "Accept",
             onClick: () => {
-              autoSaveRuleAndReEvaluate(transaction.description, entityId!, entityName);
+              autoSaveRuleAndReEvaluate(
+                transaction.description,
+                entityId!,
+                entityName,
+                transaction.amount
+              );
             },
           },
           cancel: {
@@ -391,7 +435,12 @@ export function ReviewStep() {
 
         // Auto-save correction rule using the first transaction's description and re-evaluate
         if (firstTx) {
-          autoSaveRuleAndReEvaluate(firstTx.description, resolvedEntityId, entityName);
+          autoSaveRuleAndReEvaluate(
+            firstTx.description,
+            resolvedEntityId,
+            entityName,
+            firstTx.amount
+          );
         }
       } catch (error) {
         toast.error(
