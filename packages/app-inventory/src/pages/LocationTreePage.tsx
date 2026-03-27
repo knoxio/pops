@@ -22,6 +22,23 @@ import {
   DialogFooter,
 } from "@pops/ui";
 import {
+  DndContext,
+  DragOverlay,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragStartEvent,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
   MapPin,
   ChevronRight,
   ChevronDown,
@@ -34,6 +51,7 @@ import {
   MoveRight,
   Trash2,
   FileText,
+  GripVertical,
 } from "lucide-react";
 import { Link } from "react-router";
 import { trpc } from "../lib/trpc";
@@ -211,6 +229,22 @@ function MoveTargetPicker({
   );
 }
 
+/** Lightweight node preview shown while dragging. */
+function DragOverlayNode({ node }: { node: LocationTreeNode }) {
+  return (
+    <div className="flex items-center gap-2 bg-background border rounded-md px-3 py-2 shadow-lg">
+      <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
+      <Folder className="h-4 w-4 text-muted-foreground" />
+      <span className="text-sm font-medium">{node.name}</span>
+      {node.children.length > 0 && (
+        <Badge variant="secondary" className="text-xs">
+          {countDescendants(node) + 1}
+        </Badge>
+      )}
+    </div>
+  );
+}
+
 interface LocationNodeProps {
   node: LocationTreeNode;
   depth: number;
@@ -250,19 +284,39 @@ function LocationNode({
   const isSelected = selectedId === node.id;
   const isAddingChild = addingChildOf === node.id;
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+    isOver,
+  } = useSortable({ id: node.id });
+
+  const sortableStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
+  const dropIndicator = isOver && !isDragging;
+
   // Auto-expand when adding a child
   useEffect(() => {
     if (isAddingChild && !open) setOpen(true);
   }, [isAddingChild, open]);
 
   return (
+    <div ref={setNodeRef} style={sortableStyle}>
     <Collapsible open={open} onOpenChange={setOpen}>
       <div
         className={`group flex items-center gap-1.5 py-1.5 px-2 rounded-md cursor-pointer transition-colors hover:bg-app-accent/10 ${
           isSelected
             ? "bg-app-accent/20 text-foreground font-bold border-l-2 border-app-accent rounded-l-none ml-[-2px]"
             : ""
-        }`}
+        } ${dropIndicator ? "ring-2 ring-app-accent/50 bg-app-accent/5" : ""}`}
         style={{ paddingLeft: `${depth * 20 + 8}px` }}
         onClick={() => onSelect(node.id)}
         onDoubleClick={(e) => {
@@ -273,6 +327,19 @@ function LocationNode({
         aria-selected={isSelected}
         aria-expanded={hasChildren ? open : undefined}
       >
+        {/* Drag handle — desktop only, visible on hover */}
+        <button
+          ref={setActivatorNodeRef}
+          {...attributes}
+          {...listeners}
+          type="button"
+          className="p-0.5 rounded hover:bg-muted cursor-grab active:cursor-grabbing hidden md:flex opacity-0 group-hover:opacity-100 transition-opacity touch-none"
+          aria-label={`Drag ${node.name}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
+        </button>
+
         {hasChildren ? (
           <CollapsibleTrigger
             asChild
@@ -319,7 +386,7 @@ function LocationNode({
           {siblingCount > 1 && siblingIndex > 0 && (
             <button
               type="button"
-              className="p-0.5 rounded hover:bg-muted"
+              className="p-0.5 rounded hover:bg-muted md:hidden"
               onClick={(e) => {
                 e.stopPropagation();
                 onReorder(node.id, "up");
@@ -333,7 +400,7 @@ function LocationNode({
           {siblingCount > 1 && siblingIndex < siblingCount - 1 && (
             <button
               type="button"
-              className="p-0.5 rounded hover:bg-muted"
+              className="p-0.5 rounded hover:bg-muted md:hidden"
               onClick={(e) => {
                 e.stopPropagation();
                 onReorder(node.id, "down");
@@ -399,44 +466,50 @@ function LocationNode({
 
       {(hasChildren || isAddingChild) && (
         <CollapsibleContent forceMount={isAddingChild ? true : undefined}>
-          <div role="group">
-            {node.children.map((child, i) => (
-              <LocationNode
-                key={child.id}
-                node={child}
-                depth={depth + 1}
-                selectedId={selectedId}
-                onSelect={onSelect}
-                onAddChild={onAddChild}
-                onRename={onRename}
-                onMoveStart={onMoveStart}
-                onReorder={onReorder}
-                onDelete={onDelete}
-                addingChildOf={addingChildOf}
-                onNewChildSave={onNewChildSave}
-                onNewChildCancel={onNewChildCancel}
-                siblingIndex={i}
-                siblingCount={node.children.length}
-              />
-            ))}
-            {isAddingChild && (
-              <div
-                className="flex items-center gap-1.5 py-1.5 px-2"
-                style={{ paddingLeft: `${(depth + 1) * 20 + 8}px` }}
-              >
-                <span className="w-[22px]" />
-                <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
-                <InlineInput
-                  onSave={onNewChildSave}
-                  onCancel={onNewChildCancel}
-                  placeholder="Location name"
+          <SortableContext
+            items={node.children.map((c) => c.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div role="group">
+              {node.children.map((child, i) => (
+                <LocationNode
+                  key={child.id}
+                  node={child}
+                  depth={depth + 1}
+                  selectedId={selectedId}
+                  onSelect={onSelect}
+                  onAddChild={onAddChild}
+                  onRename={onRename}
+                  onMoveStart={onMoveStart}
+                  onReorder={onReorder}
+                  onDelete={onDelete}
+                  addingChildOf={addingChildOf}
+                  onNewChildSave={onNewChildSave}
+                  onNewChildCancel={onNewChildCancel}
+                  siblingIndex={i}
+                  siblingCount={node.children.length}
                 />
-              </div>
-            )}
-          </div>
+              ))}
+              {isAddingChild && (
+                <div
+                  className="flex items-center gap-1.5 py-1.5 px-2"
+                  style={{ paddingLeft: `${(depth + 1) * 20 + 8}px` }}
+                >
+                  <span className="w-[22px]" />
+                  <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <InlineInput
+                    onSave={onNewChildSave}
+                    onCancel={onNewChildCancel}
+                    placeholder="Location name"
+                  />
+                </div>
+              )}
+            </div>
+          </SortableContext>
         </CollapsibleContent>
       )}
     </Collapsible>
+    </div>
   );
 }
 
@@ -445,6 +518,12 @@ export function LocationTreePage() {
   const [addingChildOf, setAddingChildOf] = useState<string | null>(null);
   const [addingRoot, setAddingRoot] = useState(false);
   const [movingId, setMovingId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
+  );
+
   const [deleteConfirm, setDeleteConfirm] = useState<{
     id: string;
     name: string;
@@ -617,6 +696,51 @@ export function LocationTreePage() {
     [treeNodes, nodeMap, updateMutation]
   );
 
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setActiveId(event.active.id as string);
+  }, []);
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      setActiveId(null);
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+
+      const activeNode = nodeMap.get(active.id as string);
+      const overNode = nodeMap.get(over.id as string);
+      if (!activeNode || !overNode) return;
+
+      // Prevent dropping on own descendants
+      if (isDescendant(active.id as string, over.id as string, nodeMap)) {
+        toast.error("Cannot move a location into its own sub-location");
+        return;
+      }
+
+      if (activeNode.parentId === overNode.parentId) {
+        // Reorder within same parent
+        const siblings = getSiblings(active.id as string, treeNodes, nodeMap);
+        const oldIndex = siblings.findIndex((s) => s.id === active.id);
+        const newIndex = siblings.findIndex((s) => s.id === over.id);
+        if (oldIndex < 0 || newIndex < 0) return;
+
+        const reordered = arrayMove(siblings, oldIndex, newIndex);
+        reordered.forEach((n, index) => {
+          if (n.sortOrder !== index) {
+            updateMutation.mutate({ id: n.id, data: { sortOrder: index } });
+          }
+        });
+      } else {
+        // Different parent → reparent: make active a child of over
+        updateMutation.mutate({
+          id: activeNode.id,
+          data: { parentId: overNode.id },
+        });
+      }
+    },
+    [nodeMap, treeNodes, updateMutation]
+  );
+
+  const activeNode = activeId ? nodeMap.get(activeId) : null;
   const movingNode = movingId ? nodeMap.get(movingId) : null;
 
   if (error) {
@@ -671,26 +795,37 @@ export function LocationTreePage() {
         </div>
       ) : (
         <div className="flex flex-col md:flex-row gap-6">
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
           <div className="md:w-2/5 border rounded-lg py-2" role="tree" aria-label="Location tree">
-            {treeNodes.map((node, i) => (
-              <LocationNode
-                key={node.id}
-                node={node}
-                depth={0}
-                selectedId={selectedId}
-                onSelect={handleSelect}
-                onAddChild={handleAddChild}
-                onRename={handleRename}
-                onMoveStart={handleMoveStart}
-                onReorder={handleReorder}
-                onDelete={handleDelete}
-                addingChildOf={addingChildOf}
-                onNewChildSave={handleNewChildSave}
-                onNewChildCancel={handleNewChildCancel}
-                siblingIndex={i}
-                siblingCount={treeNodes.length}
-              />
-            ))}
+            <SortableContext
+              items={treeNodes.map((n) => n.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {treeNodes.map((node, i) => (
+                <LocationNode
+                  key={node.id}
+                  node={node}
+                  depth={0}
+                  selectedId={selectedId}
+                  onSelect={handleSelect}
+                  onAddChild={handleAddChild}
+                  onRename={handleRename}
+                  onMoveStart={handleMoveStart}
+                  onReorder={handleReorder}
+                  onDelete={handleDelete}
+                  addingChildOf={addingChildOf}
+                  onNewChildSave={handleNewChildSave}
+                  onNewChildCancel={handleNewChildCancel}
+                  siblingIndex={i}
+                  siblingCount={treeNodes.length}
+                />
+              ))}
+            </SortableContext>
             {addingRoot && (
               <div className="flex items-center gap-1.5 py-1.5 px-2" style={{ paddingLeft: "8px" }}>
                 <span className="w-[22px]" />
@@ -703,6 +838,10 @@ export function LocationTreePage() {
               </div>
             )}
           </div>
+          <DragOverlay>
+            {activeNode ? <DragOverlayNode node={activeNode} /> : null}
+          </DragOverlay>
+          </DndContext>
 
           <div className="md:w-3/5">
             {selectedId && nodeMap.get(selectedId) ? (
