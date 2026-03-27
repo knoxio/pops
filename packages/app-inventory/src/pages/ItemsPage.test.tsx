@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 
 const mocks = vi.hoisted(() => ({
@@ -45,6 +45,7 @@ vi.mock("../components/InventoryCard", () => ({
 
 vi.mock("../components/ValueBreakdown", () => ({
   ValueByTypeCard: () => <div data-testid="value-by-type" />,
+  ValueByLocationCard: () => <div data-testid="value-by-location" />,
 }));
 
 import { ItemsPage } from "./ItemsPage";
@@ -106,7 +107,11 @@ describe("ItemsPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.itemsQuery.mockReturnValue({
-      data: { data: [], pagination: { total: 0 }, totals: { totalReplacementValue: 0, totalResaleValue: 0 } },
+      data: {
+        data: [],
+        pagination: { total: 0 },
+        totals: { totalReplacementValue: 0, totalResaleValue: 0 },
+      },
       isLoading: false,
     });
     mocks.typesQuery.mockReturnValue({ data: { data: [] } });
@@ -182,6 +187,173 @@ describe("ItemsPage", () => {
       mocks.dashboardQuery.mockReturnValue({ ...populatedDashboard, isLoading: false });
       renderPage("/inventory?q=test");
       expect(screen.queryByText("Warranties")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Filters", () => {
+    beforeEach(() => {
+      mocks.dashboardQuery.mockReturnValue({ ...emptyDashboard, isLoading: false });
+    });
+
+    it("renders Type select dropdown with dynamic options from database", () => {
+      mocks.typesQuery.mockReturnValue({
+        data: { data: ["Electronics", "Furniture", "Appliances"] },
+      });
+      renderPage();
+
+      const typeSelect = screen.getAllByRole("combobox")[0];
+      expect(typeSelect).toBeInTheDocument();
+      // Options include: placeholder + "All Types" + 3 dynamic types = 5
+      const options = typeSelect.querySelectorAll("option");
+      expect(options.length).toBe(5);
+    });
+
+    it("renders Location select dropdown with hierarchical options", () => {
+      mocks.treeQuery.mockReturnValue({
+        data: {
+          data: [
+            {
+              id: "loc-1",
+              name: "Home",
+              children: [{ id: "loc-2", name: "Office", children: [] }],
+            },
+          ],
+        },
+      });
+      renderPage();
+
+      // Location select should have: All Locations, Home, └ Office
+      const selects = screen.getAllByRole("combobox");
+      const locationSelect = selects[selects.length - 1]; // last select
+      const options = locationSelect.querySelectorAll("option");
+      expect(options.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it("renders Condition select dropdown with all options", () => {
+      renderPage();
+
+      const selects = screen.getAllByRole("combobox");
+      // Condition select: placeholder + All Conditions + Excellent + Good + Fair + Poor = 6
+      const conditionSelect = selects[1]; // second select
+      const options = conditionSelect.querySelectorAll("option");
+      expect(options.length).toBe(6);
+    });
+
+    it("shows Clear filters button when a filter is active", () => {
+      mocks.dashboardQuery.mockReturnValue({ ...populatedDashboard, isLoading: false });
+      renderPage("/inventory?type=Electronics");
+
+      expect(screen.getByText("Clear filters")).toBeInTheDocument();
+    });
+
+    it("does not show Clear filters button when no filters are active", () => {
+      renderPage();
+      expect(screen.queryByText("Clear filters")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("Query parameter persistence", () => {
+    beforeEach(() => {
+      mocks.dashboardQuery.mockReturnValue({ ...emptyDashboard, isLoading: false });
+    });
+
+    it("reads search query from URL params", () => {
+      renderPage("/inventory?q=MacBook");
+
+      const searchInput = screen.getByPlaceholderText("Search items or asset IDs...");
+      expect(searchInput).toHaveValue("MacBook");
+    });
+
+    it("reads type filter from URL params", () => {
+      mocks.typesQuery.mockReturnValue({ data: { data: ["Electronics"] } });
+      renderPage("/inventory?type=Electronics");
+
+      const typeSelect = screen.getAllByRole("combobox")[0];
+      expect(typeSelect).toHaveValue("Electronics");
+    });
+
+    it("reads condition filter from URL params", () => {
+      renderPage("/inventory?condition=Good");
+
+      const selects = screen.getAllByRole("combobox");
+      const conditionSelect = selects[1];
+      expect(conditionSelect).toHaveValue("Good");
+    });
+  });
+
+  describe("Asset ID search", () => {
+    beforeEach(() => {
+      mocks.dashboardQuery.mockReturnValue({ ...emptyDashboard, isLoading: false });
+    });
+
+    it("navigates to item detail on Enter when asset ID matches", async () => {
+      mocks.searchByAssetId.mockResolvedValue({
+        data: { id: "item-99", itemName: "Test Item" },
+      });
+
+      renderPage("/inventory?q=ELEC-001");
+
+      const searchInput = screen.getByPlaceholderText("Search items or asset IDs...");
+      fireEvent.keyDown(searchInput, { key: "Enter" });
+
+      await waitFor(() => {
+        expect(mocks.searchByAssetId).toHaveBeenCalledWith({ assetId: "ELEC-001" });
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId("item-detail-page")).toBeInTheDocument();
+      });
+    });
+
+    it("stays on list page when asset ID does not match", async () => {
+      mocks.searchByAssetId.mockResolvedValue({ data: null });
+
+      renderPage("/inventory?q=NONEXISTENT");
+
+      const searchInput = screen.getByPlaceholderText("Search items or asset IDs...");
+      fireEvent.keyDown(searchInput, { key: "Enter" });
+
+      await waitFor(() => {
+        expect(mocks.searchByAssetId).toHaveBeenCalledWith({ assetId: "NONEXISTENT" });
+      });
+
+      // Should still be on inventory page
+      expect(screen.getByText("Inventory")).toBeInTheDocument();
+    });
+
+    it("does not search on Enter when search is empty", () => {
+      renderPage();
+
+      const searchInput = screen.getByPlaceholderText("Search items or asset IDs...");
+      fireEvent.keyDown(searchInput, { key: "Enter" });
+
+      expect(mocks.searchByAssetId).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("Empty state", () => {
+    beforeEach(() => {
+      mocks.dashboardQuery.mockReturnValue({ ...emptyDashboard, isLoading: false });
+    });
+
+    it("shows empty state with Add button when no items exist", () => {
+      renderPage();
+
+      expect(screen.getByText("No inventory items yet.")).toBeInTheDocument();
+      expect(screen.getByText("Add your first item")).toBeInTheDocument();
+    });
+
+    it("navigates to new item page when Add button is clicked", () => {
+      renderPage();
+
+      fireEvent.click(screen.getByText("Add your first item"));
+      expect(screen.getByTestId("item-new-page")).toBeInTheDocument();
+    });
+
+    it("shows no-results state when filters match nothing", () => {
+      renderPage("/inventory?type=NonexistentType");
+
+      expect(screen.getByText("No items match your filters.")).toBeInTheDocument();
     });
   });
 });
