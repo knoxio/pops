@@ -238,10 +238,11 @@ export function getValueByLocation(): ValueBreakdownEntry[] {
       name: sql<string>`COALESCE(${locations.name}, 'Unassigned')`,
       totalValue: sql<number>`COALESCE(SUM(${homeInventory.replacementValue}), 0)`,
       itemCount: count(),
+      key: sql<string | null>`${locations.id}`,
     })
     .from(homeInventory)
     .leftJoin(locations, eq(homeInventory.locationId, locations.id))
-    .groupBy(sql`COALESCE(${locations.name}, 'Unassigned')`)
+    .groupBy(sql`COALESCE(${locations.name}, 'Unassigned')`, locations.id)
     .orderBy(desc(sql`COALESCE(SUM(${homeInventory.replacementValue}), 0)`))
     .all() as ValueBreakdownEntry[];
 }
