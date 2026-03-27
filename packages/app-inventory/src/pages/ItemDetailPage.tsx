@@ -583,10 +583,6 @@ function PhotosSection({ itemId }: { itemId: string }) {
     );
   }
 
-  if (photos.length === 0) return null;
-
-  const sorted = [...photos].sort((a, b) => a.sortOrder - b.sortOrder);
-  const primaryPhoto = sorted[0]!;
   const baseUrl = "/api/inventory/photos";
 
   return (
@@ -594,23 +590,12 @@ function PhotosSection({ itemId }: { itemId: string }) {
       <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
         <Camera className="h-5 w-5" />
         Photos
-        <span className="text-sm font-normal text-muted-foreground">({photos.length})</span>
+        {photos.length > 0 && (
+          <span className="text-sm font-normal text-muted-foreground">({photos.length})</span>
+        )}
       </h2>
 
-      {/* Primary photo display */}
-      <div className="mb-4">
-        <img
-          src={`${baseUrl}/${encodeURIComponent(primaryPhoto.filePath)}`}
-          alt={primaryPhoto.caption ?? "Primary photo"}
-          className="w-full max-h-96 object-contain rounded-lg border bg-muted"
-          data-testid="primary-photo"
-        />
-        {primaryPhoto.caption && (
-          <p className="text-sm text-muted-foreground mt-1">{primaryPhoto.caption}</p>
-        )}
-      </div>
-
-      {/* Thumbnail gallery with lightbox */}
+      {/* Primary photo + thumbnail strip + lightbox (or placeholder) */}
       <PhotoGallery photos={photos} baseUrl={baseUrl} />
 
       {/* Drag-and-drop reorder */}

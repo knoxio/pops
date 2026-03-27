@@ -1,11 +1,11 @@
 /**
- * PhotoGallery — Thumbnail grid with lightbox overlay.
+ * PhotoGallery — Primary display + thumbnail strip with lightbox overlay.
  *
- * Displays item photos in a responsive grid. Click a thumbnail
- * to open a full-size lightbox with prev/next navigation.
+ * Shows the selected photo at full width, a thumbnail strip below (for 2+ photos),
+ * and a lightbox overlay on primary click. Click a thumbnail to swap it into primary.
  */
 import { useState, useCallback, useEffect } from "react";
-import { X, ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { X, ChevronLeft, ChevronRight, Trash2, Package } from "lucide-react";
 import { Button } from "@pops/ui";
 
 export interface PhotoItem {
@@ -27,9 +27,17 @@ export function PhotoGallery({
   onDelete,
   baseUrl = "/api/inventory/photos",
 }: PhotoGalleryProps) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const sorted = [...photos].sort((a, b) => a.sortOrder - b.sortOrder);
+
+  // Reset selected index if photos change and index is out of bounds
+  useEffect(() => {
+    if (selectedIndex >= sorted.length) {
+      setSelectedIndex(0);
+    }
+  }, [sorted.length, selectedIndex]);
 
   const openLightbox = useCallback((index: number) => {
     setLightboxIndex(index);
@@ -62,47 +70,79 @@ export function PhotoGallery({
   }, [lightboxIndex, closeLightbox, goNext, goPrev]);
 
   if (photos.length === 0) {
-    return <p className="text-sm text-muted-foreground">No photos yet.</p>;
+    return (
+      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground" data-testid="photo-placeholder">
+        <Package className="h-16 w-16 mb-3 opacity-30" />
+        <p className="text-sm">No photos yet</p>
+      </div>
+    );
   }
 
   const photoSrc = (filePath: string) => `${baseUrl}/${encodeURIComponent(filePath)}`;
 
+  const primaryPhoto = sorted[selectedIndex]!;
   const currentPhoto = lightboxIndex !== null ? sorted[lightboxIndex] : null;
 
   return (
     <>
-      {/* Thumbnail grid */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-        {sorted.map((photo, index) => (
-          <div key={photo.id} className="group relative">
-            <button
-              type="button"
-              onClick={() => openLightbox(index)}
-              className="w-full aspect-square rounded-md overflow-hidden border border-border hover:border-app-accent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <img
-                src={photoSrc(photo.filePath)}
-                alt={photo.caption ?? `Photo ${index + 1}`}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-            </button>
-            {onDelete && (
+      {/* Primary photo display */}
+      <button
+        type="button"
+        onClick={() => openLightbox(selectedIndex)}
+        className="w-full rounded-lg overflow-hidden border bg-muted cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        data-testid="primary-photo"
+        aria-label="View photo in lightbox"
+      >
+        <img
+          src={photoSrc(primaryPhoto.filePath)}
+          alt={primaryPhoto.caption ?? "Primary photo"}
+          className="w-full max-h-96 object-contain"
+        />
+      </button>
+      {primaryPhoto.caption && (
+        <p className="text-sm text-muted-foreground mt-1">{primaryPhoto.caption}</p>
+      )}
+
+      {/* Thumbnail strip (only for 2+ photos) */}
+      {sorted.length > 1 && (
+        <div className="flex gap-2 mt-3 overflow-x-auto pb-1" data-testid="thumbnail-strip">
+          {sorted.map((photo, index) => (
+            <div key={photo.id} className="group relative shrink-0">
               <button
                 type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(photo.id);
-                }}
-                className="absolute top-1 right-1 p-1 rounded-full bg-background/80 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
-                aria-label={`Delete photo ${photo.caption ?? index + 1}`}
+                onClick={() => setSelectedIndex(index)}
+                className={`w-16 h-16 rounded-md overflow-hidden border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                  index === selectedIndex
+                    ? "border-app-accent ring-2 ring-app-accent"
+                    : "border-border hover:border-app-accent/50"
+                }`}
+                aria-label={photo.caption ?? `Photo ${index + 1}`}
+                data-testid={`thumbnail-${index}`}
               >
-                <Trash2 className="h-3.5 w-3.5" />
+                <img
+                  src={photoSrc(photo.filePath)}
+                  alt={photo.caption ?? `Photo ${index + 1}`}
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                />
               </button>
-            )}
-          </div>
-        ))}
-      </div>
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(photo.id);
+                  }}
+                  className="absolute -top-1 -right-1 p-0.5 rounded-full bg-background/80 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
+                  aria-label={`Delete photo ${photo.caption ?? index + 1}`}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Lightbox overlay */}
       {currentPhoto && (
