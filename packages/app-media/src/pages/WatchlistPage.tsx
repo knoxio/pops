@@ -9,9 +9,28 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { Link, useNavigate } from "react-router";
 import { Alert, AlertTitle, AlertDescription, Badge, Skeleton, Textarea } from "@pops/ui";
 import { Button } from "@pops/ui";
-import { ArrowUp, ArrowDown, Trash2, Film } from "lucide-react";
+import { ArrowUp, ArrowDown, Trash2, Film, GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragOverlay,
+  type DragStartEvent,
+  type DragEndEvent,
+  type DraggableAttributes,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface WatchlistEntry {
   id: number;
@@ -70,6 +89,7 @@ interface WatchlistItemProps {
   onRemove: (id: number) => void;
   isRemoving: boolean;
   isReordering: boolean;
+  showReorderControls?: boolean;
   onUpdateNotes: (id: number, notes: string | null) => void;
   isUpdating: boolean;
   updateError: string | null;
@@ -87,6 +107,7 @@ function WatchlistItem({
   onRemove,
   isRemoving,
   isReordering,
+  showReorderControls = true,
   onUpdateNotes,
   isUpdating,
   updateError,
@@ -145,29 +166,31 @@ function WatchlistItem({
 
   return (
     <div className="flex gap-4 p-3 rounded-lg border" role="listitem">
-      {/* Reorder controls */}
-      <div className="flex flex-col justify-center gap-1 shrink-0">
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-6 w-6 p-0"
-          disabled={isFirst || isReordering}
-          onClick={onMoveUp}
-          aria-label={`Move ${title} up`}
-        >
-          <ArrowUp className="h-3.5 w-3.5" />
-        </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          className="h-6 w-6 p-0"
-          disabled={isLast || isReordering}
-          onClick={onMoveDown}
-          aria-label={`Move ${title} down`}
-        >
-          <ArrowDown className="h-3.5 w-3.5" />
-        </Button>
-      </div>
+      {/* Reorder controls (hidden for single-item lists) */}
+      {showReorderControls && (
+        <div className="flex flex-col justify-center gap-1 shrink-0">
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 w-6 p-0"
+            disabled={isFirst || isReordering}
+            onClick={onMoveUp}
+            aria-label={`Move ${title} up`}
+          >
+            <ArrowUp className="h-3.5 w-3.5" />
+          </Button>
+          <Button
+            size="sm"
+            variant="ghost"
+            className="h-6 w-6 p-0"
+            disabled={isLast || isReordering}
+            onClick={onMoveDown}
+            aria-label={`Move ${title} down`}
+          >
+            <ArrowDown className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      )}
 
       <Link to={href} className="shrink-0">
         <img
@@ -274,6 +297,8 @@ interface WatchlistCardProps {
   priority: number;
   onRemove: (id: number) => void;
   isRemoving: boolean;
+  dragAttributes?: DraggableAttributes;
+  dragListeners?: Record<string, unknown>;
 }
 
 function WatchlistCard({
@@ -284,6 +309,8 @@ function WatchlistCard({
   priority,
   onRemove,
   isRemoving,
+  dragAttributes,
+  dragListeners,
 }: WatchlistCardProps) {
   const navigate = useNavigate();
   const [imageError, setImageError] = useState(false);
@@ -311,6 +338,20 @@ function WatchlistCard({
         <div className="absolute top-2 left-2 z-10 bg-primary text-primary-foreground text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
           #{priority}
         </div>
+
+        {/* Grab handle (desktop hover) */}
+        {dragListeners && (
+          <button
+            type="button"
+            aria-label={`Drag to reorder ${title}`}
+            className="absolute top-2 left-1/2 -translate-x-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white rounded-md p-1 cursor-grab active:cursor-grabbing"
+            onClick={(e) => e.stopPropagation()}
+            {...dragListeners}
+            {...dragAttributes}
+          >
+            <GripVertical className="h-4 w-4" />
+          </button>
+        )}
 
         {/* Type badge */}
         <Badge
@@ -361,11 +402,31 @@ function WatchlistCard({
   );
 }
 
+function SortableWatchlistCard(props: WatchlistCardProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: props.entry.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <WatchlistCard {...props} dragAttributes={attributes} dragListeners={listeners} />
+    </div>
+  );
+}
+
 export function WatchlistPage() {
   const [isReordering, setIsReordering] = useState(false);
   const [removingId, setRemovingId] = useState<number | null>(null);
   const [updateErrorId, setUpdateErrorId] = useState<number | null>(null);
   const [updateErrorMsg, setUpdateErrorMsg] = useState<string | null>(null);
+  const [optimisticOrder, setOptimisticOrder] = useState<WatchlistEntry[] | null>(null);
+  const [activeId, setActiveId] = useState<number | null>(null);
 
   const {
     data: watchlistData,
@@ -410,9 +471,11 @@ export function WatchlistPage() {
 
   const reorderMutation = trpc.media.watchlist.reorder.useMutation({
     onSuccess: () => {
+      setOptimisticOrder(null);
       void utils.media.watchlist.list.invalidate();
     },
     onError: (err: { message: string }) => {
+      setOptimisticOrder(null);
       toast.error(`Failed to reorder: ${err.message}`);
     },
     onSettled: () => {
@@ -468,8 +531,9 @@ export function WatchlistPage() {
     [tvShowsData?.data]
   );
 
-  // Already sorted by priority ASC from the API
-  const sortedEntries = entries;
+  // Use optimistic order during drag, otherwise server order
+  const sortedEntries = optimisticOrder ?? entries;
+  const hasManyItems = sortedEntries.length >= 2;
 
   const handleMove = useCallback(
     (index: number, direction: "up" | "down") => {
@@ -493,6 +557,62 @@ export function WatchlistPage() {
       reorderMutation.mutate({ items });
     },
     [sortedEntries, reorderMutation, isReordering]
+  );
+
+  // Drag-and-drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor)
+  );
+
+  const handleDragStart = useCallback(
+    (event: DragStartEvent) => {
+      setActiveId(event.active.id as number);
+      // Snapshot current order for potential revert
+      setOptimisticOrder([...sortedEntries]);
+    },
+    [sortedEntries]
+  );
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      setActiveId(null);
+
+      if (!over || active.id === over.id) {
+        // Cancelled or dropped on same spot — revert without API call
+        setOptimisticOrder(null);
+        return;
+      }
+
+      const currentOrder = optimisticOrder ?? sortedEntries;
+      const oldIndex = currentOrder.findIndex((e) => e.id === active.id);
+      const newIndex = currentOrder.findIndex((e) => e.id === over.id);
+
+      if (oldIndex === -1 || newIndex === -1) {
+        setOptimisticOrder(null);
+        return;
+      }
+
+      const reordered = arrayMove(currentOrder, oldIndex, newIndex);
+      setOptimisticOrder(reordered);
+
+      const items = reordered.map((entry, i) => ({ id: entry.id, priority: i }));
+      setIsReordering(true);
+      reorderMutation.mutate({ items });
+    },
+    [sortedEntries, optimisticOrder, reorderMutation]
+  );
+
+  const handleDragCancel = useCallback(() => {
+    setActiveId(null);
+    setOptimisticOrder(null);
+  }, []);
+
+  const getMetaForEntry = useCallback(
+    (entry: WatchlistEntry) =>
+      entry.mediaType === "movie" ? movieMap.get(entry.mediaId) : tvMap.get(entry.mediaId),
+    [movieMap, tvMap]
   );
 
   if (watchlistError) {
@@ -529,10 +649,7 @@ export function WatchlistPage() {
           {/* Mobile: compact list with reorder */}
           <div className="space-y-3 md:hidden" role="list" aria-label="Watchlist items">
             {sortedEntries.map((entry: WatchlistEntry, index: number) => {
-              const meta =
-                entry.mediaType === "movie"
-                  ? movieMap.get(entry.mediaId)
-                  : tvMap.get(entry.mediaId);
+              const meta = getMetaForEntry(entry);
 
               return (
                 <WatchlistItem
@@ -551,6 +668,7 @@ export function WatchlistPage() {
                   }}
                   isRemoving={removingId === entry.id}
                   isReordering={isReordering}
+                  showReorderControls={hasManyItems}
                   onUpdateNotes={(id, notes) => {
                     setUpdateErrorId(id);
                     setUpdateErrorMsg(null);
@@ -563,31 +681,79 @@ export function WatchlistPage() {
             })}
           </div>
 
-          {/* Desktop: poster card grid */}
-          <div className="hidden md:grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-            {sortedEntries.map((entry: WatchlistEntry, index: number) => {
-              const meta =
-                entry.mediaType === "movie"
-                  ? movieMap.get(entry.mediaId)
-                  : tvMap.get(entry.mediaId);
+          {/* Desktop: poster card grid with drag-and-drop */}
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            onDragCancel={handleDragCancel}
+          >
+            <SortableContext
+              items={sortedEntries.map((e) => e.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="hidden md:grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                {sortedEntries.map((entry: WatchlistEntry, index: number) => {
+                  const meta = getMetaForEntry(entry);
 
-              return (
-                <WatchlistCard
-                  key={entry.id}
-                  entry={entry}
-                  title={meta?.title ?? "Unknown"}
-                  year={meta?.year ?? null}
-                  posterUrl={meta?.posterUrl ?? null}
-                  priority={index + 1}
-                  onRemove={(id) => {
-                    setRemovingId(id);
-                    removeMutation.mutate({ id });
-                  }}
-                  isRemoving={removingId === entry.id}
-                />
-              );
-            })}
-          </div>
+                  return hasManyItems ? (
+                    <SortableWatchlistCard
+                      key={entry.id}
+                      entry={entry}
+                      title={meta?.title ?? "Unknown"}
+                      year={meta?.year ?? null}
+                      posterUrl={meta?.posterUrl ?? null}
+                      priority={index + 1}
+                      onRemove={(id) => {
+                        setRemovingId(id);
+                        removeMutation.mutate({ id });
+                      }}
+                      isRemoving={removingId === entry.id}
+                    />
+                  ) : (
+                    <WatchlistCard
+                      key={entry.id}
+                      entry={entry}
+                      title={meta?.title ?? "Unknown"}
+                      year={meta?.year ?? null}
+                      posterUrl={meta?.posterUrl ?? null}
+                      priority={index + 1}
+                      onRemove={(id) => {
+                        setRemovingId(id);
+                        removeMutation.mutate({ id });
+                      }}
+                      isRemoving={removingId === entry.id}
+                    />
+                  );
+                })}
+              </div>
+            </SortableContext>
+
+            <DragOverlay>
+              {activeId != null
+                ? (() => {
+                    const entry = sortedEntries.find((e) => e.id === activeId);
+                    if (!entry) return null;
+                    const meta = getMetaForEntry(entry);
+                    const idx = sortedEntries.findIndex((e) => e.id === activeId);
+                    return (
+                      <div className="opacity-80 w-48">
+                        <WatchlistCard
+                          entry={entry}
+                          title={meta?.title ?? "Unknown"}
+                          year={meta?.year ?? null}
+                          posterUrl={meta?.posterUrl ?? null}
+                          priority={idx + 1}
+                          onRemove={() => {}}
+                          isRemoving={false}
+                        />
+                      </div>
+                    );
+                  })()
+                : null}
+            </DragOverlay>
+          </DndContext>
         </>
       )}
     </div>
