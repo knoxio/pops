@@ -8,6 +8,7 @@ import { tvShows, seasons, episodes } from "@pops/db-types";
 import type { TvShowRow, SeasonRow } from "@pops/db-types";
 import type { TheTvdbClient } from "../thetvdb/client.js";
 import type { TvdbArtwork, TvdbEpisode } from "../thetvdb/types.js";
+import type { ImageCacheService } from "../tmdb/image-cache.js";
 import { getTvShowByTvdbId } from "../tv-shows/service.js";
 
 export interface AddTvShowResult {
@@ -23,7 +24,11 @@ export interface AddTvShowResult {
  * - Fetches full detail + episodes from TheTVDB.
  * - Inserts show, seasons, and episodes in a single transaction.
  */
-export async function addTvShow(tvdbId: number, client: TheTvdbClient): Promise<AddTvShowResult> {
+export async function addTvShow(
+  tvdbId: number,
+  client: TheTvdbClient,
+  imageCache?: ImageCacheService
+): Promise<AddTvShowResult> {
   // Check for existing show (idempotent)
   const existing = getTvShowByTvdbId(tvdbId);
   if (existing) {
@@ -141,6 +146,17 @@ export async function addTvShow(tvdbId: number, client: TheTvdbClient): Promise<
 
     return { show: showRow, seasons: insertedSeasons, created: true as const };
   });
+
+  // Download images to local cache (non-blocking — failures are logged)
+  if (result.created && imageCache) {
+    imageCache
+      .downloadTvShowImages(tvdbId, posterUrl, backdropUrl)
+      .catch((err) =>
+        console.warn(
+          `[addTvShow] Image download failed for tvdbId ${tvdbId}: ${err instanceof Error ? err.message : String(err)}`
+        )
+      );
+  }
 
   return result;
 }

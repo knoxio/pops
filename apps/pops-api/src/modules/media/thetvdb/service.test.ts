@@ -416,4 +416,57 @@ describe("refreshTvShow", () => {
     expect(result.seasonsAdded).toBe(2);
     expect(result.episodesAdded).toBe(1);
   });
+
+  it("re-downloads images when redownloadImages is true and imageCache provided", async () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189 });
+    seedSeason(db, { tv_show_id: showId, tvdb_id: 30001, season_number: 1 });
+
+    const detail = makeShowDetail({
+      artworks: [
+        { id: 1, type: 2, imageUrl: "https://artworks.thetvdb.com/poster.jpg", language: "eng", score: 100 },
+        { id: 2, type: 3, imageUrl: "https://artworks.thetvdb.com/backdrop.jpg", language: "eng", score: 90 },
+      ],
+    });
+    const client = createMockClient(detail, {});
+    const mockImageCache = {
+      deleteTvShowImages: vi.fn().mockResolvedValue(undefined),
+      downloadTvShowImages: vi.fn().mockResolvedValue(undefined),
+    };
+
+    await refreshTvShow(client, {
+      id: showId,
+      redownloadImages: true,
+      refreshEpisodes: false,
+      imageCache: mockImageCache as any,
+    });
+
+    expect(mockImageCache.deleteTvShowImages).toHaveBeenCalledWith(81189);
+    expect(mockImageCache.downloadTvShowImages).toHaveBeenCalledWith(
+      81189,
+      "https://artworks.thetvdb.com/poster.jpg",
+      "https://artworks.thetvdb.com/backdrop.jpg"
+    );
+  });
+
+  it("does not download images when redownloadImages is false", async () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189 });
+    seedSeason(db, { tv_show_id: showId, tvdb_id: 30001, season_number: 1 });
+
+    const detail = makeShowDetail();
+    const client = createMockClient(detail, {});
+    const mockImageCache = {
+      deleteTvShowImages: vi.fn(),
+      downloadTvShowImages: vi.fn(),
+    };
+
+    await refreshTvShow(client, {
+      id: showId,
+      redownloadImages: false,
+      refreshEpisodes: false,
+      imageCache: mockImageCache as any,
+    });
+
+    expect(mockImageCache.deleteTvShowImages).not.toHaveBeenCalled();
+    expect(mockImageCache.downloadTvShowImages).not.toHaveBeenCalled();
+  });
 });

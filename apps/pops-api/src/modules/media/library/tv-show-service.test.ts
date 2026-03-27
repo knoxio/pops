@@ -281,6 +281,42 @@ describe("addTvShow", () => {
 
     await expect(addTvShow(99999, client)).rejects.toThrow("TheTVDB API error: 404 Not Found");
   });
+
+  it("calls imageCache.downloadTvShowImages when provided", async () => {
+    const detail = makeShowDetail();
+    const episodeMap = new Map([
+      [0, makeEpisodes(0, 2)],
+      [1, makeEpisodes(1, 3)],
+    ]);
+    const client = makeMockClient(detail, episodeMap);
+
+    const mockImageCache = {
+      downloadTvShowImages: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const result = await addTvShow(81189, client, mockImageCache as any);
+
+    expect(result.created).toBe(true);
+    expect(mockImageCache.downloadTvShowImages).toHaveBeenCalledWith(
+      81189,
+      "https://artworks.thetvdb.com/poster.jpg",
+      "https://artworks.thetvdb.com/backdrop.jpg"
+    );
+  });
+
+  it("does not call imageCache for existing show", async () => {
+    seedTvShow(db, { tvdb_id: 81189, name: "Breaking Bad" });
+
+    const client = makeMockClient(makeShowDetail(), new Map());
+    const mockImageCache = {
+      downloadTvShowImages: vi.fn().mockResolvedValue(undefined),
+    };
+
+    const result = await addTvShow(81189, client, mockImageCache as any);
+
+    expect(result.created).toBe(false);
+    expect(mockImageCache.downloadTvShowImages).not.toHaveBeenCalled();
+  });
 });
 
 describe("selectBestArtwork", () => {

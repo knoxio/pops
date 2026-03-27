@@ -8,11 +8,14 @@ import { seasons, episodes } from "@pops/db-types";
 import * as tvShowsService from "../tv-shows/service.js";
 import type { TheTvdbClient } from "./client.js";
 import type { TvdbEpisode, TvdbSeasonSummary } from "./types.js";
+import type { ImageCacheService } from "../tmdb/image-cache.js";
+import { selectBestArtwork } from "../library/tv-show-service.js";
 
 export interface RefreshTvShowInput {
   id: number;
   redownloadImages?: boolean;
   refreshEpisodes?: boolean;
+  imageCache?: ImageCacheService;
 }
 
 export interface RefreshTvShowResult {
@@ -81,7 +84,7 @@ export async function refreshTvShow(
   client: TheTvdbClient,
   input: RefreshTvShowInput
 ): Promise<RefreshTvShowResult> {
-  const { id, redownloadImages = false, refreshEpisodes = true } = input;
+  const { id, redownloadImages = false, refreshEpisodes = true, imageCache } = input;
 
   // 1. Get existing show to retrieve tvdbId
   const existingShow = tvShowsService.getTvShow(id);
@@ -188,11 +191,11 @@ export async function refreshTvShow(
     tvShowsService.updateTvShow(id, { numberOfEpisodes: totalEpisodes });
   }
 
-  // 6. Re-download images if requested (stubbed — image cache tb-065 in review)
-  if (redownloadImages) {
-    // TODO: When image cache service lands (tb-065), call:
-    // await imageCache.deleteTvShowImages(tvdbId);
-    // await imageCache.downloadTvShowImages(tvdbId, posterUrl, backdropUrl);
+  // 6. Re-download images if requested
+  if (redownloadImages && imageCache) {
+    const { posterUrl, backdropUrl } = selectBestArtwork(detail.artworks);
+    await imageCache.deleteTvShowImages(tvdbId);
+    await imageCache.downloadTvShowImages(tvdbId, posterUrl, backdropUrl);
   }
 
   // 7. Return updated show with seasons
