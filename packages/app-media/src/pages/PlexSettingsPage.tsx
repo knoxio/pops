@@ -28,9 +28,19 @@ import {
   AlertTriangle,
   Server,
   Save,
+  Clock,
+  Copy,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
+
+interface SyncResult {
+  synced: number;
+  skipped: number;
+  errors: { title: string; error: string }[];
+}
 
 function ConnectionBadge({ connected }: { connected: boolean }) {
   return connected ? (
@@ -46,15 +56,61 @@ function ConnectionBadge({ connected }: { connected: boolean }) {
   );
 }
 
+function SyncResultDisplay({ result, label }: { result: SyncResult; label: string }) {
+  const [showErrors, setShowErrors] = useState(false);
+
+  return (
+    <div className="rounded-md border bg-muted/30 p-3 space-y-2 text-sm">
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="font-medium">{label} Results:</span>
+        <span className="text-emerald-400">{result.synced} synced</span>
+        <span className="text-muted-foreground">{result.skipped} skipped</span>
+        {result.errors.length > 0 && (
+          <span className="text-red-400">{result.errors.length} errors</span>
+        )}
+      </div>
+      {result.errors.length > 0 && (
+        <div>
+          <button
+            onClick={() => setShowErrors(!showErrors)}
+            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors"
+          >
+            {showErrors ? (
+              <ChevronUp className="h-3 w-3" />
+            ) : (
+              <ChevronDown className="h-3 w-3" />
+            )}
+            {showErrors ? "Hide" : "Show"} error details
+          </button>
+          {showErrors && (
+            <div className="mt-2 space-y-1 text-xs text-red-400/80">
+              {result.errors.map((err, i) => (
+                <p key={i}>
+                  <span className="font-medium">{err.title}:</span> {err.error}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function PlexSettingsPage() {
   const [movieSectionId, setMovieSectionId] = useState<string>("");
   const [tvSectionId, setTvSectionId] = useState<string>("");
   const [pinId, setPinId] = useState<number | null>(null);
+  const [pinCode, setPinCode] = useState<string | null>(null);
   const [plexUrl, setPlexUrl] = useState<string>("");
+  const [movieSyncResult, setMovieSyncResult] = useState<SyncResult | null>(null);
+  const [tvSyncResult, setTvSyncResult] = useState<SyncResult | null>(null);
+  const [schedulerHours, setSchedulerHours] = useState<number>(6);
 
   const syncStatus = trpc.media.plex.getSyncStatus.useQuery();
   const currentUrl = trpc.media.plex.getPlexUrl.useQuery();
   const savedSectionIds = trpc.media.plex.getSectionIds.useQuery();
+  const schedulerStatus = trpc.media.plex.getSchedulerStatus.useQuery();
 
   useEffect(() => {
     if (currentUrl.data?.data) {
@@ -70,6 +126,13 @@ export function PlexSettingsPage() {
     }
   }, [savedSectionIds.data?.data]);
 
+  useEffect(() => {
+    if (schedulerStatus.data?.data) {
+      const ms = schedulerStatus.data.data.intervalMs;
+      setSchedulerHours(Math.max(1, Math.round(ms / (60 * 60 * 1000))));
+    }
+  }, [schedulerStatus.data?.data]);
+
   const connectionTest = trpc.media.plex.testConnection.useQuery(undefined, {
     enabled: syncStatus.data?.data.configured === true,
     retry: false,
@@ -79,15 +142,21 @@ export function PlexSettingsPage() {
   });
 
   const syncMovies = trpc.media.plex.syncMovies.useMutation({
-    onSuccess: () => {
-      toast.success("Movie sync complete");
+    onSuccess: (res: { data: SyncResult }) => {
+      setMovieSyncResult(res.data);
+      toast.success(
+        `Movie sync complete: ${res.data.synced} synced, ${res.data.skipped} skipped`
+      );
       syncStatus.refetch();
     },
     onError: (err: { message: string }) => toast.error(`Movie sync failed: ${err.message}`),
   });
   const syncTvShows = trpc.media.plex.syncTvShows.useMutation({
-    onSuccess: () => {
-      toast.success("TV show sync complete");
+    onSuccess: (res: { data: SyncResult }) => {
+      setTvSyncResult(res.data);
+      toast.success(
+        `TV sync complete: ${res.data.synced} synced, ${res.data.skipped} skipped`
+      );
       syncStatus.refetch();
     },
     onError: (err: { message: string }) => toast.error(`TV show sync failed: ${err.message}`),
@@ -111,12 +180,9 @@ export function PlexSettingsPage() {
 
   const getPin = trpc.media.plex.getAuthPin.useMutation({
     onSuccess: (res: { data: { id: number; code: string; clientId: string } }) => {
-      const { id, code, clientId } = res.data;
+      const { id, code } = res.data;
       setPinId(id);
-      window.open(
-        `https://app.plex.tv/auth#?clientID=${clientId}&code=${code}&context[device][product]=POPS`,
-        "_blank"
-      );
+      setPinCode(code);
     },
     onError: (err: { message: string }) => {
       toast.error(`Failed to start auth: ${err.message}`);
@@ -128,6 +194,7 @@ export function PlexSettingsPage() {
       if (res.data.connected) {
         toast.success("Plex account connected");
         setPinId(null);
+        setPinCode(null);
         syncStatus.refetch();
         connectionTest.refetch();
       }
@@ -144,6 +211,22 @@ export function PlexSettingsPage() {
       connectionTest.refetch();
     },
     onError: (err: { message: string }) => toast.error(`Failed to disconnect: ${err.message}`),
+  });
+
+  const startScheduler = trpc.media.plex.startScheduler.useMutation({
+    onSuccess: () => {
+      toast.success("Scheduler started");
+      schedulerStatus.refetch();
+    },
+    onError: (err: { message: string }) => toast.error(`Failed to start scheduler: ${err.message}`),
+  });
+
+  const stopScheduler = trpc.media.plex.stopScheduler.useMutation({
+    onSuccess: () => {
+      toast.success("Scheduler stopped");
+      schedulerStatus.refetch();
+    },
+    onError: (err: { message: string }) => toast.error(`Failed to stop scheduler: ${err.message}`),
   });
 
   useEffect(() => {
@@ -164,6 +247,9 @@ export function PlexSettingsPage() {
 
   const movieLibraries = libraryList.filter((lib: { type: string }) => lib.type === "movie");
   const tvLibraries = libraryList.filter((lib: { type: string }) => lib.type === "show");
+
+  const scheduler = schedulerStatus.data?.data;
+  const isSchedulerRunning = scheduler?.isRunning ?? false;
 
   const isLoading = syncStatus.isLoading || currentUrl.isLoading;
 
@@ -270,12 +356,42 @@ export function PlexSettingsPage() {
             </div>
 
             <div className="pt-2">
-              {pinId ? (
-                <div className="space-y-3">
-                  <p className="text-sm text-amber-400 animate-pulse">
-                    Waiting for authentication in new tab...
-                  </p>
-                  <Button variant="outline" onClick={() => setPinId(null)}>
+              {pinId && pinCode ? (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">
+                      Enter this code at{" "}
+                      <a
+                        href="https://plex.tv/link"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-400 hover:text-blue-300 underline"
+                      >
+                        plex.tv/link
+                      </a>
+                    </p>
+                    <div className="flex items-center justify-center gap-2">
+                      <code className="text-3xl font-mono font-bold tracking-widest bg-muted px-4 py-2 rounded-lg">
+                        {pinCode}
+                      </code>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          navigator.clipboard.writeText(pinCode);
+                          toast.success("Code copied");
+                        }}
+                        aria-label="Copy PIN code"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-center gap-2 text-sm text-amber-400">
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    <span>Checking for authentication...</span>
+                  </div>
+                  <Button variant="outline" onClick={() => { setPinId(null); setPinCode(null); }}>
                     Cancel
                   </Button>
                 </div>
@@ -345,7 +461,10 @@ export function PlexSettingsPage() {
                   <Button
                     size="sm"
                     disabled={!movieSectionId || syncMovies.isPending}
-                    onClick={() => syncMovies.mutate({ sectionId: movieSectionId })}
+                    onClick={() => {
+                      setMovieSyncResult(null);
+                      syncMovies.mutate({ sectionId: movieSectionId });
+                    }}
                     className="w-full"
                   >
                     {syncMovies.isPending ? (
@@ -355,6 +474,10 @@ export function PlexSettingsPage() {
                     )}
                     {syncMovies.isPending ? "Syncing..." : "Sync Movies"}
                   </Button>
+
+                  {movieSyncResult && (
+                    <SyncResultDisplay result={movieSyncResult} label="Movie" />
+                  )}
                 </>
               ) : (
                 <p className="text-xs text-muted-foreground">No movie libraries found</p>
@@ -391,7 +514,10 @@ export function PlexSettingsPage() {
                   <Button
                     size="sm"
                     disabled={!tvSectionId || syncTvShows.isPending}
-                    onClick={() => syncTvShows.mutate({ sectionId: tvSectionId })}
+                    onClick={() => {
+                      setTvSyncResult(null);
+                      syncTvShows.mutate({ sectionId: tvSectionId });
+                    }}
                     className="w-full"
                   >
                     {syncTvShows.isPending ? (
@@ -401,6 +527,10 @@ export function PlexSettingsPage() {
                     )}
                     {syncTvShows.isPending ? "Syncing..." : "Sync TV Shows"}
                   </Button>
+
+                  {tvSyncResult && (
+                    <SyncResultDisplay result={tvSyncResult} label="TV" />
+                  )}
                 </>
               ) : (
                 <p className="text-xs text-muted-foreground">No TV libraries found</p>
@@ -409,7 +539,93 @@ export function PlexSettingsPage() {
           </div>
         )}
 
-        {/* Sync results are shown via toast notifications on sync completion */}
+        {/* Scheduler */}
+        {connected && (
+          <div className="rounded-lg border bg-card p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold">Auto Sync Scheduler</h2>
+            </div>
+
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex items-center gap-2">
+                <label htmlFor="scheduler-hours" className="text-sm text-muted-foreground">
+                  Sync every
+                </label>
+                <Input
+                  id="scheduler-hours"
+                  type="number"
+                  min={1}
+                  max={168}
+                  value={schedulerHours}
+                  onChange={(e) => setSchedulerHours(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="w-20"
+                  disabled={isSchedulerRunning}
+                />
+                <span className="text-sm text-muted-foreground">hours</span>
+              </div>
+
+              {isSchedulerRunning ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => stopScheduler.mutate()}
+                  disabled={stopScheduler.isPending}
+                >
+                  {stopScheduler.isPending ? (
+                    <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  ) : null}
+                  Stop Scheduler
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    startScheduler.mutate({
+                      intervalMs: schedulerHours * 60 * 60 * 1000,
+                      movieSectionId: movieSectionId || undefined,
+                      tvSectionId: tvSectionId || undefined,
+                    })
+                  }
+                  disabled={startScheduler.isPending}
+                >
+                  {startScheduler.isPending ? (
+                    <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                  ) : null}
+                  Start Scheduler
+                </Button>
+              )}
+            </div>
+
+            {/* Scheduler status */}
+            <div className="text-sm text-muted-foreground space-y-1">
+              {isSchedulerRunning ? (
+                <>
+                  <p className="text-emerald-400">
+                    Scheduler active — syncing every {Math.round((scheduler?.intervalMs ?? 0) / (60 * 60 * 1000))} hours
+                  </p>
+                  {scheduler?.nextSyncAt && (
+                    <p>Next sync: {new Date(scheduler.nextSyncAt).toLocaleTimeString()}</p>
+                  )}
+                </>
+              ) : (
+                <p>Scheduler off</p>
+              )}
+              {scheduler?.lastSyncAt && (
+                <p>Last sync: {new Date(scheduler.lastSyncAt).toLocaleString()}</p>
+              )}
+              {scheduler?.lastSyncError && (
+                <p className="text-red-400">Last error: {scheduler.lastSyncError}</p>
+              )}
+              {(scheduler?.moviesSynced ?? 0) > 0 && (
+                <p>Total movies synced: {scheduler?.moviesSynced}</p>
+              )}
+              {(scheduler?.tvShowsSynced ?? 0) > 0 && (
+                <p>Total TV shows synced: {scheduler?.tvShowsSynced}</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
