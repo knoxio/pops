@@ -5,7 +5,7 @@ import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
-import { DataTable, SortableHeader, StatCard } from "@pops/ui";
+import { DataTable, SortableHeader, StatCard, DateInput } from "@pops/ui";
 import { Badge, Button } from "@pops/ui";
 import { Alert } from "@pops/ui";
 import { Skeleton } from "@pops/ui";
@@ -22,6 +22,7 @@ import {
   AlertDialogTrigger,
 } from "@pops/ui";
 import { Database, Trash2 } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -34,8 +35,7 @@ function CacheManagement() {
   const utils = trpc.useUtils();
   const [staleDays, setStaleDays] = useState(30);
 
-  const { data: cacheStats, isLoading: cacheLoading } =
-    trpc.core.aiUsage.cacheStats.useQuery();
+  const { data: cacheStats, isLoading: cacheLoading } = trpc.core.aiUsage.cacheStats.useQuery();
 
   const clearStaleMutation = trpc.core.aiUsage.clearStaleCache.useMutation({
     onSuccess: (data) => {
@@ -116,8 +116,8 @@ function CacheManagement() {
                 <AlertDialogTitle>Clear entire AI cache?</AlertDialogTitle>
                 <AlertDialogDescription>
                   This will remove all {cacheStats?.totalEntries.toLocaleString() ?? 0} cached
-                  categorization results. Future transactions will require new API calls,
-                  which will incur additional costs.
+                  categorization results. Future transactions will require new API calls, which will
+                  incur additional costs.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -134,6 +134,59 @@ function CacheManagement() {
   );
 }
 
+function DailyCostChart({ data }: { data: AiUsageRecord[] }) {
+  // Sort ascending for chart display (oldest first)
+  const chartData = [...data]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((d) => ({
+      date: new Date(d.date).toLocaleDateString("en-AU", { day: "2-digit", month: "short" }),
+      cost: d.cost,
+      apiCalls: d.apiCalls,
+    }));
+
+  if (chartData.length === 0) return null;
+
+  return (
+    <Card className="p-4">
+      <h3 className="font-semibold mb-4">Daily Cost</h3>
+      <ResponsiveContainer width="100%" height={250}>
+        <BarChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+          <XAxis
+            dataKey="date"
+            tick={{ fontSize: 12 }}
+            className="fill-muted-foreground"
+            tickLine={false}
+            axisLine={false}
+          />
+          <YAxis
+            tick={{ fontSize: 12 }}
+            className="fill-muted-foreground"
+            tickFormatter={(v: number) => `$${v.toFixed(3)}`}
+            tickLine={false}
+            axisLine={false}
+            width={60}
+          />
+          <Tooltip
+            content={({ active, payload }) => {
+              if (!active || !payload?.length) return null;
+              const item = payload[0]?.payload as { date: string; cost: number; apiCalls: number };
+              return (
+                <div className="rounded-lg border bg-background p-2 shadow-md text-sm">
+                  <p className="font-medium">{item.date}</p>
+                  <p className="text-amber-600">Cost: ${item.cost.toFixed(4)}</p>
+                  <p className="text-muted-foreground">{item.apiCalls} API calls</p>
+                </div>
+              );
+            }}
+          />
+          <Bar dataKey="cost" fill="hsl(38, 92%, 50%)" radius={[4, 4, 0, 0]} />
+        </BarChart>
+      </ResponsiveContainer>
+    </Card>
+  );
+}
+
 interface AiUsageRecord {
   date: string;
   apiCalls: number;
@@ -144,6 +197,9 @@ interface AiUsageRecord {
 }
 
 export function AiUsagePage() {
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
   // Fetch overall stats
   const {
     data: stats,
@@ -151,12 +207,15 @@ export function AiUsagePage() {
     error: statsError,
   } = trpc.core.aiUsage.getStats.useQuery();
 
-  // Fetch usage history
+  // Fetch usage history with date range filter
   const {
     data: history,
     isLoading: historyLoading,
     error: historyError,
-  } = trpc.core.aiUsage.getHistory.useQuery({});
+  } = trpc.core.aiUsage.getHistory.useQuery({
+    ...(startDate ? { startDate } : {}),
+    ...(endDate ? { endDate } : {}),
+  });
 
   // Loading state
   if (statsLoading || historyLoading) {
@@ -342,6 +401,39 @@ export function AiUsagePage() {
 
       {/* Cache Management */}
       <CacheManagement />
+
+      {/* Date Range Filter */}
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-sm font-medium">Date Range:</span>
+        <DateInput
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          size="sm"
+          aria-label="Start date"
+        />
+        <span className="text-sm text-muted-foreground">to</span>
+        <DateInput
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          size="sm"
+          aria-label="End date"
+        />
+        {(startDate || endDate) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setStartDate("");
+              setEndDate("");
+            }}
+          >
+            Clear
+          </Button>
+        )}
+      </div>
+
+      {/* Daily Cost Chart */}
+      {history && history.records.length > 0 && <DailyCostChart data={history.records} />}
 
       {/* Usage History Table */}
       {history && history.records.length > 0 ? (
