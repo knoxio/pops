@@ -5,15 +5,7 @@
 import { Link } from "react-router";
 import { Skeleton } from "@pops/ui";
 import { Swords, BarChart3, Heart, Weight } from "lucide-react";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 
 interface GenreDistribution {
   genre: string;
@@ -61,7 +53,10 @@ const CHART_COLORS = [
 
 function CompareCTA() {
   return (
-    <div className="rounded-lg border border-dashed border-border p-6 text-center" data-testid="compare-cta">
+    <div
+      className="rounded-lg border border-dashed border-border p-6 text-center"
+      data-testid="compare-cta"
+    >
       <Swords className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
       <p className="text-sm text-muted-foreground">Compare movies to see your preferences</p>
       <Link
@@ -134,7 +129,7 @@ export function PreferenceProfile({ data, isLoading }: PreferenceProfileProps) {
         </h3>
         {hasComparisons ? (
           <div className="space-y-2" data-testid="genre-affinity-list">
-            {data.genreAffinities
+            {[...data.genreAffinities]
               .sort((a, b) => b.avgScore - a.avgScore)
               .slice(0, 10)
               .map((item, i) => {
