@@ -267,6 +267,7 @@ export function SearchPage() {
                   <SearchResultCard
                     key={movie.tmdbId}
                     type="movie"
+                    tmdbId={movie.tmdbId}
                     title={movie.title}
                     year={movie.releaseDate?.slice(0, 4) ?? null}
                     overview={movie.overview}
