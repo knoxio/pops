@@ -63,12 +63,19 @@ export function findMatchingCorrection(
 export function listCorrections(
   minConfidence?: number,
   limit: number = 50,
-  offset: number = 0
+  offset: number = 0,
+  matchType?: "exact" | "contains" | "regex"
 ): { rows: CorrectionRow[]; total: number } {
   const db = getDrizzle();
 
-  const condition =
-    minConfidence !== undefined ? gte(transactionCorrections.confidence, minConfidence) : undefined;
+  const conditions = [];
+  if (minConfidence !== undefined) {
+    conditions.push(gte(transactionCorrections.confidence, minConfidence));
+  }
+  if (matchType) {
+    conditions.push(eq(transactionCorrections.matchType, matchType));
+  }
+  const condition = conditions.length > 0 ? and(...conditions) : undefined;
 
   const [countResult] = db
     .select({ count: count() })

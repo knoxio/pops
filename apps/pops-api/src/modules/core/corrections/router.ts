@@ -24,6 +24,7 @@ export const correctionsRouter = router({
     .input(
       z.object({
         minConfidence: z.number().min(0).max(1).optional(),
+        matchType: z.enum(["exact", "contains", "regex"]).optional(),
         limit: z.coerce.number().positive().optional(),
         offset: z.coerce.number().nonnegative().optional(),
       })
@@ -32,7 +33,12 @@ export const correctionsRouter = router({
       const limit = input.limit ?? DEFAULT_LIMIT;
       const offset = input.offset ?? DEFAULT_OFFSET;
 
-      const { rows, total } = service.listCorrections(input.minConfidence, limit, offset);
+      const { rows, total } = service.listCorrections(
+        input.minConfidence,
+        limit,
+        offset,
+        input.matchType
+      );
 
       return {
         data: rows.map(toCorrection),
