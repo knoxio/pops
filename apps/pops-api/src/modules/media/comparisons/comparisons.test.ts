@@ -165,6 +165,22 @@ describe("comparisons.record", () => {
       })
     ).rejects.toThrow(TRPCError);
   });
+
+  it("throws when dimension is inactive", async () => {
+    const dimId = seedDimension(db, { name: "Retired", active: 0 });
+
+    await expect(
+      caller.media.comparisons.record({
+        dimensionId: dimId,
+        mediaAType: "movie",
+        mediaAId: 1,
+        mediaBType: "movie",
+        mediaBId: 2,
+        winnerType: "movie",
+        winnerId: 1,
+      })
+    ).rejects.toThrow(TRPCError);
+  });
 });
 
 describe("comparisons.listForMedia", () => {
@@ -516,7 +532,8 @@ describe("comparisons.rankings", () => {
 
   it("excludes inactive dimensions from overall rankings", async () => {
     const activeDim = seedDimension(db, { name: "Story", active: 1 });
-    const inactiveDim = seedDimension(db, { name: "Inactive", active: 0 });
+    // Create as active so we can record comparisons, then deactivate
+    const inactiveDim = seedDimension(db, { name: "Inactive", active: 1 });
 
     await caller.media.comparisons.record({
       dimensionId: activeDim,
@@ -535,6 +552,12 @@ describe("comparisons.rankings", () => {
       mediaBId: 2,
       winnerType: "movie",
       winnerId: 2,
+    });
+
+    // Now deactivate the dimension
+    await caller.media.comparisons.updateDimension({
+      id: inactiveDim,
+      data: { active: false },
     });
 
     // Overall should only use active dimension

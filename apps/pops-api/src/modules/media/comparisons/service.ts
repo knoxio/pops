@@ -96,8 +96,11 @@ function expectedScore(ratingA: number, ratingB: number): number {
 export function recordComparison(input: RecordComparisonInput): ComparisonRow {
   const drizzleDb = getDrizzle();
 
-  // Verify dimension exists
-  getDimension(input.dimensionId);
+  // Verify dimension exists and is active
+  const dimension = getDimension(input.dimensionId);
+  if (dimension.active !== 1) {
+    throw new ValidationError("Cannot record comparison for inactive dimension");
+  }
 
   // Validate winner matches one of the two media items
   const winnerIsA = input.winnerType === input.mediaAType && input.winnerId === input.mediaAId;
@@ -424,9 +427,12 @@ export interface RankingsResult {
 /**
  * Get ranked list of media items by Elo score.
  *
- * - With dimensionId: returns scores for that specific dimension, ordered by score DESC.
- * - Without dimensionId (Overall): computes average score across all active dimensions
- *   for each media item, ordered by average score DESC.
+ * - With dimensionId: returns scores for that specific dimension.
+ * - Without dimensionId (Overall): computes average score across all active
+ *   dimensions for each media item.
+ *
+ * Ordering: scored items first (by score DESC, title ASC for tie-breaking),
+ * then unscored items (zero comparisons) sorted alphabetically by title.
  *
  * Supports optional mediaType filter and pagination.
  */
@@ -436,28 +442,44 @@ export function getRankings(
   limit: number,
   offset: number
 ): RankingsResult {
-  const db = getDrizzle();
+  const rawDb = getDb();
 
   if (dimensionId) {
-    // Per-dimension ranking — query media_scores directly
-    const conditions: ReturnType<typeof eq>[] = [eq(mediaScores.dimensionId, dimensionId)];
-    if (mediaType) {
-      conditions.push(eq(mediaScores.mediaType, mediaType));
-    }
+    // Per-dimension ranking — JOIN movies/tv_shows for title tie-breaking
+    const mediaTypeClause = mediaType ? "AND ms.media_type = ?" : "";
+    const params: unknown[] = [dimensionId];
+    if (mediaType) params.push(mediaType);
 
-    const where = and(...conditions);
+    const countResult = rawDb
+      .prepare(
+        `SELECT COUNT(*) as total FROM media_scores ms
+         WHERE ms.dimension_id = ? ${mediaTypeClause}`
+      )
+      .get(...params) as { total: number };
 
-    const rows = db
-      .select()
-      .from(mediaScores)
-      .where(where)
-      .orderBy(desc(mediaScores.score))
-      .limit(limit)
-      .offset(offset)
-      .all();
-
-    const scoreCountRow = db.select({ total: count() }).from(mediaScores).where(where).all()[0];
-    const total = scoreCountRow?.total ?? 0;
+    const rows = rawDb
+      .prepare(
+        `SELECT
+          ms.media_type as mediaType,
+          ms.media_id as mediaId,
+          ms.score as score,
+          ms.comparison_count as comparisonCount
+        FROM media_scores ms
+        LEFT JOIN movies m ON ms.media_type = 'movie' AND ms.media_id = m.id
+        LEFT JOIN tv_shows tv ON ms.media_type = 'tv_show' AND ms.media_id = tv.id
+        WHERE ms.dimension_id = ? ${mediaTypeClause}
+        ORDER BY
+          CASE WHEN ms.comparison_count = 0 THEN 1 ELSE 0 END,
+          ms.score DESC,
+          COALESCE(m.title, tv.name) ASC
+        LIMIT ? OFFSET ?`
+      )
+      .all(...params, limit, offset) as Array<{
+      mediaType: string;
+      mediaId: number;
+      score: number;
+      comparisonCount: number;
+    }>;
 
     return {
       rows: rows.map((row, i) => ({
@@ -467,12 +489,13 @@ export function getRankings(
         score: Math.round(row.score * 10) / 10,
         comparisonCount: row.comparisonCount,
       })),
-      total,
+      total: countResult.total,
     };
   }
 
   // Overall ranking — average score across all active dimensions
-  const activeDimensionIds = db
+  const drizzleDb = getDrizzle();
+  const activeDimensionIds = drizzleDb
     .select({ id: comparisonDimensions.id })
     .from(comparisonDimensions)
     .where(eq(comparisonDimensions.active, 1))
@@ -483,13 +506,11 @@ export function getRankings(
     return { rows: [], total: 0 };
   }
 
-  // Use raw SQL for the grouped aggregate query with parameterized values
-  const rawDb = getDb();
   const dimensionPlaceholders = activeDimensionIds.map(() => "?").join(",");
-  const baseParams = [...activeDimensionIds];
+  const baseParams: unknown[] = [...activeDimensionIds];
 
   const mediaTypeClause = mediaType ? "AND ms.media_type = ?" : "";
-  const filterParams = mediaType ? [...baseParams, mediaType] : [...baseParams];
+  const filterParams: unknown[] = mediaType ? [...baseParams, mediaType] : [...baseParams];
 
   const countResult = rawDb
     .prepare(
@@ -510,9 +531,14 @@ export function getRankings(
         AVG(ms.score) as score,
         SUM(ms.comparison_count) as comparisonCount
       FROM media_scores ms
+      LEFT JOIN movies m ON ms.media_type = 'movie' AND ms.media_id = m.id
+      LEFT JOIN tv_shows tv ON ms.media_type = 'tv_show' AND ms.media_id = tv.id
       WHERE ms.dimension_id IN (${dimensionPlaceholders}) ${mediaTypeClause}
       GROUP BY ms.media_type, ms.media_id
-      ORDER BY score DESC
+      ORDER BY
+        CASE WHEN SUM(ms.comparison_count) = 0 THEN 1 ELSE 0 END,
+        AVG(ms.score) DESC,
+        COALESCE(m.title, tv.name) ASC
       LIMIT ? OFFSET ?`
     )
     .all(...filterParams, limit, offset) as Array<{
