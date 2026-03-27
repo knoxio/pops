@@ -3,7 +3,7 @@
  */
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { settings } from "@pops/db-types";
 import { router, protectedProcedure } from "../../../trpc.js";
 import { PlexApiError } from "./types.js";
@@ -26,7 +26,6 @@ function requirePlexClient(): PlexClient {
 }
 
 export const plexRouter = router({
-  /** Test connection to Plex Media Server. */
   testConnection: protectedProcedure.query(async () => {
     const client = requirePlexClient();
     try {
@@ -40,7 +39,6 @@ export const plexRouter = router({
     }
   }),
 
-  /** List Plex library sections. */
   getLibraries: protectedProcedure.query(async () => {
     const client = requirePlexClient();
     try {
@@ -57,7 +55,6 @@ export const plexRouter = router({
     }
   }),
 
-  /** Sync movies from a Plex library section. */
   syncMovies: protectedProcedure
     .input(z.object({ sectionId: z.string().min(1) }))
     .mutation(async ({ input }) => {
@@ -79,7 +76,6 @@ export const plexRouter = router({
       }
     }),
 
-  /** Sync TV shows from a Plex library section. */
   syncTvShows: protectedProcedure
     .input(z.object({ sectionId: z.string().min(1) }))
     .mutation(async ({ input }) => {
@@ -101,13 +97,11 @@ export const plexRouter = router({
       }
     }),
 
-  /** Get current sync status. */
   getSyncStatus: protectedProcedure.query(() => {
     const client = plexService.getPlexClient();
     return { data: plexService.getSyncStatus(client) };
   }),
 
-  /** Set Plex Server URL and validate connection */
   setUrl: protectedProcedure
     .input(z.object({ url: z.string().min(1) }))
     .mutation(async ({ input }) => {
@@ -116,7 +110,6 @@ export const plexRouter = router({
         finalUrl = `http://${finalUrl}`;
       }
 
-      // 1. Basic URL format validation
       try {
         new URL(finalUrl);
       } catch {
@@ -131,15 +124,12 @@ export const plexRouter = router({
       const tokenRecord = db.select().from(settings).where(eq(settings.key, "plex_token")).get();
       const token = tokenRecord?.value;
 
-      // 2. Connectivity test
       try {
         if (token) {
-          // Full validation with token
           console.log(`[Plex] Validating full connection to ${finalUrl}...`);
           const testClient = new PlexClient(finalUrl, token);
           await testClient.getLibraries();
         } else {
-          // Basic reachability test (no token yet)
           console.log(`[Plex] Validating reachability for ${finalUrl}...`);
           const controller = new AbortController();
           const id = setTimeout(() => controller.abort(), 5000);
@@ -164,7 +154,6 @@ export const plexRouter = router({
         });
       }
 
-      // 3. Save if validated
       console.log(`[Plex] Updating server URL to: ${finalUrl}`);
       db.insert(settings)
         .values({ key: "plex_url", value: finalUrl })
@@ -174,12 +163,10 @@ export const plexRouter = router({
       return { message: "Plex URL updated and validated" };
     }),
 
-  /** Get current Plex URL (from settings or env) */
   getPlexUrl: protectedProcedure.query(() => {
     return { data: plexService.getPlexUrl() };
   }),
 
-  /** Start the periodic sync scheduler. */
   startScheduler: protectedProcedure
     .input(
       z
@@ -195,23 +182,19 @@ export const plexRouter = router({
       return { data: status };
     }),
 
-  /** Stop the periodic sync scheduler. */
   stopScheduler: protectedProcedure.mutation(() => {
     const status = scheduler.stopScheduler();
     return { data: status };
   }),
 
-  /** Get scheduler status. */
   getSchedulerStatus: protectedProcedure.query(() => {
     return { data: scheduler.getSchedulerStatus() };
   }),
 
-  /** Get saved Plex library section IDs. */
   getSectionIds: protectedProcedure.query(() => {
     return { data: plexService.getPlexSectionIds() };
   }),
 
-  /** Save Plex library section IDs. */
   saveSectionIds: protectedProcedure
     .input(
       z.object({
@@ -224,7 +207,6 @@ export const plexRouter = router({
       return { message: "Section IDs saved" };
     }),
 
-  /** Get Plex Auth PIN */
   getAuthPin: protectedProcedure.mutation(async () => {
     const clientId = plexService.getPlexClientId();
     const res = await fetch("https://plex.tv/api/v2/pins?strong=true", {
@@ -236,13 +218,16 @@ export const plexRouter = router({
       },
     });
     if (!res.ok) {
-      throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to get Plex PIN" });
+      const status = res.status;
+      throw new TRPCError({
+        code: status === 429 ? "TOO_MANY_REQUESTS" : "INTERNAL_SERVER_ERROR",
+        message: `Failed to get Plex PIN (HTTP ${status})`,
+      });
     }
     const data = (await res.json()) as { id: number; code: string };
     return { data: { id: data.id, code: data.code, clientId } };
   }),
 
-  /** Check Plex Auth PIN status */
   checkAuthPin: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
@@ -253,10 +238,34 @@ export const plexRouter = router({
           "X-Plex-Client-Identifier": clientId,
         },
       });
+
       if (!res.ok) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to check Plex PIN" });
+        const status = res.status;
+        if (status === 404) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Invalid or expired PIN ID",
+          });
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Failed to check Plex PIN (HTTP ${status})`,
+        });
       }
-      const data = (await res.json()) as { authToken?: string | null };
+
+      const data = (await res.json()) as {
+        authToken?: string | null;
+        expiresAt?: string | null;
+        username?: string | null;
+      };
+
+      if (data.expiresAt) {
+        const expiresAt = new Date(data.expiresAt);
+        if (expiresAt.getTime() < Date.now()) {
+          return { data: { connected: false, expired: true } };
+        }
+      }
+
       console.log(
         `[Plex] PIN check response for ${input.id}:`,
         data.authToken ? "Token received" : "No token yet"
@@ -264,20 +273,34 @@ export const plexRouter = router({
 
       if (data.authToken) {
         const db = getDrizzle();
-        console.log(`[Plex] Saving token to database...`);
+        console.log(`[Plex] Encrypting and saving token to database...`);
+        const encryptedToken = plexService.encryptToken(data.authToken);
         db.insert(settings)
-          .values({ key: "plex_token", value: data.authToken })
-          .onConflictDoUpdate({ target: settings.key, set: { value: data.authToken } })
+          .values({ key: "plex_token", value: encryptedToken })
+          .onConflictDoUpdate({ target: settings.key, set: { value: encryptedToken } })
           .run();
-        return { data: { connected: true } };
+
+        if (data.username) {
+          db.insert(settings)
+            .values({ key: "plex_username", value: data.username })
+            .onConflictDoUpdate({ target: settings.key, set: { value: data.username } })
+            .run();
+        }
+
+        return { data: { connected: true, username: data.username ?? null } };
       }
-      return { data: { connected: false } };
+      return { data: { connected: false, expired: false } };
     }),
 
-  /** Disconnect Plex */
+  getPlexUsername: protectedProcedure.query(() => {
+    return { data: plexService.getPlexUsername() };
+  }),
+
   disconnect: protectedProcedure.mutation(() => {
     const db = getDrizzle();
-    db.delete(settings).where(eq(settings.key, "plex_token")).run();
+    db.delete(settings)
+      .where(inArray(settings.key, ["plex_token", "plex_username"]))
+      .run();
     return { message: "Disconnected from Plex" };
   }),
 });

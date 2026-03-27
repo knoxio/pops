@@ -1,16 +1,10 @@
 /**
  * Plex sync service — orchestrates importing movies and TV shows
  * from a Plex Media Server into the local library, and syncs watch history.
- *
- * Flow:
- *   1. Connect to Plex → list libraries
- *   2. For each movie library: iterate items, extract TMDB ID, upsert via library service
- *   3. For each TV library: iterate items, extract TVDB ID, upsert via library service
- *   4. Sync watch history from Plex viewCount/lastViewedAt
  */
 import { eq } from "drizzle-orm";
 import { settings } from "@pops/db-types";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createCipheriv, createDecipheriv, scryptSync, randomBytes } from "node:crypto";
 import { PlexClient } from "./client.js";
 import { getEnv } from "../../../env.js";
 import { getDrizzle } from "../../../db.js";
@@ -27,12 +21,60 @@ export interface PlexSyncStatus {
 }
 
 // ---------------------------------------------------------------------------
+// Token encryption
+// ---------------------------------------------------------------------------
+
+const ALGORITHM = "aes-256-gcm";
+const IV_LENGTH = 12;
+const TAG_LENGTH = 16;
+
+function getEncryptionKey(): Buffer {
+  const envKey = getEnv("ENCRYPTION_KEY");
+  if (envKey) {
+    return scryptSync(envKey, "pops-plex-token", 32);
+  }
+  const db = getDrizzle();
+  const record = db.select().from(settings).where(eq(settings.key, "plex_encryption_seed")).get();
+  if (record) {
+    return scryptSync(record.value, "pops-plex-token", 32);
+  }
+  const seed = randomBytes(32).toString("hex");
+  db.insert(settings)
+    .values({ key: "plex_encryption_seed", value: seed })
+    .onConflictDoNothing()
+    .run();
+  const finalRecord = db
+    .select()
+    .from(settings)
+    .where(eq(settings.key, "plex_encryption_seed"))
+    .get();
+  return scryptSync(finalRecord?.value ?? seed, "pops-plex-token", 32);
+}
+
+export function encryptToken(plaintext: string): string {
+  const key = getEncryptionKey();
+  const iv = randomBytes(IV_LENGTH);
+  const cipher = createCipheriv(ALGORITHM, key, iv);
+  const encrypted = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
+  const tag = cipher.getAuthTag();
+  return Buffer.concat([iv, tag, encrypted]).toString("base64");
+}
+
+export function decryptToken(ciphertext: string): string {
+  const key = getEncryptionKey();
+  const buf = Buffer.from(ciphertext, "base64");
+  const iv = buf.subarray(0, IV_LENGTH);
+  const tag = buf.subarray(IV_LENGTH, IV_LENGTH + TAG_LENGTH);
+  const encrypted = buf.subarray(IV_LENGTH + TAG_LENGTH);
+  const decipher = createDecipheriv(ALGORITHM, key, iv);
+  decipher.setAuthTag(tag);
+  return decipher.update(encrypted) + decipher.final("utf8");
+}
+
+// ---------------------------------------------------------------------------
 // Client factory
 // ---------------------------------------------------------------------------
 
-/**
- * Get or generate a persistent Plex Client Identifier for this app instance.
- */
 export function getPlexClientId(): string {
   const db = getDrizzle();
   const record = db.select().from(settings).where(eq(settings.key, "plex_client_identifier")).get();
@@ -43,7 +85,6 @@ export function getPlexClientId(): string {
       .values({ key: "plex_client_identifier", value: newId })
       .onConflictDoNothing()
       .run();
-    // Fetch again just in case another request won the race
     const finalRecord = db
       .select()
       .from(settings)
@@ -54,9 +95,6 @@ export function getPlexClientId(): string {
   return record.value;
 }
 
-/**
- * Get the configured Plex URL from settings or environment.
- */
 export function getPlexUrl(): string | null {
   const db = getDrizzle();
   const record = db.select().from(settings).where(eq(settings.key, "plex_url")).get();
@@ -64,10 +102,6 @@ export function getPlexUrl(): string | null {
   return getEnv("PLEX_URL") || null;
 }
 
-/**
- * Create a PlexClient using the configured URL and the token from the database.
- * Returns null if the URL or the plex_token setting are not configured.
- */
 export function getPlexClient(): PlexClient | null {
   const url = getPlexUrl();
   if (!url) {
@@ -77,14 +111,26 @@ export function getPlexClient(): PlexClient | null {
 
   const db = getDrizzle();
   const tokenRecord = db.select().from(settings).where(eq(settings.key, "plex_token")).get();
-  const token = tokenRecord?.value;
+  const encryptedToken = tokenRecord?.value;
 
-  if (!token) {
+  if (!encryptedToken) {
     console.log("[Plex] No plex_token found in settings table");
     return null;
   }
 
-  return new PlexClient(url, token);
+  try {
+    const token = decryptToken(encryptedToken);
+    return new PlexClient(url, token);
+  } catch {
+    console.log("[Plex] Failed to decrypt token — trying raw value (legacy).");
+    return new PlexClient(url, encryptedToken);
+  }
+}
+
+export function getPlexUsername(): string | null {
+  const db = getDrizzle();
+  const record = db.select().from(settings).where(eq(settings.key, "plex_username")).get();
+  return record?.value ?? null;
 }
 
 // ---------------------------------------------------------------------------
@@ -96,7 +142,6 @@ export interface PlexSectionIds {
   tvSectionId: string | null;
 }
 
-/** Read saved Plex library section IDs from the settings table. */
 export function getPlexSectionIds(): PlexSectionIds {
   const db = getDrizzle();
   const movieRecord = db
@@ -111,7 +156,6 @@ export function getPlexSectionIds(): PlexSectionIds {
   };
 }
 
-/** Persist Plex library section IDs to the settings table. */
 export function savePlexSectionIds(movieSectionId?: string, tvSectionId?: string): void {
   const db = getDrizzle();
   if (movieSectionId) {
@@ -132,7 +176,6 @@ export function savePlexSectionIds(movieSectionId?: string, tvSectionId?: string
 // Operations
 // ---------------------------------------------------------------------------
 
-/** Test connection to Plex server by fetching libraries. */
 export async function testConnection(client: PlexClient): Promise<boolean> {
   try {
     await client.getLibraries();
@@ -142,7 +185,6 @@ export async function testConnection(client: PlexClient): Promise<boolean> {
   }
 }
 
-/** Get current sync status. */
 export function getSyncStatus(client: PlexClient | null): PlexSyncStatus {
   const db = getDrizzle();
   const token = db.select().from(settings).where(eq(settings.key, "plex_token")).get();
@@ -152,6 +194,6 @@ export function getSyncStatus(client: PlexClient | null): PlexSyncStatus {
     configured: client !== null,
     hasUrl: !!url,
     hasToken: !!token,
-    connected: false, // Caller should test connection separately
+    connected: false,
   };
 }
