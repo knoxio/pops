@@ -1,13 +1,16 @@
 /**
  * AI Usage page - view AI categorization costs and usage
  */
+import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { trpc } from "../lib/trpc";
 import { DataTable, SortableHeader, StatCard } from "@pops/ui";
-import { Badge } from "@pops/ui";
+import { Badge, Button } from "@pops/ui";
 import { Alert } from "@pops/ui";
 import { Skeleton } from "@pops/ui";
 import { Card } from "@pops/ui";
+import { X } from "lucide-react";
 
 interface AiUsageRecord {
   date: string;
@@ -19,6 +22,9 @@ interface AiUsageRecord {
 }
 
 export function AiUsagePage() {
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+
   // Fetch overall stats
   const {
     data: stats,
@@ -26,12 +32,15 @@ export function AiUsagePage() {
     error: statsError,
   } = trpc.core.aiUsage.getStats.useQuery();
 
-  // Fetch usage history
+  // Fetch usage history with date range filter
   const {
     data: history,
     isLoading: historyLoading,
     error: historyError,
-  } = trpc.core.aiUsage.getHistory.useQuery({});
+  } = trpc.core.aiUsage.getHistory.useQuery({
+    startDate: startDate || undefined,
+    endDate: endDate || undefined,
+  });
 
   // Loading state
   if (statsLoading || historyLoading) {
@@ -215,15 +224,108 @@ export function AiUsagePage() {
         />
       </div>
 
-      {/* Usage History Table */}
+      {/* Daily Cost Chart + History Table */}
       {history && history.records.length > 0 ? (
         <div className="space-y-4">
-          <div>
-            <h2 className="text-xl font-semibold">Daily Usage History</h2>
-            <p className="text-sm text-muted-foreground">
-              Showing {history.records.length} days • Total: ${history.summary.totalCost.toFixed(4)}
-            </p>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-xl font-semibold">Daily Usage History</h2>
+              <p className="text-sm text-muted-foreground">
+                Showing {history.records.length} days • Total: $
+                {history.summary.totalCost.toFixed(4)}
+              </p>
+            </div>
+
+            {/* Date range filter */}
+            <div className="flex items-end gap-2">
+              <div className="flex flex-col gap-1">
+                <label htmlFor="start-date" className="text-xs text-muted-foreground">
+                  From
+                </label>
+                <input
+                  id="start-date"
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="rounded-md border border-input bg-background px-3 py-1.5 text-sm"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label htmlFor="end-date" className="text-xs text-muted-foreground">
+                  To
+                </label>
+                <input
+                  id="end-date"
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="rounded-md border border-input bg-background px-3 py-1.5 text-sm"
+                />
+              </div>
+              {(startDate || endDate) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setStartDate("");
+                    setEndDate("");
+                  }}
+                  aria-label="Clear date filter"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
+
+          {/* Cost chart */}
+          <Card className="p-4">
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart
+                data={[...history.records].sort(
+                  (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+                )}
+                margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis
+                  dataKey="date"
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(val: string) =>
+                    new Date(val).toLocaleDateString("en-AU", { day: "2-digit", month: "short" })
+                  }
+                />
+                <YAxis
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(val: number) => `$${val.toFixed(3)}`}
+                />
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (!active || !payload?.length) return null;
+                    const d = payload[0]!.payload as AiUsageRecord;
+                    return (
+                      <div className="rounded-md border bg-popover p-3 text-sm shadow-md">
+                        <p className="font-medium">
+                          {new Date(d.date).toLocaleDateString("en-AU", {
+                            day: "2-digit",
+                            month: "short",
+                            year: "numeric",
+                          })}
+                        </p>
+                        <p className="mt-1 font-mono">${d.cost.toFixed(4)}</p>
+                        <p className="text-muted-foreground">
+                          {d.apiCalls.toLocaleString()} calls • {d.cacheHits.toLocaleString()}{" "}
+                          cached
+                        </p>
+                      </div>
+                    );
+                  }}
+                />
+                <Bar dataKey="cost" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </Card>
+
           <DataTable columns={columns} data={history.records} />
         </div>
       ) : (
