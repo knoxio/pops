@@ -1,16 +1,50 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
 
+// Mock sonner toast
+const mockToastSuccess = vi.fn();
+const mockToastError = vi.fn();
+vi.mock("sonner", () => ({
+  toast: {
+    success: (...args: unknown[]) => mockToastSuccess(...args),
+    error: (...args: unknown[]) => mockToastError(...args),
+  },
+}));
+
 const mockListRecentQuery = vi.fn();
+const mockDeleteMutate = vi.fn();
+let deleteMutationOpts: Record<string, (...args: unknown[]) => unknown> = {};
+let deleteMutationPending = false;
+const mockInvalidateListRecent = vi.fn();
+const mockInvalidateList = vi.fn();
+const mockInvalidateWatchlist = vi.fn();
 
 vi.mock("../lib/trpc", () => ({
   trpc: {
     media: {
       watchHistory: {
         listRecent: { useQuery: (...args: unknown[]) => mockListRecentQuery(...args) },
+        delete: {
+          useMutation: (opts: Record<string, (...args: unknown[]) => unknown>) => {
+            deleteMutationOpts = opts;
+            return { mutate: mockDeleteMutate, isPending: deleteMutationPending };
+          },
+        },
       },
     },
+    useUtils: () => ({
+      media: {
+        watchHistory: {
+          listRecent: { invalidate: mockInvalidateListRecent },
+          list: { invalidate: mockInvalidateList },
+        },
+        watchlist: {
+          list: { invalidate: mockInvalidateWatchlist },
+        },
+      },
+    }),
   },
 }));
 
@@ -69,98 +103,257 @@ const episodeNoShow = {
 describe("HistoryPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-  });
-
-  it("renders episode subtitle in S02E10 format with em-dash", () => {
+    deleteMutationPending = false;
+    deleteMutationOpts = {};
     mockListRecentQuery.mockReturnValue({
-      data: { data: [episodeEntry], pagination: { total: 1 } },
+      data: { data: [episodeEntry, movieEntry], pagination: { total: 2 } },
       isLoading: false,
       error: null,
     });
-
-    renderPage();
-
-    expect(screen.getAllByText("Breaking Bad").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("S02E10").length).toBeGreaterThan(0);
   });
 
-  it("renders show name as link to show detail page", () => {
-    mockListRecentQuery.mockReturnValue({
-      data: { data: [episodeEntry], pagination: { total: 1 } },
-      isLoading: false,
-      error: null,
+  describe("episode enrichment", () => {
+    it("renders episode subtitle in S02E10 format with em-dash", () => {
+      renderPage();
+      expect(screen.getAllByText("Breaking Bad").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("S02E10").length).toBeGreaterThan(0);
     });
 
-    renderPage();
+    it("renders show name as link to show detail page", () => {
+      renderPage();
+      const showLinks = screen.getAllByText("Breaking Bad");
+      const showLink = showLinks.find(
+        (el) => el.closest("a")?.getAttribute("href") === "/media/tv/7"
+      );
+      expect(showLink).toBeTruthy();
+    });
 
-    const showLinks = screen.getAllByText("Breaking Bad");
-    const showLink = showLinks.find(
-      (el) => el.closest("a")?.getAttribute("href") === "/media/tv/7"
-    );
-    expect(showLink).toBeTruthy();
+    it("renders season code as link to season detail page", () => {
+      renderPage();
+      const codeLinks = screen.getAllByText("S02E10");
+      const seasonLink = codeLinks.find(
+        (el) => el.closest("a")?.getAttribute("href") === "/media/tv/7?season=2"
+      );
+      expect(seasonLink).toBeTruthy();
+    });
+
+    it("renders movie entries with no subtitle", () => {
+      mockListRecentQuery.mockReturnValue({
+        data: { data: [movieEntry], pagination: { total: 1 } },
+        isLoading: false,
+        error: null,
+      });
+      renderPage();
+      expect(screen.getAllByText("The Matrix").length).toBeGreaterThan(0);
+      expect(screen.queryByText(/S\d+E\d+/)).toBeNull();
+    });
+
+    it("renders episode with missing show data as title only (graceful fallback)", () => {
+      mockListRecentQuery.mockReturnValue({
+        data: { data: [episodeNoShow], pagination: { total: 1 } },
+        isLoading: false,
+        error: null,
+      });
+      renderPage();
+      expect(screen.getAllByText("Mystery Episode").length).toBeGreaterThan(0);
+      expect(screen.queryByText(/S\d+E\d+/)).toBeNull();
+    });
+
+    it("renders mixed entries correctly", () => {
+      mockListRecentQuery.mockReturnValue({
+        data: {
+          data: [episodeEntry, movieEntry, episodeNoShow],
+          pagination: { total: 3 },
+        },
+        isLoading: false,
+        error: null,
+      });
+      renderPage();
+      expect(screen.getAllByText("Breaking Bad").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("S02E10").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("The Matrix").length).toBeGreaterThan(0);
+      expect(screen.getAllByText("Mystery Episode").length).toBeGreaterThan(0);
+    });
   });
 
-  it("renders season code as link to season detail page", () => {
-    mockListRecentQuery.mockReturnValue({
-      data: { data: [episodeEntry], pagination: { total: 1 } },
-      isLoading: false,
-      error: null,
+  describe("delete button visibility", () => {
+    it("renders delete buttons with correct aria-label", () => {
+      renderPage();
+      const deleteButtons = screen.getAllByLabelText("Delete watch event");
+      expect(deleteButtons.length).toBeGreaterThanOrEqual(2);
     });
-
-    renderPage();
-
-    const codeLinks = screen.getAllByText("S02E10");
-    const seasonLink = codeLinks.find(
-      (el) => el.closest("a")?.getAttribute("href") === "/media/tv/7?season=2"
-    );
-    expect(seasonLink).toBeTruthy();
   });
 
-  it("renders movie entries with no subtitle", () => {
-    mockListRecentQuery.mockReturnValue({
-      data: { data: [movieEntry], pagination: { total: 1 } },
-      isLoading: false,
-      error: null,
+  describe("delete confirmation dialog", () => {
+    it("opens confirmation dialog when delete is clicked", async () => {
+      const user = userEvent.setup();
+      renderPage();
+      const deleteButtons = screen.getAllByLabelText("Delete watch event");
+      await user.click(deleteButtons[0]!);
+      expect(screen.getByText("Remove watch event?")).toBeInTheDocument();
+      expect(screen.getByText(/This cannot be undone/)).toBeInTheDocument();
     });
 
-    renderPage();
+    it("shows cancel and remove buttons in dialog", async () => {
+      const user = userEvent.setup();
+      renderPage();
+      const deleteButtons = screen.getAllByLabelText("Delete watch event");
+      await user.click(deleteButtons[0]!);
+      expect(screen.getByText("Cancel")).toBeInTheDocument();
+      expect(screen.getByText("Remove")).toBeInTheDocument();
+    });
 
-    expect(screen.getAllByText("The Matrix").length).toBeGreaterThan(0);
-    // No episode code or show name should appear
-    expect(screen.queryByText(/S\d+E\d+/)).toBeNull();
+    it("calls delete mutation when confirmed", async () => {
+      const user = userEvent.setup();
+      renderPage();
+      const deleteButtons = screen.getAllByLabelText("Delete watch event");
+      await user.click(deleteButtons[0]!);
+      await user.click(screen.getByText("Remove"));
+      expect(mockDeleteMutate).toHaveBeenCalledWith({ id: episodeEntry.id });
+    });
+
+    it("closes dialog on cancel without calling delete", async () => {
+      const user = userEvent.setup();
+      renderPage();
+      const deleteButtons = screen.getAllByLabelText("Delete watch event");
+      await user.click(deleteButtons[0]!);
+      await user.click(screen.getByText("Cancel"));
+      expect(mockDeleteMutate).not.toHaveBeenCalled();
+      expect(screen.queryByText("Remove watch event?")).not.toBeInTheDocument();
+    });
   });
 
-  it("renders episode with missing show data as title only (graceful fallback)", () => {
-    mockListRecentQuery.mockReturnValue({
-      data: { data: [episodeNoShow], pagination: { total: 1 } },
-      isLoading: false,
-      error: null,
+  describe("delete success", () => {
+    it("shows success toast on deletion", () => {
+      renderPage();
+      deleteMutationOpts.onSuccess?.();
+      expect(mockToastSuccess).toHaveBeenCalledWith("Watch event removed");
     });
 
-    renderPage();
-
-    expect(screen.getAllByText("Mystery Episode").length).toBeGreaterThan(0);
-    // No subtitle when show data is missing
-    expect(screen.queryByText(/S\d+E\d+/)).toBeNull();
+    it("invalidates queries on success", () => {
+      renderPage();
+      deleteMutationOpts.onSuccess?.();
+      expect(mockInvalidateListRecent).toHaveBeenCalled();
+      expect(mockInvalidateList).toHaveBeenCalled();
+      expect(mockInvalidateWatchlist).toHaveBeenCalled();
+    });
   });
 
-  it("renders mixed entries correctly", () => {
-    mockListRecentQuery.mockReturnValue({
-      data: { data: [episodeEntry, movieEntry, episodeNoShow], pagination: { total: 3 } },
-      isLoading: false,
-      error: null,
+  describe("delete error", () => {
+    it("shows error toast on failure", () => {
+      renderPage();
+      deleteMutationOpts.onError?.({ message: "Server error" });
+      expect(mockToastError).toHaveBeenCalledWith("Failed to delete watch event: Server error");
+    });
+  });
+
+  describe("empty state", () => {
+    it("shows empty state when no entries", () => {
+      mockListRecentQuery.mockReturnValue({
+        data: { data: [], pagination: { total: 0 } },
+        isLoading: false,
+        error: null,
+      });
+      renderPage();
+      expect(
+        screen.getByText("No watch history yet. Start watching something!")
+      ).toBeInTheDocument();
     });
 
-    renderPage();
+    it("shows filtered empty state for movies", async () => {
+      const user = userEvent.setup();
+      mockListRecentQuery.mockReturnValue({
+        data: { data: [], pagination: { total: 0 } },
+        isLoading: false,
+        error: null,
+      });
+      renderPage();
+      await user.click(screen.getByText("Movies"));
+      expect(screen.getByText("No movies in your history.")).toBeInTheDocument();
+    });
 
-    // Episode with full data shows subtitle
-    expect(screen.getAllByText("Breaking Bad").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("S02E10").length).toBeGreaterThan(0);
+    it("shows browse library link in empty state", () => {
+      mockListRecentQuery.mockReturnValue({
+        data: { data: [], pagination: { total: 0 } },
+        isLoading: false,
+        error: null,
+      });
+      renderPage();
+      expect(screen.getByText("Browse library")).toHaveAttribute("href", "/media");
+    });
+  });
 
-    // Movie has no subtitle
-    expect(screen.getAllByText("The Matrix").length).toBeGreaterThan(0);
+  describe("loading state", () => {
+    it("shows skeleton when loading", () => {
+      mockListRecentQuery.mockReturnValue({
+        data: null,
+        isLoading: true,
+        error: null,
+      });
+      const { container } = renderPage();
+      expect(container.querySelectorAll("[data-slot='skeleton']").length).toBeGreaterThan(0);
+    });
+  });
 
-    // Episode without show data has no subtitle
-    expect(screen.getAllByText("Mystery Episode").length).toBeGreaterThan(0);
+  describe("error state", () => {
+    it("shows error alert on query error", () => {
+      mockListRecentQuery.mockReturnValue({
+        data: null,
+        isLoading: false,
+        error: { message: "Failed to fetch" },
+      });
+      renderPage();
+      expect(screen.getByText("Error")).toBeInTheDocument();
+      expect(screen.getByText("Failed to fetch")).toBeInTheDocument();
+    });
+  });
+
+  describe("filter tabs", () => {
+    it("passes mediaType filter when Movies tab is selected", async () => {
+      const user = userEvent.setup();
+      renderPage();
+      await user.click(screen.getByText("Movies"));
+      const lastCall = mockListRecentQuery.mock.calls.at(-1);
+      expect(lastCall?.[0]).toMatchObject({ mediaType: "movie" });
+    });
+
+    it("passes mediaType filter when Episodes tab is selected", async () => {
+      const user = userEvent.setup();
+      renderPage();
+      await user.click(screen.getByText("Episodes"));
+      const lastCall = mockListRecentQuery.mock.calls.at(-1);
+      expect(lastCall?.[0]).toMatchObject({ mediaType: "episode" });
+    });
+
+    it("does not pass mediaType filter when All tab is selected", () => {
+      renderPage();
+      const lastCall = mockListRecentQuery.mock.calls.at(-1);
+      expect(lastCall?.[0]).not.toHaveProperty("mediaType");
+    });
+  });
+
+  describe("pagination", () => {
+    it("shows pagination info", () => {
+      renderPage();
+      expect(screen.getByText("Showing 2 of 2")).toBeInTheDocument();
+    });
+
+    it("shows Next button when there are more pages", () => {
+      mockListRecentQuery.mockReturnValue({
+        data: {
+          data: Array.from({ length: 50 }, (_, i) => ({ ...movieEntry, id: i + 1 })),
+          pagination: { total: 100 },
+        },
+        isLoading: false,
+        error: null,
+      });
+      renderPage();
+      expect(screen.getByText("Next")).toBeInTheDocument();
+    });
+
+    it("hides Previous button on first page", () => {
+      renderPage();
+      expect(screen.queryByText("Previous")).not.toBeInTheDocument();
+    });
   });
 });
