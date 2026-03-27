@@ -199,6 +199,7 @@ export function SeasonDetailPage() {
             mediaId: id,
             mediaType: "episode" as const,
             watchedAt: new Date().toISOString(),
+            completed: 1,
           }));
         utils.media.watchHistory.list.setData(
           { mediaType: "episode", limit: 500 },
@@ -207,17 +208,13 @@ export function SeasonDetailPage() {
       }
       return { previousData };
     },
-    onSuccess: (result: { data: { logged: number } }) => {
+    onSuccess: (result) => {
       utils.media.watchHistory.invalidate();
       toast.success(
         `Marked ${result.data.logged} episode${result.data.logged !== 1 ? "s" : ""} as watched`
       );
     },
-    onError: (
-      err: { message: string },
-      _variables: unknown,
-      context: { previousData?: unknown } | undefined
-    ) => {
+    onError: (err, _variables, context) => {
       if (context?.previousData) {
         utils.media.watchHistory.list.setData(
           { mediaType: "episode", limit: 500 },
