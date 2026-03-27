@@ -4,7 +4,7 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../../../trpc.js";
-import { getTmdbClient, TmdbClient, TmdbApiError } from "../tmdb/index.js";
+import { getTmdbClient, TmdbClient, TmdbApiError, getImageCache } from "../tmdb/index.js";
 import { NotFoundError } from "../../../shared/errors.js";
 import { toMovie } from "../movies/types.js";
 import { toTvShow, toSeason } from "../tv-shows/types.js";
@@ -51,8 +51,9 @@ export const libraryRouter = router({
     .input(z.object({ tmdbId: z.number().int().positive() }))
     .mutation(async ({ input }) => {
       const client = requireTmdbClient();
+      const imageCache = getImageCache();
       try {
-        const { movie, created } = await libraryService.addMovie(input.tmdbId, client);
+        const { movie, created } = await libraryService.addMovie(input.tmdbId, client, imageCache);
         return {
           data: movie,
           created,
@@ -78,8 +79,14 @@ export const libraryRouter = router({
   /** Refresh movie metadata from TMDB. */
   refreshMovie: protectedProcedure.input(RefreshMovieSchema).mutation(async ({ input }) => {
     const tmdbClient = requireTmdbClient();
+    const imageCache = getImageCache();
     try {
-      const row = await libraryService.refreshMovie(input.id, tmdbClient);
+      const row = await libraryService.refreshMovie(
+        input.id,
+        tmdbClient,
+        imageCache,
+        input.redownloadImages
+      );
       return {
         data: toMovie(row),
         message: "Movie metadata refreshed",

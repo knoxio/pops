@@ -7,6 +7,7 @@ import { getDrizzle } from "../../../db.js";
 import { getDb } from "../../../db.js";
 import { movies, watchHistory } from "@pops/db-types";
 import type { TmdbClient } from "../tmdb/client.js";
+import type { ImageCacheService } from "../tmdb/image-cache.js";
 import type { TmdbMovieDetail } from "../tmdb/types.js";
 import { getMovieByTmdbId, getMovie, createMovie, updateMovie } from "../movies/service.js";
 import { toMovie } from "../movies/types.js";
@@ -18,13 +19,13 @@ import type { LibraryListInput, LibraryItem, LibrarySortOption } from "./types.j
  * Add a movie to the library by TMDB ID.
  *
  * Idempotent: returns the existing record if the movie is already in the library.
- * Fetches full detail from TMDB, maps fields, and inserts a new record.
- *
- * Image download is deferred until the image cache service is available (tb-058).
+ * Fetches full detail from TMDB, maps fields, inserts a new record,
+ * and downloads poster/backdrop images to the local cache.
  */
 export async function addMovie(
   tmdbId: number,
-  tmdbClient: TmdbClient
+  tmdbClient: TmdbClient,
+  imageCache: ImageCacheService
 ): Promise<{ movie: Movie; created: boolean }> {
   // Idempotency: return existing if already in library
   const existing = getMovieByTmdbId(tmdbId);
@@ -56,7 +57,8 @@ export async function addMovie(
     genres: detail.genres.map((g) => g.name),
   });
 
-  // TODO: download images in background when image cache service is available (tb-058)
+  // Download images to local cache (failures are logged, not thrown)
+  await imageCache.downloadMovieImages(detail.tmdbId, detail.posterPath, detail.backdropPath, null);
 
   return { movie: toMovie(row), created: true };
 }
@@ -89,8 +91,14 @@ function mapTmdbDetailToUpdate(detail: TmdbMovieDetail): UpdateMovieInput {
  *
  * Fetches fresh detail from TMDB and updates the local record.
  * Preserves poster_override_path (user-uploaded override).
+ * When redownloadImages is true, deletes and re-downloads cached images.
  */
-export async function refreshMovie(id: number, tmdbClient: TmdbClient): Promise<MovieRow> {
+export async function refreshMovie(
+  id: number,
+  tmdbClient: TmdbClient,
+  imageCache: ImageCacheService,
+  redownloadImages = false
+): Promise<MovieRow> {
   // Get existing movie (throws NotFoundError if missing)
   const existing = getMovie(id);
 
@@ -101,7 +109,20 @@ export async function refreshMovie(id: number, tmdbClient: TmdbClient): Promise<
   const updateInput = mapTmdbDetailToUpdate(detail);
 
   // Update the local record
-  return updateMovie(id, updateInput);
+  const updated = updateMovie(id, updateInput);
+
+  // Re-download images if requested
+  if (redownloadImages) {
+    await imageCache.deleteMovieImages(existing.tmdbId);
+    await imageCache.downloadMovieImages(
+      existing.tmdbId,
+      detail.posterPath,
+      detail.backdropPath,
+      null
+    );
+  }
+
+  return updated;
 }
 
 /** Map a sort option to SQL ORDER BY clause. */

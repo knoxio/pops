@@ -10,6 +10,18 @@ vi.mock("../tmdb/client.js", () => ({
   TmdbClient: vi.fn(),
 }));
 
+// Shared mock image cache instance — stable reference across tests
+const mockImageCache = {
+  downloadMovieImages: vi.fn().mockResolvedValue(undefined),
+  deleteMovieImages: vi.fn().mockResolvedValue(undefined),
+  getImagePath: vi.fn().mockResolvedValue(null),
+};
+
+vi.mock("../tmdb/image-cache.js", () => ({
+  ImageCacheService: vi.fn().mockImplementation(() => mockImageCache),
+  MEDIA_DIR_NAMES: { movie: "movies", tv: "tv" },
+}));
+
 // Set the env var before the router module loads
 vi.stubEnv("TMDB_API_TOKEN", "test-api-key");
 
@@ -44,6 +56,8 @@ const MOCK_TMDB_DETAIL: TmdbMovieDetail = {
 };
 
 beforeEach(async () => {
+  mockImageCache.downloadMovieImages.mockClear();
+  mockImageCache.deleteMovieImages.mockClear();
   ({ caller, db } = ctx.setup());
 
   // Reset the mock for each test
@@ -160,5 +174,57 @@ describe("library.addMovie", () => {
   it("rejects unauthenticated calls", async () => {
     const anonCaller = createCaller(false);
     await expect(anonCaller.media.library.addMovie({ tmdbId: 550 })).rejects.toThrow(TRPCError);
+  });
+
+  it("calls downloadMovieImages after creating a new movie", async () => {
+    await caller.media.library.addMovie({ tmdbId: 550 });
+
+    expect(mockImageCache.downloadMovieImages).toHaveBeenCalledWith(
+      550,
+      MOCK_TMDB_DETAIL.posterPath,
+      MOCK_TMDB_DETAIL.backdropPath,
+      null
+    );
+  });
+
+  it("does not call downloadMovieImages for existing movie (idempotent)", async () => {
+    seedMovie(db, { tmdb_id: 550, title: "Fight Club (existing)", genres: '["Drama"]' });
+
+    await caller.media.library.addMovie({ tmdbId: 550 });
+
+    expect(mockImageCache.downloadMovieImages).not.toHaveBeenCalled();
+  });
+});
+
+describe("library.refreshMovie — image cache", () => {
+  it("re-downloads images when redownloadImages is true", async () => {
+    const movieId = seedMovie(db, {
+      tmdb_id: 550,
+      title: "Fight Club",
+      genres: '["Drama"]',
+    });
+
+    await caller.media.library.refreshMovie({ id: movieId, redownloadImages: true });
+
+    expect(mockImageCache.deleteMovieImages).toHaveBeenCalledWith(550);
+    expect(mockImageCache.downloadMovieImages).toHaveBeenCalledWith(
+      550,
+      MOCK_TMDB_DETAIL.posterPath,
+      MOCK_TMDB_DETAIL.backdropPath,
+      null
+    );
+  });
+
+  it("does not re-download images when redownloadImages is false (default)", async () => {
+    const movieId = seedMovie(db, {
+      tmdb_id: 550,
+      title: "Fight Club",
+      genres: '["Drama"]',
+    });
+
+    await caller.media.library.refreshMovie({ id: movieId });
+
+    expect(mockImageCache.deleteMovieImages).not.toHaveBeenCalled();
+    expect(mockImageCache.downloadMovieImages).not.toHaveBeenCalled();
   });
 });

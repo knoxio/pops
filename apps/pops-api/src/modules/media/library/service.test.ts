@@ -13,6 +13,16 @@ import { listLibrary, listLibraryGenres } from "./service.js";
 import type { TmdbMovieDetail } from "../tmdb/types.js";
 import { TRPCError } from "@trpc/server";
 
+// Mock ImageCacheService so getImageCache() returns a stub
+vi.mock("../tmdb/image-cache.js", () => ({
+  ImageCacheService: vi.fn().mockImplementation(() => ({
+    downloadMovieImages: vi.fn().mockResolvedValue(undefined),
+    deleteMovieImages: vi.fn().mockResolvedValue(undefined),
+    getImagePath: vi.fn().mockResolvedValue(null),
+  })),
+  MEDIA_DIR_NAMES: { movie: "movies", tv: "tv" },
+}));
+
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;
 let db: Database;
