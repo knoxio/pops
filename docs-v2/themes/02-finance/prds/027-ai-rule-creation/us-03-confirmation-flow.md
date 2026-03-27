@@ -1,7 +1,7 @@
 # US-03: Confirmation flow for low-confidence rules
 
 > PRD: [027 — AI Rule Creation](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,11 +9,11 @@ As a user, I want to review low-confidence AI rule suggestions before they're ap
 
 ## Acceptance Criteria
 
-- [ ] AI suggestions with confidence < 0.8 shown in a confirmation UI (toast or inline prompt)
-- [ ] Shows: proposed pattern, match type, how many transactions it would match
-- [ ] "Accept" saves the rule and applies to remaining transactions
-- [ ] "Reject" discards the suggestion — correction is saved but no rule created
-- [ ] Rejected patterns are not re-suggested for the same description in this import
+- [x] AI suggestions with confidence < 0.8 shown in a confirmation UI (toast or inline prompt)
+- [x] Shows: proposed pattern, match type, how many transactions it would match
+- [x] "Accept" saves the rule and applies to remaining transactions
+- [x] "Reject" discards the suggestion — correction is saved but no rule created
+- [x] Rejected patterns are not re-suggested for the same description in this import
 
 ## Notes
 

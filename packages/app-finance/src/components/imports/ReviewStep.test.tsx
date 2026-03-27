@@ -18,8 +18,7 @@ vi.mock("../../lib/trpc", () => ({
           useMutation: (opts: Record<string, unknown>) => ({
             mutateAsync: (...args: unknown[]) => {
               const result = mockCreateEntityMutateAsync(...args);
-              if (typeof opts.onSuccess === "function")
-                (opts.onSuccess as () => void)();
+              if (typeof opts.onSuccess === "function") (opts.onSuccess as () => void)();
               return result;
             },
             isPending: false,
@@ -158,7 +157,8 @@ vi.mock("../../lib/transaction-utils", () => ({
     txs.length > 0
       ? [
           {
-            entityName: (txs[0] as { entity?: { entityName?: string } })?.entity?.entityName ?? "Unknown",
+            entityName:
+              (txs[0] as { entity?: { entityName?: string } })?.entity?.entityName ?? "Unknown",
             aiSuggestion: true,
             transactions: txs,
           },
@@ -183,20 +183,10 @@ vi.mock("@pops/ui", async () => {
       ),
     TabsList: ({ children }: { children: React.ReactNode }) =>
       React.createElement("div", { role: "tablist" }, children),
-    TabsTrigger: ({
-      children,
-      value,
-    }: {
-      children: React.ReactNode;
-      value: string;
-    }) => React.createElement("button", { role: "tab", "data-value": value }, children),
-    TabsContent: ({
-      children,
-      value,
-    }: {
-      children: React.ReactNode;
-      value: string;
-    }) => React.createElement("div", { "data-testid": `tab-${value}` }, children),
+    TabsTrigger: ({ children, value }: { children: React.ReactNode; value: string }) =>
+      React.createElement("button", { role: "tab", "data-value": value }, children),
+    TabsContent: ({ children, value }: { children: React.ReactNode; value: string }) =>
+      React.createElement("div", { "data-testid": `tab-${value}` }, children),
   };
 });
 
@@ -204,10 +194,7 @@ import { ReviewStep } from "./ReviewStep";
 
 // --- Helpers ---
 
-function makeTx(
-  description: string,
-  overrides: Record<string, unknown> = {}
-) {
+function makeTx(description: string, overrides: Record<string, unknown> = {}) {
   return {
     date: "2026-01-15",
     description,
@@ -357,5 +344,182 @@ describe("ReviewStep — auto-apply rules", () => {
     expect(mockToastSuccess).toHaveBeenCalledWith(
       expect.stringContaining("Applied to 1 more transaction")
     );
+  });
+});
+
+describe("ReviewStep — low-confidence confirmation flow", () => {
+  it("shows confirmation toast for low-confidence suggestion instead of auto-saving", () => {
+    const tx = makeTx("SPOTIFY PREMIUM", {
+      entity: { entityId: "ent-3", entityName: "Spotify", matchType: "ai", confidence: 0.6 },
+    });
+    mockEntitiesQuery.mockReturnValue({
+      data: {
+        data: [
+          { id: "ent-1", name: "Woolworths", type: "company" },
+          { id: "ent-3", name: "Spotify", type: "company" },
+        ],
+      },
+    });
+    mockProcessedTransactions = {
+      matched: [],
+      uncertain: [tx],
+      failed: [],
+      skipped: [],
+    };
+    render(<ReviewStep />);
+
+    fireEvent.click(screen.getByTestId("accept-SPOTIFY PREMIUM"));
+
+    // Should show info toast with confirmation, not auto-save
+    expect(mockToastInfo).toHaveBeenCalledWith(
+      expect.stringContaining('Create rule: contains "Spotify"'),
+      expect.objectContaining({
+        action: expect.objectContaining({ label: "Accept" }),
+        cancel: expect.objectContaining({ label: "Reject" }),
+      })
+    );
+
+    // Should NOT auto-save correction
+    expect(mockCreateCorrectionMutate).not.toHaveBeenCalled();
+  });
+
+  it("auto-saves rule when confidence >= 0.8 (high confidence path)", () => {
+    const tx = makeTx("WOOLWORTHS 1234 SYDNEY", {
+      entity: { entityId: "ent-1", entityName: "Woolworths", matchType: "ai", confidence: 0.85 },
+    });
+    mockProcessedTransactions = {
+      matched: [],
+      uncertain: [tx],
+      failed: [],
+      skipped: [],
+    };
+    render(<ReviewStep />);
+
+    fireEvent.click(screen.getByTestId("accept-WOOLWORTHS 1234 SYDNEY"));
+
+    // Should auto-save correction (high confidence path)
+    expect(mockCreateCorrectionMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        matchType: "contains",
+        entityId: "ent-1",
+        entityName: "Woolworths",
+      })
+    );
+
+    // Should NOT show confirmation toast
+    expect(mockToastInfo).not.toHaveBeenCalledWith(
+      expect.stringContaining("Create rule"),
+      expect.anything()
+    );
+  });
+
+  it("confirmation toast shows match count when other transactions would match", () => {
+    const tx1 = makeTx("SPOTIFY PREMIUM", {
+      entity: { entityId: "ent-3", entityName: "Spotify", matchType: "ai", confidence: 0.6 },
+    });
+    const tx2 = makeTx("SPOTIFY FAMILY PLAN", {
+      entity: { entityId: "ent-3", entityName: "Spotify", matchType: "ai", confidence: 0.5 },
+    });
+    mockEntitiesQuery.mockReturnValue({
+      data: {
+        data: [{ id: "ent-3", name: "Spotify", type: "company" }],
+      },
+    });
+    mockProcessedTransactions = {
+      matched: [],
+      uncertain: [tx1, tx2],
+      failed: [],
+      skipped: [],
+    };
+    render(<ReviewStep />);
+
+    fireEvent.click(screen.getByTestId("accept-SPOTIFY PREMIUM"));
+
+    // Should mention 1 more transaction that would match
+    expect(mockToastInfo).toHaveBeenCalledWith(
+      expect.stringContaining("Would apply to 1 more transaction"),
+      expect.anything()
+    );
+  });
+
+  it("accept button in confirmation toast saves the rule", () => {
+    const tx = makeTx("SPOTIFY PREMIUM", {
+      entity: { entityId: "ent-3", entityName: "Spotify", matchType: "ai", confidence: 0.6 },
+    });
+    mockEntitiesQuery.mockReturnValue({
+      data: {
+        data: [{ id: "ent-3", name: "Spotify", type: "company" }],
+      },
+    });
+    mockProcessedTransactions = {
+      matched: [],
+      uncertain: [tx],
+      failed: [],
+      skipped: [],
+    };
+    render(<ReviewStep />);
+
+    fireEvent.click(screen.getByTestId("accept-SPOTIFY PREMIUM"));
+
+    // Simulate clicking the Accept button in the toast
+    const infoCall = mockToastInfo.mock.calls[0]!;
+    const actionOnClick = (infoCall[1] as { action: { onClick: () => void } }).action.onClick;
+    actionOnClick();
+
+    // Now the correction should be saved
+    expect(mockCreateCorrectionMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        matchType: "contains",
+        entityId: "ent-3",
+        entityName: "Spotify",
+      })
+    );
+  });
+
+  it("reject button prevents re-suggestion for same pattern", () => {
+    // Both descriptions normalise to "SPOTIFY" (digits + extra spaces stripped)
+    const tx1 = makeTx("SPOTIFY 1234", {
+      entity: { entityId: "ent-3", entityName: "Spotify", matchType: "ai", confidence: 0.6 },
+    });
+    const tx2 = makeTx("SPOTIFY 5678", {
+      entity: { entityId: "ent-3", entityName: "Spotify", matchType: "ai", confidence: 0.5 },
+    });
+    mockEntitiesQuery.mockReturnValue({
+      data: {
+        data: [{ id: "ent-3", name: "Spotify", type: "company" }],
+      },
+    });
+    mockProcessedTransactions = {
+      matched: [],
+      uncertain: [tx1, tx2],
+      failed: [],
+      skipped: [],
+    };
+    const { unmount } = render(<ReviewStep />);
+
+    // Accept first transaction — shows confirmation toast
+    fireEvent.click(screen.getByTestId("accept-SPOTIFY 1234"));
+    expect(mockToastInfo).toHaveBeenCalledTimes(1);
+
+    // Simulate clicking Reject
+    const infoCall = mockToastInfo.mock.calls[0]!;
+    const cancelOnClick = (infoCall[1] as { cancel: { onClick: () => void } }).cancel.onClick;
+    cancelOnClick();
+
+    // No correction should be saved
+    expect(mockCreateCorrectionMutate).not.toHaveBeenCalled();
+
+    // Accept second transaction with same normalised pattern — should NOT show confirmation again
+    mockToastInfo.mockClear();
+    fireEvent.click(screen.getByTestId("accept-SPOTIFY 5678"));
+
+    // The confirmation toast should not appear for the rejected pattern
+    const createRuleCalls = mockToastInfo.mock.calls.filter(
+      (call: unknown[]) =>
+        typeof call[0] === "string" && (call[0] as string).includes("Create rule")
+    );
+    expect(createRuleCalls).toHaveLength(0);
+
+    unmount();
   });
 });

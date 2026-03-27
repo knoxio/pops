@@ -35,6 +35,9 @@ export function ReviewStep() {
   const initialTab = localTransactions.uncertain.length > 0 ? "uncertain" : "matched";
   const [activeTab, setActiveTab] = useState(initialTab);
 
+  // Track rejected patterns so they aren't re-suggested during this import session
+  const rejectedPatterns = useRef<Set<string>>(new Set());
+
   // Preserve scroll position per tab
   const scrollPositions = useRef<Map<string, number>>(new Map());
   const handleTabChange = useCallback(
@@ -234,8 +237,30 @@ export function ReviewStep() {
   );
 
   /**
+   * Count how many remaining uncertain/failed transactions would match a pattern.
+   * Excludes the transaction being accepted (identified by checksum).
+   */
+  const countPatternMatches = useCallback(
+    (entityName: string, excludeChecksum: string) => {
+      const normalised = entityName.toUpperCase();
+      let count = 0;
+      for (const t of localTransactions.uncertain) {
+        if (t.checksum !== excludeChecksum && t.description.toUpperCase().includes(normalised))
+          count++;
+      }
+      for (const t of localTransactions.failed) {
+        if (t.checksum !== excludeChecksum && t.description.toUpperCase().includes(normalised))
+          count++;
+      }
+      return count;
+    },
+    [localTransactions.uncertain, localTransactions.failed]
+  );
+
+  /**
    * Accept AI suggestion for a single transaction.
-   * Auto-saves a correction rule and re-evaluates remaining transactions.
+   * High-confidence (>= 0.8): auto-saves a correction rule and re-evaluates.
+   * Low-confidence (< 0.8): shows a confirmation toast for the user to accept or reject.
    */
   const handleAcceptAiSuggestion = useCallback(
     (transaction: ProcessedTransaction) => {
@@ -258,12 +283,51 @@ export function ReviewStep() {
         return;
       }
 
-      handleEntitySelect(transaction, entityId, transaction.entity.entityName);
+      const confidence = transaction.entity.confidence ?? 0;
+      const entityName = transaction.entity.entityName;
+      const pattern = transaction.description
+        .toUpperCase()
+        .replace(/\d+/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
 
-      // Auto-save correction rule and re-evaluate remaining transactions
-      autoSaveRuleAndReEvaluate(transaction.description, entityId, transaction.entity.entityName);
+      // Always accept the transaction itself
+      handleEntitySelect(transaction, entityId, entityName);
+
+      if (confidence >= 0.8) {
+        // High confidence — auto-save rule
+        autoSaveRuleAndReEvaluate(transaction.description, entityId, entityName);
+      } else if (!rejectedPatterns.current.has(pattern)) {
+        // Low confidence — show confirmation toast
+        const matchCount = countPatternMatches(entityName, transaction.checksum);
+        const matchSuffix =
+          matchCount > 0
+            ? `. Would apply to ${matchCount} more transaction${matchCount !== 1 ? "s" : ""}`
+            : "";
+
+        toast.info(`Create rule: contains "${entityName}"?${matchSuffix}`, {
+          action: {
+            label: "Accept",
+            onClick: () => {
+              autoSaveRuleAndReEvaluate(transaction.description, entityId!, entityName);
+            },
+          },
+          cancel: {
+            label: "Reject",
+            onClick: () => {
+              rejectedPatterns.current.add(pattern);
+            },
+          },
+        });
+      }
     },
-    [handleEntitySelect, entities, handleCreateEntity, autoSaveRuleAndReEvaluate]
+    [
+      handleEntitySelect,
+      entities,
+      handleCreateEntity,
+      autoSaveRuleAndReEvaluate,
+      countPatternMatches,
+    ]
   );
 
   /**
