@@ -115,6 +115,7 @@ describe("RadarrClient", () => {
       const result = await client.addMovie({
         tmdbId: 12345,
         title: "Test Movie",
+        year: 2024,
         qualityProfileId: 1,
         rootFolderPath: "/movies",
       });
@@ -127,6 +128,7 @@ describe("RadarrClient", () => {
           body: JSON.stringify({
             tmdbId: 12345,
             title: "Test Movie",
+            year: 2024,
             qualityProfileId: 1,
             rootFolderPath: "/movies",
             monitored: true,
@@ -142,7 +144,13 @@ describe("RadarrClient", () => {
       );
 
       await expect(
-        client.addMovie({ tmdbId: 1, title: "X", qualityProfileId: 1, rootFolderPath: "/m" })
+        client.addMovie({
+          tmdbId: 1,
+          title: "X",
+          year: 2024,
+          qualityProfileId: 1,
+          rootFolderPath: "/m",
+        })
       ).rejects.toThrow(ArrApiError);
     });
   });

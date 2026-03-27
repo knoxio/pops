@@ -54,6 +54,7 @@ export class RadarrClient extends ArrBaseClient {
     return this.post<RadarrMovie>("/movie", {
       tmdbId: input.tmdbId,
       title: input.title,
+      year: input.year,
       qualityProfileId: input.qualityProfileId,
       rootFolderPath: input.rootFolderPath,
       monitored: true,

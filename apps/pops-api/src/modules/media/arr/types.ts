@@ -65,6 +65,7 @@ export interface RadarrRootFolder {
 export interface RadarrAddMovieInput {
   tmdbId: number;
   title: string;
+  year: number;
   qualityProfileId: number;
   rootFolderPath: string;
 }

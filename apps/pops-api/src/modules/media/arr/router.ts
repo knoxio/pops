@@ -160,6 +160,7 @@ export const arrRouter = router({
       z.object({
         tmdbId: z.number().int().positive(),
         title: z.string().min(1),
+        year: z.number().int().positive(),
         qualityProfileId: z.number().int().positive(),
         rootFolderPath: z.string().min(1),
       })
