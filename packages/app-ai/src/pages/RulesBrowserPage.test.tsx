@@ -47,6 +47,8 @@ vi.mock("../lib/trpc", () => ({
 
 vi.mock("@pops/ui", async () => {
   const React = await import("react");
+  // Shared ref so DialogClose can call the Dialog's onOpenChange
+  let dialogCloseRef: (() => void) | null = null;
   return {
     DataTable: ({
       columns,
@@ -141,8 +143,9 @@ vi.mock("@pops/ui", async () => {
       children: React.ReactNode;
       open: boolean;
       onOpenChange: (v: boolean) => void;
-    }) =>
-      open
+    }) => {
+      dialogCloseRef = open ? () => onOpenChange(false) : null;
+      return open
         ? React.createElement(
             "div",
             {
@@ -155,7 +158,8 @@ vi.mock("@pops/ui", async () => {
             },
             children
           )
-        : null,
+        : null;
+    },
     DialogContent: ({ children }: { children: React.ReactNode; showCloseButton?: boolean }) =>
       React.createElement("div", { "data-testid": "dialog-content" }, children),
     DialogHeader: ({ children }: { children: React.ReactNode }) =>
@@ -166,8 +170,19 @@ vi.mock("@pops/ui", async () => {
       React.createElement("p", null, children),
     DialogFooter: ({ children }: { children: React.ReactNode }) =>
       React.createElement("div", null, children),
-    DialogClose: ({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) =>
-      asChild ? (children as React.ReactElement) : React.createElement("button", null, children),
+    DialogClose: ({ children, asChild }: { children: React.ReactNode; asChild?: boolean }) => {
+      if (asChild) {
+        // Wrap the child element to add an onClick that closes the dialog
+        const child = children as React.ReactElement;
+        return React.cloneElement(child, {
+          onClick: (...args: unknown[]) => {
+            dialogCloseRef?.();
+            (child.props as Record<string, unknown>).onClick?.(...args);
+          },
+        } as Record<string, unknown>);
+      }
+      return React.createElement("button", { onClick: () => dialogCloseRef?.() }, children);
+    },
   };
 });
 
