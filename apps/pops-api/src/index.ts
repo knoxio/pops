@@ -9,6 +9,7 @@ import { createApp } from "./app.js";
 import { closeDb } from "./db.js";
 import { startTtlWatcher } from "./modules/core/envs/ttl-watcher.js";
 import { startupCleanup } from "./modules/core/envs/registry.js";
+import { validateTvdbApiKey } from "./modules/media/thetvdb/index.js";
 
 const port = Number(process.env["PORT"] ?? 3000);
 const app = createApp();
@@ -19,6 +20,9 @@ if (expired.length > 0)
   console.log(`[pops-api] Cleaned up ${expired.length} expired env(s): ${expired.join(", ")}`);
 if (orphaned.length > 0)
   console.log(`[pops-api] Removed ${orphaned.length} orphaned env DB(s): ${orphaned.join(", ")}`);
+
+// Validate required environment variables
+validateTvdbApiKey();
 
 const server = app.listen(port, () => {
   console.log(`[pops-api] Listening on port ${port}`);

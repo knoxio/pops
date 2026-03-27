@@ -32,6 +32,19 @@ export function getTvdbClient(): TheTvdbClient {
   return _tvdbClient;
 }
 
+/**
+ * Validate that THETVDB_API_KEY is configured.
+ * Call at server startup to fail fast with a clear error.
+ */
+export function validateTvdbApiKey(): void {
+  const apiKey = getEnv("THETVDB_API_KEY");
+  if (!apiKey) {
+    throw new Error(
+      "THETVDB_API_KEY is not configured. Set it in .env (development) or Docker secrets (production)."
+    );
+  }
+}
+
 /** Reset the shared client (for testing). */
 export function setTvdbClient(client: TheTvdbClient | null): void {
   _tvdbClient = client;
