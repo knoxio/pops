@@ -313,7 +313,7 @@ export async function processImport(
           "[Import] Entity matched"
         );
         // Good match - add to matched list
-        const entityId = entityLookup[match.entityName];
+        const entityId = entityLookup.get(match.entityName.toLowerCase());
         if (!entityId) {
           throw new Error(`Entity lookup failed for matched entity: ${match.entityName}`);
         }
@@ -359,22 +359,15 @@ export async function processImport(
 
         if (aiResult && aiResult.entityName) {
           // AI suggested an entity name - check if it exists in lookup
-          const existingEntity = Object.keys(entityLookup).find(
-            (name) => name.toUpperCase() === aiResult.entityName.toUpperCase()
-          );
+          const entityId = entityLookup.get(aiResult.entityName.toLowerCase());
 
-          if (existingEntity) {
+          if (entityId) {
             // AI matched to existing entity
-            const entityId = entityLookup[existingEntity];
-            if (!entityId) {
-              throw new Error(`Entity lookup failed for AI match: ${existingEntity}`);
-            }
-
             matched.push({
               ...transaction,
               entity: {
                 entityId,
-                entityName: existingEntity,
+                entityName: aiResult.entityName,
                 matchType: "ai",
               },
               status: "matched",
@@ -675,7 +668,7 @@ export async function processImportWithProgress(
             "[Import] Entity matched"
           );
 
-          const entityId = entityLookup[match.entityName];
+          const entityId = entityLookup.get(match.entityName.toLowerCase());
           if (!entityId) {
             throw new Error(`Entity lookup failed for matched entity: ${match.entityName}`);
           }
@@ -724,21 +717,14 @@ export async function processImportWithProgress(
           }
 
           if (aiResult && aiResult.entityName) {
-            const existingEntity = Object.keys(entityLookup).find(
-              (name) => name.toUpperCase() === aiResult.entityName.toUpperCase()
-            );
+            const entityId = entityLookup.get(aiResult.entityName.toLowerCase());
 
-            if (existingEntity) {
-              const entityId = entityLookup[existingEntity];
-              if (!entityId) {
-                throw new Error(`Entity lookup failed for AI match: ${existingEntity}`);
-              }
-
+            if (entityId) {
               matched.push({
                 ...transaction,
                 entity: {
                   entityId,
-                  entityName: existingEntity,
+                  entityName: aiResult.entityName,
                   matchType: "ai",
                 },
                 status: "matched",
