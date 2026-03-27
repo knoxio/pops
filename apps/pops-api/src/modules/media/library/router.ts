@@ -13,10 +13,7 @@ import * as libraryService from "./service.js";
 import { getTvdbClient } from "../thetvdb/index.js";
 import { TvdbApiError } from "../thetvdb/types.js";
 import { refreshTvShow } from "../thetvdb/service.js";
-import { ImageCacheService } from "../tmdb/image-cache.js";
 import * as tvShowService from "./tv-show-service.js";
-
-const MEDIA_IMAGES_DIR = process.env.MEDIA_IMAGES_DIR ?? "./data/media/images";
 
 function requireTmdbClient(): TmdbClient {
   return getTmdbClient();
@@ -114,7 +111,7 @@ export const libraryRouter = router({
     .mutation(async ({ input }) => {
       try {
         const client = getTvdbClient();
-        const imageCache = new ImageCacheService(MEDIA_IMAGES_DIR);
+        const imageCache = getImageCache();
         const result = await tvShowService.addTvShow(input.tvdbId, client, imageCache);
         return {
           data: {
@@ -156,7 +153,7 @@ export const libraryRouter = router({
     .mutation(async ({ input }) => {
       try {
         const client = getTvdbClient();
-        const imageCache = new ImageCacheService(MEDIA_IMAGES_DIR);
+        const imageCache = getImageCache();
         const result = await refreshTvShow(client, { ...input, imageCache });
         return {
           data: {

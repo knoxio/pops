@@ -12,11 +12,15 @@ import { stat } from "node:fs/promises";
 import { join, resolve, extname } from "node:path";
 import { createHash } from "node:crypto";
 import { MEDIA_DIR_NAMES } from "../../modules/media/tmdb/image-cache.js";
+import { getImageCache } from "../../modules/media/tmdb/index.js";
 import { getDb } from "../../db.js";
 
 const VALID_MEDIA_TYPES = ["movie", "tv"] as const;
 const VALID_FILENAMES = ["poster.jpg", "backdrop.jpg", "logo.png", "override.jpg"] as const;
 type ValidFilename = (typeof VALID_FILENAMES)[number];
+
+/** Season poster filenames follow the pattern season_{N}.jpg. */
+const SEASON_POSTER_RE = /^season_\d+\.jpg$/;
 
 const CONTENT_TYPES: Record<string, string> = {
   ".jpg": "image/jpeg",
@@ -48,7 +52,7 @@ router.get("/media/images/:mediaType/:id/:filename", async (req, res): Promise<v
   }
 
   // Validate filename
-  if (!VALID_FILENAMES.includes(filename as ValidFilename)) {
+  if (!VALID_FILENAMES.includes(filename as ValidFilename) && !SEASON_POSTER_RE.test(filename)) {
     res.status(400).json({ error: `Invalid filename: ${filename}` });
     return;
   }
@@ -81,6 +85,7 @@ router.get("/media/images/:mediaType/:id/:filename", async (req, res): Promise<v
     const db = getDb();
     const table = mediaType === "movie" ? "movies" : "tv_shows";
     const idColumn = mediaType === "movie" ? "tmdb_id" : "tvdb_id";
+    const titleColumn = mediaType === "movie" ? "title" : "name";
     const pathColumn = filename.startsWith("poster")
       ? "poster_path"
       : filename.startsWith("logo")
@@ -88,8 +93,8 @@ router.get("/media/images/:mediaType/:id/:filename", async (req, res): Promise<v
         : "backdrop_path";
 
     const record = db
-      .prepare(`SELECT ${pathColumn} AS path FROM ${table} WHERE ${idColumn} = ?`)
-      .get(id) as { path: string | null } | undefined;
+      .prepare(`SELECT ${pathColumn} AS path, ${titleColumn} AS title FROM ${table} WHERE ${idColumn} = ?`)
+      .get(id) as { path: string | null; title: string | null } | undefined;
 
     if (record?.path) {
       const originalPath = record.path;
@@ -104,8 +109,20 @@ router.get("/media/images/:mediaType/:id/:filename", async (req, res): Promise<v
         return;
       }
     }
+
+    // Generate placeholder as final fallback for poster requests
+    if (filename === "poster.jpg" && record?.title) {
+      const imageCache = getImageCache();
+      if (mediaType === "movie") {
+        await imageCache.generatePlaceholder(Number(id), record.title);
+      } else {
+        await imageCache.generateTvPlaceholder(Number(id), record.title);
+      }
+      const served = await tryServeFile(filePath, res);
+      if (served) return;
+    }
   } catch (err) {
-    console.error("[Images] Fallback redirect failed:", err);
+    console.error("[Images] Fallback failed:", err);
   }
 
   // Final 404 if no fallback available
