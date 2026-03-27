@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { CheckCircle, AlertTriangle, XCircle, AlertCircle, List, Layers } from "lucide-react";
 import { useImportStore } from "../../store/importStore";
 import type { ProcessedTransaction } from "../../store/importStore";
@@ -9,9 +9,12 @@ import { EntityCreateDialog } from "./EntityCreateDialog";
 import { TransactionCard } from "./TransactionCard";
 import { TransactionGroup } from "./TransactionGroup";
 import { EditableTransactionCard } from "./EditableTransactionCard";
+import { BatchProposalsPanel } from "./BatchProposalsPanel";
 import { toast } from "sonner";
 import type { ConfirmedTransaction } from "@pops/api/modules/finance/imports";
 import { groupTransactionsByEntity } from "../../lib/transaction-utils";
+import { useBatchAnalysis } from "../../lib/useBatchAnalysis";
+import type { CorrectionEntry } from "../../lib/useBatchAnalysis";
 
 type ViewMode = "list" | "grouped";
 
@@ -37,6 +40,26 @@ export function ReviewStep() {
 
   // Track rejected patterns so they aren't re-suggested during this import session
   const rejectedPatterns = useRef<Set<string>>(new Set());
+
+  // Batch analysis — accumulate corrections, trigger AI analysis
+  const batchAnalysis = useBatchAnalysis();
+
+  // Seed batch analysis with matched transactions on mount
+  const seededRef = useRef(false);
+  useEffect(() => {
+    if (seededRef.current) return;
+    seededRef.current = true;
+    const seed: CorrectionEntry[] = localTransactions.matched
+      .filter((t) => t.entity?.entityName)
+      .map((t) => ({
+        description: t.description,
+        entityName: t.entity?.entityName ?? null,
+        amount: t.amount,
+        account: t.account,
+        currentTags: (t.suggestedTags ?? []).map((s) => s.tag),
+      }));
+    if (seed.length > 0) batchAnalysis.seedTransactions(seed);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Preserve scroll position per tab
   const scrollPositions = useRef<Map<string, number>>(new Map());
@@ -578,6 +601,14 @@ export function ReviewStep() {
           entityName: editedFields.entity?.entityName ?? transaction.entity?.entityName,
           location: editedFields.location ?? transaction.location,
         });
+        // Feed into batch analysis for refined pattern proposals
+        batchAnalysis.addCorrection({
+          description: transaction.description,
+          entityName: editedFields.entity?.entityName ?? transaction.entity?.entityName ?? null,
+          amount: transaction.amount,
+          account: transaction.account,
+          currentTags: (transaction.suggestedTags ?? []).map((s) => s.tag),
+        });
         toast.success("Correction saved!");
       } else if (hasChanges && !shouldLearn) {
         // Show toast asking if they want to learn
@@ -602,7 +633,7 @@ export function ReviewStep() {
         toast.success("Transaction updated");
       }
     },
-    [createCorrectionMutation]
+    [createCorrectionMutation, batchAnalysis]
   );
 
   const handleCancelEdit = useCallback(() => {
@@ -770,6 +801,13 @@ export function ReviewStep() {
           <SkippedTab transactions={localTransactions.skipped} />
         </TabsContent>
       </Tabs>
+
+      <BatchProposalsPanel
+        proposals={batchAnalysis.proposals}
+        isAnalyzing={batchAnalysis.isAnalyzing}
+        onAccept={batchAnalysis.acceptProposal}
+        onDismiss={batchAnalysis.dismissProposal}
+      />
 
       <div className="flex justify-between gap-3 items-center">
         <Button variant="outline" onClick={prevStep}>
