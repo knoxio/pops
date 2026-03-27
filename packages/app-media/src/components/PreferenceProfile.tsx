@@ -132,8 +132,8 @@ export function PreferenceProfile({ data, isLoading }: PreferenceProfileProps) {
             {[...data.genreAffinities]
               .sort((a, b) => b.avgScore - a.avgScore)
               .slice(0, 10)
-              .map((item, i) => {
-                const maxScore = data.genreAffinities[0]?.avgScore ?? 1;
+              .map((item, i, sorted) => {
+                const maxScore = sorted[0]?.avgScore ?? 1;
                 const pct = Math.round((item.avgScore / maxScore) * 100);
                 return (
                   <div key={item.genre} className="flex items-center gap-3">
