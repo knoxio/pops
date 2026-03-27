@@ -95,6 +95,33 @@ export interface RadarrQueueResponse {
   records: RadarrQueueRecord[];
 }
 
+// -- Sonarr request/config types --
+
+export interface SonarrQualityProfile {
+  id: number;
+  name: string;
+}
+
+export interface SonarrRootFolder {
+  id: number;
+  path: string;
+  freeSpace: number;
+}
+
+export interface SonarrLanguageProfile {
+  id: number;
+  name: string;
+}
+
+export interface SonarrAddSeriesInput {
+  tvdbId: number;
+  title: string;
+  qualityProfileId: number;
+  rootFolderPath: string;
+  languageProfileId: number;
+  seasons: { seasonNumber: number; monitored: boolean }[];
+}
+
 // -- Sonarr response types --
 
 export interface SonarrSeries {

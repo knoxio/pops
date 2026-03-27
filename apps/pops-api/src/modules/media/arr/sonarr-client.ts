@@ -2,7 +2,15 @@
  * Sonarr API client — extends base *arr client with TV show-specific endpoints.
  */
 import { ArrBaseClient } from "./base-client.js";
-import type { SonarrSeries, SonarrQueueResponse, ArrStatusResult } from "./types.js";
+import type {
+  SonarrSeries,
+  SonarrQueueResponse,
+  ArrStatusResult,
+  SonarrQualityProfile,
+  SonarrRootFolder,
+  SonarrLanguageProfile,
+  SonarrAddSeriesInput,
+} from "./types.js";
 
 export class SonarrClient extends ArrBaseClient {
   /** Fetch all monitored series from Sonarr. */
@@ -65,5 +73,34 @@ export class SonarrClient extends ArrBaseClient {
     }
 
     return { status: "monitored", label: "Monitored" };
+  }
+
+  /** Fetch quality profiles from Sonarr. */
+  async getQualityProfiles(): Promise<SonarrQualityProfile[]> {
+    return this.get<SonarrQualityProfile[]>("/qualityprofile");
+  }
+
+  /** Fetch root folders from Sonarr. */
+  async getRootFolders(): Promise<SonarrRootFolder[]> {
+    return this.get<SonarrRootFolder[]>("/rootfolder");
+  }
+
+  /** Fetch language profiles from Sonarr. */
+  async getLanguageProfiles(): Promise<SonarrLanguageProfile[]> {
+    return this.get<SonarrLanguageProfile[]>("/languageprofile");
+  }
+
+  /** Add a series to Sonarr. */
+  async addSeries(input: SonarrAddSeriesInput): Promise<SonarrSeries> {
+    return this.post<SonarrSeries>("/series", {
+      tvdbId: input.tvdbId,
+      title: input.title,
+      qualityProfileId: input.qualityProfileId,
+      rootFolderPath: input.rootFolderPath,
+      languageProfileId: input.languageProfileId,
+      seasons: input.seasons,
+      monitored: true,
+      addOptions: { searchForMissingEpisodes: false },
+    });
   }
 }
