@@ -80,13 +80,13 @@ export function InsuranceReportPage(): React.ReactElement {
   }
 
   return (
-    <div className="p-6 max-w-5xl mx-auto print:p-0 print:max-w-none">
+    <div className="p-6 max-w-5xl mx-auto print:p-0 print:max-w-none print:text-[11pt]">
       {/* Header */}
       <div className="flex items-center justify-between mb-6 print:mb-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <FileText className="h-6 w-6 text-muted-foreground print:hidden" />
-            <h1 className="text-2xl font-bold">Insurance Report</h1>
+            <h1 className="text-2xl font-bold print:text-[14pt]">Insurance Report</h1>
           </div>
           <p className="text-sm text-muted-foreground">
             Generated {today}
@@ -123,12 +123,12 @@ export function InsuranceReportPage(): React.ReactElement {
       </div>
 
       {/* Location Groups */}
-      {report.groups.map((group) => (
+      {report.groups.map((group, groupIndex) => (
         <div
           key={group.locationId ?? "unlocated"}
-          className="mb-8 print:mb-4 print:break-inside-avoid-page"
+          className={`mb-8 print:mb-4 ${groupIndex > 0 ? "print:break-before-page" : ""}`}
         >
-          <h2 className="text-lg font-semibold mb-3 pb-1 border-b">
+          <h2 className="text-lg font-semibold mb-3 pb-1 border-b print:text-[14pt]">
             {group.locationName}
             <span className="ml-2 text-sm font-normal text-muted-foreground">
               ({group.items.length} {group.items.length === 1 ? "item" : "items"})
@@ -136,16 +136,16 @@ export function InsuranceReportPage(): React.ReactElement {
           </h2>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm print:text-[11pt] print:border-collapse print:border print:border-gray-300">
               <thead>
-                <tr className="border-b text-left text-muted-foreground">
-                  <th className="py-2 pr-3 w-10">Photo</th>
-                  <th className="py-2 pr-3">Name</th>
-                  <th className="py-2 pr-3">Asset ID</th>
-                  <th className="py-2 pr-3">Brand</th>
-                  <th className="py-2 pr-3">Condition</th>
-                  <th className="py-2 pr-3">Warranty</th>
-                  <th className="py-2 pr-3 text-right">Value</th>
+                <tr className="border-b text-left text-muted-foreground print:border-gray-300">
+                  <th className="py-2 pr-3 w-10 print:border print:border-gray-300 print:p-1">Photo</th>
+                  <th className="py-2 pr-3 print:border print:border-gray-300 print:p-1">Name</th>
+                  <th className="py-2 pr-3 print:border print:border-gray-300 print:p-1">Asset ID</th>
+                  <th className="py-2 pr-3 print:border print:border-gray-300 print:p-1">Brand</th>
+                  <th className="py-2 pr-3 print:border print:border-gray-300 print:p-1">Condition</th>
+                  <th className="py-2 pr-3 print:border print:border-gray-300 print:p-1">Warranty</th>
+                  <th className="py-2 pr-3 text-right print:border print:border-gray-300 print:p-1">Value</th>
                 </tr>
               </thead>
               <tbody>
@@ -154,40 +154,40 @@ export function InsuranceReportPage(): React.ReactElement {
                   return (
                     <tr
                       key={item.id}
-                      className="border-b last:border-0 hover:bg-muted/30 cursor-pointer print:hover:bg-transparent print:cursor-default"
+                      className="border-b last:border-0 hover:bg-muted/30 cursor-pointer print:hover:bg-transparent print:cursor-default print:break-inside-avoid print:border-gray-300"
                       onClick={() => navigate(`/inventory/items/${item.id}`)}
                     >
-                      <td className="py-2 pr-3">
+                      <td className="py-2 pr-3 print:border print:border-gray-300 print:p-1">
                         {item.photoPath ? (
                           <img
                             src={`/inventory/photos/${item.photoPath}`}
                             alt=""
-                            className="w-8 h-8 rounded object-cover"
+                            className="w-8 h-8 rounded object-cover print:w-auto print:h-auto print:max-w-[200px] print:break-inside-avoid"
                           />
                         ) : (
-                          <div className="w-8 h-8 rounded bg-muted" />
+                          <div className="w-8 h-8 rounded bg-muted print:bg-gray-100" />
                         )}
                       </td>
-                      <td className="py-2 pr-3 font-medium">{item.itemName}</td>
-                      <td className="py-2 pr-3">
+                      <td className="py-2 pr-3 font-medium print:border print:border-gray-300 print:p-1 print:text-[12pt]">{item.itemName}</td>
+                      <td className="py-2 pr-3 print:border print:border-gray-300 print:p-1 [&_span]:print:bg-transparent [&_span]:print:text-black">
                         {item.assetId ? (
                           <AssetIdBadge assetId={item.assetId} />
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
                       </td>
-                      <td className="py-2 pr-3">{item.brand ?? "—"}</td>
-                      <td className="py-2 pr-3">
+                      <td className="py-2 pr-3 print:border print:border-gray-300 print:p-1">{item.brand ?? "—"}</td>
+                      <td className="py-2 pr-3 print:border print:border-gray-300 print:p-1 [&_span]:print:bg-transparent [&_span]:print:text-black">
                         {item.condition ? (
                           <ConditionBadge condition={item.condition as Condition} />
                         ) : (
                           <span className="text-muted-foreground">—</span>
                         )}
                       </td>
-                      <td className="py-2 pr-3">
-                        <Badge variant={warranty.variant}>{warranty.label}</Badge>
+                      <td className="py-2 pr-3 print:border print:border-gray-300 print:p-1">
+                        <Badge variant={warranty.variant} className="print:bg-transparent print:border print:border-gray-400 print:text-black">{warranty.label}</Badge>
                       </td>
-                      <td className="py-2 pr-3 text-right tabular-nums">
+                      <td className="py-2 pr-3 text-right tabular-nums print:border print:border-gray-300 print:p-1">
                         {item.replacementValue ? formatCurrency(item.replacementValue) : "—"}
                       </td>
                     </tr>
