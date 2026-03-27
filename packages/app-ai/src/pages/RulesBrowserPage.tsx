@@ -26,9 +26,22 @@ import {
 } from "@pops/ui";
 import { trpc } from "../lib/trpc";
 
-type Correction = NonNullable<
-  ReturnType<typeof trpc.core.corrections.list.useQuery>["data"]
->["data"][number];
+type MatchType = "exact" | "contains" | "regex";
+
+interface Correction {
+  id: string;
+  descriptionPattern: string;
+  matchType: MatchType;
+  entityId: string | null;
+  entityName: string | null;
+  location: string | null;
+  tags: string[];
+  transactionType: "purchase" | "transfer" | "income" | null;
+  confidence: number;
+  timesApplied: number;
+  createdAt: string;
+  lastUsedAt: string | null;
+}
 
 const MATCH_TYPE_OPTIONS: SelectOption[] = [
   { value: "", label: "All Match Types" },
@@ -129,7 +142,7 @@ export function RulesBrowserPage(): React.ReactElement {
   const [removedIds, setRemovedIds] = useState<Set<string>>(new Set());
 
   const parsedMinConfidence = minConfidence ? parseFloat(minConfidence) : undefined;
-  const parsedMatchType =
+  const parsedMatchType: MatchType | undefined =
     matchType === "exact" || matchType === "contains" || matchType === "regex"
       ? matchType
       : undefined;
