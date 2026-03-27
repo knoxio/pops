@@ -81,6 +81,14 @@ export function ProcessingStep() {
     }
   }, [parsedTransactions.length]);
 
+  const handleRetry = (): void => {
+    processImportMutation.reset();
+    processImportMutation.mutate({
+      transactions: parsedTransactions,
+      account: "Amex",
+    });
+  };
+
   const progress = progressQuery.data;
   const isProcessing = pollingEnabled && progress?.status === "processing";
 
@@ -242,6 +250,9 @@ export function ProcessingStep() {
               ))}
             </div>
           )}
+          <Button variant="destructive" size="sm" className="mt-3" onClick={handleRetry}>
+            Retry
+          </Button>
         </div>
       )}
 
