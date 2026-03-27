@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { CheckCircle, AlertTriangle, XCircle, AlertCircle, List, Layers } from "lucide-react";
 import { useImportStore } from "../../store/importStore";
 import type { ProcessedTransaction } from "../../store/importStore";
@@ -30,6 +30,26 @@ export function ReviewStep() {
   >(null);
   const [editingTransaction, setEditingTransaction] = useState<ProcessedTransaction | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("grouped");
+
+  // Default to Uncertain tab when uncertain transactions exist, otherwise Matched
+  const initialTab = localTransactions.uncertain.length > 0 ? "uncertain" : "matched";
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  // Preserve scroll position per tab
+  const scrollPositions = useRef<Map<string, number>>(new Map());
+  const handleTabChange = useCallback(
+    (value: string) => {
+      // Save current scroll position
+      scrollPositions.current.set(activeTab, window.scrollY);
+      setActiveTab(value);
+      // Restore scroll position for the new tab (defer to after render)
+      requestAnimationFrame(() => {
+        const saved = scrollPositions.current.get(value);
+        window.scrollTo(0, saved ?? 0);
+      });
+    },
+    [activeTab]
+  );
 
   const { data: entities } = trpc.core.entities.list.useQuery({});
 
@@ -477,7 +497,7 @@ export function ReviewStep() {
         </div>
       )}
 
-      <Tabs defaultValue="matched" className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="matched" className="flex items-center gap-2">
             <CheckCircle className="w-4 h-4" />
