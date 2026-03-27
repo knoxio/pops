@@ -9,6 +9,7 @@ import type { PlexClient } from "./client.js";
 import type { PlexMediaItem } from "./types.js";
 import type { TheTvdbClient } from "../thetvdb/client.js";
 import { getTvdbClient } from "../thetvdb/index.js";
+import { getDb } from "../../../db.js";
 import * as tvShowService from "../library/tv-show-service.js";
 import { extractExternalIdAsNumber, syncEpisodeWatches } from "./sync-helpers.js";
 
@@ -103,12 +104,16 @@ async function syncSingleShow(
     return;
   }
 
-  // Step 2: Add to library (idempotent)
+  // Step 2: Add to library (idempotent, has internal transaction)
   await tvShowService.addTvShow(tvdbId, tvdbClient);
 
-  // Step 3: Sync episode watches
+  // Step 3: Fetch episodes from Plex (async)
   const plexEpisodes = await plexClient.getEpisodes(item.ratingKey);
-  const matched = syncEpisodeWatches(tvdbId, plexEpisodes);
+
+  // Step 4: Wrap episode watch syncing in a transaction for atomicity
+  const matched = getDb().transaction(() => {
+    return syncEpisodeWatches(tvdbId, plexEpisodes);
+  })();
   progress.episodesMatched += matched;
 
   progress.synced++;

@@ -4,6 +4,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { PlexMediaItem, PlexEpisode } from "./types.js";
 import type { PlexClient } from "./client.js";
+import type BetterSqlite3 from "better-sqlite3";
 
 // Mock dependencies
 vi.mock("../thetvdb/index.js", () => ({
@@ -23,6 +24,7 @@ vi.mock("../watch-history/service.js", () => ({
 }));
 
 vi.mock("../../../db.js", () => ({
+  getDb: vi.fn(),
   getDrizzle: vi.fn(),
 }));
 
@@ -41,12 +43,13 @@ import { getTvdbClient } from "../thetvdb/index.js";
 import * as tvShowService from "../library/tv-show-service.js";
 import { getTvShowByTvdbId } from "../tv-shows/service.js";
 import { logWatch } from "../watch-history/service.js";
-import { getDrizzle } from "../../../db.js";
+import { getDb, getDrizzle } from "../../../db.js";
 
 const mockGetTvdbClient = vi.mocked(getTvdbClient);
 const mockAddTvShow = vi.mocked(tvShowService.addTvShow);
 const mockGetTvShowByTvdbId = vi.mocked(getTvShowByTvdbId);
 const mockLogWatch = vi.mocked(logWatch);
+const mockGetDb = vi.mocked(getDb);
 const mockGetDrizzle = vi.mocked(getDrizzle);
 
 // ---------------------------------------------------------------------------
@@ -130,6 +133,10 @@ function makeMockDb(seasonResult: unknown = undefined, episodeResult: unknown = 
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // getDb().transaction() wraps episode watch syncing
+  mockGetDb.mockReturnValue({
+    transaction: vi.fn((fn: () => unknown) => fn),
+  } as unknown as BetterSqlite3.Database);
 });
 
 describe("importTvShowsFromPlex", () => {
@@ -396,5 +403,64 @@ describe("importTvShowsFromPlex", () => {
     expect(result.synced).toBe(4);
     expect(result.errors).toHaveLength(0);
     expect(mockAddTvShow).toHaveBeenCalledTimes(4);
+  });
+
+  it("wraps episode watch syncing in a transaction", async () => {
+    const mockTransaction = vi.fn((fn: () => unknown) => fn);
+    mockGetDb.mockReturnValue({
+      transaction: mockTransaction,
+    } as unknown as BetterSqlite3.Database);
+
+    const fakeTvdbClient = {} as ReturnType<typeof getTvdbClient>;
+    mockGetTvdbClient.mockReturnValue(fakeTvdbClient);
+    mockAddTvShow.mockResolvedValue({
+      show: { id: 1, title: "Breaking Bad" } as unknown as import("@pops/db-types").TvShowRow,
+      seasons: [],
+      created: true,
+    });
+    mockGetTvShowByTvdbId.mockReturnValue({
+      id: 1,
+    } as unknown as import("@pops/db-types").TvShowRow);
+    makeMockDb({ id: 10 }, { id: 100 });
+
+    const ep = makePlexEpisode({ viewCount: 1, lastViewedAt: 1711400000 });
+    const show = makePlexShow();
+    const client = makePlexClient([show], { "200": [ep] });
+
+    await importTvShowsFromPlex(client, "2");
+
+    expect(mockTransaction).toHaveBeenCalledTimes(1);
+  });
+
+  it("single show failure does not affect other shows", async () => {
+    const fakeTvdbClient = {} as ReturnType<typeof getTvdbClient>;
+    mockGetTvdbClient.mockReturnValue(fakeTvdbClient);
+    mockGetTvShowByTvdbId.mockReturnValue(null);
+
+    const show1 = makePlexShow({ ratingKey: "1", title: "Show 1" });
+    const show2 = makePlexShow({ ratingKey: "2", title: "Show 2" });
+    const show3 = makePlexShow({ ratingKey: "3", title: "Show 3" });
+
+    mockAddTvShow
+      .mockResolvedValueOnce({
+        show: { id: 1, title: "Show 1" } as unknown as import("@pops/db-types").TvShowRow,
+        seasons: [],
+        created: true,
+      })
+      .mockRejectedValueOnce(new Error("TVDB fetch failed for show 2"))
+      .mockResolvedValueOnce({
+        show: { id: 3, title: "Show 3" } as unknown as import("@pops/db-types").TvShowRow,
+        seasons: [],
+        created: true,
+      });
+
+    const client = makePlexClient([show1, show2, show3], { "1": [], "3": [] });
+
+    const result = await importTvShowsFromPlex(client, "2");
+
+    expect(result.synced).toBe(2);
+    expect(result.errors).toHaveLength(1);
+    expect(result.errors[0]!.title).toBe("Show 2");
+    expect(result.processed).toBe(3);
   });
 });

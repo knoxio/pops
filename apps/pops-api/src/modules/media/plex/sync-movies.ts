@@ -9,7 +9,9 @@ import type { PlexClient } from "./client.js";
 import type { PlexMediaItem } from "./types.js";
 import type { TmdbClient } from "../tmdb/client.js";
 import { getTmdbClient } from "../tmdb/index.js";
-import * as libraryService from "../library/service.js";
+import { getDb } from "../../../db.js";
+import { getMovieByTmdbId, createMovie } from "../movies/service.js";
+import { toMovie } from "../movies/types.js";
 import { logMovieWatch } from "./sync-helpers.js";
 
 // ---------------------------------------------------------------------------
@@ -92,7 +94,7 @@ async function syncSingleMovie(
   tmdbClient: TmdbClient,
   progress: MovieSyncProgress
 ): Promise<void> {
-  // Step 1: Resolve TMDB ID
+  // Step 1: Resolve TMDB ID (may call external API)
   const tmdbId = await resolveTmdbId(item, tmdbClient);
 
   if (!tmdbId) {
@@ -100,12 +102,48 @@ async function syncSingleMovie(
     return;
   }
 
-  // Step 2: Add to library (idempotent)
-  const { movie } = await libraryService.addMovie(tmdbId, tmdbClient);
+  // Step 2: Check if already in library (idempotent)
+  const existing = getMovieByTmdbId(tmdbId);
 
-  // Step 3: Sync watch history
-  if (item.viewCount > 0 && item.lastViewedAt) {
-    logMovieWatch(movie.id, item.lastViewedAt);
+  if (existing) {
+    // Movie exists — only sync watch history in a transaction
+    getDb().transaction(() => {
+      if (item.viewCount > 0 && item.lastViewedAt) {
+        logMovieWatch(existing.id, item.lastViewedAt);
+      }
+    })();
+  } else {
+    // Fetch TMDB detail outside transaction (async)
+    const detail = await tmdbClient.getMovie(tmdbId);
+
+    // All DB writes in a single transaction (atomic per movie)
+    getDb().transaction(() => {
+      const movie = toMovie(
+        createMovie({
+          tmdbId: detail.tmdbId,
+          imdbId: detail.imdbId,
+          title: detail.title,
+          originalTitle: detail.originalTitle,
+          overview: detail.overview,
+          tagline: detail.tagline,
+          releaseDate: detail.releaseDate,
+          runtime: detail.runtime,
+          status: detail.status,
+          originalLanguage: detail.originalLanguage,
+          budget: detail.budget,
+          revenue: detail.revenue,
+          posterPath: detail.posterPath,
+          backdropPath: detail.backdropPath,
+          voteAverage: detail.voteAverage,
+          voteCount: detail.voteCount,
+          genres: detail.genres.map((g) => g.name),
+        })
+      );
+
+      if (item.viewCount > 0 && item.lastViewedAt) {
+        logMovieWatch(movie.id, item.lastViewedAt);
+      }
+    })();
   }
 
   progress.synced++;
