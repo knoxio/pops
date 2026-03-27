@@ -32,6 +32,8 @@ function makeItem(
     itemName: string;
     warrantyExpires: string | null;
     assetId: string | null;
+    brand: string | null;
+    model: string | null;
     replacementValue: number | null;
   }> = {}
 ) {
@@ -40,6 +42,8 @@ function makeItem(
     itemName: overrides.itemName ?? "Test Item",
     warrantyExpires: overrides.warrantyExpires ?? null,
     assetId: overrides.assetId ?? null,
+    brand: overrides.brand ?? null,
+    model: overrides.model ?? null,
     replacementValue: overrides.replacementValue ?? null,
   };
 }
@@ -150,5 +154,149 @@ describe("WarrantiesPage", () => {
     // Click to expand Expired section
     fireEvent.click(screen.getByText("Expired"));
     expect(screen.getByText("Old Phone")).toBeInTheDocument();
+  });
+
+  it("shows brand and model in warranty row", () => {
+    mockWarrantiesQuery.mockReturnValue({
+      data: {
+        data: [
+          makeItem({
+            id: "1",
+            itemName: "Laptop",
+            brand: "Apple",
+            model: "MacBook Pro",
+            warrantyExpires: "2030-01-01",
+          }),
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    renderPage();
+    expect(screen.getByText("Laptop")).toBeInTheDocument();
+    expect(screen.getByText("Apple MacBook Pro")).toBeInTheDocument();
+  });
+
+  it("shows brand only when model is null", () => {
+    mockWarrantiesQuery.mockReturnValue({
+      data: {
+        data: [
+          makeItem({
+            id: "1",
+            itemName: "TV",
+            brand: "Samsung",
+            model: null,
+            warrantyExpires: "2030-01-01",
+          }),
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    renderPage();
+    expect(screen.getByText("Samsung")).toBeInTheDocument();
+  });
+
+  it("shows days-remaining badge for active warranties", () => {
+    mockWarrantiesQuery.mockReturnValue({
+      data: {
+        data: [makeItem({ id: "1", itemName: "Active Item", warrantyExpires: "2030-06-01" })],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    renderPage();
+    // Active items (>90 days) should show a days-remaining badge
+    expect(screen.getByText("Active Item")).toBeInTheDocument();
+    expect(screen.getByText(/days$/)).toBeInTheDocument();
+  });
+
+  it("shows urgency badge for expiring soon items", () => {
+    // Set warranty to expire in 10 days from now
+    const soon = new Date();
+    soon.setDate(soon.getDate() + 10);
+    const soonStr = soon.toISOString().slice(0, 10);
+
+    mockWarrantiesQuery.mockReturnValue({
+      data: {
+        data: [makeItem({ id: "1", itemName: "Urgent Item", warrantyExpires: soonStr })],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    renderPage();
+    expect(screen.getByText("Urgent Item")).toBeInTheDocument();
+    expect(screen.getByText("Expiring Soon")).toBeInTheDocument();
+    expect(screen.getByText("10 days")).toBeInTheDocument();
+  });
+
+  it("shows expired time ago text", () => {
+    mockWarrantiesQuery.mockReturnValue({
+      data: {
+        data: [makeItem({ id: "1", itemName: "Old Item", warrantyExpires: "2020-01-01" })],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    renderPage();
+    // Only expired items → section defaults open
+    expect(screen.getByText("Old Item")).toBeInTheDocument();
+    expect(screen.getByText(/d ago$/)).toBeInTheDocument();
+  });
+
+  it("sorts expiring soon section by soonest first", () => {
+    const soon1 = new Date();
+    soon1.setDate(soon1.getDate() + 5);
+    const soon2 = new Date();
+    soon2.setDate(soon2.getDate() + 30);
+
+    mockWarrantiesQuery.mockReturnValue({
+      data: {
+        data: [
+          makeItem({
+            id: "2",
+            itemName: "Later Expiry",
+            warrantyExpires: soon2.toISOString().slice(0, 10),
+          }),
+          makeItem({
+            id: "1",
+            itemName: "Sooner Expiry",
+            warrantyExpires: soon1.toISOString().slice(0, 10),
+          }),
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    renderPage();
+    const buttons = screen.getAllByRole("button").filter((b) => b.textContent?.includes("Expiry"));
+    expect(buttons[0]!.textContent).toContain("Sooner Expiry");
+    expect(buttons[1]!.textContent).toContain("Later Expiry");
+  });
+
+  it("shows asset ID badge when present", () => {
+    mockWarrantiesQuery.mockReturnValue({
+      data: {
+        data: [
+          makeItem({
+            id: "1",
+            itemName: "Tagged Item",
+            assetId: "INV-001",
+            warrantyExpires: "2030-01-01",
+          }),
+        ],
+      },
+      isLoading: false,
+      isError: false,
+      refetch: vi.fn(),
+    });
+    renderPage();
+    expect(screen.getByText("INV-001")).toBeInTheDocument();
   });
 });

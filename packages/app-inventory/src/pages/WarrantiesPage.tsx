@@ -14,6 +14,8 @@ interface WarrantyItem {
   id: string;
   itemName: string;
   assetId: string | null;
+  brand: string | null;
+  model: string | null;
   warrantyExpires: string | null;
   replacementValue: number | null;
 }
@@ -67,21 +69,45 @@ interface WarrantyRowProps {
   onClick: () => void;
 }
 
+function formatDaysRemaining(days: number): string {
+  if (days === 0) return "Today";
+  if (days === 1) return "1 day";
+  return `${days} days`;
+}
+
+function brandModelLabel(brand: string | null, model: string | null): string | null {
+  if (brand && model) return `${brand} ${model}`;
+  return brand ?? model ?? null;
+}
+
 function WarrantyRow({ item, daysRemaining, showUrgency, onClick }: WarrantyRowProps) {
+  const subtitle = brandModelLabel(item.brand, item.model);
+
   return (
     <button
       type="button"
       className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-muted/50"
       onClick={onClick}
     >
-      <span className="font-medium truncate flex-1">{item.itemName}</span>
+      <div className="flex flex-col min-w-0 flex-1">
+        <span className="font-medium truncate">{item.itemName}</span>
+        {subtitle && <span className="text-xs text-muted-foreground truncate">{subtitle}</span>}
+      </div>
       {item.assetId && <AssetIdBadge assetId={item.assetId} />}
       <span className="text-muted-foreground text-xs whitespace-nowrap">
         {item.warrantyExpires && formatDate(item.warrantyExpires)}
       </span>
       {showUrgency && (
         <Badge variant={urgencyBadgeVariant(daysRemaining)} className="text-xs whitespace-nowrap">
-          {daysRemaining === 0 ? "Today" : daysRemaining === 1 ? "1 day" : `${daysRemaining} days`}
+          {formatDaysRemaining(daysRemaining)}
+        </Badge>
+      )}
+      {!showUrgency && daysRemaining >= 0 && (
+        <Badge
+          variant="outline"
+          className="text-xs whitespace-nowrap text-green-600 border-green-200"
+        >
+          {formatDaysRemaining(daysRemaining)}
         </Badge>
       )}
       {!showUrgency && daysRemaining < 0 && (
