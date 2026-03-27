@@ -283,9 +283,13 @@ Return ONLY the JSON object, no markdown, no explanation.`;
   try {
     const parsed = JSON.parse(cleanedText) as Record<string, unknown>;
 
-    const matchType = String(parsed["matchType"]);
-    const pattern = String(parsed["pattern"] ?? "");
-    const confidence = Number(parsed["confidence"] ?? 0);
+    const rawMatchType = parsed["matchType"];
+    const rawPattern = parsed["pattern"];
+    const rawConfidence = parsed["confidence"];
+
+    const matchType = typeof rawMatchType === "string" ? rawMatchType : "";
+    const pattern = typeof rawPattern === "string" ? rawPattern : "";
+    const confidence = typeof rawConfidence === "number" ? rawConfidence : 0;
 
     if (
       !["exact", "prefix", "contains"].includes(matchType) ||
