@@ -155,8 +155,87 @@ export function ReviewStep() {
     setShowCreateDialog(true);
   }, []);
 
+  const createCorrectionMutation = trpc.core.corrections.createOrUpdate.useMutation();
+
   /**
-   * Accept AI suggestion for a single transaction
+   * Auto-save a correction rule, re-evaluate remaining uncertain/failed transactions,
+   * move matches to the matched tab, and show a toast with the result.
+   */
+  const autoSaveRuleAndReEvaluate = useCallback(
+    (description: string, entityId: string, entityName: string) => {
+      const pattern = description.toUpperCase().replace(/\d+/g, "").replace(/\s+/g, " ").trim();
+
+      createCorrectionMutation.mutate({
+        descriptionPattern: pattern,
+        matchType: "contains",
+        entityId,
+        entityName,
+      });
+
+      // Re-evaluate and move matching transactions in a single state update.
+      // Toast is called inside the updater so it has access to the computed count.
+      const normalizedEntityName = entityName.toUpperCase();
+
+      setLocalTransactions((prev) => {
+        const toMove: ProcessedTransaction[] = [];
+        const remainingUncertain: ProcessedTransaction[] = [];
+        const remainingFailed: ProcessedTransaction[] = [];
+
+        for (const t of prev.uncertain) {
+          if (t.description.toUpperCase().includes(normalizedEntityName)) {
+            toMove.push(t);
+          } else {
+            remainingUncertain.push(t);
+          }
+        }
+
+        for (const t of prev.failed) {
+          if (t.description.toUpperCase().includes(normalizedEntityName)) {
+            toMove.push(t);
+          } else {
+            remainingFailed.push(t);
+          }
+        }
+
+        if (toMove.length > 0) {
+          toast.success(
+            `Rule created: "${entityName}". Applied to ${toMove.length} more transaction${toMove.length !== 1 ? "s" : ""}`
+          );
+        } else {
+          toast.success(`Rule created: "${entityName}"`);
+        }
+
+        if (toMove.length === 0) return prev;
+
+        return {
+          ...prev,
+          uncertain: remainingUncertain,
+          failed: remainingFailed,
+          matched: [
+            ...prev.matched,
+            ...toMove.map(
+              (t) =>
+                ({
+                  ...t,
+                  entity: {
+                    entityId,
+                    entityName,
+                    matchType: "learned" as never,
+                    confidence: 0.8,
+                  },
+                  status: "matched" as const,
+                }) as ProcessedTransaction
+            ),
+          ],
+        };
+      });
+    },
+    [createCorrectionMutation]
+  );
+
+  /**
+   * Accept AI suggestion for a single transaction.
+   * Auto-saves a correction rule and re-evaluates remaining transactions.
    */
   const handleAcceptAiSuggestion = useCallback(
     (transaction: ProcessedTransaction) => {
@@ -180,8 +259,11 @@ export function ReviewStep() {
       }
 
       handleEntitySelect(transaction, entityId, transaction.entity.entityName);
+
+      // Auto-save correction rule and re-evaluate remaining transactions
+      autoSaveRuleAndReEvaluate(transaction.description, entityId, transaction.entity.entityName);
     },
-    [handleEntitySelect, entities, handleCreateEntity]
+    [handleEntitySelect, entities, handleCreateEntity, autoSaveRuleAndReEvaluate]
   );
 
   /**
@@ -242,13 +324,18 @@ export function ReviewStep() {
         toast.success(
           `Accepted ${transactions.length} transaction${transactions.length !== 1 ? "s" : ""}`
         );
+
+        // Auto-save correction rule using the first transaction's description and re-evaluate
+        if (firstTx) {
+          autoSaveRuleAndReEvaluate(firstTx.description, resolvedEntityId, entityName);
+        }
       } catch (error) {
         toast.error(
           `Failed to accept: ${error instanceof Error ? error.message : "Unknown error"}`
         );
       }
     },
-    [entities, createEntityMutation]
+    [entities, createEntityMutation, autoSaveRuleAndReEvaluate]
   );
 
   /**
@@ -312,8 +399,6 @@ export function ReviewStep() {
   const handleEdit = useCallback((transaction: ProcessedTransaction) => {
     setEditingTransaction(transaction);
   }, []);
-
-  const createCorrectionMutation = trpc.core.corrections.createOrUpdate.useMutation();
 
   const handleSaveEdit = useCallback(
     (
