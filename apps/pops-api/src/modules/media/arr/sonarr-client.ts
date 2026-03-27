@@ -9,6 +9,10 @@ import type {
   ArrStatusResult,
   SonarrCalendarEpisode,
   SonarrEpisodeMonitorInput,
+  SonarrQualityProfile,
+  SonarrRootFolder,
+  SonarrLanguageProfile,
+  SonarrAddSeriesInput,
 } from "./types.js";
 
 export class SonarrClient extends ArrBaseClient {
@@ -130,5 +134,37 @@ export class SonarrClient extends ArrBaseClient {
   async updateEpisodeMonitoring(episodeIds: number[], monitored: boolean): Promise<void> {
     const body: SonarrEpisodeMonitorInput = { episodeIds, monitored };
     await this.put<unknown>("/episode/monitor", body);
+  }
+
+  /** Fetch quality profiles from Sonarr. */
+  async getQualityProfiles(): Promise<SonarrQualityProfile[]> {
+    return this.get<SonarrQualityProfile[]>("/qualityprofile");
+  }
+
+  /** Fetch root folders from Sonarr. */
+  async getRootFolders(): Promise<SonarrRootFolder[]> {
+    return this.get<SonarrRootFolder[]>("/rootfolder");
+  }
+
+  /** Fetch language profiles from Sonarr. */
+  async getLanguageProfiles(): Promise<SonarrLanguageProfile[]> {
+    return this.get<SonarrLanguageProfile[]>("/languageprofile");
+  }
+
+  /** Add a series to Sonarr. */
+  async addSeries(input: SonarrAddSeriesInput): Promise<SonarrSeriesFull> {
+    return this.post<SonarrSeriesFull>("/series", {
+      tvdbId: input.tvdbId,
+      title: input.title,
+      qualityProfileId: input.qualityProfileId,
+      rootFolderPath: input.rootFolderPath,
+      languageProfileId: input.languageProfileId,
+      seasons: input.seasons.map((s) => ({
+        seasonNumber: s.seasonNumber,
+        monitored: s.monitored,
+      })),
+      monitored: true,
+      addOptions: { searchForMissingEpisodes: true },
+    });
   }
 }

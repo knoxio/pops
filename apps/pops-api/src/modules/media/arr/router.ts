@@ -326,6 +326,102 @@ export const arrRouter = router({
       }
     }),
 
+  /** Get Sonarr quality profiles. */
+  getSonarrQualityProfiles: protectedProcedure.query(async () => {
+    const client = arrService.getSonarrClient();
+    if (!client) {
+      throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Sonarr is not configured" });
+    }
+    try {
+      const profiles = await client.getQualityProfiles();
+      return { data: profiles };
+    } catch (err) {
+      if (err instanceof ArrApiError) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Sonarr error: ${err.message}`,
+        });
+      }
+      throw err;
+    }
+  }),
+
+  /** Get Sonarr root folders. */
+  getSonarrRootFolders: protectedProcedure.query(async () => {
+    const client = arrService.getSonarrClient();
+    if (!client) {
+      throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Sonarr is not configured" });
+    }
+    try {
+      const folders = await client.getRootFolders();
+      return { data: folders };
+    } catch (err) {
+      if (err instanceof ArrApiError) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Sonarr error: ${err.message}`,
+        });
+      }
+      throw err;
+    }
+  }),
+
+  /** Get Sonarr language profiles. */
+  getSonarrLanguageProfiles: protectedProcedure.query(async () => {
+    const client = arrService.getSonarrClient();
+    if (!client) {
+      throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Sonarr is not configured" });
+    }
+    try {
+      const profiles = await client.getLanguageProfiles();
+      return { data: profiles };
+    } catch (err) {
+      if (err instanceof ArrApiError) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Sonarr error: ${err.message}`,
+        });
+      }
+      throw err;
+    }
+  }),
+
+  /** Add a series to Sonarr. */
+  addSeries: protectedProcedure
+    .input(
+      z.object({
+        tvdbId: z.number().int().positive(),
+        title: z.string().min(1),
+        qualityProfileId: z.number().int().positive(),
+        rootFolderPath: z.string().min(1),
+        languageProfileId: z.number().int().positive(),
+        seasons: z.array(
+          z.object({
+            seasonNumber: z.number().int().min(0),
+            monitored: z.boolean(),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const client = arrService.getSonarrClient();
+      if (!client) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Sonarr is not configured" });
+      }
+      try {
+        const series = await client.addSeries(input);
+        return { data: series };
+      } catch (err) {
+        if (err instanceof ArrApiError) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Sonarr error: ${err.message}`,
+          });
+        }
+        throw err;
+      }
+    }),
+
   /** Update season monitoring for a series in Sonarr. */
   updateSeasonMonitoring: protectedProcedure
     .input(
