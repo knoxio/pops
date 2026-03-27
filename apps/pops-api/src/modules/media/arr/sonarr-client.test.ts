@@ -78,7 +78,12 @@ describe("SonarrClient", () => {
         title: "Breaking Bad",
         tvdbId: 81189,
         monitored: true,
-        statistics: { episodeFileCount: 62, episodeCount: 62, totalEpisodeCount: 62, percentOfEpisodes: 100 },
+        statistics: {
+          episodeFileCount: 62,
+          episodeCount: 62,
+          totalEpisodeCount: 62,
+          percentOfEpisodes: 100,
+        },
       },
     ];
     mockFetch.mockResolvedValueOnce(jsonResponse(series));
@@ -141,8 +146,8 @@ describe("SonarrClient", () => {
 
   it("getShowStatus returns not_found for unknown TVDB ID", async () => {
     mockFetch
-      .mockResolvedValueOnce(jsonResponse([]))  // getSeries
-      .mockResolvedValueOnce(jsonResponse({ totalRecords: 0, records: [] }));  // getQueue
+      .mockResolvedValueOnce(jsonResponse([])) // getSeries
+      .mockResolvedValueOnce(jsonResponse({ totalRecords: 0, records: [] })); // getQueue
 
     const result = await client.getShowStatus(99999);
 
@@ -151,15 +156,22 @@ describe("SonarrClient", () => {
 
   it("getShowStatus returns complete when all episodes have files", async () => {
     mockFetch
-      .mockResolvedValueOnce(jsonResponse([
-        {
-          id: 1,
-          title: "Test Show",
-          tvdbId: 12345,
-          monitored: true,
-          statistics: { episodeFileCount: 10, episodeCount: 10, totalEpisodeCount: 10, percentOfEpisodes: 100 },
-        },
-      ]))
+      .mockResolvedValueOnce(
+        jsonResponse([
+          {
+            id: 1,
+            title: "Test Show",
+            tvdbId: 12345,
+            monitored: true,
+            statistics: {
+              episodeFileCount: 10,
+              episodeCount: 10,
+              totalEpisodeCount: 10,
+              percentOfEpisodes: 100,
+            },
+          },
+        ])
+      )
       .mockResolvedValueOnce(jsonResponse({ totalRecords: 0, records: [] }));
 
     const result = await client.getShowStatus(12345);

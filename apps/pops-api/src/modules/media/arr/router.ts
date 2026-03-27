@@ -317,7 +317,10 @@ export const arrRouter = router({
       return { data: await client.getQualityProfiles() };
     } catch (err) {
       if (err instanceof ArrApiError) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Sonarr error: ${err.message}` });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Sonarr error: ${err.message}`,
+        });
       }
       throw err;
     }
@@ -333,7 +336,10 @@ export const arrRouter = router({
       return { data: await client.getRootFolders() };
     } catch (err) {
       if (err instanceof ArrApiError) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Sonarr error: ${err.message}` });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Sonarr error: ${err.message}`,
+        });
       }
       throw err;
     }
@@ -349,7 +355,10 @@ export const arrRouter = router({
       return { data: await client.getLanguageProfiles() };
     } catch (err) {
       if (err instanceof ArrApiError) {
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Sonarr error: ${err.message}` });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Sonarr error: ${err.message}`,
+        });
       }
       throw err;
     }
@@ -367,7 +376,10 @@ export const arrRouter = router({
         return { data: await client.checkSeries(input.tvdbId) };
       } catch (err) {
         if (err instanceof ArrApiError) {
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Sonarr error: ${err.message}` });
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Sonarr error: ${err.message}`,
+          });
         }
         throw err;
       }
@@ -390,7 +402,10 @@ export const arrRouter = router({
         return { data: await client.getCalendar(input.start, input.end) };
       } catch (err) {
         if (err instanceof ArrApiError) {
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: `Sonarr error: ${err.message}` });
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Sonarr error: ${err.message}`,
+          });
         }
         throw err;
       }
