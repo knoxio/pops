@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
 import { HorizontalScrollRow } from "../components/HorizontalScrollRow";
 import { DiscoverCard } from "../components/DiscoverCard";
+import { PreferenceProfile } from "../components/PreferenceProfile";
 
 const COMPARISON_THRESHOLD = 5;
 
@@ -381,6 +382,9 @@ export function DiscoverPage() {
             )
           )}
       </HorizontalScrollRow>
+
+      {/* Preference Profile */}
+      <PreferenceProfile data={profile.data?.data} isLoading={profile.isLoading} />
     </div>
   );
 }
