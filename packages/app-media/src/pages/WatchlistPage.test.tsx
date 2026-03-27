@@ -10,6 +10,7 @@ const mockRemoveMutate = vi.fn();
 const mockReorderMutate = vi.fn();
 const mockUpdateMutate = vi.fn();
 const mockInvalidate = vi.fn();
+const capturedOpts: Record<string, Record<string, unknown>> = {};
 
 vi.mock("../lib/trpc", () => ({
   trpc: {
@@ -18,19 +19,19 @@ vi.mock("../lib/trpc", () => ({
         list: { useQuery: (...args: unknown[]) => mockWatchlistQuery(...args) },
         remove: {
           useMutation: (opts: Record<string, unknown>) => {
-            mockRemoveMutate._opts = opts;
+            capturedOpts.remove = opts;
             return { mutate: mockRemoveMutate, isPending: false };
           },
         },
         reorder: {
           useMutation: (opts: Record<string, unknown>) => {
-            mockReorderMutate._opts = opts;
+            capturedOpts.reorder = opts;
             return { mutate: mockReorderMutate, isPending: false };
           },
         },
         update: {
           useMutation: (opts: Record<string, unknown>) => {
-            mockUpdateMutate._opts = opts;
+            capturedOpts.update = opts;
             return { mutate: mockUpdateMutate, isPending: false, variables: null };
           },
         },
