@@ -1,7 +1,7 @@
 # US-01: Show hero and metadata layout
 
 > PRD: [034 — TV Show Detail Page](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -14,14 +14,14 @@ As a user, I want to see a TV show's full details — backdrop, poster, title, y
 - [x] If no backdrop image exists, the hero uses a solid colour gradient as fallback
 - [x] Poster renders overlaid on the hero, using the 3-tier fallback chain (override → cached → placeholder)
 - [x] Title renders as a large heading within the hero
-- [ ] Year range displays correctly: "Start – End" for ended shows, "Start – Present" for continuing shows, "Start" for single-season ended shows — only shows start year; no end year or "Present" suffix
+- [x] Year range displays correctly: "Start – End" for ended shows, "Start – Present" for continuing shows, "Start" for single-season ended shows
 - [x] Status renders as a badge or label (Continuing, Ended, Upcoming)
 - [x] Genres render as comma-separated text or badge pills
-- [ ] Networks render below or alongside genres (e.g., "HBO", "Netflix") — not displayed; not present in hero or metadata section
+- [x] Networks render below or alongside genres (e.g., "HBO", "Netflix")
 - [x] Overview section displays the full synopsis text below the hero
 - [x] Page shows a loading state (skeleton) while data is fetching
 - [x] Page shows a 404 state or redirects to library when the show ID does not exist
-- [ ] Tests cover: hero renders with backdrop, fallback gradient, poster fallback chain, year range formatting for all three cases (ended, continuing, single-season), status badge, 404 handling
+- [x] Tests cover: hero renders with backdrop, fallback gradient, poster fallback chain, year range formatting for all three cases (ended, continuing, single-season), status badge, 404 handling
 
 ## Notes
 
