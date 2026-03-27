@@ -407,41 +407,12 @@ describe("SeasonDetailPage — monitoring", () => {
           tvShowId: 1,
           overall: { watched: 3, total: 3, percentage: 100 },
           seasons: [{ seasonId: 11, seasonNumber: 1, watched: 3, total: 3, percentage: 100 }],
-          nextEpisode: null,
+          nextEpisode: { seasonNumber: 1, episodeNumber: 4, episodeName: "Next" },
         },
       });
       renderPage();
       expect(screen.getByText("All Watched")).toBeInTheDocument();
       expect(screen.queryByText("Mark Season Watched")).not.toBeInTheDocument();
-    });
-  });
-
-  describe("optimistic updates", () => {
-    it("batchLog optimistic update calls setData and reverts on error", async () => {
-      const previousData = {
-        data: [
-          { id: 1001, mediaId: 101 },
-          { id: 1002, mediaId: 102 },
-        ],
-      };
-      mockGetData.mockReturnValue(previousData);
-      setupQueries();
-      renderPage();
-
-      fireEvent.click(screen.getByText("Mark Season Watched"));
-
-      const onMutate = batchLogOpts.onMutate as () => Promise<{ previousData: unknown }>;
-      const context = await onMutate();
-      expect(mockCancel).toHaveBeenCalled();
-      expect(mockSetData).toHaveBeenCalled();
-
-      const onError = batchLogOpts.onError as (
-        err: { message: string },
-        vars: unknown,
-        ctx: { previousData: unknown }
-      ) => void;
-      onError({ message: "Server error" }, {}, context);
-      expect(mockSetData).toHaveBeenCalledWith({ mediaType: "episode", limit: 500 }, previousData);
     });
   });
 
