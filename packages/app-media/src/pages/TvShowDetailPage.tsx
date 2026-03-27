@@ -15,6 +15,7 @@ import {
   BreadcrumbPage,
 } from "@pops/ui";
 import { trpc } from "../lib/trpc";
+import { formatYearRange } from "../lib/format";
 import { ProgressBar } from "../components/ProgressBar";
 import { ArrStatusBadge } from "../components/ArrStatusBadge";
 
@@ -106,7 +107,7 @@ export function TvShowDetailPage() {
   const show = data?.data;
   if (!show) return null;
 
-  const year = show.firstAirDate ? new Date(show.firstAirDate).getFullYear() : null;
+  const yearRange = formatYearRange(show.firstAirDate, show.lastAirDate, show.status);
 
   const posterSrc = show.posterUrl ?? "";
   const backdropSrc = show.backdropUrl ?? null;
@@ -129,6 +130,10 @@ export function TvShowDetailPage() {
   const metadataItems = [
     { label: "Status", value: show.status },
     { label: "Language", value: show.originalLanguage?.toUpperCase() },
+    {
+      label: "Networks",
+      value: show.networks && show.networks.length > 0 ? show.networks.join(", ") : null,
+    },
     {
       label: "TMDB Rating",
       value: show.voteAverage ? `${show.voteAverage.toFixed(1)} (${show.voteCount} votes)` : null,
@@ -178,10 +183,10 @@ export function TvShowDetailPage() {
             <h1 className="text-2xl md:text-4xl font-bold text-foreground">{show.name}</h1>
 
             <div className="flex items-center gap-2 mt-2 text-sm text-muted-foreground">
-              {year && <span>{year}</span>}
+              {yearRange && <span>{yearRange}</span>}
               {show.status && (
                 <>
-                  {year && <span>·</span>}
+                  {yearRange && <span>·</span>}
                   <span>{show.status}</span>
                 </>
               )}

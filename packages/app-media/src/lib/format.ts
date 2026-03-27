@@ -95,6 +95,34 @@ export function formatLanguage(code: string): string {
   return LANGUAGE_NAMES[code.toLowerCase()] ?? code.toUpperCase();
 }
 
+/**
+ * Format a TV show year range based on air dates and status.
+ * - Ended with different years: "2020–2024"
+ * - Continuing/returning: "2020–Present"
+ * - Single year or no last air date + ended: "2020"
+ * - No first air date: null
+ */
+export function formatYearRange(
+  firstAirDate: string | null,
+  lastAirDate: string | null,
+  status: string | null
+): string | null {
+  if (!firstAirDate) return null;
+  const startYear = new Date(firstAirDate).getFullYear();
+  const isOngoing = status === "Returning Series" || status === "In Production";
+
+  if (isOngoing) {
+    return `${startYear}–Present`;
+  }
+
+  if (lastAirDate) {
+    const endYear = new Date(lastAirDate).getFullYear();
+    return endYear !== startYear ? `${startYear}–${endYear}` : `${startYear}`;
+  }
+
+  return `${startYear}`;
+}
+
 export function formatRuntime(minutes: number): string {
   const h = Math.floor(minutes / 60);
   const m = minutes % 60;

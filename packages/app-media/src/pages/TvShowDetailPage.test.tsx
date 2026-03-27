@@ -62,6 +62,7 @@ const SHOW = {
   name: "Breaking Bad",
   overview: "A chemistry teacher turned meth cook.",
   firstAirDate: "2008-01-20",
+  lastAirDate: "2013-09-29",
   status: "Ended",
   originalLanguage: "en",
   posterUrl: "/media/images/tv/81189/poster.jpg",
@@ -69,6 +70,7 @@ const SHOW = {
   voteAverage: 9.5,
   voteCount: 10000,
   genres: ["Drama", "Crime"],
+  networks: ["AMC"],
 };
 
 const SEASONS = [
@@ -247,6 +249,96 @@ describe("TvShowDetailPage — season list", () => {
       });
       renderPage("999");
       expect(screen.getByText("Show not found")).toBeInTheDocument();
+    });
+  });
+});
+
+describe("TvShowDetailPage — hero and metadata", () => {
+  describe("hero with backdrop", () => {
+    it("renders backdrop image when backdropUrl is present", () => {
+      setupQueries();
+      const { container } = renderPage();
+      const backdrop = container.querySelector('img[src="/media/images/tv/81189/backdrop.jpg"]');
+      expect(backdrop).toBeInTheDocument();
+    });
+
+    it("renders poster image", () => {
+      setupQueries();
+      renderPage();
+      expect(screen.getByAltText("Breaking Bad poster")).toBeInTheDocument();
+    });
+
+    it("renders title in h1", () => {
+      setupQueries();
+      renderPage();
+      const heading = screen.getByRole("heading", { level: 1 });
+      expect(heading).toHaveTextContent("Breaking Bad");
+    });
+  });
+
+  describe("year range formatting", () => {
+    it("shows start–end for ended show spanning multiple years", () => {
+      setupQueries();
+      renderPage();
+      expect(screen.getByText("2008–2013")).toBeInTheDocument();
+    });
+
+    it("shows year–Present for returning series", () => {
+      setupQueries({
+        status: "Returning Series",
+        firstAirDate: "2022-02-18",
+        lastAirDate: "2024-01-12",
+      });
+      renderPage();
+      expect(screen.getByText("2022–Present")).toBeInTheDocument();
+    });
+
+    it("shows single year when start and end are in same year", () => {
+      setupQueries({
+        firstAirDate: "2020-06-01",
+        lastAirDate: "2020-12-15",
+        status: "Ended",
+      });
+      renderPage();
+      expect(screen.getByText("2020")).toBeInTheDocument();
+    });
+  });
+
+  describe("networks display", () => {
+    it("renders networks in metadata grid", () => {
+      setupQueries();
+      renderPage();
+      expect(screen.getByText("Networks")).toBeInTheDocument();
+      expect(screen.getByText("AMC")).toBeInTheDocument();
+    });
+
+    it("renders multiple networks as comma-separated list", () => {
+      setupQueries({ networks: ["HBO", "Max"] });
+      renderPage();
+      expect(screen.getByText("HBO, Max")).toBeInTheDocument();
+    });
+
+    it("does not render networks when empty", () => {
+      setupQueries({ networks: [] });
+      renderPage();
+      expect(screen.queryByText("Networks")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("genres", () => {
+    it("renders genre badges", () => {
+      setupQueries();
+      renderPage();
+      expect(screen.getByText("Drama")).toBeInTheDocument();
+      expect(screen.getByText("Crime")).toBeInTheDocument();
+    });
+  });
+
+  describe("overview", () => {
+    it("renders overview text", () => {
+      setupQueries();
+      renderPage();
+      expect(screen.getByText("A chemistry teacher turned meth cook.")).toBeInTheDocument();
     });
   });
 });
