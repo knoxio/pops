@@ -20,7 +20,9 @@ import {
   Badge,
   PageHeader,
 } from "@pops/ui";
-import { Save, Link2, X, Search, Wand2, Loader2, ImageIcon, Trash2 } from "lucide-react";
+import { Save, Link2, X, Search, Wand2, Loader2, ImageIcon, Trash2, Eye, PenLine } from "lucide-react";
+import Markdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
 import { trpc } from "../lib/trpc";
 import { PhotoUpload, type UploadedFile } from "../components/PhotoUpload";
 import { useImageProcessor } from "../hooks/useImageProcessor";
@@ -44,6 +46,7 @@ interface ItemFormValues {
   deductible: boolean;
   purchaseDate: string;
   warrantyExpires: string;
+  purchasePrice: string;
   replacementValue: string;
   resaleValue: string;
   assetId: string;
@@ -62,7 +65,13 @@ const ITEM_TYPES = [
   "Other",
 ];
 
-const CONDITIONS = ["Excellent", "Good", "Fair", "Poor"];
+const CONDITIONS = [
+  { value: "new", label: "New" },
+  { value: "good", label: "Good" },
+  { value: "fair", label: "Fair" },
+  { value: "poor", label: "Poor" },
+  { value: "broken", label: "Broken" },
+];
 
 const defaultValues: ItemFormValues = {
   itemName: "",
@@ -70,12 +79,13 @@ const defaultValues: ItemFormValues = {
   model: "",
   itemId: "",
   type: "",
-  condition: "",
+  condition: "good",
   locationId: "",
   inUse: false,
   deductible: false,
   purchaseDate: "",
   warrantyExpires: "",
+  purchasePrice: "",
   replacementValue: "",
   resaleValue: "",
   assetId: "",
@@ -129,6 +139,7 @@ export function ItemFormPage() {
   const [assetIdError, setAssetIdError] = useState<string | null>(null);
   const [assetIdChecking, setAssetIdChecking] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [notesPreview, setNotesPreview] = useState(false);
 
   const validateAssetIdUniqueness = useCallback(
     async (value: string) => {
@@ -356,6 +367,7 @@ export function ItemFormPage() {
         deductible: item.deductible,
         purchaseDate: item.purchaseDate ?? "",
         warrantyExpires: item.warrantyExpires ?? "",
+        purchasePrice: item.purchasePrice?.toString() ?? "",
         replacementValue: item.replacementValue?.toString() ?? "",
         resaleValue: item.resaleValue?.toString() ?? "",
         assetId: item.assetId ?? "",
@@ -440,6 +452,7 @@ export function ItemFormPage() {
       deductible: values.deductible,
       purchaseDate: values.purchaseDate || null,
       warrantyExpires: values.warrantyExpires || null,
+      purchasePrice: values.purchasePrice ? parseFloat(values.purchasePrice) : null,
       replacementValue: values.replacementValue ? parseFloat(values.replacementValue) : null,
       resaleValue: values.resaleValue ? parseFloat(values.resaleValue) : null,
       assetId: values.assetId || null,
@@ -578,9 +591,9 @@ export function ItemFormPage() {
           </h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="Type">
+            <FormField label="Type *" error={errors.type?.message}>
               <Select
-                {...register("type")}
+                {...register("type", { required: "Type is required" })}
                 options={[
                   { value: "", label: "Select type..." },
                   ...ITEM_TYPES.map((t) => ({ value: t, label: t })),
@@ -592,7 +605,7 @@ export function ItemFormPage() {
                 {...register("condition")}
                 options={[
                   { value: "", label: "Select condition..." },
-                  ...CONDITIONS.map((c) => ({ value: c, label: c })),
+                  ...CONDITIONS,
                 ]}
               />
             </FormField>
@@ -632,7 +645,16 @@ export function ItemFormPage() {
             </FormField>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <FormField label="Purchase Price ($)">
+              <TextInput
+                type="number"
+                step="0.01"
+                min="0"
+                {...register("purchasePrice")}
+                placeholder="0.00"
+              />
+            </FormField>
             <FormField label="Replacement Value ($)">
               <TextInput
                 type="number"
@@ -726,16 +748,41 @@ export function ItemFormPage() {
 
         {/* Notes */}
         <section className="space-y-4 p-6 rounded-2xl border-2 border-app-accent/10 bg-card/50 shadow-sm shadow-app-accent/5">
-          <h2 className="text-lg font-bold flex items-center gap-2 text-foreground">
-            <span className="w-1.5 h-1.5 rounded-full bg-app-accent" />
-            Notes
-          </h2>
-          <Textarea
-            {...register("notes")}
-            rows={4}
-            placeholder="Add notes about this item..."
-            className="w-full bg-transparent"
-          />
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold flex items-center gap-2 text-foreground">
+              <span className="w-1.5 h-1.5 rounded-full bg-app-accent" />
+              Notes
+            </h2>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setNotesPreview((v) => !v)}
+              className="text-xs text-muted-foreground"
+            >
+              {notesPreview ? (
+                <><PenLine className="h-3.5 w-3.5 mr-1" /> Edit</>
+              ) : (
+                <><Eye className="h-3.5 w-3.5 mr-1" /> Preview</>
+              )}
+            </Button>
+          </div>
+          {notesPreview ? (
+            <div className="prose prose-sm dark:prose-invert max-w-none min-h-[6.5rem] p-3 rounded-md border bg-muted/30">
+              {watch("notes") ? (
+                <Markdown rehypePlugins={[rehypeSanitize]}>{watch("notes")}</Markdown>
+              ) : (
+                <p className="text-muted-foreground italic">Nothing to preview</p>
+              )}
+            </div>
+          ) : (
+            <Textarea
+              {...register("notes")}
+              rows={4}
+              placeholder="Add notes about this item... (supports markdown)"
+              className="w-full bg-transparent"
+            />
+          )}
         </section>
 
         {/* Connected Items (create mode only) */}

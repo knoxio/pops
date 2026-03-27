@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, within } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { extractPrefix } from "./ItemFormPage";
 
@@ -110,6 +110,16 @@ vi.mock("../lib/trpc", () => ({
           useMutation: () => ({ mutateAsync: mockConnectMutate }),
         },
       },
+      locations: {
+        tree: { useQuery: () => ({ data: { data: [] } }) },
+        create: {
+          useMutation: (opts?: Record<string, unknown>) => ({
+            mutate: vi.fn(),
+            isPending: false,
+            ...(opts || {}),
+          }),
+        },
+      },
       photos: {
         listForItem: {
           useQuery: (...args: unknown[]) => {
@@ -147,9 +157,21 @@ vi.mock("../lib/trpc", () => ({
           searchByAssetId: { fetch: mockSearchByAssetIdFetch },
           countByAssetPrefix: { fetch: mockCountByAssetPrefixFetch },
         },
+        locations: {
+          tree: { invalidate: vi.fn() },
+        },
       },
     }),
   },
+}));
+
+// Mock react-markdown
+vi.mock("react-markdown", () => ({
+  default: ({ children }: { children: string }) => <div data-testid="markdown-preview">{children}</div>,
+}));
+
+vi.mock("rehype-sanitize", () => ({
+  default: {},
 }));
 
 // Mock useImageProcessor
@@ -267,6 +289,7 @@ describe("ItemFormPage — Asset ID generation", () => {
           warrantyExpires: null,
           replacementValue: null,
           resaleValue: null,
+          purchasePrice: null,
           assetId: "ELEC01",
           notes: null,
           locationId: null,
@@ -332,6 +355,7 @@ describe("ItemFormPage — Photos section", () => {
           warrantyExpires: null,
           replacementValue: null,
           resaleValue: null,
+          purchasePrice: null,
           assetId: null,
           notes: null,
           locationId: null,
@@ -379,6 +403,7 @@ describe("ItemFormPage — Photos section", () => {
           warrantyExpires: null,
           replacementValue: null,
           resaleValue: null,
+          purchasePrice: null,
           assetId: null,
           notes: null,
           locationId: null,
@@ -425,6 +450,7 @@ describe("ItemFormPage — Photos section", () => {
           warrantyExpires: null,
           replacementValue: null,
           resaleValue: null,
+          purchasePrice: null,
           assetId: null,
           notes: null,
           locationId: null,
@@ -457,5 +483,53 @@ describe("ItemFormPage — Photos section", () => {
   it("renders camera button for mobile photo capture", () => {
     renderCreate();
     expect(screen.getByRole("button", { name: /take photo/i })).toBeInTheDocument();
+  });
+});
+
+describe("ItemFormPage — Form gaps (tb-581)", () => {
+  it("renders Purchase Price field in Dates & Values section", () => {
+    renderCreate();
+    expect(screen.getByText(/purchase price/i)).toBeInTheDocument();
+    // The input is rendered via TextInput with register("purchasePrice")
+    const input = document.querySelector('input[name="purchasePrice"]');
+    expect(input).toBeInTheDocument();
+  });
+
+  it("defaults condition to 'good' in create mode", () => {
+    renderCreate();
+    const conditionSelect = document.querySelector('select[name="condition"]') as HTMLSelectElement;
+    expect(conditionSelect).toBeInTheDocument();
+    expect(conditionSelect.value).toBe("good");
+  });
+
+  it("renders correct condition options (new/good/fair/poor/broken)", () => {
+    renderCreate();
+    const conditionSelect = document.querySelector('select[name="condition"]') as HTMLSelectElement;
+    const options = Array.from(conditionSelect.options).map((o) => o.value);
+    expect(options).toContain("new");
+    expect(options).toContain("good");
+    expect(options).toContain("fair");
+    expect(options).toContain("poor");
+    expect(options).toContain("broken");
+    // Old values should not be present
+    expect(options).not.toContain("Excellent");
+  });
+
+  it("marks Type as required", () => {
+    renderCreate();
+    expect(screen.getByText("Type *")).toBeInTheDocument();
+  });
+
+  it("shows notes preview toggle button", () => {
+    renderCreate();
+    expect(screen.getByRole("button", { name: /preview/i })).toBeInTheDocument();
+  });
+
+  it("toggles notes between edit and preview mode", () => {
+    renderCreate();
+    const previewBtn = screen.getByRole("button", { name: /preview/i });
+    fireEvent.click(previewBtn);
+    expect(screen.getByText(/nothing to preview/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /edit/i })).toBeInTheDocument();
   });
 });

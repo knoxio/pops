@@ -20,6 +20,7 @@ export interface InventoryItem {
   warrantyExpires: string | null;
   replacementValue: number | null;
   resaleValue: number | null;
+  purchasePrice: number | null;
   purchaseTransactionId: string | null;
   purchasedFromId: string | null;
   purchasedFromName: string | null;
@@ -47,6 +48,7 @@ export function toInventoryItem(row: InventoryRow): InventoryItem {
     warrantyExpires: row.warrantyExpires,
     replacementValue: row.replacementValue,
     resaleValue: row.resaleValue,
+    purchasePrice: row.purchasePrice,
     purchaseTransactionId: row.purchaseTransactionId,
     purchasedFromId: row.purchasedFromId,
     purchasedFromName: row.purchasedFromName,
@@ -73,6 +75,7 @@ export const CreateInventoryItemSchema = z.object({
   warrantyExpires: z.string().nullable().optional(),
   replacementValue: z.number().nullable().optional(),
   resaleValue: z.number().nullable().optional(),
+  purchasePrice: z.number().nullable().optional(),
   purchaseTransactionId: z.string().nullable().optional(),
   purchasedFromId: z.string().nullable().optional(),
   purchasedFromName: z.string().nullable().optional(),
@@ -98,6 +101,7 @@ export const UpdateInventoryItemSchema = z.object({
   warrantyExpires: z.string().nullable().optional(),
   replacementValue: z.number().nullable().optional(),
   resaleValue: z.number().nullable().optional(),
+  purchasePrice: z.number().nullable().optional(),
   purchaseTransactionId: z.string().nullable().optional(),
   purchasedFromId: z.string().nullable().optional(),
   purchasedFromName: z.string().nullable().optional(),
