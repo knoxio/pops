@@ -32,7 +32,7 @@ export function useMediaLibrary({
   page,
   pageSize,
 }: UseMediaLibraryParams) {
-  const { data, isLoading } = trpc.media.library.list.useQuery({
+  const { data, isLoading, error, refetch } = trpc.media.library.list.useQuery({
     type: typeFilter,
     sort: sortBy,
     search: search || undefined,
@@ -46,7 +46,9 @@ export function useMediaLibrary({
   return {
     items: (data?.data ?? []) as MediaItem[],
     isLoading,
-    isEmpty: !isLoading && (data?.pagination.total ?? 0) === 0,
+    error,
+    refetch,
+    isEmpty: !isLoading && !error && (data?.pagination.total ?? 0) === 0,
     allGenres: genresData?.data ?? [],
     pagination: data?.pagination ?? {
       page: 1,
