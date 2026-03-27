@@ -123,7 +123,7 @@ describe("SonarrClient", () => {
 
     expect(result).toEqual(entries);
     expect(mockFetch).toHaveBeenCalledWith(
-      "http://localhost:8989/api/v3/calendar?start=2026-04-01&end=2026-04-07",
+      "http://localhost:8989/api/v3/calendar?start=2026-04-01&end=2026-04-07&includeSeries=true",
       expect.anything()
     );
   });
