@@ -13,6 +13,7 @@ import { transactions, entities } from "@pops/db-types";
 import { logger } from "../../../lib/logger.js";
 import { formatImportError } from "../../../lib/errors.js";
 import { matchEntity } from "./lib/entity-matcher.js";
+import { loadEntityMaps } from "./lib/entity-lookup.js";
 import { categorizeWithAi, AiCategorizationError } from "./lib/ai-categorizer.js";
 import { updateProgress } from "./progress-store.js";
 import { findMatchingCorrection } from "../../core/corrections/service.js";
@@ -102,42 +103,7 @@ function buildSuggestedTags(
   });
 }
 
-/**
- * Load entity lookup from SQLite: name → id
- */
-function loadEntityLookup(): Record<string, string> {
-  const db = getDrizzle();
-  const rows = db.select({ name: entities.name, id: entities.id }).from(entities).all();
-
-  const lookup: Record<string, string> = {};
-  for (const row of rows) {
-    lookup[row.name] = row.id;
-  }
-  return lookup;
-}
-
-/**
- * Load aliases from SQLite: alias → entity name
- * Aliases are stored as comma-separated strings in the aliases column
- */
-function loadAliases(): Record<string, string> {
-  const db = getDrizzle();
-  const rows = db
-    .select({ name: entities.name, aliases: entities.aliases })
-    .from(entities)
-    .where(isNotNull(entities.aliases))
-    .all();
-
-  const aliasMap: Record<string, string> = {};
-  for (const row of rows) {
-    if (!row.aliases) continue;
-    const aliasList = row.aliases.split(",").map((a) => a.trim());
-    for (const alias of aliasList) {
-      aliasMap[alias] = row.name;
-    }
-  }
-  return aliasMap;
-}
+// Entity lookup and alias loading moved to lib/entity-lookup.ts
 
 /**
  * Query SQLite for existing checksums.
@@ -243,8 +209,7 @@ export async function processImport(
   const duplicates = transactions.filter((t) => existingChecksums.has(t.checksum));
 
   // Step 2: Load entity lookup, aliases, and known tags (once per batch)
-  const entityLookup = loadEntityLookup();
-  const aliases = loadAliases();
+  const { entityLookup, aliasMap: aliases } = loadEntityMaps();
   const knownTags = loadKnownTags();
 
   // Step 3: Match entities for each transaction
@@ -330,20 +295,26 @@ export async function processImport(
           "[Import] Entity matched"
         );
         // Good match - add to matched list
-        const entityId = entityLookup[match.entityName];
-        if (!entityId) {
+        const entityEntry = entityLookup.get(match.entityName.toLowerCase());
+        if (!entityEntry) {
           throw new Error(`Entity lookup failed for matched entity: ${match.entityName}`);
         }
 
         matched.push({
           ...transaction,
           entity: {
-            entityId,
-            entityName: match.entityName,
+            entityId: entityEntry.id,
+            entityName: entityEntry.name,
             matchType: match.matchType,
           },
           status: "matched",
-          suggestedTags: buildSuggestedTags(transaction.description, entityId, [], null, knownTags),
+          suggestedTags: buildSuggestedTags(
+            transaction.description,
+            entityEntry.id,
+            [],
+            null,
+            knownTags
+          ),
         });
       } else {
         // No match - try AI categorization
@@ -376,28 +347,21 @@ export async function processImport(
 
         if (aiResult && aiResult.entityName) {
           // AI suggested an entity name - check if it exists in lookup
-          const existingEntity = Object.keys(entityLookup).find(
-            (name) => name.toUpperCase() === aiResult.entityName.toUpperCase()
-          );
+          const entityEntry = entityLookup.get(aiResult.entityName.toLowerCase());
 
-          if (existingEntity) {
-            // AI matched to existing entity
-            const entityId = entityLookup[existingEntity];
-            if (!entityId) {
-              throw new Error(`Entity lookup failed for AI match: ${existingEntity}`);
-            }
-
+          if (entityEntry) {
+            // AI matched to existing entity — use canonical name from DB
             matched.push({
               ...transaction,
               entity: {
-                entityId,
-                entityName: existingEntity,
+                entityId: entityEntry.id,
+                entityName: entityEntry.name,
                 matchType: "ai",
               },
               status: "matched",
               suggestedTags: buildSuggestedTags(
                 transaction.description,
-                entityId,
+                entityEntry.id,
                 [],
                 aiResult.category,
                 knownTags
@@ -627,8 +591,7 @@ export async function processImportWithProgress(
     // Step 2: Entity matching
     updateProgress(sessionId, { currentStep: "matching", processedCount: 0 });
 
-    const entityLookup = loadEntityLookup();
-    const aliases = loadAliases();
+    const { entityLookup, aliasMap: aliases } = loadEntityMaps();
     const knownTags = loadKnownTags();
 
     const matched: ProcessedTransaction[] = [];
@@ -693,22 +656,22 @@ export async function processImportWithProgress(
             "[Import] Entity matched"
           );
 
-          const entityId = entityLookup[match.entityName];
-          if (!entityId) {
+          const entityEntry = entityLookup.get(match.entityName.toLowerCase());
+          if (!entityEntry) {
             throw new Error(`Entity lookup failed for matched entity: ${match.entityName}`);
           }
 
           matched.push({
             ...transaction,
             entity: {
-              entityId,
-              entityName: match.entityName,
+              entityId: entityEntry.id,
+              entityName: entityEntry.name,
               matchType: match.matchType,
             },
             status: "matched",
             suggestedTags: buildSuggestedTags(
               transaction.description,
-              entityId,
+              entityEntry.id,
               [],
               null,
               knownTags
@@ -742,27 +705,20 @@ export async function processImportWithProgress(
           }
 
           if (aiResult && aiResult.entityName) {
-            const existingEntity = Object.keys(entityLookup).find(
-              (name) => name.toUpperCase() === aiResult.entityName.toUpperCase()
-            );
+            const entityEntry = entityLookup.get(aiResult.entityName.toLowerCase());
 
-            if (existingEntity) {
-              const entityId = entityLookup[existingEntity];
-              if (!entityId) {
-                throw new Error(`Entity lookup failed for AI match: ${existingEntity}`);
-              }
-
+            if (entityEntry) {
               matched.push({
                 ...transaction,
                 entity: {
-                  entityId,
-                  entityName: existingEntity,
+                  entityId: entityEntry.id,
+                  entityName: entityEntry.name,
                   matchType: "ai",
                 },
                 status: "matched",
                 suggestedTags: buildSuggestedTags(
                   transaction.description,
-                  entityId,
+                  entityEntry.id,
                   [],
                   aiResult.category,
                   knownTags
