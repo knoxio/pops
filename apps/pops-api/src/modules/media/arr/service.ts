@@ -10,7 +10,12 @@ import type {
   ArrStatusResult,
   CalendarEpisode,
   DownloadQueueItem,
+  SonarrAddSeriesInput,
   SonarrCalendarEpisode,
+  SonarrCommandResponse,
+  SonarrLanguageProfile,
+  SonarrQualityProfile,
+  SonarrRootFolder,
   SonarrSeriesFull,
 } from "./types.js";
 import { getEnv } from "../../../env.js";
@@ -324,6 +329,64 @@ export async function updateEpisodeMonitoring(
   await client.updateEpisodeMonitoring(episodeIds, monitored);
   showStatusCache.clear();
   client.clearCache();
+}
+
+// ---------------------------------------------------------------------------
+// Sonarr profile / folder / add / search endpoints
+// ---------------------------------------------------------------------------
+
+/** Get Sonarr quality profiles. */
+export async function getSonarrQualityProfiles(): Promise<SonarrQualityProfile[]> {
+  const client = getSonarrClient();
+  if (!client) throw new Error("Sonarr not configured");
+  return client.getQualityProfiles();
+}
+
+/** Get Sonarr root folders. */
+export async function getSonarrRootFolders(): Promise<SonarrRootFolder[]> {
+  const client = getSonarrClient();
+  if (!client) throw new Error("Sonarr not configured");
+  return client.getRootFolders();
+}
+
+/** Get Sonarr language profiles. */
+export async function getSonarrLanguageProfiles(): Promise<SonarrLanguageProfile[]> {
+  const client = getSonarrClient();
+  if (!client) throw new Error("Sonarr not configured");
+  return client.getLanguageProfiles();
+}
+
+/** Add a series to Sonarr. */
+export async function addSeries(input: SonarrAddSeriesInput): Promise<SonarrSeriesFull> {
+  const client = getSonarrClient();
+  if (!client) throw new Error("Sonarr not configured");
+  const result = await client.addSeries(input);
+  showStatusCache.clear();
+  client.clearCache();
+  return result;
+}
+
+/** Update whole-series monitoring flag. */
+export async function updateSeriesMonitoring(
+  sonarrId: number,
+  monitored: boolean
+): Promise<SonarrSeriesFull> {
+  const client = getSonarrClient();
+  if (!client) throw new Error("Sonarr not configured");
+  const result = await client.updateMonitoring(sonarrId, monitored);
+  showStatusCache.clear();
+  client.clearCache();
+  return result;
+}
+
+/** Trigger a search for a series or season. */
+export async function triggerSeriesSearch(
+  sonarrId: number,
+  seasonNumber?: number
+): Promise<SonarrCommandResponse> {
+  const client = getSonarrClient();
+  if (!client) throw new Error("Sonarr not configured");
+  return client.triggerSearch(sonarrId, seasonNumber);
 }
 
 /** Clear all cached statuses. */

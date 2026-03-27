@@ -13,6 +13,7 @@ import type {
   SonarrRootFolder,
   SonarrLanguageProfile,
   SonarrAddSeriesInput,
+  SonarrCommandResponse,
 } from "./types.js";
 
 export class SonarrClient extends ArrBaseClient {
@@ -164,7 +165,28 @@ export class SonarrClient extends ArrBaseClient {
         monitored: s.monitored,
       })),
       monitored: true,
-      addOptions: { searchForMissingEpisodes: true },
+      addOptions: { searchForMissingEpisodes: false },
+    });
+  }
+
+  /** Update monitoring flag for a series. Fetches full series first, merges, then PUTs. */
+  async updateMonitoring(sonarrId: number, monitored: boolean): Promise<SonarrSeriesFull> {
+    const series = await this.get<SonarrSeriesFull>(`/series/${sonarrId}`);
+    return this.put<SonarrSeriesFull>(`/series/${sonarrId}`, { ...series, monitored });
+  }
+
+  /** Trigger a search for a series or a specific season. */
+  async triggerSearch(sonarrId: number, seasonNumber?: number): Promise<SonarrCommandResponse> {
+    if (seasonNumber !== undefined) {
+      return this.post<SonarrCommandResponse>("/command", {
+        name: "SeasonSearch",
+        seriesId: sonarrId,
+        seasonNumber,
+      });
+    }
+    return this.post<SonarrCommandResponse>("/command", {
+      name: "SeriesSearch",
+      seriesId: sonarrId,
     });
   }
 }

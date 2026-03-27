@@ -474,4 +474,56 @@ export const arrRouter = router({
         throw err;
       }
     }),
+
+  /** Update monitoring flag for a series in Sonarr. */
+  updateSeriesMonitoring: protectedProcedure
+    .input(
+      z.object({
+        sonarrId: z.number().int().positive(),
+        monitored: z.boolean(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const series = await arrService.updateSeriesMonitoring(input.sonarrId, input.monitored);
+        return { data: series };
+      } catch (err) {
+        if (err instanceof ArrApiError) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Sonarr error: ${err.message}`,
+          });
+        }
+        if (err instanceof Error && err.message === "Sonarr not configured") {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: err.message });
+        }
+        throw err;
+      }
+    }),
+
+  /** Trigger a search for a series or season in Sonarr. */
+  triggerSeriesSearch: protectedProcedure
+    .input(
+      z.object({
+        sonarrId: z.number().int().positive(),
+        seasonNumber: z.number().int().min(0).optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      try {
+        const result = await arrService.triggerSeriesSearch(input.sonarrId, input.seasonNumber);
+        return { data: result };
+      } catch (err) {
+        if (err instanceof ArrApiError) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Sonarr error: ${err.message}`,
+          });
+        }
+        if (err instanceof Error && err.message === "Sonarr not configured") {
+          throw new TRPCError({ code: "PRECONDITION_FAILED", message: err.message });
+        }
+        throw err;
+      }
+    }),
 });
