@@ -3,21 +3,45 @@
  * Route: /inventory/items/:id
  */
 import { useState } from "react";
-import { useParams, Link } from "react-router";
+import { useParams, Link, useNavigate } from "react-router";
 import { toast } from "sonner";
+import Markdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
 import {
   Badge,
   Button,
   Alert,
   AlertTitle,
   AlertDescription,
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+  AlertDialogCancel,
   Skeleton,
   TypeBadge,
   ConditionBadge,
   PageHeader,
   type Condition,
 } from "@pops/ui";
-import { Pencil, Link2, Unlink, GitBranch, FileText, X, Network } from "lucide-react";
+import {
+  Pencil,
+  Link2,
+  Unlink,
+  GitBranch,
+  FileText,
+  X,
+  Network,
+  Trash2,
+  MapPin,
+  ChevronRight,
+  ExternalLink,
+  Store,
+} from "lucide-react";
 import { trpc } from "../lib/trpc";
 
 const DOCUMENT_TYPE_LABELS: Record<string, string> = {
@@ -34,6 +58,7 @@ import { ConnectionGraph } from "../components/ConnectionGraph";
 
 export function ItemDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const utils = trpc.useUtils();
 
   const {
@@ -45,7 +70,22 @@ export function ItemDetailPage() {
   const { data: connectionsData, isLoading: connectionsLoading } =
     trpc.inventory.connections.listForItem.useQuery({ itemId: id! }, { enabled: !!id });
 
+  const { data: photosData } = trpc.inventory.photos.listForItem.useQuery(
+    { itemId: id! },
+    { enabled: !!id }
+  );
+
   const [showGraph, setShowGraph] = useState(false);
+
+  const deleteMutation = trpc.inventory.items.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Item deleted");
+      void navigate("/inventory");
+    },
+    onError: (err) => {
+      toast.error(`Failed to delete: ${err.message}`);
+    },
+  });
 
   const disconnectMutation = trpc.inventory.connections.disconnect.useMutation({
     onSuccess: () => {
@@ -112,16 +152,50 @@ export function ItemDetailPage() {
         backHref="/inventory"
         breadcrumbs={[{ label: "Inventory", href: "/inventory" }, { label: item.itemName }]}
         actions={
-          <Link to={`/inventory/items/${id}/edit`}>
-            <Button
-              variant="outline"
-              size="sm"
-              className="font-bold border-app-accent/20 hover:border-app-accent/50 hover:bg-app-accent/5 transition-colors"
-            >
-              <Pencil className="h-4 w-4 mr-2 text-app-accent" />
-              Edit
-            </Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link to={`/inventory/items/${id}/edit`}>
+              <Button
+                variant="outline"
+                size="sm"
+                className="font-bold border-app-accent/20 hover:border-app-accent/50 hover:bg-app-accent/5 transition-colors"
+              >
+                <Pencil className="h-4 w-4 mr-2 text-app-accent" />
+                Edit
+              </Button>
+            </Link>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive border-destructive/20 hover:bg-destructive/5"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete {item.itemName}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will also remove {connectionsData?.data.length ?? 0} connection
+                    {(connectionsData?.data.length ?? 0) !== 1 ? "s" : ""} and{" "}
+                    {photosData?.pagination?.total ?? 0} photo
+                    {(photosData?.pagination?.total ?? 0) !== 1 ? "s" : ""}.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    variant="destructive"
+                    onClick={() => deleteMutation.mutate({ id: id! })}
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         }
         renderLink={Link}
         className="mb-8"
@@ -180,10 +254,22 @@ export function ItemDetailPage() {
         </div>
       </div>
 
+      {/* Location Breadcrumb */}
+      <LocationBreadcrumb locationId={item.locationId} />
+
+      {/* Purchase Info */}
+      <PurchaseLinkSection
+        purchaseTransactionId={item.purchaseTransactionId}
+        purchasedFromId={item.purchasedFromId}
+        purchasedFromName={item.purchasedFromName}
+      />
+
       {item.notes && (
         <div className="mb-8">
           <h2 className="text-lg font-semibold mb-2">Notes</h2>
-          <p className="text-muted-foreground whitespace-pre-wrap">{item.notes}</p>
+          <div className="text-muted-foreground prose prose-sm dark:prose-invert max-w-none">
+            <Markdown rehypePlugins={[rehypeSanitize]}>{item.notes}</Markdown>
+          </div>
         </div>
       )}
 
@@ -244,6 +330,68 @@ export function ItemDetailPage() {
 
       {/* Documents — hidden when Paperless-ngx not configured */}
       <DocumentsSection itemId={id!} />
+    </div>
+  );
+}
+
+function LocationBreadcrumb({ locationId }: { locationId: string | null }) {
+  const { data: pathData } = trpc.inventory.locations.getPath.useQuery(
+    { id: locationId! },
+    { enabled: !!locationId }
+  );
+
+  return (
+    <div className="mb-8 flex items-center gap-1.5 text-sm" data-testid="location-breadcrumb">
+      <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+      {!locationId ? (
+        <span className="text-muted-foreground">No location assigned</span>
+      ) : pathData?.data ? (
+        pathData.data.map((loc, i) => (
+          <span key={loc.id} className="flex items-center gap-1.5">
+            {i > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
+            <Link
+              to={`/inventory?location=${loc.id}`}
+              className="text-app-accent hover:text-app-accent/80 hover:underline font-medium"
+            >
+              {loc.name}
+            </Link>
+          </span>
+        ))
+      ) : (
+        <Skeleton className="h-4 w-32" />
+      )}
+    </div>
+  );
+}
+
+function PurchaseLinkSection({
+  purchaseTransactionId,
+  purchasedFromId,
+  purchasedFromName,
+}: {
+  purchaseTransactionId: string | null;
+  purchasedFromId: string | null;
+  purchasedFromName: string | null;
+}) {
+  if (!purchaseTransactionId && !purchasedFromId) return null;
+
+  return (
+    <div className="mb-8 flex items-center gap-4 text-sm" data-testid="purchase-link-section">
+      {purchaseTransactionId && (
+        <Link
+          to={`/finance/transactions/${purchaseTransactionId}`}
+          className="flex items-center gap-1.5 text-app-accent hover:text-app-accent/80 hover:underline font-medium"
+        >
+          <ExternalLink className="h-4 w-4" />
+          View transaction
+        </Link>
+      )}
+      {purchasedFromId && purchasedFromName && (
+        <span className="flex items-center gap-1.5 text-muted-foreground">
+          <Store className="h-4 w-4" />
+          {purchasedFromName}
+        </span>
+      )}
     </div>
   );
 }
