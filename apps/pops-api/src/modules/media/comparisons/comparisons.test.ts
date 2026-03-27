@@ -567,6 +567,100 @@ describe("comparisons.rankings", () => {
     expect(result.data[0]!.mediaId).toBe(1);
     expect(result.data[0]!.score).toBeGreaterThan(1500);
   });
+
+  it("breaks ties by title alphabetically (per-dimension)", async () => {
+    const dimId = seedDimension(db, { name: "Overall" });
+    const mZebra = seedMovie(db, { tmdb_id: 601, title: "Zebra Movie" });
+    const mAlpha = seedMovie(db, { tmdb_id: 602, title: "Alpha Movie" });
+
+    // Each movie wins once -> scores return to ~1500
+    await caller.media.comparisons.record({
+      dimensionId: dimId,
+      mediaAType: "movie",
+      mediaAId: mZebra,
+      mediaBType: "movie",
+      mediaBId: mAlpha,
+      winnerType: "movie",
+      winnerId: mZebra,
+    });
+    await caller.media.comparisons.record({
+      dimensionId: dimId,
+      mediaAType: "movie",
+      mediaAId: mZebra,
+      mediaBType: "movie",
+      mediaBId: mAlpha,
+      winnerType: "movie",
+      winnerId: mAlpha,
+    });
+
+    const result = await caller.media.comparisons.rankings({ dimensionId: dimId });
+    expect(result.data.length).toBe(2);
+    // Equal scores -> alphabetical: Alpha before Zebra
+    expect(result.data[0]!.mediaId).toBe(mAlpha);
+    expect(result.data[1]!.mediaId).toBe(mZebra);
+  });
+
+  it("sorts zero-comparison items after scored items (per-dimension)", async () => {
+    const dimId = seedDimension(db, { name: "Overall" });
+    const mScored1 = seedMovie(db, { tmdb_id: 701, title: "Scored Movie" });
+    const mScored2 = seedMovie(db, { tmdb_id: 702, title: "Another Scored" });
+    const mUnscored = seedMovie(db, { tmdb_id: 703, title: "Aardvark Unscored" });
+
+    await caller.media.comparisons.record({
+      dimensionId: dimId,
+      mediaAType: "movie",
+      mediaAId: mScored1,
+      mediaBType: "movie",
+      mediaBId: mScored2,
+      winnerType: "movie",
+      winnerId: mScored1,
+    });
+
+    // Insert an unscored entry (comparison_count = 0, score = 1500)
+    db.prepare(
+      `INSERT INTO media_scores (media_type, media_id, dimension_id, score, comparison_count)
+       VALUES ('movie', ?, ?, 1500.0, 0)`
+    ).run(mUnscored, dimId);
+
+    const result = await caller.media.comparisons.rankings({ dimensionId: dimId });
+    expect(result.data.length).toBe(3);
+    // Unscored item should be last despite alphabetically first title
+    expect(result.data[2]!.mediaId).toBe(mUnscored);
+    expect(result.data[2]!.comparisonCount).toBe(0);
+  });
+
+  it("breaks ties by title in overall rankings", async () => {
+    const dim1 = seedDimension(db, { name: "Story", active: 1 });
+    const dim2 = seedDimension(db, { name: "Visuals", active: 1 });
+    const mZebra = seedMovie(db, { tmdb_id: 801, title: "Zebra Film" });
+    const mAlpha = seedMovie(db, { tmdb_id: 802, title: "Alpha Film" });
+
+    // Each movie wins one dimension -> average scores should be equal
+    await caller.media.comparisons.record({
+      dimensionId: dim1,
+      mediaAType: "movie",
+      mediaAId: mZebra,
+      mediaBType: "movie",
+      mediaBId: mAlpha,
+      winnerType: "movie",
+      winnerId: mZebra,
+    });
+    await caller.media.comparisons.record({
+      dimensionId: dim2,
+      mediaAType: "movie",
+      mediaAId: mZebra,
+      mediaBType: "movie",
+      mediaBId: mAlpha,
+      winnerType: "movie",
+      winnerId: mAlpha,
+    });
+
+    const result = await caller.media.comparisons.rankings({});
+    expect(result.data.length).toBe(2);
+    // Equal average scores -> alphabetical: Alpha before Zebra
+    expect(result.data[0]!.mediaId).toBe(mAlpha);
+    expect(result.data[1]!.mediaId).toBe(mZebra);
+  });
 });
 
 describe("comparisons auth", () => {

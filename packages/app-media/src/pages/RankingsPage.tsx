@@ -4,8 +4,8 @@
  * Supports per-dimension tabs (Overall + each active dimension).
  * Uses the comparisons.rankings tRPC query with pagination.
  */
-import { useState, useMemo } from "react";
-import { Link } from "react-router";
+import { useState, useMemo, useCallback } from "react";
+import { Link, useSearchParams } from "react-router";
 import {
   Alert,
   AlertTitle,
@@ -20,7 +20,7 @@ import {
 import { Trophy } from "lucide-react";
 import { trpc } from "../lib/trpc";
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 25;
 
 function RankingsSkeleton() {
   return (
@@ -262,6 +262,9 @@ function RankingsList({ dimensionId }: { dimensionId?: number }) {
 }
 
 export function RankingsPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const dimensionParam = searchParams.get("dimension") ?? "overall";
+
   const { data: dimensionsData, isLoading: dimsLoading } =
     trpc.media.comparisons.listDimensions.useQuery();
 
@@ -271,6 +274,24 @@ export function RankingsPage() {
   );
 
   const showTabs = activeDimensions.length > 0;
+
+  const handleTabChange = useCallback(
+    (value: string) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          if (value === "overall") {
+            next.delete("dimension");
+          } else {
+            next.set("dimension", value);
+          }
+          return next;
+        },
+        { replace: true }
+      );
+    },
+    [setSearchParams]
+  );
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
@@ -282,7 +303,7 @@ export function RankingsPage() {
       {dimsLoading ? (
         <RankingsSkeleton />
       ) : showTabs ? (
-        <Tabs defaultValue="overall">
+        <Tabs value={dimensionParam} onValueChange={handleTabChange}>
           <TabsList>
             <TabsTrigger value="overall">Overall</TabsTrigger>
             {activeDimensions.map((dim: { id: number; name: string }) => (
