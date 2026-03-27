@@ -145,7 +145,6 @@ export const correctionsRouter = router({
         description: z.string().min(1),
         entityName: z.string().min(1),
         amount: z.number(),
-        account: z.string(),
       })
     )
     .mutation(async ({ input }) => {

@@ -169,13 +169,7 @@ export function ReviewStep() {
    * Falls back to a simple contains-based pattern if AI is unavailable.
    */
   const autoSaveRuleAndReEvaluate = useCallback(
-    (
-      description: string,
-      entityId: string,
-      entityName: string,
-      amount: number,
-      account: string
-    ) => {
+    (description: string, entityId: string, entityName: string, amount: number) => {
       const fallbackPattern = description
         .toUpperCase()
         .replace(/\d+/g, "")
@@ -184,7 +178,7 @@ export function ReviewStep() {
 
       // Fire AI analysis in background — save correction with result or fallback
       analyzeCorrectionMutation
-        .mutateAsync({ description, entityName, amount, account })
+        .mutateAsync({ description, entityName, amount })
         .then((res) => {
           const analysis = res.data;
           if (analysis && analysis.pattern.length >= 3) {
@@ -340,8 +334,7 @@ export function ReviewStep() {
           transaction.description,
           entityId,
           entityName,
-          transaction.amount,
-          transaction.account
+          transaction.amount
         );
       } else if (!rejectedPatterns.current.has(pattern)) {
         // Low confidence — show confirmation toast
@@ -359,8 +352,7 @@ export function ReviewStep() {
                 transaction.description,
                 entityId!,
                 entityName,
-                transaction.amount,
-                transaction.account
+                transaction.amount
               );
             },
           },
@@ -447,8 +439,7 @@ export function ReviewStep() {
             firstTx.description,
             resolvedEntityId,
             entityName,
-            firstTx.amount,
-            firstTx.account
+            firstTx.amount
           );
         }
       } catch (error) {

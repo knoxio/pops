@@ -553,14 +553,17 @@ describe("ReviewStep — AI correction analysis", () => {
 
     fireEvent.click(screen.getByTestId("accept-WOOLWORTHS 1234 SYDNEY"));
 
-    // Should call analyzeCorrection with transaction context
+    // Should call analyzeCorrection with transaction context (no account — PII rule)
     expect(mockAnalyzeCorrectionMutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({
         description: "WOOLWORTHS 1234 SYDNEY",
         entityName: "Woolworths",
         amount: -42.5,
-        account: "Amex",
       })
+    );
+    // Verify account is NOT sent to AI
+    expect(mockAnalyzeCorrectionMutateAsync).not.toHaveBeenCalledWith(
+      expect.objectContaining({ account: expect.anything() })
     );
   });
 

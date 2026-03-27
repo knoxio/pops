@@ -58,7 +58,6 @@ interface CorrectionInput {
   description: string;
   entityName: string;
   amount: number;
-  account: string;
 }
 
 interface TransactionInput {
@@ -236,7 +235,6 @@ export async function analyzeCorrection(
 Transaction description: "${input.description}"
 Assigned entity: "${input.entityName}"
 Amount: ${input.amount}
-Account: ${input.account}
 
 Identify which part of the description is the entity/merchant name versus location, branch, reference numbers, or noise.
 
