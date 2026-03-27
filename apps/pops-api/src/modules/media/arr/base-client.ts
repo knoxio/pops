@@ -64,6 +64,48 @@ export class ArrBaseClient {
     this.cache.clear();
   }
 
+  /** Make an authenticated POST request to the *arr API. */
+  protected async post<T>(path: string, body: unknown): Promise<T> {
+    const url = `${this.baseUrl}/api/v3${path}`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "X-Api-Key": this.apiKey,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      throw new ArrApiError(`${response.status} ${response.statusText} — ${url}`, response.status);
+    }
+
+    return (await response.json()) as T;
+  }
+
+  /** Make an authenticated PUT request to the *arr API. */
+  protected async put<T>(path: string, body: unknown): Promise<T> {
+    const url = `${this.baseUrl}/api/v3${path}`;
+
+    const response = await fetch(url, {
+      method: "PUT",
+      headers: {
+        "X-Api-Key": this.apiKey,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      throw new ArrApiError(`${response.status} ${response.statusText} — ${url}`, response.status);
+    }
+
+    return (await response.json()) as T;
+  }
+
   /** Test the connection by fetching system status. */
   async testConnection(): Promise<ArrSystemStatus> {
     return this.get<ArrSystemStatus>("/system/status");

@@ -51,6 +51,36 @@ export interface RadarrMovie {
   hasFile: boolean;
 }
 
+export interface RadarrQualityProfile {
+  id: number;
+  name: string;
+}
+
+export interface RadarrRootFolder {
+  id: number;
+  path: string;
+  freeSpace: number;
+}
+
+export interface RadarrAddMovieInput {
+  tmdbId: number;
+  title: string;
+  qualityProfileId: number;
+  rootFolderPath: string;
+}
+
+export interface RadarrCheckResult {
+  exists: boolean;
+  radarrId?: number;
+  monitored?: boolean;
+}
+
+export interface RadarrCommandResponse {
+  id: number;
+  name: string;
+  status: string;
+}
+
 export interface RadarrQueueRecord {
   id: number;
   movieId: number;

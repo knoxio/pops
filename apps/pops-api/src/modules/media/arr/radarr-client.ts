@@ -2,7 +2,16 @@
  * Radarr API client — extends base *arr client with movie-specific endpoints.
  */
 import { ArrBaseClient } from "./base-client.js";
-import type { RadarrMovie, RadarrQueueResponse, ArrStatusResult } from "./types.js";
+import type {
+  RadarrMovie,
+  RadarrQueueResponse,
+  ArrStatusResult,
+  RadarrQualityProfile,
+  RadarrRootFolder,
+  RadarrAddMovieInput,
+  RadarrCheckResult,
+  RadarrCommandResponse,
+} from "./types.js";
 
 export class RadarrClient extends ArrBaseClient {
   /** Fetch all monitored movies from Radarr. */
@@ -18,6 +27,52 @@ export class RadarrClient extends ArrBaseClient {
   /** Fetch the download queue. */
   async getQueue(): Promise<RadarrQueueResponse> {
     return this.get<RadarrQueueResponse>("/queue?includeMovie=true");
+  }
+
+  /** Fetch quality profiles from Radarr. */
+  async getQualityProfiles(): Promise<RadarrQualityProfile[]> {
+    return this.get<RadarrQualityProfile[]>("/qualityprofile");
+  }
+
+  /** Fetch root folders from Radarr. */
+  async getRootFolders(): Promise<RadarrRootFolder[]> {
+    return this.get<RadarrRootFolder[]>("/rootfolder");
+  }
+
+  /** Check if a movie exists in Radarr by TMDB ID. */
+  async checkMovie(tmdbId: number): Promise<RadarrCheckResult> {
+    const movies = await this.get<RadarrMovie[]>(`/movie?tmdbId=${tmdbId}`);
+    const movie = movies[0];
+    if (!movie) {
+      return { exists: false };
+    }
+    return { exists: true, radarrId: movie.id, monitored: movie.monitored };
+  }
+
+  /** Add a movie to Radarr. */
+  async addMovie(input: RadarrAddMovieInput): Promise<RadarrMovie> {
+    return this.post<RadarrMovie>("/movie", {
+      tmdbId: input.tmdbId,
+      title: input.title,
+      qualityProfileId: input.qualityProfileId,
+      rootFolderPath: input.rootFolderPath,
+      monitored: true,
+      addOptions: { searchForMovie: true },
+    });
+  }
+
+  /** Update monitoring flag for a movie. Fetches full movie first, merges, then PUTs. */
+  async updateMonitoring(radarrId: number, monitored: boolean): Promise<RadarrMovie> {
+    const movie = await this.getMovie(radarrId);
+    return this.put<RadarrMovie>(`/movie/${radarrId}`, { ...movie, monitored });
+  }
+
+  /** Trigger a search for a movie in Radarr. */
+  async triggerSearch(radarrId: number): Promise<RadarrCommandResponse> {
+    return this.post<RadarrCommandResponse>("/command", {
+      name: "MoviesSearch",
+      movieIds: [radarrId],
+    });
   }
 
   /**

@@ -92,6 +92,146 @@ export const arrRouter = router({
       return { message: "Arr settings saved" };
     }),
 
+  /** Get Radarr quality profiles. */
+  getQualityProfiles: protectedProcedure.query(async () => {
+    const client = arrService.getRadarrClient();
+    if (!client) {
+      throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Radarr is not configured" });
+    }
+    try {
+      const profiles = await client.getQualityProfiles();
+      return { data: profiles };
+    } catch (err) {
+      if (err instanceof ArrApiError) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Radarr error: ${err.message}`,
+        });
+      }
+      throw err;
+    }
+  }),
+
+  /** Get Radarr root folders. */
+  getRootFolders: protectedProcedure.query(async () => {
+    const client = arrService.getRadarrClient();
+    if (!client) {
+      throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Radarr is not configured" });
+    }
+    try {
+      const folders = await client.getRootFolders();
+      return { data: folders };
+    } catch (err) {
+      if (err instanceof ArrApiError) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Radarr error: ${err.message}`,
+        });
+      }
+      throw err;
+    }
+  }),
+
+  /** Check if a movie exists in Radarr by TMDB ID. */
+  checkMovie: protectedProcedure
+    .input(z.object({ tmdbId: z.number().int().positive() }))
+    .query(async ({ input }) => {
+      const client = arrService.getRadarrClient();
+      if (!client) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Radarr is not configured" });
+      }
+      try {
+        const result = await client.checkMovie(input.tmdbId);
+        return { data: result };
+      } catch (err) {
+        if (err instanceof ArrApiError) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Radarr error: ${err.message}`,
+          });
+        }
+        throw err;
+      }
+    }),
+
+  /** Add a movie to Radarr. */
+  addMovie: protectedProcedure
+    .input(
+      z.object({
+        tmdbId: z.number().int().positive(),
+        title: z.string().min(1),
+        qualityProfileId: z.number().int().positive(),
+        rootFolderPath: z.string().min(1),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const client = arrService.getRadarrClient();
+      if (!client) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Radarr is not configured" });
+      }
+      try {
+        const movie = await client.addMovie(input);
+        return { data: movie };
+      } catch (err) {
+        if (err instanceof ArrApiError) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Radarr error: ${err.message}`,
+          });
+        }
+        throw err;
+      }
+    }),
+
+  /** Update monitoring flag for a movie in Radarr. */
+  updateMonitoring: protectedProcedure
+    .input(
+      z.object({
+        radarrId: z.number().int().positive(),
+        monitored: z.boolean(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const client = arrService.getRadarrClient();
+      if (!client) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Radarr is not configured" });
+      }
+      try {
+        const movie = await client.updateMonitoring(input.radarrId, input.monitored);
+        return { data: movie };
+      } catch (err) {
+        if (err instanceof ArrApiError) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Radarr error: ${err.message}`,
+          });
+        }
+        throw err;
+      }
+    }),
+
+  /** Trigger a search for a movie in Radarr. */
+  triggerSearch: protectedProcedure
+    .input(z.object({ radarrId: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      const client = arrService.getRadarrClient();
+      if (!client) {
+        throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Radarr is not configured" });
+      }
+      try {
+        const result = await client.triggerSearch(input.radarrId);
+        return { data: result };
+      } catch (err) {
+        if (err instanceof ArrApiError) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Radarr error: ${err.message}`,
+          });
+        }
+        throw err;
+      }
+    }),
+
   /** Get Radarr status for a movie by TMDB ID. */
   getMovieStatus: protectedProcedure
     .input(z.object({ tmdbId: z.number().int().positive() }))
