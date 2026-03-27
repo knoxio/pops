@@ -36,6 +36,11 @@ const IMAGE_FILENAMES = {
 
 export type ImageType = keyof typeof IMAGE_FILENAMES;
 
+/** Season poster filename: season_1.jpg, season_0.jpg (specials), etc. */
+function seasonFilename(seasonNumber: number): string {
+  return `season_${seasonNumber}.jpg`;
+}
+
 /** Interface for rate limiters — call acquire() before each network request. */
 export interface RateLimiter {
   acquire(): Promise<void>;
@@ -110,7 +115,8 @@ export class ImageCacheService {
   async downloadTvShowImages(
     tvdbId: number,
     posterUrl: string | null,
-    backdropUrl: string | null
+    backdropUrl: string | null,
+    seasonPosters?: Array<{ seasonNumber: number; posterUrl: string | null }>
   ): Promise<void> {
     const tvDir = this.tvShowDir(tvdbId);
     await mkdir(tvDir, { recursive: true });
@@ -125,9 +131,35 @@ export class ImageCacheService {
       downloads.push(this.downloadImage(backdropUrl, join(tvDir, IMAGE_FILENAMES.backdrop)));
     }
 
+    if (seasonPosters) {
+      for (const sp of seasonPosters) {
+        if (sp.posterUrl) {
+          downloads.push(
+            this.downloadImage(sp.posterUrl, join(tvDir, seasonFilename(sp.seasonNumber)))
+          );
+        }
+      }
+    }
+
     if (downloads.length > 0) {
       await Promise.allSettled(downloads);
     }
+  }
+
+  /**
+   * Download a single season poster to the TV show's cache directory.
+   * Stored as season_{num}.jpg (e.g. season_1.jpg, season_0.jpg for specials).
+   */
+  async downloadSeasonPoster(
+    tvdbId: number,
+    seasonNumber: number,
+    posterUrl: string | null
+  ): Promise<void> {
+    if (!posterUrl) return;
+
+    const tvDir = this.tvShowDir(tvdbId);
+    await mkdir(tvDir, { recursive: true });
+    await this.downloadImage(posterUrl, join(tvDir, seasonFilename(seasonNumber)));
   }
 
   /**
@@ -142,6 +174,20 @@ export class ImageCacheService {
     const dirName = MEDIA_DIR_NAMES[mediaType] ?? `${mediaType}s`;
     const filePath = join(this.imagesDir, dirName, String(id), IMAGE_FILENAMES[imageType]);
 
+    try {
+      await stat(filePath);
+      return filePath;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Get the absolute path to a cached season poster.
+   * Returns null if the file doesn't exist.
+   */
+  async getSeasonImagePath(tvdbId: number, seasonNumber: number): Promise<string | null> {
+    const filePath = join(this.tvShowDir(tvdbId), seasonFilename(seasonNumber));
     try {
       await stat(filePath);
       return filePath;
@@ -178,10 +224,36 @@ export class ImageCacheService {
   async generatePlaceholder(tmdbId: number, title: string): Promise<void> {
     const movieDir = this.movieDir(tmdbId);
     await mkdir(movieDir, { recursive: true });
+    await this.writePlaceholderSvg(join(movieDir, IMAGE_FILENAMES.poster), title, tmdbId);
+  }
 
-    const destPath = join(movieDir, IMAGE_FILENAMES.poster);
+  /**
+   * Generate an SVG placeholder poster for a TV show or season.
+   * For seasons, includes "Season N" in the label.
+   * Stored as poster.jpg (show) or season_{num}.jpg (season).
+   */
+  async generateTvPlaceholder(
+    tvdbId: number,
+    title: string,
+    seasonNumber?: number
+  ): Promise<void> {
+    const tvDir = this.tvShowDir(tvdbId);
+    await mkdir(tvDir, { recursive: true });
 
-    // Skip if poster already exists
+    const filename =
+      seasonNumber !== undefined ? seasonFilename(seasonNumber) : IMAGE_FILENAMES.poster;
+    const label =
+      seasonNumber !== undefined ? `${title} — Season ${seasonNumber}` : title;
+    await this.writePlaceholderSvg(join(tvDir, filename), label, tvdbId);
+  }
+
+  /** Write an SVG placeholder to destPath unless the file already exists. */
+  private async writePlaceholderSvg(
+    destPath: string,
+    label: string,
+    seed: number
+  ): Promise<void> {
+    // Skip if file already exists
     try {
       await stat(destPath);
       return;
@@ -189,9 +261,8 @@ export class ImageCacheService {
       // File doesn't exist — generate placeholder
     }
 
-    // Deterministic colour from tmdbId
-    const hue = (tmdbId * 137) % 360;
-    const escapedTitle = title
+    const hue = (seed * 137) % 360;
+    const escapedLabel = label
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
@@ -202,7 +273,7 @@ export class ImageCacheService {
   <text x="390" y="585" text-anchor="middle" dominant-baseline="central"
     font-family="system-ui, sans-serif" font-size="48" font-weight="bold"
     fill="white" opacity="0.9">
-    <tspan>${escapedTitle}</tspan>
+    <tspan>${escapedLabel}</tspan>
   </text>
 </svg>`;
 

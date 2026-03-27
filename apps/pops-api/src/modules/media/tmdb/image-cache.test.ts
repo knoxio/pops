@@ -389,3 +389,127 @@ describe("generatePlaceholder", () => {
     expect(hue1).not.toBe(hue2);
   });
 });
+
+describe("downloadSeasonPoster", () => {
+  it("downloads season poster to season_{num}.jpg", async () => {
+    fetchMock.mockResolvedValue(mockImageResponse());
+
+    await service.downloadSeasonPoster(
+      81189,
+      1,
+      "https://artworks.thetvdb.com/banners/seasons/81189-1.jpg"
+    );
+
+    const tvDir = path.join(IMAGES_DIR, "tv", "81189");
+    expect(fs.mkdir).toHaveBeenCalledWith(tvDir, { recursive: true });
+    expect(fetchMock).toHaveBeenCalledWith(
+      "https://artworks.thetvdb.com/banners/seasons/81189-1.jpg"
+    );
+
+    const destPath = vi.mocked(fs.writeFile).mock.calls[0]![0];
+    expect(destPath).toBe(path.join(tvDir, "season_1.jpg"));
+  });
+
+  it("uses season_0.jpg for specials", async () => {
+    fetchMock.mockResolvedValue(mockImageResponse());
+
+    await service.downloadSeasonPoster(
+      81189,
+      0,
+      "https://artworks.thetvdb.com/banners/seasons/81189-0.jpg"
+    );
+
+    const destPath = vi.mocked(fs.writeFile).mock.calls[0]![0];
+    expect(destPath).toBe(path.join(IMAGES_DIR, "tv", "81189", "season_0.jpg"));
+  });
+
+  it("skips download when posterUrl is null", async () => {
+    await service.downloadSeasonPoster(81189, 1, null);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fs.mkdir).not.toHaveBeenCalled();
+  });
+});
+
+describe("downloadTvShowImages — season posters", () => {
+  it("downloads season posters alongside show images", async () => {
+    fetchMock.mockResolvedValue(mockImageResponse());
+
+    await service.downloadTvShowImages(
+      81189,
+      "https://artworks.thetvdb.com/banners/posters/81189.jpg",
+      null,
+      [
+        { seasonNumber: 1, posterUrl: "https://artworks.thetvdb.com/banners/seasons/81189-1.jpg" },
+        { seasonNumber: 2, posterUrl: "https://artworks.thetvdb.com/banners/seasons/81189-2.jpg" },
+      ]
+    );
+
+    // show poster + 2 season posters = 3 downloads
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+
+    const paths = vi.mocked(fs.writeFile).mock.calls.map((c) => c[0]);
+    expect(paths).toContainEqual(path.join(IMAGES_DIR, "tv", "81189", "poster.jpg"));
+    expect(paths).toContainEqual(path.join(IMAGES_DIR, "tv", "81189", "season_1.jpg"));
+    expect(paths).toContainEqual(path.join(IMAGES_DIR, "tv", "81189", "season_2.jpg"));
+  });
+
+  it("skips null season poster URLs", async () => {
+    fetchMock.mockResolvedValue(mockImageResponse());
+
+    await service.downloadTvShowImages(81189, null, null, [
+      { seasonNumber: 1, posterUrl: null },
+    ]);
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("generateTvPlaceholder", () => {
+  it("creates SVG placeholder for a TV show", async () => {
+    await service.generateTvPlaceholder(81189, "Breaking Bad");
+
+    const tvDir = path.join(IMAGES_DIR, "tv", "81189");
+    expect(fs.mkdir).toHaveBeenCalledWith(tvDir, { recursive: true });
+
+    const [destPath, content] = vi.mocked(fs.writeFile).mock.calls[0]!;
+    expect(destPath).toBe(path.join(tvDir, "poster.jpg"));
+    expect(content).toContain("<svg");
+    expect(content).toContain("Breaking Bad");
+  });
+
+  it("creates SVG placeholder for a season with season label", async () => {
+    await service.generateTvPlaceholder(81189, "Breaking Bad", 1);
+
+    const [destPath, content] = vi.mocked(fs.writeFile).mock.calls[0]!;
+    expect(destPath).toBe(path.join(IMAGES_DIR, "tv", "81189", "season_1.jpg"));
+    expect(content).toContain("Breaking Bad");
+    expect(content).toContain("Season 1");
+  });
+
+  it("skips if file already exists", async () => {
+    vi.mocked(fs.stat).mockResolvedValueOnce({} as Awaited<ReturnType<typeof fs.stat>>);
+
+    await service.generateTvPlaceholder(81189, "Breaking Bad");
+
+    expect(fs.writeFile).not.toHaveBeenCalled();
+  });
+});
+
+describe("getSeasonImagePath", () => {
+  it("returns path when season poster exists", async () => {
+    vi.mocked(fs.stat).mockResolvedValueOnce({} as Awaited<ReturnType<typeof fs.stat>>);
+
+    const result = await service.getSeasonImagePath(81189, 1);
+
+    expect(result).toBe(path.join(IMAGES_DIR, "tv", "81189", "season_1.jpg"));
+  });
+
+  it("returns null when season poster does not exist", async () => {
+    vi.mocked(fs.stat).mockRejectedValueOnce(new Error("ENOENT"));
+
+    const result = await service.getSeasonImagePath(81189, 1);
+
+    expect(result).toBeNull();
+  });
+});
