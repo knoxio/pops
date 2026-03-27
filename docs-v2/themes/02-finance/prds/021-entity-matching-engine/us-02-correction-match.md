@@ -1,7 +1,7 @@
 # US-02: Correction matching (Stage 0)
 
 > PRD: [021 — Entity Matching Engine](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -13,10 +13,10 @@ As a developer, I want transaction descriptions matched against learned correcti
 - [x] Description normalized before matching: uppercase, remove numbers, normalize whitespace
 - [x] Priority: exact match first, then contains match
 - [x] Ties broken by: highest confidence, then highest times_applied
-- [ ] If match confidence >= 0.9 → result is "matched" — confidence-based result classification not yet implemented
-- [ ] If match confidence < 0.9 → result is "uncertain" — same as above
+- [x] If match confidence >= 0.9 → result is "matched"
+- [x] If match confidence < 0.9 → result is "uncertain"
 - [x] Matched correction provides: entity_id, entity_name, location, tags, transaction_type
-- [ ] If correction matches, skip all subsequent matching stages — import pipeline integration pending
+- [x] If correction matches, skip all subsequent matching stages
 
 ## Notes
 

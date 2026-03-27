@@ -90,7 +90,7 @@ If no match from stages 0-5, call Claude Haiku API:
 | # | Story | Summary | Parallelisable |
 |---|-------|---------|----------------|
 | 01 | [us-01-entity-lookup](us-01-entity-lookup.md) | Load entity lookup and alias maps from database | Not started |
-| 02 | [us-02-correction-match](us-02-correction-match.md) | Stage 0: match against learned corrections (fuzzy, confidence threshold) | Partial |
+| 02 | [us-02-correction-match](us-02-correction-match.md) | Stage 0: match against learned corrections (fuzzy, confidence threshold) | Done |
 | 03 | [us-03-rule-matching](us-03-rule-matching.md) | Stages 1-5: alias, exact, prefix, contains, punctuation stripping | Done |
 | 04 | [us-04-ai-fallback](us-04-ai-fallback.md) | Stage 6: Claude Haiku API call with caching, rate limiting, cost tracking | Done |
 | 05 | [us-05-tag-suggestion](us-05-tag-suggestion.md) | Tag suggestion pipeline: correction tags → AI category → entity defaults | Partial |

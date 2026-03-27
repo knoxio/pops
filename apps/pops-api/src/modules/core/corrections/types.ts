@@ -3,6 +3,25 @@ import type { TransactionCorrectionRow } from "@pops/db-types";
 
 export type CorrectionRow = TransactionCorrectionRow;
 
+/** Confidence threshold above which a correction match is considered definitive */
+export const HIGH_CONFIDENCE_THRESHOLD = 0.9;
+
+export type CorrectionMatchStatus = "matched" | "uncertain";
+
+/** Result of matching a description against correction rules */
+export interface CorrectionMatchResult {
+  correction: CorrectionRow;
+  status: CorrectionMatchStatus;
+}
+
+/** Classify a correction match based on confidence */
+export function classifyCorrectionMatch(correction: CorrectionRow): CorrectionMatchResult {
+  return {
+    correction,
+    status: correction.confidence >= HIGH_CONFIDENCE_THRESHOLD ? "matched" : "uncertain",
+  };
+}
+
 /**
  * API response shape (camelCase)
  */

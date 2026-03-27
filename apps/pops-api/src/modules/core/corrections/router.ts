@@ -59,15 +59,15 @@ export const correctionsRouter = router({
     }
   }),
 
-  /** Find best matching correction for a description */
+  /** Find best matching correction for a description (includes confidence classification) */
   findMatch: protectedProcedure.input(FindCorrectionSchema).query(({ input }) => {
-    const row = service.findMatchingCorrection(input.description, input.minConfidence);
+    const result = service.findMatchingCorrection(input.description, input.minConfidence);
 
-    if (!row) {
-      return { data: null };
+    if (!result) {
+      return { data: null, status: null };
     }
 
-    return { data: toCorrection(row) };
+    return { data: toCorrection(result.correction), status: result.status };
   }),
 
   /** Create or update a correction */

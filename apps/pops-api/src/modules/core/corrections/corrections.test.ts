@@ -109,6 +109,7 @@ describe("corrections", () => {
       });
 
       expect(result.data).toBeNull();
+      expect(result.status).toBeNull();
     });
 
     it("returns null for unknown description", async () => {
@@ -118,6 +119,58 @@ describe("corrections", () => {
       });
 
       expect(result.data).toBeNull();
+      expect(result.status).toBeNull();
+    });
+
+    it("classifies match as 'uncertain' when confidence < 0.9", async () => {
+      // Default confidence is 0.5
+      const result = await caller.core.corrections.findMatch({
+        description: "NETFLIX",
+        minConfidence: 0,
+      });
+
+      expect(result.data).not.toBeNull();
+      expect(result.status).toBe("uncertain");
+    });
+
+    it("classifies match as 'matched' when confidence >= 0.9", async () => {
+      // Create a high-confidence correction
+      const created = await caller.core.corrections.createOrUpdate({
+        descriptionPattern: "SHELL PETROL",
+        matchType: "exact",
+        tags: ["Transport"],
+      });
+      await caller.core.corrections.update({
+        id: created.data.id,
+        data: { confidence: 0.95 },
+      });
+
+      const result = await caller.core.corrections.findMatch({
+        description: "SHELL PETROL",
+        minConfidence: 0,
+      });
+
+      expect(result.data).not.toBeNull();
+      expect(result.status).toBe("matched");
+    });
+
+    it("classifies match at exactly 0.9 as 'matched'", async () => {
+      const created = await caller.core.corrections.createOrUpdate({
+        descriptionPattern: "COLES",
+        matchType: "exact",
+        tags: ["Groceries"],
+      });
+      await caller.core.corrections.update({
+        id: created.data.id,
+        data: { confidence: 0.9 },
+      });
+
+      const result = await caller.core.corrections.findMatch({
+        description: "COLES",
+        minConfidence: 0,
+      });
+
+      expect(result.status).toBe("matched");
     });
   });
 

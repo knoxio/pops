@@ -6,16 +6,23 @@ import { eq, gte, desc, count, sql, and } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
 import { transactionCorrections } from "@pops/db-types";
 import { NotFoundError } from "../../../shared/errors.js";
-import type { CorrectionRow, CreateCorrectionInput, UpdateCorrectionInput } from "./types.js";
-import { normalizeDescription } from "./types.js";
+import type {
+  CorrectionRow,
+  CreateCorrectionInput,
+  UpdateCorrectionInput,
+  CorrectionMatchResult,
+} from "./types.js";
+import { normalizeDescription, classifyCorrectionMatch } from "./types.js";
 
 /**
- * Find the best matching correction for a description
+ * Find the best matching correction for a description.
+ * Returns a classified result ("matched" if confidence >= 0.9, "uncertain" otherwise).
+ * When a match is found, callers should skip all subsequent matching stages.
  */
 export function findMatchingCorrection(
   description: string,
   minConfidence: number = 0.7
-): CorrectionRow | null {
+): CorrectionMatchResult | null {
   const db = getDrizzle();
   const normalized = normalizeDescription(description);
 
@@ -34,7 +41,7 @@ export function findMatchingCorrection(
     .limit(1)
     .all();
 
-  if (exactMatch) return exactMatch;
+  if (exactMatch) return classifyCorrectionMatch(exactMatch);
 
   // Try contains match (pattern is substring of description)
   // This uses SQL LIKE which needs raw SQL for the dynamic pattern
@@ -52,7 +59,7 @@ export function findMatchingCorrection(
     .limit(1)
     .all();
 
-  if (containsMatch) return containsMatch;
+  if (containsMatch) return classifyCorrectionMatch(containsMatch);
 
   return null;
 }

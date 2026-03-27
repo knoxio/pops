@@ -297,40 +297,46 @@ export async function processImport(
 
     try {
       // Step 1: Apply learned corrections (highest priority)
-      const correction = findMatchingCorrection(transaction.description, 0.7);
+      // When a correction matches, skip all subsequent matching stages.
+      const correctionResult = findMatchingCorrection(transaction.description, 0.7);
 
-      if (correction && correction.entityId) {
-        logger.debug(
-          {
-            index: i + 1,
-            total: newTransactions.length,
-            description: transaction.description.substring(0, 50),
-            entityName: correction.entityName,
-            confidence: correction.confidence,
-          },
-          "[Import] Applied learned correction"
-        );
+      if (correctionResult) {
+        const { correction, status } = correctionResult;
+        const entityId = correction.entityId;
+        if (entityId) {
+          logger.debug(
+            {
+              index: i + 1,
+              total: newTransactions.length,
+              description: transaction.description.substring(0, 50),
+              entityName: correction.entityName,
+              confidence: correction.confidence,
+              status,
+            },
+            "[Import] Applied learned correction"
+          );
 
-        matched.push({
-          ...transaction,
-          location: correction.location ?? transaction.location,
-          entity: {
-            entityId: correction.entityId,
-            entityName: correction.entityName ?? "Unknown",
-            matchType: "learned" as never, // UI-only matchType
-            confidence: correction.confidence,
-          },
-          status: correction.confidence >= 0.9 ? "matched" : "uncertain",
-          suggestedTags: buildSuggestedTags(
-            transaction.description,
-            correction.entityId,
-            parseCorrectionTags(correction.tags),
-            null,
-            knownTags,
-            correction.descriptionPattern
-          ),
-        });
-        continue; // Skip to next transaction
+          matched.push({
+            ...transaction,
+            location: correction.location ?? transaction.location,
+            entity: {
+              entityId,
+              entityName: correction.entityName ?? "Unknown",
+              matchType: "learned" as never, // UI-only matchType
+              confidence: correction.confidence,
+            },
+            status,
+            suggestedTags: buildSuggestedTags(
+              transaction.description,
+              entityId,
+              parseCorrectionTags(correction.tags),
+              null,
+              knownTags,
+              correction.descriptionPattern
+            ),
+          });
+          continue; // Skip all subsequent matching stages
+        }
       }
 
       // Step 2: Try universal entity matching
