@@ -1,7 +1,7 @@
 # US-02: Location picker
 
 > PRD: [046 — Item Create/Edit Form](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -22,8 +22,8 @@ As a user, I want a location picker that shows my location hierarchy as a browsa
 - [x] A "Clear" option allows deselecting the current location (set to null)
 - [x] Overlay can be closed without selecting (Escape key, click outside, close button)
 - [x] When the location tree is empty, the overlay shows "No locations — create one" with the quick-add form
-- [ ] Tests cover: trigger breadcrumb display, tree rendering with expand/collapse, node selection, search filtering, quick-add location creation, clear selection, empty tree state, overlay close without selection
-- [ ] LocationPicker component NOT integrated into ItemFormPage — form uses plain text room field instead
+- [x] Tests cover: trigger breadcrumb display, tree rendering with expand/collapse, node selection, search filtering, quick-add location creation, clear selection, empty tree state, overlay close without selection
+- [x] LocationPicker component integrated into ItemFormPage — replaces plain text room field with tree-based location picker
 
 ## Notes
 

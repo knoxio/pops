@@ -25,6 +25,7 @@ import { trpc } from "../lib/trpc";
 import { PhotoUpload, type UploadedFile } from "../components/PhotoUpload";
 import { useImageProcessor } from "../hooks/useImageProcessor";
 import type { PhotoItem } from "../components/PhotoGallery";
+import { LocationPicker } from "../components/LocationPicker";
 
 interface PendingConnection {
   id: string;
@@ -38,7 +39,7 @@ interface ItemFormValues {
   itemId: string;
   type: string;
   condition: string;
-  room: string;
+  locationId: string;
   inUse: boolean;
   deductible: boolean;
   purchaseDate: string;
@@ -70,7 +71,7 @@ const defaultValues: ItemFormValues = {
   itemId: "",
   type: "",
   condition: "",
-  room: "",
+  locationId: "",
   inUse: false,
   deductible: false,
   purchaseDate: "",
@@ -320,6 +321,18 @@ export function ItemFormPage() {
 
   const connectMutation = trpc.inventory.connections.connect.useMutation();
 
+  // Location tree for LocationPicker
+  const { data: locationsData } = trpc.inventory.locations.tree.useQuery();
+  const locationTree = locationsData?.data ?? [];
+
+  const createLocationMutation = trpc.inventory.locations.create.useMutation({
+    onSuccess: () => {
+      toast.success("Location created");
+      void utils.inventory.locations.tree.invalidate();
+    },
+    onError: (err) => toast.error(`Failed to create location: ${err.message}`),
+  });
+
   // Fetch existing item for edit mode
   const {
     data: itemData,
@@ -338,7 +351,7 @@ export function ItemFormPage() {
         itemId: item.itemId ?? "",
         type: item.type ?? "",
         condition: item.condition ?? "",
-        room: item.room ?? "",
+        locationId: item.locationId ?? "",
         inUse: item.inUse,
         deductible: item.deductible,
         purchaseDate: item.purchaseDate ?? "",
@@ -421,7 +434,8 @@ export function ItemFormPage() {
       itemId: values.itemId || null,
       type: values.type || null,
       condition: values.condition || null,
-      room: values.room || null,
+      room: null,
+      locationId: values.locationId || null,
       inUse: values.inUse,
       deductible: values.deductible,
       purchaseDate: values.purchaseDate || null,
@@ -584,8 +598,16 @@ export function ItemFormPage() {
             </FormField>
           </div>
 
-          <FormField label="Room">
-            <TextInput {...register("room")} placeholder="e.g. Office, Bedroom" />
+          <FormField label="Location">
+            <LocationPicker
+              locations={locationTree}
+              value={watch("locationId") || null}
+              onChange={(id) => setValue("locationId", id ?? "", { shouldDirty: true })}
+              onCreateLocation={(name, parentId) =>
+                createLocationMutation.mutate({ name, parentId })
+              }
+              placeholder="Select location…"
+            />
           </FormField>
 
           <div className="flex gap-6 p-4 rounded-xl bg-app-accent/5">
