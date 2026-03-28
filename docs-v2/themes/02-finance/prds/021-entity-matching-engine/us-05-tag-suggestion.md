@@ -1,7 +1,7 @@
 # US-05: Tag suggestion pipeline
 
 > PRD: [021 — Entity Matching Engine](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -11,11 +11,11 @@ As a developer, I want tags suggested for each transaction from multiple sources
 
 - [x] Priority chain (no duplicates): correction tags → AI category → entity default tags
 - [x] Correction tags: from matched correction rule (source: "rule", includes pattern text)
-- [ ] AI category: only if it case-insensitively matches an existing tag in the database — not yet integrated into tag suggester
+- [x] AI category: only if it case-insensitively matches an existing tag in the database
 - [x] Entity default tags: from entity.defaultTags (source: "entity")
-- [ ] Each tag includes source attribution for UI badges — returns string[] not object array
+- [x] Each tag includes source attribution for UI badges
 - [x] Deduplicated: each tag appears only once regardless of how many sources suggest it
-- [ ] Output: `{ tag, source: "rule" | "ai" | "entity", pattern?: string }[]` — returns string[] instead
+- [x] Output: `{ tag, source: "rule" | "ai" | "entity", pattern?: string }[]`
 
 ## Notes
 
