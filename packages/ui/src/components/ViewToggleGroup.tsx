@@ -88,7 +88,7 @@ export function ViewToggleGroup<T extends string>({
           aria-label={option.label}
           onClick={() => handleChange(option.value)}
           className={cn(
-            "rounded-md p-1.5 min-h-11 min-w-11 transition-all",
+            "flex items-center justify-center rounded-md p-1.5 min-h-8 min-w-8 transition-all",
             activeValue === option.value
               ? "bg-background text-foreground shadow-sm"
               : "text-muted-foreground hover:text-foreground",
