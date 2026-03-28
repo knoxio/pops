@@ -5,7 +5,18 @@
  *   - Movie: removed from watchlist when marked as watched.
  *   - Episode: TV show removed from watchlist when all episodes are watched.
  */
-import { count, countDistinct, desc, eq, and, inArray, gte, lte, type SQL } from "drizzle-orm";
+import {
+  count,
+  countDistinct,
+  desc,
+  eq,
+  and,
+  inArray,
+  gte,
+  lte,
+  isNotNull,
+  type SQL,
+} from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
 import { watchHistory, mediaWatchlist, episodes, seasons, movies, tvShows } from "@pops/db-types";
 import { NotFoundError } from "../../../shared/errors.js";
@@ -510,14 +521,16 @@ export function batchLogWatch(input: BatchLogWatchInput): BatchLogResult {
   const watchedAt = input.watchedAt ?? new Date().toISOString();
 
   return db.transaction((tx) => {
-    // Resolve episode IDs based on mediaType
+    // Resolve episode IDs based on mediaType, excluding future unaired episodes
     let episodeIds: number[];
+    const today = new Date().toISOString().slice(0, 10);
+    const airedFilter = and(isNotNull(episodes.airDate), lte(episodes.airDate, today));
 
     if (input.mediaType === "season") {
       episodeIds = tx
         .select({ id: episodes.id })
         .from(episodes)
-        .where(eq(episodes.seasonId, input.mediaId))
+        .where(and(eq(episodes.seasonId, input.mediaId), airedFilter))
         .all()
         .map((r) => r.id);
     } else {
@@ -526,7 +539,7 @@ export function batchLogWatch(input: BatchLogWatchInput): BatchLogResult {
         .select({ id: episodes.id })
         .from(episodes)
         .innerJoin(seasons, eq(episodes.seasonId, seasons.id))
-        .where(eq(seasons.tvShowId, input.mediaId))
+        .where(and(eq(seasons.tvShowId, input.mediaId), airedFilter))
         .all()
         .map((r) => r.id);
     }
