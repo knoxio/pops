@@ -126,7 +126,7 @@ describe("migration safety", () => {
         .all() as { tags: string }[];
       expect(txRows.length).toBeGreaterThan(0);
       for (const row of txRows) {
-        expect(() => JSON.parse(row.tags)).not.toThrow();
+        expect(() => JSON.parse(row.tags) as unknown).not.toThrow();
       }
 
       // Movies have genres as JSON
@@ -135,7 +135,7 @@ describe("migration safety", () => {
         .all() as { genres: string }[];
       expect(movieRows.length).toBeGreaterThan(0);
       for (const row of movieRows) {
-        expect(() => JSON.parse(row.genres)).not.toThrow();
+        expect(() => JSON.parse(row.genres) as unknown).not.toThrow();
       }
 
       db.close();
