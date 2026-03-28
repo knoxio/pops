@@ -54,6 +54,7 @@ src/
 ## Data Patterns
 
 - **SQLite** — source of truth. All access through Drizzle ORM (no raw SQL in new code).
+- **Schema changes go through Drizzle only** — edit the schema file in `packages/db-types/src/schema/`, run `mise drizzle:generate`, review the generated SQL, commit both. Manual SQL migrations in `src/db/migrations/` are frozen (CI enforced).
 - **Integer PKs** for domain tables. **TEXT UUIDs** for cross-domain FKs (finance transactions, entities).
 - **Timestamps** — `createdAt`/`updatedAt` as ISO 8601 TEXT columns.
 - **JSON columns** — stored as TEXT, parsed on read (e.g., tags, genres).
