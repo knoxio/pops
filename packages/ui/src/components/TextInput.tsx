@@ -191,7 +191,7 @@ export const TextInput = forwardRef<HTMLInputElement, TextInputProps>(
             error && "border-destructive ring-destructive/20",
             containerClassName
           )}
-          style={isFocused && !error ? { borderColor: "rgb(55, 65, 81)" } : undefined}
+          style={isFocused && !error ? { borderColor: "var(--ring)" } : undefined}
         >
           {prefix && <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>}
           <input

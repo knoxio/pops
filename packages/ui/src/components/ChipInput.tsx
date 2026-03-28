@@ -220,7 +220,7 @@ export const ChipInput = forwardRef<HTMLInputElement, ChipInputProps>(
           disabled && "opacity-50 cursor-not-allowed",
           containerClassName
         )}
-        style={isFocused ? { borderColor: "rgb(55, 65, 81)" } : undefined}
+        style={isFocused ? { borderColor: "var(--ring)" } : undefined}
         onClick={handleContainerClick}
       >
         {values.map((value, index) => (

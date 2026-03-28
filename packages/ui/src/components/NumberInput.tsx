@@ -254,7 +254,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
           enableDrag && !disabled && "cursor-ns-resize select-none",
           containerClassName
         )}
-        style={isFocused ? { borderColor: "rgb(55, 65, 81)" } : undefined}
+        style={isFocused ? { borderColor: "var(--ring)" } : undefined}
         onMouseDown={handleMouseDown}
       >
         {prefix && <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>}

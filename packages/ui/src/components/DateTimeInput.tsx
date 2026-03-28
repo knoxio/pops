@@ -126,7 +126,7 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
           disabled && "opacity-50 cursor-not-allowed",
           containerClassName
         )}
-        style={isFocused ? { borderColor: "rgb(55, 65, 81)" } : undefined}
+        style={isFocused ? { borderColor: "var(--ring)" } : undefined}
       >
         {prefix && <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>}
         <input
@@ -190,7 +190,7 @@ export const TimeInput = forwardRef<HTMLInputElement, TimeInputProps>(
           disabled && "opacity-50 cursor-not-allowed",
           containerClassName
         )}
-        style={isFocused ? { borderColor: "rgb(55, 65, 81)" } : undefined}
+        style={isFocused ? { borderColor: "var(--ring)" } : undefined}
       >
         {prefix && <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>}
         <input
@@ -254,7 +254,7 @@ export const DateTimeInput = forwardRef<HTMLInputElement, DateTimeInputProps>(
           disabled && "opacity-50 cursor-not-allowed",
           containerClassName
         )}
-        style={isFocused ? { borderColor: "rgb(55, 65, 81)" } : undefined}
+        style={isFocused ? { borderColor: "var(--ring)" } : undefined}
       >
         {prefix && <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>}
         <input
