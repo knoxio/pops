@@ -719,7 +719,12 @@ describe("batchLogWatch", () => {
   it("skips already-watched episodes", () => {
     const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
     const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
-    const ep1 = seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1, air_date: "2020-01-01" });
+    const ep1 = seedEpisode(db, {
+      season_id: sId,
+      tvdb_id: 5001,
+      episode_number: 1,
+      air_date: "2020-01-01",
+    });
     seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2, air_date: "2020-01-08" });
 
     // Watch ep1 individually first
@@ -855,7 +860,12 @@ describe("batchLogWatch", () => {
   it("does not skip when completed is 0 (re-logging incomplete watches)", () => {
     const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
     const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
-    const ep1 = seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1, air_date: "2020-01-01" });
+    const ep1 = seedEpisode(db, {
+      season_id: sId,
+      tvdb_id: 5001,
+      episode_number: 1,
+      air_date: "2020-01-01",
+    });
     seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2, air_date: "2020-01-08" });
 
     // Watch ep1 as completed
