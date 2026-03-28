@@ -55,9 +55,10 @@ vi.mock("../lib/trpc", () => ({
 }));
 
 vi.mock("../components/HorizontalScrollRow", () => ({
-  HorizontalScrollRow: ({ title, children }: { title: string; children: React.ReactNode }) => (
+  HorizontalScrollRow: ({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) => (
     <section>
       <h2>{title}</h2>
+      {subtitle && <p data-testid="scroll-row-subtitle">{subtitle}</p>}
       <div>{children}</div>
     </section>
   ),
@@ -290,8 +291,9 @@ describe("DiscoverPage — recommendations", () => {
     defaultRecommendations();
     renderPage();
 
-    const link = screen.getByText("Start Comparing");
-    expect(link.closest("a")?.getAttribute("href")).toBe("/media/compare");
+    const links = screen.getAllByText("Start Comparing");
+    const compareLink = links.find((el) => el.closest("a")?.getAttribute("href") === "/media/compare");
+    expect(compareLink).toBeTruthy();
   });
 
   it("renders recommendations with attribution when above threshold", () => {
@@ -329,5 +331,96 @@ describe("DiscoverPage — recommendations", () => {
     fireEvent.click(addButtons[addButtons.length - 2]!);
 
     expect(mockAddMovieMutateAsync).toHaveBeenCalledWith({ tmdbId: 400 });
+  });
+
+  it("shows attribution subtitle with source movies", () => {
+    defaultProfile(10);
+    defaultRecommendations();
+    renderPage();
+
+    const subtitles = screen.getAllByTestId("scroll-row-subtitle");
+    const attributionText = subtitles.map((el) => el.textContent).join(" ");
+    expect(attributionText).toContain("Based on Interstellar, The Matrix");
+  });
+
+  it("shows Owned badge and hides Add button for in-library recommendation", () => {
+    defaultProfile(10);
+    mockRecommendationsQuery.mockReturnValue({
+      data: {
+        results: [
+          { tmdbId: 600, title: "Inception", releaseDate: "2010-07-16", posterPath: null, posterUrl: null, voteAverage: 8.4, inLibrary: true, matchPercentage: 90, matchReason: "Sci-Fi, Thriller" },
+          { tmdbId: 700, title: "Tenet", releaseDate: "2020-08-26", posterPath: null, posterUrl: null, voteAverage: 7.3, inLibrary: false, matchPercentage: 78, matchReason: "Sci-Fi" },
+        ],
+        sourceMovies: ["Interstellar"],
+      },
+      isLoading: false,
+      error: null,
+    });
+    renderPage();
+
+    // Inception is in library — should show Owned, no Add button (appears in both sections)
+    const inceptionCards = screen.getAllByTestId("card-600");
+    expect(inceptionCards[0]!.textContent).toContain("Owned");
+    expect(inceptionCards[0]!.querySelector("button")).toBeNull();
+
+    // Tenet is not in library — should show Add button, no Owned
+    const tenetCards = screen.getAllByTestId("card-700");
+    expect(tenetCards[0]!.textContent).not.toContain("Owned");
+    expect(tenetCards[0]!.querySelector("button")).toBeTruthy();
+  });
+
+  it("renders recommendation cards in matchPercentage order (composite score sorting)", () => {
+    defaultProfile(10);
+    const sortedMovies = [
+      { tmdbId: 801, title: "Movie A", releaseDate: "2020-01-01", posterPath: null, posterUrl: null, voteAverage: 7.0, inLibrary: false, matchPercentage: 95, matchReason: "Action" },
+      { tmdbId: 802, title: "Movie B", releaseDate: "2020-01-01", posterPath: null, posterUrl: null, voteAverage: 8.0, inLibrary: false, matchPercentage: 88, matchReason: "Drama" },
+      { tmdbId: 803, title: "Movie C", releaseDate: "2020-01-01", posterPath: null, posterUrl: null, voteAverage: 9.0, inLibrary: false, matchPercentage: 72, matchReason: "Comedy" },
+    ];
+    mockRecommendationsQuery.mockReturnValue({
+      data: { results: sortedMovies, sourceMovies: ["Top Gun"] },
+      isLoading: false,
+      error: null,
+    });
+    renderPage();
+
+    // Both "Recommended for You" and "Similar to Top Rated" render same data
+    // Check that within a section, cards appear in matchPercentage-descending order
+    const allCards = screen.getAllByTestId(/^card-80/);
+    // First 3 are from "Recommended for You", next 3 from "Similar to Top Rated"
+    expect(allCards[0]!.getAttribute("data-testid")).toBe("card-801");
+    expect(allCards[1]!.getAttribute("data-testid")).toBe("card-802");
+    expect(allCards[2]!.getAttribute("data-testid")).toBe("card-803");
+
+    // Verify match percentages are displayed
+    expect(screen.getAllByText("95% Match").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("88% Match").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("72% Match").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("displays matchReason on recommendation cards", () => {
+    defaultProfile(10);
+    defaultRecommendations();
+    renderPage();
+
+    expect(screen.getAllByText("Sci-Fi, Action").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText("Sci-Fi").length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("shows exact comparison count in cold start CTA", () => {
+    defaultProfile(4);
+    defaultRecommendations();
+    renderPage();
+
+    expect(screen.getByText(/you have 4 so far/)).toBeTruthy();
+    expect(screen.getByText(/at least 5 comparisons/)).toBeTruthy();
+  });
+
+  it("hides cold start CTA at exactly the threshold (5 comparisons)", () => {
+    defaultProfile(5);
+    defaultRecommendations();
+    renderPage();
+
+    expect(screen.queryByText("Compare more movies to unlock recommendations")).toBeNull();
+    expect(screen.getByText("Recommended for You")).toBeTruthy();
   });
 });
