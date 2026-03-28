@@ -68,6 +68,11 @@ const HistoryPage = lazy(() =>
     default: m.HistoryPage,
   }))
 );
+const ComparisonHistoryPage = lazy(() =>
+  import("./pages/ComparisonHistoryPage").then((m) => ({
+    default: m.ComparisonHistoryPage,
+  }))
+);
 const CalendarPage = lazy(() =>
   import("./pages/CalendarPage").then((m) => ({
     default: m.CalendarPage,
@@ -118,6 +123,7 @@ export const routes: RouteObject[] = [
   { path: "rankings", element: <RankingsPage /> },
   { path: "search", element: <SearchPage /> },
   { path: "compare", element: <CompareArenaPage /> },
+  { path: "compare/history", element: <ComparisonHistoryPage /> },
   { path: "quick-pick", element: <QuickPickPage /> },
   { path: "plex", element: <PlexSettingsPage /> },
   { path: "arr", element: <ArrSettingsPage /> },

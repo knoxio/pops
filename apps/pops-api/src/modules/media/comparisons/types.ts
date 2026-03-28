@@ -156,3 +156,15 @@ export const ComparisonQuerySchema = z.object({
   offset: z.coerce.number().nonnegative().optional(),
 });
 export type ComparisonQuery = z.infer<typeof ComparisonQuerySchema>;
+
+export const ComparisonHistoryQuerySchema = z.object({
+  dimensionId: z.number().int().positive().optional(),
+  limit: z.coerce.number().positive().max(100).optional(),
+  offset: z.coerce.number().nonnegative().optional(),
+});
+export type ComparisonHistoryQuery = z.infer<typeof ComparisonHistoryQuerySchema>;
+
+export const DeleteComparisonSchema = z.object({
+  id: z.number().int().positive(),
+});
+export type DeleteComparisonInput = z.infer<typeof DeleteComparisonSchema>;

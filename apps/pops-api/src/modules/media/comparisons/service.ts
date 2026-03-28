@@ -297,6 +297,81 @@ export function listComparisonsForMedia(
   return { rows, total };
 }
 
+/**
+ * Delete a comparison and recalculate Elo scores for the affected dimension.
+ * Replays all remaining comparisons in chronological order to ensure accuracy.
+ */
+export function deleteComparison(id: number): void {
+  const drizzleDb = getDrizzle();
+  const rawDb = getDb();
+
+  const comparison = drizzleDb.select().from(comparisons).where(eq(comparisons.id, id)).get();
+  if (!comparison) throw new NotFoundError("Comparison", String(id));
+
+  const dimensionId = comparison.dimensionId;
+
+  rawDb.transaction(() => {
+    // Delete the comparison
+    drizzleDb.delete(comparisons).where(eq(comparisons.id, id)).run();
+
+    // Reset all scores for this dimension
+    drizzleDb
+      .update(mediaScores)
+      .set({ score: 1500.0, comparisonCount: 0, updatedAt: new Date().toISOString() })
+      .where(eq(mediaScores.dimensionId, dimensionId))
+      .run();
+
+    // Replay all remaining comparisons in chronological order
+    const remaining = drizzleDb
+      .select()
+      .from(comparisons)
+      .where(eq(comparisons.dimensionId, dimensionId))
+      .orderBy(asc(comparisons.comparedAt))
+      .all();
+
+    for (const comp of remaining) {
+      updateEloScores({
+        dimensionId: comp.dimensionId,
+        mediaAType: comp.mediaAType as "movie" | "tv_show",
+        mediaAId: comp.mediaAId,
+        mediaBType: comp.mediaBType as "movie" | "tv_show",
+        mediaBId: comp.mediaBId,
+        winnerType: comp.winnerType as "movie" | "tv_show",
+        winnerId: comp.winnerId,
+      });
+    }
+  })();
+}
+
+/**
+ * List all comparisons across all dimensions, ordered by most recent first.
+ */
+export function listAllComparisons(
+  dimensionId: number | undefined,
+  limit: number,
+  offset: number
+): ComparisonListResult {
+  const db = getDrizzle();
+
+  const conditions = dimensionId ? eq(comparisons.dimensionId, dimensionId) : undefined;
+
+  const rows = db
+    .select()
+    .from(comparisons)
+    .where(conditions)
+    .orderBy(desc(comparisons.comparedAt))
+    .limit(limit)
+    .offset(offset)
+    .all();
+
+  const countRow = conditions
+    ? db.select({ total: count() }).from(comparisons).where(conditions).all()[0]
+    : db.select({ total: count() }).from(comparisons).all()[0];
+  const total = countRow?.total ?? 0;
+
+  return { rows, total };
+}
+
 // ── Random Pair ──
 
 /**
