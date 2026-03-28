@@ -86,6 +86,24 @@ export class PlexClient {
   }
 
   // -------------------------------------------------------------------------
+  // Plex Discover (cloud) watchlist API
+  // -------------------------------------------------------------------------
+
+  /** Add an item to the Plex cloud watchlist by discover ratingKey. */
+  async addToWatchlist(ratingKey: string): Promise<void> {
+    await this.put(
+      `https://discover.provider.plex.tv/actions/addToWatchlist?ratingKey=${ratingKey}`
+    );
+  }
+
+  /** Remove an item from the Plex cloud watchlist by discover ratingKey. */
+  async removeFromWatchlist(ratingKey: string): Promise<void> {
+    await this.put(
+      `https://discover.provider.plex.tv/actions/removeFromWatchlist?ratingKey=${ratingKey}`
+    );
+  }
+
+  // -------------------------------------------------------------------------
   // Mappers
   // -------------------------------------------------------------------------
 
@@ -184,5 +202,40 @@ export class PlexClient {
     }
 
     return (await response.json()) as T;
+  }
+
+  /** Generic PUT for cloud API endpoints (absolute URLs). */
+  private async put(absoluteUrl: string): Promise<void> {
+    const separator = absoluteUrl.includes("?") ? "&" : "?";
+    const url = `${absoluteUrl}${separator}X-Plex-Token=${this.token}`;
+
+    let response: Response;
+
+    try {
+      response = await fetch(url, {
+        method: "PUT",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+    } catch (err) {
+      throw new PlexApiError(
+        0,
+        `Network error: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+
+    if (!response.ok) {
+      let message = `Plex API error: ${response.status} ${response.statusText}`;
+      try {
+        const text = await response.text();
+        if (text) {
+          message = text;
+        }
+      } catch {
+        // Ignore parse failures
+      }
+      throw new PlexApiError(response.status, message);
+    }
   }
 }

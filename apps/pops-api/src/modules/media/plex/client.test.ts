@@ -512,6 +512,54 @@ describe("error handling", () => {
   });
 });
 
+describe("addToWatchlist", () => {
+  it("calls Plex Discover API with PUT and correct ratingKey", async () => {
+    fetchMock.mockResolvedValueOnce(mockResponse(null, 200));
+
+    await client.addToWatchlist("5d776830880197001ec955e8");
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [url, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain("discover.provider.plex.tv/actions/addToWatchlist");
+    expect(url).toContain("ratingKey=5d776830880197001ec955e8");
+    expect(url).toContain(`X-Plex-Token=${PLEX_TOKEN}`);
+    expect(options.method).toBe("PUT");
+  });
+
+  it("throws PlexApiError on API failure", async () => {
+    fetchMock.mockResolvedValueOnce(mockResponse("Server Error", 500, "Internal Server Error"));
+
+    await expect(client.addToWatchlist("bad-key")).rejects.toThrow(PlexApiError);
+  });
+
+  it("throws PlexApiError on network error", async () => {
+    fetchMock.mockRejectedValueOnce(new Error("ECONNREFUSED"));
+
+    await expect(client.addToWatchlist("key")).rejects.toThrow(PlexApiError);
+  });
+});
+
+describe("removeFromWatchlist", () => {
+  it("calls Plex Discover API with PUT and correct ratingKey", async () => {
+    fetchMock.mockResolvedValueOnce(mockResponse(null, 200));
+
+    await client.removeFromWatchlist("5d776830880197001ec955e8");
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    const [url, options] = fetchMock.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain("discover.provider.plex.tv/actions/removeFromWatchlist");
+    expect(url).toContain("ratingKey=5d776830880197001ec955e8");
+    expect(url).toContain(`X-Plex-Token=${PLEX_TOKEN}`);
+    expect(options.method).toBe("PUT");
+  });
+
+  it("throws PlexApiError on API failure", async () => {
+    fetchMock.mockResolvedValueOnce(mockResponse("Not Found", 404, "Not Found"));
+
+    await expect(client.removeFromWatchlist("bad-key")).rejects.toThrow(PlexApiError);
+  });
+});
+
 describe("external ID parsing", () => {
   it("handles malformed guid strings gracefully", async () => {
     fetchMock.mockResolvedValueOnce(

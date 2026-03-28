@@ -14,6 +14,7 @@ import {
 } from "./types.js";
 import * as service from "./service.js";
 import { NotFoundError, ConflictError } from "../../../shared/errors.js";
+import { getPlexClient } from "../plex/service.js";
 
 const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
@@ -49,20 +50,39 @@ export const watchlistRouter = router({
     }
   }),
 
-  /** Add an item to the watchlist. */
-  add: protectedProcedure.input(AddToWatchlistSchema).mutation(({ input }) => {
+  /** Add an item to the watchlist. Pushes to Plex if connected (best-effort). */
+  add: protectedProcedure.input(AddToWatchlistSchema).mutation(async ({ input }) => {
+    let row;
     try {
-      const row = service.addToWatchlist(input);
-      return {
-        data: toWatchlistEntry(row),
-        message: "Added to watchlist",
-      };
+      row = service.addToWatchlist(input);
     } catch (err) {
       if (err instanceof ConflictError) {
         throw new TRPCError({ code: "CONFLICT", message: err.message });
       }
       throw err;
     }
+
+    // Best-effort push to Plex — failures do not block local operation
+    const plexRatingKey = (row as Record<string, unknown>).plexRatingKey as string | null;
+    if (plexRatingKey) {
+      try {
+        const client = getPlexClient();
+        if (client) {
+          await client.addToWatchlist(plexRatingKey);
+          console.log(`[Plex] Pushed watchlist add for ratingKey=${plexRatingKey}`);
+        }
+      } catch (err) {
+        console.warn(
+          `[Plex] Failed to push watchlist add for ratingKey=${plexRatingKey}:`,
+          err instanceof Error ? err.message : err
+        );
+      }
+    }
+
+    return {
+      data: toWatchlistEntry(row),
+      message: "Added to watchlist",
+    };
   }),
 
   /** Update a watchlist entry. */
@@ -115,16 +135,45 @@ export const watchlistRouter = router({
       }
     }),
 
-  /** Remove an entry from the watchlist. */
-  remove: protectedProcedure.input(z.object({ id: z.number() })).mutation(({ input }) => {
+  /** Remove an entry from the watchlist. Pushes removal to Plex if connected (best-effort). */
+  remove: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+    // Fetch entry before removing to get plexRatingKey
+    let plexRatingKey: string | null = null;
     try {
-      service.removeFromWatchlist(input.id);
-      return { message: "Removed from watchlist" };
+      const entry = service.getWatchlistEntry(input.id);
+      plexRatingKey = (entry as Record<string, unknown>).plexRatingKey as string | null;
     } catch (err) {
       if (err instanceof NotFoundError) {
         throw new TRPCError({ code: "NOT_FOUND", message: err.message });
       }
       throw err;
     }
+
+    try {
+      service.removeFromWatchlist(input.id);
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+      }
+      throw err;
+    }
+
+    // Best-effort push removal to Plex
+    if (plexRatingKey) {
+      try {
+        const client = getPlexClient();
+        if (client) {
+          await client.removeFromWatchlist(plexRatingKey);
+          console.log(`[Plex] Pushed watchlist removal for ratingKey=${plexRatingKey}`);
+        }
+      } catch (err) {
+        console.warn(
+          `[Plex] Failed to push watchlist removal for ratingKey=${plexRatingKey}:`,
+          err instanceof Error ? err.message : err
+        );
+      }
+    }
+
+    return { message: "Removed from watchlist" };
   }),
 });
