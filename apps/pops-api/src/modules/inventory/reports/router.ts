@@ -39,9 +39,11 @@ export const reportsRouter = router({
         });
         return { data: result };
       } catch (err) {
+        const detail = err instanceof Error ? err.message : String(err);
+        console.error("[insurance-report] Failed:", detail, err);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: "Failed to generate insurance report",
+          message: `Failed to generate insurance report: ${detail}`,
           cause: err,
         });
       }
@@ -52,9 +54,11 @@ export const reportsRouter = router({
     try {
       return { data: service.getValueByLocation() };
     } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      console.error("[value-by-location] Failed:", detail, err);
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to load value by location breakdown",
+        message: `Failed to load value by location breakdown: ${detail}`,
         cause: err,
       });
     }
@@ -65,9 +69,11 @@ export const reportsRouter = router({
     try {
       return { data: service.getValueByType() };
     } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      console.error("[value-by-type] Failed:", detail, err);
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Failed to load value by type breakdown",
+        message: `Failed to load value by type breakdown: ${detail}`,
         cause: err,
       });
     }
