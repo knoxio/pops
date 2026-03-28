@@ -7,7 +7,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import {
-  Badge,
   Button,
   Skeleton,
   Input,
@@ -18,23 +17,10 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage,
 } from "@pops/ui";
-import { ArrowLeft, CheckCircle2, XCircle, RefreshCw, Film, Tv, Save } from "lucide-react";
+import { ArrowLeft, RefreshCw, Film, Tv, Save } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
-
-function ConnectionBadge({ connected }: { connected: boolean }) {
-  return connected ? (
-    <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
-      <CheckCircle2 className="h-3 w-3 mr-1" />
-      Connected
-    </Badge>
-  ) : (
-    <Badge className="bg-red-500/10 text-red-400 border-red-500/20">
-      <XCircle className="h-3 w-3 mr-1" />
-      Disconnected
-    </Badge>
-  );
-}
+import { ConnectionBadge } from "../components/ConnectionBadge";
 
 function ServiceCard({
   label,

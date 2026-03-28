@@ -7,10 +7,10 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router";
 import {
-  Badge,
   Button,
   Skeleton,
   Input,
+  Select,
   Breadcrumb,
   BreadcrumbList,
   BreadcrumbItem,
@@ -20,8 +20,6 @@ import {
 } from "@pops/ui";
 import {
   ArrowLeft,
-  CheckCircle2,
-  XCircle,
   RefreshCw,
   Film,
   Tv,
@@ -36,26 +34,13 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
+import { ConnectionBadge } from "../components/ConnectionBadge";
 
 interface SyncResult {
   synced: number;
   skipped: number;
   errors: { title: string; reason: string; year: number | null }[];
   skipReasons?: { title: string; reason: string; year: number | null }[];
-}
-
-function ConnectionBadge({ connected }: { connected: boolean }) {
-  return connected ? (
-    <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20">
-      <CheckCircle2 className="h-3 w-3 mr-1" />
-      Connected
-    </Badge>
-  ) : (
-    <Badge className="bg-red-500/10 text-red-400 border-red-500/20">
-      <XCircle className="h-3 w-3 mr-1" />
-      Disconnected
-    </Badge>
-  );
 }
 
 function SyncResultDisplay({ result, label }: { result: SyncResult; label: string }) {
@@ -100,14 +85,11 @@ function SyncResultDisplay({ result, label }: { result: SyncResult; label: strin
       {result.errors.length > 0 && (
         <div>
           <button
+            type="button"
             onClick={() => setShowErrors(!showErrors)}
             className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors"
           >
-            {showErrors ? (
-              <ChevronUp className="h-3 w-3" />
-            ) : (
-              <ChevronDown className="h-3 w-3" />
-            )}
+            {showErrors ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
             {showErrors ? "Hide" : "Show"} error details
           </button>
           {showErrors && (
@@ -173,9 +155,7 @@ export function PlexSettingsPage() {
   const syncMovies = trpc.media.plex.syncMovies.useMutation({
     onSuccess: (res: { data: SyncResult }) => {
       setMovieSyncResult(res.data);
-      toast.success(
-        `Movie sync complete: ${res.data.synced} synced, ${res.data.skipped} skipped`
-      );
+      toast.success(`Movie sync complete: ${res.data.synced} synced, ${res.data.skipped} skipped`);
       syncStatus.refetch();
       syncLogs.refetch();
     },
@@ -184,9 +164,7 @@ export function PlexSettingsPage() {
   const syncTvShows = trpc.media.plex.syncTvShows.useMutation({
     onSuccess: (res: { data: SyncResult }) => {
       setTvSyncResult(res.data);
-      toast.success(
-        `TV sync complete: ${res.data.synced} synced, ${res.data.skipped} skipped`
-      );
+      toast.success(`TV sync complete: ${res.data.synced} synced, ${res.data.skipped} skipped`);
       syncStatus.refetch();
       syncLogs.refetch();
     },
@@ -337,6 +315,11 @@ export function PlexSettingsPage() {
         )}
       </div>
 
+      <p className="text-sm text-muted-foreground">
+        Connect your Plex Media Server to sync your movie and TV libraries, track watch history, and
+        schedule automatic syncs.
+      </p>
+
       <div className="grid gap-6">
         {/* URL Configuration */}
         <div className="rounded-lg border bg-card p-6 space-y-4">
@@ -423,7 +406,13 @@ export function PlexSettingsPage() {
                     <RefreshCw className="h-3.5 w-3.5 animate-spin" />
                     <span>Checking for authentication...</span>
                   </div>
-                  <Button variant="outline" onClick={() => { setPinId(null); setPinCode(null); }}>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setPinId(null);
+                      setPinCode(null);
+                    }}
+                  >
                     Cancel
                   </Button>
                 </div>
@@ -472,23 +461,23 @@ export function PlexSettingsPage() {
 
               {movieLibraries.length > 0 ? (
                 <>
-                  <select
+                  <Select
                     value={movieSectionId}
                     onChange={(e) => {
                       const id = e.target.value;
                       setMovieSectionId(id);
                       if (id) saveSectionIds.mutate({ movieSectionId: id });
                     }}
-                    className="w-full h-8 rounded-md border bg-background px-2 text-sm"
+                    size="sm"
+                    placeholder="Select library..."
+                    options={movieLibraries.map(
+                      (lib: { key: string; title: string; type: string }) => ({
+                        value: lib.key,
+                        label: lib.title,
+                      })
+                    )}
                     aria-label="Select movie library"
-                  >
-                    <option value="">Select library...</option>
-                    {movieLibraries.map((lib: { key: string; title: string; type: string }) => (
-                      <option key={lib.key} value={lib.key}>
-                        {lib.title}
-                      </option>
-                    ))}
-                  </select>
+                  />
 
                   <Button
                     size="sm"
@@ -507,9 +496,7 @@ export function PlexSettingsPage() {
                     {syncMovies.isPending ? "Syncing..." : "Sync Movies"}
                   </Button>
 
-                  {movieSyncResult && (
-                    <SyncResultDisplay result={movieSyncResult} label="Movie" />
-                  )}
+                  {movieSyncResult && <SyncResultDisplay result={movieSyncResult} label="Movie" />}
                 </>
               ) : (
                 <p className="text-xs text-muted-foreground">No movie libraries found</p>
@@ -525,23 +512,23 @@ export function PlexSettingsPage() {
 
               {tvLibraries.length > 0 ? (
                 <>
-                  <select
+                  <Select
                     value={tvSectionId}
                     onChange={(e) => {
                       const id = e.target.value;
                       setTvSectionId(id);
                       if (id) saveSectionIds.mutate({ tvSectionId: id });
                     }}
-                    className="w-full h-8 rounded-md border bg-background px-2 text-sm"
+                    size="sm"
+                    placeholder="Select library..."
+                    options={tvLibraries.map(
+                      (lib: { key: string; title: string; type: string }) => ({
+                        value: lib.key,
+                        label: lib.title,
+                      })
+                    )}
                     aria-label="Select TV library"
-                  >
-                    <option value="">Select library...</option>
-                    {tvLibraries.map((lib: { key: string; title: string; type: string }) => (
-                      <option key={lib.key} value={lib.key}>
-                        {lib.title}
-                      </option>
-                    ))}
-                  </select>
+                  />
 
                   <Button
                     size="sm"
@@ -560,9 +547,7 @@ export function PlexSettingsPage() {
                     {syncTvShows.isPending ? "Syncing..." : "Sync TV Shows"}
                   </Button>
 
-                  {tvSyncResult && (
-                    <SyncResultDisplay result={tvSyncResult} label="TV" />
-                  )}
+                  {tvSyncResult && <SyncResultDisplay result={tvSyncResult} label="TV" />}
                 </>
               ) : (
                 <p className="text-xs text-muted-foreground">No TV libraries found</p>
@@ -634,7 +619,8 @@ export function PlexSettingsPage() {
               {isSchedulerRunning ? (
                 <>
                   <p className="text-emerald-400">
-                    Scheduler active — syncing every {Math.round((scheduler?.intervalMs ?? 0) / (60 * 60 * 1000))} hours
+                    Scheduler active — syncing every{" "}
+                    {Math.round((scheduler?.intervalMs ?? 0) / (60 * 60 * 1000))} hours
                   </p>
                   {scheduler?.nextSyncAt && (
                     <p>Next sync: {new Date(scheduler.nextSyncAt).toLocaleTimeString()}</p>
