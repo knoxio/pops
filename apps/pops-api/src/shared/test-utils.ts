@@ -110,7 +110,7 @@ export function createTestDb(): Database {
       FOREIGN KEY (purchased_from_id) REFERENCES entities(id) ON DELETE SET NULL,
       FOREIGN KEY (location_id) REFERENCES locations(id) ON DELETE SET NULL
     );
-    CREATE INDEX IF NOT EXISTS idx_inventory_asset_id ON home_inventory(asset_id);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_inventory_asset_id ON home_inventory(asset_id);
     CREATE INDEX IF NOT EXISTS idx_inventory_name ON home_inventory(item_name);
     CREATE INDEX IF NOT EXISTS idx_inventory_location ON home_inventory(location_id);
     CREATE INDEX IF NOT EXISTS idx_inventory_type ON home_inventory(type);

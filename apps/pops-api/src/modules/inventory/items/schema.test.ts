@@ -160,6 +160,17 @@ describe("items and locations schema", () => {
       expect(indexNames).toContain("idx_inventory_warranty");
     });
 
+    it("idx_inventory_asset_id is a UNIQUE index", () => {
+      const indexes = db.prepare("PRAGMA index_list(home_inventory)").all() as {
+        name: string;
+        unique: number;
+      }[];
+      const assetIdIndex = indexes.find((i) => i.name === "idx_inventory_asset_id");
+
+      expect(assetIdIndex).toBeDefined();
+      expect(assetIdIndex!.unique).toBe(1);
+    });
+
     it("has all required indexes on locations", () => {
       const indexes = db.prepare("PRAGMA index_list(locations)").all() as { name: string }[];
       const indexNames = indexes.map((i) => i.name);

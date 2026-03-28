@@ -31,6 +31,7 @@ const INCLUDED_MIGRATIONS = [
   "20260326150000_budgets_unique_category_period.sql",
   "20260326160000_items_locations_schema.sql",
   "20260327120000_sync_logs.sql",
+  "20260328120000_inventory_asset_id_unique_index.sql",
 ];
 
 /**
@@ -141,7 +142,7 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       FOREIGN KEY (location_id) REFERENCES locations(id) ON DELETE SET NULL
     );
 
-    CREATE INDEX IF NOT EXISTS idx_inventory_asset_id ON home_inventory(asset_id);
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_inventory_asset_id ON home_inventory(asset_id);
     CREATE INDEX IF NOT EXISTS idx_inventory_name ON home_inventory(item_name);
     CREATE INDEX IF NOT EXISTS idx_inventory_location ON home_inventory(location_id);
     CREATE INDEX IF NOT EXISTS idx_inventory_type ON home_inventory(type);
