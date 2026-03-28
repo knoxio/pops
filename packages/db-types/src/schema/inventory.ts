@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, real, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, real, index, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 import { transactions } from "./transactions.js";
 import { entities } from "./entities.js";
@@ -47,7 +47,7 @@ export const homeInventory = sqliteTable(
     lastEditedTime: text("last_edited_time").notNull(),
   },
   (table) => [
-    index("idx_inventory_asset_id").on(table.assetId),
+    uniqueIndex("idx_inventory_asset_id").on(table.assetId),
     index("idx_inventory_name").on(table.itemName),
     index("idx_inventory_location").on(table.locationId),
     index("idx_inventory_type").on(table.type),
