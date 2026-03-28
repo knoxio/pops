@@ -116,6 +116,11 @@
 :root {
   --radius: 0.625rem;
 
+  /* Tree indentation */
+  --tree-indent-step: 1.25rem;   /* 20px — main tree row indent per depth */
+  --tree-indent-base: 0.5rem;    /* 8px — base left padding at depth 0 */
+  --tree-picker-step: 1rem;      /* 16px — compact picker indent per depth */
+
   /* Light mode - Clean, Warm, Efficient with subtle indigo tint */
   --background: oklch(
     0.975 0.01 260

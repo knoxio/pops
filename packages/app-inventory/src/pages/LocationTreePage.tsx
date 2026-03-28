@@ -73,7 +73,7 @@ function TreeSkeleton() {
         <div
           key={i}
           className="flex items-center gap-2"
-          style={{ paddingLeft: `${(i % 3) * 20}px` }}
+          style={{ paddingLeft: `calc(${i % 3} * var(--tree-indent-step))` }}
         >
           <Skeleton className="h-4 w-4" />
           <Skeleton className="h-4 w-32" />
@@ -209,7 +209,7 @@ function MoveTargetPicker({
                 className={`w-full text-left flex items-center gap-1.5 py-1.5 px-2 rounded-md transition-colors ${
                   disabled ? "opacity-40 cursor-not-allowed" : "hover:bg-muted/50 cursor-pointer"
                 }`}
-                style={{ paddingLeft: `${depth * 16 + 8}px` }}
+                style={{ paddingLeft: `calc(${depth} * var(--tree-picker-step) + var(--tree-indent-base))` }}
               >
                 <Folder className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <span className="text-sm truncate">{node.name}</span>
@@ -251,7 +251,7 @@ function DropIndicatorLine({ depth }: { depth: number }) {
   return (
     <div
       className="relative h-0.5 my-[-1px] z-10"
-      style={{ marginLeft: `${depth * 20 + 8}px`, marginRight: "8px" }}
+      style={{ marginLeft: `calc(${depth} * var(--tree-indent-step) + var(--tree-indent-base))`, marginRight: "8px" }}
       data-testid="drop-indicator"
     >
       <div className="absolute inset-0 bg-app-accent rounded-full" />
@@ -340,7 +340,7 @@ function LocationNode({
             ? "bg-app-accent/20 text-foreground font-bold border-l-2 border-app-accent rounded-l-none ml-[-2px]"
             : ""
         } ${isOver && !isDragging ? "ring-2 ring-app-accent/50 bg-app-accent/5" : ""}`}
-        style={{ paddingLeft: `${depth * 20 + 8}px` }}
+        style={{ paddingLeft: `calc(${depth} * var(--tree-indent-step) + var(--tree-indent-base))` }}
         onClick={() => onSelect(node.id)}
         onDoubleClick={(e) => {
           e.stopPropagation();
@@ -518,7 +518,7 @@ function LocationNode({
               {isAddingChild && (
                 <div
                   className="flex items-center gap-1.5 py-1.5 px-2"
-                  style={{ paddingLeft: `${(depth + 1) * 20 + 8}px` }}
+                  style={{ paddingLeft: `calc(${depth + 1} * var(--tree-indent-step) + var(--tree-indent-base))` }}
                 >
                   <span className="w-[22px]" />
                   <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -861,7 +861,7 @@ export function LocationTreePage() {
               ))}
             </SortableContext>
             {addingRoot && (
-              <div className="flex items-center gap-1.5 py-1.5 px-2" style={{ paddingLeft: "8px" }}>
+              <div className="flex items-center gap-1.5 py-1.5 px-2" style={{ paddingLeft: "var(--tree-indent-base)" }}>
                 <span className="w-[22px]" />
                 <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
                 <InlineInput
@@ -908,7 +908,7 @@ export function LocationTreePage() {
               type="button"
               onClick={() => handleMoveTo(null)}
               className="w-full text-left flex items-center gap-1.5 py-1.5 px-2 rounded-md hover:bg-muted/50"
-              style={{ paddingLeft: "8px" }}
+              style={{ paddingLeft: "var(--tree-indent-base)" }}
             >
               <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               <span className="text-sm font-medium">Root level</span>
