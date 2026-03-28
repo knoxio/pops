@@ -215,7 +215,7 @@ export const plexRouter = router({
 
   getAuthPin: protectedProcedure.mutation(async () => {
     const clientId = plexService.getPlexClientId();
-    const res = await fetch("https://plex.tv/api/v2/pins?strong=true", {
+    const res = await fetch("https://plex.tv/api/v2/pins?strong=false", {
       method: "POST",
       headers: {
         Accept: "application/json",
