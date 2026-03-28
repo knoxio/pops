@@ -346,7 +346,8 @@ export function LibraryPage() {
                 type={item.type}
                 title={item.title}
                 year={item.year}
-                posterUrl={item.posterUrl}
+                posterUrl={item.cdnPosterUrl ?? item.posterUrl}
+                fallbackPosterUrl={item.cdnPosterUrl ? item.posterUrl : undefined}
                 showTypeBadge={showTypeBadge}
               />
             ))}

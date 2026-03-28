@@ -152,17 +152,26 @@ function parseGenres(raw: string | null): string[] {
   }
 }
 
-/** Build a poster URL for a movie row. */
+/** Build a local cache poster URL for a movie row. */
 function moviePosterUrl(row: LibraryRawRow): string | null {
   if (row.poster_override_path) return row.poster_override_path;
   if (row.poster_path) return `/media/images/movie/${row.external_id}/poster.jpg`;
   return null;
 }
 
-/** Build a poster URL for a TV show row. */
+/** Build a local cache poster URL for a TV show row. */
 function tvPosterUrl(row: LibraryRawRow): string | null {
   if (row.poster_override_path) return row.poster_override_path;
   if (row.poster_path) return `/media/images/tv/${row.external_id}/poster.jpg`;
+  return null;
+}
+
+const TMDB_IMAGE_BASE = "https://image.tmdb.org/t/p/w342";
+
+/** Build a CDN poster URL (TMDB for movies, local fallback for TV). */
+function cdnPosterUrl(row: LibraryRawRow): string | null {
+  if (row.poster_override_path) return null; // override is local-only
+  if (row.type === "movie" && row.poster_path) return `${TMDB_IMAGE_BASE}${row.poster_path}`;
   return null;
 }
 
@@ -239,6 +248,7 @@ export function listLibrary(input: LibraryListInput): { items: LibraryItem[]; to
     title: row.title,
     year: row.release_date ? new Date(row.release_date).getFullYear() : null,
     posterUrl: row.type === "movie" ? moviePosterUrl(row) : tvPosterUrl(row),
+    cdnPosterUrl: cdnPosterUrl(row),
     genres: parseGenres(row.genres),
     voteAverage: row.vote_average,
     createdAt: row.created_at,

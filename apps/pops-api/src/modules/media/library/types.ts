@@ -38,6 +38,8 @@ export interface LibraryItem {
   title: string;
   year: number | null;
   posterUrl: string | null;
+  /** Direct TMDB/TVDB CDN URL for faster loading (bypasses same-origin connection limit). */
+  cdnPosterUrl: string | null;
   genres: string[];
   voteAverage: number | null;
   createdAt: string;
