@@ -41,6 +41,7 @@ interface SyncResult {
   synced: number;
   skipped: number;
   errors: { title: string; reason: string; year: number | null }[];
+  skipReasons?: { title: string; reason: string; year: number | null }[];
 }
 
 function ConnectionBadge({ connected }: { connected: boolean }) {
@@ -59,6 +60,8 @@ function ConnectionBadge({ connected }: { connected: boolean }) {
 
 function SyncResultDisplay({ result, label }: { result: SyncResult; label: string }) {
   const [showErrors, setShowErrors] = useState(false);
+  const [showSkipped, setShowSkipped] = useState(false);
+  const skipReasons = result.skipReasons ?? [];
 
   return (
     <div className="rounded-md border bg-muted/30 p-3 space-y-2 text-sm">
@@ -70,6 +73,30 @@ function SyncResultDisplay({ result, label }: { result: SyncResult; label: strin
           <span className="text-red-400">{result.errors.length} errors</span>
         )}
       </div>
+      {skipReasons.length > 0 && (
+        <div>
+          <button
+            onClick={() => setShowSkipped(!showSkipped)}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {showSkipped ? (
+              <ChevronUp className="h-3 w-3" />
+            ) : (
+              <ChevronDown className="h-3 w-3" />
+            )}
+            {showSkipped ? "Hide" : "Show"} skip reasons
+          </button>
+          {showSkipped && (
+            <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+              {skipReasons.map((skip, i) => (
+                <p key={i}>
+                  <span className="font-medium">{skip.title}:</span> {skip.reason}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       {result.errors.length > 0 && (
         <div>
           <button

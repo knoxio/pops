@@ -185,6 +185,16 @@ describe("getAllItems", () => {
     },
   };
 
+  it("requests includeGuids=1 to get external IDs", async () => {
+    fetchMock.mockResolvedValueOnce(mockResponse(rawItems));
+
+    await client.getAllItems("1");
+
+    const [url] = fetchMock.mock.calls[0] as [string];
+    expect(url).toContain("/library/sections/1/all");
+    expect(url).toContain("includeGuids=1");
+  });
+
   it("returns mapped media items", async () => {
     fetchMock.mockResolvedValueOnce(mockResponse(rawItems));
 

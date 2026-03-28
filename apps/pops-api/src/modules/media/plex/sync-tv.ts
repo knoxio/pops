@@ -24,6 +24,13 @@ export interface TvSyncProgress {
   skipped: number;
   episodesMatched: number;
   errors: TvSyncError[];
+  skipReasons: TvSyncSkip[];
+}
+
+export interface TvSyncSkip {
+  title: string;
+  year: number | null;
+  reason: string;
 }
 
 export interface TvSyncError {
@@ -66,6 +73,7 @@ export async function importTvShowsFromPlex(
     skipped: 0,
     episodesMatched: 0,
     errors: [],
+    skipReasons: [],
   };
 
   for (const item of items) {
@@ -100,7 +108,13 @@ async function syncSingleShow(
   const tvdbId = extractExternalIdAsNumber(item, "tvdb");
 
   if (!tvdbId) {
+    const hasTvdbGuid = item.externalIds.some((id) => id.source === "tvdb");
     progress.skipped++;
+    progress.skipReasons.push({
+      title: item.title,
+      year: item.year,
+      reason: hasTvdbGuid ? "TVDB ID is not a valid number" : "No TVDB ID in Plex metadata",
+    });
     return;
   }
 

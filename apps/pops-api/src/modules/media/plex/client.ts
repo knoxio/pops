@@ -54,10 +54,10 @@ export class PlexClient {
     }));
   }
 
-  /** Get all items in a library section. */
+  /** Get all items in a library section (includes external IDs). */
   async getAllItems(sectionId: string): Promise<PlexMediaItem[]> {
     const raw = await this.get<RawPlexMediaContainer<RawPlexItemsContainer>>(
-      `/library/sections/${sectionId}/all`
+      `/library/sections/${sectionId}/all?includeGuids=1`
     );
     const items = raw.MediaContainer.Metadata ?? [];
     return items.map((item) => this.mapMediaItem(item));

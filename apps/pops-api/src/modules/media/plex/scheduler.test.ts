@@ -209,6 +209,7 @@ describe("sync execution", () => {
       skipped: 1,
       episodesMatched: 5,
       errors: [],
+      skipReasons: [],
     });
 
     startScheduler({ intervalMs: 5000 });
@@ -245,6 +246,7 @@ describe("sync execution", () => {
       skipped: 0,
       episodesMatched: 3,
       errors: [],
+      skipReasons: [],
     });
 
     startScheduler({ intervalMs: 5000, movieSectionId: "1", tvSectionId: "2" });
@@ -329,6 +331,7 @@ describe("sync execution", () => {
       skipped: 0,
       episodesMatched: 0,
       errors: [],
+      skipReasons: [],
     });
 
     vi.advanceTimersByTime(5000);
@@ -357,6 +360,7 @@ describe("sync execution", () => {
       skipped: 0,
       episodesMatched: 3,
       errors: [],
+      skipReasons: [],
     });
 
     startScheduler({ intervalMs: 1000, movieSectionId: "1", tvSectionId: "2" });
@@ -389,6 +393,7 @@ describe("sync execution", () => {
       skipped: 0,
       episodesMatched: 0,
       errors: [],
+      skipReasons: [],
     });
 
     startScheduler({
@@ -422,6 +427,7 @@ describe("sync execution", () => {
       skipped: 0,
       episodesMatched: 0,
       errors: [],
+      skipReasons: [],
     });
 
     startScheduler({ intervalMs: 5000, movieSectionId: "1", tvSectionId: "2" });
@@ -525,6 +531,7 @@ describe("_triggerSync", () => {
       skipped: 0,
       episodesMatched: 0,
       errors: [],
+      skipReasons: [],
     });
 
     startScheduler({ intervalMs: 60000, movieSectionId: "1", tvSectionId: "2" });

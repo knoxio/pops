@@ -12,4 +12,4 @@ export {
 } from "./types.js";
 export { getPlexClient, testConnection, getSyncStatus, type PlexSyncStatus } from "./service.js";
 export { importMoviesFromPlex, type MovieSyncProgress } from "./sync-movies.js";
-export { importTvShowsFromPlex, type TvSyncProgress } from "./sync-tv.js";
+export { importTvShowsFromPlex, type TvSyncProgress, type TvSyncSkip } from "./sync-tv.js";

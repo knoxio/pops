@@ -171,7 +171,7 @@ describe("importTvShowsFromPlex", () => {
     expect(mockAddTvShow).toHaveBeenCalledWith(81189, fakeTvdbClient);
   });
 
-  it("skips shows without TVDB ID", async () => {
+  it("skips shows without TVDB ID and logs reason", async () => {
     const fakeTvdbClient = {} as ReturnType<typeof getTvdbClient>;
     mockGetTvdbClient.mockReturnValue(fakeTvdbClient);
 
@@ -184,10 +184,13 @@ describe("importTvShowsFromPlex", () => {
 
     expect(result.synced).toBe(0);
     expect(result.skipped).toBe(1);
+    expect(result.skipReasons).toHaveLength(1);
+    expect(result.skipReasons[0]!.title).toBe("Breaking Bad");
+    expect(result.skipReasons[0]!.reason).toBe("No TVDB ID in Plex metadata");
     expect(mockAddTvShow).not.toHaveBeenCalled();
   });
 
-  it("skips shows with non-numeric TVDB ID", async () => {
+  it("skips shows with non-numeric TVDB ID and logs reason", async () => {
     const fakeTvdbClient = {} as ReturnType<typeof getTvdbClient>;
     mockGetTvdbClient.mockReturnValue(fakeTvdbClient);
 
@@ -200,6 +203,8 @@ describe("importTvShowsFromPlex", () => {
 
     expect(result.synced).toBe(0);
     expect(result.skipped).toBe(1);
+    expect(result.skipReasons).toHaveLength(1);
+    expect(result.skipReasons[0]!.reason).toBe("TVDB ID is not a valid number");
   });
 
   it("syncs episode watch history for watched episodes", async () => {
@@ -370,6 +375,7 @@ describe("importTvShowsFromPlex", () => {
     // Should still count as synced despite watch history error
     expect(result.synced).toBe(1);
     expect(result.errors).toHaveLength(0);
+    expect(result.skipReasons).toHaveLength(0);
   });
 
   it("handles multiple shows in batch", async () => {
