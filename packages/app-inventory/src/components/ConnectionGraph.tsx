@@ -38,20 +38,36 @@ interface GraphLink extends SimulationLinkDatum<GraphNode> {
 // Constants
 // ---------------------------------------------------------------------------
 
+/**
+ * Graph color tokens — centralised palette for the connection graph canvas.
+ * Type colors are intentionally hardcoded hex (Canvas 2D doesn't resolve CSS vars).
+ * Structural colors use getComputedStyle at render time for dark-mode support.
+ */
 const TYPE_COLORS: Record<string, string> = {
-  electronics: "#6366f1", // indigo
-  furniture: "#f59e0b", // amber
-  appliance: "#10b981", // emerald
-  tool: "#ef4444", // red
-  clothing: "#8b5cf6", // violet
-  kitchenware: "#ec4899", // pink
-  sport: "#14b8a6", // teal
-  vehicle: "#f97316", // orange
-  other: "#64748b", // slate
+  electronics: "#6366f1", // indigo-500
+  furniture: "#f59e0b", // amber-500
+  appliance: "#10b981", // emerald-500
+  tool: "#ef4444", // red-500
+  clothing: "#8b5cf6", // violet-500
+  kitchenware: "#ec4899", // pink-500
+  sport: "#14b8a6", // teal-500
+  vehicle: "#f97316", // orange-500
+  other: "#64748b", // slate-500
 };
 
 const DEFAULT_COLOR = "#94a3b8"; // slate-400
 const CURRENT_COLOR = "#3b82f6"; // blue-500
+
+function getStructuralColors() {
+  const s = getComputedStyle(document.documentElement);
+  return {
+    edge: s.getPropertyValue("--color-border").trim() || "#cbd5e1",
+    currentBorder: "#1d4ed8", // blue-700 — always high-contrast
+    iconText: "#ffffff", // always white on filled node
+    label: s.getPropertyValue("--color-muted-foreground").trim() || "#334155",
+    legendText: s.getPropertyValue("--color-muted-foreground").trim() || "#475569",
+  };
+}
 const NODE_RADIUS = 24;
 const LABEL_OFFSET = NODE_RADIUS + 10;
 
@@ -124,8 +140,11 @@ export function ConnectionGraph({ itemId }: ConnectionGraphProps): React.ReactEl
     ctx.translate(t.x, t.y);
     ctx.scale(t.k, t.k);
 
+    // Resolve structural colors once per frame (supports dark mode)
+    const colors = getStructuralColors();
+
     // Draw edges
-    ctx.strokeStyle = "#cbd5e1"; // slate-300
+    ctx.strokeStyle = colors.edge;
     ctx.lineWidth = 1.5 / t.k;
     for (const link of linksRef.current) {
       const sx = link.source.x ?? 0;
@@ -154,12 +173,12 @@ export function ConnectionGraph({ itemId }: ConnectionGraphProps): React.ReactEl
       // Border for current node
       if (isCurrent) {
         ctx.lineWidth = 3 / t.k;
-        ctx.strokeStyle = "#1d4ed8"; // blue-700
+        ctx.strokeStyle = colors.currentBorder;
         ctx.stroke();
       }
 
       // Icon text (first letter of type or item name)
-      ctx.fillStyle = "#ffffff";
+      ctx.fillStyle = colors.iconText;
       ctx.font = `bold ${14 / t.k}px system-ui, sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -167,7 +186,7 @@ export function ConnectionGraph({ itemId }: ConnectionGraphProps): React.ReactEl
       ctx.fillText(initial, nx, ny);
 
       // Label below
-      ctx.fillStyle = "#334155"; // slate-700
+      ctx.fillStyle = colors.label;
       ctx.font = `${11 / t.k}px system-ui, sans-serif`;
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
@@ -191,7 +210,7 @@ export function ConnectionGraph({ itemId }: ConnectionGraphProps): React.ReactEl
         ctx.beginPath();
         ctx.arc(16, ly + 5, 5, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = "#475569";
+        ctx.fillStyle = colors.legendText;
         ctx.textAlign = "left";
         ctx.textBaseline = "middle";
         ctx.fillText(type, 26, ly + 5);
