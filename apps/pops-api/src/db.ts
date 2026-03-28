@@ -1,7 +1,7 @@
 import BetterSqlite3 from "better-sqlite3";
 import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { AsyncLocalStorage } from "node:async_hooks";
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync, unlinkSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { initializeSchema } from "./db/schema.js";
@@ -64,13 +64,107 @@ function runMigrations(database: BetterSqlite3.Database): void {
   }
 }
 
+/**
+ * Check how many migrations are pending (not yet applied).
+ * Returns the count and the list of pending filenames.
+ */
+function getPendingMigrations(database: BetterSqlite3.Database): string[] {
+  // Ensure the tracking table exists before querying
+  database.exec(`
+    CREATE TABLE IF NOT EXISTS schema_migrations (
+      version TEXT PRIMARY KEY,
+      applied_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+
+  const applied = new Set(
+    (
+      database.prepare("SELECT version FROM schema_migrations ORDER BY version").all() as {
+        version: string;
+      }[]
+    ).map((r) => r.version)
+  );
+
+  let files: string[];
+  try {
+    files = readdirSync(MIGRATIONS_DIR)
+      .filter((f) => f.endsWith(".sql"))
+      .sort();
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") return [];
+    throw err;
+  }
+
+  return files.filter((f) => !applied.has(f));
+}
+
+/** Check if the database has any data (not a fresh install). */
+function hasData(database: BetterSqlite3.Database): boolean {
+  try {
+    const row = database
+      .prepare("SELECT COUNT(*) AS cnt FROM transactions")
+      .get() as { cnt: number } | undefined;
+    return (row?.cnt ?? 0) > 0;
+  } catch {
+    // Table may not exist on fresh install
+    return false;
+  }
+}
+
+/**
+ * Create a pre-migration backup using VACUUM INTO.
+ * Returns the backup path or null if backup was skipped.
+ */
+function createPreMigrationBackup(
+  database: BetterSqlite3.Database,
+  dbPath: string,
+  pendingCount: number
+): string | null {
+  if (!hasData(database)) {
+    return null;
+  }
+
+  const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const backupPath = `${dbPath}.pre-migration-${timestamp}.bak`;
+
+  console.log(`[db] Backing up database before applying ${pendingCount} migration(s)...`);
+  database.exec(`VACUUM INTO '${backupPath.replace(/'/g, "''")}'`);
+  return backupPath;
+}
+
 /** Open and configure a SQLite database. Runs migrations on first open. */
 function openDatabase(path: string): BetterSqlite3.Database {
   const db = new BetterSqlite3(path);
   db.pragma("journal_mode = WAL");
   db.pragma("busy_timeout = 5000");
   db.pragma("foreign_keys = ON");
-  runMigrations(db);
+
+  const pending = getPendingMigrations(db);
+
+  if (pending.length === 0) {
+    return db;
+  }
+
+  const backupPath = createPreMigrationBackup(db, path, pending.length);
+
+  try {
+    runMigrations(db);
+  } catch (err) {
+    if (backupPath) {
+      console.error(`[db] Migration failed. Backup available at: ${backupPath}`);
+    }
+    throw err;
+  }
+
+  if (backupPath) {
+    try {
+      unlinkSync(backupPath);
+      console.log("[db] All migrations applied successfully. Backup removed.");
+    } catch {
+      // Non-fatal — backup cleanup failure shouldn't crash startup
+    }
+  }
+
   return db;
 }
 
