@@ -29,7 +29,7 @@ import type { Condition } from "@pops/ui";
 import { trpc } from "../lib/trpc";
 import { InventoryTable } from "../components/InventoryTable";
 import { InventoryCard } from "../components/InventoryCard";
-import { ValueByTypeCard, ValueByLocationCard } from "../components/ValueBreakdown";
+import { ValueByTypeCard } from "../components/ValueBreakdown";
 import { formatCurrency } from "../lib/utils";
 type ViewMode = "table" | "grid";
 
@@ -204,7 +204,6 @@ function DashboardWidgets() {
       </Card>
 
       <ValueByTypeCard className="col-span-2" />
-      <ValueByLocationCard className="col-span-2" />
     </div>
   );
 }

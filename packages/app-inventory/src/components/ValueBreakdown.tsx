@@ -3,7 +3,7 @@
  * grouped by item type or location.
  */
 import { Alert, AlertDescription, Button, Card, CardContent, Skeleton } from "@pops/ui";
-import { AlertCircle, MapPin, RefreshCw, Tag } from "lucide-react";
+import { AlertCircle, RefreshCw, Tag } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
 import { useNavigate } from "react-router";
 import { trpc } from "../lib/trpc";
@@ -139,62 +139,6 @@ export function ValueByTypeCard({ className }: { className?: string }) {
           <BreakdownChart
             data={typeEntries}
             onBarClick={(entry) => navigate(`/inventory?type=${encodeURIComponent(entry.name)}`)}
-          />
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-export function ValueByLocationCard({ className }: { className?: string }) {
-  const navigate = useNavigate();
-
-  const {
-    data: locationData,
-    isLoading: locationLoading,
-    isError: locationError,
-    refetch: refetchLocation,
-  } = trpc.inventory.reports.valueByLocation.useQuery();
-
-  if (locationLoading) {
-    return (
-      <Card className={className}>
-        <CardContent className="p-4 space-y-2">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-40 w-full" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const locationEntries: BreakdownEntry[] = locationData?.data ?? [];
-
-  return (
-    <Card className={className}>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-2 text-muted-foreground mb-3">
-          <MapPin className="h-4 w-4" />
-          <span className="text-xs font-medium">Value by Location</span>
-        </div>
-        {locationError ? (
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="flex items-center justify-between gap-2">
-              <span>Failed to load location breakdown</span>
-              <Button variant="outline" size="sm" onClick={() => refetchLocation()}>
-                <RefreshCw className="h-3 w-3 mr-1" />
-                Retry
-              </Button>
-            </AlertDescription>
-          </Alert>
-        ) : (
-          <BreakdownChart
-            data={locationEntries}
-            onBarClick={(entry) => {
-              if (entry.key) {
-                navigate(`/inventory?locationId=${encodeURIComponent(entry.key)}`);
-              }
-            }}
           />
         )}
       </CardContent>
