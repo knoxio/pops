@@ -29,8 +29,8 @@ let db: Database;
 
 beforeEach(() => {
   ({ caller, db } = ctx.setup());
-  // Set TMDB_API_TOKEN so the router can create a client
-  vi.stubEnv("TMDB_API_TOKEN", "test-api-key");
+  // Set TMDB_API_KEY so the router can create a client
+  vi.stubEnv("TMDB_API_KEY", "test-api-key");
 });
 
 afterEach(() => {

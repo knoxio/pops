@@ -10,7 +10,7 @@ let caller: ReturnType<typeof createCaller>;
 
 beforeEach(() => {
   ({ caller } = ctx.setup());
-  vi.stubEnv("TMDB_API_TOKEN", "test-tmdb-key");
+  vi.stubEnv("TMDB_API_KEY", "test-tmdb-key");
   vi.stubEnv("THETVDB_API_KEY", "test-tvdb-key");
 });
 

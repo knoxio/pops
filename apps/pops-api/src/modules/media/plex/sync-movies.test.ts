@@ -140,11 +140,11 @@ beforeEach(() => {
 describe("importMoviesFromPlex", () => {
   it("throws when TMDB client is not configured", async () => {
     mockGetTmdbClient.mockImplementation(() => {
-      throw new Error("TMDB_API_TOKEN is not configured");
+      throw new Error("TMDB_API_KEY is not configured");
     });
     const client = makePlexClient([]);
 
-    await expect(importMoviesFromPlex(client, "1")).rejects.toThrow("TMDB_API_TOKEN");
+    await expect(importMoviesFromPlex(client, "1")).rejects.toThrow("TMDB_API_KEY");
     expect(client.getAllItems).not.toHaveBeenCalled();
   });
 

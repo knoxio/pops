@@ -58,7 +58,7 @@ No new tables — uses the `movies` table from PRD-028. Image paths written to `
 - Token bucket algorithm: 50 tokens capacity, refills at 50 tokens per 10 seconds
 - Shared across all TMDB API calls (search, metadata fetch, image download)
 - When bucket is empty, requests queue until tokens are available — no errors thrown for rate limiting
-- TMDB_API_TOKEN environment variable required
+- TMDB_API_KEY environment variable required
 
 ## Business Rules
 
