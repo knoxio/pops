@@ -1,7 +1,7 @@
 # PRD-042: Sonarr Request Management
 
 > Epic: [07 — Radarr & Sonarr](../../epics/07-radarr-sonarr.md)
-> Status: Not started
+> Status: In progress
 
 ## Overview
 
