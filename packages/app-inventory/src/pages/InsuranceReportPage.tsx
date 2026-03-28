@@ -8,7 +8,7 @@
 import { useMemo, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router";
 import { FileText, Printer, Download } from "lucide-react";
-import { Skeleton, AssetIdBadge, ConditionBadge, Badge, type Condition } from "@pops/ui";
+import { Skeleton, AssetIdBadge, ConditionBadge, Badge, PageHeader, type Condition } from "@pops/ui";
 import { trpc } from "../lib/trpc";
 import { LocationPicker } from "../components/LocationPicker";
 
@@ -194,38 +194,39 @@ export function InsuranceReportPage(): React.ReactElement {
   return (
     <div className="p-6 max-w-5xl mx-auto print:p-0 print:max-w-none print:text-[11pt]">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 print:mb-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <FileText className="h-6 w-6 text-muted-foreground print:hidden" />
-            <h1 className="text-2xl font-bold print:text-[14pt]">Insurance Report</h1>
+      <PageHeader
+        title={
+          <span className="print:text-[14pt]">Insurance Report</span>
+        }
+        icon={<FileText className="h-6 w-6 text-muted-foreground print:hidden" />}
+        actions={
+          <div className="flex items-center gap-2 print:hidden">
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-bold hover:bg-muted/50 transition-colors"
+            >
+              <Download className="h-4 w-4" />
+              Export CSV
+            </button>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-app-accent text-white text-sm font-bold hover:bg-app-accent/80 transition-colors shadow-sm shadow-app-accent/20"
+            >
+              <Printer className="h-4 w-4" />
+              Print / PDF
+            </button>
           </div>
-          <p className="text-sm text-muted-foreground">
-            Generated {today}
-            {locationId && report.groups.length === 1 && report.groups[0] && (
-              <> — {report.groups[0].locationName}</>
-            )}
-          </p>
-        </div>
-        <div className="flex items-center gap-2 print:hidden">
-          <button
-            type="button"
-            onClick={handleExportCsv}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-bold hover:bg-muted/50 transition-colors"
-          >
-            <Download className="h-4 w-4" />
-            Export CSV
-          </button>
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-app-accent text-white text-sm font-bold hover:bg-app-accent/80 transition-colors shadow-sm shadow-app-accent/20"
-          >
-            <Printer className="h-4 w-4" />
-            Print / PDF
-          </button>
-        </div>
-      </div>
+        }
+        className="mb-6 print:mb-4"
+      />
+      <p className="text-sm text-muted-foreground -mt-5 mb-6">
+        Generated {today}
+        {locationId && report.groups.length === 1 && report.groups[0] && (
+          <> — {report.groups[0].locationName}</>
+        )}
+      </p>
 
       {/* Filters */}
       <div className="flex flex-wrap items-end gap-4 mb-6 print:hidden">

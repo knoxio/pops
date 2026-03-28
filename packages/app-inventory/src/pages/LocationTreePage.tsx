@@ -20,6 +20,7 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
+  PageHeader,
 } from "@pops/ui";
 import {
   DndContext,
@@ -777,10 +778,10 @@ export function LocationTreePage() {
   if (error) {
     return (
       <div className="space-y-6 max-w-4xl">
-        <div className="flex items-center gap-3">
-          <MapPin className="h-6 w-6 text-muted-foreground" />
-          <h1 className="text-2xl font-bold">Locations</h1>
-        </div>
+        <PageHeader
+          title="Locations"
+          icon={<MapPin className="h-6 w-6 text-muted-foreground" />}
+        />
         <p className="text-destructive">Failed to load locations.</p>
       </div>
     );
@@ -788,32 +789,32 @@ export function LocationTreePage() {
 
   return (
     <div className="space-y-6 max-w-4xl">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <MapPin className="h-6 w-6 text-muted-foreground" />
-          <h1 className="text-2xl font-bold">Locations</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          <Link
-            to="/inventory/report"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-          >
-            <FileText className="h-4 w-4" />
-            Insurance Report
-          </Link>
-          <button
-            type="button"
-            onClick={() => {
-              setAddingRoot(true);
-              setAddingChildOf(null);
-            }}
-            className="flex items-center gap-1.5 text-sm font-bold text-app-accent hover:text-app-accent/80 transition-colors"
-          >
-            <Plus className="h-4 w-4" />
-            Add Root Location
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Locations"
+        icon={<MapPin className="h-6 w-6 text-muted-foreground" />}
+        actions={
+          <>
+            <Link
+              to="/inventory/report"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+            >
+              <FileText className="h-4 w-4" />
+              Insurance Report
+            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                setAddingRoot(true);
+                setAddingChildOf(null);
+              }}
+              className="flex items-center gap-1.5 text-sm font-bold text-app-accent hover:text-app-accent/80 transition-colors"
+            >
+              <Plus className="h-4 w-4" />
+              Add Root Location
+            </button>
+          </>
+        }
+      />
 
       {isLoading ? (
         <TreeSkeleton />

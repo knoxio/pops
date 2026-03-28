@@ -28,6 +28,8 @@ export interface BreadcrumbSegment {
 export interface PageHeaderProps {
   /** Page title displayed as heading */
   title: ReactNode;
+  /** Optional icon rendered before the title */
+  icon?: ReactNode;
   /** URL of the logical parent page — shows back button when provided */
   backHref?: string;
   /** Breadcrumb segments — last segment is the current page (not clickable) */
@@ -146,6 +148,7 @@ function BreadcrumbItems({
 
 export function PageHeader({
   title,
+  icon,
   backHref,
   breadcrumbs,
   actions,
@@ -159,7 +162,10 @@ export function PageHeader({
     return (
       <header className={cn("space-y-1", className)}>
         <div className="flex items-center justify-between gap-4">
-          <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+          <div className="flex items-center gap-3">
+            {icon}
+            <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+          </div>
           {actions && <div className="flex items-center gap-2">{actions}</div>}
         </div>
       </header>
@@ -187,7 +193,10 @@ export function PageHeader({
         )}
       </div>
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+        <div className="flex items-center gap-3">
+          {icon}
+          <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
+        </div>
         {actions && <div className="flex items-center gap-2">{actions}</div>}
       </div>
     </header>

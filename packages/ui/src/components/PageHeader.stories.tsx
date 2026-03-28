@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import { MapPin, ShieldCheck } from "lucide-react";
 import { PageHeader } from "./PageHeader";
 import { Button } from "./Button";
 
@@ -56,6 +57,25 @@ export const FourLevels: Story = {
       { label: "Season 1", href: "/media/shows/1/seasons/1" },
       { label: "Episode 3" },
     ],
+  },
+};
+
+export const WithIcon: Story = {
+  args: {
+    title: "Locations",
+    icon: <MapPin className="h-6 w-6 text-muted-foreground" />,
+  },
+};
+
+export const WithIconAndActions: Story = {
+  args: {
+    title: "Warranty Tracking",
+    icon: (
+      <div className="p-2 rounded-xl bg-primary/10">
+        <ShieldCheck className="h-6 w-6 text-primary" />
+      </div>
+    ),
+    actions: <Button size="sm">Add Item</Button>,
   },
 };
 

@@ -7,7 +7,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router";
 import { ShieldCheck, ChevronDown, ChevronRight, AlertCircle } from "lucide-react";
-import { Skeleton, AssetIdBadge, Badge } from "@pops/ui";
+import { Skeleton, AssetIdBadge, Badge, PageHeader } from "@pops/ui";
 import { trpc } from "../lib/trpc";
 
 interface WarrantyItem {
@@ -281,13 +281,14 @@ export function WarrantiesPage() {
 
   return (
     <div className="space-y-6 max-w-3xl">
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="p-2 rounded-xl bg-app-accent/10">
-          <ShieldCheck className="h-6 w-6 text-app-accent" />
-        </div>
-        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Warranty Tracking</h1>
-      </div>
+      <PageHeader
+        title="Warranty Tracking"
+        icon={
+          <div className="p-2 rounded-xl bg-app-accent/10">
+            <ShieldCheck className="h-6 w-6 text-app-accent" />
+          </div>
+        }
+      />
 
       {isLoading ? (
         <WarrantySkeleton />
