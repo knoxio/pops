@@ -220,12 +220,7 @@ async function syncSingleWatchlistItem(
   const existing = db
     .select()
     .from(mediaWatchlist)
-    .where(
-      and(
-        eq(mediaWatchlist.mediaType, mediaType),
-        eq(mediaWatchlist.mediaId, mediaId)
-      )
-    )
+    .where(and(eq(mediaWatchlist.mediaType, mediaType), eq(mediaWatchlist.mediaId, mediaId)))
     .get();
 
   if (existing) {
@@ -355,10 +350,7 @@ async function resolveTvShow(item: PlexMediaItem): Promise<ResolvedMedia | null>
  * - source="plex" and not in Plex → delete
  * - source="both" and not in Plex → downgrade to "manual"
  */
-function handleRemovals(
-  seenPlexRatingKeys: Set<string>,
-  progress: WatchlistSyncProgress
-): void {
+function handleRemovals(seenPlexRatingKeys: Set<string>, progress: WatchlistSyncProgress): void {
   const db = getDrizzle();
 
   // Get all watchlist entries that have a plexRatingKey (came from Plex at some point)

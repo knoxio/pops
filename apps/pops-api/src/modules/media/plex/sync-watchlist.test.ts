@@ -51,10 +51,7 @@ vi.mock("../library/tv-show-service.js", () => ({
   addTvShow: vi.fn(),
 }));
 
-import {
-  fetchPlexWatchlist,
-  syncWatchlistFromPlex,
-} from "./sync-watchlist.js";
+import { fetchPlexWatchlist, syncWatchlistFromPlex } from "./sync-watchlist.js";
 import { getDrizzle } from "../../../db.js";
 import { getMovieByTmdbId } from "../movies/service.js";
 import { getTvShowByTvdbId } from "../tv-shows/service.js";
@@ -209,10 +206,7 @@ describe("fetchPlexWatchlist", () => {
               type: "movie",
               title: "Inception",
               year: 2010,
-              Guid: [
-                { id: "tmdb://27205" },
-                { id: "imdb://tt1375666" },
-              ],
+              Guid: [{ id: "tmdb://27205" }, { id: "imdb://tt1375666" }],
             },
             {
               ratingKey: "def456",

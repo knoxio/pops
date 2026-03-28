@@ -11,6 +11,7 @@ const mockSelectSyncLogs = vi.fn().mockReturnValue([]);
 vi.mock("./service.js", () => ({
   getPlexClient: vi.fn(),
   getPlexSectionIds: vi.fn().mockReturnValue({ movieSectionId: null, tvSectionId: null }),
+  getPlexToken: vi.fn().mockReturnValue("test-plex-token"),
 }));
 
 vi.mock("./sync-movies.js", () => ({
@@ -19,6 +20,17 @@ vi.mock("./sync-movies.js", () => ({
 
 vi.mock("./sync-tv.js", () => ({
   importTvShowsFromPlex: vi.fn(),
+}));
+
+vi.mock("./sync-watchlist.js", () => ({
+  syncWatchlistFromPlex: vi.fn().mockResolvedValue({
+    total: 0,
+    processed: 0,
+    added: 0,
+    removed: 0,
+    skipped: 0,
+    errors: [],
+  }),
 }));
 
 vi.mock("../../../db.js", () => ({
