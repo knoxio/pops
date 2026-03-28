@@ -24,6 +24,7 @@ import {
   CardContent,
   TypeBadge,
   ViewToggleGroup,
+  PageHeader,
 } from "@pops/ui";
 import type { Condition } from "@pops/ui";
 import { trpc } from "../lib/trpc";
@@ -336,10 +337,7 @@ export function ItemsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl md:text-3xl font-bold">Inventory</h1>
-      </div>
+      <PageHeader title="Inventory" />
 
       {!hasActiveFilters && !search && <DashboardWidgets />}
 

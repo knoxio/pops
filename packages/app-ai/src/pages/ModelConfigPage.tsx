@@ -7,7 +7,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
-import { Select, Button, Skeleton, Alert, StatCard } from "@pops/ui";
+import { Select, Button, Skeleton, Alert, StatCard, PageHeader } from "@pops/ui";
 import { TextInput } from "@pops/ui";
 
 const SETTING_KEYS = {
@@ -99,12 +99,7 @@ export function ModelConfigPage() {
   if (isLoading) {
     return (
       <div className="space-y-6 max-w-2xl">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
-            Model Configuration
-          </h1>
-          <p className="text-muted-foreground text-sm">Configure AI model and spending limits</p>
-        </div>
+        <PageHeader title="Model Configuration" description="Configure AI model and spending limits" />
         <Skeleton className="h-48" />
         <Skeleton className="h-32" />
       </div>
@@ -113,10 +108,7 @@ export function ModelConfigPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <div>
-        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Model Configuration</h1>
-        <p className="text-muted-foreground text-sm">Configure AI model and spending limits</p>
-      </div>
+      <PageHeader title="Model Configuration" description="Configure AI model and spending limits" />
 
       {/* Usage vs Budget */}
       <div className="grid gap-4 md:grid-cols-2">

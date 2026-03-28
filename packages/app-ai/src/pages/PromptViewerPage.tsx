@@ -4,6 +4,7 @@
  * Shows the current prompt templates used for transaction categorisation
  * and rule generation, with model attribution. PRD-053/US-04.
  */
+import { PageHeader } from "@pops/ui";
 
 const PROMPTS = [
   {
@@ -46,13 +47,10 @@ Return ONLY the JSON array, no markdown, no explanation.`,
 export function PromptViewerPage() {
   return (
     <div className="space-y-6 max-w-3xl">
-      <div className="flex items-center gap-3">
-        <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">Prompt Templates</h1>
-      </div>
-      <p className="text-muted-foreground text-sm">
-        Read-only view of the AI prompt templates used in this application. Prompts are defined in
-        code and cannot be edited here.
-      </p>
+      <PageHeader
+        title="Prompt Templates"
+        description="Read-only view of the AI prompt templates used in this application. Prompts are defined in code and cannot be edited here."
+      />
 
       <div className="space-y-8">
         {PROMPTS.map((prompt) => (

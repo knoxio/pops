@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
 import { DataTable, SortableHeader, StatCard, DateInput } from "@pops/ui";
 import { Badge, Button } from "@pops/ui";
-import { Alert } from "@pops/ui";
+import { Alert, PageHeader } from "@pops/ui";
 import { Skeleton } from "@pops/ui";
 import { Card } from "@pops/ui";
 import {
@@ -221,10 +221,7 @@ export function AiUsagePage() {
   if (statsLoading || historyLoading) {
     return (
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">AI Usage</h1>
-          <p className="text-muted-foreground">Track AI categorization costs and usage</p>
-        </div>
+        <PageHeader title="AI Usage" description="Track AI categorization costs and usage" />
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
@@ -241,7 +238,7 @@ export function AiUsagePage() {
   if (statsError || historyError) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">AI Usage</h1>
+        <PageHeader title="AI Usage" />
         <Alert variant="destructive">
           <h3 className="font-semibold">Failed to load AI usage data</h3>
           <p className="text-sm mt-1">
@@ -354,13 +351,10 @@ export function AiUsagePage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">AI Usage</h1>
-        <p className="text-muted-foreground">
-          Track AI categorization costs and usage across all imports
-        </p>
-      </div>
+      <PageHeader
+        title="AI Usage"
+        description="Track AI categorization costs and usage across all imports"
+      />
 
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

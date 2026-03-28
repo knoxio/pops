@@ -28,6 +28,8 @@ export interface BreadcrumbSegment {
 export interface PageHeaderProps {
   /** Page title displayed as heading */
   title: ReactNode;
+  /** Optional description shown below the title */
+  description?: ReactNode;
   /** URL of the logical parent page — shows back button when provided */
   backHref?: string;
   /** Breadcrumb segments — last segment is the current page (not clickable) */
@@ -146,6 +148,7 @@ function BreadcrumbItems({
 
 export function PageHeader({
   title,
+  description,
   backHref,
   breadcrumbs,
   actions,
@@ -158,9 +161,14 @@ export function PageHeader({
   if (isTopLevel) {
     return (
       <header className={cn("space-y-1", className)}>
-        <div className="flex items-center justify-between gap-4">
-          <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
-          {actions && <div className="flex items-center gap-2">{actions}</div>}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{title}</h1>
+            {description && (
+              <p className="text-muted-foreground text-sm mt-1">{description}</p>
+            )}
+          </div>
+          {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
         </div>
       </header>
     );
@@ -186,9 +194,14 @@ export function PageHeader({
           </Breadcrumb>
         )}
       </div>
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold tracking-tight">{title}</h1>
-        {actions && <div className="flex items-center gap-2">{actions}</div>}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{title}</h1>
+          {description && (
+            <p className="text-muted-foreground text-sm mt-1">{description}</p>
+          )}
+        </div>
+        {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
       </div>
     </header>
   );
