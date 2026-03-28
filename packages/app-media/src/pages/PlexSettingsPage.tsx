@@ -49,6 +49,7 @@ interface WatchlistSyncResult {
   removed: number;
   skipped: number;
   errors: { title: string; reason: string }[];
+  skipReasons?: { title: string; reason: string }[];
 }
 
 function SyncResultDisplay({ result, label }: { result: SyncResult; label: string }) {
@@ -72,11 +73,7 @@ function SyncResultDisplay({ result, label }: { result: SyncResult; label: strin
             onClick={() => setShowSkipped(!showSkipped)}
             className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
           >
-            {showSkipped ? (
-              <ChevronUp className="h-3 w-3" />
-            ) : (
-              <ChevronDown className="h-3 w-3" />
-            )}
+            {showSkipped ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
             {showSkipped ? "Hide" : "Show"} skip reasons
           </button>
           {showSkipped && (
@@ -117,6 +114,8 @@ function SyncResultDisplay({ result, label }: { result: SyncResult; label: strin
 
 function WatchlistSyncResultDisplay({ result }: { result: WatchlistSyncResult }) {
   const [showErrors, setShowErrors] = useState(false);
+  const [showSkipped, setShowSkipped] = useState(false);
+  const skipReasons = result.skipReasons ?? [];
 
   return (
     <div className="rounded-md border bg-muted/30 p-3 space-y-2 text-sm">
@@ -129,6 +128,27 @@ function WatchlistSyncResultDisplay({ result }: { result: WatchlistSyncResult })
           <span className="text-red-400">{result.errors.length} errors</span>
         )}
       </div>
+      {skipReasons.length > 0 && (
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowSkipped(!showSkipped)}
+            className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {showSkipped ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            {showSkipped ? "Hide" : "Show"} skip reasons
+          </button>
+          {showSkipped && (
+            <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+              {skipReasons.map((skip, i) => (
+                <p key={i}>
+                  <span className="font-medium">{skip.title}:</span> {skip.reason}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       {result.errors.length > 0 && (
         <div>
           <button
@@ -637,9 +657,7 @@ export function PlexSettingsPage() {
               )}
               {syncWatchlist.isPending ? "Syncing..." : "Sync Watchlist"}
             </Button>
-            {watchlistSyncResult && (
-              <WatchlistSyncResultDisplay result={watchlistSyncResult} />
-            )}
+            {watchlistSyncResult && <WatchlistSyncResultDisplay result={watchlistSyncResult} />}
           </div>
         )}
 

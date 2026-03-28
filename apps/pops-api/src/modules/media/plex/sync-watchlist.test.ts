@@ -357,6 +357,7 @@ describe("syncWatchlistFromPlex", () => {
 
     expect(result.added).toBe(0);
     expect(result.skipped).toBe(1);
+    expect(result.skipReasons).toEqual([{ title: "Inception", reason: "Already on watchlist" }]);
   });
 
   it("escalates source from manual to both when item found in Plex", async () => {
@@ -386,7 +387,7 @@ describe("syncWatchlistFromPlex", () => {
     );
   });
 
-  it("skips items without TMDB or TVDB ID", async () => {
+  it("skips items without TMDB or TVDB ID and reports reason", async () => {
     const noIdItem = makePlexWatchlistItem({
       externalIds: [{ source: "imdb", id: "tt1375666" }], // Only IMDB, no TMDB
     });
@@ -398,9 +399,12 @@ describe("syncWatchlistFromPlex", () => {
 
     expect(result.skipped).toBe(1);
     expect(result.added).toBe(0);
+    expect(result.skipReasons).toEqual([
+      { title: "Inception", reason: "No TMDB ID in Plex metadata" },
+    ]);
   });
 
-  it("skips items with unsupported media type", async () => {
+  it("skips items with unsupported media type and reports reason", async () => {
     const unknownTypeItem = makePlexWatchlistItem({ type: "artist" });
     mockPlexWatchlistResponse([unknownTypeItem]);
 
@@ -409,6 +413,9 @@ describe("syncWatchlistFromPlex", () => {
     const result = await syncWatchlistFromPlex("test-token");
 
     expect(result.skipped).toBe(1);
+    expect(result.skipReasons).toEqual([
+      { title: "Inception", reason: "Unsupported media type: artist" },
+    ]);
   });
 
   it("handles empty Plex watchlist", async () => {
