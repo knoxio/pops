@@ -150,12 +150,8 @@ export function ArrSettingsPage() {
     onError: (err: { message: string }) => toast.error(`Failed to save: ${err.message}`),
   });
 
-  const testRadarr = trpc.media.arr.testRadarr.useQuery(undefined, {
-    enabled: false,
-  });
-  const testSonarr = trpc.media.arr.testSonarr.useQuery(undefined, {
-    enabled: false,
-  });
+  const testRadarr = trpc.media.arr.testRadarr.useMutation();
+  const testSonarr = trpc.media.arr.testSonarr.useMutation();
 
   if (settingsQuery.isLoading) {
     return (
@@ -218,9 +214,9 @@ export function ArrSettingsPage() {
               radarrApiKey,
             });
           }}
-          onTest={() => testRadarr.refetch()}
+          onTest={() => testRadarr.mutate({ url: ensureProtocol(radarrUrl), apiKey: radarrApiKey })}
           saving={saveSettings.isPending}
-          testing={testRadarr.isFetching}
+          testing={testRadarr.isPending}
           testResult={testRadarr.data?.data ?? null}
         />
 
@@ -240,9 +236,9 @@ export function ArrSettingsPage() {
               sonarrApiKey,
             });
           }}
-          onTest={() => testSonarr.refetch()}
+          onTest={() => testSonarr.mutate({ url: ensureProtocol(sonarrUrl), apiKey: sonarrApiKey })}
           saving={saveSettings.isPending}
-          testing={testSonarr.isFetching}
+          testing={testSonarr.isPending}
           testResult={testSonarr.data?.data ?? null}
         />
       </div>

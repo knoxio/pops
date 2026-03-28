@@ -5,16 +5,32 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../../../trpc.js";
 import { ArrApiError } from "./types.js";
+import { RadarrClient } from "./radarr-client.js";
+import { SonarrClient } from "./sonarr-client.js";
 import * as arrService from "./service.js";
 
-export const arrRouter = router({
-  /** Test Radarr connection and return server version. Safe to call when not configured. */
-  testRadarr: protectedProcedure.query(async () => {
-    const client = arrService.getRadarrClient();
-    if (!client) {
-      return { data: { configured: false, connected: false, error: "Radarr is not configured" } };
-    }
+const TestConnectionInput = z.object({
+  url: z.string().min(1),
+  apiKey: z.string().min(1),
+});
 
+const MASKED_KEY = "••••••••";
+
+/** If the API key is still masked, resolve the saved key from DB. */
+function resolveApiKey(formKey: string, service: "radarr" | "sonarr"): string | null {
+  if (formKey !== MASKED_KEY) return formKey;
+  const settings = arrService.getArrSettings();
+  return (service === "radarr" ? settings.radarrApiKey : settings.sonarrApiKey) ?? null;
+}
+
+export const arrRouter = router({
+  /** Test Radarr connection using provided form values. */
+  testRadarr: protectedProcedure.input(TestConnectionInput).mutation(async ({ input }) => {
+    const apiKey = resolveApiKey(input.apiKey, "radarr");
+    if (!apiKey) {
+      return { data: { configured: false, connected: false, error: "No API key provided" } };
+    }
+    const client = new RadarrClient(input.url, apiKey);
     try {
       const status = await client.testConnection();
       return {
@@ -28,13 +44,13 @@ export const arrRouter = router({
     }
   }),
 
-  /** Test Sonarr connection and return server version. Safe to call when not configured. */
-  testSonarr: protectedProcedure.query(async () => {
-    const client = arrService.getSonarrClient();
-    if (!client) {
-      return { data: { configured: false, connected: false, error: "Sonarr is not configured" } };
+  /** Test Sonarr connection using provided form values. */
+  testSonarr: protectedProcedure.input(TestConnectionInput).mutation(async ({ input }) => {
+    const apiKey = resolveApiKey(input.apiKey, "sonarr");
+    if (!apiKey) {
+      return { data: { configured: false, connected: false, error: "No API key provided" } };
     }
-
+    const client = new SonarrClient(input.url, apiKey);
     try {
       const status = await client.testConnection();
       return {
