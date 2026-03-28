@@ -422,7 +422,7 @@ describe("SeasonDetailPage — monitoring", () => {
       renderPage();
       const headings = screen.getAllByRole("heading", { level: 1 });
       expect(headings.some((h) => h.textContent === "Season 1")).toBe(true);
-      expect(screen.getByText("3 episodes")).toBeInTheDocument();
+      expect(screen.getByText("4 episodes")).toBeInTheDocument();
     });
 
     it("renders episodes section", () => {
