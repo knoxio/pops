@@ -133,27 +133,21 @@ export function DiscoverPage() {
       try {
         // First add to library (idempotent)
         const libResult = await addMovieMutation.mutateAsync({ tmdbId });
-        // Then add to watchlist using the local DB id
-        await addWatchlistMutation.mutateAsync({
+        // Then add to watchlist using the local DB id (idempotent)
+        const watchlistResult = await addWatchlistMutation.mutateAsync({
           mediaType: "movie",
           mediaId: libResult.data.id,
         });
-        toast.success(`Added "${libResult.data.title}" to watchlist`);
+        if (watchlistResult.created) {
+          toast.success(`Added "${libResult.data.title}" to watchlist`);
+        } else {
+          toast.info(`"${libResult.data.title}" is already on watchlist`);
+        }
         void utils.media.watchlist.list.invalidate();
         void utils.media.discovery.trending.invalidate();
         void utils.media.discovery.recommendations.invalidate();
-      } catch (err) {
-        // CONFLICT means already on watchlist — that's fine
-        if (
-          err &&
-          typeof err === "object" &&
-          "data" in err &&
-          (err as { data?: { code?: string } }).data?.code === "CONFLICT"
-        ) {
-          toast.info("Already on watchlist");
-        } else {
-          toast.error("Failed to add to watchlist");
-        }
+      } catch {
+        toast.error("Failed to add to watchlist");
       } finally {
         setAddingToWatchlist((prev) => {
           const next = new Set(prev);

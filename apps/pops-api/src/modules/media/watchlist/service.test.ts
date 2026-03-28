@@ -59,13 +59,14 @@ describe("getWatchlistEntry", () => {
 
 describe("addToWatchlist", () => {
   it("creates a watchlist entry", () => {
-    const entry = service.addToWatchlist({
+    const { row: entry, created } = service.addToWatchlist({
       mediaType: "movie",
       mediaId: 550,
       priority: 2,
       notes: "Must watch",
     });
 
+    expect(created).toBe(true);
     expect(entry.id).toBeGreaterThan(0);
     expect(entry.mediaType).toBe("movie");
     expect(entry.mediaId).toBe(550);
@@ -74,7 +75,7 @@ describe("addToWatchlist", () => {
   });
 
   it("sets default values for optional fields", () => {
-    const entry = service.addToWatchlist({
+    const { row: entry } = service.addToWatchlist({
       mediaType: "tv_show",
       mediaId: 100,
     });
@@ -83,11 +84,19 @@ describe("addToWatchlist", () => {
     expect(entry.notes).toBeNull();
   });
 
-  it("throws ConflictError on duplicate mediaType+mediaId", () => {
-    service.addToWatchlist({ mediaType: "movie", mediaId: 550 });
-    expect(() => service.addToWatchlist({ mediaType: "movie", mediaId: 550 })).toThrow(
-      "already on the watchlist"
-    );
+  it("returns existing entry on duplicate mediaType+mediaId", () => {
+    const { row: first, created: firstCreated } = service.addToWatchlist({
+      mediaType: "movie",
+      mediaId: 550,
+    });
+    const { row: second, created: secondCreated } = service.addToWatchlist({
+      mediaType: "movie",
+      mediaId: 550,
+    });
+
+    expect(firstCreated).toBe(true);
+    expect(secondCreated).toBe(false);
+    expect(second.id).toBe(first.id);
   });
 });
 

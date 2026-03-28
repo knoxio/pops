@@ -50,38 +50,33 @@ export const watchlistRouter = router({
     }
   }),
 
-  /** Add an item to the watchlist. Pushes to Plex if connected (best-effort). */
+  /** Add an item to the watchlist. Idempotent — returns existing entry if already present. */
   add: protectedProcedure.input(AddToWatchlistSchema).mutation(async ({ input }) => {
-    let row;
-    try {
-      row = service.addToWatchlist(input);
-    } catch (err) {
-      if (err instanceof ConflictError) {
-        throw new TRPCError({ code: "CONFLICT", message: err.message });
-      }
-      throw err;
-    }
+    const { row, created } = service.addToWatchlist(input);
 
     // Best-effort push to Plex — failures do not block local operation
-    const plexRatingKey = (row as Record<string, unknown>).plexRatingKey as string | null;
-    if (plexRatingKey) {
-      try {
-        const client = getPlexClient();
-        if (client) {
-          await client.addToWatchlist(plexRatingKey);
-          console.log(`[Plex] Pushed watchlist add for ratingKey=${plexRatingKey}`);
+    if (created) {
+      const plexRatingKey = (row as Record<string, unknown>).plexRatingKey as string | null;
+      if (plexRatingKey) {
+        try {
+          const client = getPlexClient();
+          if (client) {
+            await client.addToWatchlist(plexRatingKey);
+            console.log(`[Plex] Pushed watchlist add for ratingKey=${plexRatingKey}`);
+          }
+        } catch (err) {
+          console.warn(
+            `[Plex] Failed to push watchlist add for ratingKey=${plexRatingKey}:`,
+            err instanceof Error ? err.message : err
+          );
         }
-      } catch (err) {
-        console.warn(
-          `[Plex] Failed to push watchlist add for ratingKey=${plexRatingKey}:`,
-          err instanceof Error ? err.message : err
-        );
       }
     }
 
     return {
       data: toWatchlistEntry(row),
-      message: "Added to watchlist",
+      created,
+      message: created ? "Added to watchlist" : "Already on watchlist",
     };
   }),
 

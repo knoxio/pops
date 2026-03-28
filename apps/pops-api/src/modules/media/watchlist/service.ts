@@ -56,8 +56,11 @@ export function getWatchlistEntry(id: number): MediaWatchlistRow {
   return row;
 }
 
-/** Add an item to the watchlist. Returns the created row. Throws ConflictError on duplicate. */
-export function addToWatchlist(input: AddToWatchlistInput): MediaWatchlistRow {
+/** Add an item to the watchlist. Idempotent — returns the existing entry if already present. */
+export function addToWatchlist(input: AddToWatchlistInput): {
+  row: MediaWatchlistRow;
+  created: boolean;
+} {
   const db = getDrizzle();
 
   try {
@@ -71,10 +74,20 @@ export function addToWatchlist(input: AddToWatchlistInput): MediaWatchlistRow {
       })
       .run();
 
-    return getWatchlistEntry(Number(result.lastInsertRowid));
+    return { row: getWatchlistEntry(Number(result.lastInsertRowid)), created: true };
   } catch (err) {
     if (err instanceof Error && err.message.includes("UNIQUE constraint failed")) {
-      throw new ConflictError(`${input.mediaType} ${input.mediaId} is already on the watchlist`);
+      const existing = db
+        .select()
+        .from(mediaWatchlist)
+        .where(
+          and(
+            eq(mediaWatchlist.mediaType, input.mediaType),
+            eq(mediaWatchlist.mediaId, input.mediaId)
+          )
+        )
+        .get();
+      if (existing) return { row: existing, created: false };
     }
     throw err;
   }
