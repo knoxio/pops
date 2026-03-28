@@ -13,10 +13,7 @@ import { initializeSchema } from "./schema.js";
 import { seedDatabase } from "./seeder.js";
 
 /** Reproduce runMigrations locally for testability (not exported from db.ts). */
-function runMigrations(
-  database: BetterSqlite3.Database,
-  migrationsDir: string
-): string[] {
+function runMigrations(database: BetterSqlite3.Database, migrationsDir: string): string[] {
   database.exec(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
       version TEXT PRIMARY KEY,
@@ -121,18 +118,18 @@ describe("migration safety", () => {
       seedDatabase(db);
 
       // Transactions have tags as JSON
-      const txRows = db
-        .prepare("SELECT tags FROM transactions WHERE tags != '[]'")
-        .all() as { tags: string }[];
+      const txRows = db.prepare("SELECT tags FROM transactions WHERE tags != '[]'").all() as {
+        tags: string;
+      }[];
       expect(txRows.length).toBeGreaterThan(0);
       for (const row of txRows) {
         expect(() => JSON.parse(row.tags) as unknown).not.toThrow();
       }
 
       // Movies have genres as JSON
-      const movieRows = db
-        .prepare("SELECT genres FROM movies WHERE genres IS NOT NULL")
-        .all() as { genres: string }[];
+      const movieRows = db.prepare("SELECT genres FROM movies WHERE genres IS NOT NULL").all() as {
+        genres: string;
+      }[];
       expect(movieRows.length).toBeGreaterThan(0);
       for (const row of movieRows) {
         expect(() => JSON.parse(row.genres) as unknown).not.toThrow();
@@ -248,9 +245,9 @@ describe("migration safety", () => {
       expect(count(db, "transactions")).toBe(countBefore);
 
       // Existing rows get the default value
-      const rows = db
-        .prepare("SELECT test_flag FROM transactions")
-        .all() as { test_flag: number | null }[];
+      const rows = db.prepare("SELECT test_flag FROM transactions").all() as {
+        test_flag: number | null;
+      }[];
       for (const row of rows) {
         expect(row.test_flag).toBe(0); // SQLite: ALTER ADD COLUMN with DEFAULT applies the default
       }
@@ -305,10 +302,7 @@ describe("migration safety", () => {
 
       const testMigrationsDir = join(tmpDir, "bad-migrations");
       mkdirSync(testMigrationsDir);
-      writeFileSync(
-        join(testMigrationsDir, "999_bad_migration.sql"),
-        "INVALID SQL SYNTAX HERE"
-      );
+      writeFileSync(join(testMigrationsDir, "999_bad_migration.sql"), "INVALID SQL SYNTAX HERE");
 
       expect(() => runMigrations(db, testMigrationsDir)).toThrow();
 
