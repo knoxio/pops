@@ -59,6 +59,7 @@ Build polling-based sync with Plex Media Server. Import library items and watch 
 |---------|--------|
 | Last sync time | Relative time ("2 hours ago") with full timestamp on hover |
 | Results | Synced: N, Skipped: N, Errors: N |
+| Skip details | Expandable list of skipped items with title and reason (e.g., "Breaking Bad — no TheTVDB ID in Plex metadata") |
 | Error details | Expandable list of error messages if errors > 0 |
 
 ## API Dependencies
@@ -138,7 +139,7 @@ Build polling-based sync with Plex Media Server. Import library items and watch 
 - POPS owns the library — Plex is one input source, not the source of truth
 - Sync is additive only — Plex sync never deletes items from the POPS library
 - TMDB ID is the match key for movies; TheTVDB ID is the match key for TV shows
-- If a Plex item has no external ID, it is skipped and counted as an error
+- If a Plex item has no external ID, it is skipped with a descriptive reason (title + why it was skipped)
 - Auth token is stored in the settings table, not in environment variables or config files
 - Scheduler is optional — manual sync is always available
 - Sync results are stored for the most recent run only (not historical)
@@ -148,7 +149,7 @@ Build polling-based sync with Plex Media Server. Import library items and watch 
 | Case | Behaviour |
 |------|-----------|
 | Plex server unreachable | Test connection fails with error message; sync operations fail gracefully |
-| Plex item missing TMDB/TheTVDB ID | Skipped, counted in errors with descriptive message |
+| Plex item missing TMDB/TheTVDB ID | Skipped with reason recorded (title + "no TheTVDB ID in Plex metadata"), visible in skip details UI |
 | Auth token expired | Sync fails with auth error; UI prompts to reconnect |
 | Sync interrupted mid-run | Partial results committed (each item is its own transaction); re-sync is safe |
 | Duplicate movie in Plex (two copies) | Both map to same TMDB ID — second is skipped (unique constraint) |
