@@ -1,21 +1,20 @@
 # US-02: Global theme decorator
 
 > PRD: [004 — Storybook](README.md)
-> Status: Partial
+> Status: Done
 
-**GH Issue:** #401
+**GH Issue:** #727
 
 ## Audit Findings
 
 **Present:**
-- `packages/ui/.storybook/preview.ts` imports `../src/theme/globals.css`, so all stories render with the correct design tokens
+- `apps/pops-storybook/.storybook/preview.tsx` imports `@pops/ui/theme/globals.css`, so all stories render with the correct design tokens
 - Storybook controls (color matchers, date matchers) configured
-
-**Missing:**
-- No global decorator wrapping stories with a theme provider or dark mode class toggle
-- No Storybook toolbar addon for light/dark mode switching — dark mode can't be previewed without manually setting the `dark` class on `<html>`
-- No app colour variable dropdown (e.g., switching between emerald, indigo, amber themes)
-- The `@storybook/addon-backgrounds` dark background option is not wired to the CSS `dark` class
+- Global decorator wraps all stories with theme class toggle and app colour class
+- Storybook toolbar has light/dark mode toggle (sun/moon icons)
+- App colour dropdown in toolbar with all 6 colour options (emerald, indigo, amber, rose, sky, violet)
+- Default app colour set to emerald
+- `AppColourVerification` stories demonstrate all combinations
 
 ## Description
 
@@ -23,12 +22,12 @@ As a developer, I want a global Storybook decorator that provides theme context 
 
 ## Acceptance Criteria
 
-- [ ] Global decorator in `preview.ts` wraps all stories with theme provider
-- [ ] Storybook toolbar has a light/dark mode toggle
-- [ ] Switching modes updates all component styles in real-time
-- [ ] App colour variable is configurable in Storybook (e.g., dropdown to switch between emerald, indigo, amber)
-- [ ] Default app colour is set (e.g., primary) so stories render without manual selection
-- [ ] No console errors when switching themes
+- [x] Global decorator in `preview.tsx` wraps all stories with theme provider
+- [x] Storybook toolbar has a light/dark mode toggle
+- [x] Switching modes updates all component styles in real-time
+- [x] App colour variable is configurable in Storybook (dropdown to switch between emerald, indigo, amber, rose, sky, violet)
+- [x] Default app colour is set (emerald) so stories render without manual selection
+- [x] No console errors when switching themes
 
 ## Notes
 
