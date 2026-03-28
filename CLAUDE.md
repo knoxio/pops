@@ -80,9 +80,16 @@ cd apps/pops-shell && pnpm install && pnpm dev          # Vite dev server
 cd apps/<service> && pnpm typecheck
 
 # Run tests
-cd apps/<service> && pnpm test                 # single run
+cd apps/<service> && pnpm test                 # single run (unit tests only)
 cd apps/<service> && pnpm test:watch           # watch mode
 ```
+
+**Integration tests are CI-only.** The following tests create full Express apps and SQLite databases per test, which hangs in resource-constrained environments. They run in CI only:
+- `env-context.integration.test.ts`
+- `envs/router.integration.test.ts`
+- `ai-categorizer-disk.integration.test.ts`
+
+Do NOT run `pnpm test:integration` locally. CI handles these automatically.
 
 ### Tools (import scripts)
 ```bash
