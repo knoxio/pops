@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 
 /* ------------------------------------------------------------------ */
@@ -92,18 +92,20 @@ vi.mock("../components/LocationContentsPanel", () => ({
 /* ------------------------------------------------------------------ */
 let capturedDragHandlers: {
   onDragStart?: (event: { active: { id: string } }) => void;
+  onDragOver?: (event: { active: { id: string }; over: { id: string } | null }) => void;
   onDragEnd?: (event: { active: { id: string }; over: { id: string } | null }) => void;
 } = {};
 
 vi.mock("@dnd-kit/core", () => ({
-  DndContext: ({ children, onDragStart, onDragEnd }: {
+  DndContext: ({ children, onDragStart, onDragOver, onDragEnd }: {
     children: React.ReactNode;
     sensors?: unknown;
     collisionDetection?: unknown;
     onDragStart?: (event: { active: { id: string } }) => void;
+    onDragOver?: (event: { active: { id: string }; over: { id: string } | null }) => void;
     onDragEnd?: (event: { active: { id: string }; over: { id: string } | null }) => void;
   }) => {
-    capturedDragHandlers = { onDragStart, onDragEnd };
+    capturedDragHandlers = { onDragStart, onDragOver, onDragEnd };
     return <div data-testid="dnd-context">{children}</div>;
   },
   DragOverlay: ({ children }: { children: React.ReactNode }) => (
@@ -259,17 +261,17 @@ describe("LocationTreePage", () => {
     expect(screen.getByTestId("drag-overlay")).toBeInTheDocument();
   });
 
-  /* --- Arrow buttons hidden on desktop --- */
+  /* --- Arrow buttons for coarse pointers (touch devices) --- */
 
-  it("arrow buttons have md:hidden class", () => {
+  it("arrow buttons use pointer:coarse media query", () => {
     renderPage();
     const moveUpButtons = screen.getAllByTitle("Move up");
     moveUpButtons.forEach((btn) => {
-      expect(btn.className).toContain("md:hidden");
+      expect(btn.className).toContain("[@media(pointer:coarse)]:inline-flex");
     });
     const moveDownButtons = screen.getAllByTitle("Move down");
     moveDownButtons.forEach((btn) => {
-      expect(btn.className).toContain("md:hidden");
+      expect(btn.className).toContain("[@media(pointer:coarse)]:inline-flex");
     });
   });
 
@@ -282,11 +284,11 @@ describe("LocationTreePage", () => {
     expect(handle.className).toContain("touch-none");
   });
 
-  it("drag handle is hidden on mobile (hidden md:flex)", () => {
+  it("drag handle uses pointer:fine media query", () => {
     renderPage();
     const handle = screen.getByLabelText("Drag Home");
     expect(handle.className).toContain("hidden");
-    expect(handle.className).toContain("md:flex");
+    expect(handle.className).toContain("[@media(pointer:fine)]:flex");
   });
 
   /* --- Drag-and-drop: reorder within siblings --- */
@@ -366,6 +368,43 @@ describe("LocationTreePage", () => {
       over: null,
     });
     expect(mockUpdateMutate).not.toHaveBeenCalled();
+  });
+
+  /* --- Drop indicator line --- */
+
+  it("shows drop indicator when dragging over a sibling", () => {
+    renderPage();
+    act(() => {
+      capturedDragHandlers.onDragStart!({ active: { id: "office" } });
+    });
+    act(() => {
+      capturedDragHandlers.onDragOver!({
+        active: { id: "office" },
+        over: { id: "home" },
+      });
+    });
+    expect(screen.getByTestId("drop-indicator")).toBeInTheDocument();
+  });
+
+  it("removes drop indicator on drag end", () => {
+    renderPage();
+    act(() => {
+      capturedDragHandlers.onDragStart!({ active: { id: "office" } });
+    });
+    act(() => {
+      capturedDragHandlers.onDragOver!({
+        active: { id: "office" },
+        over: { id: "home" },
+      });
+    });
+    expect(screen.getByTestId("drop-indicator")).toBeInTheDocument();
+    act(() => {
+      capturedDragHandlers.onDragEnd!({
+        active: { id: "office" },
+        over: { id: "home" },
+      });
+    });
+    expect(screen.queryByTestId("drop-indicator")).not.toBeInTheDocument();
   });
 
   /* --- Selection --- */

@@ -30,6 +30,7 @@ import {
   useSensors,
   type DragStartEvent,
   type DragEndEvent,
+  type DragOverEvent,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -245,6 +246,20 @@ function DragOverlayNode({ node }: { node: LocationTreeNode }) {
   );
 }
 
+/** Visual drop indicator line shown between siblings during drag. */
+function DropIndicatorLine({ depth }: { depth: number }) {
+  return (
+    <div
+      className="relative h-0.5 my-[-1px] z-10"
+      style={{ marginLeft: `${depth * 20 + 8}px`, marginRight: "8px" }}
+      data-testid="drop-indicator"
+    >
+      <div className="absolute inset-0 bg-app-accent rounded-full" />
+      <div className="absolute left-0 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-app-accent -ml-1" />
+    </div>
+  );
+}
+
 interface LocationNodeProps {
   node: LocationTreeNode;
   depth: number;
@@ -260,6 +275,10 @@ interface LocationNodeProps {
   onNewChildCancel: () => void;
   siblingIndex: number;
   siblingCount: number;
+  /** ID of the node currently being dragged over (for drop indicator). */
+  overId: string | null;
+  /** ID of the node currently being dragged. */
+  activeId: string | null;
 }
 
 function LocationNode({
@@ -277,6 +296,8 @@ function LocationNode({
   onNewChildCancel,
   siblingIndex,
   siblingCount,
+  overId,
+  activeId,
 }: LocationNodeProps) {
   const [open, setOpen] = useState(depth < 1);
   const [renaming, setRenaming] = useState(false);
@@ -301,7 +322,8 @@ function LocationNode({
     opacity: isDragging ? 0.4 : 1,
   };
 
-  const dropIndicator = isOver && !isDragging;
+  // Show drop indicator line when this node is the drop target during a same-parent reorder
+  const showDropLine = overId === node.id && activeId !== null && activeId !== node.id && !isDragging;
 
   // Auto-expand when adding a child
   useEffect(() => {
@@ -310,13 +332,14 @@ function LocationNode({
 
   return (
     <div ref={setNodeRef} style={sortableStyle}>
+    {showDropLine && <DropIndicatorLine depth={depth} />}
     <Collapsible open={open} onOpenChange={setOpen}>
       <div
         className={`group flex items-center gap-1.5 py-1.5 px-2 rounded-md cursor-pointer transition-colors hover:bg-app-accent/10 ${
           isSelected
             ? "bg-app-accent/20 text-foreground font-bold border-l-2 border-app-accent rounded-l-none ml-[-2px]"
             : ""
-        } ${dropIndicator ? "ring-2 ring-app-accent/50 bg-app-accent/5" : ""}`}
+        } ${isOver && !isDragging ? "ring-2 ring-app-accent/50 bg-app-accent/5" : ""}`}
         style={{ paddingLeft: `${depth * 20 + 8}px` }}
         onClick={() => onSelect(node.id)}
         onDoubleClick={(e) => {
@@ -327,13 +350,13 @@ function LocationNode({
         aria-selected={isSelected}
         aria-expanded={hasChildren ? open : undefined}
       >
-        {/* Drag handle — desktop only, visible on hover */}
+        {/* Drag handle — fine pointer only (mouse/trackpad), visible on hover */}
         <button
           ref={setActivatorNodeRef}
           {...attributes}
           {...listeners}
           type="button"
-          className="p-0.5 rounded hover:bg-muted cursor-grab active:cursor-grabbing hidden md:flex opacity-0 group-hover:opacity-100 transition-opacity touch-none"
+          className="p-0.5 rounded hover:bg-muted cursor-grab active:cursor-grabbing hidden [@media(pointer:fine)]:flex opacity-0 group-hover:opacity-100 transition-opacity touch-none"
           aria-label={`Drag ${node.name}`}
           onClick={(e) => e.stopPropagation()}
         >
@@ -386,7 +409,7 @@ function LocationNode({
           {siblingCount > 1 && siblingIndex > 0 && (
             <button
               type="button"
-              className="p-0.5 rounded hover:bg-muted md:hidden"
+              className="p-0.5 rounded hover:bg-muted hidden [@media(pointer:coarse)]:inline-flex"
               onClick={(e) => {
                 e.stopPropagation();
                 onReorder(node.id, "up");
@@ -400,7 +423,7 @@ function LocationNode({
           {siblingCount > 1 && siblingIndex < siblingCount - 1 && (
             <button
               type="button"
-              className="p-0.5 rounded hover:bg-muted md:hidden"
+              className="p-0.5 rounded hover:bg-muted hidden [@media(pointer:coarse)]:inline-flex"
               onClick={(e) => {
                 e.stopPropagation();
                 onReorder(node.id, "down");
@@ -488,6 +511,8 @@ function LocationNode({
                   onNewChildCancel={onNewChildCancel}
                   siblingIndex={i}
                   siblingCount={node.children.length}
+                  overId={overId}
+                  activeId={activeId}
                 />
               ))}
               {isAddingChild && (
@@ -519,6 +544,7 @@ export function LocationTreePage() {
   const [addingRoot, setAddingRoot] = useState(false);
   const [movingId, setMovingId] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
@@ -700,9 +726,14 @@ export function LocationTreePage() {
     setActiveId(event.active.id as string);
   }, []);
 
+  const handleDragOver = useCallback((event: DragOverEvent) => {
+    setOverId(event.over ? (event.over.id as string) : null);
+  }, []);
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       setActiveId(null);
+      setOverId(null);
       const { active, over } = event;
       if (!over || active.id === over.id) return;
 
@@ -799,6 +830,7 @@ export function LocationTreePage() {
             sensors={sensors}
             collisionDetection={closestCenter}
             onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
           <div className="md:w-2/5 border rounded-lg py-2" role="tree" aria-label="Location tree">
@@ -823,6 +855,8 @@ export function LocationTreePage() {
                   onNewChildCancel={handleNewChildCancel}
                   siblingIndex={i}
                   siblingCount={treeNodes.length}
+                  overId={overId}
+                  activeId={activeId}
                 />
               ))}
             </SortableContext>
