@@ -252,10 +252,42 @@ function renderPage(showId = "1", seasonNum = "1") {
 }
 
 const SONARR_EPISODES = [
-  { id: 5001, seriesId: 42, seasonNumber: 1, episodeNumber: 1, title: "Pilot", monitored: true, hasFile: true },
-  { id: 5002, seriesId: 42, seasonNumber: 1, episodeNumber: 2, title: "Cat's in the Bag", monitored: true, hasFile: true },
-  { id: 5003, seriesId: 42, seasonNumber: 1, episodeNumber: 3, title: "...And the Bag's in the River", monitored: false, hasFile: false },
-  { id: 5004, seriesId: 42, seasonNumber: 1, episodeNumber: 4, title: "Future Episode", monitored: true, hasFile: false },
+  {
+    id: 5001,
+    seriesId: 42,
+    seasonNumber: 1,
+    episodeNumber: 1,
+    title: "Pilot",
+    monitored: true,
+    hasFile: true,
+  },
+  {
+    id: 5002,
+    seriesId: 42,
+    seasonNumber: 1,
+    episodeNumber: 2,
+    title: "Cat's in the Bag",
+    monitored: true,
+    hasFile: true,
+  },
+  {
+    id: 5003,
+    seriesId: 42,
+    seasonNumber: 1,
+    episodeNumber: 3,
+    title: "...And the Bag's in the River",
+    monitored: false,
+    hasFile: false,
+  },
+  {
+    id: 5004,
+    seriesId: 42,
+    seasonNumber: 1,
+    episodeNumber: 4,
+    title: "Future Episode",
+    monitored: true,
+    hasFile: false,
+  },
 ];
 
 function setupQueries(

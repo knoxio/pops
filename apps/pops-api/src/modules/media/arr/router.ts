@@ -460,10 +460,7 @@ export const arrRouter = router({
     )
     .query(async ({ input }) => {
       try {
-        const episodes = await arrService.getSeriesEpisodes(
-          input.sonarrId,
-          input.seasonNumber
-        );
+        const episodes = await arrService.getSeriesEpisodes(input.sonarrId, input.seasonNumber);
         return { data: episodes };
       } catch (err) {
         if (err instanceof ArrApiError) {

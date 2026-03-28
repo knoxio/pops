@@ -165,11 +165,7 @@ export function SeasonDetailPage() {
       });
       toast.error(`Failed to update monitoring: ${err.message}`);
     },
-    onSettled: (
-      _data: unknown,
-      _err: unknown,
-      variables: { episodeIds: number[] }
-    ) => {
+    onSettled: (_data: unknown, _err: unknown, variables: { episodeIds: number[] }) => {
       setPendingEpMonitoring((prev) => {
         const next = new Set(prev);
         const affectedIds = new Set(variables.episodeIds);
@@ -204,7 +200,8 @@ export function SeasonDetailPage() {
   );
 
   // Batch monitor/unmonitor all episodes in season
-  const allEpisodesMonitored = sonarrEpisodes.length > 0 &&
+  const allEpisodesMonitored =
+    sonarrEpisodes.length > 0 &&
     sonarrEpisodes.every((ep) => monitoredMap.get(ep.episodeNumber) ?? ep.monitored);
 
   const handleBatchMonitorToggle = useCallback(() => {
