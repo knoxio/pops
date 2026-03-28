@@ -26,17 +26,10 @@ export const settingsRouter = router({
     };
   }),
 
-  /** Get a single setting by key */
+  /** Get a single setting by key (returns null when key does not exist) */
   get: protectedProcedure.input(z.object({ key: z.string() })).query(({ input }) => {
-    try {
-      const row = service.getSetting(input.key);
-      return { data: toSetting(row) };
-    } catch (err) {
-      if (err instanceof NotFoundError) {
-        throw new TRPCError({ code: "NOT_FOUND", message: err.message });
-      }
-      throw err;
-    }
+    const row = service.getSettingOrNull(input.key);
+    return { data: row ? toSetting(row) : null };
   }),
 
   /** Set a setting value (upsert — creates or updates) */

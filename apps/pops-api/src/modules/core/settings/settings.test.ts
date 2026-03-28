@@ -66,15 +66,14 @@ describe("settings.get", () => {
     seedSetting(db, { key: "theme", value: "dark" });
 
     const result = await caller.core.settings.get({ key: "theme" });
-    expect(result.data.key).toBe("theme");
-    expect(result.data.value).toBe("dark");
+    expect(result.data).not.toBeNull();
+    expect(result.data!.key).toBe("theme");
+    expect(result.data!.value).toBe("dark");
   });
 
-  it("throws NOT_FOUND for missing key", async () => {
-    await expect(caller.core.settings.get({ key: "nonexistent" })).rejects.toThrow(TRPCError);
-    await expect(caller.core.settings.get({ key: "nonexistent" })).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
+  it("returns null for missing key", async () => {
+    const result = await caller.core.settings.get({ key: "nonexistent" });
+    expect(result.data).toBeNull();
   });
 });
 
@@ -121,9 +120,8 @@ describe("settings.delete", () => {
     expect(result.message).toBe("Setting deleted");
 
     // Verify it's gone
-    await expect(caller.core.settings.get({ key: "theme" })).rejects.toMatchObject({
-      code: "NOT_FOUND",
-    });
+    const check = await caller.core.settings.get({ key: "theme" });
+    expect(check.data).toBeNull();
   });
 
   it("throws NOT_FOUND for missing key", async () => {

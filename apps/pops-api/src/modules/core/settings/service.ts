@@ -19,6 +19,13 @@ export function getSetting(key: string): SettingRow {
   return row;
 }
 
+/** Get a single setting by key, returning null if not found */
+export function getSettingOrNull(key: string): SettingRow | null {
+  const db = getDrizzle();
+  const [row] = db.select().from(settings).where(eq(settings.key, key)).all();
+  return row ?? null;
+}
+
 /** List settings with optional search filter */
 export function listSettings(
   search: string | undefined,
