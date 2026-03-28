@@ -49,6 +49,32 @@ jobs:
         env:
           CLAUDE_API_KEY: test-key
 
+  lint-frozen-migrations:
+    name: Frozen Migrations Check
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for new SQL migration files
+        run: |
+          NEW_SQL=$(git diff --name-only --diff-filter=A origin/${{ github.base_ref }}...HEAD -- 'apps/pops-api/src/db/migrations/*.sql')
+          if [ -n "$NEW_SQL" ]; then
+            echo "::error::Manual SQL migrations are frozen. Use Drizzle instead:"
+            echo "::error::  1. Edit schema in packages/db-types/src/schema/"
+            echo "::error::  2. Run: mise drizzle:generate"
+            echo "::error::  3. Review generated SQL in src/db/drizzle-migrations/"
+            echo ""
+            echo "New .sql files detected:"
+            echo "$NEW_SQL"
+            exit 1
+          fi
+          echo "No new SQL migration files — check passed."
+
   test-frontend:
     name: Frontend Tests
     runs-on: ubuntu-latest
