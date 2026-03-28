@@ -64,8 +64,11 @@ jobs:
       - name: Format check
         run: cd apps/pops-api && pnpm format
 
-      - name: Run tests
+      - name: Run unit tests
         run: cd apps/pops-api && pnpm test
+
+      - name: Run integration tests
+        run: cd apps/pops-api && pnpm test:integration
 
       - name: Build
         run: cd apps/pops-api && pnpm build
