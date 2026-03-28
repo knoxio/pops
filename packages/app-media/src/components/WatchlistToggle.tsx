@@ -40,6 +40,8 @@ export function WatchlistToggle({ mediaType, mediaId, className }: WatchlistTogg
           mediaId,
           priority: null,
           notes: null,
+          source: null,
+          plexRatingKey: null,
           addedAt: new Date().toISOString(),
         };
         return {

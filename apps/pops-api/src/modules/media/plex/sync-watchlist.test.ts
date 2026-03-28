@@ -55,7 +55,7 @@ import {
   fetchPlexWatchlist,
   syncWatchlistFromPlex,
 } from "./sync-watchlist.js";
-import { getDb, getDrizzle } from "../../../db.js";
+import { getDrizzle } from "../../../db.js";
 import { getMovieByTmdbId } from "../movies/service.js";
 import { getTvShowByTvdbId } from "../tv-shows/service.js";
 
