@@ -143,6 +143,7 @@ export function ArrSettingsPage() {
   const [sonarrUrl, setSonarrUrl] = useState("");
   const [sonarrApiKey, setSonarrApiKey] = useState("");
 
+  const utils = trpc.useUtils();
   const settingsQuery = trpc.media.arr.getSettings.useQuery();
 
   useEffect(() => {
@@ -158,6 +159,7 @@ export function ArrSettingsPage() {
   const saveSettings = trpc.media.arr.saveSettings.useMutation({
     onSuccess: () => {
       toast.success("Settings saved");
+      void utils.media.arr.getConfig.invalidate();
     },
     onError: (err: { message: string }) => toast.error(`Failed to save: ${err.message}`),
   });
