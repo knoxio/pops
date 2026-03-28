@@ -6,7 +6,7 @@ import { useCallback } from "react";
 import { trpc } from "../lib/trpc";
 import { DataTable, SortableHeader } from "@pops/ui";
 import { Badge } from "@pops/ui";
-import { Alert } from "@pops/ui";
+import { Alert, PageHeader } from "@pops/ui";
 import { Skeleton } from "@pops/ui";
 import { TagEditor } from "../components/TagEditor";
 import type { ColumnFilter } from "@pops/ui";
@@ -185,7 +185,7 @@ export function TransactionsPage() {
   if (error) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl md:text-3xl font-bold">Transactions</h1>
+        <PageHeader title="Transactions" />
         <Alert variant="destructive">
           <p className="font-semibold">Failed to load transactions</p>
           <p className="text-sm">{error.message}</p>
@@ -199,14 +199,10 @@ export function TransactionsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Transactions</h1>
-          <p className="text-muted-foreground">
-            {data && `${data.pagination.total} total transactions`}
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Transactions"
+        description={data ? `${data.pagination.total} total transactions` : undefined}
+      />
 
       {isLoading ? (
         <div className="space-y-4">

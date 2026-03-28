@@ -18,10 +18,26 @@ export const TopLevel: Story = {
   },
 };
 
+export const TopLevelWithDescription: Story = {
+  args: {
+    title: "Budgets",
+    description: "12 total budgets",
+  },
+};
+
 export const TopLevelWithActions: Story = {
   args: {
     title: "Movies",
     actions: <Button size="sm">Add Movie</Button>,
+  },
+};
+
+export const TopLevelFull: Story = {
+  name: "Top Level (title + description + actions)",
+  args: {
+    title: "Entities",
+    description: "Manage merchants and payees",
+    actions: <Button size="sm">Add Entity</Button>,
   },
 };
 

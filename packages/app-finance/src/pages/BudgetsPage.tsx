@@ -34,6 +34,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  PageHeader,
 } from "@pops/ui";
 import type { ColumnFilter } from "@pops/ui";
 import { MoreHorizontal, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
@@ -275,7 +276,7 @@ export function BudgetsPage() {
   if (error) {
     return (
       <div className="space-y-6">
-        <h1 className="text-2xl md:text-3xl font-bold">Budgets</h1>
+        <PageHeader title="Budgets" />
         <Alert variant="destructive">
           <p className="font-semibold">Failed to load budgets</p>
           <p className="text-sm">{error.message}</p>
@@ -291,17 +292,15 @@ export function BudgetsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Budgets</h1>
-          <p className="text-muted-foreground text-sm">
-            {data ? `${data.pagination.total} total budgets` : "Manage spending targets"}
-          </p>
-        </div>
-        <Button onClick={handleAdd}>
-          <Plus className="mr-2 h-4 w-4" /> Add Budget
-        </Button>
-      </div>
+      <PageHeader
+        title="Budgets"
+        description={data ? `${data.pagination.total} total budgets` : "Manage spending targets"}
+        actions={
+          <Button onClick={handleAdd}>
+            <Plus className="mr-2 h-4 w-4" /> Add Budget
+          </Button>
+        }
+      />
 
       {isLoading ? (
         <div className="space-y-4">

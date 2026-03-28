@@ -2,7 +2,7 @@
  * Dashboard page - overview of finances
  */
 import { trpc } from "../lib/trpc";
-import { Card, StatCard, Alert, AlertTitle, AlertDescription, Skeleton, Badge } from "@pops/ui";
+import { Card, StatCard, Alert, AlertTitle, AlertDescription, Skeleton, Badge, PageHeader } from "@pops/ui";
 
 export function DashboardPage() {
   // Fetch recent transactions
@@ -36,7 +36,7 @@ export function DashboardPage() {
   if (transactionsError) {
     return (
       <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-6">Dashboard</h1>
+        <PageHeader title="Dashboard" className="mb-6" />
         <Alert variant="destructive">
           <AlertTitle>Unable to load dashboard</AlertTitle>
           <AlertDescription>
@@ -59,10 +59,10 @@ export function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-10">
-      <header>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground mt-1">Welcome back! Here's your financial overview.</p>
-      </header>
+      <PageHeader
+        title="Dashboard"
+        description="Welcome back! Here's your financial overview."
+      />
 
       {/* Stats Grid */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
