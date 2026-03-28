@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useParams, Link } from "react-router";
 import {
   Alert,
@@ -78,6 +78,8 @@ export function TvShowDetailPage() {
 
   const utils = trpc.useUtils();
 
+  const progressSnapshot = useRef<ReturnType<typeof utils.media.watchHistory.progress.getData>>(undefined);
+
   const seasonMonitorMutation = trpc.media.arr.updateSeasonMonitoring.useMutation({
     onError: (
       err: { message: string },
@@ -103,8 +105,47 @@ export function TvShowDetailPage() {
   });
 
   const batchLogMutation = trpc.media.watchHistory.batchLog.useMutation({
-    onSuccess: () => {
-      utils.media.watchHistory.invalidate();
+    onMutate: async () => {
+      await utils.media.watchHistory.progress.cancel({ tvShowId: showId });
+      progressSnapshot.current = utils.media.watchHistory.progress.getData({ tvShowId: showId });
+
+      // Optimistically set all seasons to 100%
+      utils.media.watchHistory.progress.setData({ tvShowId: showId }, (old) => {
+        if (!old?.data) return old;
+        const updatedSeasons = old.data.seasons.map((s) => ({
+          ...s,
+          watched: s.total,
+          percentage: 100,
+        }));
+        const totalEpisodes = updatedSeasons.reduce((sum, s) => sum + s.total, 0);
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            seasons: updatedSeasons,
+            overall: {
+              watched: totalEpisodes,
+              total: totalEpisodes,
+              percentage: 100,
+            },
+            nextEpisode: null,
+          },
+        };
+      });
+    },
+    onSuccess: (result: { data: { logged: number } }) => {
+      toast.success(
+        `Marked ${result.data.logged} episode${result.data.logged !== 1 ? "s" : ""} as watched`
+      );
+    },
+    onError: (err: { message: string }) => {
+      if (progressSnapshot.current !== undefined) {
+        utils.media.watchHistory.progress.setData({ tvShowId: showId }, progressSnapshot.current);
+      }
+      toast.error(`Failed to mark all watched: ${err.message}`);
+    },
+    onSettled: () => {
+      void utils.media.watchHistory.invalidate();
     },
   });
 

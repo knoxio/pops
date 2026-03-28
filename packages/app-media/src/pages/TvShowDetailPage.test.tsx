@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router";
 import { TvShowDetailPage } from "./TvShowDetailPage";
 
@@ -13,6 +13,9 @@ const {
   mockCheckSeriesQuery,
   mockSeasonMonitorMutation,
   mockInvalidate,
+  mockCancel,
+  mockGetData,
+  mockSetData,
 } = vi.hoisted(() => ({
   mockShowQuery: vi.fn(),
   mockSeasonsQuery: vi.fn(),
@@ -21,7 +24,13 @@ const {
   mockCheckSeriesQuery: vi.fn(),
   mockSeasonMonitorMutation: vi.fn(),
   mockInvalidate: vi.fn(),
+  mockCancel: vi.fn(),
+  mockGetData: vi.fn(),
+  mockSetData: vi.fn(),
 }));
+
+// Store batchLog opts so tests can invoke callbacks
+let batchLogOpts: Record<string, unknown> = {};
 
 vi.mock("../lib/trpc", () => ({
   trpc: {
@@ -40,8 +49,15 @@ vi.mock("../lib/trpc", () => ({
         },
         batchLog: {
           useMutation: (opts: Record<string, unknown>) => {
-            mockBatchLogMutation.mockImplementation(() => {
-              if (typeof opts.onSuccess === "function") (opts.onSuccess as () => void)();
+            batchLogOpts = opts;
+            mockBatchLogMutation.mockImplementation(async () => {
+              if (typeof opts.onMutate === "function")
+                await (opts.onMutate as () => Promise<void>)();
+              if (typeof opts.onSuccess === "function")
+                (opts.onSuccess as (result: { data: { logged: number } }) => void)({
+                  data: { logged: 16 },
+                });
+              if (typeof opts.onSettled === "function") (opts.onSettled as () => void)();
             });
             return { mutate: mockBatchLogMutation, isPending: false };
           },
@@ -72,6 +88,11 @@ vi.mock("../lib/trpc", () => ({
     useUtils: () => ({
       media: {
         watchHistory: {
+          progress: {
+            cancel: mockCancel,
+            getData: mockGetData,
+            setData: mockSetData,
+          },
           invalidate: mockInvalidate,
         },
         arr: {
@@ -125,7 +146,7 @@ const PROGRESS = {
     { seasonId: 12, seasonNumber: 2, watched: 8, total: 13, percentage: 62 },
     { seasonId: 13, seasonNumber: 3, watched: 5, total: 13, percentage: 38 },
   ],
-  nextEpisode: null,
+  nextEpisode: null as null | { seasonNumber: number; episodeNumber: number; episodeName: string | null },
 };
 
 // --- Helpers ---
@@ -434,5 +455,167 @@ describe("TvShowDetailPage — hero and metadata", () => {
       renderPage();
       expect(screen.getByText("A chemistry teacher turned meth cook.")).toBeInTheDocument();
     });
+  });
+});
+
+describe("TvShowDetailPage — overall progress bar", () => {
+  it("renders overall progress bar with label", () => {
+    setupQueries({}, SEASONS, {
+      ...PROGRESS,
+      overall: { watched: 20, total: 36, percentage: 56 },
+    });
+    renderPage();
+    expect(screen.getByText("20/36")).toBeInTheDocument();
+  });
+
+  it("renders green bar at 100%", () => {
+    setupQueries({}, SEASONS, {
+      ...PROGRESS,
+      overall: { watched: 36, total: 36, percentage: 100 },
+      seasons: PROGRESS.seasons.map((s) => ({ ...s, watched: s.total, percentage: 100 })),
+    });
+    const { container } = renderPage();
+    // Overall progress bar in hero — find bar with 100% width
+    const bars = container.querySelectorAll("[style*='width: 100%']");
+    const greenBar = Array.from(bars).find((b) => b.className.includes("bg-green-500"));
+    expect(greenBar).toBeTruthy();
+  });
+
+  it("renders primary bar at 50%", () => {
+    setupQueries({}, SEASONS, {
+      ...PROGRESS,
+      overall: { watched: 18, total: 36, percentage: 50 },
+    });
+    const { container } = renderPage();
+    const bar = container.querySelector("[style*='width: 50%']");
+    expect(bar).toBeInTheDocument();
+    expect(bar?.className).toContain("bg-primary");
+  });
+
+  it("does not render progress bar when total is 0", () => {
+    setupQueries({}, SEASONS, {
+      ...PROGRESS,
+      overall: { watched: 0, total: 0, percentage: 0 },
+    });
+    renderPage();
+    // ProgressBar returns null when total is 0
+    expect(screen.queryByText(/\/0/)).not.toBeInTheDocument();
+  });
+});
+
+describe("TvShowDetailPage — next episode indicator", () => {
+  it("renders next episode link with correct text", () => {
+    setupQueries({}, SEASONS, {
+      ...PROGRESS,
+      nextEpisode: { seasonNumber: 2, episodeNumber: 9, episodeName: "4 Days Out" },
+    });
+    renderPage();
+    expect(screen.getByText(/Continue watching: S02E09 — 4 Days Out/)).toBeInTheDocument();
+  });
+
+  it("renders next episode without name", () => {
+    setupQueries({}, SEASONS, {
+      ...PROGRESS,
+      nextEpisode: { seasonNumber: 3, episodeNumber: 1, episodeName: null },
+    });
+    renderPage();
+    expect(screen.getByText("Continue watching: S03E01")).toBeInTheDocument();
+  });
+
+  it("does not render next episode when all watched", () => {
+    setupQueries({}, SEASONS, {
+      ...PROGRESS,
+      overall: { watched: 36, total: 36, percentage: 100 },
+      nextEpisode: null,
+    });
+    renderPage();
+    expect(screen.queryByText(/Continue watching/)).not.toBeInTheDocument();
+  });
+
+  it("links to correct season page", () => {
+    setupQueries({}, SEASONS, {
+      ...PROGRESS,
+      nextEpisode: { seasonNumber: 2, episodeNumber: 9, episodeName: "4 Days Out" },
+    });
+    const { container } = renderPage();
+    const link = container.querySelector('a[href="/media/tv/1/season/2"]');
+    expect(link?.textContent).toContain("Continue watching");
+  });
+});
+
+describe("TvShowDetailPage — batch mark all watched", () => {
+  it("shows Mark All Watched button when not all watched", () => {
+    setupQueries();
+    renderPage();
+    expect(screen.getByRole("button", { name: "Mark All Watched" })).toBeInTheDocument();
+  });
+
+  it("shows All Watched checkmark when fully watched", () => {
+    setupQueries({}, SEASONS, {
+      ...PROGRESS,
+      overall: { watched: 36, total: 36, percentage: 100 },
+      seasons: PROGRESS.seasons.map((s) => ({ ...s, watched: s.total, percentage: 100 })),
+    });
+    renderPage();
+    expect(screen.getByText("All Watched")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Mark All Watched" })).not.toBeInTheDocument();
+  });
+
+  it("calls batchLog mutation with correct args on click", () => {
+    setupQueries();
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "Mark All Watched" }));
+    expect(mockBatchLogMutation).toHaveBeenCalledWith({
+      mediaType: "show",
+      mediaId: 1,
+    });
+  });
+
+  it("cancels progress query on batch mark (optimistic)", () => {
+    setupQueries();
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "Mark All Watched" }));
+    expect(mockCancel).toHaveBeenCalled();
+  });
+
+  it("snapshots progress data before optimistic update", async () => {
+    setupQueries();
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "Mark All Watched" }));
+    await waitFor(() => expect(mockGetData).toHaveBeenCalled());
+  });
+
+  it("sets progress data optimistically on batch mark", async () => {
+    setupQueries();
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "Mark All Watched" }));
+    await waitFor(() => expect(mockSetData).toHaveBeenCalled());
+  });
+
+  it("invalidates watch history after batch mark settles", async () => {
+    setupQueries();
+    renderPage();
+    fireEvent.click(screen.getByRole("button", { name: "Mark All Watched" }));
+    await waitFor(() => expect(mockInvalidate).toHaveBeenCalled());
+  });
+
+  it("reverts progress data on error", async () => {
+    mockGetData.mockReturnValue({ data: PROGRESS });
+    setupQueries();
+    renderPage();
+    // Override AFTER render so it isn't overwritten by useMutation mock
+    mockBatchLogMutation.mockImplementation(async () => {
+      if (typeof batchLogOpts.onMutate === "function")
+        await (batchLogOpts.onMutate as () => Promise<void>)();
+      if (typeof batchLogOpts.onError === "function")
+        (batchLogOpts.onError as (err: { message: string }) => void)({
+          message: "Network error",
+        });
+      if (typeof batchLogOpts.onSettled === "function")
+        (batchLogOpts.onSettled as () => void)();
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Mark All Watched" }));
+    // setData called twice: once for optimistic, once for rollback
+    await waitFor(() => expect(mockSetData).toHaveBeenCalledTimes(2));
   });
 });
