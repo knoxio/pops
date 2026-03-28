@@ -101,10 +101,10 @@ export function InventoryCard({
             </div>
           )}
 
-          {/* Type badge overlay */}
-          {type && (
+          {/* Asset ID badge overlay */}
+          {assetId && (
             <div className="absolute top-2 left-2">
-              <TypeBadge type={type} />
+              <AssetIdBadge assetId={assetId} />
             </div>
           )}
         </div>
@@ -113,9 +113,9 @@ export function InventoryCard({
         <div className="flex min-w-0 flex-1 flex-col gap-1 p-3">
           <h3 className="text-sm font-semibold leading-tight line-clamp-2">{itemName}</h3>
 
-          {assetId && (
+          {type && (
             <div className="flex items-center">
-              <AssetIdBadge assetId={assetId} />
+              <TypeBadge type={type} />
             </div>
           )}
 
