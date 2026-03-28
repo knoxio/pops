@@ -27,8 +27,9 @@ Set up a self-hosted production environment on dedicated hardware with zero-trus
 | 4 | [CI/CD Pipelines](epics/04-cicd-pipelines.md) | GitHub Actions workflows for quality gates, deployment, validation | Done |
 | 5 | [Backups](epics/05-backups.md) | Encrypted offsite to Backblaze B2 via rclone | Partial |
 | 6 | [Monitoring](epics/06-monitoring.md) | Health checks, log aggregation, alerting | Done |
+| 7 | [Database Operations](epics/07-database-operations.md) | Unified migration system, production guards, pre-migration backups, go-live runbook | Not started |
 
-Epics 0-2 are sequential (hardware before Docker before networking). Epics 3-6 can be parallelised after 1.
+Epics 0-2 are sequential (hardware before Docker before networking). Epics 3-6 can be parallelised after 1. Epic 7 depends on Epic 5 (backup system).
 
 ## Key Decisions
 
