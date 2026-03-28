@@ -450,7 +450,7 @@ export function SeasonDetailPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <PageHeader
-        title={seasonLabel}
+        title={show.name}
         backHref={`/media/tv/${show.id}`}
         breadcrumbs={[
           { label: "Media", href: "/media" },
@@ -474,8 +474,8 @@ export function SeasonDetailPage() {
           <h1 className="text-2xl font-bold">{season.name ?? seasonLabel}</h1>
 
           <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-            {season.episodeCount != null && <span>{season.episodeCount} episodes</span>}
-            {season.episodeCount != null && season.airDate && <span>·</span>}
+            {episodes.length > 0 && <span>{episodes.length} episodes</span>}
+            {episodes.length > 0 && season.airDate && <span>·</span>}
             {season.airDate && <span>First aired {season.airDate}</span>}
           </div>
 
