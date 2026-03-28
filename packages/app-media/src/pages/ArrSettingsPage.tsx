@@ -72,7 +72,11 @@ function ServiceCard({
   testResult: { configured: boolean; connected: boolean; version?: string; error?: string } | null;
 }) {
   const configured = !!(url && (hasKey || (apiKey && apiKey !== "••••••••")));
-  const urlInvalid = url.length > 0 && !url.startsWith("http://") && !url.startsWith("https://");
+
+  const normalizeUrl = () => {
+    const normalized = ensureProtocol(url);
+    if (normalized !== url) onUrlChange(normalized);
+  };
 
   return (
     <div className="rounded-lg border bg-card p-6 space-y-4">
@@ -86,14 +90,12 @@ function ServiceCard({
         <div className="space-y-1.5">
           <label className="text-sm font-medium text-muted-foreground">Server URL</label>
           <Input
-            placeholder="http://192.168.1.100:7878"
+            placeholder="https://192.168.1.100:7878"
             value={url}
             onChange={(e) => onUrlChange(e.target.value)}
+            onBlur={normalizeUrl}
             disabled={saving}
           />
-          {urlInvalid && (
-            <p className="text-xs text-red-400">URL must start with http:// or https://</p>
-          )}
         </div>
 
         <div className="space-y-1.5">
@@ -109,7 +111,7 @@ function ServiceCard({
       </div>
 
       <div className="flex gap-2">
-        <Button variant="outline" size="sm" onClick={onSave} disabled={saving || urlInvalid}>
+        <Button variant="outline" size="sm" onClick={onSave} disabled={saving}>
           {saving ? (
             <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
           ) : (
@@ -135,6 +137,12 @@ function ServiceCard({
       )}
     </div>
   );
+}
+
+function ensureProtocol(url: string): string {
+  const trimmed = url.trim();
+  if (!trimmed || trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+  return `https://${trimmed}`;
 }
 
 export function ArrSettingsPage() {
@@ -223,12 +231,14 @@ export function ArrSettingsPage() {
           hasKey={settingsQuery.data?.data.radarrHasKey ?? false}
           onUrlChange={setRadarrUrl}
           onApiKeyChange={setRadarrApiKey}
-          onSave={() =>
+          onSave={() => {
+            const normalizedUrl = ensureProtocol(radarrUrl);
+            if (normalizedUrl !== radarrUrl) setRadarrUrl(normalizedUrl);
             saveSettings.mutate({
-              radarrUrl,
+              radarrUrl: normalizedUrl,
               radarrApiKey,
-            })
-          }
+            });
+          }}
           onTest={() => testRadarr.refetch()}
           saving={saveSettings.isPending}
           testing={testRadarr.isFetching}
@@ -243,12 +253,14 @@ export function ArrSettingsPage() {
           hasKey={settingsQuery.data?.data.sonarrHasKey ?? false}
           onUrlChange={setSonarrUrl}
           onApiKeyChange={setSonarrApiKey}
-          onSave={() =>
+          onSave={() => {
+            const normalizedUrl = ensureProtocol(sonarrUrl);
+            if (normalizedUrl !== sonarrUrl) setSonarrUrl(normalizedUrl);
             saveSettings.mutate({
-              sonarrUrl,
+              sonarrUrl: normalizedUrl,
               sonarrApiKey,
-            })
-          }
+            });
+          }}
           onTest={() => testSonarr.refetch()}
           saving={saveSettings.isPending}
           testing={testSonarr.isFetching}
