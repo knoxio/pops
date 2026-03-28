@@ -9,6 +9,7 @@ export interface MediaItem {
   title: string;
   year: number | null;
   posterUrl: string | null;
+  cdnPosterUrl: string | null;
   genres: string[];
   voteAverage: number | null;
   createdAt: string;
