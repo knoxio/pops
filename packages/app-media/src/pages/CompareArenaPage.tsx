@@ -124,6 +124,11 @@ export function CompareArenaPage() {
           <Badge variant="outline" className="text-sm">
             {sessionCount} comparison{sessionCount !== 1 ? "s" : ""} this session
           </Badge>
+          <Link to="/media/compare/history">
+            <Button variant="outline" size="sm">
+              History
+            </Button>
+          </Link>
           <DimensionManager />
         </div>
       </div>

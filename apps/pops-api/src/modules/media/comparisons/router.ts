@@ -10,6 +10,8 @@ import {
   UpdateDimensionSchema,
   RecordComparisonSchema,
   ComparisonQuerySchema,
+  ComparisonHistoryQuerySchema,
+  DeleteComparisonSchema,
   ScoreQuerySchema,
   RandomPairQuerySchema,
   RankingsQuerySchema,
@@ -88,6 +90,30 @@ export const comparisonsRouter = router({
       data: rows.map(toComparison),
       pagination: paginationMeta(total, limit, offset),
     };
+  }),
+
+  /** List all comparisons (paginated, optional dimension filter). */
+  listAll: protectedProcedure.input(ComparisonHistoryQuerySchema).query(({ input }) => {
+    const limit = input.limit ?? DEFAULT_LIMIT;
+    const offset = input.offset ?? 0;
+    const { rows, total } = service.listAllComparisons(input.dimensionId, limit, offset);
+    return {
+      data: rows.map(toComparison),
+      pagination: paginationMeta(total, limit, offset),
+    };
+  }),
+
+  /** Delete a comparison and recalculate Elo scores. */
+  delete: protectedProcedure.input(DeleteComparisonSchema).mutation(({ input }) => {
+    try {
+      service.deleteComparison(input.id);
+      return { message: "Comparison deleted and scores recalculated" };
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+      }
+      throw err;
+    }
   }),
 
   /** Get a random pair of watched movies for comparison. */
