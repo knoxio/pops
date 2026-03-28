@@ -149,6 +149,18 @@ export function TvShowDetailPage() {
     },
   });
 
+  const rawSeasons = seasonsData?.data ?? [];
+  // Sort seasons ascending by number, specials (season 0) last
+  const seasons = useMemo(
+    () =>
+      [...rawSeasons].sort((a: { seasonNumber: number }, b: { seasonNumber: number }) => {
+        if (a.seasonNumber === 0) return 1;
+        if (b.seasonNumber === 0) return -1;
+        return a.seasonNumber - b.seasonNumber;
+      }),
+    [rawSeasons]
+  );
+
   if (Number.isNaN(showId)) {
     return (
       <div className="p-6">
@@ -189,17 +201,6 @@ export function TvShowDetailPage() {
   const posterSrc = show.posterUrl ?? "";
   const backdropSrc = show.backdropUrl ?? null;
 
-  const rawSeasons = seasonsData?.data ?? [];
-  // Sort seasons ascending by number, specials (season 0) last
-  const seasons = useMemo(
-    () =>
-      [...rawSeasons].sort((a: { seasonNumber: number }, b: { seasonNumber: number }) => {
-        if (a.seasonNumber === 0) return 1;
-        if (b.seasonNumber === 0) return -1;
-        return a.seasonNumber - b.seasonNumber;
-      }),
-    [rawSeasons]
-  );
   const progress = progressData?.data;
 
   const nextEpisode = progress?.nextEpisode ?? null;
