@@ -28,6 +28,8 @@ import {
   FileText,
   ShieldCheck,
   MapPin,
+  Settings,
+  BookOpen,
   type LucideIcon,
 } from "lucide-react";
 
@@ -53,4 +55,6 @@ export const iconMap: Record<string, LucideIcon> = {
   FileText,
   ShieldCheck,
   MapPin,
+  Settings,
+  BookOpen,
 };
