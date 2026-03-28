@@ -52,7 +52,7 @@ export function LocationContentsPanel({
   node,
 }: LocationContentsPanelProps) {
   const navigate = useNavigate();
-  const [includeSubLocations, setIncludeSubLocations] = useState(false);
+  const [includeSubLocations, setIncludeSubLocations] = useState(true);
 
   const descendantIds = useMemo(() => collectDescendantIds(node), [node]);
   const hasSubLocations = descendantIds.length > 0;
