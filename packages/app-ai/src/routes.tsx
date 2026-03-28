@@ -47,9 +47,9 @@ export const navConfig: AppNavConfig = {
   basePath: "/ai",
   items: [
     { path: "", label: "AI Usage", icon: "BarChart3" },
-    { path: "prompts", label: "Prompt Templates", icon: "FileText" },
-    { path: "config", label: "Model Config", icon: "Settings" },
-    { path: "rules", label: "Rules", icon: "BookOpen" },
+    { path: "/prompts", label: "Prompt Templates", icon: "FileText" },
+    { path: "/config", label: "Model Config", icon: "Settings" },
+    { path: "/rules", label: "Rules", icon: "BookOpen" },
   ],
 };
 
