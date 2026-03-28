@@ -455,7 +455,13 @@ function DocumentsSection({ itemId }: { itemId: string }) {
   return <DocumentsList itemId={itemId} paperlessBaseUrl={status?.baseUrl ?? null} />;
 }
 
-function DocumentsList({ itemId, paperlessBaseUrl }: { itemId: string; paperlessBaseUrl: string | null }) {
+function DocumentsList({
+  itemId,
+  paperlessBaseUrl,
+}: {
+  itemId: string;
+  paperlessBaseUrl: string | null;
+}) {
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.inventory.documents.listForItem.useQuery({
     itemId,
@@ -587,9 +593,7 @@ function DocumentThumbnail({ documentId }: { documentId: number }) {
 
   return (
     <div className="h-12 w-10 shrink-0 relative">
-      {status === "loading" && (
-        <Skeleton className="absolute inset-0 rounded" />
-      )}
+      {status === "loading" && <Skeleton className="absolute inset-0 rounded" />}
       <img
         src={src}
         alt="Document thumbnail"

@@ -110,12 +110,8 @@ describe("GET /inventory/documents/:id/thumbnail", () => {
     });
 
     it("returns 502 when fetch throws a network error", async () => {
-      const { PaperlessApiError } = await import(
-        "../../modules/inventory/paperless/types.js"
-      );
-      mockFetchThumbnail.mockRejectedValue(
-        new PaperlessApiError(0, "Network error: timeout")
-      );
+      const { PaperlessApiError } = await import("../../modules/inventory/paperless/types.js");
+      mockFetchThumbnail.mockRejectedValue(new PaperlessApiError(0, "Network error: timeout"));
 
       const app = createTestApp();
       const res = await request(app).get("/inventory/documents/42/thumbnail");

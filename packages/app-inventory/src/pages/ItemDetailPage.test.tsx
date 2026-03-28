@@ -467,7 +467,9 @@ describe("ItemDetailPage", () => {
 
     it("renders document cards with thumbnail images", () => {
       mockPaperlessStatusQuery.mockReturnValue({
-        data: { data: { configured: true, available: true, baseUrl: "https://paperless.example.com" } },
+        data: {
+          data: { configured: true, available: true, baseUrl: "https://paperless.example.com" },
+        },
         isLoading: false,
       });
 
@@ -496,7 +498,9 @@ describe("ItemDetailPage", () => {
 
     it("renders View in Paperless link when baseUrl available", () => {
       mockPaperlessStatusQuery.mockReturnValue({
-        data: { data: { configured: true, available: true, baseUrl: "https://paperless.example.com" } },
+        data: {
+          data: { configured: true, available: true, baseUrl: "https://paperless.example.com" },
+        },
         isLoading: false,
       });
 
@@ -524,7 +528,9 @@ describe("ItemDetailPage", () => {
 
     it("shows skeleton while documents are loading", () => {
       mockPaperlessStatusQuery.mockReturnValue({
-        data: { data: { configured: true, available: true, baseUrl: "https://paperless.example.com" } },
+        data: {
+          data: { configured: true, available: true, baseUrl: "https://paperless.example.com" },
+        },
         isLoading: false,
       });
 
@@ -539,7 +545,9 @@ describe("ItemDetailPage", () => {
 
     it("shows empty state when no documents linked", () => {
       mockPaperlessStatusQuery.mockReturnValue({
-        data: { data: { configured: true, available: true, baseUrl: "https://paperless.example.com" } },
+        data: {
+          data: { configured: true, available: true, baseUrl: "https://paperless.example.com" },
+        },
         isLoading: false,
       });
 
