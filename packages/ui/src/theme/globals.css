@@ -345,6 +345,14 @@
   }
 }
 
+/* Utility: micro-typography (badges, table headers, stat labels)
+ * The @theme --font-size-2xs token is not generating a text-2xs utility
+ * in Tailwind v4.0.14, so we define it explicitly here. */
+@utility text-2xs {
+  font-size: var(--font-size-2xs, 0.625rem);
+  line-height: var(--font-size-2xs--line-height, 0.75rem);
+}
+
 /* Utility: force tabular figures (financial data, counters, dashboards) */
 @utility tabular-nums {
   font-variant-numeric: tabular-nums;
