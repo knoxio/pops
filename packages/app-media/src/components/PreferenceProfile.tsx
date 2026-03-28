@@ -95,8 +95,8 @@ export function PreferenceProfile({ data, isLoading }: PreferenceProfileProps) {
           Genre Distribution
         </h3>
         {data.genreDistribution.length > 0 ? (
-          <div data-testid="genre-distribution-chart" className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
+          <div data-testid="genre-distribution-chart">
+            <ResponsiveContainer width="100%" height={256}>
               <BarChart
                 data={data.genreDistribution.slice(0, 10)}
                 layout="vertical"
@@ -164,8 +164,8 @@ export function PreferenceProfile({ data, isLoading }: PreferenceProfileProps) {
           Dimension Weights
         </h3>
         {hasComparisons && data.dimensionWeights.length > 0 ? (
-          <div data-testid="dimension-weights-chart" className="h-48">
-            <ResponsiveContainer width="100%" height="100%">
+          <div data-testid="dimension-weights-chart">
+            <ResponsiveContainer width="100%" height={192}>
               <BarChart
                 data={data.dimensionWeights}
                 margin={{ top: 0, right: 20, bottom: 0, left: 20 }}
