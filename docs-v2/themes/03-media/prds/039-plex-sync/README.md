@@ -1,7 +1,7 @@
 # PRD-039: Plex Sync
 
 > Epic: [06 — Plex Sync](../../epics/06-plex-sync.md)
-> Status: To Review
+> Status: Partial
 
 ## Overview
 
