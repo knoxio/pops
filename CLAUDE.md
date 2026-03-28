@@ -323,6 +323,8 @@ mise db:seed     # Reset between test runs
 
 ## Rules and Standards
 
+See [CONVENTIONS.md](CONVENTIONS.md) for coding conventions (styling, API patterns, component rules, data patterns, testing).
+
 - Keep files small, modular and reusable.
 - Aim for small, well named and well structured code.
 - REuse reuse reuse. DRY principles!
