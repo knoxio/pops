@@ -666,8 +666,8 @@ describe("priority re-sequencing after auto-removal", () => {
   it("re-sequences priorities after batch auto-removal", () => {
     const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
     const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
-    seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
-    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1, air_date: "2020-01-01" });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2, air_date: "2020-01-08" });
 
     seedWatchlistEntry(db, { media_type: "movie", media_id: 100, priority: 0 });
     seedWatchlistEntry(db, { media_type: "tv_show", media_id: showId, priority: 1 });
@@ -688,9 +688,9 @@ describe("batchLogWatch", () => {
   it("logs all episodes in a season", () => {
     const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
     const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
-    seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
-    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
-    seedEpisode(db, { season_id: sId, tvdb_id: 5003, episode_number: 3 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1, air_date: "2020-01-01" });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2, air_date: "2020-01-08" });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5003, episode_number: 3, air_date: "2020-01-15" });
 
     const result = service.batchLogWatch({ mediaType: "season", mediaId: sId, completed: 1 });
 
@@ -706,9 +706,9 @@ describe("batchLogWatch", () => {
     const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
     const s1Id = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
     const s2Id = seedSeason(db, { tv_show_id: showId, tvdb_id: 3002, season_number: 2 });
-    seedEpisode(db, { season_id: s1Id, tvdb_id: 5001, episode_number: 1 });
-    seedEpisode(db, { season_id: s1Id, tvdb_id: 5002, episode_number: 2 });
-    seedEpisode(db, { season_id: s2Id, tvdb_id: 5003, episode_number: 1 });
+    seedEpisode(db, { season_id: s1Id, tvdb_id: 5001, episode_number: 1, air_date: "2020-01-01" });
+    seedEpisode(db, { season_id: s1Id, tvdb_id: 5002, episode_number: 2, air_date: "2020-01-08" });
+    seedEpisode(db, { season_id: s2Id, tvdb_id: 5003, episode_number: 1, air_date: "2020-06-01" });
 
     const result = service.batchLogWatch({ mediaType: "show", mediaId: showId, completed: 1 });
 
@@ -719,8 +719,13 @@ describe("batchLogWatch", () => {
   it("skips already-watched episodes", () => {
     const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
     const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
-    const ep1 = seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
-    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
+    const ep1 = seedEpisode(db, {
+      season_id: sId,
+      tvdb_id: 5001,
+      episode_number: 1,
+      air_date: "2020-01-01",
+    });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2, air_date: "2020-01-08" });
 
     // Watch ep1 individually first
     service.logWatch({ mediaType: "episode", mediaId: ep1, completed: 1 });
@@ -753,8 +758,8 @@ describe("batchLogWatch", () => {
   it("removes TV show from watchlist when all episodes batch-logged for show", () => {
     const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
     const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
-    seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
-    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1, air_date: "2020-01-01" });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2, air_date: "2020-01-08" });
 
     const wlId = seedWatchlistEntry(db, { media_type: "tv_show", media_id: showId });
 
@@ -766,8 +771,8 @@ describe("batchLogWatch", () => {
   it("removes TV show from watchlist when all episodes batch-logged for season (single season show)", () => {
     const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
     const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
-    seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
-    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1, air_date: "2020-01-01" });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2, air_date: "2020-01-08" });
 
     const wlId = seedWatchlistEntry(db, { media_type: "tv_show", media_id: showId });
 
@@ -780,8 +785,8 @@ describe("batchLogWatch", () => {
     const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
     const s1Id = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
     const s2Id = seedSeason(db, { tv_show_id: showId, tvdb_id: 3002, season_number: 2 });
-    seedEpisode(db, { season_id: s1Id, tvdb_id: 5001, episode_number: 1 });
-    seedEpisode(db, { season_id: s2Id, tvdb_id: 5002, episode_number: 1 });
+    seedEpisode(db, { season_id: s1Id, tvdb_id: 5001, episode_number: 1, air_date: "2020-01-01" });
+    seedEpisode(db, { season_id: s2Id, tvdb_id: 5002, episode_number: 1, air_date: "2020-06-01" });
 
     const wlId = seedWatchlistEntry(db, { media_type: "tv_show", media_id: showId });
 
@@ -796,8 +801,8 @@ describe("batchLogWatch", () => {
   it("uses custom watchedAt for all entries", () => {
     const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
     const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
-    seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
-    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1, air_date: "2020-01-01" });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2, air_date: "2020-01-08" });
 
     const customDate = "2026-03-01T12:00:00.000Z";
     service.batchLogWatch({
@@ -813,11 +818,55 @@ describe("batchLogWatch", () => {
     }
   });
 
+  it("excludes future unaired episodes", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1, air_date: "2020-01-01" });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2, air_date: "2020-01-08" });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5003, episode_number: 3, air_date: "2099-12-31" });
+
+    const result = service.batchLogWatch({ mediaType: "season", mediaId: sId, completed: 1 });
+
+    // Only the 2 aired episodes should be logged, not the future one
+    expect(result.logged).toBe(2);
+    expect(result.skipped).toBe(0);
+  });
+
+  it("excludes episodes with null air date", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1, air_date: "2020-01-01" });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 }); // no air_date
+
+    const result = service.batchLogWatch({ mediaType: "season", mediaId: sId, completed: 1 });
+
+    expect(result.logged).toBe(1);
+    expect(result.skipped).toBe(0);
+  });
+
+  it("excludes future episodes when batch-logging a whole show", () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
+    const s1Id = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
+    const s2Id = seedSeason(db, { tv_show_id: showId, tvdb_id: 3002, season_number: 2 });
+    seedEpisode(db, { season_id: s1Id, tvdb_id: 5001, episode_number: 1, air_date: "2020-01-01" });
+    seedEpisode(db, { season_id: s2Id, tvdb_id: 5002, episode_number: 1, air_date: "2099-06-01" });
+
+    const result = service.batchLogWatch({ mediaType: "show", mediaId: showId, completed: 1 });
+
+    expect(result.logged).toBe(1);
+    expect(result.skipped).toBe(0);
+  });
+
   it("does not skip when completed is 0 (re-logging incomplete watches)", () => {
     const showId = seedTvShow(db, { tvdb_id: 81189, name: "Test Show" });
     const sId = seedSeason(db, { tv_show_id: showId, tvdb_id: 3001, season_number: 1 });
-    const ep1 = seedEpisode(db, { season_id: sId, tvdb_id: 5001, episode_number: 1 });
-    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2 });
+    const ep1 = seedEpisode(db, {
+      season_id: sId,
+      tvdb_id: 5001,
+      episode_number: 1,
+      air_date: "2020-01-01",
+    });
+    seedEpisode(db, { season_id: sId, tvdb_id: 5002, episode_number: 2, air_date: "2020-01-08" });
 
     // Watch ep1 as completed
     service.logWatch({ mediaType: "episode", mediaId: ep1, completed: 1 });
