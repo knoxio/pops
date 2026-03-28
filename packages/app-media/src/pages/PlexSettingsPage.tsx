@@ -32,6 +32,7 @@ import {
   Copy,
   ChevronDown,
   ChevronUp,
+  History,
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
@@ -111,6 +112,7 @@ export function PlexSettingsPage() {
   const currentUrl = trpc.media.plex.getPlexUrl.useQuery();
   const savedSectionIds = trpc.media.plex.getSectionIds.useQuery();
   const schedulerStatus = trpc.media.plex.getSchedulerStatus.useQuery();
+  const syncLogs = trpc.media.plex.getSyncLogs.useQuery({ limit: 10 });
 
   useEffect(() => {
     if (currentUrl.data?.data) {
@@ -148,6 +150,7 @@ export function PlexSettingsPage() {
         `Movie sync complete: ${res.data.synced} synced, ${res.data.skipped} skipped`
       );
       syncStatus.refetch();
+      syncLogs.refetch();
     },
     onError: (err: { message: string }) => toast.error(`Movie sync failed: ${err.message}`),
   });
@@ -158,6 +161,7 @@ export function PlexSettingsPage() {
         `TV sync complete: ${res.data.synced} synced, ${res.data.skipped} skipped`
       );
       syncStatus.refetch();
+      syncLogs.refetch();
     },
     onError: (err: { message: string }) => toast.error(`TV show sync failed: ${err.message}`),
   });
@@ -217,6 +221,7 @@ export function PlexSettingsPage() {
     onSuccess: () => {
       toast.success("Scheduler started");
       schedulerStatus.refetch();
+      syncLogs.refetch();
     },
     onError: (err: { message: string }) => toast.error(`Failed to start scheduler: ${err.message}`),
   });
@@ -623,6 +628,41 @@ export function PlexSettingsPage() {
               {(scheduler?.tvShowsSynced ?? 0) > 0 && (
                 <p>Total TV shows synced: {scheduler?.tvShowsSynced}</p>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Sync History */}
+        {connected && syncLogs.data?.data && syncLogs.data.data.length > 0 && (
+          <div className="rounded-lg border bg-card p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <History className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold">Sync History</h2>
+            </div>
+
+            <div className="space-y-2">
+              {syncLogs.data.data.map((log) => (
+                <div
+                  key={log.id}
+                  className="flex items-center gap-3 flex-wrap rounded-md border bg-muted/30 px-3 py-2 text-sm"
+                >
+                  <span className="text-muted-foreground min-w-[140px]">
+                    {new Date(log.syncedAt).toLocaleString()}
+                  </span>
+                  <span className="text-emerald-400">{log.moviesSynced} movies</span>
+                  <span className="text-blue-400">{log.tvShowsSynced} TV</span>
+                  {log.durationMs != null && (
+                    <span className="text-muted-foreground text-xs">
+                      {(log.durationMs / 1000).toFixed(1)}s
+                    </span>
+                  )}
+                  {log.errors && log.errors.length > 0 && (
+                    <span className="text-red-400 text-xs">
+                      {log.errors.length} error{log.errors.length > 1 ? "s" : ""}
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
         )}
