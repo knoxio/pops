@@ -6,6 +6,9 @@ import BetterSqlite3 from "better-sqlite3";
 import { existsSync, mkdirSync, unlinkSync } from "node:fs";
 import { dirname } from "node:path";
 import { initializeSchema } from "../src/db/schema.js";
+import { assertNotProduction, assertLowRecordCount } from "./lib/guard.js";
+
+assertNotProduction();
 
 const DB_PATH = process.env.SQLITE_PATH ?? "./data/pops.db";
 
@@ -15,6 +18,9 @@ mkdirSync(dirname(DB_PATH), { recursive: true });
 // Delete existing database — init always creates a fresh database.
 // Use migrations (runMigrations in db.ts) to upgrade existing databases.
 if (existsSync(DB_PATH)) {
+  const existing = new BetterSqlite3(DB_PATH);
+  assertLowRecordCount(existing);
+  existing.close();
   unlinkSync(DB_PATH);
   // Also remove WAL/SHM files if present
   if (existsSync(`${DB_PATH}-wal`)) unlinkSync(`${DB_PATH}-wal`);

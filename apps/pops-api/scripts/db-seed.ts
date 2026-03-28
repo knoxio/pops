@@ -5,6 +5,9 @@
 import BetterSqlite3 from "better-sqlite3";
 import { existsSync } from "node:fs";
 import { seedDatabase } from "../src/db/seeder.js";
+import { assertNotProduction, assertLowRecordCount } from "./lib/guard.js";
+
+assertNotProduction();
 
 const DB_PATH = process.env.SQLITE_PATH ?? "./data/pops.db";
 
@@ -17,6 +20,8 @@ if (!existsSync(DB_PATH)) {
 const db = new BetterSqlite3(DB_PATH);
 db.pragma("journal_mode = WAL");
 db.pragma("busy_timeout = 5000");
+
+assertLowRecordCount(db);
 
 console.log(`🌱 Seeding database at ${DB_PATH}...\n`);
 seedDatabase(db);

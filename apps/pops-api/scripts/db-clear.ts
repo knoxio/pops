@@ -4,6 +4,9 @@
  */
 import BetterSqlite3 from "better-sqlite3";
 import { existsSync } from "node:fs";
+import { assertNotProduction, assertLowRecordCount } from "./lib/guard.js";
+
+assertNotProduction();
 
 const DB_PATH = process.env.SQLITE_PATH ?? "./data/pops.db";
 
@@ -18,6 +21,8 @@ const db = new BetterSqlite3(DB_PATH);
 // Set pragmas
 db.pragma("journal_mode = WAL");
 db.pragma("busy_timeout = 5000");
+
+assertLowRecordCount(db);
 
 console.log("🧹 Clearing database...");
 
