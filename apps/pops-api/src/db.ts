@@ -101,9 +101,9 @@ function getPendingMigrations(database: BetterSqlite3.Database): string[] {
 /** Check if the database has any data (not a fresh install). */
 function hasData(database: BetterSqlite3.Database): boolean {
   try {
-    const row = database
-      .prepare("SELECT COUNT(*) AS cnt FROM transactions")
-      .get() as { cnt: number } | undefined;
+    const row = database.prepare("SELECT COUNT(*) AS cnt FROM transactions").get() as
+      | { cnt: number }
+      | undefined;
     return (row?.cnt ?? 0) > 0;
   } catch {
     // Table may not exist on fresh install

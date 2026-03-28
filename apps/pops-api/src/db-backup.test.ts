@@ -12,10 +12,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 
 /** Minimal reproduction of the backup logic from db.ts for testability. */
-function getPendingMigrations(
-  database: BetterSqlite3.Database,
-  migrationsDir: string
-): string[] {
+function getPendingMigrations(database: BetterSqlite3.Database, migrationsDir: string): string[] {
   database.exec(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
       version TEXT PRIMARY KEY,
@@ -46,9 +43,9 @@ function getPendingMigrations(
 
 function hasData(database: BetterSqlite3.Database): boolean {
   try {
-    const row = database
-      .prepare("SELECT COUNT(*) AS cnt FROM transactions")
-      .get() as { cnt: number } | undefined;
+    const row = database.prepare("SELECT COUNT(*) AS cnt FROM transactions").get() as
+      | { cnt: number }
+      | undefined;
     return (row?.cnt ?? 0) > 0;
   } catch {
     return false;
