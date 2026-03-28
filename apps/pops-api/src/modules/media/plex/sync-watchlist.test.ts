@@ -55,9 +55,13 @@ import { fetchPlexWatchlist, syncWatchlistFromPlex } from "./sync-watchlist.js";
 import { getDrizzle } from "../../../db.js";
 import { getMovieByTmdbId } from "../movies/service.js";
 import { getTvShowByTvdbId } from "../tv-shows/service.js";
+import { getTmdbClient } from "../tmdb/index.js";
+import { getTvdbClient } from "../thetvdb/index.js";
 
 const mockGetMovieByTmdbId = vi.mocked(getMovieByTmdbId);
 const mockGetTvShowByTvdbId = vi.mocked(getTvShowByTvdbId);
+const mockGetTmdbClient = vi.mocked(getTmdbClient);
+const mockGetTvdbClient = vi.mocked(getTvdbClient);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -387,11 +391,46 @@ describe("syncWatchlistFromPlex", () => {
     );
   });
 
-  it("skips items without TMDB or TVDB ID and reports reason", async () => {
+  it("falls back to TMDB title search when no TMDB ID in metadata", async () => {
     const noIdItem = makePlexWatchlistItem({
       externalIds: [{ source: "imdb", id: "tt1375666" }], // Only IMDB, no TMDB
     });
     mockPlexWatchlistResponse([noIdItem]);
+
+    // Mock TMDB search returning a match
+    /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument */
+    mockGetTmdbClient.mockReturnValue({
+      searchMovies: vi.fn().mockResolvedValue({
+        results: [{ tmdbId: 27205, title: "Inception", releaseDate: "2010-07-16" }],
+      }),
+    } as any);
+    /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument */
+    mockGetMovieByTmdbId.mockReturnValue({ id: 42 } as ReturnType<typeof getMovieByTmdbId>);
+
+    const { getMock, valuesMock } = setupDrizzleMock();
+    getMock.mockReturnValue(undefined);
+
+    const result = await syncWatchlistFromPlex("test-token");
+
+    expect(result.added).toBe(1);
+    expect(result.skipped).toBe(0);
+    expect(valuesMock).toHaveBeenCalledWith(
+      expect.objectContaining({ mediaType: "movie", mediaId: 42 })
+    );
+  });
+
+  it("skips movie when no TMDB ID and title search finds no match", async () => {
+    const noIdItem = makePlexWatchlistItem({
+      externalIds: [{ source: "imdb", id: "tt1375666" }], // Only IMDB, no TMDB
+    });
+    mockPlexWatchlistResponse([noIdItem]);
+
+    // Mock TMDB search returning no results
+    /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument */
+    mockGetTmdbClient.mockReturnValue({
+      searchMovies: vi.fn().mockResolvedValue({ results: [] }),
+    } as any);
+    /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument */
 
     setupDrizzleMock();
 
@@ -400,8 +439,39 @@ describe("syncWatchlistFromPlex", () => {
     expect(result.skipped).toBe(1);
     expect(result.added).toBe(0);
     expect(result.skipReasons).toEqual([
-      { title: "Inception", reason: "No TMDB ID in Plex metadata" },
+      {
+        title: "Inception",
+        reason: "No TMDB ID in Plex metadata and title search found no match",
+      },
     ]);
+  });
+
+  it("falls back to TVDB title search when no TVDB ID in metadata", async () => {
+    const noIdItem = makeTvWatchlistItem({
+      externalIds: [{ source: "tmdb", id: "1396" }], // Only TMDB, no TVDB
+    });
+    mockPlexWatchlistResponse([noIdItem]);
+
+    // Mock TVDB search returning a match
+    /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument */
+    mockGetTvdbClient.mockReturnValue({
+      searchSeries: vi
+        .fn()
+        .mockResolvedValue([{ tvdbId: 81189, name: "Breaking Bad", year: "2008" }]),
+    } as any);
+    /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument */
+    mockGetTvShowByTvdbId.mockReturnValue({ id: 7 } as ReturnType<typeof getTvShowByTvdbId>);
+
+    const { getMock, valuesMock } = setupDrizzleMock();
+    getMock.mockReturnValue(undefined);
+
+    const result = await syncWatchlistFromPlex("test-token");
+
+    expect(result.added).toBe(1);
+    expect(result.skipped).toBe(0);
+    expect(valuesMock).toHaveBeenCalledWith(
+      expect.objectContaining({ mediaType: "tv_show", mediaId: 7 })
+    );
   });
 
   it("skips items with unsupported media type and reports reason", async () => {

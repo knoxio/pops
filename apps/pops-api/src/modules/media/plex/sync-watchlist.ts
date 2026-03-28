@@ -297,8 +297,18 @@ async function resolveMediaItem(item: PlexMediaItem): Promise<ResolveResult> {
 }
 
 async function resolveMovie(item: PlexMediaItem): Promise<ResolveResult> {
-  const tmdbId = extractExternalIdAsNumber(item, "tmdb");
-  if (!tmdbId) return { resolved: null, skipReason: "No TMDB ID in Plex metadata" };
+  let tmdbId = extractExternalIdAsNumber(item, "tmdb");
+
+  // Fall back to TMDB title search when Plex metadata lacks the ID
+  if (!tmdbId) {
+    tmdbId = await searchTmdbByTitleYear(item.title, item.year);
+    if (!tmdbId) {
+      return {
+        resolved: null,
+        skipReason: "No TMDB ID in Plex metadata and title search found no match",
+      };
+    }
+  }
 
   let movie = getMovieByTmdbId(tmdbId);
 
@@ -341,8 +351,18 @@ async function resolveMovie(item: PlexMediaItem): Promise<ResolveResult> {
 }
 
 async function resolveTvShow(item: PlexMediaItem): Promise<ResolveResult> {
-  const tvdbId = extractExternalIdAsNumber(item, "tvdb");
-  if (!tvdbId) return { resolved: null, skipReason: "No TVDB ID in Plex metadata" };
+  let tvdbId = extractExternalIdAsNumber(item, "tvdb");
+
+  // Fall back to TVDB title search when Plex metadata lacks the ID
+  if (!tvdbId) {
+    tvdbId = await searchTvdbByTitle(item.title, item.year);
+    if (!tvdbId) {
+      return {
+        resolved: null,
+        skipReason: "No TVDB ID in Plex metadata and title search found no match",
+      };
+    }
+  }
 
   let show = getTvShowByTvdbId(tvdbId);
 
@@ -358,6 +378,75 @@ async function resolveTvShow(item: PlexMediaItem): Promise<ResolveResult> {
 
   if (!show) return { resolved: null, skipReason: "Failed to create TV show record" };
   return { resolved: { mediaType: "tv_show", mediaId: show.id }, skipReason: null };
+}
+
+// ---------------------------------------------------------------------------
+// Title-based search fallbacks
+// ---------------------------------------------------------------------------
+
+/**
+ * Search TMDB for a movie by title and optional year.
+ * Returns the first result's TMDB ID if the title is a close match.
+ */
+async function searchTmdbByTitleYear(title: string, year: number | null): Promise<number | null> {
+  try {
+    const tmdbClient = getTmdbClient();
+    const result = await tmdbClient.searchMovies(title);
+    if (result.results.length === 0) return null;
+
+    // Find best match: prefer exact title + matching year
+    for (const r of result.results) {
+      const titleMatch = r.title.toLowerCase() === title.toLowerCase();
+      const yearMatch =
+        year && r.releaseDate ? new Date(r.releaseDate).getFullYear() === year : true;
+
+      if (titleMatch && yearMatch) {
+        return r.tmdbId;
+      }
+    }
+
+    // No exact match — take first result if title is close enough
+    const first = result.results[0];
+    if (first && first.title.toLowerCase() === title.toLowerCase()) {
+      return first.tmdbId;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Search TVDB for a TV show by title and optional year.
+ * Returns the first result's TVDB ID if the title is a close match.
+ */
+async function searchTvdbByTitle(title: string, year: number | null): Promise<number | null> {
+  try {
+    const tvdbClient = getTvdbClient();
+    const results = await tvdbClient.searchSeries(title);
+    if (results.length === 0) return null;
+
+    // Find best match: prefer exact name + matching year
+    for (const r of results) {
+      const nameMatch = r.name.toLowerCase() === title.toLowerCase();
+      const yearMatch = year && r.year ? Number(r.year) === year : true;
+
+      if (nameMatch && yearMatch) {
+        return r.tvdbId;
+      }
+    }
+
+    // No exact match — take first result if name matches
+    const first = results[0];
+    if (first && first.name.toLowerCase() === title.toLowerCase()) {
+      return first.tvdbId;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
