@@ -10,7 +10,7 @@ Build `pops-api` — a single Express + tRPC server with domain-grouped router m
 
 | # | PRD | Summary | Status |
 |---|-----|---------|--------|
-| 008 | [API Server](../prds/008-api-server/README.md) | Domain module structure, router composition, middleware, module import rules | Done |
+| 008 | [API Server](../prds/008-api-server/README.md) | Domain module structure, router composition, middleware, module import rules | Partial |
 
 ## Dependencies
 

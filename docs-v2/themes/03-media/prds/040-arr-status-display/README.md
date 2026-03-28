@@ -87,11 +87,11 @@ Both Radarr and Sonarr expose similar REST APIs. Build a shared HTTP client fact
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-arr-base-client](us-01-arr-base-client.md) | Shared HTTP client factory for Radarr/Sonarr, in-memory cache with 30s TTL, graceful degradation, config storage | Yes | Partial |
-| 02 | [us-02-status-badges](us-02-status-badges.md) | Status badges on movie/TV detail pages — monitored, downloading, available, not monitored — colour-coded with conditional display | Blocked by us-01 | Partial |
-| 03 | [us-03-arr-settings](us-03-arr-settings.md) | Settings page at `/media/arr` with URL/API key inputs, test connection, status indicators, masked key display | Blocked by us-01 | Partial |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-arr-base-client](us-01-arr-base-client.md) | Shared HTTP client factory for Radarr/Sonarr, in-memory cache with 30s TTL, graceful degradation, config storage | Partial | Yes |
+| 02 | [us-02-status-badges](us-02-status-badges.md) | Status badges on movie/TV detail pages — monitored, downloading, available, not monitored — colour-coded with conditional display | Partial | Blocked by us-01 |
+| 03 | [us-03-arr-settings](us-03-arr-settings.md) | Settings page at `/media/arr` with URL/API key inputs, test connection, status indicators, masked key display | Partial | Blocked by us-01 |
 
 US-01 is the foundation. US-02 and US-03 can be built in parallel once US-01 is complete.
 

@@ -10,7 +10,7 @@ Build the pairwise comparison system (per ADR-010). Two movies presented side by
 
 | # | PRD | Summary | Status |
 |---|-----|---------|--------|
-| 037 | [Ratings & Comparisons](../prds/037-ratings-comparisons/README.md) | Compare arena page, dimension management, ELO scoring algorithm, rankings page, radar charts on detail pages, quick-pick flow | Done |
+| 037 | [Ratings & Comparisons](../prds/037-ratings-comparisons/README.md) | Compare arena page, dimension management, ELO scoring algorithm, rankings page, radar charts on detail pages, quick-pick flow | Partial |
 
 ## Dependencies
 

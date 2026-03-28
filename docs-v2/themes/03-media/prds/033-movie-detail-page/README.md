@@ -1,7 +1,7 @@
 # PRD-033: Movie Detail Page
 
 > Epic: [02 — App Package & Core UI](../../epics/02-app-package-ui.md)
-> Status: To Review
+> Status: Partial
 
 ## Overview
 
@@ -102,12 +102,12 @@ Build the movie detail page — a full metadata view with hero backdrop, poster,
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-movie-hero-metadata](us-01-movie-hero-metadata.md) | Hero layout with backdrop, poster, title/year/runtime/genres, overview, metadata grid | No (first) |
-| 02 | [us-02-watchlist-toggle](us-02-watchlist-toggle.md) | WatchlistToggle component with optimistic add/remove, state detection | Yes (parallel with us-01) |
-| 03 | [us-03-mark-as-watched](us-03-mark-as-watched.md) | MarkAsWatchedButton with watch logging, undo toast, watchlist auto-removal | Yes (parallel with us-01) |
-| 04 | [us-04-comparison-scores](us-04-comparison-scores.md) | ComparisonScores radar chart, conditional display, score normalisation | Yes (parallel with us-01) |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-movie-hero-metadata](us-01-movie-hero-metadata.md) | Hero layout with backdrop, poster, title/year/runtime/genres, overview, metadata grid | Partial | No (first) |
+| 02 | [us-02-watchlist-toggle](us-02-watchlist-toggle.md) | WatchlistToggle component with optimistic add/remove, state detection | Partial | Yes (parallel with us-01) |
+| 03 | [us-03-mark-as-watched](us-03-mark-as-watched.md) | MarkAsWatchedButton with watch logging, undo toast, watchlist auto-removal | Partial | Yes (parallel with us-01) |
+| 04 | [us-04-comparison-scores](us-04-comparison-scores.md) | ComparisonScores radar chart, conditional display, score normalisation | Partial | Yes (parallel with us-01) |
 
 US-01 builds the page shell. US-02, US-03, and US-04 are independent components that can all be built in parallel with each other and integrated into the page.
 

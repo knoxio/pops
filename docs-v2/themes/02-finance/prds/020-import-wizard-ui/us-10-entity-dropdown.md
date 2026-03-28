@@ -1,7 +1,7 @@
 # US-10: Entity selection dropdown
 
 > PRD: [020 — Import Wizard UI](README.md)
-> Status: Partial — entity type badge missing in dropdown options
+> Status: Partial
 
 ## Description
 

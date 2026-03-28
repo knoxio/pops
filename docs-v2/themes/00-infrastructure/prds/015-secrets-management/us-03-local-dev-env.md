@@ -1,7 +1,7 @@
 # US-03: Local dev environment secrets
 
 > PRD: [015 — Secrets Management](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,11 +9,11 @@ As a developer, I want a `.env.example` and local secret loading pattern so that
 
 ## Acceptance Criteria
 
-- [ ] `.env.example` at repo root with all required keys and placeholder values
-- [ ] `.env` in `.gitignore`
-- [ ] Application code supports both: `process.env.KEY` (dev) and `/run/secrets/key` (prod)
-- [ ] `mise ansible:decrypt-env` generates `.env` from Ansible Vault for authorised developers
-- [ ] Local dev works with just `.env` — no Docker secrets setup needed
+- [x] `.env.example` at repo root with all required keys and placeholder values
+- [x] `.env` in `.gitignore`
+- [x] Application code supports both: `process.env.KEY` (dev) and `/run/secrets/key` (prod)
+- [x] `mise ansible:decrypt-env` generates `.env` from Ansible Vault for authorised developers
+- [x] Local dev works with just `.env` — no Docker secrets setup needed
 
 ## Notes
 

@@ -10,7 +10,7 @@ Build the recommendation engine and discovery page. Surfaces trending content, n
 
 | # | PRD | Summary | Status |
 |---|-----|---------|--------|
-| 038 | [Discovery & Recommendations](../prds/038-discovery-recommendations/README.md) | Discover page, recommendation algorithm (weighted scoring from genre affinity + comparison scores), trending/new releases from TMDB | Done |
+| 038 | [Discovery & Recommendations](../prds/038-discovery-recommendations/README.md) | Discover page, recommendation algorithm (weighted scoring from genre affinity + comparison scores), trending/new releases from TMDB | Partial |
 
 ## Dependencies
 

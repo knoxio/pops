@@ -1,7 +1,7 @@
 # US-06: Call processImport
 
 > PRD: [020 — Import Wizard UI](README.md)
-> Status: Partial — missing error retry button
+> Status: Partial
 
 ## Description
 

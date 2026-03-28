@@ -30,5 +30,3 @@ As a user, I want a modal to request movies through Radarr so that I can select 
 ## Notes
 
 Quality profiles and root folders are fetched fresh each time the modal opens — do not cache these. The modal should feel lightweight and fast despite the two API calls on open. Consider fetching both in parallel to minimise wait time.
-
-Audited — no RequestMovieModal component or Radarr request UI found in codebase; status confirmed Not started.

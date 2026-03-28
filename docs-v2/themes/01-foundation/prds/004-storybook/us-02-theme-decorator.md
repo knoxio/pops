@@ -3,19 +3,6 @@
 > PRD: [004 — Storybook](README.md)
 > Status: Done
 
-**GH Issue:** #727
-
-## Audit Findings
-
-**Present:**
-- `apps/pops-storybook/.storybook/preview.tsx` imports `@pops/ui/theme/globals.css`, so all stories render with the correct design tokens
-- Storybook controls (color matchers, date matchers) configured
-- Global decorator wraps all stories with theme class toggle and app colour class
-- Storybook toolbar has light/dark mode toggle (sun/moon icons)
-- App colour dropdown in toolbar with all 6 colour options (emerald, indigo, amber, rose, sky, violet)
-- Default app colour set to emerald
-- `AppColourVerification` stories demonstrate all combinations
-
 ## Description
 
 As a developer, I want a global Storybook decorator that provides theme context (light/dark mode, app colour variable) so that I can preview components in all visual states.

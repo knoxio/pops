@@ -1,7 +1,7 @@
 # US-08: Review tabbed view
 
 > PRD: [020 — Import Wizard UI](README.md)
-> Status: Partial — default tab and scroll position not implemented
+> Status: Partial
 
 ## Description
 

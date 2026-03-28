@@ -1,7 +1,7 @@
 # PRD-041: Radarr Request Management
 
 > Epic: [07 — Radarr & Sonarr](../../epics/07-radarr-sonarr.md)
-> Status: Not started
+> Status: Partial
 
 ## Overview
 
@@ -84,11 +84,11 @@ The request action surfaces on existing movie pages, not on a dedicated route.
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-radarr-api-client](us-01-radarr-api-client.md) | Radarr v3 API client — quality profiles, root folders, add movie, check existence, update monitoring, trigger search | Yes |
-| 02 | [us-02-request-modal](us-02-request-modal.md) | Request modal with quality profile selector, root folder selector, confirm action, search trigger | Blocked by us-01 |
-| 03 | [us-03-request-integration](us-03-request-integration.md) | "Request" button on movie detail, search results, and discovery; state-aware visibility | Blocked by us-01, us-02 |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-radarr-api-client](us-01-radarr-api-client.md) | Radarr v3 API client — quality profiles, root folders, add movie, check existence, update monitoring, trigger search | Partial | Yes |
+| 02 | [us-02-request-modal](us-02-request-modal.md) | Request modal with quality profile selector, root folder selector, confirm action, search trigger | Not started | Blocked by us-01 |
+| 03 | [us-03-request-integration](us-03-request-integration.md) | "Request" button on movie detail, search results, and discovery; state-aware visibility | Not started | Blocked by us-01, us-02 |
 
 US-01 is the API layer. US-02 builds the modal component. US-03 integrates the button and modal into existing pages.
 

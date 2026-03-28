@@ -17,7 +17,7 @@ Build three layers of AI capability: categorisation (automated data entry and ma
 
 | # | Epic | Summary | Status |
 |---|------|---------|--------|
-| 0 | [AI Operations App](epics/00-ai-operations-app.md) | `@pops/app-ai` — usage tracking, cost visualisation, model config, categorisation rules | Partial (usage page exists) |
+| 0 | [AI Operations App](epics/00-ai-operations-app.md) | `@pops/app-ai` — usage tracking, cost visualisation, model config, categorisation rules | Partial |
 | 1 | [AI Overlay](epics/01-ai-overlay.md) | Contextual assistant in the shell — query across domains, suggest actions | Not started |
 | 2 | [AI Inference](epics/02-ai-inference.md) | Proactive monitoring, anomaly detection, Moltbot alerts, scheduled analysis | Not started |
 

@@ -1,7 +1,7 @@
 # US-01: Table view
 
 > PRD: [044 — Items List Page](README.md)
-> Status: Partial — missing Purchase Date column; Location shows plain text not breadcrumb; condition names differ (Excellent not New); no URL sort params
+> Status: Partial
 
 ## Description
 

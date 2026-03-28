@@ -1,7 +1,7 @@
 # PRD-050: Warranty Tracking
 
 > Epic: [05 — Warranty, Value & Reporting](../../epics/05-warranty-value-reporting.md)
-> Status: To Review
+> Status: Partial
 
 ## Overview
 
@@ -62,11 +62,11 @@ The endpoint returns all items with warranty dates in a single call. Tier assign
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-warranty-tiers](us-01-warranty-tiers.md) | Warranty page with urgency tiers, colour coding, collapsible sections, sort by expiry | No (first) |
-| 02 | [us-02-warranty-items](us-02-warranty-items.md) | Item rows with name/assetId/brand/model, expiry date, days remaining, detail + document links | Blocked by us-01 |
-| 03 | [us-03-warranty-empty-states](us-03-warranty-empty-states.md) | Page-level and per-tier empty states, edge case handling | Blocked by us-01 |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-warranty-tiers](us-01-warranty-tiers.md) | Warranty page with urgency tiers, colour coding, collapsible sections, sort by expiry | Partial | No (first) |
+| 02 | [us-02-warranty-items](us-02-warranty-items.md) | Item rows with name/assetId/brand/model, expiry date, days remaining, detail + document links | Partial | Blocked by us-01 |
+| 03 | [us-03-warranty-empty-states](us-03-warranty-empty-states.md) | Page-level and per-tier empty states, edge case handling | Partial | Blocked by us-01 |
 
 US-02 and US-03 can parallelise after US-01.
 

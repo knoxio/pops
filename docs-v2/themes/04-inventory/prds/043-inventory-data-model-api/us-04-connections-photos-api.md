@@ -1,7 +1,7 @@
 # US-04: Connections and photos API
 
 > PRD: [043 — Inventory Data Model & API](README.md)
-> Status: Partial — photos.attach takes file path string (no upload/compression/HEIC); disconnect takes connection ID not item pair
+> Status: Partial
 
 ## Description
 

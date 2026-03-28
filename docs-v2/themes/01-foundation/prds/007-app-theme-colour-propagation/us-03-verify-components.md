@@ -19,4 +19,4 @@ As a developer, I want confirmation that all components using app-accent tokens 
 
 ## Notes
 
-This is a visual verification sweep, not a code change. If any component looks wrong with a particular accent colour (e.g., poor contrast), fix the token definitions in PRD-002 or the component in PRD-003.
+This is a visual verification sweep, not a code change. If any component looks wrong with a particular accent colour (e.g., poor contrast), fix the token definitions in PRD-002 or the component in PRD-003. Blocked by US-01 — cannot verify CSS variable propagation until the propagation mechanism exists.

@@ -1,7 +1,7 @@
 # PRD-037: Ratings & Comparisons
 
 > Epic: [04 — Ratings & Comparisons](../../epics/04-ratings-comparisons.md)
-> Status: To Review
+> Status: Partial
 
 ## Overview
 
@@ -107,13 +107,13 @@ Build a pairwise comparison system per [ADR-010](../../../../architecture/adr-01
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-compare-arena](us-01-compare-arena.md) | Compare arena page with random pair display, dimension label, pick-winner interaction, skip, pair avoidance | Blocked by us-02 |
-| 02 | [us-02-elo-scoring](us-02-elo-scoring.md) | Elo algorithm implementation (K=32, 1500 start), transaction-safe score updates, record comparison | Yes |
-| 03 | [us-03-rankings-page](us-03-rankings-page.md) | Rankings page with dimension selector, ranked list (poster, title, score, count), overall average | Yes (parallel with us-01) |
-| 04 | [us-04-dimension-management](us-04-dimension-management.md) | CRUD for comparison dimensions, active/inactive toggle, sort order | Yes |
-| 05 | [us-05-quick-pick](us-05-quick-pick.md) | Quick pick page with random unwatched movies, configurable count, "Watch This" action | Yes |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-compare-arena](us-01-compare-arena.md) | Compare arena page with random pair display, dimension label, pick-winner interaction, skip, pair avoidance | Partial | Blocked by us-02 |
+| 02 | [us-02-elo-scoring](us-02-elo-scoring.md) | Elo algorithm implementation (K=32, 1500 start), transaction-safe score updates, record comparison | Partial | Yes |
+| 03 | [us-03-rankings-page](us-03-rankings-page.md) | Rankings page with dimension selector, ranked list (poster, title, score, count), overall average | Partial | Yes (parallel with us-01) |
+| 04 | [us-04-dimension-management](us-04-dimension-management.md) | CRUD for comparison dimensions, active/inactive toggle, sort order | Partial | Yes |
+| 05 | [us-05-quick-pick](us-05-quick-pick.md) | Quick pick page with random unwatched movies, configurable count, "Watch This" action | Partial | Yes |
 
 US-01 depends on US-02 (arena needs Elo scoring to record comparisons). US-03, US-04, and US-05 can all be built in parallel.
 

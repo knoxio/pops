@@ -1,7 +1,7 @@
 # PRD-016: CI/CD Pipelines
 
 > Epic: [04 — CI/CD Pipelines](../../epics/04-cicd-pipelines.md)
-> Status: To Review
+> Status: Done
 
 ## Overview
 
@@ -29,10 +29,10 @@ Set up GitHub Actions workflows for quality gates and deployment. Every PR runs 
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-pr-workflows](us-01-pr-workflows.md) | CI workflows for PRs: API, shell, test, e2e, ansible, tools | No (first) |
-| 02 | [us-02-deploy-workflow](us-02-deploy-workflow.md) | Manual deploy workflow with quality gates and server deployment | Blocked by us-01 |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-pr-workflows](us-01-pr-workflows.md) | CI workflows for PRs: API, shell, test, e2e, ansible, tools | Done | No (first) |
+| 02 | [us-02-deploy-workflow](us-02-deploy-workflow.md) | Manual deploy workflow with quality gates and server deployment | Done | Blocked by us-01 |
 
 ## Verification
 

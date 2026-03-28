@@ -37,11 +37,11 @@ The `cloudflared` container maintains an outbound connection to Cloudflare. No i
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-tunnel-setup](us-01-tunnel-setup.md) | Install cloudflared, create tunnel, configure routes to services ✅ | No (first) |
-| 02 | [us-02-access-policies](us-02-access-policies.md) | Configure Cloudflare Access policies per service ✅ | Blocked by us-01 |
-| 03 | [us-03-dns-config](us-03-dns-config.md) | Set up DNS records pointing to tunnel ✅ | Blocked by us-01 |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-tunnel-setup](us-01-tunnel-setup.md) | Install cloudflared, create tunnel, configure routes to services | Done | No (first) |
+| 02 | [us-02-access-policies](us-02-access-policies.md) | Configure Cloudflare Access policies per service | Done | Blocked by us-01 |
+| 03 | [us-03-dns-config](us-03-dns-config.md) | Set up DNS records pointing to tunnel | Done | Blocked by us-01 |
 
 ## Verification
 

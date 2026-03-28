@@ -104,12 +104,12 @@ These patterns must be eliminated and replaced with token-based classes:
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-globals-css](us-01-globals-css.md) | Create globals.css with Tailwind imports, @theme block, CSS variables, light/dark tokens ✅ | No (first) |
-| 02 | [us-02-app-colour-variable](us-02-app-colour-variable.md) | Define the app colour CSS variable system (--app-accent, --app-accent-foreground) with per-colour definitions | Blocked by us-01 |
-| 03 | [us-03-eliminate-arbitrary-values](us-03-eliminate-arbitrary-values.md) | Replace all arbitrary Tailwind values with token-based classes across all components (partial) | Blocked by us-01 |
-| 04 | [us-04-eliminate-hardcoded-colours](us-04-eliminate-hardcoded-colours.md) | Replace all hardcoded app colour classes (bg-indigo-600, text-emerald-400, etc.) with app-accent token references | Blocked by us-02 |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-globals-css](us-01-globals-css.md) | Create globals.css with Tailwind imports, @theme block, CSS variables, light/dark tokens | Done | No (first) |
+| 02 | [us-02-app-colour-variable](us-02-app-colour-variable.md) | Define the app colour CSS variable system (--app-accent, --app-accent-foreground) with per-colour definitions | Not started | Blocked by us-01 |
+| 03 | [us-03-eliminate-arbitrary-values](us-03-eliminate-arbitrary-values.md) | Replace all arbitrary Tailwind values with token-based classes across all components | Partial | Blocked by us-01 |
+| 04 | [us-04-eliminate-hardcoded-colours](us-04-eliminate-hardcoded-colours.md) | Replace all hardcoded app colour classes (bg-indigo-600, text-emerald-400, etc.) with app-accent token references | Not started | Blocked by us-02 |
 
 ## Verification
 

@@ -1,7 +1,7 @@
 # US-02: Manual deploy workflow
 
 > PRD: [016 — CI/CD Pipelines](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,13 +9,13 @@ As an operator, I want a manual deploy workflow that runs quality gates then dep
 
 ## Acceptance Criteria
 
-- [ ] `deploy.yml` triggered only via `workflow_dispatch` (manual)
-- [ ] Runs typecheck, lint, test, build as quality gates before deploy
-- [ ] If any gate fails, deployment is skipped
-- [ ] Deployment step SSHes to server and runs Ansible deploy playbook
-- [ ] Self-hosted runner used only for the deploy step
-- [ ] GitHub secrets configured for SSH key and server connection
-- [ ] Deployment verified — services restarted and healthy
+- [x] `deploy.yml` triggered only via `workflow_dispatch` (manual)
+- [x] Runs typecheck, lint, test, build as quality gates before deploy
+- [x] If any gate fails, deployment is skipped
+- [x] Deployment step SSHes to server and runs Ansible deploy playbook
+- [x] Self-hosted runner used only for the deploy step
+- [x] GitHub secrets configured for SSH key and server connection
+- [x] Deployment verified — services restarted and healthy
 
 ## Notes
 

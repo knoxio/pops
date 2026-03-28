@@ -20,5 +20,3 @@ As a user, I want an AI usage page showing costs, token counts, and trends so th
 ## Notes
 
 Chart uses Recharts (already available in the project). Cost trends help identify if AI spend is growing unexpectedly.
-
-**Audit findings** (`packages/app-ai/src/pages/AiUsagePage.tsx`): Stats cards, last 30 days, loading skeleton, and empty state are all implemented. No Recharts chart — history shown as DataTable instead. No date range filter (date inputs not present).

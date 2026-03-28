@@ -1,7 +1,7 @@
 # PRD-012: Hardware & OS Provisioning
 
 > Epic: [00 — Hardware & OS](../../epics/00-hardware-os.md)
-> Status: To Review
+> Status: Done
 
 ## Overview
 
@@ -43,11 +43,11 @@ All Ansible commands run from the `infra/ansible/` directory due to relative `ro
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-os-hardening](us-01-os-hardening.md) | Ansible role for OS hardening: SSH config, firewall, disable root, updates | No (first) |
-| 02 | [us-02-docker-install](us-02-docker-install.md) | Ansible role for Docker + Docker Compose installation | Blocked by us-01 |
-| 03 | [us-03-ansible-structure](us-03-ansible-structure.md) | Set up Ansible directory structure, inventory, vault, playbooks | Yes (parallel with us-01) |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-os-hardening](us-01-os-hardening.md) | Ansible role for OS hardening: SSH config, firewall, disable root, updates | Done | No (first) |
+| 02 | [us-02-docker-install](us-02-docker-install.md) | Ansible role for Docker + Docker Compose installation | Done | Blocked by us-01 |
+| 03 | [us-03-ansible-structure](us-03-ansible-structure.md) | Set up Ansible directory structure, inventory, vault, playbooks | Done | Yes (parallel with us-01) |
 
 ## Verification
 

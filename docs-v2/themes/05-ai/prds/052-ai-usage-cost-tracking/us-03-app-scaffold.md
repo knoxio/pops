@@ -19,5 +19,3 @@ As a developer, I want `@pops/app-ai` as a workspace package registered in the s
 ## Notes
 
 Minimal app — starts with just the usage page. Future PRDs (053) add configuration and rules pages.
-
-**Audit findings** (`packages/app-ai/`, `apps/pops-shell/src/app/`): Package exists, registered in shell at `/ai/*` with lazy loading. NavConfig uses icon "BarChart3" instead of "Brain".

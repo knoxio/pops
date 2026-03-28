@@ -27,5 +27,3 @@ As a user, I want a settings page to configure Radarr and Sonarr connections so 
 ## Notes
 
 API keys are sensitive — they must never be returned in full from the API. The password field plus server-side masking ensures keys are write-only from the UI perspective. The "keep existing key" behaviour on empty field prevents accidental key deletion when the user only wants to change the URL.
-
-**Audit findings** (`packages/app-media/src/pages/ArrSettingsPage.tsx`): Settings page exists at `/media/arr`. API key field has reveal toggle (show/hide) — spec says no reveal toggle. No URL format validation (only placeholder hint). All other criteria met.

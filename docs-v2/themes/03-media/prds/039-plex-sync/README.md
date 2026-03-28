@@ -158,12 +158,12 @@ Build polling-based sync with Plex Media Server. Import library items and watch 
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-plex-auth](us-01-plex-auth.md) | PIN-based OAuth flow (getAuthPin, checkAuthPin, disconnect), token storage in settings table | Yes |
-| 02 | [us-02-plex-settings](us-02-plex-settings.md) | Settings page with URL input, connection test, section selector, sync controls, status display | Blocked by us-01 |
-| 03 | [us-03-library-sync](us-03-library-sync.md) | Movie and TV show sync from Plex sections (match by TMDB/TheTVDB ID, add new, report results) | Blocked by us-01 |
-| 04 | [us-04-watch-history-sync](us-04-watch-history-sync.md) | Watch status sync with source="plex_sync", skip watchlist auto-removal, scheduler for periodic sync | Blocked by us-03 |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-plex-auth](us-01-plex-auth.md) | PIN-based OAuth flow (getAuthPin, checkAuthPin, disconnect), token storage in settings table | Partial | Yes |
+| 02 | [us-02-plex-settings](us-02-plex-settings.md) | Settings page with URL input, connection test, section selector, sync controls, status display | Partial | Blocked by us-01 |
+| 03 | [us-03-library-sync](us-03-library-sync.md) | Movie and TV show sync from Plex sections (match by TMDB/TheTVDB ID, add new, report results) | Partial | Blocked by us-01 |
+| 04 | [us-04-watch-history-sync](us-04-watch-history-sync.md) | Watch status sync with source="plex_sync", skip watchlist auto-removal, scheduler for periodic sync | Partial | Blocked by us-03 |
 
 US-01 is the foundation (auth required for all Plex API calls). US-02 and US-03 both depend on US-01 but can run in parallel with each other. US-04 depends on US-03 (needs library sync to have items to sync watch status for).
 

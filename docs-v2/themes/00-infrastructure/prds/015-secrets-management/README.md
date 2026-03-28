@@ -1,7 +1,7 @@
 # PRD-015: Secrets Management
 
 > Epic: [03 — Secrets Management](../../epics/03-secrets-management.md)
-> Status: To Review
+> Status: Done
 
 ## Overview
 
@@ -40,11 +40,11 @@ Ansible Vault (encrypted at rest)
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-vault-setup](us-01-vault-setup.md) | Set up Ansible Vault with encrypted secrets file | No (first) |
-| 02 | [us-02-docker-secrets](us-02-docker-secrets.md) | Configure Docker Compose file-based secrets, update services to read from /run/secrets/ | Blocked by us-01 |
-| 03 | [us-03-local-dev-env](us-03-local-dev-env.md) | Create .env.example and local dev secret loading pattern | Yes |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-vault-setup](us-01-vault-setup.md) | Set up Ansible Vault with encrypted secrets file | Done | No (first) |
+| 02 | [us-02-docker-secrets](us-02-docker-secrets.md) | Configure Docker Compose file-based secrets, update services to read from /run/secrets/ | Done | Blocked by us-01 |
+| 03 | [us-03-local-dev-env](us-03-local-dev-env.md) | Create .env.example and local dev secret loading pattern | Done | Yes |
 
 ## Verification
 

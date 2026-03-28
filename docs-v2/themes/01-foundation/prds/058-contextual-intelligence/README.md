@@ -1,7 +1,7 @@
 # PRD-058: Contextual Intelligence
 
 > Epic: [07 — Search](../../epics/07-search.md)
-> Status: To Review
+> Status: Not started
 
 ## Overview
 

@@ -1,7 +1,7 @@
 # PRD-055: AI Inference & Monitoring
 
 > Epic: [02 — AI Inference](../../epics/02-ai-inference.md)
-> Status: To Review
+> Status: Not started
 > NOT READY FOR IMPLEMENTATION
 
 ## Overview
@@ -18,12 +18,12 @@ Build proactive AI capabilities — anomaly detection, smart automations, and sc
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-anomaly-detection](us-01-anomaly-detection.md) | Detect spending anomalies (spikes, unusual patterns) and surface alerts | No (first) |
-| 02 | [us-02-scheduled-analysis](us-02-scheduled-analysis.md) | Periodic analysis jobs (weekly/monthly summaries) | Blocked by us-01 |
-| 03 | [us-03-moltbot-alerts](us-03-moltbot-alerts.md) | Deliver insights via Telegram through Moltbot | Blocked by us-01 |
-| 04 | [us-04-threshold-config](us-04-threshold-config.md) | Configurable alert thresholds (what % change triggers an alert) | Blocked by us-01 |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-anomaly-detection](us-01-anomaly-detection.md) | Detect spending anomalies (spikes, unusual patterns) and surface alerts | Not started | No (first) |
+| 02 | [us-02-scheduled-analysis](us-02-scheduled-analysis.md) | Periodic analysis jobs (weekly/monthly summaries) | Not started | Blocked by us-01 |
+| 03 | [us-03-moltbot-alerts](us-03-moltbot-alerts.md) | Deliver insights via Telegram through Moltbot | Not started | Blocked by us-01 |
+| 04 | [us-04-threshold-config](us-04-threshold-config.md) | Configurable alert thresholds (what % change triggers an alert) | Not started | Blocked by us-01 |
 
 ## Out of Scope
 

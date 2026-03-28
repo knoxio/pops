@@ -10,7 +10,7 @@ Build the location tree management UI — hierarchical browser for creating, edi
 
 | # | PRD | Summary | Status |
 |---|-----|---------|--------|
-| 047 | [Location Tree Management](../prds/047-location-tree-management/README.md) | Tree browser, CRUD operations, drag-and-drop reordering, circular reference prevention, item browsing per location, mobile fallback for drag-and-drop | Done |
+| 047 | [Location Tree Management](../prds/047-location-tree-management/README.md) | Tree browser, CRUD operations, drag-and-drop reordering, circular reference prevention, item browsing per location, mobile fallback for drag-and-drop | Partial |
 
 ## Dependencies
 

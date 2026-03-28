@@ -112,12 +112,12 @@ Users override defaults in the request modal or later via per-season toggles on 
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-sonarr-api-client](us-01-sonarr-api-client.md) | Sonarr v3 API client — profiles, root folders, add series, check existence, update monitoring, calendar, trigger search | Yes |
-| 02 | [us-02-request-modal](us-02-request-modal.md) | Request modal with quality/language/root folder selectors, season monitoring defaults (future=on, past=off) | Blocked by us-01 |
-| 03 | [us-03-season-monitoring](us-03-season-monitoring.md) | Per-season monitoring toggles on show detail, per-episode monitoring on season detail | Blocked by us-01 |
-| 04 | [us-04-calendar](us-04-calendar.md) | Calendar view of upcoming episodes (next 30 days), grouped by date, poster/series/episode display | Blocked by us-01 |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-sonarr-api-client](us-01-sonarr-api-client.md) | Sonarr v3 API client — profiles, root folders, add series, check existence, update monitoring, calendar, trigger search | Partial | Yes |
+| 02 | [us-02-request-modal](us-02-request-modal.md) | Request modal with quality/language/root folder selectors, season monitoring defaults (future=on, past=off) | Not started | Blocked by us-01 |
+| 03 | [us-03-season-monitoring](us-03-season-monitoring.md) | Per-season monitoring toggles on show detail, per-episode monitoring on season detail | Not started | Blocked by us-01 |
+| 04 | [us-04-calendar](us-04-calendar.md) | Calendar view of upcoming episodes (next 30 days), grouped by date, poster/series/episode display | Not started | Blocked by us-01 |
 
 US-01 is the API layer. US-02, US-03, and US-04 can be built in parallel once US-01 is complete.
 

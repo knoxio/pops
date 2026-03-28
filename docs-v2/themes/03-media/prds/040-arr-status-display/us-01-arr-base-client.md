@@ -26,5 +26,3 @@ As a developer, I want a shared HTTP client factory for Radarr and Sonarr with i
 ## Notes
 
 Radarr and Sonarr use nearly identical API patterns (versioned REST, API key header, JSON responses). The factory avoids duplicating HTTP setup, caching, and error handling. The 30-second cache prevents excessive polling while keeping status reasonably fresh. Configuration is persisted in the existing settings table as key-value pairs.
-
-**Audit findings** (`apps/pops-api/src/modules/media/arr/`): `ArrBaseClient` class handles auth and GET requests. Service-level cache (not client-level): 5-min TTL for movie/show status, 30s for queue; keyed by ID not URL. No connection timeout on `fetch()`. `clearStatusCache()` is defined but not wired into `saveSettings` in the router.

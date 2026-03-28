@@ -24,8 +24,4 @@ As a user, I want a visual graph of item connections so that I can see the netwo
 
 ## Notes
 
-**Audit findings** (`packages/app-inventory/src/components/ConnectionGraph.tsx`): Graph visualisation fully implemented using d3-force with HTML5 Canvas rendering. Force-directed layout, zoom/pan, node navigation, colour-coded by type, retina scaling. Uses dedicated `inventory.connections.graph` procedure (not `traceChain`). Error fallback shows error message rather than chain trace — functional degradation, minor deviation from spec.
-
-## Notes
-
 Use a lightweight graph rendering library (e.g., vis-network, react-force-graph, or cytoscape.js). The graph data comes from the same chain trace endpoint used in US-02 — reformat the flat node list into a nodes/edges structure for the graph library. This is a stretch goal; prioritise US-01 and US-02 first.

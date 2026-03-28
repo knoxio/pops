@@ -25,5 +25,3 @@ As a user, I want to see colour-coded status badges on movie and TV show detail 
 ## Notes
 
 The badge is a pure display component driven by external state. It should not trigger any mutations. The detail page is responsible for fetching the status and passing it as props. For Sonarr, "Available" means all episodes of the series have files — partial availability still shows "Monitored" since individual episode tracking is not in scope here.
-
-**Audit findings** (`packages/app-media/src/components/ArrStatusBadge.tsx`): Component exists with available (green), downloading (yellow), monitored (yellow — spec says blue), unmonitored (grey). Unreachable service shows a grey "Radarr/Sonarr unavailable" badge rather than an empty area. Badge is in both MovieDetailPage and TvShowDetailPage.

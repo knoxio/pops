@@ -1,7 +1,7 @@
 # US-02: Configure Docker secrets
 
 > PRD: [015 — Secrets Management](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,11 +9,11 @@ As an operator, I want Docker Compose configured with file-based secrets so that
 
 ## Acceptance Criteria
 
-- [ ] `secrets:` section in docker-compose.yml defines all secrets with `file:` pointing to `/opt/pops/secrets/`
-- [ ] Each service declares which secrets it needs
-- [ ] Application code reads secrets from `/run/secrets/<name>` in production
-- [ ] No secrets in `environment:` section of docker-compose.yml
-- [ ] Containers can read their secrets on startup
+- [x] `secrets:` section in docker-compose.yml defines all secrets with `file:` pointing to `/opt/pops/secrets/`
+- [x] Each service declares which secrets it needs
+- [x] Application code reads secrets from `/run/secrets/<name>` in production
+- [x] No secrets in `environment:` section of docker-compose.yml
+- [x] Containers can read their secrets on startup
 
 ## Notes
 

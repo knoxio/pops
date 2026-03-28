@@ -1,7 +1,7 @@
 # US-03: Items and locations API
 
 > PRD: [043 — Inventory Data Model & API](README.md)
-> Status: Partial — missing searchByAssetId, items.list includeChildren subtree, locations.getPath, locations.getItems
+> Status: Partial
 
 ## Description
 

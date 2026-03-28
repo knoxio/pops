@@ -10,7 +10,7 @@ Define the media domain schema (movies, TV shows, seasons, episodes, comparisons
 
 | # | PRD | Summary | Status |
 |---|-----|---------|--------|
-| 028 | [Media Data Model & API](../prds/028-media-data-model-api/README.md) | Split tables per ADR-008, comparison dimensions, media scores, tRPC routers for all media entities | Partial |
+| 028 | [Media Data Model & API](../prds/028-media-data-model-api/README.md) | Split tables per ADR-008, comparison dimensions, media scores, tRPC routers for all media entities | Done |
 
 ## Dependencies
 

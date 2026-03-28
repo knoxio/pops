@@ -65,5 +65,3 @@ As a developer, I want tRPC procedures for watchlist management, watch history l
 Auto-removal on watch completion is a side effect of `log` — the procedure inserts the history record and then conditionally removes from watchlist in the same transaction. For episodes, checking "all episodes watched" requires joining through seasons to the show, then querying the watchlist for that show.
 
 The Elo calculation: expected score = 1 / (1 + 10^((opponent - self) / 400)), new score = old + K * (actual - expected), where actual = 1 for winner, 0 for loser.
-
-**Audit findings** (`apps/pops-api/src/modules/media/watchlist/`, `watch-history/`, `comparisons/`): Full API implemented with all procedures, Elo scoring (K=32, starting 1500.0), auto-removal on completion, batch operations, and comprehensive test coverage.

@@ -1,7 +1,7 @@
 # PRD-049: Paperless-ngx Integration
 
 > Epic: [04 — Paperless-ngx Integration](../../epics/04-paperless-integration.md)
-> Status: To Review
+> Status: Partial
 
 ## Overview
 

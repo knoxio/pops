@@ -19,5 +19,3 @@ As a developer, I want API procedures for AI usage statistics so that the usage 
 ## Notes
 
 Stats separate cached (cached=1, zero cost) from API calls (cached=0, real cost). Cache hit rate = cacheHits / (cacheHits + apiCalls).
-
-**Audit findings** (`apps/pops-api/src/modules/core/ai-usage/`): `getStats` and `getHistory` tRPC procedures exist with all required output fields. No test file — `apps/pops-api/src/modules/core/ai-usage/*.test.ts` does not exist.

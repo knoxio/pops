@@ -1,7 +1,7 @@
 # US-02: Configure Turbo
 
 > PRD: [001 — Project Bootstrap](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,11 +9,11 @@ As a developer, I want Turbo configured for build orchestration so that dev, bui
 
 ## Acceptance Criteria
 
-- [ ] `turbo.json` exists with pipeline definitions for: dev, build, test, typecheck, lint
-- [ ] `turbo build` builds all packages in dependency order
-- [ ] `turbo dev` starts all dev servers
-- [ ] Turbo caching works — second run of `turbo build` is near-instant
-- [ ] Changing a shared package (e.g., `@pops/ui`) invalidates downstream package builds
+- [x] `turbo.json` exists with pipeline definitions for: dev, build, test, typecheck, lint
+- [x] `turbo build` builds all packages in dependency order
+- [x] `turbo dev` starts all dev servers
+- [x] Turbo caching works — second run of `turbo build` is near-instant
+- [x] Changing a shared package (e.g., `@pops/ui`) invalidates downstream package builds
 
 ## Notes
 

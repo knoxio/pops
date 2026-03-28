@@ -3,20 +3,6 @@
 > PRD: [005 — Shell](README.md)
 > Status: Done
 
-**GH Issue:** #405
-
-## Audit Findings
-
-**Present:**
-- `Breadcrumb` primitive available in `@pops/ui` (shadcn-based, at `packages/ui/src/primitives/breadcrumb.tsx`)
-- `LocationBreadcrumb.tsx` composite in `@pops/ui` for inventory location hierarchies (with click handlers and segments)
-
-**Implemented:**
-- Shared `PageHeader` component in `@pops/ui` with back button + breadcrumb trail + page title
-- Drill-down pages (SeasonDetailPage, ItemDetailPage, ItemFormPage) refactored to use `PageHeader`
-- Mobile collapse behaviour (`…` for middle segments) implemented
-- Storybook stories added for all variants
-
 ## Description
 
 As a developer, I want a standard page header pattern with back button and breadcrumbs for drill-down pages so that users always know where they are and can navigate up.

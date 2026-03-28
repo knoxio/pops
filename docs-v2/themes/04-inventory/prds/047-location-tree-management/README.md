@@ -1,7 +1,7 @@
 # PRD-047: Location Tree Management
 
 > Epic: [02 — Location Tree Management](../../epics/02-location-tree-management.md)
-> Status: To Review
+> Status: Partial
 
 ## Overview
 

@@ -10,7 +10,7 @@ Set up the monorepo toolchain: package manager, build orchestration, task runner
 
 | # | PRD | Summary | Status |
 |---|-----|---------|--------|
-| 001 | [Project Bootstrap](../prds/001-project-bootstrap/README.md) | Monorepo setup, toolchain config, dev environment, test frameworks | Done |
+| 001 | [Project Bootstrap](../prds/001-project-bootstrap/README.md) | Monorepo setup, toolchain config, dev environment, test frameworks | Partial |
 
 ## What This Delivers
 

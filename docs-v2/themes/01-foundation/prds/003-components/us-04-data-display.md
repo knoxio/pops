@@ -3,20 +3,6 @@
 > PRD: [003 — Components](README.md)
 > Status: Partial
 
-**GH Issue:** #397
-
-## Audit Findings
-
-**Present:**
-- `DataTable.tsx` — TanStack Table with sorting, filtering, pagination; stories at `DataTable.stories.tsx` and `DataTable.filtering.stories.tsx`
-- `DataTableFilters.tsx` — filter bar component
-- `InfiniteScrollTable.tsx` — scroll-based pagination variant; story at `InfiniteScrollTable.stories.tsx`
-- `EditableCell.tsx` — inline cell editing
-- `StatCard.tsx` — metric card with oklch color variants and trend support; all using design tokens
-
-**Implemented:**
-- `ViewToggleGroup` — segmented button toggle with localStorage persistence, generic value type, Storybook stories
-
 ## Description
 
 As a developer, I want data display components (DataTable, filters, view toggle) in `@pops/ui` so that any app can display tabular and grid data with consistent patterns.

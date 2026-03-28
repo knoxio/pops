@@ -1,7 +1,7 @@
 # PRD-024: Corrections
 
 > Epic: [03 — Corrections](../../epics/03-corrections.md)
-> Status: To Review
+> Status: Done
 
 ## Overview
 
@@ -62,12 +62,12 @@ Build the corrections system — learned tagging rules that improve over time. W
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-schema-api](us-01-schema-api.md) | Corrections table, view, CRUD + findMatch + adjustConfidence procedures | No (first) |
-| 02 | [us-02-upsert-logic](us-02-upsert-logic.md) | createOrUpdate upsert: confidence increment, times_applied tracking, field merging | Blocked by us-01 |
-| 03 | [us-03-auto-cleanup](us-03-auto-cleanup.md) | adjustConfidence with auto-delete below 0.3 threshold | Blocked by us-01 |
-| 04 | [us-04-normalization](us-04-normalization.md) | Description normalization for storage and matching (uppercase, strip numbers, normalize whitespace) | Blocked by us-01 |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-schema-api](us-01-schema-api.md) | Corrections table, view, CRUD + findMatch + adjustConfidence procedures | Done | No (first) |
+| 02 | [us-02-upsert-logic](us-02-upsert-logic.md) | createOrUpdate upsert: confidence increment, times_applied tracking, field merging | Done | Blocked by us-01 |
+| 03 | [us-03-auto-cleanup](us-03-auto-cleanup.md) | adjustConfidence with auto-delete below 0.3 threshold | Done | Blocked by us-01 |
+| 04 | [us-04-normalization](us-04-normalization.md) | Description normalization for storage and matching (uppercase, strip numbers, normalize whitespace) | Done | Blocked by us-01 |
 
 US-02, US-03, US-04 can parallelise after US-01.
 

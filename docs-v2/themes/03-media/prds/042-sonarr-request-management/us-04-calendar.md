@@ -28,5 +28,3 @@ As a user, I want a calendar view of upcoming episodes from my monitored TV show
 ## Notes
 
 The calendar is a flat chronological list grouped by date, not a traditional month-grid calendar. This format works better for the typical case of 5-15 upcoming episodes across a few shows. The 30-day window balances usefulness with API response size. Refreshing on page focus ensures the user sees current data without manual refresh.
-
-Audited — no /media/arr/calendar page or Sonarr getCalendar implementation found in codebase; status confirmed Not started.

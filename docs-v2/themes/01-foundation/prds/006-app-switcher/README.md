@@ -1,7 +1,7 @@
 # PRD-006: App Switcher
 
 > Epic: [02 — Shell & App Switcher](../../epics/02-shell-app-switcher.md)
-> Status: To Review
+> Status: Partial
 
 ## Overview
 

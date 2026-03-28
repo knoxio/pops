@@ -1,7 +1,7 @@
 # PRD-054: AI Overlay
 
 > Epic: [01 — AI Overlay](../../epics/01-ai-overlay.md)
-> Status: To Review
+> Status: Not started
 
 ## Overview
 
@@ -24,12 +24,12 @@ Build a contextual AI assistant integrated into the shell. Knows which app the u
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-overlay-ui](us-01-overlay-ui.md) | Shell-integrated assistant panel with input and response display | No (first) |
-| 02 | [us-02-context-injection](us-02-context-injection.md) | Inject current context (app, page, entity) into AI prompts | Blocked by us-01 |
-| 03 | [us-03-cross-domain-query](us-03-cross-domain-query.md) | Query across domains, return results with URI links | Blocked by us-02 |
-| 04 | [us-04-action-suggestions](us-04-action-suggestions.md) | Contextual action suggestions based on current page | Blocked by us-02 |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-overlay-ui](us-01-overlay-ui.md) | Shell-integrated assistant panel with input and response display | Not started | No (first) |
+| 02 | [us-02-context-injection](us-02-context-injection.md) | Inject current context (app, page, entity) into AI prompts | Not started | Blocked by us-01 |
+| 03 | [us-03-cross-domain-query](us-03-cross-domain-query.md) | Query across domains, return results with URI links | Not started | Blocked by us-02 |
+| 04 | [us-04-action-suggestions](us-04-action-suggestions.md) | Contextual action suggestions based on current page | Not started | Blocked by us-02 |
 
 ## Out of Scope
 

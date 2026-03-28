@@ -3,8 +3,6 @@
 > PRD: [005 — Shell](README.md)
 > Status: Done
 
-**GH Issue:** #406
-
 ## Description
 
 As a developer, I want tRPC configured in the shell with a clear import pattern for app packages so that any app can make type-safe API calls.

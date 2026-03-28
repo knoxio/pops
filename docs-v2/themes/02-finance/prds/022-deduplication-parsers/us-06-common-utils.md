@@ -1,7 +1,7 @@
 # US-06: Common parsing utilities
 
 > PRD: [022 — Deduplication & Parsers](README.md)
-> Status: Partial — extractLocation, online detection, and checksum generation not exposed as shared utilities
+> Status: Partial
 
 ## Description
 

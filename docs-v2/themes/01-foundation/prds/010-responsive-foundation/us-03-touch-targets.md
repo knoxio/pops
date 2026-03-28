@@ -1,7 +1,7 @@
 # US-03: Touch target audit
 
 > PRD: [010 — Responsive Foundation](README.md)
-> Status: Partial — audit incomplete, not all components verified
+> Status: Not started
 
 ## Description
 

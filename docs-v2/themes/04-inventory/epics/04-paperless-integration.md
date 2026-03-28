@@ -10,7 +10,7 @@ Integrate with Paperless-ngx to link receipts, warranties, and manuals to invent
 
 | # | PRD | Summary | Status |
 |---|-----|---------|--------|
-| 049 | [Paperless-ngx Integration](../prds/049-paperless-integration/README.md) | Document search modal, linking with tags, thumbnail display, graceful degradation when Paperless is unavailable | Done |
+| 049 | [Paperless-ngx Integration](../prds/049-paperless-integration/README.md) | Document search modal, linking with tags, thumbnail display, graceful degradation when Paperless is unavailable | Partial |
 
 ## Dependencies
 

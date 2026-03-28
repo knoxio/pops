@@ -10,7 +10,7 @@ Build the entity registry — the merchant/payee database that transactions matc
 
 | # | PRD | Summary | Status |
 |---|-----|---------|--------|
-| 023 | [Entities](../prds/023-entities/README.md) | Entity data model, registry page with CRUD, aliases, default tags, type (company/person) | Done |
+| 023 | [Entities](../prds/023-entities/README.md) | Entity data model, registry page with CRUD, aliases, default tags, type (company/person) | Partial |
 
 ## Dependencies
 

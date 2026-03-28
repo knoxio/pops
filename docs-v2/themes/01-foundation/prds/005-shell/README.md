@@ -1,7 +1,7 @@
 # PRD-005: Shell
 
 > Epic: [02 — Shell & App Switcher](../../epics/02-shell-app-switcher.md)
-> Status: To Review
+> Status: Done
 
 ## Overview
 
@@ -185,8 +185,8 @@ The key rule: app packages depend on `@pops/ui` and shared packages, never on ot
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
 | 01 | [us-01-shell-scaffold](us-01-shell-scaffold.md) | Create pops-shell with entry point, Vite config, provider stack | Done | No (first) |
-| 02 | [us-02-layout](us-02-layout.md) | Build RootLayout, TopBar with fixed positioning, content area with independent scroll | To Review | Blocked by us-01 |
-| 03 | [us-03-routing](us-03-routing.md) | Build router with lazy-loaded app registration, namespaced routes, error handling, NotFoundPage | To Review | Blocked by us-01 |
+| 02 | [us-02-layout](us-02-layout.md) | Build RootLayout, TopBar with fixed positioning, content area with independent scroll | Done | Blocked by us-01 |
+| 03 | [us-03-routing](us-03-routing.md) | Build router with lazy-loaded app registration, namespaced routes, error handling, NotFoundPage | Done | Blocked by us-01 |
 | 04 | [us-04-breadcrumbs](us-04-breadcrumbs.md) | Build page-level navigation pattern: back button + breadcrumbs for drill-down pages, mobile truncation | Done | Blocked by us-02 |
 | 05 | [us-05-trpc-access](us-05-trpc-access.md) | Set up tRPC client in shell and establish the import pattern for app packages | Done | Blocked by us-01 |
 

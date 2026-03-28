@@ -10,7 +10,7 @@ Add AI-powered live rule creation to the import pipeline. When a user corrects a
 
 | # | PRD | Summary | Status |
 |---|-----|---------|--------|
-| 027 | [AI Rule Creation](../prds/027-ai-rule-creation/README.md) | User corrects "IKEA Tempe" → AI creates pattern rule → "IKEA Rhodes" later in the same import matches automatically. Live, iterative learning within a single import run | Done |
+| 027 | [AI Rule Creation](../prds/027-ai-rule-creation/README.md) | User corrects "IKEA Tempe" → AI creates pattern rule → "IKEA Rhodes" later in the same import matches automatically. Live, iterative learning within a single import run | Partial |
 
 ## Dependencies
 

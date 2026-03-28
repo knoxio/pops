@@ -1,7 +1,7 @@
 # US-01: Radarr API client
 
 > PRD: [041 — Radarr Request Management](README.md)
-> Status: Partial — RadarrClient extends ArrBaseClient (criteria 1 ✓); request management methods (getQualityProfiles, getRootFolders, checkMovie, addMovie, updateMonitoring, triggerSearch) not implemented
+> Status: Partial
 
 ## Description
 

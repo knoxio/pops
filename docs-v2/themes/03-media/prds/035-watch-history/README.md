@@ -1,7 +1,7 @@
 # PRD-035: Watch History
 
 > Epic: [03 — Tracking & Watchlist](../../epics/03-tracking-watchlist.md)
-> Status: To Review
+> Status: Partial
 
 ## Overview
 
@@ -66,11 +66,11 @@ Track what's been watched at movie and episode level. Build a chronological hist
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-history-page](us-01-history-page.md) | History page with chronological list, filter tabs (All/Movies/Episodes), pagination, poster/title/date display | Yes |
-| 02 | [us-02-episode-enrichment](us-02-episode-enrichment.md) | Episode entries show show name, season/episode numbers (S01E03), link to show and season detail pages | Blocked by us-01 |
-| 03 | [us-03-delete-watch-event](us-03-delete-watch-event.md) | Delete watch event action with confirmation, for correcting mistakes | Yes (parallel with us-01) |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-history-page](us-01-history-page.md) | History page with chronological list, filter tabs (All/Movies/Episodes), pagination, poster/title/date display | To Review | Yes |
+| 02 | [us-02-episode-enrichment](us-02-episode-enrichment.md) | Episode entries show show name, season/episode numbers (S01E03), link to show and season detail pages | Partial | Blocked by us-01 |
+| 03 | [us-03-delete-watch-event](us-03-delete-watch-event.md) | Delete watch event action with confirmation, for correcting mistakes | Partial | Yes (parallel with us-01) |
 
 US-02 depends on US-01 (needs the history list to add episode-specific rendering). US-03 can be built in parallel with US-01 (independent delete interaction).
 

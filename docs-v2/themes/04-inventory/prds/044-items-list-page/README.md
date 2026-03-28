@@ -1,7 +1,7 @@
 # PRD-044: Items List Page
 
 > Epic: [01 — App Package & CRUD UI](../../epics/01-app-package-crud-ui.md)
-> Status: To Review
+> Status: Partial
 
 ## Overview
 
@@ -71,11 +71,11 @@ Build the inventory items list — a dual-mode view (table and grid) of all inve
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-table-view](us-01-table-view.md) | DataTable with sortable columns, row click navigation | Yes |
-| 02 | [us-02-grid-view](us-02-grid-view.md) | Responsive card grid with photo/metadata, view toggle persisted in localStorage | Yes |
-| 03 | [us-03-filters-search](us-03-filters-search.md) | Search input with asset ID redirect, type/location/condition selects, empty state | Yes |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-table-view](us-01-table-view.md) | DataTable with sortable columns, row click navigation | Partial | Yes |
+| 02 | [us-02-grid-view](us-02-grid-view.md) | Responsive card grid with photo/metadata, view toggle persisted in localStorage | Partial | Yes |
+| 03 | [us-03-filters-search](us-03-filters-search.md) | Search input with asset ID redirect, type/location/condition selects, empty state | Partial | Yes |
 
 All three stories can be built in parallel. US-01 and US-02 are independent view modes. US-03 provides filtering that applies to both views.
 

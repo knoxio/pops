@@ -1,7 +1,7 @@
 # US-03: Filters, search, and empty state
 
 > PRD: [044 — Items List Page](README.md)
-> Status: Partial — missing assetId search-on-Enter navigation, location filter, URL query params; type options are static not from DB; empty state lacks "Add your first item" link
+> Status: Partial
 
 ## Description
 

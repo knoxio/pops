@@ -25,8 +25,4 @@ As a user, I want to connect items to each other and see existing connections on
 
 ## Notes
 
-**Audit findings** (`packages/app-inventory/src/components/ConnectDialog.tsx`, `ConnectionsList.tsx`, `pages/ItemDetailPage.tsx`): Connect dialog and connection list are implemented. Procedure is named `connections.connect` (not `create`) and `connections.disconnect` (not `delete`). Connection rows in `ConnectionRow` component show item name and brand but omit AssetIdBadge and TypeBadge. No confirmation dialog before disconnect — fires immediately.
-
-## Notes
-
 The `A < B` dedup normalisation is server-side. The client sends both item IDs in any order; the API normalises before insert. The connection list shows connections from both directions (where the item is A or B).

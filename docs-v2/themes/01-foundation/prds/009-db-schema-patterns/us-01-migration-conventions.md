@@ -3,19 +3,6 @@
 > PRD: [009 — DB Schema Patterns](README.md)
 > Status: Done
 
-**GH Issue:** #419
-
-## Audit Findings
-
-**Present:**
-- Timestamp-based naming convention in use for all recent migrations (`YYYYMMDDHHMMSS_domain_description.sql`)
-- Template at `apps/pops-api/src/db/migration-template.sql` with header, forward migration section, and rollback documentation
-- `runMigrations()` in `db.ts` creates `schema_migrations` table, reads flat migrations directory sorted alphabetically, applies unapplied migrations in transactions
-- `initializeSchema()` in `db/schema.ts` creates all tables with `CREATE TABLE IF NOT EXISTS`
-- `INCLUDED_MIGRATIONS` array in `db/schema.ts` lists all migration filenames; pre-marks them as applied on fresh DBs
-- `db.pragma('foreign_keys = ON')` called in `openDatabase()` for every connection
-- Flat migrations directory at `apps/pops-api/src/db/migrations/`
-
 ## Description
 
 As a developer, I want documented migration conventions, a template file, and a working migration runner so that new domains can add tables consistently.

@@ -1,23 +1,20 @@
 # US-01: Initialize pnpm Monorepo
 
-**PRD:** 001 — Project Bootstrap
-**Theme:** 01-foundation
-**Status:** done
+> PRD: [001 — Project Bootstrap](README.md)
+> Status: Done
 
-## Audit Findings
+## Description
 
-Audited on 2026-03-26 by qa (tb-238).
+As a developer, I want a pnpm monorepo configured with workspace packages so that all apps and shared libraries are managed in a single repository with shared dependency resolution.
 
-### Evidence
+## Acceptance Criteria
 
-- `pnpm-workspace.yaml` — exists, defines workspace packages:
-  - `apps/*` (pops-api, pops-shell, moltbot, finance-api, pops-pwa)
-  - `packages/app-finance`, `packages/app-media`, `packages/db-types`, `packages/ui`
-- Root `package.json` — `"packageManager": "pnpm@10.32.1"` set, all monorepo scripts delegate to Turbo
-- `pnpm-lock.yaml` — lockfile present
-- `turbo.json` — Turbo pipeline configured for build, dev, test, typecheck, lint, format
-- `mise.toml` — task runner configured with node=24.5.0, all dev/build/test tasks present
+- [x] pnpm workspace configured with `pnpm-workspace.yaml` listing `apps/*` and `packages/*`
+- [x] Root `package.json` with workspace scripts
+- [x] Packages discoverable: `pnpm ls` shows all workspace packages
+- [x] `pnpm install` from root installs all dependencies
+- [x] Workspace packages can import each other via package name
 
-### Verdict
+## Notes
 
-Implementation is complete. The pnpm monorepo is fully initialized with proper workspace configuration, task orchestration via Turbo, and `mise` as the task runner.
+Import-tools is a standalone package (not in the workspace) — it has its own install and dependency tree. All other packages are part of the pnpm workspace.

@@ -1,7 +1,7 @@
 # PRD-018: Monitoring
 
 > Epic: [06 — Monitoring](../../epics/06-monitoring.md)
-> Status: To Review
+> Status: Done
 
 ## Overview
 
@@ -16,10 +16,10 @@ Set up monitoring so that service failures are detected without manual checking.
 
 ## User Stories
 
-| # | Story | Summary | Parallelisable |
-|---|-------|---------|----------------|
-| 01 | [us-01-health-checks](us-01-health-checks.md) | Docker health checks on API and shell, restart policies | Done |
-| 02 | [us-02-log-access](us-02-log-access.md) | Centralised log access via docker compose logs and mise tasks | Done |
+| # | Story | Summary | Status | Parallelisable |
+|---|-------|---------|--------|----------------|
+| 01 | [us-01-health-checks](us-01-health-checks.md) | Docker health checks on API and shell, restart policies | Done | No (first) |
+| 02 | [us-02-log-access](us-02-log-access.md) | Centralised log access via docker compose logs and mise tasks | Done | Yes |
 
 ## Verification
 

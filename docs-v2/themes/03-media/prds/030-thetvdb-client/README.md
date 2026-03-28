@@ -1,7 +1,7 @@
 # PRD-030: TheTVDB Client
 
 > Epic: [01 — Metadata Integration](../../epics/01-metadata-integration.md)
-> Status: To Review
+> Status: Partial
 
 ## Overview
 

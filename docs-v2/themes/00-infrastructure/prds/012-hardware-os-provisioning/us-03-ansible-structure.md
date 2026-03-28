@@ -1,7 +1,7 @@
 # US-03: Ansible directory structure
 
 > PRD: [012 — Hardware & OS Provisioning](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,13 +9,13 @@ As an operator, I want the Ansible directory structure set up with inventory, va
 
 ## Acceptance Criteria
 
-- [ ] `infra/ansible/` directory with playbooks, inventory, roles structure
-- [ ] `playbooks/site.yml` — full provisioning (OS + Docker + services)
-- [ ] `playbooks/deploy.yml` — services only (skip OS hardening)
-- [ ] `inventory/hosts` with server configuration
-- [ ] `inventory/group_vars/pops_servers/vault.yml` encrypted with Ansible Vault
-- [ ] `ansible-playbook playbooks/site.yml --syntax-check` passes
-- [ ] Vault password documented (location, not the password itself)
+- [x] `infra/ansible/` directory with playbooks, inventory, roles structure
+- [x] `playbooks/site.yml` — full provisioning (OS + Docker + services)
+- [x] `playbooks/deploy.yml` — services only (skip OS hardening)
+- [x] `inventory/hosts` with server configuration
+- [x] `inventory/group_vars/pops_servers/vault.yml` encrypted with Ansible Vault
+- [x] `ansible-playbook playbooks/site.yml --syntax-check` passes
+- [x] Vault password documented (location, not the password itself)
 
 ## Notes
 

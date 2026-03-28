@@ -1,7 +1,7 @@
 # US-01: Items and locations schema
 
 > PRD: [043 — Inventory Data Model & API](README.md)
-> Status: Partial — missing purchasePrice column, condition default, createdAt/updatedAt, composite parentId+sortOrder index; table named home_inventory not items
+> Status: Partial
 
 ## Description
 

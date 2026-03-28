@@ -1,7 +1,7 @@
 # US-02: Build primitive components
 
 > PRD: [003 — Components](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,12 +9,12 @@ As a developer, I want all 28 Shadcn/Radix primitive components in `@pops/ui/pri
 
 ## Acceptance Criteria
 
-- [ ] All 28 primitives exist in `packages/ui/src/primitives/`: Accordion, AlertDialog, Alert, Avatar, Badge, Breadcrumb, Button, Card, Checkbox, Collapsible, Command, Dialog, DropdownMenu, Input, Label, Popover, Progress, RadioGroup, Select, Separator, Skeleton, Slider, Sonner, Switch, Table, Tabs, Textarea, Tooltip
-- [ ] Each primitive has a co-located `.stories.tsx` file (where applicable)
-- [ ] All primitives exported from barrel `index.ts`
-- [ ] All primitives use design tokens from PRD-002 — no hardcoded colours or arbitrary values
-- [ ] Storybook renders all primitive stories
-- [ ] Light and dark mode work for all primitives
+- [x] All 28 primitives exist in `packages/ui/src/primitives/`: Accordion, AlertDialog, Alert, Avatar, Badge, Breadcrumb, Button, Card, Checkbox, Collapsible, Command, Dialog, DropdownMenu, Input, Label, Popover, Progress, RadioGroup, Select, Separator, Skeleton, Slider, Sonner, Switch, Table, Tabs, Textarea, Tooltip
+- [x] Each primitive has a co-located `.stories.tsx` file (where applicable)
+- [x] All primitives exported from barrel `index.ts`
+- [x] All primitives use design tokens from PRD-002 — no hardcoded colours or arbitrary values
+- [x] Storybook renders all primitive stories
+- [x] Light and dark mode work for all primitives
 
 ## Notes
 

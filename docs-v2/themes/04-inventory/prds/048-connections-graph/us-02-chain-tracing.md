@@ -23,8 +23,4 @@ As a user, I want to trace the full chain of connected items from any starting p
 
 ## Notes
 
-**Audit findings** (`packages/app-inventory/src/components/ConnectionTracePanel.tsx`, `apps/pops-api/src/modules/inventory/connections/router.ts`): Chain trace fully implemented. `ConnectionTracePanel` is displayed by default whenever the item has connections (rather than behind a dedicated button). Procedure named `trace` not `traceChain` — same functionality. All other criteria verified.
-
-## Notes
-
 The recursive CTE runs server-side. It maintains a visited set to detect cycles and respects maxDepth. The response is a flat list with `depth` and `parentItemId` fields that the client assembles into a tree for display. The CTE walks all edges bidirectionally (since connections are stored once with A<B).

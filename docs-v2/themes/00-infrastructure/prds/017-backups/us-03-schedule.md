@@ -1,7 +1,7 @@
 # US-03: Scheduled backups
 
 > PRD: [017 — Backups](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,11 +9,11 @@ As an operator, I want backups running automatically on a daily schedule so that
 
 ## Acceptance Criteria
 
-- [ ] Systemd timer unit triggers backup script daily
-- [ ] Timer runs at a low-traffic time (e.g., 3am local)
-- [ ] `systemctl status pops-backup.timer` shows next scheduled run
-- [ ] Systemd journal captures backup script output
-- [ ] Timer deployed via Ansible
+- [x] Systemd timer unit triggers backup script daily
+- [x] Timer runs at a low-traffic time (e.g., 3am local)
+- [x] `systemctl status pops-backup.timer` shows next scheduled run
+- [x] Systemd journal captures backup script output
+- [x] Timer deployed via Ansible
 
 ## Notes
 

@@ -10,7 +10,7 @@ Establish the database conventions that all domains follow: SQLite as source of 
 
 | # | PRD | Summary | Status |
 |---|-----|---------|--------|
-| 009 | [DB Schema Patterns](../prds/009-db-schema-patterns/README.md) | Migration conventions, entity type system, cross-domain FKs, seed data, UUID PKs, standard columns | Done |
+| 009 | [DB Schema Patterns](../prds/009-db-schema-patterns/README.md) | Migration conventions, entity type system, cross-domain FKs, seed data, UUID PKs, standard columns | Partial |
 
 ## Dependencies
 

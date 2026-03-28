@@ -27,5 +27,3 @@ As a user, I want per-season monitoring toggles on the TV show detail page and p
 ## Notes
 
 Season monitoring updates go through the series PUT endpoint (Sonarr requires the full series object). Episode monitoring uses a dedicated batch endpoint that accepts an array of episode IDs. Optimistic updates provide instant feedback — the toggle moves immediately and only reverts if the API call fails. This avoids the sluggish feel of waiting for a round trip on every toggle.
-
-Audited — no season/episode monitoring toggle UI found in codebase; the SonarrClient tracks episode counts for status display but has no monitoring control methods; status confirmed Not started.

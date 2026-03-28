@@ -3,18 +3,6 @@
 > PRD: [008 — API Server](README.md)
 > Status: Done
 
-**GH Issue:** #418
-
-## Audit Findings
-
-**Present:**
-- `routes/webhooks/up-bank.ts` sets up the Up Bank webhook receiver at `POST /webhooks/up`
-- Webhook verifies `X-Up-Authenticity-Signature` via HMAC-SHA256 before processing; rejects with 401 if missing or invalid
-- `routes/media/images.ts` serves cached media images at `GET /media/images/:mediaType/:id/:filename`
-- Static file responses include `Cache-Control: public, max-age=31536000, immutable` and `ETag` headers
-- Both routes registered in `app.ts` alongside tRPC; webhook raw body parsing registered before `express.json()`
-- Webhook raw body parsing (`express.raw()`) is registered before `express.json()` to preserve body for signature verification
-
 ## Description
 
 As a developer, I want Express routes for webhooks and static file serving so that non-tRPC endpoints have a home outside the tRPC router.

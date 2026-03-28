@@ -1,7 +1,7 @@
 # US-01: Sonarr API client
 
 > PRD: [042 — Sonarr Request Management](README.md)
-> Status: Partial — SonarrClient extends ArrBaseClient (criteria 1 ✓); request management methods (getQualityProfiles, getRootFolders, getLanguageProfiles, checkSeries, addSeries, updateMonitoring, updateSeasonMonitoring, updateEpisodeMonitoring, getCalendar, triggerSearch) not implemented
+> Status: Partial
 
 ## Description
 

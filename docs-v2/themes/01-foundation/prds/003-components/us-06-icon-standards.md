@@ -3,8 +3,6 @@
 > PRD: [003 — Components](README.md)
 > Status: Partial — aria-label and doc done, full icon sweep pending
 
-**GH Issue:** #399
-
 ## Description
 
 As a developer, I want all interactive actions across the platform to use the standardised Lucide icon vocabulary so that the UI is consistent and predictable.

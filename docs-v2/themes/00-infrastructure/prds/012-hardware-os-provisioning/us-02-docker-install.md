@@ -1,7 +1,7 @@
 # US-02: Docker installation
 
 > PRD: [012 — Hardware & OS Provisioning](README.md)
-> Status: To Review
+> Status: Done
 
 ## Description
 
@@ -9,11 +9,11 @@ As an operator, I want Docker and Docker Compose installed on the server so that
 
 ## Acceptance Criteria
 
-- [ ] Docker Engine installed from official Docker repository
-- [ ] Docker Compose v2 plugin installed
-- [ ] Deploy user added to `docker` group (no sudo needed for docker commands)
-- [ ] Docker service enabled and running on boot
-- [ ] Ansible role is idempotent
+- [x] Docker Engine installed from official Docker repository
+- [x] Docker Compose v2 plugin installed
+- [x] Deploy user added to `docker` group (no sudo needed for docker commands)
+- [x] Docker service enabled and running on boot
+- [x] Ansible role is idempotent
 
 ## Notes
 
