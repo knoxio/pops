@@ -18,15 +18,7 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage,
 } from "@pops/ui";
-import {
-  ArrowLeft,
-  CheckCircle2,
-  XCircle,
-  RefreshCw,
-  Film,
-  Tv,
-  Save,
-} from "lucide-react";
+import { ArrowLeft, CheckCircle2, XCircle, RefreshCw, Film, Tv, Save } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
 
@@ -132,8 +124,8 @@ function ServiceCard({
       {testResult?.connected && testResult.version && (
         <p className="text-xs text-emerald-400">Connected — v{testResult.version}</p>
       )}
-      {testResult && !testResult.connected && testResult.error && (
-        <p className="text-xs text-red-400">{testResult.error}</p>
+      {testResult && !testResult.connected && (
+        <p className="text-xs text-red-400">{testResult.error ?? "Connection failed"}</p>
       )}
     </div>
   );

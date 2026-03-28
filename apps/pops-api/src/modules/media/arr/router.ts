@@ -12,7 +12,7 @@ export const arrRouter = router({
   testRadarr: protectedProcedure.query(async () => {
     const client = arrService.getRadarrClient();
     if (!client) {
-      return { data: { configured: false, connected: false } };
+      return { data: { configured: false, connected: false, error: "Radarr is not configured" } };
     }
 
     try {
@@ -32,7 +32,7 @@ export const arrRouter = router({
   testSonarr: protectedProcedure.query(async () => {
     const client = arrService.getSonarrClient();
     if (!client) {
-      return { data: { configured: false, connected: false } };
+      return { data: { configured: false, connected: false, error: "Sonarr is not configured" } };
     }
 
     try {

@@ -15,7 +15,7 @@ interface CacheEntry {
 }
 
 const CACHE_TTL_MS = 30_000;
-const CONNECTION_TIMEOUT_MS = 5_000;
+const CONNECTION_TIMEOUT_MS = 10_000;
 
 export class ArrBaseClient {
   protected readonly baseUrl: string;
