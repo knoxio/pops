@@ -8,6 +8,7 @@ const mockGetSyncStatus = vi.fn();
 const mockGetPlexUrl = vi.fn();
 const mockGetSectionIds = vi.fn();
 const mockGetSchedulerStatus = vi.fn();
+const mockGetSyncLogs = vi.fn();
 const mockTestConnection = vi.fn();
 const mockGetLibraries = vi.fn();
 const mockSyncMoviesMutate = vi.fn();
@@ -19,9 +20,11 @@ const mockCheckPinMutate = vi.fn();
 const mockDisconnectMutate = vi.fn();
 const mockStartSchedulerMutate = vi.fn();
 const mockStopSchedulerMutate = vi.fn();
+const mockSyncWatchlistMutate = vi.fn();
 
 let syncMoviesOpts: Record<string, unknown> = {};
 let syncTvOpts: Record<string, unknown> = {};
+let syncWatchlistOpts: Record<string, unknown> = {};
 let getPinOpts: Record<string, unknown> = {};
 
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
@@ -41,6 +44,9 @@ vi.mock("../lib/trpc", () => ({
         },
         getSchedulerStatus: {
           useQuery: (...args: unknown[]) => mockGetSchedulerStatus(...args),
+        },
+        getSyncLogs: {
+          useQuery: (...args: unknown[]) => mockGetSyncLogs(...args),
         },
         testConnection: {
           useQuery: (...args: unknown[]) => mockTestConnection(...args),
@@ -107,6 +113,12 @@ vi.mock("../lib/trpc", () => ({
             isPending: false,
           }),
         },
+        syncWatchlist: {
+          useMutation: (opts: Record<string, unknown>) => {
+            syncWatchlistOpts = opts;
+            return { mutate: mockSyncWatchlistMutate, isPending: false };
+          },
+        },
       },
     },
   },
@@ -163,6 +175,10 @@ function setupDefaults(overrides: {
     },
     refetch: vi.fn(),
   });
+  mockGetSyncLogs.mockReturnValue({
+    data: { data: [] },
+    refetch: vi.fn(),
+  });
   mockTestConnection.mockReturnValue({
     data: { data: { connected } },
     refetch: vi.fn(),
@@ -192,6 +208,7 @@ describe("PlexSettingsPage", () => {
     mockGetPlexUrl.mockReturnValue({ isLoading: true });
     mockGetSectionIds.mockReturnValue({ data: null });
     mockGetSchedulerStatus.mockReturnValue({ data: null });
+    mockGetSyncLogs.mockReturnValue({ data: null });
     mockTestConnection.mockReturnValue({ data: null });
     mockGetLibraries.mockReturnValue({ data: null });
 
@@ -375,5 +392,90 @@ describe("PlexSettingsPage", () => {
 
     expect(screen.getByText("Connection Failed")).toBeInTheDocument();
     expect(screen.getByText("Connection refused")).toBeInTheDocument();
+  });
+
+  // ── Watchlist Sync ──────────────────────────────────────────────────────
+
+  it("shows Watchlist Sync section when connected", () => {
+    setupDefaults();
+    renderPage();
+
+    expect(screen.getByText("Watchlist Sync")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sync watchlist/i })).toBeInTheDocument();
+  });
+
+  it("hides Watchlist Sync section when not connected", () => {
+    setupDefaults({ connected: false, hasToken: false, configured: false });
+    renderPage();
+
+    expect(screen.queryByText("Watchlist Sync")).not.toBeInTheDocument();
+  });
+
+  it("triggers syncWatchlist mutation on button click", () => {
+    setupDefaults();
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /sync watchlist/i }));
+    expect(mockSyncWatchlistMutate).toHaveBeenCalledOnce();
+  });
+
+  it("displays watchlist sync results after successful sync", () => {
+    setupDefaults();
+    renderPage();
+
+    // Simulate sync success
+    const onSuccess = syncWatchlistOpts.onSuccess as (res: {
+      data: { added: number; removed: number; skipped: number; errors: { title: string; reason: string }[] };
+      message: string;
+    }) => void;
+    onSuccess({
+      data: { added: 3, removed: 1, skipped: 5, errors: [] },
+      message: "Watchlist sync: 3 added, 1 removed, 5 skipped",
+    });
+
+    renderPage();
+
+    expect(screen.getByText("Watchlist Results:")).toBeInTheDocument();
+    expect(screen.getByText("3 added")).toBeInTheDocument();
+    expect(screen.getByText("1 removed")).toBeInTheDocument();
+    expect(screen.getByText("5 skipped")).toBeInTheDocument();
+  });
+
+  it("shows expandable error details for watchlist sync errors", () => {
+    setupDefaults();
+    renderPage();
+
+    const onSuccess = syncWatchlistOpts.onSuccess as (res: {
+      data: { added: number; removed: number; skipped: number; errors: { title: string; reason: string }[] };
+      message: string;
+    }) => void;
+    onSuccess({
+      data: {
+        added: 1,
+        removed: 0,
+        skipped: 0,
+        errors: [{ title: "Unknown Movie", reason: "No TMDB match found" }],
+      },
+      message: "Watchlist sync: 1 added, 0 removed, 0 skipped",
+    });
+
+    renderPage();
+
+    expect(screen.getByText("1 errors")).toBeInTheDocument();
+    // Errors hidden initially
+    expect(screen.queryByText(/No TMDB match found/)).not.toBeInTheDocument();
+
+    // Expand errors — find the one inside the watchlist section
+    const watchlistSection = screen.getByText("Watchlist Sync").closest("div")!;
+    const showBtn = within(watchlistSection).getByText("Show error details");
+    fireEvent.click(showBtn);
+
+    expect(screen.getByText(/Unknown Movie:/)).toBeInTheDocument();
+    expect(screen.getByText(/No TMDB match found/)).toBeInTheDocument();
+
+    // Collapse
+    const hideBtn = within(watchlistSection).getByText("Hide error details");
+    fireEvent.click(hideBtn);
+    expect(screen.queryByText(/No TMDB match found/)).not.toBeInTheDocument();
   });
 });

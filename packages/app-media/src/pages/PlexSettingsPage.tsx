@@ -31,6 +31,7 @@ import {
   ChevronDown,
   ChevronUp,
   History,
+  Bookmark,
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
@@ -41,6 +42,13 @@ interface SyncResult {
   skipped: number;
   errors: { title: string; reason: string; year: number | null }[];
   skipReasons?: { title: string; reason: string; year: number | null }[];
+}
+
+interface WatchlistSyncResult {
+  added: number;
+  removed: number;
+  skipped: number;
+  errors: { title: string; reason: string }[];
 }
 
 function SyncResultDisplay({ result, label }: { result: SyncResult; label: string }) {
@@ -107,6 +115,45 @@ function SyncResultDisplay({ result, label }: { result: SyncResult; label: strin
   );
 }
 
+function WatchlistSyncResultDisplay({ result }: { result: WatchlistSyncResult }) {
+  const [showErrors, setShowErrors] = useState(false);
+
+  return (
+    <div className="rounded-md border bg-muted/30 p-3 space-y-2 text-sm">
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="font-medium">Watchlist Results:</span>
+        <span className="text-emerald-400">{result.added} added</span>
+        <span className="text-orange-400">{result.removed} removed</span>
+        <span className="text-muted-foreground">{result.skipped} skipped</span>
+        {result.errors.length > 0 && (
+          <span className="text-red-400">{result.errors.length} errors</span>
+        )}
+      </div>
+      {result.errors.length > 0 && (
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowErrors(!showErrors)}
+            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors"
+          >
+            {showErrors ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            {showErrors ? "Hide" : "Show"} error details
+          </button>
+          {showErrors && (
+            <div className="mt-2 space-y-1 text-xs text-red-400/80">
+              {result.errors.map((err, i) => (
+                <p key={i}>
+                  <span className="font-medium">{err.title}:</span> {err.reason}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function PlexSettingsPage() {
   const [movieSectionId, setMovieSectionId] = useState<string>("");
   const [tvSectionId, setTvSectionId] = useState<string>("");
@@ -115,6 +162,7 @@ export function PlexSettingsPage() {
   const [plexUrl, setPlexUrl] = useState<string>("");
   const [movieSyncResult, setMovieSyncResult] = useState<SyncResult | null>(null);
   const [tvSyncResult, setTvSyncResult] = useState<SyncResult | null>(null);
+  const [watchlistSyncResult, setWatchlistSyncResult] = useState<WatchlistSyncResult | null>(null);
   const [schedulerHours, setSchedulerHours] = useState<number>(6);
 
   const syncStatus = trpc.media.plex.getSyncStatus.useQuery();
@@ -169,6 +217,13 @@ export function PlexSettingsPage() {
       syncLogs.refetch();
     },
     onError: (err: { message: string }) => toast.error(`TV show sync failed: ${err.message}`),
+  });
+  const syncWatchlist = trpc.media.plex.syncWatchlist.useMutation({
+    onSuccess: (res: { data: WatchlistSyncResult; message: string }) => {
+      setWatchlistSyncResult(res.data);
+      toast.success(res.message);
+    },
+    onError: (err: { message: string }) => toast.error(`Watchlist sync failed: ${err.message}`),
   });
   const saveSectionIds = trpc.media.plex.saveSectionIds.useMutation({
     onError: (err: { message: string }) =>
@@ -553,6 +608,38 @@ export function PlexSettingsPage() {
                 <p className="text-xs text-muted-foreground">No TV libraries found</p>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Watchlist Sync */}
+        {connected && (
+          <div className="rounded-lg border bg-card p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <Bookmark className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold">Watchlist Sync</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Sync your Plex watchlist to POPS. Items added or removed on Plex will be reflected
+              locally.
+            </p>
+            <Button
+              size="sm"
+              disabled={syncWatchlist.isPending}
+              onClick={() => {
+                setWatchlistSyncResult(null);
+                syncWatchlist.mutate();
+              }}
+            >
+              {syncWatchlist.isPending ? (
+                <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
+              )}
+              {syncWatchlist.isPending ? "Syncing..." : "Sync Watchlist"}
+            </Button>
+            {watchlistSyncResult && (
+              <WatchlistSyncResultDisplay result={watchlistSyncResult} />
+            )}
           </div>
         )}
 
