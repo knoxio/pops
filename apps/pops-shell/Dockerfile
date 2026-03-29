@@ -18,8 +18,14 @@ COPY packages/api-client/package.json ./packages/api-client/
 # Install pnpm and dependencies (workspace resolution)
 RUN corepack enable && pnpm install --frozen-lockfile
 
-# Copy source files for all workspace packages
-COPY packages/db-types/ ./packages/db-types/
+# Copy db-types source and build it first (same pattern as pops-api Dockerfile)
+COPY packages/db-types/src ./packages/db-types/src
+COPY packages/db-types/tsconfig.json ./packages/db-types/
+WORKDIR /app/packages/db-types
+RUN pnpm build
+
+# Copy remaining source files
+WORKDIR /app
 COPY packages/ui/ ./packages/ui/
 COPY packages/app-finance/ ./packages/app-finance/
 COPY packages/app-media/ ./packages/app-media/
@@ -29,13 +35,9 @@ COPY packages/api-client/ ./packages/api-client/
 COPY apps/pops-api/ ./apps/pops-api/
 COPY apps/pops-shell/ ./apps/pops-shell/
 
-# Build db-types first (other packages are bundled by Vite)
-# Run from workspace root so tsc resolves from hoisted node_modules
-WORKDIR /app
-RUN pnpm --filter @pops/db-types build
-
 # Build pops-shell (tsc typecheck + vite build)
-RUN pnpm --filter @pops/shell build
+WORKDIR /app/apps/pops-shell
+RUN pnpm build
 
 # ── Production image ──────────────────────────────────────────────
 FROM nginx:alpine
