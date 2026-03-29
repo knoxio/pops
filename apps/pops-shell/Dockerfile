@@ -28,12 +28,12 @@ COPY apps/pops-api/ ./apps/pops-api/
 COPY apps/pops-shell/ ./apps/pops-shell/
 
 # Build db-types first (other packages are bundled by Vite)
-WORKDIR /app/packages/db-types
-RUN pnpm build
+# Run from workspace root so tsc resolves from hoisted node_modules
+WORKDIR /app
+RUN pnpm --filter @pops/db-types build
 
 # Build pops-shell (tsc typecheck + vite build)
-WORKDIR /app/apps/pops-shell
-RUN pnpm build
+RUN pnpm --filter @pops/shell build
 
 # ── Production image ──────────────────────────────────────────────
 FROM nginx:alpine
