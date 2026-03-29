@@ -14,34 +14,40 @@ Before starting, verify all of the following:
 - [ ] `.env` on the N95 has correct values (Up API token, TMDB key, Plex URL/token, Claude API key)
 - [ ] Ansible vault is up to date (`mise ansible:view` to confirm)
 
-## Step 1: Initial Data Import
-
-Run imports in this order. Each step is idempotent — safe to re-run.
+## Step 1: Deploy Fresh
 
 ```bash
 # 1. Start with a fresh database (last time you will ever run this)
 mise db:init
 
-# 2. Import bank transactions (oldest → newest)
-CSV_PATH=/data/imports/anz.csv mise import:anz --execute
-CSV_PATH=/data/imports/amex.csv mise import:amex --execute
-CSV_PATH=/data/imports/ing.csv mise import:ing --execute
-SINCE_DATE=2024-01-01 mise import:up --execute
+# 2. Set production mode (activates guards)
+# In .env or Docker Compose environment:
+NODE_ENV=production
 
-# 3. Link transfer pairs and novated lease pairs
-yarn --cwd packages/import-tools match:transfers --execute
-yarn --cwd packages/import-tools match:novated --execute
-
-# 4. Create entities and rebuild lookup cache
-yarn --cwd packages/import-tools entities:create --execute
-mise entities:lookup
+# 3. Deploy
+mise ansible:deploy
+# or for local Docker:
+mise docker:up
 ```
 
-### Dry Run First
+## Step 2: Import Data via UI
 
-Omit `--execute` from every import command to preview what would be written. Verify counts look correct before committing.
+All bank imports go through the Import Wizard in the app (PRD-020). No CLI import scripts.
 
-## Step 2: Verification
+1. Open the app → Finance → Import
+2. Upload CSV files one at a time (oldest account first):
+   - ANZ Everyday
+   - Amex
+   - ING
+   - Up Bank (if CSV — Up webhook handles ongoing imports automatically)
+3. For each import:
+   - Upload the CSV
+   - Verify column mapping (auto-detected for supported banks)
+   - Review transactions — check entity matching, resolve uncertain matches
+   - Approve and execute the import
+4. After all imports, review the entity list — merge duplicates, fix mismatches
+
+## Step 3: Verification
 
 ```bash
 # Show database statistics
@@ -55,29 +61,9 @@ Check the following:
 - [ ] No orphaned transactions (every transaction has an entity match or is explicitly uncategorised)
 - [ ] Spot check: pick 5 recent transactions from each account — amounts and dates match bank statements
 
-```sql
--- Quick row counts (run via sqlite3 CLI)
-SELECT 'transactions' AS tbl, COUNT(*) FROM transactions
-UNION ALL SELECT 'entities', COUNT(*) FROM entities
-UNION ALL SELECT 'budgets', COUNT(*) FROM budgets;
-```
+## Step 4: Verify Guards and Backup
 
-## Step 3: Point of No Return
-
-After this step, **never run `db:init`, `db:seed`, or `db:clear` again** on this database.
-
-1. Set the environment variable:
-   ```bash
-   # In .env or Docker Compose environment
-   NODE_ENV=production
-   ```
-
-2. Restart services to pick up the environment change:
-   ```bash
-   mise docker:up
-   ```
-
-3. Verify guards are active:
+1. Verify guards are active:
    ```bash
    # These should all fail with a clear error
    mise db:init     # Expected: "Refusing to run against production database"
@@ -85,12 +71,14 @@ After this step, **never run `db:init`, `db:seed`, or `db:clear` again** on this
    mise db:clear    # Expected: "Refusing to run against production database"
    ```
 
-4. Take a manual backup:
+2. Take a manual backup:
    ```bash
    sqlite3 /opt/pops/data/pops.db "VACUUM INTO '/opt/pops/backups/pops-go-live-$(date +%Y%m%d).db';"
    ```
 
-## Step 4: Ongoing Operations
+**After this point, never run `db:init`, `db:seed`, or `db:clear` again on this database.**
+
+## Step 5: Ongoing Operations
 
 ### Schema Changes (the normal workflow)
 
@@ -107,12 +95,8 @@ pnpm --filter @pops/db-types exec drizzle-kit generate
 
 ### Adding Bank Data
 
-```bash
-# Up Bank (ongoing via webhook — automatic)
-# Manual CSV imports (as needed):
-CSV_PATH=/data/imports/anz-2026-04.csv mise import:anz --execute
-CSV_PATH=/data/imports/amex-2026-04.csv mise import:amex --execute
-```
+- **Up Bank**: ongoing via webhook — automatic, no action needed
+- **CSV imports (ANZ, Amex, ING)**: use the Import Wizard in the app (Finance → Import). Upload the CSV, review, approve.
 
 ### Routine Maintenance
 
@@ -127,7 +111,7 @@ mise entities:lookup
 rclone ls b2:pops-backups/
 ```
 
-## Step 5: Emergency Recovery
+## Step 6: Emergency Recovery
 
 If something goes wrong (bad migration, data corruption, accidental deletion):
 
