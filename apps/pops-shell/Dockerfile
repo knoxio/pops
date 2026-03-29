@@ -13,6 +13,7 @@ COPY packages/app-finance/package.json ./packages/app-finance/
 COPY packages/app-media/package.json ./packages/app-media/
 COPY packages/app-inventory/package.json ./packages/app-inventory/
 COPY packages/app-ai/package.json ./packages/app-ai/
+COPY packages/api-client/package.json ./packages/api-client/
 
 # Install pnpm and dependencies (workspace resolution)
 RUN corepack enable && pnpm install --frozen-lockfile
@@ -24,6 +25,7 @@ COPY packages/app-finance/ ./packages/app-finance/
 COPY packages/app-media/ ./packages/app-media/
 COPY packages/app-inventory/ ./packages/app-inventory/
 COPY packages/app-ai/ ./packages/app-ai/
+COPY packages/api-client/ ./packages/api-client/
 COPY apps/pops-api/ ./apps/pops-api/
 COPY apps/pops-shell/ ./apps/pops-shell/
 

@@ -621,10 +621,10 @@ export function WatchlistPage() {
         return;
       }
 
-      const reordered = arrayMove(currentOrder, oldIndex, newIndex);
+      const reordered = arrayMove(currentOrder, oldIndex, newIndex) as WatchlistEntry[];
       setOptimisticOrder(reordered);
 
-      const items = reordered.map((entry, i) => ({ id: entry.id, priority: i }));
+      const items = reordered.map((entry: WatchlistEntry, i: number) => ({ id: entry.id, priority: i }));
       setIsReordering(true);
       reorderMutation.mutate({ items });
     },
@@ -741,7 +741,7 @@ export function WatchlistPage() {
             onDragCancel={handleDragCancel}
           >
             <SortableContext
-              items={sortedEntries.map((e) => e.id)}
+              items={sortedEntries.map((e: WatchlistEntry) => e.id)}
               strategy={verticalListSortingStrategy}
             >
               <div className="hidden md:grid grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
@@ -784,10 +784,10 @@ export function WatchlistPage() {
             <DragOverlay>
               {activeId != null
                 ? (() => {
-                    const entry = sortedEntries.find((e) => e.id === activeId);
+                    const entry = sortedEntries.find((e: WatchlistEntry) => e.id === activeId);
                     if (!entry) return null;
                     const meta = getMetaForEntry(entry);
-                    const idx = sortedEntries.findIndex((e) => e.id === activeId);
+                    const idx = sortedEntries.findIndex((e: WatchlistEntry) => e.id === activeId);
                     return (
                       <div className="opacity-80 w-48">
                         <WatchlistCard
