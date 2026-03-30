@@ -107,10 +107,7 @@ export class PlexClient {
    * Search the Plex Discover API by title and media type.
    * Returns items with ratingKeys and external IDs (tmdb://, tvdb://).
    */
-  async searchDiscover(
-    query: string,
-    searchType: "movie" | "show"
-  ): Promise<PlexMediaItem[]> {
+  async searchDiscover(query: string, searchType: "movie" | "show"): Promise<PlexMediaItem[]> {
     const typeParam = searchType === "movie" ? "1" : "2";
     const url =
       `https://discover.provider.plex.tv/library/search` +
