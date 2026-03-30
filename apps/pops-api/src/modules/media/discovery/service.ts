@@ -226,7 +226,12 @@ export function getUnwatchedLibraryMovies(): DiscoverResult[] {
     .all();
 
   return rows.map((row) => {
-    const genreNames = (row.genres ? JSON.parse(row.genres) : []) as string[];
+    let genreNames: string[] = [];
+    try {
+      genreNames = row.genres ? (JSON.parse(row.genres) as string[]) : [];
+    } catch {
+      // Malformed JSON — skip genres for this movie
+    }
     const genreIds = genreNames
       .map((name) => GENRE_NAME_TO_ID[name])
       .filter((id): id is number => id != null);

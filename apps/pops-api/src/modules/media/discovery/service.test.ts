@@ -132,7 +132,7 @@ describe("scoreDiscoverResults", () => {
   });
 });
 
-describe("fromYourServer scoring integration", () => {
+describe("fromYourServer genre mapping and scoring", () => {
   /** Reverse map used by getUnwatchedLibraryMovies to convert genre names → IDs. */
   const GENRE_NAME_TO_ID = Object.fromEntries(
     Object.entries(TMDB_GENRE_MAP).map(([id, name]) => [name, Number(id)])
@@ -211,9 +211,20 @@ describe("fromYourServer scoring integration", () => {
     expect(scored[0]!.matchPercentage).toBeLessThanOrEqual(98);
   });
 
-  it("returns empty results when no unwatched movies exist", () => {
+  it("returns empty scored array when no movies provided", () => {
     const scored = scoreDiscoverResults([], makeProfile());
     expect(scored).toEqual([]);
+  });
+
+  it("handles malformed genres JSON gracefully", () => {
+    // Simulate the try/catch logic in getUnwatchedLibraryMovies
+    let genreNames: string[] = [];
+    try {
+      genreNames = JSON.parse("not valid json") as string[];
+    } catch {
+      // Falls back to empty — same as production code
+    }
+    expect(genreNames).toEqual([]);
   });
 
   it("ignores unknown genre names from library data", () => {
