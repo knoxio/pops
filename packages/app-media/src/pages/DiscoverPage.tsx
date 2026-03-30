@@ -41,13 +41,17 @@ export function DiscoverPage() {
     { staleTime: 5 * 60 * 1000 }
   );
 
-  // Accumulate trending results when new data arrives
+  // Accumulate trending results when new data arrives, deduplicating by tmdbId
   useEffect(() => {
     if (trending.data?.results) {
       if (trendingPage === 1) {
         setAccumulatedResults(trending.data.results);
       } else {
-        setAccumulatedResults((prev) => [...prev, ...trending.data!.results]);
+        setAccumulatedResults((prev) => {
+          const existingIds = new Set(prev.map((r) => r.tmdbId));
+          const newItems = trending.data!.results.filter((r) => !existingIds.has(r.tmdbId));
+          return [...prev, ...newItems];
+        });
       }
     }
   }, [trending.data, trendingPage]);
@@ -97,10 +101,12 @@ export function DiscoverPage() {
   // Track in-progress mutations per tmdbId
   const [addingToLibrary, setAddingToLibrary] = useState<Set<number>>(new Set());
   const [addingToWatchlist, setAddingToWatchlist] = useState<Set<number>>(new Set());
+  const [markingWatched, setMarkingWatched] = useState<Set<number>>(new Set());
 
   // Mutations
   const addMovieMutation = trpc.media.library.addMovie.useMutation();
   const addWatchlistMutation = trpc.media.watchlist.add.useMutation();
+  const logWatchMutation = trpc.media.watchHistory.log.useMutation();
 
   const handleAddToLibrary = useCallback(
     async (tmdbId: number) => {
@@ -157,6 +163,31 @@ export function DiscoverPage() {
       }
     },
     [addMovieMutation, addWatchlistMutation, utils]
+  );
+
+  const handleMarkWatched = useCallback(
+    async (tmdbId: number) => {
+      setMarkingWatched((prev) => new Set(prev).add(tmdbId));
+      try {
+        const libResult = await addMovieMutation.mutateAsync({ tmdbId });
+        await logWatchMutation.mutateAsync({
+          mediaType: "movie",
+          mediaId: libResult.data.id,
+        });
+        toast.success(`Marked "${libResult.data.title}" as watched`);
+        void utils.media.discovery.trending.invalidate();
+        void utils.media.discovery.recommendations.invalidate();
+      } catch {
+        toast.error("Failed to mark as watched");
+      } finally {
+        setMarkingWatched((prev) => {
+          const next = new Set(prev);
+          next.delete(tmdbId);
+          return next;
+        });
+      }
+    },
+    [addMovieMutation, logWatchMutation, utils]
   );
 
   return (
@@ -237,6 +268,8 @@ export function DiscoverPage() {
                   isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
                   onAddToLibrary={handleAddToLibrary}
                   onAddToWatchlist={handleAddToWatchlist}
+                  onMarkWatched={handleMarkWatched}
+                  isMarkingWatched={markingWatched.has(item.tmdbId)}
                   matchPercentage={item.matchPercentage}
                   matchReason={item.matchReason}
                 />
@@ -298,6 +331,8 @@ export function DiscoverPage() {
               isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
               onAddToLibrary={handleAddToLibrary}
               onAddToWatchlist={handleAddToWatchlist}
+                  onMarkWatched={handleMarkWatched}
+                  isMarkingWatched={markingWatched.has(item.tmdbId)}
             />
           ))}
         </HorizontalScrollRow>
@@ -374,6 +409,8 @@ export function DiscoverPage() {
                 isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
                 onAddToLibrary={handleAddToLibrary}
                 onAddToWatchlist={handleAddToWatchlist}
+                  onMarkWatched={handleMarkWatched}
+                  isMarkingWatched={markingWatched.has(item.tmdbId)}
                 matchPercentage={item.matchPercentage}
                 matchReason={item.matchReason}
               />

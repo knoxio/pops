@@ -4,7 +4,7 @@
  */
 import { useState } from "react";
 import { cn, Badge, Button, Skeleton } from "@pops/ui";
-import { Film, Plus, Bookmark, Check, Loader2, X } from "lucide-react";
+import { Film, Plus, Bookmark, Check, Loader2, X, Eye } from "lucide-react";
 import { RequestMovieButton } from "./RequestMovieButton";
 
 export interface DiscoverCardProps {
@@ -17,8 +17,10 @@ export interface DiscoverCardProps {
   inLibrary: boolean;
   isAddingToLibrary?: boolean;
   isAddingToWatchlist?: boolean;
+  isMarkingWatched?: boolean;
   onAddToLibrary?: (tmdbId: number) => void;
   onAddToWatchlist?: (tmdbId: number) => void;
+  onMarkWatched?: (tmdbId: number) => void;
   onNotInterested?: (tmdbId: number) => void;
   /** Match percentage (0–100) from preference profile scoring. */
   matchPercentage?: number;
@@ -38,6 +40,8 @@ export function DiscoverCard({
   isAddingToWatchlist,
   onAddToLibrary,
   onAddToWatchlist,
+  onMarkWatched,
+  isMarkingWatched,
   onNotInterested,
   matchPercentage,
   matchReason,
@@ -45,7 +49,16 @@ export function DiscoverCard({
 }: DiscoverCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
+  const [dismissed, setDismissed] = useState(() => {
+    try {
+      const stored = localStorage.getItem("pops:dismissed-discover");
+      if (!stored) return false;
+      const ids = JSON.parse(stored) as number[];
+      return ids.includes(tmdbId);
+    } catch {
+      return false;
+    }
+  });
 
   if (dismissed) return null;
 
@@ -132,6 +145,21 @@ export function DiscoverCard({
               <Bookmark className="h-3.5 w-3.5" />
             )}
           </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-7 w-7 text-white hover:bg-white/20"
+            onClick={() => onMarkWatched?.(tmdbId)}
+            disabled={isMarkingWatched}
+            title="Mark as Watched"
+            aria-label="Mark as Watched"
+          >
+            {isMarkingWatched ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Eye className="h-3.5 w-3.5" />
+            )}
+          </Button>
           <RequestMovieButton tmdbId={tmdbId} title={title} variant="compact" />
           <Button
             size="icon"
@@ -139,6 +167,16 @@ export function DiscoverCard({
             className="ml-auto h-7 w-7 text-white hover:bg-white/20"
             onClick={() => {
               setDismissed(true);
+              try {
+                const stored = localStorage.getItem("pops:dismissed-discover");
+                const ids: number[] = stored ? (JSON.parse(stored) as number[]) : [];
+                if (!ids.includes(tmdbId)) {
+                  ids.push(tmdbId);
+                  localStorage.setItem("pops:dismissed-discover", JSON.stringify(ids));
+                }
+              } catch {
+                // localStorage unavailable — dismiss still works for this session
+              }
               onNotInterested?.(tmdbId);
             }}
             title="Not Interested"
