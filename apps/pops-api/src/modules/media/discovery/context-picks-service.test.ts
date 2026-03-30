@@ -16,10 +16,7 @@ vi.mock("../../../db.js", () => ({
   getDrizzle: vi.fn(() => ({
     select: vi.fn(() => ({
       from: vi.fn(() => ({
-        all: vi.fn(() => [
-          { tmdbId: 100 },
-          { tmdbId: 200 },
-        ]),
+        all: vi.fn(() => [{ tmdbId: 100 }, { tmdbId: 200 }]),
       })),
     })),
   })),
@@ -88,10 +85,7 @@ describe("getContextPicks", () => {
       },
     ]);
 
-    const client = makeMockClient([
-      makeTmdbResponse([1, 2, 3]),
-      makeTmdbResponse([4, 5]),
-    ]);
+    const client = makeMockClient([makeTmdbResponse([1, 2, 3]), makeTmdbResponse([4, 5])]);
 
     const result = await getContextPicks(client);
 
@@ -175,20 +169,13 @@ describe("getContextPicks", () => {
       },
     ]);
 
-    const client = makeMockClient([
-      makeTmdbResponse([1]),
-      makeTmdbResponse([2]),
-    ]);
+    const client = makeMockClient([makeTmdbResponse([1]), makeTmdbResponse([2])]);
 
     await getContextPicks(client, { "date-night": 3 });
 
-    expect(client.discoverMovies).toHaveBeenCalledWith(
-      expect.objectContaining({ page: 3 }),
-    );
+    expect(client.discoverMovies).toHaveBeenCalledWith(expect.objectContaining({ page: 3 }));
     // Second call (rainy-day) defaults to page 1
-    expect(client.discoverMovies).toHaveBeenCalledWith(
-      expect.objectContaining({ page: 1 }),
-    );
+    expect(client.discoverMovies).toHaveBeenCalledWith(expect.objectContaining({ page: 1 }));
   });
 
   it("omits genreIds param when collection has none", async () => {
@@ -235,7 +222,7 @@ describe("getContextPicks", () => {
     const result = await getContextPicks(client);
 
     expect(result.collections[0]!.results[0]!.posterUrl).toBe(
-      "https://image.tmdb.org/t/p/w342/poster999.jpg",
+      "https://image.tmdb.org/t/p/w342/poster999.jpg"
     );
     expect(result.collections[0]!.results[0]!.inLibrary).toBe(false);
   });

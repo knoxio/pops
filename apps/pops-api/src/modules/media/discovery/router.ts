@@ -60,7 +60,7 @@ export const discoveryRouter = router({
       z.object({
         /** Per-collection page numbers for Load More (e.g. { "date-night": 2 }). */
         pages: z.record(z.string(), z.number().int().positive()).optional(),
-      }),
+      })
     )
     .query(async ({ input }) => {
       try {

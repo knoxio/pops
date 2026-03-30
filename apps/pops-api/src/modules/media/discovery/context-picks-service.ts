@@ -25,7 +25,7 @@ export interface ContextPicksResponse {
 function buildPosterUrl(
   posterPath: string | null,
   tmdbId: number,
-  inLibrary: boolean,
+  inLibrary: boolean
 ): string | null {
   if (!posterPath) return null;
   if (inLibrary) return `/media/images/movie/${tmdbId}/poster.jpg`;
@@ -45,7 +45,7 @@ async function fetchCollectionResults(
   collection: ContextCollection,
   libraryIds: Set<number>,
   dismissedIds: Set<number>,
-  page: number,
+  page: number
 ): Promise<DiscoverResult[]> {
   const response = await client.discoverMovies({
     genreIds: collection.genreIds.length > 0 ? collection.genreIds : undefined,
@@ -83,7 +83,7 @@ async function fetchCollectionResults(
  */
 export async function getContextPicks(
   client: TmdbClient,
-  pages?: Record<string, number>,
+  pages?: Record<string, number>
 ): Promise<ContextPicksResponse> {
   const now = new Date();
   const hour = now.getHours();
@@ -99,20 +99,14 @@ export async function getContextPicks(
   const collectionResults = await Promise.all(
     activeCollections.map(async (col) => {
       const page = pages?.[col.id] ?? 1;
-      const results = await fetchCollectionResults(
-        client,
-        col,
-        libraryIds,
-        dismissedIds,
-        page,
-      );
+      const results = await fetchCollectionResults(client, col, libraryIds, dismissedIds, page);
       return {
         id: col.id,
         title: col.title,
         emoji: col.emoji,
         results,
       };
-    }),
+    })
   );
 
   return { collections: collectionResults };
