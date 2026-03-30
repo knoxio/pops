@@ -37,7 +37,6 @@ export const discoveryRouter = router({
     }
   }),
 
-<<<<<<< HEAD
   /** Get rewatch suggestions — movies watched 6+ months ago with high scores. */
   rewatchSuggestions: protectedProcedure.query(() => {
     try {
@@ -49,7 +48,8 @@ export const discoveryRouter = router({
         message: err instanceof Error ? err.message : "Unknown error fetching rewatch suggestions",
       });
     }
-=======
+  }),
+
   /** Get unwatched library movies scored by preference profile. */
   fromYourServer: protectedProcedure.query(() => {
     const unwatched = service.getUnwatchedLibraryMovies();
@@ -59,7 +59,6 @@ export const discoveryRouter = router({
     const profile = service.getPreferenceProfile();
     const scored = service.scoreDiscoverResults(unwatched, profile);
     return { results: scored.slice(0, 20) };
->>>>>>> 83256c0 (feat(discovery): add From Your Server endpoint + UI row [tb-124])
   }),
 
   /** Get recommendations based on top-rated library movies, scored by preference profile. */
