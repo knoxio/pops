@@ -41,7 +41,7 @@ export const watchlistRouter = router({
   get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => {
     try {
       const row = service.getWatchlistEntry(input.id);
-      return { data: toWatchlistEntry(row) };
+      return { data: toWatchlistEntry({ ...row, title: null, posterUrl: null }) };
     } catch (err) {
       if (err instanceof NotFoundError) {
         throw new TRPCError({ code: "NOT_FOUND", message: err.message });
@@ -74,7 +74,7 @@ export const watchlistRouter = router({
     }
 
     return {
-      data: toWatchlistEntry(row),
+      data: toWatchlistEntry({ ...row, title: null, posterUrl: null }),
       created,
       message: created ? "Added to watchlist" : "Already on watchlist",
     };
@@ -92,7 +92,7 @@ export const watchlistRouter = router({
       try {
         const row = service.updateWatchlistEntry(input.id, input.data);
         return {
-          data: toWatchlistEntry(row),
+          data: toWatchlistEntry({ ...row, title: null, posterUrl: null }),
           message: "Watchlist entry updated",
         };
       } catch (err) {

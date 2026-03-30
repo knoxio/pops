@@ -52,6 +52,8 @@ interface WatchlistEntry {
   priority: number | null;
   notes: string | null;
   addedAt: string;
+  title?: string | null;
+  posterUrl?: string | null;
 }
 
 interface MediaMeta {
@@ -637,8 +639,20 @@ export function WatchlistPage() {
   }, []);
 
   const getMetaForEntry = useCallback(
-    (entry: WatchlistEntry) =>
-      entry.mediaType === "movie" ? movieMap.get(entry.mediaId) : tvMap.get(entry.mediaId),
+    (entry: WatchlistEntry) => {
+      const mapMeta =
+        entry.mediaType === "movie" ? movieMap.get(entry.mediaId) : tvMap.get(entry.mediaId);
+      // Fall back to API-provided title/poster if map lookup fails
+      if (mapMeta) return mapMeta;
+      if (entry.title) {
+        return {
+          title: entry.title,
+          posterUrl: entry.posterUrl ?? null,
+          year: null,
+        };
+      }
+      return undefined;
+    },
     [movieMap, tvMap]
   );
 
