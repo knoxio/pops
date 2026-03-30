@@ -37,7 +37,6 @@ const INCLUDED_MIGRATIONS = [
   "20260327120000_sync_logs.sql",
   "20260328120000_inventory_asset_id_unique_index.sql",
   "20260328130000_watchlist_source_plex_key.sql",
-  "20260330120000_sync_job_results.sql",
 ];
 
 /**
