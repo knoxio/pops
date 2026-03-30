@@ -10,7 +10,7 @@ services:
       - frontend
       - backend
     volumes:
-      - sqlite-data:/data/sqlite:ro
+      - sqlite-data:/data/sqlite
     secrets:
       - notion_api_token
       - up_bank_token
