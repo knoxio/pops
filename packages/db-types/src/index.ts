@@ -30,6 +30,7 @@ import type { itemDocuments } from "./schema/item-documents.js";
 import type { settings } from "./schema/settings.js";
 import type { syncLogs } from "./schema/sync-logs.js";
 import type { syncJobResults } from "./schema/sync-job-results.js";
+import type { dismissedDiscover } from "./schema/dismissed-discover.js";
 
 // Re-export Drizzle table objects for use in queries
 export {
@@ -57,6 +58,7 @@ export {
   settings,
   syncLogs,
   syncJobResults,
+  dismissedDiscover,
 } from "./schema/index.js";
 
 // Select types (what you get back from a SELECT query)
@@ -110,6 +112,8 @@ export type SyncLogRow = InferSelectModel<typeof syncLogs>;
 export type SyncLogInsert = InferInsertModel<typeof syncLogs>;
 export type SyncJobResultRow = InferSelectModel<typeof syncJobResults>;
 export type SyncJobResultInsert = InferInsertModel<typeof syncJobResults>;
+export type DismissedDiscoverRow = InferSelectModel<typeof dismissedDiscover>;
+export type DismissedDiscoverInsert = InferInsertModel<typeof dismissedDiscover>;
 
 // Constants
 export const ENTITY_TYPES = ["company", "person", "place", "brand", "organisation"] as const;

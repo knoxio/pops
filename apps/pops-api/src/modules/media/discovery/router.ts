@@ -14,6 +14,27 @@ import { getDrizzle } from "../../../db.js";
 import { movies } from "@pops/db-types";
 
 export const discoveryRouter = router({
+  /** Dismiss a movie by tmdbId. Idempotent. */
+  dismiss: protectedProcedure
+    .input(z.object({ tmdbId: z.number().int().positive() }))
+    .mutation(({ input }) => {
+      service.dismiss(input.tmdbId);
+      return { success: true };
+    }),
+
+  /** Undismiss a movie by tmdbId. */
+  undismiss: protectedProcedure
+    .input(z.object({ tmdbId: z.number().int().positive() }))
+    .mutation(({ input }) => {
+      service.undismiss(input.tmdbId);
+      return { success: true };
+    }),
+
+  /** Get all dismissed tmdbIds. */
+  getDismissed: protectedProcedure.query(() => {
+    return { data: service.getDismissed() };
+  }),
+
   /** Get computed preference profile (genre affinities, dimension weights, genre distribution). */
   profile: protectedProcedure.query(() => {
     return { data: service.getPreferenceProfile() };

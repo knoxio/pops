@@ -11,6 +11,7 @@ import {
   watchHistory,
   comparisons,
   mediaWatchlist,
+  dismissedDiscover,
 } from "@pops/db-types";
 import type {
   GenreAffinity,
@@ -316,6 +317,25 @@ export function scoreDiscoverResults(
       return { ...result, matchPercentage, matchReason };
     })
     .sort((a, b) => b.matchPercentage - a.matchPercentage);
+}
+
+/** Dismiss a movie by tmdbId (idempotent — ON CONFLICT DO NOTHING). */
+export function dismiss(tmdbId: number): void {
+  const db = getDrizzle();
+  db.insert(dismissedDiscover).values({ tmdbId }).onConflictDoNothing().run();
+}
+
+/** Undismiss a movie by tmdbId. */
+export function undismiss(tmdbId: number): void {
+  const db = getDrizzle();
+  db.delete(dismissedDiscover).where(eq(dismissedDiscover.tmdbId, tmdbId)).run();
+}
+
+/** Get all dismissed tmdbIds. */
+export function getDismissed(): number[] {
+  const db = getDrizzle();
+  const rows = db.select({ tmdbId: dismissedDiscover.tmdbId }).from(dismissedDiscover).all();
+  return rows.map((r) => r.tmdbId);
 }
 
 /**

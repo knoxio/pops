@@ -363,6 +363,11 @@ export function createTestDb(): Database {
       key TEXT PRIMARY KEY NOT NULL,
       value TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS dismissed_discover (
+      tmdb_id INTEGER PRIMARY KEY,
+      dismissed_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
 
   return db;

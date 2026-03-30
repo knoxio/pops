@@ -424,6 +424,11 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     );
     CREATE INDEX IF NOT EXISTS idx_sync_logs_synced_at ON sync_logs(synced_at);
 
+    CREATE TABLE IF NOT EXISTS dismissed_discover (
+      tmdb_id INTEGER PRIMARY KEY,
+      dismissed_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
     CREATE TABLE IF NOT EXISTS sync_job_results (
       id            TEXT PRIMARY KEY,
       job_type      TEXT NOT NULL,

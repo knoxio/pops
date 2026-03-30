@@ -151,7 +151,7 @@ Displayed at the bottom of the page. Shows:
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 01 | [us-01-dismissed-schema](us-01-dismissed-schema.md) | dismissed_discover SQLite table, Drizzle schema + migration, dismiss/getDismissed tRPC endpoints | Not started | Yes |
+| 01 | [us-01-dismissed-schema](us-01-dismissed-schema.md) | dismissed_discover SQLite table, Drizzle schema + migration, dismiss/getDismissed tRPC endpoints | Done | Yes |
 | 02 | [us-02-discover-card-actions](us-02-discover-card-actions.md) | Card hover actions (Add, Watchlist, Watched, Request, Dismiss), Owned/Watched badges, loading states | Not started | Blocked by us-01 |
 | 03 | [us-03-recommendation-scoring](us-03-recommendation-scoring.md) | Preference profile scoring service: genre affinity from ELO + watch history fallback, match percentage calculation | Not started | Yes |
 
