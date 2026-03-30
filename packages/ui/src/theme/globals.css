@@ -48,8 +48,9 @@
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
 
-  --color-app-accent: var(--app-accent);
-  --color-app-accent-foreground: var(--app-accent-foreground);
+  /* App accent uses @theme inline — tells Tailwind to keep var() at runtime
+     instead of resolving it at build time. This enables opacity modifiers
+     (bg-app-accent/10) while allowing .app-* classes to override --app-accent. */
 
   --color-border: var(--border);
   --color-input: var(--input);
@@ -110,6 +111,17 @@
       height: 0;
     }
   }
+}
+
+/*
+ * Runtime-dynamic theme tokens.
+ * @theme inline tells Tailwind v4 to keep var() references at runtime
+ * instead of resolving them at build time. This enables opacity modifiers
+ * (bg-app-accent/10) while allowing .app-* classes to override --app-accent.
+ */
+@theme inline {
+  --color-app-accent: var(--app-accent);
+  --color-app-accent-foreground: var(--app-accent-foreground);
 }
 
 /* Variable definitions */
@@ -405,3 +417,5 @@
 @utility tabular-nums {
   font-variant-numeric: tabular-nums;
 }
+
+/* App accent — removed @utility block, handled via @theme inline below */
