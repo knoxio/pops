@@ -124,7 +124,7 @@ export const RecordComparisonSchema = z.object({
   mediaBType: z.enum(MEDIA_TYPES),
   mediaBId: z.number().int().positive(),
   winnerType: z.enum(MEDIA_TYPES),
-  winnerId: z.number().int().positive(),
+  winnerId: z.number().int().nonnegative(), // 0 = draw
 });
 export type RecordComparisonInput = z.infer<typeof RecordComparisonSchema>;
 
