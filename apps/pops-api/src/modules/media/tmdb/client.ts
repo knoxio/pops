@@ -183,7 +183,7 @@ export class TmdbClient {
   /** Discover movies by genre IDs and/or keywords, with configurable sort and filters. */
   async discoverMovies(opts: {
     genreIds?: number[];
-    keywords?: string[];
+    keywordIds?: number[];
     sortBy?: string;
     voteCountGte?: number;
     page?: number;
@@ -193,8 +193,8 @@ export class TmdbClient {
     if (opts.genreIds?.length) {
       params.set("with_genres", opts.genreIds.join(","));
     }
-    if (opts.keywords?.length) {
-      params.set("with_keywords", opts.keywords.join("|"));
+    if (opts.keywordIds?.length) {
+      params.set("with_keywords", opts.keywordIds.join("|"));
     }
     if (opts.sortBy) {
       params.set("sort_by", opts.sortBy);

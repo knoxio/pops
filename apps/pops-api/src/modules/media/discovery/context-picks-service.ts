@@ -49,7 +49,7 @@ async function fetchCollectionResults(
 ): Promise<DiscoverResult[]> {
   const response = await client.discoverMovies({
     genreIds: collection.genreIds.length > 0 ? collection.genreIds : undefined,
-    keywords: collection.keywords.length > 0 ? collection.keywords : undefined,
+    keywordIds: collection.keywordIds.length > 0 ? collection.keywordIds : undefined,
     sortBy: "vote_average.desc",
     voteCountGte: 100,
     page,

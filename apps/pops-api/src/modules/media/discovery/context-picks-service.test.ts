@@ -75,7 +75,7 @@ describe("getContextPicks", () => {
         title: "Date Night",
         emoji: "💕",
         genreIds: [10749, 35],
-        keywords: [],
+        keywordIds: [],
         trigger: () => true,
       },
       {
@@ -83,7 +83,7 @@ describe("getContextPicks", () => {
         title: "Rainy Day",
         emoji: "🌧️",
         genreIds: [35, 18, 16],
-        keywords: [],
+        keywordIds: [],
         trigger: () => true,
       },
     ]);
@@ -112,7 +112,7 @@ describe("getContextPicks", () => {
         title: "Test",
         emoji: "🧪",
         genreIds: [18],
-        keywords: [],
+        keywordIds: [],
         trigger: () => true,
       },
     ]);
@@ -136,7 +136,7 @@ describe("getContextPicks", () => {
         title: "Halloween",
         emoji: "🎃",
         genreIds: [27],
-        keywords: ["halloween"],
+        keywordIds: [3335],
         trigger: () => true,
       },
     ]);
@@ -147,7 +147,7 @@ describe("getContextPicks", () => {
 
     expect(client.discoverMovies).toHaveBeenCalledWith({
       genreIds: [27],
-      keywords: ["halloween"],
+      keywordIds: [3335],
       sortBy: "vote_average.desc",
       voteCountGte: 100,
       page: 1,
@@ -162,7 +162,7 @@ describe("getContextPicks", () => {
         title: "Date Night",
         emoji: "💕",
         genreIds: [10749, 35],
-        keywords: [],
+        keywordIds: [],
         trigger: () => true,
       },
       {
@@ -170,7 +170,7 @@ describe("getContextPicks", () => {
         title: "Rainy Day",
         emoji: "🌧️",
         genreIds: [35, 18, 16],
-        keywords: [],
+        keywordIds: [],
         trigger: () => true,
       },
     ]);
@@ -199,7 +199,7 @@ describe("getContextPicks", () => {
         title: "Christmas Movies",
         emoji: "🎄",
         genreIds: [],
-        keywords: ["christmas"],
+        keywordIds: [207317],
         trigger: () => true,
       },
     ]);
@@ -210,7 +210,7 @@ describe("getContextPicks", () => {
 
     expect(client.discoverMovies).toHaveBeenCalledWith({
       genreIds: undefined,
-      keywords: ["christmas"],
+      keywordIds: [207317],
       sortBy: "vote_average.desc",
       voteCountGte: 100,
       page: 1,
@@ -225,7 +225,7 @@ describe("getContextPicks", () => {
         title: "Test",
         emoji: "🧪",
         genreIds: [18],
-        keywords: [],
+        keywordIds: [],
         trigger: () => true,
       },
     ]);
