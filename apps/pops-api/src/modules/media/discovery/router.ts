@@ -54,10 +54,14 @@ export const discoveryRouter = router({
   recommendations: protectedProcedure.input(RecommendationsQuerySchema).query(async ({ input }) => {
     try {
       const client = getTmdbClient();
-      const raw = await tmdbService.getRecommendations(client, input.sampleSize);
       const profile = service.getPreferenceProfile();
+      const raw = await tmdbService.getRecommendations(client, input.sampleSize);
       const scored = service.scoreDiscoverResults(raw.results, profile);
-      return { results: scored, sourceMovies: raw.sourceMovies };
+      return {
+        results: scored,
+        sourceMovies: raw.sourceMovies,
+        totalComparisons: profile.totalComparisons,
+      };
     } catch (err) {
       if (err instanceof TRPCError) throw err;
       throw new TRPCError({
