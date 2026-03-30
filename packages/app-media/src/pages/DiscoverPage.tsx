@@ -2,7 +2,7 @@
  * DiscoverPage — personalized movie discovery with trending and recommendations.
  * Three horizontal scroll sections: Recommended for You, Trending, Similar to Top Rated.
  */
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { Link, useSearchParams } from "react-router";
 import { Alert, Button } from "@pops/ui";
 import { Compass, AlertCircle, RefreshCw, Loader2, Swords } from "lucide-react";
@@ -110,15 +110,28 @@ export function DiscoverPage() {
   const totalComparisons = profile.data?.data?.totalComparisons ?? 0;
   const hasEnoughComparisons = totalComparisons >= COMPARISON_THRESHOLD;
 
+  // Dismissed movies — server-side
+  const dismissed = trpc.media.discovery.getDismissed.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+  });
+  const dismissedSet = useMemo(() => new Set(dismissed.data?.data ?? []), [dismissed.data]);
+  const [optimisticDismissed, setOptimisticDismissed] = useState<Set<number>>(new Set());
+  const isDismissed = useCallback(
+    (tmdbId: number) => dismissedSet.has(tmdbId) || optimisticDismissed.has(tmdbId),
+    [dismissedSet, optimisticDismissed]
+  );
+
   // Track in-progress mutations per tmdbId
   const [addingToLibrary, setAddingToLibrary] = useState<Set<number>>(new Set());
   const [addingToWatchlist, setAddingToWatchlist] = useState<Set<number>>(new Set());
   const [markingWatched, setMarkingWatched] = useState<Set<number>>(new Set());
+  const [dismissing, setDismissing] = useState<Set<number>>(new Set());
 
   // Mutations
   const addMovieMutation = trpc.media.library.addMovie.useMutation();
   const addWatchlistMutation = trpc.media.watchlist.add.useMutation();
   const logWatchMutation = trpc.media.watchHistory.log.useMutation();
+  const dismissMutation = trpc.media.discovery.dismiss.useMutation();
 
   const handleAddToLibrary = useCallback(
     async (tmdbId: number) => {
@@ -203,6 +216,33 @@ export function DiscoverPage() {
     [addMovieMutation, logWatchMutation, utils]
   );
 
+  const handleNotInterested = useCallback(
+    async (tmdbId: number) => {
+      // Optimistic: hide immediately
+      setOptimisticDismissed((prev) => new Set(prev).add(tmdbId));
+      setDismissing((prev) => new Set(prev).add(tmdbId));
+      try {
+        await dismissMutation.mutateAsync({ tmdbId });
+        void utils.media.discovery.getDismissed.invalidate();
+      } catch {
+        // Revert optimistic dismiss on failure
+        setOptimisticDismissed((prev) => {
+          const next = new Set(prev);
+          next.delete(tmdbId);
+          return next;
+        });
+        toast.error("Failed to dismiss");
+      } finally {
+        setDismissing((prev) => {
+          const next = new Set(prev);
+          next.delete(tmdbId);
+          return next;
+        });
+      }
+    },
+    [dismissMutation, utils]
+  );
+
   return (
     <div className="space-y-8 pb-8">
       {/* Header */}
@@ -255,6 +295,7 @@ export function DiscoverPage() {
             </p>
           )}
           {recommendations.data?.results
+            .filter((item) => !isDismissed(item.tmdbId))
             .slice(0, 20)
             .map(
               (item: {
@@ -283,6 +324,8 @@ export function DiscoverPage() {
                   onAddToWatchlist={handleAddToWatchlist}
                   onMarkWatched={handleMarkWatched}
                   isMarkingWatched={markingWatched.has(item.tmdbId)}
+                  onNotInterested={handleNotInterested}
+                  isDismissing={dismissing.has(item.tmdbId)}
                   matchPercentage={item.matchPercentage}
                   matchReason={item.matchReason}
                 />
@@ -330,24 +373,28 @@ export function DiscoverPage() {
               </Button>
             </Alert>
           )}
-          {accumulatedResults.map((item) => (
-            <DiscoverCard
-              key={item.tmdbId}
-              tmdbId={item.tmdbId}
-              title={item.title}
-              releaseDate={item.releaseDate ?? ""}
-              posterPath={item.posterPath}
-              posterUrl={item.posterUrl}
-              voteAverage={item.voteAverage ?? 0}
-              inLibrary={item.inLibrary}
-              isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
-              isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
-              onAddToLibrary={handleAddToLibrary}
-              onAddToWatchlist={handleAddToWatchlist}
-              onMarkWatched={handleMarkWatched}
-              isMarkingWatched={markingWatched.has(item.tmdbId)}
-            />
-          ))}
+          {accumulatedResults
+            .filter((item) => !isDismissed(item.tmdbId))
+            .map((item) => (
+              <DiscoverCard
+                key={item.tmdbId}
+                tmdbId={item.tmdbId}
+                title={item.title}
+                releaseDate={item.releaseDate ?? ""}
+                posterPath={item.posterPath}
+                posterUrl={item.posterUrl}
+                voteAverage={item.voteAverage ?? 0}
+                inLibrary={item.inLibrary}
+                isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
+                isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
+                onAddToLibrary={handleAddToLibrary}
+                onAddToWatchlist={handleAddToWatchlist}
+                onMarkWatched={handleMarkWatched}
+                isMarkingWatched={markingWatched.has(item.tmdbId)}
+                onNotInterested={handleNotInterested}
+                isDismissing={dismissing.has(item.tmdbId)}
+              />
+            ))}
         </HorizontalScrollRow>
 
         {/* Load More */}
@@ -398,26 +445,30 @@ export function DiscoverPage() {
             title={`Best in ${genre.genreName}`}
             isLoading={genreSpotlight.isLoading}
           >
-            {genre.results.map((item) => (
-              <DiscoverCard
-                key={item.tmdbId}
-                tmdbId={item.tmdbId}
-                title={item.title}
-                releaseDate={item.releaseDate ?? ""}
-                posterPath={item.posterPath}
-                posterUrl={item.posterUrl}
-                voteAverage={item.voteAverage ?? 0}
-                inLibrary={item.inLibrary}
-                isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
-                isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
-                onAddToLibrary={handleAddToLibrary}
-                onAddToWatchlist={handleAddToWatchlist}
-                onMarkWatched={handleMarkWatched}
-                isMarkingWatched={markingWatched.has(item.tmdbId)}
-                matchPercentage={item.matchPercentage}
-                matchReason={item.matchReason}
-              />
-            ))}
+            {genre.results
+              .filter((item) => !isDismissed(item.tmdbId))
+              .map((item) => (
+                <DiscoverCard
+                  key={item.tmdbId}
+                  tmdbId={item.tmdbId}
+                  title={item.title}
+                  releaseDate={item.releaseDate ?? ""}
+                  posterPath={item.posterPath}
+                  posterUrl={item.posterUrl}
+                  voteAverage={item.voteAverage ?? 0}
+                  inLibrary={item.inLibrary}
+                  isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
+                  isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
+                  onAddToLibrary={handleAddToLibrary}
+                  onAddToWatchlist={handleAddToWatchlist}
+                  onMarkWatched={handleMarkWatched}
+                  isMarkingWatched={markingWatched.has(item.tmdbId)}
+                  onNotInterested={handleNotInterested}
+                  isDismissing={dismissing.has(item.tmdbId)}
+                  matchPercentage={item.matchPercentage}
+                  matchReason={item.matchReason}
+                />
+              ))}
           </HorizontalScrollRow>
         )
       )}
@@ -438,34 +489,38 @@ export function DiscoverPage() {
               </Button>
             </Alert>
           )}
-          {rewatchSuggestions.data?.data?.map(
-            (item: {
-              tmdbId: number;
-              title: string;
-              releaseDate: string | null;
-              posterPath: string | null;
-              posterUrl: string | null;
-              voteAverage: number | null;
-              inLibrary: boolean;
-            }) => (
-              <DiscoverCard
-                key={item.tmdbId}
-                tmdbId={item.tmdbId}
-                title={item.title}
-                releaseDate={item.releaseDate ?? ""}
-                posterPath={item.posterPath}
-                posterUrl={item.posterUrl}
-                voteAverage={item.voteAverage ?? 0}
-                inLibrary={item.inLibrary}
-                isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
-                isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
-                onAddToLibrary={handleAddToLibrary}
-                onAddToWatchlist={handleAddToWatchlist}
-                onMarkWatched={handleMarkWatched}
-                isMarkingWatched={markingWatched.has(item.tmdbId)}
-              />
-            )
-          )}
+          {rewatchSuggestions.data?.data
+            ?.filter((item: { tmdbId: number }) => !isDismissed(item.tmdbId))
+            .map(
+              (item: {
+                tmdbId: number;
+                title: string;
+                releaseDate: string | null;
+                posterPath: string | null;
+                posterUrl: string | null;
+                voteAverage: number | null;
+                inLibrary: boolean;
+              }) => (
+                <DiscoverCard
+                  key={item.tmdbId}
+                  tmdbId={item.tmdbId}
+                  title={item.title}
+                  releaseDate={item.releaseDate ?? ""}
+                  posterPath={item.posterPath}
+                  posterUrl={item.posterUrl}
+                  voteAverage={item.voteAverage ?? 0}
+                  inLibrary={item.inLibrary}
+                  isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
+                  isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
+                  onAddToLibrary={handleAddToLibrary}
+                  onAddToWatchlist={handleAddToWatchlist}
+                  onMarkWatched={handleMarkWatched}
+                  isMarkingWatched={markingWatched.has(item.tmdbId)}
+                  onNotInterested={handleNotInterested}
+                  isDismissing={dismissing.has(item.tmdbId)}
+                />
+              )
+            )}
         </HorizontalScrollRow>
       )}
 
@@ -494,6 +549,7 @@ export function DiscoverPage() {
           </p>
         )}
         {similarToTopRated.data?.results
+          .filter((item) => !isDismissed(item.tmdbId))
           .slice(0, 20)
           .map(
             (item: {
@@ -522,6 +578,8 @@ export function DiscoverPage() {
                 onAddToWatchlist={handleAddToWatchlist}
                 onMarkWatched={handleMarkWatched}
                 isMarkingWatched={markingWatched.has(item.tmdbId)}
+                onNotInterested={handleNotInterested}
+                isDismissing={dismissing.has(item.tmdbId)}
                 matchPercentage={item.matchPercentage}
                 matchReason={item.matchReason}
               />
@@ -536,38 +594,42 @@ export function DiscoverPage() {
           subtitle="Unwatched movies on your server, ranked for you"
           isLoading={fromYourServer.isLoading}
         >
-          {fromYourServer.data?.results.map(
-            (item: {
-              tmdbId: number;
-              title: string;
-              releaseDate: string | null;
-              posterPath: string | null;
-              posterUrl: string | null;
-              voteAverage: number | null;
-              inLibrary: boolean;
-              matchPercentage?: number;
-              matchReason?: string;
-            }) => (
-              <DiscoverCard
-                key={item.tmdbId}
-                tmdbId={item.tmdbId}
-                title={item.title}
-                releaseDate={item.releaseDate ?? ""}
-                posterPath={item.posterPath}
-                posterUrl={item.posterUrl}
-                voteAverage={item.voteAverage ?? 0}
-                inLibrary={item.inLibrary}
-                isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
-                isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
-                onAddToLibrary={handleAddToLibrary}
-                onAddToWatchlist={handleAddToWatchlist}
-                onMarkWatched={handleMarkWatched}
-                isMarkingWatched={markingWatched.has(item.tmdbId)}
-                matchPercentage={item.matchPercentage}
-                matchReason={item.matchReason}
-              />
-            )
-          )}
+          {fromYourServer.data?.results
+            .filter((item) => !isDismissed(item.tmdbId))
+            .map(
+              (item: {
+                tmdbId: number;
+                title: string;
+                releaseDate: string | null;
+                posterPath: string | null;
+                posterUrl: string | null;
+                voteAverage: number | null;
+                inLibrary: boolean;
+                matchPercentage?: number;
+                matchReason?: string;
+              }) => (
+                <DiscoverCard
+                  key={item.tmdbId}
+                  tmdbId={item.tmdbId}
+                  title={item.title}
+                  releaseDate={item.releaseDate ?? ""}
+                  posterPath={item.posterPath}
+                  posterUrl={item.posterUrl}
+                  voteAverage={item.voteAverage ?? 0}
+                  inLibrary={item.inLibrary}
+                  isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
+                  isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
+                  onAddToLibrary={handleAddToLibrary}
+                  onAddToWatchlist={handleAddToWatchlist}
+                  onMarkWatched={handleMarkWatched}
+                  isMarkingWatched={markingWatched.has(item.tmdbId)}
+                  onNotInterested={handleNotInterested}
+                  isDismissing={dismissing.has(item.tmdbId)}
+                  matchPercentage={item.matchPercentage}
+                  matchReason={item.matchReason}
+                />
+              )
+            )}
         </HorizontalScrollRow>
       )}
 

@@ -22,6 +22,8 @@ export interface DiscoverCardProps {
   onAddToWatchlist?: (tmdbId: number) => void;
   onMarkWatched?: (tmdbId: number) => void;
   onNotInterested?: (tmdbId: number) => void;
+  /** Whether a dismiss mutation is in progress for this card. */
+  isDismissing?: boolean;
   /** Match percentage (0–100) from preference profile scoring. */
   matchPercentage?: number;
   /** Brief explanation of match, e.g. "Action, Sci-Fi". */
@@ -43,24 +45,13 @@ export function DiscoverCard({
   onMarkWatched,
   isMarkingWatched,
   onNotInterested,
+  isDismissing,
   matchPercentage,
   matchReason,
   className,
 }: DiscoverCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
-  const [dismissed, setDismissed] = useState(() => {
-    try {
-      const stored = localStorage.getItem("pops:dismissed-discover");
-      if (!stored) return false;
-      const ids = JSON.parse(stored) as number[];
-      return ids.includes(tmdbId);
-    } catch {
-      return false;
-    }
-  });
-
-  if (dismissed) return null;
 
   const posterUrl = posterUrlProp;
   const showPlaceholder = !posterUrl || imageError;
@@ -165,24 +156,16 @@ export function DiscoverCard({
             size="icon"
             variant="ghost"
             className="ml-auto h-7 w-7 text-white hover:bg-white/20"
-            onClick={() => {
-              setDismissed(true);
-              try {
-                const stored = localStorage.getItem("pops:dismissed-discover");
-                const ids: number[] = stored ? (JSON.parse(stored) as number[]) : [];
-                if (!ids.includes(tmdbId)) {
-                  ids.push(tmdbId);
-                  localStorage.setItem("pops:dismissed-discover", JSON.stringify(ids));
-                }
-              } catch {
-                // localStorage unavailable — dismiss still works for this session
-              }
-              onNotInterested?.(tmdbId);
-            }}
+            onClick={() => onNotInterested?.(tmdbId)}
+            disabled={isDismissing}
             title="Not Interested"
             aria-label="Not Interested"
           >
-            <X className="h-3.5 w-3.5" />
+            {isDismissing ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <X className="h-3.5 w-3.5" />
+            )}
           </Button>
         </div>
       </div>
