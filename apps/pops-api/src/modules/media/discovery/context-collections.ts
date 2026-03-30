@@ -31,9 +31,7 @@ export const CONTEXT_COLLECTIONS: ContextCollection[] = [
     genreIds: [10749, 35], // Romance + Comedy
     keywordIds: [],
     trigger: (hour, _month, dayOfWeek) =>
-      (dayOfWeek === FRIDAY || dayOfWeek === SATURDAY) &&
-      hour >= 18 &&
-      hour <= 22,
+      (dayOfWeek === FRIDAY || dayOfWeek === SATURDAY) && hour >= 18 && hour <= 22,
   },
   {
     id: "sunday-flicks",
@@ -94,7 +92,7 @@ const MAX_ACTIVE = 2;
 export function getActiveCollections(
   hour: number,
   month: number,
-  dayOfWeek: number,
+  dayOfWeek: number
 ): ContextCollection[] {
   const matched: ContextCollection[] = [];
 

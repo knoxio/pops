@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-  CONTEXT_COLLECTIONS,
-  getActiveCollections,
-} from "./context-collections.js";
+import { CONTEXT_COLLECTIONS, getActiveCollections } from "./context-collections.js";
 
 /** Helper — get collection by id. */
 function findCollection(id: string) {
