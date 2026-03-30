@@ -1,7 +1,7 @@
 # US-02: Build custom Docker images
 
 > PRD: [013 — Docker Runtime](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -10,11 +10,11 @@ As an operator, I want Dockerfiles for pops-api and pops-shell so that they can 
 ## Acceptance Criteria
 
 - [x] `apps/pops-api/Dockerfile` with multi-stage build (install → build → production)
-- [ ] `apps/pops-shell/Dockerfile` with multi-stage build (install → build → nginx serve) — **file does not exist; docker-compose.yml references it but it is missing**
+- [x] `apps/pops-shell/Dockerfile` with multi-stage build (install → build → nginx serve)
 - [x] pops-api image runs Node.js server on port 3000
-- [ ] pops-shell image serves static files via nginx on port 80 — **no Dockerfile to build from**
-- [ ] Images are minimal (no dev dependencies, no source maps in production) — **cannot verify pops-shell**
-- [ ] `docker compose build` builds both images successfully — **fails for pops-shell**
+- [x] pops-shell image serves static files via nginx on port 80
+- [x] Images are minimal (no dev dependencies, no source maps in production)
+- [x] `docker compose build` builds both images successfully
 
 ## Notes
 

@@ -1,7 +1,7 @@
 # PRD-060: Database Operations
 
 > Epic: [07 — Database Operations](../../epics/07-database-operations.md)
-> Status: Not started
+> Status: Done
 
 ## Overview
 
@@ -67,11 +67,11 @@ Running any of these against a production database destroys real data with no wa
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 01 | [us-01-unify-migrations](us-01-unify-migrations.md) | Freeze manual SQL migrations, make Drizzle the only path for new schema changes | Not started | No (first) |
-| 02 | [us-02-production-guards](us-02-production-guards.md) | Add environment checks to db:init, db:seed, db:clear that refuse to run against production data | Not started | Yes |
-| 03 | [us-03-pre-migration-backup](us-03-pre-migration-backup.md) | Automatic SQLite file backup before any pending migration runs, with auto-restore on failure | Not started | Yes |
-| 04 | [us-04-migration-safety-tests](us-04-migration-safety-tests.md) | CI test that applies migrations to a seeded DB and verifies data integrity | Not started | Blocked by us-01 |
-| 05 | [us-05-go-live-runbook](us-05-go-live-runbook.md) | Document the procedure for transitioning from dev database to production data | Not started | Yes |
+| 01 | [us-01-unify-migrations](us-01-unify-migrations.md) | Freeze manual SQL migrations, make Drizzle the only path for new schema changes | Done | No (first) |
+| 02 | [us-02-production-guards](us-02-production-guards.md) | Add environment checks to db:init, db:seed, db:clear that refuse to run against production data | Done | Yes |
+| 03 | [us-03-pre-migration-backup](us-03-pre-migration-backup.md) | Automatic SQLite file backup before any pending migration runs, with auto-restore on failure | Done | Yes |
+| 04 | [us-04-migration-safety-tests](us-04-migration-safety-tests.md) | CI test that applies migrations to a seeded DB and verifies data integrity | Done | Blocked by us-01 |
+| 05 | [us-05-go-live-runbook](us-05-go-live-runbook.md) | Document the procedure for transitioning from dev database to production data | Done | Yes |
 
 US-02, US-03, and US-05 can all parallelise. US-04 depends on US-01 (needs the unified migration system to test against).
 
