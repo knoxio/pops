@@ -197,7 +197,7 @@ export function getPreferenceProfile(): PreferenceProfile {
  * genre affinity scores, and computes a weighted match percentage.
  * Results are sorted by matchPercentage descending.
  */
-export function scoreRecommendations(
+export function scoreDiscoverResults(
   results: DiscoverResult[],
   profile: PreferenceProfile
 ): ScoredDiscoverResult[] {

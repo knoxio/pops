@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { scoreRecommendations } from "./service.js";
+import { scoreDiscoverResults } from "./service.js";
 import type { DiscoverResult, PreferenceProfile } from "./types.js";
 
 /** Helper to build a minimal DiscoverResult. */
@@ -33,10 +33,10 @@ function makeProfile(overrides: Partial<PreferenceProfile> = {}): PreferenceProf
   };
 }
 
-describe("scoreRecommendations", () => {
+describe("scoreDiscoverResults", () => {
   it("returns 0% match when profile has no data", () => {
     const results = [makeResult()];
-    const scored = scoreRecommendations(results, makeProfile());
+    const scored = scoreDiscoverResults(results, makeProfile());
 
     expect(scored).toHaveLength(1);
     expect(scored[0]!.matchPercentage).toBe(0);
@@ -57,7 +57,7 @@ describe("scoreRecommendations", () => {
       ],
     });
 
-    const scored = scoreRecommendations(results, profile);
+    const scored = scoreDiscoverResults(results, profile);
 
     // Action/Sci-Fi should score higher than Comedy/Romance
     expect(scored[0]!.title).toBe("Action Sci-Fi");
@@ -78,7 +78,7 @@ describe("scoreRecommendations", () => {
       ],
     });
 
-    const scored = scoreRecommendations(results, profile);
+    const scored = scoreDiscoverResults(results, profile);
 
     expect(scored[0]!.matchReason).toContain("Action");
     expect(scored[0]!.matchReason).toContain("Science Fiction");
@@ -94,7 +94,7 @@ describe("scoreRecommendations", () => {
       totalMoviesWatched: 13,
     });
 
-    const scored = scoreRecommendations(results, profile);
+    const scored = scoreDiscoverResults(results, profile);
 
     expect(scored[0]!.matchPercentage).toBeGreaterThan(50);
     expect(scored[0]!.matchReason).toContain("Action");
@@ -112,7 +112,7 @@ describe("scoreRecommendations", () => {
       ],
     });
 
-    const scored = scoreRecommendations(results, profile);
+    const scored = scoreDiscoverResults(results, profile);
 
     expect(scored[0]!.title).toBe("High Match");
     expect(scored[1]!.title).toBe("Low Match");
@@ -124,7 +124,7 @@ describe("scoreRecommendations", () => {
       genreAffinities: [{ genre: "Action", avgScore: 1500, movieCount: 10, totalComparisons: 50 }],
     });
 
-    const scored = scoreRecommendations(results, profile);
+    const scored = scoreDiscoverResults(results, profile);
 
     expect(scored[0]!.matchPercentage).toBe(0);
     expect(scored[0]!.matchReason).toBe("");

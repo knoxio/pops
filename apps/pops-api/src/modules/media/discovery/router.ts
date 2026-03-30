@@ -42,7 +42,7 @@ export const discoveryRouter = router({
       const client = getTmdbClient();
       const raw = await tmdbService.getRecommendations(client, input.sampleSize);
       const profile = service.getPreferenceProfile();
-      const scored = service.scoreRecommendations(raw.results, profile);
+      const scored = service.scoreDiscoverResults(raw.results, profile);
       return { results: scored, sourceMovies: raw.sourceMovies };
     } catch (err) {
       if (err instanceof TRPCError) throw err;
