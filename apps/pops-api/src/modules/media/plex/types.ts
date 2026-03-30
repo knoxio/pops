@@ -80,6 +80,7 @@ export interface RawPlexMediaItem {
 export interface RawPlexItemsContainer {
   size: number;
   totalSize?: number;
+  offset?: number;
   Metadata?: RawPlexMediaItem[];
 }
 
@@ -103,6 +104,8 @@ export interface RawPlexEpisode {
 
 export interface RawPlexEpisodesContainer {
   size: number;
+  totalSize?: number;
+  offset?: number;
   Metadata?: RawPlexEpisode[];
 }
 

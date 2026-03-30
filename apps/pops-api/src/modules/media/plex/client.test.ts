@@ -560,6 +560,179 @@ describe("removeFromWatchlist", () => {
   });
 });
 
+describe("getAllItems pagination", () => {
+  it("fetches multiple pages when totalSize exceeds page size", async () => {
+    // Page 1: 2 items of 3 total
+    fetchMock.mockResolvedValueOnce(
+      mockResponse({
+        MediaContainer: {
+          size: 2,
+          totalSize: 3,
+          offset: 0,
+          Metadata: [
+            {
+              ratingKey: "1",
+              key: "/library/metadata/1",
+              guid: "plex://movie/a",
+              type: "movie",
+              title: "Movie A",
+              addedAt: 0,
+              updatedAt: 0,
+            },
+            {
+              ratingKey: "2",
+              key: "/library/metadata/2",
+              guid: "plex://movie/b",
+              type: "movie",
+              title: "Movie B",
+              addedAt: 0,
+              updatedAt: 0,
+            },
+          ],
+        },
+      })
+    );
+    // Page 2: 1 item remaining
+    fetchMock.mockResolvedValueOnce(
+      mockResponse({
+        MediaContainer: {
+          size: 1,
+          totalSize: 3,
+          offset: 2,
+          Metadata: [
+            {
+              ratingKey: "3",
+              key: "/library/metadata/3",
+              guid: "plex://movie/c",
+              type: "movie",
+              title: "Movie C",
+              addedAt: 0,
+              updatedAt: 0,
+            },
+          ],
+        },
+      })
+    );
+
+    const result = await client.getAllItems("1");
+
+    expect(result).toHaveLength(3);
+    expect(result.map((r) => r.title)).toEqual(["Movie A", "Movie B", "Movie C"]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    const [url1] = fetchMock.mock.calls[0] as [string];
+    expect(url1).toContain("X-Plex-Container-Start=0");
+    const [url2] = fetchMock.mock.calls[1] as [string];
+    expect(url2).toContain("X-Plex-Container-Start=2");
+  });
+
+  it("stops paginating when totalSize is missing (single page)", async () => {
+    fetchMock.mockResolvedValueOnce(
+      mockResponse({
+        MediaContainer: {
+          size: 1,
+          Metadata: [
+            {
+              ratingKey: "1",
+              key: "/library/metadata/1",
+              guid: "plex://movie/a",
+              type: "movie",
+              title: "Movie A",
+              addedAt: 0,
+              updatedAt: 0,
+            },
+          ],
+        },
+      })
+    );
+
+    const result = await client.getAllItems("1");
+
+    expect(result).toHaveLength(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("getEpisodes pagination", () => {
+  it("fetches multiple pages of episodes", async () => {
+    // Page 1
+    fetchMock.mockResolvedValueOnce(
+      mockResponse({
+        MediaContainer: {
+          size: 2,
+          totalSize: 3,
+          Metadata: [
+            {
+              ratingKey: "501",
+              key: "/library/metadata/501",
+              parentRatingKey: "500",
+              grandparentRatingKey: "400",
+              type: "episode",
+              title: "Episode 1",
+              index: 1,
+              parentIndex: 1,
+              addedAt: 0,
+              updatedAt: 0,
+            },
+            {
+              ratingKey: "502",
+              key: "/library/metadata/502",
+              parentRatingKey: "500",
+              grandparentRatingKey: "400",
+              type: "episode",
+              title: "Episode 2",
+              index: 2,
+              parentIndex: 1,
+              addedAt: 0,
+              updatedAt: 0,
+            },
+          ],
+        },
+      })
+    );
+    // Page 2
+    fetchMock.mockResolvedValueOnce(
+      mockResponse({
+        MediaContainer: {
+          size: 1,
+          totalSize: 3,
+          Metadata: [
+            {
+              ratingKey: "503",
+              key: "/library/metadata/503",
+              parentRatingKey: "500",
+              grandparentRatingKey: "400",
+              type: "episode",
+              title: "Episode 3",
+              index: 3,
+              parentIndex: 1,
+              addedAt: 0,
+              updatedAt: 0,
+            },
+          ],
+        },
+      })
+    );
+
+    const result = await client.getEpisodes("400");
+
+    expect(result).toHaveLength(3);
+    expect(result.map((r) => r.title)).toEqual(["Episode 1", "Episode 2", "Episode 3"]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("handles empty first page without infinite loop", async () => {
+    fetchMock.mockResolvedValueOnce(
+      mockResponse({ MediaContainer: { size: 0, totalSize: 0 } })
+    );
+
+    const result = await client.getEpisodes("400");
+
+    expect(result).toEqual([]);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe("external ID parsing", () => {
   it("handles malformed guid strings gracefully", async () => {
     fetchMock.mockResolvedValueOnce(

@@ -125,10 +125,10 @@ async function syncSingleShow(
   const plexEpisodes = await plexClient.getEpisodes(item.ratingKey);
 
   // Step 4: Wrap episode watch syncing in a transaction for atomicity
-  const matched = getDb().transaction(() => {
+  const diagnostics = getDb().transaction(() => {
     return syncEpisodeWatches(tvdbId, plexEpisodes);
   })();
-  progress.episodesMatched += matched;
+  progress.episodesMatched += diagnostics.matched;
 
   progress.synced++;
 }

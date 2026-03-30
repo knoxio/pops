@@ -54,13 +54,27 @@ export class PlexClient {
     }));
   }
 
-  /** Get all items in a library section (includes external IDs). */
+  /** Get all items in a library section (includes external IDs). Paginates automatically. */
   async getAllItems(sectionId: string): Promise<PlexMediaItem[]> {
-    const raw = await this.get<RawPlexMediaContainer<RawPlexItemsContainer>>(
-      `/library/sections/${sectionId}/all?includeGuids=1`
-    );
-    const items = raw.MediaContainer.Metadata ?? [];
-    return items.map((item) => this.mapMediaItem(item));
+    const allItems: PlexMediaItem[] = [];
+    let start = 0;
+    const pageSize = 100;
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- pagination loop
+    while (true) {
+      const raw = await this.get<RawPlexMediaContainer<RawPlexItemsContainer>>(
+        `/library/sections/${sectionId}/all?includeGuids=1&X-Plex-Container-Start=${start}&X-Plex-Container-Size=${pageSize}`
+      );
+      const container = raw.MediaContainer;
+      const items = container.Metadata ?? [];
+      allItems.push(...items.map((item) => this.mapMediaItem(item)));
+
+      const totalSize = container.totalSize ?? items.length;
+      start += items.length;
+      if (start >= totalSize || items.length === 0) break;
+    }
+
+    return allItems;
   }
 
   /** Get detail for a single item by rating key. */
@@ -76,13 +90,27 @@ export class PlexClient {
     return this.mapMediaItem(first);
   }
 
-  /** Get all episodes for a TV show by its rating key. */
+  /** Get all episodes for a TV show by its rating key. Paginates automatically. */
   async getEpisodes(showRatingKey: string): Promise<PlexEpisode[]> {
-    const raw = await this.get<RawPlexMediaContainer<RawPlexEpisodesContainer>>(
-      `/library/metadata/${showRatingKey}/allLeaves`
-    );
-    const episodes = raw.MediaContainer.Metadata ?? [];
-    return episodes.map((ep) => this.mapEpisode(ep));
+    const allEpisodes: PlexEpisode[] = [];
+    let start = 0;
+    const pageSize = 100;
+
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- pagination loop
+    while (true) {
+      const raw = await this.get<RawPlexMediaContainer<RawPlexEpisodesContainer>>(
+        `/library/metadata/${showRatingKey}/allLeaves?X-Plex-Container-Start=${start}&X-Plex-Container-Size=${pageSize}`
+      );
+      const container = raw.MediaContainer;
+      const episodes = container.Metadata ?? [];
+      allEpisodes.push(...episodes.map((ep) => this.mapEpisode(ep)));
+
+      const totalSize = container.totalSize ?? episodes.length;
+      start += episodes.length;
+      if (start >= totalSize || episodes.length === 0) break;
+    }
+
+    return allEpisodes;
   }
 
   // -------------------------------------------------------------------------

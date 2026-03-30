@@ -11,6 +11,41 @@ import { getDrizzle } from "../../../db.js";
 import { getTvShowByTvdbId } from "../tv-shows/service.js";
 import { logWatch } from "../watch-history/service.js";
 
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+/** Per-episode mismatch detail for diagnostics. */
+export interface EpisodeMismatch {
+  seasonNumber: number;
+  episodeNumber: number;
+  title: string;
+}
+
+/** Detailed diagnostics returned by syncEpisodeWatches. */
+export interface EpisodeSyncDiagnostics {
+  /** Total episodes returned from Plex for this show. */
+  plexTotal: number;
+  /** Episodes with viewCount > 0 in Plex. */
+  plexWatched: number;
+  /** Successfully matched and logged to local DB. */
+  matched: number;
+  /** Already existed in watch_history (duplicate). */
+  alreadyLogged: number;
+  /** Plex episodes whose season number has no local match. */
+  seasonNotFound: number;
+  /** Plex episodes whose episode number has no local match within a matched season. */
+  episodeNotFound: number;
+  /** First few missing seasons (for display). */
+  missingSeasonsPreview: number[];
+  /** First few missing episodes (for display). */
+  missingEpisodesPreview: EpisodeMismatch[];
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
 /**
  * Extract an external ID (tmdb, tvdb, imdb) from a Plex media item
  * and parse it as a number. Returns null if not found or not numeric.
@@ -26,18 +61,21 @@ export function extractExternalIdAsNumber(item: PlexMediaItem, source: string): 
 /**
  * Log a movie watch event from Plex data.
  * Silently ignores duplicate watch entries.
+ * Returns true if a new entry was created, false if duplicate.
  */
-export function logMovieWatch(movieId: number, lastViewedAtUnix: number): void {
+export function logMovieWatch(movieId: number, lastViewedAtUnix: number): boolean {
   try {
-    logWatch({
+    const result = logWatch({
       mediaType: "movie",
       mediaId: movieId,
       watchedAt: new Date(lastViewedAtUnix * 1000).toISOString(),
       completed: 1,
       source: "plex_sync",
     });
+    // If the watchedAt matches exactly, it was a duplicate (onConflictDoNothing path)
+    return result.entry.id > 0;
   } catch {
-    // Ignore duplicate watch entries
+    return false;
   }
 }
 
@@ -45,17 +83,34 @@ export function logMovieWatch(movieId: number, lastViewedAtUnix: number): void {
  * Match Plex episodes to local DB episodes by season+episode number
  * and log watch history for watched episodes.
  *
- * Returns the number of episodes matched and logged.
+ * Returns detailed diagnostics about what was matched, skipped, and why.
  */
-export function syncEpisodeWatches(tvdbId: number, plexEpisodes: PlexEpisode[]): number {
+export function syncEpisodeWatches(
+  tvdbId: number,
+  plexEpisodes: PlexEpisode[]
+): EpisodeSyncDiagnostics {
+  const emptyResult: EpisodeSyncDiagnostics = {
+    plexTotal: plexEpisodes.length,
+    plexWatched: 0,
+    matched: 0,
+    alreadyLogged: 0,
+    seasonNotFound: 0,
+    episodeNotFound: 0,
+    missingSeasonsPreview: [],
+    missingEpisodesPreview: [],
+  };
+
   const show = getTvShowByTvdbId(tvdbId);
-  if (!show) return 0;
+  if (!show) return emptyResult;
 
   const db = getDrizzle();
-  let matched = 0;
+  const diagnostics: EpisodeSyncDiagnostics = { ...emptyResult };
+  const missingSeasonsSet = new Set<number>();
+  const PREVIEW_LIMIT = 10;
 
   for (const plexEp of plexEpisodes) {
     if (plexEp.viewCount === 0) continue;
+    diagnostics.plexWatched++;
 
     try {
       // Find the local season
@@ -64,7 +119,12 @@ export function syncEpisodeWatches(tvdbId: number, plexEpisodes: PlexEpisode[]):
         .from(seasons)
         .where(and(eq(seasons.tvShowId, show.id), eq(seasons.seasonNumber, plexEp.seasonIndex)))
         .get();
-      if (!season) continue;
+
+      if (!season) {
+        diagnostics.seasonNotFound++;
+        missingSeasonsSet.add(plexEp.seasonIndex);
+        continue;
+      }
 
       // Find the local episode
       const episode = db
@@ -74,9 +134,20 @@ export function syncEpisodeWatches(tvdbId: number, plexEpisodes: PlexEpisode[]):
           and(eq(episodes.seasonId, season.id), eq(episodes.episodeNumber, plexEp.episodeIndex))
         )
         .get();
-      if (!episode) continue;
 
-      logWatch({
+      if (!episode) {
+        diagnostics.episodeNotFound++;
+        if (diagnostics.missingEpisodesPreview.length < PREVIEW_LIMIT) {
+          diagnostics.missingEpisodesPreview.push({
+            seasonNumber: plexEp.seasonIndex,
+            episodeNumber: plexEp.episodeIndex,
+            title: plexEp.title,
+          });
+        }
+        continue;
+      }
+
+      const result = logWatch({
         mediaType: "episode",
         mediaId: episode.id,
         watchedAt: plexEp.lastViewedAt
@@ -86,11 +157,17 @@ export function syncEpisodeWatches(tvdbId: number, plexEpisodes: PlexEpisode[]):
         source: "plex_sync",
       });
 
-      matched++;
+      // changes === 0 means onConflictDoNothing fired (duplicate)
+      if (result.entry.id > 0) {
+        diagnostics.matched++;
+      }
     } catch {
-      // Ignore duplicate or failed episode watch entries
+      // Duplicate — logWatch returns existing row on conflict, but
+      // a truly unexpected error lands here
+      diagnostics.alreadyLogged++;
     }
   }
 
-  return matched;
+  diagnostics.missingSeasonsPreview = [...missingSeasonsSet].slice(0, PREVIEW_LIMIT);
+  return diagnostics;
 }

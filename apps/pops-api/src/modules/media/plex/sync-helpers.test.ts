@@ -148,9 +148,14 @@ describe("extractExternalIdAsNumber", () => {
 });
 
 describe("logMovieWatch", () => {
-  it("calls logWatch with correct parameters", () => {
-    logMovieWatch(42, 1711500000);
+  it("calls logWatch with correct parameters and returns true", () => {
+    mockLogWatch.mockReturnValue({ entry: { id: 1 }, watchlistRemoved: false } as ReturnType<
+      typeof logWatch
+    >);
 
+    const result = logMovieWatch(42, 1711500000);
+
+    expect(result).toBe(true);
     expect(mockLogWatch).toHaveBeenCalledOnce();
     expect(mockLogWatch).toHaveBeenCalledWith({
       mediaType: "movie",
@@ -161,22 +166,24 @@ describe("logMovieWatch", () => {
     });
   });
 
-  it("silently ignores duplicate watch errors", () => {
+  it("returns false on duplicate watch errors", () => {
     mockLogWatch.mockImplementation(() => {
       throw new Error("UNIQUE constraint failed");
     });
 
-    expect(() => logMovieWatch(42, 1711500000)).not.toThrow();
+    const result = logMovieWatch(42, 1711500000);
+    expect(result).toBe(false);
   });
 });
 
 describe("syncEpisodeWatches", () => {
-  it("returns 0 when show is not found", () => {
+  it("returns empty diagnostics when show is not found", () => {
     mockGetTvShowByTvdbId.mockReturnValue(null);
 
     const result = syncEpisodeWatches(81189, [makeEpisode()]);
 
-    expect(result).toBe(0);
+    expect(result.matched).toBe(0);
+    expect(result.plexTotal).toBe(1);
     expect(mockLogWatch).not.toHaveBeenCalled();
   });
 
@@ -185,11 +192,15 @@ describe("syncEpisodeWatches", () => {
       typeof getTvShowByTvdbId
     >);
     makeMockDb({ id: 10 }, { id: 100 });
+    mockLogWatch.mockReturnValue({ entry: { id: 1 }, watchlistRemoved: false } as ReturnType<
+      typeof logWatch
+    >);
 
     const ep = makeEpisode({ viewCount: 1, lastViewedAt: 1711400000 });
     const result = syncEpisodeWatches(81189, [ep]);
 
-    expect(result).toBe(1);
+    expect(result.matched).toBe(1);
+    expect(result.plexWatched).toBe(1);
     expect(mockLogWatch).toHaveBeenCalledWith({
       mediaType: "episode",
       mediaId: 100,
@@ -207,33 +218,40 @@ describe("syncEpisodeWatches", () => {
     const ep = makeEpisode({ viewCount: 0 });
     const result = syncEpisodeWatches(81189, [ep]);
 
-    expect(result).toBe(0);
+    expect(result.matched).toBe(0);
+    expect(result.plexWatched).toBe(0);
     expect(mockLogWatch).not.toHaveBeenCalled();
   });
 
-  it("skips episodes when season not found in DB", () => {
+  it("tracks season not found in diagnostics", () => {
     mockGetTvShowByTvdbId.mockReturnValue({ id: 1 } as unknown as ReturnType<
       typeof getTvShowByTvdbId
     >);
     makeMockDb(undefined, undefined);
 
-    const ep = makeEpisode({ viewCount: 1 });
+    const ep = makeEpisode({ viewCount: 1, seasonIndex: 5 });
     const result = syncEpisodeWatches(81189, [ep]);
 
-    expect(result).toBe(0);
+    expect(result.matched).toBe(0);
+    expect(result.seasonNotFound).toBe(1);
+    expect(result.missingSeasonsPreview).toEqual([5]);
     expect(mockLogWatch).not.toHaveBeenCalled();
   });
 
-  it("skips episodes when episode not found in DB", () => {
+  it("tracks episode not found in diagnostics", () => {
     mockGetTvShowByTvdbId.mockReturnValue({ id: 1 } as unknown as ReturnType<
       typeof getTvShowByTvdbId
     >);
     makeMockDb({ id: 10 }, undefined);
 
-    const ep = makeEpisode({ viewCount: 1 });
+    const ep = makeEpisode({ viewCount: 1, seasonIndex: 1, episodeIndex: 3, title: "Missing Ep" });
     const result = syncEpisodeWatches(81189, [ep]);
 
-    expect(result).toBe(0);
+    expect(result.matched).toBe(0);
+    expect(result.episodeNotFound).toBe(1);
+    expect(result.missingEpisodesPreview).toEqual([
+      { seasonNumber: 1, episodeNumber: 3, title: "Missing Ep" },
+    ]);
     expect(mockLogWatch).not.toHaveBeenCalled();
   });
 
@@ -242,6 +260,9 @@ describe("syncEpisodeWatches", () => {
       typeof getTvShowByTvdbId
     >);
     makeMockDb({ id: 10 }, { id: 100 });
+    mockLogWatch.mockReturnValue({ entry: { id: 1 }, watchlistRemoved: false } as ReturnType<
+      typeof logWatch
+    >);
 
     const now = new Date("2026-03-24T12:00:00Z");
     vi.setSystemTime(now);
@@ -258,7 +279,7 @@ describe("syncEpisodeWatches", () => {
     vi.useRealTimers();
   });
 
-  it("ignores duplicate watch errors without affecting count", () => {
+  it("counts duplicate watch errors as alreadyLogged", () => {
     mockGetTvShowByTvdbId.mockReturnValue({ id: 1 } as unknown as ReturnType<
       typeof getTvShowByTvdbId
     >);
@@ -270,17 +291,46 @@ describe("syncEpisodeWatches", () => {
     const ep = makeEpisode({ viewCount: 1 });
     const result = syncEpisodeWatches(81189, [ep]);
 
-    // Error during logWatch means matched++ is not reached
-    expect(result).toBe(0);
+    expect(result.matched).toBe(0);
+    expect(result.alreadyLogged).toBe(1);
   });
 
-  it("returns 0 for empty episode list", () => {
+  it("returns empty diagnostics for empty episode list", () => {
     mockGetTvShowByTvdbId.mockReturnValue({ id: 1 } as unknown as ReturnType<
       typeof getTvShowByTvdbId
     >);
 
     const result = syncEpisodeWatches(81189, []);
 
-    expect(result).toBe(0);
+    expect(result.matched).toBe(0);
+    expect(result.plexTotal).toBe(0);
+    expect(result.plexWatched).toBe(0);
+  });
+
+  it("deduplicates missing seasons in preview", () => {
+    mockGetTvShowByTvdbId.mockReturnValue({ id: 1 } as unknown as ReturnType<
+      typeof getTvShowByTvdbId
+    >);
+    // Both episodes will miss season lookup
+    const mockSelect = vi.fn().mockImplementation(() => ({
+      from: vi.fn().mockReturnValue({
+        where: vi.fn().mockReturnValue({
+          get: vi.fn().mockReturnValue(undefined), // season not found
+        }),
+      }),
+    }));
+    mockGetDrizzle.mockReturnValue({ select: mockSelect } as unknown as ReturnType<
+      typeof getDrizzle
+    >);
+
+    const eps = [
+      makeEpisode({ viewCount: 1, seasonIndex: 99, episodeIndex: 1 }),
+      makeEpisode({ viewCount: 1, seasonIndex: 99, episodeIndex: 2 }),
+    ];
+    const result = syncEpisodeWatches(81189, eps);
+
+    expect(result.seasonNotFound).toBe(2);
+    // Season 99 should appear only once in the preview
+    expect(result.missingSeasonsPreview).toEqual([99]);
   });
 });

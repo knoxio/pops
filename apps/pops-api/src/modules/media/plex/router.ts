@@ -13,6 +13,7 @@ import * as scheduler from "./scheduler.js";
 import { importMoviesFromPlex } from "./sync-movies.js";
 import { importTvShowsFromPlex } from "./sync-tv.js";
 import { syncWatchlistFromPlex } from "./sync-watchlist.js";
+import { syncWatchHistoryFromPlex } from "./sync-watch-history.js";
 import { getDrizzle } from "../../../db.js";
 
 function requirePlexClient(): PlexClient {
@@ -123,6 +124,36 @@ export const plexRouter = router({
       throw err;
     }
   }),
+
+  syncWatchHistory: protectedProcedure
+    .input(
+      z.object({
+        movieSectionId: z.string().min(1).optional(),
+        tvSectionId: z.string().min(1).optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const client = requirePlexClient();
+      try {
+        const result = await syncWatchHistoryFromPlex(
+          client,
+          input.movieSectionId,
+          input.tvSectionId
+        );
+        return {
+          data: result,
+          message: `Watch history sync: ${result.summary.moviesLogged} movies, ${result.summary.episodesLogged} episodes logged`,
+        };
+      } catch (err) {
+        if (err instanceof PlexApiError) {
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: `Plex API error: ${err.message}`,
+          });
+        }
+        throw err;
+      }
+    }),
 
   getSyncStatus: protectedProcedure.query(() => {
     const client = plexService.getPlexClient();

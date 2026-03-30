@@ -52,6 +52,45 @@ interface WatchlistSyncResult {
   skipReasons?: { title: string; reason: string }[];
 }
 
+interface EpisodeMismatch {
+  seasonNumber: number;
+  episodeNumber: number;
+  title: string;
+}
+
+interface ShowWatchDiagnostics {
+  title: string;
+  tvdbId: number;
+  plexViewedLeafCount: number | null;
+  diagnostics: {
+    plexTotal: number;
+    plexWatched: number;
+    matched: number;
+    alreadyLogged: number;
+    seasonNotFound: number;
+    episodeNotFound: number;
+    missingSeasonsPreview: number[];
+    missingEpisodesPreview: EpisodeMismatch[];
+  };
+}
+
+interface WatchHistorySyncResult {
+  movies: {
+    total: number;
+    watched: number;
+    logged: number;
+    alreadyLogged: number;
+    noLocalMatch: number;
+  } | null;
+  shows: ShowWatchDiagnostics[];
+  summary: {
+    moviesLogged: number;
+    episodesLogged: number;
+    showsProcessed: number;
+    showsWithGaps: number;
+  };
+}
+
 function SyncResultDisplay({ result, label }: { result: SyncResult; label: string }) {
   const [showErrors, setShowErrors] = useState(false);
   const [showSkipped, setShowSkipped] = useState(false);
@@ -174,6 +213,129 @@ function WatchlistSyncResultDisplay({ result }: { result: WatchlistSyncResult })
   );
 }
 
+function WatchHistorySyncResultDisplay({ result }: { result: WatchHistorySyncResult }) {
+  const [showShows, setShowShows] = useState(false);
+  const [expandedShow, setExpandedShow] = useState<number | null>(null);
+
+  const gapShows = result.shows.filter((s) => {
+    const d = s.diagnostics;
+    return d.seasonNotFound > 0 || d.episodeNotFound > 0;
+  });
+
+  return (
+    <div className="rounded-md border bg-muted/30 p-3 space-y-3 text-sm">
+      {/* Summary */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="font-medium">Watch History Results:</span>
+        {result.movies && (
+          <span className="text-emerald-400">{result.movies.logged} movies logged</span>
+        )}
+        <span className="text-emerald-400">
+          {result.summary.episodesLogged} episodes logged
+        </span>
+        <span className="text-muted-foreground">
+          {result.summary.showsProcessed} shows processed
+        </span>
+        {result.summary.showsWithGaps > 0 && (
+          <span className="text-amber-400">
+            {result.summary.showsWithGaps} shows with gaps
+          </span>
+        )}
+      </div>
+
+      {/* Movie details */}
+      {result.movies && result.movies.watched > 0 && (
+        <div className="text-xs text-muted-foreground space-y-0.5">
+          <p>
+            Movies: {result.movies.watched} watched in Plex
+            {result.movies.alreadyLogged > 0 && ` (${result.movies.alreadyLogged} already logged)`}
+            {result.movies.noLocalMatch > 0 && (
+              <span className="text-amber-400"> ({result.movies.noLocalMatch} not in library)</span>
+            )}
+          </p>
+        </div>
+      )}
+
+      {/* Show-level details */}
+      {gapShows.length > 0 && (
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowShows(!showShows)}
+            className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 transition-colors"
+          >
+            {showShows ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            {showShows ? "Hide" : "Show"} {gapShows.length} shows with matching issues
+          </button>
+          {showShows && (
+            <div className="mt-2 space-y-1">
+              {gapShows.map((show, i) => {
+                const d = show.diagnostics;
+                const isExpanded = expandedShow === i;
+                return (
+                  <div key={i} className="rounded border border-muted bg-background/50 p-2">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedShow(isExpanded ? null : i)}
+                      className="flex items-center gap-2 w-full text-left text-xs"
+                    >
+                      {isExpanded ? (
+                        <ChevronUp className="h-3 w-3 shrink-0" />
+                      ) : (
+                        <ChevronDown className="h-3 w-3 shrink-0" />
+                      )}
+                      <span className="font-medium flex-1">{show.title}</span>
+                      <span className="text-muted-foreground">
+                        {d.matched}/{d.plexWatched} matched
+                      </span>
+                      {show.plexViewedLeafCount !== null && (
+                        <span className="text-muted-foreground">
+                          (Plex: {show.plexViewedLeafCount} watched)
+                        </span>
+                      )}
+                    </button>
+                    {isExpanded && (
+                      <div className="mt-2 pl-5 space-y-1 text-xs text-muted-foreground">
+                        <p>Plex episodes: {d.plexTotal} total, {d.plexWatched} watched</p>
+                        <p>
+                          Matched: {d.matched}
+                          {d.alreadyLogged > 0 && ` | Already logged: ${d.alreadyLogged}`}
+                        </p>
+                        {d.seasonNotFound > 0 && (
+                          <p className="text-amber-400">
+                            Season not found: {d.seasonNotFound} episodes
+                            {d.missingSeasonsPreview.length > 0 &&
+                              ` (seasons: ${d.missingSeasonsPreview.join(", ")})`}
+                          </p>
+                        )}
+                        {d.episodeNotFound > 0 && (
+                          <div className="text-amber-400">
+                            <p>Episode not found: {d.episodeNotFound} episodes</p>
+                            {d.missingEpisodesPreview.length > 0 && (
+                              <ul className="ml-3 mt-0.5">
+                                {d.missingEpisodesPreview.map((ep, j) => (
+                                  <li key={j}>
+                                    S{String(ep.seasonNumber).padStart(2, "0")}E
+                                    {String(ep.episodeNumber).padStart(2, "0")} — {ep.title}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function PlexSettingsPage() {
   const [movieSectionId, setMovieSectionId] = useState<string>("");
   const [tvSectionId, setTvSectionId] = useState<string>("");
@@ -183,6 +345,8 @@ export function PlexSettingsPage() {
   const [movieSyncResult, setMovieSyncResult] = useState<SyncResult | null>(null);
   const [tvSyncResult, setTvSyncResult] = useState<SyncResult | null>(null);
   const [watchlistSyncResult, setWatchlistSyncResult] = useState<WatchlistSyncResult | null>(null);
+  const [watchHistorySyncResult, setWatchHistorySyncResult] =
+    useState<WatchHistorySyncResult | null>(null);
   const [schedulerHours, setSchedulerHours] = useState<number>(6);
 
   const syncStatus = trpc.media.plex.getSyncStatus.useQuery();
@@ -244,6 +408,14 @@ export function PlexSettingsPage() {
       toast.success(res.message);
     },
     onError: (err: { message: string }) => toast.error(`Watchlist sync failed: ${err.message}`),
+  });
+  const syncWatchHistory = trpc.media.plex.syncWatchHistory.useMutation({
+    onSuccess: (res: { data: WatchHistorySyncResult; message: string }) => {
+      setWatchHistorySyncResult(res.data);
+      toast.success(res.message);
+    },
+    onError: (err: { message: string }) =>
+      toast.error(`Watch history sync failed: ${err.message}`),
   });
   const saveSectionIds = trpc.media.plex.saveSectionIds.useMutation({
     onError: (err: { message: string }) =>
@@ -658,6 +830,48 @@ export function PlexSettingsPage() {
               {syncWatchlist.isPending ? "Syncing..." : "Sync Watchlist"}
             </Button>
             {watchlistSyncResult && <WatchlistSyncResultDisplay result={watchlistSyncResult} />}
+          </div>
+        )}
+
+        {/* Watch History Sync */}
+        {connected && (
+          <div className="rounded-lg border bg-card p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <History className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold">Watch History Sync</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Re-sync watch history from Plex for movies and TV shows already in your library.
+              Shows detailed diagnostics about what matched and what was missed.
+            </p>
+            <Button
+              size="sm"
+              disabled={
+                syncWatchHistory.isPending || (!movieSectionId && !tvSectionId)
+              }
+              onClick={() => {
+                setWatchHistorySyncResult(null);
+                syncWatchHistory.mutate({
+                  movieSectionId: movieSectionId || undefined,
+                  tvSectionId: tvSectionId || undefined,
+                });
+              }}
+            >
+              {syncWatchHistory.isPending ? (
+                <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <History className="h-3.5 w-3.5 mr-1.5" />
+              )}
+              {syncWatchHistory.isPending ? "Syncing Watch History..." : "Sync Watch History"}
+            </Button>
+            {!movieSectionId && !tvSectionId && (
+              <p className="text-xs text-amber-400">
+                Select a movie or TV library above first.
+              </p>
+            )}
+            {watchHistorySyncResult && (
+              <WatchHistorySyncResultDisplay result={watchHistorySyncResult} />
+            )}
           </div>
         )}
 
