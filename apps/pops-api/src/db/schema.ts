@@ -19,6 +19,7 @@ const INCLUDED_MIGRATIONS = [
   "007_transaction_corrections.sql",
   "008_add_tags_to_transactions.sql",
   "009_environments.sql",
+  "009a_add_default_tags_column.sql",
   "010_uuid_primary_keys.sql",
   "011_add_checksum_raw_row.sql",
   "20260320120000_core_entity_types.sql",
