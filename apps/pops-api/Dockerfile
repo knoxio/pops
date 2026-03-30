@@ -38,6 +38,10 @@ COPY --from=builder /app/deploy ./
 # Copy built dist
 COPY --from=builder /app/apps/pops-api/dist ./dist
 
+# Copy SQL migration files (tsc doesn't copy .sql files)
+COPY --from=builder /app/apps/pops-api/src/db/migrations ./dist/db/migrations
+COPY --from=builder /app/apps/pops-api/src/db/drizzle-migrations ./dist/db/drizzle-migrations
+
 # Copy db-types built output into node_modules
 COPY --from=builder /app/packages/db-types/dist ./node_modules/@pops/db-types/dist
 COPY --from=builder /app/packages/db-types/package.json ./node_modules/@pops/db-types/
