@@ -20,9 +20,7 @@ function getLibraryTmdbIds(): Set<number> {
 function getDismissedTmdbIds(): Set<number> {
   try {
     const db = getDrizzle();
-    const rows = db.all<{ tmdb_id: number }>(
-      /* sql */ `SELECT tmdb_id FROM dismissed_discover`
-    );
+    const rows = db.all<{ tmdb_id: number }>(/* sql */ `SELECT tmdb_id FROM dismissed_discover`);
     return new Set(rows.map((r) => r.tmdb_id));
   } catch {
     // Table may not exist yet (created by tb-115)

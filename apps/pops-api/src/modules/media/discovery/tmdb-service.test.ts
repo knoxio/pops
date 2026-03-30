@@ -54,7 +54,9 @@ function createMockDb(libraryTmdbIds: number[] = [], dismissedTmdbIds: number[] 
   const mockLimit = vi.fn().mockReturnValue({ all: mockAll });
   const mockOrderBy = vi.fn().mockReturnValue({ limit: mockLimit, all: mockAll });
   const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy, all: mockAll });
-  const mockFrom = vi.fn().mockReturnValue({ where: mockWhere, all: mockAll, orderBy: mockOrderBy });
+  const mockFrom = vi
+    .fn()
+    .mockReturnValue({ where: mockWhere, all: mockAll, orderBy: mockOrderBy });
   const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
 
   // Track calls to return different data for different queries
@@ -70,9 +72,7 @@ function createMockDb(libraryTmdbIds: number[] = [], dismissedTmdbIds: number[] 
   });
 
   // For raw SQL query (getDismissedTmdbIds)
-  const mockDbAll = vi.fn().mockReturnValue(
-    dismissedTmdbIds.map((id) => ({ tmdb_id: id }))
-  );
+  const mockDbAll = vi.fn().mockReturnValue(dismissedTmdbIds.map((id) => ({ tmdb_id: id })));
 
   return {
     select: mockSelect,
@@ -94,7 +94,8 @@ describe("getRecommendations", () => {
     const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy });
     const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
-    (mockDb as ReturnType<typeof getDrizzle> & { select: ReturnType<typeof vi.fn> }).select = mockSelect;
+    (mockDb as ReturnType<typeof getDrizzle> & { select: ReturnType<typeof vi.fn> }).select =
+      mockSelect;
     mockGetDrizzle.mockReturnValue(mockDb);
 
     const client = makeTmdbClient([]);
@@ -142,15 +143,22 @@ describe("getRecommendations", () => {
     let selectCallCount = 0;
     const mockAll = vi.fn().mockImplementation(() => {
       const current = selectCallCount++;
-      if (current === 0) return [{ tmdbId: 555, title: "Source 1" }, { tmdbId: 666, title: "Source 2" }];
+      if (current === 0)
+        return [
+          { tmdbId: 555, title: "Source 1" },
+          { tmdbId: 666, title: "Source 2" },
+        ];
       return []; // library IDs
     });
     const mockLimit = vi.fn().mockReturnValue({ all: mockAll });
     const mockOrderBy = vi.fn().mockReturnValue({ limit: mockLimit, all: mockAll });
     const mockWhere = vi.fn().mockReturnValue({ orderBy: mockOrderBy, all: mockAll });
-    const mockFrom = vi.fn().mockReturnValue({ where: mockWhere, all: mockAll, orderBy: mockOrderBy });
+    const mockFrom = vi
+      .fn()
+      .mockReturnValue({ where: mockWhere, all: mockAll, orderBy: mockOrderBy });
     const mockSelect = vi.fn().mockReturnValue({ from: mockFrom });
-    (mockDb as ReturnType<typeof getDrizzle> & { select: ReturnType<typeof vi.fn> }).select = mockSelect;
+    (mockDb as ReturnType<typeof getDrizzle> & { select: ReturnType<typeof vi.fn> }).select =
+      mockSelect;
     mockGetDrizzle.mockReturnValue(mockDb);
 
     const client = makeTmdbClient([
