@@ -50,10 +50,19 @@ export interface GenreSpotlightEntry {
   genreId: number;
   genreName: string;
   results: ScoredDiscoverResult[];
+  totalPages: number;
 }
 
 export interface GenreSpotlightResponse {
   genres: GenreSpotlightEntry[];
+}
+
+export interface GenreSpotlightPageResponse {
+  genreId: number;
+  genreName: string;
+  results: ScoredDiscoverResult[];
+  page: number;
+  totalPages: number;
 }
 
 /**
@@ -144,11 +153,62 @@ export async function getGenreSpotlight(
         genreId,
         genreName,
         results: scored,
+        totalPages: response.totalPages,
       };
     })
   );
 
   return {
     genres: entries.filter((e): e is GenreSpotlightEntry => e != null),
+  };
+}
+
+/**
+ * Fetch additional page of genre spotlight results for a specific genre.
+ */
+export async function getGenreSpotlightPage(
+  client: TmdbClient,
+  profile: PreferenceProfile,
+  libraryIds: Set<number>,
+  genreId: number,
+  page: number
+): Promise<GenreSpotlightPageResponse> {
+  const genreName = TMDB_GENRE_MAP[genreId] ?? "Unknown";
+
+  const response = await client.discoverMovies({
+    genreIds: [genreId],
+    sortBy: "vote_average.desc",
+    voteCountGte: 100,
+    page,
+  });
+
+  const results: DiscoverResult[] = response.results
+    .filter((r) => !libraryIds.has(r.tmdbId))
+    .map((r) => {
+      const inLibrary = false;
+      return {
+        tmdbId: r.tmdbId,
+        title: r.title,
+        overview: r.overview,
+        releaseDate: r.releaseDate,
+        posterPath: r.posterPath,
+        posterUrl: buildPosterUrl(r.posterPath, r.tmdbId, inLibrary),
+        backdropPath: r.backdropPath,
+        voteAverage: r.voteAverage,
+        voteCount: r.voteCount,
+        genreIds: r.genreIds,
+        popularity: r.popularity,
+        inLibrary,
+      };
+    });
+
+  const scored = scoreDiscoverResults(results, profile);
+
+  return {
+    genreId,
+    genreName,
+    results: scored,
+    page: response.page,
+    totalPages: response.totalPages,
   };
 }

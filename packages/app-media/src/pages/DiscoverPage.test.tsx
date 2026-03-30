@@ -89,6 +89,8 @@ vi.mock("../lib/trpc", () => ({
           trending: { invalidate: vi.fn() },
           recommendations: { invalidate: vi.fn() },
           rewatchSuggestions: { invalidate: vi.fn() },
+          genreSpotlight: { invalidate: vi.fn() },
+          genreSpotlightPage: { fetch: vi.fn().mockResolvedValue({ results: [] }) },
           contextPicks: { invalidate: vi.fn() },
           getDismissed: { invalidate: vi.fn() },
         },
@@ -431,8 +433,24 @@ describe("DiscoverPage", () => {
     defaultGenreSpotlight();
 
     const page2Movies = [
-      { tmdbId: 200, title: "Oppenheimer", releaseDate: "2023-07-21", posterPath: null, posterUrl: null, voteAverage: 8.5, inLibrary: true }, // duplicate
-      { tmdbId: 400, title: "Interstellar", releaseDate: "2014-11-07", posterPath: null, posterUrl: null, voteAverage: 8.7, inLibrary: false }, // new
+      {
+        tmdbId: 200,
+        title: "Oppenheimer",
+        releaseDate: "2023-07-21",
+        posterPath: null,
+        posterUrl: null,
+        voteAverage: 8.5,
+        inLibrary: true,
+      }, // duplicate
+      {
+        tmdbId: 400,
+        title: "Interstellar",
+        releaseDate: "2014-11-07",
+        posterPath: null,
+        posterUrl: null,
+        voteAverage: 8.7,
+        inLibrary: false,
+      }, // new
     ];
 
     // Start with page 1
@@ -870,5 +888,133 @@ describe("DiscoverPage — context picks", () => {
     // The contextPicks query is called with pages param
     const lastCall = mockContextPicksQuery.mock.calls[mockContextPicksQuery.mock.calls.length - 1];
     expect(lastCall).toBeDefined();
+  });
+});
+
+const genreSpotlightData = {
+  genres: [
+    {
+      genreId: 28,
+      genreName: "Action",
+      totalPages: 5,
+      results: [
+        {
+          tmdbId: 900,
+          title: "Mad Max: Fury Road",
+          releaseDate: "2015-05-15",
+          posterPath: null,
+          posterUrl: null,
+          voteAverage: 7.6,
+          inLibrary: false,
+          matchPercentage: 88,
+          matchReason: "Action",
+        },
+      ],
+    },
+    {
+      genreId: 35,
+      genreName: "Comedy",
+      totalPages: 3,
+      results: [
+        {
+          tmdbId: 901,
+          title: "The Grand Budapest Hotel",
+          releaseDate: "2014-03-28",
+          posterPath: null,
+          posterUrl: null,
+          voteAverage: 8.1,
+          inLibrary: false,
+          matchPercentage: 76,
+          matchReason: "Comedy",
+        },
+      ],
+    },
+  ],
+};
+
+describe("DiscoverPage — genre spotlight", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setupDefaults();
+  });
+
+  it("renders genre spotlight rows with correct titles", () => {
+    mockGenreSpotlightQuery.mockReturnValue({
+      data: genreSpotlightData,
+      isLoading: false,
+      error: null,
+    });
+    renderPage();
+
+    expect(screen.getByText("Best in Action")).toBeTruthy();
+    expect(screen.getByText("Best in Comedy")).toBeTruthy();
+  });
+
+  it("renders cards within genre spotlight rows", () => {
+    mockGenreSpotlightQuery.mockReturnValue({
+      data: genreSpotlightData,
+      isLoading: false,
+      error: null,
+    });
+    renderPage();
+
+    expect(screen.getByText("Mad Max: Fury Road")).toBeTruthy();
+    expect(screen.getByText("The Grand Budapest Hotel")).toBeTruthy();
+  });
+
+  it("shows match percentage on genre spotlight cards", () => {
+    mockGenreSpotlightQuery.mockReturnValue({
+      data: genreSpotlightData,
+      isLoading: false,
+      error: null,
+    });
+    renderPage();
+
+    expect(screen.getByText("88% Match")).toBeTruthy();
+    expect(screen.getByText("76% Match")).toBeTruthy();
+  });
+
+  it("hides genre spotlight when no genres returned", () => {
+    defaultGenreSpotlight();
+    renderPage();
+
+    expect(screen.queryByText(/Best in /)).toBeNull();
+  });
+
+  it("shows loading skeleton while genre spotlight is loading", () => {
+    mockGenreSpotlightQuery.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      error: null,
+    });
+    renderPage();
+
+    expect(screen.getByText("Best in ...")).toBeTruthy();
+  });
+
+  it("shows Load More buttons for genre rows with multiple pages", () => {
+    mockGenreSpotlightQuery.mockReturnValue({
+      data: genreSpotlightData,
+      isLoading: false,
+      error: null,
+    });
+    renderPage();
+
+    // Both genres have totalPages > 1, so both get Load More
+    const loadMoreButtons = screen.getAllByText("Load More");
+    // At least 2 Load More buttons (one per genre row) plus potentially one from trending
+    expect(loadMoreButtons.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("shows error state with retry button for genre spotlight", () => {
+    mockGenreSpotlightQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: { message: "Genre API error" },
+      refetch: vi.fn(),
+    });
+    renderPage();
+
+    expect(screen.getByText("Genre API error")).toBeTruthy();
   });
 });

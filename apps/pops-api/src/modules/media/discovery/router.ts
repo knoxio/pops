@@ -168,4 +168,36 @@ export const discoveryRouter = router({
       });
     }
   }),
+
+  /** Load more results for a specific genre spotlight row. */
+  genreSpotlightPage: protectedProcedure
+    .input(
+      z.object({
+        genreId: z.number().int().positive(),
+        page: z.number().int().positive().min(2),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const client = getTmdbClient();
+        const profile = service.getPreferenceProfile();
+        const db = getDrizzle();
+        const rows = db.select({ tmdbId: movies.tmdbId }).from(movies).all();
+        const libraryIds = new Set(rows.map((r) => r.tmdbId));
+        return await genreSpotlightService.getGenreSpotlightPage(
+          client,
+          profile,
+          libraryIds,
+          input.genreId,
+          input.page
+        );
+      } catch (err) {
+        if (err instanceof TRPCError) throw err;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            err instanceof Error ? err.message : "Unknown error fetching genre spotlight page",
+        });
+      }
+    }),
 });

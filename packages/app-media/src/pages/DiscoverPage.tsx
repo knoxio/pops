@@ -98,6 +98,71 @@ export function DiscoverPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  // Reset per-genre accumulated state when base query data changes (e.g. after invalidation)
+  useEffect(() => {
+    setGenreAccumulated({});
+    setGenrePages({});
+  }, [genreSpotlight.dataUpdatedAt]);
+
+  // Per-genre pagination for Load More
+  const [genrePages, setGenrePages] = useState<Record<number, number>>({});
+  const [genreAccumulated, setGenreAccumulated] = useState<
+    Record<
+      number,
+      Array<{
+        tmdbId: number;
+        title: string;
+        releaseDate: string;
+        posterPath: string | null;
+        posterUrl: string | null;
+        voteAverage: number;
+        inLibrary: boolean;
+        matchPercentage: number;
+        matchReason: string;
+      }>
+    >
+  >({});
+  const [genreLoadingMore, setGenreLoadingMore] = useState<Set<number>>(new Set());
+
+  const handleGenreLoadMore = useCallback(
+    async (genreId: number, totalPages: number) => {
+      const currentPage = genrePages[genreId] ?? 1;
+      const nextPage = currentPage + 1;
+      if (nextPage > totalPages) return;
+
+      // Collect page-1 IDs for dedup
+      const page1Ids = new Set(
+        genreSpotlight.data?.genres
+          ?.find((g: { genreId: number }) => g.genreId === genreId)
+          ?.results.map((r: { tmdbId: number }) => r.tmdbId) ?? []
+      );
+
+      setGenreLoadingMore((prev) => new Set(prev).add(genreId));
+      try {
+        const data = await utils.media.discovery.genreSpotlightPage.fetch({
+          genreId,
+          page: nextPage,
+        });
+        setGenrePages((prev) => ({ ...prev, [genreId]: nextPage }));
+        setGenreAccumulated((prev) => {
+          const existing = prev[genreId] ?? [];
+          const existingIds = new Set([...existing.map((r) => r.tmdbId), ...page1Ids]);
+          const newItems = data.results.filter((r) => !existingIds.has(r.tmdbId));
+          return { ...prev, [genreId]: [...existing, ...newItems] };
+        });
+      } catch {
+        toast.error("Failed to load more results");
+      } finally {
+        setGenreLoadingMore((prev) => {
+          const next = new Set(prev);
+          next.delete(genreId);
+          return next;
+        });
+      }
+    },
+    [genrePages, genreSpotlight.data, utils]
+  );
+
   // Context picks — each collection accumulates results across pages
   const [contextPages, setContextPages] = useState<Record<string, number>>({});
   const [accumulatedContext, setAccumulatedContext] = useState<
@@ -198,6 +263,7 @@ export function DiscoverPage() {
         }
         void utils.media.discovery.trending.invalidate();
         void utils.media.discovery.recommendations.invalidate();
+        void utils.media.discovery.genreSpotlight.invalidate();
       } catch {
         toast.error("Failed to add to library");
       } finally {
@@ -230,6 +296,7 @@ export function DiscoverPage() {
         void utils.media.watchlist.list.invalidate();
         void utils.media.discovery.trending.invalidate();
         void utils.media.discovery.recommendations.invalidate();
+        void utils.media.discovery.genreSpotlight.invalidate();
       } catch {
         toast.error("Failed to add to watchlist");
       } finally {
@@ -255,6 +322,7 @@ export function DiscoverPage() {
         toast.success(`Marked "${libResult.data.title}" as watched`);
         void utils.media.discovery.trending.invalidate();
         void utils.media.discovery.recommendations.invalidate();
+        void utils.media.discovery.genreSpotlight.invalidate();
         void utils.media.discovery.rewatchSuggestions.invalidate();
       } catch {
         toast.error("Failed to mark as watched");
@@ -477,10 +545,20 @@ export function DiscoverPage() {
           {null}
         </HorizontalScrollRow>
       )}
+      {genreSpotlight.error && !genreSpotlight.data && (
+        <Alert variant="destructive" className="flex items-center gap-3">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <p className="flex-1 text-sm">{genreSpotlight.error.message}</p>
+          <Button variant="outline" size="sm" onClick={() => genreSpotlight.refetch()}>
+            <RefreshCw className="mr-1 h-3 w-3" /> Retry
+          </Button>
+        </Alert>
+      )}
       {genreSpotlight.data?.genres?.map(
         (genre: {
           genreId: number;
           genreName: string;
+          totalPages: number;
           results: Array<{
             tmdbId: number;
             title: string;
@@ -492,38 +570,66 @@ export function DiscoverPage() {
             matchPercentage: number;
             matchReason: string;
           }>;
-        }) => (
-          <HorizontalScrollRow
-            key={genre.genreId}
-            title={`Best in ${genre.genreName}`}
-            isLoading={genreSpotlight.isLoading}
-          >
-            {genre.results
-              .filter((item) => !isDismissed(item.tmdbId))
-              .map((item) => (
-                <DiscoverCard
-                  key={item.tmdbId}
-                  tmdbId={item.tmdbId}
-                  title={item.title}
-                  releaseDate={item.releaseDate ?? ""}
-                  posterPath={item.posterPath}
-                  posterUrl={item.posterUrl}
-                  voteAverage={item.voteAverage ?? 0}
-                  inLibrary={item.inLibrary}
-                  isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
-                  isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
-                  onAddToLibrary={handleAddToLibrary}
-                  onAddToWatchlist={handleAddToWatchlist}
-                  onMarkWatched={handleMarkWatched}
-                  isMarkingWatched={markingWatched.has(item.tmdbId)}
-                  onNotInterested={handleNotInterested}
-                  isDismissing={dismissing.has(item.tmdbId)}
-                  matchPercentage={item.matchPercentage}
-                  matchReason={item.matchReason}
-                />
-              ))}
-          </HorizontalScrollRow>
-        )
+        }) => {
+          const extraResults = genreAccumulated[genre.genreId] ?? [];
+          const page1Ids = new Set(genre.results.map((r) => r.tmdbId));
+          const allResults = [
+            ...genre.results,
+            ...extraResults.filter((r) => !page1Ids.has(r.tmdbId)),
+          ].filter((item) => !isDismissed(item.tmdbId));
+          const currentPage = genrePages[genre.genreId] ?? 1;
+          const hasMore = currentPage < genre.totalPages;
+
+          return (
+            <div key={genre.genreId} className="space-y-3">
+              <HorizontalScrollRow
+                title={`Best in ${genre.genreName}`}
+                isLoading={genreSpotlight.isLoading}
+              >
+                {allResults.map((item) => (
+                  <DiscoverCard
+                    key={item.tmdbId}
+                    tmdbId={item.tmdbId}
+                    title={item.title}
+                    releaseDate={item.releaseDate ?? ""}
+                    posterPath={item.posterPath}
+                    posterUrl={item.posterUrl}
+                    voteAverage={item.voteAverage ?? 0}
+                    inLibrary={item.inLibrary}
+                    isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
+                    isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
+                    onAddToLibrary={handleAddToLibrary}
+                    onAddToWatchlist={handleAddToWatchlist}
+                    onMarkWatched={handleMarkWatched}
+                    isMarkingWatched={markingWatched.has(item.tmdbId)}
+                    onNotInterested={handleNotInterested}
+                    isDismissing={dismissing.has(item.tmdbId)}
+                    matchPercentage={item.matchPercentage}
+                    matchReason={item.matchReason}
+                  />
+                ))}
+              </HorizontalScrollRow>
+              {hasMore && (
+                <div className="flex justify-center">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleGenreLoadMore(genre.genreId, genre.totalPages)}
+                    disabled={genreLoadingMore.has(genre.genreId)}
+                  >
+                    {genreLoadingMore.has(genre.genreId) ? (
+                      <>
+                        <Loader2 className="mr-1 h-3 w-3 animate-spin" /> Loading…
+                      </>
+                    ) : (
+                      "Load More"
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+          );
+        }
       )}
 
       {/* Worth Rewatching — hidden when empty */}
