@@ -14,10 +14,20 @@ export interface WatchlistEntry {
   source: string | null;
   plexRatingKey: string | null;
   addedAt: string;
+  title: string | null;
+  posterUrl: string | null;
 }
 
-/** Map a SQLite row to the API response shape. */
-export function toWatchlistEntry(row: MediaWatchlistRow): WatchlistEntry {
+/** Enriched row from the service (includes joined title/poster). */
+export interface EnrichedWatchlistRow extends MediaWatchlistRow {
+  title: string | null;
+  posterUrl: string | null;
+}
+
+/** Map a row to the API response shape. Accepts both plain and enriched rows. */
+export function toWatchlistEntry(
+  row: MediaWatchlistRow & { title?: string | null; posterUrl?: string | null }
+): WatchlistEntry {
   return {
     id: row.id,
     mediaType: row.mediaType,
@@ -27,6 +37,8 @@ export function toWatchlistEntry(row: MediaWatchlistRow): WatchlistEntry {
     source: row.source,
     plexRatingKey: row.plexRatingKey,
     addedAt: row.addedAt,
+    title: row.title ?? null,
+    posterUrl: row.posterUrl ?? null,
   };
 }
 

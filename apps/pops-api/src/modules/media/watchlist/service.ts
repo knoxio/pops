@@ -7,6 +7,7 @@ import { mediaWatchlist } from "@pops/db-types";
 import { NotFoundError, ConflictError } from "../../../shared/errors.js";
 import type {
   MediaWatchlistRow,
+  EnrichedWatchlistRow,
   AddToWatchlistInput,
   UpdateWatchlistInput,
   WatchlistFilters,
@@ -14,7 +15,7 @@ import type {
 
 /** Count + rows for a paginated list. */
 export interface WatchlistListResult {
-  rows: MediaWatchlistRow[];
+  rows: EnrichedWatchlistRow[];
   total: number;
 }
 
@@ -33,7 +34,7 @@ export function listWatchlist(
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 
-  const rows = db
+  const rawRows = db
     .select()
     .from(mediaWatchlist)
     .where(where)
@@ -41,6 +42,37 @@ export function listWatchlist(
     .limit(limit)
     .offset(offset)
     .all();
+
+  // Enrich with title and poster from movies/tv_shows tables
+  const rawDb = getDb();
+  const rows = rawRows.map((row) => {
+    let title: string | null = null;
+    let posterUrl: string | null = null;
+
+    if (row.mediaType === "movie") {
+      const movie = rawDb
+        .prepare("SELECT title, tmdb_id, poster_path FROM movies WHERE id = ?")
+        .get(row.mediaId) as
+        | { title: string; tmdb_id: number; poster_path: string | null }
+        | undefined;
+      if (movie) {
+        title = movie.title;
+        posterUrl = movie.poster_path ? `/media/images/movie/${movie.tmdb_id}/poster.jpg` : null;
+      }
+    } else if (row.mediaType === "tv_show") {
+      const show = rawDb
+        .prepare("SELECT name, tvdb_id, poster_path FROM tv_shows WHERE id = ?")
+        .get(row.mediaId) as
+        | { name: string; tvdb_id: number; poster_path: string | null }
+        | undefined;
+      if (show) {
+        title = show.name;
+        posterUrl = show.poster_path ? `/media/images/tv/${show.tvdb_id}/poster.jpg` : null;
+      }
+    }
+
+    return { ...row, title, posterUrl };
+  });
 
   const [countRow] = db.select({ total: count() }).from(mediaWatchlist).where(where).all();
 
@@ -87,7 +119,7 @@ export function addToWatchlist(input: AddToWatchlistInput): {
           )
         )
         .get();
-      if (existing) return { row: existing, created: false };
+      if (existing) return { row: getWatchlistEntry(existing.id), created: false };
     }
     throw err;
   }
