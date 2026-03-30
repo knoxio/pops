@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import crypto from "crypto-js";
 import { useImportStore } from "../../store/importStore";
-import { Button } from "@pops/ui";
+import { Button, Label, Select as UiSelect } from "@pops/ui";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import type { ParsedTransaction } from "@pops/api/modules/finance/imports";
 
@@ -140,24 +140,22 @@ export function ColumnMapStep() {
           const isInvalid = field.required && !localColumnMap[field.key];
           return (
             <div key={field.key} className="flex items-center gap-4">
-              <label className="w-40 text-sm font-medium">
+              <Label className="w-40">
                 {field.label}
                 {field.required && <span className="text-red-500 ml-1">*</span>}
-              </label>
-              <select
+              </Label>
+              <UiSelect
                 name={field.key}
                 value={localColumnMap[field.key] ?? ""}
                 onChange={(e) => handleColumnChange(field.key, e.target.value)}
                 aria-invalid={isInvalid}
-                className="flex-1 px-3 py-2 border rounded-md"
-              >
-                <option value="">Select column...</option>
-                {headers.map((header) => (
-                  <option key={header} value={header}>
-                    {header}
-                  </option>
-                ))}
-              </select>
+                placeholder="Select column..."
+                options={headers.map((header) => ({
+                  label: header,
+                  value: header,
+                }))}
+                containerClassName="flex-1"
+              />
             </div>
           );
         })}

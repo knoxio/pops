@@ -374,8 +374,9 @@ function EntityGroup({
     <div className="border rounded-lg overflow-hidden">
       {/* Group header */}
       <div className="flex items-center justify-between gap-3 px-4 py-3 bg-muted/40">
-        <button
-          className="flex items-center gap-2 flex-1 text-left"
+        <Button
+          variant="ghost"
+          className="flex items-center gap-2 flex-1 text-left h-auto p-0 hover:bg-transparent"
           onClick={() => setExpanded((prev) => !prev)}
           aria-expanded={expanded}
         >
@@ -386,7 +387,7 @@ function EntityGroup({
           )}
           <span className="font-medium text-sm">{group.entityName}</span>
           <span className="text-xs text-muted-foreground">({group.transactions.length})</span>
-        </button>
+        </Button>
 
         <div className="flex items-center gap-2 flex-shrink-0">
           {/* Current tag union preview (reactive to edits) */}
@@ -407,16 +408,15 @@ function EntityGroup({
 
           {/* Apply original suggestions to all (if any exist) */}
           {suggestedUnion.length > 0 && (
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               onClick={handleApplySuggestions}
-              className={cn(
-                "text-xs px-2 py-1 rounded border transition-colors whitespace-nowrap",
-                "border-border hover:bg-accent hover:border-accent-foreground/20"
-              )}
+              className="text-xs px-2 py-1 h-auto whitespace-nowrap"
               title={`Apply suggestions: ${suggestedUnion.join(", ")}`}
             >
               Apply suggestions
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -527,13 +527,15 @@ function GroupTagBar({
           className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-background border border-border rounded-full"
         >
           {tag}
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => onRemoveTag(tag)}
-            className="text-muted-foreground hover:text-foreground transition-colors ml-0.5"
+            className="text-muted-foreground hover:text-foreground ml-0.5 h-4 w-4 p-0"
             aria-label={`Remove ${tag}`}
           >
             <X className="w-3 h-3" />
-          </button>
+          </Button>
         </span>
       ))}
 
@@ -596,18 +598,18 @@ function GroupTagBar({
       </div>
 
       {/* Apply button — disabled when no staged tags */}
-      <button
+      <Button
+        variant="outline"
+        size="sm"
         onClick={onApply}
         disabled={stagedTags.length === 0}
         className={cn(
-          "px-2 py-0.5 rounded border text-xs transition-colors whitespace-nowrap",
-          stagedTags.length === 0
-            ? "border-border text-muted-foreground cursor-not-allowed opacity-50"
-            : "border-primary text-primary hover:bg-primary/10"
+          "px-2 py-0.5 h-auto text-xs whitespace-nowrap",
+          stagedTags.length > 0 && "border-primary text-primary hover:bg-primary/10"
         )}
       >
         Merge into all
-      </button>
+      </Button>
     </div>
   );
 }

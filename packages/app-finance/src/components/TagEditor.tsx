@@ -6,7 +6,7 @@
  * This component is tRPC-agnostic — callers wire up the API.
  */
 import { useState, useRef, useEffect } from "react";
-import { Chip, Popover, PopoverContent, PopoverTrigger, Badge } from "@pops/ui";
+import { Button, Chip, Popover, PopoverContent, PopoverTrigger, Badge } from "@pops/ui";
 import { cn } from "../lib/utils";
 
 /** Source attribution for a tag — from AI, correction rule, or entity defaults. */
@@ -180,9 +180,10 @@ export function TagEditor({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button
+        <Button
+          variant="ghost"
           className={cn(
-            "flex flex-wrap gap-1 min-h-10 text-left w-full rounded px-2 py-1.5 transition-colors items-center",
+            "flex flex-wrap gap-1 min-h-10 text-left w-full rounded px-2 py-1.5 transition-colors items-center h-auto",
             disabled ? "cursor-default" : "hover:bg-accent/50 cursor-pointer"
           )}
           aria-label="Edit tags"
@@ -219,7 +220,7 @@ export function TagEditor({
               +{tags.length - 3}
             </Badge>
           )}
-        </button>
+        </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80 p-3" align="start">
         <div className="space-y-3">
@@ -264,17 +265,16 @@ export function TagEditor({
               {filteredSuggestions.slice(0, 8).map((tag) => {
                 const style = getTagStyle(tag);
                 return (
-                  <button
+                  <Button
                     key={tag}
+                    variant="outline"
+                    size="sm"
                     onClick={() => addTag(tag)}
-                    className={cn(
-                      "text-xs px-3 py-2 border rounded-full transition-colors",
-                      "hover:brightness-110"
-                    )}
+                    className="text-xs px-3 py-2 rounded-full h-auto hover:brightness-110"
                     style={style}
                   >
                     + {tag}
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -283,30 +283,35 @@ export function TagEditor({
           {/* Actions */}
           <div className="flex items-center justify-between pt-1">
             {onSuggest ? (
-              <button
+              <Button
+                variant="link"
+                size="sm"
                 onClick={handleSuggest}
                 disabled={isSuggesting}
-                className="text-xs text-muted-foreground hover:text-foreground underline disabled:opacity-50 py-2"
+                className="text-xs text-muted-foreground hover:text-foreground px-0 h-auto"
               >
                 {isSuggesting ? "Suggesting…" : "Suggest"}
-              </button>
+              </Button>
             ) : (
               <span />
             )}
             <div className="flex gap-2">
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handleCancel}
-                className="text-xs px-3 py-2 border border-border rounded hover:bg-accent transition-colors"
+                className="text-xs px-3 h-auto py-2"
               >
                 Cancel
-              </button>
-              <button
+              </Button>
+              <Button
+                size="sm"
                 onClick={handleSave}
                 disabled={isSaving}
-                className="text-xs px-3 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 disabled:opacity-50 transition-colors"
+                className="text-xs px-3 h-auto py-2"
               >
                 {isSaving ? "Saving…" : "Save"}
-              </button>
+              </Button>
             </div>
           </div>
         </div>

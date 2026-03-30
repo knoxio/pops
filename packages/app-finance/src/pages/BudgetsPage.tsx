@@ -35,6 +35,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   PageHeader,
+  Label,
 } from "@pops/ui";
 import type { ColumnFilter } from "@pops/ui";
 import { MoreHorizontal, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
@@ -364,7 +365,7 @@ export function BudgetsPage() {
                 )}
               />
               <div className="space-y-2">
-                <label className="text-sm font-medium">Notes (Optional)</label>
+                <Label>Notes (Optional)</Label>
                 <Textarea placeholder="Additional details..." {...form.register("notes")} />
               </div>
             </div>

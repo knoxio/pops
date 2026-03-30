@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ChevronRight, Sparkles } from "lucide-react";
-import { Button } from "@pops/ui";
+import { Button, Label, Select as UiSelect } from "@pops/ui";
 import { Badge } from "@pops/ui";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@pops/ui";
 import { TransactionCard } from "./TransactionCard";
@@ -146,15 +146,18 @@ export function TransactionGroup({
         {/* Entity selector for bulk assignment */}
         {showEntitySelector && entities && entities.length > 0 && (
           <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600">
-            <label className="block text-sm font-medium mb-2">
+            <Label className="block mb-2">
               Select entity to assign to all {group.transactions.length} transactions:
-            </label>
-            <select
-              className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-800"
+            </Label>
+            <UiSelect
+              placeholder="Choose entity..."
+              options={entities.map((entity) => ({
+                label: entity.name,
+                value: entity.id,
+              }))}
               onChange={(e) => {
                 const selectedEntity = entities.find((ent) => ent.id === e.target.value);
                 if (selectedEntity) {
-                  // Apply selected entity to all transactions in group
                   group.transactions.forEach((t) => {
                     onEntitySelect(t, selectedEntity.id, selectedEntity.name);
                   });
@@ -162,14 +165,7 @@ export function TransactionGroup({
                 }
               }}
               defaultValue=""
-            >
-              <option value="">Choose entity...</option>
-              {entities.map((entity) => (
-                <option key={entity.id} value={entity.id}>
-                  {entity.name}
-                </option>
-              ))}
-            </select>
+            />
           </div>
         )}
 

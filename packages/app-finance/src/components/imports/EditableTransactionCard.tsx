@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Save, X, ChevronRight } from "lucide-react";
-import { Button } from "@pops/ui";
+import { Button, CheckboxInput } from "@pops/ui";
 import { Input } from "@pops/ui";
 import { Label } from "@pops/ui";
+import { Select as UiSelect } from "@pops/ui";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@pops/ui";
 import { EntitySelect } from "./EntitySelect";
 import type { ProcessedTransaction } from "@pops/api/modules/finance/imports";
@@ -92,7 +93,7 @@ export function EditableTransactionCard({
         <Label htmlFor="transactionType" className="block mb-2 font-semibold">
           Transaction Type
         </Label>
-        <select
+        <UiSelect
           id="transactionType"
           name="type"
           value={transactionType}
@@ -102,12 +103,12 @@ export function EditableTransactionCard({
               transactionType: e.target.value as "purchase" | "transfer" | "income",
             })
           }
-          className="w-full px-3 py-2 border rounded-md bg-white dark:bg-gray-800"
-        >
-          <option value="purchase">Purchase (requires entity)</option>
-          <option value="transfer">Transfer (between accounts, no entity)</option>
-          <option value="income">Income (salary, refund, etc.)</option>
-        </select>
+          options={[
+            { label: "Purchase (requires entity)", value: "purchase" },
+            { label: "Transfer (between accounts, no entity)", value: "transfer" },
+            { label: "Income (salary, refund, etc.)", value: "income" },
+          ]}
+        />
         <p className="text-xs mt-1 text-blue-700 dark:text-blue-300">
           {transactionType === "transfer" &&
             "Transfers don't need an entity - they move money between accounts"}
@@ -179,16 +180,14 @@ export function EditableTransactionCard({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="online" className="flex items-center gap-2">
-            <input
-              id="online"
-              type="checkbox"
-              checked={editedFields.online || false}
-              onChange={(e) => setEditedFields({ ...editedFields, online: e.target.checked })}
-              className="w-4 h-4"
-            />
-            <span>Online transaction</span>
-          </Label>
+          <CheckboxInput
+            id="online"
+            label="Online transaction"
+            checked={editedFields.online || false}
+            onCheckedChange={(checked) =>
+              setEditedFields({ ...editedFields, online: checked === true })
+            }
+          />
         </div>
       </div>
 

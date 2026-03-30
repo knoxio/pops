@@ -35,6 +35,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   PageHeader,
+  Label,
 } from "@pops/ui";
 import type { ColumnFilter } from "@pops/ui";
 import { MoreHorizontal, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
@@ -324,7 +325,9 @@ export function EntitiesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Entities"
-        description={data ? `${data.pagination.total} total entities` : "Manage merchants and payees"}
+        description={
+          data ? `${data.pagination.total} total entities` : "Manage merchants and payees"
+        }
         actions={
           <Button onClick={handleAdd}>
             <Plus className="mr-2 h-4 w-4" /> Add Entity
@@ -381,7 +384,7 @@ export function EntitiesPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Aliases</label>
+                <Label>Aliases</Label>
                 <Controller
                   control={form.control}
                   name="aliases"
@@ -400,7 +403,7 @@ export function EntitiesPage() {
                 {...form.register("defaultTransactionType")}
               />
               <div className="space-y-2">
-                <label className="text-sm font-medium">Default Tags</label>
+                <Label>Default Tags</Label>
                 <Controller
                   control={form.control}
                   name="defaultTags"
@@ -414,7 +417,7 @@ export function EntitiesPage() {
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Notes (Optional)</label>
+                <Label>Notes (Optional)</Label>
                 <Textarea placeholder="Additional details..." {...form.register("notes")} />
               </div>
             </div>

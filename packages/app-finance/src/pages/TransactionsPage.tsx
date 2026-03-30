@@ -6,7 +6,7 @@ import { useCallback } from "react";
 import { trpc } from "../lib/trpc";
 import { DataTable, SortableHeader } from "@pops/ui";
 import { Badge } from "@pops/ui";
-import { Alert, PageHeader } from "@pops/ui";
+import { Alert, Button, PageHeader } from "@pops/ui";
 import { Skeleton } from "@pops/ui";
 import { TagEditor } from "../components/TagEditor";
 import type { ColumnFilter } from "@pops/ui";
@@ -189,9 +189,9 @@ export function TransactionsPage() {
         <Alert variant="destructive">
           <p className="font-semibold">Failed to load transactions</p>
           <p className="text-sm">{error.message}</p>
-          <button onClick={() => refetch()} className="mt-2 text-sm underline">
+          <Button variant="link" size="sm" onClick={() => refetch()} className="mt-2 px-0">
             Try again
-          </button>
+          </Button>
         </Alert>
       </div>
     );

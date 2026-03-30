@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { Upload, FileText, X } from "lucide-react";
+import { Button, Label } from "@pops/ui";
 
 interface FileUploadProps {
   onFileSelect: (file: File | null) => void;
@@ -122,7 +123,7 @@ export function FileUpload({
             ${error ? "border-red-500 bg-red-50 dark:bg-red-950" : ""}
           `}
         >
-          <label
+          <Label
             htmlFor="file-upload"
             className="flex flex-col items-center justify-center cursor-pointer"
           >
@@ -142,7 +143,7 @@ export function FileUpload({
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
               aria-label="Upload CSV file"
             />
-          </label>
+          </Label>
         </div>
       ) : (
         <div className="flex items-center justify-between p-4 border-2 border-green-500 bg-green-50 dark:bg-green-950 rounded-lg">
@@ -157,13 +158,15 @@ export function FileUpload({
               </p>
             </div>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={handleRemove}
-            className="p-2 text-gray-500 hover:text-red-600 transition-colors"
+            className="text-gray-500 hover:text-red-600"
             aria-label="Remove file"
           >
             <X className="w-5 h-5" />
-          </button>
+          </Button>
         </div>
       )}
 
