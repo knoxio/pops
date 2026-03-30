@@ -392,7 +392,7 @@ export function listAllComparisons(
  * @param avoidRecent - Number of recent comparisons to check for repeat avoidance (default 10)
  * @returns A pair of movies with metadata, or null if fewer than 2 watched movies exist
  */
-export function getRandomPair(dimensionId: number, avoidRecent: number = 10): RandomPair | null {
+export function getRandomPair(dimensionId: number, avoidRecent: number = 50): RandomPair | null {
   getDimension(dimensionId); // verify dimension exists
 
   const db = getDrizzle();
