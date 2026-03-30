@@ -132,12 +132,30 @@ function createPreMigrationBackup(
   return backupPath;
 }
 
+/** Check if this is a completely fresh database (no tables at all). */
+function isFreshDatabase(database: BetterSqlite3.Database): boolean {
+  const row = database
+    .prepare(
+      "SELECT COUNT(*) AS cnt FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+    )
+    .get() as { cnt: number };
+  return row.cnt === 0;
+}
+
 /** Open and configure a SQLite database. Runs migrations on first open. */
 function openDatabase(path: string): BetterSqlite3.Database {
   const db = new BetterSqlite3(path);
   db.pragma("journal_mode = WAL");
   db.pragma("busy_timeout = 5000");
   db.pragma("foreign_keys = ON");
+
+  // Fresh database: initialize full schema (creates all tables + marks migrations as applied)
+  if (isFreshDatabase(db)) {
+    console.log("[db] Fresh database detected — initializing schema...");
+    initializeSchema(db);
+    console.log("[db] Schema initialized successfully.");
+    return db;
+  }
 
   const pending = getPendingMigrations(db);
 
