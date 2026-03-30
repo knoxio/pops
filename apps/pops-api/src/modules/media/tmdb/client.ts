@@ -180,6 +180,53 @@ export class TmdbClient {
     };
   }
 
+  /** Discover movies by genre IDs and/or keywords, with configurable sort and filters. */
+  async discoverMovies(opts: {
+    genreIds?: number[];
+    keywordIds?: number[];
+    sortBy?: string;
+    voteCountGte?: number;
+    page?: number;
+  }): Promise<TmdbSearchResponse> {
+    const params = new URLSearchParams({ language: "en-US" });
+
+    if (opts.genreIds?.length) {
+      params.set("with_genres", opts.genreIds.join(","));
+    }
+    if (opts.keywordIds?.length) {
+      params.set("with_keywords", opts.keywordIds.join("|"));
+    }
+    if (opts.sortBy) {
+      params.set("sort_by", opts.sortBy);
+    }
+    if (opts.voteCountGte != null) {
+      params.set("vote_count.gte", String(opts.voteCountGte));
+    }
+    params.set("page", String(opts.page ?? 1));
+
+    const raw = await this.get<RawTmdbSearchResponse>(`/3/discover/movie?${params.toString()}`);
+
+    return {
+      page: raw.page,
+      totalResults: raw.total_results,
+      totalPages: raw.total_pages,
+      results: raw.results.map((r) => ({
+        tmdbId: r.id,
+        title: r.title,
+        originalTitle: r.original_title,
+        overview: r.overview,
+        releaseDate: r.release_date,
+        posterPath: r.poster_path,
+        backdropPath: r.backdrop_path,
+        voteAverage: r.vote_average,
+        voteCount: r.vote_count,
+        genreIds: r.genre_ids,
+        originalLanguage: r.original_language,
+        popularity: r.popularity,
+      })),
+    };
+  }
+
   /** Get the full list of TMDB movie genres. */
   async getGenreList(): Promise<TmdbGenreListResponse> {
     return this.get<TmdbGenreListResponse>("/3/genre/movie/list?language=en-US");

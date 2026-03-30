@@ -8,6 +8,7 @@ import { getTmdbClient } from "../tmdb/index.js";
 import { TrendingQuerySchema, RecommendationsQuerySchema } from "./types.js";
 import * as service from "./service.js";
 import * as tmdbService from "./tmdb-service.js";
+import * as contextPicksService from "./context-picks-service.js";
 
 export const discoveryRouter = router({
   /** Get computed preference profile (genre affinities, dimension weights, genre distribution). */
@@ -65,4 +66,25 @@ export const discoveryRouter = router({
       });
     }
   }),
+
+  /** Get context-aware movie picks based on current time of day, month, and day of week. */
+  contextPicks: protectedProcedure
+    .input(
+      z.object({
+        /** Per-collection page numbers for Load More (e.g. { "date-night": 2 }). */
+        pages: z.record(z.string(), z.number().int().positive()).optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const client = getTmdbClient();
+        return await contextPicksService.getContextPicks(client, input.pages);
+      } catch (err) {
+        if (err instanceof TRPCError) throw err;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: err instanceof Error ? err.message : "Unknown error fetching context picks",
+        });
+      }
+    }),
 });
