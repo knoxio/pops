@@ -2,10 +2,9 @@
  * Library service — orchestrates adding media to the local library
  * by fetching metadata from external APIs and inserting records.
  */
-import { sql } from "drizzle-orm";
+import { sql, type SQL } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
-import { getDb } from "../../../db.js";
-import { movies, watchHistory } from "@pops/db-types";
+import { movies, tvShows, watchHistory } from "@pops/db-types";
 import type { TmdbClient } from "../tmdb/client.js";
 import type { ImageCacheService } from "../tmdb/image-cache.js";
 import type { TmdbMovieDetail } from "../tmdb/types.js";
@@ -125,19 +124,19 @@ export async function refreshMovie(
   return updated;
 }
 
-/** Map a sort option to SQL ORDER BY clause. */
-function sortClause(sort: LibrarySortOption): string {
+/** Map a sort option to a Drizzle SQL fragment. */
+function sortClause(sort: LibrarySortOption): SQL {
   switch (sort) {
     case "title":
-      return "title COLLATE NOCASE ASC";
+      return sql`title COLLATE NOCASE ASC`;
     case "dateAdded":
-      return "created_at DESC";
+      return sql`created_at DESC`;
     case "releaseDate":
-      return "release_date DESC";
+      return sql`release_date DESC`;
     case "rating":
-      return "vote_average DESC";
+      return sql`vote_average DESC`;
     default:
-      return "title COLLATE NOCASE ASC";
+      return sql`title COLLATE NOCASE ASC`;
   }
 }
 
@@ -189,58 +188,70 @@ interface LibraryRawRow {
   created_at: string;
 }
 
+/** Build the base UNION ALL query combining movies and TV shows. */
+function libraryUnionSql(): SQL {
+  return sql`
+    SELECT ${movies.id} AS id, 'movie' AS type, ${movies.title} AS title,
+           ${movies.releaseDate} AS release_date, ${movies.posterPath} AS poster_path,
+           ${movies.posterOverridePath} AS poster_override_path,
+           ${movies.tmdbId} AS external_id, ${movies.voteAverage} AS vote_average,
+           ${movies.genres} AS genres, ${movies.createdAt} AS created_at
+    FROM ${movies}
+    UNION ALL
+    SELECT ${tvShows.id} AS id, 'tv' AS type, ${tvShows.name} AS title,
+           ${tvShows.firstAirDate} AS release_date, ${tvShows.posterPath} AS poster_path,
+           ${tvShows.posterOverridePath} AS poster_override_path,
+           ${tvShows.tvdbId} AS external_id, ${tvShows.voteAverage} AS vote_average,
+           ${tvShows.genres} AS genres, ${tvShows.createdAt} AS created_at
+    FROM ${tvShows}
+  `;
+}
+
+/** Build a WHERE clause from filter conditions. */
+function buildWhereClause(input: LibraryListInput): SQL | null {
+  const conditions: SQL[] = [];
+
+  if (input.type !== "all") {
+    conditions.push(sql`type = ${input.type}`);
+  }
+
+  if (input.search) {
+    conditions.push(sql`title LIKE ${"%" + input.search + "%"}`);
+  }
+
+  if (input.genre) {
+    conditions.push(
+      sql`EXISTS (SELECT 1 FROM json_each(genres) WHERE json_each.value = ${input.genre})`
+    );
+  }
+
+  if (conditions.length === 0) return null;
+
+  return conditions.reduce((acc, cond) => sql`${acc} AND ${cond}`);
+}
+
 /**
  * List all library items (movies + TV shows) with filtering, sorting, and pagination.
  * Uses a SQL UNION ALL query for efficiency.
  */
 export function listLibrary(input: LibraryListInput): { items: LibraryItem[]; total: number } {
-  const db = getDb();
-
-  const conditions: string[] = [];
-  const params: unknown[] = [];
-
-  if (input.type !== "all") {
-    conditions.push("type = ?");
-    params.push(input.type);
-  }
-
-  if (input.search) {
-    conditions.push("title LIKE ?");
-    params.push(`%${input.search}%`);
-  }
-
-  if (input.genre) {
-    conditions.push("EXISTS (SELECT 1 FROM json_each(genres) WHERE json_each.value = ?)");
-    params.push(input.genre);
-  }
-
-  const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+  const db = getDrizzle();
+  const baseSql = libraryUnionSql();
+  const whereClause = buildWhereClause(input);
   const orderBy = sortClause(input.sort);
   const limit = input.pageSize;
   const offset = (input.page - 1) * input.pageSize;
 
-  const baseSql = `
-    SELECT id, 'movie' AS type, title, release_date, poster_path, poster_override_path,
-           tmdb_id AS external_id, vote_average, genres, created_at
-    FROM movies
-    UNION ALL
-    SELECT id, 'tv' AS type, name AS title, first_air_date AS release_date, poster_path,
-           poster_override_path, tvdb_id AS external_id, vote_average, genres, created_at
-    FROM tv_shows
-  `;
+  const whereFragment = whereClause ? sql`WHERE ${whereClause}` : sql``;
 
-  const countSql = `SELECT COUNT(*) AS total FROM (${baseSql}) AS library ${whereClause}`;
-  const countRow = db.prepare(countSql).get(...params) as { total: number } | undefined;
-  const total = countRow?.total ?? 0;
+  const countRow = db.all<{ total: number }>(
+    sql`SELECT COUNT(*) AS total FROM (${baseSql}) AS library ${whereFragment}`
+  );
+  const total = countRow[0]?.total ?? 0;
 
-  const dataSql = `
-    SELECT * FROM (${baseSql}) AS library
-    ${whereClause}
-    ORDER BY ${orderBy}
-    LIMIT ? OFFSET ?
-  `;
-
-  const rows = db.prepare(dataSql).all(...params, limit, offset) as LibraryRawRow[];
+  const rows = db.all<LibraryRawRow>(
+    sql`SELECT * FROM (${baseSql}) AS library ${whereFragment} ORDER BY ${orderBy} LIMIT ${limit} OFFSET ${offset}`
+  );
 
   const items: LibraryItem[] = rows.map((row) => ({
     id: row.id,
@@ -262,18 +273,17 @@ export function listLibrary(input: LibraryListInput): { items: LibraryItem[]; to
  * Get all unique genres across movies and TV shows.
  */
 export function listLibraryGenres(): string[] {
-  const db = getDb();
-  const sql = `
+  const db = getDrizzle();
+  const rows = db.all<{ genre: string }>(sql`
     SELECT DISTINCT je.value AS genre
     FROM (
-      SELECT genres FROM movies
+      SELECT ${movies.genres} AS genres FROM ${movies}
       UNION ALL
-      SELECT genres FROM tv_shows
+      SELECT ${tvShows.genres} AS genres FROM ${tvShows}
     ) AS combined, json_each(combined.genres) AS je
     WHERE je.value IS NOT NULL
     ORDER BY je.value COLLATE NOCASE
-  `;
-  const rows = db.prepare(sql).all() as { genre: string }[];
+  `);
   return rows.map((r) => r.genre);
 }
 
