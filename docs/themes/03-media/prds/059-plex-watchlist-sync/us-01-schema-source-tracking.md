@@ -1,7 +1,7 @@
 # US-01: Watchlist source tracking schema
 
 > PRD: [059 — Plex Watchlist Sync](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,14 +9,14 @@ As a developer, I want source tracking columns on the watchlist table so that th
 
 ## Acceptance Criteria
 
-- [ ] `source` TEXT column added to `media_watchlist` table with DEFAULT `'manual'`
-- [ ] `plexRatingKey` TEXT nullable column added to `media_watchlist` table
-- [ ] Existing watchlist rows default to `source='manual'` (no data loss)
-- [ ] `source` accepts values: `"manual"`, `"plex"`, `"both"`
-- [ ] TypeScript types updated to include `source` and `plexRatingKey` fields
-- [ ] `media.watchlist.add` accepts optional `source` and `plexRatingKey` params
-- [ ] `media.watchlist.list` returns `source` and `plexRatingKey` in responses
-- [ ] Tests cover: default source on new entries, source update from manual to both, plexRatingKey storage and retrieval
+- [x] `source` TEXT column added to `media_watchlist` table with DEFAULT `'manual'`
+- [x] `plexRatingKey` TEXT nullable column added to `media_watchlist` table
+- [x] Existing watchlist rows default to `source='manual'` (no data loss)
+- [x] `source` accepts values: `"manual"`, `"plex"`, `"both"`
+- [x] TypeScript types updated to include `source` and `plexRatingKey` fields
+- [x] `media.watchlist.add` accepts optional `source` and `plexRatingKey` params
+- [x] `media.watchlist.list` returns `source` and `plexRatingKey` in responses
+- [x] Tests cover: default source on new entries, source update from manual to both, plexRatingKey storage and retrieval
 
 ## Notes
 

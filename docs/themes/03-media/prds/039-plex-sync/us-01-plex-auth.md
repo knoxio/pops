@@ -1,7 +1,7 @@
 # US-01: Plex authentication
 
 > PRD: [039 — Plex Sync](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -14,13 +14,13 @@ As a user, I want to authenticate with my Plex account using a PIN code so that 
 - [x] `media.plex.checkAuthPin(id)` polls the Plex API to check if the PIN has been claimed
 - [x] When the PIN is claimed, the auth token is extracted from the Plex response
 - [x] Auth token is stored in the POPS settings table (not in env vars or config files)
-- [ ] Token storage is encrypted at rest (or at minimum, not stored as plaintext) — stored as plaintext in settings table
-- [ ] After successful auth, the server can identify the Plex username from the token — username not extracted or stored during auth
+- [x] Token storage is encrypted at rest via AES-256-GCM (encryptToken/decryptToken in service.ts)
+- [x] After successful auth, the server can identify the Plex username from the token (stored in settings as plex_username)
 - [x] `media.plex.disconnect()` deletes the stored token from the settings table
 - [x] After disconnect, all Plex API calls that require auth return an "not authenticated" error
-- [ ] If the PIN expires before the user authenticates (Plex PINs expire after ~5 minutes), `checkAuthPin` returns an expired status — no expiry check; returns generic error
-- [ ] If `checkAuthPin` is called with an invalid or already-claimed PIN ID, an appropriate error is returned — returns generic `INTERNAL_SERVER_ERROR` for all failures
-- [ ] Tests cover: PIN generation, successful auth flow, token storage and retrieval, disconnect removes token, expired PIN handling, invalid PIN ID error — partial tests (mock-based, no expiry/invalid PIN coverage)
+- [x] If the PIN expires before the user authenticates, `checkAuthPin` returns an expired status
+- [x] If `checkAuthPin` is called with an invalid PIN ID, a NOT_FOUND error is returned
+- [x] Tests cover: PIN generation, successful auth flow, token encryption/decryption, disconnect, expired PIN handling, invalid PIN ID error (13 tests in plex-auth.test.ts)
 
 ## Notes
 

@@ -385,6 +385,19 @@ mise db:seed     # Reset between test runs
 - Each branch = one focused task = one PR
 - Keep commits atomic and well-described
 
+### Documentation Sync Rule
+
+**Every code change must update related documentation.** When completing a user story, fixing a bug, or adding a feature:
+
+1. **Check acceptance criteria** — tick off `- [ ]` → `- [x]` in the relevant user story file
+2. **Update US status** — `Partial` → `Done` when all criteria are checked
+3. **Update PRD status** — update the user story table in the PRD README when a US changes status
+4. **Update epic status** — update the PRD table in the epic when a PRD changes status
+5. **Update theme status** — update the epic table in the theme README when an epic changes status
+6. **Update roadmap** — update `docs/roadmap.md` implementation tracker when epic status changes
+
+See [docs/CLAUDE.md](docs/CLAUDE.md) for the full documentation standards and status flow rules. Status flows upward: US → PRD → Epic → Theme → Roadmap.
+
 ## Rules and Standards
 
 See [CONVENTIONS.md](CONVENTIONS.md) for coding conventions (styling, API patterns, component rules, data patterns, testing).

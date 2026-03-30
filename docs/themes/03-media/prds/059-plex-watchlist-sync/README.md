@@ -97,10 +97,10 @@ The scheduler (PRD-039 US-04) calls `syncWatchlist` after syncing movies and TV 
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 01 | [us-01-schema-source-tracking](us-01-schema-source-tracking.md) | Add `source` and `plexRatingKey` columns to watchlist table, migrate existing data | Not started | No (first) |
-| 02 | [us-02-plex-to-pops-sync](us-02-plex-to-pops-sync.md) | Plex → POPS polling sync: fetch cloud watchlist, match IDs, add/remove with source tracking | Not started | Blocked by us-01 |
-| 03 | [us-03-pops-to-plex-push](us-03-pops-to-plex-push.md) | POPS → Plex inline push: extend watchlist add/remove to call Plex API when connected | Not started | Blocked by us-01 |
-| 04 | [us-04-sync-ui](us-04-sync-ui.md) | Watchlist sync status on Plex settings page: last sync, items synced/removed, manual trigger | Not started | Blocked by us-02 |
+| 01 | [us-01-schema-source-tracking](us-01-schema-source-tracking.md) | Add `source` and `plexRatingKey` columns to watchlist table, migrate existing data | Done | No (first) |
+| 02 | [us-02-plex-to-pops-sync](us-02-plex-to-pops-sync.md) | Plex → POPS polling sync: fetch cloud watchlist, match IDs, add/remove with source tracking | Done | Blocked by us-01 |
+| 03 | [us-03-pops-to-plex-push](us-03-pops-to-plex-push.md) | POPS → Plex inline push: extend watchlist add/remove to call Plex API when connected | Done | Blocked by us-01 |
+| 04 | [us-04-sync-ui](us-04-sync-ui.md) | Watchlist sync status on Plex settings page: last sync, items synced/removed, manual trigger | Done | Blocked by us-02 |
 
 US-02 and US-03 can parallelise after US-01.
 
