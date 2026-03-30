@@ -16,6 +16,18 @@ function getLibraryTmdbIds(): Set<number> {
   return new Set(rows.map((r) => r.tmdbId));
 }
 
+/** Get dismissed TMDB IDs for filtering. Returns empty set if table doesn't exist yet. */
+function getDismissedTmdbIds(): Set<number> {
+  try {
+    const db = getDrizzle();
+    const rows = db.all<{ tmdb_id: number }>(/* sql */ `SELECT tmdb_id FROM dismissed_discover`);
+    return new Set(rows.map((r) => r.tmdb_id));
+  } catch {
+    // Table may not exist yet (created by tb-115)
+    return new Set();
+  }
+}
+
 /** Build a poster URL: proxy for library items, TMDB CDN for non-library items. */
 function buildPosterUrl(
   posterPath: string | null,
@@ -87,35 +99,36 @@ export async function getRecommendations(
   }
 
   const libraryIds = getLibraryTmdbIds();
+  const dismissedIds = getDismissedTmdbIds();
 
   // Fetch recommendations for each top movie in parallel
   const recPromises = topMovies.map((m) => client.getMovieRecommendations(m.tmdbId, 1));
   const recResponses = await Promise.all(recPromises);
 
-  // Merge and deduplicate
+  // Merge, deduplicate, and exclude library + dismissed movies
   const seen = new Set<number>();
   const merged: DiscoverResult[] = [];
 
   for (const response of recResponses) {
     for (const result of response.results) {
-      if (!seen.has(result.tmdbId)) {
-        seen.add(result.tmdbId);
-        const inLibrary = libraryIds.has(result.tmdbId);
-        merged.push({
-          tmdbId: result.tmdbId,
-          title: result.title,
-          overview: result.overview,
-          releaseDate: result.releaseDate,
-          posterPath: result.posterPath,
-          posterUrl: buildPosterUrl(result.posterPath, result.tmdbId, inLibrary),
-          backdropPath: result.backdropPath,
-          voteAverage: result.voteAverage,
-          voteCount: result.voteCount,
-          genreIds: result.genreIds,
-          popularity: result.popularity,
-          inLibrary,
-        });
-      }
+      if (seen.has(result.tmdbId)) continue;
+      if (libraryIds.has(result.tmdbId)) continue;
+      if (dismissedIds.has(result.tmdbId)) continue;
+      seen.add(result.tmdbId);
+      merged.push({
+        tmdbId: result.tmdbId,
+        title: result.title,
+        overview: result.overview,
+        releaseDate: result.releaseDate,
+        posterPath: result.posterPath,
+        posterUrl: buildPosterUrl(result.posterPath, result.tmdbId, false),
+        backdropPath: result.backdropPath,
+        voteAverage: result.voteAverage,
+        voteCount: result.voteCount,
+        genreIds: result.genreIds,
+        popularity: result.popularity,
+        inLibrary: false,
+      });
     }
   }
 

@@ -88,11 +88,23 @@ export const discoveryRouter = router({
   /** Get recommendations based on top-rated library movies, scored by preference profile. */
   recommendations: protectedProcedure.input(RecommendationsQuerySchema).query(async ({ input }) => {
     try {
+      const profile = service.getPreferenceProfile();
+      // Cold start: return empty results when below comparison threshold
+      if (profile.totalComparisons < 5) {
+        return {
+          results: [],
+          sourceMovies: [],
+          totalComparisons: profile.totalComparisons,
+        };
+      }
       const client = getTmdbClient();
       const raw = await tmdbService.getRecommendations(client, input.sampleSize);
-      const profile = service.getPreferenceProfile();
       const scored = service.scoreDiscoverResults(raw.results, profile);
-      return { results: scored, sourceMovies: raw.sourceMovies };
+      return {
+        results: scored,
+        sourceMovies: raw.sourceMovies,
+        totalComparisons: profile.totalComparisons,
+      };
     } catch (err) {
       if (err instanceof TRPCError) throw err;
       throw new TRPCError({
