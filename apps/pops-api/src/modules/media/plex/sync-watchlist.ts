@@ -58,15 +58,37 @@ export interface WatchlistSyncOptions {
 
 const PLEX_DISCOVER_BASE = "https://discover.provider.plex.tv";
 
+const WATCHLIST_PAGE_SIZE = 50;
+
+interface PlexWatchlistResponse {
+  MediaContainer: {
+    totalSize?: number;
+    Metadata?: Array<{
+      ratingKey: string;
+      guid: string;
+      type: string;
+      title: string;
+      year?: number;
+      Guid?: Array<{ id: string }>;
+    }>;
+  };
+}
+
 /**
- * Fetch all items from the Plex Universal Watchlist (cloud API).
- * Returns the same PlexMediaItem shape as local library items.
+ * Fetch a single page from the Plex Universal Watchlist (cloud API).
  */
-export async function fetchPlexWatchlist(
+async function fetchPlexWatchlistPage(
   token: string,
-  clientId: string
-): Promise<PlexMediaItem[]> {
-  const url = `${PLEX_DISCOVER_BASE}/library/sections/watchlist/all?X-Plex-Token=${token}&X-Plex-Client-Identifier=${clientId}`;
+  clientId: string,
+  start: number,
+  size: number
+): Promise<PlexWatchlistResponse> {
+  const url =
+    `${PLEX_DISCOVER_BASE}/library/sections/watchlist/all` +
+    `?X-Plex-Token=${token}` +
+    `&X-Plex-Client-Identifier=${clientId}` +
+    `&X-Plex-Container-Start=${start}` +
+    `&X-Plex-Container-Size=${size}`;
 
   let response: Response;
   try {
@@ -88,46 +110,66 @@ export async function fetchPlexWatchlist(
     );
   }
 
-  const data = (await response.json()) as {
-    MediaContainer: {
-      Metadata?: Array<{
-        ratingKey: string;
-        guid: string;
-        type: string;
-        title: string;
-        year?: number;
-        Guid?: Array<{ id: string }>;
-      }>;
-    };
-  };
+  return (await response.json()) as PlexWatchlistResponse;
+}
 
-  const items = data.MediaContainer.Metadata ?? [];
+/**
+ * Fetch all items from the Plex Universal Watchlist (cloud API).
+ * Paginates using X-Plex-Container-Start / X-Plex-Container-Size to
+ * retrieve every item (the API defaults to ~20 without these params).
+ * Returns the same PlexMediaItem shape as local library items.
+ */
+export async function fetchPlexWatchlist(
+  token: string,
+  clientId: string
+): Promise<PlexMediaItem[]> {
+  const allItems: PlexMediaItem[] = [];
+  let start = 0;
 
-  return items.map((item) => ({
-    ratingKey: item.ratingKey,
-    type: item.type,
-    title: item.title,
-    originalTitle: null,
-    summary: null,
-    tagline: null,
-    year: item.year ?? null,
-    thumbUrl: null,
-    artUrl: null,
-    durationMs: null,
-    addedAt: 0,
-    updatedAt: 0,
-    lastViewedAt: null,
-    viewCount: 0,
-    rating: null,
-    audienceRating: null,
-    contentRating: null,
-    externalIds: parseGuids(item.Guid),
-    genres: [],
-    directors: [],
-    leafCount: null,
-    viewedLeafCount: null,
-    childCount: null,
-  }));
+  // eslint-disable-next-line no-constant-condition
+  while (true) {
+    const data = await fetchPlexWatchlistPage(token, clientId, start, WATCHLIST_PAGE_SIZE);
+    const pageItems = data.MediaContainer.Metadata ?? [];
+
+    for (const item of pageItems) {
+      allItems.push({
+        ratingKey: item.ratingKey,
+        type: item.type,
+        title: item.title,
+        originalTitle: null,
+        summary: null,
+        tagline: null,
+        year: item.year ?? null,
+        thumbUrl: null,
+        artUrl: null,
+        durationMs: null,
+        addedAt: 0,
+        updatedAt: 0,
+        lastViewedAt: null,
+        viewCount: 0,
+        rating: null,
+        audienceRating: null,
+        contentRating: null,
+        externalIds: parseGuids(item.Guid),
+        genres: [],
+        directors: [],
+        leafCount: null,
+        viewedLeafCount: null,
+        childCount: null,
+      });
+    }
+
+    // Stop if this page returned fewer items than requested (last page)
+    if (pageItems.length < WATCHLIST_PAGE_SIZE) break;
+
+    start += pageItems.length;
+
+    // Safety: stop if we've reached totalSize (when available)
+    const totalSize = data.MediaContainer.totalSize;
+    if (totalSize !== undefined && allItems.length >= totalSize) break;
+  }
+
+  return allItems;
 }
 
 /** Parse Guid array from Plex Discover response. */

@@ -270,7 +270,7 @@ describe("fetchPlexWatchlist", () => {
     );
   });
 
-  it("sends correct URL with token and client ID", async () => {
+  it("sends correct URL with token, client ID, and pagination params", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: async () => ({ MediaContainer: {} }),
@@ -279,9 +279,79 @@ describe("fetchPlexWatchlist", () => {
     await fetchPlexWatchlist("my-token", "my-client-id");
 
     expect(mockFetch).toHaveBeenCalledWith(
-      "https://discover.provider.plex.tv/library/sections/watchlist/all?X-Plex-Token=my-token&X-Plex-Client-Identifier=my-client-id",
+      "https://discover.provider.plex.tv/library/sections/watchlist/all?X-Plex-Token=my-token&X-Plex-Client-Identifier=my-client-id&X-Plex-Container-Start=0&X-Plex-Container-Size=50",
       { method: "GET", headers: { Accept: "application/json" } }
     );
+  });
+
+  it("paginates through multiple pages to fetch all items", async () => {
+    // Page 1: 50 items (full page, triggers next fetch)
+    const page1Items = Array.from({ length: 50 }, (_, i) => ({
+      ratingKey: `key-${i}`,
+      guid: `plex://movie/key-${i}`,
+      type: "movie",
+      title: `Movie ${i}`,
+      year: 2020,
+      Guid: [{ id: `tmdb://${1000 + i}` }],
+    }));
+
+    // Page 2: 10 items (partial page, stops pagination)
+    const page2Items = Array.from({ length: 10 }, (_, i) => ({
+      ratingKey: `key-${50 + i}`,
+      guid: `plex://movie/key-${50 + i}`,
+      type: "movie",
+      title: `Movie ${50 + i}`,
+      year: 2021,
+      Guid: [{ id: `tmdb://${1050 + i}` }],
+    }));
+
+    mockFetch
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ MediaContainer: { totalSize: 60, Metadata: page1Items } }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({ MediaContainer: { totalSize: 60, Metadata: page2Items } }),
+      });
+
+    const items = await fetchPlexWatchlist("test-token", "test-client-id");
+
+    expect(items).toHaveLength(60);
+    expect(items[0]!.title).toBe("Movie 0");
+    expect(items[59]!.title).toBe("Movie 59");
+
+    // Verify pagination params
+    expect(mockFetch).toHaveBeenCalledTimes(2);
+    const firstUrl = mockFetch.mock.calls[0]![0] as string;
+    const secondUrl = mockFetch.mock.calls[1]![0] as string;
+    expect(firstUrl).toContain("X-Plex-Container-Start=0");
+    expect(firstUrl).toContain("X-Plex-Container-Size=50");
+    expect(secondUrl).toContain("X-Plex-Container-Start=50");
+    expect(secondUrl).toContain("X-Plex-Container-Size=50");
+  });
+
+  it("stops pagination when totalSize is reached", async () => {
+    // Page 1: 50 items with totalSize=50 (no second page needed)
+    const page1Items = Array.from({ length: 50 }, (_, i) => ({
+      ratingKey: `key-${i}`,
+      guid: `plex://movie/key-${i}`,
+      type: "movie",
+      title: `Movie ${i}`,
+      year: 2020,
+      Guid: [{ id: `tmdb://${1000 + i}` }],
+    }));
+
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({ MediaContainer: { totalSize: 50, Metadata: page1Items } }),
+    });
+
+    const items = await fetchPlexWatchlist("test-token", "test-client-id");
+
+    expect(items).toHaveLength(50);
+    // Should only make 1 call since totalSize was reached
+    expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 });
 
