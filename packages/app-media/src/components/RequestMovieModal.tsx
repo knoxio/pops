@@ -51,10 +51,13 @@ export function RequestMovieModal({ open, onClose, tmdbId, title, year }: Reques
     }
   }, [folders.data?.data, rootFolderPath]);
 
+  const utils = trpc.useUtils();
+
   const addMovie = trpc.media.arr.addMovie.useMutation({
     onSuccess: () => {
       setSuccess(true);
       setError(null);
+      utils.media.arr.getMovieStatus.invalidate({ tmdbId });
       setTimeout(() => {
         onClose();
         setSuccess(false);

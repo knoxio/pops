@@ -400,6 +400,11 @@ export async function triggerSeriesSearch(
   return client.triggerSearch(sonarrId, seasonNumber);
 }
 
+/** Clear cached status for a specific movie by tmdbId. */
+export function clearMovieStatusCache(tmdbId: number): void {
+  movieStatusCache.delete(tmdbId);
+}
+
 /** Clear all cached statuses. */
 export function clearStatusCache(): void {
   movieStatusCache.clear();
