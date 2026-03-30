@@ -35,6 +35,13 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
     };
   }
 
+  // If Cloudflare Access team name is not configured, trust the tunnel
+  if (!process.env["CLOUDFLARE_ACCESS_TEAM_NAME"]) {
+    return {
+      user: { email: "tunnel-authenticated@pops.local" },
+    };
+  }
+
   const token = req.headers["cf-access-jwt-assertion"];
 
   if (typeof token === "string") {
