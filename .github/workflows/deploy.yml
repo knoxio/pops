@@ -82,6 +82,7 @@ jobs:
           ansible-playbook playbooks/deploy.yml \
             -i inventory/hosts.yml \
             --vault-password-file ~/.ansible/pops-vault-password \
+            --connection=local \
             -v
 
       - name: Wait for services to stabilize
