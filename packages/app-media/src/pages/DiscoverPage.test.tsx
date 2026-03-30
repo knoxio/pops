@@ -5,6 +5,8 @@ import { MemoryRouter } from "react-router";
 const mockTrendingQuery = vi.fn();
 const mockRecommendationsQuery = vi.fn();
 const mockProfileQuery = vi.fn();
+const mockRewatchSuggestionsQuery = vi.fn();
+const mockGenreSpotlightQuery = vi.fn();
 const mockAddMovieMutateAsync = vi.fn();
 const mockAddWatchlistMutateAsync = vi.fn();
 const mockTrendingRefetch = vi.fn();
@@ -29,6 +31,12 @@ vi.mock("../lib/trpc", () => ({
         profile: {
           useQuery: (...args: unknown[]) => mockProfileQuery(...args),
         },
+        rewatchSuggestions: {
+          useQuery: (...args: unknown[]) => mockRewatchSuggestionsQuery(...args),
+        },
+        genreSpotlight: {
+          useQuery: (...args: unknown[]) => mockGenreSpotlightQuery(...args),
+        },
       },
       library: {
         addMovie: {
@@ -41,12 +49,18 @@ vi.mock("../lib/trpc", () => ({
         },
         list: { invalidate: vi.fn() },
       },
+      watchHistory: {
+        log: {
+          useMutation: () => ({ mutateAsync: vi.fn() }),
+        },
+      },
     },
     useUtils: () => ({
       media: {
         discovery: {
           trending: { invalidate: vi.fn() },
           recommendations: { invalidate: vi.fn() },
+          rewatchSuggestions: { invalidate: vi.fn() },
         },
         watchlist: { list: { invalidate: vi.fn() } },
       },
@@ -55,7 +69,15 @@ vi.mock("../lib/trpc", () => ({
 }));
 
 vi.mock("../components/HorizontalScrollRow", () => ({
-  HorizontalScrollRow: ({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) => (
+  HorizontalScrollRow: ({
+    title,
+    subtitle,
+    children,
+  }: {
+    title: string;
+    subtitle?: string;
+    children: React.ReactNode;
+  }) => (
     <section>
       <h2>{title}</h2>
       {subtitle && <p data-testid="scroll-row-subtitle">{subtitle}</p>}
@@ -92,6 +114,10 @@ vi.mock("../components/DiscoverCard", () => ({
   ),
 }));
 
+vi.mock("../components/PreferenceProfile", () => ({
+  PreferenceProfile: () => <div data-testid="preference-profile" />,
+}));
+
 vi.mock("sonner", () => ({
   toast: { success: vi.fn(), info: vi.fn(), error: vi.fn() },
 }));
@@ -99,14 +125,58 @@ vi.mock("sonner", () => ({
 import { DiscoverPage } from "./DiscoverPage";
 
 const trendingMovies = [
-  { tmdbId: 100, title: "Dune", releaseDate: "2024-03-01", posterPath: null, posterUrl: null, voteAverage: 8.1, inLibrary: false },
-  { tmdbId: 200, title: "Oppenheimer", releaseDate: "2023-07-21", posterPath: null, posterUrl: null, voteAverage: 8.5, inLibrary: true },
-  { tmdbId: 300, title: "Barbie", releaseDate: "2023-07-21", posterPath: null, posterUrl: null, voteAverage: 7.0, inLibrary: false },
+  {
+    tmdbId: 100,
+    title: "Dune",
+    releaseDate: "2024-03-01",
+    posterPath: null,
+    posterUrl: null,
+    voteAverage: 8.1,
+    inLibrary: false,
+  },
+  {
+    tmdbId: 200,
+    title: "Oppenheimer",
+    releaseDate: "2023-07-21",
+    posterPath: null,
+    posterUrl: null,
+    voteAverage: 8.5,
+    inLibrary: true,
+  },
+  {
+    tmdbId: 300,
+    title: "Barbie",
+    releaseDate: "2023-07-21",
+    posterPath: null,
+    posterUrl: null,
+    voteAverage: 7.0,
+    inLibrary: false,
+  },
 ];
 
 const recommendedMovies = [
-  { tmdbId: 400, title: "Blade Runner 2049", releaseDate: "2017-10-06", posterPath: null, posterUrl: null, voteAverage: 7.9, inLibrary: false, matchPercentage: 92, matchReason: "Sci-Fi, Action" },
-  { tmdbId: 500, title: "Arrival", releaseDate: "2016-11-11", posterPath: null, posterUrl: null, voteAverage: 7.6, inLibrary: false, matchPercentage: 85, matchReason: "Sci-Fi" },
+  {
+    tmdbId: 400,
+    title: "Blade Runner 2049",
+    releaseDate: "2017-10-06",
+    posterPath: null,
+    posterUrl: null,
+    voteAverage: 7.9,
+    inLibrary: false,
+    matchPercentage: 92,
+    matchReason: "Sci-Fi, Action",
+  },
+  {
+    tmdbId: 500,
+    title: "Arrival",
+    releaseDate: "2016-11-11",
+    posterPath: null,
+    posterUrl: null,
+    voteAverage: 7.6,
+    inLibrary: false,
+    matchPercentage: 85,
+    matchReason: "Sci-Fi",
+  },
 ];
 
 const emptyRecommendations = {
@@ -146,17 +216,35 @@ function defaultProfile(totalComparisons: number) {
   });
 }
 
+function defaultRewatchSuggestions() {
+  mockRewatchSuggestionsQuery.mockReturnValue({
+    data: { data: [] },
+    isLoading: false,
+    error: null,
+  });
+}
+
+function defaultGenreSpotlight() {
+  mockGenreSpotlightQuery.mockReturnValue({
+    data: { genres: [] },
+    isLoading: false,
+    error: null,
+  });
+}
+
 function setupDefaults() {
   defaultTrending();
   mockRecommendationsQuery.mockReturnValue(emptyRecommendations);
   defaultProfile(10);
+  defaultRewatchSuggestions();
+  defaultGenreSpotlight();
 }
 
 function renderPage(initialEntry = "/media/discover") {
   return render(
     <MemoryRouter initialEntries={[initialEntry]}>
       <DiscoverPage />
-    </MemoryRouter>,
+    </MemoryRouter>
   );
 }
 
@@ -181,14 +269,14 @@ describe("DiscoverPage", () => {
     // Default is "week"
     expect(mockTrendingQuery).toHaveBeenCalledWith(
       expect.objectContaining({ timeWindow: "week" }),
-      expect.anything(),
+      expect.anything()
     );
 
     fireEvent.click(screen.getByText("Today"));
 
     expect(mockTrendingQuery).toHaveBeenCalledWith(
       expect.objectContaining({ timeWindow: "day" }),
-      expect.anything(),
+      expect.anything()
     );
   });
 
@@ -265,7 +353,7 @@ describe("DiscoverPage", () => {
 
     expect(mockTrendingQuery).toHaveBeenCalledWith(
       expect.objectContaining({ timeWindow: "day" }),
-      expect.anything(),
+      expect.anything()
     );
   });
 });
@@ -274,6 +362,8 @@ describe("DiscoverPage — recommendations", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     defaultTrending();
+    defaultRewatchSuggestions();
+    defaultGenreSpotlight();
   });
 
   it("shows cold start CTA when totalComparisons < 5", () => {
@@ -292,7 +382,9 @@ describe("DiscoverPage — recommendations", () => {
     renderPage();
 
     const links = screen.getAllByText("Start Comparing");
-    const compareLink = links.find((el) => el.closest("a")?.getAttribute("href") === "/media/compare");
+    const compareLink = links.find(
+      (el) => el.closest("a")?.getAttribute("href") === "/media/compare"
+    );
     expect(compareLink).toBeTruthy();
   });
 
@@ -348,8 +440,28 @@ describe("DiscoverPage — recommendations", () => {
     mockRecommendationsQuery.mockReturnValue({
       data: {
         results: [
-          { tmdbId: 600, title: "Inception", releaseDate: "2010-07-16", posterPath: null, posterUrl: null, voteAverage: 8.4, inLibrary: true, matchPercentage: 90, matchReason: "Sci-Fi, Thriller" },
-          { tmdbId: 700, title: "Tenet", releaseDate: "2020-08-26", posterPath: null, posterUrl: null, voteAverage: 7.3, inLibrary: false, matchPercentage: 78, matchReason: "Sci-Fi" },
+          {
+            tmdbId: 600,
+            title: "Inception",
+            releaseDate: "2010-07-16",
+            posterPath: null,
+            posterUrl: null,
+            voteAverage: 8.4,
+            inLibrary: true,
+            matchPercentage: 90,
+            matchReason: "Sci-Fi, Thriller",
+          },
+          {
+            tmdbId: 700,
+            title: "Tenet",
+            releaseDate: "2020-08-26",
+            posterPath: null,
+            posterUrl: null,
+            voteAverage: 7.3,
+            inLibrary: false,
+            matchPercentage: 78,
+            matchReason: "Sci-Fi",
+          },
         ],
         sourceMovies: ["Interstellar"],
       },
@@ -372,9 +484,39 @@ describe("DiscoverPage — recommendations", () => {
   it("renders recommendation cards in matchPercentage order (composite score sorting)", () => {
     defaultProfile(10);
     const sortedMovies = [
-      { tmdbId: 801, title: "Movie A", releaseDate: "2020-01-01", posterPath: null, posterUrl: null, voteAverage: 7.0, inLibrary: false, matchPercentage: 95, matchReason: "Action" },
-      { tmdbId: 802, title: "Movie B", releaseDate: "2020-01-01", posterPath: null, posterUrl: null, voteAverage: 8.0, inLibrary: false, matchPercentage: 88, matchReason: "Drama" },
-      { tmdbId: 803, title: "Movie C", releaseDate: "2020-01-01", posterPath: null, posterUrl: null, voteAverage: 9.0, inLibrary: false, matchPercentage: 72, matchReason: "Comedy" },
+      {
+        tmdbId: 801,
+        title: "Movie A",
+        releaseDate: "2020-01-01",
+        posterPath: null,
+        posterUrl: null,
+        voteAverage: 7.0,
+        inLibrary: false,
+        matchPercentage: 95,
+        matchReason: "Action",
+      },
+      {
+        tmdbId: 802,
+        title: "Movie B",
+        releaseDate: "2020-01-01",
+        posterPath: null,
+        posterUrl: null,
+        voteAverage: 8.0,
+        inLibrary: false,
+        matchPercentage: 88,
+        matchReason: "Drama",
+      },
+      {
+        tmdbId: 803,
+        title: "Movie C",
+        releaseDate: "2020-01-01",
+        posterPath: null,
+        posterUrl: null,
+        voteAverage: 9.0,
+        inLibrary: false,
+        matchPercentage: 72,
+        matchReason: "Comedy",
+      },
     ];
     mockRecommendationsQuery.mockReturnValue({
       data: { results: sortedMovies, sourceMovies: ["Top Gun"] },
