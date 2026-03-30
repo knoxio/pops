@@ -201,6 +201,59 @@ export class PlexClient {
     return items;
   }
 
+  /**
+   * Fetch trending/popular movies from the Plex Discover API.
+   * Uses the online media hub to discover popular content across the Plex ecosystem.
+   */
+  async getTrending(limit: number = 20): Promise<PlexMediaItem[]> {
+    const url =
+      `https://discover.provider.plex.tv/library/sections/watchlist/all` +
+      `?type=1` +
+      `&sort=popularityMonth:desc` +
+      `&limit=${limit}` +
+      `&includeGuids=1` +
+      `&X-Plex-Token=${this.token}`;
+
+    try {
+      const data = await this.getAbsolute<{
+        MediaContainer: {
+          Metadata?: RawPlexMediaItem[];
+        };
+      }>(url);
+
+      return (data.MediaContainer.Metadata ?? []).map((item) => this.mapMediaItem(item));
+    } catch {
+      // Fallback: try the hub endpoint for popular content
+      const hubUrl =
+        `https://discover.provider.plex.tv/hubs/promoted` +
+        `?count=${limit}` +
+        `&includeGuids=1` +
+        `&X-Plex-Token=${this.token}`;
+
+      const hubData = await this.getAbsolute<{
+        MediaContainer: {
+          Hub?: Array<{
+            type: string;
+            Metadata?: RawPlexMediaItem[];
+          }>;
+        };
+      }>(hubUrl);
+
+      const hubs = hubData.MediaContainer.Hub ?? [];
+      const movieItems: PlexMediaItem[] = [];
+      for (const hub of hubs) {
+        for (const item of hub.Metadata ?? []) {
+          if (item.type === "movie") {
+            movieItems.push(this.mapMediaItem(item));
+          }
+          if (movieItems.length >= limit) break;
+        }
+        if (movieItems.length >= limit) break;
+      }
+      return movieItems.slice(0, limit);
+    }
+  }
+
   // -------------------------------------------------------------------------
   // Mappers
   // -------------------------------------------------------------------------

@@ -5,10 +5,14 @@ import { MemoryRouter } from "react-router";
 const mockTrendingQuery = vi.fn();
 const mockRecommendationsQuery = vi.fn();
 const mockProfileQuery = vi.fn();
+const mockTrendingPlexQuery = vi.fn();
 const mockRewatchSuggestionsQuery = vi.fn();
+const mockRewatchSuggestionsRefetch = vi.fn();
 const mockGenreSpotlightQuery = vi.fn();
+const mockFromYourServerQuery = vi.fn();
 const mockAddMovieMutateAsync = vi.fn();
 const mockAddWatchlistMutateAsync = vi.fn();
+const mockLogWatchMutateAsync = vi.fn();
 const mockTrendingRefetch = vi.fn();
 const mockRecommendationsRefetch = vi.fn();
 
@@ -31,11 +35,20 @@ vi.mock("../lib/trpc", () => ({
         profile: {
           useQuery: (...args: unknown[]) => mockProfileQuery(...args),
         },
+        trendingPlex: {
+          useQuery: (...args: unknown[]) => mockTrendingPlexQuery(...args),
+        },
         rewatchSuggestions: {
-          useQuery: (...args: unknown[]) => mockRewatchSuggestionsQuery(...args),
+          useQuery: (...args: unknown[]) => {
+            const result = mockRewatchSuggestionsQuery(...args);
+            return { ...result, refetch: mockRewatchSuggestionsRefetch };
+          },
         },
         genreSpotlight: {
           useQuery: (...args: unknown[]) => mockGenreSpotlightQuery(...args),
+        },
+        fromYourServer: {
+          useQuery: (...args: unknown[]) => mockFromYourServerQuery(...args),
         },
       },
       library: {
@@ -51,7 +64,7 @@ vi.mock("../lib/trpc", () => ({
       },
       watchHistory: {
         log: {
-          useMutation: () => ({ mutateAsync: vi.fn() }),
+          useMutation: () => ({ mutateAsync: mockLogWatchMutateAsync }),
         },
       },
     },
@@ -224,9 +237,25 @@ function defaultRewatchSuggestions() {
   });
 }
 
+function defaultTrendingPlex(data: unknown[] | null = null) {
+  mockTrendingPlexQuery.mockReturnValue({
+    data: { data },
+    isLoading: false,
+    error: null,
+  });
+}
+
 function defaultGenreSpotlight() {
   mockGenreSpotlightQuery.mockReturnValue({
     data: { genres: [] },
+    isLoading: false,
+    error: null,
+  });
+}
+
+function defaultFromYourServer() {
+  mockFromYourServerQuery.mockReturnValue({
+    data: { results: [] },
     isLoading: false,
     error: null,
   });
@@ -236,8 +265,10 @@ function setupDefaults() {
   defaultTrending();
   mockRecommendationsQuery.mockReturnValue(emptyRecommendations);
   defaultProfile(10);
+  defaultTrendingPlex();
   defaultRewatchSuggestions();
   defaultGenreSpotlight();
+  defaultFromYourServer();
 }
 
 function renderPage(initialEntry = "/media/discover") {
@@ -362,8 +393,10 @@ describe("DiscoverPage — recommendations", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     defaultTrending();
+    defaultTrendingPlex();
     defaultRewatchSuggestions();
     defaultGenreSpotlight();
+    defaultFromYourServer();
   });
 
   it("shows cold start CTA when totalComparisons < 5", () => {
@@ -564,5 +597,58 @@ describe("DiscoverPage — recommendations", () => {
 
     expect(screen.queryByText("Compare more movies to unlock recommendations")).toBeNull();
     expect(screen.getByText("Recommended for You")).toBeTruthy();
+  });
+});
+
+describe("DiscoverPage — Trending on Plex", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    defaultTrending();
+    defaultProfile(10);
+    mockRecommendationsQuery.mockReturnValue(emptyRecommendations);
+    defaultRewatchSuggestions();
+  });
+
+  it("renders Trending on Plex row when Plex is connected and has results", () => {
+    const plexMovies = [
+      {
+        tmdbId: 900,
+        title: "Plex Movie A",
+        releaseDate: "2025-01-01",
+        posterPath: null,
+        posterUrl: "/thumb/a",
+        voteAverage: 7.0,
+        inLibrary: false,
+      },
+      {
+        tmdbId: 901,
+        title: "Plex Movie B",
+        releaseDate: "2025-02-01",
+        posterPath: null,
+        posterUrl: "/thumb/b",
+        voteAverage: 8.0,
+        inLibrary: true,
+      },
+    ];
+    defaultTrendingPlex(plexMovies);
+    renderPage();
+
+    expect(screen.getByText("Trending on Plex")).toBeTruthy();
+    expect(screen.getByText("Plex Movie A")).toBeTruthy();
+    expect(screen.getByText("Plex Movie B")).toBeTruthy();
+  });
+
+  it("hides Trending on Plex when Plex is not connected (null data)", () => {
+    defaultTrendingPlex(null);
+    renderPage();
+
+    expect(screen.queryByText("Trending on Plex")).toBeNull();
+  });
+
+  it("hides Trending on Plex when API returns empty results", () => {
+    defaultTrendingPlex([]);
+    renderPage();
+
+    expect(screen.queryByText("Trending on Plex")).toBeNull();
   });
 });

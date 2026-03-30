@@ -10,6 +10,7 @@ import * as service from "./service.js";
 import * as tmdbService from "./tmdb-service.js";
 import * as contextPicksService from "./context-picks-service.js";
 import * as genreSpotlightService from "./genre-spotlight-service.js";
+import * as plexService from "./plex-service.js";
 import { getDrizzle } from "../../../db.js";
 import { movies } from "@pops/db-types";
 
@@ -84,6 +85,21 @@ export const discoveryRouter = router({
     const scored = service.scoreDiscoverResults(unwatched, profile);
     return { results: scored.slice(0, 20) };
   }),
+
+  /** Get trending movies from the Plex Discover API. Returns null data when Plex is not connected. */
+  trendingPlex: protectedProcedure
+    .input(z.object({ limit: z.number().int().positive().max(50).default(20) }))
+    .query(async ({ input }) => {
+      try {
+        const results = await plexService.getTrendingFromPlex(input.limit);
+        return { data: results };
+      } catch (err) {
+        if (err instanceof TRPCError) throw err;
+        // Graceful fallback: return null on Plex API failure (section hidden, not error)
+        console.warn("[Discovery] Plex trending failed:", err instanceof Error ? err.message : err);
+        return { data: null };
+      }
+    }),
 
   /** Get recommendations based on top-rated library movies, scored by preference profile. */
   recommendations: protectedProcedure.input(RecommendationsQuerySchema).query(async ({ input }) => {

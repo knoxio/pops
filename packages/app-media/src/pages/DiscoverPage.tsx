@@ -107,6 +107,11 @@ export function DiscoverPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const trendingPlex = trpc.media.discovery.trendingPlex.useQuery(
+    { limit: 20 },
+    { staleTime: 5 * 60 * 1000 }
+  );
+
   const totalComparisons = profile.data?.data?.totalComparisons ?? 0;
   const hasEnoughComparisons = totalComparisons >= COMPARISON_THRESHOLD;
 
@@ -466,6 +471,30 @@ export function DiscoverPage() {
               />
             )
           )}
+        </HorizontalScrollRow>
+      )}
+
+      {/* Trending on Plex — hidden when not connected or API fails */}
+      {trendingPlex.data?.data && trendingPlex.data.data.length > 0 && (
+        <HorizontalScrollRow title="Trending on Plex" isLoading={false}>
+          {trendingPlex.data.data.map((item) => (
+            <DiscoverCard
+              key={item.tmdbId}
+              tmdbId={item.tmdbId}
+              title={item.title}
+              releaseDate={item.releaseDate ?? ""}
+              posterPath={item.posterPath}
+              posterUrl={item.posterUrl}
+              voteAverage={item.voteAverage ?? 0}
+              inLibrary={item.inLibrary}
+              isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
+              isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
+              onAddToLibrary={handleAddToLibrary}
+              onAddToWatchlist={handleAddToWatchlist}
+              onMarkWatched={handleMarkWatched}
+              isMarkingWatched={markingWatched.has(item.tmdbId)}
+            />
+          ))}
         </HorizontalScrollRow>
       )}
 
