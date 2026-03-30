@@ -132,6 +132,41 @@ export class PlexClient {
   }
 
   /**
+   * Get the user's watch state for a Discover item.
+   * Returns viewCount (0 = not watched) and lastViewedAt if available.
+   * Returns null if the item has no user state (never interacted with).
+   */
+  async getUserState(
+    discoverRatingKey: string
+  ): Promise<{ viewCount: number; lastViewedAt: number | null } | null> {
+    const url =
+      `https://metadata.provider.plex.tv/library/metadata/${discoverRatingKey}/userState` +
+      `?X-Plex-Token=${this.token}`;
+
+    try {
+      const data = await this.getAbsolute<{
+        MediaContainer: {
+          UserState?: Array<{
+            viewCount?: number;
+            lastViewedAt?: number;
+          }>;
+        };
+      }>(url);
+
+      const state = data.MediaContainer.UserState?.[0];
+      if (!state) return null;
+
+      return {
+        viewCount: state.viewCount ?? 0,
+        lastViewedAt: state.lastViewedAt ?? null,
+      };
+    } catch {
+      // 404 or network error — item has no user state
+      return null;
+    }
+  }
+
+  /**
    * Search the Plex Discover API by title and media type.
    * Returns items with ratingKeys and external IDs (tmdb://, tvdb://).
    */

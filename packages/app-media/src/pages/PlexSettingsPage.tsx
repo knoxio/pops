@@ -33,6 +33,7 @@ import {
   ChevronUp,
   History,
   Bookmark,
+  Eye,
 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
@@ -91,6 +92,20 @@ interface WatchHistorySyncResult {
     showsProcessed: number;
     showsWithGaps: number;
   };
+}
+
+interface DiscoverMediaResult {
+  total: number;
+  watched: number;
+  logged: number;
+  alreadyLogged: number;
+  notFound: number;
+  errors: number;
+}
+
+interface DiscoverWatchSyncResult {
+  movies: DiscoverMediaResult;
+  tvShows: DiscoverMediaResult;
 }
 
 function SyncResultDisplay({ result, label }: { result: SyncResult; label: string }) {
@@ -361,6 +376,9 @@ export function PlexSettingsPage() {
   const [watchlistSyncResult, setWatchlistSyncResult] = useState<WatchlistSyncResult | null>(null);
   const [watchHistorySyncResult, setWatchHistorySyncResult] =
     useState<WatchHistorySyncResult | null>(null);
+  const [discoverSyncResult, setDiscoverSyncResult] = useState<DiscoverWatchSyncResult | null>(
+    null
+  );
   const [schedulerHours, setSchedulerHours] = useState<number>(6);
 
   const syncStatus = trpc.media.plex.getSyncStatus.useQuery();
@@ -430,6 +448,14 @@ export function PlexSettingsPage() {
     },
     onError: (err: { message: string }) =>
       toast.error(`Watch history sync failed: ${err.message}`),
+  });
+  const syncDiscover = trpc.media.plex.syncDiscoverWatches.useMutation({
+    onSuccess: (res: { data: DiscoverWatchSyncResult; message: string }) => {
+      setDiscoverSyncResult(res.data);
+      toast.success(res.message);
+    },
+    onError: (err: { message: string }) =>
+      toast.error(`Discover watch sync failed: ${err.message}`),
   });
   const saveSectionIds = trpc.media.plex.saveSectionIds.useMutation({
     onError: (err: { message: string }) =>
@@ -885,6 +911,72 @@ export function PlexSettingsPage() {
             )}
             {watchHistorySyncResult && (
               <WatchHistorySyncResultDisplay result={watchHistorySyncResult} />
+            )}
+          </div>
+        )}
+
+        {/* Plex Discover Cloud Watch Sync */}
+        {connected && (
+          <div className="rounded-lg border bg-card p-6 space-y-4">
+            <div className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-muted-foreground" />
+              <h2 className="text-lg font-semibold">Plex Cloud Watch Sync</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Check all movies in your POPS library against your Plex account&apos;s cloud watch
+              history. Catches watches from streaming services (Netflix, Disney+, etc.) and other
+              Plex servers — not just your local library. This may take several minutes.
+            </p>
+            <Button
+              size="sm"
+              disabled={syncDiscover.isPending}
+              onClick={() => {
+                setDiscoverSyncResult(null);
+                syncDiscover.mutate();
+              }}
+            >
+              {syncDiscover.isPending ? (
+                <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+              ) : (
+                <Eye className="h-3.5 w-3.5 mr-1.5" />
+              )}
+              {syncDiscover.isPending ? "Checking Plex Cloud..." : "Sync Cloud Watches"}
+            </Button>
+            {discoverSyncResult && (
+              <div className="rounded-md border bg-muted/30 p-3 space-y-2 text-sm">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="font-medium">Cloud Watch Results:</span>
+                  {discoverSyncResult.movies.logged > 0 && (
+                    <span className="text-emerald-400">
+                      {discoverSyncResult.movies.logged} movies newly logged
+                    </span>
+                  )}
+                  <span className="text-muted-foreground">
+                    {discoverSyncResult.movies.watched} movies watched on Plex
+                  </span>
+                  {discoverSyncResult.movies.alreadyLogged > 0 && (
+                    <span className="text-muted-foreground">
+                      ({discoverSyncResult.movies.alreadyLogged} already tracked)
+                    </span>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground space-y-0.5">
+                  <p>
+                    Checked {discoverSyncResult.movies.total} movies,{" "}
+                    {discoverSyncResult.tvShows.total} TV shows against Plex cloud
+                  </p>
+                  {discoverSyncResult.movies.notFound > 0 && (
+                    <p>
+                      {discoverSyncResult.movies.notFound} movies not found on Plex Discover
+                    </p>
+                  )}
+                  {discoverSyncResult.movies.errors > 0 && (
+                    <p className="text-red-400">
+                      {discoverSyncResult.movies.errors} errors during lookup
+                    </p>
+                  )}
+                </div>
+              </div>
             )}
           </div>
         )}

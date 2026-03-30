@@ -14,6 +14,7 @@ import { importMoviesFromPlex } from "./sync-movies.js";
 import { importTvShowsFromPlex } from "./sync-tv.js";
 import { syncWatchlistFromPlex } from "./sync-watchlist.js";
 import { syncWatchHistoryFromPlex } from "./sync-watch-history.js";
+import { syncDiscoverWatches } from "./sync-discover-watches.js";
 import { getDrizzle } from "../../../db.js";
 
 function requirePlexClient(): PlexClient {
@@ -154,6 +155,27 @@ export const plexRouter = router({
         throw err;
       }
     }),
+
+  syncDiscoverWatches: protectedProcedure.mutation(async () => {
+    const client = requirePlexClient();
+    try {
+      const result = await syncDiscoverWatches(client);
+      const totalLogged = result.movies.logged + result.tvShows.logged;
+      const totalWatched = result.movies.watched + result.tvShows.watched;
+      return {
+        data: result,
+        message: `Discover sync: ${totalWatched} watched found, ${totalLogged} new watches logged`,
+      };
+    } catch (err) {
+      if (err instanceof PlexApiError) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: `Plex API error: ${err.message}`,
+        });
+      }
+      throw err;
+    }
+  }),
 
   getSyncStatus: protectedProcedure.query(() => {
     const client = plexService.getPlexClient();

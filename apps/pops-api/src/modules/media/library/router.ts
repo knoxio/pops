@@ -10,6 +10,8 @@ import { toMovie } from "../movies/types.js";
 import { toTvShow, toSeason } from "../tv-shows/types.js";
 import { RefreshMovieSchema, QuickPickSchema, LibraryListSchema } from "./types.js";
 import * as libraryService from "./service.js";
+import { getPlexClient } from "../plex/service.js";
+import { checkAndLogMovieWatch } from "../plex/sync-discover-watches.js";
 import { getTvdbClient } from "../thetvdb/index.js";
 import { TvdbApiError } from "../thetvdb/types.js";
 import { refreshTvShow } from "../thetvdb/service.js";
@@ -54,6 +56,17 @@ export const libraryRouter = router({
       const imageCache = getImageCache();
       try {
         const { movie, created } = await libraryService.addMovie(input.tmdbId, client, imageCache);
+
+        // Best-effort: check Plex Discover cloud for watch status
+        if (created) {
+          const plexClient = getPlexClient();
+          if (plexClient) {
+            checkAndLogMovieWatch(plexClient, movie.id, movie.title, movie.tmdbId).catch(() => {
+              // Ignore — best-effort
+            });
+          }
+        }
+
         return {
           data: movie,
           created,
