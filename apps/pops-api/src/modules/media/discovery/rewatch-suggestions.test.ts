@@ -85,6 +85,20 @@ describe("getRewatchSuggestions", () => {
     expect(titles).not.toContain("Bad");
   });
 
+  it("excludes movies rewatched recently even if first watched 6+ months ago", () => {
+    const movieId = seedMovie(db, { tmdb_id: 300, title: "Rewatched Recently", vote_average: 9.0 });
+    // First watched 12 months ago
+    seedWatchHistoryEntry(db, { media_id: movieId, watched_at: monthsAgo(12) });
+    // Rewatched 2 months ago — should NOT appear
+    seedWatchHistoryEntry(db, {
+      media_id: movieId,
+      watched_at: monthsAgo(2),
+    });
+
+    const results = getRewatchSuggestions();
+    expect(results).toEqual([]);
+  });
+
   it("uses ELO score when available instead of voteAverage", () => {
     const dimId = seedDimension(db, "overall");
     const movieA = seedMovie(db, { tmdb_id: 10, title: "High ELO", vote_average: 3.0 });

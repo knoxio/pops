@@ -286,8 +286,8 @@ export function getRewatchSuggestions(): RewatchSuggestion[] {
       mediaScores,
       and(eq(mediaScores.mediaType, "movie"), eq(mediaScores.mediaId, movies.id))
     )
-    .where(sql`${watchHistory.watchedAt} <= ${sixMonthsAgo}`)
     .groupBy(movies.id)
+    .having(sql`MAX(${watchHistory.watchedAt}) <= ${sixMonthsAgo}`)
     .all() as {
     id: number;
     tmdbId: number;
