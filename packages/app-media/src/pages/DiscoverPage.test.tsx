@@ -86,14 +86,17 @@ vi.mock("../components/HorizontalScrollRow", () => ({
     title,
     subtitle,
     children,
+    isLoading,
   }: {
     title: string;
     subtitle?: string;
     children: React.ReactNode;
+    isLoading?: boolean;
   }) => (
     <section>
       <h2>{title}</h2>
       {subtitle && <p data-testid="scroll-row-subtitle">{subtitle}</p>}
+      {isLoading && <div data-testid="loading-skeleton">Loading...</div>}
       <div>{children}</div>
     </section>
   ),
@@ -386,6 +389,57 @@ describe("DiscoverPage", () => {
       expect.objectContaining({ timeWindow: "day" }),
       expect.anything()
     );
+  });
+
+  it("deduplicates trending results across pages on Load More", () => {
+    defaultProfile(10);
+    mockRecommendationsQuery.mockReturnValue(emptyRecommendations);
+    defaultRewatchSuggestions();
+    defaultGenreSpotlight();
+
+    const page2Movies = [
+      { tmdbId: 200, title: "Oppenheimer", releaseDate: "2023-07-21", posterPath: null, posterUrl: null, voteAverage: 8.5, inLibrary: true }, // duplicate
+      { tmdbId: 400, title: "Interstellar", releaseDate: "2014-11-07", posterPath: null, posterUrl: null, voteAverage: 8.7, inLibrary: false }, // new
+    ];
+
+    // Start with page 1
+    mockTrendingQuery.mockReturnValue({
+      data: { results: trendingMovies, totalResults: 60, page: 1 },
+      isLoading: false,
+      error: null,
+    });
+    renderPage();
+
+    expect(screen.getByText("Dune")).toBeTruthy();
+    expect(screen.getByText("Oppenheimer")).toBeTruthy();
+    expect(screen.getByText("Barbie")).toBeTruthy();
+
+    // Simulate page 2 response (with overlap on tmdbId 200)
+    mockTrendingQuery.mockReturnValue({
+      data: { results: page2Movies, totalResults: 60, page: 2 },
+      isLoading: false,
+      error: null,
+    });
+    fireEvent.click(screen.getByText("Load More"));
+
+    expect(screen.getByText("Interstellar")).toBeTruthy();
+    expect(screen.getAllByTestId("card-200")).toHaveLength(1);
+  });
+
+  it("shows loading skeleton on first page load", () => {
+    defaultProfile(10);
+    mockRecommendationsQuery.mockReturnValue(emptyRecommendations);
+    defaultRewatchSuggestions();
+    defaultGenreSpotlight();
+    mockTrendingQuery.mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      error: null,
+    });
+    renderPage();
+
+    const skeletons = screen.getAllByTestId("loading-skeleton");
+    expect(skeletons.length).toBeGreaterThanOrEqual(1);
   });
 });
 

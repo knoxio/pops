@@ -71,8 +71,13 @@ export async function getTrending(
     Promise.resolve(getLibraryTmdbIds()),
   ]);
 
+  const results = toDiscoverResults(response.results, libraryIds);
+
+  // TODO(tb-121): Filter out dismissed movies server-side once dismissed_discover
+  // schema lands (tb-115). Currently dismissed filtering is client-side only.
+
   return {
-    results: toDiscoverResults(response.results, libraryIds),
+    results,
     totalResults: response.totalResults,
     page: response.page,
   };
