@@ -71,8 +71,13 @@ export async function getTrending(
     Promise.resolve(getLibraryTmdbIds()),
   ]);
 
+  const dismissedIds = getDismissedTmdbIds();
+  const results = toDiscoverResults(response.results, libraryIds).filter(
+    (r) => !dismissedIds.has(r.tmdbId)
+  );
+
   return {
-    results: toDiscoverResults(response.results, libraryIds),
+    results,
     totalResults: response.totalResults,
     page: response.page,
   };
