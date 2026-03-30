@@ -63,12 +63,14 @@ export function extractExternalIdAsNumber(item: PlexMediaItem, source: string): 
  * Silently ignores duplicate watch entries.
  * Returns true if a new entry was created, false if duplicate.
  */
-export function logMovieWatch(movieId: number, lastViewedAtUnix: number): boolean {
+export function logMovieWatch(movieId: number, lastViewedAtUnix: number | null): boolean {
   try {
     const result = logWatch({
       mediaType: "movie",
       mediaId: movieId,
-      watchedAt: new Date(lastViewedAtUnix * 1000).toISOString(),
+      watchedAt: lastViewedAtUnix
+        ? new Date(lastViewedAtUnix * 1000).toISOString()
+        : new Date().toISOString(),
       completed: 1,
       source: "plex_sync",
     });

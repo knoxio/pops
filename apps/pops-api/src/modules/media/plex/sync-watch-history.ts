@@ -151,8 +151,7 @@ function syncMovieWatches(plexItems: PlexMediaItem[]): MovieWatchSyncResult {
   };
 
   for (const item of plexItems) {
-    const { viewCount, lastViewedAt } = item;
-    if (viewCount === 0 || !lastViewedAt) continue;
+    if (item.viewCount === 0) continue;
     result.watched++;
 
     const tmdbId = extractExternalIdAsNumber(item, "tmdb");
@@ -168,7 +167,7 @@ function syncMovieWatches(plexItems: PlexMediaItem[]): MovieWatchSyncResult {
     }
 
     const created = getDb().transaction(() => {
-      return logMovieWatch(movie.id, lastViewedAt);
+      return logMovieWatch(movie.id, item.lastViewedAt);
     })();
 
     if (created) {

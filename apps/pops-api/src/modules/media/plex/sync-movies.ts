@@ -108,7 +108,7 @@ async function syncSingleMovie(
   if (existing) {
     // Movie exists — only sync watch history in a transaction
     getDb().transaction(() => {
-      if (item.viewCount > 0 && item.lastViewedAt) {
+      if (item.viewCount > 0) {
         logMovieWatch(existing.id, item.lastViewedAt);
       }
     })();
@@ -140,7 +140,7 @@ async function syncSingleMovie(
         })
       );
 
-      if (item.viewCount > 0 && item.lastViewedAt) {
+      if (item.viewCount > 0) {
         logMovieWatch(movie.id, item.lastViewedAt);
       }
     })();
