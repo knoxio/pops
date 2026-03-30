@@ -1,5 +1,6 @@
 import BetterSqlite3 from "better-sqlite3";
 import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
+import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { readdirSync, readFileSync, unlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -8,6 +9,7 @@ import { initializeSchema } from "./db/schema.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS_DIR = join(__dirname, "db", "migrations");
+const DRIZZLE_MIGRATIONS_DIR = join(__dirname, "db", "drizzle-migrations");
 
 /** Singleton prod database connection. */
 let prodDb: BetterSqlite3.Database | null = null;
@@ -132,6 +134,55 @@ function createPreMigrationBackup(
   return backupPath;
 }
 
+/**
+ * Mark Drizzle migrations as applied without running them.
+ * Reads the journal to find migration tags and inserts them into __drizzle_migrations.
+ */
+function markDrizzleMigrationsFromJournal(
+  database: BetterSqlite3.Database,
+  filter?: (entry: { idx: number; tag: string }) => boolean
+): void {
+  try {
+    const journalPath = join(DRIZZLE_MIGRATIONS_DIR, "meta", "_journal.json");
+    const journal = JSON.parse(readFileSync(journalPath, "utf8")) as {
+      entries: { idx: number; tag: string }[];
+    };
+
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS "__drizzle_migrations" (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        hash TEXT NOT NULL,
+        created_at NUMERIC
+      )
+    `);
+
+    const insert = database.prepare(
+      "INSERT OR IGNORE INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)"
+    );
+
+    const entries = filter ? journal.entries.filter(filter) : journal.entries;
+    for (const entry of entries) {
+      insert.run(entry.tag, Date.now());
+    }
+  } catch {
+    // Non-fatal — Drizzle migrate will handle it on next startup
+  }
+}
+
+/** Mark ALL Drizzle migrations as applied (for fresh DBs where schema is complete). */
+function markDrizzleMigrationsApplied(database: BetterSqlite3.Database): void {
+  markDrizzleMigrationsFromJournal(database);
+}
+
+/**
+ * Mark baseline Drizzle migrations (0000-0008) as applied.
+ * For existing DBs that were created before Drizzle was adopted.
+ * New migrations (0009+) will run normally.
+ */
+function markDrizzleBaselineMigrationsApplied(database: BetterSqlite3.Database): void {
+  markDrizzleMigrationsFromJournal(database, (entry) => entry.idx <= 8);
+}
+
 /** Check if this is a completely fresh database (no tables at all). */
 function isFreshDatabase(database: BetterSqlite3.Database): boolean {
   const row = database
@@ -153,34 +204,58 @@ function openDatabase(path: string): BetterSqlite3.Database {
   if (isFreshDatabase(db)) {
     console.log("[db] Fresh database detected — initializing schema...");
     initializeSchema(db);
+    // Mark all Drizzle migrations as applied (schema already includes their changes)
+    markDrizzleMigrationsApplied(db);
     console.log("[db] Schema initialized successfully.");
     return db;
   }
 
+  // Run manual SQL migrations (frozen — no new ones, but existing ones still apply)
   const pending = getPendingMigrations(db);
-
-  if (pending.length === 0) {
-    return db;
-  }
-
-  const backupPath = createPreMigrationBackup(db, path, pending.length);
-
-  try {
-    runMigrations(db);
-  } catch (err) {
-    if (backupPath) {
-      console.error(`[db] Migration failed. Backup available at: ${backupPath}`);
-    }
-    throw err;
-  }
-
-  if (backupPath) {
+  if (pending.length > 0) {
+    const backupPath = createPreMigrationBackup(db, path, pending.length);
     try {
-      unlinkSync(backupPath);
-      console.log("[db] All migrations applied successfully. Backup removed.");
-    } catch {
-      // Non-fatal — backup cleanup failure shouldn't crash startup
+      runMigrations(db);
+    } catch (err) {
+      if (backupPath) {
+        console.error(`[db] Migration failed. Backup available at: ${backupPath}`);
+      }
+      throw err;
     }
+    if (backupPath) {
+      try {
+        unlinkSync(backupPath);
+      } catch {
+        // Non-fatal
+      }
+    }
+  }
+
+  // Run Drizzle migrations (the sole path for new schema changes)
+  // If __drizzle_migrations table doesn't exist, mark baseline migrations
+  // as applied first (DB was created via initializeSchema, not Drizzle)
+  try {
+    const hasDrizzleTable =
+      (
+        db
+          .prepare(
+            "SELECT COUNT(*) AS cnt FROM sqlite_master WHERE type='table' AND name='__drizzle_migrations'"
+          )
+          .get() as { cnt: number }
+      ).cnt > 0;
+
+    if (!hasDrizzleTable) {
+      // Mark baseline Drizzle migrations as applied (0000-0008).
+      // The schema was created via initializeSchema or manual migrations
+      // which already include these changes. Only new migrations (0009+) should run.
+      markDrizzleBaselineMigrationsApplied(db);
+    }
+
+    const drizzleDb = drizzle(db);
+    migrate(drizzleDb, { migrationsFolder: DRIZZLE_MIGRATIONS_DIR });
+  } catch (err) {
+    console.error("[db] Drizzle migration failed:", err);
+    throw err;
   }
 
   return db;

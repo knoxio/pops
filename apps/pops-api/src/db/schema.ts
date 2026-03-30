@@ -13,6 +13,9 @@
  * when it later runs against a database initialized by this function.
  */
 import type BetterSqlite3 from "better-sqlite3";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 /** All migration filenames that this schema already incorporates. */
 const INCLUDED_MIGRATIONS = [
@@ -346,6 +349,7 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       description TEXT,
       active      INTEGER NOT NULL DEFAULT 1,
       sort_order  INTEGER NOT NULL DEFAULT 0,
+      weight      REAL NOT NULL DEFAULT 1.0,
       created_at  TEXT NOT NULL DEFAULT (datetime('now'))
     );
     CREATE UNIQUE INDEX IF NOT EXISTS idx_comparison_dimensions_name ON comparison_dimensions(name);
@@ -428,5 +432,34 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
   );
   for (const migration of INCLUDED_MIGRATIONS) {
     insertMigration.run(migration);
+  }
+
+  // Also mark all Drizzle migrations as applied (schema already incorporates them)
+  try {
+    const drizzleMigrationsDir = join(
+      dirname(fileURLToPath(import.meta.url)),
+      "drizzle-migrations"
+    );
+    const journalPath = join(drizzleMigrationsDir, "meta", "_journal.json");
+    const journal = JSON.parse(readFileSync(journalPath, "utf8")) as {
+      entries: { idx: number; tag: string }[];
+    };
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS "__drizzle_migrations" (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        hash TEXT NOT NULL,
+        created_at NUMERIC
+      )
+    `);
+
+    const insertDrizzle = db.prepare(
+      "INSERT OR IGNORE INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)"
+    );
+    for (const entry of journal.entries) {
+      insertDrizzle.run(entry.tag, Date.now());
+    }
+  } catch {
+    // Non-fatal — Drizzle migrate at startup will handle it
   }
 }
