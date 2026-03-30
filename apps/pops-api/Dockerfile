@@ -25,16 +25,20 @@ RUN pnpm build
 WORKDIR /app/apps/pops-api
 RUN pnpm build
 
+# Deploy creates a standalone directory with all runtime deps (no symlinks)
+RUN pnpm --filter @pops/api deploy --prod --legacy /app/deploy
+
 FROM node:22-alpine
 WORKDIR /app
 RUN apk add --no-cache curl
 
-# Copy built service
-COPY --from=builder /app/apps/pops-api/dist ./dist
-COPY --from=builder /app/apps/pops-api/package.json ./
+# Copy the standalone deployment (includes node_modules with real files, not symlinks)
+COPY --from=builder /app/deploy ./
 
-# Copy node_modules and workspace dependencies
-COPY --from=builder /app/node_modules ./node_modules
+# Copy built dist
+COPY --from=builder /app/apps/pops-api/dist ./dist
+
+# Copy db-types built output into node_modules
 COPY --from=builder /app/packages/db-types/dist ./node_modules/@pops/db-types/dist
 COPY --from=builder /app/packages/db-types/package.json ./node_modules/@pops/db-types/
 
