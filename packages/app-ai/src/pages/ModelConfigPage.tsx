@@ -5,9 +5,23 @@
  * and fallback behaviour when budget is exceeded. PRD-053/US-01.
  */
 import { useState, useEffect } from "react";
+import { Link } from "react-router";
 import { toast } from "sonner";
+import { ArrowLeft } from "lucide-react";
 import { trpc } from "../lib/trpc";
-import { Select, Button, Skeleton, Alert, StatCard, PageHeader } from "@pops/ui";
+import {
+  Select,
+  Button,
+  Skeleton,
+  Alert,
+  StatCard,
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbSeparator,
+  BreadcrumbPage,
+} from "@pops/ui";
 import { TextInput } from "@pops/ui";
 
 const SETTING_KEYS = {
@@ -96,10 +110,43 @@ export function ModelConfigPage() {
   const budgetNum = budget ? parseInt(budget, 10) : 0;
   const budgetUsedPct = budgetNum > 0 ? Math.min((currentMonthTokens / budgetNum) * 100, 100) : 0;
 
+  const navigation = (
+    <>
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link to="/ai">AI</Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>Model Config</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
+      <div className="flex items-center gap-3">
+        <Link
+          to="/ai"
+          className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+          aria-label="Back to AI"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Link>
+        <h1 className="text-2xl font-bold tracking-tight">Model Configuration</h1>
+      </div>
+
+      <p className="text-sm text-muted-foreground">
+        Configure AI model and spending limits
+      </p>
+    </>
+  );
+
   if (isLoading) {
     return (
       <div className="space-y-6 max-w-2xl">
-        <PageHeader title="Model Configuration" description="Configure AI model and spending limits" />
+        {navigation}
         <Skeleton className="h-48" />
         <Skeleton className="h-32" />
       </div>
@@ -108,7 +155,7 @@ export function ModelConfigPage() {
 
   return (
     <div className="space-y-6 max-w-2xl">
-      <PageHeader title="Model Configuration" description="Configure AI model and spending limits" />
+      {navigation}
 
       {/* Usage vs Budget */}
       <div className="grid gap-4 md:grid-cols-2">
