@@ -144,12 +144,15 @@ export function recordComparison(input: RecordComparisonInput): ComparisonRow {
     throw new ValidationError("Cannot record comparison for inactive dimension");
   }
 
-  // Validate winner matches one of the two media items
-  const winnerIsA = input.winnerType === input.mediaAType && input.winnerId === input.mediaAId;
-  const winnerIsB = input.winnerType === input.mediaBType && input.winnerId === input.mediaBId;
+  // Validate winner matches one of the two media items, or is a draw (winnerId = 0)
+  const isDraw = input.winnerId === 0;
+  const winnerIsA =
+    !isDraw && input.winnerType === input.mediaAType && input.winnerId === input.mediaAId;
+  const winnerIsB =
+    !isDraw && input.winnerType === input.mediaBType && input.winnerId === input.mediaBId;
 
-  if (!winnerIsA && !winnerIsB) {
-    throw new ValidationError("Winner must match either media A or media B");
+  if (!isDraw && !winnerIsA && !winnerIsB) {
+    throw new ValidationError("Winner must match either media A or media B, or be 0 for a draw");
   }
 
   // Wrap insert + Elo update in a transaction
@@ -235,9 +238,13 @@ function updateEloScores(input: RecordComparisonInput): void {
   const expectedA = expectedScore(scoreA.score, scoreB.score);
   const expectedB = expectedScore(scoreB.score, scoreA.score);
 
-  const actualA =
-    input.winnerType === input.mediaAType && input.winnerId === input.mediaAId ? 1 : 0;
-  const actualB = 1 - actualA;
+  const isDraw = input.winnerId === 0;
+  const actualA = isDraw
+    ? 0.5
+    : input.winnerType === input.mediaAType && input.winnerId === input.mediaAId
+      ? 1
+      : 0;
+  const actualB = isDraw ? 0.5 : 1 - actualA;
 
   const newScoreA = scoreA.score + ELO_K * (actualA - expectedA);
   const newScoreB = scoreB.score + ELO_K * (actualB - expectedB);
