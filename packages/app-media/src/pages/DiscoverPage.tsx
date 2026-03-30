@@ -94,6 +94,10 @@ export function DiscoverPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const genreSpotlight = trpc.media.discovery.genreSpotlight.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+  });
+
   const similarToTopRated = trpc.media.discovery.recommendations.useQuery(
     { sampleSize: 5 },
     { staleTime: 5 * 60 * 1000 }
@@ -336,8 +340,8 @@ export function DiscoverPage() {
               isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
               onAddToLibrary={handleAddToLibrary}
               onAddToWatchlist={handleAddToWatchlist}
-                  onMarkWatched={handleMarkWatched}
-                  isMarkingWatched={markingWatched.has(item.tmdbId)}
+              onMarkWatched={handleMarkWatched}
+              isMarkingWatched={markingWatched.has(item.tmdbId)}
             />
           ))}
         </HorizontalScrollRow>
@@ -362,6 +366,57 @@ export function DiscoverPage() {
           </div>
         )}
       </div>
+
+      {/* Genre Spotlight — hidden when no genres */}
+      {genreSpotlight.isLoading && !genreSpotlight.data && (
+        <HorizontalScrollRow title="Best in ..." isLoading={true}>
+          {null}
+        </HorizontalScrollRow>
+      )}
+      {genreSpotlight.data?.genres?.map(
+        (genre: {
+          genreId: number;
+          genreName: string;
+          results: Array<{
+            tmdbId: number;
+            title: string;
+            releaseDate: string;
+            posterPath: string | null;
+            posterUrl: string | null;
+            voteAverage: number;
+            inLibrary: boolean;
+            matchPercentage: number;
+            matchReason: string;
+          }>;
+        }) => (
+          <HorizontalScrollRow
+            key={genre.genreId}
+            title={`Best in ${genre.genreName}`}
+            isLoading={genreSpotlight.isLoading}
+          >
+            {genre.results.map((item) => (
+              <DiscoverCard
+                key={item.tmdbId}
+                tmdbId={item.tmdbId}
+                title={item.title}
+                releaseDate={item.releaseDate ?? ""}
+                posterPath={item.posterPath}
+                posterUrl={item.posterUrl}
+                voteAverage={item.voteAverage ?? 0}
+                inLibrary={item.inLibrary}
+                isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
+                isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
+                onAddToLibrary={handleAddToLibrary}
+                onAddToWatchlist={handleAddToWatchlist}
+                onMarkWatched={handleMarkWatched}
+                isMarkingWatched={markingWatched.has(item.tmdbId)}
+                matchPercentage={item.matchPercentage}
+                matchReason={item.matchReason}
+              />
+            ))}
+          </HorizontalScrollRow>
+        )
+      )}
 
       {/* Worth Rewatching — hidden when empty */}
       {(rewatchSuggestions.isLoading || (rewatchSuggestions.data?.data?.length ?? 0) > 0) && (
@@ -461,8 +516,8 @@ export function DiscoverPage() {
                 isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
                 onAddToLibrary={handleAddToLibrary}
                 onAddToWatchlist={handleAddToWatchlist}
-                  onMarkWatched={handleMarkWatched}
-                  isMarkingWatched={markingWatched.has(item.tmdbId)}
+                onMarkWatched={handleMarkWatched}
+                isMarkingWatched={markingWatched.has(item.tmdbId)}
                 matchPercentage={item.matchPercentage}
                 matchReason={item.matchReason}
               />

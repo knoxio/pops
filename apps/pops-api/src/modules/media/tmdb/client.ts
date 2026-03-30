@@ -180,7 +180,7 @@ export class TmdbClient {
     };
   }
 
-  /** Discover movies by genre IDs and/or keywords, with configurable sort and filters. */
+  /** Discover movies by genre IDs and/or keyword IDs, with configurable sort and filters. */
   async discoverMovies(opts: {
     genreIds?: number[];
     keywordIds?: number[];

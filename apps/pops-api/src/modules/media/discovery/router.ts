@@ -9,6 +9,9 @@ import { TrendingQuerySchema, RecommendationsQuerySchema } from "./types.js";
 import * as service from "./service.js";
 import * as tmdbService from "./tmdb-service.js";
 import * as contextPicksService from "./context-picks-service.js";
+import * as genreSpotlightService from "./genre-spotlight-service.js";
+import { getDrizzle } from "../../../db.js";
+import { movies } from "@pops/db-types";
 
 export const discoveryRouter = router({
   /** Get computed preference profile (genre affinities, dimension weights, genre distribution). */
@@ -87,4 +90,22 @@ export const discoveryRouter = router({
         });
       }
     }),
+
+  /** Get genre spotlight — top user genres with high-rated TMDB movies. */
+  genreSpotlight: protectedProcedure.query(async () => {
+    try {
+      const client = getTmdbClient();
+      const profile = service.getPreferenceProfile();
+      const db = getDrizzle();
+      const rows = db.select({ tmdbId: movies.tmdbId }).from(movies).all();
+      const libraryIds = new Set(rows.map((r) => r.tmdbId));
+      return await genreSpotlightService.getGenreSpotlight(client, profile, libraryIds);
+    } catch (err) {
+      if (err instanceof TRPCError) throw err;
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: err instanceof Error ? err.message : "Unknown error fetching genre spotlight",
+      });
+    }
+  }),
 });
