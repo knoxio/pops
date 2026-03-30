@@ -71,41 +71,52 @@ export interface WatchHistorySyncResult {
 export async function syncWatchHistoryFromPlex(
   plexClient: PlexClient,
   movieSectionId?: string,
-  tvSectionId?: string
+  tvSectionId?: string,
+  onProgress?: (processed: number, total: number) => void
 ): Promise<WatchHistorySyncResult> {
   let movieResult: MovieWatchSyncResult | null = null;
   const showResults: ShowWatchDiagnostics[] = [];
 
+  // Fetch items from both sections to calculate total for progress
+  const movieItems = movieSectionId ? await plexClient.getAllItems(movieSectionId) : [];
+  const tvItems = tvSectionId ? await plexClient.getAllItems(tvSectionId) : [];
+  const totalItems = movieItems.length + tvItems.length;
+  let processed = 0;
+
   // Sync movie watches
-  if (movieSectionId) {
-    const items = await plexClient.getAllItems(movieSectionId);
-    movieResult = syncMovieWatches(items);
+  if (movieItems.length > 0) {
+    movieResult = syncMovieWatches(movieItems);
+    processed += movieItems.length;
+    onProgress?.(processed, totalItems);
   }
 
   // Sync TV episode watches
-  if (tvSectionId) {
-    const items = await plexClient.getAllItems(tvSectionId);
-
-    for (const item of items) {
-      const tvdbId = extractExternalIdAsNumber(item, "tvdb");
-      if (!tvdbId) continue;
-
-      const plexEpisodes = await plexClient.getEpisodes(item.ratingKey);
-
-      const diagnostics = getDb().transaction(() => {
-        return syncEpisodeWatches(tvdbId, plexEpisodes);
-      })();
-
-      // Only include shows that have some watched content or gaps
-      if (diagnostics.plexWatched > 0) {
-        showResults.push({
-          title: item.title,
-          tvdbId,
-          plexViewedLeafCount: item.viewedLeafCount,
-          diagnostics,
-        });
-      }
+  for (const item of tvItems) {
+    const tvdbId = extractExternalIdAsNumber(item, "tvdb");
+    if (!tvdbId) {
+      processed++;
+      onProgress?.(processed, totalItems);
+      continue;
     }
+
+    const plexEpisodes = await plexClient.getEpisodes(item.ratingKey);
+
+    const diagnostics = getDb().transaction(() => {
+      return syncEpisodeWatches(tvdbId, plexEpisodes);
+    })();
+
+    // Only include shows that have some watched content or gaps
+    if (diagnostics.plexWatched > 0) {
+      showResults.push({
+        title: item.title,
+        tvdbId,
+        plexViewedLeafCount: item.viewedLeafCount,
+        diagnostics,
+      });
+    }
+
+    processed++;
+    onProgress?.(processed, totalItems);
   }
 
   // Build summary — count both new matches and previously logged as "tracked"

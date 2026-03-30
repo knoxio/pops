@@ -38,6 +38,7 @@ import {
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
 import { ConnectionBadge } from "../components/ConnectionBadge";
+import { useSyncJob, useLastSyncResults } from "../hooks/useSyncJob";
 
 interface SyncResult {
   synced: number;
@@ -371,15 +372,15 @@ export function PlexSettingsPage() {
   const [pinId, setPinId] = useState<number | null>(null);
   const [pinCode, setPinCode] = useState<string | null>(null);
   const [plexUrl, setPlexUrl] = useState<string>("");
-  const [movieSyncResult, setMovieSyncResult] = useState<SyncResult | null>(null);
-  const [tvSyncResult, setTvSyncResult] = useState<SyncResult | null>(null);
-  const [watchlistSyncResult, setWatchlistSyncResult] = useState<WatchlistSyncResult | null>(null);
-  const [watchHistorySyncResult, setWatchHistorySyncResult] =
-    useState<WatchHistorySyncResult | null>(null);
-  const [discoverSyncResult, setDiscoverSyncResult] = useState<DiscoverWatchSyncResult | null>(
-    null
-  );
   const [schedulerHours, setSchedulerHours] = useState<number>(6);
+
+  // Background sync jobs
+  const movieSync = useSyncJob("syncMovies");
+  const tvSync = useSyncJob("syncTvShows");
+  const watchlistSync = useSyncJob("syncWatchlist");
+  const watchHistorySync = useSyncJob("syncWatchHistory");
+  const discoverSync = useSyncJob("syncDiscoverWatches");
+  const lastResults = useLastSyncResults();
 
   const syncStatus = trpc.media.plex.getSyncStatus.useQuery();
   const currentUrl = trpc.media.plex.getPlexUrl.useQuery();
@@ -416,47 +417,6 @@ export function PlexSettingsPage() {
     enabled: connectionTest.data?.data.connected === true,
   });
 
-  const syncMovies = trpc.media.plex.syncMovies.useMutation({
-    onSuccess: (res: { data: SyncResult }) => {
-      setMovieSyncResult(res.data);
-      toast.success(`Movie sync complete: ${res.data.synced} synced, ${res.data.skipped} skipped`);
-      syncStatus.refetch();
-      syncLogs.refetch();
-    },
-    onError: (err: { message: string }) => toast.error(`Movie sync failed: ${err.message}`),
-  });
-  const syncTvShows = trpc.media.plex.syncTvShows.useMutation({
-    onSuccess: (res: { data: SyncResult }) => {
-      setTvSyncResult(res.data);
-      toast.success(`TV sync complete: ${res.data.synced} synced, ${res.data.skipped} skipped`);
-      syncStatus.refetch();
-      syncLogs.refetch();
-    },
-    onError: (err: { message: string }) => toast.error(`TV show sync failed: ${err.message}`),
-  });
-  const syncWatchlist = trpc.media.plex.syncWatchlist.useMutation({
-    onSuccess: (res: { data: WatchlistSyncResult; message: string }) => {
-      setWatchlistSyncResult(res.data);
-      toast.success(res.message);
-    },
-    onError: (err: { message: string }) => toast.error(`Watchlist sync failed: ${err.message}`),
-  });
-  const syncWatchHistory = trpc.media.plex.syncWatchHistory.useMutation({
-    onSuccess: (res: { data: WatchHistorySyncResult; message: string }) => {
-      setWatchHistorySyncResult(res.data);
-      toast.success(res.message);
-    },
-    onError: (err: { message: string }) =>
-      toast.error(`Watch history sync failed: ${err.message}`),
-  });
-  const syncDiscover = trpc.media.plex.syncDiscoverWatches.useMutation({
-    onSuccess: (res: { data: DiscoverWatchSyncResult; message: string }) => {
-      setDiscoverSyncResult(res.data);
-      toast.success(res.message);
-    },
-    onError: (err: { message: string }) =>
-      toast.error(`Discover watch sync failed: ${err.message}`),
-  });
   const saveSectionIds = trpc.media.plex.saveSectionIds.useMutation({
     onError: (err: { message: string }) =>
       toast.error(`Failed to save library selection: ${err.message}`),
@@ -768,22 +728,26 @@ export function PlexSettingsPage() {
 
                   <Button
                     size="sm"
-                    disabled={!movieSectionId || syncMovies.isPending}
-                    onClick={() => {
-                      setMovieSyncResult(null);
-                      syncMovies.mutate({ sectionId: movieSectionId });
-                    }}
+                    disabled={!movieSectionId || movieSync.isRunning || movieSync.isStarting}
+                    onClick={() => movieSync.start({ sectionId: movieSectionId })}
                     className="w-full"
                   >
-                    {syncMovies.isPending ? (
+                    {movieSync.isRunning ? (
                       <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
                     ) : (
                       <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
                     )}
-                    {syncMovies.isPending ? "Syncing..." : "Sync Movies"}
+                    {movieSync.isRunning && movieSync.progress
+                      ? `Syncing... ${movieSync.progress.processed}/${movieSync.progress.total}`
+                      : "Sync Movies"}
                   </Button>
 
-                  {movieSyncResult && <SyncResultDisplay result={movieSyncResult} label="Movie" />}
+                  {movieSync.result != null && (
+                    <SyncResultDisplay
+                      result={movieSync.result as SyncResult}
+                      label="Movie"
+                    />
+                  )}
                 </>
               ) : (
                 <p className="text-xs text-muted-foreground">No movie libraries found</p>
@@ -819,22 +783,23 @@ export function PlexSettingsPage() {
 
                   <Button
                     size="sm"
-                    disabled={!tvSectionId || syncTvShows.isPending}
-                    onClick={() => {
-                      setTvSyncResult(null);
-                      syncTvShows.mutate({ sectionId: tvSectionId });
-                    }}
+                    disabled={!tvSectionId || tvSync.isRunning || tvSync.isStarting}
+                    onClick={() => tvSync.start({ sectionId: tvSectionId })}
                     className="w-full"
                   >
-                    {syncTvShows.isPending ? (
+                    {tvSync.isRunning ? (
                       <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
                     ) : (
                       <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
                     )}
-                    {syncTvShows.isPending ? "Syncing..." : "Sync TV Shows"}
+                    {tvSync.isRunning && tvSync.progress
+                      ? `Syncing... ${tvSync.progress.processed}/${tvSync.progress.total}`
+                      : "Sync TV Shows"}
                   </Button>
 
-                  {tvSyncResult && <SyncResultDisplay result={tvSyncResult} label="TV" />}
+                  {tvSync.result != null && (
+                    <SyncResultDisplay result={tvSync.result as SyncResult} label="TV" />
+                  )}
                 </>
               ) : (
                 <p className="text-xs text-muted-foreground">No TV libraries found</p>
@@ -856,20 +821,21 @@ export function PlexSettingsPage() {
             </p>
             <Button
               size="sm"
-              disabled={syncWatchlist.isPending}
-              onClick={() => {
-                setWatchlistSyncResult(null);
-                syncWatchlist.mutate();
-              }}
+              disabled={watchlistSync.isRunning || watchlistSync.isStarting}
+              onClick={() => watchlistSync.start()}
             >
-              {syncWatchlist.isPending ? (
+              {watchlistSync.isRunning ? (
                 <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
               ) : (
                 <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
               )}
-              {syncWatchlist.isPending ? "Syncing..." : "Sync Watchlist"}
+              {watchlistSync.isRunning && watchlistSync.progress
+                ? `Syncing... ${watchlistSync.progress.processed}/${watchlistSync.progress.total}`
+                : "Sync Watchlist"}
             </Button>
-            {watchlistSyncResult && <WatchlistSyncResultDisplay result={watchlistSyncResult} />}
+            {watchlistSync.result != null && (
+              <WatchlistSyncResultDisplay result={watchlistSync.result as WatchlistSyncResult} />
+            )}
           </div>
         )}
 
@@ -887,30 +853,35 @@ export function PlexSettingsPage() {
             <Button
               size="sm"
               disabled={
-                syncWatchHistory.isPending || (!movieSectionId && !tvSectionId)
+                watchHistorySync.isRunning ||
+                watchHistorySync.isStarting ||
+                (!movieSectionId && !tvSectionId)
               }
-              onClick={() => {
-                setWatchHistorySyncResult(null);
-                syncWatchHistory.mutate({
+              onClick={() =>
+                watchHistorySync.start({
                   movieSectionId: movieSectionId || undefined,
                   tvSectionId: tvSectionId || undefined,
-                });
-              }}
+                })
+              }
             >
-              {syncWatchHistory.isPending ? (
+              {watchHistorySync.isRunning ? (
                 <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
               ) : (
                 <History className="h-3.5 w-3.5 mr-1.5" />
               )}
-              {syncWatchHistory.isPending ? "Syncing Watch History..." : "Sync Watch History"}
+              {watchHistorySync.isRunning && watchHistorySync.progress
+                ? `Syncing... ${watchHistorySync.progress.processed}/${watchHistorySync.progress.total}`
+                : "Sync Watch History"}
             </Button>
             {!movieSectionId && !tvSectionId && (
               <p className="text-xs text-amber-400">
                 Select a movie or TV library above first.
               </p>
             )}
-            {watchHistorySyncResult && (
-              <WatchHistorySyncResultDisplay result={watchHistorySyncResult} />
+            {watchHistorySync.result != null && (
+              <WatchHistorySyncResultDisplay
+                result={watchHistorySync.result as WatchHistorySyncResult}
+              />
             )}
           </div>
         )}
@@ -929,55 +900,53 @@ export function PlexSettingsPage() {
             </p>
             <Button
               size="sm"
-              disabled={syncDiscover.isPending}
-              onClick={() => {
-                setDiscoverSyncResult(null);
-                syncDiscover.mutate();
-              }}
+              disabled={discoverSync.isRunning || discoverSync.isStarting}
+              onClick={() => discoverSync.start()}
             >
-              {syncDiscover.isPending ? (
+              {discoverSync.isRunning ? (
                 <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
               ) : (
                 <Eye className="h-3.5 w-3.5 mr-1.5" />
               )}
-              {syncDiscover.isPending ? "Checking Plex Cloud..." : "Sync Cloud Watches"}
+              {discoverSync.isRunning && discoverSync.progress
+                ? `Checking... ${discoverSync.progress.processed}/${discoverSync.progress.total}`
+                : "Sync Cloud Watches"}
             </Button>
-            {discoverSyncResult && (
-              <div className="rounded-md border bg-muted/30 p-3 space-y-2 text-sm">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="font-medium">Cloud Watch Results:</span>
-                  {discoverSyncResult.movies.logged > 0 && (
-                    <span className="text-emerald-400">
-                      {discoverSyncResult.movies.logged} movies newly logged
-                    </span>
-                  )}
-                  <span className="text-muted-foreground">
-                    {discoverSyncResult.movies.watched} movies watched on Plex
-                  </span>
-                  {discoverSyncResult.movies.alreadyLogged > 0 && (
+            {discoverSync.result != null && (() => {
+              const r = discoverSync.result as DiscoverWatchSyncResult;
+              return (
+                <div className="rounded-md border bg-muted/30 p-3 space-y-2 text-sm">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <span className="font-medium">Cloud Watch Results:</span>
+                    {r.movies.logged > 0 && (
+                      <span className="text-emerald-400">
+                        {r.movies.logged} movies newly logged
+                      </span>
+                    )}
                     <span className="text-muted-foreground">
-                      ({discoverSyncResult.movies.alreadyLogged} already tracked)
+                      {r.movies.watched} movies watched on Plex
                     </span>
-                  )}
-                </div>
-                <div className="text-xs text-muted-foreground space-y-0.5">
-                  <p>
-                    Checked {discoverSyncResult.movies.total} movies,{" "}
-                    {discoverSyncResult.tvShows.total} TV shows against Plex cloud
-                  </p>
-                  {discoverSyncResult.movies.notFound > 0 && (
+                    {r.movies.alreadyLogged > 0 && (
+                      <span className="text-muted-foreground">
+                        ({r.movies.alreadyLogged} already tracked)
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground space-y-0.5">
                     <p>
-                      {discoverSyncResult.movies.notFound} movies not found on Plex Discover
+                      Checked {r.movies.total} movies, {r.tvShows.total} TV shows against Plex
+                      cloud
                     </p>
-                  )}
-                  {discoverSyncResult.movies.errors > 0 && (
-                    <p className="text-red-400">
-                      {discoverSyncResult.movies.errors} errors during lookup
-                    </p>
-                  )}
+                    {r.movies.notFound > 0 && (
+                      <p>{r.movies.notFound} movies not found on Plex Discover</p>
+                    )}
+                    {r.movies.errors > 0 && (
+                      <p className="text-red-400">{r.movies.errors} errors during lookup</p>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
         )}
 

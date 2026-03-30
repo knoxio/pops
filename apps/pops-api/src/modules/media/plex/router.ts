@@ -1,5 +1,9 @@
 /**
  * Plex tRPC router — sync operations and connection management.
+ *
+ * All sync operations run as background jobs via the sync job manager.
+ * The startSyncJob mutation returns immediately with a job ID.
+ * The frontend polls getSyncJobStatus for progress and results.
  */
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
@@ -10,11 +14,13 @@ import { PlexApiError } from "./types.js";
 import { PlexClient } from "./client.js";
 import * as plexService from "./service.js";
 import * as scheduler from "./scheduler.js";
-import { importMoviesFromPlex } from "./sync-movies.js";
-import { importTvShowsFromPlex } from "./sync-tv.js";
-import { syncWatchlistFromPlex } from "./sync-watchlist.js";
-import { syncWatchHistoryFromPlex } from "./sync-watch-history.js";
-import { syncDiscoverWatches } from "./sync-discover-watches.js";
+import {
+  SYNC_JOB_TYPES,
+  startJob,
+  getJob,
+  getActiveJobs,
+  getLastCompletedJobs,
+} from "./sync-job-manager.js";
 import { getDrizzle } from "../../../db.js";
 
 function requirePlexClient(): PlexClient {
@@ -58,123 +64,56 @@ export const plexRouter = router({
     }
   }),
 
-  syncMovies: protectedProcedure
-    .input(z.object({ sectionId: z.string().min(1) }))
-    .mutation(async ({ input }) => {
-      const client = requirePlexClient();
-      try {
-        const result = await importMoviesFromPlex(client, input.sectionId);
-        return {
-          data: result,
-          message: `Synced ${result.synced} movies (${result.skipped} skipped, ${result.errors.length} errors)`,
-        };
-      } catch (err) {
-        if (err instanceof PlexApiError) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: `Plex API error: ${err.message}`,
-          });
-        }
-        throw err;
-      }
-    }),
+  // ---------------------------------------------------------------------------
+  // Background sync jobs
+  // ---------------------------------------------------------------------------
 
-  syncTvShows: protectedProcedure
-    .input(z.object({ sectionId: z.string().min(1) }))
-    .mutation(async ({ input }) => {
-      const client = requirePlexClient();
-      try {
-        const result = await importTvShowsFromPlex(client, input.sectionId);
-        return {
-          data: result,
-          message: `Synced ${result.synced} TV shows (${result.skipped} skipped, ${result.errors.length} errors)`,
-        };
-      } catch (err) {
-        if (err instanceof PlexApiError) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: `Plex API error: ${err.message}`,
-          });
-        }
-        throw err;
-      }
-    }),
-
-  syncWatchlist: protectedProcedure.mutation(async () => {
-    requirePlexClient(); // Verify Plex is configured
-    const token = plexService.getPlexToken();
-    if (!token) {
-      throw new TRPCError({
-        code: "PRECONDITION_FAILED",
-        message: "Plex token not available",
-      });
-    }
-    try {
-      const result = await syncWatchlistFromPlex(token);
-      return {
-        data: result,
-        message: `Watchlist sync: ${result.added} added, ${result.removed} removed, ${result.skipped} skipped`,
-      };
-    } catch (err) {
-      if (err instanceof PlexApiError) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `Plex API error: ${err.message}`,
-        });
-      }
-      throw err;
-    }
-  }),
-
-  syncWatchHistory: protectedProcedure
+  /** Start a background sync job. Returns immediately with the job ID. */
+  startSyncJob: protectedProcedure
     .input(
       z.object({
+        jobType: z.enum(SYNC_JOB_TYPES),
+        sectionId: z.string().min(1).optional(),
         movieSectionId: z.string().min(1).optional(),
         tvSectionId: z.string().min(1).optional(),
       })
     )
-    .mutation(async ({ input }) => {
-      const client = requirePlexClient();
+    .mutation(({ input }) => {
+      requirePlexClient();
       try {
-        const result = await syncWatchHistoryFromPlex(
-          client,
-          input.movieSectionId,
-          input.tvSectionId
-        );
-        return {
-          data: result,
-          message: `Watch history sync: ${result.summary.moviesLogged} movies, ${result.summary.episodesLogged} episodes logged`,
-        };
+        const jobId = startJob(input.jobType, {
+          sectionId: input.sectionId,
+          movieSectionId: input.movieSectionId,
+          tvSectionId: input.tvSectionId,
+        });
+        return { data: { jobId } };
       } catch (err) {
-        if (err instanceof PlexApiError) {
-          throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: `Plex API error: ${err.message}`,
-          });
-        }
-        throw err;
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: err instanceof Error ? err.message : String(err),
+        });
       }
     }),
 
-  syncDiscoverWatches: protectedProcedure.mutation(async () => {
-    const client = requirePlexClient();
-    try {
-      const result = await syncDiscoverWatches(client);
-      const totalLogged = result.movies.logged + result.tvShows.logged;
-      const totalWatched = result.movies.watched + result.tvShows.watched;
-      return {
-        data: result,
-        message: `Discover sync: ${totalWatched} watched found, ${totalLogged} new watches logged`,
-      };
-    } catch (err) {
-      if (err instanceof PlexApiError) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: `Plex API error: ${err.message}`,
-        });
+  /** Poll for the status of a sync job (progress, result, error). */
+  getSyncJobStatus: protectedProcedure
+    .input(z.object({ jobId: z.string().min(1) }))
+    .query(({ input }) => {
+      const job = getJob(input.jobId);
+      if (!job) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Job not found" });
       }
-      throw err;
-    }
+      return { data: job };
+    }),
+
+  /** Get all currently running sync jobs (for restoring UI state on page load). */
+  getActiveSyncJobs: protectedProcedure.query(() => {
+    return { data: getActiveJobs() };
+  }),
+
+  /** Get the most recent completed result for each sync type ("last synced" display). */
+  getLastSyncResults: protectedProcedure.query(() => {
+    return { data: getLastCompletedJobs() };
   }),
 
   getSyncStatus: protectedProcedure.query(() => {

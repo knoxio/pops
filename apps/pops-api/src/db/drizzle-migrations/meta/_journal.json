@@ -71,6 +71,13 @@
       "when": 1774853312000,
       "tag": "0009_red_quasimodo",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1774873150708,
+      "tag": "0010_gifted_firestar",
+      "breakpoints": true
     }
   ]
 }

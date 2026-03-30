@@ -12,6 +12,7 @@ import { importMoviesFromPlex } from "./sync-movies.js";
 import { importTvShowsFromPlex } from "./sync-tv.js";
 import { syncWatchlistFromPlex } from "./sync-watchlist.js";
 import { getPlexClient, getPlexSectionIds, getPlexToken } from "./service.js";
+import { isJobRunning } from "./sync-job-manager.js";
 import { getDrizzle } from "../../../db.js";
 
 // ---------------------------------------------------------------------------
@@ -268,22 +269,30 @@ async function executeSyncCycle(
   const errors: string[] = [];
 
   if (movieSectionId) {
-    const movieResult = await importMoviesFromPlex(client, movieSectionId);
-    movieCount = movieResult.synced;
-    moviesSynced += movieResult.synced;
-    for (const err of movieResult.errors) {
-      errors.push(`Movie: ${err.title} — ${err.reason}`);
+    if (isJobRunning("syncMovies")) {
+      console.log("[Plex Scheduler] Skipping movie sync — manual job in progress");
+    } else {
+      const movieResult = await importMoviesFromPlex(client, movieSectionId);
+      movieCount = movieResult.synced;
+      moviesSynced += movieResult.synced;
+      for (const err of movieResult.errors) {
+        errors.push(`Movie: ${err.title} — ${err.reason}`);
+      }
     }
   } else {
     console.warn("[Plex Scheduler] Movie section ID not configured — skipping movie sync");
   }
 
   if (tvSectionId) {
-    const tvResult = await importTvShowsFromPlex(client, tvSectionId);
-    tvCount = tvResult.synced;
-    tvShowsSynced += tvResult.synced;
-    for (const err of tvResult.errors) {
-      errors.push(`TV: ${err.title} — ${err.reason}`);
+    if (isJobRunning("syncTvShows")) {
+      console.log("[Plex Scheduler] Skipping TV sync — manual job in progress");
+    } else {
+      const tvResult = await importTvShowsFromPlex(client, tvSectionId);
+      tvCount = tvResult.synced;
+      tvShowsSynced += tvResult.synced;
+      for (const err of tvResult.errors) {
+        errors.push(`TV: ${err.title} — ${err.reason}`);
+      }
     }
   } else {
     console.warn("[Plex Scheduler] TV section ID not configured — skipping TV sync");
@@ -292,14 +301,18 @@ async function executeSyncCycle(
   // Watchlist sync runs after library sync (items may need to be added to library first)
   const token = getPlexToken();
   if (token) {
-    try {
-      const watchlistResult = await syncWatchlistFromPlex(token);
-      watchlistAdded = watchlistResult.added;
-      for (const err of watchlistResult.errors) {
-        errors.push(`Watchlist: ${err.title} — ${err.reason}`);
+    if (isJobRunning("syncWatchlist")) {
+      console.log("[Plex Scheduler] Skipping watchlist sync — manual job in progress");
+    } else {
+      try {
+        const watchlistResult = await syncWatchlistFromPlex(token);
+        watchlistAdded = watchlistResult.added;
+        for (const err of watchlistResult.errors) {
+          errors.push(`Watchlist: ${err.title} — ${err.reason}`);
+        }
+      } catch (err) {
+        errors.push(`Watchlist sync failed: ${err instanceof Error ? err.message : String(err)}`);
       }
-    } catch (err) {
-      errors.push(`Watchlist sync failed: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
 

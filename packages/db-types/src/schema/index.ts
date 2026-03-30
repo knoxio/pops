@@ -21,3 +21,4 @@ export { itemPhotos } from "./item-photos.js";
 export { itemDocuments } from "./item-documents.js";
 export { settings } from "./settings.js";
 export { syncLogs } from "./sync-logs.js";
+export { syncJobResults } from "./sync-job-results.js";
