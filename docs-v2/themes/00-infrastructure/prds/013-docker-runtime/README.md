@@ -1,7 +1,7 @@
 # PRD-013: Docker Runtime
 
 > Epic: [01 — Docker Runtime](../../epics/01-docker-runtime.md)
-> Status: Partial
+> Status: Done
 
 ## Overview
 
@@ -50,7 +50,7 @@ Three networks isolate service groups:
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
 | 01 | [us-01-compose-file](us-01-compose-file.md) | Create docker-compose.yml with all services, networks, and volumes | Done | No (first) |
-| 02 | [us-02-custom-images](us-02-custom-images.md) | Dockerfiles for pops-api and pops-shell with multi-stage builds | Partial | Yes |
+| 02 | [us-02-custom-images](us-02-custom-images.md) | Dockerfiles for pops-api and pops-shell with multi-stage builds | Done | Yes |
 | 03 | [us-03-health-checks](us-03-health-checks.md) | Health check configuration for critical services, restart policies | Done | Blocked by us-01 |
 
 ## Verification

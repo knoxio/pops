@@ -1,7 +1,7 @@
 # US-03: Pre-migration automatic backup
 
 > PRD: [060 — Database Operations](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,16 +9,16 @@ As an operator, I want an automatic backup of the SQLite database before any mig
 
 ## Acceptance Criteria
 
-- [ ] When `runMigrations()` or Drizzle migrate detects pending migrations, a backup is created BEFORE applying them
-- [ ] Backup is a file copy: `{DB_PATH}.pre-migration-{timestamp}.bak` in the same directory as the database
-- [ ] Backup uses SQLite's `VACUUM INTO` or file copy with WAL checkpoint to ensure consistency
-- [ ] If all migrations succeed, the backup file is deleted (no accumulation of old backups)
-- [ ] If any migration fails, the backup file is preserved and its path is logged: "Migration failed. Backup available at: {path}"
-- [ ] If the database has no data (fresh install), backup is skipped (no point backing up empty schema)
-- [ ] Backup is skipped if there are no pending migrations (server starts normally, no unnecessary I/O)
-- [ ] Log line on backup: `[db] Backing up database before applying N migration(s)...`
-- [ ] Log line on cleanup: `[db] All migrations applied successfully. Backup removed.`
-- [ ] Tests cover: backup created when migrations pending, backup deleted on success, backup preserved on failure, backup skipped when no pending migrations
+- [x] When `runMigrations()` or Drizzle migrate detects pending migrations, a backup is created BEFORE applying them
+- [x] Backup is a file copy: `{DB_PATH}.pre-migration-{timestamp}.bak` in the same directory as the database
+- [x] Backup uses SQLite's `VACUUM INTO` or file copy with WAL checkpoint to ensure consistency
+- [x] If all migrations succeed, the backup file is deleted (no accumulation of old backups)
+- [x] If any migration fails, the backup file is preserved and its path is logged: "Migration failed. Backup available at: {path}"
+- [x] If the database has no data (fresh install), backup is skipped (no point backing up empty schema)
+- [x] Backup is skipped if there are no pending migrations (server starts normally, no unnecessary I/O)
+- [x] Log line on backup: `[db] Backing up database before applying N migration(s)...`
+- [x] Log line on cleanup: `[db] All migrations applied successfully. Backup removed.`
+- [x] Tests cover: backup created when migrations pending, backup deleted on success, backup preserved on failure, backup skipped when no pending migrations
 
 ## Notes
 
