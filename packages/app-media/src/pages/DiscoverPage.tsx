@@ -90,6 +90,10 @@ export function DiscoverPage() {
     staleTime: 5 * 60 * 1000,
   });
 
+  const rewatchSuggestions = trpc.media.discovery.rewatchSuggestions.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+  });
+
   const similarToTopRated = trpc.media.discovery.recommendations.useQuery(
     { sampleSize: 5 },
     { staleTime: 5 * 60 * 1000 }
@@ -177,6 +181,7 @@ export function DiscoverPage() {
         toast.success(`Marked "${libResult.data.title}" as watched`);
         void utils.media.discovery.trending.invalidate();
         void utils.media.discovery.recommendations.invalidate();
+        void utils.media.discovery.rewatchSuggestions.invalidate();
       } catch {
         toast.error("Failed to mark as watched");
       } finally {
@@ -357,6 +362,53 @@ export function DiscoverPage() {
           </div>
         )}
       </div>
+
+      {/* Worth Rewatching — hidden when empty */}
+      {(rewatchSuggestions.isLoading || (rewatchSuggestions.data?.data?.length ?? 0) > 0) && (
+        <HorizontalScrollRow
+          title="Worth Rewatching"
+          subtitle="Movies you loved — worth another watch"
+          isLoading={rewatchSuggestions.isLoading}
+        >
+          {rewatchSuggestions.error && (
+            <Alert variant="destructive" className="flex items-center gap-3">
+              <AlertCircle className="h-4 w-4 shrink-0" />
+              <p className="flex-1 text-sm">{rewatchSuggestions.error.message}</p>
+              <Button variant="outline" size="sm" onClick={() => rewatchSuggestions.refetch()}>
+                <RefreshCw className="mr-1 h-3 w-3" /> Retry
+              </Button>
+            </Alert>
+          )}
+          {rewatchSuggestions.data?.data?.map(
+            (item: {
+              tmdbId: number;
+              title: string;
+              releaseDate: string | null;
+              posterPath: string | null;
+              posterUrl: string | null;
+              voteAverage: number | null;
+              inLibrary: boolean;
+            }) => (
+              <DiscoverCard
+                key={item.tmdbId}
+                tmdbId={item.tmdbId}
+                title={item.title}
+                releaseDate={item.releaseDate ?? ""}
+                posterPath={item.posterPath}
+                posterUrl={item.posterUrl}
+                voteAverage={item.voteAverage ?? 0}
+                inLibrary={item.inLibrary}
+                isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
+                isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
+                onAddToLibrary={handleAddToLibrary}
+                onAddToWatchlist={handleAddToWatchlist}
+                onMarkWatched={handleMarkWatched}
+                isMarkingWatched={markingWatched.has(item.tmdbId)}
+              />
+            )
+          )}
+        </HorizontalScrollRow>
+      )}
 
       {/* Similar to Your Top Rated */}
       <HorizontalScrollRow

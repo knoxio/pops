@@ -82,6 +82,23 @@ export interface ScoredDiscoverResult extends DiscoverResult {
   matchReason: string;
 }
 
+/** A movie from the user's watch history suggested for rewatching. */
+export interface RewatchSuggestion {
+  id: number;
+  tmdbId: number;
+  title: string;
+  releaseDate: string | null;
+  posterPath: string | null;
+  posterUrl: string | null;
+  voteAverage: number | null;
+  /** ELO score from media_scores, null if not yet rated. */
+  eloScore: number | null;
+  /** Effective score used for ranking (ELO or voteAverage fallback). */
+  score: number;
+  /** Always true — rewatch suggestions are from the user's library. */
+  inLibrary: true;
+}
+
 /**
  * Standard TMDB genre ID → name mapping.
  * @see https://developer.themoviedb.org/reference/genre-movie-list

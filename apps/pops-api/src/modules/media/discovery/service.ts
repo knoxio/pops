@@ -21,6 +21,7 @@ import type {
   QuickPickMovie,
   DiscoverResult,
   ScoredDiscoverResult,
+  RewatchSuggestion,
 } from "./types.js";
 import { TMDB_GENRE_MAP } from "./types.js";
 
@@ -198,7 +199,7 @@ export function getPreferenceProfile(): PreferenceProfile {
  * genre affinity scores, and computes a weighted match percentage.
  * Results are sorted by matchPercentage descending.
  */
-export function scoreRecommendations(
+export function scoreDiscoverResults(
   results: DiscoverResult[],
   profile: PreferenceProfile
 ): ScoredDiscoverResult[] {
@@ -273,4 +274,78 @@ export function getDismissed(): number[] {
   const db = getDrizzle();
   const rows = db.select({ tmdbId: dismissedDiscover.tmdbId }).from(dismissedDiscover).all();
   return rows.map((r) => r.tmdbId);
+}
+
+/**
+ * Get rewatch suggestions: movies watched 6+ months ago with above-median
+ * ELO score (or top 50% by voteAverage if no ELO data).
+ * Sorted by score descending, limited to 20.
+ */
+export function getRewatchSuggestions(): RewatchSuggestion[] {
+  const db = getDrizzle();
+
+  const sixMonthsAgo = sql`datetime('now', '-6 months')`;
+
+  // Get movies watched 6+ months ago, with optional ELO scores
+  const rows = db
+    .select({
+      id: movies.id,
+      tmdbId: movies.tmdbId,
+      title: movies.title,
+      releaseDate: movies.releaseDate,
+      posterPath: movies.posterPath,
+      voteAverage: movies.voteAverage,
+      eloScore: sql<number | null>`MAX(${mediaScores.score})`,
+    })
+    .from(watchHistory)
+    .innerJoin(
+      movies,
+      and(eq(movies.id, watchHistory.mediaId), eq(watchHistory.mediaType, "movie"))
+    )
+    .leftJoin(
+      mediaScores,
+      and(eq(mediaScores.mediaType, "movie"), eq(mediaScores.mediaId, movies.id))
+    )
+    .groupBy(movies.id)
+    .having(sql`MAX(${watchHistory.watchedAt}) <= ${sixMonthsAgo}`)
+    .all() as {
+    id: number;
+    tmdbId: number;
+    title: string;
+    releaseDate: string | null;
+    posterPath: string | null;
+    voteAverage: number | null;
+    eloScore: number | null;
+  }[];
+
+  if (rows.length === 0) return [];
+
+  // Compute effective score for each movie (ELO if available, else voteAverage)
+  const hasElo = rows.some((r) => r.eloScore != null);
+  const scored = rows.map((row) => ({
+    ...row,
+    score: hasElo ? (row.eloScore ?? 0) : (row.voteAverage ?? 0),
+  }));
+
+  // Filter to above-median score
+  const scores = scored.map((r) => r.score).sort((a, b) => a - b);
+  const median = scores[Math.floor(scores.length / 2)] ?? 0;
+  const filtered = scored.filter((r) => r.score >= median);
+
+  // Sort by score desc, limit 20
+  filtered.sort((a, b) => b.score - a.score);
+  const limited = filtered.slice(0, 20);
+
+  return limited.map((row) => ({
+    id: row.id,
+    tmdbId: row.tmdbId,
+    title: row.title,
+    releaseDate: row.releaseDate,
+    posterPath: row.posterPath,
+    posterUrl: row.posterPath ? `/media/images/movie/${row.tmdbId}/poster.jpg` : null,
+    voteAverage: row.voteAverage,
+    eloScore: row.eloScore,
+    score: row.score,
+    inLibrary: true as const,
+  }));
 }

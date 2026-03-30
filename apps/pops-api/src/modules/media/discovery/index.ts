@@ -8,3 +8,5 @@ export type {
   DimensionWeight,
   GenreDistribution,
 } from "./types.js";
+export { CONTEXT_COLLECTIONS, getActiveCollections } from "./context-collections.js";
+export type { ContextCollection } from "./context-collections.js";

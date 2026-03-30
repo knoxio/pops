@@ -8,6 +8,7 @@ import { getTmdbClient } from "../tmdb/index.js";
 import { TrendingQuerySchema, RecommendationsQuerySchema } from "./types.js";
 import * as service from "./service.js";
 import * as tmdbService from "./tmdb-service.js";
+import * as contextPicksService from "./context-picks-service.js";
 
 export const discoveryRouter = router({
   /** Dismiss a movie by tmdbId. Idempotent. */
@@ -57,13 +58,26 @@ export const discoveryRouter = router({
     }
   }),
 
+  /** Get rewatch suggestions — movies watched 6+ months ago with high scores. */
+  rewatchSuggestions: protectedProcedure.query(() => {
+    try {
+      return { data: service.getRewatchSuggestions() };
+    } catch (err) {
+      if (err instanceof TRPCError) throw err;
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: err instanceof Error ? err.message : "Unknown error fetching rewatch suggestions",
+      });
+    }
+  }),
+
   /** Get recommendations based on top-rated library movies, scored by preference profile. */
   recommendations: protectedProcedure.input(RecommendationsQuerySchema).query(async ({ input }) => {
     try {
       const client = getTmdbClient();
       const raw = await tmdbService.getRecommendations(client, input.sampleSize);
       const profile = service.getPreferenceProfile();
-      const scored = service.scoreRecommendations(raw.results, profile);
+      const scored = service.scoreDiscoverResults(raw.results, profile);
       return { results: scored, sourceMovies: raw.sourceMovies };
     } catch (err) {
       if (err instanceof TRPCError) throw err;
@@ -73,4 +87,25 @@ export const discoveryRouter = router({
       });
     }
   }),
+
+  /** Get context-aware movie picks based on current time of day, month, and day of week. */
+  contextPicks: protectedProcedure
+    .input(
+      z.object({
+        /** Per-collection page numbers for Load More (e.g. { "date-night": 2 }). */
+        pages: z.record(z.string(), z.number().int().positive()).optional(),
+      })
+    )
+    .query(async ({ input }) => {
+      try {
+        const client = getTmdbClient();
+        return await contextPicksService.getContextPicks(client, input.pages);
+      } catch (err) {
+        if (err instanceof TRPCError) throw err;
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: err instanceof Error ? err.message : "Unknown error fetching context picks",
+        });
+      }
+    }),
 });
