@@ -2,7 +2,7 @@
  * Static context collection definitions for time/date-aware discover rows.
  *
  * Each collection maps to a TMDB `/discover/movie` query via genre IDs
- * and/or keyword strings. `getActiveCollections` picks up to 2 that match
+ * and/or keyword IDs. `getActiveCollections` picks up to 2 that match
  * the current moment, falling back to rainy-day when fewer than 2 match.
  */
 
@@ -11,7 +11,8 @@ export interface ContextCollection {
   title: string;
   emoji: string;
   genreIds: number[];
-  keywords: string[];
+  /** TMDB keyword IDs (numeric). Use TMDB /search/keyword to find IDs. */
+  keywordIds: number[];
   trigger: (hour: number, month: number, dayOfWeek: number) => boolean;
 }
 
@@ -28,7 +29,7 @@ export const CONTEXT_COLLECTIONS: ContextCollection[] = [
     title: "Date Night",
     emoji: "💕",
     genreIds: [10749, 35], // Romance + Comedy
-    keywords: [],
+    keywordIds: [],
     trigger: (hour, _month, dayOfWeek) =>
       (dayOfWeek === FRIDAY || dayOfWeek === SATURDAY) &&
       hour >= 18 &&
@@ -39,7 +40,7 @@ export const CONTEXT_COLLECTIONS: ContextCollection[] = [
     title: "Sunday Flicks",
     emoji: "☀️",
     genreIds: [18], // Drama
-    keywords: [],
+    keywordIds: [],
     trigger: (_hour, _month, dayOfWeek) => dayOfWeek === SUNDAY,
   },
   {
@@ -47,7 +48,7 @@ export const CONTEXT_COLLECTIONS: ContextCollection[] = [
     title: "Late Night Thrillers",
     emoji: "🌙",
     genreIds: [53, 9648], // Thriller + Mystery
-    keywords: [],
+    keywordIds: [],
     trigger: (hour) => hour >= 22 || hour <= 2,
   },
   {
@@ -55,7 +56,7 @@ export const CONTEXT_COLLECTIONS: ContextCollection[] = [
     title: "Halloween",
     emoji: "🎃",
     genreIds: [27], // Horror
-    keywords: ["halloween"],
+    keywordIds: [3335], // TMDB keyword ID for "halloween"
     trigger: (_hour, month) => month === 10,
   },
   {
@@ -63,7 +64,7 @@ export const CONTEXT_COLLECTIONS: ContextCollection[] = [
     title: "Christmas Movies",
     emoji: "🎄",
     genreIds: [],
-    keywords: ["christmas"],
+    keywordIds: [207317], // TMDB keyword ID for "christmas"
     trigger: (_hour, month) => month === 12,
   },
   {
@@ -71,7 +72,7 @@ export const CONTEXT_COLLECTIONS: ContextCollection[] = [
     title: "Oscar Winners",
     emoji: "🏆",
     genreIds: [],
-    keywords: ["oscar", "academy award"],
+    keywordIds: [293, 11487], // TMDB keyword IDs for "oscar" + "academy award"
     trigger: (_hour, month) => month === 2 || month === 3,
   },
   {
@@ -79,7 +80,7 @@ export const CONTEXT_COLLECTIONS: ContextCollection[] = [
     title: "Rainy Day",
     emoji: "🌧️",
     genreIds: [35, 18, 16], // Comedy + Drama + Animation
-    keywords: [],
+    keywordIds: [],
     trigger: () => true, // always matches
   },
 ];

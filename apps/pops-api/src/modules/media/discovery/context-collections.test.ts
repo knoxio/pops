@@ -21,7 +21,7 @@ describe("CONTEXT_COLLECTIONS", () => {
       expect(col.emoji).toBeTruthy();
       expect(typeof col.trigger).toBe("function");
       expect(Array.isArray(col.genreIds)).toBe(true);
-      expect(Array.isArray(col.keywords)).toBe(true);
+      expect(Array.isArray(col.keywordIds)).toBe(true);
     }
   });
 });
