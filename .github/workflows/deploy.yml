@@ -1,8 +1,8 @@
 name: Deploy to Production
 
 on:
-  # SECURITY: Disabled automatic deployment on public repo with self-hosted runner
-  # Only allow manual deployment trigger by repo owner
+  push:
+    branches: [main]
   workflow_dispatch:
 
 jobs:
