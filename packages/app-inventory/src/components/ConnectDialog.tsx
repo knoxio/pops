@@ -102,10 +102,10 @@ export function ConnectDialog({ currentItemId, onConnected }: ConnectDialogProps
             <p className="text-sm text-muted-foreground py-4 text-center">No items found</p>
           ) : (
             results.map((item) => (
-              <button
+              <Button
                 key={item.id}
-                type="button"
-                className="w-full flex items-center justify-between p-2.5 rounded-md hover:bg-accent text-left transition-colors"
+                variant="ghost"
+                className="w-full flex items-center justify-between p-2.5 h-auto text-left"
                 onClick={() => handleConnect(item.id)}
                 disabled={connectMutation.isPending}
               >
@@ -117,7 +117,7 @@ export function ConnectDialog({ currentItemId, onConnected }: ConnectDialogProps
                   </div>
                 </div>
                 <Link2 className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
-              </button>
+              </Button>
             ))
           )}
         </div>

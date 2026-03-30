@@ -127,17 +127,18 @@ export function PhotoGallery({
                 />
               </button>
               {onDelete && (
-                <button
-                  type="button"
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={(e) => {
                     e.stopPropagation();
                     onDelete(photo.id);
                   }}
-                  className="absolute -top-1 -right-1 p-0.5 rounded-full bg-background/80 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
+                  className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-background/80 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
                   aria-label={`Delete photo ${photo.caption ?? index + 1}`}
                 >
                   <Trash2 className="h-3 w-3" />
-                </button>
+                </Button>
               )}
             </div>
           ))}

@@ -19,6 +19,7 @@ import {
   Skeleton,
   Badge,
   PageHeader,
+  Label,
 } from "@pops/ui";
 import { Save, Link2, X, Search, Wand2, Loader2, ImageIcon, Trash2, Eye, PenLine } from "lucide-react";
 import Markdown from "react-markdown";
@@ -111,7 +112,7 @@ function FormField({
 }) {
   return (
     <div>
-      <label className="text-sm font-medium mb-1.5 block">{label}</label>
+      <Label className="mb-1.5 block">{label}</Label>
       {children}
       {error && <p className="text-sm text-destructive mt-1">{error}</p>}
     </div>
@@ -699,14 +700,15 @@ export function ItemFormPage() {
                         loading="lazy"
                       />
                     </div>
-                    <button
-                      type="button"
+                    <Button
+                      variant="ghost"
+                      size="icon"
                       onClick={() => handleDeletePhoto(photo.id)}
-                      className="absolute top-1 right-1 p-1 rounded-full bg-background/80 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
+                      className="absolute top-1 right-1 h-6 w-6 rounded-full bg-background/80 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
                       aria-label={`Delete photo ${photo.caption ?? photo.id}`}
                     >
                       <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    </Button>
                   </div>
                 ))}
             </div>
@@ -802,15 +804,16 @@ export function ItemFormPage() {
                     className="flex items-center gap-1.5 pl-3 pr-1.5 py-1 bg-app-accent/10 text-app-accent border-app-accent/20"
                   >
                     {conn.itemName}
-                    <button
-                      type="button"
-                      className="rounded-full p-0.5 hover:bg-app-accent/20"
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4 rounded-full hover:bg-app-accent/20"
                       onClick={() =>
                         setPendingConnections((prev) => prev.filter((c) => c.id !== conn.id))
                       }
                     >
                       <X className="h-3 w-3" />
-                    </button>
+                    </Button>
                   </Badge>
                 ))}
               </div>
@@ -844,10 +847,10 @@ export function ItemFormPage() {
                       </p>
                     ) : (
                       filtered.map((item) => (
-                        <button
+                        <Button
                           key={item.id}
-                          type="button"
-                          className="w-full flex items-center justify-between p-2.5 hover:bg-app-accent/5 text-left transition-colors"
+                          variant="ghost"
+                          className="w-full flex items-center justify-between p-2.5 h-auto text-left"
                           onClick={() => {
                             setPendingConnections((prev) => [
                               ...prev,
@@ -864,7 +867,7 @@ export function ItemFormPage() {
                             </div>
                           </div>
                           <Link2 className="h-4 w-4 text-app-accent/50 shrink-0 ml-2" />
-                        </button>
+                        </Button>
                       ))
                     );
                   })()

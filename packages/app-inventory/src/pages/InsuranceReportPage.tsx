@@ -8,7 +8,7 @@
 import { useMemo, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router";
 import { FileText, Printer, Download } from "lucide-react";
-import { Skeleton, AssetIdBadge, ConditionBadge, Badge, PageHeader, type Condition } from "@pops/ui";
+import { Skeleton, AssetIdBadge, ConditionBadge, Badge, PageHeader, Button, Select, CheckboxInput, Label, type Condition } from "@pops/ui";
 import { trpc } from "../lib/trpc";
 import { LocationPicker } from "../components/LocationPicker";
 
@@ -201,22 +201,21 @@ export function InsuranceReportPage(): React.ReactElement {
         icon={<FileText className="h-6 w-6 text-muted-foreground print:hidden" />}
         actions={
           <div className="flex items-center gap-2 print:hidden">
-            <button
-              type="button"
+            <Button
+              variant="outline"
+              size="sm"
+              prefix={<Download className="h-4 w-4" />}
               onClick={handleExportCsv}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-bold hover:bg-muted/50 transition-colors"
             >
-              <Download className="h-4 w-4" />
               Export CSV
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              size="sm"
+              prefix={<Printer className="h-4 w-4" />}
               onClick={() => window.print()}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-app-accent text-white text-sm font-bold hover:bg-app-accent/80 transition-colors shadow-sm shadow-app-accent/20"
             >
-              <Printer className="h-4 w-4" />
               Print / PDF
-            </button>
+            </Button>
           </div>
         }
         className="mb-6 print:mb-4"
@@ -231,7 +230,7 @@ export function InsuranceReportPage(): React.ReactElement {
       {/* Filters */}
       <div className="flex flex-wrap items-end gap-4 mb-6 print:hidden">
         <div className="w-64">
-          <label className="block text-sm font-medium mb-1">Filter by location</label>
+          <Label className="block mb-1">Filter by location</Label>
           <LocationPicker
             value={locationId ?? null}
             onChange={handleLocationChange}
@@ -240,30 +239,25 @@ export function InsuranceReportPage(): React.ReactElement {
           />
         </div>
         {locationId && (
-          <label className="flex items-center gap-2 text-sm cursor-pointer">
-            <input
-              type="checkbox"
-              checked={includeChildren}
-              onChange={(e) => updateParam("includeChildren", e.target.checked ? null : "false")}
-              className="rounded border-border"
-            />
-            Include sub-locations
-          </label>
+          <CheckboxInput
+            label="Include sub-locations"
+            checked={includeChildren}
+            onCheckedChange={(checked) => updateParam("includeChildren", checked ? null : "false")}
+          />
         )}
-        <div>
-          <label className="block text-sm font-medium mb-1">Sort by</label>
-          <select
-            value={sortBy}
-            onChange={(e) =>
-              updateParam("sortBy", e.target.value === "value" ? null : e.target.value)
-            }
-            className="rounded-lg border border-border bg-background px-3 py-2 text-sm"
-          >
-            <option value="value">Value (high first)</option>
-            <option value="name">Name</option>
-            <option value="type">Type</option>
-          </select>
-        </div>
+        <Select
+          label="Sort by"
+          size="sm"
+          value={sortBy}
+          onChange={(e) =>
+            updateParam("sortBy", e.target.value === "value" ? null : e.target.value)
+          }
+          options={[
+            { value: "value", label: "Value (high first)" },
+            { value: "name", label: "Name" },
+            { value: "type", label: "Type" },
+          ]}
+        />
       </div>
 
       {/* Summary */}

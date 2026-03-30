@@ -14,6 +14,7 @@ import {
   DialogDescription,
   Button,
   TextInput,
+  Select,
   Skeleton,
 } from "@pops/ui";
 import { FileText, Search, Link2 } from "lucide-react";
@@ -112,17 +113,15 @@ export function LinkDocumentDialog({ itemId, onLinked }: LinkDocumentDialogProps
               autoFocus
             />
           </div>
-          <select
+          <Select
             value={docType}
             onChange={(e) => setDocType(e.target.value as typeof docType)}
-            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-          >
-            {DOCUMENT_TYPES.map((t) => (
-              <option key={t} value={t}>
-                {t.charAt(0).toUpperCase() + t.slice(1)}
-              </option>
-            ))}
-          </select>
+            size="sm"
+            options={DOCUMENT_TYPES.map((t) => ({
+              value: t,
+              label: t.charAt(0).toUpperCase() + t.slice(1),
+            }))}
+          />
         </div>
 
         <div className="max-h-72 overflow-y-auto space-y-1">

@@ -140,15 +140,16 @@ export function LocationContentsPanel({
         <ul className="space-y-1">
           {allItems.map((item) => (
             <li key={item.id}>
-              <button
-                type="button"
-                className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors hover:bg-muted/50"
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full justify-start gap-2 h-auto px-2 py-1.5 text-left"
                 onClick={() => navigate(`/inventory/items/${item.id}`)}
               >
                 <span className="font-medium truncate flex-1">{item.itemName}</span>
                 {item.assetId && <AssetIdBadge assetId={item.assetId} />}
                 {item.type && <TypeBadge type={item.type} />}
-              </button>
+              </Button>
             </li>
           ))}
         </ul>

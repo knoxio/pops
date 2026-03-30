@@ -7,7 +7,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router";
 import { ShieldCheck, ChevronDown, ChevronRight, AlertCircle } from "lucide-react";
-import { Skeleton, AssetIdBadge, Badge, PageHeader } from "@pops/ui";
+import { Skeleton, AssetIdBadge, Badge, PageHeader, Button } from "@pops/ui";
 import { trpc } from "../lib/trpc";
 
 interface WarrantyItem {
@@ -221,9 +221,9 @@ function CollapsibleSection({
 
   return (
     <div className="border rounded-lg">
-      <button
-        type="button"
-        className="flex w-full items-center gap-2 px-4 py-3 text-left font-medium transition-colors hover:bg-muted/30"
+      <Button
+        variant="ghost"
+        className="flex w-full items-center gap-2 px-4 py-3 h-auto text-left font-medium"
         onClick={() => setOpen(!open)}
       >
         {open ? (
@@ -235,7 +235,7 @@ function CollapsibleSection({
         <Badge variant="secondary" className="text-xs ml-1">
           {count}
         </Badge>
-      </button>
+      </Button>
       {open && <div className="px-2 pb-2">{children}</div>}
     </div>
   );
@@ -296,13 +296,9 @@ export function WarrantiesPage() {
         <div className="text-center py-16">
           <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground/40 mb-4" />
           <p className="text-muted-foreground mb-4">Could not load warranties — try again</p>
-          <button
-            type="button"
-            className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
-            onClick={() => refetch()}
-          >
+          <Button onClick={() => refetch()}>
             Retry
-          </button>
+          </Button>
         </div>
       ) : totalItems === 0 ? (
         <div className="text-center py-16">

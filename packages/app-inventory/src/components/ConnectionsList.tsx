@@ -3,7 +3,7 @@
  * Shows connection count header, list of connected items with badges,
  * and a "Connect to…" button placeholder.
  */
-import { cn, AssetIdBadge, TypeBadge } from "@pops/ui";
+import { cn, AssetIdBadge, TypeBadge, Button } from "@pops/ui";
 import { Link2, Plus } from "lucide-react";
 
 export interface ConnectedItem {
@@ -67,14 +67,15 @@ export function ConnectionsList({
 
       {/* Connect button */}
       {onConnect && (
-        <button
-          type="button"
-          className="flex w-full items-center justify-center gap-1.5 rounded-md border border-dashed border-border px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full border-dashed text-muted-foreground hover:text-foreground"
+          prefix={<Plus className="h-3.5 w-3.5" />}
           onClick={onConnect}
         >
-          <Plus className="h-3.5 w-3.5" />
           Connect to item…
-        </button>
+        </Button>
       )}
     </div>
   );

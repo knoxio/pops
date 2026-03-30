@@ -801,17 +801,18 @@ export function LocationTreePage() {
               <FileText className="h-4 w-4" />
               Insurance Report
             </Link>
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-app-accent hover:text-app-accent/80"
+              prefix={<Plus className="h-4 w-4" />}
               onClick={() => {
                 setAddingRoot(true);
                 setAddingChildOf(null);
               }}
-              className="flex items-center gap-1.5 text-sm font-bold text-app-accent hover:text-app-accent/80 transition-colors"
             >
-              <Plus className="h-4 w-4" />
               Add Root Location
-            </button>
+            </Button>
           </>
         }
       />

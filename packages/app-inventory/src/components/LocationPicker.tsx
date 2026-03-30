@@ -263,25 +263,27 @@ export function LocationPicker({
         {/* Footer: Clear + Add */}
         <div className="border-t p-2 flex flex-col gap-1">
           {value && (
-            <button
-              type="button"
-              className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-muted-foreground hover:text-foreground"
+              prefix={<X className="h-3.5 w-3.5" />}
               onClick={handleClear}
             >
-              <X className="h-3.5 w-3.5" />
               Clear selection
-            </button>
+            </Button>
           )}
 
           {onCreateLocation && !showAddForm && (
-            <button
-              type="button"
-              className="flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-colors"
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full justify-start text-muted-foreground hover:text-foreground"
+              prefix={<Plus className="h-3.5 w-3.5" />}
               onClick={() => setShowAddForm(true)}
             >
-              <Plus className="h-3.5 w-3.5" />
               Add location
-            </button>
+            </Button>
           )}
 
           {onCreateLocation && showAddForm && (
