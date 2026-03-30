@@ -15,6 +15,8 @@ import {
   Skeleton,
   Alert,
   StatCard,
+  Input,
+  Label,
   Breadcrumb,
   BreadcrumbList,
   BreadcrumbItem,
@@ -22,7 +24,6 @@ import {
   BreadcrumbSeparator,
   BreadcrumbPage,
 } from "@pops/ui";
-import { TextInput } from "@pops/ui";
 
 const SETTING_KEYS = {
   model: "ai.model",
@@ -211,14 +212,16 @@ export function ModelConfigPage() {
           onChange={(e) => setModel(e.target.value)}
         />
 
-        <TextInput
-          label="Monthly Token Budget"
-          type="number"
-          placeholder="e.g. 1000000"
-          value={budget}
-          onChange={(e) => setBudget(e.target.value)}
-          min={0}
-        />
+        <div className="space-y-1.5">
+          <Label className="text-muted-foreground">Monthly Token Budget</Label>
+          <Input
+            type="number"
+            placeholder="e.g. 1000000"
+            value={budget}
+            onChange={(e) => setBudget(e.target.value)}
+            min={0}
+          />
+        </div>
 
         <Select
           label="When Budget Exceeded"
