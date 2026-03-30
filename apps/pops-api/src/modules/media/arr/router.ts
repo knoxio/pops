@@ -188,6 +188,7 @@ export const arrRouter = router({
       }
       try {
         const movie = await client.addMovie(input);
+        arrService.clearMovieStatusCache(input.tmdbId);
         return { data: movie };
       } catch (err) {
         if (err instanceof ArrApiError) {
