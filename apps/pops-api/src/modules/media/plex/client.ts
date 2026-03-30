@@ -221,9 +221,7 @@ export class PlexClient {
         };
       }>(url);
 
-      return (data.MediaContainer.Metadata ?? []).map((item) =>
-        this.mapMediaItem(item)
-      );
+      return (data.MediaContainer.Metadata ?? []).map((item) => this.mapMediaItem(item));
     } catch {
       // Fallback: try the hub endpoint for popular content
       const hubUrl =

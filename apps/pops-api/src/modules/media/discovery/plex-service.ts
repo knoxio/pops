@@ -34,10 +34,7 @@ function extractTmdbId(item: PlexMediaItem): number | null {
 }
 
 /** Map a Plex media item to a DiscoverResult. */
-function toDiscoverResult(
-  item: PlexMediaItem,
-  libraryIds: Set<number>
-): DiscoverResult | null {
+function toDiscoverResult(item: PlexMediaItem, libraryIds: Set<number>): DiscoverResult | null {
   const tmdbId = extractTmdbId(item);
   if (!tmdbId) return null;
 
@@ -62,9 +59,7 @@ function toDiscoverResult(
 function getDismissedTmdbIds(): Set<number> {
   try {
     const db = getDrizzle();
-    const rows = db.all<{ tmdb_id: number }>(
-      /* sql */ `SELECT tmdb_id FROM dismissed_discover`
-    );
+    const rows = db.all<{ tmdb_id: number }>(/* sql */ `SELECT tmdb_id FROM dismissed_discover`);
     return new Set(rows.map((r) => r.tmdb_id));
   } catch {
     // Table may not exist yet (tb-115 creates it)
@@ -76,9 +71,7 @@ function getDismissedTmdbIds(): Set<number> {
  * Fetch trending movies from Plex Discover API.
  * Returns null if Plex is not connected (no client available).
  */
-export async function getTrendingFromPlex(
-  limit: number = 20
-): Promise<DiscoverResult[] | null> {
+export async function getTrendingFromPlex(limit: number = 20): Promise<DiscoverResult[] | null> {
   const client = getPlexClient();
   if (!client) return null;
 

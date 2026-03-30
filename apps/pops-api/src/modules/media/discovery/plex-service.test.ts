@@ -81,12 +81,24 @@ describe("getTrendingFromPlex", () => {
 
   it("returns DiscoverResult[] when Plex is connected", async () => {
     const mockClient = {
-      getTrending: vi.fn().mockResolvedValue([
-        makePlexItem({ ratingKey: "1", title: "Movie A", externalIds: [{ source: "tmdb", id: "100" }] }),
-        makePlexItem({ ratingKey: "2", title: "Movie B", externalIds: [{ source: "tmdb", id: "200" }] }),
-      ]),
+      getTrending: vi
+        .fn()
+        .mockResolvedValue([
+          makePlexItem({
+            ratingKey: "1",
+            title: "Movie A",
+            externalIds: [{ source: "tmdb", id: "100" }],
+          }),
+          makePlexItem({
+            ratingKey: "2",
+            title: "Movie B",
+            externalIds: [{ source: "tmdb", id: "200" }],
+          }),
+        ]),
     };
-    mockGetPlexClient.mockReturnValue(mockClient as unknown as ReturnType<typeof getPlexClient> & object);
+    mockGetPlexClient.mockReturnValue(
+      mockClient as unknown as ReturnType<typeof getPlexClient> & object
+    );
     mockGetDrizzle.mockReturnValue(createMockDb());
 
     const result = await getTrendingFromPlex();
@@ -99,13 +111,17 @@ describe("getTrendingFromPlex", () => {
 
   it("excludes items without TMDB IDs", async () => {
     const mockClient = {
-      getTrending: vi.fn().mockResolvedValue([
-        makePlexItem({ title: "Has TMDB", externalIds: [{ source: "tmdb", id: "100" }] }),
-        makePlexItem({ title: "No TMDB", externalIds: [{ source: "imdb", id: "tt1234" }] }),
-        makePlexItem({ title: "No IDs", externalIds: [] }),
-      ]),
+      getTrending: vi
+        .fn()
+        .mockResolvedValue([
+          makePlexItem({ title: "Has TMDB", externalIds: [{ source: "tmdb", id: "100" }] }),
+          makePlexItem({ title: "No TMDB", externalIds: [{ source: "imdb", id: "tt1234" }] }),
+          makePlexItem({ title: "No IDs", externalIds: [] }),
+        ]),
     };
-    mockGetPlexClient.mockReturnValue(mockClient as unknown as ReturnType<typeof getPlexClient> & object);
+    mockGetPlexClient.mockReturnValue(
+      mockClient as unknown as ReturnType<typeof getPlexClient> & object
+    );
     mockGetDrizzle.mockReturnValue(createMockDb());
 
     const result = await getTrendingFromPlex();
@@ -115,12 +131,16 @@ describe("getTrendingFromPlex", () => {
 
   it("marks items as inLibrary when TMDB ID matches", async () => {
     const mockClient = {
-      getTrending: vi.fn().mockResolvedValue([
-        makePlexItem({ title: "In Library", externalIds: [{ source: "tmdb", id: "100" }] }),
-        makePlexItem({ title: "Not In Library", externalIds: [{ source: "tmdb", id: "200" }] }),
-      ]),
+      getTrending: vi
+        .fn()
+        .mockResolvedValue([
+          makePlexItem({ title: "In Library", externalIds: [{ source: "tmdb", id: "100" }] }),
+          makePlexItem({ title: "Not In Library", externalIds: [{ source: "tmdb", id: "200" }] }),
+        ]),
     };
-    mockGetPlexClient.mockReturnValue(mockClient as unknown as ReturnType<typeof getPlexClient> & object);
+    mockGetPlexClient.mockReturnValue(
+      mockClient as unknown as ReturnType<typeof getPlexClient> & object
+    );
     mockGetDrizzle.mockReturnValue(createMockDb([100]));
 
     const result = await getTrendingFromPlex();
@@ -132,12 +152,24 @@ describe("getTrendingFromPlex", () => {
 
   it("deduplicates by TMDB ID", async () => {
     const mockClient = {
-      getTrending: vi.fn().mockResolvedValue([
-        makePlexItem({ ratingKey: "1", title: "Movie A", externalIds: [{ source: "tmdb", id: "100" }] }),
-        makePlexItem({ ratingKey: "2", title: "Movie A Duplicate", externalIds: [{ source: "tmdb", id: "100" }] }),
-      ]),
+      getTrending: vi
+        .fn()
+        .mockResolvedValue([
+          makePlexItem({
+            ratingKey: "1",
+            title: "Movie A",
+            externalIds: [{ source: "tmdb", id: "100" }],
+          }),
+          makePlexItem({
+            ratingKey: "2",
+            title: "Movie A Duplicate",
+            externalIds: [{ source: "tmdb", id: "100" }],
+          }),
+        ]),
     };
-    mockGetPlexClient.mockReturnValue(mockClient as unknown as ReturnType<typeof getPlexClient> & object);
+    mockGetPlexClient.mockReturnValue(
+      mockClient as unknown as ReturnType<typeof getPlexClient> & object
+    );
     mockGetDrizzle.mockReturnValue(createMockDb());
 
     const result = await getTrendingFromPlex();
@@ -147,12 +179,16 @@ describe("getTrendingFromPlex", () => {
 
   it("excludes dismissed movies", async () => {
     const mockClient = {
-      getTrending: vi.fn().mockResolvedValue([
-        makePlexItem({ title: "Keep", externalIds: [{ source: "tmdb", id: "100" }] }),
-        makePlexItem({ title: "Dismissed", externalIds: [{ source: "tmdb", id: "200" }] }),
-      ]),
+      getTrending: vi
+        .fn()
+        .mockResolvedValue([
+          makePlexItem({ title: "Keep", externalIds: [{ source: "tmdb", id: "100" }] }),
+          makePlexItem({ title: "Dismissed", externalIds: [{ source: "tmdb", id: "200" }] }),
+        ]),
     };
-    mockGetPlexClient.mockReturnValue(mockClient as unknown as ReturnType<typeof getPlexClient> & object);
+    mockGetPlexClient.mockReturnValue(
+      mockClient as unknown as ReturnType<typeof getPlexClient> & object
+    );
 
     const mockDb = createMockDb();
     // Override the raw SQL query to return dismissed IDs
@@ -175,7 +211,9 @@ describe("getTrendingFromPlex", () => {
     const mockClient = {
       getTrending: vi.fn().mockResolvedValue(items),
     };
-    mockGetPlexClient.mockReturnValue(mockClient as unknown as ReturnType<typeof getPlexClient> & object);
+    mockGetPlexClient.mockReturnValue(
+      mockClient as unknown as ReturnType<typeof getPlexClient> & object
+    );
     mockGetDrizzle.mockReturnValue(createMockDb());
 
     const result = await getTrendingFromPlex(3);
