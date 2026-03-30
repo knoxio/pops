@@ -40,7 +40,9 @@ services:
     container_name: pops-shell
     restart: unless-stopped
     networks:
-      - frontend
+      frontend:
+        aliases:
+          - pops-pwa
     expose:
       - "80"
 
