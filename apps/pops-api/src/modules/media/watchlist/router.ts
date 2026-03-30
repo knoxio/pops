@@ -15,6 +15,7 @@ import {
 import * as service from "./service.js";
 import { NotFoundError, ConflictError } from "../../../shared/errors.js";
 import { getPlexClient } from "../plex/service.js";
+import { pushToPlexWatchlist } from "./plex-push.js";
 
 const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
@@ -70,6 +71,9 @@ export const watchlistRouter = router({
             err instanceof Error ? err.message : err
           );
         }
+      } else {
+        // Manually added items lack a plexRatingKey — look one up via Discover API
+        await pushToPlexWatchlist(row.id, input.mediaType, input.mediaId);
       }
     }
 

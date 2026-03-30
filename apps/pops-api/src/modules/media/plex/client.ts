@@ -131,6 +131,41 @@ export class PlexClient {
     );
   }
 
+  /**
+   * Search the Plex Discover API by title and media type.
+   * Returns items with ratingKeys and external IDs (tmdb://, tvdb://).
+   */
+  async searchDiscover(query: string, searchType: "movie" | "show"): Promise<PlexMediaItem[]> {
+    const typeParam = searchType === "movie" ? "1" : "2";
+    const url =
+      `https://discover.provider.plex.tv/library/search` +
+      `?query=${encodeURIComponent(query)}` +
+      `&searchTypes=${typeParam}` +
+      `&limit=5` +
+      `&X-Plex-Token=${this.token}`;
+
+    const data = await this.getAbsolute<{
+      MediaContainer: {
+        SearchResults?: Array<{
+          SearchResult?: Array<{
+            Metadata?: RawPlexMediaItem;
+          }>;
+        }>;
+      };
+    }>(url);
+
+    const searchResults = data.MediaContainer.SearchResults ?? [];
+    const items: PlexMediaItem[] = [];
+    for (const group of searchResults) {
+      for (const result of group.SearchResult ?? []) {
+        if (result.Metadata) {
+          items.push(this.mapMediaItem(result.Metadata));
+        }
+      }
+    }
+    return items;
+  }
+
   // -------------------------------------------------------------------------
   // Mappers
   // -------------------------------------------------------------------------
@@ -204,6 +239,40 @@ export class PlexClient {
 
     try {
       response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+        },
+      });
+    } catch (err) {
+      throw new PlexApiError(
+        0,
+        `Network error: ${err instanceof Error ? err.message : String(err)}`
+      );
+    }
+
+    if (!response.ok) {
+      let message = `Plex API error: ${response.status} ${response.statusText}`;
+      try {
+        const text = await response.text();
+        if (text) {
+          message = text;
+        }
+      } catch {
+        // Ignore parse failures
+      }
+      throw new PlexApiError(response.status, message);
+    }
+
+    return (await response.json()) as T;
+  }
+
+  /** Generic GET for cloud API endpoints (absolute URLs, token already in query). */
+  private async getAbsolute<T>(absoluteUrl: string): Promise<T> {
+    let response: Response;
+
+    try {
+      response = await fetch(absoluteUrl, {
         method: "GET",
         headers: {
           Accept: "application/json",
