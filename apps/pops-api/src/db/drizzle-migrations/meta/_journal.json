@@ -64,6 +64,13 @@
       "when": 1774158551720,
       "tag": "0008_tough_nick_fury",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1774853312000,
+      "tag": "0009_red_quasimodo",
+      "breakpoints": true
     }
   ]
 }
