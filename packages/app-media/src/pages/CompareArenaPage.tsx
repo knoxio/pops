@@ -38,7 +38,13 @@ export function CompareArenaPage() {
     refetch: refetchPair,
   } = trpc.media.comparisons.getRandomPair.useQuery(
     { dimensionId: dimensionId! },
-    { enabled: dimensionId !== null, refetchOnWindowFocus: false }
+    {
+      enabled: dimensionId !== null,
+      refetchOnWindowFocus: false,
+      // Never cache — each call should return a fresh random pair
+      gcTime: 0,
+      staleTime: 0,
+    }
   );
 
   const utils = trpc.useUtils();
@@ -87,7 +93,11 @@ export function CompareArenaPage() {
       setSessionCount((c) => c + 1);
       setDimensionIndex((i) => i + 1);
 
-      // Show delta briefly, then clear it (next pair loads via dimension rotation query key change)
+      // Invalidate pair cache so next fetch returns a fresh random pair
+      // (without this, returning to the same dimensionId serves the cached pair)
+      utils.media.comparisons.getRandomPair.invalidate();
+
+      // Show delta briefly, then clear it
       setTimeout(() => {
         setScoreDelta(null);
       }, 1500);
@@ -319,7 +329,10 @@ export function CompareArenaPage() {
       {/* Skip + Done buttons */}
       {pairData?.data && !recordMutation.isPending && !scoreDelta && (
         <div className="flex justify-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => setDimensionIndex((i) => i + 1)}>
+          <Button variant="outline" size="sm" onClick={() => {
+            utils.media.comparisons.getRandomPair.invalidate();
+            setDimensionIndex((i) => i + 1);
+          }}>
             Skip this pair
           </Button>
           <Button variant="ghost" size="sm" onClick={() => navigate("/media")}>
