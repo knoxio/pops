@@ -1,7 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
-import { Badge, Skeleton, Button } from "@pops/ui";
-import { ImageOff } from "lucide-react";
+import { Badge, Skeleton, Button, Tooltip, TooltipContent, TooltipTrigger } from "@pops/ui";
+import { ImageOff, Bookmark } from "lucide-react";
+import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
 import { DimensionManager } from "../components/DimensionManager";
 
@@ -97,6 +98,41 @@ export function CompareArenaPage() {
   useEffect(() => {
     setScoreDelta(null);
   }, [dimensionIndex]);
+
+  // Watchlist: check which movies are on it, add mutation
+  const movieAId = pairData?.data?.movieA?.id;
+  const movieBId = pairData?.data?.movieB?.id;
+
+  const { data: watchlistData } = trpc.media.watchlist.list.useQuery(
+    { mediaType: "movie" },
+    { enabled: !!pairData?.data }
+  );
+
+  const watchlistedMovieIds = new Set(
+    (watchlistData?.data ?? [])
+      .filter((e: { mediaType: string }) => e.mediaType === "movie")
+      .map((e: { mediaId: number }) => e.mediaId)
+  );
+
+  const addToWatchlistMutation = trpc.media.watchlist.add.useMutation({
+    onSuccess: (_data: unknown, variables: { mediaType: string; mediaId: number }) => {
+      utils.media.watchlist.list.invalidate();
+      const movie = variables.mediaId === movieAId ? pairData?.data?.movieA : pairData?.data?.movieB;
+      toast.success(`${movie?.title ?? "Movie"} added to watchlist`);
+      // Refetch pair since this movie should now be excluded
+      refetchPair();
+    },
+  });
+
+  const handleAddToWatchlist = useCallback(
+    (movieId: number) => {
+      addToWatchlistMutation.mutate({
+        mediaType: "movie",
+        mediaId: movieId,
+      });
+    },
+    [addToWatchlistMutation]
+  );
 
   const handlePick = useCallback(
     (winnerId: number) => {
@@ -196,12 +232,14 @@ export function CompareArenaPage() {
               const name = dim?.name ?? "Overall";
               const desc = dim?.description;
               return desc ? (
-                <span
-                  className="font-medium text-foreground underline decoration-dotted cursor-help"
-                  title={desc}
-                >
-                  {name}
-                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="font-medium text-foreground underline decoration-dotted cursor-help">
+                      {name}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>{desc}</TooltipContent>
+                </Tooltip>
               ) : (
                 <span className="font-medium text-foreground">{name}</span>
               );
@@ -221,6 +259,9 @@ export function CompareArenaPage() {
                     : null
               }
               isWinner={scoreDelta?.winnerId === pairData.data.movieA.id}
+              onAddToWatchlist={() => handleAddToWatchlist(pairData.data.movieA.id)}
+              isOnWatchlist={watchlistedMovieIds.has(pairData.data.movieA.id)}
+              watchlistPending={addToWatchlistMutation.isPending}
             />
             <MovieCard
               movie={pairData.data.movieB}
@@ -234,6 +275,9 @@ export function CompareArenaPage() {
                     : null
               }
               isWinner={scoreDelta?.winnerId === pairData.data.movieB.id}
+              onAddToWatchlist={() => handleAddToWatchlist(pairData.data.movieB.id)}
+              isOnWatchlist={watchlistedMovieIds.has(pairData.data.movieB.id)}
+              watchlistPending={addToWatchlistMutation.isPending}
             />
           </div>
         </>
@@ -260,43 +304,73 @@ function MovieCard({
   disabled,
   scoreDelta,
   isWinner,
+  onAddToWatchlist,
+  isOnWatchlist,
+  watchlistPending,
 }: {
   movie: { id: number; title: string; posterPath: string | null; posterUrl: string | null };
   onPick: () => void;
   disabled?: boolean;
   scoreDelta?: number | null;
   isWinner?: boolean;
+  onAddToWatchlist?: () => void;
+  isOnWatchlist?: boolean;
+  watchlistPending?: boolean;
 }) {
   const posterSrc = movie.posterUrl ?? undefined;
   const [imgError, setImgError] = useState(false);
 
   return (
-    <button
-      onClick={onPick}
-      disabled={disabled}
+    <div
       className={`group relative flex flex-col items-center text-center rounded-lg border p-4 transition-all ${
         isWinner
           ? "border-green-500 shadow-lg scale-[1.02]"
           : isWinner === false && scoreDelta != null
             ? "border-red-500/50 opacity-75"
-            : "border-border hover:border-primary hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
-      } ${disabled ? "cursor-default" : "cursor-pointer"}`}
+            : "border-border hover:border-primary hover:shadow-lg hover:scale-[1.02]"
+      }`}
     >
-      {imgError ? (
-        <div className="w-full aspect-[2/3] rounded-md mb-3 bg-muted flex items-center justify-center">
-          <ImageOff className="h-8 w-8 text-muted-foreground" />
-        </div>
-      ) : (
-        <img
-          src={posterSrc}
-          alt={`${movie.title} poster`}
-          className="w-full aspect-[2/3] rounded-md object-cover mb-3"
-          onError={() => setImgError(true)}
-        />
+      {/* Main clickable area for picking winner */}
+      <button
+        onClick={onPick}
+        disabled={disabled}
+        className={`w-full flex flex-col items-center ${disabled ? "cursor-default" : "cursor-pointer active:scale-[0.98]"}`}
+      >
+        {imgError ? (
+          <div className="w-full aspect-[2/3] rounded-md mb-3 bg-muted flex items-center justify-center">
+            <ImageOff className="h-8 w-8 text-muted-foreground" />
+          </div>
+        ) : (
+          <img
+            src={posterSrc}
+            alt={`${movie.title} poster`}
+            className="w-full aspect-[2/3] rounded-md object-cover mb-3"
+            onError={() => setImgError(true)}
+          />
+        )}
+        <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
+          {movie.title}
+        </h3>
+      </button>
+
+      {/* Add to watchlist button */}
+      {onAddToWatchlist && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddToWatchlist();
+          }}
+          disabled={isOnWatchlist || watchlistPending}
+          className={`absolute top-2 left-2 p-1.5 rounded-full transition-colors ${
+            isOnWatchlist
+              ? "bg-app-accent text-app-accent-foreground"
+              : "bg-background/80 text-muted-foreground hover:text-foreground hover:bg-background"
+          }`}
+          aria-label={isOnWatchlist ? "On watchlist" : `Add ${movie.title} to watchlist`}
+        >
+          <Bookmark className={`h-4 w-4 ${isOnWatchlist ? "fill-current" : ""}`} />
+        </button>
       )}
-      <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
-        {movie.title}
-      </h3>
 
       {/* Score delta animation */}
       {scoreDelta != null && (
@@ -309,7 +383,7 @@ function MovieCard({
           {scoreDelta}
         </div>
       )}
-    </button>
+    </div>
   );
 }
 

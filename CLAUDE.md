@@ -259,7 +259,7 @@ Hit rate: ~95-100% with aliases. AI fallback handles the rest and caches results
 
 ## Production
 
-- **Go-live runbook:** [docs-v2/runbooks/go-live.md](docs-v2/runbooks/go-live.md) — step-by-step procedure for transitioning from dev to production data
+- **Go-live runbook:** [docs/runbooks/go-live.md](docs/runbooks/go-live.md) — step-by-step procedure for transitioning from dev to production data
 - **Never run destructive commands in production:** `db:init`, `db:seed`, `db:clear` are for dev/test only
 - **Schema changes go through Drizzle:** edit schema → `drizzle-kit generate` → review → commit → deploy → auto-migrate on startup
 

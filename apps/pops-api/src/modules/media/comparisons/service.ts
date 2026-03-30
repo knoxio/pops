@@ -7,6 +7,7 @@ import {
   comparisonDimensions,
   comparisons,
   mediaScores,
+  mediaWatchlist,
   watchHistory,
   movies,
 } from "@pops/db-types";
@@ -390,13 +391,25 @@ export function getRandomPair(dimensionId: number, avoidRecent: number = 10): Ra
   const db = getDrizzle();
 
   // Get distinct watched movie IDs
-  const watchedMovieIds = db
+  const allWatchedIds = db
     .select({ mediaId: watchHistory.mediaId })
     .from(watchHistory)
     .where(and(eq(watchHistory.mediaType, "movie"), eq(watchHistory.completed, 1)))
     .groupBy(watchHistory.mediaId)
     .all()
     .map((r) => r.mediaId);
+
+  // Exclude movies on the watchlist (user queued them for rewatch, skip in arena)
+  const watchlistedIds = new Set(
+    db
+      .select({ mediaId: mediaWatchlist.mediaId })
+      .from(mediaWatchlist)
+      .where(eq(mediaWatchlist.mediaType, "movie"))
+      .all()
+      .map((r) => r.mediaId)
+  );
+
+  const watchedMovieIds = allWatchedIds.filter((id) => !watchlistedIds.has(id));
 
   if (watchedMovieIds.length < 2) return null;
 

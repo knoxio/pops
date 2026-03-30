@@ -4,10 +4,10 @@ Brainstorm dump from 2026-03-18, updated 2026-03-20. Nothing here is committed t
 
 ## Confirmed (will build)
 
-- **Finance** — Budgeting, transaction tracking, wishlist, bank imports. Heavily automated. *Already exists. Retroactive product spec complete — see [finance spec](../themes/finance-spec/README.md).*
-- **Home Inventory** — Physical connectivity graph, hierarchical locations, photos, asset IDs, Paperless-ngx receipt linking, warranty tracking, insurance reports. Highest daily-use app. *Partially exists. Fully specced — see [inventory theme](../themes/inventory/README.md).*
+- **Finance** — Budgeting, transaction tracking, wishlist, bank imports. Heavily automated. *Already exists. Retroactive product spec complete — see [finance spec](../themes/02-finance/README.md).*
+- **Home Inventory** — Physical connectivity graph, hierarchical locations, photos, asset IDs, Paperless-ngx receipt linking, warranty tracking, insurance reports. Highest daily-use app. *Partially exists. Fully specced — see [inventory theme](../themes/04-inventory/README.md).*
 - **Recipe Book** — Ingredient tracking, recipe management, meal planning. Links to finance (grocery spend) and inventory (kitchen gear).
-- **Media** — Preference learning and recommendation engine for movies and TV shows. 1v1 pairwise comparisons (ELO-scored) build a taste profile across configurable dimensions. TMDB (movies), TheTVDB (TV), Plex sync, Radarr/Sonarr status. *Fully specced — see [media theme](../themes/media/README.md).*
+- **Media** — Preference learning and recommendation engine for movies and TV shows. 1v1 pairwise comparisons (ELO-scored) build a taste profile across configurable dimensions. TMDB (movies), TheTVDB (TV), Plex sync, Radarr/Sonarr status. *Fully specced — see [media theme](../themes/03-media/README.md).*
 - **Travel Planner** — Trip planning, organising, tracking. Links to finance (trip budgets), recipes (local cuisine).
 - **AI Hub** — Integrated AI agents that can query and act across all apps. Cross-domain intelligence layer. Universal object URIs ([ADR-010](../architecture/adr-010-universal-object-uri.md)) enable the AI to reference any object in the system.
 
@@ -30,7 +30,7 @@ Brainstorm dump from 2026-03-18, updated 2026-03-20. Nothing here is committed t
 Items from the original brainstorm that have been scoped into existing themes or removed:
 
 - ~~**Subscriptions Tracker**~~ — Removed. No active streaming subscriptions. If needed in the future, lives as a finance feature, not a separate app.
-- ~~**Media Tracker** (original framing)~~ — Evolved from "tracker" to "preference learning and recommendation engine." The tracking is the input, recommendations are the output. See [media theme](../themes/media/README.md).
+- ~~**Media Tracker** (original framing)~~ — Evolved from "tracker" to "preference learning and recommendation engine." The tracking is the input, recommendations are the output. See [media theme](../themes/03-media/README.md).
 
 ## Cross-communication patterns
 

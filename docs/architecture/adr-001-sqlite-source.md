@@ -2,15 +2,23 @@
 
 ## Status
 
-Accepted (2026-03-18)
+Accepted
 
 ## Context
 
-POPS originally used Notion as the primary data store with SQLite as a sync cache. This created latency, API rate limit issues, and coupling to a third-party service.
+POPS needs a database for a single-user, self-hosted system running on a mini PC. The typical choice would be Postgres, but the operational overhead (separate process, connection pooling, backups, upgrades) is disproportionate for a single-user workload.
+
+## Options Considered
+
+| Option | Pros | Cons |
+|--------|------|------|
+| PostgreSQL | Mature, scalable, rich query features | Separate process, connection management, heavier backups, overkill for one user |
+| SQLite | Zero dependencies, single file, synchronous reads, trivial backups, cross-domain joins for free | No horizontal scaling, write concurrency limited to one writer |
+| Cloud DB (Supabase, PlanetScale) | Managed, no ops | External dependency, latency, ongoing cost, defeats self-hosted goal |
 
 ## Decision
 
-SQLite is the sole source of truth. Notion dependency has been fully removed.
+SQLite is the sole source of truth. One file, one process, no external dependencies.
 
 ## Consequences
 
@@ -19,3 +27,4 @@ SQLite is the sole source of truth. Notion dependency has been fully removed.
 - Single-file database simplifies backups (rclone to Backblaze B2)
 - Cross-domain queries are trivial (joins within one DB)
 - No horizontal scaling — acceptable for single-user system
+- Write concurrency is limited — acceptable since there's one user and no concurrent writers
