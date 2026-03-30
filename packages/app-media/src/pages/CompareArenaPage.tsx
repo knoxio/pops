@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { Badge, Skeleton, Button, Tooltip, TooltipContent, TooltipTrigger } from "@pops/ui";
-import { ImageOff, Bookmark } from "lucide-react";
+import { ImageOff, Bookmark, Equal } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
 import { DimensionManager } from "../components/DimensionManager";
@@ -152,6 +152,21 @@ export function CompareArenaPage() {
     [pairData, dimensionId, recordMutation]
   );
 
+  const handleDraw = useCallback(() => {
+    if (!pairData?.data || !dimensionId || recordMutation.isPending) return;
+
+    const { movieA, movieB } = pairData.data;
+    recordMutation.mutate({
+      dimensionId,
+      mediaAType: "movie" as const,
+      mediaAId: movieA.id,
+      mediaBType: "movie" as const,
+      mediaBId: movieB.id,
+      winnerType: "movie" as const,
+      winnerId: 0, // 0 = draw
+    });
+  }, [pairData, dimensionId, recordMutation]);
+
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -246,7 +261,7 @@ export function CompareArenaPage() {
             })()}
             ? Click to pick.
           </p>
-          <div className="grid grid-cols-2 gap-6">
+          <div className="relative grid grid-cols-2 gap-6">
             <MovieCard
               movie={pairData.data.movieA}
               onPick={() => handlePick(pairData.data.movieA.id)}
@@ -263,6 +278,24 @@ export function CompareArenaPage() {
               isOnWatchlist={watchlistedMovieIds.has(pairData.data.movieA.id)}
               watchlistPending={addToWatchlistMutation.isPending}
             />
+
+            {/* Draw button — centered between cards */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleDraw}
+                  disabled={recordMutation.isPending || scoreDelta !== null}
+                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 rounded-full h-12 w-12 shadow-lg hover:shadow-xl hover:scale-110 active:scale-95"
+                  aria-label="Draw — both equal"
+                >
+                  <Equal className="h-5 w-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Draw — both equal</TooltipContent>
+            </Tooltip>
+
             <MovieCard
               movie={pairData.data.movieB}
               onPick={() => handlePick(pairData.data.movieB.id)}
