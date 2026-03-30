@@ -9,6 +9,7 @@
   roles:
     - common
     - docker
+    - github-runner
     - secrets
     - pops-deploy
     - cloudflare-tunnel

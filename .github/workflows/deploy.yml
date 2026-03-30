@@ -6,10 +6,49 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Path detection to determine what to build/deploy
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      backend: ${{ steps.filter.outputs.backend }}
+      infra: ${{ steps.filter.outputs.infra }}
+      deploy_needed: ${{ steps.filter.outputs.deploy_needed }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'apps/pops-shell/**'
+              - 'packages/app-*/**'
+              - 'packages/ui/**'
+              - 'packages/widgets/**'
+              - 'packages/navigation/**'
+            backend:
+              - 'apps/pops-api/**'
+              - 'packages/db-types/**'
+              - 'packages/types/**'
+              - 'packages/auth/**'
+            infra:
+              - 'infra/**'
+              - 'apps/pops-shell/nginx.conf'
+              - 'docker-compose*'
+            deploy_needed:
+              - '!docs/**'
+              - '!.github/**'
+              - '!*.md'
+
   # Run all quality checks before deploying
   quality-checks:
     name: Quality Checks
     runs-on: ubuntu-latest
+    needs: changes
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.deploy_needed == 'true'
     steps:
       - uses: actions/checkout@v6
 
@@ -51,7 +90,10 @@ jobs:
   deploy:
     name: Deploy to N95
     runs-on: self-hosted
-    needs: quality-checks
+    needs: [changes, quality-checks]
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      needs.changes.outputs.deploy_needed == 'true'
     environment:
       name: production
       url: https://pops.jmiranda.dev
@@ -60,23 +102,31 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Verify Ansible is installed
+      - name: Set deployment mode
+        id: mode
         run: |
-          if ! command -v ansible-playbook &> /dev/null; then
-            echo "❌ Ansible not found. Please install: sudo apt-get install -y ansible"
-            exit 1
-          fi
-          ansible-playbook --version
-
-      - name: Verify Ansible vault password exists
-        run: |
-          if [ ! -f ~/.ansible/pops-vault-password ]; then
-            echo "❌ Ansible vault password not found at ~/.ansible/pops-vault-password"
-            echo "Create it with: echo 'your-password' > ~/.ansible/pops-vault-password && chmod 600 ~/.ansible/pops-vault-password"
-            exit 1
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ] || [ "${{ needs.changes.outputs.infra }}" == "true" ]; then
+            echo "type=full" >> $GITHUB_OUTPUT
+            echo "🚀 Full Ansible deployment"
+          elif [ "${{ needs.changes.outputs.frontend }}" == "true" ] && [ "${{ needs.changes.outputs.backend }}" == "true" ]; then
+            echo "type=selective" >> $GITHUB_OUTPUT
+            echo "target=both" >> $GITHUB_OUTPUT
+            echo "⚡ Selective deployment (Frontend + Backend)"
+          elif [ "${{ needs.changes.outputs.frontend }}" == "true" ]; then
+            echo "type=selective" >> $GITHUB_OUTPUT
+            echo "target=frontend" >> $GITHUB_OUTPUT
+            echo "⚡ Selective deployment (Frontend only)"
+          elif [ "${{ needs.changes.outputs.backend }}" == "true" ]; then
+            echo "type=selective" >> $GITHUB_OUTPUT
+            echo "target=backend" >> $GITHUB_OUTPUT
+            echo "⚡ Selective deployment (Backend only)"
+          else
+            echo "type=full" >> $GITHUB_OUTPUT
+            echo "🚀 Fallback: Full Ansible deployment (Unknown changes)"
           fi
 
       - name: Run Ansible deployment
+        if: steps.mode.outputs.type == 'full'
         run: |
           cd infra/ansible
           ansible-playbook playbooks/deploy.yml \
@@ -85,23 +135,74 @@ jobs:
             --connection=local \
             -v
 
-      - name: Wait for services to stabilize
-        run: sleep 30
-
-      - name: Verify deployment health
+      - name: Selective deploy: Build + Restart
+        if: steps.mode.outputs.type == 'selective'
+        id: selective
         run: |
-          # Check Docker services are running
+          # The self-hosted runner is on the N95
+          # Docker context is repo root
           cd /opt/pops
-          docker compose ps
 
-          # Check pops-api health endpoint
-          if ! docker exec pops-api wget -qO- http://localhost:3000/health > /dev/null 2>&1; then
-            echo "❌ Health check failed"
-            docker compose logs --tail=50 pops-api
-            exit 1
+          if [ "${{ steps.mode.outputs.target }}" == "frontend" ] || [ "${{ steps.mode.outputs.target }}" == "both" ]; then
+            echo "📦 Building pops-shell..."
+            docker compose build pops-shell
+            echo "🔄 Restarting pops-shell..."
+            docker compose up -d pops-shell
           fi
 
-          echo "✅ All services healthy"
+          if [ "${{ steps.mode.outputs.target }}" == "backend" ] || [ "${{ steps.mode.outputs.target }}" == "both" ]; then
+            echo "📦 Building pops-api..."
+            docker compose build pops-api
+            echo "🔄 Restarting pops-api..."
+            docker compose up -d pops-api
+          fi
+
+      - name: Wait for services to stabilize
+        run: sleep 10
+
+      - name: Verify health
+        id: health
+        continue-on-error: true
+        run: |
+          # Check pops-api if it was touched
+          if [ "${{ steps.mode.outputs.type }}" == "full" ] || [ "${{ steps.mode.outputs.target }}" == "backend" ] || [ "${{ steps.mode.outputs.target }}" == "both" ]; then
+            echo "🏥 Checking pops-api health..."
+            if ! docker exec pops-api wget -qO- http://localhost:3000/health > /dev/null 2>&1; then
+              echo "❌ pops-api health check failed"
+              exit 1
+            fi
+          fi
+
+          # Check pops-shell if it was touched
+          if [ "${{ steps.mode.outputs.type }}" == "full" ] || [ "${{ steps.mode.outputs.target }}" == "frontend" ] || [ "${{ steps.mode.outputs.target }}" == "both" ]; then
+            echo "🏥 Checking pops-shell health..."
+            if ! docker exec pops-shell wget -qO- http://localhost > /dev/null 2>&1; then
+              echo "❌ pops-shell health check failed"
+              exit 1
+            fi
+          fi
+          
+          echo "✅ Health checks passed"
+
+      - name: Fallback to full deploy on selective failure
+        if: steps.mode.outputs.type == 'selective' && steps.health.outcome == 'failure'
+        run: |
+          echo "⚠️ Selective deploy failed health check. Falling back to full Ansible deploy..."
+          cd infra/ansible
+          ansible-playbook playbooks/deploy.yml \
+            -i inventory/hosts.yml \
+            --vault-password-file ~/.ansible/pops-vault-password \
+            --connection=local \
+            -v
+
+      - name: Final health check after fallback
+        if: steps.mode.outputs.type == 'selective' && steps.health.outcome == 'failure'
+        run: |
+          # Wait a bit longer for full restart
+          sleep 20
+          cd /opt/pops
+          docker exec pops-api wget -qO- http://localhost:3000/health > /dev/null 2>&1
+          docker exec pops-shell wget -qO- http://localhost > /dev/null 2>&1
 
       - name: Show deployment summary
         if: always()
