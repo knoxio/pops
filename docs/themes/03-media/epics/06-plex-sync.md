@@ -10,8 +10,8 @@ Build polling-based sync with Plex Media Server. Import library items and watch 
 
 | # | PRD | Summary | Status |
 |---|-----|---------|--------|
-| 039 | [Plex Sync](../prds/039-plex-sync/README.md) | Plex API client, library scan, watch history import, ID matching (TMDB for movies, TheTVDB for TV), polling schedule, settings page | Partial |
-| 059 | [Plex Watchlist Sync](../prds/059-plex-watchlist-sync/README.md) | Bidirectional sync between POPS watchlist and Plex Universal Watchlist (cloud API), source tracking, conflict resolution | Not started |
+| 039 | [Plex Sync](../prds/039-plex-sync/README.md) | Plex API client, library scan, watch history import, Discover cloud sync, ID matching (TMDB/TheTVDB), polling schedule, settings page | Done |
+| 059 | [Plex Watchlist Sync](../prds/059-plex-watchlist-sync/README.md) | Bidirectional sync between POPS watchlist and Plex Universal Watchlist (cloud API), source tracking, conflict resolution | Done |
 
 PRD-059 depends on PRD-039 (auth, settings page) and PRD-036 (watchlist).
 

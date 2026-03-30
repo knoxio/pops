@@ -52,7 +52,7 @@ Live status of every theme and epic. Updated as work completes.
 | API modularisation (`pops-api`) | Done | 4 domain modules (core, finance, inventory, media) |
 | DB schema patterns & migrations | Done | 28 tables, timestamp migrations, entity types |
 | Responsive foundation | Done | Tailwind v4 breakpoints, mobile-first, touch targets |
-| Drizzle ORM migration | Not started | Blocks future schema work; raw SQL currently works |
+| Drizzle ORM migration | Done | All modules use Drizzle ORM; raw SQL eliminated |
 
 ### Phase 2 — Core Apps
 
@@ -80,7 +80,7 @@ Live status of every theme and epic. Updated as work completes.
 | Watch history & tracking | Done | Episode-level, chronological history |
 | Ratings & comparisons | Done | Compare arena, ELO scoring, radar charts, rankings |
 | Discovery & recommendations | Done | Trending, new releases, discover page |
-| Plex sync | Done | Library import, watch history sync, settings page |
+| Plex sync | Done | Library import (paginated), watch history sync (local + Discover cloud), watchlist sync (bidirectional), auto-check on add, settings page |
 | Radarr & Sonarr | Partial | Status badges done; request management (Overseerr replacement) not started |
 
 #### Inventory

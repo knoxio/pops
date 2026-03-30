@@ -1,7 +1,7 @@
 # PRD-039: Plex Sync
 
 > Epic: [06 — Plex Sync](../../epics/06-plex-sync.md)
-> Status: Partial
+> Status: Done
 
 ## Overview
 
@@ -73,6 +73,8 @@ Build polling-based sync with Plex Media Server. Import library items and watch 
 | `media.plex.getSections` | List library sections from the Plex server |
 | `media.plex.syncMovies` | Sync movies from a Plex library section |
 | `media.plex.syncTvShows` | Sync TV shows from a Plex library section |
+| `media.plex.syncWatchHistory` | Re-sync watch history for already-imported media with detailed diagnostics |
+| `media.plex.syncDiscoverWatches` | Sync watch state from Plex Discover cloud for all library items |
 | `media.plex.startScheduler` | Start periodic sync with configured interval |
 | `media.plex.stopScheduler` | Stop periodic sync |
 | `media.plex.getSchedulerStatus` | Get scheduler state (running, interval, next run time) |
@@ -124,6 +126,21 @@ Build polling-based sync with Plex Media Server. Import library items and watch 
 - Unique constraint on (mediaType, mediaId, watchedAt) prevents duplicate watch entries across syncs
 - Repeated syncs are safe — idempotent by design
 
+### Watch History Re-sync (`syncWatchHistory`)
+
+Standalone re-sync for already-imported media. Returns detailed per-show diagnostics:
+- Episodes matched vs season/episode not found (with preview of missing items)
+- Gap detection: compares total tracked (new + already logged) against Plex viewedLeafCount
+- Movies: counts watched, logged, already logged, not in library
+
+### Plex Discover Cloud Watch Sync (`syncDiscoverWatches`)
+
+Checks all POPS library items against the Plex Discover cloud API (`metadata.provider.plex.tv`). Catches watches from streaming services (Netflix, Disney+, etc.) and other Plex servers — not just the local library.
+
+- One-time backfill: searches Discover by title, matches by TMDB/TVDB ID, checks `userState`
+- Auto-check on add: when a movie is added to the library, automatically checks Plex Discover for watch state
+- No ongoing cron needed — the per-item auto-check covers future additions
+
 ## Scheduler
 
 | Operation | Detail |
@@ -161,10 +178,10 @@ Build polling-based sync with Plex Media Server. Import library items and watch 
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 01 | [us-01-plex-auth](us-01-plex-auth.md) | PIN-based OAuth flow (getAuthPin, checkAuthPin, disconnect), token storage in settings table | Partial | Yes |
-| 02 | [us-02-plex-settings](us-02-plex-settings.md) | Settings page with URL input, connection test, section selector, sync controls, status display | Partial | Blocked by us-01 |
-| 03 | [us-03-library-sync](us-03-library-sync.md) | Movie and TV show sync from Plex sections (match by TMDB/TheTVDB ID, add new, report results) | Partial | Blocked by us-01 |
-| 04 | [us-04-watch-history-sync](us-04-watch-history-sync.md) | Watch status sync with source="plex_sync", skip watchlist auto-removal, scheduler for periodic sync | Partial | Blocked by us-03 |
+| 01 | [us-01-plex-auth](us-01-plex-auth.md) | PIN-based OAuth flow (getAuthPin, checkAuthPin, disconnect), token storage in settings table | Done | Yes |
+| 02 | [us-02-plex-settings](us-02-plex-settings.md) | Settings page with URL input, connection test, section selector, sync controls, status display | Done | Blocked by us-01 |
+| 03 | [us-03-library-sync](us-03-library-sync.md) | Movie and TV show sync from Plex sections (match by TMDB/TheTVDB ID, add new, report results) | Done | Blocked by us-01 |
+| 04 | [us-04-watch-history-sync](us-04-watch-history-sync.md) | Watch status sync with source="plex_sync", skip watchlist auto-removal, scheduler for periodic sync | Done | Blocked by us-03 |
 
 US-01 is the foundation (auth required for all Plex API calls). US-02 and US-03 both depend on US-01 but can run in parallel with each other. US-04 depends on US-03 (needs library sync to have items to sync watch status for).
 

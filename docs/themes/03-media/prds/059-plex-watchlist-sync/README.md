@@ -1,7 +1,7 @@
 # PRD-059: Plex Watchlist Sync
 
 > Epic: [06 — Plex Sync](../../epics/06-plex-sync.md)
-> Status: Not started
+> Status: Done
 
 ## Overview
 
