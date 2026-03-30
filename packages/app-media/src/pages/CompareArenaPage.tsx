@@ -191,10 +191,21 @@ export function CompareArenaPage() {
         <>
           <p className="text-center text-muted-foreground text-sm">
             Which movie has better{" "}
-            <span className="font-medium text-foreground">
-              {activeDimensions.find((d: { id: number }) => d.id === dimensionId)?.name ??
-                "Overall"}
-            </span>
+            {(() => {
+              const dim = activeDimensions.find((d: { id: number }) => d.id === dimensionId);
+              const name = dim?.name ?? "Overall";
+              const desc = dim?.description;
+              return desc ? (
+                <span
+                  className="font-medium text-foreground underline decoration-dotted cursor-help"
+                  title={desc}
+                >
+                  {name}
+                </span>
+              ) : (
+                <span className="font-medium text-foreground">{name}</span>
+              );
+            })()}
             ? Click to pick.
           </p>
           <div className="grid grid-cols-2 gap-6">

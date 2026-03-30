@@ -4,7 +4,7 @@
  * Accessed from CompareArenaPage via a gear icon. Lets users add,
  * edit, deactivate, and reorder comparison dimensions.
  */
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import {
   Badge,
   Button,
@@ -129,21 +129,27 @@ export function DimensionManager() {
     });
   }, [editing, updateMutation]);
 
-  const weightTimers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  // Local weight state for smooth slider dragging (avoids server round-trip jitter)
+  const [localWeights, setLocalWeights] = useState<Map<number, number>>(new Map());
 
-  const handleWeightChange = useCallback(
-    (dim: Dimension, newWeight: number) => {
-      const existing = weightTimers.current.get(dim.id);
-      if (existing) clearTimeout(existing);
+  const handleWeightDrag = useCallback((dimId: number, value: number) => {
+    setLocalWeights((prev) => new Map(prev).set(dimId, value));
+  }, []);
 
-      const timer = setTimeout(() => {
-        weightTimers.current.delete(dim.id);
-        updateMutation.mutate({
-          id: dim.id,
-          data: { weight: newWeight },
-        });
-      }, 300);
-      weightTimers.current.set(dim.id, timer);
+  const handleWeightCommit = useCallback(
+    (dim: Dimension, value: number) => {
+      updateMutation.mutate(
+        { id: dim.id, data: { weight: value } },
+        {
+          onSettled: () => {
+            setLocalWeights((prev) => {
+              const next = new Map(prev);
+              next.delete(dim.id);
+              return next;
+            });
+          },
+        }
+      );
     },
     [updateMutation]
   );
@@ -309,15 +315,18 @@ export function DimensionManager() {
                       {/* Weight slider */}
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-muted-foreground shrink-0">
-                          Weight: {dim.weight.toFixed(1)}
+                          Weight: {(localWeights.get(dim.id) ?? dim.weight).toFixed(1)}
                         </span>
                         <Slider
                           min={0.1}
                           max={3}
                           step={0.1}
-                          value={[dim.weight]}
+                          value={[localWeights.get(dim.id) ?? dim.weight]}
                           onValueChange={([v]) => {
-                            if (v !== undefined) handleWeightChange(dim, v);
+                            if (v !== undefined) handleWeightDrag(dim.id, v);
+                          }}
+                          onValueCommit={([v]) => {
+                            if (v !== undefined) handleWeightCommit(dim, v);
                           }}
                           disabled={updateMutation.isPending}
                           className="w-24"
