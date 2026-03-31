@@ -8,6 +8,7 @@ on:
       - "packages/app-*/**"
       - "packages/db-types/**"
       - "packages/ui/**"
+      - "packages/api-client/**"
       - "packages/widgets/**"
       - "packages/navigation/**"
       - ".github/workflows/fe-quality.yml"
@@ -31,6 +32,7 @@ jobs:
               - 'packages/app-*/**'
               - 'packages/db-types/**'
               - 'packages/ui/**'
+              - 'packages/api-client/**'
               - 'packages/widgets/**'
               - 'packages/navigation/**'
               - '.github/workflows/fe-quality.yml'

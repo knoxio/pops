@@ -1,0 +1,37 @@
+name: DB Types Quality
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/db-types/**"
+      - ".github/workflows/db-types-quality.yml"
+      - ".github/workflows/_pkg-check.yml"
+  pull_request:
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    outputs:
+      relevant: ${{ steps.filter.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            relevant:
+              - 'packages/db-types/**'
+              - '.github/workflows/db-types-quality.yml'
+              - '.github/workflows/_pkg-check.yml'
+
+  quality:
+    needs: [changes]
+    if: always()
+    uses: ./.github/workflows/_pkg-check.yml
+    with:
+      package-path: packages/db-types
+      has-test: false
+      skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}
