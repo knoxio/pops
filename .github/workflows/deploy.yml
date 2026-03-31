@@ -199,6 +199,12 @@ jobs:
 
           echo "✅ Health checks passed"
 
+      - name: Fail on full deploy health check failure
+        if: steps.health.outcome == 'failure' && steps.mode.outputs.type == 'full'
+        run: |
+          echo "❌ Health check failed on full deploy — no fallback available"
+          exit 1
+
       - name: Fallback to full deploy on selective failure
         if: steps.mode.outputs.type == 'selective' && steps.health.outcome == 'failure'
         run: |
@@ -213,7 +219,6 @@ jobs:
       - name: Final health check after fallback
         if: steps.mode.outputs.type == 'selective' && steps.health.outcome == 'failure'
         run: |
-          # Wait a bit longer for full restart
           sleep 20
           cd /opt/pops
           docker exec pops-api wget -qO- http://localhost:3000/health > /dev/null 2>&1

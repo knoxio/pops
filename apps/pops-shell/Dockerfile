@@ -15,8 +15,9 @@ COPY packages/app-inventory/package.json ./packages/app-inventory/
 COPY packages/app-ai/package.json ./packages/app-ai/
 COPY packages/api-client/package.json ./packages/api-client/
 
-# Install pnpm and dependencies (workspace resolution)
-RUN corepack enable && pnpm install --frozen-lockfile
+# Install pnpm and dependencies (cached across builds)
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    corepack enable && pnpm install --frozen-lockfile
 
 # Copy db-types source and build it first (same pattern as pops-api Dockerfile)
 COPY packages/db-types/src ./packages/db-types/src

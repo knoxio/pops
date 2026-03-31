@@ -8,8 +8,9 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 COPY packages/db-types/package.json ./packages/db-types/
 COPY apps/pops-api/package.json ./apps/pops-api/
 
-# Install pnpm and dependencies (workspace resolution)
-RUN corepack enable && pnpm install --frozen-lockfile
+# Install pnpm and dependencies (cached across builds)
+RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
+    corepack enable && pnpm install --frozen-lockfile
 
 # Copy source files
 COPY packages/db-types/src ./packages/db-types/src
