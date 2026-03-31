@@ -14,9 +14,7 @@ const LOCATIONS: LocationTreeNode[] = [
         id: "bedroom",
         name: "Bedroom",
         parentId: "home",
-        children: [
-          { id: "wardrobe", name: "Wardrobe", parentId: "bedroom", children: [] },
-        ],
+        children: [{ id: "wardrobe", name: "Wardrobe", parentId: "bedroom", children: [] }],
       },
       { id: "kitchen", name: "Kitchen", parentId: "home", children: [] },
     ],
@@ -135,9 +133,7 @@ describe("LocationPicker", () => {
 
   describe("quick-add location", () => {
     it("shows add button when onCreateLocation provided", () => {
-      render(
-        <LocationPicker locations={LOCATIONS} value={null} onCreateLocation={vi.fn()} />
-      );
+      render(<LocationPicker locations={LOCATIONS} value={null} onCreateLocation={vi.fn()} />);
       fireEvent.click(screen.getByRole("combobox"));
       expect(screen.getByText("Add location")).toBeInTheDocument();
     });
@@ -149,9 +145,7 @@ describe("LocationPicker", () => {
     });
 
     it("shows input form when add button clicked", () => {
-      render(
-        <LocationPicker locations={LOCATIONS} value={null} onCreateLocation={vi.fn()} />
-      );
+      render(<LocationPicker locations={LOCATIONS} value={null} onCreateLocation={vi.fn()} />);
       fireEvent.click(screen.getByRole("combobox"));
       fireEvent.click(screen.getByText("Add location"));
       expect(screen.getByPlaceholderText("Location name…")).toBeInTheDocument();
@@ -159,9 +153,7 @@ describe("LocationPicker", () => {
 
     it("calls onCreateLocation with name and parent when add clicked", () => {
       const onCreate = vi.fn();
-      render(
-        <LocationPicker locations={LOCATIONS} value="bedroom" onCreateLocation={onCreate} />
-      );
+      render(<LocationPicker locations={LOCATIONS} value="bedroom" onCreateLocation={onCreate} />);
       fireEvent.click(screen.getByRole("combobox"));
       fireEvent.click(screen.getByText("Add location"));
       const nameInput = screen.getByPlaceholderText("Location name…");
@@ -171,9 +163,7 @@ describe("LocationPicker", () => {
     });
 
     it("disables add button when name is empty", () => {
-      render(
-        <LocationPicker locations={LOCATIONS} value={null} onCreateLocation={vi.fn()} />
-      );
+      render(<LocationPicker locations={LOCATIONS} value={null} onCreateLocation={vi.fn()} />);
       fireEvent.click(screen.getByRole("combobox"));
       fireEvent.click(screen.getByText("Add location"));
       expect(screen.getByText("Add")).toBeDisabled();

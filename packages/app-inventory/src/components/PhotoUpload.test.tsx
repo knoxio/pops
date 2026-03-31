@@ -108,11 +108,7 @@ describe("PhotoUpload", () => {
     ];
 
     render(
-      <PhotoUpload
-        onFilesSelected={mockOnFilesSelected}
-        files={files}
-        onRemove={mockOnRemove}
-      />
+      <PhotoUpload onFilesSelected={mockOnFilesSelected} files={files} onRemove={mockOnRemove} />
     );
 
     expect(screen.getByText("photo.jpg")).toBeInTheDocument();
@@ -132,9 +128,7 @@ describe("PhotoUpload", () => {
       },
     ];
 
-    render(
-      <PhotoUpload onFilesSelected={mockOnFilesSelected} files={files} />
-    );
+    render(<PhotoUpload onFilesSelected={mockOnFilesSelected} files={files} />);
 
     expect(screen.getByText("50%")).toBeInTheDocument();
     expect(screen.getByRole("progressbar")).toBeInTheDocument();
@@ -151,9 +145,7 @@ describe("PhotoUpload", () => {
       },
     ];
 
-    render(
-      <PhotoUpload onFilesSelected={mockOnFilesSelected} files={files} />
-    );
+    render(<PhotoUpload onFilesSelected={mockOnFilesSelected} files={files} />);
 
     expect(screen.getByText("Network error")).toBeInTheDocument();
   });
@@ -170,9 +162,7 @@ describe("PhotoUpload", () => {
       },
     ];
 
-    render(
-      <PhotoUpload onFilesSelected={mockOnFilesSelected} files={files} />
-    );
+    render(<PhotoUpload onFilesSelected={mockOnFilesSelected} files={files} />);
 
     expect(screen.getByText(/5\.0MB/)).toBeInTheDocument();
     expect(screen.getByText(/800KB/)).toBeInTheDocument();
@@ -189,11 +179,7 @@ describe("PhotoUpload", () => {
     ];
 
     render(
-      <PhotoUpload
-        onFilesSelected={mockOnFilesSelected}
-        files={files}
-        onRemove={mockOnRemove}
-      />
+      <PhotoUpload onFilesSelected={mockOnFilesSelected} files={files} onRemove={mockOnRemove} />
     );
 
     fireEvent.click(screen.getByRole("button", { name: /remove remove-me.jpg/i }));
@@ -233,9 +219,7 @@ describe("PhotoUpload", () => {
       },
     ];
 
-    render(
-      <PhotoUpload onFilesSelected={mockOnFilesSelected} files={files} />
-    );
+    render(<PhotoUpload onFilesSelected={mockOnFilesSelected} files={files} />);
 
     const img = screen.getByAltText("thumb.jpg");
     expect(img).toHaveAttribute("src", "blob:http://localhost/thumb");

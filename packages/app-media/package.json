@@ -9,7 +9,9 @@
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src --ext .ts,.tsx",
-    "lint:fix": "eslint src --ext .ts,.tsx --fix"
+    "lint:fix": "eslint src --ext .ts,.tsx --fix",
+    "format:check": "prettier --check \"src/**/*.{ts,tsx}\"",
+    "format:fix": "prettier --write \"src/**/*.{ts,tsx}\""
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

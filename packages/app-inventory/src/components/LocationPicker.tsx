@@ -91,7 +91,9 @@ function TreeNode({
           "hover:bg-accent/50 transition-colors",
           isSelected && "bg-accent text-accent-foreground font-medium"
         )}
-        style={{ paddingLeft: `calc(${depth} * var(--tree-picker-step) + var(--tree-indent-base))` }}
+        style={{
+          paddingLeft: `calc(${depth} * var(--tree-picker-step) + var(--tree-indent-base))`,
+        }}
         onClick={() => onSelect(node.id)}
       >
         {hasChildren ? (

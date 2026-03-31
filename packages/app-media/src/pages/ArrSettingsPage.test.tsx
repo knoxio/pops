@@ -51,9 +51,12 @@ vi.mock("../lib/trpc", () => ({
   },
 }));
 
-let mockTestRadarrData: { data: { configured: boolean; connected: boolean; version?: string; error?: string } } | null = null;
-let mockTestSonarrData: { data: { configured: boolean; connected: boolean; version?: string; error?: string } } | null = null;
-
+let mockTestRadarrData: {
+  data: { configured: boolean; connected: boolean; version?: string; error?: string };
+} | null = null;
+let mockTestSonarrData: {
+  data: { configured: boolean; connected: boolean; version?: string; error?: string };
+} | null = null;
 
 import { ArrSettingsPage } from "./ArrSettingsPage";
 

@@ -210,7 +210,9 @@ function MoveTargetPicker({
                 className={`w-full text-left flex items-center gap-1.5 py-1.5 px-2 rounded-md transition-colors ${
                   disabled ? "opacity-40 cursor-not-allowed" : "hover:bg-muted/50 cursor-pointer"
                 }`}
-                style={{ paddingLeft: `calc(${depth} * var(--tree-picker-step) + var(--tree-indent-base))` }}
+                style={{
+                  paddingLeft: `calc(${depth} * var(--tree-picker-step) + var(--tree-indent-base))`,
+                }}
               >
                 <Folder className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                 <span className="text-sm truncate">{node.name}</span>
@@ -252,7 +254,10 @@ function DropIndicatorLine({ depth }: { depth: number }) {
   return (
     <div
       className="relative h-0.5 my-[-1px] z-10"
-      style={{ marginLeft: `calc(${depth} * var(--tree-indent-step) + var(--tree-indent-base))`, marginRight: "8px" }}
+      style={{
+        marginLeft: `calc(${depth} * var(--tree-indent-step) + var(--tree-indent-base))`,
+        marginRight: "8px",
+      }}
       data-testid="drop-indicator"
     >
       <div className="absolute inset-0 bg-app-accent rounded-full" />
@@ -324,7 +329,8 @@ function LocationNode({
   };
 
   // Show drop indicator line when this node is the drop target during a same-parent reorder
-  const showDropLine = overId === node.id && activeId !== null && activeId !== node.id && !isDragging;
+  const showDropLine =
+    overId === node.id && activeId !== null && activeId !== node.id && !isDragging;
 
   // Auto-expand when adding a child
   useEffect(() => {
@@ -333,208 +339,212 @@ function LocationNode({
 
   return (
     <div ref={setNodeRef} style={sortableStyle}>
-    {showDropLine && <DropIndicatorLine depth={depth} />}
-    <Collapsible open={open} onOpenChange={setOpen}>
-      <div
-        className={`group flex items-center gap-1.5 py-1.5 px-2 rounded-md cursor-pointer transition-colors hover:bg-app-accent/10 ${
-          isSelected
-            ? "bg-app-accent/20 text-foreground font-bold border-l-2 border-app-accent rounded-l-none ml-[-2px]"
-            : ""
-        } ${isOver && !isDragging ? "ring-2 ring-app-accent/50 bg-app-accent/5" : ""}`}
-        style={{ paddingLeft: `calc(${depth} * var(--tree-indent-step) + var(--tree-indent-base))` }}
-        onClick={() => onSelect(node.id)}
-        onDoubleClick={(e) => {
-          e.stopPropagation();
-          setRenaming(true);
-        }}
-        role="treeitem"
-        aria-selected={isSelected}
-        aria-expanded={hasChildren ? open : undefined}
-      >
-        {/* Drag handle — fine pointer only (mouse/trackpad), visible on hover */}
-        <button
-          ref={setActivatorNodeRef}
-          {...attributes}
-          {...listeners}
-          type="button"
-          className="p-0.5 rounded hover:bg-muted cursor-grab active:cursor-grabbing hidden [@media(pointer:fine)]:flex opacity-0 group-hover:opacity-100 transition-opacity touch-none"
-          aria-label={`Drag ${node.name}`}
-          onClick={(e) => e.stopPropagation()}
+      {showDropLine && <DropIndicatorLine depth={depth} />}
+      <Collapsible open={open} onOpenChange={setOpen}>
+        <div
+          className={`group flex items-center gap-1.5 py-1.5 px-2 rounded-md cursor-pointer transition-colors hover:bg-app-accent/10 ${
+            isSelected
+              ? "bg-app-accent/20 text-foreground font-bold border-l-2 border-app-accent rounded-l-none ml-[-2px]"
+              : ""
+          } ${isOver && !isDragging ? "ring-2 ring-app-accent/50 bg-app-accent/5" : ""}`}
+          style={{
+            paddingLeft: `calc(${depth} * var(--tree-indent-step) + var(--tree-indent-base))`,
+          }}
+          onClick={() => onSelect(node.id)}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            setRenaming(true);
+          }}
+          role="treeitem"
+          aria-selected={isSelected}
+          aria-expanded={hasChildren ? open : undefined}
         >
-          <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
-        </button>
-
-        {hasChildren ? (
-          <CollapsibleTrigger
-            asChild
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
+          {/* Drag handle — fine pointer only (mouse/trackpad), visible on hover */}
+          <button
+            ref={setActivatorNodeRef}
+            {...attributes}
+            {...listeners}
+            type="button"
+            className="p-0.5 rounded hover:bg-muted cursor-grab active:cursor-grabbing hidden [@media(pointer:fine)]:flex opacity-0 group-hover:opacity-100 transition-opacity touch-none"
+            aria-label={`Drag ${node.name}`}
+            onClick={(e) => e.stopPropagation()}
           >
+            <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
+          </button>
+
+          {hasChildren ? (
+            <CollapsibleTrigger
+              asChild
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
+            >
+              <button
+                type="button"
+                className="p-0.5 rounded hover:bg-muted"
+                aria-label={open ? "Collapse" : "Expand"}
+              >
+                {open ? (
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                )}
+              </button>
+            </CollapsibleTrigger>
+          ) : (
+            <span className="w-[22px]" />
+          )}
+
+          {hasChildren && open ? (
+            <FolderOpen className="h-4 w-4 text-muted-foreground shrink-0" />
+          ) : (
+            <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
+          )}
+
+          {renaming ? (
+            <InlineInput
+              defaultValue={node.name}
+              onSave={(name) => {
+                setRenaming(false);
+                if (name !== node.name) onRename(node.id, name);
+              }}
+              onCancel={() => setRenaming(false)}
+            />
+          ) : (
+            <span className="text-sm font-medium truncate">{node.name}</span>
+          )}
+
+          <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-auto shrink-0">
+            {siblingCount > 1 && siblingIndex > 0 && (
+              <button
+                type="button"
+                className="p-0.5 rounded hover:bg-muted hidden [@media(pointer:coarse)]:inline-flex"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReorder(node.id, "up");
+                }}
+                aria-label="Move up"
+                title="Move up"
+              >
+                <ArrowUp className="h-3 w-3 text-muted-foreground" />
+              </button>
+            )}
+            {siblingCount > 1 && siblingIndex < siblingCount - 1 && (
+              <button
+                type="button"
+                className="p-0.5 rounded hover:bg-muted hidden [@media(pointer:coarse)]:inline-flex"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReorder(node.id, "down");
+                }}
+                aria-label="Move down"
+                title="Move down"
+              >
+                <ArrowDown className="h-3 w-3 text-muted-foreground" />
+              </button>
+            )}
             <button
               type="button"
               className="p-0.5 rounded hover:bg-muted"
-              aria-label={open ? "Collapse" : "Expand"}
-            >
-              {open ? (
-                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
-              ) : (
-                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
-              )}
-            </button>
-          </CollapsibleTrigger>
-        ) : (
-          <span className="w-[22px]" />
-        )}
-
-        {hasChildren && open ? (
-          <FolderOpen className="h-4 w-4 text-muted-foreground shrink-0" />
-        ) : (
-          <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
-        )}
-
-        {renaming ? (
-          <InlineInput
-            defaultValue={node.name}
-            onSave={(name) => {
-              setRenaming(false);
-              if (name !== node.name) onRename(node.id, name);
-            }}
-            onCancel={() => setRenaming(false)}
-          />
-        ) : (
-          <span className="text-sm font-medium truncate">{node.name}</span>
-        )}
-
-        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-auto shrink-0">
-          {siblingCount > 1 && siblingIndex > 0 && (
-            <button
-              type="button"
-              className="p-0.5 rounded hover:bg-muted hidden [@media(pointer:coarse)]:inline-flex"
               onClick={(e) => {
                 e.stopPropagation();
-                onReorder(node.id, "up");
+                onMoveStart(node.id);
               }}
-              aria-label="Move up"
-              title="Move up"
+              aria-label={`Move ${node.name}`}
+              title="Move to..."
             >
-              <ArrowUp className="h-3 w-3 text-muted-foreground" />
+              <MoveRight className="h-3 w-3 text-muted-foreground" />
             </button>
-          )}
-          {siblingCount > 1 && siblingIndex < siblingCount - 1 && (
             <button
               type="button"
-              className="p-0.5 rounded hover:bg-muted hidden [@media(pointer:coarse)]:inline-flex"
+              className="p-0.5 rounded hover:bg-muted"
               onClick={(e) => {
                 e.stopPropagation();
-                onReorder(node.id, "down");
+                onAddChild(node.id);
               }}
-              aria-label="Move down"
-              title="Move down"
+              aria-label={`Add child to ${node.name}`}
+              title="Add child location"
             >
-              <ArrowDown className="h-3 w-3 text-muted-foreground" />
+              <FolderPlus className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
+            <Link
+              to={`/inventory/report?locationId=${node.id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="p-0.5 rounded hover:bg-muted"
+              title={`Insurance report for ${node.name}`}
+            >
+              <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+            </Link>
+            <button
+              type="button"
+              className="p-0.5 rounded hover:bg-muted"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(node.id);
+              }}
+              aria-label={`Delete ${node.name}`}
+              title="Delete location"
+            >
+              <Trash2 className="h-3 w-3 text-destructive" />
+            </button>
+          </div>
+
+          {hasChildren && (
+            <Badge variant="secondary" className="text-xs shrink-0">
+              {countDescendants(node) + 1}
+            </Badge>
           )}
-          <button
-            type="button"
-            className="p-0.5 rounded hover:bg-muted"
-            onClick={(e) => {
-              e.stopPropagation();
-              onMoveStart(node.id);
-            }}
-            aria-label={`Move ${node.name}`}
-            title="Move to..."
-          >
-            <MoveRight className="h-3 w-3 text-muted-foreground" />
-          </button>
-          <button
-            type="button"
-            className="p-0.5 rounded hover:bg-muted"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddChild(node.id);
-            }}
-            aria-label={`Add child to ${node.name}`}
-            title="Add child location"
-          >
-            <FolderPlus className="h-3.5 w-3.5 text-muted-foreground" />
-          </button>
-          <Link
-            to={`/inventory/report?locationId=${node.id}`}
-            onClick={(e) => e.stopPropagation()}
-            className="p-0.5 rounded hover:bg-muted"
-            title={`Insurance report for ${node.name}`}
-          >
-            <FileText className="h-3.5 w-3.5 text-muted-foreground" />
-          </Link>
-          <button
-            type="button"
-            className="p-0.5 rounded hover:bg-muted"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete(node.id);
-            }}
-            aria-label={`Delete ${node.name}`}
-            title="Delete location"
-          >
-            <Trash2 className="h-3 w-3 text-destructive" />
-          </button>
         </div>
 
-        {hasChildren && (
-          <Badge variant="secondary" className="text-xs shrink-0">
-            {countDescendants(node) + 1}
-          </Badge>
-        )}
-      </div>
-
-      {(hasChildren || isAddingChild) && (
-        <CollapsibleContent forceMount={isAddingChild ? true : undefined}>
-          <SortableContext
-            items={node.children.map((c) => c.id)}
-            strategy={verticalListSortingStrategy}
-          >
-            <div role="group">
-              {node.children.map((child, i) => (
-                <LocationNode
-                  key={child.id}
-                  node={child}
-                  depth={depth + 1}
-                  selectedId={selectedId}
-                  onSelect={onSelect}
-                  onAddChild={onAddChild}
-                  onRename={onRename}
-                  onMoveStart={onMoveStart}
-                  onReorder={onReorder}
-                  onDelete={onDelete}
-                  addingChildOf={addingChildOf}
-                  onNewChildSave={onNewChildSave}
-                  onNewChildCancel={onNewChildCancel}
-                  siblingIndex={i}
-                  siblingCount={node.children.length}
-                  overId={overId}
-                  activeId={activeId}
-                />
-              ))}
-              {isAddingChild && (
-                <div
-                  className="flex items-center gap-1.5 py-1.5 px-2"
-                  style={{ paddingLeft: `calc(${depth + 1} * var(--tree-indent-step) + var(--tree-indent-base))` }}
-                >
-                  <span className="w-[22px]" />
-                  <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
-                  <InlineInput
-                    onSave={onNewChildSave}
-                    onCancel={onNewChildCancel}
-                    placeholder="Location name"
+        {(hasChildren || isAddingChild) && (
+          <CollapsibleContent forceMount={isAddingChild ? true : undefined}>
+            <SortableContext
+              items={node.children.map((c) => c.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div role="group">
+                {node.children.map((child, i) => (
+                  <LocationNode
+                    key={child.id}
+                    node={child}
+                    depth={depth + 1}
+                    selectedId={selectedId}
+                    onSelect={onSelect}
+                    onAddChild={onAddChild}
+                    onRename={onRename}
+                    onMoveStart={onMoveStart}
+                    onReorder={onReorder}
+                    onDelete={onDelete}
+                    addingChildOf={addingChildOf}
+                    onNewChildSave={onNewChildSave}
+                    onNewChildCancel={onNewChildCancel}
+                    siblingIndex={i}
+                    siblingCount={node.children.length}
+                    overId={overId}
+                    activeId={activeId}
                   />
-                </div>
-              )}
-            </div>
-          </SortableContext>
-        </CollapsibleContent>
-      )}
-    </Collapsible>
+                ))}
+                {isAddingChild && (
+                  <div
+                    className="flex items-center gap-1.5 py-1.5 px-2"
+                    style={{
+                      paddingLeft: `calc(${depth + 1} * var(--tree-indent-step) + var(--tree-indent-base))`,
+                    }}
+                  >
+                    <span className="w-[22px]" />
+                    <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <InlineInput
+                      onSave={onNewChildSave}
+                      onCancel={onNewChildCancel}
+                      placeholder="Location name"
+                    />
+                  </div>
+                )}
+              </div>
+            </SortableContext>
+          </CollapsibleContent>
+        )}
+      </Collapsible>
     </div>
   );
 }
@@ -547,9 +557,7 @@ export function LocationTreePage() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } })
-  );
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   const [deleteConfirm, setDeleteConfirm] = useState<{
     id: string;
@@ -778,10 +786,7 @@ export function LocationTreePage() {
   if (error) {
     return (
       <div className="space-y-6 max-w-4xl">
-        <PageHeader
-          title="Locations"
-          icon={<MapPin className="h-6 w-6 text-muted-foreground" />}
-        />
+        <PageHeader title="Locations" icon={<MapPin className="h-6 w-6 text-muted-foreground" />} />
         <p className="text-destructive">Failed to load locations.</p>
       </div>
     );
@@ -835,48 +840,49 @@ export function LocationTreePage() {
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
           >
-          <div className="md:w-2/5 border rounded-lg py-2" role="tree" aria-label="Location tree">
-            <SortableContext
-              items={treeNodes.map((n) => n.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {treeNodes.map((node, i) => (
-                <LocationNode
-                  key={node.id}
-                  node={node}
-                  depth={0}
-                  selectedId={selectedId}
-                  onSelect={handleSelect}
-                  onAddChild={handleAddChild}
-                  onRename={handleRename}
-                  onMoveStart={handleMoveStart}
-                  onReorder={handleReorder}
-                  onDelete={handleDelete}
-                  addingChildOf={addingChildOf}
-                  onNewChildSave={handleNewChildSave}
-                  onNewChildCancel={handleNewChildCancel}
-                  siblingIndex={i}
-                  siblingCount={treeNodes.length}
-                  overId={overId}
-                  activeId={activeId}
-                />
-              ))}
-            </SortableContext>
-            {addingRoot && (
-              <div className="flex items-center gap-1.5 py-1.5 px-2" style={{ paddingLeft: "var(--tree-indent-base)" }}>
-                <span className="w-[22px]" />
-                <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
-                <InlineInput
-                  onSave={handleNewRootSave}
-                  onCancel={handleNewRootCancel}
-                  placeholder="Root location name"
-                />
-              </div>
-            )}
-          </div>
-          <DragOverlay>
-            {activeNode ? <DragOverlayNode node={activeNode} /> : null}
-          </DragOverlay>
+            <div className="md:w-2/5 border rounded-lg py-2" role="tree" aria-label="Location tree">
+              <SortableContext
+                items={treeNodes.map((n) => n.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                {treeNodes.map((node, i) => (
+                  <LocationNode
+                    key={node.id}
+                    node={node}
+                    depth={0}
+                    selectedId={selectedId}
+                    onSelect={handleSelect}
+                    onAddChild={handleAddChild}
+                    onRename={handleRename}
+                    onMoveStart={handleMoveStart}
+                    onReorder={handleReorder}
+                    onDelete={handleDelete}
+                    addingChildOf={addingChildOf}
+                    onNewChildSave={handleNewChildSave}
+                    onNewChildCancel={handleNewChildCancel}
+                    siblingIndex={i}
+                    siblingCount={treeNodes.length}
+                    overId={overId}
+                    activeId={activeId}
+                  />
+                ))}
+              </SortableContext>
+              {addingRoot && (
+                <div
+                  className="flex items-center gap-1.5 py-1.5 px-2"
+                  style={{ paddingLeft: "var(--tree-indent-base)" }}
+                >
+                  <span className="w-[22px]" />
+                  <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <InlineInput
+                    onSave={handleNewRootSave}
+                    onCancel={handleNewRootCancel}
+                    placeholder="Root location name"
+                  />
+                </div>
+              )}
+            </div>
+            <DragOverlay>{activeNode ? <DragOverlayNode node={activeNode} /> : null}</DragOverlay>
           </DndContext>
 
           <div className="md:w-3/5">

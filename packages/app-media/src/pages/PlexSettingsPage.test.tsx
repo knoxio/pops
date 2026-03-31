@@ -24,17 +24,20 @@ let getPinOpts: Record<string, unknown> = {};
 vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 /** Per-job-type sync state, controlled via `setSyncJobState`. */
-const syncJobStates: Record<string, {
-  start: ReturnType<typeof vi.fn>;
-  isStarting: boolean;
-  isRunning: boolean;
-  progress: { processed: number; total: number } | null;
-  result: unknown;
-  error: string | null;
-  durationMs: number | null;
-  completedAt: string | null;
-  status: "idle" | "running" | "completed" | "failed";
-}> = {};
+const syncJobStates: Record<
+  string,
+  {
+    start: ReturnType<typeof vi.fn>;
+    isStarting: boolean;
+    isRunning: boolean;
+    progress: { processed: number; total: number } | null;
+    result: unknown;
+    error: string | null;
+    durationMs: number | null;
+    completedAt: string | null;
+    status: "idle" | "running" | "completed" | "failed";
+  }
+> = {};
 
 function defaultSyncJobState() {
   return {
@@ -139,15 +142,17 @@ import { PlexSettingsPage } from "./PlexSettingsPage";
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-function setupDefaults(overrides: {
-  configured?: boolean;
-  hasToken?: boolean;
-  hasUrl?: boolean;
-  connected?: boolean;
-  libraries?: { key: string; title: string; type: string }[];
-  schedulerRunning?: boolean;
-  schedulerIntervalMs?: number;
-} = {}) {
+function setupDefaults(
+  overrides: {
+    configured?: boolean;
+    hasToken?: boolean;
+    hasUrl?: boolean;
+    connected?: boolean;
+    libraries?: { key: string; title: string; type: string }[];
+    schedulerRunning?: boolean;
+    schedulerIntervalMs?: number;
+  } = {}
+) {
   const {
     configured = true,
     hasToken = true,
@@ -294,7 +299,11 @@ describe("PlexSettingsPage", () => {
     setupDefaults();
     setSyncJobState("syncMovies", {
       status: "completed",
-      result: { synced: 5, skipped: 2, errors: [{ title: "Bad Movie", reason: "TMDB not found", year: 2020 }] },
+      result: {
+        synced: 5,
+        skipped: 2,
+        errors: [{ title: "Bad Movie", reason: "TMDB not found", year: 2020 }],
+      },
     });
     renderPage();
 

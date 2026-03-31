@@ -4,13 +4,7 @@
  */
 import { useState } from "react";
 import { Link } from "react-router";
-import {
-  Button,
-  Card,
-  CardContent,
-  Skeleton,
-  Select,
-} from "@pops/ui";
+import { Button, Card, CardContent, Skeleton, Select } from "@pops/ui";
 import { Trash2, ChevronLeft, ChevronRight, History } from "lucide-react";
 import { trpc } from "../lib/trpc";
 
@@ -53,9 +47,7 @@ export function ComparisonHistoryPage() {
     })),
   ];
 
-  const dimensionMap = new Map(
-    dimensions.map((d: { id: number; name: string }) => [d.id, d.name])
-  );
+  const dimensionMap = new Map(dimensions.map((d: { id: number; name: string }) => [d.id, d.name]));
 
   function handleDelete(id: number) {
     if (!window.confirm("Delete this comparison? Elo scores will be recalculated.")) return;
@@ -180,8 +172,7 @@ function ComparisonRow({
   isDeleting: boolean;
 }) {
   const winnerId = comparison.winnerId;
-  const loserId =
-    comparison.mediaAId === winnerId ? comparison.mediaBId : comparison.mediaAId;
+  const loserId = comparison.mediaAId === winnerId ? comparison.mediaBId : comparison.mediaAId;
 
   return (
     <Card className="group">

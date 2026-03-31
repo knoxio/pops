@@ -146,7 +146,11 @@ const PROGRESS = {
     { seasonId: 12, seasonNumber: 2, watched: 8, total: 13, percentage: 62 },
     { seasonId: 13, seasonNumber: 3, watched: 5, total: 13, percentage: 38 },
   ],
-  nextEpisode: null as null | { seasonNumber: number; episodeNumber: number; episodeName: string | null },
+  nextEpisode: null as null | {
+    seasonNumber: number;
+    episodeNumber: number;
+    episodeName: string | null;
+  },
 };
 
 // --- Helpers ---
@@ -613,8 +617,7 @@ describe("TvShowDetailPage — batch mark all watched", () => {
         (batchLogOpts.onError as (err: { message: string }) => void)({
           message: "Network error",
         });
-      if (typeof batchLogOpts.onSettled === "function")
-        (batchLogOpts.onSettled as () => void)();
+      if (typeof batchLogOpts.onSettled === "function") (batchLogOpts.onSettled as () => void)();
     });
     fireEvent.click(screen.getByRole("button", { name: "Mark All Watched" }));
     // setData called twice: once for optimistic, once for rollback

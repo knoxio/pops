@@ -138,9 +138,7 @@ export function ModelConfigPage() {
         <h1 className="text-2xl font-bold tracking-tight">Model Configuration</h1>
       </div>
 
-      <p className="text-sm text-muted-foreground">
-        Configure AI model and spending limits
-      </p>
+      <p className="text-sm text-muted-foreground">Configure AI model and spending limits</p>
     </>
   );
 

@@ -46,7 +46,9 @@ function TraceNodeRow({ node, depth, currentItemId }: TraceNodeRowProps) {
             ? "bg-app-accent/10 text-foreground font-bold border-l-2 border-app-accent rounded-l-none ml-[-2px]"
             : "hover:bg-app-accent/5 cursor-pointer"
         }`}
-        style={{ paddingLeft: `calc(${depth} * var(--tree-indent-step) + var(--tree-indent-base))` }}
+        style={{
+          paddingLeft: `calc(${depth} * var(--tree-indent-step) + var(--tree-indent-base))`,
+        }}
         onClick={() => {
           if (!isCurrent) navigate(`/inventory/items/${node.id}`);
         }}
@@ -111,7 +113,9 @@ function TraceSkeleton() {
         <div
           key={i}
           className="flex items-center gap-2"
-          style={{ paddingLeft: `calc(${i % 3} * var(--tree-indent-step) + var(--tree-indent-base))` }}
+          style={{
+            paddingLeft: `calc(${i % 3} * var(--tree-indent-step) + var(--tree-indent-base))`,
+          }}
         >
           <Skeleton className="h-4 w-4" />
           <Skeleton className="h-4 w-32" />

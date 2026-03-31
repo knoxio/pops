@@ -52,7 +52,9 @@ export function MediaCard({
   className,
 }: MediaCardProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [currentSrc, setCurrentSrc] = useState<string | null>(posterUrl ?? fallbackPosterUrl ?? null);
+  const [currentSrc, setCurrentSrc] = useState<string | null>(
+    posterUrl ?? fallbackPosterUrl ?? null
+  );
   const [showPlaceholder, setShowPlaceholder] = useState(!posterUrl && !fallbackPosterUrl);
 
   // Resolve the active image source — starts with posterUrl, cascades on error

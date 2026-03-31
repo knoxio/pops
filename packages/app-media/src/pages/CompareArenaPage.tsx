@@ -26,9 +26,10 @@ export function CompareArenaPage() {
   const activeDimensions = dimensionsData?.data?.filter((d: { active: boolean }) => d.active) ?? [];
 
   // Derive current dimension from rotation index
-  const dimensionId = activeDimensions.length > 0
-    ? (activeDimensions[dimensionIndex % activeDimensions.length]?.id ?? null)
-    : null;
+  const dimensionId =
+    activeDimensions.length > 0
+      ? (activeDimensions[dimensionIndex % activeDimensions.length]?.id ?? null)
+      : null;
 
   // Fetch random pair
   const {
@@ -127,7 +128,8 @@ export function CompareArenaPage() {
   const addToWatchlistMutation = trpc.media.watchlist.add.useMutation({
     onSuccess: (_data: unknown, variables: { mediaType: string; mediaId: number }) => {
       utils.media.watchlist.list.invalidate();
-      const movie = variables.mediaId === movieAId ? pairData?.data?.movieA : pairData?.data?.movieB;
+      const movie =
+        variables.mediaId === movieAId ? pairData?.data?.movieA : pairData?.data?.movieB;
       toast.success(`${movie?.title ?? "Movie"} added to watchlist`);
       // Refetch pair since this movie should now be excluded
       refetchPair();
@@ -329,10 +331,14 @@ export function CompareArenaPage() {
       {/* Skip + Done buttons */}
       {pairData?.data && !recordMutation.isPending && !scoreDelta && (
         <div className="flex justify-center gap-3">
-          <Button variant="outline" size="sm" onClick={() => {
-            utils.media.comparisons.getRandomPair.invalidate();
-            setDimensionIndex((i) => i + 1);
-          }}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              utils.media.comparisons.getRandomPair.invalidate();
+              setDimensionIndex((i) => i + 1);
+            }}
+          >
             Skip this pair
           </Button>
           <Button variant="ghost" size="sm" onClick={() => navigate("/media")}>

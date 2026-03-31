@@ -8,7 +8,18 @@
 import { useMemo, useCallback } from "react";
 import { useSearchParams, useNavigate } from "react-router";
 import { FileText, Printer, Download } from "lucide-react";
-import { Skeleton, AssetIdBadge, ConditionBadge, Badge, PageHeader, Button, Select, CheckboxInput, Label, type Condition } from "@pops/ui";
+import {
+  Skeleton,
+  AssetIdBadge,
+  ConditionBadge,
+  Badge,
+  PageHeader,
+  Button,
+  Select,
+  CheckboxInput,
+  Label,
+  type Condition,
+} from "@pops/ui";
 import { trpc } from "../lib/trpc";
 import { LocationPicker } from "../components/LocationPicker";
 
@@ -195,9 +206,7 @@ export function InsuranceReportPage(): React.ReactElement {
     <div className="p-6 max-w-5xl mx-auto print:p-0 print:max-w-none print:text-[11pt]">
       {/* Header */}
       <PageHeader
-        title={
-          <span className="print:text-[14pt]">Insurance Report</span>
-        }
+        title={<span className="print:text-[14pt]">Insurance Report</span>}
         icon={<FileText className="h-6 w-6 text-muted-foreground print:hidden" />}
         actions={
           <div className="flex items-center gap-2 print:hidden">

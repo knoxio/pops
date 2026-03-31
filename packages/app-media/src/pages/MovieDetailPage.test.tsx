@@ -108,7 +108,9 @@ describe("MovieDetailPage", () => {
 
     it("renders tagline", () => {
       renderAtRoute("/media/movies/1");
-      expect(screen.getByText("Fear can hold you prisoner. Hope can set you free.")).toBeInTheDocument();
+      expect(
+        screen.getByText("Fear can hold you prisoner. Hope can set you free.")
+      ).toBeInTheDocument();
     });
 
     it("renders year and runtime in hero subtitle", () => {
@@ -279,8 +281,20 @@ describe("MovieDetailPage", () => {
       mockWatchHistoryQuery.mockReturnValue({
         data: {
           data: [
-            { id: 2, mediaType: "movie", mediaId: 1, watchedAt: "2026-03-15T00:00:00Z", completed: 1 },
-            { id: 1, mediaType: "movie", mediaId: 1, watchedAt: "2025-12-25T00:00:00Z", completed: 1 },
+            {
+              id: 2,
+              mediaType: "movie",
+              mediaId: 1,
+              watchedAt: "2026-03-15T00:00:00Z",
+              completed: 1,
+            },
+            {
+              id: 1,
+              mediaType: "movie",
+              mediaId: 1,
+              watchedAt: "2025-12-25T00:00:00Z",
+              completed: 1,
+            },
           ],
         },
       });
@@ -310,7 +324,9 @@ describe("MovieDetailPage", () => {
       });
       const { container } = renderAtRoute("/media/movies/1");
       // Skeleton renders multiple placeholder elements
-      expect(container.querySelectorAll("[class*='animate-pulse'], [data-slot='skeleton']").length).toBeGreaterThan(0);
+      expect(
+        container.querySelectorAll("[class*='animate-pulse'], [data-slot='skeleton']").length
+      ).toBeGreaterThan(0);
     });
   });
 });

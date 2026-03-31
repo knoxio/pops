@@ -9,6 +9,7 @@ on:
       - "packages/db-types/**"
       - "packages/api-client/**"
       - ".github/workflows/finance-quality.yml"
+      - ".github/workflows/_pkg-check.yml"
   pull_request:
 
 jobs:
@@ -30,76 +31,13 @@ jobs:
               - 'packages/db-types/**'
               - 'packages/api-client/**'
               - '.github/workflows/finance-quality.yml'
+              - '.github/workflows/_pkg-check.yml'
 
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
+  quality:
     needs: [changes]
     if: always()
-    steps:
-      - name: "Skip — no relevant changes"
-        if: github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true'
-        run: echo "Skipping — no finance changes"
-      - uses: actions/checkout@v6
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-      - uses: pnpm/action-setup@v5
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-      - uses: actions/setup-node@v6
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        with:
-          node-version: "22"
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-      - run: cd packages/app-finance && pnpm lint
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-
-  typecheck:
-    name: Typecheck
-    runs-on: ubuntu-latest
-    needs: [changes]
-    if: always()
-    steps:
-      - name: "Skip — no relevant changes"
-        if: github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true'
-        run: echo "Skipping — no finance changes"
-      - uses: actions/checkout@v6
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-      - uses: pnpm/action-setup@v5
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-      - uses: actions/setup-node@v6
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        with:
-          node-version: "22"
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-      - run: pnpm --filter @pops/db-types build
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-      - run: cd packages/app-finance && pnpm typecheck
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    needs: [changes]
-    if: always()
-    steps:
-      - name: "Skip — no relevant changes"
-        if: github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true'
-        run: echo "Skipping — no finance changes"
-      - uses: actions/checkout@v6
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-      - uses: pnpm/action-setup@v5
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-      - uses: actions/setup-node@v6
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        with:
-          node-version: "22"
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-      - run: pnpm --filter @pops/db-types build
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-      - run: cd packages/app-finance && pnpm test
-        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
+    uses: ./.github/workflows/_pkg-check.yml
+    with:
+      package-path: packages/app-finance
+      needs-db-build: true
+      skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}

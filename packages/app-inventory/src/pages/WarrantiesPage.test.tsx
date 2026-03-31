@@ -106,9 +106,7 @@ describe("WarrantiesPage", () => {
     it("shows critical tier for items under 30 days", () => {
       mockWarrantiesQuery.mockReturnValue({
         data: {
-          data: [
-            makeItem({ id: "1", itemName: "Laptop", warrantyExpires: daysFromNow(10) }),
-          ],
+          data: [makeItem({ id: "1", itemName: "Laptop", warrantyExpires: daysFromNow(10) })],
         },
         isLoading: false,
         isError: false,
@@ -122,9 +120,7 @@ describe("WarrantiesPage", () => {
     it("shows warning tier for items 30-60 days", () => {
       mockWarrantiesQuery.mockReturnValue({
         data: {
-          data: [
-            makeItem({ id: "1", itemName: "Tablet", warrantyExpires: daysFromNow(45) }),
-          ],
+          data: [makeItem({ id: "1", itemName: "Tablet", warrantyExpires: daysFromNow(45) })],
         },
         isLoading: false,
         isError: false,
@@ -138,9 +134,7 @@ describe("WarrantiesPage", () => {
     it("shows caution tier for items 60-90 days", () => {
       mockWarrantiesQuery.mockReturnValue({
         data: {
-          data: [
-            makeItem({ id: "1", itemName: "Monitor", warrantyExpires: daysFromNow(75) }),
-          ],
+          data: [makeItem({ id: "1", itemName: "Monitor", warrantyExpires: daysFromNow(75) })],
         },
         isLoading: false,
         isError: false,
@@ -154,9 +148,7 @@ describe("WarrantiesPage", () => {
     it("shows active tier for items over 90 days", () => {
       mockWarrantiesQuery.mockReturnValue({
         data: {
-          data: [
-            makeItem({ id: "1", itemName: "Phone", warrantyExpires: daysFromNow(200) }),
-          ],
+          data: [makeItem({ id: "1", itemName: "Phone", warrantyExpires: daysFromNow(200) })],
         },
         isLoading: false,
         isError: false,
@@ -170,9 +162,7 @@ describe("WarrantiesPage", () => {
     it("shows expired tier for past-date items", () => {
       mockWarrantiesQuery.mockReturnValue({
         data: {
-          data: [
-            makeItem({ id: "1", itemName: "Old Laptop", warrantyExpires: "2020-01-01" }),
-          ],
+          data: [makeItem({ id: "1", itemName: "Old Laptop", warrantyExpires: "2020-01-01" })],
         },
         isLoading: false,
         isError: false,
@@ -290,9 +280,7 @@ describe("WarrantiesPage", () => {
     it("does not render tier headers for empty tiers", () => {
       mockWarrantiesQuery.mockReturnValue({
         data: {
-          data: [
-            makeItem({ id: "1", itemName: "Active Only", warrantyExpires: daysFromNow(200) }),
-          ],
+          data: [makeItem({ id: "1", itemName: "Active Only", warrantyExpires: daysFromNow(200) })],
         },
         isLoading: false,
         isError: false,

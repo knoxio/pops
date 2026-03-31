@@ -103,7 +103,10 @@ export function MovieDetailPage() {
 
   const metadataItems = [
     { label: "Status", value: movie.status },
-    { label: "Language", value: movie.originalLanguage ? formatLanguage(movie.originalLanguage) : null },
+    {
+      label: "Language",
+      value: movie.originalLanguage ? formatLanguage(movie.originalLanguage) : null,
+    },
     {
       label: "Budget",
       value: movie.budget ? formatCurrency(movie.budget) : null,

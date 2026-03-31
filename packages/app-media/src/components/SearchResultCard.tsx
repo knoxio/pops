@@ -170,7 +170,11 @@ export function SearchResultCard({
 
   if (href) {
     return (
-      <Link to={href} className={baseClasses} aria-label={`${title} (${type === "movie" ? "Movie" : "TV"})`}>
+      <Link
+        to={href}
+        className={baseClasses}
+        aria-label={`${title} (${type === "movie" ? "Movie" : "TV"})`}
+      >
         {cardContent}
       </Link>
     );

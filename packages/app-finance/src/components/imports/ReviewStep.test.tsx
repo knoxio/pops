@@ -157,7 +157,7 @@ vi.mock("./TransactionGroup", async () => {
             },
             `Accept ${t.description}`
           )
-        ),
+        )
       ),
   };
 });

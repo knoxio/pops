@@ -179,8 +179,12 @@ function ExpiringSection({ tier, items, onItemClick }: ExpiringSectionProps) {
   const style = TIER_STYLES[tier]!;
 
   return (
-    <div className={`border-2 ${style.borderColor} rounded-2xl ${style.bgColor} overflow-hidden shadow-sm`}>
-      <div className={`flex items-center gap-2 px-5 py-4 font-bold text-foreground ${style.headerBg}`}>
+    <div
+      className={`border-2 ${style.borderColor} rounded-2xl ${style.bgColor} overflow-hidden shadow-sm`}
+    >
+      <div
+        className={`flex items-center gap-2 px-5 py-4 font-bold text-foreground ${style.headerBg}`}
+      >
         <span className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full ${style.dotColor} animate-pulse`} />
           {style.label}
@@ -276,7 +280,8 @@ export function WarrantiesPage() {
     return { critical, warning, caution, active, expired };
   }, [data]);
 
-  const totalItems = critical.length + warning.length + caution.length + active.length + expired.length;
+  const totalItems =
+    critical.length + warning.length + caution.length + active.length + expired.length;
   const hasExpiringItems = critical.length + warning.length + caution.length > 0;
 
   return (
@@ -296,9 +301,7 @@ export function WarrantiesPage() {
         <div className="text-center py-16">
           <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground/40 mb-4" />
           <p className="text-muted-foreground mb-4">Could not load warranties — try again</p>
-          <Button onClick={() => refetch()}>
-            Retry
-          </Button>
+          <Button onClick={() => refetch()}>Retry</Button>
         </div>
       ) : totalItems === 0 ? (
         <div className="text-center py-16">
@@ -317,9 +320,21 @@ export function WarrantiesPage() {
       ) : (
         <div className="space-y-4">
           {/* Expiring tiers — always expanded, not collapsible */}
-          <ExpiringSection tier="critical" items={critical} onItemClick={(id) => navigate(`/inventory/items/${id}`)} />
-          <ExpiringSection tier="warning" items={warning} onItemClick={(id) => navigate(`/inventory/items/${id}`)} />
-          <ExpiringSection tier="caution" items={caution} onItemClick={(id) => navigate(`/inventory/items/${id}`)} />
+          <ExpiringSection
+            tier="critical"
+            items={critical}
+            onItemClick={(id) => navigate(`/inventory/items/${id}`)}
+          />
+          <ExpiringSection
+            tier="warning"
+            items={warning}
+            onItemClick={(id) => navigate(`/inventory/items/${id}`)}
+          />
+          <ExpiringSection
+            tier="caution"
+            items={caution}
+            onItemClick={(id) => navigate(`/inventory/items/${id}`)}
+          />
 
           {/* Active — collapsible, expanded by default */}
           {active.length > 0 && (

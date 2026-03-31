@@ -61,7 +61,9 @@ describe("PreferenceProfile", () => {
     expect(screen.getByTestId("genre-affinity-list")).toBeInTheDocument();
 
     // Drama has highest avgScore (1600), should appear first
-    const items = screen.getByTestId("genre-affinity-list").querySelectorAll(".flex.items-center.gap-3");
+    const items = screen
+      .getByTestId("genre-affinity-list")
+      .querySelectorAll(".flex.items-center.gap-3");
     expect(items[0]?.textContent).toContain("Drama");
     expect(items[1]?.textContent).toContain("Action");
     expect(items[2]?.textContent).toContain("Comedy");

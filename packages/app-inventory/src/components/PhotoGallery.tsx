@@ -71,7 +71,10 @@ export function PhotoGallery({
 
   if (photos.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-12 text-muted-foreground" data-testid="photo-placeholder">
+      <div
+        className="flex flex-col items-center justify-center py-12 text-muted-foreground"
+        data-testid="photo-placeholder"
+      >
         <Package className="h-16 w-16 mb-3 opacity-30" />
         <p className="text-sm">No photos yet</p>
       </div>

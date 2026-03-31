@@ -52,7 +52,6 @@ vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
 
-
 vi.mock("../components/LocationContentsPanel", () => ({
   LocationContentsPanel: ({ locationName }: { locationName: string }) => (
     <div data-testid="contents-panel">{locationName}</div>
@@ -69,7 +68,12 @@ let capturedDragHandlers: {
 } = {};
 
 vi.mock("@dnd-kit/core", () => ({
-  DndContext: ({ children, onDragStart, onDragOver, onDragEnd }: {
+  DndContext: ({
+    children,
+    onDragStart,
+    onDragOver,
+    onDragEnd,
+  }: {
     children: React.ReactNode;
     sensors?: unknown;
     collisionDetection?: unknown;
@@ -90,9 +94,13 @@ vi.mock("@dnd-kit/core", () => ({
 }));
 
 vi.mock("@dnd-kit/sortable", () => ({
-  SortableContext: ({ children }: { children: React.ReactNode; items: string[]; strategy?: unknown }) => (
-    <div data-testid="sortable-context">{children}</div>
-  ),
+  SortableContext: ({
+    children,
+  }: {
+    children: React.ReactNode;
+    items: string[];
+    strategy?: unknown;
+  }) => <div data-testid="sortable-context">{children}</div>,
   useSortable: ({ id }: { id: string }) => ({
     attributes: { "data-sortable-id": id },
     listeners: {},

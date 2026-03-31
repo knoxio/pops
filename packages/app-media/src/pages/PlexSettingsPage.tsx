@@ -254,9 +254,7 @@ function WatchHistorySyncResultDisplay({ result }: { result: WatchHistorySyncRes
           <span className="text-emerald-400">{result.movies.logged} movies logged</span>
         )}
         {result.summary.episodesLogged > 0 && (
-          <span className="text-emerald-400">
-            {result.summary.episodesLogged} episodes logged
-          </span>
+          <span className="text-emerald-400">{result.summary.episodesLogged} episodes logged</span>
         )}
         {result.summary.episodesAlreadyLogged > 0 && (
           <span className="text-muted-foreground">
@@ -267,9 +265,7 @@ function WatchHistorySyncResultDisplay({ result }: { result: WatchHistorySyncRes
           {result.summary.showsProcessed} shows processed
         </span>
         {result.summary.showsWithGaps > 0 && (
-          <span className="text-amber-400">
-            {result.summary.showsWithGaps} shows with gaps
-          </span>
+          <span className="text-amber-400">{result.summary.showsWithGaps} shows with gaps</span>
         )}
       </div>
 
@@ -326,7 +322,9 @@ function WatchHistorySyncResultDisplay({ result }: { result: WatchHistorySyncRes
                     </button>
                     {isExpanded && (
                       <div className="mt-2 pl-5 space-y-1 text-xs text-muted-foreground">
-                        <p>Plex episodes: {d.plexTotal} total, {d.plexWatched} watched</p>
+                        <p>
+                          Plex episodes: {d.plexTotal} total, {d.plexWatched} watched
+                        </p>
                         <p>
                           Matched: {d.matched}
                           {d.alreadyLogged > 0 && ` | Already logged: ${d.alreadyLogged}`}
@@ -573,9 +571,7 @@ export function PlexSettingsPage() {
             <h2 className="text-lg font-semibold">Server Configuration</h2>
           </div>
           <div className="space-y-2">
-            <Label className="text-muted-foreground">
-              Plex Media Server URL
-            </Label>
+            <Label className="text-muted-foreground">Plex Media Server URL</Label>
             <div className="flex gap-2">
               <Input
                 placeholder="http://192.168.1.100:32400"
@@ -741,10 +737,7 @@ export function PlexSettingsPage() {
                   </Button>
 
                   {movieSync.result != null && (
-                    <SyncResultDisplay
-                      result={movieSync.result as SyncResult}
-                      label="Movie"
-                    />
+                    <SyncResultDisplay result={movieSync.result as SyncResult} label="Movie" />
                   )}
                 </>
               ) : (
@@ -845,8 +838,8 @@ export function PlexSettingsPage() {
               <h2 className="text-lg font-semibold">Watch History Sync</h2>
             </div>
             <p className="text-sm text-muted-foreground">
-              Re-sync watch history from Plex for movies and TV shows already in your library.
-              Shows detailed diagnostics about what matched and what was missed.
+              Re-sync watch history from Plex for movies and TV shows already in your library. Shows
+              detailed diagnostics about what matched and what was missed.
             </p>
             <Button
               size="sm"
@@ -872,9 +865,7 @@ export function PlexSettingsPage() {
                 : "Sync Watch History"}
             </Button>
             {!movieSectionId && !tvSectionId && (
-              <p className="text-xs text-amber-400">
-                Select a movie or TV library above first.
-              </p>
+              <p className="text-xs text-amber-400">Select a movie or TV library above first.</p>
             )}
             {watchHistorySync.result != null && (
               <WatchHistorySyncResultDisplay
@@ -910,41 +901,42 @@ export function PlexSettingsPage() {
                 ? `Checking... ${discoverSync.progress.processed}/${discoverSync.progress.total}`
                 : "Sync Cloud Watches"}
             </Button>
-            {discoverSync.result != null && (() => {
-              const r = discoverSync.result as DiscoverWatchSyncResult;
-              return (
-                <div className="rounded-md border bg-muted/30 p-3 space-y-2 text-sm">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <span className="font-medium">Cloud Watch Results:</span>
-                    {r.movies.logged > 0 && (
-                      <span className="text-emerald-400">
-                        {r.movies.logged} movies newly logged
-                      </span>
-                    )}
-                    <span className="text-muted-foreground">
-                      {r.movies.watched} movies watched on Plex
-                    </span>
-                    {r.movies.alreadyLogged > 0 && (
+            {discoverSync.result != null &&
+              (() => {
+                const r = discoverSync.result as DiscoverWatchSyncResult;
+                return (
+                  <div className="rounded-md border bg-muted/30 p-3 space-y-2 text-sm">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <span className="font-medium">Cloud Watch Results:</span>
+                      {r.movies.logged > 0 && (
+                        <span className="text-emerald-400">
+                          {r.movies.logged} movies newly logged
+                        </span>
+                      )}
                       <span className="text-muted-foreground">
-                        ({r.movies.alreadyLogged} already tracked)
+                        {r.movies.watched} movies watched on Plex
                       </span>
-                    )}
+                      {r.movies.alreadyLogged > 0 && (
+                        <span className="text-muted-foreground">
+                          ({r.movies.alreadyLogged} already tracked)
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-muted-foreground space-y-0.5">
+                      <p>
+                        Checked {r.movies.total} movies, {r.tvShows.total} TV shows against Plex
+                        cloud
+                      </p>
+                      {r.movies.notFound > 0 && (
+                        <p>{r.movies.notFound} movies not found on Plex Discover</p>
+                      )}
+                      {r.movies.errors > 0 && (
+                        <p className="text-red-400">{r.movies.errors} errors during lookup</p>
+                      )}
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground space-y-0.5">
-                    <p>
-                      Checked {r.movies.total} movies, {r.tvShows.total} TV shows against Plex
-                      cloud
-                    </p>
-                    {r.movies.notFound > 0 && (
-                      <p>{r.movies.notFound} movies not found on Plex Discover</p>
-                    )}
-                    {r.movies.errors > 0 && (
-                      <p className="text-red-400">{r.movies.errors} errors during lookup</p>
-                    )}
-                  </div>
-                </div>
-              );
-            })()}
+                );
+              })()}
           </div>
         )}
 

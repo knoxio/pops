@@ -167,7 +167,9 @@ vi.mock("../lib/trpc", () => ({
 
 // Mock react-markdown
 vi.mock("react-markdown", () => ({
-  default: ({ children }: { children: string }) => <div data-testid="markdown-preview">{children}</div>,
+  default: ({ children }: { children: string }) => (
+    <div data-testid="markdown-preview">{children}</div>
+  ),
 }));
 
 vi.mock("rehype-sanitize", () => ({

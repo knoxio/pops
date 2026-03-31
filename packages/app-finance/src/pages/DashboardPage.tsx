@@ -2,7 +2,16 @@
  * Dashboard page - overview of finances
  */
 import { trpc } from "../lib/trpc";
-import { Card, StatCard, Alert, AlertTitle, AlertDescription, Skeleton, Badge, PageHeader } from "@pops/ui";
+import {
+  Card,
+  StatCard,
+  Alert,
+  AlertTitle,
+  AlertDescription,
+  Skeleton,
+  Badge,
+  PageHeader,
+} from "@pops/ui";
 
 export function DashboardPage() {
   // Fetch recent transactions
@@ -59,10 +68,7 @@ export function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-10">
-      <PageHeader
-        title="Dashboard"
-        description="Welcome back! Here's your financial overview."
-      />
+      <PageHeader title="Dashboard" description="Welcome back! Here's your financial overview." />
 
       {/* Stats Grid */}
       <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

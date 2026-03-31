@@ -23,7 +23,7 @@ export interface ViewToggleGroupProps<T extends string> {
 
 function getStoredValue<T extends string>(
   storageKey: string | undefined,
-  validValues: T[],
+  validValues: T[]
 ): T | undefined {
   if (!storageKey) return undefined;
   try {
@@ -45,10 +45,7 @@ export function ViewToggleGroup<T extends string>({
 }: ViewToggleGroupProps<T>) {
   const validValues = options.map((o) => o.value);
   const initialValue =
-    controlledValue ??
-    getStoredValue(storageKey, validValues) ??
-    defaultValue ??
-    options[0]?.value;
+    controlledValue ?? getStoredValue(storageKey, validValues) ?? defaultValue ?? options[0]?.value;
 
   const [internalValue, setInternalValue] = useState<T>(initialValue as T);
   const isControlled = controlledValue !== undefined;
@@ -68,15 +65,12 @@ export function ViewToggleGroup<T extends string>({
       }
       onChange?.(newValue);
     },
-    [isControlled, storageKey, onChange],
+    [isControlled, storageKey, onChange]
   );
 
   return (
     <div
-      className={cn(
-        "inline-flex items-center gap-0.5 rounded-lg bg-muted p-1",
-        className,
-      )}
+      className={cn("inline-flex items-center gap-0.5 rounded-lg bg-muted p-1", className)}
       role="radiogroup"
     >
       {options.map((option) => (
@@ -91,7 +85,7 @@ export function ViewToggleGroup<T extends string>({
             "flex items-center justify-center rounded-md p-1.5 min-h-8 min-w-8 transition-all",
             activeValue === option.value
               ? "bg-background text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground",
+              : "text-muted-foreground hover:text-foreground"
           )}
         >
           {option.icon}

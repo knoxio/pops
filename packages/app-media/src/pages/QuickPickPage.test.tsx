@@ -76,10 +76,7 @@ describe("QuickPickPage", () => {
 
     renderPage("/media/quick-pick?count=2");
 
-    expect(mockQuickPickQuery).toHaveBeenCalledWith(
-      { count: 2 },
-      expect.anything()
-    );
+    expect(mockQuickPickQuery).toHaveBeenCalledWith({ count: 2 }, expect.anything());
   });
 
   it("defaults invalid count param to 3", () => {
@@ -90,10 +87,7 @@ describe("QuickPickPage", () => {
 
     renderPage("/media/quick-pick?count=99");
 
-    expect(mockQuickPickQuery).toHaveBeenCalledWith(
-      { count: 3 },
-      expect.anything()
-    );
+    expect(mockQuickPickQuery).toHaveBeenCalledWith({ count: 3 }, expect.anything());
   });
 
   it("renders count selector with 2, 3, 4, 5 options", () => {
