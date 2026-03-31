@@ -167,7 +167,9 @@ vi.mock("../lib/trpc", () => ({
 
 // Mock react-markdown
 vi.mock("react-markdown", () => ({
-  default: ({ children }: { children: string }) => <div data-testid="markdown-preview">{children}</div>,
+  default: ({ children }: { children: string }) => (
+    <div data-testid="markdown-preview">{children}</div>
+  ),
 }));
 
 vi.mock("rehype-sanitize", () => ({
@@ -249,7 +251,8 @@ describe("ItemFormPage — Asset ID generation", () => {
 
   it("enables auto-generate when type is selected", () => {
     renderCreate();
-    const typeSelect = screen.getByRole("combobox", { name: /type/i });
+    const typeSelect = document.querySelector('select[name="type"]') as HTMLSelectElement;
+    expect(typeSelect).toBeInTheDocument();
     fireEvent.change(typeSelect, { target: { value: "Electronics" } });
     const btn = screen.getByRole("button", { name: /auto-generate/i });
     expect(btn).not.toBeDisabled();
@@ -261,7 +264,8 @@ describe("ItemFormPage — Asset ID generation", () => {
     });
 
     renderCreate();
-    const assetInput = screen.getByRole("textbox", { name: /asset id/i });
+    const assetInput = document.querySelector('input[name="assetId"]') as HTMLInputElement;
+    expect(assetInput).toBeInTheDocument();
     fireEvent.change(assetInput, { target: { value: "ELEC01" } });
     fireEvent.blur(assetInput);
 
@@ -320,7 +324,8 @@ describe("ItemFormPage — Asset ID generation", () => {
 
   it("skips uniqueness check when asset ID is empty", () => {
     renderCreate();
-    const assetInput = screen.getByRole("textbox", { name: /asset id/i });
+    const assetInput = document.querySelector('input[name="assetId"]') as HTMLInputElement;
+    expect(assetInput).toBeInTheDocument();
     fireEvent.blur(assetInput);
     expect(mockSearchByAssetIdFetch).not.toHaveBeenCalled();
   });
@@ -427,9 +432,13 @@ describe("ItemFormPage — Photos section", () => {
     renderEdit("item-1");
 
     fireEvent.click(screen.getByLabelText(/delete photo front/i));
-    expect(screen.getByText(/delete this photo/i)).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /^delete$/i })).toBeInTheDocument();
+    const confirmText = screen.getByText(/delete this photo/i);
+    expect(confirmText).toBeInTheDocument();
+    // Scope to the confirmation bar to avoid matching the form-level Cancel button
+    const confirmBar = confirmText.closest("div")!;
+    const confirmScope = within(confirmBar);
+    expect(confirmScope.getByRole("button", { name: /cancel/i })).toBeInTheDocument();
+    expect(confirmScope.getByRole("button", { name: /^delete$/i })).toBeInTheDocument();
   });
 
   it("dismisses delete confirmation on cancel", () => {
@@ -474,9 +483,12 @@ describe("ItemFormPage — Photos section", () => {
     renderEdit("item-1");
 
     fireEvent.click(screen.getByLabelText(/delete photo front/i));
-    expect(screen.getByText(/delete this photo/i)).toBeInTheDocument();
+    const confirmText = screen.getByText(/delete this photo/i);
+    expect(confirmText).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /cancel/i }));
+    // Scope to the confirmation bar to avoid matching the form-level Cancel button
+    const confirmBar = confirmText.closest("div")!;
+    fireEvent.click(within(confirmBar).getByRole("button", { name: /cancel/i }));
     expect(screen.queryByText(/delete this photo/i)).not.toBeInTheDocument();
   });
 

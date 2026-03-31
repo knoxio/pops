@@ -96,70 +96,71 @@ vi.mock("./EntityCreateDialog", () => ({
   EntityCreateDialog: () => null,
 }));
 
-vi.mock("./TransactionCard", () => ({
-  TransactionCard: ({
-    transaction,
-    onAcceptAiSuggestion,
-  }: {
-    transaction: { description: string; entity?: { entityName?: string } };
-    onAcceptAiSuggestion?: (t: unknown) => void;
-  }) => {
-    const React = require("react");
-    return React.createElement(
-      "div",
-      { "data-testid": `tx-${transaction.description}` },
-      transaction.description,
-      onAcceptAiSuggestion &&
-        React.createElement(
-          "button",
-          {
-            "data-testid": `accept-${transaction.description}`,
-            onClick: () => onAcceptAiSuggestion(transaction),
-          },
-          "Accept AI"
-        )
-    );
-  },
-}));
-
-vi.mock("./TransactionGroup", () => ({
-  TransactionGroup: ({
-    group,
-    onAcceptAll,
-    onAcceptAiSuggestion,
-  }: {
-    group: { entityName: string; transactions: unknown[] };
-    onAcceptAll: (txs: unknown[]) => void;
-    onAcceptAiSuggestion: (t: unknown) => void;
-  }) => {
-    const React = require("react");
-    return React.createElement(
-      "div",
-      { "data-testid": `group-${group.entityName}` },
-      group.entityName,
+vi.mock("./TransactionCard", async () => {
+  const React = await import("react");
+  return {
+    TransactionCard: ({
+      transaction,
+      onAcceptAiSuggestion,
+    }: {
+      transaction: { description: string; entity?: { entityName?: string } };
+      onAcceptAiSuggestion?: (t: unknown) => void;
+    }) =>
       React.createElement(
-        "button",
-        {
-          "data-testid": `accept-all-${group.entityName}`,
-          onClick: () => onAcceptAll(group.transactions),
-        },
-        "Accept All"
+        "div",
+        { "data-testid": `tx-${transaction.description}` },
+        transaction.description,
+        onAcceptAiSuggestion &&
+          React.createElement(
+            "button",
+            {
+              "data-testid": `accept-${transaction.description}`,
+              onClick: () => onAcceptAiSuggestion(transaction),
+            },
+            "Accept AI"
+          )
       ),
-      // Render individual accept buttons for each transaction in the group
-      ...(group.transactions as { description: string }[]).map((t) =>
+  };
+});
+
+vi.mock("./TransactionGroup", async () => {
+  const React = await import("react");
+  return {
+    TransactionGroup: ({
+      group,
+      onAcceptAll,
+      onAcceptAiSuggestion,
+    }: {
+      group: { entityName: string; transactions: unknown[] };
+      onAcceptAll: (txs: unknown[]) => void;
+      onAcceptAiSuggestion: (t: unknown) => void;
+    }) =>
+      React.createElement(
+        "div",
+        { "data-testid": `group-${group.entityName}` },
+        group.entityName,
         React.createElement(
           "button",
           {
-            key: t.description,
-            "data-testid": `accept-${t.description}`,
-            onClick: () => onAcceptAiSuggestion(t),
+            "data-testid": `accept-all-${group.entityName}`,
+            onClick: () => onAcceptAll(group.transactions),
           },
-          `Accept ${t.description}`
+          "Accept All"
+        ),
+        ...(group.transactions as { description: string }[]).map((t) =>
+          React.createElement(
+            "button",
+            {
+              key: t.description,
+              "data-testid": `accept-${t.description}`,
+              onClick: () => onAcceptAiSuggestion(t),
+            },
+            `Accept ${t.description}`
+          )
         )
-      )
-    );
-  },
-}));
+      ),
+  };
+});
 
 vi.mock("./EditableTransactionCard", () => ({
   EditableTransactionCard: () => null,
@@ -188,7 +189,7 @@ vi.mock("@pops/ui", async () => {
         { onClick: onClick as () => void, disabled, ...rest },
         children as React.ReactNode
       ),
-    Tabs: ({ children, value, onValueChange }: Record<string, unknown>) =>
+    Tabs: ({ children, value }: Record<string, unknown>) =>
       React.createElement(
         "div",
         { "data-testid": "tabs", "data-value": value },

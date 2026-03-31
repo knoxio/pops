@@ -3,70 +3,88 @@ name: Infra Quality
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
-      - 'infra/ansible/**'
-      - '.ansible-lint'
-      - '.yamllint'
-      - '.github/workflows/infra-quality.yml'
+      - "infra/ansible/**"
+      - ".ansible-lint"
+      - ".yamllint"
+      - ".github/workflows/infra-quality.yml"
   pull_request:
-    paths:
-      - 'infra/ansible/**'
-      - '.ansible-lint'
-      - '.yamllint'
-      - '.github/workflows/infra-quality.yml'
 
 jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    outputs:
+      relevant: ${{ steps.filter.outputs.relevant }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            relevant:
+              - 'infra/ansible/**'
+              - '.ansible-lint'
+              - '.yamllint'
+              - '.github/workflows/infra-quality.yml'
+
   lint-yaml:
     name: YAML Lint
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: always()
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - name: "Skip — no relevant changes"
+        if: github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true'
+        run: echo "Skipping — no infra changes"
+      - uses: actions/checkout@v6
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
+      - uses: actions/setup-python@v6
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         with:
-          python-version: '3.12'
-          cache: 'pip'
-
-      - name: Install yamllint
-        run: pip install yamllint
-
-      - name: Run yamllint on Ansible files
-        run: yamllint infra/ansible/
+          python-version: "3.12"
+          cache: pip
+      - run: pip install yamllint
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
+      - run: yamllint infra/ansible/
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
 
   ansible-lint:
     name: Ansible Lint
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: always()
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - name: "Skip — no relevant changes"
+        if: github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true'
+        run: echo "Skipping — no infra changes"
+      - uses: actions/checkout@v6
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
+      - uses: actions/setup-python@v6
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         with:
-          python-version: '3.12'
-          cache: 'pip'
-
-      - name: Install Ansible and ansible-lint
-        run: |
-          pip install ansible-core ansible-lint
-
+          python-version: "3.12"
+          cache: pip
+      - run: pip install ansible-core ansible-lint
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
       - name: Install Ansible Galaxy collections
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: |
           ansible-galaxy collection install community.general
           ansible-galaxy collection install community.docker
           ansible-galaxy collection install ansible.posix
-
       - name: Run ansible-lint
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         working-directory: infra/ansible
         run: ansible-lint .
 
   syntax-check:
     name: Ansible Syntax Check
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: always()
     strategy:
       matrix:
         playbook:
@@ -74,28 +92,29 @@ jobs:
           - infra/ansible/playbooks/deploy.yml
           - infra/ansible/playbooks/bootstrap.yml
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - name: "Skip — no relevant changes"
+        if: github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true'
+        run: echo "Skipping — no infra changes"
+      - uses: actions/checkout@v6
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
+      - uses: actions/setup-python@v6
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         with:
-          python-version: '3.12'
-          cache: 'pip'
-
-      - name: Install Ansible
-        run: pip install ansible-core
-
+          python-version: "3.12"
+          cache: pip
+      - run: pip install ansible-core
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
       - name: Install Ansible Galaxy collections
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: |
           ansible-galaxy collection install community.general
           ansible-galaxy collection install community.docker
           ansible-galaxy collection install ansible.posix
-
       - name: Create dummy vault password file
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: echo "dummy-password-for-ci" > /tmp/vault-pass
-
       - name: Run syntax check on ${{ matrix.playbook }}
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: |
           cd infra/ansible
           ansible-playbook --syntax-check \
@@ -105,22 +124,17 @@ jobs:
   security-check:
     name: Security Check
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: always()
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
-          cache: 'pip'
-
-      - name: Install ansible-lint
-        run: pip install ansible-lint
-
-      - name: Check for hardcoded secrets (basic scan)
+      - name: "Skip — no relevant changes"
+        if: github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true'
+        run: echo "Skipping — no infra changes"
+      - uses: actions/checkout@v6
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
+      - name: Check for hardcoded secrets
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: |
-          # Check for common secret patterns in non-vault files
           if grep -r -i \
             --exclude-dir=.git \
             --exclude="*.enc" \
@@ -132,8 +146,8 @@ jobs:
           else
             echo "No obvious hardcoded secrets detected"
           fi
-
       - name: Check vault file is encrypted
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: |
           if [ -f infra/ansible/inventory/group_vars/pops_servers/vault.yml ]; then
             if head -n 1 infra/ansible/inventory/group_vars/pops_servers/vault.yml | grep -q '$ANSIBLE_VAULT'; then
@@ -149,34 +163,36 @@ jobs:
   best-practices:
     name: Best Practices Check
     runs-on: ubuntu-latest
+    needs: [changes]
+    if: always()
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v6
-
+      - name: "Skip — no relevant changes"
+        if: github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true'
+        run: echo "Skipping — no infra changes"
+      - uses: actions/checkout@v6
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
       - name: Check for become usage
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: |
           echo "Checking for proper privilege escalation..."
-          # Ensure we're not using sudo directly
           if grep -r "sudo:" infra/ansible/roles/; then
             echo "WARNING: Direct sudo usage found. Use 'become' instead."
             exit 1
           fi
-          echo "No direct sudo usage found ✓"
-
+          echo "No direct sudo usage found"
       - name: Check for shell module usage
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: |
           echo "Checking for shell module best practices..."
-          # Prefer command module over shell when possible
           shell_count=$(grep -r "ansible.builtin.shell:" infra/ansible/roles/ | wc -l || echo "0")
           echo "Shell module usage count: $shell_count"
           if [ "$shell_count" -gt 10 ]; then
             echo "WARNING: High shell module usage. Consider using specific modules."
           fi
-
-      - name: Check for FQCNs (Fully Qualified Collection Names)
+      - name: Check for FQCNs
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: |
           echo "Checking for FQCN usage..."
-          # Ensure using FQCNs like ansible.builtin.* instead of bare module names
           if grep -r -E "^[[:space:]]+-[[:space:]]+[a-z_]+:" infra/ansible/roles/ | \
              grep -v "ansible.builtin." | \
              grep -v "community.general." | \
@@ -191,7 +207,7 @@ jobs:
              head -n 5; then
             echo "Consider using FQCNs for all modules"
           else
-            echo "FQCN usage looks good ✓"
+            echo "FQCN usage looks good"
           fi
 
   summary:
@@ -202,15 +218,15 @@ jobs:
     steps:
       - name: Check job statuses
         run: |
-          if [[ "${{ needs.lint-yaml.result }}" == "success" ]] && \
-             [[ "${{ needs.ansible-lint.result }}" == "success" ]] && \
-             [[ "${{ needs.syntax-check.result }}" == "success" ]] && \
-             [[ "${{ needs.security-check.result }}" == "success" ]] && \
-             [[ "${{ needs.best-practices.result }}" == "success" ]]; then
-            echo "✅ All Ansible CI checks passed!"
+          if [[ "${{ needs.lint-yaml.result }}" =~ ^(success|skipped)$ ]] && \
+             [[ "${{ needs.ansible-lint.result }}" =~ ^(success|skipped)$ ]] && \
+             [[ "${{ needs.syntax-check.result }}" =~ ^(success|skipped)$ ]] && \
+             [[ "${{ needs.security-check.result }}" =~ ^(success|skipped)$ ]] && \
+             [[ "${{ needs.best-practices.result }}" =~ ^(success|skipped)$ ]]; then
+            echo "All Infra CI checks passed (or skipped)"
             exit 0
           else
-            echo "❌ Some Ansible CI checks failed"
+            echo "Some Infra CI checks failed"
             echo "YAML Lint: ${{ needs.lint-yaml.result }}"
             echo "Ansible Lint: ${{ needs.ansible-lint.result }}"
             echo "Syntax Check: ${{ needs.syntax-check.result }}"

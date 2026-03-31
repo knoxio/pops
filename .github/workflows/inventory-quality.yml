@@ -1,11 +1,14 @@
-name: Tools Quality
+name: Inventory Quality
 
 on:
   push:
     branches: [main]
     paths:
-      - "packages/import-tools/**"
-      - ".github/workflows/tools-quality.yml"
+      - "packages/app-inventory/**"
+      - "packages/ui/**"
+      - "packages/db-types/**"
+      - "packages/api-client/**"
+      - ".github/workflows/inventory-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
 
@@ -23,8 +26,11 @@ jobs:
         with:
           filters: |
             relevant:
-              - 'packages/import-tools/**'
-              - '.github/workflows/tools-quality.yml'
+              - 'packages/app-inventory/**'
+              - 'packages/ui/**'
+              - 'packages/db-types/**'
+              - 'packages/api-client/**'
+              - '.github/workflows/inventory-quality.yml'
               - '.github/workflows/_pkg-check.yml'
 
   quality:
@@ -32,6 +38,6 @@ jobs:
     if: always()
     uses: ./.github/workflows/_pkg-check.yml
     with:
-      package-path: packages/import-tools
-      needs-db-build: false
+      package-path: packages/app-inventory
+      needs-db-build: true
       skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}

@@ -108,7 +108,9 @@ describe("MovieDetailPage", () => {
 
     it("renders tagline", () => {
       renderAtRoute("/media/movies/1");
-      expect(screen.getByText("Fear can hold you prisoner. Hope can set you free.")).toBeInTheDocument();
+      expect(
+        screen.getByText("Fear can hold you prisoner. Hope can set you free.")
+      ).toBeInTheDocument();
     });
 
     it("renders year and runtime in hero subtitle", () => {
@@ -152,15 +154,17 @@ describe("MovieDetailPage", () => {
       expect(poster).toHaveAttribute("src", "/media/images/movie/278/poster.jpg");
     });
 
-    it("still renders poster img element when posterUrl is null (with empty string fallback)", () => {
+    it("renders a placeholder div when posterUrl is null (no img element)", () => {
       mockMovieQuery.mockReturnValue({
         data: { data: { ...baseMovie, posterUrl: null } },
         isLoading: false,
         error: null,
       });
-      renderAtRoute("/media/movies/1");
-      const poster = screen.getByAltText("The Shawshank Redemption poster");
-      expect(poster).toBeInTheDocument();
+      const { container } = renderAtRoute("/media/movies/1");
+      // Component renders a <div> placeholder instead of <img> when posterUrl is null
+      expect(screen.queryByAltText("The Shawshank Redemption poster")).not.toBeInTheDocument();
+      const placeholder = container.querySelector("div.rounded-lg.bg-muted.shadow-lg");
+      expect(placeholder).toBeInTheDocument();
     });
   });
 
@@ -277,8 +281,20 @@ describe("MovieDetailPage", () => {
       mockWatchHistoryQuery.mockReturnValue({
         data: {
           data: [
-            { id: 2, mediaType: "movie", mediaId: 1, watchedAt: "2026-03-15T00:00:00Z", completed: 1 },
-            { id: 1, mediaType: "movie", mediaId: 1, watchedAt: "2025-12-25T00:00:00Z", completed: 1 },
+            {
+              id: 2,
+              mediaType: "movie",
+              mediaId: 1,
+              watchedAt: "2026-03-15T00:00:00Z",
+              completed: 1,
+            },
+            {
+              id: 1,
+              mediaType: "movie",
+              mediaId: 1,
+              watchedAt: "2025-12-25T00:00:00Z",
+              completed: 1,
+            },
           ],
         },
       });
@@ -308,7 +324,9 @@ describe("MovieDetailPage", () => {
       });
       const { container } = renderAtRoute("/media/movies/1");
       // Skeleton renders multiple placeholder elements
-      expect(container.querySelectorAll("[class*='animate-pulse'], [data-slot='skeleton']").length).toBeGreaterThan(0);
+      expect(
+        container.querySelectorAll("[class*='animate-pulse'], [data-slot='skeleton']").length
+      ).toBeGreaterThan(0);
     });
   });
 });

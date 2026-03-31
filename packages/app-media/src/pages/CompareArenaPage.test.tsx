@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
+import { TooltipProvider } from "@pops/ui";
 
 const mockDimensionsQuery = vi.fn();
 const mockPairQuery = vi.fn();
@@ -9,6 +10,12 @@ const mockRecordMutate = vi.fn() as ReturnType<typeof vi.fn> & {
 };
 const mockRefetchPair = vi.fn();
 const mockScoresFetch = vi.fn();
+const mockWatchlistListQuery = vi.fn();
+const mockWatchlistAddMutate = vi.fn() as ReturnType<typeof vi.fn> & {
+  _opts?: Record<string, unknown>;
+};
+const mockInvalidateRandomPair = vi.fn();
+const mockInvalidateWatchlistList = vi.fn();
 
 vi.mock("../lib/trpc", () => ({
   trpc: {
@@ -31,11 +38,26 @@ vi.mock("../lib/trpc", () => ({
         },
         scores: { fetch: (...args: unknown[]) => mockScoresFetch(...args) },
       },
+      watchlist: {
+        list: {
+          useQuery: (...args: unknown[]) => mockWatchlistListQuery(...args),
+        },
+        add: {
+          useMutation: (opts: Record<string, unknown>) => {
+            mockWatchlistAddMutate._opts = opts;
+            return { mutate: mockWatchlistAddMutate, isPending: false };
+          },
+        },
+      },
     },
     useUtils: () => ({
       media: {
         comparisons: {
           scores: { fetch: mockScoresFetch },
+          getRandomPair: { invalidate: mockInvalidateRandomPair },
+        },
+        watchlist: {
+          list: { invalidate: mockInvalidateWatchlistList },
         },
       },
     }),
@@ -58,7 +80,9 @@ const movieB = { id: 20, title: "Inception", posterPath: null, posterUrl: null }
 function renderPage() {
   return render(
     <MemoryRouter>
-      <CompareArenaPage />
+      <TooltipProvider>
+        <CompareArenaPage />
+      </TooltipProvider>
     </MemoryRouter>
   );
 }
@@ -73,11 +97,20 @@ function setupArena() {
     isLoading: false,
     error: null,
   });
+  mockWatchlistListQuery.mockReturnValue({
+    data: { data: [] },
+    isLoading: false,
+  });
 }
 
 describe("CompareArenaPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default watchlist mock — overridden by setupArena but needed for standalone tests
+    mockWatchlistListQuery.mockReturnValue({
+      data: { data: [] },
+      isLoading: false,
+    });
   });
 
   it("renders pair with movie titles", () => {
@@ -171,7 +204,9 @@ describe("CompareArenaPage", () => {
     vi.mocked(mockRecordMutate);
     const { unmount } = render(
       <MemoryRouter>
-        <CompareArenaPage />
+        <TooltipProvider>
+          <CompareArenaPage />
+        </TooltipProvider>
       </MemoryRouter>
     );
 

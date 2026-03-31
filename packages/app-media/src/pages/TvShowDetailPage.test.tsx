@@ -146,7 +146,11 @@ const PROGRESS = {
     { seasonId: 12, seasonNumber: 2, watched: 8, total: 13, percentage: 62 },
     { seasonId: 13, seasonNumber: 3, watched: 5, total: 13, percentage: 38 },
   ],
-  nextEpisode: null as null | { seasonNumber: number; episodeNumber: number; episodeName: string | null },
+  nextEpisode: null as null | {
+    seasonNumber: number;
+    episodeNumber: number;
+    episodeName: string | null;
+  },
 };
 
 // --- Helpers ---
@@ -341,11 +345,13 @@ describe("TvShowDetailPage — hero and metadata", () => {
       expect(screen.getByAltText("Breaking Bad poster")).toBeInTheDocument();
     });
 
-    it("renders poster element even when posterUrl is null", () => {
+    it("renders a placeholder div when posterUrl is null (no img element)", () => {
       setupQueries({ posterUrl: null });
       const { container } = renderPage();
-      const poster = container.querySelector('img[alt="Breaking Bad poster"]');
-      expect(poster).toBeInTheDocument();
+      // Component renders a <div> placeholder instead of <img> when posterUrl is null
+      expect(container.querySelector('img[alt="Breaking Bad poster"]')).not.toBeInTheDocument();
+      const placeholder = container.querySelector("div.rounded-lg.bg-muted.shadow-lg");
+      expect(placeholder).toBeInTheDocument();
     });
 
     it("renders title in h1", () => {
@@ -611,8 +617,7 @@ describe("TvShowDetailPage — batch mark all watched", () => {
         (batchLogOpts.onError as (err: { message: string }) => void)({
           message: "Network error",
         });
-      if (typeof batchLogOpts.onSettled === "function")
-        (batchLogOpts.onSettled as () => void)();
+      if (typeof batchLogOpts.onSettled === "function") (batchLogOpts.onSettled as () => void)();
     });
     fireEvent.click(screen.getByRole("button", { name: "Mark All Watched" }));
     // setData called twice: once for optimistic, once for rollback

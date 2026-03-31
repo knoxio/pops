@@ -59,7 +59,7 @@ export function ReviewStep() {
         currentTags: (t.suggestedTags ?? []).map((s) => s.tag),
       }));
     if (seed.length > 0) batchAnalysis.seedTransactions(seed);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // Preserve scroll position per tab
   const scrollPositions = useRef<Map<string, number>>(new Map());

@@ -630,7 +630,10 @@ export function WatchlistPage() {
       const reordered = arrayMove(currentOrder, oldIndex, newIndex) as WatchlistEntry[];
       setOptimisticOrder(reordered);
 
-      const items = reordered.map((entry: WatchlistEntry, i: number) => ({ id: entry.id, priority: i }));
+      const items = reordered.map((entry: WatchlistEntry, i: number) => ({
+        id: entry.id,
+        priority: i,
+      }));
       setIsReordering(true);
       reorderMutation.mutate({ items });
     },

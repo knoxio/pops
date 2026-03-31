@@ -244,14 +244,14 @@ export function PhotoUpload({
                 {f.status === "uploading" && (
                   <div className="mt-1 space-y-1">
                     <Progress value={f.progress ?? 0} className="h-1.5" />
-                    <span className="text-xs text-muted-foreground">
-                      {f.progress ?? 0}%
-                    </span>
+                    <span className="text-xs text-muted-foreground">{f.progress ?? 0}%</span>
                   </div>
                 )}
                 {f.status !== "uploading" && (
                   <div className="flex items-center gap-2">
-                    {f.status === "done" && <span className="text-xs text-green-600">Uploaded</span>}
+                    {f.status === "done" && (
+                      <span className="text-xs text-green-600">Uploaded</span>
+                    )}
                     {f.status === "error" && (
                       <span className="text-xs text-destructive">{f.error ?? "Upload failed"}</span>
                     )}

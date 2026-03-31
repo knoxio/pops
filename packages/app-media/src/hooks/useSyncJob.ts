@@ -103,7 +103,6 @@ export function useSyncJob(jobType: SyncJobType): UseSyncJobReturn {
       toast.error(`${label} failed: ${job.error ?? "Unknown error"}`);
     }
     // Only trigger on status transitions — not on every poll
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [statusQuery.data?.data?.status]);
 
   const start = useCallback(
@@ -148,7 +147,6 @@ export function useRestoreActiveSyncJobs(
       }
     }
     // Only run on initial load
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeJobs.data?.data]);
 }
 

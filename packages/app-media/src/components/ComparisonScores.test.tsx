@@ -13,9 +13,7 @@ vi.mock("recharts", () => ({
   PolarAngleAxis: ({ dataKey }: { dataKey: string }) => (
     <div data-testid="polar-angle-axis" data-key={dataKey} />
   ),
-  Radar: ({ dataKey }: { dataKey: string }) => (
-    <div data-testid="radar" data-key={dataKey} />
-  ),
+  Radar: ({ dataKey }: { dataKey: string }) => <div data-testid="radar" data-key={dataKey} />,
   ResponsiveContainer: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   Tooltip: () => <div data-testid="tooltip" />,
 }));
@@ -109,7 +107,9 @@ describe("ComparisonScores", () => {
         isLoading: false,
       });
       render(<ComparisonScores mediaType="movie" mediaId={1} />);
-      expect(screen.getByText("Not enough data — at least 3 comparisons needed")).toBeInTheDocument();
+      expect(
+        screen.getByText("Not enough data — at least 3 comparisons needed")
+      ).toBeInTheDocument();
       expect(screen.queryByTestId("radar-chart")).not.toBeInTheDocument();
     });
 
@@ -124,7 +124,9 @@ describe("ComparisonScores", () => {
         isLoading: false,
       });
       render(<ComparisonScores mediaType="movie" mediaId={1} />);
-      expect(screen.getByText("Not enough data — at least 3 comparisons needed")).toBeInTheDocument();
+      expect(
+        screen.getByText("Not enough data — at least 3 comparisons needed")
+      ).toBeInTheDocument();
     });
   });
 

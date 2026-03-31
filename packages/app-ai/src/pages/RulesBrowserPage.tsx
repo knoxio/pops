@@ -251,7 +251,10 @@ export function RulesBrowserPage(): React.ReactElement {
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Categorisation Rules" description="Browse and manage AI categorisation rules" />
+        <PageHeader
+          title="Categorisation Rules"
+          description="Browse and manage AI categorisation rules"
+        />
         <div className="space-y-4">
           {Array.from({ length: 6 }).map((_, i) => (
             <Skeleton key={i} className="h-12 w-full" />
@@ -264,7 +267,10 @@ export function RulesBrowserPage(): React.ReactElement {
   if (isError) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Categorisation Rules" description="Browse and manage AI categorisation rules" />
+        <PageHeader
+          title="Categorisation Rules"
+          description="Browse and manage AI categorisation rules"
+        />
         <Alert variant="destructive">
           <h3 className="font-semibold">Failed to load rules</h3>
           <p className="text-sm mt-1">Something went wrong loading categorisation rules.</p>
@@ -281,7 +287,10 @@ export function RulesBrowserPage(): React.ReactElement {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Categorisation Rules" description="Browse and manage AI categorisation rules" />
+      <PageHeader
+        title="Categorisation Rules"
+        description="Browse and manage AI categorisation rules"
+      />
 
       {/* Filters */}
       <div className="flex flex-wrap items-end gap-3">

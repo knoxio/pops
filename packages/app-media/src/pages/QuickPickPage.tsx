@@ -68,7 +68,11 @@ export function QuickPickPage() {
         </h1>
         <div className="flex items-center gap-3">
           {/* Count selector */}
-          <div className="flex items-center gap-1 rounded-lg border p-1" role="group" aria-label="Number of picks">
+          <div
+            className="flex items-center gap-1 rounded-lg border p-1"
+            role="group"
+            aria-label="Number of picks"
+          >
             {COUNT_OPTIONS.map((n) => (
               <button
                 key={n}

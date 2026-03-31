@@ -31,31 +31,6 @@ vi.mock("../lib/trpc", () => ({
   },
 }));
 
-// Mock UI badge components to avoid complex dependency chain
-vi.mock("@pops/ui", () => ({
-  Skeleton: ({ className }: { className?: string }) => (
-    <div className={`animate-pulse ${className ?? ""}`} />
-  ),
-  AssetIdBadge: ({ assetId }: { assetId: string }) => (
-    <span data-testid="asset-id-badge">{assetId}</span>
-  ),
-  ConditionBadge: ({ condition }: { condition: string }) => (
-    <span data-testid="condition-badge">{condition}</span>
-  ),
-  Badge: ({
-    children,
-    className,
-  }: {
-    children: React.ReactNode;
-    variant?: string;
-    className?: string;
-  }) => (
-    <span data-testid="badge" className={className}>
-      {children}
-    </span>
-  ),
-}));
-
 /* ------------------------------------------------------------------ */
 /*  Mock LocationPicker to avoid popover complexity in tests           */
 /* ------------------------------------------------------------------ */
@@ -407,9 +382,16 @@ describe("InsuranceReportPage", () => {
       isLoading: false,
     });
     renderPage();
-    const badges = screen.getAllByTestId("badge");
-    badges.forEach((badge) => {
-      expect(badge.className).toContain("print:bg-transparent");
+    // Warranty badges are rendered with print:bg-transparent for print-friendly output.
+    // Other badges (AssetIdBadge, ConditionBadge) don't need print overrides.
+    const warrantyBadges = document.querySelectorAll(
+      '[data-slot="badge"][class*="print:bg-transparent"]'
+    );
+    // 3 items in sampleReport → 3 warranty badges
+    expect(warrantyBadges.length).toBe(3);
+    warrantyBadges.forEach((badge) => {
+      expect(badge.className).toContain("print:border");
+      expect(badge.className).toContain("print:text-black");
     });
   });
 

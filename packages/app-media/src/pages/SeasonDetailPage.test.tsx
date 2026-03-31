@@ -41,7 +41,7 @@ const {
   mockSetListData: vi.fn(),
 }));
 
-let batchLogOpts: Record<string, unknown> = {};
+let _batchLogOpts: Record<string, unknown> = {};
 
 vi.mock("../lib/trpc", () => ({
   trpc: {
@@ -82,7 +82,7 @@ vi.mock("../lib/trpc", () => ({
         },
         batchLog: {
           useMutation: (opts: Record<string, unknown>) => {
-            batchLogOpts = opts;
+            _batchLogOpts = opts;
             mockBatchLogMutation.mockImplementation(() => {
               if (typeof opts.onMutate === "function") (opts.onMutate as () => void)();
               if (typeof opts.onSuccess === "function")
@@ -358,7 +358,7 @@ function setupQueries(
 
 beforeEach(() => {
   vi.clearAllMocks();
-  batchLogOpts = {};
+  _batchLogOpts = {};
   mockShowQuery.mockReturnValue({ data: null, isLoading: false, error: null });
   mockSeasonsQuery.mockReturnValue({ data: { data: [] }, isLoading: false });
   mockEpisodesQuery.mockReturnValue({ data: { data: [] }, isLoading: false });

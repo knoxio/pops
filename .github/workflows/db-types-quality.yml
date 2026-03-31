@@ -1,11 +1,11 @@
-name: Tools Quality
+name: DB Types Quality
 
 on:
   push:
     branches: [main]
     paths:
-      - "packages/import-tools/**"
-      - ".github/workflows/tools-quality.yml"
+      - "packages/db-types/**"
+      - ".github/workflows/db-types-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
 
@@ -23,8 +23,8 @@ jobs:
         with:
           filters: |
             relevant:
-              - 'packages/import-tools/**'
-              - '.github/workflows/tools-quality.yml'
+              - 'packages/db-types/**'
+              - '.github/workflows/db-types-quality.yml'
               - '.github/workflows/_pkg-check.yml'
 
   quality:
@@ -32,6 +32,6 @@ jobs:
     if: always()
     uses: ./.github/workflows/_pkg-check.yml
     with:
-      package-path: packages/import-tools
-      needs-db-build: false
+      package-path: packages/db-types
+      has-test: false
       skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}

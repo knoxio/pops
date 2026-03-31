@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 
 // ── Mocks ──────────────────────────────────────────────────────────────────
 
@@ -24,8 +24,18 @@ vi.mock("../lib/trpc", () => ({
             return { mutate: mockAddMovieMutate, isPending: false };
           },
         },
+        getMovieStatus: {
+          invalidate: vi.fn(),
+        },
       },
     },
+    useUtils: () => ({
+      media: {
+        arr: {
+          getMovieStatus: { invalidate: vi.fn() },
+        },
+      },
+    }),
   },
 }));
 
@@ -102,8 +112,8 @@ describe("RequestMovieModal", () => {
     setupDefaults();
     renderModal();
 
-    const select = screen.getByLabelText("Quality Profile") as HTMLSelectElement;
-    expect(select).toBeInTheDocument();
+    const select = document.getElementById("quality-profile") as HTMLSelectElement;
+    expect(select).toBeTruthy();
 
     const options = select.querySelectorAll("option");
     expect(options).toHaveLength(2);
@@ -115,8 +125,8 @@ describe("RequestMovieModal", () => {
     setupDefaults();
     renderModal();
 
-    const select = screen.getByLabelText("Root Folder") as HTMLSelectElement;
-    expect(select).toBeInTheDocument();
+    const select = document.getElementById("root-folder") as HTMLSelectElement;
+    expect(select).toBeTruthy();
 
     const options = select.querySelectorAll("option");
     expect(options).toHaveLength(2);
@@ -150,11 +160,11 @@ describe("RequestMovieModal", () => {
 
     // Simulate success callback
     const onSuccess = addMovieOpts.onSuccess as () => void;
-    onSuccess();
+    act(() => onSuccess());
 
     expect(screen.getByText("Movie Added")).toBeInTheDocument();
 
-    vi.advanceTimersByTime(1500);
+    act(() => vi.advanceTimersByTime(1500));
     expect(onClose).toHaveBeenCalled();
 
     vi.useRealTimers();
@@ -167,7 +177,7 @@ describe("RequestMovieModal", () => {
     fireEvent.click(screen.getByText("Request"));
 
     const onError = addMovieOpts.onError as (err: { message: string }) => void;
-    onError({ message: "Movie already exists in Radarr" });
+    act(() => onError({ message: "Movie already exists in Radarr" }));
 
     expect(screen.getByText("Movie already exists in Radarr")).toBeInTheDocument();
   });
@@ -208,10 +218,10 @@ describe("RequestMovieModal", () => {
     setupDefaults();
     renderModal();
 
-    const profileSelect = screen.getByLabelText("Quality Profile") as HTMLSelectElement;
+    const profileSelect = document.getElementById("quality-profile") as HTMLSelectElement;
     expect(profileSelect.value).toBe("1");
 
-    const folderSelect = screen.getByLabelText("Root Folder") as HTMLSelectElement;
+    const folderSelect = document.getElementById("root-folder") as HTMLSelectElement;
     expect(folderSelect.value).toBe("/movies");
   });
 });

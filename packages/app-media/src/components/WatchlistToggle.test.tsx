@@ -154,10 +154,7 @@ describe("WatchlistToggle", () => {
 
       expect(mockCancel).toHaveBeenCalled();
       expect(mockGetData).toHaveBeenCalledWith({ mediaType: "movie" });
-      expect(mockSetData).toHaveBeenCalledWith(
-        { mediaType: "movie" },
-        expect.any(Function)
-      );
+      expect(mockSetData).toHaveBeenCalledWith({ mediaType: "movie" }, expect.any(Function));
       expect(context).toEqual({ previous: previousData });
 
       // Verify the updater function adds the optimistic entry
@@ -183,11 +180,7 @@ describe("WatchlistToggle", () => {
       render(<WatchlistToggle mediaType="movie" mediaId={550} />);
 
       const previous = { data: [], pagination: PAGINATION_EMPTY };
-      addMutationOpts.onError!(
-        { message: "Server error", data: null },
-        {},
-        { previous }
-      );
+      addMutationOpts.onError!({ message: "Server error", data: null }, {}, { previous });
 
       expect(mockSetData).toHaveBeenCalledWith({ mediaType: "movie" }, previous);
       expect(mockToastError).toHaveBeenCalledWith("Failed to add: Server error");
@@ -261,11 +254,7 @@ describe("WatchlistToggle", () => {
       render(<WatchlistToggle mediaType="movie" mediaId={550} />);
 
       const previous = { data: [WATCHLIST_ENTRY], pagination: PAGINATION_ONE };
-      removeMutationOpts.onError!(
-        { message: "Network error" },
-        {},
-        { previous }
-      );
+      removeMutationOpts.onError!({ message: "Network error" }, {}, { previous });
 
       expect(mockSetData).toHaveBeenCalledWith({ mediaType: "movie" }, previous);
       expect(mockToastError).toHaveBeenCalledWith("Failed to remove: Network error");
@@ -289,10 +278,7 @@ describe("WatchlistToggle", () => {
       });
       render(<WatchlistToggle mediaType="tv" mediaId={100} />);
 
-      expect(mockListQuery).toHaveBeenCalledWith(
-        { mediaType: "tv_show" },
-        expect.any(Object)
-      );
+      expect(mockListQuery).toHaveBeenCalledWith({ mediaType: "tv_show" }, expect.any(Object));
     });
   });
 });

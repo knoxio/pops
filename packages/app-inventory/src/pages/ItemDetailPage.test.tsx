@@ -13,6 +13,7 @@ const mockDisconnectMutation = vi.fn();
 const mockPaperlessStatusQuery = vi.fn();
 const mockDocumentsListQuery = vi.fn();
 const mockDocumentsUnlinkMutation = vi.fn();
+const mockPhotosReorderMutation = vi.fn();
 const mockUseUtils = vi.fn();
 
 vi.mock("../lib/trpc", () => ({
@@ -28,6 +29,7 @@ vi.mock("../lib/trpc", () => ({
       },
       photos: {
         listForItem: { useQuery: (...args: unknown[]) => mockPhotosQuery(...args) },
+        reorder: { useMutation: (...args: unknown[]) => mockPhotosReorderMutation(...args) },
       },
       locations: {
         getPath: { useQuery: (...args: unknown[]) => mockLocationPathQuery(...args) },
@@ -159,10 +161,16 @@ beforeEach(() => {
     isPending: false,
   });
 
+  mockPhotosReorderMutation.mockReturnValue({
+    mutate: vi.fn(),
+    isPending: false,
+  });
+
   mockUseUtils.mockReturnValue({
     inventory: {
       connections: { listForItem: { invalidate: vi.fn() } },
       documents: { listForItem: { invalidate: vi.fn() } },
+      photos: { listForItem: { invalidate: vi.fn() } },
     },
   });
 });
@@ -171,16 +179,16 @@ describe("ItemDetailPage", () => {
   describe("metadata rendering", () => {
     it("renders item name and brand/model", () => {
       renderAtRoute("/inventory/items/item-1");
-      expect(screen.getByText("MacBook Pro")).toBeInTheDocument();
+      expect(screen.getAllByText("MacBook Pro").length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText(/Apple/)).toBeInTheDocument();
       expect(screen.getByText(/M3 Max/)).toBeInTheDocument();
     });
 
     it("renders all metadata fields", () => {
       renderAtRoute("/inventory/items/item-1");
-      expect(screen.getByText("Electronics")).toBeInTheDocument();
+      expect(screen.getAllByText("Electronics").length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText("Excellent")).toBeInTheDocument();
-      expect(screen.getByText("Office")).toBeInTheDocument();
+      expect(screen.getAllByText("Office").length).toBeGreaterThanOrEqual(1);
       expect(screen.getByText("ASSET-001")).toBeInTheDocument();
       expect(screen.getByText("In Use")).toBeInTheDocument();
       expect(screen.getByText("$4,500")).toBeInTheDocument();
@@ -205,7 +213,7 @@ describe("ItemDetailPage", () => {
         error: null,
       });
       renderAtRoute("/inventory/items/item-1");
-      expect(screen.getByText("MacBook Pro")).toBeInTheDocument();
+      expect(screen.getAllByText("MacBook Pro").length).toBeGreaterThanOrEqual(1);
       expect(screen.queryByText("Electronics")).not.toBeInTheDocument();
       expect(screen.queryByText("Excellent")).not.toBeInTheDocument();
       expect(screen.queryByText("ASSET-001")).not.toBeInTheDocument();
@@ -442,6 +450,10 @@ describe("ItemDetailPage", () => {
 
       const disconnectButtons = screen.getAllByRole("button", { name: /disconnect/i });
       fireEvent.click(disconnectButtons[0]!);
+
+      // Click the confirm action inside the AlertDialog
+      const confirmButton = screen.getByRole("button", { name: /^Disconnect$/i });
+      fireEvent.click(confirmButton);
 
       expect(mockDisconnectMutate).toHaveBeenCalledWith({ id: "c1" });
     });

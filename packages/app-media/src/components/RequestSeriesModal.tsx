@@ -5,7 +5,15 @@
  * season monitoring checkboxes with smart defaults, then submits to Sonarr.
  */
 import { useState, useEffect, useMemo } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Select, Label } from "@pops/ui";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  Select,
+  Label,
+} from "@pops/ui";
 import { Button } from "@pops/ui";
 import { RefreshCw, CheckCircle2 } from "lucide-react";
 import { trpc } from "../lib/trpc";

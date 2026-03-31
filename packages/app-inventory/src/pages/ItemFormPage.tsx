@@ -21,7 +21,18 @@ import {
   PageHeader,
   Label,
 } from "@pops/ui";
-import { Save, Link2, X, Search, Wand2, Loader2, ImageIcon, Trash2, Eye, PenLine } from "lucide-react";
+import {
+  Save,
+  Link2,
+  X,
+  Search,
+  Wand2,
+  Loader2,
+  ImageIcon,
+  Trash2,
+  Eye,
+  PenLine,
+} from "lucide-react";
 import Markdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import { trpc } from "../lib/trpc";
@@ -309,12 +320,9 @@ export function ItemFormPage() {
     });
   }, []);
 
-  const handleDeletePhoto = useCallback(
-    (photoId: number) => {
-      setDeleteConfirmId(photoId);
-    },
-    []
-  );
+  const handleDeletePhoto = useCallback((photoId: number) => {
+    setDeleteConfirmId(photoId);
+  }, []);
 
   const confirmDeletePhoto = useCallback(() => {
     if (deleteConfirmId !== null) {
@@ -604,10 +612,7 @@ export function ItemFormPage() {
             <FormField label="Condition">
               <Select
                 {...register("condition")}
-                options={[
-                  { value: "", label: "Select condition..." },
-                  ...CONDITIONS,
-                ]}
+                options={[{ value: "", label: "Select condition..." }, ...CONDITIONS]}
               />
             </FormField>
           </div>
@@ -763,9 +768,13 @@ export function ItemFormPage() {
               className="text-xs text-muted-foreground"
             >
               {notesPreview ? (
-                <><PenLine className="h-3.5 w-3.5 mr-1" /> Edit</>
+                <>
+                  <PenLine className="h-3.5 w-3.5 mr-1" /> Edit
+                </>
               ) : (
-                <><Eye className="h-3.5 w-3.5 mr-1" /> Preview</>
+                <>
+                  <Eye className="h-3.5 w-3.5 mr-1" /> Preview
+                </>
               )}
             </Button>
           </div>

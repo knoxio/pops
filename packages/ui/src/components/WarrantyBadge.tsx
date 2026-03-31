@@ -54,7 +54,7 @@ export function WarrantyBadge({ warrantyExpiry, className, ...props }: WarrantyB
       className={cn(
         "text-2xs uppercase tracking-wider font-semibold py-0 px-1.5 h-5",
         warrantyStyles[state],
-        className,
+        className
       )}
       {...props}
     >

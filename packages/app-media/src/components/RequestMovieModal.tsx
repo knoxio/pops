@@ -5,7 +5,14 @@
  * then submits to Radarr's addMovie endpoint.
  */
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Select } from "@pops/ui";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  Select,
+} from "@pops/ui";
 import { Button } from "@pops/ui";
 import { RefreshCw, CheckCircle2 } from "lucide-react";
 import { trpc } from "../lib/trpc";

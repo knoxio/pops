@@ -8,6 +8,7 @@ on:
       - "packages/app-*/**"
       - "packages/db-types/**"
       - "packages/ui/**"
+      - "packages/api-client/**"
       - "packages/widgets/**"
       - "packages/navigation/**"
       - ".github/workflows/fe-quality.yml"
@@ -31,6 +32,7 @@ jobs:
               - 'packages/app-*/**'
               - 'packages/db-types/**'
               - 'packages/ui/**'
+              - 'packages/api-client/**'
               - 'packages/widgets/**'
               - 'packages/navigation/**'
               - '.github/workflows/fe-quality.yml'
@@ -73,6 +75,14 @@ jobs:
       - name: Lint
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: cd apps/pops-shell && pnpm lint
+
+      - name: Format check
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
+        run: cd apps/pops-shell && pnpm format:check
+
+      - name: Test
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
+        run: cd apps/pops-shell && pnpm test
 
       - name: Build
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'

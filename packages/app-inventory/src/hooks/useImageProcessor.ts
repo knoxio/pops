@@ -42,9 +42,13 @@ export function useImageProcessor() {
           const heic2any = (await import("heic2any")).default;
           const blob = await heic2any({ blob: file, toType: "image/jpeg", quality: QUALITY });
           const converted: Blob = Array.isArray(blob) ? blob[0]! : blob;
-          input = new File([converted], file.name.replace(/\.heic$/i, ".jpg").replace(/\.heif$/i, ".jpg"), {
-            type: "image/jpeg",
-          });
+          input = new File(
+            [converted],
+            file.name.replace(/\.heic$/i, ".jpg").replace(/\.heif$/i, ".jpg"),
+            {
+              type: "image/jpeg",
+            }
+          );
         }
 
         // Compress and resize

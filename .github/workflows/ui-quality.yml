@@ -1,11 +1,11 @@
-name: Tools Quality
+name: UI Quality
 
 on:
   push:
     branches: [main]
     paths:
-      - "packages/import-tools/**"
-      - ".github/workflows/tools-quality.yml"
+      - "packages/ui/**"
+      - ".github/workflows/ui-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
 
@@ -23,8 +23,8 @@ jobs:
         with:
           filters: |
             relevant:
-              - 'packages/import-tools/**'
-              - '.github/workflows/tools-quality.yml'
+              - 'packages/ui/**'
+              - '.github/workflows/ui-quality.yml'
               - '.github/workflows/_pkg-check.yml'
 
   quality:
@@ -32,6 +32,6 @@ jobs:
     if: always()
     uses: ./.github/workflows/_pkg-check.yml
     with:
-      package-path: packages/import-tools
+      package-path: packages/ui
       needs-db-build: false
       skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}

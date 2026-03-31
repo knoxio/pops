@@ -17,7 +17,5 @@ export const syncJobResults = sqliteTable(
       .notNull()
       .default(sql`(datetime('now'))`),
   },
-  (table) => [
-    index("idx_sync_job_results_type_completed").on(table.jobType, table.completedAt),
-  ]
+  (table) => [index("idx_sync_job_results_type_completed").on(table.jobType, table.completedAt)]
 );

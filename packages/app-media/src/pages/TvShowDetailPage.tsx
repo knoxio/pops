@@ -78,7 +78,8 @@ export function TvShowDetailPage() {
 
   const utils = trpc.useUtils();
 
-  const progressSnapshot = useRef<ReturnType<typeof utils.media.watchHistory.progress.getData>>(undefined);
+  const progressSnapshot =
+    useRef<ReturnType<typeof utils.media.watchHistory.progress.getData>>(undefined);
 
   const seasonMonitorMutation = trpc.media.arr.updateSeasonMonitoring.useMutation({
     onError: (

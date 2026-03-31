@@ -1,0 +1,118 @@
+name: Package Quality Check
+
+on:
+  workflow_call:
+    inputs:
+      package-path:
+        description: "Path to the package (e.g. packages/app-finance)"
+        type: string
+        required: true
+      needs-db-build:
+        description: "Whether to build @pops/db-types before running checks"
+        type: boolean
+        default: false
+      has-test:
+        description: "Whether the package has a test script"
+        type: boolean
+        default: true
+      has-format:
+        description: "Whether the package has a format:check script"
+        type: boolean
+        default: true
+      skip:
+        description: "Set to 'true' to skip all jobs (used for change detection)"
+        type: string
+        default: "false"
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Skip — no relevant changes"
+        if: inputs.skip == 'true'
+        run: echo "Skipping — no relevant changes"
+      - uses: actions/checkout@v6
+        if: inputs.skip != 'true'
+      - uses: pnpm/action-setup@v5
+        if: inputs.skip != 'true'
+      - uses: actions/setup-node@v6
+        if: inputs.skip != 'true'
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        if: inputs.skip != 'true'
+      - run: cd ${{ inputs.package-path }} && pnpm lint
+        if: inputs.skip != 'true'
+
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Skip — no relevant changes"
+        if: inputs.skip == 'true'
+        run: echo "Skipping — no relevant changes"
+      - uses: actions/checkout@v6
+        if: inputs.skip != 'true'
+      - uses: pnpm/action-setup@v5
+        if: inputs.skip != 'true'
+      - uses: actions/setup-node@v6
+        if: inputs.skip != 'true'
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        if: inputs.skip != 'true'
+      - name: Build db-types
+        if: inputs.skip != 'true' && inputs.needs-db-build
+        run: pnpm --filter @pops/db-types build
+      - run: cd ${{ inputs.package-path }} && pnpm typecheck
+        if: inputs.skip != 'true'
+
+  test:
+    name: Test
+    if: ${{ inputs.has-test }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Skip — no relevant changes"
+        if: inputs.skip == 'true'
+        run: echo "Skipping — no relevant changes"
+      - uses: actions/checkout@v6
+        if: inputs.skip != 'true'
+      - uses: pnpm/action-setup@v5
+        if: inputs.skip != 'true'
+      - uses: actions/setup-node@v6
+        if: inputs.skip != 'true'
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        if: inputs.skip != 'true'
+      - name: Build db-types
+        if: inputs.skip != 'true' && inputs.needs-db-build
+        run: pnpm --filter @pops/db-types build
+      - run: cd ${{ inputs.package-path }} && pnpm test
+        if: inputs.skip != 'true'
+
+  format:
+    name: Format
+    if: ${{ inputs.has-format }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Skip — no relevant changes"
+        if: inputs.skip == 'true'
+        run: echo "Skipping — no relevant changes"
+      - uses: actions/checkout@v6
+        if: inputs.skip != 'true'
+      - uses: pnpm/action-setup@v5
+        if: inputs.skip != 'true'
+      - uses: actions/setup-node@v6
+        if: inputs.skip != 'true'
+        with:
+          node-version: "22"
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+        if: inputs.skip != 'true'
+      - run: cd ${{ inputs.package-path }} && pnpm format:check
+        if: inputs.skip != 'true'

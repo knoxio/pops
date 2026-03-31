@@ -50,6 +50,19 @@ vi.mock("@pops/ui", async () => {
   // Shared ref so DialogClose can call the Dialog's onOpenChange
   let dialogCloseRef: (() => void) | null = null;
   return {
+    PageHeader: ({
+      title,
+      description,
+    }: {
+      title: React.ReactNode;
+      description?: React.ReactNode;
+    }) =>
+      React.createElement(
+        "div",
+        { "data-testid": "page-header" },
+        React.createElement("h1", null, title),
+        description && React.createElement("p", null, description)
+      ),
     DataTable: ({
       columns,
       data,

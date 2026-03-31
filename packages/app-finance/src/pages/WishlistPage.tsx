@@ -131,7 +131,7 @@ export function WishlistPage() {
       item: item.item,
       targetAmount: item.targetAmount,
       saved: item.saved,
-      priority: (item.priority as any) || "Soon",
+      priority: (item.priority as WishlistFormValues["priority"]) || "Soon",
       url: item.url || "",
       notes: item.notes || "",
     });

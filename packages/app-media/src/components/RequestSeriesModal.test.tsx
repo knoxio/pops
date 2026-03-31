@@ -134,7 +134,8 @@ describe("RequestSeriesModal", () => {
     setupDefaults();
     renderModal();
 
-    const select = screen.getByLabelText("Quality Profile") as HTMLSelectElement;
+    const select = document.getElementById("quality-profile") as HTMLSelectElement;
+    expect(select).toBeTruthy();
     const options = select.querySelectorAll("option");
     expect(options).toHaveLength(2);
     expect(options[0]!.textContent).toBe("HD - 720p/1080p");
@@ -145,7 +146,8 @@ describe("RequestSeriesModal", () => {
     setupDefaults();
     renderModal();
 
-    const select = screen.getByLabelText("Root Folder") as HTMLSelectElement;
+    const select = document.getElementById("root-folder") as HTMLSelectElement;
+    expect(select).toBeTruthy();
     const options = select.querySelectorAll("option");
     expect(options).toHaveLength(2);
     expect(options[0]!.textContent).toContain("/tv");
@@ -156,7 +158,8 @@ describe("RequestSeriesModal", () => {
     setupDefaults();
     renderModal();
 
-    const select = screen.getByLabelText("Language Profile") as HTMLSelectElement;
+    const select = document.getElementById("language-profile") as HTMLSelectElement;
+    expect(select).toBeTruthy();
     const options = select.querySelectorAll("option");
     expect(options).toHaveLength(2);
     expect(options[0]!.textContent).toBe("English");
@@ -167,9 +170,9 @@ describe("RequestSeriesModal", () => {
     setupDefaults();
     renderModal();
 
-    expect((screen.getByLabelText("Quality Profile") as HTMLSelectElement).value).toBe("1");
-    expect((screen.getByLabelText("Root Folder") as HTMLSelectElement).value).toBe("/tv");
-    expect((screen.getByLabelText("Language Profile") as HTMLSelectElement).value).toBe("1");
+    expect((document.getElementById("quality-profile") as HTMLSelectElement).value).toBe("1");
+    expect((document.getElementById("root-folder") as HTMLSelectElement).value).toBe("/tv");
+    expect((document.getElementById("language-profile") as HTMLSelectElement).value).toBe("1");
   });
 
   it("applies smart season defaults — future checked, past unchecked", () => {
