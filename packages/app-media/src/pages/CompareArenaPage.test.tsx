@@ -11,7 +11,9 @@ const mockRecordMutate = vi.fn() as ReturnType<typeof vi.fn> & {
 const mockRefetchPair = vi.fn();
 const mockScoresFetch = vi.fn();
 const mockWatchlistListQuery = vi.fn();
-const mockWatchlistAddMutate = vi.fn();
+const mockWatchlistAddMutate = vi.fn() as ReturnType<typeof vi.fn> & {
+  _opts?: Record<string, unknown>;
+};
 const mockInvalidateRandomPair = vi.fn();
 const mockInvalidateWatchlistList = vi.fn();
 
