@@ -180,6 +180,38 @@ export class TmdbClient {
     };
   }
 
+  /** Get similar movies based on a specific movie. */
+  async getMovieSimilar(tmdbId: number, page = 1): Promise<TmdbSearchResponse> {
+    const params = new URLSearchParams({
+      page: String(page),
+      language: "en-US",
+    });
+
+    const raw = await this.get<RawTmdbRecommendationsResponse>(
+      `/3/movie/${tmdbId}/similar?${params.toString()}`
+    );
+
+    return {
+      page: raw.page,
+      totalResults: raw.total_results,
+      totalPages: raw.total_pages,
+      results: raw.results.map((r) => ({
+        tmdbId: r.id,
+        title: r.title,
+        originalTitle: r.original_title,
+        overview: r.overview,
+        releaseDate: r.release_date,
+        posterPath: r.poster_path,
+        backdropPath: r.backdrop_path,
+        voteAverage: r.vote_average,
+        voteCount: r.vote_count,
+        genreIds: r.genre_ids,
+        originalLanguage: r.original_language,
+        popularity: r.popularity,
+      })),
+    };
+  }
+
   /** Discover movies by genre IDs and/or keyword IDs, with configurable sort and filters. */
   async discoverMovies(opts: {
     genreIds?: number[];
