@@ -2,12 +2,13 @@
  * Discovery TMDB service — trending movies and recommendations from TMDB,
  * enriched with library membership status.
  */
-import { desc, isNotNull } from "drizzle-orm";
+import { desc, eq, isNotNull } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
-import { movies } from "@pops/db-types";
+import { movies, mediaWatchlist } from "@pops/db-types";
 import type { TmdbClient } from "../tmdb/client.js";
 import type { TmdbSearchResult } from "../tmdb/types.js";
-import type { DiscoverResult } from "./types.js";
+import type { DiscoverResult, ScoredDiscoverResult } from "./types.js";
+import { getPreferenceProfile, scoreDiscoverResults } from "./service.js";
 
 /** Get all TMDB IDs currently in the library for quick lookup. */
 function getLibraryTmdbIds(): Set<number> {
@@ -143,5 +144,91 @@ export async function getRecommendations(
   return {
     results: merged,
     sourceMovies: topMovies.map((m) => m.title),
+  };
+}
+
+/** Get TMDB IDs of movies on the watchlist for exclusion. */
+function getWatchlistTmdbIds(): Set<number> {
+  const db = getDrizzle();
+  const rows = db
+    .select({ tmdbId: movies.tmdbId })
+    .from(mediaWatchlist)
+    .innerJoin(movies, eq(movies.id, mediaWatchlist.mediaId))
+    .where(eq(mediaWatchlist.mediaType, "movie"))
+    .all();
+  return new Set(rows.map((r) => r.tmdbId));
+}
+
+/**
+ * Get recommendations based on watchlist movies.
+ * Fetches TMDB /movie/{id}/similar for the 10 most recent watchlist items,
+ * merges/deduplicates, excludes library + watchlist + dismissed, scores by preference profile.
+ */
+export async function getWatchlistRecommendations(
+  client: TmdbClient
+): Promise<{ results: ScoredDiscoverResult[]; sourceMovies: string[] }> {
+  const db = getDrizzle();
+
+  // Get up to 10 most recently added movie watchlist items
+  const watchlistItems = db
+    .select({ tmdbId: movies.tmdbId, title: movies.title })
+    .from(mediaWatchlist)
+    .innerJoin(movies, eq(movies.id, mediaWatchlist.mediaId))
+    .where(eq(mediaWatchlist.mediaType, "movie"))
+    .orderBy(desc(mediaWatchlist.addedAt))
+    .limit(10)
+    .all();
+
+  if (watchlistItems.length === 0) {
+    return { results: [], sourceMovies: [] };
+  }
+
+  const libraryIds = getLibraryTmdbIds();
+  const watchlistIds = getWatchlistTmdbIds();
+  const dismissedIds = getDismissedTmdbIds();
+
+  // Fetch similar movies for each watchlist item in parallel
+  const simPromises = watchlistItems.map((m) => client.getMovieSimilar(m.tmdbId, 1));
+  const simResponses = await Promise.all(simPromises);
+
+  // Merge and deduplicate, excluding library, watchlist, and dismissed
+  const seen = new Set<number>();
+  const merged: DiscoverResult[] = [];
+
+  for (const response of simResponses) {
+    for (const result of response.results) {
+      if (
+        seen.has(result.tmdbId) ||
+        libraryIds.has(result.tmdbId) ||
+        watchlistIds.has(result.tmdbId) ||
+        dismissedIds.has(result.tmdbId)
+      ) {
+        continue;
+      }
+      seen.add(result.tmdbId);
+      merged.push({
+        tmdbId: result.tmdbId,
+        title: result.title,
+        overview: result.overview,
+        releaseDate: result.releaseDate,
+        posterPath: result.posterPath,
+        posterUrl: buildPosterUrl(result.posterPath, result.tmdbId, false),
+        backdropPath: result.backdropPath,
+        voteAverage: result.voteAverage,
+        voteCount: result.voteCount,
+        genreIds: result.genreIds,
+        popularity: result.popularity,
+        inLibrary: false,
+      });
+    }
+  }
+
+  // Score using preference profile
+  const profile = getPreferenceProfile();
+  const scored = scoreDiscoverResults(merged, profile);
+
+  return {
+    results: scored,
+    sourceMovies: watchlistItems.map((m) => m.title),
   };
 }

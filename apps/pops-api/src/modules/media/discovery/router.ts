@@ -62,6 +62,21 @@ export const discoveryRouter = router({
     }
   }),
 
+  /** Get recommendations based on watchlist movies via TMDB similar. */
+  watchlistRecommendations: protectedProcedure.query(async () => {
+    try {
+      const client = getTmdbClient();
+      return await tmdbService.getWatchlistRecommendations(client);
+    } catch (err) {
+      if (err instanceof TRPCError) throw err;
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message:
+          err instanceof Error ? err.message : "Unknown error fetching watchlist recommendations",
+      });
+    }
+  }),
+
   /** Get rewatch suggestions — movies watched 6+ months ago with high scores. */
   rewatchSuggestions: protectedProcedure.query(() => {
     try {
