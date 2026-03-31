@@ -53,3 +53,4 @@ See [CLAUDE.md](CLAUDE.md) for templates and standards.
 ## Current State
 
 POPS has a working platform with 4 apps (Finance, Media, Inventory, AI), deployed on an N95 mini PC with Docker, Cloudflare Tunnel, and CI/CD. See the [roadmap implementation tracker](roadmap.md#implementation-tracker) for detailed status.
+
