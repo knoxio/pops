@@ -26,25 +26,27 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
           node-version: '22'
-          cache: pnpm
-          cache: 'yarn'
-          cache-dependency-path: packages/import-tools/yarn.lock
+          cache: 'pnpm'
 
       - name: Install dependencies
-        run: yarn install --frozen-lockfile
+        working-directory: .
+        run: pnpm install --frozen-lockfile
 
       - name: Type check
-        run: yarn typecheck
+        run: pnpm typecheck
 
       - name: Lint
-        run: yarn lint
+        run: pnpm lint
 
       - name: Format check
-        run: yarn format
+        run: pnpm format
 
       - name: Run tests
-        run: yarn test
+        run: pnpm test

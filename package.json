@@ -11,7 +11,7 @@
     "lint:fix": "turbo lint:fix",
     "format:check": "turbo format:check",
     "format:fix": "turbo format:fix",
-    "ci:fix": "turbo run lint:fix && turbo run format:fix && turbo run typecheck lint format:check && (cd packages/import-tools && pnpm ci:fix)"
+    "ci:fix": "turbo run lint:fix && turbo run format:fix && turbo run typecheck lint format:check"
   },
   "pnpm": {
     "onlyBuiltDependencies": [

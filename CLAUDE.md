@@ -95,17 +95,17 @@ Do NOT run `pnpm test:integration` locally. CI handles these automatically.
 
 ### Tools (import scripts)
 ```bash
-cd packages/import-tools && yarn install
+cd packages/import-tools && pnpm install
 
-yarn import:anz --csv path/to/file.csv --execute           # ANZ import
-yarn import:amex --csv path/to/file.csv --execute          # Amex import
-yarn import:ing --csv path/to/file.csv --execute           # ING import
-yarn import:up --since 2026-01-01 --execute                # Up Bank batch
-yarn match:transfers --execute                              # Link transfer pairs
-yarn match:novated --execute                                # Link novated pairs
-yarn entities:create --execute                              # Batch create entities
-yarn entities:lookup                                        # Rebuild entity lookup
-yarn audit                                                  # DB statistics
+pnpm import:anz --csv path/to/file.csv --execute           # ANZ import
+pnpm import:amex --csv path/to/file.csv --execute          # Amex import
+pnpm import:ing --csv path/to/file.csv --execute           # ING import
+pnpm import:up --since 2026-01-01 --execute                # Up Bank batch
+pnpm match:transfers --execute                              # Link transfer pairs
+pnpm match:novated --execute                                # Link novated pairs
+pnpm entities:create --execute                              # Batch create entities
+pnpm entities:lookup                                        # Rebuild entity lookup
+pnpm audit                                                  # DB statistics
 ```
 Omit `--execute` for dry-run mode (no writes).
 

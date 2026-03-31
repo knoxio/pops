@@ -2,7 +2,7 @@
  * Match novated lease reimbursement pairs in the transactions table.
  * Links payroll deductions to the original lease charges.
  *
- * Usage: yarn match:novated [--execute]
+ * Usage: pnpm match:novated [--execute]
  */
 
 async function main(): Promise<void> {

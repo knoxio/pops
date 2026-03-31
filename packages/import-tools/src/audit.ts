@@ -1,7 +1,7 @@
 /**
  * Audit SQLite database — print statistics and data quality checks.
  *
- * Usage: yarn audit
+ * Usage: pnpm audit
  */
 import Database from 'better-sqlite3';
 

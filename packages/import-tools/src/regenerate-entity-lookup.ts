@@ -2,7 +2,7 @@
  * Rebuild entity_lookup.json from the entities table.
  * Maps entity name -> entity ID for use by import scripts.
  *
- * Usage: yarn entities:lookup
+ * Usage: pnpm entities:lookup
  */
 
 async function main(): Promise<void> {

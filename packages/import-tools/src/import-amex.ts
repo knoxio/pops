@@ -2,7 +2,7 @@
  * Amex CSV import script.
  * Handles Amex's multiline field format and Town/City, Country extraction.
  *
- * Usage: yarn import:amex --csv path/to/activity.csv [--execute]
+ * Usage: pnpm import:amex --csv path/to/activity.csv [--execute]
  */
 
 import type { RunMode } from './lib/types.js';
@@ -14,7 +14,7 @@ function parseArgs(): { csvPath: string; mode: RunMode } {
   const mode: RunMode = args.includes('--execute') ? 'execute' : 'dry-run';
 
   if (!csvPath) {
-    console.error('Usage: yarn import:amex --csv <path> [--execute]');
+    console.error('Usage: pnpm import:amex --csv <path> [--execute]');
     process.exit(1);
   }
 

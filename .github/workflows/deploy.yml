@@ -17,7 +17,7 @@ jobs:
       deploy_needed: ${{ steps.filter.outputs.deploy_needed }}
     steps:
       - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           filters: |
@@ -46,9 +46,7 @@ jobs:
     name: Quality Checks
     runs-on: ubuntu-latest
     needs: changes
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      needs.changes.outputs.deploy_needed == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.deploy_needed == 'true'
     steps:
       - uses: actions/checkout@v6
 
@@ -91,9 +89,7 @@ jobs:
     name: Deploy to N95
     runs-on: self-hosted
     needs: [changes, quality-checks]
-    if: |
-      github.event_name == 'workflow_dispatch' ||
-      needs.changes.outputs.deploy_needed == 'true'
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.deploy_needed == 'true'
     environment:
       name: production
       url: https://pops.jmiranda.dev

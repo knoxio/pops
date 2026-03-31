@@ -7,3 +7,4 @@ packages:
   - 'packages/api-client'
   - 'packages/db-types'
   - 'packages/ui'
+  - 'packages/import-tools'

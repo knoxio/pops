@@ -1,7 +1,7 @@
 FROM node:22-alpine
 WORKDIR /app
-COPY package.json yarn.lock* ./
-RUN yarn install --frozen-lockfile
+COPY package.json pnpm-lock.yaml* ./
+RUN corepack enable pnpm && pnpm install --frozen-lockfile
 COPY tsconfig.json ./
 COPY src/ ./src/
 USER node

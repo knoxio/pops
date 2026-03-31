@@ -43,10 +43,10 @@ export function normaliseDate(raw: string): string {
   // DD/MM/YYYY or DD-MM-YYYY
   const slashMatch = trimmed.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
   if (slashMatch) {
-    const day = slashMatch[1];
-    const month = slashMatch[2];
-    const year = slashMatch[3];
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    const [, day, month, year] = slashMatch;
+    if (day && month && year) {
+      return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+    }
   }
 
   // DD MMM YYYY (e.g. "15 Jan 2026")
@@ -66,12 +66,12 @@ export function normaliseDate(raw: string): string {
   };
   const textMatch = trimmed.match(/^(\d{1,2})\s+(\w{3})\s+(\d{4})$/);
   if (textMatch) {
-    const day = textMatch[1];
-    const monthAbbr = textMatch[2];
-    const year = textMatch[3];
-    const monthNum = months[monthAbbr];
-    if (monthNum) {
-      return `${year}-${monthNum}-${day.padStart(2, '0')}`;
+    const [, day, monthAbbr, year] = textMatch;
+    if (day && monthAbbr && year) {
+      const monthNum = months[monthAbbr];
+      if (monthNum) {
+        return `${year}-${monthNum}-${day.padStart(2, '0')}`;
+      }
     }
   }
 

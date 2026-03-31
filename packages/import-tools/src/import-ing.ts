@@ -2,7 +2,7 @@
  * ING CSV import script.
  * New for Phase 1 — covers ING Everyday and ING Loan accounts.
  *
- * Usage: yarn import:ing --csv path/to/ing-export.csv [--execute]
+ * Usage: pnpm import:ing --csv path/to/ing-export.csv [--execute]
  */
 
 import type { RunMode } from './lib/types.js';
@@ -14,7 +14,7 @@ function parseArgs(): { csvPath: string; mode: RunMode } {
   const mode: RunMode = args.includes('--execute') ? 'execute' : 'dry-run';
 
   if (!csvPath) {
-    console.error('Usage: yarn import:ing --csv <path> [--execute]');
+    console.error('Usage: pnpm import:ing --csv <path> [--execute]');
     process.exit(1);
   }
 

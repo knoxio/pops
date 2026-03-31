@@ -2,7 +2,7 @@
  * Batch create entities in the entities table.
  * Also regenerates entity_lookup.json after creation.
  *
- * Usage: yarn entities:create [--execute]
+ * Usage: pnpm entities:create [--execute]
  */
 
 async function main(): Promise<void> {

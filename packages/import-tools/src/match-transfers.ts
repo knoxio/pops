@@ -2,7 +2,7 @@
  * Match inter-account transfer pairs in the transactions table.
  * Links matching debit/credit transactions across accounts via related_transaction_id.
  *
- * Usage: yarn match:transfers [--execute]
+ * Usage: pnpm match:transfers [--execute]
  */
 
 async function main(): Promise<void> {

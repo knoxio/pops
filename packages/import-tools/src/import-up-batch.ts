@@ -2,7 +2,7 @@
  * Up Bank API batch import script.
  * Fetches transactions from Up Bank API and imports to SQLite.
  *
- * Usage: yarn import:up [--since 2026-01-01] [--execute]
+ * Usage: pnpm import:up [--since 2026-01-01] [--execute]
  */
 
 import type { RunMode } from './lib/types.js';
