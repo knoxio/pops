@@ -8,37 +8,81 @@ on:
 jobs:
   changes:
     name: Detect Changes
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
-      frontend: ${{ steps.filter.outputs.frontend }}
-      backend: ${{ steps.filter.outputs.backend }}
-      infra: ${{ steps.filter.outputs.infra }}
-      deploy_needed: ${{ steps.filter.outputs.deploy_needed }}
+      frontend: ${{ steps.diff.outputs.frontend }}
+      backend: ${{ steps.diff.outputs.backend }}
+      infra: ${{ steps.diff.outputs.infra }}
+      deploy_needed: ${{ steps.diff.outputs.deploy_needed }}
+      last_deployed_sha: ${{ steps.sha.outputs.last_deployed_sha }}
     steps:
       - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v4
-        id: filter
         with:
-          filters: |
-            frontend:
-              - 'apps/pops-shell/**'
-              - 'packages/app-*/**'
-              - 'packages/ui/**'
-              - 'packages/widgets/**'
-              - 'packages/navigation/**'
-            backend:
-              - 'apps/pops-api/**'
-              - 'packages/db-types/**'
-              - 'packages/types/**'
-              - 'packages/auth/**'
-            infra:
-              - 'infra/**'
-              - 'apps/pops-shell/nginx.conf'
-              - 'docker-compose*'
-            deploy_needed:
-              - '!docs/**'
-              - '!.github/**'
-              - '!*.md'
+          fetch-depth: 0
+
+      - name: Read last deployed SHA
+        id: sha
+        run: |
+          DEPLOY_SHA_FILE="/opt/pops/.last-deploy-sha"
+          if [ -f "$DEPLOY_SHA_FILE" ] && [ "${{ github.event_name }}" != "workflow_dispatch" ]; then
+            LAST_SHA=$(cat "$DEPLOY_SHA_FILE")
+            echo "Last deployed: $LAST_SHA"
+            # Verify the SHA exists in history
+            if git cat-file -e "$LAST_SHA" 2>/dev/null; then
+              echo "last_deployed_sha=$LAST_SHA" >> $GITHUB_OUTPUT
+            else
+              echo "Stored SHA not found in history — diffing full"
+              echo "last_deployed_sha=" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "No deploy marker found or manual dispatch — full deploy"
+            echo "last_deployed_sha=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Diff against last deploy
+        id: diff
+        run: |
+          LAST_SHA="${{ steps.sha.outputs.last_deployed_sha }}"
+          if [ -z "$LAST_SHA" ]; then
+            echo "No baseline — marking all as changed"
+            echo "frontend=true" >> $GITHUB_OUTPUT
+            echo "backend=true" >> $GITHUB_OUTPUT
+            echo "infra=true" >> $GITHUB_OUTPUT
+            echo "deploy_needed=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          CHANGED=$(git diff --name-only "$LAST_SHA"..HEAD)
+          echo "Changed files since last deploy ($LAST_SHA):"
+          echo "$CHANGED"
+
+          # Frontend
+          if echo "$CHANGED" | grep -qE '^(apps/pops-shell/|packages/app-|packages/ui/|packages/widgets/|packages/navigation/)'; then
+            echo "frontend=true" >> $GITHUB_OUTPUT
+          else
+            echo "frontend=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Backend
+          if echo "$CHANGED" | grep -qE '^(apps/pops-api/|packages/db-types/|packages/types/|packages/auth/)'; then
+            echo "backend=true" >> $GITHUB_OUTPUT
+          else
+            echo "backend=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Infra
+          if echo "$CHANGED" | grep -qE '^(infra/|apps/pops-shell/nginx\.conf|docker-compose)'; then
+            echo "infra=true" >> $GITHUB_OUTPUT
+          else
+            echo "infra=false" >> $GITHUB_OUTPUT
+          fi
+
+          # Deploy needed (anything except docs/CI/markdown)
+          if echo "$CHANGED" | grep -qvE '^(docs/|\.github/|.*\.md$)'; then
+            echo "deploy_needed=true" >> $GITHUB_OUTPUT
+          else
+            echo "deploy_needed=false" >> $GITHUB_OUTPUT
+          fi
 
   # Quality checks run in parallel for faster feedback
   lint:
@@ -102,8 +146,6 @@ jobs:
       - run: pnpm build
 
   # Deploy to N95 server
-  # Note: This job expects a self-hosted runner on the N95 server
-  # See docs/DEPLOYMENT.md for setup instructions
   deploy:
     name: Deploy to N95
     runs-on: self-hosted
@@ -122,22 +164,22 @@ jobs:
         run: |
           if [ "${{ github.event_name }}" == "workflow_dispatch" ] || [ "${{ needs.changes.outputs.infra }}" == "true" ]; then
             echo "type=full" >> $GITHUB_OUTPUT
-            echo "🚀 Full Ansible deployment"
+            echo "Full Ansible deployment"
           elif [ "${{ needs.changes.outputs.frontend }}" == "true" ] && [ "${{ needs.changes.outputs.backend }}" == "true" ]; then
             echo "type=selective" >> $GITHUB_OUTPUT
             echo "target=both" >> $GITHUB_OUTPUT
-            echo "⚡ Selective deployment (Frontend + Backend)"
+            echo "Selective deployment (Frontend + Backend)"
           elif [ "${{ needs.changes.outputs.frontend }}" == "true" ]; then
             echo "type=selective" >> $GITHUB_OUTPUT
             echo "target=frontend" >> $GITHUB_OUTPUT
-            echo "⚡ Selective deployment (Frontend only)"
+            echo "Selective deployment (Frontend only)"
           elif [ "${{ needs.changes.outputs.backend }}" == "true" ]; then
             echo "type=selective" >> $GITHUB_OUTPUT
             echo "target=backend" >> $GITHUB_OUTPUT
-            echo "⚡ Selective deployment (Backend only)"
+            echo "Selective deployment (Backend only)"
           else
             echo "type=full" >> $GITHUB_OUTPUT
-            echo "🚀 Fallback: Full Ansible deployment (Unknown changes)"
+            echo "Fallback: Full Ansible deployment (Unknown changes)"
           fi
 
       - name: Run Ansible deployment
@@ -154,21 +196,19 @@ jobs:
         if: steps.mode.outputs.type == 'selective'
         id: selective
         run: |
-          # The self-hosted runner is on the N95
-          # Docker context is repo root
           cd /opt/pops
 
           if [ "${{ steps.mode.outputs.target }}" == "frontend" ] || [ "${{ steps.mode.outputs.target }}" == "both" ]; then
-            echo "📦 Building pops-shell..."
+            echo "Building pops-shell..."
             docker compose build pops-shell
-            echo "🔄 Restarting pops-shell..."
+            echo "Restarting pops-shell..."
             docker compose up -d pops-shell
           fi
 
           if [ "${{ steps.mode.outputs.target }}" == "backend" ] || [ "${{ steps.mode.outputs.target }}" == "both" ]; then
-            echo "📦 Building pops-api..."
+            echo "Building pops-api..."
             docker compose build pops-api
-            echo "🔄 Restarting pops-api..."
+            echo "Restarting pops-api..."
             docker compose up -d pops-api
           fi
 
@@ -179,15 +219,24 @@ jobs:
           wait_healthy() {
             local container=$1
             for i in $(seq 1 12); do
+              # Try docker healthcheck first, fall back to wget
               status=$(docker inspect --format='{{.State.Health.Status}}' "$container" 2>/dev/null || echo "no-healthcheck")
               if [ "$status" = "healthy" ]; then
-                echo "✅ $container healthy"
+                echo "$container healthy (docker healthcheck)"
                 return 0
               fi
-              echo "⏳ $container status: $status (attempt $i/12)..."
+              # If no docker healthcheck, try direct HTTP
+              if [ "$status" = "no-healthcheck" ]; then
+                if docker exec "$container" wget -qO- http://127.0.0.1 > /dev/null 2>&1 || \
+                   docker exec "$container" wget -qO- http://127.0.0.1:3000/health > /dev/null 2>&1; then
+                  echo "$container healthy (direct HTTP)"
+                  return 0
+                fi
+              fi
+              echo "$container status: $status (attempt $i/12)..."
               sleep 10
             done
-            echo "❌ $container not healthy after 120s (status: $status)"
+            echo "$container not healthy after 120s (status: $status)"
             docker logs --tail=20 "$container" 2>&1 || true
             return 1
           }
@@ -205,13 +254,13 @@ jobs:
       - name: Fail on full deploy health check failure
         if: steps.health.outcome == 'failure' && steps.mode.outputs.type == 'full'
         run: |
-          echo "❌ Health check failed on full deploy — no fallback available"
+          echo "Health check failed on full deploy — no fallback available"
           exit 1
 
       - name: Fallback to full deploy on selective failure
         if: steps.mode.outputs.type == 'selective' && steps.health.outcome == 'failure'
         run: |
-          echo "⚠️ Selective deploy failed health check. Falling back to full Ansible deploy..."
+          echo "Selective deploy failed health check. Falling back to full Ansible deploy..."
           cd infra/ansible
           ansible-playbook playbooks/deploy.yml \
             -i inventory/hosts.yml \
@@ -227,15 +276,24 @@ jobs:
           docker exec pops-api wget -qO- http://127.0.0.1:3000/health > /dev/null 2>&1
           docker exec pops-shell wget -qO- http://127.0.0.1 > /dev/null 2>&1
 
+      - name: Record successful deploy
+        if: success()
+        run: |
+          echo "${{ github.sha }}" > /opt/pops/.last-deploy-sha
+          echo "Recorded deploy SHA: ${{ github.sha }}"
+
       - name: Show deployment summary
         if: always()
         run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "---"
           echo "Deployment Status: ${{ job.status }}"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "Deploy SHA: ${{ github.sha }}"
+          echo "Last deployed: ${{ needs.changes.outputs.last_deployed_sha || 'none' }}"
+          echo "Mode: ${{ steps.mode.outputs.type }} (${{ steps.mode.outputs.target || 'n/a' }})"
+          echo "---"
           cd /opt/pops
           docker compose ps
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+          echo "---"
 
       - name: Upload logs on failure
         if: failure()
