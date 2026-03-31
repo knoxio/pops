@@ -172,32 +172,31 @@ jobs:
             docker compose up -d pops-api
           fi
 
-      - name: Wait for services to stabilize
-        run: sleep 10
-
       - name: Verify health
         id: health
         continue-on-error: true
         run: |
-          # Check pops-api if it was touched
+          check_health() {
+            local container=$1 url=$2
+            for i in $(seq 1 6); do
+              if docker exec "$container" wget -qO- "$url" > /dev/null 2>&1; then
+                echo "✅ $container healthy"
+                return 0
+              fi
+              echo "⏳ $container not ready (attempt $i/6)..."
+              sleep 10
+            done
+            echo "❌ $container health check failed after 60s"
+            return 1
+          }
+
           if [ "${{ steps.mode.outputs.type }}" == "full" ] || [ "${{ steps.mode.outputs.target }}" == "backend" ] || [ "${{ steps.mode.outputs.target }}" == "both" ]; then
-            echo "🏥 Checking pops-api health..."
-            if ! docker exec pops-api wget -qO- http://localhost:3000/health > /dev/null 2>&1; then
-              echo "❌ pops-api health check failed"
-              exit 1
-            fi
+            check_health pops-api http://localhost:3000/health
           fi
 
-          # Check pops-shell if it was touched
           if [ "${{ steps.mode.outputs.type }}" == "full" ] || [ "${{ steps.mode.outputs.target }}" == "frontend" ] || [ "${{ steps.mode.outputs.target }}" == "both" ]; then
-            echo "🏥 Checking pops-shell health..."
-            if ! docker exec pops-shell wget -qO- http://localhost > /dev/null 2>&1; then
-              echo "❌ pops-shell health check failed"
-              exit 1
-            fi
+            check_health pops-shell http://localhost
           fi
-
-          echo "✅ Health checks passed"
 
       - name: Fail on full deploy health check failure
         if: steps.health.outcome == 'failure' && steps.mode.outputs.type == 'full'
