@@ -6,6 +6,7 @@
  */
 import { eq, and } from "drizzle-orm";
 import { episodes, seasons } from "@pops/db-types";
+import type { PlexClient } from "./client.js";
 import type { PlexMediaItem, PlexEpisode } from "./types.js";
 import { getDrizzle } from "../../../db.js";
 import { getTvShowByTvdbId } from "../tv-shows/service.js";
@@ -45,6 +46,27 @@ export interface EpisodeSyncDiagnostics {
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Find the Discover ratingKey whose metadata contains a matching external ID.
+ *
+ * Search results don't include Guid arrays, so this fetches full metadata
+ * for each candidate and compares the given source/ID pair.
+ */
+export async function findDiscoverMatch(
+  client: PlexClient,
+  candidates: PlexMediaItem[],
+  source: string,
+  expectedId: number
+): Promise<string | null> {
+  for (const item of candidates) {
+    const meta = await client.getDiscoverMetadata(item.ratingKey);
+    if (!meta) continue;
+    const id = extractExternalIdAsNumber(meta, source);
+    if (id === expectedId) return item.ratingKey;
+  }
+  return null;
+}
 
 /**
  * Extract an external ID (tmdb, tvdb, imdb) from a Plex media item

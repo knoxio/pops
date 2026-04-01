@@ -146,14 +146,16 @@ export class PlexClient {
     try {
       const data = await this.getAbsolute<{
         MediaContainer: {
-          UserState?: Array<{
-            viewCount?: number;
-            lastViewedAt?: number;
-          }>;
+          UserState?:
+            | { viewCount?: number; lastViewedAt?: number }
+            | Array<{ viewCount?: number; lastViewedAt?: number }>;
         };
       }>(url);
 
-      const state = data.MediaContainer.UserState?.[0];
+      // Plex API returns UserState as either an object or an array
+      const raw = data.MediaContainer.UserState;
+      if (!raw) return null;
+      const state = Array.isArray(raw) ? raw[0] : raw;
       if (!state) return null;
 
       return {
@@ -168,14 +170,16 @@ export class PlexClient {
 
   /**
    * Search the Plex Discover API by title and media type.
-   * Returns items with ratingKeys and external IDs (tmdb://, tvdb://).
+   * Returns items with ratingKeys but without external IDs (Guid arrays).
+   * Use getDiscoverMetadata() to fetch Guids for a specific item.
    */
   async searchDiscover(query: string, searchType: "movie" | "show"): Promise<PlexMediaItem[]> {
-    const typeParam = searchType === "movie" ? "1" : "2";
+    const typeParam = searchType === "movie" ? "movies" : "tv";
     const url =
       `https://discover.provider.plex.tv/library/search` +
       `?query=${encodeURIComponent(query)}` +
       `&searchTypes=${typeParam}` +
+      `&searchProviders=discover` +
       `&limit=5` +
       `&X-Plex-Token=${this.token}`;
 
@@ -199,6 +203,30 @@ export class PlexClient {
       }
     }
     return items;
+  }
+
+  /**
+   * Fetch full metadata for a Discover item by its ratingKey.
+   * Includes Guid array (tmdb://, tvdb://, imdb://) for ID matching.
+   */
+  async getDiscoverMetadata(ratingKey: string): Promise<PlexMediaItem | null> {
+    const url =
+      `https://metadata.provider.plex.tv/library/metadata/${ratingKey}` +
+      `?includeGuids=1` +
+      `&X-Plex-Token=${this.token}`;
+
+    try {
+      const data = await this.getAbsolute<{
+        MediaContainer: {
+          Metadata?: RawPlexMediaItem[];
+        };
+      }>(url);
+
+      const item = data.MediaContainer.Metadata?.[0];
+      return item ? this.mapMediaItem(item) : null;
+    } catch {
+      return null;
+    }
   }
 
   /**

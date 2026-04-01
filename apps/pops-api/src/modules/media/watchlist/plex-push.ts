@@ -5,11 +5,11 @@
 import { eq } from "drizzle-orm";
 import { mediaWatchlist } from "@pops/db-types";
 import { getPlexClient } from "../plex/service.js";
-import { extractExternalIdAsNumber } from "../plex/sync-helpers.js";
+import { findDiscoverMatch } from "../plex/sync-helpers.js";
 import { getMovie } from "../movies/service.js";
 import { getTvShow } from "../tv-shows/service.js";
 import { getDrizzle } from "../../../db.js";
-import type { PlexMediaItem } from "../plex/types.js";
+import type { PlexClient as PlexClientType } from "../plex/client.js";
 
 /**
  * Look up a Plex Discover ratingKey for a local media item by searching the
@@ -32,37 +32,21 @@ export async function lookupPlexRatingKey(
 }
 
 async function lookupMovieRatingKey(
-  client: { searchDiscover: (q: string, t: "movie" | "show") => Promise<PlexMediaItem[]> },
+  client: PlexClientType,
   movieId: number
 ): Promise<string | null> {
   const movie = getMovie(movieId);
   const results = await client.searchDiscover(movie.title, "movie");
-
-  for (const item of results) {
-    const tmdbId = extractExternalIdAsNumber(item, "tmdb");
-    if (tmdbId && tmdbId === movie.tmdbId) {
-      return item.ratingKey;
-    }
-  }
-
-  return null;
+  return findDiscoverMatch(client, results, "tmdb", movie.tmdbId);
 }
 
 async function lookupTvShowRatingKey(
-  client: { searchDiscover: (q: string, t: "movie" | "show") => Promise<PlexMediaItem[]> },
+  client: PlexClientType,
   tvShowId: number
 ): Promise<string | null> {
   const show = getTvShow(tvShowId);
   const results = await client.searchDiscover(show.name, "show");
-
-  for (const item of results) {
-    const tvdbId = extractExternalIdAsNumber(item, "tvdb");
-    if (tvdbId && tvdbId === show.tvdbId) {
-      return item.ratingKey;
-    }
-  }
-
-  return null;
+  return findDiscoverMatch(client, results, "tvdb", show.tvdbId);
 }
 
 /**
