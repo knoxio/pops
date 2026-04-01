@@ -38,6 +38,8 @@ COPY apps/pops-shell/ ./apps/pops-shell/
 
 # Build pops-shell (tsc typecheck + vite build)
 WORKDIR /app/apps/pops-shell
+ARG BUILD_VERSION=dev
+ENV BUILD_VERSION=$BUILD_VERSION
 RUN pnpm build
 
 # ── Production image ──────────────────────────────────────────────

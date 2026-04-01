@@ -10,6 +10,7 @@ import { iconMap } from "@/app/nav/icon-map";
 import { isPageActive } from "@/app/nav/path-utils";
 import { useUIStore } from "@/store/uiStore";
 import { X } from "lucide-react";
+import { BuildVersion } from "./BuildVersion";
 
 interface SidebarProps {
   open: boolean;
@@ -38,7 +39,10 @@ export function Sidebar({ open }: SidebarProps) {
       <aside className="w-64 bg-card border-r border-border fixed z-50 top-0 left-0 h-full md:hidden">
         {/* Header with close button */}
         <div className="flex items-center justify-between p-4 border-b border-border">
-          <span className="text-lg font-bold">POPS</span>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-lg font-bold">POPS</span>
+            <BuildVersion />
+          </div>
           <button
             onClick={() => setSidebarOpen(false)}
             className="min-w-[44px] min-h-[44px] flex items-center justify-center hover:bg-muted rounded-lg"

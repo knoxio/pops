@@ -5,6 +5,9 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "node:path";
 
 export default defineConfig({
+  define: {
+    __BUILD_VERSION__: JSON.stringify(process.env.BUILD_VERSION || "dev"),
+  },
   plugins: [react(), tailwindcss()],
   test: {
     exclude: ["e2e/**", "node_modules/**"],

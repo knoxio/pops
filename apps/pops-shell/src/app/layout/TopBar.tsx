@@ -7,6 +7,7 @@
 import { useThemeStore } from "@/store/themeStore";
 import { useUIStore } from "@/store/uiStore";
 import { Menu, Sun, Moon } from "lucide-react";
+import { BuildVersion } from "./BuildVersion";
 
 export function TopBar() {
   const theme = useThemeStore((state) => state.theme);
@@ -23,9 +24,12 @@ export function TopBar() {
         <Menu className="h-5 w-5" />
       </button>
 
-      <h1 className="text-xl md:text-2xl font-black bg-clip-text text-transparent bg-gradient-to-br from-[oklch(0.7_0.2_150)] via-[oklch(0.6_0.2_260)] to-[oklch(0.6_0.2_320)] tracking-tighter">
-        POPS
-      </h1>
+      <div className="flex items-baseline gap-1.5">
+        <h1 className="text-xl md:text-2xl font-black bg-clip-text text-transparent bg-gradient-to-br from-[oklch(0.7_0.2_150)] via-[oklch(0.6_0.2_260)] to-[oklch(0.6_0.2_320)] tracking-tighter">
+          POPS
+        </h1>
+        <BuildVersion />
+      </div>
 
       <div className="ml-auto flex items-center gap-1 md:gap-4">
         <button

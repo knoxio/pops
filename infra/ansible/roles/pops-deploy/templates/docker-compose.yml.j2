@@ -37,6 +37,8 @@ services:
     build:
       context: {{ docker_compose_dir }}/repo
       dockerfile: apps/pops-shell/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
     container_name: pops-shell
     restart: unless-stopped
     networks:

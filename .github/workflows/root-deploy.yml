@@ -144,6 +144,8 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
+        env:
+          BUILD_VERSION: b${{ github.run_number }}
 
   # Deploy to N95 server
   deploy:
@@ -154,6 +156,8 @@ jobs:
     environment:
       name: production
       url: https://pops.jmiranda.dev
+    env:
+      BUILD_VERSION: b${{ github.run_number }}
 
     steps:
       - name: Checkout code
@@ -286,11 +290,20 @@ jobs:
           echo "${{ github.sha }}" > /opt/pops/.last-deploy-sha
           echo "Recorded deploy SHA: ${{ github.sha }}"
 
+      - name: Tag build
+        if: success()
+        continue-on-error: true
+        run: |
+          git tag "build-${{ github.run_number }}" "${{ github.sha }}"
+          git push origin "build-${{ github.run_number }}"
+          echo "Tagged: build-${{ github.run_number }}"
+
       - name: Show deployment summary
         if: always()
         run: |
           echo "---"
           echo "Deployment Status: ${{ job.status }}"
+          echo "Build Version: b${{ github.run_number }}"
           echo "Deploy SHA: ${{ github.sha }}"
           echo "Last deployed: ${{ needs.changes.outputs.last_deployed_sha || 'none' }}"
           echo "Mode: ${{ steps.mode.outputs.type }} (${{ steps.mode.outputs.target || 'n/a' }})"
