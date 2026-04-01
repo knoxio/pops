@@ -102,6 +102,7 @@ interface DiscoverMediaResult {
   alreadyLogged: number;
   notFound: number;
   errors: number;
+  errorSamples?: string[];
 }
 
 interface DiscoverWatchSyncResult {
@@ -227,6 +228,69 @@ function WatchlistSyncResultDisplay({ result }: { result: WatchlistSyncResult })
                 <p key={i}>
                   <span className="font-medium">{err.title}:</span> {err.reason}
                 </p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function DiscoverSyncResultDisplay({
+  result,
+  isRunning,
+}: {
+  result: DiscoverWatchSyncResult | null;
+  isRunning: boolean;
+}) {
+  const [showErrors, setShowErrors] = useState(false);
+
+  if (!result) return null;
+
+  const r = result;
+  const allErrors = [...(r.movies.errorSamples ?? []), ...(r.tvShows.errorSamples ?? [])];
+
+  return (
+    <div className="rounded-md border bg-muted/30 p-3 space-y-2 text-sm">
+      <div className="flex items-center gap-3 flex-wrap">
+        <span className="font-medium">
+          {isRunning ? "Cloud Watch Progress:" : "Cloud Watch Results:"}
+        </span>
+        {r.movies.logged > 0 && <span className="text-emerald-400">{r.movies.logged} logged</span>}
+        {r.movies.watched > 0 && (
+          <span className="text-muted-foreground">{r.movies.watched} watched</span>
+        )}
+        {r.movies.alreadyLogged > 0 && (
+          <span className="text-muted-foreground">{r.movies.alreadyLogged} already tracked</span>
+        )}
+        {r.movies.notFound > 0 && (
+          <span className="text-muted-foreground">{r.movies.notFound} not found</span>
+        )}
+        {r.movies.errors + r.tvShows.errors > 0 && (
+          <span className="text-red-400">{r.movies.errors + r.tvShows.errors} errors</span>
+        )}
+      </div>
+      {!isRunning && (
+        <p className="text-xs text-muted-foreground">
+          Checked {r.movies.total} movies, {r.tvShows.total} TV shows against Plex cloud
+        </p>
+      )}
+      {allErrors.length > 0 && (
+        <div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowErrors(!showErrors)}
+            className="flex items-center gap-1 text-xs h-auto p-0 text-red-400 hover:text-red-300"
+          >
+            {showErrors ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+            {showErrors ? "Hide" : "Show"} error details
+          </Button>
+          {showErrors && (
+            <div className="mt-2 space-y-1 text-xs text-red-400/80">
+              {allErrors.map((err, i) => (
+                <p key={i}>{err}</p>
               ))}
             </div>
           )}
@@ -901,42 +965,10 @@ export function PlexSettingsPage() {
                 ? `Checking... ${discoverSync.progress.processed}/${discoverSync.progress.total}`
                 : "Sync Cloud Watches"}
             </Button>
-            {discoverSync.result != null &&
-              (() => {
-                const r = discoverSync.result as DiscoverWatchSyncResult;
-                return (
-                  <div className="rounded-md border bg-muted/30 p-3 space-y-2 text-sm">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <span className="font-medium">Cloud Watch Results:</span>
-                      {r.movies.logged > 0 && (
-                        <span className="text-emerald-400">
-                          {r.movies.logged} movies newly logged
-                        </span>
-                      )}
-                      <span className="text-muted-foreground">
-                        {r.movies.watched} movies watched on Plex
-                      </span>
-                      {r.movies.alreadyLogged > 0 && (
-                        <span className="text-muted-foreground">
-                          ({r.movies.alreadyLogged} already tracked)
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-muted-foreground space-y-0.5">
-                      <p>
-                        Checked {r.movies.total} movies, {r.tvShows.total} TV shows against Plex
-                        cloud
-                      </p>
-                      {r.movies.notFound > 0 && (
-                        <p>{r.movies.notFound} movies not found on Plex Discover</p>
-                      )}
-                      {r.movies.errors > 0 && (
-                        <p className="text-red-400">{r.movies.errors} errors during lookup</p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })()}
+            <DiscoverSyncResultDisplay
+              result={discoverSync.result as DiscoverWatchSyncResult | null}
+              isRunning={discoverSync.isRunning}
+            />
           </div>
         )}
 
