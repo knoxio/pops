@@ -78,18 +78,18 @@ export class RadarrClient extends ArrBaseClient {
 
   /**
    * Get the status of a movie by TMDB ID.
-   * Fetches all movies and queue, then matches by tmdbId.
+   * Uses the filtered endpoint to fetch only the matching movie, then checks queue.
    */
   async getMovieStatus(tmdbId: number): Promise<ArrStatusResult> {
-    const [movies, queue] = await Promise.all([this.getMovies(), this.getQueue()]);
-
-    const movie = movies.find((m) => m.tmdbId === tmdbId);
+    const movies = await this.get<RadarrMovie[]>(`/movie?tmdbId=${tmdbId}`);
+    const movie = movies[0];
 
     if (!movie) {
       return { status: "not_found", label: "Not in Radarr" };
     }
 
-    // Check download queue
+    // Check download queue only if the movie exists in Radarr
+    const queue = await this.getQueue();
     const queueItem = queue.records.find((r) => r.movieId === movie.id);
     if (queueItem) {
       const progress =
