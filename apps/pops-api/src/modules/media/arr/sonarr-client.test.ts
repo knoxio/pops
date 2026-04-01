@@ -367,12 +367,30 @@ describe("SonarrClient", () => {
       },
     };
 
+    it("uses filtered endpoint /series?tvdbId=N", async () => {
+      mockFetch.mockResolvedValueOnce(jsonResponse([]));
+
+      await client.getShowStatus(81189);
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:8989/api/v3/series?tvdbId=81189",
+        expect.objectContaining({ method: "GET" })
+      );
+    });
+
     it("returns not_found when series not in Sonarr", async () => {
-      mockFetch.mockResolvedValueOnce(jsonResponse([])); // getSeries
-      mockFetch.mockResolvedValueOnce(jsonResponse({ totalRecords: 0, records: [] })); // getQueue
+      mockFetch.mockResolvedValueOnce(jsonResponse([]));
 
       const result = await client.getShowStatus(99999);
       expect(result).toEqual({ status: "not_found", label: "Not in Sonarr" });
+    });
+
+    it("does not fetch queue when series not found", async () => {
+      mockFetch.mockResolvedValueOnce(jsonResponse([]));
+
+      await client.getShowStatus(99999);
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
     });
 
     it("returns complete when all episodes available", async () => {
@@ -401,7 +419,33 @@ describe("SonarrClient", () => {
       expect(result.episodeStats).toBe("30/62 episodes");
     });
 
-    it("returns downloading when in queue", async () => {
+    it("returns monitored when no episode files exist", async () => {
+      const monitoredSeries = {
+        ...baseSeries,
+        statistics: {
+          episodeFileCount: 0,
+          episodeCount: 62,
+          totalEpisodeCount: 62,
+          percentOfEpisodes: 0,
+        },
+      };
+      mockFetch.mockResolvedValueOnce(jsonResponse([monitoredSeries]));
+      mockFetch.mockResolvedValueOnce(jsonResponse({ totalRecords: 0, records: [] }));
+
+      const result = await client.getShowStatus(81189);
+      expect(result).toEqual({ status: "monitored", label: "Monitored" });
+    });
+
+    it("returns unmonitored when series is not monitored", async () => {
+      const unmonitoredSeries = { ...baseSeries, monitored: false };
+      mockFetch.mockResolvedValueOnce(jsonResponse([unmonitoredSeries]));
+      mockFetch.mockResolvedValueOnce(jsonResponse({ totalRecords: 0, records: [] }));
+
+      const result = await client.getShowStatus(81189);
+      expect(result).toEqual({ status: "unmonitored", label: "Unmonitored" });
+    });
+
+    it("returns downloading with episode label when in queue", async () => {
       mockFetch.mockResolvedValueOnce(jsonResponse([baseSeries]));
       mockFetch.mockResolvedValueOnce(
         jsonResponse({
@@ -423,6 +467,28 @@ describe("SonarrClient", () => {
       const result = await client.getShowStatus(81189);
       expect(result.status).toBe("downloading");
       expect(result.label).toContain("S01E01");
+    });
+
+    it("returns downloading without episode label when queue has no episode info", async () => {
+      mockFetch.mockResolvedValueOnce(jsonResponse([baseSeries]));
+      mockFetch.mockResolvedValueOnce(
+        jsonResponse({
+          totalRecords: 1,
+          records: [
+            {
+              id: 1,
+              seriesId: 10,
+              title: "Breaking Bad",
+              status: "downloading",
+              sizeleft: 500,
+              size: 1000,
+            },
+          ],
+        })
+      );
+
+      const result = await client.getShowStatus(81189);
+      expect(result).toEqual({ status: "downloading", label: "Downloading" });
     });
   });
 });

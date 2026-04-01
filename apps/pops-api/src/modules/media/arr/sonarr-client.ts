@@ -42,18 +42,18 @@ export class SonarrClient extends ArrBaseClient {
 
   /**
    * Get the status of a TV show by TVDB ID.
-   * Fetches all series and queue, then matches by tvdbId.
+   * Uses the filtered endpoint to fetch only the matching series, then checks queue.
    */
   async getShowStatus(tvdbId: number): Promise<ArrStatusResult> {
-    const [series, queue] = await Promise.all([this.getSeries(), this.getQueue()]);
-
-    const show = series.find((s) => s.tvdbId === tvdbId);
+    const series = await this.get<SonarrSeries[]>(`/series?tvdbId=${tvdbId}`);
+    const show = series[0];
 
     if (!show) {
       return { status: "not_found", label: "Not in Sonarr" };
     }
 
-    // Check download queue for any episodes of this series
+    // Check download queue only if the show exists in Sonarr
+    const queue = await this.getQueue();
     const queueItem = queue.records.find((r) => r.seriesId === show.id);
     if (queueItem) {
       const episodeLabel = queueItem.episode

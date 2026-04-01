@@ -209,4 +209,98 @@ describe("RadarrClient", () => {
       );
     });
   });
+
+  describe("getMovieStatus", () => {
+    it("uses filtered endpoint /movie?tmdbId=N", async () => {
+      mockFetch.mockResolvedValueOnce(jsonResponse([]));
+
+      await client.getMovieStatus(550);
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:7878/api/v3/movie?tmdbId=550",
+        expect.objectContaining({ method: "GET" })
+      );
+    });
+
+    it("returns not_found when movie not in Radarr", async () => {
+      mockFetch.mockResolvedValueOnce(jsonResponse([]));
+
+      const result = await client.getMovieStatus(99999);
+
+      expect(result).toEqual({ status: "not_found", label: "Not in Radarr" });
+    });
+
+    it("does not fetch queue when movie not found", async () => {
+      mockFetch.mockResolvedValueOnce(jsonResponse([]));
+
+      await client.getMovieStatus(99999);
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("returns available when movie has file", async () => {
+      mockFetch.mockResolvedValueOnce(
+        jsonResponse([{ id: 42, tmdbId: 550, monitored: true, hasFile: true }])
+      );
+      mockFetch.mockResolvedValueOnce(jsonResponse({ totalRecords: 0, records: [] }));
+
+      const result = await client.getMovieStatus(550);
+
+      expect(result).toEqual({ status: "available", label: "Available" });
+    });
+
+    it("returns monitored when movie is monitored without file", async () => {
+      mockFetch.mockResolvedValueOnce(
+        jsonResponse([{ id: 42, tmdbId: 550, monitored: true, hasFile: false }])
+      );
+      mockFetch.mockResolvedValueOnce(jsonResponse({ totalRecords: 0, records: [] }));
+
+      const result = await client.getMovieStatus(550);
+
+      expect(result).toEqual({ status: "monitored", label: "Monitored" });
+    });
+
+    it("returns unmonitored when movie is not monitored and has no file", async () => {
+      mockFetch.mockResolvedValueOnce(
+        jsonResponse([{ id: 42, tmdbId: 550, monitored: false, hasFile: false }])
+      );
+      mockFetch.mockResolvedValueOnce(jsonResponse({ totalRecords: 0, records: [] }));
+
+      const result = await client.getMovieStatus(550);
+
+      expect(result).toEqual({ status: "unmonitored", label: "Unmonitored" });
+    });
+
+    it("returns downloading with progress when movie is in queue", async () => {
+      mockFetch.mockResolvedValueOnce(
+        jsonResponse([{ id: 42, tmdbId: 550, monitored: true, hasFile: false }])
+      );
+      mockFetch.mockResolvedValueOnce(
+        jsonResponse({
+          totalRecords: 1,
+          records: [{ id: 1, movieId: 42, title: "Fight Club", size: 2000, sizeleft: 500 }],
+        })
+      );
+
+      const result = await client.getMovieStatus(550);
+
+      expect(result).toEqual({ status: "downloading", label: "Downloading 75%", progress: 75 });
+    });
+
+    it("returns 0% progress when queue item has zero size", async () => {
+      mockFetch.mockResolvedValueOnce(
+        jsonResponse([{ id: 42, tmdbId: 550, monitored: true, hasFile: false }])
+      );
+      mockFetch.mockResolvedValueOnce(
+        jsonResponse({
+          totalRecords: 1,
+          records: [{ id: 1, movieId: 42, title: "Fight Club", size: 0, sizeleft: 0 }],
+        })
+      );
+
+      const result = await client.getMovieStatus(550);
+
+      expect(result).toEqual({ status: "downloading", label: "Downloading 0%", progress: 0 });
+    });
+  });
 });
