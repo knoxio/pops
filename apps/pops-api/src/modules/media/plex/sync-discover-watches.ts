@@ -13,7 +13,7 @@
  */
 import { movies, tvShows } from "@pops/db-types";
 import type { PlexClient } from "./client.js";
-import { extractExternalIdAsNumber } from "./sync-helpers.js";
+import { findDiscoverMatch } from "./sync-helpers.js";
 import { logWatch } from "../watch-history/service.js";
 import { getDrizzle } from "../../../db.js";
 
@@ -154,7 +154,8 @@ type SyncStatus = "logged" | "already" | "not_watched" | "not_found";
 /**
  * Check a single movie against Plex Discover and log watch if played.
  *
- * Uses a small delay between API calls to avoid rate limiting.
+ * Flow: search by title → fetch metadata for each result to get TMDB ID →
+ * match by TMDB ID → check userState → log watch.
  */
 async function syncSingleMovieWatch(
   client: PlexClient,
@@ -162,18 +163,15 @@ async function syncSingleMovieWatch(
   title: string,
   tmdbId: number
 ): Promise<SyncStatus> {
-  // Search Discover for the movie
+  // Search Discover for the movie and match by TMDB ID
   const results = await client.searchDiscover(title, "movie");
+  if (results.length === 0) return "not_found";
 
-  // Match by TMDB ID
-  const match = results.find((item) => {
-    const id = extractExternalIdAsNumber(item, "tmdb");
-    return id === tmdbId;
-  });
-  if (!match) return "not_found";
+  const matchedRatingKey = await findDiscoverMatch(client, results, "tmdb", tmdbId);
+  if (!matchedRatingKey) return "not_found";
 
   // Check user state
-  const state = await client.getUserState(match.ratingKey);
+  const state = await client.getUserState(matchedRatingKey);
   if (!state || state.viewCount === 0) return "not_watched";
 
   // Log the watch
@@ -208,18 +206,15 @@ async function syncSingleTvShowWatch(
   name: string,
   tvdbId: number
 ): Promise<SyncStatus> {
-  // Search Discover for the show
+  // Search Discover for the show and match by TVDB ID
   const results = await client.searchDiscover(name, "show");
+  if (results.length === 0) return "not_found";
 
-  // Match by TVDB ID
-  const match = results.find((item) => {
-    const id = extractExternalIdAsNumber(item, "tvdb");
-    return id === tvdbId;
-  });
-  if (!match) return "not_found";
+  const matchedRatingKey = await findDiscoverMatch(client, results, "tvdb", tvdbId);
+  if (!matchedRatingKey) return "not_found";
 
   // Check user state — for TV shows this indicates the user has interacted with it
-  const state = await client.getUserState(match.ratingKey);
+  const state = await client.getUserState(matchedRatingKey);
   if (!state || state.viewCount === 0) return "not_watched";
 
   // TV show watch state is tracked but we don't log show-level watch events
