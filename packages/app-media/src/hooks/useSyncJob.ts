@@ -2,9 +2,9 @@
  * useSyncJob — hook for managing background Plex sync jobs.
  *
  * Starts a job via mutation (returns immediately), polls for progress,
- * and restores state on page navigation via getActiveSyncJobs.
+ * and auto-restores running jobs on mount (survives page navigation).
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
 
@@ -69,7 +69,25 @@ const JOB_TYPE_LABELS: Record<SyncJobType, string> = {
 
 export function useSyncJob(jobType: SyncJobType): UseSyncJobReturn {
   const [jobId, setJobId] = useState<string | null>(null);
+  const restoredRef = useRef(false);
   const label = JOB_TYPE_LABELS[jobType];
+
+  // On mount, check for any active job of this type to restore
+  const activeJobs = trpc.media.plex.getActiveSyncJobs.useQuery(undefined, {
+    enabled: !jobId && !restoredRef.current,
+    refetchOnWindowFocus: false,
+  });
+
+  useEffect(() => {
+    if (restoredRef.current || jobId) return;
+    if (!activeJobs.data?.data) return;
+    restoredRef.current = true;
+
+    const match = activeJobs.data.data.find((j) => j.jobType === jobType && j.status === "running");
+    if (match) {
+      setJobId(match.id);
+    }
+  }, [activeJobs.data?.data, jobId, jobType]);
 
   // Poll for job status while we have an active job ID
   const statusQuery = trpc.media.plex.getSyncJobStatus.useQuery(
@@ -126,28 +144,6 @@ export function useSyncJob(jobType: SyncJobType): UseSyncJobReturn {
     completedAt: job?.completedAt ?? null,
     status: !job ? "idle" : job.status,
   };
-}
-
-/**
- * Hook to restore active sync jobs on page load.
- * Returns a map of jobType → jobId for any running jobs.
- */
-export function useRestoreActiveSyncJobs(
-  onRestore: (jobType: SyncJobType, jobId: string) => void
-): void {
-  const activeJobs = trpc.media.plex.getActiveSyncJobs.useQuery(undefined, {
-    refetchOnWindowFocus: false,
-  });
-
-  useEffect(() => {
-    if (!activeJobs.data?.data) return;
-    for (const job of activeJobs.data.data) {
-      if (job.status === "running") {
-        onRestore(job.jobType as SyncJobType, job.id);
-      }
-    }
-    // Only run on initial load
-  }, [activeJobs.data?.data]);
 }
 
 /** Hook to get "last synced" data for all sync types. */
