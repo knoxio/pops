@@ -33,6 +33,15 @@ export const arrRouter = router({
     const client = new RadarrClient(input.url, apiKey);
     try {
       const status = await client.testConnection();
+      if (status.appName && status.appName.toLowerCase() !== "radarr") {
+        return {
+          data: {
+            configured: true,
+            connected: false,
+            error: `Expected Radarr but connected to ${status.appName} — check the URL`,
+          },
+        };
+      }
       return {
         data: { configured: true, connected: true, ...status },
         message: "Radarr connection successful",
@@ -53,6 +62,15 @@ export const arrRouter = router({
     const client = new SonarrClient(input.url, apiKey);
     try {
       const status = await client.testConnection();
+      if (status.appName && status.appName.toLowerCase() !== "sonarr") {
+        return {
+          data: {
+            configured: true,
+            connected: false,
+            error: `Expected Sonarr but connected to ${status.appName} — check the URL`,
+          },
+        };
+      }
       return {
         data: { configured: true, connected: true, ...status },
         message: "Sonarr connection successful",
