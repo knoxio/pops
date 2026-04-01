@@ -17,6 +17,10 @@ import { findDiscoverMatch } from "./sync-helpers.js";
 import { logWatch } from "../watch-history/service.js";
 import { getDrizzle } from "../../../db.js";
 
+/** Small delay between items to avoid Plex API rate limits. */
+const RATE_LIMIT_DELAY_MS = 200;
+const delay = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -26,10 +30,10 @@ export interface DiscoverWatchSyncResult {
   tvShows: DiscoverTvShowResult;
 }
 
-export interface DiscoverMovieResult {
-  /** Total movies in POPS library. */
+export interface DiscoverItemResult {
+  /** Total items in POPS library. */
   total: number;
-  /** Movies found as watched on Plex Discover. */
+  /** Items found as watched on Plex Discover. */
   watched: number;
   /** New watch entries logged. */
   logged: number;
@@ -39,22 +43,13 @@ export interface DiscoverMovieResult {
   notFound: number;
   /** Errors during lookup. */
   errors: number;
+  /** First few error messages for diagnostics (max 5). */
+  errorSamples: string[];
 }
 
-export interface DiscoverTvShowResult {
-  /** Total TV shows in POPS library. */
-  total: number;
-  /** Shows found as watched on Plex Discover. */
-  watched: number;
-  /** New watch entries logged (show-level, not per-episode). */
-  logged: number;
-  /** Already had a watch entry. */
-  alreadyLogged: number;
-  /** Could not find on Plex Discover. */
-  notFound: number;
-  /** Errors during lookup. */
-  errors: number;
-}
+// Keep old names as aliases for backwards compat
+export type DiscoverMovieResult = DiscoverItemResult;
+export type DiscoverTvShowResult = DiscoverItemResult;
 
 // ---------------------------------------------------------------------------
 // Main sync function
@@ -68,7 +63,8 @@ export interface DiscoverTvShowResult {
  */
 export async function syncDiscoverWatches(
   plexClient: PlexClient,
-  onProgress?: (processed: number, total: number) => void
+  onProgress?: (processed: number, total: number) => void,
+  onPartialResult?: (result: DiscoverWatchSyncResult) => void
 ): Promise<DiscoverWatchSyncResult> {
   const db = getDrizzle();
 
@@ -86,7 +82,10 @@ export async function syncDiscoverWatches(
   const totalItems = allMovies.length + allShows.length;
   let processed = 0;
 
-  // Sync movies
+  const MAX_ERROR_SAMPLES = 5;
+
+  // Initialise both result objects up front so partial-result callbacks
+  // can reference tvResult while the movie loop is still running.
   const movieResult: DiscoverMovieResult = {
     total: allMovies.length,
     watched: 0,
@@ -94,8 +93,20 @@ export async function syncDiscoverWatches(
     alreadyLogged: 0,
     notFound: 0,
     errors: 0,
+    errorSamples: [],
   };
 
+  const tvResult: DiscoverTvShowResult = {
+    total: allShows.length,
+    watched: 0,
+    logged: 0,
+    alreadyLogged: 0,
+    notFound: 0,
+    errors: 0,
+    errorSamples: [],
+  };
+
+  // Sync movies
   for (const movie of allMovies) {
     try {
       const synced = await syncSingleMovieWatch(plexClient, movie.id, movie.title, movie.tmdbId);
@@ -106,24 +117,21 @@ export async function syncDiscoverWatches(
       } else movieResult.notFound++;
 
       if (synced === "logged" || synced === "already") movieResult.watched++;
-    } catch {
+    } catch (err) {
       movieResult.errors++;
+      if (movieResult.errorSamples.length < MAX_ERROR_SAMPLES) {
+        const msg = err instanceof Error ? err.message : String(err);
+        movieResult.errorSamples.push(`${movie.title}: ${msg}`);
+      }
     }
 
     processed++;
     onProgress?.(processed, totalItems);
+    onPartialResult?.({ movies: movieResult, tvShows: tvResult });
+    await delay(RATE_LIMIT_DELAY_MS);
   }
 
   // Sync TV shows (show-level watch check only)
-  const tvResult: DiscoverTvShowResult = {
-    total: allShows.length,
-    watched: 0,
-    logged: 0,
-    alreadyLogged: 0,
-    notFound: 0,
-    errors: 0,
-  };
-
   for (const show of allShows) {
     try {
       const synced = await syncSingleTvShowWatch(plexClient, show.id, show.name, show.tvdbId);
@@ -134,12 +142,18 @@ export async function syncDiscoverWatches(
       } else tvResult.notFound++;
 
       if (synced === "logged" || synced === "already") tvResult.watched++;
-    } catch {
+    } catch (err) {
       tvResult.errors++;
+      if (tvResult.errorSamples.length < MAX_ERROR_SAMPLES) {
+        const msg = err instanceof Error ? err.message : String(err);
+        tvResult.errorSamples.push(`${show.name}: ${msg}`);
+      }
     }
 
     processed++;
     onProgress?.(processed, totalItems);
+    onPartialResult?.({ movies: movieResult, tvShows: tvResult });
+    await delay(RATE_LIMIT_DELAY_MS);
   }
 
   return { movies: movieResult, tvShows: tvResult };

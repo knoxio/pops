@@ -162,7 +162,7 @@ async function runJob(jobId: string, jobType: SyncJobType, params: SyncJobParams
   const startTime = Date.now();
 
   try {
-    const result = await executeSyncByType(jobType, params, (progress) => {
+    const result = await executeSyncByType(jobId, jobType, params, (progress) => {
       job.progress = progress;
     });
 
@@ -186,6 +186,7 @@ async function runJob(jobId: string, jobType: SyncJobType, params: SyncJobParams
 }
 
 async function executeSyncByType(
+  jobId: string,
   jobType: SyncJobType,
   params: SyncJobParams,
   onProgress: (progress: SyncJobProgress) => void
@@ -221,7 +222,14 @@ async function executeSyncByType(
       );
     }
     case "syncDiscoverWatches": {
-      return syncDiscoverWatches(client, (processed, total) => onProgress({ processed, total }));
+      const job = activeJobs.get(jobId);
+      return syncDiscoverWatches(
+        client,
+        (processed, total) => onProgress({ processed, total }),
+        (partialResult) => {
+          if (job) job.result = partialResult;
+        }
+      );
     }
   }
 }

@@ -155,7 +155,7 @@ export function useSyncJob(jobType: SyncJobType): UseSyncJobReturn {
     isStarting: startMutation.isPending,
     isRunning,
     progress: isRunning ? (job?.progress ?? null) : null,
-    result: job?.status === "completed" ? job.result : null,
+    result: job?.result ?? null,
     error: job?.status === "failed" ? job.error : null,
     durationMs: job?.durationMs ?? null,
     completedAt: job?.completedAt ?? null,
