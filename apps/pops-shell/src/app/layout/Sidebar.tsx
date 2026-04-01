@@ -10,6 +10,7 @@ import { iconMap } from "@/app/nav/icon-map";
 import { isPageActive } from "@/app/nav/path-utils";
 import { useUIStore } from "@/store/uiStore";
 import { X } from "lucide-react";
+import { BuildVersion } from "./BuildVersion";
 
 interface SidebarProps {
   open: boolean;
@@ -40,9 +41,7 @@ export function Sidebar({ open }: SidebarProps) {
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-baseline gap-1.5">
             <span className="text-lg font-bold">POPS</span>
-            <span className="text-[10px] text-muted-foreground/50 font-mono">
-              {__BUILD_VERSION__}
-            </span>
+            <BuildVersion />
           </div>
           <button
             onClick={() => setSidebarOpen(false)}

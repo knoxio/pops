@@ -292,6 +292,7 @@ jobs:
 
       - name: Tag build
         if: success()
+        continue-on-error: true
         run: |
           git tag "build-${{ github.run_number }}" "${{ github.sha }}"
           git push origin "build-${{ github.run_number }}"
