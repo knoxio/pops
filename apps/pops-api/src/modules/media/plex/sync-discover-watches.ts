@@ -1,33 +1,37 @@
 /**
- * Plex Discover cloud watch sync — checks the Plex cloud (metadata.provider.plex.tv)
- * for watch state on all movies and TV shows in the POPS library.
+ * Plex Discover cloud watch sync — fetches the user's complete watch history
+ * from the Plex community GraphQL API and matches entries to POPS library items.
  *
  * Unlike the local server sync, this catches watches from streaming services
  * (Netflix, Disney+, etc.) and other Plex servers — any watch tracked by the
  * Plex account regardless of where it was played.
  *
- * Flow per item:
- *   1. Search Plex Discover by title to get the cloud ratingKey
- *   2. Check userState on that ratingKey for viewCount > 0
- *   3. If watched, log a watch event in POPS
+ * Flow:
+ *   1. Fetch user UUID from plex.tv
+ *   2. Build a lookup map of Discover ratingKey → POPS movie/episode
+ *   3. Paginate through the community activity feed (watch history)
+ *   4. For each entry, match by ratingKey and log with the real watch date
+ *
+ * Note: TV show episode-level watches are not available from the cloud activity
+ * feed (only show-level entries). Per-episode tracking is handled by local
+ * server sync instead.
  */
+import { eq } from "drizzle-orm";
 import { movies, tvShows } from "@pops/db-types";
+import { PlexApiError } from "./types.js";
 import type { PlexClient } from "./client.js";
 import { findDiscoverMatch } from "./sync-helpers.js";
 import { logWatch } from "../watch-history/service.js";
 import { getDrizzle } from "../../../db.js";
-
-/** Small delay between items to avoid Plex API rate limits. */
-const RATE_LIMIT_DELAY_MS = 200;
-const delay = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+import { getPlexToken, getPlexClientId } from "./service.js";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 export interface DiscoverWatchSyncResult {
-  movies: DiscoverMovieResult;
-  tvShows: DiscoverTvShowResult;
+  movies: DiscoverItemResult;
+  tvShows: DiscoverItemResult;
 }
 
 export interface DiscoverItemResult {
@@ -51,15 +55,73 @@ export interface DiscoverItemResult {
 export type DiscoverMovieResult = DiscoverItemResult;
 export type DiscoverTvShowResult = DiscoverItemResult;
 
+/** A single watch event from the Plex community GraphQL API. */
+interface ActivityWatchEntry {
+  id: string;
+  date: string;
+  metadataItem: {
+    id: string; // Discover ratingKey
+    title: string;
+    type: string;
+    parent: { title: string; index: number } | null;
+    grandparent: { title: string } | null;
+    year: number | null;
+    index: number;
+  };
+}
+
+const MAX_ERROR_SAMPLES = 5;
+const GRAPHQL_PAGE_SIZE = 50;
+/** Delay between Discover search requests to avoid rate limits. */
+const RATE_LIMIT_DELAY_MS = 200;
+const delay = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
+
+// ---------------------------------------------------------------------------
+// GraphQL queries
+// ---------------------------------------------------------------------------
+
+const WATCH_HISTORY_QUERY = `
+query GetWatchHistoryHub($uuid: ID = "", $first: PaginationInt!, $after: String) {
+  user(id: $uuid) {
+    watchHistory(first: $first, after: $after) {
+      nodes {
+        id
+        date
+        metadataItem {
+          id
+          title
+          type
+          index
+          year
+          parent { title, index }
+          grandparent { title }
+        }
+      }
+      pageInfo {
+        hasNextPage
+        endCursor
+      }
+    }
+  }
+}`;
+
+const ACTIVITY_FEED_QUERY = `
+query GetActivityFeed($first: PaginationInt!, $metadataID: ID, $types: [ActivityType!]!) {
+  activityFeed(first: $first, metadataID: $metadataID, types: $types) {
+    nodes { date, id, metadataItem { id, title, type } }
+  }
+}`;
+
 // ---------------------------------------------------------------------------
 // Main sync function
 // ---------------------------------------------------------------------------
 
 /**
- * Sync watch status from Plex Discover cloud for all POPS library items.
+ * Sync watch history from the Plex community GraphQL API.
  *
- * @param plexClient - Authenticated Plex client
- * @param onProgress - Optional callback for progress updates (item count)
+ * Instead of checking each library item individually (O(n) API calls per item),
+ * this fetches the user's full watch history and matches entries to POPS library
+ * items by Discover ratingKey. Each entry has an individual timestamp.
  */
 export async function syncDiscoverWatches(
   plexClient: PlexClient,
@@ -67,26 +129,45 @@ export async function syncDiscoverWatches(
   onPartialResult?: (result: DiscoverWatchSyncResult) => void
 ): Promise<DiscoverWatchSyncResult> {
   const db = getDrizzle();
+  const token = getPlexToken();
+  if (!token) throw new Error("Plex token not available");
 
-  // Get all movies and TV shows from POPS library
+  // Fetch the account UUID needed for the GraphQL query
+  const uuid = await fetchAccountUuid(token);
+
+  // Build lookup: Discover ratingKey → POPS media info
+  // We need to know which ratingKeys belong to POPS movies/shows.
+  // Strategy: fetch all library items, then for each watch entry check if
+  // its ratingKey matches a known item (built lazily via metadata lookups).
   const allMovies = db
-    .select({ id: movies.id, title: movies.title, tmdbId: movies.tmdbId })
+    .select({
+      id: movies.id,
+      title: movies.title,
+      tmdbId: movies.tmdbId,
+      discoverRatingKey: movies.discoverRatingKey,
+    })
     .from(movies)
     .all();
 
   const allShows = db
-    .select({ id: tvShows.id, name: tvShows.name, tvdbId: tvShows.tvdbId })
+    .select({
+      id: tvShows.id,
+      name: tvShows.name,
+      tvdbId: tvShows.tvdbId,
+      discoverRatingKey: tvShows.discoverRatingKey,
+    })
     .from(tvShows)
     .all();
 
-  const totalItems = allMovies.length + allShows.length;
-  let processed = 0;
+  // Build ratingKey → POPS item maps from cached keys
+  const movieByRatingKey = new Map<string, { id: number; title: string }>();
+  for (const m of allMovies) {
+    if (m.discoverRatingKey) {
+      movieByRatingKey.set(m.discoverRatingKey, { id: m.id, title: m.title });
+    }
+  }
 
-  const MAX_ERROR_SAMPLES = 5;
-
-  // Initialise both result objects up front so partial-result callbacks
-  // can reference tvResult while the movie loop is still running.
-  const movieResult: DiscoverMovieResult = {
+  const movieResult: DiscoverItemResult = {
     total: allMovies.length,
     watched: 0,
     logged: 0,
@@ -96,7 +177,7 @@ export async function syncDiscoverWatches(
     errorSamples: [],
   };
 
-  const tvResult: DiscoverTvShowResult = {
+  const tvResult: DiscoverItemResult = {
     total: allShows.length,
     watched: 0,
     logged: 0,
@@ -106,135 +187,202 @@ export async function syncDiscoverWatches(
     errorSamples: [],
   };
 
-  // Sync movies
-  for (const movie of allMovies) {
-    try {
-      const synced = await syncSingleMovieWatch(plexClient, movie.id, movie.title, movie.tmdbId);
-      if (synced === "logged") movieResult.logged++;
-      else if (synced === "already") movieResult.alreadyLogged++;
-      else if (synced === "not_watched") {
-        /* not watched on Plex */
-      } else movieResult.notFound++;
+  // Paginate through the full watch history
+  let after: string | null = null;
+  let totalEntries = 0;
+  let processedEntries = 0;
+  let hasMore = true;
 
-      if (synced === "logged" || synced === "already") movieResult.watched++;
-    } catch (err) {
-      movieResult.errors++;
-      if (movieResult.errorSamples.length < MAX_ERROR_SAMPLES) {
-        const msg = err instanceof Error ? err.message : String(err);
-        movieResult.errorSamples.push(`${movie.title}: ${msg}`);
+  while (hasMore) {
+    const page = await fetchWatchHistoryPage(token, uuid, after);
+    const entries = page.nodes;
+    totalEntries = Math.max(
+      totalEntries,
+      processedEntries + entries.length + (page.hasNextPage ? 1 : 0)
+    );
+
+    for (const entry of entries) {
+      try {
+        if (entry.metadataItem.type === "MOVIE") {
+          const movie = movieByRatingKey.get(entry.metadataItem.id);
+          if (movie) {
+            movieResult.watched++;
+            const logResult = logWatch({
+              mediaType: "movie",
+              mediaId: movie.id,
+              watchedAt: entry.date,
+              completed: 1,
+              source: "plex_sync",
+            });
+            if (logResult.created) movieResult.logged++;
+            else movieResult.alreadyLogged++;
+          }
+          // Not in library — skip (not an error, just not a POPS item)
+        }
+        // Episodes from watch history are show-level in Discover;
+        // we don't have episode-level ratingKey mapping here.
+        // TV episode watches are better handled by local server sync.
+      } catch (err) {
+        movieResult.errors++;
+        if (movieResult.errorSamples.length < MAX_ERROR_SAMPLES) {
+          const msg = err instanceof Error ? err.message : String(err);
+          movieResult.errorSamples.push(`${entry.metadataItem.title}: ${msg}`);
+        }
       }
+
+      processedEntries++;
+      onProgress?.(processedEntries, totalEntries);
+      onPartialResult?.({ movies: movieResult, tvShows: tvResult });
     }
 
-    processed++;
-    onProgress?.(processed, totalItems);
-    onPartialResult?.({ movies: movieResult, tvShows: tvResult });
-    await delay(RATE_LIMIT_DELAY_MS);
+    hasMore = page.hasNextPage;
+    after = page.endCursor;
   }
 
-  // Sync TV shows (show-level watch check only)
-  for (const show of allShows) {
-    try {
-      const synced = await syncSingleTvShowWatch(plexClient, show.id, show.name, show.tvdbId);
-      if (synced === "logged") tvResult.logged++;
-      else if (synced === "already") tvResult.alreadyLogged++;
-      else if (synced === "not_watched") {
-        /* not watched on Plex */
-      } else tvResult.notFound++;
-
-      if (synced === "logged" || synced === "already") tvResult.watched++;
-    } catch (err) {
-      tvResult.errors++;
-      if (tvResult.errorSamples.length < MAX_ERROR_SAMPLES) {
-        const msg = err instanceof Error ? err.message : String(err);
-        tvResult.errorSamples.push(`${show.name}: ${msg}`);
-      }
-    }
-
-    processed++;
-    onProgress?.(processed, totalItems);
-    onPartialResult?.({ movies: movieResult, tvShows: tvResult });
-    await delay(RATE_LIMIT_DELAY_MS);
+  // Now resolve any movies that didn't have a cached ratingKey.
+  // Search Discover for each unmatched movie and cache the ratingKey for next time.
+  const unmatchedMovies = allMovies.filter((m) => !m.discoverRatingKey);
+  if (unmatchedMovies.length > 0) {
+    await resolveAndCacheRatingKeys(plexClient, unmatchedMovies, db);
   }
 
   return { movies: movieResult, tvShows: tvResult };
 }
 
 // ---------------------------------------------------------------------------
-// Per-item sync
+// Account UUID
 // ---------------------------------------------------------------------------
 
-type SyncStatus = "logged" | "already" | "not_watched" | "not_found";
-
-/**
- * Check a single movie against Plex Discover and log watch if played.
- *
- * Flow: search by title → fetch metadata for each result to get TMDB ID →
- * match by TMDB ID → check userState → log watch.
- */
-async function syncSingleMovieWatch(
-  client: PlexClient,
-  movieId: number,
-  title: string,
-  tmdbId: number
-): Promise<SyncStatus> {
-  // Search Discover for the movie and match by TMDB ID
-  const results = await client.searchDiscover(title, "movie");
-  if (results.length === 0) return "not_found";
-
-  const matchedRatingKey = await findDiscoverMatch(client, results, "tmdb", tmdbId);
-  if (!matchedRatingKey) return "not_found";
-
-  // Check user state
-  const state = await client.getUserState(matchedRatingKey);
-  if (!state || state.viewCount === 0) return "not_watched";
-
-  // Log the watch
-  try {
-    const result = logWatch({
-      mediaType: "movie",
-      mediaId: movieId,
-      watchedAt: state.lastViewedAt
-        ? new Date(state.lastViewedAt * 1000).toISOString()
-        : new Date().toISOString(),
-      completed: 1,
-      source: "plex_sync",
-    });
-    return result.created ? "logged" : "already";
-  } catch {
-    return "already";
-  }
+async function fetchAccountUuid(token: string): Promise<string> {
+  const res = await fetch("https://plex.tv/api/v2/user", {
+    headers: { Accept: "application/json", "X-Plex-Token": token },
+  });
+  if (!res.ok) throw new PlexApiError(res.status, "Failed to fetch Plex account info");
+  const data = (await res.json()) as { uuid?: string };
+  if (!data.uuid) throw new Error("Plex account UUID not found");
+  return data.uuid;
 }
 
+// ---------------------------------------------------------------------------
+// GraphQL helpers
+// ---------------------------------------------------------------------------
+
+interface WatchHistoryPage {
+  nodes: ActivityWatchEntry[];
+  hasNextPage: boolean;
+  endCursor: string | null;
+}
+
+/** Send a GraphQL request to the Plex community API. */
+async function communityGraphQL<T>(
+  token: string,
+  query: string,
+  variables: Record<string, unknown>,
+  operationName: string
+): Promise<T> {
+  const clientId = getPlexClientId();
+
+  const res = await fetch("https://community.plex.tv/api", {
+    method: "POST",
+    headers: {
+      Accept: "*/*",
+      "Content-Type": "application/json",
+      "x-plex-token": token,
+      "x-plex-client-identifier": clientId,
+      "x-plex-product": "POPS",
+    },
+    body: JSON.stringify({ query, variables, operationName }),
+  });
+
+  if (!res.ok) {
+    throw new PlexApiError(res.status, `Community API error: ${res.statusText}`);
+  }
+
+  const json = (await res.json()) as { data?: T; errors?: Array<{ message: string }> };
+  if (json.errors?.length) {
+    throw new Error(`GraphQL error: ${json.errors[0]?.message}`);
+  }
+  if (!json.data) {
+    throw new Error("GraphQL response missing data");
+  }
+  return json.data;
+}
+
+async function fetchWatchHistoryPage(
+  token: string,
+  uuid: string,
+  after: string | null
+): Promise<WatchHistoryPage> {
+  const variables: Record<string, unknown> = {
+    first: GRAPHQL_PAGE_SIZE,
+    uuid,
+  };
+  if (after) variables.after = after;
+
+  const data = await communityGraphQL<{
+    user?: {
+      watchHistory?: {
+        nodes?: ActivityWatchEntry[];
+        pageInfo?: { hasNextPage?: boolean; endCursor?: string | null };
+      };
+    };
+  }>(token, WATCH_HISTORY_QUERY, variables, "GetWatchHistoryHub");
+
+  const history = data.user?.watchHistory;
+  return {
+    nodes: history?.nodes ?? [],
+    hasNextPage: history?.pageInfo?.hasNextPage ?? false,
+    endCursor: history?.pageInfo?.endCursor ?? null,
+  };
+}
+
+/** Fetch activity feed entries for a specific item. */
+async function fetchActivityForItem(
+  token: string,
+  ratingKey: string
+): Promise<Array<{ date: string }>> {
+  const data = await communityGraphQL<{
+    activityFeed?: { nodes?: Array<{ date: string }> };
+  }>(
+    token,
+    ACTIVITY_FEED_QUERY,
+    { first: 50, metadataID: ratingKey, types: ["WATCH_HISTORY"] },
+    "GetActivityFeed"
+  );
+  return data.activityFeed?.nodes ?? [];
+}
+
+// ---------------------------------------------------------------------------
+// Rating key resolution (first-run only)
+// ---------------------------------------------------------------------------
+
 /**
- * Check a single TV show against Plex Discover and log a show-level watch
- * event if the user has watched it. Since Discover doesn't expose per-episode
- * state easily, we log at the show level by checking if the show itself has
- * been interacted with (viewCount > 0 on the show-level metadata).
- *
- * Note: For per-episode watch history, the local server sync is more accurate.
- * This catches shows watched entirely outside the local library.
+ * For movies without a cached Discover ratingKey, search Discover to find
+ * and cache the mapping. This only needs to happen once per movie.
+ * Rate-limited to avoid Plex API throttling on first run.
  */
-async function syncSingleTvShowWatch(
+async function resolveAndCacheRatingKeys(
   client: PlexClient,
-  _tvShowId: number,
-  name: string,
-  tvdbId: number
-): Promise<SyncStatus> {
-  // Search Discover for the show and match by TVDB ID
-  const results = await client.searchDiscover(name, "show");
-  if (results.length === 0) return "not_found";
+  unmatchedMovies: Array<{ id: number; title: string; tmdbId: number }>,
+  db: ReturnType<typeof getDrizzle>
+): Promise<void> {
+  for (const movie of unmatchedMovies) {
+    try {
+      const results = await client.searchDiscover(movie.title, "movie");
+      if (results.length === 0) continue;
 
-  const matchedRatingKey = await findDiscoverMatch(client, results, "tvdb", tvdbId);
-  if (!matchedRatingKey) return "not_found";
-
-  // Check user state — for TV shows this indicates the user has interacted with it
-  const state = await client.getUserState(matchedRatingKey);
-  if (!state || state.viewCount === 0) return "not_watched";
-
-  // TV show watch state is tracked but we don't log show-level watch events
-  // (watch_history only supports "movie" and "episode" media types).
-  // Return "already" to indicate it's tracked on Plex's side.
-  return "already";
+      const ratingKey = await findDiscoverMatch(client, results, "tmdb", movie.tmdbId);
+      if (ratingKey) {
+        db.update(movies)
+          .set({ discoverRatingKey: ratingKey })
+          .where(eq(movies.id, movie.id))
+          .run();
+      }
+    } catch {
+      // Best-effort — will retry on next sync
+    }
+    await delay(RATE_LIMIT_DELAY_MS);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -243,6 +391,7 @@ async function syncSingleTvShowWatch(
 
 /**
  * Check if a movie is watched on Plex Discover and log the watch if so.
+ * Uses the activity feed GraphQL API to get individual watch dates.
  * Best-effort — returns false on any error without throwing.
  *
  * Call this when a movie is added to the library to auto-mark it as watched.
@@ -254,8 +403,54 @@ export async function checkAndLogMovieWatch(
   tmdbId: number
 ): Promise<boolean> {
   try {
-    const status = await syncSingleMovieWatch(plexClient, movieId, title, tmdbId);
-    return status === "logged";
+    const token = getPlexToken();
+    if (!token) return false;
+
+    // Find the Discover ratingKey for this movie
+    const results = await plexClient.searchDiscover(title, "movie");
+    if (results.length === 0) return false;
+
+    const ratingKey = await findDiscoverMatch(plexClient, results, "tmdb", tmdbId);
+    if (!ratingKey) return false;
+
+    // Cache the ratingKey
+    const db = getDrizzle();
+    db.update(movies).set({ discoverRatingKey: ratingKey }).where(eq(movies.id, movieId)).run();
+
+    // Check userState for quick watched check (avoids paginating full history)
+    const state = await plexClient.getUserState(ratingKey);
+    if (!state || state.viewCount === 0) return false;
+
+    // Fetch activity feed for this specific item to get individual dates
+    const nodes = await fetchActivityForItem(token, ratingKey);
+
+    if (nodes.length === 0) {
+      // Fallback to userState lastViewedAt
+      logWatch({
+        mediaType: "movie",
+        mediaId: movieId,
+        watchedAt: state.lastViewedAt
+          ? new Date(state.lastViewedAt * 1000).toISOString()
+          : new Date().toISOString(),
+        completed: 1,
+        source: "plex_sync",
+      });
+      return true;
+    }
+
+    // Log each individual watch event
+    let logged = false;
+    for (const node of nodes) {
+      const result = logWatch({
+        mediaType: "movie",
+        mediaId: movieId,
+        watchedAt: node.date,
+        completed: 1,
+        source: "plex_sync",
+      });
+      if (result.created) logged = true;
+    }
+    return logged;
   } catch {
     return false;
   }
