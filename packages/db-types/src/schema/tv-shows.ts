@@ -20,6 +20,7 @@ export const tvShows = sqliteTable(
     backdropPath: text("backdrop_path"),
     logoPath: text("logo_path"),
     posterOverridePath: text("poster_override_path"),
+    discoverRatingKey: text("discover_rating_key"),
     voteAverage: real("vote_average"),
     voteCount: integer("vote_count"),
     genres: text("genres"), // JSON array
