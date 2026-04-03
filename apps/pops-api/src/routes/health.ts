@@ -1,5 +1,6 @@
 import { type Router as ExpressRouter, Router } from "express";
-import { getDb } from "../db.js";
+import { sql } from "drizzle-orm";
+import { getDrizzle } from "../db.js";
 
 const router: ExpressRouter = Router();
 
@@ -10,9 +11,9 @@ const apiVersion =
 
 router.get("/health", (_req, res) => {
   try {
-    const db = getDb();
-    const row = db.prepare("SELECT 1 AS ok").get() as { ok: number } | undefined;
-    if (row?.ok === 1) {
+    const db = getDrizzle();
+    const rows = db.all<{ ok: number }>(sql`SELECT 1 AS ok`);
+    if (rows[0]?.ok === 1) {
       res.json({ status: "ok", version: apiVersion });
     } else {
       res.status(503).json({ status: "unhealthy", reason: "sqlite check failed" });
