@@ -196,6 +196,15 @@ jobs:
             --connection=local \
             -v
 
+      - name: "Selective deploy: Update repo"
+        if: steps.mode.outputs.type == 'selective'
+        run: |
+          cd /opt/pops/repo
+          git fetch origin main
+          git checkout main
+          git reset --hard origin/main
+          echo "Repo updated to $(git rev-parse --short HEAD)"
+
       - name: "Selective deploy: Build + Restart"
         if: steps.mode.outputs.type == 'selective'
         id: selective
