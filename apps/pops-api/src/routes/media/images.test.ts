@@ -12,9 +12,7 @@ vi.mock("node:fs/promises");
 import * as fs from "node:fs/promises";
 
 // Mock database
-const mockGet = vi.fn<() => { path: string | null; title: string | null } | undefined>(
-  () => undefined
-);
+const mockGet = vi.fn<() => { path: string | null } | undefined>(() => undefined);
 vi.mock("../../db.js", () => ({
   getDb: vi.fn(() => ({
     prepare: vi.fn(() => ({
@@ -26,16 +24,53 @@ vi.mock("../../db.js", () => ({
 // Mock image cache
 const mockDownloadMovieImages = vi.fn(async () => {});
 const mockDownloadTvShowImages = vi.fn(async () => {});
-const mockGeneratePlaceholder = vi.fn(async () => {});
-const mockGenerateTvPlaceholder = vi.fn(async () => {});
 vi.mock("../../modules/media/tmdb/index.js", () => ({
   getImageCache: vi.fn(() => ({
     downloadMovieImages: mockDownloadMovieImages,
     downloadTvShowImages: mockDownloadTvShowImages,
-    generatePlaceholder: mockGeneratePlaceholder,
-    generateTvPlaceholder: mockGenerateTvPlaceholder,
   })),
 }));
+
+/** Create a mock FileHandle that reads the given bytes. */
+function createMockFileHandle(
+  content: Buffer
+): Awaited<ReturnType<(typeof import("node:fs/promises"))["open"]>> {
+  /* FileHandle has ~20 methods; only read() and close() are called by the route. */
+  const handle = {
+    fd: 0,
+    appendFile: vi.fn(),
+    chmod: vi.fn(),
+    chown: vi.fn(),
+    close: vi.fn(),
+    createReadStream: vi.fn(),
+    createWriteStream: vi.fn(),
+    datasync: vi.fn(),
+    read: vi.fn(),
+    readFile: vi.fn(),
+    readLines: vi.fn(),
+    readableWebStream: vi.fn(),
+    readv: vi.fn(),
+    stat: vi.fn(),
+    sync: vi.fn(),
+    truncate: vi.fn(),
+    utimes: vi.fn(),
+    write: vi.fn(),
+    writeFile: vi.fn(),
+    writev: vi.fn(),
+    [Symbol.asyncDispose]: vi.fn(),
+  } as Awaited<ReturnType<(typeof import("node:fs/promises"))["open"]>>;
+
+  // Set up read implementation after cast to avoid overload signature mismatch
+  handle.read = vi
+    .fn()
+    .mockImplementation(async (buf: Buffer, _offset: number, length: number, position: number) => {
+      const bytesToRead = Math.min(length, content.length - position);
+      content.copy(buf, 0, position, position + bytesToRead);
+      return { bytesRead: bytesToRead, buffer: buf };
+    }) as typeof handle.read;
+
+  return handle;
+}
 
 const TEST_IMAGES_DIR = "/test/media/images";
 
@@ -49,11 +84,12 @@ beforeEach(() => {
   vi.stubEnv("MEDIA_IMAGES_DIR", TEST_IMAGES_DIR);
   // Default: files don't exist
   vi.mocked(fs.stat).mockRejectedValue(new Error("ENOENT"));
+  // Default: open fails (file doesn't exist) → removeCorruptedPlaceholder returns false
+  vi.mocked(fs.open).mockRejectedValue(new Error("ENOENT"));
+  vi.mocked(fs.unlink).mockResolvedValue(undefined);
   mockGet.mockReturnValue(undefined);
   mockDownloadMovieImages.mockResolvedValue(undefined);
   mockDownloadTvShowImages.mockResolvedValue(undefined);
-  mockGeneratePlaceholder.mockResolvedValue(undefined);
-  mockGenerateTvPlaceholder.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -213,7 +249,7 @@ describe("GET /media/images/:mediaType/:id/:filename", () => {
   describe("on-demand download", () => {
     it("downloads movie image from TMDB on cache miss", async () => {
       const app = createTestApp();
-      mockGet.mockReturnValue({ path: "/abc123.jpg", title: "Test Movie" });
+      mockGet.mockReturnValue({ path: "/abc123.jpg" });
 
       await request(app).get("/media/images/movie/550/poster.jpg");
 
@@ -222,7 +258,7 @@ describe("GET /media/images/:mediaType/:id/:filename", () => {
 
     it("downloads backdrop via correct parameter slot", async () => {
       const app = createTestApp();
-      mockGet.mockReturnValue({ path: "/backdrop.jpg", title: "Test Movie" });
+      mockGet.mockReturnValue({ path: "/backdrop.jpg" });
 
       await request(app).get("/media/images/movie/550/backdrop.jpg");
 
@@ -231,7 +267,7 @@ describe("GET /media/images/:mediaType/:id/:filename", () => {
 
     it("downloads logo via correct parameter slot", async () => {
       const app = createTestApp();
-      mockGet.mockReturnValue({ path: "/logo.png", title: "Test Movie" });
+      mockGet.mockReturnValue({ path: "/logo.png" });
 
       await request(app).get("/media/images/movie/550/logo.png");
 
@@ -240,10 +276,7 @@ describe("GET /media/images/:mediaType/:id/:filename", () => {
 
     it("downloads TV poster from TheTVDB on cache miss", async () => {
       const app = createTestApp();
-      mockGet.mockReturnValue({
-        path: "https://artworks.thetvdb.com/poster.jpg",
-        title: "Test Show",
-      });
+      mockGet.mockReturnValue({ path: "https://artworks.thetvdb.com/poster.jpg" });
 
       await request(app).get("/media/images/tv/81189/poster.jpg");
 
@@ -258,10 +291,7 @@ describe("GET /media/images/:mediaType/:id/:filename", () => {
 
     it("downloads TV logo from TheTVDB on cache miss", async () => {
       const app = createTestApp();
-      mockGet.mockReturnValue({
-        path: "https://artworks.thetvdb.com/logo.png",
-        title: "Test Show",
-      });
+      mockGet.mockReturnValue({ path: "https://artworks.thetvdb.com/logo.png" });
 
       await request(app).get("/media/images/tv/81189/logo.png");
 
@@ -274,56 +304,6 @@ describe("GET /media/images/:mediaType/:id/:filename", () => {
       );
     });
 
-    it("generates placeholder when download fails for movies", async () => {
-      const app = createTestApp();
-      mockGet.mockReturnValue({ path: "/abc123.jpg", title: "Test Movie" });
-      mockDownloadMovieImages.mockRejectedValue(new Error("Download failed"));
-
-      const res = await request(app).get("/media/images/movie/550/poster.jpg");
-
-      // Download failed → placeholder generation attempted
-      expect(mockGeneratePlaceholder).toHaveBeenCalledWith(550, "Test Movie");
-      // Still returns 404 since the file doesn't exist (mock stat always fails)
-      expect(res.status).toBe(404);
-    });
-
-    it("generates placeholder for TV when download fails", async () => {
-      const app = createTestApp();
-      mockGet.mockReturnValue({
-        path: "https://artworks.thetvdb.com/poster.jpg",
-        title: "Test Show",
-      });
-      mockDownloadTvShowImages.mockRejectedValue(new Error("Download failed"));
-
-      const res = await request(app).get("/media/images/tv/81189/poster.jpg");
-
-      expect(mockGenerateTvPlaceholder).toHaveBeenCalledWith(81189, "Test Show");
-      expect(res.status).toBe(404);
-    });
-
-    it("generates placeholder when DB has no poster_path", async () => {
-      const app = createTestApp();
-      mockGet.mockReturnValue({ path: null, title: "No Poster Movie" });
-
-      const res = await request(app).get("/media/images/movie/550/poster.jpg");
-
-      // No path → skip download → generate placeholder
-      expect(mockDownloadMovieImages).not.toHaveBeenCalled();
-      expect(mockGeneratePlaceholder).toHaveBeenCalledWith(550, "No Poster Movie");
-      expect(res.status).toBe(404);
-    });
-
-    it("returns 404 without placeholder for non-poster images with no path", async () => {
-      const app = createTestApp();
-      mockGet.mockReturnValue({ path: null, title: "Test Movie" });
-
-      const res = await request(app).get("/media/images/movie/550/backdrop.jpg");
-
-      // Placeholder is only generated for poster.jpg
-      expect(mockGeneratePlaceholder).not.toHaveBeenCalled();
-      expect(res.status).toBe(404);
-    });
-
     it("does not attempt download when no DB record exists", async () => {
       const app = createTestApp();
       mockGet.mockReturnValue(undefined);
@@ -331,7 +311,6 @@ describe("GET /media/images/:mediaType/:id/:filename", () => {
       const res = await request(app).get("/media/images/movie/9999/poster.jpg");
 
       expect(mockDownloadMovieImages).not.toHaveBeenCalled();
-      expect(mockGeneratePlaceholder).not.toHaveBeenCalled();
       expect(res.status).toBe(404);
     });
 
@@ -340,10 +319,115 @@ describe("GET /media/images/:mediaType/:id/:filename", () => {
 
       const res = await request(app).get("/media/images/movie/550/override.jpg");
 
-      // override.jpg is a user upload — never downloaded on-demand
       expect(mockDownloadMovieImages).not.toHaveBeenCalled();
       expect(mockDownloadTvShowImages).not.toHaveBeenCalled();
       expect(res.status).toBe(404);
+    });
+
+    it("returns 404 when DB has no poster_path", async () => {
+      const app = createTestApp();
+      mockGet.mockReturnValue({ path: null });
+
+      const res = await request(app).get("/media/images/movie/550/poster.jpg");
+
+      expect(mockDownloadMovieImages).not.toHaveBeenCalled();
+      expect(res.status).toBe(404);
+    });
+  });
+
+  describe("CDN redirect fallback (tier 3)", () => {
+    it("redirects to TMDB CDN when movie download fails", async () => {
+      const app = createTestApp();
+      mockGet.mockReturnValue({ path: "/abc123.jpg" });
+      mockDownloadMovieImages.mockRejectedValue(new Error("Download failed"));
+
+      const res = await request(app).get("/media/images/movie/550/poster.jpg");
+
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toBe("https://image.tmdb.org/t/p/w780/abc123.jpg");
+      expect(res.headers["cache-control"]).toBe("private, max-age=300");
+    });
+
+    it("redirects to TMDB CDN with correct size for backdrops", async () => {
+      const app = createTestApp();
+      mockGet.mockReturnValue({ path: "/backdrop.jpg" });
+      mockDownloadMovieImages.mockRejectedValue(new Error("Download failed"));
+
+      const res = await request(app).get("/media/images/movie/550/backdrop.jpg");
+
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toBe("https://image.tmdb.org/t/p/w1280/backdrop.jpg");
+    });
+
+    it("redirects to TMDB CDN with original size for logos", async () => {
+      const app = createTestApp();
+      mockGet.mockReturnValue({ path: "/logo.png" });
+      mockDownloadMovieImages.mockRejectedValue(new Error("Download failed"));
+
+      const res = await request(app).get("/media/images/movie/550/logo.png");
+
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toBe("https://image.tmdb.org/t/p/original/logo.png");
+    });
+
+    it("redirects to TheTVDB URL when TV download fails", async () => {
+      const app = createTestApp();
+      mockGet.mockReturnValue({ path: "https://artworks.thetvdb.com/poster.jpg" });
+      mockDownloadTvShowImages.mockRejectedValue(new Error("Download failed"));
+
+      const res = await request(app).get("/media/images/tv/81189/poster.jpg");
+
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toBe("https://artworks.thetvdb.com/poster.jpg");
+    });
+
+    it("redirects when download silently fails (no file written)", async () => {
+      const app = createTestApp();
+      mockGet.mockReturnValue({ path: "/abc123.jpg" });
+      // Download resolves but doesn't write a file (e.g. TMDB returned 404)
+
+      const res = await request(app).get("/media/images/movie/550/poster.jpg");
+
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toBe("https://image.tmdb.org/t/p/w780/abc123.jpg");
+    });
+  });
+
+  describe("corrupted SVG placeholder detection", () => {
+    it("deletes corrupted SVG placeholder and redirects to CDN", async () => {
+      const app = createTestApp();
+      vi.mocked(fs.open).mockResolvedValue(createMockFileHandle(Buffer.from("<svg xmlns=...")));
+      mockGet.mockReturnValue({ path: "/abc123.jpg" });
+
+      const res = await request(app).get("/media/images/movie/550/poster.jpg");
+
+      // Should delete the corrupted file
+      expect(fs.unlink).toHaveBeenCalled();
+      // Should NOT serve the corrupted file — should redirect to CDN
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toBe("https://image.tmdb.org/t/p/w780/abc123.jpg");
+    });
+
+    it("serves real JPEG file normally without deleting", async () => {
+      const app = createTestApp();
+      const posterPath = join(TEST_IMAGES_DIR, "movies", "550", "poster.jpg");
+
+      vi.mocked(fs.open).mockResolvedValue(
+        createMockFileHandle(Buffer.from([0xff, 0xd8, 0xff, 0xe0]))
+      );
+      vi.mocked(fs.stat).mockImplementation(async (path) => {
+        if (path === posterPath) {
+          return { mtimeMs: 1700000000000, size: 12345 } as Awaited<ReturnType<typeof fs.stat>>;
+        }
+        throw new Error("ENOENT");
+      });
+
+      await request(app).get("/media/images/movie/550/poster.jpg");
+
+      // Should NOT delete a valid file
+      expect(fs.unlink).not.toHaveBeenCalled();
+      // stat should be called for the poster file (tryServeFile path)
+      expect(fs.stat).toHaveBeenCalledWith(posterPath);
     });
   });
 });

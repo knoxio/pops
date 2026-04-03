@@ -47,5 +47,8 @@ COPY --from=builder /app/apps/pops-api/src/db/drizzle-migrations ./dist/db/drizz
 COPY --from=builder /app/packages/db-types/dist ./node_modules/@pops/db-types/dist
 COPY --from=builder /app/packages/db-types/package.json ./node_modules/@pops/db-types/
 
+ARG BUILD_VERSION=dev
+ENV BUILD_VERSION=$BUILD_VERSION
+
 EXPOSE 3000
 CMD ["node", "dist/index.js"]

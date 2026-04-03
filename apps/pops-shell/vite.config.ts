@@ -6,7 +6,11 @@ import path from "node:path";
 
 export default defineConfig({
   define: {
-    __BUILD_VERSION__: JSON.stringify(process.env.BUILD_VERSION || "dev"),
+    __BUILD_VERSION__: JSON.stringify(
+      process.env.BUILD_VERSION && process.env.BUILD_VERSION !== "dev"
+        ? `f${process.env.BUILD_VERSION}`
+        : "dev",
+    ),
   },
   plugins: [react(), tailwindcss()],
   test: {

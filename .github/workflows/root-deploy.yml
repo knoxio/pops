@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   changes:
     name: Detect Changes
@@ -145,7 +148,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm build
         env:
-          BUILD_VERSION: b${{ github.run_number }}
+          BUILD_VERSION: ${{ github.run_number }}
 
   # Deploy to N95 server
   deploy:
@@ -162,6 +165,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set deployment mode
         id: mode
@@ -195,6 +200,15 @@ jobs:
             --vault-password-file ~/.ansible/pops-vault-password \
             --connection=local \
             -v
+
+      - name: "Selective deploy: Update repo"
+        if: steps.mode.outputs.type == 'selective'
+        run: |
+          cd /opt/pops/repo
+          git fetch origin main
+          git checkout main
+          git reset --hard origin/main
+          echo "Repo updated to $(git rev-parse --short HEAD)"
 
       - name: "Selective deploy: Build + Restart"
         if: steps.mode.outputs.type == 'selective'
@@ -303,7 +317,7 @@ jobs:
         run: |
           echo "---"
           echo "Deployment Status: ${{ job.status }}"
-          echo "Build Version: b${{ github.run_number }}"
+          echo "Build Number: ${{ github.run_number }} (f${{ github.run_number }} / a${{ github.run_number }})"
           echo "Deploy SHA: ${{ github.sha }}"
           echo "Last deployed: ${{ needs.changes.outputs.last_deployed_sha || 'none' }}"
           echo "Mode: ${{ steps.mode.outputs.type }} (${{ steps.mode.outputs.target || 'n/a' }})"

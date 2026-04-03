@@ -4,6 +4,8 @@ services:
     build:
       context: ..
       dockerfile: apps/pops-api/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
     container_name: pops-api
     restart: unless-stopped
     networks:
