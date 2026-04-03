@@ -3,14 +3,15 @@
  *
  * GET /media/images/:mediaType/:id/:filename
  *
- * Serves locally cached images with immutable cache headers.
- * Checks for override file first when requesting posters.
- * On cache miss, downloads the image on-demand from the original source
- * (TMDB for movies, TheTVDB for TV shows), caches it, and serves it.
- * Falls back to an SVG placeholder when all else fails.
+ * Three-tier fallback strategy (every poster must load):
+ * 1. Serve locally cached image
+ * 2. Download from CDN → cache → serve
+ * 3. Redirect to CDN URL (browser fetches directly)
+ *
+ * Falls back to 404 only when there is genuinely no image source.
  */
 import { type Router as ExpressRouter, Router } from "express";
-import { stat } from "node:fs/promises";
+import { open, stat, unlink } from "node:fs/promises";
 import { join, resolve, extname } from "node:path";
 import { createHash } from "node:crypto";
 import { MEDIA_DIR_NAMES } from "../../modules/media/tmdb/image-cache.js";
@@ -31,6 +32,13 @@ const CONTENT_TYPES: Record<string, string> = {
 
 const CACHE_CONTROL = "public, max-age=31536000, immutable";
 
+/** CDN size presets for TMDB redirect fallback. */
+const TMDB_CDN_SIZES: Record<string, string> = {
+  poster: "w780",
+  backdrop: "w1280",
+  logo: "original",
+};
+
 function getImagesDir(): string {
   const dir = process.env.MEDIA_IMAGES_DIR ?? "./data/media/images";
   return resolve(dir); // Return absolute path
@@ -46,6 +54,54 @@ function resolveImageType(filename: string): "poster" | "backdrop" | "logo" | "o
   if (filename.startsWith("poster") || filename.startsWith("season_")) return "poster";
   if (filename.startsWith("logo")) return "logo";
   return "backdrop";
+}
+
+/**
+ * Build a CDN fallback URL from the stored path.
+ * Movies store TMDB-relative paths (e.g. /abc123.jpg) → prepend CDN base.
+ * TV shows store full TheTVDB URLs (e.g. https://artworks.thetvdb.com/...) → use as-is.
+ */
+function buildCdnFallbackUrl(
+  mediaType: string,
+  path: string,
+  imageType: "poster" | "backdrop" | "logo"
+): string | null {
+  if (mediaType === "movie" && path.startsWith("/")) {
+    const size = TMDB_CDN_SIZES[imageType] ?? "w780";
+    return `https://image.tmdb.org/t/p/${size}${path}`;
+  }
+  if (mediaType === "tv" && path.startsWith("http")) {
+    return path;
+  }
+  return null;
+}
+
+/**
+ * Detect and remove corrupted SVG placeholders (SVG content saved as .jpg).
+ * Reads only 4 bytes to check. If corrupted, deletes the file so downstream
+ * downloads aren't blocked by the skip-if-exists check in ImageCacheService.
+ * Returns true if a corrupted file was found and removed.
+ */
+async function removeCorruptedPlaceholder(filePath: string): Promise<boolean> {
+  let fh: Awaited<ReturnType<typeof open>> | undefined;
+  try {
+    fh = await open(filePath, "r");
+    const buf = Buffer.alloc(4);
+    const { bytesRead } = await fh.read(buf, 0, 4, 0);
+    if (bytesRead < 4) return false;
+
+    if (buf.toString("ascii", 0, 4) === "<svg") {
+      await fh.close();
+      fh = undefined;
+      await unlink(filePath).catch(() => {});
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
+  } finally {
+    await fh?.close();
+  }
 }
 
 const router: ExpressRouter = Router();
@@ -89,10 +145,13 @@ router.get("/media/images/:mediaType/:id/:filename", async (req, res): Promise<v
     if (served) return;
   }
 
-  // Serve the requested file from local cache
+  // Remove corrupted SVG placeholders so they don't block downloads or get served
   const filePath = join(mediaDir, filename);
-  const served = await tryServeFile(filePath, res);
-  if (served) return;
+  const wasCorrupted = await removeCorruptedPlaceholder(filePath);
+  if (!wasCorrupted) {
+    const served = await tryServeFile(filePath, res);
+    if (served) return;
+  }
 
   // Cache miss — try to download on-demand from original source
   // Overrides are user uploads — never downloaded on-demand
@@ -106,18 +165,15 @@ router.get("/media/images/:mediaType/:id/:filename", async (req, res): Promise<v
     const db = getDb();
     const table = mediaType === "movie" ? "movies" : "tv_shows";
     const idColumn = mediaType === "movie" ? "tmdb_id" : "tvdb_id";
-    const titleColumn = mediaType === "movie" ? "title" : "name";
     const pathColumn =
       imageType === "poster" ? "poster_path" : imageType === "logo" ? "logo_path" : "backdrop_path";
 
     const record = db
-      .prepare(
-        `SELECT ${pathColumn} AS path, ${titleColumn} AS title FROM ${table} WHERE ${idColumn} = ?`
-      )
-      .get(id) as { path: string | null; title: string | null } | undefined;
+      .prepare(`SELECT ${pathColumn} AS path FROM ${table} WHERE ${idColumn} = ?`)
+      .get(id) as { path: string | null } | undefined;
 
     if (record?.path) {
-      // Download the image to local cache, then serve it
+      // Tier 2: Download from CDN → cache → serve
       const downloaded = await downloadAndServe(
         mediaType,
         Number(id),
@@ -127,24 +183,20 @@ router.get("/media/images/:mediaType/:id/:filename", async (req, res): Promise<v
         res
       );
       if (downloaded) return;
-    }
 
-    // Generate placeholder as final fallback for poster requests
-    if (filename === "poster.jpg" && record?.title) {
-      const imageCache = getImageCache();
-      if (mediaType === "movie") {
-        await imageCache.generatePlaceholder(Number(id), record.title);
-      } else {
-        await imageCache.generateTvPlaceholder(Number(id), record.title);
+      // Tier 3: Redirect browser to CDN URL directly
+      const cdnUrl = buildCdnFallbackUrl(mediaType, record.path, imageType);
+      if (cdnUrl) {
+        res.set("Cache-Control", "private, max-age=300");
+        res.redirect(302, cdnUrl);
+        return;
       }
-      const served = await tryServeFile(filePath, res);
-      if (served) return;
     }
   } catch (err) {
     console.error("[Images] Fallback failed:", err);
   }
 
-  // Final 404 if no fallback available
+  // No image source at all
   res.status(404).json({ error: "Image not found" });
 });
 

@@ -381,9 +381,29 @@ mise db:seed     # Reset between test runs
 ### Rules
 
 - **Never commit directly to `main`** — all changes go through PRs
-- Run tests and typecheck before committing
 - Each branch = one focused task = one PR
 - Keep commits atomic and well-described
+
+### Pre-Push Quality Gate (mandatory, no exceptions)
+
+**Before every `git push`, you MUST run all of the following and they MUST pass:**
+
+```bash
+mise lint             # Lint all packages
+mise typecheck        # Type check all packages
+```
+
+For changes scoped to a single app, at minimum run that app's checks:
+
+```bash
+# pops-api
+cd apps/pops-api && pnpm format --check && pnpm lint && pnpm typecheck
+
+# pops-shell
+cd apps/pops-shell && pnpm format --check && pnpm lint && pnpm typecheck
+```
+
+**Do NOT push if any of these fail.** Fix the issue first, commit the fix, then push. A PR with red CI is not a PR — it's a draft at best. This is non-negotiable.
 
 ### Documentation Sync Rule
 
