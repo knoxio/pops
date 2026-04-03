@@ -30,7 +30,9 @@ const CONTENT_TYPES: Record<string, string> = {
   ".png": "image/png",
 };
 
-const CACHE_CONTROL = "public, max-age=31536000, immutable";
+/** Cache for 7 days, revalidate via ETag after that. Never use `immutable` — if a
+ *  corrupt file is ever served, the browser would be stuck for the full max-age. */
+const CACHE_CONTROL = "public, max-age=604800";
 
 /** CDN size presets for TMDB redirect fallback. */
 const TMDB_CDN_SIZES: Record<string, string> = {
