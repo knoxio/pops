@@ -263,9 +263,7 @@ function DiscoverSyncResultDisplay({
         <span className="font-medium">
           {isRunning ? "Cloud Sync Progress:" : "Cloud Sync Results:"}
         </span>
-        {totalAdded > 0 && (
-          <span className="text-blue-400">{totalAdded} added to library</span>
-        )}
+        {totalAdded > 0 && <span className="text-blue-400">{totalAdded} added to library</span>}
         {totalLogged > 0 && <span className="text-emerald-400">{totalLogged} watches logged</span>}
         {totalAlreadyLogged > 0 && (
           <span className="text-muted-foreground">{totalAlreadyLogged} already tracked</span>
