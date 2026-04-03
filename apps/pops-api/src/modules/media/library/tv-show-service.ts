@@ -104,6 +104,11 @@ export async function addTvShow(
     const insertedSeasons: SeasonRow[] = [];
 
     for (const season of detail.seasons) {
+      // Use the actual fetched episode count rather than the TVDB season summary,
+      // which typically returns 0 from the extended endpoint (episodes not included).
+      const eps = seasonEpisodes.get(season.seasonNumber) ?? [];
+      const episodeCount = eps.length > 0 ? eps.length : season.episodeCount || null;
+
       const seasonResult = tx
         .insert(seasons)
         .values({
@@ -113,7 +118,7 @@ export async function addTvShow(
           name: season.name,
           overview: season.overview,
           posterPath: season.imageUrl,
-          episodeCount: season.episodeCount,
+          episodeCount,
         })
         .run();
 
@@ -123,7 +128,6 @@ export async function addTvShow(
       insertedSeasons.push(seasonRow);
 
       // Insert episodes for this season
-      const eps = seasonEpisodes.get(season.seasonNumber) ?? [];
       for (const ep of eps) {
         tx.insert(episodes)
           .values({

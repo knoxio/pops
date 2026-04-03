@@ -208,6 +208,75 @@ describe("addTvShow", () => {
     expect(result.show.networks).toBeNull();
   });
 
+  it("sets episodeCount from actual fetched episodes, not TVDB summary", async () => {
+    // TVDB season summary says episodeCount: 99, but only 3 episodes are fetched.
+    // The DB should reflect the actual count (3), not the summary value (99).
+    const detail = makeShowDetail({
+      seasons: [
+        {
+          tvdbId: 30002,
+          seasonNumber: 1,
+          name: "Season 1",
+          overview: null,
+          imageUrl: null,
+          episodeCount: 99,
+        },
+      ],
+    });
+    const episodeMap = new Map([[1, makeEpisodes(1, 3)]]);
+    const client = makeMockClient(detail, episodeMap);
+
+    const result = await addTvShow(81189, client);
+
+    expect(result.seasons).toHaveLength(1);
+    expect(result.seasons[0]!.episodeCount).toBe(3);
+  });
+
+  it("falls back to TVDB summary episodeCount when no episodes are fetched", async () => {
+    const detail = makeShowDetail({
+      seasons: [
+        {
+          tvdbId: 30002,
+          seasonNumber: 1,
+          name: "Season 1",
+          overview: null,
+          imageUrl: null,
+          episodeCount: 8,
+        },
+      ],
+    });
+    // No episodes fetched for this season
+    const episodeMap = new Map<number, TvdbEpisode[]>([[1, []]]);
+    const client = makeMockClient(detail, episodeMap);
+
+    const result = await addTvShow(81189, client);
+
+    expect(result.seasons).toHaveLength(1);
+    expect(result.seasons[0]!.episodeCount).toBe(8);
+  });
+
+  it("sets episodeCount to null when TVDB summary is 0 and no episodes fetched", async () => {
+    const detail = makeShowDetail({
+      seasons: [
+        {
+          tvdbId: 30002,
+          seasonNumber: 1,
+          name: "Season 1",
+          overview: null,
+          imageUrl: null,
+          episodeCount: 0,
+        },
+      ],
+    });
+    const episodeMap = new Map<number, TvdbEpisode[]>([[1, []]]);
+    const client = makeMockClient(detail, episodeMap);
+
+    const result = await addTvShow(81189, client);
+
+    expect(result.seasons).toHaveLength(1);
+    expect(result.seasons[0]!.episodeCount).toBeNull();
+  });
+
   it("inserts episodes with correct data", async () => {
     const detail = makeShowDetail({
       seasons: [

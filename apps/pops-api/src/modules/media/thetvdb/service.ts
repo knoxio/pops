@@ -30,6 +30,10 @@ export interface RefreshTvShowResult {
 /**
  * Upsert a season row — insert if new, update if existing.
  * Returns the local season ID and whether it was newly added.
+ *
+ * Note: episodeCount from the TVDB season summary is unreliable (often 0
+ * because the extended endpoint doesn't include episodes). Use
+ * {@link updateSeasonEpisodeCount} after fetching actual episodes.
  */
 function upsertSeason(
   showId: number,
@@ -38,13 +42,17 @@ function upsertSeason(
   const db = getDrizzle();
   const existing = db.select().from(seasons).where(eq(seasons.tvdbId, seasonSummary.tvdbId)).get();
 
+  // Only use the TVDB summary episodeCount as a fallback (non-zero).
+  const episodeCount = seasonSummary.episodeCount || null;
+
   if (existing) {
     db.update(seasons)
       .set({
         name: seasonSummary.name,
         overview: seasonSummary.overview,
         posterPath: seasonSummary.imageUrl,
-        episodeCount: seasonSummary.episodeCount,
+        // Preserve existing episodeCount if the summary provides 0/null
+        ...(episodeCount != null ? { episodeCount } : {}),
       })
       .where(eq(seasons.id, existing.id))
       .run();
@@ -59,7 +67,7 @@ function upsertSeason(
       name: seasonSummary.name,
       overview: seasonSummary.overview,
       posterPath: seasonSummary.imageUrl,
-      episodeCount: seasonSummary.episodeCount,
+      episodeCount,
     })
     .run();
 
@@ -70,6 +78,15 @@ function upsertSeason(
   }
 
   return { seasonId: newSeason.id, added: true };
+}
+
+/**
+ * Update a season's episodeCount based on actually fetched episode data.
+ */
+function updateSeasonEpisodeCount(seasonId: number, episodeCount: number): void {
+  if (episodeCount <= 0) return;
+  const db = getDrizzle();
+  db.update(seasons).set({ episodeCount }).where(eq(seasons.id, seasonId)).run();
 }
 
 /**
@@ -178,6 +195,9 @@ export async function refreshTvShow(
           episodesAdded++;
         }
       }
+
+      // Update season episodeCount with the actual fetched count
+      updateSeasonEpisodeCount(seasonId, tvdbEpisodes.length);
     }
 
     // Update numberOfEpisodes on the show

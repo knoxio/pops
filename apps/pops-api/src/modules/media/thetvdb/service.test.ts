@@ -302,6 +302,80 @@ describe("refreshTvShow", () => {
     expect(result.show.numberOfSeasons).toBe(1);
   });
 
+  it("updates season episodeCount from actual fetched episodes", async () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Breaking Bad" });
+    // Seed a season with episodeCount: 0 (the bug state)
+    seedSeason(db, {
+      tv_show_id: showId,
+      tvdb_id: 5001,
+      season_number: 1,
+      name: "Season 1",
+      episode_count: 0,
+    });
+
+    const detail = makeShowDetail({
+      seasons: [
+        {
+          tvdbId: 5001,
+          seasonNumber: 1,
+          name: "Season 1",
+          overview: null,
+          imageUrl: null,
+          // TVDB summary also says 0 (the root cause of the bug)
+          episodeCount: 0,
+        },
+      ],
+    });
+    const episodesBySeason: Record<number, TvdbEpisode[]> = {
+      1: [
+        makeEpisode({ tvdbId: 6001, episodeNumber: 1, name: "Pilot" }),
+        makeEpisode({ tvdbId: 6002, episodeNumber: 2, name: "Cat's in the Bag..." }),
+        makeEpisode({ tvdbId: 6003, episodeNumber: 3, name: "...And the Bag's in the River" }),
+      ],
+    };
+    const client = createMockClient(detail, episodesBySeason);
+
+    const result = await refreshTvShow(client, { id: showId });
+
+    // The season episodeCount should be corrected to 3 (actual episodes)
+    expect(result.seasons).toHaveLength(1);
+    expect(result.seasons[0]!.episodeCount).toBe(3);
+  });
+
+  it("preserves existing season episodeCount when TVDB summary is 0 and no episodes fetched", async () => {
+    const showId = seedTvShow(db, { tvdb_id: 81189, name: "Breaking Bad" });
+    seedSeason(db, {
+      tv_show_id: showId,
+      tvdb_id: 5001,
+      season_number: 1,
+      name: "Season 1",
+      episode_count: 7,
+    });
+
+    const detail = makeShowDetail({
+      seasons: [
+        {
+          tvdbId: 5001,
+          seasonNumber: 1,
+          name: "Season 1 (Updated)",
+          overview: null,
+          imageUrl: null,
+          // TVDB summary returns 0 (unreliable)
+          episodeCount: 0,
+        },
+      ],
+    });
+    // No episodes returned from the episode endpoint
+    const client = createMockClient(detail, { 1: [] });
+
+    const result = await refreshTvShow(client, { id: showId });
+
+    // The existing episodeCount (7) should be preserved since TVDB summary is 0
+    // and no episodes were fetched to provide an actual count
+    expect(result.seasons).toHaveLength(1);
+    expect(result.seasons[0]!.episodeCount).toBe(7);
+  });
+
   it("throws NotFoundError for invalid show id", async () => {
     const detail = makeShowDetail();
     const client = createMockClient(detail);
