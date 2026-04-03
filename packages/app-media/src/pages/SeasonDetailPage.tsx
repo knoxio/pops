@@ -246,6 +246,8 @@ export function SeasonDetailPage() {
   const logMutation = trpc.media.watchHistory.log.useMutation({
     onSuccess: () => {
       void utils.media.watchHistory.list.invalidate();
+      void utils.media.watchHistory.progress.invalidate();
+      void utils.media.tvShows.listSeasons.invalidate();
     },
     onError: (err: { message: string }) => {
       toast.error(`Failed to log watch: ${err.message}`);
@@ -262,6 +264,8 @@ export function SeasonDetailPage() {
   const deleteMutation = trpc.media.watchHistory.delete.useMutation({
     onSuccess: () => {
       void utils.media.watchHistory.list.invalidate();
+      void utils.media.watchHistory.progress.invalidate();
+      void utils.media.tvShows.listSeasons.invalidate();
     },
     onError: (err: { message: string }) => {
       toast.error(`Failed to remove watch: ${err.message}`);
@@ -383,6 +387,7 @@ export function SeasonDetailPage() {
     },
     onSettled: () => {
       void utils.media.watchHistory.invalidate();
+      void utils.media.tvShows.listSeasons.invalidate();
     },
   });
 

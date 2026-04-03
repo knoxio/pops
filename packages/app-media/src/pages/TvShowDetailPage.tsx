@@ -147,6 +147,7 @@ export function TvShowDetailPage() {
     },
     onSettled: () => {
       void utils.media.watchHistory.invalidate();
+      void utils.media.tvShows.listSeasons.invalidate();
     },
   });
 
