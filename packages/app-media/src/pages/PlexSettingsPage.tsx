@@ -100,6 +100,7 @@ interface DiscoverMediaResult {
   watched: number;
   logged: number;
   alreadyLogged: number;
+  added: number;
   notFound: number;
   errors: number;
   errorSamples?: string[];
@@ -250,30 +251,31 @@ function DiscoverSyncResultDisplay({
 
   const r = result;
   const allErrors = [...(r.movies.errorSamples ?? []), ...(r.tvShows.errorSamples ?? [])];
+  const totalAdded = (r.movies.added ?? 0) + (r.tvShows.added ?? 0);
+  const totalLogged = r.movies.logged + r.tvShows.logged;
+  const totalAlreadyLogged = r.movies.alreadyLogged + r.tvShows.alreadyLogged;
+  const totalNotFound = r.movies.notFound + r.tvShows.notFound;
+  const totalErrors = r.movies.errors + r.tvShows.errors;
 
   return (
     <div className="rounded-md border bg-muted/30 p-3 space-y-2 text-sm">
       <div className="flex items-center gap-3 flex-wrap">
         <span className="font-medium">
-          {isRunning ? "Cloud Watch Progress:" : "Cloud Watch Results:"}
+          {isRunning ? "Cloud Sync Progress:" : "Cloud Sync Results:"}
         </span>
-        {r.movies.logged > 0 && <span className="text-emerald-400">{r.movies.logged} logged</span>}
-        {r.movies.watched > 0 && (
-          <span className="text-muted-foreground">{r.movies.watched} watched</span>
+        {totalAdded > 0 && <span className="text-blue-400">{totalAdded} added to library</span>}
+        {totalLogged > 0 && <span className="text-emerald-400">{totalLogged} watches logged</span>}
+        {totalAlreadyLogged > 0 && (
+          <span className="text-muted-foreground">{totalAlreadyLogged} already tracked</span>
         )}
-        {r.movies.alreadyLogged > 0 && (
-          <span className="text-muted-foreground">{r.movies.alreadyLogged} already tracked</span>
+        {totalNotFound > 0 && (
+          <span className="text-muted-foreground">{totalNotFound} not found</span>
         )}
-        {r.movies.notFound > 0 && (
-          <span className="text-muted-foreground">{r.movies.notFound} not found</span>
-        )}
-        {r.movies.errors + r.tvShows.errors > 0 && (
-          <span className="text-red-400">{r.movies.errors + r.tvShows.errors} errors</span>
-        )}
+        {totalErrors > 0 && <span className="text-red-400">{totalErrors} errors</span>}
       </div>
       {!isRunning && (
         <p className="text-xs text-muted-foreground">
-          Checked {r.movies.total} movies, {r.tvShows.total} TV shows against Plex cloud
+          Processed {r.movies.total} movie and {r.tvShows.total} TV episode activity entries
         </p>
       )}
       {allErrors.length > 0 && (
@@ -947,9 +949,10 @@ export function PlexSettingsPage() {
               <h2 className="text-lg font-semibold">Plex Cloud Watch Sync</h2>
             </div>
             <p className="text-sm text-muted-foreground">
-              Check all movies in your POPS library against your Plex account&apos;s cloud watch
-              history. Catches watches from streaming services (Netflix, Disney+, etc.) and other
-              Plex servers — not just your local library. This may take several minutes.
+              Sync your full Plex cloud activity history into POPS. For each movie and TV episode
+              you&apos;ve watched — adds it to your library if missing and logs the watch if not
+              already tracked. Catches streaming services (Netflix, Disney+, etc.) and other Plex
+              servers. This may take several minutes on first run.
             </p>
             <Button
               size="sm"
