@@ -68,6 +68,9 @@ Build a pairwise comparison system per [ADR-010](../../../../architecture/adr-01
 | Score update | `oldScore + K * (actual - expected)` |
 | Winner actual | 1 |
 | Loser actual | 0 |
+| Draw actual (high) | 0.7 — both gain (equally good) |
+| Draw actual (mid) | 0.5 — neutral (standard draw) |
+| Draw actual (low) | 0.3 — both lose (equally bad) |
 | Transaction | Both scores updated in a single transaction |
 
 ## Default Comparison Dimensions
@@ -117,6 +120,7 @@ Build a pairwise comparison system per [ADR-010](../../../../architecture/adr-01
 | 06 | [us-06-comparison-history](us-06-comparison-history.md) | Comparison history list, delete with Elo recalculation, undo toast, dimension filter | Not started | Yes |
 | 07 | [us-07-dimension-weights](us-07-dimension-weights.md) | Per-dimension weight for overall ranking, weight slider in dimension management UI | Done | Yes |
 | 08 | [us-08-arena-watchlist-filter](us-08-arena-watchlist-filter.md) | Add to watchlist from arena, exclude watchlisted movies from pair selection | Not started | Yes |
+| 09 | [us-09-tiered-draws](us-09-tiered-draws.md) | Replace single Equal button with High/Mid/Low draw tiers that affect ELO outcome values (0.7/0.5/0.3) | Not started | Yes |
 
 US-01 depends on US-02 (arena needs Elo scoring to record comparisons). US-03 through US-08 can all be built in parallel.
 

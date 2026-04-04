@@ -125,6 +125,18 @@ export function updateDimension(id: number, input: UpdateDimensionInput): Compar
 /** Elo K-factor for score updates. */
 const ELO_K = 32;
 
+/** Map draw tier to ELO outcome value. High = both gain, Mid = neutral, Low = both lose. */
+function drawTierOutcome(tier: string | null | undefined): number {
+  switch (tier) {
+    case "high":
+      return 0.7;
+    case "low":
+      return 0.3;
+    default:
+      return 0.5;
+  }
+}
+
 /** Calculate expected score for player A given ratings. */
 function expectedScore(ratingA: number, ratingB: number): number {
   return 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
@@ -168,6 +180,7 @@ export function recordComparison(input: RecordComparisonInput): ComparisonRow {
         mediaBId: input.mediaBId,
         winnerType: input.winnerType,
         winnerId: input.winnerId,
+        drawTier: input.drawTier ?? null,
       })
       .run();
 
@@ -239,12 +252,13 @@ function updateEloScores(input: RecordComparisonInput): void {
   const expectedB = expectedScore(scoreB.score, scoreA.score);
 
   const isDraw = input.winnerId === 0;
+  const drawOutcome = isDraw ? drawTierOutcome(input.drawTier) : 0.5;
   const actualA = isDraw
-    ? 0.5
+    ? drawOutcome
     : input.winnerType === input.mediaAType && input.winnerId === input.mediaAId
       ? 1
       : 0;
-  const actualB = isDraw ? 0.5 : 1 - actualA;
+  const actualB = isDraw ? drawOutcome : 1 - actualA;
 
   const newScoreA = scoreA.score + ELO_K * (actualA - expectedA);
   const newScoreB = scoreB.score + ELO_K * (actualB - expectedB);
@@ -348,6 +362,7 @@ export function deleteComparison(id: number): void {
         mediaBId: comp.mediaBId,
         winnerType: comp.winnerType as "movie" | "tv_show",
         winnerId: comp.winnerId,
+        drawTier: comp.drawTier as "high" | "mid" | "low" | null,
       });
     }
   })();

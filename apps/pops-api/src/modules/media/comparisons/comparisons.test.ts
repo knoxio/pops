@@ -1180,6 +1180,114 @@ describe("dimension weights", () => {
   });
 });
 
+describe("tiered draws", () => {
+  it("high draw: both movies gain score", async () => {
+    const dimId = seedDimension(db, { name: "Story" });
+
+    await caller.media.comparisons.record({
+      dimensionId: dimId,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 2,
+      winnerType: "movie",
+      winnerId: 0,
+      drawTier: "high",
+    });
+
+    const scoresA = await caller.media.comparisons.scores({
+      mediaType: "movie",
+      mediaId: 1,
+      dimensionId: dimId,
+    });
+    const scoresB = await caller.media.comparisons.scores({
+      mediaType: "movie",
+      mediaId: 2,
+      dimensionId: dimId,
+    });
+    // Both should be above 1500 (outcome 0.7 > expected 0.5)
+    expect(scoresA.data[0]!.score).toBeGreaterThan(1500);
+    expect(scoresB.data[0]!.score).toBeGreaterThan(1500);
+  });
+
+  it("mid draw: both movies stay at 1500", async () => {
+    const dimId = seedDimension(db, { name: "Visuals" });
+
+    await caller.media.comparisons.record({
+      dimensionId: dimId,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 2,
+      winnerType: "movie",
+      winnerId: 0,
+      drawTier: "mid",
+    });
+
+    const scoresA = await caller.media.comparisons.scores({
+      mediaType: "movie",
+      mediaId: 1,
+      dimensionId: dimId,
+    });
+    const scoresB = await caller.media.comparisons.scores({
+      mediaType: "movie",
+      mediaId: 2,
+      dimensionId: dimId,
+    });
+    expect(scoresA.data[0]!.score).toBe(1500);
+    expect(scoresB.data[0]!.score).toBe(1500);
+  });
+
+  it("low draw: both movies lose score", async () => {
+    const dimId = seedDimension(db, { name: "Sound" });
+
+    await caller.media.comparisons.record({
+      dimensionId: dimId,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 2,
+      winnerType: "movie",
+      winnerId: 0,
+      drawTier: "low",
+    });
+
+    const scoresA = await caller.media.comparisons.scores({
+      mediaType: "movie",
+      mediaId: 1,
+      dimensionId: dimId,
+    });
+    const scoresB = await caller.media.comparisons.scores({
+      mediaType: "movie",
+      mediaId: 2,
+      dimensionId: dimId,
+    });
+    expect(scoresA.data[0]!.score).toBeLessThan(1500);
+    expect(scoresB.data[0]!.score).toBeLessThan(1500);
+  });
+
+  it("legacy draw without tier uses 0.5 (neutral)", async () => {
+    const dimId = seedDimension(db, { name: "Entertainment" });
+
+    await caller.media.comparisons.record({
+      dimensionId: dimId,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 2,
+      winnerType: "movie",
+      winnerId: 0,
+    });
+
+    const scoresA = await caller.media.comparisons.scores({
+      mediaType: "movie",
+      mediaId: 1,
+      dimensionId: dimId,
+    });
+    expect(scoresA.data[0]!.score).toBe(1500);
+  });
+});
+
 describe("comparisons auth", () => {
   it("rejects unauthenticated calls", async () => {
     const anonCaller = createCaller(false);

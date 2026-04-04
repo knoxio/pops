@@ -15,6 +15,7 @@ export const comparisons = sqliteTable(
     mediaBId: integer("media_b_id").notNull(),
     winnerType: text("winner_type").notNull(),
     winnerId: integer("winner_id").notNull(),
+    drawTier: text("draw_tier"),
     comparedAt: text("compared_at")
       .notNull()
       .default(sql`(datetime('now'))`),

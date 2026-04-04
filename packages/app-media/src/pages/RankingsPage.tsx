@@ -249,10 +249,19 @@ export function RankingsPage() {
         <RankingsSkeleton />
       ) : showTabs ? (
         <Tabs value={dimensionParam} onValueChange={handleTabChange}>
-          <TabsList className="h-auto w-full flex-wrap justify-center">
-            <TabsTrigger value="overall">Overall</TabsTrigger>
+          <TabsList variant="line" className="h-auto w-full flex-wrap justify-center gap-2 p-0">
+            <TabsTrigger
+              value="overall"
+              className="rounded-full border border-border bg-muted/50 px-4 py-1.5 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary"
+            >
+              Overall
+            </TabsTrigger>
             {activeDimensions.map((dim: { id: number; name: string }) => (
-              <TabsTrigger key={dim.id} value={String(dim.id)}>
+              <TabsTrigger
+                key={dim.id}
+                value={String(dim.id)}
+                className="rounded-full border border-border bg-muted/50 px-4 py-1.5 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary"
+              >
                 {dim.name}
               </TabsTrigger>
             ))}
