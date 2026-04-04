@@ -1,13 +1,11 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { setupTestContext, seedDimension, createCaller } from "../../../shared/test-utils.js";
-import type { Database } from "better-sqlite3";
+import { setupTestContext, createCaller } from "../../../shared/test-utils.js";
 import { markStale, getStaleness, resetStaleness } from "./staleness.js";
 
 const ctx = setupTestContext();
-let db: Database;
 
 beforeEach(() => {
-  ({ db } = ctx.setup());
+  ctx.setup();
 });
 
 afterEach(() => {
