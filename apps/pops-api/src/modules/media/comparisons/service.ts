@@ -651,7 +651,7 @@ export interface RankingsResult {
  * Supports optional mediaType filter and pagination.
  */
 /** Resolve the best poster URL from a rankings row. */
-function resolvePosterUrl(row: {
+export function resolvePosterUrl(row: {
   mediaType: string;
   moviePosterPath: string | null;
   movieTmdbId: number | null;
