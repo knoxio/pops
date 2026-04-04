@@ -1,7 +1,7 @@
 # US-08: Arena watchlist button and filter
 
 > PRD: [037 — Ratings & Comparisons](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,15 +9,15 @@ As a user, I want to add a movie to my watchlist from the compare arena and have
 
 ## Acceptance Criteria
 
-- [ ] Each movie card in the compare arena shows a small "Add to Watchlist" button (bookmark icon)
-- [ ] Clicking the button adds the movie to the watchlist via `media.watchlist.add`
-- [ ] Success toast confirms: "{Movie title} added to watchlist"
-- [ ] After adding, the button changes to a filled bookmark (already on watchlist) and is disabled
-- [ ] Movies already on the watchlist show the filled bookmark on load (check watchlist status)
-- [ ] `getRandomPair` excludes movies that are on the user's watchlist from the candidate pool
-- [ ] If adding to watchlist reduces the pool below 2 eligible movies, show "Not enough movies — some are on your watchlist" with a link to the watchlist page
-- [ ] Skip button still works independently of the watchlist button
-- [ ] Tests cover: watchlist button adds movie, pair selection excludes watchlisted movies, pool depletion message
+- [x] Each movie card in the compare arena shows a small "Add to Watchlist" button (bookmark icon)
+- [x] Clicking the button adds the movie to the watchlist via `media.watchlist.add`
+- [x] Success toast confirms: "{Movie title} added to watchlist"
+- [x] After adding, the button changes to a filled bookmark (already on watchlist) and is disabled
+- [x] Movies already on the watchlist show the filled bookmark on load (check watchlist status)
+- [x] `getRandomPair` excludes movies that are on the user's watchlist from the candidate pool
+- [x] If adding to watchlist reduces the pool below 2 eligible movies, show "Not enough movies — some are on your watchlist" with a link to the watchlist page
+- [x] Skip button still works independently of the watchlist button
+- [x] Tests cover: watchlist button adds movie, pair selection excludes watchlisted movies, pool depletion message
 
 ## Notes
 
