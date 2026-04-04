@@ -153,7 +153,7 @@ export function DebriefPage() {
   // ── Summary data for CompletionSummary ──
   const summaryData = allComplete
     ? {
-        sessionId,
+        sessionId: debrief.sessionId,
         movieTitle: debrief.movie.title,
         dimensions: debrief.dimensions.map((d) => ({
           dimensionId: d.dimensionId,
@@ -306,7 +306,7 @@ export function DebriefPage() {
       {/* ── Action bar (skip/bail/completion) ── */}
       <div className="flex justify-center">
         <DebriefActionBar
-          sessionId={sessionId}
+          sessionId={debrief.sessionId}
           currentDimension={
             currentDimension
               ? { id: currentDimension.dimensionId, name: currentDimension.name }
