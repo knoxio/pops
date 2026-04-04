@@ -44,8 +44,8 @@ Uses the existing `ai_usage` table (created in PRD-009):
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
 | 01 | [us-01-stats-api](us-01-stats-api.md) | getStats and getHistory procedures with aggregation | Partial | No (first) |
-| 02 | [us-02-usage-page](us-02-usage-page.md) | Stats cards, daily chart, date range filter | Partial | Blocked by us-01 |
-| 03 | [us-03-app-scaffold](us-03-app-scaffold.md) | `@pops/app-ai` workspace package, shell registration, route at /ai | Partial | Yes (parallel with us-01) |
+| 02 | [us-02-usage-page](us-02-usage-page.md) | Stats cards, daily chart, date range filter | Done | Blocked by us-01 |
+| 03 | [us-03-app-scaffold](us-03-app-scaffold.md) | `@pops/app-ai` workspace package, shell registration, route at /ai | Done | Yes (parallel with us-01) |
 
 ## Out of Scope
 

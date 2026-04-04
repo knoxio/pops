@@ -68,7 +68,7 @@ Track what's been watched at movie and episode level. Build a chronological hist
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 01 | [us-01-history-page](us-01-history-page.md) | History page with chronological list, filter tabs (All/Movies/Episodes), pagination, poster/title/date display | To Review | Yes |
+| 01 | [us-01-history-page](us-01-history-page.md) | History page with chronological list, filter tabs (All/Movies/Episodes), pagination, poster/title/date display | Done | Yes |
 | 02 | [us-02-episode-enrichment](us-02-episode-enrichment.md) | Episode entries show show name, season/episode numbers (S01E03), link to show and season detail pages | Partial | Blocked by us-01 |
 | 03 | [us-03-delete-watch-event](us-03-delete-watch-event.md) | Delete watch event action with confirmation, for correcting mistakes | Partial | Yes (parallel with us-01) |
 

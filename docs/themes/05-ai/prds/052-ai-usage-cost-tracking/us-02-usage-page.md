@@ -1,7 +1,7 @@
 # US-02: AI usage page
 
 > PRD: [052 — AI Usage & Cost Tracking](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -11,8 +11,8 @@ As a user, I want an AI usage page showing costs, token counts, and trends so th
 
 - [x] Stats cards: total cost, API calls, cache hits, cache hit rate, avg cost per call
 - [x] Last 30 days section with cost, calls, cache hits
-- [ ] Daily history chart (line/bar chart showing cost over time) — no chart component; history data is fetched but displayed as a DataTable, not a chart
-- [ ] Date range filter (start/end date pickers) — no date range filter UI
+- [x] Daily history chart (line/bar chart showing cost over time)
+- [x] Date range filter (start/end date pickers)
 - [x] Loading skeletons while data fetches
 - [x] Empty state when no AI usage exists
 - [x] Cost formatted as USD with appropriate precision

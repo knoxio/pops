@@ -11,7 +11,7 @@ GitHub Actions workflows for quality gates (typecheck, lint, test, build) and au
 | # | PRD | Summary | Status |
 |---|-----|---------|--------|
 | 016 | [CI/CD Pipelines](../prds/016-cicd-pipelines/README.md) | Workflow definitions for deploy, API CI, shell CI, tests, e2e, Ansible validation, tools CI | Done |
-| 061 | [Smart Deploy Pipeline](../prds/061-smart-deploy/README.md) | Path-based selective deploy — only rebuild changed services, skip deploy for docs-only changes, health checks, Ansible runner provisioning | Not started |
+| 061 | [Smart Deploy Pipeline](../prds/061-smart-deploy/README.md) | Path-based selective deploy — only rebuild changed services, skip deploy for docs-only changes, health checks, Ansible runner provisioning | Done |
 
 ## Dependencies
 
