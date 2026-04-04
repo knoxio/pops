@@ -182,7 +182,12 @@ export function DebriefResultsSummary({ sessionId }: DebriefResultsSummaryProps)
               <ArrowLeft className="mr-1 h-4 w-4" />
               Back to Movie
             </Button>
-            <Button variant="default" size="sm" onClick={() => navigate("/media")} data-testid="done-btn">
+            <Button
+              variant="default"
+              size="sm"
+              onClick={() => navigate("/media")}
+              data-testid="done-btn"
+            >
               Done
             </Button>
           </div>

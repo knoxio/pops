@@ -34,9 +34,27 @@ const debriefResponse = {
       posterUrl: null,
     },
     dimensions: [
-      { dimensionId: 1, name: "Cinematography", status: "complete", comparisonId: 10, opponent: null },
-      { dimensionId: 2, name: "Entertainment", status: "complete", comparisonId: null, opponent: null },
-      { dimensionId: 3, name: "Rewatchability", status: "pending", comparisonId: null, opponent: null },
+      {
+        dimensionId: 1,
+        name: "Cinematography",
+        status: "complete",
+        comparisonId: 10,
+        opponent: null,
+      },
+      {
+        dimensionId: 2,
+        name: "Entertainment",
+        status: "complete",
+        comparisonId: null,
+        opponent: null,
+      },
+      {
+        dimensionId: 3,
+        name: "Rewatchability",
+        status: "pending",
+        comparisonId: null,
+        opponent: null,
+      },
     ],
   },
 };
