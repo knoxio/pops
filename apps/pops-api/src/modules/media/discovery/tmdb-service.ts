@@ -9,25 +9,13 @@ import type { TmdbClient } from "../tmdb/client.js";
 import type { TmdbSearchResult } from "../tmdb/types.js";
 import type { DiscoverResult, ScoredDiscoverResult } from "./types.js";
 import { getPreferenceProfile, scoreDiscoverResults } from "./service.js";
-import { getWatchedTmdbIds, getWatchlistTmdbIds } from "./flags.js";
+import { getWatchedTmdbIds, getWatchlistTmdbIds, getDismissedTmdbIds } from "./flags.js";
 
 /** Get all TMDB IDs currently in the library for quick lookup. */
 function getLibraryTmdbIds(): Set<number> {
   const db = getDrizzle();
   const rows = db.select({ tmdbId: movies.tmdbId }).from(movies).all();
   return new Set(rows.map((r) => r.tmdbId));
-}
-
-/** Get dismissed TMDB IDs for filtering. Returns empty set if table doesn't exist yet. */
-function getDismissedTmdbIds(): Set<number> {
-  try {
-    const db = getDrizzle();
-    const rows = db.all<{ tmdb_id: number }>(/* sql */ `SELECT tmdb_id FROM dismissed_discover`);
-    return new Set(rows.map((r) => r.tmdb_id));
-  } catch {
-    // Table may not exist yet (created by tb-115)
-    return new Set();
-  }
 }
 
 /** Build a poster URL: proxy for library items, TMDB CDN for non-library items. */
