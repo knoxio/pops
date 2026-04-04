@@ -659,7 +659,7 @@ function pickDimensionByNeed(rawDb: ReturnType<typeof getDb>): number | null {
     r -= d.need;
     if (r <= 0) return d.id;
   }
-  return needs[needs.length - 1]!.id;
+  return needs.at(-1)?.id ?? null;
 }
 
 /**
@@ -683,13 +683,17 @@ function recencyWeight(daysSinceLastWatch: number): number {
 function weightedRandomSample<T>(items: Array<{ item: T; weight: number }>): T | null {
   if (items.length === 0) return null;
   const total = items.reduce((sum, i) => sum + i.weight, 0);
-  if (total <= 0) return items[Math.floor(Math.random() * items.length)]!.item;
+  if (total <= 0) {
+    const picked = items[Math.floor(Math.random() * items.length)];
+    return picked ? picked.item : null;
+  }
   let r = Math.random() * total;
   for (const { item, weight } of items) {
     r -= weight;
     if (r <= 0) return item;
   }
-  return items[items.length - 1]!.item;
+  const last = items.at(-1);
+  return last ? last.item : null;
 }
 
 const SAMPLE_SIZE = 50;
@@ -739,15 +743,13 @@ export function getSmartPair(dimensionId?: number): RandomPair | null {
   );
 
   // Exclude movies excluded for this dimension
-  const excludedIds = new Set(
-    rawDb
-      .prepare(
-        `SELECT media_id FROM media_scores
-         WHERE dimension_id = ? AND media_type = 'movie' AND excluded = 1`
-      )
-      .all(selectedDimId)
-      .map((r: any) => r.media_id as number)
-  );
+  const excludedRows = rawDb
+    .prepare(
+      `SELECT media_id FROM media_scores
+       WHERE dimension_id = ? AND media_type = 'movie' AND excluded = 1`
+    )
+    .all(selectedDimId) as Array<{ media_id: number }>;
+  const excludedIds = new Set(excludedRows.map((r) => r.media_id));
 
   // Get pairs on cooloff for this dimension (skip_until is a global comparison count)
   const globalCount = getGlobalComparisonCount();
@@ -868,8 +870,9 @@ export function getSmartPair(dimensionId?: number): RandomPair | null {
   const scoredPairs: ScoredPair[] = [];
   for (let i = 0; i < candidates.length; i++) {
     for (let j = i + 1; j < candidates.length; j++) {
-      const a = candidates[i]!;
-      const b = candidates[j]!;
+      const a = candidates[i];
+      const b = candidates[j];
+      if (!a || !b) continue;
 
       // Skip pairs on cooloff
       if (cooloffPairs.has(`${a.id}-${b.id}`)) continue;
@@ -892,8 +895,9 @@ export function getSmartPair(dimensionId?: number): RandomPair | null {
   // Fallback: if no scored pairs (all on cooloff), pick any eligible pair
   if (scoredPairs.length === 0) {
     if (candidates.length >= 2) {
-      const [a, b] = [candidates[0]!, candidates[1]!];
-      return buildRandomPairResult(a, b);
+      const a = candidates[0];
+      const b = candidates[1];
+      if (a && b) return buildRandomPairResult(a, b);
     }
     return null;
   }
@@ -935,7 +939,9 @@ function shuffleAndTake<T>(arr: T[], n: number): T[] {
   const copy = [...arr];
   for (let i = 0; i < n && i < copy.length; i++) {
     const j = i + Math.floor(Math.random() * (copy.length - i));
-    [copy[i], copy[j]] = [copy[j]!, copy[i]!];
+    const tmp = copy[i];
+    copy[i] = copy[j] as T;
+    copy[j] = tmp as T;
   }
   return copy.slice(0, n);
 }

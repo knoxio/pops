@@ -250,7 +250,7 @@ describe("getSmartPair", () => {
 
   it("boosts under-sampled dimensions when no dimensionId given", () => {
     const dim1 = seedDimension(db, { name: "Story" });
-    const dim2 = seedDimension(db, { name: "Visuals" });
+    seedDimension(db, { name: "Visuals" });
     const m1 = seedMovie(db, { tmdb_id: 550, title: "Fight Club" });
     const m2 = seedMovie(db, { tmdb_id: 551, title: "The Matrix" });
     seedWatchHistoryEntry(db, { media_type: "movie", media_id: m1 });
