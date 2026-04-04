@@ -14,6 +14,9 @@ const mockWatchlistListQuery = vi.fn();
 const mockWatchlistAddMutate = vi.fn() as ReturnType<typeof vi.fn> & {
   _opts?: Record<string, unknown>;
 };
+const mockMarkStaleMutate = vi.fn() as ReturnType<typeof vi.fn> & {
+  _opts?: Record<string, unknown>;
+};
 const mockInvalidateRandomPair = vi.fn();
 const mockInvalidateWatchlistList = vi.fn();
 
@@ -37,6 +40,12 @@ vi.mock("../lib/trpc", () => ({
           },
         },
         scores: { fetch: (...args: unknown[]) => mockScoresFetch(...args) },
+        markStale: {
+          useMutation: (opts: Record<string, unknown>) => {
+            mockMarkStaleMutate._opts = opts;
+            return { mutate: mockMarkStaleMutate, isPending: false };
+          },
+        },
       },
       watchlist: {
         list: {
@@ -271,5 +280,46 @@ describe("CompareArenaPage", () => {
 
     expect(screen.queryByText("The Matrix")).toBeNull();
     expect(screen.queryByText("Not enough watched movies")).toBeNull();
+  });
+
+  it("renders stale buttons for both movies", () => {
+    setupArena();
+    renderPage();
+
+    expect(screen.getByLabelText("Mark The Matrix as stale")).toBeTruthy();
+    expect(screen.getByLabelText("Mark Inception as stale")).toBeTruthy();
+  });
+
+  it("calls markStale mutation when clicking stale button for movie A", () => {
+    setupArena();
+    renderPage();
+
+    fireEvent.click(screen.getByLabelText("Mark The Matrix as stale"));
+
+    expect(mockMarkStaleMutate).toHaveBeenCalledWith({
+      mediaType: "movie",
+      mediaId: 10,
+    });
+  });
+
+  it("calls markStale mutation when clicking stale button for movie B", () => {
+    setupArena();
+    renderPage();
+
+    fireEvent.click(screen.getByLabelText("Mark Inception as stale"));
+
+    expect(mockMarkStaleMutate).toHaveBeenCalledWith({
+      mediaType: "movie",
+      mediaId: 20,
+    });
+  });
+
+  it("does not record a comparison when marking stale", () => {
+    setupArena();
+    renderPage();
+
+    fireEvent.click(screen.getByLabelText("Mark The Matrix as stale"));
+
+    expect(mockRecordMutate).not.toHaveBeenCalled();
   });
 });
