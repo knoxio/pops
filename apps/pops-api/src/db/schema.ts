@@ -384,6 +384,15 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     CREATE UNIQUE INDEX IF NOT EXISTS idx_media_scores_unique ON media_scores(media_type, media_id, dimension_id);
     CREATE INDEX IF NOT EXISTS idx_media_scores_dimension ON media_scores(dimension_id);
 
+    CREATE TABLE IF NOT EXISTS comparison_staleness (
+      id         INTEGER PRIMARY KEY AUTOINCREMENT,
+      media_type TEXT NOT NULL,
+      media_id   INTEGER NOT NULL,
+      staleness  REAL NOT NULL DEFAULT 1.0,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_comparison_staleness_unique ON comparison_staleness(media_type, media_id);
+
     CREATE TABLE IF NOT EXISTS watchlist (
       id               INTEGER PRIMARY KEY AUTOINCREMENT,
       media_type       TEXT NOT NULL CHECK(media_type IN ('movie', 'tv_show')),
