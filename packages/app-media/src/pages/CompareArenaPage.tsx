@@ -219,6 +219,28 @@ export function CompareArenaPage() {
     [pairData, dimensionId, recordMutation]
   );
 
+  // Skip pair with cooloff mutation
+  const skipMutation = trpc.media.comparisons.recordSkip.useMutation({
+    onSuccess: () => {
+      toast.success("Pair skipped for 10 comparisons");
+      setDimensionIndex((i) => i + 1);
+      utils.media.comparisons.getRandomPair.invalidate();
+    },
+  });
+
+  const handleSkip = useCallback(() => {
+    if (!pairData?.data || !dimensionId || skipMutation.isPending) return;
+
+    const { movieA, movieB } = pairData.data;
+    skipMutation.mutate({
+      dimensionId,
+      mediaAType: "movie" as const,
+      mediaAId: movieA.id,
+      mediaBType: "movie" as const,
+      mediaBId: movieB.id,
+    });
+  }, [pairData, dimensionId, skipMutation]);
+
   const handleDraw = useCallback(
     (tier: "high" | "mid" | "low") => {
       if (!pairData?.data || !dimensionId || recordMutation.isPending) return;
@@ -453,12 +475,10 @@ export function CompareArenaPage() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                utils.media.comparisons.getRandomPair.invalidate();
-                setDimensionIndex((i) => i + 1);
-              }}
+              onClick={handleSkip}
+              disabled={skipMutation.isPending}
             >
-              Skip this pair
+              {skipMutation.isPending ? "Skipping…" : "Skip this pair"}
             </Button>
             <Button
               variant="outline"

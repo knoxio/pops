@@ -14,6 +14,9 @@ const mockWatchlistListQuery = vi.fn();
 const mockWatchlistAddMutate = vi.fn() as ReturnType<typeof vi.fn> & {
   _opts?: Record<string, unknown>;
 };
+const mockSkipMutate = vi.fn() as ReturnType<typeof vi.fn> & {
+  _opts?: Record<string, unknown>;
+};
 const mockMarkStaleMutate = vi.fn() as ReturnType<typeof vi.fn> & {
   _opts?: Record<string, unknown>;
 };
@@ -44,6 +47,12 @@ vi.mock("../lib/trpc", () => ({
           useMutation: (opts: Record<string, unknown>) => {
             mockRecordMutate._opts = opts;
             return { mutate: mockRecordMutate, isPending: false };
+          },
+        },
+        recordSkip: {
+          useMutation: (opts: Record<string, unknown>) => {
+            mockSkipMutate._opts = opts;
+            return { mutate: mockSkipMutate, isPending: false };
           },
         },
         scores: { fetch: (...args: unknown[]) => mockScoresFetch(...args) },
@@ -179,7 +188,7 @@ describe("CompareArenaPage", () => {
     );
   });
 
-  it("skip button advances dimension without recording", () => {
+  it("skip button calls recordSkip mutation with correct pair details", () => {
     setupArena();
     renderPage();
 
@@ -189,13 +198,16 @@ describe("CompareArenaPage", () => {
 
     fireEvent.click(screen.getByText("Skip this pair"));
 
-    // No recording should be made
+    // No winner recording should be made
     expect(mockRecordMutate).not.toHaveBeenCalled();
-    // refetchPair should NOT be called — dimension index change triggers automatic refetch
-    expect(mockRefetchPair).not.toHaveBeenCalled();
-    // Dimension should advance to Entertainment (dim2)
-    const tabsAfter = screen.getAllByRole("tab");
-    expect(tabsAfter[1]?.getAttribute("aria-selected")).toBe("true");
+    // Skip mutation should be called with correct args
+    expect(mockSkipMutate).toHaveBeenCalledWith({
+      dimensionId: 1,
+      mediaAType: "movie",
+      mediaAId: 10,
+      mediaBType: "movie",
+      mediaBId: 20,
+    });
   });
 
   it("shows minimum threshold message when pair data is null", () => {
