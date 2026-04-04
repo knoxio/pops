@@ -744,28 +744,40 @@ export function DiscoverPage() {
       {/* Trending on Plex — hidden when not connected or API fails */}
       {trendingPlex.data?.data && trendingPlex.data.data.length > 0 && (
         <HorizontalScrollRow title="Trending on Plex" isLoading={false}>
-          {trendingPlex.data.data.map((item) => (
-            <DiscoverCard
-              key={item.tmdbId}
-              tmdbId={item.tmdbId}
-              title={item.title}
-              releaseDate={item.releaseDate ?? ""}
-              posterPath={item.posterPath}
-              posterUrl={item.posterUrl}
-              voteAverage={item.voteAverage ?? 0}
-              inLibrary={item.inLibrary}
-              isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
-              isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
-              onAddToLibrary={handleAddToLibrary}
-              onAddToWatchlist={handleAddToWatchlist}
-              onMarkWatched={handleMarkWatched}
-              isMarkingWatched={markingWatched.has(item.tmdbId)}
-              isWatched={item.isWatched}
-              onWatchlist={item.onWatchlist}
-              onMarkRewatched={handleMarkRewatched}
-              isMarkingRewatched={markingRewatched.has(item.tmdbId)}
-            />
-          ))}
+          {trendingPlex.data.data.map(
+            (item: {
+              tmdbId: number;
+              title: string;
+              releaseDate: string | null;
+              posterPath: string | null;
+              posterUrl: string | null;
+              voteAverage: number | null;
+              inLibrary: boolean;
+              isWatched?: boolean;
+              onWatchlist?: boolean;
+            }) => (
+              <DiscoverCard
+                key={item.tmdbId}
+                tmdbId={item.tmdbId}
+                title={item.title}
+                releaseDate={item.releaseDate ?? ""}
+                posterPath={item.posterPath}
+                posterUrl={item.posterUrl}
+                voteAverage={item.voteAverage ?? 0}
+                inLibrary={item.inLibrary}
+                isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
+                isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
+                onAddToLibrary={handleAddToLibrary}
+                onAddToWatchlist={handleAddToWatchlist}
+                onMarkWatched={handleMarkWatched}
+                isMarkingWatched={markingWatched.has(item.tmdbId)}
+                isWatched={item.isWatched}
+                onWatchlist={item.onWatchlist}
+                onMarkRewatched={handleMarkRewatched}
+                isMarkingRewatched={markingRewatched.has(item.tmdbId)}
+              />
+            )
+          )}
         </HorizontalScrollRow>
       )}
 

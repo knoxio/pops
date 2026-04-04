@@ -4,7 +4,17 @@
  */
 import { useState } from "react";
 import { cn, Badge, Button, Skeleton } from "@pops/ui";
-import { Film, Plus, Bookmark, BookmarkCheck, Check, Eye, Loader2, RotateCw, X } from "lucide-react";
+import {
+  Film,
+  Plus,
+  Bookmark,
+  BookmarkCheck,
+  Check,
+  Eye,
+  Loader2,
+  RotateCw,
+  X,
+} from "lucide-react";
 import { RequestMovieButton } from "./RequestMovieButton";
 
 export interface DiscoverCardProps {
