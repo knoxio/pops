@@ -67,10 +67,10 @@ const scoresResponse = {
   ],
 };
 
-function renderComponent(sessionId = 1) {
+function renderComponent(mediaType: "movie" | "episode" = "movie", mediaId = 1) {
   return render(
     <MemoryRouter>
-      <DebriefResultsSummary sessionId={sessionId} />
+      <DebriefResultsSummary mediaType={mediaType} mediaId={mediaId} />
     </MemoryRouter>
   );
 }

@@ -206,7 +206,7 @@ export function getDebrief(sessionId: number): DebriefResponse {
  *
  * Throws NotFoundError if no pending/active session exists for this media.
  */
-export function getDebriefByMedia(mediaType: string, mediaId: number): DebriefResponse {
+export function getDebriefByMedia(mediaType: "movie" | "episode", mediaId: number): DebriefResponse {
   const db = getDrizzle();
 
   // Find the most recent pending/active session for this media

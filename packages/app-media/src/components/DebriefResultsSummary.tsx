@@ -19,7 +19,7 @@ import {
 import { trpc } from "../lib/trpc";
 
 interface DebriefResultsSummaryProps {
-  mediaType: string;
+  mediaType: "movie" | "episode";
   mediaId: number;
 }
 
