@@ -13,14 +13,14 @@ const mockCancel = vi.fn().mockResolvedValue(undefined);
 const mockGetData = vi.fn();
 const mockSetData = vi.fn();
 
-const mockListQuery = vi.fn();
+const mockStatusQuery = vi.fn();
 
 vi.mock("../lib/trpc", () => ({
   trpc: {
     media: {
       watchlist: {
-        list: {
-          useQuery: (...args: unknown[]) => mockListQuery(...args),
+        status: {
+          useQuery: (...args: unknown[]) => mockStatusQuery(...args),
         },
         add: {
           useMutation: (opts: Record<string, (...args: unknown[]) => unknown>) => {
@@ -39,7 +39,7 @@ vi.mock("../lib/trpc", () => ({
     useUtils: () => ({
       media: {
         watchlist: {
-          list: {
+          status: {
             invalidate: mockInvalidate,
             cancel: mockCancel,
             getData: mockGetData,
@@ -63,34 +63,22 @@ vi.mock("sonner", () => ({
   },
 }));
 
-const PAGINATION_EMPTY = { total: 0, limit: 50, offset: 0, hasMore: false };
-const PAGINATION_ONE = { total: 1, limit: 50, offset: 0, hasMore: false };
-
-const WATCHLIST_ENTRY = {
-  id: 42,
-  mediaType: "movie",
-  mediaId: 550,
-  priority: null,
-  notes: null,
-  addedAt: "2026-01-01T00:00:00Z",
-};
-
 function setupNotOnWatchlist() {
-  mockListQuery.mockReturnValue({
-    data: { data: [], pagination: PAGINATION_EMPTY },
+  mockStatusQuery.mockReturnValue({
+    data: { onWatchlist: false, entryId: null },
     isLoading: false,
   });
 }
 
 function setupOnWatchlist() {
-  mockListQuery.mockReturnValue({
-    data: { data: [WATCHLIST_ENTRY], pagination: PAGINATION_ONE },
+  mockStatusQuery.mockReturnValue({
+    data: { onWatchlist: true, entryId: 42 },
     isLoading: false,
   });
 }
 
 function setupLoading() {
-  mockListQuery.mockReturnValue({
+  mockStatusQuery.mockReturnValue({
     data: undefined,
     isLoading: true,
   });
@@ -143,27 +131,28 @@ describe("WatchlistToggle", () => {
       expect(mockAddMutate).toHaveBeenCalledWith({ mediaType: "movie", mediaId: 550 });
     });
 
-    it("onMutate cancels queries, snapshots cache, and adds optimistic entry", async () => {
+    it("onMutate cancels queries, snapshots cache, and sets optimistic state", async () => {
       setupNotOnWatchlist();
       render(<WatchlistToggle mediaType="movie" mediaId={550} />);
 
-      const previousData = { data: [], pagination: PAGINATION_EMPTY };
+      const previousData = { onWatchlist: false, entryId: null };
       mockGetData.mockReturnValue(previousData);
 
       const context = await addMutationOpts.onMutate!();
 
-      expect(mockCancel).toHaveBeenCalled();
-      expect(mockGetData).toHaveBeenCalledWith({ mediaType: "movie" });
-      expect(mockSetData).toHaveBeenCalledWith({ mediaType: "movie" }, expect.any(Function));
+      expect(mockCancel).toHaveBeenCalledWith({ mediaType: "movie", mediaId: 550 });
+      expect(mockGetData).toHaveBeenCalledWith({ mediaType: "movie", mediaId: 550 });
+      expect(mockSetData).toHaveBeenCalledWith(
+        { mediaType: "movie", mediaId: 550 },
+        expect.any(Function)
+      );
       expect(context).toEqual({ previous: previousData });
 
-      // Verify the updater function adds the optimistic entry
+      // Verify the updater sets onWatchlist: true
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updater = mockSetData.mock.calls[0]![1] as any;
-      const result = updater({ data: [], pagination: PAGINATION_EMPTY });
-      expect(result.data).toHaveLength(1);
-      expect(result.pagination.total).toBe(1);
-      expect((result.data[0] as { mediaId: number }).mediaId).toBe(550);
+      const result = updater(previousData);
+      expect(result.onWatchlist).toBe(true);
     });
 
     it("onSuccess shows success toast", () => {
@@ -179,10 +168,10 @@ describe("WatchlistToggle", () => {
       setupNotOnWatchlist();
       render(<WatchlistToggle mediaType="movie" mediaId={550} />);
 
-      const previous = { data: [], pagination: PAGINATION_EMPTY };
+      const previous = { onWatchlist: false, entryId: null };
       addMutationOpts.onError!({ message: "Server error", data: null }, {}, { previous });
 
-      expect(mockSetData).toHaveBeenCalledWith({ mediaType: "movie" }, previous);
+      expect(mockSetData).toHaveBeenCalledWith({ mediaType: "movie", mediaId: 550 }, previous);
       expect(mockToastError).toHaveBeenCalledWith("Failed to add: Server error");
     });
 
@@ -193,7 +182,7 @@ describe("WatchlistToggle", () => {
       addMutationOpts.onError!(
         { message: "Conflict", data: { code: "CONFLICT" } },
         {},
-        { previous: { data: [], pagination: PAGINATION_EMPTY } }
+        { previous: { onWatchlist: false, entryId: null } }
       );
 
       expect(mockToastInfo).toHaveBeenCalledWith("Already on watchlist");
@@ -205,7 +194,7 @@ describe("WatchlistToggle", () => {
 
       addMutationOpts.onSettled!();
 
-      expect(mockInvalidate).toHaveBeenCalled();
+      expect(mockInvalidate).toHaveBeenCalledWith({ mediaType: "movie", mediaId: 550 });
     });
   });
 
@@ -220,24 +209,24 @@ describe("WatchlistToggle", () => {
       expect(mockRemoveMutate).toHaveBeenCalledWith({ id: 42 });
     });
 
-    it("onMutate cancels queries, snapshots cache, and removes entry", async () => {
+    it("onMutate cancels queries, snapshots cache, and clears status", async () => {
       setupOnWatchlist();
       render(<WatchlistToggle mediaType="movie" mediaId={550} />);
 
-      const previousData = { data: [WATCHLIST_ENTRY], pagination: PAGINATION_ONE };
+      const previousData = { onWatchlist: true, entryId: 42 };
       mockGetData.mockReturnValue(previousData);
 
       const context = await removeMutationOpts.onMutate!();
 
-      expect(mockCancel).toHaveBeenCalled();
+      expect(mockCancel).toHaveBeenCalledWith({ mediaType: "movie", mediaId: 550 });
       expect(context).toEqual({ previous: previousData });
 
-      // Verify the updater function removes the entry
+      // Verify the updater clears the status
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const updater = mockSetData.mock.calls[0]![1] as any;
-      const result = updater({ data: [WATCHLIST_ENTRY], pagination: PAGINATION_ONE });
-      expect(result.data).toHaveLength(0);
-      expect(result.pagination.total).toBe(0);
+      const result = updater(previousData);
+      expect(result.onWatchlist).toBe(false);
+      expect(result.entryId).toBeNull();
     });
 
     it("onSuccess shows success toast", () => {
@@ -253,10 +242,10 @@ describe("WatchlistToggle", () => {
       setupOnWatchlist();
       render(<WatchlistToggle mediaType="movie" mediaId={550} />);
 
-      const previous = { data: [WATCHLIST_ENTRY], pagination: PAGINATION_ONE };
+      const previous = { onWatchlist: true, entryId: 42 };
       removeMutationOpts.onError!({ message: "Network error" }, {}, { previous });
 
-      expect(mockSetData).toHaveBeenCalledWith({ mediaType: "movie" }, previous);
+      expect(mockSetData).toHaveBeenCalledWith({ mediaType: "movie", mediaId: 550 }, previous);
       expect(mockToastError).toHaveBeenCalledWith("Failed to remove: Network error");
     });
 
@@ -266,19 +255,22 @@ describe("WatchlistToggle", () => {
 
       removeMutationOpts.onSettled!();
 
-      expect(mockInvalidate).toHaveBeenCalled();
+      expect(mockInvalidate).toHaveBeenCalledWith({ mediaType: "movie", mediaId: 550 });
     });
   });
 
   describe("media type conversion", () => {
     it("converts 'tv' to 'tv_show' for API calls", () => {
-      mockListQuery.mockReturnValue({
-        data: { data: [], pagination: PAGINATION_EMPTY },
+      mockStatusQuery.mockReturnValue({
+        data: { onWatchlist: false, entryId: null },
         isLoading: false,
       });
       render(<WatchlistToggle mediaType="tv" mediaId={100} />);
 
-      expect(mockListQuery).toHaveBeenCalledWith({ mediaType: "tv_show" }, expect.any(Object));
+      expect(mockStatusQuery).toHaveBeenCalledWith(
+        { mediaType: "tv_show", mediaId: 100 },
+        expect.any(Object)
+      );
     });
   });
 });

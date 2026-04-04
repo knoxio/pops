@@ -1,7 +1,7 @@
 # US-03: MarkAsWatchedButton component
 
 > PRD: [033 — Movie Detail Page](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 

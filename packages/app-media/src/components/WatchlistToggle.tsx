@@ -18,40 +18,22 @@ export function WatchlistToggle({ mediaType, mediaId, className }: WatchlistTogg
   const utils = trpc.useUtils();
   const apiMediaType = toApiMediaType(mediaType);
 
-  const { data: watchlistData, isLoading: isChecking } = trpc.media.watchlist.list.useQuery(
-    { mediaType: apiMediaType },
+  const { data: statusData, isLoading: isChecking } = trpc.media.watchlist.status.useQuery(
+    { mediaType: apiMediaType, mediaId },
     { staleTime: 30_000 }
   );
 
-  const watchlistEntry = watchlistData?.data?.find(
-    (entry: { mediaId: number }) => entry.mediaId === mediaId
-  );
-  const isOnWatchlist = !!watchlistEntry;
+  const isOnWatchlist = statusData?.onWatchlist ?? false;
+  const watchlistEntryId = statusData?.entryId ?? null;
 
   const addMutation = trpc.media.watchlist.add.useMutation({
     onMutate: async () => {
-      await utils.media.watchlist.list.cancel();
-      const previous = utils.media.watchlist.list.getData({ mediaType: apiMediaType });
-      utils.media.watchlist.list.setData({ mediaType: apiMediaType }, (old) => {
-        if (!old) return old;
-        const optimisticEntry = {
-          id: -1,
-          mediaType: apiMediaType,
-          mediaId,
-          priority: null,
-          notes: null,
-          source: null,
-          plexRatingKey: null,
-          addedAt: new Date().toISOString(),
-          title: null,
-          posterUrl: null,
-        };
-        return {
-          ...old,
-          data: [...old.data, optimisticEntry],
-          pagination: { ...old.pagination, total: old.pagination.total + 1 },
-        };
-      });
+      await utils.media.watchlist.status.cancel({ mediaType: apiMediaType, mediaId });
+      const previous = utils.media.watchlist.status.getData({ mediaType: apiMediaType, mediaId });
+      utils.media.watchlist.status.setData({ mediaType: apiMediaType, mediaId }, () => ({
+        onWatchlist: true,
+        entryId: -1,
+      }));
       return { previous };
     },
     onSuccess: () => {
@@ -59,7 +41,10 @@ export function WatchlistToggle({ mediaType, mediaId, className }: WatchlistTogg
     },
     onError: (err: { message: string; data?: { code?: string } | null }, _vars, context) => {
       if (context?.previous !== undefined) {
-        utils.media.watchlist.list.setData({ mediaType: apiMediaType }, context.previous);
+        utils.media.watchlist.status.setData(
+          { mediaType: apiMediaType, mediaId },
+          context.previous
+        );
       }
       if (err.data?.code === "CONFLICT") {
         toast.info("Already on watchlist");
@@ -68,22 +53,18 @@ export function WatchlistToggle({ mediaType, mediaId, className }: WatchlistTogg
       }
     },
     onSettled: () => {
-      void utils.media.watchlist.list.invalidate();
+      void utils.media.watchlist.status.invalidate({ mediaType: apiMediaType, mediaId });
     },
   });
 
   const removeMutation = trpc.media.watchlist.remove.useMutation({
     onMutate: async () => {
-      await utils.media.watchlist.list.cancel();
-      const previous = utils.media.watchlist.list.getData({ mediaType: apiMediaType });
-      utils.media.watchlist.list.setData({ mediaType: apiMediaType }, (old) => {
-        if (!old) return old;
-        return {
-          ...old,
-          data: old.data.filter((entry) => entry.mediaId !== mediaId),
-          pagination: { ...old.pagination, total: Math.max(0, old.pagination.total - 1) },
-        };
-      });
+      await utils.media.watchlist.status.cancel({ mediaType: apiMediaType, mediaId });
+      const previous = utils.media.watchlist.status.getData({ mediaType: apiMediaType, mediaId });
+      utils.media.watchlist.status.setData({ mediaType: apiMediaType, mediaId }, () => ({
+        onWatchlist: false,
+        entryId: null,
+      }));
       return { previous };
     },
     onSuccess: () => {
@@ -91,12 +72,15 @@ export function WatchlistToggle({ mediaType, mediaId, className }: WatchlistTogg
     },
     onError: (err: { message: string }, _vars, context) => {
       if (context?.previous !== undefined) {
-        utils.media.watchlist.list.setData({ mediaType: apiMediaType }, context.previous);
+        utils.media.watchlist.status.setData(
+          { mediaType: apiMediaType, mediaId },
+          context.previous
+        );
       }
       toast.error(`Failed to remove: ${err.message}`);
     },
     onSettled: () => {
-      void utils.media.watchlist.list.invalidate();
+      void utils.media.watchlist.status.invalidate({ mediaType: apiMediaType, mediaId });
     },
   });
 
@@ -105,8 +89,8 @@ export function WatchlistToggle({ mediaType, mediaId, className }: WatchlistTogg
   const handleToggle = () => {
     if (isMutating) return;
 
-    if (isOnWatchlist && watchlistEntry) {
-      removeMutation.mutate({ id: watchlistEntry.id });
+    if (isOnWatchlist && watchlistEntryId !== null) {
+      removeMutation.mutate({ id: watchlistEntryId });
     } else {
       addMutation.mutate({ mediaType: apiMediaType, mediaId });
     }

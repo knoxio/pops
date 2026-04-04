@@ -79,6 +79,20 @@ export function listWatchlist(
   return { rows, total: countRow?.total ?? 0 };
 }
 
+/** Check whether a specific media item is on the watchlist. Returns entry ID if present. */
+export function getWatchlistStatus(
+  mediaType: "movie" | "tv_show",
+  mediaId: number
+): { onWatchlist: boolean; entryId: number | null } {
+  const db = getDrizzle();
+  const row = db
+    .select({ id: mediaWatchlist.id })
+    .from(mediaWatchlist)
+    .where(and(eq(mediaWatchlist.mediaType, mediaType), eq(mediaWatchlist.mediaId, mediaId)))
+    .get();
+  return row ? { onWatchlist: true, entryId: row.id } : { onWatchlist: false, entryId: null };
+}
+
 /** Get a single watchlist entry by id. Throws NotFoundError if missing. */
 export function getWatchlistEntry(id: number): MediaWatchlistRow {
   const db = getDrizzle();

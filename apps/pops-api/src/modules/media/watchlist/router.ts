@@ -38,6 +38,18 @@ export const watchlistRouter = router({
     };
   }),
 
+  /** Check if a specific media item is on the watchlist. */
+  status: protectedProcedure
+    .input(
+      z.object({
+        mediaType: z.enum(["movie", "tv_show"]),
+        mediaId: z.number().int().positive(),
+      })
+    )
+    .query(({ input }) => {
+      return service.getWatchlistStatus(input.mediaType, input.mediaId);
+    }),
+
   /** Get a single watchlist entry by ID. */
   get: protectedProcedure.input(z.object({ id: z.number() })).query(({ input }) => {
     try {
