@@ -158,6 +158,7 @@ export function ArenaActionBar({
           disabled={blacklistPending}
           className="text-destructive border-destructive/50 hover:bg-destructive/10"
           data-testid="not-watched-a-button"
+          aria-label={`Not watched ${movieA.title}`}
         >
           <EyeOff className="h-3.5 w-3.5 mr-1.5" />
           Not Watched: {movieA.title}
@@ -170,6 +171,7 @@ export function ArenaActionBar({
           disabled={blacklistPending}
           className="text-destructive border-destructive/50 hover:bg-destructive/10"
           data-testid="not-watched-b-button"
+          aria-label={`Not watched ${movieB.title}`}
         >
           <EyeOff className="h-3.5 w-3.5 mr-1.5" />
           Not Watched: {movieB.title}
