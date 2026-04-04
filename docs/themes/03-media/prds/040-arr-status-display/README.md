@@ -1,7 +1,7 @@
 # PRD-040: Arr Status Display
 
 > Epic: [07 — Radarr & Sonarr](../../epics/07-radarr-sonarr.md)
-> Status: Partial
+> Status: Done
 
 ## Overview
 
@@ -89,7 +89,7 @@ Both Radarr and Sonarr expose similar REST APIs. Build a shared HTTP client fact
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 01 | [us-01-arr-base-client](us-01-arr-base-client.md) | Shared HTTP client factory for Radarr/Sonarr, in-memory cache with 30s TTL, graceful degradation, config storage | Partial | Yes |
+| 01 | [us-01-arr-base-client](us-01-arr-base-client.md) | Shared HTTP client factory for Radarr/Sonarr, in-memory cache with 30s TTL, graceful degradation, config storage | Done | Yes |
 | 02 | [us-02-status-badges](us-02-status-badges.md) | Status badges on movie/TV detail pages — monitored, downloading, available, not monitored — colour-coded with conditional display | Done | Blocked by us-01 |
 | 03 | [us-03-arr-settings](us-03-arr-settings.md) | Settings page at `/media/arr` with URL/API key inputs, test connection, status indicators, masked key display | Done | Blocked by us-01 |
 
