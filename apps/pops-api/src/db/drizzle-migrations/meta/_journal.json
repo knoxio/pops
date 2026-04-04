@@ -134,6 +134,13 @@
       "when": 1775282378987,
       "tag": "0018_high_excalibur",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "6",
+      "when": 1775283261622,
+      "tag": "0019_little_diamondback",
+      "breakpoints": true
     }
   ]
 }

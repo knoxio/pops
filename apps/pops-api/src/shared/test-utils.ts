@@ -423,6 +423,17 @@ export function createTestDb(): Database {
       comparison_id   INTEGER REFERENCES comparisons(id),
       created_at      TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS tier_overrides (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      media_type    TEXT NOT NULL,
+      media_id      INTEGER NOT NULL,
+      dimension_id  INTEGER NOT NULL REFERENCES comparison_dimensions(id),
+      tier          TEXT NOT NULL,
+      created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_tier_overrides_unique
+      ON tier_overrides(media_type, media_id, dimension_id);
   `);
 
   return db;

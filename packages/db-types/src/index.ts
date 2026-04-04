@@ -35,6 +35,7 @@ import type { comparisonSkipCooloffs } from "./schema/comparison-skip-cooloffs.j
 import type { comparisonStaleness } from "./schema/comparison-staleness.js";
 import type { debriefSessions } from "./schema/debrief-sessions.js";
 import type { debriefResults } from "./schema/debrief-results.js";
+import type { tierOverrides } from "./schema/tier-overrides.js";
 
 // Re-export Drizzle table objects for use in queries
 export {
@@ -67,6 +68,7 @@ export {
   comparisonStaleness,
   debriefSessions,
   debriefResults,
+  tierOverrides,
 } from "./schema/index.js";
 
 // Select types (what you get back from a SELECT query)
@@ -130,6 +132,8 @@ export type DebriefSessionRow = InferSelectModel<typeof debriefSessions>;
 export type DebriefSessionInsert = InferInsertModel<typeof debriefSessions>;
 export type DebriefResultRow = InferSelectModel<typeof debriefResults>;
 export type DebriefResultInsert = InferInsertModel<typeof debriefResults>;
+export type TierOverrideRow = InferSelectModel<typeof tierOverrides>;
+export type TierOverrideInsert = InferInsertModel<typeof tierOverrides>;
 
 // Constants
 export const ENTITY_TYPES = ["company", "person", "place", "brand", "organisation"] as const;
