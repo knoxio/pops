@@ -328,10 +328,10 @@ export const comparisonsRouter = router({
     }
   }),
 
-  /** Get a debrief session with movie info, dimensions, and opponents. */
+  /** Get a debrief session by media — looks up most recent pending/active session. */
   getDebrief: protectedProcedure.input(GetDebriefSchema).query(({ input }) => {
     try {
-      const debrief = debriefService.getDebrief(input.sessionId);
+      const debrief = debriefService.getDebriefByMedia(input.mediaType, input.mediaId);
       return { data: debrief };
     } catch (err) {
       if (err instanceof NotFoundError) {

@@ -19,17 +19,18 @@ import {
 import { trpc } from "../lib/trpc";
 
 interface DebriefResultsSummaryProps {
-  sessionId: number;
+  mediaType: "movie" | "episode";
+  mediaId: number;
 }
 
-export function DebriefResultsSummary({ sessionId }: DebriefResultsSummaryProps) {
+export function DebriefResultsSummary({ mediaType, mediaId }: DebriefResultsSummaryProps) {
   const navigate = useNavigate();
 
   const {
     data: debriefData,
     isLoading,
     error,
-  } = trpc.media.comparisons.getDebrief.useQuery({ sessionId });
+  } = trpc.media.comparisons.getDebrief.useQuery({ mediaType, mediaId });
 
   const debrief = debriefData?.data;
 

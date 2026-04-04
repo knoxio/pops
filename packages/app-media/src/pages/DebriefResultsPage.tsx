@@ -1,20 +1,20 @@
 /**
- * DebriefResultsPage — route wrapper for /media/debrief/:sessionId/results.
- * Parses sessionId from URL params and renders DebriefResultsSummary.
+ * DebriefResultsPage — route wrapper for /media/debrief/:movieId/results.
+ * Parses movieId from URL params and renders DebriefResultsSummary.
  */
 import { useParams, useNavigate } from "react-router";
 import { Button } from "@pops/ui";
 import { DebriefResultsSummary } from "../components/DebriefResultsSummary";
 
 export function DebriefResultsPage() {
-  const { sessionId } = useParams<{ sessionId: string }>();
+  const { movieId } = useParams<{ movieId: string }>();
   const navigate = useNavigate();
-  const id = Number(sessionId);
+  const id = Number(movieId);
 
-  if (!sessionId || isNaN(id)) {
+  if (!movieId || isNaN(id)) {
     return (
       <div className="p-6 max-w-2xl mx-auto text-center text-muted-foreground">
-        <p className="text-lg mb-2">Invalid session ID</p>
+        <p className="text-lg mb-2">Invalid movie ID</p>
         <Button variant="outline" size="sm" onClick={() => navigate("/media")}>
           Back to Library
         </Button>
@@ -24,7 +24,7 @@ export function DebriefResultsPage() {
 
   return (
     <div className="p-6 max-w-2xl mx-auto">
-      <DebriefResultsSummary sessionId={id} />
+      <DebriefResultsSummary mediaType="movie" mediaId={id} />
     </div>
   );
 }
