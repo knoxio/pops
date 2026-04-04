@@ -41,16 +41,12 @@ describe("getResultComponent", () => {
 
 describe("GenericResultComponent", () => {
   it("renders the first string value found in data", () => {
-    const { getByText } = render(
-      <GenericResultComponent data={{ title: "Hello World" }} />
-    );
+    const { getByText } = render(<GenericResultComponent data={{ title: "Hello World" }} />);
     expect(getByText("Hello World")).toBeInTheDocument();
   });
 
   it("renders an empty span when data has no string fields", () => {
-    const { container } = render(
-      <GenericResultComponent data={{ count: 42, active: true }} />
-    );
+    const { container } = render(<GenericResultComponent data={{ count: 42, active: true }} />);
     expect(container.textContent).toBe("");
   });
 

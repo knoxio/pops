@@ -129,6 +129,9 @@ importers:
       '@pops/app-media':
         specifier: workspace:*
         version: link:../../packages/app-media
+      '@pops/navigation':
+        specifier: workspace:*
+        version: link:../../packages/navigation
       '@pops/ui':
         specifier: workspace:*
         version: link:../../packages/ui
@@ -660,6 +663,9 @@ importers:
       react:
         specifier: ^19.0.0
         version: 19.2.4
+      react-router:
+        specifier: ^7.13.1
+        version: 7.13.1(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
     devDependencies:
       '@testing-library/jest-dom':
         specifier: ^6.9.1

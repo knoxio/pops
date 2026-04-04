@@ -10,7 +10,8 @@ export type ResultComponent = ComponentType<ResultComponentProps>;
 
 /** Generic fallback — renders the first string field found in `data`. */
 export function GenericResultComponent({ data }: ResultComponentProps) {
-  const title = (Object.values(data).find((v) => typeof v === "string") as string | undefined) ?? "";
+  const title =
+    (Object.values(data).find((v) => typeof v === "string") as string | undefined) ?? "";
   return <span>{title}</span>;
 }
 

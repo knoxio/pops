@@ -12,6 +12,7 @@ import { AppRail } from "./AppRail";
 import { PageNav } from "./PageNav";
 import { Sidebar } from "./Sidebar";
 import { ErrorBoundary, cn } from "@pops/ui";
+import { AppContextProvider } from "@pops/navigation";
 import { useUIStore } from "@/store/uiStore";
 import { registeredApps } from "@/app/nav/registry";
 import { findActiveApp } from "@/app/nav/path-utils";
@@ -30,49 +31,51 @@ export function RootLayout() {
   }, [location.pathname, setPageNavOpen]);
 
   return (
-    <div className={cn("min-h-screen bg-background relative", appColorClass)}>
-      {/* Ambient background decorative elements */}
-      <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0 opacity-20 dark:opacity-10">
-        <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-app-accent/20 blur-[120px]" />
-        <div className="absolute bottom-[-5%] left-[-5%] w-[30%] h-[30%] rounded-full bg-app-accent/10 blur-[100px]" />
-      </div>
+    <AppContextProvider>
+      <div className={cn("min-h-screen bg-background relative", appColorClass)}>
+        {/* Ambient background decorative elements */}
+        <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0 opacity-20 dark:opacity-10">
+          <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-app-accent/20 blur-[120px]" />
+          <div className="absolute bottom-[-5%] left-[-5%] w-[30%] h-[30%] rounded-full bg-app-accent/10 blur-[100px]" />
+        </div>
 
-      <div className="relative z-10 pt-14 md:pt-16">
-        <TopBar />
-        <div className="flex">
-          {/* Desktop + Tablet: app rail always visible at md+ */}
-          <div className="hidden md:flex h-[calc(100vh-4rem)] sticky top-16 shrink-0">
-            <AppRail />
-            {/* Desktop only: permanent PageNav (lg+) */}
-            <div className="hidden lg:block">
-              <PageNav />
-            </div>
-          </div>
-
-          {/* Tablet overlay: PageNav as overlay (md to lg) */}
-          {pageNavOpen && (
-            <div className="hidden md:block lg:hidden">
-              <div
-                className="fixed inset-0 bg-black/50 z-40"
-                onClick={() => setPageNavOpen(false)}
-                aria-hidden="true"
-              />
-              <aside className="fixed left-16 top-16 bottom-0 z-50 shadow-lg">
+        <div className="relative z-10 pt-14 md:pt-16">
+          <TopBar />
+          <div className="flex">
+            {/* Desktop + Tablet: app rail always visible at md+ */}
+            <div className="hidden md:flex h-[calc(100vh-4rem)] sticky top-16 shrink-0">
+              <AppRail />
+              {/* Desktop only: permanent PageNav (lg+) */}
+              <div className="hidden lg:block">
                 <PageNav />
-              </aside>
+              </div>
             </div>
-          )}
 
-          {/* Mobile: overlay sidebar */}
-          <Sidebar open={sidebarOpen} />
+            {/* Tablet overlay: PageNav as overlay (md to lg) */}
+            {pageNavOpen && (
+              <div className="hidden md:block lg:hidden">
+                <div
+                  className="fixed inset-0 bg-black/50 z-40"
+                  onClick={() => setPageNavOpen(false)}
+                  aria-hidden="true"
+                />
+                <aside className="fixed left-16 top-16 bottom-0 z-50 shadow-lg">
+                  <PageNav />
+                </aside>
+              </div>
+            )}
 
-          <main className="flex-1 min-w-0 overflow-x-hidden p-4 md:p-6 lg:p-8 max-w-screen-2xl mx-auto transition-all duration-200">
-            <ErrorBoundary>
-              <Outlet />
-            </ErrorBoundary>
-          </main>
+            {/* Mobile: overlay sidebar */}
+            <Sidebar open={sidebarOpen} />
+
+            <main className="flex-1 min-w-0 overflow-x-hidden p-4 md:p-6 lg:p-8 max-w-screen-2xl mx-auto transition-all duration-200">
+              <ErrorBoundary>
+                <Outlet />
+              </ErrorBoundary>
+            </main>
+          </div>
         </div>
       </div>
-    </div>
+    </AppContextProvider>
   );
 }
