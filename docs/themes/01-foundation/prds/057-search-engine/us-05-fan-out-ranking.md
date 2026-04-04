@@ -5,21 +5,23 @@
 
 ## Description
 
-As a developer, I want query fan-out to all adapters with context-aware ranking so that results are ordered by relevance.
+As the system, I fan a query out to all registered adapters with the current context and return context-ordered sections for the search UI to render.
 
 ## Acceptance Criteria
 
-- [ ] Query sent to all registered adapters in parallel (`Promise.allSettled`)
+- [ ] `searchAll(query: Query, context: SearchContext)` fans query + context to all registered adapters in parallel (`Promise.allSettled`)
 - [ ] If one adapter fails, other results still returned — failed adapter's section omitted with console warning
-- [ ] Results collected and merged into sections (one per domain)
-- [ ] Context from PRD-058 determines section ordering (current app's domain first, others alphabetical)
-- [ ] Within a section, results ordered by `score` (descending) — adapters own their scoring
-- [ ] Results limited to 5 per section by default (configurable via `limit` param)
-- [ ] Response includes `totalCount` per section for "show more" UI
+- [ ] Results collected into sections (one per domain)
+- [ ] Context section: current app's domain appears first, with visual distinction flag (`isContextSection: true`)
+- [ ] Context section returns first 5 hits
+- [ ] Other sections return first 5 hits each, ordered by highest score in section (descending)
+- [ ] Each section includes `totalCount` for "show more" UI
+- [ ] `showMore(domain, query, context, offset)` returns next page of results for a single domain
 - [ ] Fast: total search time < 200ms for libraries up to 500 items per domain
+- [ ] Response shape: `{ sections: Array<{ domain, icon, color, isContextSection, hits: SearchHit[], totalCount }> }`
 
 ## Notes
 
-Fan-out is parallel — all adapters query simultaneously. The engine collects, sections, ranks, and returns. Context ordering is the key differentiator from a flat search.
+Fan-out is parallel — all adapters query simultaneously. The engine collects, sections, and returns. It does NOT re-score hits — adapters own their scores. The engine only uses `score` for ordering sections relative to each other (by max score in section).
 
-Score range is 0.0–1.0 (set by each adapter). The engine does NOT re-score — it trusts adapter scores for within-section ordering. Cross-section ordering is purely by context (current app first).
+Context comes from PRD-058's `SearchContext`. The engine's only context-aware behavior is putting the matching domain first.

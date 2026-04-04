@@ -32,6 +32,18 @@ Items from the original brainstorm that have been scoped into existing themes or
 - ~~**Subscriptions Tracker**~~ — Removed. No active streaming subscriptions. If needed in the future, lives as a finance feature, not a separate app.
 - ~~**Media Tracker** (original framing)~~ — Evolved from "tracker" to "preference learning and recommendation engine." The tracking is the input, recommendations are the output. See [media theme](../themes/03-media/README.md).
 
+## Search context enrichment (Option B)
+
+Deferred from PRD-057/058 v1 design (2026-04-04).
+
+v1 passes raw `SearchContext` (current app, page, entity, filters) to each adapter. Adapters use what they natively understand and ignore the rest. No cross-domain inference.
+
+The idea for v2: before fan-out, an enrichment layer extracts semantic tags from context. E.g. `location: "bedroom"` → tags: `["bedroom", "furniture", "home"]`. Tags are passed alongside raw context. Adapters can optionally boost results matching tags without understanding other domains' data models. The enrichment step could use Claude for semantic extraction, or a simpler keyword/category mapping.
+
+Use case: viewing bedroom inventory, search "lamp" → finance adapter boosts purchases tagged "furniture" or from home goods retailers. Without enrichment, finance ignores the inventory context entirely.
+
+Build this when the AI overlay (PRD-054) exists — the enrichment layer is a natural consumer of the same AI infrastructure.
+
 ## Cross-communication patterns
 
 These are the links that make POPS more than separate apps:
