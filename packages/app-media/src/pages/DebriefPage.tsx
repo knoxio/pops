@@ -1,7 +1,7 @@
 /**
  * Debrief page — post-watch comparison flow for a debrief session.
  *
- * Route: /media/debrief/:sessionId
+ * Route: /media/debrief/:movieId
  *
  * Shows movie poster header, dimension progress tracker, and comparison
  * cards with Pick A / Pick B / draw-tier buttons. Uses getDebrief query
@@ -25,8 +25,8 @@ import { trpc } from "../lib/trpc";
 import { DebriefActionBar } from "../components/DebriefControls";
 
 export function DebriefPage() {
-  const { sessionId: rawId } = useParams<{ sessionId: string }>();
-  const sessionId = Number(rawId);
+  const { movieId: rawId } = useParams<{ movieId: string }>();
+  const movieId = Number(rawId);
   const navigate = useNavigate();
   const utils = trpc.useUtils();
 
@@ -36,11 +36,12 @@ export function DebriefPage() {
     error,
     refetch,
   } = trpc.media.comparisons.getDebrief.useQuery(
-    { sessionId },
-    { enabled: !Number.isNaN(sessionId) && sessionId > 0 }
+    { mediaType: "movie", mediaId: movieId },
+    { enabled: !Number.isNaN(movieId) && movieId > 0 }
   );
 
   const debrief = debriefData?.data;
+  const sessionId = debrief?.sessionId;
 
   // Track which pending dimension the user is currently on
   const pendingDimensions = debrief?.dimensions.filter((d) => d.status === "pending") ?? [];
@@ -57,7 +58,7 @@ export function DebriefPage() {
       } else {
         toast.success("Comparison recorded");
       }
-      void utils.media.comparisons.getDebrief.invalidate({ sessionId });
+      void utils.media.comparisons.getDebrief.invalidate({ mediaType: "movie", mediaId: movieId });
       void utils.media.comparisons.getPendingDebriefs.invalidate();
     },
     onError: (err) => {
@@ -66,7 +67,7 @@ export function DebriefPage() {
   });
 
   const handlePick = (winnerId: number) => {
-    if (!currentDimension || !debrief || recordMutation.isPending) return;
+    if (!currentDimension || !debrief || !sessionId || recordMutation.isPending) return;
 
     recordMutation.mutate({
       sessionId,
@@ -78,7 +79,7 @@ export function DebriefPage() {
   };
 
   const handleDraw = (tier: "high" | "mid" | "low") => {
-    if (!currentDimension || !debrief || recordMutation.isPending) return;
+    if (!currentDimension || !debrief || !sessionId || recordMutation.isPending) return;
 
     recordMutation.mutate({
       sessionId,
@@ -91,7 +92,7 @@ export function DebriefPage() {
   };
 
   const handleDimensionSkipped = () => {
-    void utils.media.comparisons.getDebrief.invalidate({ sessionId });
+    void utils.media.comparisons.getDebrief.invalidate({ mediaType: "movie", mediaId: movieId });
   };
 
   const handleDoAnother = () => {
@@ -100,10 +101,10 @@ export function DebriefPage() {
 
   // ── Loading / Error states ──
 
-  if (Number.isNaN(sessionId) || sessionId <= 0) {
+  if (Number.isNaN(movieId) || movieId <= 0) {
     return (
       <div className="p-6 text-center text-muted-foreground">
-        <p>Invalid session ID.</p>
+        <p>Invalid movie ID.</p>
         <Link to="/media" className="text-primary underline">
           Back to library
         </Link>

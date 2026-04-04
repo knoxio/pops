@@ -274,7 +274,8 @@ export interface PendingDebrief {
 }
 
 export const GetDebriefSchema = z.object({
-  sessionId: z.number().int().positive(),
+  mediaType: z.string(),
+  mediaId: z.number().int().positive(),
 });
 export type GetDebriefInput = z.infer<typeof GetDebriefSchema>;
 

@@ -201,6 +201,37 @@ export function getDebrief(sessionId: number): DebriefResponse {
 }
 
 /**
+ * Look up the most recent pending or active debrief session for a media item
+ * and return its full debrief response.
+ *
+ * Throws NotFoundError if no pending/active session exists for this media.
+ */
+export function getDebriefByMedia(mediaType: string, mediaId: number): DebriefResponse {
+  const db = getDrizzle();
+
+  // Find the most recent pending/active session for this media
+  const session = db
+    .select({ id: debriefSessions.id })
+    .from(debriefSessions)
+    .innerJoin(watchHistory, eq(debriefSessions.watchHistoryId, watchHistory.id))
+    .where(
+      and(
+        eq(watchHistory.mediaType, mediaType),
+        eq(watchHistory.mediaId, mediaId),
+        inArray(debriefSessions.status, ["pending", "active"])
+      )
+    )
+    .orderBy(asc(debriefSessions.id))
+    .get();
+
+  if (!session) {
+    throw new NotFoundError("Debrief session", `${mediaType}:${mediaId}`);
+  }
+
+  return getDebrief(session.id);
+}
+
+/**
  * Queue debrief status rows for a media item — one per active dimension.
  *
  * On conflict (re-watch), resets debriefed and dismissed to 0 so the

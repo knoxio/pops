@@ -58,12 +58,12 @@ import { DebriefPage } from "./DebriefPage";
 
 // ── Helpers ──
 
-function renderWithSession(sessionId: string) {
+function renderWithMovie(movieId: string) {
   return render(
-    <MemoryRouter initialEntries={[`/media/debrief/${sessionId}`]}>
+    <MemoryRouter initialEntries={[`/media/debrief/${movieId}`]}>
       <TooltipProvider>
         <Routes>
-          <Route path="/media/debrief/:sessionId" element={<DebriefPage />} />
+          <Route path="/media/debrief/:movieId" element={<DebriefPage />} />
         </Routes>
       </TooltipProvider>
     </MemoryRouter>
@@ -138,7 +138,7 @@ beforeEach(() => {
 describe("DebriefPage", () => {
   it("shows loading skeleton while fetching", () => {
     mockDebriefQuery.mockReturnValue({ data: undefined, isLoading: true, error: null });
-    renderWithSession("42");
+    renderWithMovie("42");
     expect(screen.getByTestId("debrief-loading")).toBeInTheDocument();
   });
 
@@ -148,7 +148,7 @@ describe("DebriefPage", () => {
       isLoading: false,
       error: null,
     });
-    renderWithSession("42");
+    renderWithMovie("42");
 
     const header = screen.getByTestId("debrief-header");
     expect(header).toBeInTheDocument();
@@ -162,7 +162,7 @@ describe("DebriefPage", () => {
       isLoading: false,
       error: null,
     });
-    renderWithSession("42");
+    renderWithMovie("42");
 
     const progress = screen.getByTestId("dimension-progress");
     expect(progress).toBeInTheDocument();
@@ -176,7 +176,7 @@ describe("DebriefPage", () => {
       isLoading: false,
       error: null,
     });
-    renderWithSession("42");
+    renderWithMovie("42");
 
     expect(screen.getByTestId("comparison-cards")).toBeInTheDocument();
     expect(screen.getByTestId("pick-a")).toBeInTheDocument();
@@ -190,7 +190,7 @@ describe("DebriefPage", () => {
       isLoading: false,
       error: null,
     });
-    renderWithSession("42");
+    renderWithMovie("42");
 
     fireEvent.click(screen.getByTestId("pick-a"));
     expect(mockRecordMutate).toHaveBeenCalledWith({
@@ -208,7 +208,7 @@ describe("DebriefPage", () => {
       isLoading: false,
       error: null,
     });
-    renderWithSession("42");
+    renderWithMovie("42");
 
     fireEvent.click(screen.getByTestId("pick-b"));
     expect(mockRecordMutate).toHaveBeenCalledWith({
@@ -226,7 +226,7 @@ describe("DebriefPage", () => {
       isLoading: false,
       error: null,
     });
-    renderWithSession("42");
+    renderWithMovie("42");
 
     fireEvent.click(screen.getByTestId("draw-mid"));
     expect(mockRecordMutate).toHaveBeenCalledWith({
@@ -245,7 +245,7 @@ describe("DebriefPage", () => {
       isLoading: false,
       error: null,
     });
-    renderWithSession("42");
+    renderWithMovie("42");
 
     fireEvent.click(screen.getByTestId("skip-dimension-btn"));
     expect(mockDismissMutate).toHaveBeenCalledWith({
@@ -260,7 +260,7 @@ describe("DebriefPage", () => {
       isLoading: false,
       error: null,
     });
-    renderWithSession("42");
+    renderWithMovie("42");
 
     expect(screen.getByTestId("completion-summary")).toBeInTheDocument();
     expect(screen.getByText("Debrief Complete")).toBeInTheDocument();
@@ -273,20 +273,20 @@ describe("DebriefPage", () => {
       isLoading: false,
       error: { message: "Session not found" },
     });
-    renderWithSession("999");
+    renderWithMovie("999");
 
     expect(screen.getByTestId("debrief-error")).toBeInTheDocument();
     expect(screen.getByText("Could not load debrief")).toBeInTheDocument();
   });
 
-  it("shows invalid session message for non-numeric ID", () => {
+  it("shows invalid movie message for non-numeric ID", () => {
     mockDebriefQuery.mockReturnValue({
       data: undefined,
       isLoading: false,
       error: null,
     });
-    renderWithSession("abc");
+    renderWithMovie("abc");
 
-    expect(screen.getByText("Invalid session ID.")).toBeInTheDocument();
+    expect(screen.getByText("Invalid movie ID.")).toBeInTheDocument();
   });
 });

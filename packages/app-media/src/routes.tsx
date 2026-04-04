@@ -144,6 +144,6 @@ export const routes: RouteObject[] = [
   { path: "arr", element: <ArrSettingsPage /> },
   { path: "arr/calendar", element: <CalendarPage /> },
   { path: "tier-list", element: <TierListPage /> },
-  { path: "debrief/:sessionId", element: <DebriefPage /> },
-  { path: "debrief/:sessionId/results", element: <DebriefResultsPage /> },
+  { path: "debrief/:movieId", element: <DebriefPage /> },
+  { path: "debrief/:movieId/results", element: <DebriefResultsPage /> },
 ];

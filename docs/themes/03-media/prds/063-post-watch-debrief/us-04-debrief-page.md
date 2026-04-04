@@ -9,7 +9,7 @@ As a user, I want a dedicated debrief page where I rapidly compare a just-watche
 
 ## Acceptance Criteria
 
-- [ ] Route: `/media/debrief/:movieId`
+- [x] Route: `/media/debrief/:movieId`
 - [ ] Header: movie poster, title, year, "Debrief: {title}" heading
 - [ ] Dimension progress indicator: "{current} of {total}" with dimension name
 - [ ] Comparison layout: debrief movie (left) vs opponent (right)
