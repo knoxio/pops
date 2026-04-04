@@ -21,6 +21,7 @@ import { getDrizzle } from "../../../db.js";
 import { watchHistory, mediaWatchlist, episodes, seasons, movies, tvShows } from "@pops/db-types";
 import { NotFoundError } from "../../../shared/errors.js";
 import { resequencePriorities } from "../watchlist/service.js";
+import { resetStaleness } from "../comparisons/staleness.js";
 import type {
   WatchHistoryRow,
   LogWatchInput,
@@ -303,6 +304,11 @@ export function logWatch(input: LogWatchInput): LogWatchResult {
       .where(eq(watchHistory.id, Number(result.lastInsertRowid)))
       .get();
     if (!entry) throw new Error("Watch history entry not found after insert");
+
+    // Reset staleness when a completed watch event is logged
+    if (completed === 1) {
+      resetStaleness(input.mediaType, input.mediaId);
+    }
 
     // Auto-remove from watchlist (PRD-011 R6) — skip for plex_sync source
     let watchlistRemoved = false;
@@ -616,6 +622,13 @@ export function batchLogWatch(input: BatchLogWatchInput): BatchLogResult {
         })
         .onConflictDoNothing()
         .run();
+    }
+
+    // Reset staleness for each newly watched episode
+    if (completed === 1 && toLog.length > 0) {
+      for (const episodeId of toLog) {
+        resetStaleness("episode", episodeId);
+      }
     }
 
     // Auto-remove from watchlist if all episodes now watched
