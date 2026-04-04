@@ -7,6 +7,7 @@ import { movies } from "@pops/db-types";
 import type { TmdbClient } from "../tmdb/client.js";
 import type { DiscoverResult } from "./types.js";
 import { getActiveCollections, type ContextCollection } from "./context-collections.js";
+import { getDismissedTmdbIds } from "./flags.js";
 
 /** A context collection result set for the API response. */
 export interface ContextPicksCollection {
@@ -95,8 +96,7 @@ export async function getContextPicks(
   const activeCollections = getActiveCollections(hour, month, dayOfWeek);
   const libraryIds = getLibraryTmdbIds();
 
-  // TODO: Exclude dismissed movies once tb-115 (dismissed_discover schema) lands
-  const dismissedIds = new Set<number>();
+  const dismissedIds = getDismissedTmdbIds();
 
   const collectionResults = await Promise.all(
     activeCollections.map(async (col) => {

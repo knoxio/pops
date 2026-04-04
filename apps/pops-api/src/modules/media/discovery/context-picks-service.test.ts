@@ -11,6 +11,10 @@ vi.mock("./context-collections.js", async (importOriginal) => {
   };
 });
 
+vi.mock("./flags.js", () => ({
+  getDismissedTmdbIds: vi.fn().mockReturnValue(new Set()),
+}));
+
 // Mock database access
 vi.mock("../../../db.js", () => ({
   getDrizzle: vi.fn(() => ({
