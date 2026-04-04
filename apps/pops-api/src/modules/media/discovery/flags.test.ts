@@ -94,9 +94,7 @@ describe("getDismissedTmdbIds", () => {
   });
 
   it("returns Set of dismissed TMDB IDs from raw SQL", () => {
-    const mockAll = vi
-      .fn()
-      .mockReturnValue([{ tmdb_id: 500 }, { tmdb_id: 600 }]);
+    const mockAll = vi.fn().mockReturnValue([{ tmdb_id: 500 }, { tmdb_id: 600 }]);
     mockGetDrizzle.mockReturnValue({ all: mockAll } as unknown as ReturnType<typeof getDrizzle>);
     const result = getDismissedTmdbIds();
     expect(result.has(500)).toBe(true);

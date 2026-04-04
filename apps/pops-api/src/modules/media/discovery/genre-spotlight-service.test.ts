@@ -8,7 +8,11 @@ vi.mock("./flags.js", () => ({
 }));
 
 import { getDismissedTmdbIds } from "./flags.js";
-import { selectTopGenres, getGenreSpotlight, getGenreSpotlightPage } from "./genre-spotlight-service.js";
+import {
+  selectTopGenres,
+  getGenreSpotlight,
+  getGenreSpotlightPage,
+} from "./genre-spotlight-service.js";
 
 const mockGetDismissedTmdbIds = vi.mocked(getDismissedTmdbIds);
 
