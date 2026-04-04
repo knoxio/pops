@@ -1,4 +1,4 @@
-# US-06: Structured query syntax
+# US-09: Structured query syntax
 
 > PRD: [057 — Search Engine](README.md)
 > Status: Not started
@@ -18,4 +18,4 @@ As a power user, I want typed filter syntax in search queries so that I can narr
 
 ## Notes
 
-v2 feature — plain text search works first (US-01 through US-05). Structured syntax is a progressive enhancement. Parser should be simple (regex token extraction, not a full query language).
+v2 feature — plain text search works first (US-01 through US-08b). Structured syntax is a progressive enhancement. Parser should be simple regex token extraction, not a full query language.
