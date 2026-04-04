@@ -6,6 +6,7 @@ packages:
   - 'packages/app-ai'
   - 'packages/api-client'
   - 'packages/db-types'
+  - 'packages/types'
   - 'packages/navigation'
   - 'packages/ui'
   - 'packages/import-tools'
