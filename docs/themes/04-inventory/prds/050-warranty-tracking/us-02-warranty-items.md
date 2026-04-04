@@ -14,8 +14,8 @@ As a user, I want each warranty item to show its key details and days remaining 
 - [x] Days remaining calculated and displayed: "X days left" for active, "Expired X days ago" for expired
 - [x] Days remaining text colour matches the tier colour (red/yellow/orange/green/grey)
 - [x] Item name is a clickable link — navigates to the item detail page
-- [ ] Warranty document link shown if an `item_documents` row exists with tag "warranty" — "View Warranty" link opens the Paperless document — not implemented
-- [ ] Warranty document link absent (not shown, not disabled) if no warranty document linked — not implemented
+- [x] Warranty document link shown if an `item_documents` row exists with tag "warranty" — "View Warranty" link opens the Paperless document
+- [x] Warranty document link absent (not shown, not disabled) if no warranty document linked
 - [x] Row layout responsive: stacks vertically on mobile, horizontal on desktop
 - [ ] Brand and model shown as secondary text (smaller, muted) — hidden if both are null — not implemented
 
