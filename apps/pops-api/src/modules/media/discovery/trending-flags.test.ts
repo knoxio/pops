@@ -21,7 +21,7 @@ vi.mock("@pops/db-types", () => ({
 
 vi.mock("./service.js", () => ({
   getPreferenceProfile: vi.fn(),
-  scoreDiscoverResults: vi.fn((results) => results),
+  scoreDiscoverResults: vi.fn(<T>(results: T) => results),
 }));
 
 import { getDrizzle } from "../../../db.js";
