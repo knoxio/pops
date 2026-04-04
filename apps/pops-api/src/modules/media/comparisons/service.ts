@@ -1925,23 +1925,14 @@ export function batchRecordComparisons(
 // ── Tier List Submission ──
 
 /**
- * Submit a tier list: converts tier placements into pairwise comparisons.
- *
- * For each pair of placed movies, the higher-tier movie wins.
- * Movies in the same tier are recorded as a "mid" draw.
+ * Submit a tier list: converts placements to pairwise comparisons via
+ * convertTierPlacements, then batch-records them via batchRecordComparisons.
  * Also sets tier overrides for each placement.
  *
  * Returns the number of comparisons recorded and score deltas.
  */
 export function submitTierList(input: SubmitTierListInput): SubmitTierListResult {
-  const rawDb = getDb();
   const drizzleDb = getDrizzle();
-
-  // Validate dimension exists and is active
-  const dimension = getDimension(input.dimensionId);
-  if (dimension.active !== 1) {
-    throw new ValidationError("Cannot submit tier list for inactive dimension");
-  }
 
   // Capture old scores for all placed movies
   const oldScores = new Map<number, number>();
@@ -1960,48 +1951,24 @@ export function submitTierList(input: SubmitTierListInput): SubmitTierListResult
     oldScores.set(placement.movieId, existing?.score ?? 1500.0);
   }
 
-  // Convert placements to pairwise comparisons using the pure function
+  // Convert placements to pairwise comparisons, then batch-record them
   const pairwise = convertTierPlacements(input.placements);
-  let comparisonsRecorded = 0;
+  const batchItems: BatchComparisonItem[] = pairwise.map((pair) => ({
+    mediaAType: "movie" as const,
+    mediaAId: pair.mediaAId,
+    mediaBType: "movie" as const,
+    mediaBId: pair.mediaBId,
+    winnerType: "movie" as const,
+    winnerId: pair.winnerId,
+    drawTier: pair.drawTier,
+  }));
 
-  rawDb.transaction(() => {
-    for (const pair of pairwise) {
-      const comparisonInput: RecordComparisonInput = {
-        dimensionId: input.dimensionId,
-        mediaAType: "movie",
-        mediaAId: pair.mediaAId,
-        mediaBType: "movie",
-        mediaBId: pair.mediaBId,
-        winnerType: "movie",
-        winnerId: pair.winnerId,
-        drawTier: pair.drawTier,
-      };
+  const { count: comparisonsRecorded } = batchRecordComparisons(input.dimensionId, batchItems);
 
-      const result = drizzleDb
-        .insert(comparisons)
-        .values({
-          dimensionId: comparisonInput.dimensionId,
-          mediaAType: comparisonInput.mediaAType,
-          mediaAId: comparisonInput.mediaAId,
-          mediaBType: comparisonInput.mediaBType,
-          mediaBId: comparisonInput.mediaBId,
-          winnerType: comparisonInput.winnerType,
-          winnerId: comparisonInput.winnerId,
-          drawTier: comparisonInput.drawTier ?? null,
-        })
-        .run();
-
-      if (Number(result.lastInsertRowid) > 0) {
-        updateEloScores(comparisonInput);
-        comparisonsRecorded++;
-      }
-    }
-
-    // Set tier overrides for each placement
-    for (const placement of input.placements) {
-      setTierOverride("movie", placement.movieId, input.dimensionId, placement.tier);
-    }
-  })();
+  // Set tier overrides for each placement
+  for (const placement of input.placements) {
+    setTierOverride("movie", placement.movieId, input.dimensionId, placement.tier);
+  }
 
   // Collect score changes
   const scoreChanges: ScoreChange[] = [];
