@@ -73,7 +73,7 @@ v1 is plain text only. Structured syntax added as v2 USs.
 | 02b | [us-02b-movies-result-component](us-02b-movies-result-component.md) | Movies ResultComponent: poster + title + year + rating + runtime | Not started | Blocked by us-02 |
 | 03 | [us-03-tv-shows-adapter](us-03-tv-shows-adapter.md) | TV shows backend adapter: search by name | Not started | Blocked by us-01 |
 | 03b | [us-03b-tv-shows-result-component](us-03b-tv-shows-result-component.md) | TV shows ResultComponent: poster + name + status + seasons | Not started | Blocked by us-03 |
-| 04 | [us-04-transactions-adapter](us-04-transactions-adapter.md) | Transactions backend adapter: search by description | Not started | Blocked by us-01 |
+| 04 | [us-04-transactions-adapter](us-04-transactions-adapter.md) | Transactions backend adapter: search by description | Done | — |
 | 04b | [us-04b-transactions-result-component](us-04b-transactions-result-component.md) | Transactions ResultComponent: description + colored amount + date | Not started | Blocked by us-04 |
 | 05 | [us-05-entities-adapter](us-05-entities-adapter.md) | Entities backend adapter: search by name | Not started | Blocked by us-01 |
 | 05b | [us-05b-entities-result-component](us-05b-entities-result-component.md) | Entities ResultComponent: name + type badge + aliases | Not started | Blocked by us-05 |
