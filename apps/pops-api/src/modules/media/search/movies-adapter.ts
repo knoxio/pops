@@ -44,8 +44,8 @@ function extractYear(releaseDate: string | null): string | null {
 function parseGenres(genres: string | null): string[] {
   if (!genres) return [];
   try {
-    const parsed = JSON.parse(genres);
-    return Array.isArray(parsed) ? parsed : [];
+    const parsed: unknown = JSON.parse(genres);
+    return Array.isArray(parsed) ? (parsed as string[]) : [];
   } catch {
     return [];
   }
