@@ -37,9 +37,6 @@ vi.mock("../lib/trpc", () => ({
             return { mutate: mockDismissMutate, isPending: false };
           },
         },
-        getPendingDebriefs: {
-          invalidate: mockInvalidatePending,
-        },
       },
     },
     useUtils: () => ({
