@@ -193,3 +193,15 @@ export const DeleteComparisonSchema = z.object({
   id: z.number().int().positive(),
 });
 export type DeleteComparisonInput = z.infer<typeof DeleteComparisonSchema>;
+
+export const BlacklistMovieSchema = z.object({
+  mediaType: z.enum(MEDIA_TYPES),
+  mediaId: z.number().int().positive(),
+});
+export type BlacklistMovieInput = z.infer<typeof BlacklistMovieSchema>;
+
+export interface BlacklistMovieResult {
+  blacklistedCount: number;
+  comparisonsDeleted: number;
+  dimensionsRecalculated: number;
+}

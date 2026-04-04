@@ -8,6 +8,7 @@ import {
   seedWatchHistoryEntry,
   createCaller,
 } from "../../../shared/test-utils.js";
+import { blacklistMovie } from "./service.js";
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;
@@ -1419,5 +1420,174 @@ describe("comparisons auth", () => {
   it("rejects unauthenticated calls", async () => {
     const anonCaller = createCaller(false);
     await expect(anonCaller.media.comparisons.listDimensions()).rejects.toThrow(TRPCError);
+  });
+});
+
+describe("blacklistMovie", () => {
+  it("sets blacklisted=1 on matching watch_history rows", () => {
+    seedWatchHistoryEntry(db, { media_type: "movie", media_id: 10 });
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: 10,
+      watched_at: "2026-01-02T00:00:00Z",
+    });
+
+    const result = blacklistMovie("movie", 10);
+    expect(result.blacklistedCount).toBe(2);
+
+    const rows = db.prepare("SELECT blacklisted FROM watch_history WHERE media_id = 10").all() as {
+      blacklisted: number;
+    }[];
+    expect(rows.every((r) => r.blacklisted === 1)).toBe(true);
+  });
+
+  it("does not blacklist unrelated movies", () => {
+    seedWatchHistoryEntry(db, { media_type: "movie", media_id: 10 });
+    seedWatchHistoryEntry(db, { media_type: "movie", media_id: 20 });
+
+    blacklistMovie("movie", 10);
+
+    const unrelated = db
+      .prepare("SELECT blacklisted FROM watch_history WHERE media_id = 20")
+      .get() as { blacklisted: number };
+    expect(unrelated.blacklisted).toBe(0);
+  });
+
+  it("deletes all comparisons involving the blacklisted movie", async () => {
+    const dimId = seedDimension(db, { name: "Story" });
+
+    // movie 10 vs 20, movie 10 vs 30, movie 20 vs 30
+    await caller.media.comparisons.record({
+      dimensionId: dimId,
+      mediaAType: "movie",
+      mediaAId: 10,
+      mediaBType: "movie",
+      mediaBId: 20,
+      winnerType: "movie",
+      winnerId: 10,
+    });
+    await caller.media.comparisons.record({
+      dimensionId: dimId,
+      mediaAType: "movie",
+      mediaAId: 10,
+      mediaBType: "movie",
+      mediaBId: 30,
+      winnerType: "movie",
+      winnerId: 30,
+    });
+    await caller.media.comparisons.record({
+      dimensionId: dimId,
+      mediaAType: "movie",
+      mediaAId: 20,
+      mediaBType: "movie",
+      mediaBId: 30,
+      winnerType: "movie",
+      winnerId: 20,
+    });
+
+    seedWatchHistoryEntry(db, { media_type: "movie", media_id: 10 });
+
+    const result = blacklistMovie("movie", 10);
+    expect(result.comparisonsDeleted).toBe(2); // 10v20 and 10v30
+
+    // Only the 20v30 comparison remains
+    const remaining = await caller.media.comparisons.listAll({});
+    expect(remaining.pagination.total).toBe(1);
+    expect(remaining.data[0]!.mediaAId).toBe(20);
+    expect(remaining.data[0]!.mediaBId).toBe(30);
+  });
+
+  it("recalculates ELO for affected dimensions", async () => {
+    const dimId = seedDimension(db, { name: "Story" });
+
+    // movie 10 beats 20, movie 20 beats 30
+    await caller.media.comparisons.record({
+      dimensionId: dimId,
+      mediaAType: "movie",
+      mediaAId: 10,
+      mediaBType: "movie",
+      mediaBId: 20,
+      winnerType: "movie",
+      winnerId: 10,
+    });
+    await caller.media.comparisons.record({
+      dimensionId: dimId,
+      mediaAType: "movie",
+      mediaAId: 20,
+      mediaBType: "movie",
+      mediaBId: 30,
+      winnerType: "movie",
+      winnerId: 20,
+    });
+
+    seedWatchHistoryEntry(db, { media_type: "movie", media_id: 10 });
+
+    const result = blacklistMovie("movie", 10);
+    expect(result.dimensionsRecalculated).toBe(1);
+
+    // After blacklisting movie 10, only "20 beats 30" remains
+    // Both should be recalculated from 1500: winner gets 1516, loser gets 1484
+    const scores20 = await caller.media.comparisons.scores({ mediaType: "movie", mediaId: 20 });
+    const scores30 = await caller.media.comparisons.scores({ mediaType: "movie", mediaId: 30 });
+    expect(scores20.data[0]!.score).toBe(1516);
+    expect(scores30.data[0]!.score).toBe(1484);
+    expect(scores20.data[0]!.comparisonCount).toBe(1);
+
+    // Movie 10 scores should be reset to 1500 with 0 comparisons
+    const scores10 = await caller.media.comparisons.scores({ mediaType: "movie", mediaId: 10 });
+    expect(scores10.data[0]!.score).toBe(1500);
+    expect(scores10.data[0]!.comparisonCount).toBe(0);
+  });
+
+  it("handles multiple dimensions", async () => {
+    const dim1 = seedDimension(db, { name: "Story" });
+    const dim2 = seedDimension(db, { name: "Visuals" });
+
+    // Movie 10 vs 20 in both dimensions
+    await caller.media.comparisons.record({
+      dimensionId: dim1,
+      mediaAType: "movie",
+      mediaAId: 10,
+      mediaBType: "movie",
+      mediaBId: 20,
+      winnerType: "movie",
+      winnerId: 10,
+    });
+    await caller.media.comparisons.record({
+      dimensionId: dim2,
+      mediaAType: "movie",
+      mediaAId: 10,
+      mediaBType: "movie",
+      mediaBId: 20,
+      winnerType: "movie",
+      winnerId: 20,
+    });
+
+    seedWatchHistoryEntry(db, { media_type: "movie", media_id: 10 });
+
+    const result = blacklistMovie("movie", 10);
+    expect(result.comparisonsDeleted).toBe(2);
+    expect(result.dimensionsRecalculated).toBe(2);
+
+    // All comparisons gone
+    const remaining = await caller.media.comparisons.listAll({});
+    expect(remaining.pagination.total).toBe(0);
+  });
+
+  it("returns zero counts when movie has no watch history or comparisons", () => {
+    const result = blacklistMovie("movie", 999);
+    expect(result.blacklistedCount).toBe(0);
+    expect(result.comparisonsDeleted).toBe(0);
+    expect(result.dimensionsRecalculated).toBe(0);
+  });
+
+  it("is idempotent — re-blacklisting does not double-count", () => {
+    seedWatchHistoryEntry(db, { media_type: "movie", media_id: 10 });
+
+    const first = blacklistMovie("movie", 10);
+    expect(first.blacklistedCount).toBe(1);
+
+    const second = blacklistMovie("movie", 10);
+    expect(second.blacklistedCount).toBe(0); // already blacklisted
   });
 });

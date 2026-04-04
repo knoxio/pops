@@ -22,6 +22,7 @@ import {
   type RecordComparisonInput,
   type RandomPair,
   type RankedMediaEntry,
+  type BlacklistMovieResult,
 } from "./types.js";
 
 // ── Dimensions ──
@@ -366,6 +367,91 @@ export function deleteComparison(id: number): void {
         drawTier: comp.drawTier as "high" | "mid" | "low" | null,
       });
     }
+  })();
+}
+
+/**
+ * Blacklist a movie: mark all its watch_history rows as blacklisted,
+ * delete all comparisons involving it, and recalculate ELO for affected dimensions.
+ */
+export function blacklistMovie(mediaType: string, mediaId: number): BlacklistMovieResult {
+  const drizzleDb = getDrizzle();
+  const rawDb = getDb();
+
+  return rawDb.transaction(() => {
+    // 1. Set blacklisted = 1 on all watch_history rows for this media
+    const blacklistResult = rawDb
+      .prepare(
+        `UPDATE watch_history SET blacklisted = 1
+         WHERE media_type = ? AND media_id = ? AND blacklisted = 0`
+      )
+      .run(mediaType, mediaId);
+    const blacklistedCount = blacklistResult.changes;
+
+    // 2. Find all comparisons involving this media (either side)
+    const affectedComparisons = drizzleDb
+      .select()
+      .from(comparisons)
+      .where(
+        or(
+          and(eq(comparisons.mediaAType, mediaType), eq(comparisons.mediaAId, mediaId)),
+          and(eq(comparisons.mediaBType, mediaType), eq(comparisons.mediaBId, mediaId))
+        )
+      )
+      .all();
+
+    const comparisonsDeleted = affectedComparisons.length;
+
+    // 3. Collect affected dimension IDs (unique)
+    const affectedDimensionIds = [...new Set(affectedComparisons.map((c) => c.dimensionId))];
+
+    // 4. Delete all comparisons involving this media
+    if (comparisonsDeleted > 0) {
+      rawDb
+        .prepare(
+          `DELETE FROM comparisons
+           WHERE (media_a_type = ? AND media_a_id = ?)
+              OR (media_b_type = ? AND media_b_id = ?)`
+        )
+        .run(mediaType, mediaId, mediaType, mediaId);
+    }
+
+    // 5. Replay ELO for each affected dimension
+    for (const dimensionId of affectedDimensionIds) {
+      // Reset all scores in this dimension
+      drizzleDb
+        .update(mediaScores)
+        .set({ score: 1500.0, comparisonCount: 0, updatedAt: new Date().toISOString() })
+        .where(eq(mediaScores.dimensionId, dimensionId))
+        .run();
+
+      // Replay remaining comparisons chronologically
+      const remaining = drizzleDb
+        .select()
+        .from(comparisons)
+        .where(eq(comparisons.dimensionId, dimensionId))
+        .orderBy(asc(comparisons.comparedAt))
+        .all();
+
+      for (const comp of remaining) {
+        updateEloScores({
+          dimensionId: comp.dimensionId,
+          mediaAType: comp.mediaAType as "movie" | "tv_show",
+          mediaAId: comp.mediaAId,
+          mediaBType: comp.mediaBType as "movie" | "tv_show",
+          mediaBId: comp.mediaBId,
+          winnerType: comp.winnerType as "movie" | "tv_show",
+          winnerId: comp.winnerId,
+          drawTier: comp.drawTier as "high" | "mid" | "low" | null,
+        });
+      }
+    }
+
+    return {
+      blacklistedCount,
+      comparisonsDeleted,
+      dimensionsRecalculated: affectedDimensionIds.length,
+    };
   })();
 }
 
