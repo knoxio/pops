@@ -455,6 +455,21 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     );
     CREATE INDEX IF NOT EXISTS idx_sync_job_results_type_completed
       ON sync_job_results(job_type, completed_at);
+
+    CREATE TABLE IF NOT EXISTS debrief_sessions (
+      id                INTEGER PRIMARY KEY AUTOINCREMENT,
+      watch_history_id  INTEGER NOT NULL REFERENCES watch_history(id),
+      status            TEXT NOT NULL DEFAULT 'pending',
+      created_at        TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS debrief_results (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id      INTEGER NOT NULL REFERENCES debrief_sessions(id),
+      dimension_id    INTEGER NOT NULL REFERENCES comparison_dimensions(id),
+      comparison_id   INTEGER REFERENCES comparisons(id),
+      created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
 
   // Pre-mark all migrations this schema already incorporates so that

@@ -408,6 +408,21 @@ export function createTestDb(): Database {
     );
     CREATE UNIQUE INDEX IF NOT EXISTS idx_comparison_skip_cooloffs_pair
       ON comparison_skip_cooloffs(dimension_id, media_a_type, media_a_id, media_b_type, media_b_id);
+
+    CREATE TABLE IF NOT EXISTS debrief_sessions (
+      id                INTEGER PRIMARY KEY AUTOINCREMENT,
+      watch_history_id  INTEGER NOT NULL REFERENCES watch_history(id),
+      status            TEXT NOT NULL DEFAULT 'pending',
+      created_at        TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS debrief_results (
+      id              INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id      INTEGER NOT NULL REFERENCES debrief_sessions(id),
+      dimension_id    INTEGER NOT NULL REFERENCES comparison_dimensions(id),
+      comparison_id   INTEGER REFERENCES comparisons(id),
+      created_at      TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
 
   return db;

@@ -25,3 +25,5 @@ export { syncJobResults } from "./sync-job-results.js";
 export { dismissedDiscover } from "./dismissed-discover.js";
 export { comparisonSkipCooloffs } from "./comparison-skip-cooloffs.js";
 export { comparisonStaleness } from "./comparison-staleness.js";
+export { debriefSessions } from "./debrief-sessions.js";
+export { debriefResults } from "./debrief-results.js";
