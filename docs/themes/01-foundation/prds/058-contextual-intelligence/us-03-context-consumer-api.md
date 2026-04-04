@@ -18,4 +18,4 @@ As a developer, I want a clean API for consumers (Search, AI) to read the curren
 
 ## Notes
 
-Consumers should be able to import hooks from a shared location — either the shell re-exports them or they live in a shared package.
+Consumer hooks are exported from `@pops/navigation` (same package as the context provider, US-01). This means any package in the monorepo can import `useAppContext`, `useCurrentApp`, `useCurrentEntity` without depending on the shell.

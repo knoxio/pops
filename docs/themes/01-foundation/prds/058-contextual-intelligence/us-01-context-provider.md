@@ -13,9 +13,11 @@ As a developer, I want a context provider that tracks the active app and exposes
 - [ ] Active app detected from URL path (`/media/*` → "media", `/finance/*` → "finance")
 - [ ] Updates automatically on navigation
 - [ ] `useAppContext()` hook returns current context
-- [ ] Default context when no app matched (e.g., root `/`)
+- [ ] Default context when no app matched (e.g. root `/`): `{ app: null, page: null, pageType: "top-level" }` — entity and filters are undefined
 - [ ] No re-renders in components that don't consume context
 
 ## Notes
 
 URL-based app detection is the baseline. Page-level context (US-02) adds richer information on top.
+
+The provider and hooks live in `packages/navigation/` (already exists as shared nav config). This avoids circular deps — shell, app packages, and `@pops/ui` can all import from `@pops/navigation` without depending on the shell.

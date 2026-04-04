@@ -26,7 +26,8 @@ interface SearchResult {
   type: string;                 // "movie"
   domain: string;               // "media"
   metadata?: Record<string, string>; // { year: "1999", rating: "8.8" }
-  score: number;                // relevance score for ranking
+  thumbnailUrl?: string;        // poster/icon URL if available
+  score: number;                // 0.0–1.0 relevance: exact=1.0, starts-with=0.8, contains=0.5
 }
 ```
 
@@ -57,6 +58,14 @@ v1 is plain text only. Structured syntax added as v2 USs.
 | 06 | [us-06-structured-syntax](us-06-structured-syntax.md) | Parse structured query syntax (type:, domain:, year:, value:) and apply filters | Not started | Blocked by us-05 |
 
 US-02, US-03, US-04 can parallelise (independent adapters).
+
+## Business Rules
+
+- Each adapter owns its scoring — the engine does not re-score. Score range is 0.0–1.0
+- Adapter failures are isolated — if one adapter throws, others still return results. Failed section is omitted with a console warning
+- Default result limit: 5 per section. "Show more" returns additional results for a single domain
+- Cross-section ordering: current app's domain first (from PRD-058 context), others alphabetical
+- Adapter registry location: `apps/pops-api/src/modules/core/search/`. Each domain adapter calls `registerSearchAdapter()` at startup
 
 ## Out of Scope
 

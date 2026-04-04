@@ -19,3 +19,5 @@ As a developer, I want a SearchAdapter interface and registration pattern so tha
 ## Notes
 
 The adapter pattern means the search engine doesn't know about domain internals. Each domain owns its search logic.
+
+The adapter registry lives in a `search` module under the API core: `apps/pops-api/src/modules/core/search/`. The registry is a plain array populated at startup — each domain adapter file calls `registerSearchAdapter()` during module initialization (side-effect import in the API entry point, same pattern as tRPC router composition). No dynamic discovery needed.
