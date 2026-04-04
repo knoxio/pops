@@ -40,14 +40,24 @@ describe("ArrStatusBadge", () => {
     expect(container.innerHTML).toBe("");
   });
 
-  it("renders nothing when service is unreachable (error)", () => {
+  it("renders Radarr unavailable badge when Radarr is unreachable", () => {
     mockGetMovieStatus.mockReturnValue({
       data: null,
       isLoading: false,
       error: new Error("Connection refused"),
     });
-    const { container } = render(<ArrStatusBadge kind="movie" externalId={123} />);
-    expect(container.innerHTML).toBe("");
+    render(<ArrStatusBadge kind="movie" externalId={123} />);
+    expect(screen.getByText("Radarr unavailable")).toBeInTheDocument();
+  });
+
+  it("renders Sonarr unavailable badge when Sonarr is unreachable", () => {
+    mockGetShowStatus.mockReturnValue({
+      data: null,
+      isLoading: false,
+      error: new Error("Connection refused"),
+    });
+    render(<ArrStatusBadge kind="show" externalId={456} />);
+    expect(screen.getByText("Sonarr unavailable")).toBeInTheDocument();
   });
 
   it("renders nothing while loading", () => {
@@ -84,7 +94,7 @@ describe("ArrStatusBadge", () => {
     expect(badge.className).toContain("bg-yellow-600");
   });
 
-  it("renders Monitored badge with blue styling", () => {
+  it("renders Monitored badge with yellow styling", () => {
     mockGetMovieStatus.mockReturnValue({
       data: { data: { status: "monitored", label: "Monitored" } },
       isLoading: false,
@@ -93,7 +103,7 @@ describe("ArrStatusBadge", () => {
     render(<ArrStatusBadge kind="movie" externalId={123} />);
     const badge = screen.getByText("Monitored");
     expect(badge).toBeInTheDocument();
-    expect(badge.className).toContain("bg-blue-600");
+    expect(badge.className).toContain("bg-yellow-600");
   });
 
   it("renders Not Monitored badge with grey styling", () => {
@@ -117,6 +127,6 @@ describe("ArrStatusBadge", () => {
     render(<ArrStatusBadge kind="show" externalId={456} />);
     const badge = screen.getByText("Monitored");
     expect(badge).toBeInTheDocument();
-    expect(badge.className).toContain("bg-blue-600");
+    expect(badge.className).toContain("bg-yellow-600");
   });
 });

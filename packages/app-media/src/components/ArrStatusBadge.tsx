@@ -17,7 +17,7 @@ interface ArrStatusBadgeProps {
 const STATUS_STYLES: Record<string, string> = {
   available: "bg-green-600 text-white",
   complete: "bg-green-600 text-white",
-  monitored: "bg-blue-600 text-white",
+  monitored: "bg-yellow-600 text-white",
   downloading: "bg-yellow-600 text-white",
   partial: "bg-yellow-600 text-white",
   unmonitored: "bg-muted text-muted-foreground",
@@ -45,8 +45,11 @@ export function ArrStatusBadge({ kind, externalId }: ArrStatusBadgeProps) {
   const query = kind === "movie" ? movieStatus : showStatus;
   if (query.isLoading) return null;
 
-  // Do not render when service is unreachable
-  if (query.error) return null;
+  // Show unavailable badge when service is unreachable
+  if (query.error) {
+    const unavailableLabel = kind === "movie" ? "Radarr unavailable" : "Sonarr unavailable";
+    return <Badge className="bg-muted text-muted-foreground">{unavailableLabel}</Badge>;
+  }
 
   if (!query.data?.data) return null;
 
