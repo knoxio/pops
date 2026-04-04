@@ -45,6 +45,7 @@ interface RankingRowProps {
   mediaId: number;
   score: number;
   comparisonCount: number;
+  confidence: number;
   title: string;
   year: number | null;
   posterUrl: string | null;
@@ -56,6 +57,7 @@ function RankingRow({
   mediaId,
   score,
   comparisonCount,
+  confidence,
   title,
   year,
   posterUrl,
@@ -107,6 +109,20 @@ function RankingRow({
         <div className="text-xs text-muted-foreground">
           {comparisonCount} {comparisonCount === 1 ? "match" : "matches"}
         </div>
+        {comparisonCount > 0 && (
+          <div
+            className={cn(
+              "text-xs tabular-nums",
+              confidence >= 0.7
+                ? "text-green-600 dark:text-green-400"
+                : confidence >= 0.4
+                  ? "text-yellow-600 dark:text-yellow-400"
+                  : "text-red-500 dark:text-red-400"
+            )}
+          >
+            {Math.round(confidence * 100)}% conf
+          </div>
+        )}
       </div>
     </div>
   );
@@ -159,6 +175,7 @@ function RankingsList({ dimensionId }: { dimensionId?: number }) {
             posterUrl: string | null;
             score: number;
             comparisonCount: number;
+            confidence: number;
           }) => (
             <RankingRow
               key={`${entry.mediaType}-${entry.mediaId}`}
@@ -167,6 +184,7 @@ function RankingsList({ dimensionId }: { dimensionId?: number }) {
               mediaId={entry.mediaId}
               score={entry.score}
               comparisonCount={entry.comparisonCount}
+              confidence={entry.confidence}
               title={entry.title}
               year={entry.year}
               posterUrl={entry.posterUrl}

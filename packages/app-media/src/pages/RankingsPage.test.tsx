@@ -37,6 +37,7 @@ const rankedEntries = [
     posterUrl: "/a.jpg",
     score: 1532,
     comparisonCount: 5,
+    confidence: 0.59,
   },
   {
     rank: 2,
@@ -47,6 +48,7 @@ const rankedEntries = [
     posterUrl: "/b.jpg",
     score: 1468,
     comparisonCount: 5,
+    confidence: 0.59,
   },
 ];
 
@@ -169,6 +171,7 @@ describe("RankingsPage", () => {
       posterUrl: null,
       score: 1600 - i * 4,
       comparisonCount: 3,
+      confidence: 0.5,
     }));
 
     mockRankingsQuery.mockReturnValue({
@@ -216,6 +219,7 @@ describe("RankingsPage", () => {
         posterUrl: null,
         score: 1600,
         comparisonCount: 10,
+        confidence: 0.7,
       },
       {
         rank: 2,
@@ -226,6 +230,7 @@ describe("RankingsPage", () => {
         posterUrl: null,
         score: 1550,
         comparisonCount: 10,
+        confidence: 0.7,
       },
       {
         rank: 3,
@@ -236,6 +241,7 @@ describe("RankingsPage", () => {
         posterUrl: null,
         score: 1500,
         comparisonCount: 10,
+        confidence: 0.7,
       },
     ];
 
@@ -254,6 +260,13 @@ describe("RankingsPage", () => {
     expect(screen.getByText("#3")).toBeInTheDocument();
   });
 
+  it("displays confidence percentage for items with comparisons", () => {
+    renderPage();
+    // Both entries have confidence 0.59 → 59% conf
+    const confLabels = screen.getAllByText("59% conf");
+    expect(confLabels).toHaveLength(2);
+  });
+
   it("shows 'Unknown' for media without metadata", () => {
     mockRankingsQuery.mockReturnValue({
       data: {
@@ -267,6 +280,7 @@ describe("RankingsPage", () => {
             posterUrl: null,
             score: 1500,
             comparisonCount: 1,
+            confidence: 0.29,
           },
         ],
         pagination: { total: 1, limit: 25, offset: 0, hasMore: false },
