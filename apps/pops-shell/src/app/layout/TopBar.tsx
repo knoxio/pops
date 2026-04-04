@@ -9,6 +9,7 @@ import { useUIStore } from "@/store/uiStore";
 import { Menu, Sun, Moon } from "lucide-react";
 import { Button } from "@pops/ui";
 import { BuildVersion } from "./BuildVersion";
+import { SearchInput } from "./SearchInput";
 
 export function TopBar() {
   const theme = useThemeStore((state) => state.theme);
@@ -33,6 +34,8 @@ export function TopBar() {
         </h1>
         <BuildVersion />
       </div>
+
+      <SearchInput />
 
       <div className="ml-auto flex items-center gap-1 md:gap-4">
         <Button

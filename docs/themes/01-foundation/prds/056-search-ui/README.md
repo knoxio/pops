@@ -25,7 +25,7 @@ Build the search UI — a TopBar search bar with a results panel that shows cont
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 01 | [us-01-search-bar](us-01-search-bar.md) | TopBar search input with keyboard shortcut, focus management, debounce | Not started | Yes |
+| 01 | [us-01-search-bar](us-01-search-bar.md) | TopBar search input with keyboard shortcut, focus management, debounce | Partial | Yes |
 | 02 | [us-02-results-panel](us-02-results-panel.md) | Dropdown panel layout with domain sections, context ordering, close behavior | Not started | Yes |
 | 02b | [us-02b-result-component-registry](us-02b-result-component-registry.md) | Frontend ResultComponent registry, domain lookup, generic fallback, show more | Not started | Blocked by us-02 |
 | 03 | [us-03-result-navigation](us-03-result-navigation.md) | Click/keyboard-navigate results, resolve URIs to routes | Not started | Yes |
