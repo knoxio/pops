@@ -20,3 +20,4 @@ export { DEFAULT_APP_CONTEXT } from "./types";
 
 export { useRecentSearches } from "./recent-searches";
 export { RecentSearches } from "./RecentSearches";
+export { useSearchKeyboardNav } from "./search-keyboard-nav";
