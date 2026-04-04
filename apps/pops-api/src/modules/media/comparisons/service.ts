@@ -773,9 +773,7 @@ export function getSmartPair(dimensionId?: number): RandomPair | null {
   if (eligible.length < 2) return null;
 
   // Sample up to SAMPLE_SIZE movies
-  const sampled = eligible.length <= SAMPLE_SIZE
-    ? eligible
-    : shuffleAndTake(eligible, SAMPLE_SIZE);
+  const sampled = eligible.length <= SAMPLE_SIZE ? eligible : shuffleAndTake(eligible, SAMPLE_SIZE);
 
   // Get scores for sampled movies in this dimension
   const movieIds = sampled.map((m) => m.mediaId);
@@ -901,9 +899,7 @@ export function getSmartPair(dimensionId?: number): RandomPair | null {
   }
 
   // Weighted random sample from scored pairs
-  const selected = weightedRandomSample(
-    scoredPairs.map((p) => ({ item: p, weight: p.priority }))
-  );
+  const selected = weightedRandomSample(scoredPairs.map((p) => ({ item: p, weight: p.priority })));
 
   if (!selected) return null;
 
