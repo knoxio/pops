@@ -1,7 +1,7 @@
 # US-10: Entity selection dropdown
 
 > PRD: [020 — Import Wizard UI](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -13,7 +13,7 @@ As a user, I want to select an entity from a dropdown on uncertain/failed transa
 - [x] Appears on uncertain and failed transaction cards
 - [x] Selecting an entity moves the transaction to the matched list
 - [x] If AI suggested an entity, show "Accept" shortcut button alongside the dropdown
-- [ ] Dropdown shows entity name + type badge
+- [x] Dropdown shows entity name + type badge
 - [x] "Create Entity" option at bottom of dropdown (links to US-12)
 
 ## Notes

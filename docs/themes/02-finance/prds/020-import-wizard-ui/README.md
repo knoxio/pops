@@ -1,7 +1,7 @@
 # PRD-020: Import Wizard UI
 
 > Epic: [01 — Import Pipeline](../../epics/01-import-pipeline.md)
-> Status: Partial
+> Status: Done
 
 ## Overview
 
@@ -136,16 +136,16 @@ interface ImportStore {
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 06 | [us-06-process-call](us-06-process-call.md) | Call processImport, receive session ID | Partial | Blocked by us-05 |
+| 06 | [us-06-process-call](us-06-process-call.md) | Call processImport, receive session ID | Done | Blocked by us-05 |
 | 07 | [us-07-progress-polling](us-07-progress-polling.md) | Poll getImportProgress every 1s, show step/count/batch preview | Done | Blocked by us-06 |
 
 ### Review (Step 4)
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 08 | [us-08-review-tabs](us-08-review-tabs.md) | Tabbed view: Matched / Uncertain / Failed / Skipped with counts | Partial | Blocked by us-07 |
+| 08 | [us-08-review-tabs](us-08-review-tabs.md) | Tabbed view: Matched / Uncertain / Failed / Skipped with counts | Done | Blocked by us-07 |
 | 09 | [us-09-transaction-card](us-09-transaction-card.md) | TransactionCard component: description, amount, date, entity, match type badge | Done | Blocked by us-08 |
-| 10 | [us-10-entity-dropdown](us-10-entity-dropdown.md) | Entity selection dropdown on uncertain/failed cards | Partial | Blocked by us-09 |
+| 10 | [us-10-entity-dropdown](us-10-entity-dropdown.md) | Entity selection dropdown on uncertain/failed cards | Done | Blocked by us-09 |
 | 11 | [us-11-auto-match-similar](us-11-auto-match-similar.md) | When entity assigned, find similar transactions and offer "Apply to N similar?" toast | Done | Blocked by us-10 |
 | 12 | [us-12-entity-creation](us-12-entity-creation.md) | "Create Entity" dialog for on-the-fly entity creation during review | Done | Blocked by us-10 |
 | 13 | [us-13-edit-transaction](us-13-edit-transaction.md) | Edit dialog: modify description, amount, account, entity, location, type | Done | Blocked by us-09 |
