@@ -289,8 +289,27 @@ export function logWatch(input: LogWatchInput): LogWatchResult {
     if (!entry) throw new Error("Watch history entry not found after insert");
 
     // Reset staleness when a completed watch event is logged
+    // (comparisons use movie/tv_show types, so resolve episode → tv_show)
     if (completed === 1) {
-      resetStaleness(input.mediaType, input.mediaId);
+      if (input.mediaType === "movie") {
+        resetStaleness("movie", input.mediaId);
+      } else if (input.mediaType === "episode") {
+        const ep = tx
+          .select({ seasonId: episodes.seasonId })
+          .from(episodes)
+          .where(eq(episodes.id, input.mediaId))
+          .get();
+        if (ep) {
+          const season = tx
+            .select({ tvShowId: seasons.tvShowId })
+            .from(seasons)
+            .where(eq(seasons.id, ep.seasonId))
+            .get();
+          if (season) {
+            resetStaleness("tv_show", season.tvShowId);
+          }
+        }
+      }
     }
 
     // Auto-remove from watchlist (PRD-011 R6) — skip for plex_sync source
@@ -590,13 +609,6 @@ export function batchLogWatch(input: BatchLogWatchInput): BatchLogResult {
         .run();
     }
 
-    // Reset staleness for each newly watched episode
-    if (completed === 1 && toLog.length > 0) {
-      for (const episodeId of toLog) {
-        resetStaleness("episode", episodeId);
-      }
-    }
-
     // Auto-remove from watchlist if all episodes now watched
     if (completed === 1 && toLog.length > 0) {
       // Determine the TV show ID for watchlist removal
@@ -612,6 +624,11 @@ export function batchLogWatch(input: BatchLogWatchInput): BatchLogResult {
           .where(eq(seasons.id, input.mediaId))
           .get();
         tvShowId = season?.tvShowId;
+      }
+
+      // Reset staleness for the parent TV show (comparisons use tv_show type)
+      if (tvShowId !== undefined) {
+        resetStaleness("tv_show", tvShowId);
       }
 
       if (tvShowId !== undefined) {
