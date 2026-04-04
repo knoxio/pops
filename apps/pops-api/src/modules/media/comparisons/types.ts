@@ -241,6 +241,12 @@ export const GetDebriefOpponentSchema = z.object({
 });
 export type GetDebriefOpponentInput = z.infer<typeof GetDebriefOpponentSchema>;
 
+export const DismissDebriefDimensionSchema = z.object({
+  sessionId: z.number().int().positive(),
+  dimensionId: z.number().int().positive(),
+});
+export type DismissDebriefDimensionInput = z.infer<typeof DismissDebriefDimensionSchema>;
+
 /** API response shape for a debrief opponent. */
 export interface DebriefOpponent {
   id: number;

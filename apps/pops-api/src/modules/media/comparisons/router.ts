@@ -24,6 +24,7 @@ import {
   GetDebriefSchema,
   GetTierListMoviesSchema,
   SubmitTierListSchema,
+  DismissDebriefDimensionSchema,
   toDimension,
   toComparison,
   toMediaScore,
@@ -303,4 +304,25 @@ export const comparisonsRouter = router({
       throw err;
     }
   }),
+
+  /** Dismiss a debrief dimension (skip without comparing). */
+  dismissDebriefDimension: protectedProcedure
+    .input(DismissDebriefDimensionSchema)
+    .mutation(({ input }) => {
+      try {
+        service.dismissDebriefDimension(input.sessionId, input.dimensionId);
+        return { message: "Dimension dismissed" };
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+        }
+        if (err instanceof ValidationError) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: err.message });
+        }
+        if (err instanceof ConflictError) {
+          throw new TRPCError({ code: "CONFLICT", message: err.message });
+        }
+        throw err;
+      }
+    }),
 });

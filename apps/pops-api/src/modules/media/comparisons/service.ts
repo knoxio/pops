@@ -7,12 +7,12 @@ import {
   comparisonDimensions,
   comparisons,
   comparisonSkipCooloffs,
+  debriefResults,
+  debriefSessions,
   mediaScores,
   mediaWatchlist,
   watchHistory,
   movies,
-  debriefSessions,
-  debriefResults,
 } from "@pops/db-types";
 import { NotFoundError, ConflictError, ValidationError } from "../../../shared/errors.js";
 import {
@@ -1771,6 +1771,68 @@ export function getTierListMovies(dimensionId: number): TierListMovie[] {
     score: Math.round(row.score * 10) / 10,
     comparisonCount: row.comparisonCount,
   }));
+}
+
+// ── Debrief Dismiss ──
+
+/**
+ * Dismiss a debrief dimension — inserts a debrief_result with comparison_id=null
+ * (marks the dimension as skipped). Auto-completes the session when all active
+ * dimensions have results.
+ */
+export function dismissDebriefDimension(sessionId: number, dimensionId: number): void {
+  const db = getDrizzle();
+
+  // Verify session exists and is not complete
+  const session = db.select().from(debriefSessions).where(eq(debriefSessions.id, sessionId)).get();
+
+  if (!session) {
+    throw new NotFoundError("Debrief session", String(sessionId));
+  }
+  if (session.status === "complete") {
+    throw new ValidationError(`Debrief session ${sessionId} is already complete`);
+  }
+
+  // Verify dimension exists
+  getDimension(dimensionId);
+
+  // Check for duplicate dismiss
+  const existing = db
+    .select()
+    .from(debriefResults)
+    .where(
+      and(eq(debriefResults.sessionId, sessionId), eq(debriefResults.dimensionId, dimensionId))
+    )
+    .get();
+
+  if (existing) {
+    throw new ConflictError(
+      `Dimension ${dimensionId} already has a result for session ${sessionId}`
+    );
+  }
+
+  // Insert debrief_result with null comparison_id (dismissed)
+  db.insert(debriefResults).values({ sessionId, dimensionId, comparisonId: null }).run();
+
+  // Check if all active dimensions now have results → auto-complete
+  const activeDims = db
+    .select({ id: comparisonDimensions.id })
+    .from(comparisonDimensions)
+    .where(eq(comparisonDimensions.active, 1))
+    .all();
+
+  const resultCount = db
+    .select({ cnt: count() })
+    .from(debriefResults)
+    .where(eq(debriefResults.sessionId, sessionId))
+    .get();
+
+  if (resultCount && resultCount.cnt >= activeDims.length) {
+    db.update(debriefSessions)
+      .set({ status: "complete" })
+      .where(eq(debriefSessions.id, sessionId))
+      .run();
+  }
 }
 
 /**
