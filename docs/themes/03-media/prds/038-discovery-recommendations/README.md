@@ -1,7 +1,7 @@
 # PRD-038: Discovery & Recommendations
 
 > Epic: [05 — Discovery & Recommendations](../../epics/05-discovery-recommendations.md)
-> Status: Partial
+> Status: Done
 
 ## Overview
 
@@ -134,7 +134,7 @@ Based on comparison patterns — dimensions with more comparisons and wider scor
 |---|-------|---------|--------|----------------|
 | 01 | [us-01-trending](us-01-trending.md) | Trending section with TMDB trending movies, day/week toggle, add-to-library action, Load More | Done | Yes |
 | 02 | [us-02-recommendations](us-02-recommendations.md) | Personalised recommendations based on preference profile, cold start handling with arena CTA | Done | Yes |
-| 03 | [us-03-preference-profile](us-03-preference-profile.md) | Visual preference profile display (genre affinities, dimension weights) | Not started | Yes |
+| 03 | [us-03-preference-profile](us-03-preference-profile.md) | Visual preference profile display (genre affinities, dimension weights) | Done | Yes |
 
 All three stories can be built in parallel — they are independent sections of the discovery page.
 
