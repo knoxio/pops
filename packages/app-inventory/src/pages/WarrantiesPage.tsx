@@ -18,6 +18,7 @@ interface WarrantyItem {
   model: string | null;
   warrantyExpires: string | null;
   replacementValue: number | null;
+  warrantyDocumentId: number | null;
 }
 
 function formatCurrency(value: number): string {
@@ -66,6 +67,7 @@ interface WarrantyRowProps {
   item: WarrantyItem;
   daysRemaining: number;
   showUrgency?: boolean;
+  paperlessBaseUrl: string | null;
   onClick: () => void;
 }
 
@@ -80,8 +82,18 @@ function brandModelLabel(brand: string | null, model: string | null): string | n
   return brand ?? model ?? null;
 }
 
-function WarrantyRow({ item, daysRemaining, showUrgency, onClick }: WarrantyRowProps) {
+function WarrantyRow({
+  item,
+  daysRemaining,
+  showUrgency,
+  paperlessBaseUrl,
+  onClick,
+}: WarrantyRowProps) {
   const subtitle = brandModelLabel(item.brand, item.model);
+  const docUrl =
+    item.warrantyDocumentId != null && paperlessBaseUrl != null
+      ? `${paperlessBaseUrl}/documents/${item.warrantyDocumentId}/details`
+      : null;
 
   return (
     <button
@@ -94,6 +106,17 @@ function WarrantyRow({ item, daysRemaining, showUrgency, onClick }: WarrantyRowP
         {subtitle && <span className="text-xs text-muted-foreground truncate">{subtitle}</span>}
       </div>
       {item.assetId && <AssetIdBadge assetId={item.assetId} />}
+      {docUrl && (
+        <a
+          href={docUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-primary whitespace-nowrap hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          View Warranty
+        </a>
+      )}
       <span className="text-muted-foreground text-xs whitespace-nowrap">
         {item.warrantyExpires && formatDate(item.warrantyExpires)}
       </span>
@@ -171,10 +194,11 @@ const TIER_STYLES: Record<string, TierConfig> = {
 interface ExpiringSectionProps {
   tier: keyof typeof TIER_STYLES;
   items: Array<WarrantyItem & { daysRemaining: number }>;
+  paperlessBaseUrl: string | null;
   onItemClick: (id: string) => void;
 }
 
-function ExpiringSection({ tier, items, onItemClick }: ExpiringSectionProps) {
+function ExpiringSection({ tier, items, paperlessBaseUrl, onItemClick }: ExpiringSectionProps) {
   if (items.length === 0) return null;
   const style = TIER_STYLES[tier]!;
 
@@ -200,6 +224,7 @@ function ExpiringSection({ tier, items, onItemClick }: ExpiringSectionProps) {
             item={item}
             daysRemaining={item.daysRemaining}
             showUrgency
+            paperlessBaseUrl={paperlessBaseUrl}
             onClick={() => onItemClick(item.id)}
           />
         ))}
@@ -248,6 +273,8 @@ function CollapsibleSection({
 export function WarrantiesPage() {
   const navigate = useNavigate();
   const { data, isLoading, isError, refetch } = trpc.inventory.reports.warranties.useQuery();
+  const { data: paperlessData } = trpc.inventory.paperless.status.useQuery();
+  const paperlessBaseUrl = paperlessData?.data?.available ? paperlessData.data.baseUrl : null;
 
   const { critical, warning, caution, active, expired } = useMemo(() => {
     type Entry = WarrantyItem & { daysRemaining: number };
@@ -323,16 +350,19 @@ export function WarrantiesPage() {
           <ExpiringSection
             tier="critical"
             items={critical}
+            paperlessBaseUrl={paperlessBaseUrl}
             onItemClick={(id) => navigate(`/inventory/items/${id}`)}
           />
           <ExpiringSection
             tier="warning"
             items={warning}
+            paperlessBaseUrl={paperlessBaseUrl}
             onItemClick={(id) => navigate(`/inventory/items/${id}`)}
           />
           <ExpiringSection
             tier="caution"
             items={caution}
+            paperlessBaseUrl={paperlessBaseUrl}
             onItemClick={(id) => navigate(`/inventory/items/${id}`)}
           />
 
@@ -344,6 +374,7 @@ export function WarrantiesPage() {
                   key={item.id}
                   item={item}
                   daysRemaining={item.daysRemaining}
+                  paperlessBaseUrl={paperlessBaseUrl}
                   onClick={() => navigate(`/inventory/items/${item.id}`)}
                 />
               ))}
@@ -362,6 +393,7 @@ export function WarrantiesPage() {
                   key={item.id}
                   item={item}
                   daysRemaining={item.daysRemaining}
+                  paperlessBaseUrl={paperlessBaseUrl}
                   onClick={() => navigate(`/inventory/items/${item.id}`)}
                 />
               ))}

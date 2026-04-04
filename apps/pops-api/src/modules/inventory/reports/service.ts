@@ -65,15 +65,27 @@ export function getDashboard(): DashboardSummary {
   };
 }
 
+export interface WarrantyListItem extends InventoryRow {
+  warrantyDocumentId: number | null;
+}
+
 /** List all inventory items that have a warranty expiry date, sorted by expiry. */
-export function listWarrantyItems(): InventoryRow[] {
+export function listWarrantyItems(): WarrantyListItem[] {
   const db = getDrizzle();
-  return db
-    .select()
+  const rows = db
+    .select({
+      item: homeInventory,
+      warrantyDocumentId: itemDocuments.paperlessDocumentId,
+    })
     .from(homeInventory)
+    .leftJoin(
+      itemDocuments,
+      and(eq(itemDocuments.itemId, homeInventory.id), eq(itemDocuments.documentType, "warranty"))
+    )
     .where(isNotNull(homeInventory.warrantyExpires))
     .orderBy(homeInventory.warrantyExpires)
     .all();
+  return rows.map((r) => ({ ...r.item, warrantyDocumentId: r.warrantyDocumentId ?? null }));
 }
 
 // ---------------------------------------------------------------------------

@@ -16,7 +16,12 @@ export const reportsRouter = router({
   /** List all items with warranty dates, sorted by expiry. */
   warranties: protectedProcedure.query(() => {
     const rows = service.listWarrantyItems();
-    return { data: rows.map(toInventoryItem) };
+    return {
+      data: rows.map((row) => ({
+        ...toInventoryItem(row),
+        warrantyDocumentId: row.warrantyDocumentId,
+      })),
+    };
   }),
 
   /** Insurance report: items grouped by location with photo thumbnails and totals. */

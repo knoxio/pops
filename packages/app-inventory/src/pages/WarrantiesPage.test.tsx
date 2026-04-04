@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 
 const mockWarrantiesQuery = vi.fn();
+const mockPaperlessStatusQuery = vi.fn();
 
 vi.mock("../lib/trpc", () => ({
   trpc: {
@@ -10,6 +11,11 @@ vi.mock("../lib/trpc", () => ({
       reports: {
         warranties: {
           useQuery: (...args: unknown[]) => mockWarrantiesQuery(...args),
+        },
+      },
+      paperless: {
+        status: {
+          useQuery: (...args: unknown[]) => mockPaperlessStatusQuery(...args),
         },
       },
     },
@@ -35,6 +41,7 @@ function makeItem(
     brand: string | null;
     model: string | null;
     replacementValue: number | null;
+    warrantyDocumentId: number | null;
   }> = {}
 ) {
   return {
@@ -45,6 +52,7 @@ function makeItem(
     brand: overrides.brand ?? null,
     model: overrides.model ?? null,
     replacementValue: overrides.replacementValue ?? null,
+    warrantyDocumentId: overrides.warrantyDocumentId ?? null,
   };
 }
 
@@ -63,6 +71,9 @@ beforeEach(() => {
     isLoading: false,
     isError: false,
     refetch: vi.fn(),
+  });
+  mockPaperlessStatusQuery.mockReturnValue({
+    data: { data: { configured: false, available: false, baseUrl: null } },
   });
 });
 
@@ -438,5 +449,81 @@ describe("WarrantiesPage", () => {
     });
     renderPage();
     expect(screen.getByText("INV-001")).toBeInTheDocument();
+  });
+
+  describe("warranty document link", () => {
+    it("shows View Warranty link when document and Paperless configured", () => {
+      mockWarrantiesQuery.mockReturnValue({
+        data: {
+          data: [
+            makeItem({
+              id: "1",
+              itemName: "MacBook",
+              warrantyExpires: "2030-01-01",
+              warrantyDocumentId: 42,
+            }),
+          ],
+        },
+        isLoading: false,
+        isError: false,
+        refetch: vi.fn(),
+      });
+      mockPaperlessStatusQuery.mockReturnValue({
+        data: { data: { configured: true, available: true, baseUrl: "https://paperless.example" } },
+      });
+      renderPage();
+      const link = screen.getByText("View Warranty");
+      expect(link).toBeInTheDocument();
+      expect(link.closest("a")).toHaveAttribute(
+        "href",
+        "https://paperless.example/documents/42/details"
+      );
+    });
+
+    it("hides View Warranty link when warrantyDocumentId is null", () => {
+      mockWarrantiesQuery.mockReturnValue({
+        data: {
+          data: [
+            makeItem({
+              id: "1",
+              itemName: "MacBook",
+              warrantyExpires: "2030-01-01",
+              warrantyDocumentId: null,
+            }),
+          ],
+        },
+        isLoading: false,
+        isError: false,
+        refetch: vi.fn(),
+      });
+      mockPaperlessStatusQuery.mockReturnValue({
+        data: { data: { configured: true, available: true, baseUrl: "https://paperless.example" } },
+      });
+      renderPage();
+      expect(screen.queryByText("View Warranty")).not.toBeInTheDocument();
+    });
+
+    it("hides View Warranty link when Paperless not available", () => {
+      mockWarrantiesQuery.mockReturnValue({
+        data: {
+          data: [
+            makeItem({
+              id: "1",
+              itemName: "MacBook",
+              warrantyExpires: "2030-01-01",
+              warrantyDocumentId: 42,
+            }),
+          ],
+        },
+        isLoading: false,
+        isError: false,
+        refetch: vi.fn(),
+      });
+      mockPaperlessStatusQuery.mockReturnValue({
+        data: { data: { configured: false, available: false, baseUrl: null } },
+      });
+      renderPage();
+      expect(screen.queryByText("View Warranty")).not.toBeInTheDocument();
+    });
   });
 });
