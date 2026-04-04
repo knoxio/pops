@@ -28,6 +28,7 @@ import {
   type BlacklistMovieResult,
   type DebriefOpponent,
   type PendingDebrief,
+  type TierListMovie,
 } from "./types.js";
 import { getStaleness } from "./staleness.js";
 
@@ -1655,6 +1656,116 @@ export function getPendingDebriefs(): PendingDebrief[] {
   }
 
   return results;
+}
+
+// ── Tier List Movie Selection ──
+
+const MAX_TIER_LIST_MOVIES = 8;
+const STALENESS_THRESHOLD = 0.3;
+
+/**
+ * Select up to 8 movies for a tier list placement round.
+ *
+ * Strategy:
+ *  - Prefer low comparison count (high uncertainty)
+ *  - Mix of score ranges (sample from quantiles)
+ *  - Exclude: blacklisted, excluded-for-dimension, staleness < 0.3
+ *  - Returns fewer than 8 if not enough eligible (min 0)
+ */
+export function getTierListMovies(dimensionId: number): TierListMovie[] {
+  getDimension(dimensionId); // verify dimension exists
+
+  const rawDb = getDb();
+
+  // Get eligible movies: non-excluded, with comparisons, joined to movie metadata
+  const rows = rawDb
+    .prepare(
+      `SELECT
+        ms.media_id as mediaId,
+        ms.score as score,
+        ms.comparison_count as comparisonCount,
+        m.title as title,
+        m.poster_path as moviePosterPath,
+        m.tmdb_id as movieTmdbId,
+        m.poster_override_path as moviePosterOverride
+      FROM media_scores ms
+      JOIN movies m ON ms.media_id = m.id
+      LEFT JOIN watch_history wh ON wh.media_type = 'movie' AND wh.media_id = ms.media_id AND wh.blacklisted = 1
+      LEFT JOIN comparison_staleness cs ON cs.media_type = 'movie' AND cs.media_id = ms.media_id
+      WHERE ms.dimension_id = ?
+        AND ms.media_type = 'movie'
+        AND ms.excluded = 0
+        AND wh.id IS NULL
+        AND COALESCE(cs.staleness, 1.0) >= ?
+      ORDER BY ms.comparison_count ASC, ms.score DESC`
+    )
+    .all(dimensionId, STALENESS_THRESHOLD) as Array<{
+    mediaId: number;
+    score: number;
+    comparisonCount: number;
+    title: string;
+    moviePosterPath: string | null;
+    movieTmdbId: number | null;
+    moviePosterOverride: string | null;
+  }>;
+
+  if (rows.length === 0) return [];
+
+  // If we have 8 or fewer, return them all
+  if (rows.length <= MAX_TIER_LIST_MOVIES) {
+    return rows.map((row) => ({
+      id: row.mediaId,
+      title: row.title,
+      posterUrl: row.moviePosterOverride
+        ? row.moviePosterOverride
+        : row.moviePosterPath && row.movieTmdbId
+          ? `/media/images/movie/${row.movieTmdbId}/poster.jpg`
+          : null,
+      score: Math.round(row.score * 10) / 10,
+      comparisonCount: row.comparisonCount,
+    }));
+  }
+
+  // Sample from quantiles to get a mix of score ranges
+  // Take some from low-comparison-count (already sorted by count ASC)
+  // and sample across score distribution
+  const selected: typeof rows = [];
+  const used = new Set<number>();
+
+  // First: take top 4 by lowest comparison count (highest uncertainty)
+  for (const row of rows) {
+    if (selected.length >= 4) break;
+    selected.push(row);
+    used.add(row.mediaId);
+  }
+
+  // Then: sample remaining 4 from score quantiles
+  const remaining = rows.filter((r) => !used.has(r.mediaId));
+  if (remaining.length > 0) {
+    // Sort remaining by score for quantile sampling
+    remaining.sort((a, b) => a.score - b.score);
+    const quantileCount = Math.min(4, remaining.length);
+    for (let i = 0; i < quantileCount; i++) {
+      const idx = Math.floor((i / quantileCount) * remaining.length);
+      const row = remaining[idx];
+      if (row && !used.has(row.mediaId)) {
+        selected.push(row);
+        used.add(row.mediaId);
+      }
+    }
+  }
+
+  return selected.map((row) => ({
+    id: row.mediaId,
+    title: row.title,
+    posterUrl: row.moviePosterOverride
+      ? row.moviePosterOverride
+      : row.moviePosterPath && row.movieTmdbId
+        ? `/media/images/movie/${row.movieTmdbId}/poster.jpg`
+        : null,
+    score: Math.round(row.score * 10) / 10,
+    comparisonCount: row.comparisonCount,
+  }));
 }
 
 /**

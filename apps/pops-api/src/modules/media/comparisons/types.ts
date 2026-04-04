@@ -264,3 +264,17 @@ export const GetDebriefSchema = z.object({
   sessionId: z.number().int().positive(),
 });
 export type GetDebriefInput = z.infer<typeof GetDebriefSchema>;
+
+export const GetTierListMoviesSchema = z.object({
+  dimensionId: z.number().int().positive(),
+});
+export type GetTierListMoviesInput = z.infer<typeof GetTierListMoviesSchema>;
+
+/** API response shape for a movie in a tier list placement round. */
+export interface TierListMovie {
+  id: number;
+  title: string;
+  posterUrl: string | null;
+  score: number;
+  comparisonCount: number;
+}
