@@ -14,6 +14,9 @@ const mockWatchlistListQuery = vi.fn();
 const mockWatchlistAddMutate = vi.fn() as ReturnType<typeof vi.fn> & {
   _opts?: Record<string, unknown>;
 };
+const mockBlacklistMutate = vi.fn() as ReturnType<typeof vi.fn> & {
+  _opts?: Record<string, unknown>;
+};
 const mockInvalidateRandomPair = vi.fn();
 const mockInvalidateWatchlistList = vi.fn();
 
@@ -37,6 +40,12 @@ vi.mock("../lib/trpc", () => ({
           },
         },
         scores: { fetch: (...args: unknown[]) => mockScoresFetch(...args) },
+        blacklistMovie: {
+          useMutation: (opts: Record<string, unknown>) => {
+            mockBlacklistMutate._opts = opts;
+            return { mutate: mockBlacklistMutate, isPending: false };
+          },
+        },
       },
       watchlist: {
         list: {
@@ -271,5 +280,55 @@ describe("CompareArenaPage", () => {
 
     expect(screen.queryByText("The Matrix")).toBeNull();
     expect(screen.queryByText("Not enough watched movies")).toBeNull();
+  });
+
+  it("renders Not Watched buttons for both movies", () => {
+    setupArena();
+    renderPage();
+
+    expect(screen.getByLabelText("Not watched The Matrix")).toBeTruthy();
+    expect(screen.getByLabelText("Not watched Inception")).toBeTruthy();
+  });
+
+  it("opens confirmation dialog when Not Watched button is clicked", () => {
+    setupArena();
+    renderPage();
+
+    fireEvent.click(screen.getByLabelText("Not watched The Matrix"));
+
+    expect(screen.getByText("Mark as not watched?")).toBeTruthy();
+    expect(screen.getByText(/All comparisons involving this movie/)).toBeTruthy();
+    expect(screen.getByText("Cancel")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Not Watched" })).toBeTruthy();
+  });
+
+  it("calls blacklistMovie mutation on confirm", () => {
+    setupArena();
+    renderPage();
+
+    // Open dialog
+    fireEvent.click(screen.getByLabelText("Not watched Inception"));
+
+    // Confirm
+    fireEvent.click(screen.getByRole("button", { name: "Not Watched" }));
+
+    expect(mockBlacklistMutate).toHaveBeenCalledWith({
+      mediaType: "movie",
+      mediaId: 20,
+    });
+  });
+
+  it("closes dialog on cancel without calling blacklist", () => {
+    setupArena();
+    renderPage();
+
+    // Open dialog
+    fireEvent.click(screen.getByLabelText("Not watched The Matrix"));
+    expect(screen.getByText("Mark as not watched?")).toBeTruthy();
+
+    // Cancel
+    fireEvent.click(screen.getByText("Cancel"));
+
+    expect(mockBlacklistMutate).not.toHaveBeenCalled();
   });
 });
