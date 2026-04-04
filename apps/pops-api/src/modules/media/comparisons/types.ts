@@ -278,3 +278,31 @@ export interface TierListMovie {
   score: number;
   comparisonCount: number;
 }
+
+const TIER_RANKS = ["S", "A", "B", "C", "D"] as const;
+export type Tier = (typeof TIER_RANKS)[number];
+
+export const TierPlacementSchema = z.object({
+  movieId: z.number().int().positive(),
+  tier: z.enum(TIER_RANKS),
+});
+
+export const SubmitTierListSchema = z.object({
+  dimensionId: z.number().int().positive(),
+  placements: z.array(TierPlacementSchema).min(2, "At least 2 placements are required"),
+});
+export type SubmitTierListInput = z.infer<typeof SubmitTierListSchema>;
+
+export interface ScoreChange {
+  movieId: number;
+  oldScore: number;
+  newScore: number;
+}
+
+export interface SubmitTierListResult {
+  comparisonsRecorded: number;
+  scoreChanges: ScoreChange[];
+}
+
+/** Tier rank ordering — lower index = higher tier. */
+export const TIER_RANK_ORDER: Record<Tier, number> = { S: 0, A: 1, B: 2, C: 3, D: 4 };

@@ -23,6 +23,7 @@ import {
   GetDebriefOpponentSchema,
   GetDebriefSchema,
   GetTierListMoviesSchema,
+  SubmitTierListSchema,
   toDimension,
   toComparison,
   toMediaScore,
@@ -250,6 +251,22 @@ export const comparisonsRouter = router({
     } catch (err) {
       if (err instanceof NotFoundError) {
         throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+      }
+      throw err;
+    }
+  }),
+
+  /** Submit a tier list: converts placements to pairwise comparisons + tier overrides. */
+  submitTierList: protectedProcedure.input(SubmitTierListSchema).mutation(({ input }) => {
+    try {
+      const result = service.submitTierList(input);
+      return { data: result, message: "Tier list submitted" };
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+      }
+      if (err instanceof ValidationError) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: err.message });
       }
       throw err;
     }

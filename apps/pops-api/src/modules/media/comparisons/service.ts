@@ -29,8 +29,13 @@ import {
   type DebriefOpponent,
   type PendingDebrief,
   type TierListMovie,
+  type SubmitTierListInput,
+  type SubmitTierListResult,
+  type ScoreChange,
+  TIER_RANK_ORDER,
 } from "./types.js";
 import { getStaleness } from "./staleness.js";
+import { setTierOverride } from "./tier-overrides.js";
 
 // ── Dimensions ──
 
@@ -1782,4 +1787,121 @@ function normalizePairOrder(
   const keyB = `${bType}:${bId}`;
   if (keyA <= keyB) return [aType, aId, bType, bId];
   return [bType, bId, aType, aId];
+}
+
+// ── Tier List Submission ──
+
+/**
+ * Submit a tier list: converts tier placements into pairwise comparisons.
+ *
+ * For each pair of placed movies, the higher-tier movie wins.
+ * Movies in the same tier are recorded as a "mid" draw.
+ * Also sets tier overrides for each placement.
+ *
+ * Returns the number of comparisons recorded and score deltas.
+ */
+export function submitTierList(input: SubmitTierListInput): SubmitTierListResult {
+  const rawDb = getDb();
+  const drizzleDb = getDrizzle();
+
+  // Validate dimension exists and is active
+  const dimension = getDimension(input.dimensionId);
+  if (dimension.active !== 1) {
+    throw new ValidationError("Cannot submit tier list for inactive dimension");
+  }
+
+  // Capture old scores for all placed movies
+  const oldScores = new Map<number, number>();
+  for (const placement of input.placements) {
+    const existing = drizzleDb
+      .select()
+      .from(mediaScores)
+      .where(
+        and(
+          eq(mediaScores.mediaType, "movie"),
+          eq(mediaScores.mediaId, placement.movieId),
+          eq(mediaScores.dimensionId, input.dimensionId)
+        )
+      )
+      .get();
+    oldScores.set(placement.movieId, existing?.score ?? 1500.0);
+  }
+
+  // Generate all pairwise comparisons and record in a transaction
+  let comparisonsRecorded = 0;
+
+  rawDb.transaction(() => {
+    const placements = input.placements;
+
+    for (let i = 0; i < placements.length; i++) {
+      for (let j = i + 1; j < placements.length; j++) {
+        const a = placements[i];
+        const b = placements[j];
+        if (!a || !b) continue;
+
+        const rankA = TIER_RANK_ORDER[a.tier];
+        const rankB = TIER_RANK_ORDER[b.tier];
+
+        const comparisonInput: RecordComparisonInput = {
+          dimensionId: input.dimensionId,
+          mediaAType: "movie",
+          mediaAId: a.movieId,
+          mediaBType: "movie",
+          mediaBId: b.movieId,
+          winnerType: "movie",
+          winnerId: rankA < rankB ? a.movieId : rankB < rankA ? b.movieId : 0,
+          drawTier: rankA === rankB ? "mid" : null,
+        };
+
+        // Insert comparison and update ELO
+        const result = drizzleDb
+          .insert(comparisons)
+          .values({
+            dimensionId: comparisonInput.dimensionId,
+            mediaAType: comparisonInput.mediaAType,
+            mediaAId: comparisonInput.mediaAId,
+            mediaBType: comparisonInput.mediaBType,
+            mediaBId: comparisonInput.mediaBId,
+            winnerType: comparisonInput.winnerType,
+            winnerId: comparisonInput.winnerId,
+            drawTier: comparisonInput.drawTier ?? null,
+          })
+          .run();
+
+        if (Number(result.lastInsertRowid) > 0) {
+          updateEloScores(comparisonInput);
+          comparisonsRecorded++;
+        }
+      }
+    }
+
+    // Set tier overrides for each placement
+    for (const placement of placements) {
+      setTierOverride("movie", placement.movieId, input.dimensionId, placement.tier);
+    }
+  })();
+
+  // Collect score changes
+  const scoreChanges: ScoreChange[] = [];
+  for (const placement of input.placements) {
+    const newRow = drizzleDb
+      .select()
+      .from(mediaScores)
+      .where(
+        and(
+          eq(mediaScores.mediaType, "movie"),
+          eq(mediaScores.mediaId, placement.movieId),
+          eq(mediaScores.dimensionId, input.dimensionId)
+        )
+      )
+      .get();
+
+    scoreChanges.push({
+      movieId: placement.movieId,
+      oldScore: oldScores.get(placement.movieId) ?? 1500.0,
+      newScore: newRow?.score ?? 1500.0,
+    });
+  }
+
+  return { comparisonsRecorded, scoreChanges };
 }
