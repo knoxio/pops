@@ -12,8 +12,6 @@ const mockSaveMutate = vi.fn();
 const mockTestRadarrMutate = vi.fn();
 const mockTestSonarrMutate = vi.fn();
 
-let _saveMutationOpts: Record<string, unknown> = {};
-
 vi.mock("../lib/trpc", () => ({
   trpc: {
     useUtils: () => ({
@@ -27,10 +25,7 @@ vi.mock("../lib/trpc", () => ({
       arr: {
         getSettings: { useQuery: (...args: unknown[]) => mockSettingsQuery(...args) },
         saveSettings: {
-          useMutation: (opts: Record<string, unknown>) => {
-            _saveMutationOpts = opts;
-            return { mutate: mockSaveMutate, isPending: false };
-          },
+          useMutation: () => ({ mutate: mockSaveMutate, isPending: false }),
         },
         testRadarr: {
           useMutation: () => ({
@@ -72,7 +67,6 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockTestRadarrData = null;
   mockTestSonarrData = null;
-  _saveMutationOpts = {};
   mockSettingsQuery.mockReturnValue({
     data: {
       data: {
@@ -172,5 +166,68 @@ describe("ArrSettingsPage", () => {
     expect(saveButtons.length).toBe(2);
     const testButtons = screen.getAllByText("Test Connection");
     expect(testButtons.length).toBe(2);
+  });
+
+  it("saves Radarr independently without affecting Sonarr mutation", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    const [radarrSave] = screen.getAllByText("Save");
+    await user.click(radarrSave!);
+
+    expect(mockSaveMutate).toHaveBeenCalledTimes(1);
+    expect(mockSaveMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ radarrUrl: expect.any(String) })
+    );
+    expect(mockSaveMutate).not.toHaveBeenCalledWith(
+      expect.objectContaining({ sonarrUrl: expect.any(String) })
+    );
+  });
+
+  it("saves Sonarr independently without affecting Radarr mutation", async () => {
+    const user = userEvent.setup();
+    renderPage();
+
+    const [, sonarrSave] = screen.getAllByText("Save");
+    await user.click(sonarrSave!);
+
+    expect(mockSaveMutate).toHaveBeenCalledTimes(1);
+    expect(mockSaveMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ sonarrUrl: expect.any(String) })
+    );
+    expect(mockSaveMutate).not.toHaveBeenCalledWith(
+      expect.objectContaining({ radarrUrl: expect.any(String) })
+    );
+  });
+
+  it("shows https suggestion when Radarr connection fails on http URL", () => {
+    mockTestRadarrData = {
+      data: { configured: true, connected: false, error: "Connection refused" },
+    };
+    renderPage();
+    expect(screen.getByText("Connection refused")).toBeTruthy();
+    expect(screen.getByText("Try using https:// instead")).toBeTruthy();
+  });
+
+  it("does not show https suggestion when URL already uses https", () => {
+    mockSettingsQuery.mockReturnValue({
+      data: {
+        data: {
+          radarrUrl: "https://192.168.1.100:7878",
+          radarrApiKey: "••••••••",
+          radarrHasKey: true,
+          sonarrUrl: "https://192.168.1.100:8989",
+          sonarrApiKey: "••••••••",
+          sonarrHasKey: true,
+        },
+      },
+      isLoading: false,
+      refetch: vi.fn(),
+    });
+    mockTestRadarrData = {
+      data: { configured: true, connected: false, error: "Connection refused" },
+    };
+    renderPage();
+    expect(screen.queryByText("Try using https:// instead")).toBeNull();
   });
 });

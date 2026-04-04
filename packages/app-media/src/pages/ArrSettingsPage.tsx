@@ -112,7 +112,12 @@ function ServiceCard({
         <p className="text-xs text-emerald-400">Connected — v{testResult.version}</p>
       )}
       {testResult && !testResult.connected && (
-        <p className="text-xs text-red-400">{testResult.error ?? "Connection failed"}</p>
+        <div className="space-y-1">
+          <p className="text-xs text-red-400">{testResult.error ?? "Connection failed"}</p>
+          {url.startsWith("http://") && (
+            <p className="text-xs text-muted-foreground">Try using https:// instead</p>
+          )}
+        </div>
       )}
     </div>
   );
@@ -143,12 +148,20 @@ export function ArrSettingsPage() {
     }
   }, [settingsQuery.data?.data]);
 
-  const saveSettings = trpc.media.arr.saveSettings.useMutation({
-    onSuccess: () => {
-      toast.success("Settings saved");
-      void utils.media.arr.getConfig.invalidate();
-    },
-    onError: (err: { message: string }) => toast.error(`Failed to save: ${err.message}`),
+  const onSaveSuccess = () => {
+    toast.success("Settings saved");
+    void utils.media.arr.getConfig.invalidate();
+  };
+  const onSaveError = (err: { message: string }) => toast.error(`Failed to save: ${err.message}`);
+
+  const saveRadarrMutation = trpc.media.arr.saveSettings.useMutation({
+    onSuccess: onSaveSuccess,
+    onError: onSaveError,
+  });
+
+  const saveSonarrMutation = trpc.media.arr.saveSettings.useMutation({
+    onSuccess: onSaveSuccess,
+    onError: onSaveError,
   });
 
   const testRadarr = trpc.media.arr.testRadarr.useMutation();
@@ -210,13 +223,13 @@ export function ArrSettingsPage() {
           onSave={() => {
             const normalizedUrl = ensureProtocol(radarrUrl);
             if (normalizedUrl !== radarrUrl) setRadarrUrl(normalizedUrl);
-            saveSettings.mutate({
+            saveRadarrMutation.mutate({
               radarrUrl: normalizedUrl,
               radarrApiKey,
             });
           }}
           onTest={() => testRadarr.mutate({ url: ensureProtocol(radarrUrl), apiKey: radarrApiKey })}
-          saving={saveSettings.isPending}
+          saving={saveRadarrMutation.isPending}
           testing={testRadarr.isPending}
           testResult={testRadarr.data?.data ?? null}
         />
@@ -232,13 +245,13 @@ export function ArrSettingsPage() {
           onSave={() => {
             const normalizedUrl = ensureProtocol(sonarrUrl);
             if (normalizedUrl !== sonarrUrl) setSonarrUrl(normalizedUrl);
-            saveSettings.mutate({
+            saveSonarrMutation.mutate({
               sonarrUrl: normalizedUrl,
               sonarrApiKey,
             });
           }}
           onTest={() => testSonarr.mutate({ url: ensureProtocol(sonarrUrl), apiKey: sonarrApiKey })}
-          saving={saveSettings.isPending}
+          saving={saveSonarrMutation.isPending}
           testing={testSonarr.isPending}
           testResult={testSonarr.data?.data ?? null}
         />
