@@ -1,7 +1,7 @@
 # PRD-063: Post-Watch Debrief
 
 > Epic: [04 — Ratings & Comparisons](../../epics/04-ratings-comparisons.md)
-> Status: Not started
+> Status: In progress
 
 ## Overview
 
@@ -89,11 +89,11 @@ Rows are created when a watch event is logged — one row per active dimension. 
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 01 | [us-01-debrief-schema](us-01-debrief-schema.md) | debrief_status table, auto-queue on watch event | Not started | Yes |
-| 02 | [us-02-opponent-selection](us-02-opponent-selection.md) | Median-score opponent selection per dimension | Not started | Yes |
-| 03 | [us-03-debrief-api](us-03-debrief-api.md) | tRPC endpoints: getDebrief, recordDebriefComparison, dismissDimension | Not started | Blocked by us-01, us-02 |
-| 04 | [us-04-debrief-page](us-04-debrief-page.md) | Debrief route with comparison cards, dimension progress, bail-out, summary | Not started | Blocked by us-03 |
-| 05 | [us-05-debrief-notifications](us-05-debrief-notifications.md) | History tile button, library banner, detail page button for pending debriefs | Not started | Blocked by us-03 |
+| 01 | [us-01-debrief-schema](us-01-debrief-schema.md) | debrief_status table, auto-queue on watch event | Done | Yes |
+| 02 | [us-02-opponent-selection](us-02-opponent-selection.md) | Median-score opponent selection per dimension | Done | Yes |
+| 03 | [us-03-debrief-api](us-03-debrief-api.md) | tRPC endpoints: getDebrief, recordDebriefComparison, dismissDimension | Partial | Blocked by us-01, us-02 |
+| 04 | [us-04-debrief-page](us-04-debrief-page.md) | Debrief route with comparison cards, dimension progress, bail-out, summary | Partial | Blocked by us-03 |
+| 05 | [us-05-debrief-notifications](us-05-debrief-notifications.md) | History tile button, library banner, detail page button for pending debriefs | Partial | Blocked by us-03 |
 
 US-01 and US-02 can parallelise. US-04 and US-05 can parallelise once US-03 is done.
 

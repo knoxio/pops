@@ -1,7 +1,7 @@
 # US-03: Tier list movie selection
 
 > PRD: [064 — Batch Tier List](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,10 +9,10 @@ As the system, I select 8 movies for a tier list session that maximise informati
 
 ## Acceptance Criteria
 
-- [ ] `getTierListMovies(dimensionId)` returns up to 8 movies
-- [ ] Prefers movies with few comparisons in this dimension (high uncertainty)
-- [ ] Mix of score ranges — not all top-ranked or all bottom-ranked
-- [ ] Excludes: blacklisted, excluded-for-dimension, staleness < 0.3
-- [ ] Returns fewer than 8 if not enough eligible (minimum 2)
-- [ ] Includes poster URL and title for each movie
-- [ ] Tests: returns 8 when available, respects exclusions, mixed score ranges
+- [x] `getTierListMovies(dimensionId)` returns up to 8 movies
+- [x] Prefers movies with few comparisons in this dimension (high uncertainty)
+- [x] Mix of score ranges — not all top-ranked or all bottom-ranked
+- [x] Excludes: blacklisted, excluded-for-dimension, staleness < 0.3
+- [x] Returns fewer than 8 if not enough eligible (minimum 2)
+- [x] Includes poster URL and title for each movie
+- [x] Tests: returns 8 when available, respects exclusions, mixed score ranges
