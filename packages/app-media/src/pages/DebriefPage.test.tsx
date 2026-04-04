@@ -57,15 +57,6 @@ vi.mock("sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
 
-const mockNavigate = vi.fn();
-vi.mock("react-router", async () => {
-  const actual = await vi.importActual("react-router");
-  return {
-    ...actual,
-    useNavigate: () => mockNavigate,
-  };
-});
-
 import { DebriefPage } from "./DebriefPage";
 
 // ── Helpers ──
@@ -164,7 +155,7 @@ describe("DebriefPage", () => {
 
     expect(screen.getByText("Inception")).toBeInTheDocument();
     expect(screen.getByTestId("debrief-header")).toBeInTheDocument();
-    expect(screen.getByAlt("Inception poster")).toBeInTheDocument();
+    expect(screen.getByAltText("Inception poster")).toBeInTheDocument();
   });
 
   it("renders dimension progress badges", () => {
