@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from "react-router";
 // Mock trpc hooks
 const mockMovieQuery = vi.fn();
 const mockWatchHistoryQuery = vi.fn();
+const mockGetStalenessQuery = vi.fn();
 
 vi.mock("../lib/trpc", () => ({
   trpc: {
@@ -14,6 +15,9 @@ vi.mock("../lib/trpc", () => ({
       },
       watchHistory: {
         list: { useQuery: (...args: unknown[]) => mockWatchHistoryQuery(...args) },
+      },
+      comparisons: {
+        getStaleness: { useQuery: (...args: unknown[]) => mockGetStalenessQuery(...args) },
       },
     },
   },
@@ -34,6 +38,9 @@ vi.mock("../components/ArrStatusBadge", () => ({
 }));
 vi.mock("../components/RequestMovieButton", () => ({
   RequestMovieButton: () => null,
+}));
+vi.mock("../components/FreshnessBadge", () => ({
+  FreshnessBadge: () => null,
 }));
 
 import { MovieDetailPage } from "./MovieDetailPage";
@@ -84,6 +91,9 @@ beforeEach(() => {
   });
   mockWatchHistoryQuery.mockReturnValue({
     data: { data: [] },
+  });
+  mockGetStalenessQuery.mockReturnValue({
+    data: { data: { staleness: 1.0 } },
   });
 });
 
