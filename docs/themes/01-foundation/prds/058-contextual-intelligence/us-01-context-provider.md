@@ -1,7 +1,7 @@
 # US-01: Context provider
 
 > PRD: [058 — Contextual Intelligence](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,12 +9,12 @@ As a developer, I want a context provider that tracks the active app and exposes
 
 ## Acceptance Criteria
 
-- [ ] Context provider wraps the app (in shell's provider stack)
-- [ ] Active app detected from URL path (`/media/*` → "media", `/finance/*` → "finance")
-- [ ] Updates automatically on navigation
-- [ ] `useAppContext()` hook returns current context
-- [ ] Default context when no app matched (e.g. root `/`): `{ app: null, page: null, pageType: "top-level" }` — entity and filters are undefined
-- [ ] No re-renders in components that don't consume context
+- [x] Context provider wraps the app (in shell's provider stack)
+- [x] Active app detected from URL path (`/media/*` → "media", `/finance/*` → "finance")
+- [x] Updates automatically on navigation
+- [x] `useAppContext()` hook returns current context
+- [x] Default context when no app matched (e.g. root `/`): `{ app: null, page: null, pageType: "top-level" }` — entity and filters are undefined
+- [x] No re-renders in components that don't consume context
 
 ## Notes
 
