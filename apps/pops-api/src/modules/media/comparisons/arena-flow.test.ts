@@ -253,23 +253,23 @@ describe("arena flow — full lifecycle", () => {
     }
   });
 
-  it("getRandomPair returns null with insufficient movies", async () => {
+  it("getSmartPair returns null with insufficient movies (single movie)", async () => {
     const dimId = seedDimension(db, { name: "Entertainment" });
     seedWatchedMovie(db, 550, "Fight Club"); // only 1 movie
 
-    const pair = await caller.media.comparisons.getRandomPair({
+    const pair = await caller.media.comparisons.getSmartPair({
       dimensionId: dimId,
     });
     expect(pair.data).toBeNull();
     expect(pair.reason).toBe("insufficient_watched_movies");
   });
 
-  it("getRandomPair returns pair with sufficient movies", async () => {
+  it("getSmartPair returns pair with sufficient movies (explicit dimension)", async () => {
     const dimId = seedDimension(db, { name: "Entertainment" });
     const m1 = seedWatchedMovie(db, 550, "Fight Club");
     const m2 = seedWatchedMovie(db, 551, "The Matrix");
 
-    const pair = await caller.media.comparisons.getRandomPair({
+    const pair = await caller.media.comparisons.getSmartPair({
       dimensionId: dimId,
     });
     expect(pair.data).not.toBeNull();
