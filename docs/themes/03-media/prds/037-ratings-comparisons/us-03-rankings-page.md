@@ -1,7 +1,7 @@
 # US-03: Rankings page
 
 > PRD: [037 — Ratings & Comparisons](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -11,16 +11,16 @@ As a user, I want to see a leaderboard of my movies ranked by Elo score so that 
 
 - [x] Rankings page renders at `/media/rankings`
 - [x] Dimension selector dropdown with "Overall" as default plus each active dimension
-- [ ] Selecting a dimension updates the list and persists in `?dimension=` query param
+- [x] Selecting a dimension updates the list and persists in `?dimension=` query param
 - [x] Ranked list displays: rank number, poster thumbnail, title, Elo score (1 decimal place), comparison count
 - [x] "Overall" ranking calculates the average score across all active dimensions for each movie
-- [ ] Movies are sorted by score descending — ties broken alphabetically by title
-- [ ] Movies with zero comparisons display at 1500.0 and sort alphabetically after scored movies
-- [ ] List is paginated (25 items per page) with page navigation
+- [x] Movies are sorted by score descending — ties broken alphabetically by title
+- [x] Movies with zero comparisons display at 1500.0 and sort alphabetically after scored movies
+- [x] List is paginated (25 items per page) with page navigation
 - [x] Empty state: "No comparisons yet — start comparing" with CTA to `/media/compare`
 - [x] Only movies are shown (TV comparisons are out of scope)
 - [x] Page calls `media.comparisons.rankings` with optional dimension ID (omitted for overall)
-- [ ] Tests cover: ranked order matches scores, overall averages correctly, dimension selector switches list, zero-comparison movies sort last alphabetically, pagination, empty state renders
+- [x] Tests cover: ranked order matches scores, overall averages correctly, dimension selector switches list, zero-comparison movies sort last alphabetically, pagination, empty state renders
 
 ## Notes
 
