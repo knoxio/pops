@@ -2,7 +2,15 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { TmdbClient } from "../tmdb/client.js";
 import type { TmdbSearchResponse } from "../tmdb/types.js";
 import type { PreferenceProfile } from "./types.js";
-import { selectTopGenres, getGenreSpotlight } from "./genre-spotlight-service.js";
+
+vi.mock("./flags.js", () => ({
+  getDismissedTmdbIds: vi.fn().mockReturnValue(new Set()),
+}));
+
+import { getDismissedTmdbIds } from "./flags.js";
+import { selectTopGenres, getGenreSpotlight, getGenreSpotlightPage } from "./genre-spotlight-service.js";
+
+const mockGetDismissedTmdbIds = vi.mocked(getDismissedTmdbIds);
 
 /** Build a minimal PreferenceProfile. */
 function makeProfile(overrides: Partial<PreferenceProfile> = {}): PreferenceProfile {
@@ -176,6 +184,24 @@ describe("getGenreSpotlight", () => {
     expect(result.genres).toEqual([]);
   });
 
+  it("excludes dismissed movies from results", async () => {
+    const client = {
+      discoverMovies: vi.fn(async () => makeTmdbResponse([100, 200, 300])),
+    } as unknown as TmdbClient;
+    const profile = makeProfile({
+      genreAffinities: [{ genre: "Comedy", avgScore: 7.5, movieCount: 8, totalComparisons: 15 }],
+    });
+
+    mockGetDismissedTmdbIds.mockReturnValue(new Set([200]));
+
+    const result = await getGenreSpotlight(client, profile, new Set());
+
+    const tmdbIds = result.genres[0]!.results.map((r) => r.tmdbId);
+    expect(tmdbIds).not.toContain(200);
+    expect(tmdbIds).toContain(100);
+    expect(tmdbIds).toContain(300);
+  });
+
   it("calls TMDB discover with correct genre ID and params", async () => {
     const client = makeMockClient();
     const profile = makeProfile({
@@ -190,5 +216,42 @@ describe("getGenreSpotlight", () => {
       voteCountGte: 100,
       page: 1,
     });
+  });
+});
+
+describe("getGenreSpotlightPage — dismissed filtering", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetDismissedTmdbIds.mockReturnValue(new Set());
+  });
+
+  it("excludes dismissed movies from page results", async () => {
+    const client = {
+      discoverMovies: vi.fn(async () => makeTmdbResponse([10, 20, 30])),
+    } as unknown as TmdbClient;
+    const profile = makeProfile();
+
+    mockGetDismissedTmdbIds.mockReturnValue(new Set([20]));
+
+    const result = await getGenreSpotlightPage(client, profile, new Set(), 35, 2);
+
+    const tmdbIds = result.results.map((r) => r.tmdbId);
+    expect(tmdbIds).not.toContain(20);
+    expect(tmdbIds).toContain(10);
+    expect(tmdbIds).toContain(30);
+  });
+
+  it("excludes library movies from page results", async () => {
+    const client = {
+      discoverMovies: vi.fn(async () => makeTmdbResponse([10, 20, 30])),
+    } as unknown as TmdbClient;
+    const profile = makeProfile();
+
+    const result = await getGenreSpotlightPage(client, profile, new Set([10]), 35, 2);
+
+    const tmdbIds = result.results.map((r) => r.tmdbId);
+    expect(tmdbIds).not.toContain(10);
+    expect(tmdbIds).toContain(20);
+    expect(tmdbIds).toContain(30);
   });
 });

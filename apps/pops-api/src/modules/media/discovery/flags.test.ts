@@ -16,7 +16,7 @@ vi.mock("drizzle-orm", () => ({
 }));
 
 import { getDrizzle } from "../../../db.js";
-import { getWatchedTmdbIds, getWatchlistTmdbIds } from "./flags.js";
+import { getWatchedTmdbIds, getWatchlistTmdbIds, getDismissedTmdbIds } from "./flags.js";
 
 const mockGetDrizzle = vi.mocked(getDrizzle);
 
@@ -77,5 +77,40 @@ describe("getWatchlistTmdbIds", () => {
     expect(result.has(300)).toBe(true);
     expect(result.has(400)).toBe(true);
     expect(result.has(999)).toBe(false);
+  });
+});
+
+describe("getDismissedTmdbIds", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns empty Set when no dismissed movies", () => {
+    const mockAll = vi.fn().mockReturnValue([]);
+    mockGetDrizzle.mockReturnValue({ all: mockAll } as unknown as ReturnType<typeof getDrizzle>);
+    const result = getDismissedTmdbIds();
+    expect(result).toBeInstanceOf(Set);
+    expect(result.size).toBe(0);
+  });
+
+  it("returns Set of dismissed TMDB IDs from raw SQL", () => {
+    const mockAll = vi
+      .fn()
+      .mockReturnValue([{ tmdb_id: 500 }, { tmdb_id: 600 }]);
+    mockGetDrizzle.mockReturnValue({ all: mockAll } as unknown as ReturnType<typeof getDrizzle>);
+    const result = getDismissedTmdbIds();
+    expect(result.has(500)).toBe(true);
+    expect(result.has(600)).toBe(true);
+    expect(result.has(999)).toBe(false);
+  });
+
+  it("returns empty Set when table does not exist yet", () => {
+    const mockAll = vi.fn().mockImplementation(() => {
+      throw new Error("no such table: dismissed_discover");
+    });
+    mockGetDrizzle.mockReturnValue({ all: mockAll } as unknown as ReturnType<typeof getDrizzle>);
+    const result = getDismissedTmdbIds();
+    expect(result).toBeInstanceOf(Set);
+    expect(result.size).toBe(0);
   });
 });

@@ -12,6 +12,7 @@ import type {
 } from "./types.js";
 import { TMDB_GENRE_MAP } from "./types.js";
 import { scoreDiscoverResults } from "./service.js";
+import { getDismissedTmdbIds } from "./flags.js";
 
 /** Genre name → TMDB genre ID reverse map. */
 const GENRE_NAME_TO_ID: Record<string, number> = {};
@@ -113,7 +114,7 @@ export async function getGenreSpotlight(
     return { genres: [] };
   }
 
-  // TODO: Exclude dismissed movies once tb-115 (dismissed_discover schema) lands
+  const dismissedIds = getDismissedTmdbIds();
 
   const entries = await Promise.all(
     genres.map(async (genreName) => {
@@ -126,9 +127,9 @@ export async function getGenreSpotlight(
         page: 1,
       });
 
-      // Map to DiscoverResult, excluding library
+      // Map to DiscoverResult, excluding library and dismissed
       const results: DiscoverResult[] = response.results
-        .filter((r) => !libraryIds.has(r.tmdbId))
+        .filter((r) => !libraryIds.has(r.tmdbId) && !dismissedIds.has(r.tmdbId))
         .map((r) => {
           const inLibrary = false;
           return {
@@ -176,6 +177,7 @@ export async function getGenreSpotlightPage(
   page: number
 ): Promise<GenreSpotlightPageResponse> {
   const genreName = TMDB_GENRE_MAP[genreId] ?? "Unknown";
+  const dismissedIds = getDismissedTmdbIds();
 
   const response = await client.discoverMovies({
     genreIds: [genreId],
@@ -185,7 +187,7 @@ export async function getGenreSpotlightPage(
   });
 
   const results: DiscoverResult[] = response.results
-    .filter((r) => !libraryIds.has(r.tmdbId))
+    .filter((r) => !libraryIds.has(r.tmdbId) && !dismissedIds.has(r.tmdbId))
     .map((r) => {
       const inLibrary = false;
       return {

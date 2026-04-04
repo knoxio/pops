@@ -1,6 +1,6 @@
 /**
- * Shared helpers for building Sets of watched and watchlisted TMDB IDs,
- * used to populate isWatched and onWatchlist flags on DiscoverResult objects.
+ * Shared helpers for building Sets of TMDB IDs used by discovery services
+ * to filter and annotate DiscoverResult objects.
  */
 import { eq } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
@@ -28,4 +28,18 @@ export function getWatchlistTmdbIds(): Set<number> {
     .where(eq(mediaWatchlist.mediaType, "movie"))
     .all();
   return new Set(rows.map((r) => r.tmdbId));
+}
+
+/**
+ * Build a Set of dismissed TMDB IDs from dismissed_discover.
+ * Returns an empty set if the table doesn't exist yet.
+ */
+export function getDismissedTmdbIds(): Set<number> {
+  try {
+    const db = getDrizzle();
+    const rows = db.all<{ tmdb_id: number }>(/* sql */ `SELECT tmdb_id FROM dismissed_discover`);
+    return new Set(rows.map((r) => r.tmdb_id));
+  } catch {
+    return new Set();
+  }
 }
