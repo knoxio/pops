@@ -4,7 +4,7 @@
  * Mobile: compact list. Desktop (md+): responsive poster card grid.
  * Each entry has a delete action with confirmation dialog.
  */
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { Link, useNavigate } from "react-router";
 import {
   Alert,
@@ -22,7 +22,7 @@ import {
   Button,
   Skeleton,
 } from "@pops/ui";
-import { Film, Trash2 } from "lucide-react";
+import { ClipboardCheck, Film, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
 import { formatEpisodeCode } from "../lib/format";
@@ -114,10 +114,12 @@ function HistoryItem({
   entry,
   onDelete,
   isDeleting,
+  debriefSessionId,
 }: {
   entry: HistoryEntry;
   onDelete: (id: number) => void;
   isDeleting: boolean;
+  debriefSessionId: number | null;
 }) {
   const href = getHistoryHref(entry);
   const posterSrc = getHistoryPoster(entry);
@@ -170,6 +172,16 @@ function HistoryItem({
             )}
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
+            {debriefSessionId != null && (
+              <Link
+                to={`/media/debrief/${debriefSessionId}`}
+                aria-label="Debrief"
+                className="p-1 h-auto w-auto rounded-sm text-primary hover:bg-primary/10 inline-flex items-center"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <ClipboardCheck className="h-3.5 w-3.5" />
+              </Link>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -195,10 +207,12 @@ function HistoryCard({
   entry,
   onDelete,
   isDeleting,
+  debriefSessionId,
 }: {
   entry: HistoryEntry;
   onDelete: (id: number) => void;
   isDeleting: boolean;
+  debriefSessionId: number | null;
 }) {
   const navigate = useNavigate();
   const [imageError, setImageError] = useState(false);
@@ -239,6 +253,18 @@ function HistoryCard({
         <span className="absolute top-2 right-2 z-10 bg-black/60 text-white text-2xs font-medium px-1.5 py-0.5 rounded">
           {formatShortDate(entry.watchedAt)}
         </span>
+
+        {/* Debrief button — visible on hover when pending */}
+        {debriefSessionId != null && (
+          <Link
+            to={`/media/debrief/${debriefSessionId}`}
+            aria-label="Debrief"
+            onClick={(e) => e.stopPropagation()}
+            className="absolute bottom-2 left-2 z-10 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity p-1.5 h-auto w-auto rounded-md bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center"
+          >
+            <ClipboardCheck className="h-3.5 w-3.5" />
+          </Link>
+        )}
 
         {/* Delete button — visible on hover */}
         <Button
@@ -307,6 +333,15 @@ export function HistoryPage() {
   };
 
   const { data, isLoading, error } = trpc.media.watchHistory.listRecent.useQuery(queryInput);
+  const { data: pendingDebriefs } = trpc.media.comparisons.getPendingDebriefs.useQuery();
+
+  const debriefByMovieId = useMemo(() => {
+    const map = new Map<number, number>();
+    for (const d of pendingDebriefs?.data ?? []) {
+      map.set(d.movieId, d.sessionId);
+    }
+    return map;
+  }, [pendingDebriefs]);
 
   const entries = data?.data ?? [];
   const total = data?.pagination?.total ?? 0;
@@ -389,6 +424,9 @@ export function HistoryPage() {
                 entry={entry}
                 onDelete={handleDeleteClick}
                 isDeleting={deleteMutation.isPending}
+                debriefSessionId={
+                  entry.mediaType === "movie" ? (debriefByMovieId.get(entry.mediaId) ?? null) : null
+                }
               />
             ))}
           </div>
@@ -401,6 +439,9 @@ export function HistoryPage() {
                 entry={entry}
                 onDelete={handleDeleteClick}
                 isDeleting={deleteMutation.isPending}
+                debriefSessionId={
+                  entry.mediaType === "movie" ? (debriefByMovieId.get(entry.mediaId) ?? null) : null
+                }
               />
             ))}
           </div>

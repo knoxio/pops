@@ -14,6 +14,7 @@ vi.mock("sonner", () => ({
 }));
 
 const mockListRecentQuery = vi.fn();
+const mockGetPendingDebriefs = vi.fn();
 const mockDeleteMutate = vi.fn();
 let deleteMutationOpts: Record<string, (...args: unknown[]) => unknown> = {};
 let deleteMutationPending = false;
@@ -32,6 +33,9 @@ vi.mock("../lib/trpc", () => ({
             return { mutate: mockDeleteMutate, isPending: deleteMutationPending };
           },
         },
+      },
+      comparisons: {
+        getPendingDebriefs: { useQuery: () => mockGetPendingDebriefs() },
       },
     },
     useUtils: () => ({
@@ -110,6 +114,7 @@ describe("HistoryPage", () => {
       isLoading: false,
       error: null,
     });
+    mockGetPendingDebriefs.mockReturnValue({ data: null });
   });
 
   describe("episode enrichment", () => {
@@ -354,6 +359,61 @@ describe("HistoryPage", () => {
     it("hides Previous button on first page", () => {
       renderPage();
       expect(screen.queryByText("Previous")).not.toBeInTheDocument();
+    });
+  });
+
+  describe("debrief button", () => {
+    it("shows debrief button for movies with pending debriefs", () => {
+      mockGetPendingDebriefs.mockReturnValue({
+        data: {
+          data: [
+            {
+              sessionId: 42,
+              movieId: 99,
+              title: "The Matrix",
+              posterUrl: null,
+              status: "pending",
+              createdAt: "2026-03-20T00:00:00Z",
+              pendingDimensionCount: 3,
+            },
+          ],
+        },
+      });
+      renderPage();
+      const debriefLinks = screen.getAllByLabelText("Debrief");
+      expect(debriefLinks.length).toBeGreaterThan(0);
+      expect(debriefLinks[0]).toHaveAttribute("href", "/media/debrief/42");
+    });
+
+    it("hides debrief button for movies without pending debriefs", () => {
+      mockGetPendingDebriefs.mockReturnValue({ data: { data: [] } });
+      renderPage();
+      expect(screen.queryByLabelText("Debrief")).not.toBeInTheDocument();
+    });
+
+    it("hides debrief button for episodes", () => {
+      mockListRecentQuery.mockReturnValue({
+        data: { data: [episodeEntry], pagination: { total: 1 } },
+        isLoading: false,
+        error: null,
+      });
+      mockGetPendingDebriefs.mockReturnValue({
+        data: {
+          data: [
+            {
+              sessionId: 10,
+              movieId: 42,
+              title: "Pilot",
+              posterUrl: null,
+              status: "pending",
+              createdAt: "2026-03-20T00:00:00Z",
+              pendingDimensionCount: 2,
+            },
+          ],
+        },
+      });
+      renderPage();
+      expect(screen.queryByLabelText("Debrief")).not.toBeInTheDocument();
     });
   });
 });
