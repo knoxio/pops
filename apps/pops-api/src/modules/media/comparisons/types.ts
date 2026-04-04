@@ -205,3 +205,9 @@ export interface BlacklistMovieResult {
   comparisonsDeleted: number;
   dimensionsRecalculated: number;
 }
+
+export const StalenessSchema = z.object({
+  mediaType: z.enum(MEDIA_TYPES),
+  mediaId: z.number().int().positive(),
+});
+export type StalenessInput = z.infer<typeof StalenessSchema>;

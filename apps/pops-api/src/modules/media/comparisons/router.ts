@@ -15,11 +15,13 @@ import {
   ScoreQuerySchema,
   RandomPairQuerySchema,
   RankingsQuerySchema,
+  StalenessSchema,
   toDimension,
   toComparison,
   toMediaScore,
 } from "./types.js";
 import * as service from "./service.js";
+import * as stalenessService from "./staleness.js";
 import { NotFoundError, ConflictError, ValidationError } from "../../../shared/errors.js";
 
 const DEFAULT_LIMIT = 50;
@@ -147,5 +149,17 @@ export const comparisonsRouter = router({
       data: rows,
       pagination: paginationMeta(total, limit, offset),
     };
+  }),
+
+  /** Mark a media item as stale (compounds ×0.5 each call, floor 0.01). */
+  markStale: protectedProcedure.input(StalenessSchema).mutation(({ input }) => {
+    const staleness = stalenessService.markStale(input.mediaType, input.mediaId);
+    return { data: { staleness } };
+  }),
+
+  /** Get the staleness value for a media item (default 1.0 = fresh). */
+  getStaleness: protectedProcedure.input(StalenessSchema).query(({ input }) => {
+    const staleness = stalenessService.getStaleness(input.mediaType, input.mediaId);
+    return { data: { staleness } };
   }),
 });
