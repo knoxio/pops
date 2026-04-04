@@ -26,6 +26,7 @@ import {
   SubmitTierListSchema,
   DismissDebriefDimensionSchema,
   RecordDebriefComparisonSchema,
+  BatchRecordComparisonsSchema,
   toDimension,
   toComparison,
   toMediaScore,
@@ -277,6 +278,24 @@ export const comparisonsRouter = router({
       throw err;
     }
   }),
+
+  /** Batch record comparisons in a single transaction with ELO updates. */
+  batchRecordComparisons: protectedProcedure
+    .input(BatchRecordComparisonsSchema)
+    .mutation(({ input }) => {
+      try {
+        const result = service.batchRecordComparisons(input.dimensionId, input.comparisons);
+        return { data: result, message: `${result.count} comparisons recorded` };
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+        }
+        if (err instanceof ValidationError) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: err.message });
+        }
+        throw err;
+      }
+    }),
 
   /** Record a debrief comparison (or skip) for a session + dimension. */
   recordDebriefComparison: protectedProcedure

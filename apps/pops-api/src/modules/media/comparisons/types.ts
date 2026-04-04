@@ -322,3 +322,25 @@ export const RecordDebriefComparisonSchema = z.object({
   drawTier: z.enum(DRAW_TIERS).nullable().optional(),
 });
 export type RecordDebriefComparisonInput = z.infer<typeof RecordDebriefComparisonSchema>;
+
+/** Input for a single comparison in a batch. */
+export const BatchComparisonItemSchema = z.object({
+  mediaAType: z.enum(MEDIA_TYPES),
+  mediaAId: z.number().int().positive(),
+  mediaBType: z.enum(MEDIA_TYPES),
+  mediaBId: z.number().int().positive(),
+  winnerType: z.enum(MEDIA_TYPES),
+  winnerId: z.number().int().nonnegative(), // 0 = draw
+  drawTier: z.enum(DRAW_TIERS).nullable().optional(),
+});
+export type BatchComparisonItem = z.infer<typeof BatchComparisonItemSchema>;
+
+export const BatchRecordComparisonsSchema = z.object({
+  dimensionId: z.number().int().positive(),
+  comparisons: z.array(BatchComparisonItemSchema).min(1, "At least 1 comparison is required"),
+});
+export type BatchRecordComparisonsInput = z.infer<typeof BatchRecordComparisonsSchema>;
+
+export interface BatchRecordResult {
+  count: number;
+}

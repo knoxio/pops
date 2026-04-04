@@ -15,6 +15,7 @@ import {
   getDebriefOpponent,
   getPendingDebriefs,
   getTierListMovies,
+  batchRecordComparisons,
 } from "./service.js";
 
 const ctx = setupTestContext();
@@ -2182,5 +2183,199 @@ describe("getTierListMovies", () => {
     expect(result.data).toHaveLength(1);
     expect(result.data[0]!.title).toBe("API Movie");
     expect(result.data[0]!.score).toBe(1500);
+  });
+});
+
+describe("batchRecordComparisons", () => {
+  it("records multiple comparisons in a single batch", () => {
+    const dimId = seedDimension(db, { name: "Batch Dim" });
+    const m1 = seedMovie(db, { title: "Batch A", tmdb_id: 970 });
+    const m2 = seedMovie(db, { title: "Batch B", tmdb_id: 971 });
+    const m3 = seedMovie(db, { title: "Batch C", tmdb_id: 972 });
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: m1,
+      watched_at: "2025-01-01T00:00:00Z",
+    });
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: m2,
+      watched_at: "2025-01-02T00:00:00Z",
+    });
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: m3,
+      watched_at: "2025-01-03T00:00:00Z",
+    });
+
+    const result = batchRecordComparisons(dimId, [
+      {
+        mediaAType: "movie",
+        mediaAId: m1,
+        mediaBType: "movie",
+        mediaBId: m2,
+        winnerType: "movie",
+        winnerId: m1,
+      },
+      {
+        mediaAType: "movie",
+        mediaAId: m2,
+        mediaBType: "movie",
+        mediaBId: m3,
+        winnerType: "movie",
+        winnerId: m3,
+      },
+    ]);
+
+    expect(result.count).toBe(2);
+
+    // Verify comparisons were inserted
+    const rows = db
+      .prepare("SELECT COUNT(*) as cnt FROM comparisons WHERE dimension_id = ?")
+      .get(dimId) as { cnt: number };
+    expect(rows.cnt).toBe(2);
+  });
+
+  it("updates ELO scores for all comparisons", () => {
+    const dimId = seedDimension(db, { name: "ELO Dim" });
+    const m1 = seedMovie(db, { title: "ELO A", tmdb_id: 975 });
+    const m2 = seedMovie(db, { title: "ELO B", tmdb_id: 976 });
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: m1,
+      watched_at: "2025-02-01T00:00:00Z",
+    });
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: m2,
+      watched_at: "2025-02-02T00:00:00Z",
+    });
+
+    batchRecordComparisons(dimId, [
+      {
+        mediaAType: "movie",
+        mediaAId: m1,
+        mediaBType: "movie",
+        mediaBId: m2,
+        winnerType: "movie",
+        winnerId: m1,
+      },
+    ]);
+
+    // Winner should have score > 1500, loser < 1500
+    const scores = db
+      .prepare("SELECT media_id, score FROM media_scores WHERE dimension_id = ? ORDER BY media_id")
+      .all(dimId) as Array<{ media_id: number; score: number }>;
+
+    const winnerScore = scores.find((s) => s.media_id === m1)?.score ?? 0;
+    const loserScore = scores.find((s) => s.media_id === m2)?.score ?? 0;
+    expect(winnerScore).toBeGreaterThan(1500);
+    expect(loserScore).toBeLessThan(1500);
+  });
+
+  it("records draws with correct drawTier", () => {
+    const dimId = seedDimension(db, { name: "Draw Dim" });
+    const m1 = seedMovie(db, { title: "Draw A", tmdb_id: 980 });
+    const m2 = seedMovie(db, { title: "Draw B", tmdb_id: 981 });
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: m1,
+      watched_at: "2025-03-01T00:00:00Z",
+    });
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: m2,
+      watched_at: "2025-03-02T00:00:00Z",
+    });
+
+    const result = batchRecordComparisons(dimId, [
+      {
+        mediaAType: "movie",
+        mediaAId: m1,
+        mediaBType: "movie",
+        mediaBId: m2,
+        winnerType: "movie",
+        winnerId: 0,
+        drawTier: "high",
+      },
+    ]);
+
+    expect(result.count).toBe(1);
+    const row = db
+      .prepare("SELECT draw_tier FROM comparisons WHERE dimension_id = ?")
+      .get(dimId) as { draw_tier: string };
+    expect(row.draw_tier).toBe("high");
+  });
+
+  it("throws for inactive dimension", () => {
+    const dimId = seedDimension(db, { name: "Inactive", active: 0 });
+    const m1 = seedMovie(db, { title: "Err A", tmdb_id: 985 });
+    const m2 = seedMovie(db, { title: "Err B", tmdb_id: 986 });
+
+    expect(() =>
+      batchRecordComparisons(dimId, [
+        {
+          mediaAType: "movie",
+          mediaAId: m1,
+          mediaBType: "movie",
+          mediaBId: m2,
+          winnerType: "movie",
+          winnerId: m1,
+        },
+      ])
+    ).toThrow();
+  });
+
+  it("rolls back all on failure (non-existent dimension)", () => {
+    expect(() =>
+      batchRecordComparisons(99999, [
+        {
+          mediaAType: "movie",
+          mediaAId: 1,
+          mediaBType: "movie",
+          mediaBId: 2,
+          winnerType: "movie",
+          winnerId: 1,
+        },
+      ])
+    ).toThrow();
+
+    const rows = db
+      .prepare("SELECT COUNT(*) as cnt FROM comparisons WHERE dimension_id = 99999")
+      .get() as { cnt: number };
+    expect(rows.cnt).toBe(0);
+  });
+
+  it("works via tRPC endpoint", async () => {
+    const dimId = seedDimension(db, { name: "tRPC Batch Dim" });
+    const m1 = seedMovie(db, { title: "tRPC A", tmdb_id: 990 });
+    const m2 = seedMovie(db, { title: "tRPC B", tmdb_id: 991 });
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: m1,
+      watched_at: "2025-04-01T00:00:00Z",
+    });
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: m2,
+      watched_at: "2025-04-02T00:00:00Z",
+    });
+
+    const result = await caller.media.comparisons.batchRecordComparisons({
+      dimensionId: dimId,
+      comparisons: [
+        {
+          mediaAType: "movie",
+          mediaAId: m1,
+          mediaBType: "movie",
+          mediaBId: m2,
+          winnerType: "movie",
+          winnerId: m1,
+        },
+      ],
+    });
+
+    expect(result.data.count).toBe(1);
+    expect(result.message).toBe("1 comparisons recorded");
   });
 });

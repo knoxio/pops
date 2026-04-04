@@ -34,6 +34,8 @@ import {
   type ScoreChange,
   TIER_RANK_ORDER,
   type RecordDebriefComparisonInput,
+  type BatchComparisonItem,
+  type BatchRecordResult,
 } from "./types.js";
 import { getStaleness } from "./staleness.js";
 import { setTierOverride } from "./tier-overrides.js";
@@ -1858,6 +1860,67 @@ function normalizePairOrder(
   return [bType, bId, aType, aId];
 }
 
+// ── Batch Record Comparisons ──
+
+/**
+ * Record multiple comparisons in a single transaction with ELO updates.
+ *
+ * All-or-nothing: if any comparison fails, the entire batch is rolled back.
+ * Each comparison is inserted and its ELO scores are updated within the
+ * same transaction. Returns the total count of comparisons recorded.
+ */
+export function batchRecordComparisons(
+  dimensionId: number,
+  items: BatchComparisonItem[]
+): BatchRecordResult {
+  const rawDb = getDb();
+  const drizzleDb = getDrizzle();
+
+  // Validate dimension exists and is active
+  const dimension = getDimension(dimensionId);
+  if (dimension.active !== 1) {
+    throw new ValidationError("Cannot record comparisons for inactive dimension");
+  }
+
+  let count = 0;
+
+  rawDb.transaction(() => {
+    for (const item of items) {
+      const comparisonInput: RecordComparisonInput = {
+        dimensionId,
+        mediaAType: item.mediaAType,
+        mediaAId: item.mediaAId,
+        mediaBType: item.mediaBType,
+        mediaBId: item.mediaBId,
+        winnerType: item.winnerType,
+        winnerId: item.winnerId,
+        drawTier: item.drawTier ?? null,
+      };
+
+      const result = drizzleDb
+        .insert(comparisons)
+        .values({
+          dimensionId: comparisonInput.dimensionId,
+          mediaAType: comparisonInput.mediaAType,
+          mediaAId: comparisonInput.mediaAId,
+          mediaBType: comparisonInput.mediaBType,
+          mediaBId: comparisonInput.mediaBId,
+          winnerType: comparisonInput.winnerType,
+          winnerId: comparisonInput.winnerId,
+          drawTier: comparisonInput.drawTier ?? null,
+        })
+        .run();
+
+      if (Number(result.lastInsertRowid) > 0) {
+        updateEloScores(comparisonInput);
+        count++;
+      }
+    }
+  })();
+
+  return { count };
+}
+
 // ── Tier List Submission ──
 
 /**
@@ -1896,51 +1959,60 @@ export function submitTierList(input: SubmitTierListInput): SubmitTierListResult
     oldScores.set(placement.movieId, existing?.score ?? 1500.0);
   }
 
-  // Generate all pairwise comparisons and record in a transaction
+  // Generate pairwise comparisons from tier placements
+  const batchItems: BatchComparisonItem[] = [];
+  const placements = input.placements;
+
+  for (let i = 0; i < placements.length; i++) {
+    for (let j = i + 1; j < placements.length; j++) {
+      const a = placements[i];
+      const b = placements[j];
+      if (!a || !b) continue;
+
+      const rankA = TIER_RANK_ORDER[a.tier];
+      const rankB = TIER_RANK_ORDER[b.tier];
+
+      batchItems.push({
+        mediaAType: "movie",
+        mediaAId: a.movieId,
+        mediaBType: "movie",
+        mediaBId: b.movieId,
+        winnerType: "movie",
+        winnerId: rankA < rankB ? a.movieId : rankB < rankA ? b.movieId : 0,
+        drawTier: rankA === rankB ? "mid" : null,
+      });
+    }
+  }
+
+  // Record comparisons in batch, then set tier overrides in same transaction
   let comparisonsRecorded = 0;
 
   rawDb.transaction(() => {
-    const placements = input.placements;
+    // Insert comparisons and update ELO
+    for (const item of batchItems) {
+      const comparisonInput: RecordComparisonInput = {
+        dimensionId: input.dimensionId,
+        ...item,
+        drawTier: item.drawTier ?? null,
+      };
 
-    for (let i = 0; i < placements.length; i++) {
-      for (let j = i + 1; j < placements.length; j++) {
-        const a = placements[i];
-        const b = placements[j];
-        if (!a || !b) continue;
+      const result = drizzleDb
+        .insert(comparisons)
+        .values({
+          dimensionId: comparisonInput.dimensionId,
+          mediaAType: comparisonInput.mediaAType,
+          mediaAId: comparisonInput.mediaAId,
+          mediaBType: comparisonInput.mediaBType,
+          mediaBId: comparisonInput.mediaBId,
+          winnerType: comparisonInput.winnerType,
+          winnerId: comparisonInput.winnerId,
+          drawTier: comparisonInput.drawTier ?? null,
+        })
+        .run();
 
-        const rankA = TIER_RANK_ORDER[a.tier];
-        const rankB = TIER_RANK_ORDER[b.tier];
-
-        const comparisonInput: RecordComparisonInput = {
-          dimensionId: input.dimensionId,
-          mediaAType: "movie",
-          mediaAId: a.movieId,
-          mediaBType: "movie",
-          mediaBId: b.movieId,
-          winnerType: "movie",
-          winnerId: rankA < rankB ? a.movieId : rankB < rankA ? b.movieId : 0,
-          drawTier: rankA === rankB ? "mid" : null,
-        };
-
-        // Insert comparison and update ELO
-        const result = drizzleDb
-          .insert(comparisons)
-          .values({
-            dimensionId: comparisonInput.dimensionId,
-            mediaAType: comparisonInput.mediaAType,
-            mediaAId: comparisonInput.mediaAId,
-            mediaBType: comparisonInput.mediaBType,
-            mediaBId: comparisonInput.mediaBId,
-            winnerType: comparisonInput.winnerType,
-            winnerId: comparisonInput.winnerId,
-            drawTier: comparisonInput.drawTier ?? null,
-          })
-          .run();
-
-        if (Number(result.lastInsertRowid) > 0) {
-          updateEloScores(comparisonInput);
-          comparisonsRecorded++;
-        }
+      if (Number(result.lastInsertRowid) > 0) {
+        updateEloScores(comparisonInput);
+        comparisonsRecorded++;
       }
     }
 
