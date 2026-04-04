@@ -28,6 +28,17 @@ export interface SearchResultsPanelProps {
   onResultClick?: (uri: string) => void;
 }
 
+const COLOR_CLASSES: Record<string, string> = {
+  purple: "text-purple-600 dark:text-purple-400",
+  green: "text-green-600 dark:text-green-400",
+  blue: "text-blue-600 dark:text-blue-400",
+  red: "text-red-600 dark:text-red-400",
+  orange: "text-orange-600 dark:text-orange-400",
+  yellow: "text-yellow-600 dark:text-yellow-400",
+  pink: "text-pink-600 dark:text-pink-400",
+  cyan: "text-cyan-600 dark:text-cyan-400",
+};
+
 function SectionHeader({
   icon,
   label,
@@ -39,9 +50,11 @@ function SectionHeader({
   count: number;
   color: string;
 }) {
+  const colorClass = COLOR_CLASSES[color] ?? "text-foreground";
+
   return (
     <div
-      className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-${color}-600 dark:text-${color}-400`}
+      className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide ${colorClass}`}
       data-testid={`section-header-${label.toLowerCase().replace(/\s+/g, "-")}`}
     >
       {icon}
