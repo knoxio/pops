@@ -11,7 +11,7 @@ Build `@pops/ui` — a workspace package containing all shared UI components, de
 | # | PRD | Summary | Status |
 |---|-----|---------|--------|
 | 002 | [Design Tokens & Theming](../prds/002-design-tokens-theming/README.md) | Tailwind v4 config, colour system (including app colour variable), spacing, typography, breakpoints | Partial |
-| 003 | [Components](../prds/003-components/README.md) | Primitive (Shadcn/Radix) and composite components, all consuming design tokens — no hardcoded colours | Done |
+| 003 | [Components](../prds/003-components/README.md) | Primitive (Shadcn/Radix) and composite components, all consuming design tokens — no hardcoded colours | Partial |
 | 004 | [Storybook](../prds/004-storybook/README.md) | Config, story discovery across all packages, co-location pattern | Done |
 
 PRD-002 goes first (tokens before components). PRD-003 and PRD-004 can parallelise after that.

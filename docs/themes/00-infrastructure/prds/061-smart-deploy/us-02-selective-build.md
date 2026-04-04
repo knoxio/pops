@@ -9,16 +9,16 @@ As a developer, I want the deploy to only rebuild and restart services that chan
 
 ## Acceptance Criteria
 
-- [ ] Deploy job reads outputs from path detection (us-01)
-- [ ] If `frontend` is true and `infra` is false: run `docker compose build pops-shell && docker compose up -d pops-shell`
-- [ ] If `backend` is true and `infra` is false: run `docker compose build pops-api && docker compose up -d pops-api`
-- [ ] If both `frontend` and `backend` are true: build and restart both (but not third-party images)
-- [ ] If `infra` is true: run full Ansible deploy (current behaviour)
-- [ ] Docker commands run in the compose directory on the N95 (`/opt/pops`)
-- [ ] Git pull runs before any build to get latest code
-- [ ] Docker layer caching reduces rebuild time for incremental changes
-- [ ] Manual `workflow_dispatch` always triggers full deploy regardless of path detection
-- [ ] Deploy step logs which mode is running: "Selective deploy: frontend only" / "Full deploy"
+- [x] Deploy job reads outputs from path detection (us-01)
+- [x] If `frontend` is true and `infra` is false: run `docker compose build pops-shell && docker compose up -d pops-shell`
+- [x] If `backend` is true and `infra` is false: run `docker compose build pops-api && docker compose up -d pops-api`
+- [x] If both `frontend` and `backend` are true: build and restart both (but not third-party images)
+- [x] If `infra` is true: run full Ansible deploy (current behaviour)
+- [x] Docker commands run in the compose directory on the N95 (`/opt/pops`)
+- [x] Git pull runs before any build to get latest code
+- [x] Docker layer caching reduces rebuild time for incremental changes
+- [x] Manual `workflow_dispatch` always triggers full deploy regardless of path detection
+- [x] Deploy step logs which mode is running: "Selective deploy: frontend only" / "Full deploy"
 
 ## Notes
 

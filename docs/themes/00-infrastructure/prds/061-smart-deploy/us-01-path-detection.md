@@ -9,10 +9,10 @@ As a developer, I want the deploy workflow to detect which categories of files c
 
 ## Acceptance Criteria
 
-- [ ] New `detect-changes` job in `deploy.yml` runs before the deploy job
-- [ ] Uses `git diff --name-only HEAD~1..HEAD` to list changed files in the merge commit
-- [ ] Categorises changed paths into outputs: `frontend`, `backend`, `infra`, `skip_deploy`
-- [ ] Path-to-category mapping:
+- [x] New `detect-changes` job in `deploy.yml` runs before the deploy job
+- [x] Uses `git diff --name-only HEAD~1..HEAD` to list changed files in the merge commit
+- [x] Categorises changed paths into outputs: `frontend`, `backend`, `infra`, `skip_deploy`
+- [x] Path-to-category mapping:
 
 | Pattern | Category |
 |---------|----------|
@@ -21,11 +21,11 @@ As a developer, I want the deploy workflow to detect which categories of files c
 | `infra/**`, `docker-compose*`, `apps/pops-shell/nginx.conf` | infra |
 | `docs/**`, `.github/**`, `*.md`, `packages/test-utils/**` | skip (only if no other category matched) |
 
-- [ ] Multiple categories can be true simultaneously (e.g., frontend + backend)
-- [ ] If `infra` is true, all other categories are ignored (full deploy)
-- [ ] If only `skip` paths changed, `skip_deploy` is true
-- [ ] Outputs are available to downstream jobs via `needs.detect-changes.outputs.*`
-- [ ] Tests: verify category assignment for representative path combinations
+- [x] Multiple categories can be true simultaneously (e.g., frontend + backend)
+- [x] If `infra` is true, all other categories are ignored (full deploy)
+- [x] If only `skip` paths changed, `skip_deploy` is true
+- [x] Outputs are available to downstream jobs via `needs.detect-changes.outputs.*`
+- [x] Tests: verify category assignment for representative path combinations
 
 ## Notes
 

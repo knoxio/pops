@@ -9,19 +9,19 @@ As a developer, I want the GitHub Actions self-hosted runner to be set up automa
 
 ## Acceptance Criteria
 
-- [ ] New Ansible role `github-runner` under `infra/ansible/roles/`
-- [ ] Role installs the GitHub Actions runner binary (latest x64 Linux release)
-- [ ] Role configures the runner with the repo URL and a registration token
-- [ ] Role installs the runner as a systemd service (`svc.sh install`)
-- [ ] Role ensures the service is enabled and started
-- [ ] Role is idempotent — running it again on an already-configured runner is a no-op
-- [ ] Registration token is fetched via the GitHub API (requires a PAT or app token stored in Ansible Vault)
-- [ ] Runner labels: `self-hosted`, `linux`, `x64`, `n95`
-- [ ] Runner name: `pops-n95`
-- [ ] Role included in `playbooks/site.yml` (full provision) but NOT in `playbooks/deploy.yml` (service deploy only)
-- [ ] Ansible vault password file is created at `~/.ansible/pops-vault-password` with correct permissions (600)
-- [ ] Ansible itself is installed (via apt) as a dependency
-- [ ] Tests: role runs cleanly on a fresh Ubuntu 24.04 host (can be tested via `--check` mode)
+- [x] New Ansible role `github-runner` under `infra/ansible/roles/`
+- [x] Role installs the GitHub Actions runner binary (latest x64 Linux release)
+- [x] Role configures the runner with the repo URL and a registration token
+- [x] Role installs the runner as a systemd service (`svc.sh install`)
+- [x] Role ensures the service is enabled and started
+- [x] Role is idempotent — running it again on an already-configured runner is a no-op
+- [x] Registration token is fetched via the GitHub API (requires a PAT or app token stored in Ansible Vault)
+- [x] Runner labels: `self-hosted`, `linux`, `x64`, `n95`
+- [x] Runner name: `pops-n95`
+- [x] Role included in `playbooks/site.yml` (full provision) but NOT in `playbooks/deploy.yml` (service deploy only)
+- [x] Ansible vault password file is created at `~/.ansible/pops-vault-password` with correct permissions (600)
+- [x] Ansible itself is installed (via apt) as a dependency
+- [x] Tests: role runs cleanly on a fresh Ubuntu 24.04 host (can be tested via `--check` mode)
 
 ## Notes
 

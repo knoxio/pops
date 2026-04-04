@@ -9,11 +9,11 @@ As a developer, I want the deploy pipeline to verify services are healthy after 
 
 ## Acceptance Criteria
 
-- [ ] After selective restart, wait 10 seconds for services to stabilise
-- [ ] Check pops-api health: `docker exec pops-api wget -qO- http://localhost:3000/health`
-- [ ] Check pops-shell health: `docker exec pops-shell wget -qO- http://localhost:80` (or curl equivalent)
-- [ ] Only check the service(s) that were restarted (not all services)
-- [ ] If health check fails, log the failure and trigger a full Ansible deploy as recovery
-- [ ] If full deploy also fails, the workflow fails (no infinite retry)
-- [ ] Health check results logged: "pops-api: healthy" / "pops-shell: healthy"
-- [ ] On failure, show last 50 lines of the failed container's logs for debugging
+- [x] After selective restart, wait 10 seconds for services to stabilise
+- [x] Check pops-api health: `docker exec pops-api wget -qO- http://localhost:3000/health`
+- [x] Check pops-shell health: `docker exec pops-shell wget -qO- http://localhost:80` (or curl equivalent)
+- [x] Only check the service(s) that were restarted (not all services)
+- [x] If health check fails, log the failure and trigger a full Ansible deploy as recovery
+- [x] If full deploy also fails, the workflow fails (no infinite retry)
+- [x] Health check results logged: "pops-api: healthy" / "pops-shell: healthy"
+- [x] On failure, show last 50 lines of the failed container's logs for debugging

@@ -1,7 +1,7 @@
 # US-03: AI app scaffold
 
 > PRD: [052 — AI Usage & Cost Tracking](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -10,7 +10,7 @@ As a developer, I want `@pops/app-ai` as a workspace package registered in the s
 ## Acceptance Criteria
 
 - [x] `packages/app-ai/` exists with package.json, tsconfig, routes.tsx
-- [ ] NavConfig exported: id "ai", label "AI", icon "Brain", color "violet", basePath "/ai" — id/label/color/basePath correct; icon is "BarChart3" not "Brain"
+- [x] NavConfig exported: id "ai", label "AI", icon "Bot", color "violet", basePath "/ai"
 - [x] Registered in shell router at `/ai/*`
 - [x] Lazy-loaded from the shell (via `withSuspense`)
 - [x] AI usage page accessible at `/ai`

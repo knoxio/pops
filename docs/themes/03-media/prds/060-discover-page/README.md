@@ -1,7 +1,7 @@
 # PRD-060: Discover Page
 
 > Epic: [05 — Discovery & Recommendations](../../epics/05-discovery-recommendations.md)
-> Status: Not started
+> Status: Partial
 
 ## Overview
 

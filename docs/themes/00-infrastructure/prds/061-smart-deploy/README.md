@@ -1,7 +1,7 @@
 # PRD-061: Smart Deploy Pipeline
 
 > Epic: [04 — CI/CD Pipelines](../../epics/04-cicd-pipelines.md)
-> Status: Not started
+> Status: Done
 
 ## Overview
 
