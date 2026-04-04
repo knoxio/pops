@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import type { Database } from "better-sqlite3";
-import { setupTestContext, seedMovie, seedWatchHistoryEntry } from "../../../shared/test-utils.js";
-import { createDebriefSession } from "./service.js";
+import {
+  setupTestContext,
+  seedMovie,
+  seedDimension,
+  seedWatchHistoryEntry,
+} from "../../../shared/test-utils.js";
+import { createDebriefSession, getDebrief } from "./service.js";
 import * as watchHistoryService from "../watch-history/service.js";
 
 const ctx = setupTestContext();
@@ -97,6 +102,102 @@ describe("debrief auto-queue", () => {
       expect(sessions).toHaveLength(2);
       expect(sessions[0]!.status).toBe("complete");
       expect(sessions[1]!.status).toBe("pending");
+    });
+  });
+
+  describe("getDebrief", () => {
+    it("returns session with movie info and pending dimensions", () => {
+      seedMovie(db, { title: "The Matrix", tmdb_id: 100 });
+      const dimId = seedDimension(db, { name: "Enjoyment" });
+      const whId = seedWatchHistoryEntry(db, {
+        media_type: "movie",
+        media_id: 1,
+        completed: 1,
+      });
+      const sessionId = createDebriefSession(whId);
+
+      const result = getDebrief(sessionId);
+
+      expect(result.sessionId).toBe(sessionId);
+      expect(result.status).toBe("active"); // transitions from pending
+      expect(result.movie.title).toBe("The Matrix");
+      expect(result.movie.mediaType).toBe("movie");
+      expect(result.movie.mediaId).toBe(1);
+      expect(result.dimensions).toHaveLength(1);
+      expect(result.dimensions[0]!.dimensionId).toBe(dimId);
+      expect(result.dimensions[0]!.name).toBe("Enjoyment");
+      expect(result.dimensions[0]!.status).toBe("pending");
+      expect(result.dimensions[0]!.comparisonId).toBeNull();
+    });
+
+    it("transitions pending session to active on first read", () => {
+      seedMovie(db, { title: "The Matrix", tmdb_id: 100 });
+      const whId = seedWatchHistoryEntry(db, {
+        media_type: "movie",
+        media_id: 1,
+        completed: 1,
+      });
+      const sessionId = createDebriefSession(whId);
+
+      // First read: transitions pending → active
+      const result1 = getDebrief(sessionId);
+      expect(result1.status).toBe("active");
+
+      // Second read: stays active
+      const result2 = getDebrief(sessionId);
+      expect(result2.status).toBe("active");
+    });
+
+    it("marks dimension as complete when debrief_result exists", () => {
+      seedMovie(db, { title: "The Matrix", tmdb_id: 100 });
+      seedMovie(db, { title: "Inception", tmdb_id: 200 });
+      const dimId = seedDimension(db, { name: "Enjoyment" });
+      const whId = seedWatchHistoryEntry(db, {
+        media_type: "movie",
+        media_id: 1,
+        completed: 1,
+      });
+      const sessionId = createDebriefSession(whId);
+
+      // Create a real comparison to satisfy FK constraint
+      const compId = db
+        .prepare(
+          `INSERT INTO comparisons (dimension_id, media_a_type, media_a_id, media_b_type, media_b_id, winner_type, winner_id)
+           VALUES (?, 'movie', 1, 'movie', 2, 'movie', 1)`
+        )
+        .run(dimId).lastInsertRowid as number;
+
+      // Insert a debrief result for this dimension
+      db.prepare(
+        "INSERT INTO debrief_results (session_id, dimension_id, comparison_id) VALUES (?, ?, ?)"
+      ).run(sessionId, dimId, compId);
+
+      const result = getDebrief(sessionId);
+
+      expect(result.dimensions).toHaveLength(1);
+      expect(result.dimensions[0]!.status).toBe("complete");
+      expect(result.dimensions[0]!.comparisonId).toBe(Number(compId));
+    });
+
+    it("throws NotFoundError for non-existent session", () => {
+      expect(() => getDebrief(999)).toThrow("Debrief session '999' not found");
+    });
+
+    it("only includes active dimensions", () => {
+      seedMovie(db, { title: "The Matrix", tmdb_id: 100 });
+      seedDimension(db, { name: "Active Dim", active: 1 });
+      seedDimension(db, { name: "Inactive Dim", active: 0 });
+      const whId = seedWatchHistoryEntry(db, {
+        media_type: "movie",
+        media_id: 1,
+        completed: 1,
+      });
+      const sessionId = createDebriefSession(whId);
+
+      const result = getDebrief(sessionId);
+
+      expect(result.dimensions).toHaveLength(1);
+      expect(result.dimensions[0]!.name).toBe("Active Dim");
     });
   });
 

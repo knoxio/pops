@@ -21,12 +21,14 @@ import {
   StalenessSchema,
   RecordSkipSchema,
   GetDebriefOpponentSchema,
+  GetDebriefSchema,
   toDimension,
   toComparison,
   toMediaScore,
 } from "./types.js";
 import * as service from "./service.js";
 import * as stalenessService from "./staleness.js";
+import * as debriefService from "../debrief/service.js";
 import { NotFoundError, ConflictError, ValidationError } from "../../../shared/errors.js";
 
 const DEFAULT_LIMIT = 50;
@@ -250,6 +252,19 @@ export const comparisonsRouter = router({
         input.mediaBId
       );
       return { data: { skipUntil }, message: "Skip recorded" };
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+      }
+      throw err;
+    }
+  }),
+
+  /** Get a debrief session with movie info, dimensions, and opponents. */
+  getDebrief: protectedProcedure.input(GetDebriefSchema).query(({ input }) => {
+    try {
+      const debrief = debriefService.getDebrief(input.sessionId);
+      return { data: debrief };
     } catch (err) {
       if (err instanceof NotFoundError) {
         throw new TRPCError({ code: "NOT_FOUND", message: err.message });
