@@ -13,7 +13,13 @@ export {
 export type { ResultComponent, ResultComponentProps } from "./result-component-registry";
 
 export { AppContextProvider } from "./AppContextProvider";
-export { useAppContext, useSetPageContext, useCurrentApp, useCurrentEntity, useSearchResultNavigation } from "./hooks";
+export {
+  useAppContext,
+  useSetPageContext,
+  useCurrentApp,
+  useCurrentEntity,
+  useSearchResultNavigation,
+} from "./hooks";
 export type { SetPageContextOptions } from "./hooks";
 export { resolveUri } from "./uri-resolver";
 export type { AppContext, AppContextEntity, AppName } from "./types";
