@@ -61,13 +61,13 @@ describe("DebriefBanner", () => {
     expect(screen.getByText("2 movies to debrief")).toBeInTheDocument();
   });
 
-  it("links to first pending debrief session", () => {
+  it("links to first pending debrief movie", () => {
     mockGetPendingDebriefs.mockReturnValue({
       data: { data: [pendingDebrief] },
     });
     renderBanner();
     const link = screen.getByText("Start debrief");
-    expect(link.closest("a")).toHaveAttribute("href", "/media/debrief/42");
+    expect(link.closest("a")).toHaveAttribute("href", "/media/debrief/99");
   });
 
   it("dismiss hides banner", async () => {
