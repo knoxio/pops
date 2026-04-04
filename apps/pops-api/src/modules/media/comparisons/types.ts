@@ -104,6 +104,11 @@ export interface RandomPair {
   movieB: RandomPairMovie;
 }
 
+/** API response shape for a smart pair — includes the auto-selected dimension. */
+export interface SmartPairResult extends RandomPair {
+  dimensionId: number;
+}
+
 /** Zod schema for getRandomPair query. */
 export const RandomPairQuerySchema = z.object({
   dimensionId: z.number().int().positive(),
