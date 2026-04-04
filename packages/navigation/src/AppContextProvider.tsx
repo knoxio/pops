@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useLayoutEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "react-router";
 import { AppContextCtx } from "./context.js";
 import type { AppContext, AppName } from "./types.js";
@@ -48,8 +48,15 @@ export function AppContextProvider({ children }: AppContextProviderProps) {
     Partial<Pick<AppContext, "page" | "pageType" | "entity" | "filters">>
   >({});
 
-  // Reset page-level context whenever the user navigates to a new path.
+  // Reset page-level context when the user navigates to a new path.
+  // Skip on initial mount — child useLayoutEffect (useSetPageContext) fires before parent
+  // and would be overwritten if we reset unconditionally on every pathname value.
+  const isMounted = useRef(false);
   useLayoutEffect(() => {
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
     setPageContextState({});
   }, [pathname]);
 
