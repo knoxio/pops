@@ -110,9 +110,7 @@ describe("highlightMatch", () => {
   });
 
   it("highlights contains match", () => {
-    const { container } = render(
-      <span>{highlightMatch("The Shogun", "Shogun", "contains")}</span>
-    );
+    const { container } = render(<span>{highlightMatch("The Shogun", "Shogun", "contains")}</span>);
     const mark = container.querySelector("mark");
     expect(mark).toHaveTextContent("Shogun");
   });
@@ -124,9 +122,7 @@ describe("highlightMatch", () => {
   });
 
   it("returns plain text when no match found", () => {
-    const { container } = render(
-      <span>{highlightMatch("Severance", "XYZ", "contains")}</span>
-    );
+    const { container } = render(<span>{highlightMatch("Severance", "XYZ", "contains")}</span>);
     expect(container.querySelector("mark")).toBeNull();
     expect(container.textContent).toBe("Severance");
   });

@@ -21,11 +21,7 @@ interface TvShowHitData {
  * Highlight the matched portion of text based on query and match type.
  * Returns React nodes with the matched text wrapped in a <mark>.
  */
-export function highlightMatch(
-  text: string,
-  query: string,
-  matchType: string
-): React.ReactNode {
+export function highlightMatch(text: string, query: string, matchType: string): React.ReactNode {
   if (!query) return text;
 
   const lowerText = text.toLowerCase();
