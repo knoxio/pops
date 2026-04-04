@@ -1,7 +1,22 @@
 import { useState, useCallback, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
-import { Badge, Skeleton, Button, Tooltip, TooltipContent, TooltipTrigger } from "@pops/ui";
-import { ImageOff, Bookmark, ChevronUp, Minus, ChevronDown, Clock } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Badge,
+  Skeleton,
+  Button,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@pops/ui";
+import { ImageOff, Bookmark, ChevronUp, Minus, ChevronDown, Clock, X } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
 import { DimensionManager } from "../components/DimensionManager";
@@ -191,6 +206,31 @@ export function CompareArenaPage() {
     );
   }, [pairData, dimensionId, naIsPending, excludeAMutation, excludeBMutation, utils]);
 
+  // Blacklist (Not Watched) mutation
+  const [blacklistTarget, setBlacklistTarget] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
+
+  const blacklistMutation = trpc.media.comparisons.blacklistMovie.useMutation({
+    onSuccess: (_data: unknown, variables: { mediaType: string; mediaId: number }) => {
+      const movie =
+        variables.mediaId === movieAId ? pairData?.data?.movieA : pairData?.data?.movieB;
+      toast.success(`${movie?.title ?? "Movie"} marked as not watched`);
+      setBlacklistTarget(null);
+      utils.media.comparisons.getRandomPair.invalidate();
+    },
+  });
+
+  const handleBlacklist = useCallback((movie: { id: number; title: string }) => {
+    setBlacklistTarget(movie);
+  }, []);
+
+  const confirmBlacklist = useCallback(() => {
+    if (!blacklistTarget) return;
+    blacklistMutation.mutate({ mediaType: "movie", mediaId: blacklistTarget.id });
+  }, [blacklistTarget, blacklistMutation]);
+
   const handleAddToWatchlist = useCallback(
     (movieId: number) => {
       addToWatchlistMutation.mutate({
@@ -348,6 +388,8 @@ export function CompareArenaPage() {
               onAddToWatchlist={() => handleAddToWatchlist(pairData.data.movieA.id)}
               isOnWatchlist={watchlistedMovieIds.has(pairData.data.movieA.id)}
               watchlistPending={addToWatchlistMutation.isPending}
+              onBlacklist={() => handleBlacklist(pairData.data.movieA)}
+              blacklistPending={blacklistMutation.isPending}
             />
 
             {/* Draw tier buttons — centered between cards */}
@@ -405,6 +447,8 @@ export function CompareArenaPage() {
               onAddToWatchlist={() => handleAddToWatchlist(pairData.data.movieB.id)}
               isOnWatchlist={watchlistedMovieIds.has(pairData.data.movieB.id)}
               watchlistPending={addToWatchlistMutation.isPending}
+              onBlacklist={() => handleBlacklist(pairData.data.movieB)}
+              blacklistPending={blacklistMutation.isPending}
             />
           </div>
         </>
@@ -475,6 +519,35 @@ export function CompareArenaPage() {
           </div>
         </div>
       )}
+
+      {/* Blacklist confirmation dialog */}
+      <AlertDialog
+        open={blacklistTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setBlacklistTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark as not watched?</AlertDialogTitle>
+            <AlertDialogDescription>
+              All comparisons involving this movie will be deleted and scores recalculated. This
+              marks <span className="font-medium text-foreground">{blacklistTarget?.title}</span> as
+              not watched.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={confirmBlacklist}
+              disabled={blacklistMutation.isPending}
+            >
+              {blacklistMutation.isPending ? "Removing\u2026" : "Not Watched"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -488,6 +561,8 @@ function MovieCard({
   onAddToWatchlist,
   isOnWatchlist,
   watchlistPending,
+  onBlacklist,
+  blacklistPending,
 }: {
   movie: { id: number; title: string; posterPath: string | null; posterUrl: string | null };
   onPick: () => void;
@@ -497,6 +572,8 @@ function MovieCard({
   onAddToWatchlist?: () => void;
   isOnWatchlist?: boolean;
   watchlistPending?: boolean;
+  onBlacklist?: () => void;
+  blacklistPending?: boolean;
 }) {
   const posterSrc = movie.posterUrl ?? undefined;
   const [imgError, setImgError] = useState(false);
@@ -550,6 +627,21 @@ function MovieCard({
           aria-label={isOnWatchlist ? "On watchlist" : `Add ${movie.title} to watchlist`}
         >
           <Bookmark className={`h-4 w-4 ${isOnWatchlist ? "fill-current" : ""}`} />
+        </button>
+      )}
+
+      {/* Not Watched (blacklist) button */}
+      {onBlacklist && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onBlacklist();
+          }}
+          disabled={blacklistPending}
+          className="absolute bottom-2 left-2 p-1.5 rounded-full transition-colors bg-background/80 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 border border-red-200 dark:border-red-800"
+          aria-label={`Not watched ${movie.title}`}
+        >
+          <X className="h-4 w-4" />
         </button>
       )}
 
