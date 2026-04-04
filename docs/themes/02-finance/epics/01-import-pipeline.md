@@ -10,7 +10,7 @@ Build the multi-step import wizard for ingesting bank data into the transaction 
 
 | # | PRD | Summary | Status |
 |---|-----|---------|--------|
-| 020 | [Import Wizard UI](../prds/020-import-wizard-ui/README.md) | 6-step flow: upload, column mapping, review, tag suggestion, processing, summary | Partial |
+| 020 | [Import Wizard UI](../prds/020-import-wizard-ui/README.md) | 6-step flow: upload, column mapping, review, tag suggestion, processing, summary | Done |
 | 021 | [Entity Matching Engine](../prds/021-entity-matching-engine/README.md) | Matching chain: aliases → exact → prefix → contains → AI fallback. Per-bank alias maps. Full pipeline including Claude Haiku as final strategy | Partial |
 | 022 | [Deduplication & Parsers](../prds/022-deduplication-parsers/README.md) | Date + amount count-based dedup, per-bank CSV parsers (ANZ, Amex, ING), Up Bank API batch import | Partial |
 

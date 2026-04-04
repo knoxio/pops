@@ -1,7 +1,7 @@
 # US-08: Review tabbed view
 
 > PRD: [020 — Import Wizard UI](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -11,10 +11,10 @@ As a user, I want transactions categorized into tabs (Matched/Uncertain/Failed/S
 
 - [x] Four tabs: Matched, Uncertain, Failed, Skipped
 - [x] Each tab shows count badge
-- [ ] Default tab: Uncertain (if any exist), otherwise Matched
+- [x] Default tab: Uncertain (if any exist), otherwise Matched
 - [x] Skipped tab shows read-only table with skip reason ("Duplicate transaction (checksum match)")
 - [x] Matched tab shows read-only transaction cards (can still edit via dialog)
-- [ ] Tab switching preserves scroll position within each tab
+- [x] Tab switching preserves scroll position within each tab
 
 ## Notes
 
