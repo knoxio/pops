@@ -211,3 +211,12 @@ export const StalenessSchema = z.object({
   mediaId: z.number().int().positive(),
 });
 export type StalenessInput = z.infer<typeof StalenessSchema>;
+
+export const RecordSkipSchema = z.object({
+  dimensionId: z.number().int().positive(),
+  mediaAType: z.enum(MEDIA_TYPES),
+  mediaAId: z.number().int().positive(),
+  mediaBType: z.enum(MEDIA_TYPES),
+  mediaBId: z.number().int().positive(),
+});
+export type RecordSkipInput = z.infer<typeof RecordSkipSchema>;

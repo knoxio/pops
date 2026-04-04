@@ -890,7 +890,7 @@ export function recordSkip(
   mediaAId: number,
   mediaBType: string,
   mediaBId: number
-): void {
+): number {
   const db = getDrizzle();
   const globalCount = getGlobalComparisonCount();
   const skipUntil = globalCount + 10;
@@ -935,6 +935,8 @@ export function recordSkip(
       })
       .run();
   }
+
+  return skipUntil;
 }
 
 /**
