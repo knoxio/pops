@@ -150,8 +150,9 @@ describe("DebriefPage", () => {
     });
     renderWithSession("42");
 
-    expect(screen.getByText("Inception")).toBeInTheDocument();
-    expect(screen.getByTestId("debrief-header")).toBeInTheDocument();
+    const header = screen.getByTestId("debrief-header");
+    expect(header).toBeInTheDocument();
+    expect(header.querySelector("h1")).toHaveTextContent("Inception");
     expect(screen.getByAltText("Inception poster")).toBeInTheDocument();
   });
 
@@ -165,8 +166,8 @@ describe("DebriefPage", () => {
 
     const progress = screen.getByTestId("dimension-progress");
     expect(progress).toBeInTheDocument();
-    expect(screen.getByText("Story")).toBeInTheDocument();
-    expect(screen.getByText("Visuals")).toBeInTheDocument();
+    expect(progress).toHaveTextContent("Story");
+    expect(progress).toHaveTextContent("Visuals");
   });
 
   it("renders comparison cards with movie and opponent", () => {
