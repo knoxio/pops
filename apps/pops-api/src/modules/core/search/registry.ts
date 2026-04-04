@@ -16,6 +16,10 @@ export function getAdapters(): SearchAdapter[] {
   return [...adapters];
 }
 
+/**
+ * Resets the adapter registry to an empty state.
+ * Intended for test isolation only — do not call in production code.
+ */
 export function resetRegistry(): void {
   adapters.length = 0;
 }

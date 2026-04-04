@@ -1,7 +1,7 @@
 # US-01: Search adapter interface
 
 > PRD: [057 — Search Engine](README.md)
-> Status: Not started
+> Status: Partial
 
 ## Description
 
@@ -9,14 +9,14 @@ As a developer, I want a SearchAdapter interface with typed results and a compon
 
 ## Acceptance Criteria
 
-- [ ] `SearchAdapter<T>` interface: `domain`, `icon`, `color`, `search(query, context, options)`, `ResultComponent`
-- [ ] `SearchHit<T>` interface: `uri`, `score`, `matchField`, `matchType`, `data: T`
-- [ ] `Query` interface: `text`, optional `filters` (for v2 structured syntax)
-- [ ] `SearchContext` interface: `app`, `page`, optional `entity` and `filters` — sourced from PRD-058
-- [ ] `registerSearchAdapter(adapter)` adds to an adapter registry
-- [ ] `getAdapters()` returns all registered adapters
-- [ ] Type erasure at the registry boundary — registry stores `SearchAdapter<unknown>`, each adapter is internally typed
-- [ ] Tests with mock adapters: registration, retrieval, search call with query + context
+- [x] `SearchAdapter<T>` interface: `domain`, `icon`, `color`, `search(query, context, options)`, `ResultComponent`
+- [x] `SearchHit<T>` interface: `uri`, `score`, `matchField`, `matchType`, `data: T`
+- [x] `Query` interface: `text`, optional `filters` (for v2 structured syntax)
+- [x] `SearchContext` interface: `app`, `page`, optional `entity` and `filters` — sourced from PRD-058
+- [x] `registerSearchAdapter(adapter)` adds to an adapter registry
+- [x] `getAdapters()` returns all registered adapters
+- [x] Type erasure at the registry boundary — registry stores `SearchAdapter<unknown>`, each adapter is internally typed
+- [x] Tests with mock adapters: registration, retrieval, search call with query + context
 
 ## Notes
 
