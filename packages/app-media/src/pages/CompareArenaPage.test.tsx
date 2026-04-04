@@ -242,10 +242,40 @@ describe("CompareArenaPage", () => {
       isLoading: false,
       error: null,
     });
+    mockWatchlistListQuery.mockReturnValue({
+      data: { data: [] },
+      isLoading: false,
+    });
 
     renderPage();
 
     expect(screen.getByText("Not enough watched movies")).toBeTruthy();
+  });
+
+  it("shows watchlist depletion message when pool is empty and movies are watchlisted", () => {
+    mockDimensionsQuery.mockReturnValue({
+      data: { data: [dim1] },
+      isLoading: false,
+    });
+    mockPairQuery.mockReturnValue({
+      data: { data: null },
+      isLoading: false,
+      error: null,
+    });
+    mockWatchlistListQuery.mockReturnValue({
+      data: {
+        data: [
+          { id: 1, mediaType: "movie", mediaId: 10, title: "The Matrix", addedAt: "2026-01-01" },
+        ],
+      },
+      isLoading: false,
+    });
+
+    renderPage();
+
+    expect(screen.getByText("Not enough movies")).toBeTruthy();
+    expect(screen.getByText("Some are on your watchlist.")).toBeTruthy();
+    expect(screen.getByRole("link", { name: "View watchlist" })).toBeTruthy();
   });
 
   it("disables cards during pending mutation (double-click prevention)", () => {
