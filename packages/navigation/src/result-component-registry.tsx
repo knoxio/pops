@@ -3,6 +3,12 @@ import type { ComponentType } from "react";
 /** Props passed to every result component by the search panel. */
 export interface ResultComponentProps {
   data: Record<string, unknown>;
+  /** Raw query string for match highlighting. */
+  query?: string;
+  /** Which field matched (e.g. "description", "name"). */
+  matchField?: string;
+  /** How the match was found: "exact", "prefix", or "contains". */
+  matchType?: string;
 }
 
 /** A React component that renders a single search result. */
