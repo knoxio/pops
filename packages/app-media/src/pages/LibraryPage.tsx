@@ -4,6 +4,7 @@ import { Button, Select, Skeleton, TextInput } from "@pops/ui";
 import { Sparkles, Settings, Search, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import { MediaGrid } from "../components/MediaGrid";
 import { MediaCard } from "../components/MediaCard";
+import { DebriefBanner } from "../components/DebriefBanner";
 import { DownloadQueue } from "../components/DownloadQueue";
 import { QuickPickDialog } from "../components/QuickPickDialog";
 import { useMediaLibrary, type MediaType, type SortOption } from "../hooks/useMediaLibrary";
@@ -221,6 +222,9 @@ export function LibraryPage() {
           </Link>
         </div>
       </div>
+
+      {/* Debrief notification */}
+      <DebriefBanner />
 
       {/* Download queue */}
       <DownloadQueue />
