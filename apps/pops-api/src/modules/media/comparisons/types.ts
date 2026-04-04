@@ -248,3 +248,14 @@ export interface DebriefOpponent {
   posterPath: string | null;
   posterUrl: string | null;
 }
+
+/** API response shape for a pending debrief entry. */
+export interface PendingDebrief {
+  sessionId: number;
+  movieId: number;
+  title: string;
+  posterUrl: string | null;
+  status: "pending" | "active";
+  createdAt: string;
+  pendingDimensionCount: number;
+}

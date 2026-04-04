@@ -11,6 +11,8 @@ import {
   mediaWatchlist,
   watchHistory,
   movies,
+  debriefSessions,
+  debriefResults,
 } from "@pops/db-types";
 import { NotFoundError, ConflictError, ValidationError } from "../../../shared/errors.js";
 import {
@@ -25,6 +27,7 @@ import {
   type RankedMediaEntry,
   type BlacklistMovieResult,
   type DebriefOpponent,
+  type PendingDebrief,
 } from "./types.js";
 import { getStaleness } from "./staleness.js";
 
@@ -1559,6 +1562,99 @@ export function getDebriefOpponent(
     posterPath: movieRow.posterPath,
     posterUrl,
   };
+}
+
+// ── Pending Debriefs ──
+
+/**
+ * Get all movies with pending or active debrief sessions.
+ * Joins debrief_sessions → watch_history → movies and counts
+ * how many dimensions still need results per session.
+ */
+export function getPendingDebriefs(): PendingDebrief[] {
+  const db = getDrizzle();
+
+  // Get sessions that are pending or active
+  const sessions = db
+    .select({
+      sessionId: debriefSessions.id,
+      status: debriefSessions.status,
+      watchHistoryId: debriefSessions.watchHistoryId,
+      createdAt: debriefSessions.createdAt,
+    })
+    .from(debriefSessions)
+    .where(or(eq(debriefSessions.status, "pending"), eq(debriefSessions.status, "active")))
+    .orderBy(desc(debriefSessions.createdAt))
+    .all();
+
+  if (sessions.length === 0) return [];
+
+  // Get count of active dimensions
+  const activeDimCount =
+    db
+      .select({ total: count() })
+      .from(comparisonDimensions)
+      .where(eq(comparisonDimensions.active, 1))
+      .all()[0]?.total ?? 0;
+
+  const results: PendingDebrief[] = [];
+
+  for (const session of sessions) {
+    // Get watch history entry to find media info
+    const whEntry = db
+      .select({
+        mediaType: watchHistory.mediaType,
+        mediaId: watchHistory.mediaId,
+      })
+      .from(watchHistory)
+      .where(eq(watchHistory.id, session.watchHistoryId))
+      .get();
+
+    if (!whEntry || whEntry.mediaType !== "movie") continue;
+
+    // Get movie info
+    const movieRow = db
+      .select({
+        id: movies.id,
+        title: movies.title,
+        posterPath: movies.posterPath,
+        tmdbId: movies.tmdbId,
+        posterOverridePath: movies.posterOverridePath,
+      })
+      .from(movies)
+      .where(eq(movies.id, whEntry.mediaId))
+      .get();
+
+    if (!movieRow) continue;
+
+    // Count completed debrief results for this session
+    const completedCount =
+      db
+        .select({ total: count() })
+        .from(debriefResults)
+        .where(eq(debriefResults.sessionId, session.sessionId))
+        .all()[0]?.total ?? 0;
+
+    const pendingDimensionCount = Math.max(0, activeDimCount - completedCount);
+
+    const posterUrl = movieRow.posterOverridePath
+      ? movieRow.posterOverridePath
+      : movieRow.posterPath
+        ? `/media/images/movie/${movieRow.tmdbId}/poster.jpg`
+        : null;
+
+    results.push({
+      sessionId: session.sessionId,
+      movieId: movieRow.id,
+      title: movieRow.title,
+      posterUrl,
+      status: session.status as "pending" | "active",
+      createdAt: session.createdAt,
+      pendingDimensionCount,
+    });
+  }
+
+  return results;
 }
 
 /**

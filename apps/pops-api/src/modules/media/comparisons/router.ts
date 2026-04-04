@@ -216,6 +216,12 @@ export const comparisonsRouter = router({
     return { data: { staleness } };
   }),
 
+  /** Get all movies with pending/active debrief sessions. */
+  getPendingDebriefs: protectedProcedure.query(() => {
+    const debriefs = service.getPendingDebriefs();
+    return { data: debriefs };
+  }),
+
   /** Get a debrief opponent — movie closest to median score, excluding ineligible. */
   getDebriefOpponent: protectedProcedure.input(GetDebriefOpponentSchema).query(({ input }) => {
     try {
