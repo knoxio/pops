@@ -57,6 +57,15 @@ export function toComparison(row: ComparisonRow): Comparison {
   };
 }
 
+/**
+ * Derive confidence (0–1) from how many comparisons a media item has undergone.
+ * Formula: 1 - (1 / sqrt(comparisonCount + 1))
+ * At 0 comparisons → 0, at 1 → ~0.29, at 3 → ~0.5, at 30 → ~0.82.
+ */
+export function calculateConfidence(comparisonCount: number): number {
+  return 1 - 1 / Math.sqrt(comparisonCount + 1);
+}
+
 /** API response shape for a media score. */
 export interface MediaScore {
   id: number;
@@ -65,6 +74,7 @@ export interface MediaScore {
   dimensionId: number;
   score: number;
   comparisonCount: number;
+  confidence: number;
   updatedAt: string;
 }
 
@@ -76,6 +86,7 @@ export function toMediaScore(row: MediaScoreRow): MediaScore {
     dimensionId: row.dimensionId,
     score: row.score,
     comparisonCount: row.comparisonCount,
+    confidence: calculateConfidence(row.comparisonCount),
     updatedAt: row.updatedAt,
   };
 }
@@ -151,6 +162,7 @@ export interface RankedMediaEntry {
   posterUrl: string | null;
   score: number;
   comparisonCount: number;
+  confidence: number;
 }
 
 export const RankingsQuerySchema = z.object({

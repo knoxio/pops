@@ -1288,6 +1288,133 @@ describe("tiered draws", () => {
   });
 });
 
+describe("calculateConfidence", () => {
+  // Import the pure function directly for unit tests
+  it("returns 0 at count=0", async () => {
+    const { calculateConfidence } = await import("./types.js");
+    expect(calculateConfidence(0)).toBe(0);
+  });
+
+  it("returns ~0.29 at count=1", async () => {
+    const { calculateConfidence } = await import("./types.js");
+    expect(calculateConfidence(1)).toBeCloseTo(0.2929, 3);
+  });
+
+  it("returns ~0.5 at count=3", async () => {
+    const { calculateConfidence } = await import("./types.js");
+    expect(calculateConfidence(3)).toBeCloseTo(0.5, 1);
+  });
+
+  it("returns ~0.82 at count=30", async () => {
+    const { calculateConfidence } = await import("./types.js");
+    expect(calculateConfidence(30)).toBeCloseTo(0.8204, 2);
+  });
+});
+
+describe("confidence in API responses", () => {
+  it("scores endpoint includes confidence per entry", async () => {
+    const dimId = seedDimension(db, { name: "Story" });
+
+    await caller.media.comparisons.record({
+      dimensionId: dimId,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 2,
+      winnerType: "movie",
+      winnerId: 1,
+    });
+
+    const result = await caller.media.comparisons.scores({
+      mediaType: "movie",
+      mediaId: 1,
+    });
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0]!.confidence).toBeCloseTo(0.2929, 3);
+    expect(result.data[0]!.comparisonCount).toBe(1);
+  });
+
+  it("per-dimension rankings include confidence", async () => {
+    const dimId = seedDimension(db, { name: "Visuals" });
+
+    // Do 2 comparisons so movie 1 has comparisonCount=2
+    await caller.media.comparisons.record({
+      dimensionId: dimId,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 2,
+      winnerType: "movie",
+      winnerId: 1,
+    });
+    await caller.media.comparisons.record({
+      dimensionId: dimId,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 3,
+      winnerType: "movie",
+      winnerId: 1,
+    });
+
+    const result = await caller.media.comparisons.rankings({ dimensionId: dimId });
+    // Movie 1 has 2 comparisons
+    const movie1 = result.data.find((r) => r.mediaId === 1);
+    expect(movie1).toBeDefined();
+    expect(movie1!.confidence).toBeCloseTo(1 - 1 / Math.sqrt(3), 3); // count=2 → sqrt(3)
+  });
+
+  it("overall rankings confidence = min confidence across dimensions", async () => {
+    const dim1 = seedDimension(db, { name: "Story", active: 1 });
+    const dim2 = seedDimension(db, { name: "Visuals", active: 1 });
+
+    // Movie 1: 3 comparisons in dim1, 1 comparison in dim2
+    await caller.media.comparisons.record({
+      dimensionId: dim1,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 2,
+      winnerType: "movie",
+      winnerId: 1,
+    });
+    await caller.media.comparisons.record({
+      dimensionId: dim1,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 3,
+      winnerType: "movie",
+      winnerId: 1,
+    });
+    await caller.media.comparisons.record({
+      dimensionId: dim1,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 4,
+      winnerType: "movie",
+      winnerId: 1,
+    });
+    await caller.media.comparisons.record({
+      dimensionId: dim2,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 2,
+      winnerType: "movie",
+      winnerId: 1,
+    });
+
+    const result = await caller.media.comparisons.rankings({});
+    const movie1 = result.data.find((r) => r.mediaId === 1);
+    expect(movie1).toBeDefined();
+    // dim1: 3 comparisons → confidence ~0.5, dim2: 1 comparison → confidence ~0.29
+    // overall = min = ~0.29
+    expect(movie1!.confidence).toBeCloseTo(1 - 1 / Math.sqrt(2), 3); // count=1 → sqrt(2)
+  });
+});
+
 describe("comparisons auth", () => {
   it("rejects unauthenticated calls", async () => {
     const anonCaller = createCaller(false);

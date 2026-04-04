@@ -12,15 +12,16 @@ import {
   movies,
 } from "@pops/db-types";
 import { NotFoundError, ConflictError, ValidationError } from "../../../shared/errors.js";
-import type {
-  ComparisonDimensionRow,
-  ComparisonRow,
-  MediaScoreRow,
-  CreateDimensionInput,
-  UpdateDimensionInput,
-  RecordComparisonInput,
-  RandomPair,
-  RankedMediaEntry,
+import {
+  calculateConfidence,
+  type ComparisonDimensionRow,
+  type ComparisonRow,
+  type MediaScoreRow,
+  type CreateDimensionInput,
+  type UpdateDimensionInput,
+  type RecordComparisonInput,
+  type RandomPair,
+  type RankedMediaEntry,
 } from "./types.js";
 
 // ── Dimensions ──
@@ -682,6 +683,7 @@ export function getRankings(
         posterUrl: resolvePosterUrl(row),
         score: Math.round(row.score * 10) / 10,
         comparisonCount: row.comparisonCount,
+        confidence: calculateConfidence(row.comparisonCount),
       })),
       total: countResult.total,
     };
@@ -725,6 +727,7 @@ export function getRankings(
         ms.media_id as mediaId,
         SUM(ms.score * cd.weight) / SUM(cd.weight) as score,
         SUM(ms.comparison_count) as comparisonCount,
+        MIN(ms.comparison_count) as minComparisonCount,
         COALESCE(m.title, tv.name, 'Unknown') as title,
         CASE
           WHEN ms.media_type = 'movie' THEN CAST(SUBSTR(m.release_date, 1, 4) AS INTEGER)
@@ -753,6 +756,7 @@ export function getRankings(
     mediaId: number;
     score: number;
     comparisonCount: number;
+    minComparisonCount: number;
     title: string;
     year: number | null;
     moviePosterPath: string | null;
@@ -773,6 +777,7 @@ export function getRankings(
       posterUrl: resolvePosterUrl(row),
       score: Math.round(row.score * 10) / 10,
       comparisonCount: row.comparisonCount,
+      confidence: calculateConfidence(row.minComparisonCount),
     })),
     total: countResult.total,
   };
