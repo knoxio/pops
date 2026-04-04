@@ -312,3 +312,13 @@ export interface SubmitTierListResult {
 
 /** Tier rank ordering — lower index = higher tier. */
 export const TIER_RANK_ORDER: Record<Tier, number> = { S: 0, A: 1, B: 2, C: 3, D: 4 };
+
+export const RecordDebriefComparisonSchema = z.object({
+  sessionId: z.number().int().positive(),
+  dimensionId: z.number().int().positive(),
+  opponentType: z.enum(MEDIA_TYPES),
+  opponentId: z.number().int().positive(),
+  winnerId: z.number().int().nonnegative(), // 0 = skip (no comparison)
+  drawTier: z.enum(DRAW_TIERS).nullable().optional(),
+});
+export type RecordDebriefComparisonInput = z.infer<typeof RecordDebriefComparisonSchema>;

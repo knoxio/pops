@@ -33,6 +33,7 @@ import {
   type SubmitTierListResult,
   type ScoreChange,
   TIER_RANK_ORDER,
+  type RecordDebriefComparisonInput,
 } from "./types.js";
 import { getStaleness } from "./staleness.js";
 import { setTierOverride } from "./tier-overrides.js";
@@ -1966,4 +1967,123 @@ export function submitTierList(input: SubmitTierListInput): SubmitTierListResult
   }
 
   return { comparisonsRecorded, scoreChanges };
+}
+
+// ── Debrief Comparison ──
+
+/**
+ * Record a debrief comparison for a session + dimension.
+ * If winnerId > 0, records a real comparison via recordComparison and links it.
+ * If winnerId = 0, creates a debrief_result with null comparison_id (skip).
+ * Auto-completes the session when all active dimensions have results.
+ */
+export function recordDebriefComparison(input: RecordDebriefComparisonInput): {
+  comparisonId: number | null;
+  sessionComplete: boolean;
+} {
+  const drizzleDb = getDrizzle();
+  const rawDb = getDb();
+
+  // Validate session exists and is not complete
+  const session = drizzleDb
+    .select()
+    .from(debriefSessions)
+    .where(eq(debriefSessions.id, input.sessionId))
+    .get();
+  if (!session) throw new NotFoundError("Debrief session", String(input.sessionId));
+  if (session.status === "complete") {
+    throw new ValidationError("Debrief session is already complete");
+  }
+
+  // Get the debrief movie from watch_history
+  const watchEntry = drizzleDb
+    .select()
+    .from(watchHistory)
+    .where(eq(watchHistory.id, session.watchHistoryId))
+    .get();
+  if (!watchEntry) throw new NotFoundError("Watch history entry", String(session.watchHistoryId));
+
+  // Check dimension hasn't already been recorded for this session
+  const existingResult = drizzleDb
+    .select()
+    .from(debriefResults)
+    .where(
+      and(
+        eq(debriefResults.sessionId, input.sessionId),
+        eq(debriefResults.dimensionId, input.dimensionId)
+      )
+    )
+    .get();
+  if (existingResult) {
+    throw new ConflictError("Dimension already recorded for this session");
+  }
+
+  return rawDb.transaction(() => {
+    let comparisonId: number | null = null;
+
+    if (input.winnerId > 0) {
+      // Record a real comparison
+      const compRow = recordComparison({
+        dimensionId: input.dimensionId,
+        mediaAType: watchEntry.mediaType as "movie" | "tv_show",
+        mediaAId: watchEntry.mediaId,
+        mediaBType: input.opponentType,
+        mediaBId: input.opponentId,
+        winnerType:
+          input.winnerId === watchEntry.mediaId
+            ? (watchEntry.mediaType as "movie" | "tv_show")
+            : input.opponentType,
+        winnerId: input.winnerId,
+        drawTier: input.drawTier ?? null,
+      });
+      comparisonId = compRow.id;
+    }
+
+    // Create debrief_result
+    drizzleDb
+      .insert(debriefResults)
+      .values({
+        sessionId: input.sessionId,
+        dimensionId: input.dimensionId,
+        comparisonId,
+      })
+      .run();
+
+    // Activate session if still pending
+    if (session.status === "pending") {
+      drizzleDb
+        .update(debriefSessions)
+        .set({ status: "active" })
+        .where(eq(debriefSessions.id, input.sessionId))
+        .run();
+    }
+
+    // Check if session is complete (all active dimensions have results)
+    const activeDimCount = drizzleDb
+      .select({ cnt: count() })
+      .from(comparisonDimensions)
+      .where(eq(comparisonDimensions.active, 1))
+      .get();
+
+    const resultCount = drizzleDb
+      .select({ cnt: count() })
+      .from(debriefResults)
+      .where(eq(debriefResults.sessionId, input.sessionId))
+      .get();
+
+    const sessionComplete =
+      activeDimCount !== undefined &&
+      resultCount !== undefined &&
+      resultCount.cnt >= activeDimCount.cnt;
+
+    if (sessionComplete) {
+      drizzleDb
+        .update(debriefSessions)
+        .set({ status: "complete" })
+        .where(eq(debriefSessions.id, input.sessionId))
+        .run();
+    }
+
+    return { comparisonId, sessionComplete };
+  })();
 }
