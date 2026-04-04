@@ -75,6 +75,7 @@ export interface MediaScore {
   score: number;
   comparisonCount: number;
   confidence: number;
+  excluded: boolean;
   updatedAt: string;
 }
 
@@ -87,6 +88,7 @@ export function toMediaScore(row: MediaScoreRow): MediaScore {
     score: row.score,
     comparisonCount: row.comparisonCount,
     confidence: calculateConfidence(row.comparisonCount),
+    excluded: row.excluded === 1,
     updatedAt: row.updatedAt,
   };
 }

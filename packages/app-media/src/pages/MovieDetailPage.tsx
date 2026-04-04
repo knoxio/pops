@@ -21,6 +21,7 @@ import { MarkAsWatchedButton } from "../components/MarkAsWatchedButton";
 import { ArrStatusBadge } from "../components/ArrStatusBadge";
 import { RequestMovieButton } from "../components/RequestMovieButton";
 import { FreshnessBadge } from "../components/FreshnessBadge";
+import { ExcludedDimensions } from "../components/ExcludedDimensions";
 
 function MovieDetailSkeleton() {
   return (
@@ -267,6 +268,9 @@ export function MovieDetailPage() {
 
         {/* Comparison scores radar chart */}
         <ComparisonScores mediaType="movie" mediaId={movie.id} />
+
+        {/* Excluded dimensions (hidden when none excluded) */}
+        <ExcludedDimensions mediaType="movie" mediaId={movie.id} />
 
         {/* Metadata grid */}
         {metadataItems.length > 0 && (
