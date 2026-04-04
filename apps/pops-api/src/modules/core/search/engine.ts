@@ -68,3 +68,31 @@ export async function searchAll(query: Query, context: SearchContext): Promise<S
 
   return { sections };
 }
+
+export interface ShowMoreResult {
+  hits: SearchHit[];
+  totalCount: number;
+}
+
+const DEFAULT_SHOW_MORE_LIMIT = 5;
+
+export async function showMore(
+  domain: string,
+  query: Query,
+  context: SearchContext,
+  offset: number,
+  limit: number = DEFAULT_SHOW_MORE_LIMIT
+): Promise<ShowMoreResult> {
+  const adapter = getAdapters().find((a) => a.domain === domain);
+  if (!adapter) {
+    throw new Error(`No search adapter registered for domain "${domain}"`);
+  }
+
+  const hits = await adapter.search(query, context);
+  const sorted = [...hits].sort((a, b) => b.score - a.score);
+
+  return {
+    hits: sorted.slice(offset, offset + limit),
+    totalCount: sorted.length,
+  };
+}

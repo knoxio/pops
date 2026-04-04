@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { SearchAdapter, SearchHit, Query, SearchContext } from "./types.js";
-import { searchAll } from "./engine.js";
+import { searchAll, showMore } from "./engine.js";
 import { registerSearchAdapter, resetRegistry } from "./registry.js";
 
 const defaultContext: SearchContext = { app: "media", page: "search" };
@@ -189,5 +189,90 @@ describe("searchAll", () => {
       expect(sectionHits[1]!.score).toBe(0.8);
       expect(sectionHits[2]!.score).toBe(0.5);
     });
+  });
+});
+
+describe("showMore", () => {
+  it("returns paginated hits for a single domain", async () => {
+    const hits = Array.from({ length: 10 }, (_, i) =>
+      makeHit({ uri: `pops:test/${i}`, score: 1.0 - i * 0.05 })
+    );
+    registerSearchAdapter(makeAdapter("movies", hits));
+
+    const result = await showMore("movies", { text: "test" }, defaultContext, 0, 5);
+    expect(result.hits).toHaveLength(5);
+    expect(result.totalCount).toBe(10);
+  });
+
+  it("respects offset parameter", async () => {
+    const hits = Array.from({ length: 10 }, (_, i) =>
+      makeHit({ uri: `pops:test/${i}`, score: 1.0 - i * 0.05 })
+    );
+    registerSearchAdapter(makeAdapter("movies", hits));
+
+    const result = await showMore("movies", { text: "test" }, defaultContext, 5, 5);
+    expect(result.hits).toHaveLength(5);
+    expect(result.hits[0]!.uri).toBe("pops:test/5");
+  });
+
+  it("returns remaining hits when offset + limit exceeds total", async () => {
+    const hits = Array.from({ length: 7 }, (_, i) =>
+      makeHit({ uri: `pops:test/${i}`, score: 1.0 - i * 0.05 })
+    );
+    registerSearchAdapter(makeAdapter("movies", hits));
+
+    const result = await showMore("movies", { text: "test" }, defaultContext, 5, 5);
+    expect(result.hits).toHaveLength(2);
+    expect(result.totalCount).toBe(7);
+  });
+
+  it("throws for unknown domain", async () => {
+    await expect(showMore("unknown", { text: "test" }, defaultContext, 0)).rejects.toThrow(
+      'No search adapter registered for domain "unknown"'
+    );
+  });
+
+  it("sorts hits by score descending", async () => {
+    const hits = [
+      makeHit({ uri: "pops:test/1", score: 0.3 }),
+      makeHit({ uri: "pops:test/2", score: 0.9 }),
+      makeHit({ uri: "pops:test/3", score: 0.6 }),
+    ];
+    registerSearchAdapter(makeAdapter("movies", hits));
+
+    const result = await showMore("movies", { text: "test" }, defaultContext, 0, 10);
+    expect(result.hits[0]!.score).toBe(0.9);
+    expect(result.hits[1]!.score).toBe(0.6);
+    expect(result.hits[2]!.score).toBe(0.3);
+  });
+
+  it("defaults to limit of 5", async () => {
+    const hits = Array.from({ length: 10 }, (_, i) =>
+      makeHit({ uri: `pops:test/${i}`, score: 1.0 - i * 0.05 })
+    );
+    registerSearchAdapter(makeAdapter("movies", hits));
+
+    const result = await showMore("movies", { text: "test" }, defaultContext, 0);
+    expect(result.hits).toHaveLength(5);
+  });
+
+  it("returns empty hits when offset is beyond total", async () => {
+    const hits = [makeHit({ uri: "pops:test/1" })];
+    registerSearchAdapter(makeAdapter("movies", hits));
+
+    const result = await showMore("movies", { text: "test" }, defaultContext, 10);
+    expect(result.hits).toHaveLength(0);
+    expect(result.totalCount).toBe(1);
+  });
+
+  it("only queries the specified domain adapter", async () => {
+    const moviesAdapter = makeAdapter("movies", [makeHit()]);
+    const tvAdapter = makeAdapter("tv-shows", [makeHit()]);
+    registerSearchAdapter(moviesAdapter);
+    registerSearchAdapter(tvAdapter);
+
+    await showMore("movies", { text: "test" }, defaultContext, 0);
+    expect(moviesAdapter.search).toHaveBeenCalled();
+    expect(tvAdapter.search).not.toHaveBeenCalled();
   });
 });
