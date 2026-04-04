@@ -74,7 +74,7 @@ v1 is plain text only. Structured syntax added as v2 USs.
 | 03 | [us-03-tv-shows-adapter](us-03-tv-shows-adapter.md) | TV shows backend adapter: search by name | Done | — |
 | 03b | [us-03b-tv-shows-result-component](us-03b-tv-shows-result-component.md) | TV shows ResultComponent: poster + name + status + seasons | In progress | — |
 | 04 | [us-04-transactions-adapter](us-04-transactions-adapter.md) | Transactions backend adapter: search by description | Done | — |
-| 04b | [us-04b-transactions-result-component](us-04b-transactions-result-component.md) | Transactions ResultComponent: description + colored amount + date | In progress | — |
+| 04b | [us-04b-transactions-result-component](us-04b-transactions-result-component.md) | Transactions ResultComponent: description + colored amount + date | Done | — |
 | 05 | [us-05-entities-adapter](us-05-entities-adapter.md) | Entities backend adapter: search by name | Done | — |
 | 05b | [us-05b-entities-result-component](us-05b-entities-result-component.md) | Entities ResultComponent: name + type badge + aliases | Done | — |
 | 06 | [us-06-budgets-adapter](us-06-budgets-adapter.md) | Budgets backend adapter: search by category | Done | — |

@@ -1,6 +1,8 @@
-import { useContext, useEffect } from "react";
+import { useCallback, useContext, useEffect } from "react";
+import { useNavigate } from "react-router";
 import { AppContextCtx } from "./context.js";
 import type { AppContext, AppContextEntity, AppName } from "./types.js";
+import { resolveUri } from "./uri-resolver.js";
 
 /**
  * Returns the current AppContext.
@@ -53,4 +55,29 @@ export function useCurrentApp(): AppName | null {
 export function useCurrentEntity(): AppContextEntity | null {
   const { pageType, entity } = useAppContext();
   return pageType === "drill-down" && entity ? entity : null;
+}
+
+/**
+ * Returns a navigateTo callback that resolves a POPS URI and navigates to
+ * the corresponding frontend route.
+ *
+ * @returns `navigateTo(uri)` — returns true if navigation succeeded, false if
+ * the URI could not be resolved.
+ */
+export function useSearchResultNavigation(): {
+  navigateTo: (uri: string) => boolean;
+} {
+  const navigate = useNavigate();
+
+  const navigateTo = useCallback(
+    (uri: string): boolean => {
+      const route = resolveUri(uri);
+      if (!route) return false;
+      navigate(route);
+      return true;
+    },
+    [navigate]
+  );
+
+  return { navigateTo };
 }

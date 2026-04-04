@@ -24,6 +24,7 @@ import {
   type UpdateDimensionInput,
   type RecordComparisonInput,
   type RandomPair,
+  type SmartPairResult,
   type RankedMediaEntry,
   type BlacklistMovieResult,
   type DebriefOpponent,
@@ -32,13 +33,13 @@ import {
   type SubmitTierListInput,
   type SubmitTierListResult,
   type ScoreChange,
-  TIER_RANK_ORDER,
   type RecordDebriefComparisonInput,
   type BatchComparisonItem,
   type BatchRecordResult,
 } from "./types.js";
 import { getStaleness } from "./staleness.js";
 import { setTierOverride } from "./tier-overrides.js";
+import { convertTierPlacements } from "./tier-conversion.js";
 
 // ── Dimensions ──
 
@@ -721,7 +722,7 @@ const SAMPLE_SIZE = 50;
  * @param dimensionId - Optional specific dimension; if omitted, picks by dimensionNeed
  * @returns A pair of movies with metadata, or null if fewer than 2 eligible movies
  */
-export function getSmartPair(dimensionId?: number): RandomPair | null {
+export function getSmartPair(dimensionId?: number): SmartPairResult | null {
   const rawDb = getDb();
   const db = getDrizzle();
 
@@ -910,7 +911,7 @@ export function getSmartPair(dimensionId?: number): RandomPair | null {
     if (candidates.length >= 2) {
       const a = candidates[0];
       const b = candidates[1];
-      if (a && b) return buildRandomPairResult(a, b);
+      if (a && b) return { ...buildRandomPairResult(a, b), dimensionId: selectedDimId };
     }
     return null;
   }
@@ -920,7 +921,7 @@ export function getSmartPair(dimensionId?: number): RandomPair | null {
 
   if (!selected) return null;
 
-  return buildRandomPairResult(selected.movieA, selected.movieB);
+  return { ...buildRandomPairResult(selected.movieA, selected.movieB), dimensionId: selectedDimId };
 }
 
 /** Build the RandomPair result from two CandidateMovie objects. */
@@ -1959,41 +1960,21 @@ export function submitTierList(input: SubmitTierListInput): SubmitTierListResult
     oldScores.set(placement.movieId, existing?.score ?? 1500.0);
   }
 
-  // Generate pairwise comparisons from tier placements
-  const batchItems: BatchComparisonItem[] = [];
-  const placements = input.placements;
-
-  for (let i = 0; i < placements.length; i++) {
-    for (let j = i + 1; j < placements.length; j++) {
-      const a = placements[i];
-      const b = placements[j];
-      if (!a || !b) continue;
-
-      const rankA = TIER_RANK_ORDER[a.tier];
-      const rankB = TIER_RANK_ORDER[b.tier];
-
-      batchItems.push({
-        mediaAType: "movie",
-        mediaAId: a.movieId,
-        mediaBType: "movie",
-        mediaBId: b.movieId,
-        winnerType: "movie",
-        winnerId: rankA < rankB ? a.movieId : rankB < rankA ? b.movieId : 0,
-        drawTier: rankA === rankB ? "mid" : null,
-      });
-    }
-  }
-
-  // Record comparisons in batch, then set tier overrides in same transaction
+  // Convert placements to pairwise comparisons using the pure function
+  const pairwise = convertTierPlacements(input.placements);
   let comparisonsRecorded = 0;
 
   rawDb.transaction(() => {
-    // Insert comparisons and update ELO
-    for (const item of batchItems) {
+    for (const pair of pairwise) {
       const comparisonInput: RecordComparisonInput = {
         dimensionId: input.dimensionId,
-        ...item,
-        drawTier: item.drawTier ?? null,
+        mediaAType: "movie",
+        mediaAId: pair.mediaAId,
+        mediaBType: "movie",
+        mediaBId: pair.mediaBId,
+        winnerType: "movie",
+        winnerId: pair.winnerId,
+        drawTier: pair.drawTier,
       };
 
       const result = drizzleDb
@@ -2017,7 +1998,7 @@ export function submitTierList(input: SubmitTierListInput): SubmitTierListResult
     }
 
     // Set tier overrides for each placement
-    for (const placement of placements) {
+    for (const placement of input.placements) {
       setTierOverride("movie", placement.movieId, input.dimensionId, placement.tier);
     }
   })();

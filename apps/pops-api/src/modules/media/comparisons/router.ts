@@ -14,7 +14,6 @@ import {
   DeleteComparisonSchema,
   BlacklistMovieSchema,
   ScoreQuerySchema,
-  RandomPairQuerySchema,
   SmartPairQuerySchema,
   RankingsQuerySchema,
   DimensionExclusionSchema,
@@ -136,27 +135,19 @@ export const comparisonsRouter = router({
     return { data: result, message: "Movie blacklisted and comparisons purged" };
   }),
 
-  /** Get a random pair of watched movies for comparison. */
-  getRandomPair: protectedProcedure.input(RandomPairQuerySchema).query(({ input }) => {
-    try {
-      const pair = service.getRandomPair(input.dimensionId, input.avoidRecent);
-      if (!pair) {
-        return { data: null, reason: "insufficient_watched_movies" as const };
-      }
-      return { data: pair, reason: null };
-    } catch (err) {
-      if (err instanceof NotFoundError) {
-        throw new TRPCError({ code: "NOT_FOUND", message: err.message });
-      }
-      throw err;
-    }
-  }),
-
-  /** Get a smart pair using weighted probabilistic selection. */
+  /** Get a smart pair using weighted probabilistic selection, with random fallback. */
   getSmartPair: protectedProcedure.input(SmartPairQuerySchema).query(({ input }) => {
     try {
+      // Try smart selection first
       const pair = service.getSmartPair(input.dimensionId);
       if (!pair) {
+        // Fallback to random if smart selection finds no valid pairs
+        if (input.dimensionId) {
+          const randomPair = service.getRandomPair(input.dimensionId);
+          if (randomPair) {
+            return { data: { ...randomPair, dimensionId: input.dimensionId }, reason: null };
+          }
+        }
         return { data: null, reason: "insufficient_watched_movies" as const };
       }
       return { data: pair, reason: null };

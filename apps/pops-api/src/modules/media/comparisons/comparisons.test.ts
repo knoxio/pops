@@ -350,7 +350,7 @@ describe("comparisons.scores", () => {
   });
 });
 
-describe("comparisons.getRandomPair", () => {
+describe("comparisons.getSmartPair", () => {
   it("returns a pair of watched movies", async () => {
     const dimId = seedDimension(db, { name: "Overall" });
     const m1 = seedMovie(db, { tmdb_id: 550, title: "Fight Club", poster_path: "/fc.jpg" });
@@ -358,7 +358,7 @@ describe("comparisons.getRandomPair", () => {
     seedWatchHistoryEntry(db, { media_type: "movie", media_id: m1 });
     seedWatchHistoryEntry(db, { media_type: "movie", media_id: m2 });
 
-    const result = await caller.media.comparisons.getRandomPair({ dimensionId: dimId });
+    const result = await caller.media.comparisons.getSmartPair({ dimensionId: dimId });
     expect(result.data).not.toBeNull();
     expect(result.data!.movieA).toHaveProperty("id");
     expect(result.data!.movieA).toHaveProperty("title");
@@ -373,7 +373,7 @@ describe("comparisons.getRandomPair", () => {
     const m1 = seedMovie(db, { tmdb_id: 550, title: "Fight Club" });
     seedWatchHistoryEntry(db, { media_type: "movie", media_id: m1 });
 
-    const result = await caller.media.comparisons.getRandomPair({ dimensionId: dimId });
+    const result = await caller.media.comparisons.getSmartPair({ dimensionId: dimId });
     expect(result.data).toBeNull();
     expect(result.reason).toBe("insufficient_watched_movies");
   });
@@ -381,52 +381,27 @@ describe("comparisons.getRandomPair", () => {
   it("returns null data when no watched movies exist", async () => {
     const dimId = seedDimension(db, { name: "Overall" });
 
-    const result = await caller.media.comparisons.getRandomPair({ dimensionId: dimId });
+    const result = await caller.media.comparisons.getSmartPair({ dimensionId: dimId });
     expect(result.data).toBeNull();
     expect(result.reason).toBe("insufficient_watched_movies");
   });
 
   it("throws NOT_FOUND for missing dimension", async () => {
-    await expect(caller.media.comparisons.getRandomPair({ dimensionId: 999 })).rejects.toThrow(
+    await expect(caller.media.comparisons.getSmartPair({ dimensionId: 999 })).rejects.toThrow(
       TRPCError
     );
   });
 
-  it("avoids recently compared pairs", async () => {
+  it("returns dimensionId in response", async () => {
     const dimId = seedDimension(db, { name: "Overall" });
-    // Create 3 movies so there are multiple possible pairs
     const m1 = seedMovie(db, { tmdb_id: 550, title: "Fight Club" });
     const m2 = seedMovie(db, { tmdb_id: 551, title: "The Matrix" });
-    const m3 = seedMovie(db, { tmdb_id: 552, title: "Inception" });
     seedWatchHistoryEntry(db, { media_type: "movie", media_id: m1 });
     seedWatchHistoryEntry(db, { media_type: "movie", media_id: m2 });
-    seedWatchHistoryEntry(db, { media_type: "movie", media_id: m3 });
 
-    // Record comparison between m1 and m2
-    await caller.media.comparisons.record({
-      dimensionId: dimId,
-      mediaAType: "movie",
-      mediaAId: m1,
-      mediaBType: "movie",
-      mediaBId: m2,
-      winnerType: "movie",
-      winnerId: m1,
-    });
-
-    // With avoidRecent=1, the pair (m1, m2) should be avoided
-    // Run several times — the pair should involve m3
-    let sawM3 = false;
-    for (let i = 0; i < 20; i++) {
-      const result = await caller.media.comparisons.getRandomPair({
-        dimensionId: dimId,
-        avoidRecent: 1,
-      });
-      const ids = [result.data!.movieA.id, result.data!.movieB.id].sort();
-      if (ids.includes(m3)) sawM3 = true;
-      // The recently compared pair (m1, m2) should not appear
-      expect(ids).not.toEqual([m1, m2].sort());
-    }
-    expect(sawM3).toBe(true);
+    const result = await caller.media.comparisons.getSmartPair({ dimensionId: dimId });
+    expect(result.data).not.toBeNull();
+    expect(result.data!.dimensionId).toBe(dimId);
   });
 
   it("only considers completed watches", async () => {
@@ -437,7 +412,7 @@ describe("comparisons.getRandomPair", () => {
     seedWatchHistoryEntry(db, { media_type: "movie", media_id: m2, completed: 0 }); // incomplete
 
     // Only 1 completed watch → not enough
-    const result = await caller.media.comparisons.getRandomPair({ dimensionId: dimId });
+    const result = await caller.media.comparisons.getSmartPair({ dimensionId: dimId });
     expect(result.data).toBeNull();
     expect(result.reason).toBe("insufficient_watched_movies");
   });
