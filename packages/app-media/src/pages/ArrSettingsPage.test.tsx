@@ -29,11 +29,13 @@ vi.mock("../lib/trpc", () => ({
         getSettings: { useQuery: (...args: unknown[]) => mockSettingsQuery(...args) },
         saveSettings: {
           useMutation: () => {
-            const idx = saveMutationCallCount++;
-            return {
-              mutate: idx === 0 ? mockSaveRadarrMutate : mockSaveSonarrMutate,
-              isPending: false,
-            };
+            // React calls hooks in stable order on every render.
+            // Use % 2 so call 0/2/4... → radarr, call 1/3/5... → sonarr
+            // regardless of how many times the component re-renders.
+            const mutate =
+              saveMutationCallCount % 2 === 0 ? mockSaveRadarrMutate : mockSaveSonarrMutate;
+            saveMutationCallCount++;
+            return { mutate, isPending: false };
           },
         },
         testRadarr: {
