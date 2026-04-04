@@ -22,7 +22,7 @@ import { watchHistory, mediaWatchlist, episodes, seasons, movies, tvShows } from
 import { NotFoundError } from "../../../shared/errors.js";
 import { resequencePriorities } from "../watchlist/service.js";
 import { resetStaleness } from "../comparisons/staleness.js";
-import { createDebriefSession } from "../debrief/service.js";
+import { createDebriefSession, queueDebriefStatus } from "../debrief/service.js";
 import type {
   WatchHistoryRow,
   LogWatchInput,
@@ -306,12 +306,13 @@ export function logWatch(input: LogWatchInput): LogWatchResult {
       .get();
     if (!entry) throw new Error("Watch history entry not found after insert");
 
-    // Reset staleness when a completed watch event is logged
+    // Reset staleness + queue debrief when a completed watch event is logged
     // (comparisons use movie/tv_show types, so resolve episode → tv_show)
     if (completed === 1) {
-      if (input.mediaType === "movie") {
-        resetStaleness("movie", input.mediaId);
-      } else if (input.mediaType === "episode") {
+      let compMediaType: string = input.mediaType;
+      let compMediaId = input.mediaId;
+
+      if (input.mediaType === "episode") {
         const ep = tx
           .select({ seasonId: episodes.seasonId })
           .from(episodes)
@@ -324,13 +325,19 @@ export function logWatch(input: LogWatchInput): LogWatchResult {
             .where(eq(seasons.id, ep.seasonId))
             .get();
           if (season) {
-            resetStaleness("tv_show", season.tvShowId);
+            compMediaType = "tv_show";
+            compMediaId = season.tvShowId;
           }
         }
       }
 
+      resetStaleness(compMediaType, compMediaId);
+
       // Auto-queue debrief session for completed watches (PRD-063)
       createDebriefSession(entry.id);
+
+      // Queue per-dimension debrief status rows
+      queueDebriefStatus(compMediaType, compMediaId);
     }
 
     // Auto-remove from watchlist (PRD-011 R6) — skip for plex_sync source

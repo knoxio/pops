@@ -6,7 +6,7 @@ import {
   seedDimension,
   seedWatchHistoryEntry,
 } from "../../../shared/test-utils.js";
-import { createDebriefSession, getDebrief } from "./service.js";
+import { createDebriefSession, getDebrief, queueDebriefStatus } from "./service.js";
 import * as watchHistoryService from "../watch-history/service.js";
 
 const ctx = setupTestContext();
@@ -201,6 +201,66 @@ describe("debrief auto-queue", () => {
     });
   });
 
+  describe("queueDebriefStatus", () => {
+    function getDebriefStatusRows(db: Database) {
+      return db.prepare("SELECT * FROM debrief_status ORDER BY id").all() as Array<{
+        id: number;
+        media_type: string;
+        media_id: number;
+        dimension_id: number;
+        debriefed: number;
+        dismissed: number;
+        created_at: string;
+        updated_at: string;
+      }>;
+    }
+
+    it("creates one row per active dimension", () => {
+      seedDimension(db, { name: "Enjoyment", active: 1 });
+      seedDimension(db, { name: "Cinematography", active: 1 });
+      seedDimension(db, { name: "Inactive", active: 0 });
+
+      const count = queueDebriefStatus("movie", 1);
+
+      expect(count).toBe(2);
+      const rows = getDebriefStatusRows(db);
+      expect(rows).toHaveLength(2);
+      expect(rows[0]!.media_type).toBe("movie");
+      expect(rows[0]!.media_id).toBe(1);
+      expect(rows[0]!.debriefed).toBe(0);
+      expect(rows[0]!.dismissed).toBe(0);
+    });
+
+    it("returns 0 when no active dimensions exist", () => {
+      seedDimension(db, { name: "Inactive", active: 0 });
+
+      const count = queueDebriefStatus("movie", 1);
+
+      expect(count).toBe(0);
+      expect(getDebriefStatusRows(db)).toHaveLength(0);
+    });
+
+    it("re-watch resets debriefed and dismissed to 0", () => {
+      seedDimension(db, { name: "Enjoyment", active: 1 });
+
+      queueDebriefStatus("movie", 1);
+
+      // Simulate completed debrief
+      db.prepare("UPDATE debrief_status SET debriefed = 1, dismissed = 1 WHERE media_id = 1").run();
+      const before = getDebriefStatusRows(db);
+      expect(before[0]!.debriefed).toBe(1);
+      expect(before[0]!.dismissed).toBe(1);
+
+      // Re-watch: should reset
+      queueDebriefStatus("movie", 1);
+
+      const after = getDebriefStatusRows(db);
+      expect(after).toHaveLength(1); // still one row (upsert)
+      expect(after[0]!.debriefed).toBe(0);
+      expect(after[0]!.dismissed).toBe(0);
+    });
+  });
+
   describe("logWatch integration", () => {
     it("creates a debrief session when logging a completed watch", () => {
       seedMovie(db, { title: "The Matrix", tmdb_id: 100 });
@@ -227,6 +287,37 @@ describe("debrief auto-queue", () => {
 
       const sessions = getDebriefSessions(db);
       expect(sessions).toHaveLength(0);
+    });
+
+    it("queues debrief status rows when logging a completed watch", () => {
+      seedMovie(db, { title: "The Matrix", tmdb_id: 100 });
+      seedDimension(db, { name: "Enjoyment", active: 1 });
+      seedDimension(db, { name: "Cinematography", active: 1 });
+
+      watchHistoryService.logWatch({
+        mediaType: "movie",
+        mediaId: 1,
+        completed: 1,
+      });
+
+      const rows = db
+        .prepare("SELECT * FROM debrief_status WHERE media_type = 'movie' AND media_id = 1")
+        .all() as Array<{ dimension_id: number }>;
+      expect(rows).toHaveLength(2);
+    });
+
+    it("does not queue debrief status for incomplete watches", () => {
+      seedMovie(db, { title: "The Matrix", tmdb_id: 100 });
+      seedDimension(db, { name: "Enjoyment", active: 1 });
+
+      watchHistoryService.logWatch({
+        mediaType: "movie",
+        mediaId: 1,
+        completed: 0,
+      });
+
+      const rows = db.prepare("SELECT * FROM debrief_status").all();
+      expect(rows).toHaveLength(0);
     });
 
     it("does not create a debrief session for blacklisted watch events", () => {

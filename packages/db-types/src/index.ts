@@ -36,6 +36,7 @@ import type { comparisonStaleness } from "./schema/comparison-staleness.js";
 import type { debriefSessions } from "./schema/debrief-sessions.js";
 import type { debriefResults } from "./schema/debrief-results.js";
 import type { tierOverrides } from "./schema/tier-overrides.js";
+import type { debriefStatus } from "./schema/debrief-status.js";
 
 // Re-export Drizzle table objects for use in queries
 export {
@@ -69,6 +70,7 @@ export {
   debriefSessions,
   debriefResults,
   tierOverrides,
+  debriefStatus,
 } from "./schema/index.js";
 
 // Select types (what you get back from a SELECT query)
@@ -134,6 +136,8 @@ export type DebriefResultRow = InferSelectModel<typeof debriefResults>;
 export type DebriefResultInsert = InferInsertModel<typeof debriefResults>;
 export type TierOverrideRow = InferSelectModel<typeof tierOverrides>;
 export type TierOverrideInsert = InferInsertModel<typeof tierOverrides>;
+export type DebriefStatusRow = InferSelectModel<typeof debriefStatus>;
+export type DebriefStatusInsert = InferInsertModel<typeof debriefStatus>;
 
 // Constants
 export const ENTITY_TYPES = ["company", "person", "place", "brand", "organisation"] as const;

@@ -424,6 +424,19 @@ export function createTestDb(): Database {
       created_at      TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS debrief_status (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      media_type    TEXT NOT NULL,
+      media_id      INTEGER NOT NULL,
+      dimension_id  INTEGER NOT NULL REFERENCES comparison_dimensions(id),
+      debriefed     INTEGER NOT NULL DEFAULT 0,
+      dismissed     INTEGER NOT NULL DEFAULT 0,
+      created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS debrief_status_media_dimension_idx
+      ON debrief_status(media_type, media_id, dimension_id);
+
     CREATE TABLE IF NOT EXISTS tier_overrides (
       id            INTEGER PRIMARY KEY AUTOINCREMENT,
       media_type    TEXT NOT NULL,
