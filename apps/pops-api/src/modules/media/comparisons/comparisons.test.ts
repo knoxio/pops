@@ -8,7 +8,12 @@ import {
   seedWatchHistoryEntry,
   createCaller,
 } from "../../../shared/test-utils.js";
-import { blacklistMovie, excludeFromDimension, includeInDimension } from "./service.js";
+import {
+  blacklistMovie,
+  excludeFromDimension,
+  includeInDimension,
+  getDebriefOpponent,
+} from "./service.js";
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;
@@ -1842,5 +1847,126 @@ describe("dimension exclusion", () => {
   it("includeInDimension throws NOT_FOUND when no score row exists", () => {
     const dimId = seedDimension(db, { name: "Dim" });
     expect(() => includeInDimension("movie", 999, dimId)).toThrow();
+  });
+});
+
+describe("getDebriefOpponent", () => {
+  function seedScore(
+    rawDb: Database,
+    mediaType: string,
+    mediaId: number,
+    dimensionId: number,
+    score: number,
+    excluded = 0
+  ) {
+    rawDb
+      .prepare(
+        "INSERT INTO media_scores (media_type, media_id, dimension_id, score, comparison_count, excluded) VALUES (?, ?, ?, ?, ?, ?)"
+      )
+      .run(mediaType, mediaId, dimensionId, score, 5, excluded);
+  }
+
+  it("selects movie closest to median score", () => {
+    const dimId = seedDimension(db, { name: "Overall" });
+    const debriefMovieId = seedMovie(db, { title: "Debrief Movie", tmdb_id: 100 });
+    const lowId = seedMovie(db, { title: "Low Movie", tmdb_id: 101 });
+    const midId = seedMovie(db, { title: "Mid Movie", tmdb_id: 102 });
+    const highId = seedMovie(db, { title: "High Movie", tmdb_id: 103 });
+
+    seedScore(db, "movie", debriefMovieId, dimId, 1500);
+    seedScore(db, "movie", lowId, dimId, 1200);
+    seedScore(db, "movie", midId, dimId, 1500);
+    seedScore(db, "movie", highId, dimId, 1800);
+
+    const result = getDebriefOpponent("movie", debriefMovieId, dimId);
+    expect(result).not.toBeNull();
+    // Median of [1200, 1500, 1800] (sorted, after excluding debrief) is 1500
+    expect(result!.id).toBe(midId);
+    expect(result!.title).toBe("Mid Movie");
+  });
+
+  it("excludes the debrief movie itself", () => {
+    const dimId = seedDimension(db, { name: "Overall" });
+    const debriefId = seedMovie(db, { title: "Only Movie", tmdb_id: 200 });
+
+    seedScore(db, "movie", debriefId, dimId, 1500);
+
+    const result = getDebriefOpponent("movie", debriefId, dimId);
+    expect(result).toBeNull();
+  });
+
+  it("excludes movies with excluded=1 for the dimension", () => {
+    const dimId = seedDimension(db, { name: "Overall" });
+    const debriefId = seedMovie(db, { title: "Debrief", tmdb_id: 300 });
+    const excludedId = seedMovie(db, { title: "Excluded", tmdb_id: 301 });
+
+    seedScore(db, "movie", debriefId, dimId, 1500);
+    seedScore(db, "movie", excludedId, dimId, 1500, 1); // excluded=1
+
+    const result = getDebriefOpponent("movie", debriefId, dimId);
+    expect(result).toBeNull();
+  });
+
+  it("excludes blacklisted movies", () => {
+    const dimId = seedDimension(db, { name: "Overall" });
+    const debriefId = seedMovie(db, { title: "Debrief", tmdb_id: 400 });
+    const blacklistedId = seedMovie(db, { title: "Blacklisted", tmdb_id: 401 });
+
+    seedScore(db, "movie", debriefId, dimId, 1500);
+    seedScore(db, "movie", blacklistedId, dimId, 1500);
+    seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: blacklistedId,
+      blacklisted: 1,
+    });
+
+    const result = getDebriefOpponent("movie", debriefId, dimId);
+    expect(result).toBeNull();
+  });
+
+  it("excludes movies already compared against in this dimension", () => {
+    const dimId = seedDimension(db, { name: "Overall" });
+    const debriefId = seedMovie(db, { title: "Debrief", tmdb_id: 500 });
+    const comparedId = seedMovie(db, { title: "Compared", tmdb_id: 501 });
+
+    seedScore(db, "movie", debriefId, dimId, 1500);
+    seedScore(db, "movie", comparedId, dimId, 1500);
+
+    // Insert a comparison between them
+    db.prepare(
+      "INSERT INTO comparisons (dimension_id, media_a_type, media_a_id, media_b_type, media_b_id, winner_type, winner_id) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    ).run(dimId, "movie", debriefId, "movie", comparedId, "movie", debriefId);
+
+    const result = getDebriefOpponent("movie", debriefId, dimId);
+    expect(result).toBeNull();
+  });
+
+  it("returns null when no eligible opponents exist", () => {
+    const dimId = seedDimension(db, { name: "Overall" });
+    const debriefId = seedMovie(db, { title: "Debrief", tmdb_id: 600 });
+
+    seedScore(db, "movie", debriefId, dimId, 1500);
+    // No other movies have scores
+
+    const result = getDebriefOpponent("movie", debriefId, dimId);
+    expect(result).toBeNull();
+  });
+
+  it("returns via tRPC endpoint", async () => {
+    const dimId = seedDimension(db, { name: "Overall" });
+    const debriefId = seedMovie(db, { title: "Debrief", tmdb_id: 700 });
+    const opponentId = seedMovie(db, { title: "Opponent", tmdb_id: 701 });
+
+    seedScore(db, "movie", debriefId, dimId, 1500);
+    seedScore(db, "movie", opponentId, dimId, 1500);
+
+    const result = await caller.media.comparisons.getDebriefOpponent({
+      mediaType: "movie",
+      mediaId: debriefId,
+      dimensionId: dimId,
+    });
+    expect(result.data).not.toBeNull();
+    expect(result.data!.id).toBe(opponentId);
+    expect(result.data!.title).toBe("Opponent");
   });
 });

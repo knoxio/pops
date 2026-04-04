@@ -233,3 +233,18 @@ export const RecordSkipSchema = z.object({
   mediaBId: z.number().int().positive(),
 });
 export type RecordSkipInput = z.infer<typeof RecordSkipSchema>;
+
+export const GetDebriefOpponentSchema = z.object({
+  mediaType: z.enum(MEDIA_TYPES),
+  mediaId: z.number().int().positive(),
+  dimensionId: z.number().int().positive(),
+});
+export type GetDebriefOpponentInput = z.infer<typeof GetDebriefOpponentSchema>;
+
+/** API response shape for a debrief opponent. */
+export interface DebriefOpponent {
+  id: number;
+  title: string;
+  posterPath: string | null;
+  posterUrl: string | null;
+}

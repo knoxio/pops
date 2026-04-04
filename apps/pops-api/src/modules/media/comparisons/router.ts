@@ -20,6 +20,7 @@ import {
   DimensionExclusionSchema,
   StalenessSchema,
   RecordSkipSchema,
+  GetDebriefOpponentSchema,
   toDimension,
   toComparison,
   toMediaScore,
@@ -213,6 +214,23 @@ export const comparisonsRouter = router({
   getStaleness: protectedProcedure.input(StalenessSchema).query(({ input }) => {
     const staleness = stalenessService.getStaleness(input.mediaType, input.mediaId);
     return { data: { staleness } };
+  }),
+
+  /** Get a debrief opponent — movie closest to median score, excluding ineligible. */
+  getDebriefOpponent: protectedProcedure.input(GetDebriefOpponentSchema).query(({ input }) => {
+    try {
+      const opponent = service.getDebriefOpponent(
+        input.mediaType,
+        input.mediaId,
+        input.dimensionId
+      );
+      return { data: opponent };
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+      }
+      throw err;
+    }
   }),
 
   /** Record a skip (puts pair on cooloff for 10 global comparisons). */

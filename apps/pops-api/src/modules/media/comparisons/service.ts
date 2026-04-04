@@ -24,6 +24,7 @@ import {
   type RandomPair,
   type RankedMediaEntry,
   type BlacklistMovieResult,
+  type DebriefOpponent,
 } from "./types.js";
 import { getStaleness } from "./staleness.js";
 
@@ -1425,6 +1426,139 @@ export function isPairOnCooloff(
 
   if (!cooloff) return false;
   return globalCount < cooloff.skipUntil;
+}
+
+// ── Debrief Opponent Selection ──
+
+/**
+ * Select a debrief opponent — the eligible movie closest to the median score
+ * for the given dimension.
+ *
+ * Excludes:
+ *  - The debrief movie itself
+ *  - Movies excluded from the dimension (excluded = 1)
+ *  - Blacklisted movies (watch_history.blacklisted = 1)
+ *  - Movies already compared against the debrief movie in this dimension
+ */
+export function getDebriefOpponent(
+  mediaType: string,
+  mediaId: number,
+  dimensionId: number
+): DebriefOpponent | null {
+  getDimension(dimensionId); // verify dimension exists
+
+  const db = getDrizzle();
+
+  // Get all non-excluded scores for this dimension
+  const allScores = db
+    .select()
+    .from(mediaScores)
+    .where(
+      and(
+        eq(mediaScores.dimensionId, dimensionId),
+        eq(mediaScores.mediaType, mediaType),
+        eq(mediaScores.excluded, 0)
+      )
+    )
+    .orderBy(asc(mediaScores.score))
+    .all();
+
+  // Get blacklisted movie IDs
+  const blacklistedIds = new Set(
+    db
+      .select({ mediaId: watchHistory.mediaId })
+      .from(watchHistory)
+      .where(
+        and(
+          eq(watchHistory.mediaType, mediaType as "movie" | "episode"),
+          eq(watchHistory.blacklisted, 1)
+        )
+      )
+      .all()
+      .map((r) => r.mediaId)
+  );
+
+  // Get IDs of movies already compared against this one in this dimension
+  const comparedAgainstIds = new Set<number>();
+  const compsA = db
+    .select({ mediaBId: comparisons.mediaBId })
+    .from(comparisons)
+    .where(
+      and(
+        eq(comparisons.dimensionId, dimensionId),
+        eq(comparisons.mediaAType, mediaType),
+        eq(comparisons.mediaAId, mediaId)
+      )
+    )
+    .all();
+  for (const c of compsA) comparedAgainstIds.add(c.mediaBId);
+
+  const compsB = db
+    .select({ mediaAId: comparisons.mediaAId })
+    .from(comparisons)
+    .where(
+      and(
+        eq(comparisons.dimensionId, dimensionId),
+        eq(comparisons.mediaBType, mediaType),
+        eq(comparisons.mediaBId, mediaId)
+      )
+    )
+    .all();
+  for (const c of compsB) comparedAgainstIds.add(c.mediaAId);
+
+  // Filter eligible candidates
+  const eligible = allScores.filter(
+    (s) =>
+      s.mediaId !== mediaId && !blacklistedIds.has(s.mediaId) && !comparedAgainstIds.has(s.mediaId)
+  );
+
+  if (eligible.length === 0) return null;
+
+  // Find median score
+  const medianIndex = Math.floor(eligible.length / 2);
+  const medianEntry = eligible[medianIndex];
+  if (!medianEntry) return null;
+  const medianScore = medianEntry.score;
+
+  // Pick the one closest to median
+  let closest = eligible[0];
+  if (!closest) return null;
+  let closestDist = Math.abs(closest.score - medianScore);
+  for (const s of eligible) {
+    const dist = Math.abs(s.score - medianScore);
+    if (dist < closestDist) {
+      closest = s;
+      closestDist = dist;
+    }
+  }
+
+  // Fetch movie metadata
+  const movieRow = db
+    .select({
+      id: movies.id,
+      title: movies.title,
+      posterPath: movies.posterPath,
+      tmdbId: movies.tmdbId,
+      posterOverridePath: movies.posterOverridePath,
+    })
+    .from(movies)
+    .where(eq(movies.id, closest.mediaId))
+    .get();
+
+  if (!movieRow) return null;
+
+  const posterUrl = movieRow.posterOverridePath
+    ? movieRow.posterOverridePath
+    : movieRow.posterPath
+      ? `/media/images/movie/${movieRow.tmdbId}/poster.jpg`
+      : null;
+
+  return {
+    id: movieRow.id,
+    title: movieRow.title,
+    posterPath: movieRow.posterPath,
+    posterUrl,
+  };
 }
 
 /**
