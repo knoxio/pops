@@ -23,7 +23,7 @@ Build a personal media intelligence app — not just a tracker, but a system tha
 | 1 | [Metadata Integration](epics/01-metadata-integration.md) | TMDB (movies) and TheTVDB (TV) — search, metadata fetch, poster cache, rate limiting | Partial |
 | 2 | [App Package & Core UI](epics/02-app-package-ui.md) | `@pops/app-media` — routes, pages, browse/search/detail views | Partial |
 | 3 | [Tracking & Watchlist](epics/03-tracking-watchlist.md) | Watch history, watchlist management, episode-level progress | Partial |
-| 4 | [Ratings & Comparisons](epics/04-ratings-comparisons.md) | 1v1 pairwise comparisons, ELO scoring, rankings, radar charts | Partial |
+| 4 | [Ratings & Comparisons](epics/04-ratings-comparisons.md) | 1v1 pairwise comparisons, ELO scoring, rankings, radar charts | Done |
 | 5 | [Discovery & Recommendations](epics/05-discovery-recommendations.md) | Trending, new releases, personalised suggestions | Partial |
 | 6 | [Plex Sync](epics/06-plex-sync.md) | Library import, watch history sync (local + Discover cloud), watchlist sync, auto-check on add | Done |
 | 7 | [Radarr & Sonarr](epics/07-radarr-sonarr.md) | Status display, request management — evolves toward full Overseerr replacement | Partial |

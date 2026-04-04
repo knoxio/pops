@@ -1,7 +1,7 @@
 # PRD-037: Ratings & Comparisons
 
 > Epic: [04 — Ratings & Comparisons](../../epics/04-ratings-comparisons.md)
-> Status: Partial
+> Status: Done
 
 ## Overview
 
@@ -119,7 +119,7 @@ Build a pairwise comparison system per [ADR-010](../../../../architecture/adr-01
 | 05 | [us-05-quick-pick](us-05-quick-pick.md) | Quick pick page with random unwatched movies, configurable count, "Watch This" action | Done | Yes |
 | 06 | [us-06-comparison-history](us-06-comparison-history.md) | Comparison history list, delete with Elo recalculation, undo toast, dimension filter | Done | Yes |
 | 07 | [us-07-dimension-weights](us-07-dimension-weights.md) | Per-dimension weight for overall ranking, weight slider in dimension management UI | Done | Yes |
-| 08 | [us-08-arena-watchlist-filter](us-08-arena-watchlist-filter.md) | Add to watchlist from arena, exclude watchlisted movies from pair selection | Not started | Yes |
+| 08 | [us-08-arena-watchlist-filter](us-08-arena-watchlist-filter.md) | Add to watchlist from arena, exclude watchlisted movies from pair selection | Done | Yes |
 | 09 | [us-09-tiered-draws](us-09-tiered-draws.md) | Three draw tier buttons (High/Mid/Low) with ELO outcome values 0.7/0.5/0.3 | Done | Yes |
 
 US-01 depends on US-02 (arena needs Elo scoring to record comparisons). US-03 through US-08 can all be built in parallel.

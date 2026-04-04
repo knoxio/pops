@@ -10,7 +10,7 @@ Build the pairwise comparison system (per ADR-010). Two movies presented side by
 
 | # | PRD | Summary | Status |
 |---|-----|---------|--------|
-| 037 | [Ratings & Comparisons](../prds/037-ratings-comparisons/README.md) | Compare arena page, dimension management, ELO scoring algorithm, rankings page, radar charts on detail pages, quick-pick flow | Partial |
+| 037 | [Ratings & Comparisons](../prds/037-ratings-comparisons/README.md) | Compare arena page, dimension management, ELO scoring algorithm, rankings page, radar charts on detail pages, quick-pick flow | Done |
 | 062 | [Comparison Intelligence](../prds/062-comparison-intelligence/README.md) | Probabilistic pair selection, staleness model, dimension exclusion, watch blacklist, skip cooloff, score confidence, freshness indicators | Done |
 | 063 | [Post-Watch Debrief](../prds/063-post-watch-debrief/README.md) | Rapid-fire comparison session for newly watched movies — one opponent per dimension, median-score calibration | Done |
 | 064 | [Batch Tier List](../prds/064-batch-tier-list/README.md) | Drag-and-drop S/A/B/C/D tier ranking for 8 movies per dimension, implied pairwise comparisons | Done |
