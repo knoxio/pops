@@ -346,6 +346,9 @@ importers:
       '@pops/api-client':
         specifier: workspace:*
         version: link:../api-client
+      '@pops/navigation':
+        specifier: workspace:*
+        version: link:../navigation
       '@pops/ui':
         specifier: workspace:*
         version: link:../ui

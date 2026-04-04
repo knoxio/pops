@@ -76,7 +76,7 @@ v1 is plain text only. Structured syntax added as v2 USs.
 | 04 | [us-04-transactions-adapter](us-04-transactions-adapter.md) | Transactions backend adapter: search by description | Done | — |
 | 04b | [us-04b-transactions-result-component](us-04b-transactions-result-component.md) | Transactions ResultComponent: description + colored amount + date | Not started | Blocked by us-04 |
 | 05 | [us-05-entities-adapter](us-05-entities-adapter.md) | Entities backend adapter: search by name | Done | Blocked by us-01 |
-| 05b | [us-05b-entities-result-component](us-05b-entities-result-component.md) | Entities ResultComponent: name + type badge + aliases | Not started | Blocked by us-05 |
+| 05b | [us-05b-entities-result-component](us-05b-entities-result-component.md) | Entities ResultComponent: name + type badge + aliases | Done | — |
 | 06 | [us-06-budgets-adapter](us-06-budgets-adapter.md) | Budgets backend adapter: search by category | Not started | Blocked by us-01 |
 | 06b | [us-06b-budgets-result-component](us-06b-budgets-result-component.md) | Budgets ResultComponent: category + period + amount | Not started | Blocked by us-06 |
 | 07 | [us-07-inventory-items-adapter](us-07-inventory-items-adapter.md) | Inventory items backend adapter: search by name and asset ID | Not started | Blocked by us-01 |
