@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { AppContextProvider } from "./AppContextProvider";
 import { useAppContext } from "./hooks";
@@ -44,39 +44,47 @@ function ContextReader() {
 }
 
 describe("useSetPageContext", () => {
-  it("sets page context on mount", () => {
+  it("sets page context on mount", async () => {
     renderAt("/media", <TestPage page="library" />);
 
-    expect(screen.getByTestId("page")).toHaveTextContent("library");
-    expect(screen.getByTestId("pageType")).toHaveTextContent("top-level");
+    await waitFor(() => {
+      expect(screen.getByTestId("page")).toHaveTextContent("library");
+      expect(screen.getByTestId("pageType")).toHaveTextContent("top-level");
+    });
   });
 
-  it("sets pageType when provided", () => {
+  it("sets pageType when provided", async () => {
     renderAt("/media", <TestPage page="movie-detail" pageType="drill-down" />);
 
-    expect(screen.getByTestId("page")).toHaveTextContent("movie-detail");
-    expect(screen.getByTestId("pageType")).toHaveTextContent("drill-down");
+    await waitFor(() => {
+      expect(screen.getByTestId("page")).toHaveTextContent("movie-detail");
+      expect(screen.getByTestId("pageType")).toHaveTextContent("drill-down");
+    });
   });
 
-  it("sets entity on drill-down pages", () => {
+  it("sets entity on drill-down pages", async () => {
     const entity = { uri: "pops:media/movie/42", type: "movie", title: "Fight Club" };
     renderAt("/media", <TestPage page="movie-detail" pageType="drill-down" entity={entity} />);
 
-    expect(screen.getByTestId("entity")).toHaveTextContent("Fight Club");
+    await waitFor(() => {
+      expect(screen.getByTestId("entity")).toHaveTextContent("Fight Club");
+    });
   });
 
-  it("sets filters on list pages", () => {
+  it("sets filters on list pages", async () => {
     renderAt(
       "/finance",
       <TestPage page="transactions" filters={{ category: "food", month: "2026-03" }} />
     );
 
-    expect(screen.getByTestId("filters")).toHaveTextContent(
-      JSON.stringify({ category: "food", month: "2026-03" })
-    );
+    await waitFor(() => {
+      expect(screen.getByTestId("filters")).toHaveTextContent(
+        JSON.stringify({ category: "food", month: "2026-03" })
+      );
+    });
   });
 
-  it("clears context on unmount", () => {
+  it("clears context on unmount", async () => {
     function Toggler() {
       const [showPage, setShowPage] = useState(true);
       return (
@@ -90,7 +98,9 @@ describe("useSetPageContext", () => {
     renderAt("/media", <Toggler />);
 
     // Page is set
-    expect(screen.getByTestId("page")).toHaveTextContent("library");
+    await waitFor(() => {
+      expect(screen.getByTestId("page")).toHaveTextContent("library");
+    });
 
     // Unmount the page component
     act(() => {
@@ -98,12 +108,14 @@ describe("useSetPageContext", () => {
     });
 
     // Context should be cleared
-    expect(screen.getByTestId("page")).toHaveTextContent("null");
-    expect(screen.getByTestId("pageType")).toHaveTextContent("top-level");
-    expect(screen.getByTestId("entity")).toHaveTextContent("none");
+    await waitFor(() => {
+      expect(screen.getByTestId("page")).toHaveTextContent("null");
+      expect(screen.getByTestId("pageType")).toHaveTextContent("top-level");
+      expect(screen.getByTestId("entity")).toHaveTextContent("none");
+    });
   });
 
-  it("clears entity and filters on unmount after drill-down", () => {
+  it("clears entity and filters on unmount after drill-down", async () => {
     const entity = { uri: "pops:media/movie/42", type: "movie", title: "Fight Club" };
 
     function Toggler() {
@@ -127,14 +139,18 @@ describe("useSetPageContext", () => {
 
     renderAt("/media", <Toggler />);
 
-    expect(screen.getByTestId("entity")).toHaveTextContent("Fight Club");
-    expect(screen.getByTestId("filters")).toHaveTextContent(JSON.stringify({ tab: "cast" }));
+    await waitFor(() => {
+      expect(screen.getByTestId("entity")).toHaveTextContent("Fight Club");
+      expect(screen.getByTestId("filters")).toHaveTextContent(JSON.stringify({ tab: "cast" }));
+    });
 
     act(() => {
       screen.getByRole("button", { name: "unmount" }).click();
     });
 
-    expect(screen.getByTestId("entity")).toHaveTextContent("none");
-    expect(screen.getByTestId("filters")).toHaveTextContent("none");
+    await waitFor(() => {
+      expect(screen.getByTestId("entity")).toHaveTextContent("none");
+      expect(screen.getByTestId("filters")).toHaveTextContent("none");
+    });
   });
 });
