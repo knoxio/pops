@@ -212,6 +212,13 @@ export function CompareArenaPage() {
     title: string;
   } | null>(null);
 
+  // Fetch comparison count for the blacklist target (shown in confirmation dialog)
+  const { data: blacklistComparisonData } = trpc.media.comparisons.listForMedia.useQuery(
+    { mediaType: "movie", mediaId: blacklistTarget?.id ?? 0, limit: 1 },
+    { enabled: blacklistTarget !== null }
+  );
+  const comparisonsToPurge = blacklistComparisonData?.pagination?.total ?? null;
+
   const blacklistMutation = trpc.media.comparisons.blacklistMovie.useMutation({
     onSuccess: (_data: unknown, variables: { mediaType: string; mediaId: number }) => {
       const movie =
@@ -516,6 +523,44 @@ export function CompareArenaPage() {
             </Tooltip>
           </div>
           <div className="flex justify-center gap-3">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleBlacklist(pairData.data.movieA)}
+                  disabled={blacklistMutation.isPending}
+                  className="text-red-500 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600"
+                  aria-label={`Not watched ${pairData.data.movieA.title}`}
+                >
+                  <X className="h-3.5 w-3.5 mr-1.5" />
+                  Not Watched: {pairData.data.movieA.title}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Mark as not watched — removes all comparisons for this movie
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleBlacklist(pairData.data.movieB)}
+                  disabled={blacklistMutation.isPending}
+                  className="text-red-500 border-red-200 dark:border-red-800 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-600"
+                  aria-label={`Not watched ${pairData.data.movieB.title}`}
+                >
+                  <X className="h-3.5 w-3.5 mr-1.5" />
+                  Not Watched: {pairData.data.movieB.title}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Mark as not watched — removes all comparisons for this movie
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <div className="flex justify-center gap-3">
             <Button
               variant="outline"
               size="sm"
@@ -551,9 +596,20 @@ export function CompareArenaPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Mark as not watched?</AlertDialogTitle>
             <AlertDialogDescription>
-              All comparisons involving this movie will be deleted and scores recalculated. This
-              marks <span className="font-medium text-foreground">{blacklistTarget?.title}</span> as
-              not watched.
+              {comparisonsToPurge !== null ? (
+                <>
+                  <span className="font-medium text-foreground">{comparisonsToPurge}</span>{" "}
+                  comparison{comparisonsToPurge !== 1 ? "s" : ""} involving{" "}
+                  <span className="font-medium text-foreground">{blacklistTarget?.title}</span> will
+                  be deleted and scores recalculated.
+                </>
+              ) : (
+                <>
+                  All comparisons involving{" "}
+                  <span className="font-medium text-foreground">{blacklistTarget?.title}</span> will
+                  be deleted and scores recalculated.
+                </>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
