@@ -27,7 +27,7 @@ export function DebriefBanner() {
         <span>
           Rate your recently watched {count === 1 ? "movie" : "movies"} across dimensions.{" "}
           <Link
-            to={`/media/debrief/${firstSession.sessionId}`}
+            to={`/media/debrief/${firstSession.movieId}`}
             className="font-medium underline underline-offset-4 hover:text-foreground"
           >
             Start debrief
