@@ -14,6 +14,7 @@ import {
   includeInDimension,
   getDebriefOpponent,
   getPendingDebriefs,
+  getTierListMovies,
 } from "./service.js";
 
 const ctx = setupTestContext();
@@ -2075,5 +2076,111 @@ describe("getPendingDebriefs", () => {
     const result = await caller.media.comparisons.getPendingDebriefs();
     expect(result.data).toHaveLength(1);
     expect(result.data[0]!.title).toBe("Debrief Via API");
+  });
+});
+
+describe("getTierListMovies", () => {
+  function seedScore(
+    rawDb: Database,
+    mediaId: number,
+    dimensionId: number,
+    score: number,
+    comparisonCount: number = 5,
+    excluded: number = 0
+  ) {
+    rawDb
+      .prepare(
+        "INSERT INTO media_scores (media_type, media_id, dimension_id, score, comparison_count, excluded) VALUES (?, ?, ?, ?, ?, ?)"
+      )
+      .run("movie", mediaId, dimensionId, score, comparisonCount, excluded);
+  }
+
+  it("returns movies for a dimension", () => {
+    const dimId = seedDimension(db, { name: "Overall" });
+    const m1 = seedMovie(db, { title: "Movie A", tmdb_id: 900 });
+    const m2 = seedMovie(db, { title: "Movie B", tmdb_id: 901 });
+
+    seedScore(db, m1, dimId, 1600, 3);
+    seedScore(db, m2, dimId, 1400, 5);
+
+    const results = getTierListMovies(dimId);
+    expect(results).toHaveLength(2);
+    expect(results.map((r) => r.id)).toContain(m1);
+    expect(results.map((r) => r.id)).toContain(m2);
+  });
+
+  it("excludes movies with excluded=1", () => {
+    const dimId = seedDimension(db, { name: "Dim" });
+    const m1 = seedMovie(db, { title: "Included", tmdb_id: 910 });
+    const m2 = seedMovie(db, { title: "Excluded", tmdb_id: 911 });
+
+    seedScore(db, m1, dimId, 1500, 5);
+    seedScore(db, m2, dimId, 1500, 5, 1); // excluded
+
+    const results = getTierListMovies(dimId);
+    expect(results).toHaveLength(1);
+    expect(results[0]!.id).toBe(m1);
+  });
+
+  it("excludes blacklisted movies", () => {
+    const dimId = seedDimension(db, { name: "Dim" });
+    const m1 = seedMovie(db, { title: "Normal", tmdb_id: 920 });
+    const m2 = seedMovie(db, { title: "Blacklisted", tmdb_id: 921 });
+
+    seedScore(db, m1, dimId, 1500, 5);
+    seedScore(db, m2, dimId, 1500, 5);
+    seedWatchHistoryEntry(db, { media_type: "movie", media_id: m2, blacklisted: 1 });
+
+    const results = getTierListMovies(dimId);
+    expect(results).toHaveLength(1);
+    expect(results[0]!.id).toBe(m1);
+  });
+
+  it("excludes movies with staleness below threshold", () => {
+    const dimId = seedDimension(db, { name: "Dim" });
+    const m1 = seedMovie(db, { title: "Fresh", tmdb_id: 930 });
+    const m2 = seedMovie(db, { title: "Stale", tmdb_id: 931 });
+
+    seedScore(db, m1, dimId, 1500, 5);
+    seedScore(db, m2, dimId, 1500, 5);
+    // Mark m2 as very stale
+    db.prepare(
+      "INSERT INTO comparison_staleness (media_type, media_id, staleness) VALUES (?, ?, ?)"
+    ).run("movie", m2, 0.1);
+
+    const results = getTierListMovies(dimId);
+    expect(results).toHaveLength(1);
+    expect(results[0]!.id).toBe(m1);
+  });
+
+  it("returns at most 8 movies", () => {
+    const dimId = seedDimension(db, { name: "Dim" });
+    for (let i = 0; i < 12; i++) {
+      const mid = seedMovie(db, { title: `Movie ${i}`, tmdb_id: 940 + i });
+      seedScore(db, mid, dimId, 1400 + i * 50, i + 1);
+    }
+
+    const results = getTierListMovies(dimId);
+    expect(results.length).toBeLessThanOrEqual(8);
+    expect(results.length).toBeGreaterThan(0);
+  });
+
+  it("returns empty array when no eligible movies", () => {
+    const dimId = seedDimension(db, { name: "Empty Dim" });
+    const results = getTierListMovies(dimId);
+    expect(results).toHaveLength(0);
+  });
+
+  it("returns via tRPC endpoint", async () => {
+    const dimId = seedDimension(db, { name: "API Dim" });
+    const m1 = seedMovie(db, { title: "API Movie", tmdb_id: 960 });
+    seedScore(db, m1, dimId, 1500, 5);
+
+    const result = await caller.media.comparisons.getTierListMovies({
+      dimensionId: dimId,
+    });
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0]!.title).toBe("API Movie");
+    expect(result.data[0]!.score).toBe(1500);
   });
 });
