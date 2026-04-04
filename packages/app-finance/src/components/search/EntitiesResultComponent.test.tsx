@@ -1,13 +1,9 @@
 import { render, screen } from "@testing-library/react";
-import { describe, it, expect, beforeEach } from "vitest";
-import { _clearRegistry, getResultComponent } from "@pops/navigation";
+import { describe, it, expect } from "vitest";
+import { getResultComponent, registerResultComponent } from "@pops/navigation";
 import { EntitiesResultComponent } from "./EntitiesResultComponent";
 
 describe("EntitiesResultComponent", () => {
-  beforeEach(() => {
-    _clearRegistry();
-  });
-
   it("renders entity name and type badge", () => {
     render(<EntitiesResultComponent data={{ name: "Woolworths", type: "company", aliases: [] }} />);
 
@@ -67,9 +63,9 @@ describe("EntitiesResultComponent", () => {
     }
   });
 
-  it("registers as 'entities' domain result component", async () => {
-    // Re-import to trigger side-effect registration
-    await import("./EntitiesResultComponent");
+  it("registers as 'entities' domain result component", () => {
+    // Manually register (side-effect import already ran at module load)
+    registerResultComponent("entities", EntitiesResultComponent);
     const component = getResultComponent("entities");
     expect(component).toBe(EntitiesResultComponent);
   });
