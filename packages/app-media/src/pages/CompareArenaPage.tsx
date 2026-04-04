@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { Badge, Skeleton, Button, Tooltip, TooltipContent, TooltipTrigger } from "@pops/ui";
-import { ImageOff, Bookmark, ChevronUp, Minus, ChevronDown } from "lucide-react";
+import { ImageOff, Bookmark, ChevronUp, Minus, ChevronDown, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
 import { DimensionManager } from "../components/DimensionManager";
@@ -146,6 +146,28 @@ export function CompareArenaPage() {
       refetchPair();
     },
   });
+
+  // Mark stale mutation
+  const markStaleMutation = trpc.media.comparisons.markStale.useMutation({
+    onSuccess: (data: { data: { staleness: number } }, variables: { mediaType: string; mediaId: number }) => {
+      const movie =
+        variables.mediaId === movieAId ? pairData?.data?.movieA : pairData?.data?.movieB;
+      const staleness = data.data.staleness;
+      const timesMarked = Math.round(Math.log(staleness) / Math.log(0.5));
+      toast.success(`${movie?.title ?? "Movie"} marked stale (×${timesMarked})`);
+      // Advance to next pair
+      utils.media.comparisons.getRandomPair.invalidate();
+      setDimensionIndex((i) => i + 1);
+    },
+  });
+
+  const handleMarkStale = useCallback(
+    (movieId: number) => {
+      if (markStaleMutation.isPending) return;
+      markStaleMutation.mutate({ mediaType: "movie", mediaId: movieId });
+    },
+    [markStaleMutation]
+  );
 
   const handleAddToWatchlist = useCallback(
     (movieId: number) => {
@@ -366,22 +388,56 @@ export function CompareArenaPage() {
         </>
       ) : null}
 
-      {/* Skip + Done buttons */}
+      {/* Action bar: Stale buttons + Skip + Done */}
       {pairData?.data && !recordMutation.isPending && !scoreDelta && (
-        <div className="flex justify-center gap-3">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              utils.media.comparisons.getRandomPair.invalidate();
-              setDimensionIndex((i) => i + 1);
-            }}
-          >
-            Skip this pair
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => navigate("/media")}>
-            Done
-          </Button>
+        <div className="flex flex-col items-center gap-3">
+          <div className="flex justify-center gap-3">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleMarkStale(pairData.data.movieA.id)}
+                  disabled={markStaleMutation.isPending}
+                  aria-label={`Mark ${pairData.data.movieA.title} as stale`}
+                >
+                  <Clock className="h-3.5 w-3.5 mr-1.5" />
+                  Stale: {pairData.data.movieA.title}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Mark as stale — reduces score weight for future comparisons</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleMarkStale(pairData.data.movieB.id)}
+                  disabled={markStaleMutation.isPending}
+                  aria-label={`Mark ${pairData.data.movieB.title} as stale`}
+                >
+                  <Clock className="h-3.5 w-3.5 mr-1.5" />
+                  Stale: {pairData.data.movieB.title}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Mark as stale — reduces score weight for future comparisons</TooltipContent>
+            </Tooltip>
+          </div>
+          <div className="flex justify-center gap-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                utils.media.comparisons.getRandomPair.invalidate();
+                setDimensionIndex((i) => i + 1);
+              }}
+            >
+              Skip this pair
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => navigate("/media")}>
+              Done
+            </Button>
+          </div>
         </div>
       )}
     </div>
