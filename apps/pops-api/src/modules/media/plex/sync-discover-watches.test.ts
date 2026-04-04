@@ -93,6 +93,7 @@ function logWatchResult(created: boolean): ReturnType<typeof logWatch> {
       mediaId: 1,
       watchedAt: "2026-01-01T00:00:00.000Z",
       completed: 1,
+      blacklisted: 0,
     },
     created,
     watchlistRemoved: false,

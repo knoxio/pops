@@ -1,0 +1,1 @@
+ALTER TABLE `watch_history` ADD `blacklisted` integer DEFAULT 0 NOT NULL;

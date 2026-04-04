@@ -11,6 +11,7 @@ export const watchHistory = sqliteTable(
       .notNull()
       .default(sql`(datetime('now'))`),
     completed: integer("completed").notNull().default(1),
+    blacklisted: integer("blacklisted").notNull().default(0),
   },
   (table) => [
     index("idx_watch_history_media").on(table.mediaType, table.mediaId),
