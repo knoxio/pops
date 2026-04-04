@@ -38,6 +38,7 @@ export interface Comparison {
   mediaBId: number;
   winnerType: string;
   winnerId: number;
+  drawTier: string | null;
   comparedAt: string;
 }
 
@@ -51,6 +52,7 @@ export function toComparison(row: ComparisonRow): Comparison {
     mediaBId: row.mediaBId,
     winnerType: row.winnerType,
     winnerId: row.winnerId,
+    drawTier: row.drawTier,
     comparedAt: row.comparedAt,
   };
 }
@@ -117,6 +119,9 @@ export const UpdateDimensionSchema = z.object({
 });
 export type UpdateDimensionInput = z.infer<typeof UpdateDimensionSchema>;
 
+const DRAW_TIERS = ["high", "mid", "low"] as const;
+export type DrawTier = (typeof DRAW_TIERS)[number];
+
 export const RecordComparisonSchema = z.object({
   dimensionId: z.number().int().positive(),
   mediaAType: z.enum(MEDIA_TYPES),
@@ -125,6 +130,7 @@ export const RecordComparisonSchema = z.object({
   mediaBId: z.number().int().positive(),
   winnerType: z.enum(MEDIA_TYPES),
   winnerId: z.number().int().nonnegative(), // 0 = draw
+  drawTier: z.enum(DRAW_TIERS).nullable().optional(),
 });
 export type RecordComparisonInput = z.infer<typeof RecordComparisonSchema>;
 

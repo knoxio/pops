@@ -210,6 +210,7 @@ export function createTestDb(): Database {
       media_b_id    INTEGER NOT NULL,
       winner_type   TEXT NOT NULL,
       winner_id     INTEGER NOT NULL,
+      draw_tier     TEXT,
       compared_at   TEXT NOT NULL DEFAULT (datetime('now'))
     );
     CREATE INDEX IF NOT EXISTS idx_comparisons_dimension_id ON comparisons(dimension_id);

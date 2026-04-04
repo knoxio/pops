@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Link, useNavigate } from "react-router";
 import { Badge, Skeleton, Button, Tooltip, TooltipContent, TooltipTrigger } from "@pops/ui";
-import { ImageOff, Bookmark, Equal } from "lucide-react";
+import { ImageOff, Bookmark, ChevronUp, Minus, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
 import { DimensionManager } from "../components/DimensionManager";
@@ -54,14 +54,19 @@ export function CompareArenaPage() {
   const recordMutation = trpc.media.comparisons.record.useMutation({
     onSuccess: async (
       _data: unknown,
-      variables: { mediaAId: number; mediaBId: number; winnerId: number }
+      variables: {
+        mediaAId: number;
+        mediaBId: number;
+        winnerId: number;
+        drawTier?: "high" | "mid" | "low" | null;
+      }
     ) => {
-      // Fetch updated scores for both movies to compute delta
-      const winnerId = variables.winnerId;
+      const isDraw = variables.winnerId === 0;
+      const winnerId = isDraw ? variables.mediaAId : variables.winnerId;
       const loserId = variables.mediaAId === winnerId ? variables.mediaBId : variables.mediaAId;
 
       try {
-        const [winnerScores, loserScores] = await Promise.all([
+        const [scoresA, scoresB] = await Promise.all([
           utils.media.comparisons.scores.fetch({
             mediaType: "movie",
             mediaId: winnerId,
@@ -74,19 +79,25 @@ export function CompareArenaPage() {
           }),
         ]);
 
-        const winnerScore =
-          winnerScores?.data?.find((s: { dimensionId: number }) => s.dimensionId === dimensionId)
+        const scoreA =
+          scoresA?.data?.find((s: { dimensionId: number }) => s.dimensionId === dimensionId)
             ?.score ?? 1500;
-        const loserScore =
-          loserScores?.data?.find((s: { dimensionId: number }) => s.dimensionId === dimensionId)
+        const scoreB =
+          scoresB?.data?.find((s: { dimensionId: number }) => s.dimensionId === dimensionId)
             ?.score ?? 1500;
 
-        // Approximate delta from current scores (K=32 Elo)
-        const expectedWinner = 1 / (1 + Math.pow(10, (loserScore - winnerScore) / 400));
-        const winnerDelta = Math.round(32 * (1 - expectedWinner));
-        const loserDelta = -winnerDelta;
-
-        setScoreDelta({ winnerId, loserId, winnerDelta, loserDelta });
+        if (isDraw) {
+          // Both get the same delta for draws
+          const drawOutcome =
+            variables.drawTier === "high" ? 0.7 : variables.drawTier === "low" ? 0.3 : 0.5;
+          const expectedA = 1 / (1 + Math.pow(10, (scoreB - scoreA) / 400));
+          const delta = Math.round(32 * (drawOutcome - expectedA));
+          setScoreDelta({ winnerId, loserId, winnerDelta: delta, loserDelta: delta });
+        } else {
+          const expectedWinner = 1 / (1 + Math.pow(10, (scoreB - scoreA) / 400));
+          const winnerDelta = Math.round(32 * (1 - expectedWinner));
+          setScoreDelta({ winnerId, loserId, winnerDelta, loserDelta: -winnerDelta });
+        }
       } catch {
         // Score fetch failed — skip animation
       }
@@ -164,20 +175,24 @@ export function CompareArenaPage() {
     [pairData, dimensionId, recordMutation]
   );
 
-  const handleDraw = useCallback(() => {
-    if (!pairData?.data || !dimensionId || recordMutation.isPending) return;
+  const handleDraw = useCallback(
+    (tier: "high" | "mid" | "low") => {
+      if (!pairData?.data || !dimensionId || recordMutation.isPending) return;
 
-    const { movieA, movieB } = pairData.data;
-    recordMutation.mutate({
-      dimensionId,
-      mediaAType: "movie" as const,
-      mediaAId: movieA.id,
-      mediaBType: "movie" as const,
-      mediaBId: movieB.id,
-      winnerType: "movie" as const,
-      winnerId: 0, // 0 = draw
-    });
-  }, [pairData, dimensionId, recordMutation]);
+      const { movieA, movieB } = pairData.data;
+      recordMutation.mutate({
+        dimensionId,
+        mediaAType: "movie" as const,
+        mediaAId: movieA.id,
+        mediaBType: "movie" as const,
+        mediaBId: movieB.id,
+        winnerType: "movie" as const,
+        winnerId: 0,
+        drawTier: tier,
+      });
+    },
+    [pairData, dimensionId, recordMutation]
+  );
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
@@ -291,22 +306,30 @@ export function CompareArenaPage() {
               watchlistPending={addToWatchlistMutation.isPending}
             />
 
-            {/* Draw button — centered between cards */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleDraw}
-                  disabled={recordMutation.isPending || scoreDelta !== null}
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 rounded-full h-12 w-12 shadow-lg hover:shadow-xl hover:scale-110 active:scale-95"
-                  aria-label="Draw — both equal"
-                >
-                  <Equal className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Draw — both equal</TooltipContent>
-            </Tooltip>
+            {/* Draw tier buttons — centered between cards */}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col gap-1.5">
+              {([
+                { tier: "high" as const, icon: ChevronUp, label: "Equally great", color: "hover:border-green-500 hover:text-green-500" },
+                { tier: "mid" as const, icon: Minus, label: "Equally average", color: "hover:border-muted-foreground" },
+                { tier: "low" as const, icon: ChevronDown, label: "Equally poor", color: "hover:border-red-500 hover:text-red-500" },
+              ]).map(({ tier, icon: Icon, label, color }) => (
+                <Tooltip key={tier}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleDraw(tier)}
+                      disabled={recordMutation.isPending || scoreDelta !== null}
+                      className={`rounded-full h-10 w-10 shadow-lg hover:shadow-xl hover:scale-110 active:scale-95 bg-background ${color}`}
+                      aria-label={label}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">{label}</TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
 
             <MovieCard
               movie={pairData.data.movieB}
