@@ -20,3 +20,10 @@ export { DEFAULT_APP_CONTEXT } from "./types";
 
 export { useRecentSearches } from "./recent-searches";
 export { RecentSearches } from "./RecentSearches";
+
+export { SearchResultsPanel } from "./SearchResultsPanel";
+export type {
+  SearchResultHit,
+  SearchResultSection,
+  SearchResultsPanelProps,
+} from "./SearchResultsPanel";
