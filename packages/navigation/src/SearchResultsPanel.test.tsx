@@ -9,32 +9,34 @@ beforeEach(() => {
 });
 
 function makeSection(overrides: Partial<SearchResultSection> = {}): SearchResultSection {
+  const hits = overrides.hits ?? [
+    {
+      uri: "pops:media/movie/1",
+      score: 0.8,
+      matchField: "title",
+      matchType: "prefix",
+      data: { title: "The Matrix" },
+    },
+  ];
   return {
     domain: "movies",
     label: "Movies",
     icon: <span data-testid="icon">🎬</span>,
     color: "purple",
-    hits: [
-      {
-        uri: "pops:media/movie/1",
-        score: 0.8,
-        matchField: "title",
-        matchType: "prefix",
-        data: { title: "The Matrix" },
-      },
-    ],
+    hits,
+    totalCount: overrides.totalCount ?? hits.length,
     isContext: false,
     ...overrides,
   };
 }
 
 describe("SearchResultsPanel", () => {
-  it("renders sections with headers", () => {
-    const sections = [makeSection()];
+  it("renders sections with headers showing total count", () => {
+    const sections = [makeSection({ totalCount: 12 })];
     render(<SearchResultsPanel sections={sections} query="matrix" onClose={vi.fn()} />);
     expect(screen.getByTestId("search-results-panel")).toBeInTheDocument();
     expect(screen.getByText("Movies")).toBeInTheDocument();
-    expect(screen.getByText("1")).toBeInTheDocument(); // count
+    expect(screen.getByText("12")).toBeInTheDocument(); // totalCount
   });
 
   it("renders no results state when all sections are empty", () => {
@@ -82,7 +84,7 @@ describe("SearchResultsPanel", () => {
       }),
     ];
     render(<SearchResultsPanel sections={sections} query="test" onClose={vi.fn()} />);
-    const sectionElements = screen.getAllByTestId(/^section-/);
+    const sectionElements = screen.getAllByTestId(/^section-(?!header)/);
     expect(sectionElements[0]).toHaveAttribute("data-testid", "section-transactions");
     expect(sectionElements[1]).toHaveAttribute("data-testid", "section-movies");
   });
@@ -109,7 +111,7 @@ describe("SearchResultsPanel", () => {
       }),
     ];
     render(<SearchResultsPanel sections={sections} query="test" onClose={vi.fn()} />);
-    const sectionElements = screen.getAllByTestId(/^section-/);
+    const sectionElements = screen.getAllByTestId(/^section-(?!header)/);
     expect(sectionElements[0]).toHaveAttribute("data-testid", "section-movies");
     expect(sectionElements[1]).toHaveAttribute("data-testid", "section-budgets");
   });
@@ -180,5 +182,40 @@ describe("SearchResultsPanel", () => {
     ];
     render(<SearchResultsPanel sections={sections} query="test" onClose={vi.fn()} />);
     expect(screen.getByText("Fallback Item")).toBeInTheDocument();
+  });
+
+  it("shows 'Show more' link when totalCount exceeds displayed hits", () => {
+    const sections = [makeSection({ totalCount: 15 })];
+    render(<SearchResultsPanel sections={sections} query="test" onClose={vi.fn()} />);
+    expect(screen.getByTestId("show-more-movies")).toBeInTheDocument();
+    expect(screen.getByText("Show more (14 remaining)")).toBeInTheDocument();
+  });
+
+  it("hides 'Show more' link when totalCount equals hits length", () => {
+    const sections = [makeSection({ totalCount: 1 })];
+    render(<SearchResultsPanel sections={sections} query="test" onClose={vi.fn()} />);
+    expect(screen.queryByTestId("show-more-movies")).not.toBeInTheDocument();
+  });
+
+  it("calls onShowMore with domain when 'Show more' is clicked", () => {
+    const onShowMore = vi.fn();
+    const sections = [makeSection({ totalCount: 10 })];
+    render(
+      <SearchResultsPanel
+        sections={sections}
+        query="test"
+        onClose={vi.fn()}
+        onShowMore={onShowMore}
+      />
+    );
+    fireEvent.click(screen.getByTestId("show-more-movies"));
+    expect(onShowMore).toHaveBeenCalledWith("movies");
+    expect(onShowMore).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not show 'Show more' when totalCount is not provided (defaults to hits length)", () => {
+    const sections = [makeSection()]; // totalCount defaults to hits.length
+    render(<SearchResultsPanel sections={sections} query="test" onClose={vi.fn()} />);
+    expect(screen.queryByTestId("show-more-movies")).not.toBeInTheDocument();
   });
 });

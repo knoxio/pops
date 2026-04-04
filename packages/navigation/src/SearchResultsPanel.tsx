@@ -18,6 +18,7 @@ export interface SearchResultSection {
   icon: ReactNode;
   color: string;
   hits: SearchResultHit[];
+  totalCount: number;
   isContext: boolean;
 }
 
@@ -26,6 +27,7 @@ export interface SearchResultsPanelProps {
   query: string;
   onClose: () => void;
   onResultClick?: (uri: string) => void;
+  onShowMore?: (domain: string) => void;
 }
 
 const COLOR_CLASSES: Record<string, string> = {
@@ -69,6 +71,7 @@ export function SearchResultsPanel({
   query,
   onClose,
   onResultClick,
+  onShowMore,
 }: SearchResultsPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -143,7 +146,7 @@ export function SearchResultsPanel({
             <SectionHeader
               icon={section.icon}
               label={section.label}
-              count={section.hits.length}
+              count={section.totalCount}
               color={section.color}
             />
             <ul className="px-1 pb-1">
@@ -167,6 +170,16 @@ export function SearchResultsPanel({
                 </li>
               ))}
             </ul>
+            {section.totalCount > section.hits.length && (
+              <button
+                type="button"
+                className="w-full px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground text-left hover:bg-accent/50 transition-colors"
+                onClick={() => onShowMore?.(section.domain)}
+                data-testid={`show-more-${section.domain}`}
+              >
+                Show more ({section.totalCount - section.hits.length} remaining)
+              </button>
+            )}
           </div>
         );
       })}
