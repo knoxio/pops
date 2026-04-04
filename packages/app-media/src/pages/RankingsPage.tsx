@@ -13,9 +13,8 @@ import {
   Badge,
   Skeleton,
   Tabs,
-  TabsList,
-  TabsTrigger,
   TabsContent,
+  cn,
 } from "@pops/ui";
 import { Trophy } from "lucide-react";
 import { trpc } from "../lib/trpc";
@@ -249,23 +248,30 @@ export function RankingsPage() {
         <RankingsSkeleton />
       ) : showTabs ? (
         <Tabs value={dimensionParam} onValueChange={handleTabChange}>
-          <TabsList variant="line" className="h-auto w-full flex-wrap justify-center gap-2 p-0">
-            <TabsTrigger
-              value="overall"
-              className="rounded-full border border-border bg-muted/50 px-4 py-1.5 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary"
-            >
-              Overall
-            </TabsTrigger>
-            {activeDimensions.map((dim: { id: number; name: string }) => (
-              <TabsTrigger
-                key={dim.id}
-                value={String(dim.id)}
-                className="rounded-full border border-border bg-muted/50 px-4 py-1.5 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:border-primary"
+          <div className="flex flex-wrap justify-center gap-2" role="tablist">
+            {[
+              { value: "overall", label: "Overall" },
+              ...activeDimensions.map((dim: { id: number; name: string }) => ({
+                value: String(dim.id),
+                label: dim.name,
+              })),
+            ].map((chip) => (
+              <button
+                key={chip.value}
+                role="tab"
+                aria-selected={dimensionParam === chip.value}
+                onClick={() => handleTabChange(chip.value)}
+                className={cn(
+                  "rounded-full border px-4 py-1.5 text-sm font-medium transition-colors",
+                  dimensionParam === chip.value
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-muted/50 text-muted-foreground border-border hover:bg-muted hover:text-foreground"
+                )}
               >
-                {dim.name}
-              </TabsTrigger>
+                {chip.label}
+              </button>
             ))}
-          </TabsList>
+          </div>
 
           <TabsContent value="overall" className="mt-4">
             <RankingsList />
