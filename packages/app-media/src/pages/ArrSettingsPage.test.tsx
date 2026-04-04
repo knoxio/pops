@@ -8,12 +8,9 @@ vi.mock("sonner", () => ({
 }));
 
 const mockSettingsQuery = vi.fn();
-const mockSaveRadarrMutate = vi.fn();
-const mockSaveSonarrMutate = vi.fn();
+const mockSaveMutate = vi.fn();
 const mockTestRadarrMutate = vi.fn();
 const mockTestSonarrMutate = vi.fn();
-
-let saveMutationCallCount = 0;
 
 vi.mock("../lib/trpc", () => ({
   trpc: {
@@ -28,15 +25,7 @@ vi.mock("../lib/trpc", () => ({
       arr: {
         getSettings: { useQuery: (...args: unknown[]) => mockSettingsQuery(...args) },
         saveSettings: {
-          useMutation: () => {
-            // React calls hooks in stable order on every render.
-            // Use % 2 so call 0/2/4... → radarr, call 1/3/5... → sonarr
-            // regardless of how many times the component re-renders.
-            const mutate =
-              saveMutationCallCount % 2 === 0 ? mockSaveRadarrMutate : mockSaveSonarrMutate;
-            saveMutationCallCount++;
-            return { mutate, isPending: false };
-          },
+          useMutation: () => ({ mutate: mockSaveMutate, isPending: false }),
         },
         testRadarr: {
           useMutation: () => ({
@@ -67,7 +56,6 @@ let mockTestSonarrData: {
 import { ArrSettingsPage } from "./ArrSettingsPage";
 
 function renderPage() {
-  saveMutationCallCount = 0;
   return render(
     <MemoryRouter initialEntries={["/media/arr"]}>
       <ArrSettingsPage />
@@ -188,10 +176,13 @@ describe("ArrSettingsPage", () => {
     const [radarrSave] = screen.getAllByText("Save");
     await user.click(radarrSave!);
 
-    expect(mockSaveRadarrMutate).toHaveBeenCalledWith(
+    expect(mockSaveMutate).toHaveBeenCalledTimes(1);
+    expect(mockSaveMutate).toHaveBeenCalledWith(
       expect.objectContaining({ radarrUrl: expect.any(String) })
     );
-    expect(mockSaveSonarrMutate).not.toHaveBeenCalled();
+    expect(mockSaveMutate).not.toHaveBeenCalledWith(
+      expect.objectContaining({ sonarrUrl: expect.any(String) })
+    );
   });
 
   it("saves Sonarr independently without affecting Radarr mutation", async () => {
@@ -201,10 +192,13 @@ describe("ArrSettingsPage", () => {
     const [, sonarrSave] = screen.getAllByText("Save");
     await user.click(sonarrSave!);
 
-    expect(mockSaveSonarrMutate).toHaveBeenCalledWith(
+    expect(mockSaveMutate).toHaveBeenCalledTimes(1);
+    expect(mockSaveMutate).toHaveBeenCalledWith(
       expect.objectContaining({ sonarrUrl: expect.any(String) })
     );
-    expect(mockSaveRadarrMutate).not.toHaveBeenCalled();
+    expect(mockSaveMutate).not.toHaveBeenCalledWith(
+      expect.objectContaining({ radarrUrl: expect.any(String) })
+    );
   });
 
   it("shows https suggestion when Radarr connection fails on http URL", () => {
