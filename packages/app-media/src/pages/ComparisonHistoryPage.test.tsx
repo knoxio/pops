@@ -71,10 +71,7 @@ const COMPARISON = {
   comparedAt: "2026-01-15T12:00:00Z",
 };
 
-function setupLoaded(
-  comparisons = [COMPARISON],
-  total = comparisons.length
-) {
+function setupLoaded(comparisons = [COMPARISON], total = comparisons.length) {
   mockDimensionsQuery.mockReturnValue({ data: { data: [DIMENSION] } });
   mockListAllQuery.mockReturnValue({
     data: { data: comparisons, pagination: { total, limit: 20, offset: 0 } },
@@ -208,9 +205,7 @@ describe("ComparisonHistoryPage", () => {
     const select = screen.getByRole("combobox");
     fireEvent.change(select, { target: { value: "1" } });
 
-    expect(mockListAllQuery).toHaveBeenLastCalledWith(
-      expect.objectContaining({ dimensionId: 1 })
-    );
+    expect(mockListAllQuery).toHaveBeenLastCalledWith(expect.objectContaining({ dimensionId: 1 }));
   });
 
   it("shows pagination when multiple pages exist", () => {
