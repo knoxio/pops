@@ -1,7 +1,7 @@
 # US-02: Elo scoring
 
 > PRD: [037 — Ratings & Comparisons](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -19,7 +19,7 @@ As a system, I want to calculate and update Elo scores when a comparison is reco
 - [x] `updatedAt` on each score record is set to the current timestamp
 - [x] If the transaction fails, no partial writes occur (neither scores nor comparison saved)
 - [x] Validation error if winner does not match media A or media B
-- [ ] Validation error if dimension ID does not reference an active dimension
+- [x] Validation error if dimension ID does not reference an active dimension
 - [x] Scores are stored as REAL with no rounding — precision preserved across updates
 - [x] Tests cover: correct Elo calculation for equal-rated movies, lopsided ratings, edge case where one movie has 1500 and opponent has 2000, transaction rollback on failure, validation errors, comparison count increment
 

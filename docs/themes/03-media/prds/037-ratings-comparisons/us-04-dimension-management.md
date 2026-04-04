@@ -1,7 +1,7 @@
 # US-04: Dimension management
 
 > PRD: [037 — Ratings & Comparisons](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -20,8 +20,8 @@ As a user, I want to manage comparison dimensions (add, edit, deactivate) so tha
 - [x] Cannot delete a dimension — only deactivate (preserves historical data)
 - [x] Name uniqueness validated — duplicate name shows an error message
 - [x] Sort order can be updated by reordering the list (similar to watchlist reorder)
-- [ ] Default dimensions (Cinematography, Entertainment, Emotional Impact, Rewatchability, Soundtrack) are seeded on first use
-- [ ] Tests cover: create dimension, edit dimension, toggle active status, sort order update, name uniqueness error, deactivated dimension excluded from arena rotation, deactivated excluded from overall ranking
+- [x] Default dimensions (Cinematography, Entertainment, Emotional Impact, Rewatchability, Soundtrack) are seeded on first use
+- [x] Tests cover: create dimension, edit dimension, toggle active status, sort order update, name uniqueness error, deactivated dimension excluded from arena rotation, deactivated excluded from overall ranking
 
 ## Notes
 

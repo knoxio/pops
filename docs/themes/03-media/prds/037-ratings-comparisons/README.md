@@ -112,15 +112,15 @@ Build a pairwise comparison system per [ADR-010](../../../../architecture/adr-01
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 01 | [us-01-compare-arena](us-01-compare-arena.md) | Compare arena page with random pair display, dimension label, pick-winner interaction, skip, pair avoidance | Partial | Blocked by us-02 |
-| 02 | [us-02-elo-scoring](us-02-elo-scoring.md) | Elo algorithm implementation (K=32, 1500 start), transaction-safe score updates, record comparison | Partial | Yes |
-| 03 | [us-03-rankings-page](us-03-rankings-page.md) | Rankings page with dimension selector, ranked list (poster, title, score, count), overall average | Partial | Yes (parallel with us-01) |
-| 04 | [us-04-dimension-management](us-04-dimension-management.md) | CRUD for comparison dimensions, active/inactive toggle, sort order | Partial | Yes |
-| 05 | [us-05-quick-pick](us-05-quick-pick.md) | Quick pick page with random unwatched movies, configurable count, "Watch This" action | Partial | Yes |
-| 06 | [us-06-comparison-history](us-06-comparison-history.md) | Comparison history list, delete with Elo recalculation, undo toast, dimension filter | Not started | Yes |
+| 01 | [us-01-compare-arena](us-01-compare-arena.md) | Compare arena page with random pair display, dimension label, pick-winner interaction, skip, pair avoidance | Done | Blocked by us-02 |
+| 02 | [us-02-elo-scoring](us-02-elo-scoring.md) | Elo algorithm implementation (K=32, 1500 start), transaction-safe score updates, record comparison | Done | Yes |
+| 03 | [us-03-rankings-page](us-03-rankings-page.md) | Rankings page with dimension selector, ranked list (poster, title, score, count), overall average | Done | Yes (parallel with us-01) |
+| 04 | [us-04-dimension-management](us-04-dimension-management.md) | CRUD for comparison dimensions, active/inactive toggle, sort order | Done | Yes |
+| 05 | [us-05-quick-pick](us-05-quick-pick.md) | Quick pick page with random unwatched movies, configurable count, "Watch This" action | Done | Yes |
+| 06 | [us-06-comparison-history](us-06-comparison-history.md) | Comparison history list, delete with Elo recalculation, undo toast, dimension filter | Partial | Yes |
 | 07 | [us-07-dimension-weights](us-07-dimension-weights.md) | Per-dimension weight for overall ranking, weight slider in dimension management UI | Done | Yes |
 | 08 | [us-08-arena-watchlist-filter](us-08-arena-watchlist-filter.md) | Add to watchlist from arena, exclude watchlisted movies from pair selection | Not started | Yes |
-| 09 | [us-09-tiered-draws](us-09-tiered-draws.md) | Three draw tier buttons (High/Mid/Low) with ELO outcome values 0.7/0.5/0.3 | Not started | Yes |
+| 09 | [us-09-tiered-draws](us-09-tiered-draws.md) | Three draw tier buttons (High/Mid/Low) with ELO outcome values 0.7/0.5/0.3 | Done | Yes |
 
 US-01 depends on US-02 (arena needs Elo scoring to record comparisons). US-03 through US-08 can all be built in parallel.
 
