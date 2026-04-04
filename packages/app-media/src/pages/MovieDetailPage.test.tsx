@@ -6,6 +6,7 @@ import { MemoryRouter, Route, Routes } from "react-router";
 const mockMovieQuery = vi.fn();
 const mockWatchHistoryQuery = vi.fn();
 const mockGetStalenessQuery = vi.fn();
+const mockGetPendingDebriefsQuery = vi.fn();
 
 vi.mock("../lib/trpc", () => ({
   trpc: {
@@ -18,6 +19,9 @@ vi.mock("../lib/trpc", () => ({
       },
       comparisons: {
         getStaleness: { useQuery: (...args: unknown[]) => mockGetStalenessQuery(...args) },
+        getPendingDebriefs: {
+          useQuery: (...args: unknown[]) => mockGetPendingDebriefsQuery(...args),
+        },
       },
     },
   },
@@ -94,6 +98,9 @@ beforeEach(() => {
   });
   mockGetStalenessQuery.mockReturnValue({
     data: { data: { staleness: 1.0 } },
+  });
+  mockGetPendingDebriefsQuery.mockReturnValue({
+    data: { data: [] },
   });
 });
 
@@ -337,6 +344,38 @@ describe("MovieDetailPage", () => {
       expect(
         container.querySelectorAll("[class*='animate-pulse'], [data-slot='skeleton']").length
       ).toBeGreaterThan(0);
+    });
+  });
+
+  describe("debrief button", () => {
+    it("shows debrief button when movie has a pending debrief", () => {
+      mockGetPendingDebriefsQuery.mockReturnValue({
+        data: {
+          data: [
+            {
+              sessionId: 42,
+              movieId: 1,
+              title: "The Shawshank Redemption",
+              posterUrl: null,
+              status: "pending",
+              createdAt: "2026-04-01T00:00:00Z",
+              pendingDimensionCount: 3,
+            },
+          ],
+        },
+      });
+      renderAtRoute("/media/movies/1");
+      const button = screen.getByText("Debrief this movie");
+      expect(button).toBeInTheDocument();
+      expect(button.closest("a")).toHaveAttribute("href", "/media/debrief/42");
+    });
+
+    it("hides debrief button when no pending debrief for this movie", () => {
+      mockGetPendingDebriefsQuery.mockReturnValue({
+        data: { data: [] },
+      });
+      renderAtRoute("/media/movies/1");
+      expect(screen.queryByText("Debrief this movie")).not.toBeInTheDocument();
     });
   });
 });
