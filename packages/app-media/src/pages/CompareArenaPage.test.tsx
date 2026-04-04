@@ -41,7 +41,7 @@ vi.mock("../lib/trpc", () => ({
         listDimensions: {
           useQuery: (...args: unknown[]) => mockDimensionsQuery(...args),
         },
-        getRandomPair: {
+        getSmartPair: {
           useQuery: (...args: unknown[]) => {
             const result = mockPairQuery(...args);
             return { ...result, refetch: mockRefetchPair };
@@ -100,7 +100,7 @@ vi.mock("../lib/trpc", () => ({
       media: {
         comparisons: {
           scores: { fetch: mockScoresFetch },
-          getRandomPair: { invalidate: mockInvalidateRandomPair },
+          getSmartPair: { invalidate: mockInvalidateRandomPair },
         },
         watchlist: {
           list: { invalidate: mockInvalidateWatchlistList },
@@ -139,7 +139,7 @@ function setupArena() {
     isLoading: false,
   });
   mockPairQuery.mockReturnValue({
-    data: { data: { movieA, movieB } },
+    data: { data: { movieA, movieB, dimensionId: 1 } },
     isLoading: false,
     error: null,
   });
@@ -253,7 +253,7 @@ describe("CompareArenaPage", () => {
       isLoading: false,
     });
     mockPairQuery.mockReturnValue({
-      data: { data: { movieA, movieB } },
+      data: { data: { movieA, movieB, dimensionId: 1 } },
       isLoading: false,
       error: null,
     });
