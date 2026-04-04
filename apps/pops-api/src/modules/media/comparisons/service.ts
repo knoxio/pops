@@ -24,6 +24,7 @@ import {
   type UpdateDimensionInput,
   type RecordComparisonInput,
   type RandomPair,
+  type SmartPairResult,
   type RankedMediaEntry,
   type BlacklistMovieResult,
   type DebriefOpponent,
@@ -721,7 +722,7 @@ const SAMPLE_SIZE = 50;
  * @param dimensionId - Optional specific dimension; if omitted, picks by dimensionNeed
  * @returns A pair of movies with metadata, or null if fewer than 2 eligible movies
  */
-export function getSmartPair(dimensionId?: number): RandomPair | null {
+export function getSmartPair(dimensionId?: number): SmartPairResult | null {
   const rawDb = getDb();
   const db = getDrizzle();
 
@@ -910,7 +911,7 @@ export function getSmartPair(dimensionId?: number): RandomPair | null {
     if (candidates.length >= 2) {
       const a = candidates[0];
       const b = candidates[1];
-      if (a && b) return buildRandomPairResult(a, b);
+      if (a && b) return { ...buildRandomPairResult(a, b), dimensionId: selectedDimId };
     }
     return null;
   }
@@ -920,7 +921,7 @@ export function getSmartPair(dimensionId?: number): RandomPair | null {
 
   if (!selected) return null;
 
-  return buildRandomPairResult(selected.movieA, selected.movieB);
+  return { ...buildRandomPairResult(selected.movieA, selected.movieB), dimensionId: selectedDimId };
 }
 
 /** Build the RandomPair result from two CandidateMovie objects. */

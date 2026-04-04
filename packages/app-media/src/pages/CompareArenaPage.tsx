@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router";
 import {
   AlertDialog,
@@ -31,7 +31,7 @@ interface ScoreDelta {
 export function CompareArenaPage() {
   const navigate = useNavigate();
   const [sessionCount, setSessionCount] = useState(0);
-  const [dimensionIndex, setDimensionIndex] = useState(0);
+  const [manualDimensionId, setManualDimensionId] = useState<number | null>(null);
   const [scoreDelta, setScoreDelta] = useState<ScoreDelta | null>(null);
 
   // Fetch dimensions for tab selector
@@ -40,28 +40,25 @@ export function CompareArenaPage() {
 
   const activeDimensions = dimensionsData?.data?.filter((d: { active: boolean }) => d.active) ?? [];
 
-  // Derive current dimension from rotation index
-  const dimensionId =
-    activeDimensions.length > 0
-      ? (activeDimensions[dimensionIndex % activeDimensions.length]?.id ?? null)
-      : null;
-
-  // Fetch random pair
+  // Fetch smart pair — pass manualDimensionId if set, otherwise let backend auto-select
   const {
     data: pairData,
     isLoading: pairLoading,
     error: pairError,
     refetch: refetchPair,
-  } = trpc.media.comparisons.getRandomPair.useQuery(
-    { dimensionId: dimensionId! },
+  } = trpc.media.comparisons.getSmartPair.useQuery(
+    manualDimensionId ? { dimensionId: manualDimensionId } : {},
     {
-      enabled: dimensionId !== null,
+      enabled: activeDimensions.length > 0,
       refetchOnWindowFocus: false,
-      // Never cache — each call should return a fresh random pair
+      // Never cache — each call should return a fresh pair
       gcTime: 0,
       staleTime: 0,
     }
   );
+
+  // The active dimension comes from the smart pair response
+  const dimensionId = pairData?.data?.dimensionId ?? null;
 
   const utils = trpc.useUtils();
 
@@ -118,11 +115,10 @@ export function CompareArenaPage() {
       }
 
       setSessionCount((c) => c + 1);
-      setDimensionIndex((i) => i + 1);
+      setManualDimensionId(null);
 
-      // Invalidate pair cache so next fetch returns a fresh random pair
-      // (without this, returning to the same dimensionId serves the cached pair)
-      utils.media.comparisons.getRandomPair.invalidate();
+      // Invalidate pair cache so next fetch returns a fresh pair
+      utils.media.comparisons.getSmartPair.invalidate();
 
       // Show delta briefly, then clear it
       setTimeout(() => {
@@ -130,11 +126,6 @@ export function CompareArenaPage() {
       }, 1500);
     },
   });
-
-  // Clear delta on dimension rotation
-  useEffect(() => {
-    setScoreDelta(null);
-  }, [dimensionIndex]);
 
   // Watchlist: check which movies are on it, add mutation
   const movieAId = pairData?.data?.movieA?.id;
@@ -172,8 +163,8 @@ export function CompareArenaPage() {
       const timesMarked = Math.round(Math.log(staleness) / Math.log(0.5));
       toast.success(`${movie?.title ?? "Movie"} marked stale (×${timesMarked})`);
       // Advance to next pair
-      utils.media.comparisons.getRandomPair.invalidate();
-      setDimensionIndex((i) => i + 1);
+      setManualDimensionId(null);
+      utils.media.comparisons.getSmartPair.invalidate();
     },
   });
 
@@ -200,7 +191,7 @@ export function CompareArenaPage() {
       {
         onSuccess: () => {
           toast.success("Both movies excluded from this dimension");
-          utils.media.comparisons.getRandomPair.invalidate();
+          utils.media.comparisons.getSmartPair.invalidate();
         },
       }
     );
@@ -225,7 +216,7 @@ export function CompareArenaPage() {
         variables.mediaId === movieAId ? pairData?.data?.movieA : pairData?.data?.movieB;
       toast.success(`${movie?.title ?? "Movie"} marked as not watched`);
       setBlacklistTarget(null);
-      utils.media.comparisons.getRandomPair.invalidate();
+      utils.media.comparisons.getSmartPair.invalidate();
     },
   });
 
@@ -270,8 +261,8 @@ export function CompareArenaPage() {
   const skipMutation = trpc.media.comparisons.recordSkip.useMutation({
     onSuccess: () => {
       toast.success("Pair skipped for 10 comparisons");
-      setDimensionIndex((i) => i + 1);
-      utils.media.comparisons.getRandomPair.invalidate();
+      setManualDimensionId(null);
+      utils.media.comparisons.getSmartPair.invalidate();
     },
   });
 
@@ -336,18 +327,23 @@ export function CompareArenaPage() {
       ) : (
         <div className="flex gap-2 flex-wrap" role="tablist">
           {activeDimensions.map((dim: { id: number; name: string }) => (
-            <span
+            <button
               key={dim.id}
               role="tab"
               aria-selected={dim.id === dimensionId}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+              onClick={() => {
+                setManualDimensionId(dim.id);
+                setScoreDelta(null);
+                utils.media.comparisons.getSmartPair.invalidate();
+              }}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors cursor-pointer ${
                 dim.id === dimensionId
                   ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80"
               }`}
             >
               {dim.name}
-            </span>
+            </button>
           ))}
         </div>
       )}
