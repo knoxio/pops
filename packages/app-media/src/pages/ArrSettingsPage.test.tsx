@@ -67,7 +67,6 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockTestRadarrData = null;
   mockTestSonarrData = null;
-  saveMutationCallCount = 0;
   mockSettingsQuery.mockReturnValue({
     data: {
       data: {
