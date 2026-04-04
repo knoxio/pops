@@ -1,7 +1,7 @@
 # US-02: Discover card action buttons
 
 > PRD: [060 — Discover Page](README.md)
-> Status: Not started
+> Status: Partial
 
 ## Description
 
@@ -25,14 +25,14 @@ As a user, I want context-aware action buttons on every discover card that adapt
 - [ ] "Add to Library" disappears immediately after any action that adds the movie (Add, Watchlist, Watched)
 - [ ] Watchlist button toggles: outline bookmark icon = "Add to Watchlist", filled bookmark icon = "Remove from Watchlist"
 - [ ] Watched button changes based on state: Eye icon + "Mark as Watched" when unwatched; RotateCw icon + "Mark as Rewatched" when already watched
-- [ ] "Add to Watchlist" adds to library first (idempotent), then adds to watchlist — one click does both
-- [ ] "Mark as Watched" adds to library first (idempotent), then logs watch event — one click does both
+- [x] "Add to Watchlist" adds to library first (idempotent), then adds to watchlist — one click does both
+- [x] "Mark as Watched" adds to library first (idempotent), then logs watch event — one click does both
 - [ ] "Mark as Rewatched" logs an additional watch event (new timestamp) for an already-watched movie
-- [ ] "Not Interested" calls `media.discovery.dismiss` mutation (backend, not localStorage)
+- [x] "Not Interested" calls `media.discovery.dismiss` mutation (backend, not localStorage)
 
 ### Badges
 
-- [ ] "Owned" badge for movies in the library (top-right corner)
+- [x] "Owned" badge for movies in the library (top-right corner)
 - [ ] "Watched" badge for movies with a watch_history entry (replaces "Owned" when both apply)
 
 ### Data requirements
@@ -44,10 +44,10 @@ As a user, I want context-aware action buttons on every discover card that adapt
 
 ### General
 
-- [ ] Each action shows loading spinner during mutation, button disabled to prevent double-clicks
-- [ ] Toast notification confirms each action with movie title
-- [ ] After any action, relevant discover queries are invalidated so badges and button states update
-- [ ] Remove existing localStorage-based dismiss logic from DiscoverCard
+- [x] Each action shows loading spinner during mutation, button disabled to prevent double-clicks
+- [x] Toast notification confirms each action with movie title
+- [x] After any action, relevant discover queries are invalidated so badges and button states update
+- [x] Remove existing localStorage-based dismiss logic from DiscoverCard
 - [ ] Tests cover: each button state combination from the table above, toggle behaviours, badge display, loading states
 
 ## Notes
