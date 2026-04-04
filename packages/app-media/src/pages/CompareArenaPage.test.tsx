@@ -17,6 +17,13 @@ const mockWatchlistAddMutate = vi.fn() as ReturnType<typeof vi.fn> & {
 const mockMarkStaleMutate = vi.fn() as ReturnType<typeof vi.fn> & {
   _opts?: Record<string, unknown>;
 };
+const mockExcludeMutateA = vi.fn() as ReturnType<typeof vi.fn> & {
+  _opts?: Record<string, unknown>;
+};
+const mockExcludeMutateB = vi.fn() as ReturnType<typeof vi.fn> & {
+  _opts?: Record<string, unknown>;
+};
+let excludeCallCount = 0;
 const mockInvalidateRandomPair = vi.fn();
 const mockInvalidateWatchlistList = vi.fn();
 
@@ -44,6 +51,14 @@ vi.mock("../lib/trpc", () => ({
           useMutation: (opts: Record<string, unknown>) => {
             mockMarkStaleMutate._opts = opts;
             return { mutate: mockMarkStaleMutate, isPending: false };
+          },
+        },
+        excludeFromDimension: {
+          useMutation: (opts?: Record<string, unknown>) => {
+            excludeCallCount++;
+            const mockFn = excludeCallCount % 2 === 1 ? mockExcludeMutateA : mockExcludeMutateB;
+            if (opts) mockFn._opts = opts;
+            return { mutate: mockFn, isPending: false };
           },
         },
       },
@@ -115,6 +130,7 @@ function setupArena() {
 describe("CompareArenaPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    excludeCallCount = 0;
     // Default watchlist mock — overridden by setupArena but needed for standalone tests
     mockWatchlistListQuery.mockReturnValue({
       data: { data: [] },
@@ -360,6 +376,32 @@ describe("CompareArenaPage", () => {
 
     fireEvent.click(screen.getByLabelText("Mark The Matrix as stale"));
 
+    expect(mockRecordMutate).not.toHaveBeenCalled();
+  });
+
+  it("renders N/A button in action bar", () => {
+    setupArena();
+    renderPage();
+
+    expect(screen.getByText("N/A")).toBeTruthy();
+  });
+
+  it("N/A button calls excludeFromDimension for both movies", () => {
+    setupArena();
+    renderPage();
+
+    fireEvent.click(screen.getByText("N/A"));
+
+    // Should call exclude for movie A (id: 10) — no options arg
+    expect(mockExcludeMutateA).toHaveBeenCalledWith(
+      expect.objectContaining({ mediaType: "movie", mediaId: 10, dimensionId: 1 })
+    );
+    // Should call exclude for movie B (id: 20) — with onSuccess options
+    expect(mockExcludeMutateB).toHaveBeenCalledWith(
+      expect.objectContaining({ mediaType: "movie", mediaId: 20, dimensionId: 1 }),
+      expect.objectContaining({ onSuccess: expect.any(Function) })
+    );
+    // Should NOT record a comparison
     expect(mockRecordMutate).not.toHaveBeenCalled();
   });
 });

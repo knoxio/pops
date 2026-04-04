@@ -170,6 +170,27 @@ export function CompareArenaPage() {
     [markStaleMutation]
   );
 
+  // N/A (dimension exclusion) mutation
+  const excludeAMutation = trpc.media.comparisons.excludeFromDimension.useMutation();
+  const excludeBMutation = trpc.media.comparisons.excludeFromDimension.useMutation();
+  const naIsPending = excludeAMutation.isPending || excludeBMutation.isPending;
+
+  const handleNA = useCallback(() => {
+    if (!pairData?.data || !dimensionId || naIsPending) return;
+
+    const { movieA, movieB } = pairData.data;
+    excludeAMutation.mutate({ mediaType: "movie", mediaId: movieA.id, dimensionId });
+    excludeBMutation.mutate(
+      { mediaType: "movie", mediaId: movieB.id, dimensionId },
+      {
+        onSuccess: () => {
+          toast.success("Both movies excluded from this dimension");
+          utils.media.comparisons.getRandomPair.invalidate();
+        },
+      }
+    );
+  }, [pairData, dimensionId, naIsPending, excludeAMutation, excludeBMutation, utils]);
+
   const handleAddToWatchlist = useCallback(
     (movieId: number) => {
       addToWatchlistMutation.mutate({
@@ -389,7 +410,7 @@ export function CompareArenaPage() {
         </>
       ) : null}
 
-      {/* Action bar: Stale buttons + Skip + Done */}
+      {/* Action bar: Stale buttons + Skip + N/A + Done */}
       {pairData?.data && !recordMutation.isPending && !scoreDelta && (
         <div className="flex flex-col items-center gap-3">
           <div className="flex justify-center gap-3">
@@ -438,6 +459,15 @@ export function CompareArenaPage() {
               }}
             >
               Skip this pair
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNA}
+              disabled={naIsPending}
+              className="text-muted-foreground"
+            >
+              {naIsPending ? "Excluding…" : "N/A"}
             </Button>
             <Button variant="ghost" size="sm" onClick={() => navigate("/media")}>
               Done
