@@ -78,6 +78,11 @@ const CalendarPage = lazy(() =>
     default: m.CalendarPage,
   }))
 );
+const TierListPage = lazy(() =>
+  import("./pages/TierListPage").then((m) => ({
+    default: m.TierListPage,
+  }))
+);
 
 /** Shared navigation types (mirrored from shell to avoid circular dependency) */
 export interface AppNavItem {
@@ -128,4 +133,5 @@ export const routes: RouteObject[] = [
   { path: "plex", element: <PlexSettingsPage /> },
   { path: "arr", element: <ArrSettingsPage /> },
   { path: "arr/calendar", element: <CalendarPage /> },
+  { path: "tier-list", element: <TierListPage /> },
 ];
