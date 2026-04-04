@@ -13,6 +13,7 @@ import {
   excludeFromDimension,
   includeInDimension,
   getDebriefOpponent,
+  getPendingDebriefs,
 } from "./service.js";
 
 const ctx = setupTestContext();
@@ -1968,5 +1969,111 @@ describe("getDebriefOpponent", () => {
     expect(result.data).not.toBeNull();
     expect(result.data!.id).toBe(opponentId);
     expect(result.data!.title).toBe("Opponent");
+  });
+});
+
+describe("getPendingDebriefs", () => {
+  function seedDebriefSession(
+    rawDb: Database,
+    watchHistoryId: number,
+    status: string = "pending"
+  ): number {
+    const result = rawDb
+      .prepare("INSERT INTO debrief_sessions (watch_history_id, status) VALUES (?, ?)")
+      .run(watchHistoryId, status);
+    return Number(result.lastInsertRowid);
+  }
+
+  function seedDebriefResult(
+    rawDb: Database,
+    sessionId: number,
+    dimensionId: number,
+    comparisonId: number | null = null
+  ) {
+    rawDb
+      .prepare(
+        "INSERT INTO debrief_results (session_id, dimension_id, comparison_id) VALUES (?, ?, ?)"
+      )
+      .run(sessionId, dimensionId, comparisonId);
+  }
+
+  it("returns movies with pending debrief sessions", () => {
+    const dimId = seedDimension(db, { name: "Overall" });
+    const movieId = seedMovie(db, { title: "Watched Movie", tmdb_id: 800 });
+    const whId = seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: movieId,
+      completed: 1,
+    });
+    seedDebriefSession(db, whId, "pending");
+
+    const results = getPendingDebriefs();
+    expect(results).toHaveLength(1);
+    expect(results[0]!.movieId).toBe(movieId);
+    expect(results[0]!.title).toBe("Watched Movie");
+    expect(results[0]!.status).toBe("pending");
+    expect(results[0]!.pendingDimensionCount).toBe(1); // 1 active dim, 0 results
+    void dimId;
+  });
+
+  it("excludes complete sessions", () => {
+    const movieId = seedMovie(db, { title: "Done Movie", tmdb_id: 801 });
+    const whId = seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: movieId,
+      completed: 1,
+    });
+    seedDebriefSession(db, whId, "complete");
+
+    const results = getPendingDebriefs();
+    expect(results).toHaveLength(0);
+  });
+
+  it("includes active sessions", () => {
+    const movieId = seedMovie(db, { title: "Active Movie", tmdb_id: 802 });
+    const whId = seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: movieId,
+      completed: 1,
+    });
+    seedDebriefSession(db, whId, "active");
+
+    const results = getPendingDebriefs();
+    expect(results).toHaveLength(1);
+    expect(results[0]!.status).toBe("active");
+  });
+
+  it("counts pending dimensions correctly", () => {
+    const dim1 = seedDimension(db, { name: "Dim A" });
+    const dim2 = seedDimension(db, { name: "Dim B" });
+    const movieId = seedMovie(db, { title: "Partial Movie", tmdb_id: 803 });
+    const whId = seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: movieId,
+      completed: 1,
+    });
+    const sessionId = seedDebriefSession(db, whId, "active");
+    // Complete one dimension
+    seedDebriefResult(db, sessionId, dim1, null);
+
+    const results = getPendingDebriefs();
+    expect(results).toHaveLength(1);
+    // 2 active dims - 1 completed result = 1 pending
+    expect(results[0]!.pendingDimensionCount).toBe(1);
+    void dim2;
+  });
+
+  it("returns via tRPC endpoint", async () => {
+    const movieId = seedMovie(db, { title: "Debrief Via API", tmdb_id: 804 });
+    const whId = seedWatchHistoryEntry(db, {
+      media_type: "movie",
+      media_id: movieId,
+      completed: 1,
+    });
+    seedDebriefSession(db, whId, "pending");
+
+    const result = await caller.media.comparisons.getPendingDebriefs();
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0]!.title).toBe("Debrief Via API");
   });
 });
