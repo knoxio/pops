@@ -1200,3 +1200,49 @@ export function seedAiUsage(
     });
   return Number(result.lastInsertRowid);
 }
+
+/**
+ * Seed a debrief session. Returns the id.
+ */
+export function seedDebriefSession(
+  db: Database,
+  overrides: {
+    watch_history_id: number;
+    status?: string;
+  }
+): number {
+  const result = db
+    .prepare(
+      `INSERT INTO debrief_sessions (watch_history_id, status)
+     VALUES (@watch_history_id, @status)`
+    )
+    .run({
+      watch_history_id: overrides.watch_history_id,
+      status: overrides.status ?? "pending",
+    });
+  return Number(result.lastInsertRowid);
+}
+
+/**
+ * Seed a debrief result. Returns the id.
+ */
+export function seedDebriefResult(
+  db: Database,
+  overrides: {
+    session_id: number;
+    dimension_id: number;
+    comparison_id?: number | null;
+  }
+): number {
+  const result = db
+    .prepare(
+      `INSERT INTO debrief_results (session_id, dimension_id, comparison_id)
+     VALUES (@session_id, @dimension_id, @comparison_id)`
+    )
+    .run({
+      session_id: overrides.session_id,
+      dimension_id: overrides.dimension_id,
+      comparison_id: overrides.comparison_id ?? null,
+    });
+  return Number(result.lastInsertRowid);
+}
