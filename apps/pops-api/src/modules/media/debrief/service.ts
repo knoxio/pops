@@ -176,7 +176,7 @@ export function getDebrief(sessionId: number): DebriefResponse {
   });
 
   // Transition pending → active on first read
-  let currentStatus = session.status as "pending" | "active" | "complete";
+  let currentStatus = session.status;
   if (currentStatus === "pending") {
     db.update(debriefSessions)
       .set({ status: "active" })
