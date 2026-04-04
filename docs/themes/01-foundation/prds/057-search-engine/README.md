@@ -1,7 +1,7 @@
 # PRD-057: Search Engine
 
 > Epic: [07 — Search](../../epics/07-search.md)
-> Status: Not started
+> Status: In progress
 
 ## Overview
 
@@ -68,22 +68,22 @@ v1 is plain text only. Structured syntax added as v2 USs.
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 01 | [us-01-adapter-interface](us-01-adapter-interface.md) | SearchAdapter, SearchHit, Query, SearchContext interfaces and adapter registry | Not started | No (first) |
-| 02 | [us-02-movies-adapter](us-02-movies-adapter.md) | Movies backend adapter: search by title | Not started | Blocked by us-01 |
-| 02b | [us-02b-movies-result-component](us-02b-movies-result-component.md) | Movies ResultComponent: poster + title + year + rating + runtime | Not started | Blocked by us-02 |
-| 03 | [us-03-tv-shows-adapter](us-03-tv-shows-adapter.md) | TV shows backend adapter: search by name | Not started | Blocked by us-01 |
-| 03b | [us-03b-tv-shows-result-component](us-03b-tv-shows-result-component.md) | TV shows ResultComponent: poster + name + status + seasons | Not started | Blocked by us-03 |
+| 01 | [us-01-adapter-interface](us-01-adapter-interface.md) | SearchAdapter, SearchHit, Query, SearchContext interfaces and adapter registry | Done | No (first) |
+| 02 | [us-02-movies-adapter](us-02-movies-adapter.md) | Movies backend adapter: search by title | Done | — |
+| 02b | [us-02b-movies-result-component](us-02b-movies-result-component.md) | Movies ResultComponent: poster + title + year + rating + runtime | Done | — |
+| 03 | [us-03-tv-shows-adapter](us-03-tv-shows-adapter.md) | TV shows backend adapter: search by name | Done | — |
+| 03b | [us-03b-tv-shows-result-component](us-03b-tv-shows-result-component.md) | TV shows ResultComponent: poster + name + status + seasons | In progress | — |
 | 04 | [us-04-transactions-adapter](us-04-transactions-adapter.md) | Transactions backend adapter: search by description | Done | — |
-| 04b | [us-04b-transactions-result-component](us-04b-transactions-result-component.md) | Transactions ResultComponent: description + colored amount + date | Not started | Blocked by us-04 |
-| 05 | [us-05-entities-adapter](us-05-entities-adapter.md) | Entities backend adapter: search by name | Done | Blocked by us-01 |
+| 04b | [us-04b-transactions-result-component](us-04b-transactions-result-component.md) | Transactions ResultComponent: description + colored amount + date | In progress | — |
+| 05 | [us-05-entities-adapter](us-05-entities-adapter.md) | Entities backend adapter: search by name | Done | — |
 | 05b | [us-05b-entities-result-component](us-05b-entities-result-component.md) | Entities ResultComponent: name + type badge + aliases | Done | — |
-| 06 | [us-06-budgets-adapter](us-06-budgets-adapter.md) | Budgets backend adapter: search by category | Not started | Blocked by us-01 |
-| 06b | [us-06b-budgets-result-component](us-06b-budgets-result-component.md) | Budgets ResultComponent: category + period + amount | Not started | Blocked by us-06 |
-| 07 | [us-07-inventory-items-adapter](us-07-inventory-items-adapter.md) | Inventory items backend adapter: search by name and asset ID | Not started | Blocked by us-01 |
-| 07b | [us-07b-inventory-items-result-component](us-07b-inventory-items-result-component.md) | Inventory ResultComponent: asset badge + name + location + type | Not started | Blocked by us-07 |
-| 08 | [us-08-fan-out-ranking](us-08-fan-out-ranking.md) | Query fan-out to all adapters, section collection, context ordering | Not started | Blocked by us-02 through us-07 |
-| 08b | [us-08b-show-more-pagination](us-08b-show-more-pagination.md) | Show more pagination within a single domain section | Not started | Blocked by us-08 |
-| 09 | [us-09-structured-syntax](us-09-structured-syntax.md) | Parse structured query syntax (type:, domain:, year:, value:) and apply filters | Not started | Blocked by us-08 |
+| 06 | [us-06-budgets-adapter](us-06-budgets-adapter.md) | Budgets backend adapter: search by category | Done | — |
+| 06b | [us-06b-budgets-result-component](us-06b-budgets-result-component.md) | Budgets ResultComponent: category + period + amount | In progress | — |
+| 07 | [us-07-inventory-items-adapter](us-07-inventory-items-adapter.md) | Inventory items backend adapter: search by name and asset ID | Done | — |
+| 07b | [us-07b-inventory-items-result-component](us-07b-inventory-items-result-component.md) | Inventory ResultComponent: asset badge + name + location + type | Done | — |
+| 08 | [us-08-fan-out-ranking](us-08-fan-out-ranking.md) | Query fan-out to all adapters, section collection, context ordering | Done | — |
+| 08b | [us-08b-show-more-pagination](us-08b-show-more-pagination.md) | Show more pagination within a single domain section | In progress | — |
+| 09 | [us-09-structured-syntax](us-09-structured-syntax.md) | Parse structured query syntax (type:, domain:, year:, value:) and apply filters | In progress | — |
 
 All 6 backend adapters (us-02 through us-07) can parallelise. All 6 frontend components (us-02b through us-07b) can parallelise once their backend counterpart is done.
 
