@@ -18,6 +18,8 @@ function makeResult(overrides: Partial<DiscoverResult> = {}): DiscoverResult {
     genreIds: [28, 878], // Action, Science Fiction
     popularity: 50,
     inLibrary: false,
+    isWatched: false,
+    onWatchlist: false,
     ...overrides,
   };
 }
@@ -163,6 +165,8 @@ describe("fromYourServer genre mapping and scoring", () => {
       genreIds,
       popularity: 0,
       inLibrary: true,
+      isWatched: false,
+      onWatchlist: false,
     };
   }
 
