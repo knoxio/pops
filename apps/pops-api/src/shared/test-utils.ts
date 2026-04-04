@@ -239,6 +239,18 @@ export function createTestDb(): Database {
     );
     CREATE UNIQUE INDEX IF NOT EXISTS idx_comparison_staleness_unique ON comparison_staleness(media_type, media_id);
 
+    CREATE TABLE IF NOT EXISTS comparison_skip_cooloffs (
+      id               INTEGER PRIMARY KEY AUTOINCREMENT,
+      dimension_id     INTEGER NOT NULL REFERENCES comparison_dimensions(id),
+      media_a_type     TEXT NOT NULL,
+      media_a_id       INTEGER NOT NULL,
+      media_b_type     TEXT NOT NULL,
+      media_b_id       INTEGER NOT NULL,
+      skip_until       INTEGER NOT NULL,
+      created_at       TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_comparison_skip_cooloffs_pair ON comparison_skip_cooloffs(dimension_id, media_a_type, media_a_id, media_b_type, media_b_id);
+
     CREATE TABLE IF NOT EXISTS watchlist (
       id               INTEGER PRIMARY KEY AUTOINCREMENT,
       media_type       TEXT NOT NULL CHECK(media_type IN ('movie', 'tv_show')),
