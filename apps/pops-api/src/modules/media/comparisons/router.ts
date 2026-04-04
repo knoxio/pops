@@ -15,6 +15,7 @@ import {
   BlacklistMovieSchema,
   ScoreQuerySchema,
   RandomPairQuerySchema,
+  SmartPairQuerySchema,
   RankingsQuerySchema,
   DimensionExclusionSchema,
   StalenessSchema,
@@ -131,6 +132,22 @@ export const comparisonsRouter = router({
   getRandomPair: protectedProcedure.input(RandomPairQuerySchema).query(({ input }) => {
     try {
       const pair = service.getRandomPair(input.dimensionId, input.avoidRecent);
+      if (!pair) {
+        return { data: null, reason: "insufficient_watched_movies" as const };
+      }
+      return { data: pair, reason: null };
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+      }
+      throw err;
+    }
+  }),
+
+  /** Get a smart pair using weighted probabilistic selection. */
+  getSmartPair: protectedProcedure.input(SmartPairQuerySchema).query(({ input }) => {
+    try {
+      const pair = service.getSmartPair(input.dimensionId);
       if (!pair) {
         return { data: null, reason: "insufficient_watched_movies" as const };
       }

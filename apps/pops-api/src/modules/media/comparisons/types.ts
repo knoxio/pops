@@ -111,6 +111,12 @@ export const RandomPairQuerySchema = z.object({
 });
 export type RandomPairQuery = z.infer<typeof RandomPairQuerySchema>;
 
+/** Zod schema for getSmartPair query. */
+export const SmartPairQuerySchema = z.object({
+  dimensionId: z.number().int().positive().optional(),
+});
+export type SmartPairQuery = z.infer<typeof SmartPairQuerySchema>;
+
 /** Zod schemas */
 export const CreateDimensionSchema = z.object({
   name: z.string().min(1, "Name is required"),
