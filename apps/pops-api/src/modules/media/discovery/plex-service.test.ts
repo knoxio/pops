@@ -232,9 +232,9 @@ describe("getTrendingFromPlex — isWatched + onWatchlist flags", () => {
 
   it("sets isWatched=false and onWatchlist=false by default", async () => {
     const mockClient = {
-      getTrending: vi.fn().mockResolvedValue([
-        makePlexItem({ externalIds: [{ source: "tmdb", id: "100" }] }),
-      ]),
+      getTrending: vi
+        .fn()
+        .mockResolvedValue([makePlexItem({ externalIds: [{ source: "tmdb", id: "100" }] })]),
     };
     mockGetPlexClient.mockReturnValue(
       mockClient as unknown as ReturnType<typeof getPlexClient> & object
@@ -250,10 +250,12 @@ describe("getTrendingFromPlex — isWatched + onWatchlist flags", () => {
 
   it("sets isWatched=true when tmdbId is in watch history", async () => {
     const mockClient = {
-      getTrending: vi.fn().mockResolvedValue([
-        makePlexItem({ title: "Watched", externalIds: [{ source: "tmdb", id: "100" }] }),
-        makePlexItem({ title: "Unwatched", externalIds: [{ source: "tmdb", id: "200" }] }),
-      ]),
+      getTrending: vi
+        .fn()
+        .mockResolvedValue([
+          makePlexItem({ title: "Watched", externalIds: [{ source: "tmdb", id: "100" }] }),
+          makePlexItem({ title: "Unwatched", externalIds: [{ source: "tmdb", id: "200" }] }),
+        ]),
     };
     mockGetPlexClient.mockReturnValue(
       mockClient as unknown as ReturnType<typeof getPlexClient> & object
@@ -271,10 +273,12 @@ describe("getTrendingFromPlex — isWatched + onWatchlist flags", () => {
 
   it("sets onWatchlist=true when tmdbId is on watchlist", async () => {
     const mockClient = {
-      getTrending: vi.fn().mockResolvedValue([
-        makePlexItem({ title: "On WL", externalIds: [{ source: "tmdb", id: "300" }] }),
-        makePlexItem({ title: "Not on WL", externalIds: [{ source: "tmdb", id: "400" }] }),
-      ]),
+      getTrending: vi
+        .fn()
+        .mockResolvedValue([
+          makePlexItem({ title: "On WL", externalIds: [{ source: "tmdb", id: "300" }] }),
+          makePlexItem({ title: "Not on WL", externalIds: [{ source: "tmdb", id: "400" }] }),
+        ]),
     };
     mockGetPlexClient.mockReturnValue(
       mockClient as unknown as ReturnType<typeof getPlexClient> & object
