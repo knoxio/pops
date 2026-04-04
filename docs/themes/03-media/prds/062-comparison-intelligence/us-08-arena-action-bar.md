@@ -1,7 +1,7 @@
 # US-08: Arena action bar
 
 > PRD: [062 — Comparison Intelligence](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,7 +9,7 @@ As a user, I want a unified action bar below the comparison cards with all arena
 
 ## Acceptance Criteria
 
-- [ ] Bottom action bar with the following actions:
+- [x] Bottom action bar with the following actions:
   - **Skip** — applies per-pair cooloff (US-04), loads next pair, no comparison recorded
   - **Stale (A)** — marks movie A as stale (US-02), loads next pair, no comparison recorded
   - **Stale (B)** — marks movie B as stale (US-02), loads next pair, no comparison recorded
@@ -17,14 +17,14 @@ As a user, I want a unified action bar below the comparison cards with all arena
   - **Not watched (A)** — blacklists movie A's watch history (US-01), confirmation dialog, loads next pair
   - **Not watched (B)** — blacklists movie B's watch history (US-01), confirmation dialog, loads next pair
   - **Done** — navigates away from arena
-- [ ] Watchlist bookmark button stays on each movie card. Does NOT submit a comparison or affect the selection algorithm
-- [ ] Center column between cards shows High/Mid/Low draw tier buttons
-- [ ] "Stale" buttons show current staleness level for each movie (e.g. "Stale ×2" if marked before)
-- [ ] "Not watched" buttons use destructive styling (red) and trigger a confirmation dialog showing comparison count to be purged
-- [ ] All action bar buttons are disabled while a mutation is pending
-- [ ] Each action invalidates the pair cache and loads a fresh pair after completing
-- [ ] On mobile, secondary actions (N/A, Not watched) collapse into a "more" menu. Skip and Stale are always visible
-- [ ] Tests: each button calls the correct mutation, confirmation dialog for destructive actions, button states
+- [x] Watchlist bookmark button stays on each movie card. Does NOT submit a comparison or affect the selection algorithm
+- [x] Center column between cards shows High/Mid/Low draw tier buttons
+- [x] "Stale" buttons show current staleness level for each movie (e.g. "Stale ×2" if marked before)
+- [x] "Not watched" buttons use destructive styling (red) and trigger a confirmation dialog showing comparison count to be purged
+- [x] All action bar buttons are disabled while a mutation is pending
+- [x] Each action invalidates the pair cache and loads a fresh pair after completing
+- [x] On mobile, secondary actions (N/A, Not watched) collapse into a "more" menu. Skip and Stale are always visible
+- [x] Tests: each button calls the correct mutation, confirmation dialog for destructive actions, button states
 
 ## Notes
 

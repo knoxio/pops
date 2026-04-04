@@ -1,7 +1,7 @@
 # PRD-062: Comparison Intelligence
 
 > Epic: [04 — Ratings & Comparisons](../../epics/04-ratings-comparisons.md)
-> Status: Not started
+> Status: Done
 
 ## Overview
 
@@ -165,14 +165,14 @@ If the movie has a `comparison_staleness` row with `staleness < 1.0`, the badge 
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 01 | [us-01-blacklist-watch-history](us-01-blacklist-watch-history.md) | Blacklisted column on watch_history, "not watched" arena action with comparison purge + ELO recalc, sync protection | Not started | Yes |
-| 02 | [us-02-staleness-model](us-02-staleness-model.md) | Staleness table, compounding multiplier, watch-resets-staleness, arena stale button | Not started | Yes |
-| 03 | [us-03-dimension-exclusion](us-03-dimension-exclusion.md) | "Not applicable" action, excluded column on media_scores, comparison purge + ELO recalc, hide from rankings | Not started | Blocked by us-01 (shares recalc logic) |
-| 04 | [us-04-skip-cooloff](us-04-skip-cooloff.md) | Skip cooloff table, per-pair per-dimension cooloff of 10 comparisons | Not started | Yes |
-| 05 | [us-05-pair-selection-algorithm](us-05-pair-selection-algorithm.md) | Weighted probabilistic pair selection using info gain, recency, staleness, dimension need, jitter | Not started | Blocked by us-02, us-04 |
-| 06 | [us-06-score-confidence](us-06-score-confidence.md) | Derived confidence from comparison_count, displayed on rankings page | Not started | Yes |
-| 07 | [us-07-freshness-indicator](us-07-freshness-indicator.md) | Fresh/Recent/Fading/Stale badge on movies in arena and library | Not started | Blocked by us-02 |
-| 08 | [us-08-arena-action-bar](us-08-arena-action-bar.md) | Bottom action bar with Skip, Stale(A/B), N/A, Not Watched(A/B). Watchlist stays on cards | Not started | Blocked by us-01, us-02, us-03, us-04 |
+| 01 | [us-01-blacklist-watch-history](us-01-blacklist-watch-history.md) | Blacklisted column on watch_history, "not watched" arena action with comparison purge + ELO recalc, sync protection | Done | Yes |
+| 02 | [us-02-staleness-model](us-02-staleness-model.md) | Staleness table, compounding multiplier, watch-resets-staleness, arena stale button | Done | Yes |
+| 03 | [us-03-dimension-exclusion](us-03-dimension-exclusion.md) | "Not applicable" action, excluded column on media_scores, comparison purge + ELO recalc, hide from rankings | Done | Blocked by us-01 (shares recalc logic) |
+| 04 | [us-04-skip-cooloff](us-04-skip-cooloff.md) | Skip cooloff table, per-pair per-dimension cooloff of 10 comparisons | Done | Yes |
+| 05 | [us-05-pair-selection-algorithm](us-05-pair-selection-algorithm.md) | Weighted probabilistic pair selection using info gain, recency, staleness, dimension need, jitter | Done | Blocked by us-02, us-04 |
+| 06 | [us-06-score-confidence](us-06-score-confidence.md) | Derived confidence from comparison_count, displayed on rankings page | Done | Yes |
+| 07 | [us-07-freshness-indicator](us-07-freshness-indicator.md) | Fresh/Recent/Fading/Stale badge on movies in arena and library | Done | Blocked by us-02 |
+| 08 | [us-08-arena-action-bar](us-08-arena-action-bar.md) | Bottom action bar with Skip, Stale(A/B), N/A, Not Watched(A/B). Watchlist stays on cards | Done | Blocked by us-01, us-02, us-03, us-04 |
 
 US-01, US-02, US-04, US-06 can be built in parallel. US-03 shares recalc logic with US-01. US-05 depends on staleness and cooloff tables. US-08 is the UI integration that wires everything together.
 

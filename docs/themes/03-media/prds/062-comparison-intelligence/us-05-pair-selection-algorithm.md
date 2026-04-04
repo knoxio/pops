@@ -1,7 +1,7 @@
 # US-05: Pair selection algorithm
 
 > PRD: [062 — Comparison Intelligence](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,18 +9,18 @@ As the system, I select comparison pairs using a weighted probabilistic model so
 
 ## Acceptance Criteria
 
-- [ ] Pair selection uses the priority formula from the PRD — not random
-- [ ] **Information gain**: pairs with close scores and few head-to-head comparisons are prioritised. Formula: `1 / (1 + abs(scoreA - scoreB) / 200) × (1 / (pairCount + 1))`
-- [ ] **Recency weight**: recently watched movies appear more often. Formula: `1 / (1 + daysSinceLastWatch / 180)` (6-month half-life)
-- [ ] **Staleness weight**: reads from `comparison_staleness` table. Default 1.0 if no row. Multiplied for both movies in the pair
-- [ ] **Dimension need**: under-sampled dimensions get boosted. Formula: `maxCompCount / (thisDimensionCompCount + 1)`
-- [ ] **Random jitter**: final priority multiplied by uniform random in [0.7, 1.3]
-- [ ] Selection is weighted random sampling from all eligible pairs — NOT deterministic top-pick
-- [ ] Exclusion rules applied before scoring: blacklisted, excluded for dimension, on cooloff, no valid watch events
-- [ ] Dimension selection uses weighted random (by dimension need) instead of round-robin rotation
-- [ ] Falls back to any eligible pair if weighted selection produces no candidates
-- [ ] Performance: pair selection completes in < 200ms for libraries up to 500 movies
-- [ ] Tests: information gain favours close-score pairs, recency favours recent watches, staleness reduces frequency, dimension need favours under-sampled, jitter produces variety across repeated calls
+- [x] Pair selection uses the priority formula from the PRD — not random
+- [x] **Information gain**: pairs with close scores and few head-to-head comparisons are prioritised. Formula: `1 / (1 + abs(scoreA - scoreB) / 200) × (1 / (pairCount + 1))`
+- [x] **Recency weight**: recently watched movies appear more often. Formula: `1 / (1 + daysSinceLastWatch / 180)` (6-month half-life)
+- [x] **Staleness weight**: reads from `comparison_staleness` table. Default 1.0 if no row. Multiplied for both movies in the pair
+- [x] **Dimension need**: under-sampled dimensions get boosted. Formula: `maxCompCount / (thisDimensionCompCount + 1)`
+- [x] **Random jitter**: final priority multiplied by uniform random in [0.7, 1.3]
+- [x] Selection is weighted random sampling from all eligible pairs — NOT deterministic top-pick
+- [x] Exclusion rules applied before scoring: blacklisted, excluded for dimension, on cooloff, no valid watch events
+- [x] Dimension selection uses weighted random (by dimension need) instead of round-robin rotation
+- [x] Falls back to any eligible pair if weighted selection produces no candidates
+- [x] Performance: pair selection completes in < 200ms for libraries up to 500 movies
+- [x] Tests: information gain favours close-score pairs, recency favours recent watches, staleness reduces frequency, dimension need favours under-sampled, jitter produces variety across repeated calls
 
 ## Notes
 

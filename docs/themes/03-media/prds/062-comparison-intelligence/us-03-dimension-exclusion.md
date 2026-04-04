@@ -1,7 +1,7 @@
 # US-03: Dimension exclusion ("Not applicable")
 
 > PRD: [062 — Comparison Intelligence](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,15 +9,15 @@ As a user, I want to mark a movie as "not applicable" for a specific dimension (
 
 ## Acceptance Criteria
 
-- [ ] `media_scores` table has an `excluded` INTEGER column, default 0
-- [ ] `media.comparisons.excludeFromDimension` mutation accepts `{ mediaType, mediaId, dimensionId }` — sets `excluded = 1` on the media_scores row (creates it if missing)
-- [ ] After excluding, all comparisons involving that movie for that specific dimension are deleted
-- [ ] ELO scores are recalculated (reset + replay) for that dimension
-- [ ] Excluded movies do not appear in pair selection for that dimension
-- [ ] Excluded movies do not appear in rankings for that dimension
-- [ ] `media.comparisons.includeInDimension` mutation allows undoing the exclusion (sets `excluded = 0`)
-- [ ] Arena "N/A" button excludes BOTH movies in the current pair for the current dimension, loads next pair
-- [ ] Tests: exclude sets column, comparisons purged, recalc correct, pair selection skips excluded, rankings omit excluded, re-include works
+- [x] `media_scores` table has an `excluded` INTEGER column, default 0
+- [x] `media.comparisons.excludeFromDimension` mutation accepts `{ mediaType, mediaId, dimensionId }` — sets `excluded = 1` on the media_scores row (creates it if missing)
+- [x] After excluding, all comparisons involving that movie for that specific dimension are deleted
+- [x] ELO scores are recalculated (reset + replay) for that dimension
+- [x] Excluded movies do not appear in pair selection for that dimension
+- [x] Excluded movies do not appear in rankings for that dimension
+- [x] `media.comparisons.includeInDimension` mutation allows undoing the exclusion (sets `excluded = 0`)
+- [x] Arena "N/A" button excludes BOTH movies in the current pair for the current dimension, loads next pair
+- [x] Tests: exclude sets column, comparisons purged, recalc correct, pair selection skips excluded, rankings omit excluded, re-include works
 
 ## Notes
 

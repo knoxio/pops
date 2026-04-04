@@ -1,7 +1,7 @@
 # US-07: Freshness indicator
 
 > PRD: [062 — Comparison Intelligence](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,17 +9,17 @@ As a user, I want to see a freshness badge on movies so I know at a glance how r
 
 ## Acceptance Criteria
 
-- [ ] Freshness badge shows on movie cards in the compare arena (both cards)
-- [ ] Freshness badge shows on the movie detail page
-- [ ] Badge derived from `daysSinceLastWatch` (most recent non-blacklisted watch event):
+- [x] Freshness badge shows on movie cards in the compare arena (both cards)
+- [x] Freshness badge shows on the movie detail page
+- [x] Badge derived from `daysSinceLastWatch` (most recent non-blacklisted watch event):
   - 0–30 days: "Fresh" (green)
   - 31–90 days: "Recent" (blue)
   - 91–365 days: "Fading" (yellow)
   - 365+ days: "Stale" (red)
-- [ ] If the movie has a `comparison_staleness` row with `staleness < 1.0`, badge shows "Stale" (red) regardless of watch recency
-- [ ] Badge is a small pill/chip near the movie title or poster corner — not intrusive
-- [ ] Library page optionally shows freshness (e.g. as a sort option or filter, not on every card by default)
-- [ ] Tests: correct badge for each time range, stale override, no badge for unwatched movies
+- [x] If the movie has a `comparison_staleness` row with `staleness < 1.0`, badge shows "Stale" (red) regardless of watch recency
+- [x] Badge is a small pill/chip near the movie title or poster corner — not intrusive
+- [x] Library page optionally shows freshness (e.g. as a sort option or filter, not on every card by default)
+- [x] Tests: correct badge for each time range, stale override, no badge for unwatched movies
 
 ## Notes
 
