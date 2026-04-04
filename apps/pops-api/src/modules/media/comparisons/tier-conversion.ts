@@ -37,8 +37,9 @@ export function convertTierPlacements(placements: TierPlacement[]): PairwiseComp
 
   for (let i = 0; i < placements.length; i++) {
     for (let j = i + 1; j < placements.length; j++) {
-      const a = placements[i]!;
-      const b = placements[j]!;
+      const a = placements[i];
+      const b = placements[j];
+      if (!a || !b) continue;
 
       const rankA = TIER_RANK_ORDER[a.tier];
       const rankB = TIER_RANK_ORDER[b.tier];

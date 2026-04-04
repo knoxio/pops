@@ -32,7 +32,6 @@ import {
   type SubmitTierListInput,
   type SubmitTierListResult,
   type ScoreChange,
-  TIER_RANK_ORDER,
   type RecordDebriefComparisonInput,
   type BatchComparisonItem,
   type BatchRecordResult,
