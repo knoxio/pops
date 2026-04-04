@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useLayoutEffect, useMemo, useState } from "react";
 import { useLocation } from "react-router";
 import { AppContextCtx } from "./context.js";
 import type { AppContext, AppName } from "./types.js";
@@ -49,7 +49,7 @@ export function AppContextProvider({ children }: AppContextProviderProps) {
   >({});
 
   // Reset page-level context whenever the user navigates to a new path.
-  useEffect(() => {
+  useLayoutEffect(() => {
     setPageContextState({});
   }, [pathname]);
 

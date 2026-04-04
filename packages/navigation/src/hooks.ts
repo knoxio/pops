@@ -1,4 +1,4 @@
-import { useCallback, useContext, useEffect } from "react";
+import { useCallback, useContext, useLayoutEffect } from "react";
 import { useNavigate } from "react-router";
 import { AppContextCtx } from "./context.js";
 import type { AppContext, AppContextEntity, AppName } from "./types.js";
@@ -31,7 +31,7 @@ export interface SetPageContextOptions {
 export function useSetPageContext(options: SetPageContextOptions): void {
   const { setPageContext } = useContext(AppContextCtx);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setPageContext({
       page: options.page,
       pageType: options.pageType ?? "top-level",
