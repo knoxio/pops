@@ -246,7 +246,8 @@ export function createTestDb(): Database {
       media_type TEXT NOT NULL CHECK(media_type IN ('movie', 'episode')),
       media_id   INTEGER NOT NULL,
       watched_at TEXT NOT NULL DEFAULT (datetime('now')),
-      completed  INTEGER NOT NULL DEFAULT 1
+      completed  INTEGER NOT NULL DEFAULT 1,
+      blacklisted INTEGER NOT NULL DEFAULT 0
     );
     CREATE INDEX IF NOT EXISTS idx_watch_history_media ON watch_history(media_type, media_id);
     CREATE INDEX IF NOT EXISTS idx_watch_history_watched_at ON watch_history(watched_at);
@@ -868,13 +869,14 @@ export function seedWatchHistoryEntry(
     media_id: number;
     watched_at: string;
     completed: number;
+    blacklisted: number;
   }> = {}
 ): number {
   const result = db
     .prepare(
       `
-    INSERT INTO watch_history (media_type, media_id, watched_at, completed)
-    VALUES (@media_type, @media_id, @watched_at, @completed)
+    INSERT INTO watch_history (media_type, media_id, watched_at, completed, blacklisted)
+    VALUES (@media_type, @media_id, @watched_at, @completed, @blacklisted)
   `
     )
     .run({
@@ -882,6 +884,7 @@ export function seedWatchHistoryEntry(
       media_id: overrides.media_id ?? 1,
       watched_at: overrides.watched_at ?? new Date().toISOString(),
       completed: overrides.completed ?? 1,
+      blacklisted: overrides.blacklisted ?? 0,
     });
 
   return Number(result.lastInsertRowid);
