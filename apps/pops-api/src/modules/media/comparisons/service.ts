@@ -1240,10 +1240,12 @@ export function excludeFromDimension(
   mediaType: string,
   mediaId: number,
   dimensionId: number
-): void {
+): { comparisonsDeleted: number } {
   getDimension(dimensionId); // verify exists
   const drizzleDb = getDrizzle();
   const rawDb = getDb();
+
+  let comparisonsDeleted = 0;
 
   rawDb.transaction(() => {
     // Upsert media_scores row with excluded=1
@@ -1280,7 +1282,7 @@ export function excludeFromDimension(
     }
 
     // Delete all comparisons involving this media item for this dimension
-    drizzleDb
+    const result = drizzleDb
       .delete(comparisons)
       .where(
         and(
@@ -1293,9 +1295,13 @@ export function excludeFromDimension(
       )
       .run();
 
+    comparisonsDeleted = result.changes;
+
     // Recalculate ELO for this dimension
     recalcDimensionElo(dimensionId);
   })();
+
+  return { comparisonsDeleted };
 }
 
 /**

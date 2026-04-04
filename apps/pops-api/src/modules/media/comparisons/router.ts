@@ -187,8 +187,12 @@ export const comparisonsRouter = router({
   /** Exclude a media item from a dimension (removes comparisons, recalculates Elo). */
   excludeFromDimension: protectedProcedure.input(DimensionExclusionSchema).mutation(({ input }) => {
     try {
-      service.excludeFromDimension(input.mediaType, input.mediaId, input.dimensionId);
-      return { message: "Media excluded from dimension" };
+      const { comparisonsDeleted } = service.excludeFromDimension(
+        input.mediaType,
+        input.mediaId,
+        input.dimensionId
+      );
+      return { comparisonsDeleted };
     } catch (err) {
       if (err instanceof NotFoundError) {
         throw new TRPCError({ code: "NOT_FOUND", message: err.message });
