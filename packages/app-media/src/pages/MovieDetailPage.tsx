@@ -14,6 +14,7 @@ import {
 } from "@pops/ui";
 import { trpc } from "../lib/trpc";
 import { formatCurrency, formatLanguage, formatRuntime } from "../lib/format";
+import { Button } from "@pops/ui";
 import { WatchlistToggle } from "../components/WatchlistToggle";
 import { ComparisonScores } from "../components/ComparisonScores";
 import { MarkAsWatchedButton } from "../components/MarkAsWatchedButton";
@@ -63,6 +64,11 @@ export function MovieDetailPage() {
 
   const { data: stalenessData } = trpc.media.comparisons.getStaleness.useQuery(
     { mediaType: "movie", mediaId: movieId },
+    { enabled: !Number.isNaN(movieId) }
+  );
+
+  const { data: pendingDebriefData } = trpc.media.comparisons.getPendingDebriefs.useQuery(
+    undefined,
     { enabled: !Number.isNaN(movieId) }
   );
 
@@ -120,6 +126,11 @@ export function MovieDetailPage() {
       )
     : null;
   const staleness = stalenessData?.data?.staleness ?? 1.0;
+
+  const pendingDebrief = (pendingDebriefData?.data ?? []).find(
+    (d: { movieId: number; status: string }) =>
+      d.movieId === movie.id && (d.status === "pending" || d.status === "active")
+  );
 
   const metadataItems = [
     { label: "Status", value: movie.status },
@@ -216,6 +227,13 @@ export function MovieDetailPage() {
               <ArrStatusBadge kind="movie" externalId={movie.tmdbId} />
               <RequestMovieButton tmdbId={movie.tmdbId} title={movie.title} />
               <FreshnessBadge daysSinceWatch={daysSinceWatch} staleness={staleness} />
+              {pendingDebrief && (
+                <Link to={`/media/debrief/${pendingDebrief.sessionId}`}>
+                  <Button variant="outline" size="sm">
+                    Debrief this movie
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>
