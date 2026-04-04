@@ -160,7 +160,7 @@ jobs:
       name: production
       url: https://pops.jmiranda.dev
     env:
-      BUILD_VERSION: b${{ github.run_number }}
+      BUILD_VERSION: ${{ github.run_number }}
 
     steps:
       - name: Checkout code
