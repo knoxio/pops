@@ -46,6 +46,9 @@ vi.mock("../components/RequestMovieButton", () => ({
 vi.mock("../components/FreshnessBadge", () => ({
   FreshnessBadge: () => null,
 }));
+vi.mock("../components/ExcludedDimensions", () => ({
+  ExcludedDimensions: () => null,
+}));
 
 import { MovieDetailPage } from "./MovieDetailPage";
 
