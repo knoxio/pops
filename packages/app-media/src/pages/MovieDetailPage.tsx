@@ -19,6 +19,7 @@ import { ComparisonScores } from "../components/ComparisonScores";
 import { MarkAsWatchedButton } from "../components/MarkAsWatchedButton";
 import { ArrStatusBadge } from "../components/ArrStatusBadge";
 import { RequestMovieButton } from "../components/RequestMovieButton";
+import { FreshnessBadge } from "../components/FreshnessBadge";
 
 function MovieDetailSkeleton() {
   return (
@@ -56,6 +57,11 @@ export function MovieDetailPage() {
   );
 
   const { data: watchHistoryData } = trpc.media.watchHistory.list.useQuery(
+    { mediaType: "movie", mediaId: movieId },
+    { enabled: !Number.isNaN(movieId) }
+  );
+
+  const { data: stalenessData } = trpc.media.comparisons.getStaleness.useQuery(
     { mediaType: "movie", mediaId: movieId },
     { enabled: !Number.isNaN(movieId) }
   );
@@ -100,6 +106,20 @@ export function MovieDetailPage() {
   const posterSrc = movie.posterUrl ?? undefined;
   const backdropSrc = movie.backdropUrl ?? undefined;
   const logoSrc = movie.logoUrl ?? undefined;
+
+  const watchEntries = watchHistoryData?.data ?? [];
+  const mostRecentWatch =
+    watchEntries.length > 0
+      ? watchEntries.reduce((latest, entry) =>
+          new Date(entry.watchedAt) > new Date(latest.watchedAt) ? entry : latest
+        )
+      : null;
+  const daysSinceWatch = mostRecentWatch
+    ? Math.floor(
+        (Date.now() - new Date(mostRecentWatch.watchedAt).getTime()) / (1000 * 60 * 60 * 24)
+      )
+    : null;
+  const staleness = stalenessData?.data?.staleness ?? 1.0;
 
   const metadataItems = [
     { label: "Status", value: movie.status },
@@ -195,6 +215,7 @@ export function MovieDetailPage() {
               <MarkAsWatchedButton mediaId={movie.id} />
               <ArrStatusBadge kind="movie" externalId={movie.tmdbId} />
               <RequestMovieButton tmdbId={movie.tmdbId} title={movie.title} />
+              <FreshnessBadge daysSinceWatch={daysSinceWatch} staleness={staleness} />
             </div>
           </div>
         </div>
