@@ -1,7 +1,7 @@
 # PRD-064: Batch Tier List
 
 > Epic: [04 — Ratings & Comparisons](../../epics/04-ratings-comparisons.md)
-> Status: In progress
+> Status: Done
 
 ## Overview
 
@@ -106,7 +106,7 @@ No new tables. Tier list submissions generate standard `comparisons` rows via th
 | 02 | [us-02-batch-record](us-02-batch-record.md) | Batch record implied comparisons in a single transaction | Done | Yes |
 | 03 | [us-03-movie-selection](us-03-movie-selection.md) | Select 8 movies to maximise information gain for the chosen dimension | Done | Yes |
 | 04 | [us-04-tier-list-api](us-04-tier-list-api.md) | tRPC endpoints: getTierListMovies, submitTierList | Done | Blocked by us-01, us-02, us-03 |
-| 05 | [us-05-drag-drop-ui](us-05-drag-drop-ui.md) | Drag-and-drop tier list page with S/A/B/C/D rows, movie cards, unranked pool | Partial | Blocked by us-04 |
+| 05 | [us-05-drag-drop-ui](us-05-drag-drop-ui.md) | Drag-and-drop tier list page with S/A/B/C/D rows, movie cards, unranked pool | Done | Blocked by us-04 |
 | 06 | [us-06-submission-summary](us-06-submission-summary.md) | Post-submit summary showing implied comparison count and ELO changes | Done | Blocked by us-05 |
 
 US-01, US-02, US-03 can parallelise. US-05 and US-06 can parallelise once US-04 is done.

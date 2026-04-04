@@ -1,7 +1,7 @@
 # US-05: Drag-and-drop tier list UI
 
 > PRD: [064 — Batch Tier List](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -17,4 +17,4 @@ As a user, I want to drag movies into S/A/B/C/D tier rows to rank them quickly o
 - [x] Drag between tiers to reposition, drag back to unranked to remove
 - [x] "Refresh" button to get a different set of 8 movies
 - [x] "Submit" button disabled when fewer than 2 movies placed
-- [ ] Tests: drag and drop works, tier assignment persists, submit enables at 2+
+- [x] Tests: drag and drop works, tier assignment persists, submit enables at 2+
