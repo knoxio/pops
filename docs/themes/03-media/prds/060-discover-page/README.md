@@ -152,25 +152,25 @@ Displayed at the bottom of the page. Shows:
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
 | 01 | [us-01-dismissed-schema](us-01-dismissed-schema.md) | dismissed_discover SQLite table, Drizzle schema + migration, dismiss/getDismissed tRPC endpoints | Done | Yes |
-| 02 | [us-02-discover-card-actions](us-02-discover-card-actions.md) | Card hover actions (Add, Watchlist, Watched, Request, Dismiss), Owned/Watched badges, loading states | Not started | Blocked by us-01 |
-| 03 | [us-03-recommendation-scoring](us-03-recommendation-scoring.md) | Preference profile scoring service: genre affinity from ELO + watch history fallback, match percentage calculation | Not started | Yes |
+| 02 | [us-02-discover-card-actions](us-02-discover-card-actions.md) | Card hover actions (Add, Watchlist, Watched, Request, Dismiss), Owned/Watched badges, loading states | Partial | Blocked by us-01 |
+| 03 | [us-03-recommendation-scoring](us-03-recommendation-scoring.md) | Preference profile scoring service: genre affinity from ELO + watch history fallback, match percentage calculation | Done | Yes |
 
 ### Section endpoints (all parallelisable after us-01 and us-03)
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 04 | [us-04-trending-tmdb](us-04-trending-tmdb.md) | TMDB trending endpoint + frontend row with day/week toggle, dedup pagination, Load More | Not started | Yes |
-| 05 | [us-05-recommendations-endpoint](us-05-recommendations-endpoint.md) | tRPC endpoint: top 10-100 ELO movies → TMDB recs, merge, deduplicate, score, exclude dismissed/library | Not started | Blocked by us-03 |
+| 04 | [us-04-trending-tmdb](us-04-trending-tmdb.md) | TMDB trending endpoint + frontend row with day/week toggle, dedup pagination, Load More | Done | Yes |
+| 05 | [us-05-recommendations-endpoint](us-05-recommendations-endpoint.md) | tRPC endpoint: top 10-100 ELO movies → TMDB recs, merge, deduplicate, score, exclude dismissed/library | Done | Blocked by us-03 |
 | 06 | [us-06-recommendations-ui](us-06-recommendations-ui.md) | Frontend row: cold start CTA, attribution labels, match % badge, subtitle with source movies | Done | Blocked by us-05 |
-| 07 | [us-07-genre-spotlight-endpoint](us-07-genre-spotlight-endpoint.md) | tRPC endpoint: select 2-3 genres with variety, fetch TMDB discover per genre, score results | Not started | Blocked by us-03 |
-| 08 | [us-08-genre-spotlight-ui](us-08-genre-spotlight-ui.md) | Frontend: genre sub-rows ("Best in Action", "Best in Sci-Fi"), Load More per genre | Not started | Blocked by us-07 |
-| 09 | [us-09-watchlist-recs](us-09-watchlist-recs.md) | tRPC endpoint + frontend row: watchlist items → TMDB similar, attribution, exclude owned/dismissed | Not started | Blocked by us-03 |
-| 10 | [us-10-trending-plex](us-10-trending-plex.md) | tRPC endpoint + frontend row: Plex Discover cloud trending, hidden when disconnected | Not started | Yes |
-| 11 | [us-11-rewatch-suggestions](us-11-rewatch-suggestions.md) | tRPC endpoint + frontend row: watched 6+ months ago with high ELO, local-only query | Not started | Yes |
-| 12 | [us-12-from-your-server](us-12-from-your-server.md) | tRPC endpoint + frontend row: unwatched library movies, scored by profile, local-only | Not started | Blocked by us-03 |
-| 13 | [us-13-context-collections](us-13-context-collections.md) | Static collection definitions: genre/keyword mappings + time/date triggers for each context | Not started | Yes |
-| 14 | [us-14-context-endpoint](us-14-context-endpoint.md) | tRPC endpoint: evaluate active collections by server clock, fetch TMDB discover per collection | Not started | Blocked by us-13 |
-| 15 | [us-15-context-ui](us-15-context-ui.md) | Frontend: 1-2 context rows with themed titles, Load More, fallback to "Rainy Day" | Not started | Blocked by us-14 |
+| 07 | [us-07-genre-spotlight-endpoint](us-07-genre-spotlight-endpoint.md) | tRPC endpoint: select 2-3 genres with variety, fetch TMDB discover per genre, score results | Done | Blocked by us-03 |
+| 08 | [us-08-genre-spotlight-ui](us-08-genre-spotlight-ui.md) | Frontend: genre sub-rows ("Best in Action", "Best in Sci-Fi"), Load More per genre | Done | Blocked by us-07 |
+| 09 | [us-09-watchlist-recs](us-09-watchlist-recs.md) | tRPC endpoint + frontend row: watchlist items → TMDB similar, attribution, exclude owned/dismissed | Done | Blocked by us-03 |
+| 10 | [us-10-trending-plex](us-10-trending-plex.md) | tRPC endpoint + frontend row: Plex Discover cloud trending, hidden when disconnected | Done | Yes |
+| 11 | [us-11-rewatch-suggestions](us-11-rewatch-suggestions.md) | tRPC endpoint + frontend row: watched 6+ months ago with high ELO, local-only query | Done | Yes |
+| 12 | [us-12-from-your-server](us-12-from-your-server.md) | tRPC endpoint + frontend row: unwatched library movies, scored by profile, local-only | Done | Blocked by us-03 |
+| 13 | [us-13-context-collections](us-13-context-collections.md) | Static collection definitions: genre/keyword mappings + time/date triggers for each context | Done | Yes |
+| 14 | [us-14-context-endpoint](us-14-context-endpoint.md) | tRPC endpoint: evaluate active collections by server clock, fetch TMDB discover per collection | Done | Blocked by us-13 |
+| 15 | [us-15-context-ui](us-15-context-ui.md) | Frontend: 1-2 context rows with themed titles, Load More, fallback to "Rainy Day" | Done | Blocked by us-14 |
 
 ### Dependency graph
 
