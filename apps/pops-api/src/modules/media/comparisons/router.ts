@@ -25,6 +25,7 @@ import {
   GetTierListMoviesSchema,
   SubmitTierListSchema,
   DismissDebriefDimensionSchema,
+  RecordDebriefComparisonSchema,
   toDimension,
   toComparison,
   toMediaScore,
@@ -272,6 +273,27 @@ export const comparisonsRouter = router({
       throw err;
     }
   }),
+
+  /** Record a debrief comparison (or skip) for a session + dimension. */
+  recordDebriefComparison: protectedProcedure
+    .input(RecordDebriefComparisonSchema)
+    .mutation(({ input }) => {
+      try {
+        const result = service.recordDebriefComparison(input);
+        return { data: result, message: "Debrief comparison recorded" };
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+        }
+        if (err instanceof ValidationError) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: err.message });
+        }
+        if (err instanceof ConflictError) {
+          throw new TRPCError({ code: "CONFLICT", message: err.message });
+        }
+        throw err;
+      }
+    }),
 
   /** Record a skip (puts pair on cooloff for 10 global comparisons). */
   recordSkip: protectedProcedure.input(RecordSkipSchema).mutation(({ input }) => {
