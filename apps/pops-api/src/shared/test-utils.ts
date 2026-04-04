@@ -224,6 +224,7 @@ export function createTestDb(): Database {
       dimension_id     INTEGER NOT NULL REFERENCES comparison_dimensions(id),
       score            REAL NOT NULL DEFAULT 1500.0,
       comparison_count INTEGER NOT NULL DEFAULT 0,
+      excluded         INTEGER NOT NULL DEFAULT 0,
       updated_at       TEXT NOT NULL DEFAULT (datetime('now'))
     );
     CREATE UNIQUE INDEX IF NOT EXISTS idx_media_scores_unique ON media_scores(media_type, media_id, dimension_id);

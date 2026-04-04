@@ -13,6 +13,7 @@ export const mediaScores = sqliteTable(
       .references(() => comparisonDimensions.id),
     score: real("score").notNull().default(1500.0),
     comparisonCount: integer("comparison_count").notNull().default(0),
+    excluded: integer("excluded").notNull().default(0),
     updatedAt: text("updated_at")
       .notNull()
       .default(sql`(datetime('now'))`),
