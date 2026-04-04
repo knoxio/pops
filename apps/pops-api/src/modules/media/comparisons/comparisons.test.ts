@@ -1414,6 +1414,106 @@ describe("confidence in API responses", () => {
     // overall = min = ~0.29
     expect(movie1!.confidence).toBeCloseTo(1 - 1 / Math.sqrt(2), 3); // count=1 → sqrt(2)
   });
+
+  it("per-dimension rankings exclude excluded movies", async () => {
+    const dimId = seedDimension(db, { name: "Story" });
+
+    // Record comparisons: movie 1 > 2 > 3
+    await caller.media.comparisons.record({
+      dimensionId: dimId,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 2,
+      winnerType: "movie",
+      winnerId: 1,
+    });
+    await caller.media.comparisons.record({
+      dimensionId: dimId,
+      mediaAType: "movie",
+      mediaAId: 2,
+      mediaBType: "movie",
+      mediaBId: 3,
+      winnerType: "movie",
+      winnerId: 2,
+    });
+
+    // Exclude movie 1 from this dimension
+    excludeFromDimension("movie", 1, dimId);
+
+    const result = await caller.media.comparisons.rankings({ dimensionId: dimId });
+    expect(result.data.length).toBe(2);
+    expect(result.data.every((r) => r.mediaId !== 1)).toBe(true);
+    expect(result.pagination.total).toBe(2);
+  });
+
+  it("excluded movie still appears in other dimensions rankings", async () => {
+    const dim1 = seedDimension(db, { name: "Story", active: 1 });
+    const dim2 = seedDimension(db, { name: "Visuals", active: 1 });
+
+    // Movie 1 vs 2 in both dimensions
+    await caller.media.comparisons.record({
+      dimensionId: dim1,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 2,
+      winnerType: "movie",
+      winnerId: 1,
+    });
+    await caller.media.comparisons.record({
+      dimensionId: dim2,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 2,
+      winnerType: "movie",
+      winnerId: 1,
+    });
+
+    // Exclude movie 1 from dim1 only
+    excludeFromDimension("movie", 1, dim1);
+
+    const dim1Rankings = await caller.media.comparisons.rankings({ dimensionId: dim1 });
+    expect(dim1Rankings.data.every((r) => r.mediaId !== 1)).toBe(true);
+
+    const dim2Rankings = await caller.media.comparisons.rankings({ dimensionId: dim2 });
+    expect(dim2Rankings.data.some((r) => r.mediaId === 1)).toBe(true);
+  });
+
+  it("overall rankings exclude movies from dimensions where excluded", async () => {
+    const dim1 = seedDimension(db, { name: "Story", active: 1 });
+    const dim2 = seedDimension(db, { name: "Visuals", active: 1 });
+
+    // Movie 1 vs 2 in both dimensions
+    await caller.media.comparisons.record({
+      dimensionId: dim1,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 2,
+      winnerType: "movie",
+      winnerId: 1,
+    });
+    await caller.media.comparisons.record({
+      dimensionId: dim2,
+      mediaAType: "movie",
+      mediaAId: 1,
+      mediaBType: "movie",
+      mediaBId: 2,
+      winnerType: "movie",
+      winnerId: 1,
+    });
+
+    // Exclude movie 1 from dim1 — it should still appear in overall via dim2
+    excludeFromDimension("movie", 1, dim1);
+
+    const result = await caller.media.comparisons.rankings({});
+    // Movie 1 should still appear (has non-excluded score in dim2)
+    expect(result.data.some((r) => r.mediaId === 1)).toBe(true);
+    // Movie 2 should also appear
+    expect(result.data.some((r) => r.mediaId === 2)).toBe(true);
+  });
 });
 
 describe("comparisons auth", () => {

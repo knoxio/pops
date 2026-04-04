@@ -688,7 +688,7 @@ export function getRankings(
     const countResult = rawDb
       .prepare(
         `SELECT COUNT(*) as total FROM media_scores ms
-         WHERE ms.dimension_id = ? ${mediaTypeClause}`
+         WHERE ms.dimension_id = ? AND ms.excluded = 0 ${mediaTypeClause}`
       )
       .get(...params) as { total: number };
 
@@ -713,7 +713,7 @@ export function getRankings(
         FROM media_scores ms
         LEFT JOIN movies m ON ms.media_type = 'movie' AND ms.media_id = m.id
         LEFT JOIN tv_shows tv ON ms.media_type = 'tv_show' AND ms.media_id = tv.id
-        WHERE ms.dimension_id = ? ${mediaTypeClause}
+        WHERE ms.dimension_id = ? AND ms.excluded = 0 ${mediaTypeClause}
         ORDER BY
           CASE WHEN ms.comparison_count = 0 THEN 1 ELSE 0 END,
           ms.score DESC,
@@ -776,7 +776,7 @@ export function getRankings(
         SELECT ms.media_type, ms.media_id
         FROM media_scores ms
         JOIN comparison_dimensions cd ON ms.dimension_id = cd.id
-        WHERE cd.active = 1 AND ms.dimension_id IN (${dimensionPlaceholders}) ${mediaTypeClause}
+        WHERE cd.active = 1 AND ms.excluded = 0 AND ms.dimension_id IN (${dimensionPlaceholders}) ${mediaTypeClause}
         GROUP BY ms.media_type, ms.media_id
       )`
     )
@@ -805,7 +805,7 @@ export function getRankings(
       JOIN comparison_dimensions cd ON ms.dimension_id = cd.id
       LEFT JOIN movies m ON ms.media_type = 'movie' AND ms.media_id = m.id
       LEFT JOIN tv_shows tv ON ms.media_type = 'tv_show' AND ms.media_id = tv.id
-      WHERE cd.active = 1 AND ms.dimension_id IN (${dimensionPlaceholders}) ${mediaTypeClause}
+      WHERE cd.active = 1 AND ms.excluded = 0 AND ms.dimension_id IN (${dimensionPlaceholders}) ${mediaTypeClause}
       GROUP BY ms.media_type, ms.media_id
       ORDER BY
         CASE WHEN SUM(ms.comparison_count) = 0 THEN 1 ELSE 0 END,
