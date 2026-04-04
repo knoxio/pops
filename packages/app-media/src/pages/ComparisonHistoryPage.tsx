@@ -4,6 +4,7 @@
  */
 import { useState } from "react";
 import { Link } from "react-router";
+import { toast } from "sonner";
 import { Button, Card, CardContent, Skeleton, Select } from "@pops/ui";
 import { Trash2, ChevronLeft, ChevronRight, History } from "lucide-react";
 import { trpc } from "../lib/trpc";
@@ -50,8 +51,20 @@ export function ComparisonHistoryPage() {
   const dimensionMap = new Map(dimensions.map((d: { id: number; name: string }) => [d.id, d.name]));
 
   function handleDelete(id: number) {
-    if (!window.confirm("Delete this comparison? Elo scores will be recalculated.")) return;
-    deleteMutation.mutate({ id });
+    let cancelled = false;
+    const toastId = toast("Comparison deleted", {
+      duration: 5000,
+      action: {
+        label: "Undo",
+        onClick: () => {
+          cancelled = true;
+          toast.dismiss(toastId);
+        },
+      },
+    });
+    setTimeout(() => {
+      if (!cancelled) deleteMutation.mutate({ id });
+    }, 5000);
   }
 
   return (
