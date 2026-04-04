@@ -1,7 +1,7 @@
 # PRD-060: Discover Page
 
 > Epic: [05 — Discovery & Recommendations](../../epics/05-discovery-recommendations.md)
-> Status: Partial
+> Status: Done
 
 ## Overview
 
@@ -152,7 +152,7 @@ Displayed at the bottom of the page. Shows:
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
 | 01 | [us-01-dismissed-schema](us-01-dismissed-schema.md) | dismissed_discover SQLite table, Drizzle schema + migration, dismiss/getDismissed tRPC endpoints | Done | Yes |
-| 02 | [us-02-discover-card-actions](us-02-discover-card-actions.md) | Card hover actions (Add, Watchlist, Watched, Request, Dismiss), Owned/Watched badges, loading states | Partial | Blocked by us-01 |
+| 02 | [us-02-discover-card-actions](us-02-discover-card-actions.md) | Card hover actions (Add, Watchlist, Watched, Request, Dismiss), Owned/Watched badges, loading states | Done | Blocked by us-01 |
 | 03 | [us-03-recommendation-scoring](us-03-recommendation-scoring.md) | Preference profile scoring service: genre affinity from ELO + watch history fallback, match percentage calculation | Done | Yes |
 
 ### Section endpoints (all parallelisable after us-01 and us-03)
