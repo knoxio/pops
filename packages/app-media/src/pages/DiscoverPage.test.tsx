@@ -1156,7 +1156,7 @@ describe("DiscoverPage — genre spotlight", () => {
       defaultAssembleSession([]);
       renderPage();
       // No assembled shelf headings visible — trending section should still show
-      expect(screen.getByText("Trending")).toBeTruthy();
+      expect(screen.getByText("Trending This Week")).toBeTruthy();
     });
   });
 });
