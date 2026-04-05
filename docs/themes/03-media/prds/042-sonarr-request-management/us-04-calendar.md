@@ -1,7 +1,7 @@
 # US-04: Upcoming episodes calendar
 
 > PRD: [042 — Sonarr Request Management](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,21 +9,21 @@ As a user, I want a calendar view of upcoming episodes from my monitored TV show
 
 ## Acceptance Criteria
 
-- [ ] Calendar page renders at `/media/arr/calendar`
-- [ ] Page fetches upcoming episodes via `media.sonarr.getCalendar(today, today + 30 days)` on mount
-- [ ] Episodes are grouped by air date, with date headers (e.g., "Thursday, 27 March 2026")
-- [ ] Each episode entry shows: series poster thumbnail, series name, episode name, season/episode number (e.g., "S03E07"), and air time
-- [ ] Episodes within a date group are sorted by air time ascending
-- [ ] Date groups are sorted chronologically (nearest date first)
-- [ ] Today's date header is visually distinct (highlight or "Today" label)
-- [ ] Episodes that have already aired today but have files show a "downloaded" indicator
-- [ ] Episodes that have aired but do not have files show a "missing" indicator
-- [ ] Clicking a series name or poster navigates to the TV show detail page
-- [ ] Empty state: "No upcoming episodes in the next 30 days" when the calendar returns no results
-- [ ] Empty state when Sonarr is not configured: "Connect Sonarr to see upcoming episodes" with link to `/media/arr` settings
-- [ ] Loading state: skeleton list matching the date-group layout
-- [ ] Calendar data refreshes on page focus (user returns to tab) to catch new data
-- [ ] Tests verify: episodes grouped by date correctly, episodes sorted by air time within group, today's header is highlighted, click navigates to show detail, empty state for no episodes, empty state for unconfigured Sonarr, downloaded/missing indicators display correctly
+- [x] Calendar page renders at `/media/arr/calendar`
+- [x] Page fetches upcoming episodes via `media.sonarr.getCalendar(today, today + 30 days)` on mount
+- [x] Episodes are grouped by air date, with date headers (e.g., "Thursday, 27 March 2026")
+- [x] Each episode entry shows: series poster thumbnail, series name, episode name, season/episode number (e.g., "S03E07"), and air time
+- [x] Episodes within a date group are sorted by air time ascending
+- [x] Date groups are sorted chronologically (nearest date first)
+- [x] Today's date header is visually distinct (highlight or "Today" label)
+- [x] Episodes that have already aired today but have files show a "downloaded" indicator
+- [x] Episodes that have aired but do not have files show a "missing" indicator
+- [x] Clicking a series name or poster navigates to the TV show detail page
+- [x] Empty state: "No upcoming episodes in the next 30 days" when the calendar returns no results
+- [x] Empty state when Sonarr is not configured: "Connect Sonarr to see upcoming episodes" with link to `/media/arr` settings
+- [x] Loading state: skeleton list matching the date-group layout
+- [x] Calendar data refreshes on page focus (user returns to tab) to catch new data
+- [x] Tests verify: episodes grouped by date correctly, episodes sorted by air time within group, today's header is highlighted, click navigates to show detail, empty state for no episodes, empty state for unconfigured Sonarr, downloaded/missing indicators display correctly
 
 ## Notes
 

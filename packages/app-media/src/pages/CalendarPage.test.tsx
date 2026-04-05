@@ -209,4 +209,27 @@ describe("CalendarPage", () => {
     const link = screen.getByRole("link");
     expect(link).toHaveAttribute("href", "/media/tv/42");
   });
+
+  it("sorts episodes within a date group by air time ascending", () => {
+    mockGetConfigQuery.mockReturnValue({
+      data: { data: { radarrConfigured: false, sonarrConfigured: true } },
+    });
+    const date = "2026-04-10";
+    mockGetCalendarQuery.mockReturnValue({
+      data: {
+        data: [
+          makeEpisode({ id: 2, episodeTitle: "Late Show", airDateUtc: `${date}T22:00:00Z` }),
+          makeEpisode({ id: 1, episodeTitle: "Morning Show", airDateUtc: `${date}T08:00:00Z` }),
+          makeEpisode({ id: 3, episodeTitle: "Noon Show", airDateUtc: `${date}T12:00:00Z` }),
+        ],
+      },
+      isLoading: false,
+      error: null,
+    });
+
+    const { container } = renderPage();
+    const text = container.textContent ?? "";
+    expect(text.indexOf("Morning Show")).toBeLessThan(text.indexOf("Noon Show"));
+    expect(text.indexOf("Noon Show")).toBeLessThan(text.indexOf("Late Show"));
+  });
 });
