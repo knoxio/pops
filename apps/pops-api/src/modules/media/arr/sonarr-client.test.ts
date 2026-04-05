@@ -491,4 +491,74 @@ describe("SonarrClient", () => {
       expect(result).toEqual({ status: "downloading", label: "Downloading" });
     });
   });
+
+  describe("updateEpisodeMonitoring", () => {
+    it("sends batch episode monitoring payload to PUT /episode/monitor", async () => {
+      mockFetch.mockResolvedValueOnce(jsonResponse({}));
+
+      await client.updateEpisodeMonitoring([1, 2, 3], true);
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:8989/api/v3/episode/monitor",
+        expect.objectContaining({
+          method: "PUT",
+          body: JSON.stringify({ episodeIds: [1, 2, 3], monitored: true }),
+        })
+      );
+    });
+
+    it("sends monitored: false for unmonitoring episodes", async () => {
+      mockFetch.mockResolvedValueOnce(jsonResponse({}));
+
+      await client.updateEpisodeMonitoring([5], false);
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:8989/api/v3/episode/monitor",
+        expect.objectContaining({
+          body: JSON.stringify({ episodeIds: [5], monitored: false }),
+        })
+      );
+    });
+  });
+
+  describe("getCalendar", () => {
+    it("queries calendar endpoint with start and end dates", async () => {
+      const episodes = [
+        {
+          seriesId: 10,
+          seriesTitle: "Breaking Bad",
+          title: "Pilot",
+          seasonNumber: 1,
+          episodeNumber: 1,
+          airDateUtc: "2008-01-20T03:00:00Z",
+          hasFile: true,
+        },
+      ];
+      mockFetch.mockResolvedValueOnce(jsonResponse(episodes));
+
+      const result = await client.getCalendar("2026-04-01", "2026-04-07");
+
+      expect(result).toEqual(episodes);
+      expect(mockFetch).toHaveBeenCalledWith(
+        "http://localhost:8989/api/v3/calendar?start=2026-04-01&end=2026-04-07&includeSeries=true",
+        expect.objectContaining({ method: "GET" })
+      );
+    });
+
+    it("returns empty array when no episodes in range", async () => {
+      mockFetch.mockResolvedValueOnce(jsonResponse([]));
+
+      const result = await client.getCalendar("2026-04-01", "2026-04-07");
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe("network failure", () => {
+    it("throws on network error", async () => {
+      mockFetch.mockRejectedValueOnce(new Error("Network error"));
+
+      await expect(client.getQualityProfiles()).rejects.toThrow("Network error");
+    });
+  });
 });
