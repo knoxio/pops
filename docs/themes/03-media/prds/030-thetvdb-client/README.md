@@ -1,7 +1,7 @@
 # PRD-030: TheTVDB Client
 
 > Epic: [01 — Metadata Integration](../../epics/01-metadata-integration.md)
-> Status: Partial
+> Status: Done
 
 ## Overview
 
@@ -99,9 +99,9 @@ No new tables — uses the `tv_shows`, `seasons`, and `episodes` tables from PRD
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 01 | [us-01-thetvdb-http-client](us-01-thetvdb-http-client.md) | HTTP client with JWT auth, auto-refresh, search endpoint | Partial | Yes |
+| 01 | [us-01-thetvdb-http-client](us-01-thetvdb-http-client.md) | HTTP client with JWT auth, auto-refresh, search endpoint | Done | Yes |
 | 02 | [us-02-image-cache](us-02-image-cache.md) | Poster download for shows/seasons, local storage, serving | Done | Yes |
-| 03 | [us-03-add-to-library](us-03-add-to-library.md) | addTvShow flow (fetch show + seasons + episodes, create all, download images), refreshTvShow with diff reporting | Partial | Blocked by us-01, us-02 |
+| 03 | [us-03-add-to-library](us-03-add-to-library.md) | addTvShow flow (fetch show + seasons + episodes, create all, download images), refreshTvShow with diff reporting | Done | Blocked by us-01, us-02 |
 
 US-01 and US-02 can run in parallel. US-03 composes them into the add-to-library and refresh flows.
 
