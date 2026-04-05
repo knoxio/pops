@@ -11,6 +11,7 @@ import {
   type TmdbImageResponse,
   type TmdbGenreListResponse,
   type TmdbImage,
+  type TmdbMovieCredits,
   type RawTmdbSearchResponse,
   type RawTmdbMovieDetail,
   type RawTmdbImageResponse,
@@ -191,6 +192,73 @@ export class TmdbClient {
       `/3/movie/${tmdbId}/similar?${params.toString()}`
     );
 
+    return {
+      page: raw.page,
+      totalResults: raw.total_results,
+      totalPages: raw.total_pages,
+      results: raw.results.map((r) => ({
+        tmdbId: r.id,
+        title: r.title,
+        originalTitle: r.original_title,
+        overview: r.overview,
+        releaseDate: r.release_date,
+        posterPath: r.poster_path,
+        backdropPath: r.backdrop_path,
+        voteAverage: r.vote_average,
+        voteCount: r.vote_count,
+        genreIds: r.genre_ids,
+        originalLanguage: r.original_language,
+        popularity: r.popularity,
+      })),
+    };
+  }
+
+  /** Get crew and cast for a movie. */
+  async getMovieCredits(tmdbId: number): Promise<TmdbMovieCredits> {
+    return this.get<TmdbMovieCredits>(`/3/movie/${tmdbId}/credits?language=en-US`);
+  }
+
+  /** Discover movies by crew person ID (e.g. director). */
+  async discoverMoviesByCrew(personId: number, page = 1): Promise<TmdbSearchResponse> {
+    const params = new URLSearchParams({
+      with_crew: String(personId),
+      sort_by: "vote_average.desc",
+      "vote_count.gte": "50",
+      language: "en-US",
+      page: String(page),
+    });
+    const raw = await this.get<RawTmdbSearchResponse>(`/3/discover/movie?${params.toString()}`);
+    return {
+      page: raw.page,
+      totalResults: raw.total_results,
+      totalPages: raw.total_pages,
+      results: raw.results.map((r) => ({
+        tmdbId: r.id,
+        title: r.title,
+        originalTitle: r.original_title,
+        overview: r.overview,
+        releaseDate: r.release_date,
+        posterPath: r.poster_path,
+        backdropPath: r.backdrop_path,
+        voteAverage: r.vote_average,
+        voteCount: r.vote_count,
+        genreIds: r.genre_ids,
+        originalLanguage: r.original_language,
+        popularity: r.popularity,
+      })),
+    };
+  }
+
+  /** Discover movies by cast person ID. */
+  async discoverMoviesByCast(personId: number, page = 1): Promise<TmdbSearchResponse> {
+    const params = new URLSearchParams({
+      with_cast: String(personId),
+      sort_by: "vote_average.desc",
+      "vote_count.gte": "50",
+      language: "en-US",
+      page: String(page),
+    });
+    const raw = await this.get<RawTmdbSearchResponse>(`/3/discover/movie?${params.toString()}`);
     return {
       page: raw.page,
       totalResults: raw.total_results,

@@ -139,7 +139,7 @@ Cleanup: rows older than 30 days are deleted on startup or periodically.
 | 02 | [us-02-session-assembly](us-02-session-assembly.md) | Assembly algorithm: score, select, order, variety constraints, jitter | Not started | Blocked by us-01 |
 | 03 | [us-03-shelf-impressions](us-03-shelf-impressions.md) | shelf_impressions table, record shown shelves, compute freshness, cleanup | Not started | Yes |
 | 04 | [us-04-seed-shelves-watch](us-04-seed-shelves-watch.md) | "Because you watched {Movie}" shelf: rotation logic, TMDB recs per seed | Done | Blocked by us-01 |
-| 05 | [us-05-seed-shelves-credits](us-05-seed-shelves-credits.md) | Director + actor shelves: TMDB credits lookup, filmography query, caching | Not started | Blocked by us-01 |
+| 05 | [us-05-seed-shelves-credits](us-05-seed-shelves-credits.md) | Director + actor shelves: TMDB credits lookup, filmography query, caching | Done | Blocked by us-01 |
 | 06 | [us-06-seed-shelves-genre](us-06-seed-shelves-genre.md) | Genre, genre×genre, dimension-based, dimension+movie shelves | Not started | Blocked by us-01 |
 | 07 | [us-07-tmdb-discovery-shelves](us-07-tmdb-discovery-shelves.md) | New releases, hidden gems, critics vs audiences, award winners, decade picks | Not started | Blocked by us-01 |
 | 08 | [us-08-local-library-shelves](us-08-local-library-shelves.md) | From server, recently added, short/long watch, comfort, undiscovered, polarizing, friend-proof, franchise completions | Not started | Blocked by us-01 |
