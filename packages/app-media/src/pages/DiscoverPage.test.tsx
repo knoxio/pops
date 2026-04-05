@@ -1098,8 +1098,8 @@ describe("DiscoverPage — genre spotlight", () => {
       setupDefaults();
       defaultAssembleSession([
         {
-          shelfId: "trending-tmdb",
-          title: "Trending",
+          shelfId: "hidden-gems",
+          title: "Hidden Gems",
           subtitle: undefined,
           emoji: undefined,
           items: [
@@ -1119,7 +1119,7 @@ describe("DiscoverPage — genre spotlight", () => {
         },
       ]);
       renderPage();
-      expect(screen.getByText("Trending")).toBeTruthy();
+      expect(screen.getByText("Hidden Gems")).toBeTruthy();
       expect(screen.getByText("Assembled Movie")).toBeTruthy();
     });
 
