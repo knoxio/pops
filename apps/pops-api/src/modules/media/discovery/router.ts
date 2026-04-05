@@ -16,6 +16,14 @@ import { movies } from "@pops/db-types";
 import { assembleSession } from "./shelf/session.service.js";
 import { getRecentImpressions, recordImpressions } from "./shelf/impressions.service.js";
 import { getRegisteredShelves } from "./shelf/registry.js";
+// Side-effect imports — trigger self-registration of all shelf implementations
+import "./shelf/existing-shelves.js";
+import "./shelf/local-shelves.js";
+import "./shelf/tmdb-shelves.js";
+import "./shelf/credits-shelves.js";
+import "./shelf/because-you-watched.shelf.js";
+import "./shelf/genre-shelves.js";
+import "./shelf/context-shelves.js";
 
 export const discoveryRouter = router({
   /** Dismiss a movie by tmdbId. Idempotent. */

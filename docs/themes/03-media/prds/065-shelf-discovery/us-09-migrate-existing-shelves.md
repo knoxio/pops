@@ -1,7 +1,7 @@
 # US-09: Migrate existing sections to shelf definitions
 
 > PRD: [065 — Shelf-Based Discovery](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -15,7 +15,7 @@ As a developer, I want the current 9 hardcoded discover sections re-registered a
 - [x] `from-your-watchlist` shelf wraps existing watchlist recs
 - [x] `worth-rewatching` shelf wraps existing rewatch suggestions
 - [x] `from-your-server` shelf wraps existing unwatched library ranking
-- [ ] `best-in-genre` shelf replaces genre spotlight (already specced in US-06)
-- [ ] Context shelves replace context-aware picks (already specced in US-06 as `context` template)
+- [x] `best-in-genre` shelf replaces genre spotlight (already specced in US-06)
+- [x] Context shelves replace context-aware picks (already specced in US-06 as `context` template)
 - [x] Existing service functions reused — no rewrite of query logic, just wrap in ShelfDefinition interface
 - [x] Tests: each migrated shelf produces same results as the old endpoint
