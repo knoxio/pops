@@ -278,8 +278,8 @@ describe("SearchResultsPanel", () => {
       const buttons = screen
         .getAllByRole("button")
         .filter((b) => b.dataset.resultIndex !== undefined);
-      expect(buttons[0]!.className).not.toContain("bg-accent");
-      expect(buttons[1]!.className).toContain("bg-accent");
+      expect(buttons[0]).not.toHaveClass("bg-accent");
+      expect(buttons[1]).toHaveClass("bg-accent");
     });
 
     it("applies no highlight when selectedIndex is -1", () => {
@@ -294,7 +294,7 @@ describe("SearchResultsPanel", () => {
       const buttons = screen
         .getAllByRole("button")
         .filter((b) => b.dataset.resultIndex !== undefined);
-      buttons.forEach((b) => expect(b.className).not.toContain("bg-accent"));
+      buttons.forEach((b) => expect(b).not.toHaveClass("bg-accent"));
     });
 
     it("assigns global indices across multiple sections", () => {
