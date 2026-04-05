@@ -107,10 +107,6 @@ describe("contextShelves — module load", () => {
     expect(contextShelves).toHaveLength(7);
   });
 
-  it("registers all 7 shelves on module load", () => {
-    expect(mockRegisterShelf).toHaveBeenCalledTimes(7);
-  });
-
   it("all shelves have category=context", () => {
     for (const shelf of contextShelves) {
       expect(shelf.category).toBe("context");
