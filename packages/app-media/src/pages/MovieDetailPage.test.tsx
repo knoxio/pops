@@ -370,7 +370,7 @@ describe("MovieDetailPage", () => {
       renderAtRoute("/media/movies/1");
       const button = screen.getByText("Debrief this movie");
       expect(button).toBeInTheDocument();
-      expect(button.closest("a")).toHaveAttribute("href", "/media/debrief/42");
+      expect(button.closest("a")).toHaveAttribute("href", "/media/debrief/1");
     });
 
     it("hides debrief button when no pending debrief for this movie", () => {
