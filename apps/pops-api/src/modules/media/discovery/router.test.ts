@@ -224,11 +224,7 @@ describe("media.discovery.getShelfPage — results", () => {
 describe("media.discovery.getShelfPage — template shelf ID parsing", () => {
   it("parses defId from 'because-you-watched:42' → 'because-you-watched'", async () => {
     const items = [makeItem(100)];
-    const def = makeDefinition(
-      "because-you-watched",
-      "because-you-watched:42",
-      async () => items
-    );
+    const def = makeDefinition("because-you-watched", "because-you-watched:42", async () => items);
     mockGetRegisteredShelves.mockReturnValue([def]);
 
     const result = await caller.media.discovery.getShelfPage({
