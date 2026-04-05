@@ -218,4 +218,81 @@ describe("SearchResultsPanel", () => {
     render(<SearchResultsPanel sections={sections} query="test" onClose={vi.fn()} />);
     expect(screen.queryByTestId("show-more-movies")).not.toBeInTheDocument();
   });
+
+  it("assigns sequential data-result-index to hit buttons", () => {
+    const sections = [
+      makeSection({
+        domain: "movies",
+        hits: [
+          { uri: "m/1", score: 1.0, matchField: "title", matchType: "exact", data: {} },
+          { uri: "m/2", score: 0.8, matchField: "title", matchType: "prefix", data: {} },
+        ],
+        totalCount: 2,
+      }),
+    ];
+    render(<SearchResultsPanel sections={sections} query="test" onClose={vi.fn()} />);
+    const buttons = screen.getAllByRole("button");
+    expect(buttons[0]).toHaveAttribute("data-result-index", "0");
+    expect(buttons[1]).toHaveAttribute("data-result-index", "1");
+  });
+
+  it("assigns sequential data-result-index across multiple sections", () => {
+    const sections = [
+      makeSection({
+        domain: "movies",
+        hits: [{ uri: "m/1", score: 1.0, matchField: "title", matchType: "exact", data: {} }],
+        totalCount: 1,
+      }),
+      makeSection({
+        domain: "transactions",
+        label: "Transactions",
+        hits: [{ uri: "t/1", score: 0.8, matchField: "desc", matchType: "prefix", data: {} }],
+        totalCount: 1,
+      }),
+    ];
+    render(<SearchResultsPanel sections={sections} query="test" onClose={vi.fn()} />);
+    const buttons = screen.getAllByRole("button");
+    expect(buttons[0]).toHaveAttribute("data-result-index", "0");
+    expect(buttons[1]).toHaveAttribute("data-result-index", "1");
+  });
+
+  it("highlights the selected result by selectedIndex", () => {
+    const sections = [
+      makeSection({
+        domain: "movies",
+        hits: [
+          { uri: "m/1", score: 1.0, matchField: "title", matchType: "exact", data: {} },
+          { uri: "m/2", score: 0.8, matchField: "title", matchType: "prefix", data: {} },
+        ],
+        totalCount: 2,
+      }),
+    ];
+    render(
+      <SearchResultsPanel sections={sections} query="test" onClose={vi.fn()} selectedIndex={1} />
+    );
+    const [first, second] = screen.getAllByRole("button");
+    // first is not selected — no standalone bg-accent (hover:bg-accent is always present)
+    expect(first!.className).not.toContain(" bg-accent");
+    // second is selected — standalone bg-accent is appended
+    expect(second!.className).toContain(" bg-accent");
+  });
+
+  it("highlights first result when selectedIndex is 0", () => {
+    const sections = [
+      makeSection({
+        domain: "movies",
+        hits: [
+          { uri: "m/1", score: 1.0, matchField: "title", matchType: "exact", data: {} },
+          { uri: "m/2", score: 0.8, matchField: "title", matchType: "prefix", data: {} },
+        ],
+        totalCount: 2,
+      }),
+    ];
+    render(
+      <SearchResultsPanel sections={sections} query="test" onClose={vi.fn()} selectedIndex={0} />
+    );
+    const [first, second] = screen.getAllByRole("button");
+    expect(first!.className).toContain(" bg-accent");
+    expect(second!.className).not.toContain(" bg-accent");
+  });
 });
