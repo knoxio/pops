@@ -1,7 +1,7 @@
 # US-09: Structured query syntax
 
 > PRD: [057 — Search Engine](README.md)
-> Status: Not started
+> Status: Not started — deferred to v2
 
 ## Description
 

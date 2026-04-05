@@ -11,7 +11,7 @@ Build a platform-wide search system accessible from the TopBar. Searches across 
 | # | PRD | Summary | Status |
 |---|-----|---------|--------|
 | 056 | [Search UI](../prds/056-search-ui/README.md) | TopBar search bar, results panel with context-aware sections (current app first), keyboard navigation, recent searches, result linking via URIs | In progress |
-| 057 | [Search Engine](../prds/057-search-engine/README.md) | Cross-domain query fan-out, domain adapter interface, relevance ranking, context-based ordering. Structured query syntax (`type:movie year:>2000 fight`) as progressive enhancement | In progress |
+| 057 | [Search Engine](../prds/057-search-engine/README.md) | Cross-domain query fan-out, domain adapter interface, relevance ranking, context-based ordering. Structured query syntax (`type:movie year:>2000 fight`) as progressive enhancement | Done |
 | 058 | [Contextual Intelligence](../prds/058-contextual-intelligence/README.md) | Shell tracks active app, page, entity being viewed. Exposes via context/store for Search, AI Overlay, and future consumers | Not started |
 
 PRD-058 first (context system). PRD-057 consumes it (engine uses context for ranking). PRD-056 consumes both (UI displays context-aware results).
