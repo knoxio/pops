@@ -5,3 +5,6 @@
  * to lazily load inventory pages under /inventory/*.
  */
 export { routes, navConfig } from "./routes";
+
+// Side-effect: register search result components
+import "./components/search/register";
