@@ -9,3 +9,4 @@ export { routes, navConfig } from "./routes";
 // Side-effect: register search result components
 import "./components/search/EntitiesResultComponent";
 import "./components/search/TransactionsResultComponent";
+import "./components/search/BudgetResult";
