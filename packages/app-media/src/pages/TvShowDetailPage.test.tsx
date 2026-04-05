@@ -624,3 +624,73 @@ describe("TvShowDetailPage — batch mark all watched", () => {
     await waitFor(() => expect(mockSetData).toHaveBeenCalledTimes(2));
   });
 });
+
+const SONARR_SERIES = {
+  exists: true,
+  sonarrId: 99,
+  seasons: [
+    { seasonNumber: 0, monitored: false },
+    { seasonNumber: 1, monitored: true },
+    { seasonNumber: 2, monitored: false },
+    { seasonNumber: 3, monitored: true },
+  ],
+};
+
+function setupWithSonarr(sonarr = SONARR_SERIES) {
+  setupQueries();
+  mockCheckSeriesQuery.mockReturnValue({ data: { data: sonarr }, isLoading: false });
+}
+
+describe("TvShowDetailPage — season monitoring toggles", () => {
+  it("shows monitoring toggle per season when series exists in Sonarr", () => {
+    setupWithSonarr();
+    renderPage();
+    expect(screen.getByRole("switch", { name: "Monitor Season 1" })).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "Monitor Season 2" })).toBeInTheDocument();
+  });
+
+  it("reflects monitored state from Sonarr seasons data", () => {
+    setupWithSonarr();
+    renderPage();
+    expect(screen.getByRole("switch", { name: "Monitor Season 1" })).toBeChecked();
+    expect(screen.getByRole("switch", { name: "Monitor Season 2" })).not.toBeChecked();
+  });
+
+  it("hides monitoring toggles when series is not in Sonarr", () => {
+    setupQueries();
+    mockCheckSeriesQuery.mockReturnValue({
+      data: { data: { exists: false, sonarrId: null, seasons: [] } },
+      isLoading: false,
+    });
+    renderPage();
+    expect(screen.queryByRole("switch", { name: /Monitor Season/ })).not.toBeInTheDocument();
+  });
+
+  it("hides monitoring toggles when Sonarr data is not loaded", () => {
+    setupQueries();
+    mockCheckSeriesQuery.mockReturnValue({ data: null, isLoading: true });
+    renderPage();
+    expect(screen.queryByRole("switch", { name: /Monitor Season/ })).not.toBeInTheDocument();
+  });
+
+  it("calls updateSeasonMonitoring when toggle is clicked", () => {
+    setupWithSonarr();
+    renderPage();
+    const toggle = screen.getByRole("switch", { name: "Monitor Season 1" });
+    fireEvent.click(toggle);
+    expect(mockSeasonMonitorMutation).toHaveBeenCalledWith({
+      sonarrId: 99,
+      seasonNumber: 1,
+      monitored: false,
+    });
+  });
+
+  it("optimistically updates toggle state on click", () => {
+    setupWithSonarr();
+    renderPage();
+    const toggle = screen.getByRole("switch", { name: "Monitor Season 2" });
+    fireEvent.click(toggle);
+    // After clicking unmonitored season 2, it should optimistically show checked
+    expect(toggle).toBeChecked();
+  });
+});
