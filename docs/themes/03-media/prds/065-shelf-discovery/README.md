@@ -143,7 +143,7 @@ Cleanup: rows older than 30 days are deleted on startup or periodically.
 | 06 | [us-06-seed-shelves-genre](us-06-seed-shelves-genre.md) | Genre, genre×genre, dimension-based, dimension+movie shelves | Not started | Blocked by us-01 |
 | 07 | [us-07-tmdb-discovery-shelves](us-07-tmdb-discovery-shelves.md) | New releases, hidden gems, critics vs audiences, award winners, decade picks | Not started | Blocked by us-01 |
 | 08 | [us-08-local-library-shelves](us-08-local-library-shelves.md) | From server, recently added, short/long watch, comfort, undiscovered, polarizing, friend-proof, franchise completions | Done | Blocked by us-01 |
-| 09 | [us-09-migrate-existing-shelves](us-09-migrate-existing-shelves.md) | Migrate current 9 sections (trending, recs, genre spotlight, etc.) into shelf definitions | Not started | Blocked by us-01 |
+| 09 | [us-09-migrate-existing-shelves](us-09-migrate-existing-shelves.md) | Migrate current 9 sections (trending, recs, genre spotlight, etc.) into shelf definitions | Partial | Blocked by us-01 |
 | 10 | [us-10-assembly-api](us-10-assembly-api.md) | tRPC endpoint: assembleDiscoverPage returns ordered shelf list with first page of items each | Not started | Blocked by us-02, us-03, us-04 through us-09 |
 | 11 | [us-11-shelf-pagination](us-11-shelf-pagination.md) | tRPC endpoint: getShelfPage returns next page of items for a specific shelf instance | Not started | Blocked by us-10 |
 | 12 | [us-12-dynamic-page-renderer](us-12-dynamic-page-renderer.md) | Frontend: render N shelf sections dynamically from assembly response, lazy load off-screen | Not started | Blocked by us-10 |
