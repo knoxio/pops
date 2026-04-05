@@ -70,7 +70,7 @@ v1 is plain text only. Structured syntax added as v2 USs.
 |---|-------|---------|--------|----------------|
 | 01 | [us-01-adapter-interface](us-01-adapter-interface.md) | SearchAdapter, SearchHit, Query, SearchContext interfaces and adapter registry | Done | No (first) |
 | 02 | [us-02-movies-adapter](us-02-movies-adapter.md) | Movies backend adapter: search by title | Done | — |
-| 02b | [us-02b-movies-result-component](us-02b-movies-result-component.md) | Movies ResultComponent: poster + title + year + rating + runtime | Not started | — |
+| 02b | [us-02b-movies-result-component](us-02b-movies-result-component.md) | Movies ResultComponent: poster + title + year + rating | Done | — |
 | 03 | [us-03-tv-shows-adapter](us-03-tv-shows-adapter.md) | TV shows backend adapter: search by name | Done | — |
 | 03b | [us-03b-tv-shows-result-component](us-03b-tv-shows-result-component.md) | TV shows ResultComponent: poster + name + status + seasons | Not started | — |
 | 04 | [us-04-transactions-adapter](us-04-transactions-adapter.md) | Transactions backend adapter: search by description | Done | — |
@@ -80,7 +80,7 @@ v1 is plain text only. Structured syntax added as v2 USs.
 | 06 | [us-06-budgets-adapter](us-06-budgets-adapter.md) | Budgets backend adapter: search by category | Done | — |
 | 06b | [us-06b-budgets-result-component](us-06b-budgets-result-component.md) | Budgets ResultComponent: category + period + amount | Not started | — |
 | 07 | [us-07-inventory-items-adapter](us-07-inventory-items-adapter.md) | Inventory items backend adapter: search by name and asset ID | Done | — |
-| 07b | [us-07b-inventory-items-result-component](us-07b-inventory-items-result-component.md) | Inventory ResultComponent: asset badge + name + location + type | Not started | — |
+| 07b | [us-07b-inventory-items-result-component](us-07b-inventory-items-result-component.md) | Inventory ResultComponent: name + brand + location + value | Done | — |
 | 08 | [us-08-fan-out-ranking](us-08-fan-out-ranking.md) | Query fan-out to all adapters, section collection, context ordering | Done | — |
 | 08b | [us-08b-show-more-pagination](us-08b-show-more-pagination.md) | Show more pagination within a single domain section | Not started | — |
 | 09 | [us-09-structured-syntax](us-09-structured-syntax.md) | Parse structured query syntax (type:, domain:, year:, value:) and apply filters | Not started | — |
