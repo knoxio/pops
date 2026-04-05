@@ -80,7 +80,7 @@ Build a prioritised list of movies and TV shows to watch next. Users add/remove 
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 01 | [us-01-watchlist-page](us-01-watchlist-page.md) | Watchlist page with responsive layout (grid desktop/list mobile), filter tabs, priority badges, notes display | Partial | Yes |
+| 01 | [us-01-watchlist-page](us-01-watchlist-page.md) | Watchlist page with responsive layout (grid desktop/list mobile), filter tabs, priority badges, notes display | Done | Yes |
 | 02 | [us-02-reorder](us-02-reorder.md) | Drag-and-drop reorder (desktop) and up/down buttons (mobile), batch priority update in transaction | Partial | Blocked by us-01 |
 | 03 | [us-03-auto-removal](us-03-auto-removal.md) | Auto-remove from watchlist on manual watch completion, skip for plex_sync source | Partial | Yes (parallel with us-01) |
 

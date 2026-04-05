@@ -210,6 +210,24 @@ describe("WatchlistPage", () => {
     expect(screen.getAllByText("#3").length).toBeGreaterThan(0);
   });
 
+  it("renders priority numbers on mobile list items", () => {
+    setupMultipleEntries();
+    renderPage();
+
+    // Mobile items show numeric priority (1, 2, 3) without # prefix
+    expect(screen.getAllByText("1").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("2").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("3").length).toBeGreaterThan(0);
+  });
+
+  it("renders notes text on watchlist items", () => {
+    setupMultipleEntries();
+    renderPage();
+
+    // entry2 has notes "Great show"
+    expect(screen.getAllByText("Great show").length).toBeGreaterThan(0);
+  });
+
   describe("filter tabs", () => {
     it("renders All, Movies, TV Shows filter tabs", () => {
       setupMultipleEntries();

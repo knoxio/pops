@@ -97,6 +97,7 @@ interface WatchlistItemProps {
   title: string;
   year: number | null;
   posterUrl: string | null;
+  priority: number;
   isFirst: boolean;
   isLast: boolean;
   onMoveUp: () => void;
@@ -115,6 +116,7 @@ function WatchlistItem({
   title,
   year,
   posterUrl,
+  priority,
   isFirst,
   isLast,
   onMoveUp,
@@ -225,6 +227,9 @@ function WatchlistItem({
               <h3 className="text-sm font-medium truncate">{title}</h3>
             </Link>
             <div className="flex items-center gap-2 mt-0.5">
+              <span className="bg-primary text-primary-foreground text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center shrink-0">
+                {priority}
+              </span>
               <Badge variant="secondary" className="text-xs">
                 {entry.mediaType === "movie" ? "Movie" : "TV"}
               </Badge>
@@ -727,6 +732,7 @@ export function WatchlistPage() {
                   title={meta?.title ?? "Unknown"}
                   year={meta?.year ?? null}
                   posterUrl={meta?.posterUrl ?? null}
+                  priority={index + 1}
                   isFirst={index === 0}
                   isLast={index === sortedEntries.length - 1}
                   onMoveUp={() => handleMove(index, "up")}
