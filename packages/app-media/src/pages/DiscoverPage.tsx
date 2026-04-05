@@ -7,8 +7,8 @@
  */
 import { useMemo } from "react";
 import { Link } from "react-router";
-import { Compass, Swords, Loader2 } from "lucide-react";
-import { Skeleton } from "@pops/ui";
+import { Compass, Swords, Loader2, RefreshCw } from "lucide-react";
+import { Button, Skeleton } from "@pops/ui";
 import { trpc } from "../lib/trpc";
 import { ShelfSection } from "../components/ShelfSection";
 import { PreferenceProfile } from "../components/PreferenceProfile";
@@ -46,10 +46,23 @@ export function DiscoverPage() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <Compass className="h-6 w-6 text-muted-foreground" />
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold">Discover</h1>
           <p className="text-sm text-muted-foreground">Find your next favourite movie</p>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          aria-label="Refresh shelf selection"
+          disabled={session.isFetching}
+          onClick={() => void session.refetch()}
+        >
+          {session.isFetching ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <RefreshCw className="h-4 w-4" />
+          )}
+        </Button>
       </div>
 
       {/* Compare-to-unlock prompt for new users */}

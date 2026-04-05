@@ -1,10 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
 const mockAssembleSessionQuery = vi.fn();
+const mockAssembleSessionRefetch = vi.fn();
 const mockProfileQuery = vi.fn();
 const mockGetDismissedQuery = vi.fn();
 
@@ -13,7 +14,10 @@ vi.mock("../lib/trpc", () => ({
     media: {
       discovery: {
         assembleSession: {
-          useQuery: (...args: unknown[]) => mockAssembleSessionQuery(...args),
+          useQuery: (...args: unknown[]) => {
+            const result = mockAssembleSessionQuery(...args);
+            return { ...result, refetch: mockAssembleSessionRefetch };
+          },
         },
         profile: {
           useQuery: (...args: unknown[]) => mockProfileQuery(...args),
@@ -290,5 +294,39 @@ describe("DiscoverPage — PreferenceProfile", () => {
     renderPage();
 
     expect(screen.getByTestId("preference-profile")).toBeTruthy();
+  });
+});
+
+describe("DiscoverPage — Refresh button", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    setupDefaults();
+  });
+
+  it("renders the Refresh button", () => {
+    renderPage();
+
+    expect(screen.getByRole("button", { name: /refresh shelf selection/i })).toBeTruthy();
+  });
+
+  it("calls session refetch on click", () => {
+    renderPage();
+
+    fireEvent.click(screen.getByRole("button", { name: /refresh shelf selection/i }));
+
+    expect(mockAssembleSessionRefetch).toHaveBeenCalledTimes(1);
+  });
+
+  it("disables Refresh button while isFetching", () => {
+    mockAssembleSessionQuery.mockReturnValue({
+      data: { shelves: [] },
+      isLoading: false,
+      isFetching: true,
+      error: null,
+    });
+    renderPage();
+
+    const btn = screen.getByRole("button", { name: /refresh shelf selection/i });
+    expect(btn).toBeDisabled();
   });
 });
