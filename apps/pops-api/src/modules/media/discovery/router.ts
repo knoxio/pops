@@ -13,6 +13,8 @@ import * as genreSpotlightService from "./genre-spotlight-service.js";
 import * as plexService from "./plex-service.js";
 import { getDrizzle } from "../../../db.js";
 import { movies } from "@pops/db-types";
+import { assembleSession } from "./shelf/session.service.js";
+import { getRecentImpressions, recordImpressions } from "./shelf/impressions.service.js";
 import { getRegisteredShelves } from "./shelf/registry.js";
 
 export const discoveryRouter = router({
@@ -181,6 +183,62 @@ export const discoveryRouter = router({
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: err instanceof Error ? err.message : "Unknown error fetching genre spotlight",
+      });
+    }
+  }),
+
+  /**
+   * Assemble a discover session: runs the full pipeline (generate → filter → score →
+   * select → jitter → record impressions) and returns ordered shelves with the first
+   * 10 items each pre-fetched in parallel.
+   */
+  assembleSession: protectedProcedure.query(async () => {
+    try {
+      const profile = service.getPreferenceProfile();
+      const impressions = getRecentImpressions(7);
+      const selectedShelves = assembleSession(profile, impressions);
+
+      // Pre-fetch first page (limit 10) for all selected shelves in parallel
+      const shelfResults = await Promise.all(
+        selectedShelves.map(async (shelf) => {
+          try {
+            const items = await shelf.query({ limit: 10, offset: 0 });
+            return {
+              shelfId: shelf.shelfId,
+              title: shelf.title,
+              subtitle: shelf.subtitle,
+              emoji: shelf.emoji,
+              items,
+              totalCount: items.length,
+              hasMore: items.length >= 10,
+            };
+          } catch {
+            // Individual shelf failure → return empty, don't fail whole response
+            return {
+              shelfId: shelf.shelfId,
+              title: shelf.title,
+              subtitle: shelf.subtitle,
+              emoji: shelf.emoji,
+              items: [],
+              totalCount: 0,
+              hasMore: false,
+            };
+          }
+        })
+      );
+
+      // Filter out shelves with fewer than 3 results (per PRD business rules)
+      const nonEmpty = shelfResults.filter((s) => s.items.length >= 3);
+
+      // Record impressions for shelves that returned results
+      recordImpressions(nonEmpty.map((s) => s.shelfId));
+
+      return { shelves: nonEmpty };
+    } catch (err) {
+      if (err instanceof TRPCError) throw err;
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: err instanceof Error ? err.message : "Unknown error assembling discover session",
       });
     }
   }),
