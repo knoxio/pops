@@ -1,7 +1,7 @@
 # PRD-034: TV Show Detail Page
 
 > Epic: [02 — App Package & Core UI](../../epics/02-app-package-ui.md)
-> Status: Partial
+> Status: Done
 
 ## Overview
 
@@ -118,8 +118,8 @@ Build the TV show detail page with season list and episode drill-down. Display s
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 01 | [us-01-show-hero-metadata](us-01-show-hero-metadata.md) | Hero layout with backdrop, poster, title, year range, status, genres, networks, overview | Partial | No (first) |
-| 02 | [us-02-season-list](us-02-season-list.md) | Season cards with poster, number, episode count, per-season progress bar, click to season detail | Partial | Blocked by us-01 |
+| 01 | [us-01-show-hero-metadata](us-01-show-hero-metadata.md) | Hero layout with backdrop, poster, title, year range, status, genres, networks, overview | Done | No (first) |
+| 02 | [us-02-season-list](us-02-season-list.md) | Season cards with poster, number, episode count, per-season progress bar, click to season detail | Done | Blocked by us-01 |
 | 03 | [us-03-season-detail-page](us-03-season-detail-page.md) | Season detail route, episode list with watch status toggles, mark season watched | Done | Yes (parallel with us-02) |
 | 04 | [us-04-watch-progress](us-04-watch-progress.md) | Watch progress display (overall + per-season bars), next episode indicator, batch mark watched | Done | Yes (parallel with us-02) |
 

@@ -13,7 +13,7 @@ Build `@pops/app-media` — the workspace package with all media UI pages. Libra
 | 031 | [Library Page](../prds/031-library-page/README.md) | Grid view of owned media, filter by type (movie/TV), sorting, poster cards | Partial |
 | 032 | [Search Page](../prds/032-search-page/README.md) | Query TMDB/TheTVDB, display results, add-to-library flow with metadata fetch | Partial |
 | 033 | [Movie Detail Page](../prds/033-movie-detail-page/README.md) | Movie metadata display, poster/backdrop, cast, watch status, comparison scores, actions | Done |
-| 034 | [TV Show Detail Page](../prds/034-tv-show-detail-page/README.md) | Show metadata, season list, episode drill-down, per-episode watch tracking, season detail page | Partial |
+| 034 | [TV Show Detail Page](../prds/034-tv-show-detail-page/README.md) | Show metadata, season list, episode drill-down, per-episode watch tracking, season detail page | Done |
 
 PRD-031 and PRD-032 can be built in parallel. PRD-033 and PRD-034 can be built in parallel. All four depend on Epic 01 (metadata must be fetchable).
 
