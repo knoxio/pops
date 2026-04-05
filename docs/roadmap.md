@@ -79,7 +79,7 @@ Live status of every theme and epic. Updated as work completes.
 | Watchlist management | Done | Priority, filters, auto-remove on watch |
 | Watch history & tracking | Done | Episode-level, chronological history |
 | Ratings & comparisons | Done | Compare arena, ELO scoring, radar charts, rankings |
-| Discovery & recommendations | Partial | Discover page done (PRDs 038, 060); shelf-based discovery (PRD-065) not started |
+| Discovery & recommendations | Done | Discover page (PRDs 038, 060) and shelf-based discovery (PRD-065) all done |
 | Plex sync | Done | Library import (paginated), watch history sync (local + Discover cloud), watchlist sync (bidirectional), auto-check on add, settings page |
 | Radarr & Sonarr | Done | Status badges, Radarr request management, Sonarr request management — all done |
 
