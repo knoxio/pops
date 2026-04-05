@@ -34,6 +34,8 @@ const mockGetDismissedTmdbIds = vi.mocked(flags.getDismissedTmdbIds);
 const mockGetWatchedTmdbIds = vi.mocked(flags.getWatchedTmdbIds);
 const mockGetWatchlistTmdbIds = vi.mocked(flags.getWatchlistTmdbIds);
 const mockRegisterShelf = vi.mocked(registerShelf);
+// Capture registration count at module load — before beforeEach clears mock history
+const registrationCallCount = mockRegisterShelf.mock.calls.length;
 
 const stubProfile = {
   genreAffinities: [],
@@ -103,6 +105,10 @@ beforeEach(() => {
 // ---------------------------------------------------------------------------
 
 describe("contextShelves — module load", () => {
+  it("registers all 7 shelves on module load", () => {
+    expect(registrationCallCount).toBe(7);
+  });
+
   it("exports one shelf per ContextCollection (7 total)", () => {
     expect(contextShelves).toHaveLength(7);
   });
