@@ -51,12 +51,15 @@ function weightedSample(candidates: ScoredCandidate[], scores: number[]): Scored
   const total = scores.reduce((s, v) => s + v, 0);
   let rand = Math.random() * total;
   for (let i = 0; i < candidates.length; i++) {
-    rand -= scores[i]!;
+    rand -= scores[i] ?? 0;
     if (rand <= 0) {
-      return candidates[i]!;
+      const candidate = candidates[i];
+      if (candidate) return candidate;
     }
   }
-  return candidates[candidates.length - 1]!;
+  const fallback = candidates.at(-1);
+  if (!fallback) throw new Error("weightedSample requires non-empty candidates array");
+  return fallback;
 }
 
 /**
