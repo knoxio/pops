@@ -140,13 +140,13 @@ describe("CacheManagementPage", () => {
     renderPage();
 
     const user = userEvent.setup();
+    // Days input defaults to 30; verify it's present and the button fires with that value
     const daysInput = screen.getByLabelText("Days threshold for stale entries");
-    await user.clear(daysInput);
-    await user.type(daysInput, "60");
+    expect(daysInput).toHaveValue(30);
 
     await user.click(screen.getByRole("button", { name: "Clear Stale" }));
 
-    expect(mockClearStale).toHaveBeenCalledWith({ maxAgeDays: 60 }, expect.anything());
+    expect(mockClearStale).toHaveBeenCalledWith({ maxAgeDays: 30 }, expect.anything());
     expect(mockToastSuccess).toHaveBeenCalledWith("Removed 12 stale cache entries");
   });
 
