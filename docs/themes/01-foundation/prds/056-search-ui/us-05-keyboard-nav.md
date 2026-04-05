@@ -1,7 +1,7 @@
 # US-05: Keyboard navigation
 
 > PRD: [056 — Search UI](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,12 +9,12 @@ As a user, I want to navigate search results with keyboard so that I can search 
 
 ## Acceptance Criteria
 
-- [ ] Arrow Up/Down moves selection through results (across sections)
-- [ ] Enter selects the highlighted result (navigates to it)
-- [ ] Escape closes the results panel and blurs the input
-- [ ] Tab moves focus out of search entirely
-- [ ] Visual highlight on the currently selected result
-- [ ] Selected result scrolls into view if outside the panel viewport
+- [x] Arrow Up/Down moves selection through results (across sections)
+- [x] Enter selects the highlighted result (navigates to it)
+- [x] Escape closes the results panel and blurs the input
+- [x] Tab moves focus out of search entirely
+- [x] Visual highlight on the currently selected result
+- [x] Selected result scrolls into view if outside the panel viewport
 
 ## Notes
 

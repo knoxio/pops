@@ -10,6 +10,7 @@ import {
   type SearchResultHit,
   useCurrentApp,
   useSearchResultNavigation,
+  useSearchKeyboardNav,
 } from "@pops/navigation";
 
 const DEBOUNCE_MS = 300;
@@ -34,6 +35,7 @@ function domainToLabel(domain: string): string {
 
 export function SearchInput() {
   const inputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const query = useSearchStore((s) => s.query);
   const isOpen = useSearchStore((s) => s.isOpen);
@@ -110,7 +112,29 @@ export function SearchInput() {
 
   const handleClose = useCallback(() => {
     setOpen(false);
+    inputRef.current?.blur();
   }, [setOpen]);
+
+  // Mirror the sort order used by SearchResultsPanel (context-first, then by max score desc)
+  const orderedUris = useMemo<string[]>(() => {
+    const sorted = [...sections]
+      .filter((s) => s.hits.length > 0)
+      .sort((a, b) => {
+        if (a.isContext && !b.isContext) return -1;
+        if (!a.isContext && b.isContext) return 1;
+        const aMax = Math.max(...a.hits.map((h) => h.score));
+        const bMax = Math.max(...b.hits.map((h) => h.score));
+        return bMax - aMax;
+      });
+    return sorted.flatMap((s) => s.hits.map((h) => h.uri));
+  }, [sections]);
+
+  const { selectedIndex } = useSearchKeyboardNav({
+    containerRef,
+    resultCount: orderedUris.length,
+    onSelect: (i) => handleResultClick(orderedUris[i]),
+    onClose: handleClose,
+  });
 
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -153,7 +177,7 @@ export function SearchInput() {
   const showPanel = isOpen && query.length > 0;
 
   return (
-    <div className="hidden md:flex relative items-center max-w-sm w-full mx-4">
+    <div ref={containerRef} className="hidden md:flex relative items-center max-w-sm w-full mx-4">
       <Search className="absolute left-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
       <Input
         ref={inputRef}
@@ -186,6 +210,7 @@ export function SearchInput() {
           onClose={handleClose}
           onResultClick={handleResultClick}
           onShowMore={handleShowMore}
+          selectedIndex={selectedIndex}
         />
       )}
     </div>

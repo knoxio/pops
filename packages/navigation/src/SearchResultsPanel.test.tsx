@@ -218,4 +218,57 @@ describe("SearchResultsPanel", () => {
     render(<SearchResultsPanel sections={sections} query="test" onClose={vi.fn()} />);
     expect(screen.queryByTestId("show-more-movies")).not.toBeInTheDocument();
   });
+
+  it("assigns sequential data-result-index attributes across all section hits", () => {
+    const sections = [
+      makeSection({
+        domain: "movies",
+        label: "Movies",
+        hits: [
+          { uri: "m/1", score: 0.9, matchField: "t", matchType: "exact", data: {} },
+          { uri: "m/2", score: 0.8, matchField: "t", matchType: "prefix", data: {} },
+        ],
+        totalCount: 2,
+      }),
+      makeSection({
+        domain: "transactions",
+        label: "Transactions",
+        hits: [
+          { uri: "t/1", score: 0.5, matchField: "d", matchType: "contains", data: {} },
+        ],
+        totalCount: 1,
+      }),
+    ];
+    render(<SearchResultsPanel sections={sections} query="test" onClose={vi.fn()} />);
+    const buttons = screen.getAllByRole("button");
+    expect(buttons[0]).toHaveAttribute("data-result-index", "0");
+    expect(buttons[1]).toHaveAttribute("data-result-index", "1");
+    expect(buttons[2]).toHaveAttribute("data-result-index", "2");
+  });
+
+  it("applies bg-accent highlight to the selected result button", () => {
+    const sections = [
+      makeSection({
+        hits: [
+          { uri: "m/1", score: 0.9, matchField: "t", matchType: "exact", data: {} },
+          { uri: "m/2", score: 0.8, matchField: "t", matchType: "prefix", data: {} },
+        ],
+        totalCount: 2,
+      }),
+    ];
+    render(
+      <SearchResultsPanel sections={sections} query="test" onClose={vi.fn()} selectedIndex={1} />
+    );
+    const buttons = screen.getAllByRole("button");
+    expect(buttons[0]!.className).not.toContain(" bg-accent");
+    expect(buttons[1]!.className).toContain(" bg-accent");
+  });
+
+  it("does not highlight any result when selectedIndex is -1 (default)", () => {
+    render(<SearchResultsPanel sections={[makeSection()]} query="test" onClose={vi.fn()} />);
+    const buttons = screen.getAllByRole("button");
+    buttons.forEach((btn) => {
+      expect(btn.className).not.toMatch(/ bg-accent(?!\/)/);
+    });
+  });
 });
