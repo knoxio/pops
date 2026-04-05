@@ -33,6 +33,8 @@ export interface DiscoverCardProps {
   isMarkingRewatched?: boolean;
   onAddToLibrary?: (tmdbId: number) => void;
   onAddToWatchlist?: (tmdbId: number) => void;
+  onRemoveFromWatchlist?: (tmdbId: number) => void;
+  isRemovingFromWatchlist?: boolean;
   onMarkWatched?: (tmdbId: number) => void;
   onMarkRewatched?: (tmdbId: number) => void;
   onNotInterested?: (tmdbId: number) => void;
@@ -58,6 +60,8 @@ export function DiscoverCard({
   isAddingToWatchlist,
   onAddToLibrary,
   onAddToWatchlist,
+  onRemoveFromWatchlist,
+  isRemovingFromWatchlist,
   onMarkWatched,
   isMarkingWatched,
   isMarkingRewatched,
@@ -150,12 +154,14 @@ export function DiscoverCard({
             size="icon"
             variant="ghost"
             className="h-7 w-7 text-white hover:bg-white/20"
-            onClick={() => onAddToWatchlist?.(tmdbId)}
-            disabled={isAddingToWatchlist}
-            title={onWatchlist ? "On Watchlist" : "Add to Watchlist"}
-            aria-label={onWatchlist ? "On Watchlist" : "Add to Watchlist"}
+            onClick={() =>
+              onWatchlist ? onRemoveFromWatchlist?.(tmdbId) : onAddToWatchlist?.(tmdbId)
+            }
+            disabled={isAddingToWatchlist || isRemovingFromWatchlist}
+            title={onWatchlist ? "Remove from Watchlist" : "Add to Watchlist"}
+            aria-label={onWatchlist ? "Remove from Watchlist" : "Add to Watchlist"}
           >
-            {isAddingToWatchlist ? (
+            {isAddingToWatchlist || isRemovingFromWatchlist ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : onWatchlist ? (
               <BookmarkCheck className="h-3.5 w-3.5" />
@@ -196,12 +202,14 @@ export function DiscoverCard({
               )}
             </Button>
           )}
-          <RequestMovieButton
-            tmdbId={tmdbId}
-            title={title}
-            year={year ? parseInt(year, 10) : new Date().getFullYear()}
-            variant="compact"
-          />
+          {!inLibrary && (
+            <RequestMovieButton
+              tmdbId={tmdbId}
+              title={title}
+              year={year ? parseInt(year, 10) : new Date().getFullYear()}
+              variant="compact"
+            />
+          )}
           <Button
             size="icon"
             variant="ghost"

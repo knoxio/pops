@@ -105,7 +105,7 @@ describe("DiscoverCard — watched", () => {
 describe("DiscoverCard — watchlist states", () => {
   it("shows filled bookmark icon when onWatchlist=true", () => {
     render(<DiscoverCard {...baseProps} onWatchlist={true} />);
-    expect(screen.getByLabelText("On Watchlist")).toBeTruthy();
+    expect(screen.getByLabelText("Remove from Watchlist")).toBeTruthy();
   });
 
   it("shows unfilled bookmark icon when onWatchlist=false", () => {
@@ -113,11 +113,30 @@ describe("DiscoverCard — watchlist states", () => {
     expect(screen.getByLabelText("Add to Watchlist")).toBeTruthy();
   });
 
-  it("calls onAddToWatchlist with tmdbId when bookmark clicked", () => {
-    const onWatchlist = vi.fn();
-    render(<DiscoverCard {...baseProps} onWatchlist={false} onAddToWatchlist={onWatchlist} />);
+  it("calls onAddToWatchlist with tmdbId when bookmark clicked (not on watchlist)", () => {
+    const onAdd = vi.fn();
+    render(<DiscoverCard {...baseProps} onWatchlist={false} onAddToWatchlist={onAdd} />);
     fireEvent.click(screen.getByLabelText("Add to Watchlist"));
-    expect(onWatchlist).toHaveBeenCalledWith(42);
+    expect(onAdd).toHaveBeenCalledWith(42);
+  });
+
+  it("calls onRemoveFromWatchlist with tmdbId when bookmark clicked (already on watchlist)", () => {
+    const onRemove = vi.fn();
+    render(<DiscoverCard {...baseProps} onWatchlist={true} onRemoveFromWatchlist={onRemove} />);
+    fireEvent.click(screen.getByLabelText("Remove from Watchlist"));
+    expect(onRemove).toHaveBeenCalledWith(42);
+  });
+});
+
+describe("DiscoverCard — request button visibility", () => {
+  it("shows Request button when not in library", () => {
+    render(<DiscoverCard {...baseProps} inLibrary={false} />);
+    expect(screen.getByTestId("request-42")).toBeTruthy();
+  });
+
+  it("hides Request button when in library", () => {
+    render(<DiscoverCard {...baseProps} inLibrary={true} />);
+    expect(screen.queryByTestId("request-42")).toBeNull();
   });
 });
 
