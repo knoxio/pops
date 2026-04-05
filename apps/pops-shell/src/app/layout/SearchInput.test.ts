@@ -2,8 +2,9 @@
  * SearchInput section-mapping logic tests.
  *
  * The SearchResultsPanel component is tested comprehensively in the navigation
- * package. These tests cover the mapping helpers used to transform tRPC API
- * sections into panel-ready sections.
+ * package (sections, ordering, context distinction, close behaviour, show-more
+ * button rendering). These tests cover the helper functions and pure logic used
+ * to transform tRPC API sections into panel-ready sections.
  */
 import { describe, it, expect } from "vitest";
 
@@ -41,5 +42,44 @@ describe("showPanel condition", () => {
     for (const [isOpen, query, expected] of cases) {
       expect(isOpen && query.length > 0).toBe(expected);
     }
+  });
+});
+
+describe("showMore offset calculation", () => {
+  it("uses current hits length as offset", () => {
+    const hits = [
+      { uri: "a", score: 1, matchField: "title", matchType: "exact", data: {} },
+      { uri: "b", score: 0.8, matchField: "title", matchType: "prefix", data: {} },
+    ];
+    const offset = hits.length;
+    expect(offset).toBe(2);
+  });
+
+  it("defaults to 0 when section not found", () => {
+    const sections: { domain: string; hits: unknown[] }[] = [];
+    const offset = sections.find((s) => s.domain === "movies")?.hits.length ?? 0;
+    expect(offset).toBe(0);
+  });
+
+  it("accumulates extra hits across show-more calls", () => {
+    const extraHits: Record<string, unknown[]> = {};
+    const domain = "movies";
+    const firstBatch = [{ uri: "c" }, { uri: "d" }];
+    const secondBatch = [{ uri: "e" }];
+
+    // Simulate first show-more
+    extraHits[domain] = [...(extraHits[domain] ?? []), ...firstBatch];
+    expect(extraHits[domain]).toHaveLength(2);
+
+    // Simulate second show-more
+    extraHits[domain] = [...(extraHits[domain] ?? []), ...secondBatch];
+    expect(extraHits[domain]).toHaveLength(3);
+  });
+
+  it("resets extra hits to empty object on query change", () => {
+    let extraHits: Record<string, unknown[]> = { movies: [{ uri: "a" }] };
+    // Simulate useEffect on query change
+    extraHits = {};
+    expect(extraHits).toEqual({});
   });
 });

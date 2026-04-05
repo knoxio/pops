@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Search, X, Film, Tv, Box, ArrowRightLeft, PiggyBank, Building2 } from "lucide-react";
 import { Input, Button } from "@pops/ui";
@@ -7,6 +7,7 @@ import { trpc } from "@/lib/trpc";
 import {
   SearchResultsPanel,
   type SearchResultSection,
+  type SearchResultHit,
   useCurrentApp,
   useSearchResultNavigation,
 } from "@pops/navigation";
@@ -42,27 +43,62 @@ export function SearchInput() {
 
   const currentApp = useCurrentApp();
   const { navigateTo } = useSearchResultNavigation();
+  const utils = trpc.useUtils();
+
+  /** Extra hits appended by "Show more" per domain. */
+  const [extraHits, setExtraHits] = useState<Record<string, SearchResultHit[]>>({});
 
   const { data: searchData } = trpc.core.search.query.useQuery(
     { text: query, context: { app: currentApp ?? null, page: null } },
     { enabled: isOpen && query.length > 0 }
   );
 
+  // Reset extra hits when the query changes
+  useEffect(() => {
+    setExtraHits({});
+  }, [query]);
+
   const sections = useMemo<SearchResultSection[]>(() => {
     if (!searchData?.sections) return [];
-    return searchData.sections.map((section) => ({
-      domain: section.domain,
-      label: domainToLabel(section.domain),
-      icon: ICON_MAP[section.icon] ?? <Search className="h-3.5 w-3.5" />,
-      color: section.color,
-      isContext: section.isContextSection,
-      hits: section.hits.map((h) => ({
+    return searchData.sections.map((section) => {
+      const baseHits: SearchResultHit[] = section.hits.map((h) => ({
         ...h,
         data: (h.data ?? {}) as Record<string, unknown>,
-      })),
-      totalCount: section.totalCount,
-    }));
-  }, [searchData]);
+      }));
+      const extra = extraHits[section.domain] ?? [];
+      return {
+        domain: section.domain,
+        label: domainToLabel(section.domain),
+        icon: ICON_MAP[section.icon] ?? <Search className="h-3.5 w-3.5" />,
+        color: section.color,
+        isContext: section.isContextSection,
+        hits: [...baseHits, ...extra],
+        totalCount: section.totalCount,
+      };
+    });
+  }, [searchData, extraHits]);
+
+  const handleShowMore = useCallback(
+    async (domain: string) => {
+      const section = sections.find((s) => s.domain === domain);
+      const offset = section?.hits.length ?? 0;
+      const result = await utils.core.search.showMore.fetch({
+        domain,
+        text: query,
+        context: { app: currentApp ?? null, page: null },
+        offset,
+      });
+      const newHits: SearchResultHit[] = result.hits.map((h) => ({
+        ...h,
+        data: (h.data ?? {}) as Record<string, unknown>,
+      }));
+      setExtraHits((prev) => ({
+        ...prev,
+        [domain]: [...(prev[domain] ?? []), ...newHits],
+      }));
+    },
+    [sections, query, currentApp, utils]
+  );
 
   const handleResultClick = useCallback(
     (uri: string) => {
@@ -149,6 +185,7 @@ export function SearchInput() {
           query={query}
           onClose={handleClose}
           onResultClick={handleResultClick}
+          onShowMore={handleShowMore}
         />
       )}
     </div>
