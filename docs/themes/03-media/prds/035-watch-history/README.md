@@ -1,7 +1,7 @@
 # PRD-035: Watch History
 
 > Epic: [03 — Tracking & Watchlist](../../epics/03-tracking-watchlist.md)
-> Status: Partial
+> Status: Done
 
 ## Overview
 
