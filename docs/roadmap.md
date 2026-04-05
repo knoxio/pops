@@ -48,7 +48,7 @@ Live status of every theme and epic. Updated as work completes.
 |------|--------|-------|
 | Project bootstrap (pnpm, Turbo, mise) | Done | pnpm v10, Turbo orchestration, mise task runner |
 | UI component library (`@pops/ui`) | Done | 86+ components, Storybook, Tailwind v4 |
-| Shell & app switcher (`pops-shell`) | Partial | Lazy-loaded apps, AppRail, responsive sidebar. App theme colour propagation not implemented |
+| Shell & app switcher (`pops-shell`) | Done | Lazy-loaded apps, AppRail, responsive sidebar, app theme colour propagation |
 | API modularisation (`pops-api`) | Done | 4 domain modules (core, finance, inventory, media) |
 | DB schema patterns & migrations | Done | 28 tables, timestamp migrations, entity types |
 | Responsive foundation | Done | Tailwind v4 breakpoints, mobile-first, touch targets |
@@ -99,7 +99,7 @@ Live status of every theme and epic. Updated as work completes.
 
 | Epic | Status | Notes |
 |------|--------|-------|
-| AI operations app (`@pops/app-ai`) | Partial | Usage page exists; model config, rules, prompts not built |
+| AI operations app (`@pops/app-ai`) | Partial | Usage tracking done; model config, rules browser, prompt viewer done; cache management page not built |
 
 #### Fitness
 

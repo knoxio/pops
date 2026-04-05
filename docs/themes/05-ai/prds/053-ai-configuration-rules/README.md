@@ -34,10 +34,10 @@ Add configuration and rule management pages to the AI operations app. Model sele
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 01 | [us-01-model-config](us-01-model-config.md) | Model selection, token budget, fallback behaviour settings | Partial | Yes |
-| 02 | [us-02-rules-browser](us-02-rules-browser.md) | Corrections table browser with filters, sorting, inline confidence adjustment | Partial | Yes |
+| 01 | [us-01-model-config](us-01-model-config.md) | Model selection, token budget, fallback behaviour settings | Done | Yes |
+| 02 | [us-02-rules-browser](us-02-rules-browser.md) | Corrections table browser with filters, sorting, inline confidence adjustment | Done | Yes |
 | 03 | [us-03-cache-management](us-03-cache-management.md) | Cache stats, clear stale/all, confirmation dialogs | Partial | Yes |
-| 04 | [us-04-prompt-viewer](us-04-prompt-viewer.md) | Read-only prompt template display | Partial | Yes |
+| 04 | [us-04-prompt-viewer](us-04-prompt-viewer.md) | Read-only prompt template display | Done | Yes |
 
 All USs can parallelise — independent pages.
 

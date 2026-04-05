@@ -1,7 +1,7 @@
 # US-01: Usage stats API
 
 > PRD: [052 — AI Usage & Cost Tracking](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -14,7 +14,7 @@ As a developer, I want API procedures for AI usage statistics so that the usage 
 - [x] `core.aiUsage.getHistory` returns daily aggregation with optional date range filter
 - [x] History ordered by date DESC
 - [x] Both handle empty table gracefully (zeros, not errors)
-- [ ] Tests cover: empty data, single entry, date range filtering — no test file exists for ai-usage module
+- [x] Tests cover: empty data, single entry, date range filtering
 
 ## Notes
 
