@@ -12,7 +12,7 @@ import { getPreferenceProfile, scoreDiscoverResults } from "./service.js";
 import { getWatchedTmdbIds, getWatchlistTmdbIds, getDismissedTmdbIds } from "./flags.js";
 
 /** Get all TMDB IDs currently in the library for quick lookup. */
-function getLibraryTmdbIds(): Set<number> {
+export function getLibraryTmdbIds(): Set<number> {
   const db = getDrizzle();
   const rows = db.select({ tmdbId: movies.tmdbId }).from(movies).all();
   return new Set(rows.map((r) => r.tmdbId));
@@ -30,7 +30,7 @@ function buildPosterUrl(
 }
 
 /** Map TMDB search results to discover results with library/watched/watchlist status. */
-function toDiscoverResults(
+export function toDiscoverResults(
   results: TmdbSearchResult[],
   libraryIds: Set<number>,
   watchedIds: Set<number>,
