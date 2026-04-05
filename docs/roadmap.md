@@ -99,7 +99,7 @@ Live status of every theme and epic. Updated as work completes.
 
 | Epic | Status | Notes |
 |------|--------|-------|
-| AI operations app (`@pops/app-ai`) | Partial | Usage tracking done; model config, rules browser, prompt viewer done; cache management page not built |
+| AI operations app (`@pops/app-ai`) | Done | Usage, model config, rules browser, prompt viewer, cache management — all pages built |
 
 #### Fitness
 
