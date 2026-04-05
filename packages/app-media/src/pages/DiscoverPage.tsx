@@ -469,8 +469,6 @@ export function DiscoverPage() {
                     isMarkingRewatched={markingRewatched.has(item.tmdbId)}
                     onNotInterested={handleNotInterested}
                     isDismissing={dismissing.has(item.tmdbId)}
-                    matchPercentage={item.matchPercentage}
-                    matchReason={item.matchReason}
                   />
                 ))}
             </HorizontalScrollRow>
