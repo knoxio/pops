@@ -1,7 +1,7 @@
 # PRD-065: Shelf-Based Discovery
 
 > Epic: [05 — Discovery & Recommendations](../../epics/05-discovery-recommendations.md)
-> Status: Not started
+> Status: In progress
 
 ## Overview
 
@@ -139,10 +139,10 @@ Cleanup: rows older than 30 days are deleted on startup or periodically.
 | 02 | [us-02-session-assembly](us-02-session-assembly.md) | Assembly algorithm: score, select, order, variety constraints, jitter | Not started | Blocked by us-01 |
 | 03 | [us-03-shelf-impressions](us-03-shelf-impressions.md) | shelf_impressions table, record shown shelves, compute freshness, cleanup | Not started | Yes |
 | 04 | [us-04-seed-shelves-watch](us-04-seed-shelves-watch.md) | "Because you watched {Movie}" shelf: rotation logic, TMDB recs per seed | Done | Blocked by us-01 |
-| 05 | [us-05-seed-shelves-credits](us-05-seed-shelves-credits.md) | Director + actor shelves: TMDB credits lookup, filmography query, caching | Not started | Blocked by us-01 |
+| 05 | [us-05-seed-shelves-credits](us-05-seed-shelves-credits.md) | Director + actor shelves: TMDB credits lookup, filmography query, caching | Done | Blocked by us-01 |
 | 06 | [us-06-seed-shelves-genre](us-06-seed-shelves-genre.md) | Genre, genre×genre, dimension-based, dimension+movie shelves | Not started | Blocked by us-01 |
 | 07 | [us-07-tmdb-discovery-shelves](us-07-tmdb-discovery-shelves.md) | New releases, hidden gems, critics vs audiences, award winners, decade picks | Done | Blocked by us-01 |
-| 08 | [us-08-local-library-shelves](us-08-local-library-shelves.md) | From server, recently added, short/long watch, comfort, undiscovered, polarizing, friend-proof, franchise completions | Not started | Blocked by us-01 |
+| 08 | [us-08-local-library-shelves](us-08-local-library-shelves.md) | From server, recently added, short/long watch, comfort, undiscovered, polarizing, friend-proof, franchise completions | Done | Blocked by us-01 |
 | 09 | [us-09-migrate-existing-shelves](us-09-migrate-existing-shelves.md) | Migrate current 9 sections (trending, recs, genre spotlight, etc.) into shelf definitions | Not started | Blocked by us-01 |
 | 10 | [us-10-assembly-api](us-10-assembly-api.md) | tRPC endpoint: assembleDiscoverPage returns ordered shelf list with first page of items each | Not started | Blocked by us-02, us-03, us-04 through us-09 |
 | 11 | [us-11-shelf-pagination](us-11-shelf-pagination.md) | tRPC endpoint: getShelfPage returns next page of items for a specific shelf instance | Not started | Blocked by us-10 |

@@ -171,3 +171,25 @@ export interface RawTmdbRecommendationsResponse {
   total_results: number;
   total_pages: number;
 }
+
+/** A crew member from TMDB credits. */
+export interface TmdbCrewMember {
+  id: number;
+  name: string;
+  job: string;
+  department: string;
+}
+
+/** A cast member from TMDB credits. */
+export interface TmdbCastMember {
+  id: number;
+  name: string;
+  order: number;
+}
+
+/** Credits for a movie from TMDB. */
+export interface TmdbMovieCredits {
+  id: number;
+  crew: TmdbCrewMember[];
+  cast: TmdbCastMember[];
+}
