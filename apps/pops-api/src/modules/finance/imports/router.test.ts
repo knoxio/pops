@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import type { Database } from "better-sqlite3";
+import { eq } from "drizzle-orm";
+import { entities as entitiesTable } from "@pops/db-types";
+import { getDrizzle } from "../../../db.js";
 import { setupTestContext, seedEntity, createCaller } from "../../../shared/test-utils.js";
 import { clearCache } from "./lib/ai-categorizer.js";
 import type {
@@ -30,9 +33,6 @@ import { resetMockAi } from "./lib/ai-categorizer.mock.js";
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;
 let db: Database;
-
-/** Shape of a row returned from the entities SQLite table. */
-type EntityRow = { name: string; id: string; notion_id: string | null; last_edited_time: string };
 
 /**
  * Helper to poll for import progress until completion
@@ -360,9 +360,13 @@ describe("imports.createEntity", () => {
       name: "SQLite Test Entity",
     });
 
-    const row = db.prepare("SELECT * FROM entities WHERE id = ?").get(result.entityId);
+    const row = getDrizzle()
+      .select()
+      .from(entitiesTable)
+      .where(eq(entitiesTable.id, result.entityId))
+      .get();
     expect(row).toBeDefined();
-    expect((row as EntityRow).name).toBe("SQLite Test Entity");
+    expect(row!.name).toBe("SQLite Test Entity");
   });
 });
 

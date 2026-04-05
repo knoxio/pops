@@ -1,7 +1,7 @@
 # US-04: Migrate finance module to Drizzle
 
 > PRD: [011 — Drizzle ORM](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -10,8 +10,8 @@ As a developer, I want the finance module (transactions, budgets, imports, wishl
 ## Acceptance Criteria
 
 - [x] All raw SQL in finance services replaced with Drizzle query builder
-- [ ] No `as Row[]` type casts remain in finance module — **test files still use raw SQL**
-- [ ] All finance module tests pass — **test code still uses raw SQL patterns**
+- [x] No `as Row[]` type casts remain in finance module
+- [x] All finance module tests pass
 - [x] Import pipeline (entity matcher, dedup) works correctly with Drizzle
 - [x] Complex queries (filtered transaction lists, budget aggregations) produce correct results
 

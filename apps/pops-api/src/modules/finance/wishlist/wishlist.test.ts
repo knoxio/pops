@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import type { Database } from "better-sqlite3";
+import { eq } from "drizzle-orm";
+import { wishList as wishListTable } from "@pops/db-types";
+import { getDrizzle } from "../../../db.js";
 import { setupTestContext, seedWishListItem, createCaller } from "../../../shared/test-utils.js";
 
 const ctx = setupTestContext();
@@ -251,7 +254,11 @@ describe("wishlist.create", () => {
   it("persists to the database", async () => {
     await caller.finance.wishlist.create({ item: "New Item" });
 
-    const row = db.prepare("SELECT * FROM wish_list WHERE item = ?").get("New Item");
+    const row = getDrizzle()
+      .select()
+      .from(wishListTable)
+      .where(eq(wishListTable.item, "New Item"))
+      .get();
     expect(row).toBeDefined();
   });
 
@@ -314,10 +321,12 @@ describe("wishlist.update", () => {
 
     await caller.finance.wishlist.update({ id, data: { priority: "Needing" } });
 
-    const row = db.prepare("SELECT last_edited_time FROM wish_list WHERE id = ?").get(id) as {
-      last_edited_time: string;
-    };
-    expect(row.last_edited_time).not.toBe("2020-01-01T00:00:00.000Z");
+    const row = getDrizzle()
+      .select({ lastEditedTime: wishListTable.lastEditedTime })
+      .from(wishListTable)
+      .where(eq(wishListTable.id, id))
+      .get();
+    expect(row!.lastEditedTime).not.toBe("2020-01-01T00:00:00.000Z");
   });
 
   it("throws NOT_FOUND for non-existent ID", async () => {
@@ -372,7 +381,7 @@ describe("wishlist.delete", () => {
     expect(result.message).toBe("Wish list item deleted");
 
     // Verify gone from DB
-    const row = db.prepare("SELECT * FROM wish_list WHERE id = ?").get(id);
+    const row = getDrizzle().select().from(wishListTable).where(eq(wishListTable.id, id)).get();
     expect(row).toBeUndefined();
   });
 

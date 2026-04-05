@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import type { Database } from "better-sqlite3";
+import { eq } from "drizzle-orm";
+import { budgets as budgetsTable } from "@pops/db-types";
+import { getDrizzle } from "../../../db.js";
 import { setupTestContext, seedBudget, createCaller } from "../../../shared/test-utils.js";
 
 const ctx = setupTestContext();
@@ -268,7 +271,11 @@ describe("budgets.create", () => {
   it("persists to the database", async () => {
     await caller.finance.budgets.create({ category: "New Budget" });
 
-    const row = db.prepare("SELECT * FROM budgets WHERE category = ?").get("New Budget");
+    const row = getDrizzle()
+      .select()
+      .from(budgetsTable)
+      .where(eq(budgetsTable.category, "New Budget"))
+      .get();
     expect(row).toBeDefined();
   });
 
@@ -282,16 +289,17 @@ describe("budgets.create", () => {
     });
 
     // Verify all fields persisted in SQLite
-    const row = db.prepare("SELECT * FROM budgets WHERE id = ?").get(result.data.id) as Record<
-      string,
-      unknown
-    >;
+    const row = getDrizzle()
+      .select()
+      .from(budgetsTable)
+      .where(eq(budgetsTable.id, result.data.id))
+      .get();
     expect(row).toBeDefined();
-    expect(row.category).toBe("Groceries");
-    expect(row.period).toBe("2025-06");
-    expect(row.amount).toBe(500);
-    expect(row.active).toBe(1);
-    expect(row.notes).toBe("Test notes");
+    expect(row!.category).toBe("Groceries");
+    expect(row!.period).toBe("2025-06");
+    expect(row!.amount).toBe(500);
+    expect(row!.active).toBe(1);
+    expect(row!.notes).toBe("Test notes");
   });
 });
 
@@ -355,10 +363,12 @@ describe("budgets.update", () => {
 
     await caller.finance.budgets.update({ id, data: { amount: 500 } });
 
-    const row = db.prepare("SELECT last_edited_time FROM budgets WHERE id = ?").get(id) as {
-      last_edited_time: string;
-    };
-    expect(row.last_edited_time).not.toBe("2020-01-01T00:00:00.000Z");
+    const row = getDrizzle()
+      .select({ lastEditedTime: budgetsTable.lastEditedTime })
+      .from(budgetsTable)
+      .where(eq(budgetsTable.id, id))
+      .get();
+    expect(row!.lastEditedTime).not.toBe("2020-01-01T00:00:00.000Z");
   });
 
   it("throws NOT_FOUND for non-existent ID", async () => {
@@ -384,10 +394,12 @@ describe("budgets.update", () => {
     await caller.finance.budgets.update({ id, data: { amount: 600 } });
 
     // Verify SQLite was updated
-    const row = db.prepare("SELECT amount FROM budgets WHERE id = ?").get(id) as {
-      amount: number;
-    };
-    expect(row.amount).toBe(600);
+    const row = getDrizzle()
+      .select({ amount: budgetsTable.amount })
+      .from(budgetsTable)
+      .where(eq(budgetsTable.id, id))
+      .get();
+    expect(row!.amount).toBe(600);
   });
 });
 
@@ -399,7 +411,7 @@ describe("budgets.delete", () => {
     expect(result.message).toBe("Budget deleted");
 
     // Verify gone from DB
-    const row = db.prepare("SELECT * FROM budgets WHERE id = ?").get(id);
+    const row = getDrizzle().select().from(budgetsTable).where(eq(budgetsTable.id, id)).get();
     expect(row).toBeUndefined();
   });
 
@@ -428,7 +440,7 @@ describe("budgets.delete", () => {
     await caller.finance.budgets.delete({ id });
 
     // Verify row is gone from SQLite
-    const row = db.prepare("SELECT * FROM budgets WHERE id = ?").get(id);
+    const row = getDrizzle().select().from(budgetsTable).where(eq(budgetsTable.id, id)).get();
     expect(row).toBeUndefined();
   });
 });

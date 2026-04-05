@@ -1,6 +1,9 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import type { Database } from "better-sqlite3";
+import { eq } from "drizzle-orm";
+import { transactions as transactionsTable } from "@pops/db-types";
+import { getDrizzle } from "../../../db.js";
 import {
   setupTestContext,
   seedTransaction,
@@ -433,10 +436,12 @@ describe("transactions.update", () => {
 
     await caller.finance.transactions.update({ id, data: { amount: 100.0 } });
 
-    const row = db.prepare("SELECT last_edited_time FROM transactions WHERE id = ?").get(id) as {
-      last_edited_time: string;
-    };
-    expect(row.last_edited_time).not.toBe("2020-01-01T00:00:00.000Z");
+    const row = getDrizzle()
+      .select({ lastEditedTime: transactionsTable.lastEditedTime })
+      .from(transactionsTable)
+      .where(eq(transactionsTable.id, id))
+      .get();
+    expect(row!.lastEditedTime).not.toBe("2020-01-01T00:00:00.000Z");
   });
 
   it("throws NOT_FOUND for non-existent ID", async () => {
@@ -478,7 +483,11 @@ describe("transactions.delete", () => {
     expect(result.message).toBe("Transaction deleted");
 
     // Verify gone from DB
-    const row = db.prepare("SELECT * FROM transactions WHERE id = ?").get(id);
+    const row = getDrizzle()
+      .select()
+      .from(transactionsTable)
+      .where(eq(transactionsTable.id, id))
+      .get();
     expect(row).toBeUndefined();
   });
 

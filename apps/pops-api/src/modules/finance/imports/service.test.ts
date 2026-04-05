@@ -614,18 +614,22 @@ describe("executeImport", () => {
     executeImport([baseConfirmedTransaction]);
 
     // Verify entity_id is set before deletion
-    const before = db
-      .prepare("SELECT entity_id FROM transactions WHERE checksum = ?")
-      .get("abc123") as { entity_id: string | null };
-    expect(before.entity_id).toBe("woolworths-id");
+    const before = orm()
+      .select({ entityId: transactionsTable.entityId })
+      .from(transactionsTable)
+      .where(eq(transactionsTable.checksum, "abc123"))
+      .get();
+    expect(before!.entityId).toBe("woolworths-id");
 
     // Delete the entity — FK SET NULL should nullify entity_id
-    db.prepare("DELETE FROM entities WHERE id = ?").run("woolworths-id");
+    orm().delete(entitiesTable).where(eq(entitiesTable.id, "woolworths-id")).run();
 
-    const after = db
-      .prepare("SELECT entity_id FROM transactions WHERE checksum = ?")
-      .get("abc123") as { entity_id: string | null };
-    expect(after.entity_id).toBeNull();
+    const after = orm()
+      .select({ entityId: transactionsTable.entityId })
+      .from(transactionsTable)
+      .where(eq(transactionsTable.checksum, "abc123"))
+      .get();
+    expect(after!.entityId).toBeNull();
   });
 });
 

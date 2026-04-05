@@ -27,7 +27,7 @@ Build a multi-app platform from a shared foundation: one monorepo, one shell, on
 | 3 | [API Server](epics/03-api-server.md) | `pops-api` — Express + tRPC, domain-grouped routers, middleware (auth, rate limiting, errors) | Partial |
 | 4 | [DB Schema Patterns](epics/04-db-schema-patterns.md) | SQLite, timestamp migrations, shared entities, cross-domain FKs, seed data, UUIDs | Partial |
 | 5 | [Responsive Foundation](epics/05-responsive-foundation.md) | Tailwind v4 breakpoints, mobile-first, 44x44px touch targets, component adaptations | Partial |
-| 6 | [Drizzle ORM](epics/06-drizzle-orm.md) | Type-safe queries and schema-as-code, replacing raw SQL | Partial |
+| 6 | [Drizzle ORM](epics/06-drizzle-orm.md) | Type-safe queries and schema-as-code, replacing raw SQL | Done |
 | 7 | [Search](epics/07-search.md) | Platform-wide search from TopBar, context-aware results, structured query syntax, cross-domain via universal URIs | Not started |
 
 Epic 0 is prerequisite to everything. Epics 1-5 can be built incrementally. Epic 6 is independent.

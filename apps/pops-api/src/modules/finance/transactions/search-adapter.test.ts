@@ -1,73 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import type { Database } from "better-sqlite3";
-import BetterSqlite3 from "better-sqlite3";
-import crypto from "crypto";
 import { setDb, closeDb } from "../../../db.js";
+import { createTestDb, seedTransaction } from "../../../shared/test-utils.js";
 import type { SearchHit } from "../../core/search/index.js";
 import { transactionsSearchAdapter, type TransactionHitData } from "./search-adapter.js";
-
-function createDb(): Database {
-  const db = new BetterSqlite3(":memory:");
-  db.pragma("journal_mode = WAL");
-  db.pragma("foreign_keys = ON");
-  db.exec(`
-    CREATE TABLE transactions (
-      id              TEXT PRIMARY KEY,
-      description     TEXT NOT NULL,
-      account         TEXT NOT NULL,
-      amount          REAL NOT NULL,
-      date            TEXT NOT NULL,
-      type            TEXT NOT NULL DEFAULT '',
-      tags            TEXT NOT NULL DEFAULT '[]',
-      entity_id       TEXT,
-      entity_name     TEXT,
-      location        TEXT,
-      country         TEXT,
-      related_transaction_id TEXT,
-      notes           TEXT,
-      checksum        TEXT,
-      raw_row         TEXT,
-      last_edited_time TEXT NOT NULL
-    );
-  `);
-  return db;
-}
-
-function seedTransaction(
-  db: Database,
-  overrides: Partial<{
-    id: string;
-    description: string;
-    account: string;
-    amount: number;
-    date: string;
-    type: string;
-    entity_name: string | null;
-  }> = {}
-): string {
-  const id = overrides.id ?? crypto.randomUUID();
-  db.prepare(
-    `
-    INSERT INTO transactions (id, description, account, amount, date, type, tags, entity_name, last_edited_time)
-    VALUES (@id, @description, @account, @amount, @date, @type, '[]', @entity_name, @last_edited_time)
-  `
-  ).run({
-    id,
-    description: overrides.description ?? "Test Transaction",
-    account: overrides.account ?? "Test Account",
-    amount: overrides.amount ?? -10.0,
-    date: overrides.date ?? "2026-01-01",
-    type: overrides.type ?? "expense",
-    entity_name: overrides.entity_name ?? null,
-    last_edited_time: new Date().toISOString(),
-  });
-  return id;
-}
 
 let db: Database;
 
 beforeEach(() => {
-  db = createDb();
+  db = createTestDb();
   setDb(db);
 });
 
