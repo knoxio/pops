@@ -28,6 +28,7 @@ vi.mock("../../../db.js", () => ({
 
 import { getContextPicks } from "./context-picks-service.js";
 import { getActiveCollections } from "./context-collections.js";
+import { getDismissedTmdbIds } from "./flags.js";
 
 /** Build a mock TMDB search response. */
 function makeTmdbResponse(tmdbIds: number[]): TmdbSearchResponse {
@@ -124,6 +125,31 @@ describe("getContextPicks", () => {
     expect(ids).toEqual([300, 400]);
     expect(ids).not.toContain(100);
     expect(ids).not.toContain(200);
+  });
+
+  it("excludes dismissed movies from results", async () => {
+    vi.mocked(getDismissedTmdbIds).mockReturnValue(new Set([500, 600]));
+
+    const mockedGetActive = vi.mocked(getActiveCollections);
+    mockedGetActive.mockReturnValue([
+      {
+        id: "test",
+        title: "Test",
+        emoji: "🧪",
+        genreIds: [18],
+        keywordIds: [],
+        trigger: () => true,
+      },
+    ]);
+
+    const client = makeMockClient([makeTmdbResponse([300, 500, 600, 700])]);
+
+    const result = await getContextPicks(client);
+
+    const ids = result.collections[0]!.results.map((r) => r.tmdbId);
+    expect(ids).toEqual([300, 700]);
+    expect(ids).not.toContain(500);
+    expect(ids).not.toContain(600);
   });
 
   it("passes correct TMDB discover params", async () => {
