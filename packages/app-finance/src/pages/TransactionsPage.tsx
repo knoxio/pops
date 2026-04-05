@@ -3,6 +3,7 @@
  */
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback } from "react";
+import { useSetPageContext } from "@pops/navigation";
 import { trpc } from "../lib/trpc";
 import { DataTable, SortableHeader } from "@pops/ui";
 import { Badge } from "@pops/ui";
@@ -25,6 +26,8 @@ interface Transaction {
 }
 
 export function TransactionsPage() {
+  useSetPageContext({ page: "transactions" });
+
   const utils = trpc.useUtils();
 
   // Fetch transactions using tRPC

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router";
+import { useSetPageContext } from "@pops/navigation";
 import { Button, Select, Skeleton, TextInput } from "@pops/ui";
 import { Sparkles, Settings, Search, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
 import { MediaGrid } from "../components/MediaGrid";
@@ -178,6 +179,15 @@ export function LibraryPage() {
     search: debouncedSearch,
     page,
     pageSize,
+  });
+
+  useSetPageContext({
+    page: "library",
+    filters: {
+      ...(typeFilter !== "all" && { type: typeFilter }),
+      ...(sortBy !== "title" && { sort: sortBy }),
+      ...(searchQuery && { search: searchQuery }),
+    },
   });
 
   const totalItems = pagination.total;

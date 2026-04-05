@@ -10,19 +10,19 @@ Each phase unlocks the next. Within a phase, items can be parallelised. The road
 
 Sequenced by daily value, effort, and dependencies:
 
-| # | App | Rationale |
-|---|-----|-----------|
-| 1 | Media Tracker | Quick win, self-contained, validates multi-app architecture |
-| 2 | Inventory | High daily use, grows into a core app |
-| 3 | Finance Polish + Subscriptions | Reduce friction, add subscriptions as a feature (not separate app) |
-| 4 | Fitness Tracker | Gym and training log. Health integrations (Apple Health, meal logging) layer on later |
-| 5 | Documents Vault | Low effort, high connectivity — unlocks receipt/warranty linking for inventory, finance, travel |
-| 6 | Travel Planner | Benefits from finance (budgets), documents (bookings), and AI (planning) already being in place |
-| 7 | Books / Reading | Same pattern as media tracker, low effort once that template exists |
-| 8 | Recipe Book | Long-term feature, lower daily urgency |
-| 9 | Maintenance & Chores | Natural extension of inventory, reminder-driven |
-| 10 | Contacts / CRM-lite | Lowest urgency — gift tracking, events |
-| 11 | Home Automation | Biggest unknown, explore only if HomeAssistant leaves a clear gap |
+| #   | App                            | Rationale                                                                                       |
+| --- | ------------------------------ | ----------------------------------------------------------------------------------------------- |
+| 1   | Media Tracker                  | Quick win, self-contained, validates multi-app architecture                                     |
+| 2   | Inventory                      | High daily use, grows into a core app                                                           |
+| 3   | Finance Polish + Subscriptions | Reduce friction, add subscriptions as a feature (not separate app)                              |
+| 4   | Fitness Tracker                | Gym and training log. Health integrations (Apple Health, meal logging) layer on later           |
+| 5   | Documents Vault                | Low effort, high connectivity — unlocks receipt/warranty linking for inventory, finance, travel |
+| 6   | Travel Planner                 | Benefits from finance (budgets), documents (bookings), and AI (planning) already being in place |
+| 7   | Books / Reading                | Same pattern as media tracker, low effort once that template exists                             |
+| 8   | Recipe Book                    | Long-term feature, lower daily urgency                                                          |
+| 9   | Maintenance & Chores           | Natural extension of inventory, reminder-driven                                                 |
+| 10  | Contacts / CRM-lite            | Lowest urgency — gift tracking, events                                                          |
+| 11  | Home Automation                | Biggest unknown, explore only if HomeAssistant leaves a clear gap                               |
 
 ---
 
@@ -32,117 +32,117 @@ Live status of every theme and epic. Updated as work completes.
 
 ### Phase 0 — Infrastructure
 
-| Epic | Status | Notes |
-|------|--------|-------|
-| N95 provisioning & OS hardening | Done | Ansible playbook, SSH, firewall |
-| Docker Compose & networking | Done | 3 networks, 7+ services |
-| Cloudflare Tunnel + Access | Done | Zero-trust, no port forwarding |
-| CI/CD workflows | Done | 8 GitHub Actions workflows |
-| Secrets management | Done | Ansible Vault → Docker secrets |
-| Backups (Backblaze B2) | Done | rclone encrypted |
-| Monitoring & health checks | Done | Docker health checks on api + shell |
+| Epic                            | Status | Notes                               |
+| ------------------------------- | ------ | ----------------------------------- |
+| N95 provisioning & OS hardening | Done   | Ansible playbook, SSH, firewall     |
+| Docker Compose & networking     | Done   | 3 networks, 7+ services             |
+| Cloudflare Tunnel + Access      | Done   | Zero-trust, no port forwarding      |
+| CI/CD workflows                 | Done   | 8 GitHub Actions workflows          |
+| Secrets management              | Done   | Ansible Vault → Docker secrets      |
+| Backups (Backblaze B2)          | Done   | rclone encrypted                    |
+| Monitoring & health checks      | Done   | Docker health checks on api + shell |
 
 ### Phase 1 — Foundation
 
-| Epic | Status | Notes |
-|------|--------|-------|
-| Project bootstrap (pnpm, Turbo, mise) | Done | pnpm v10, Turbo orchestration, mise task runner |
-| UI component library (`@pops/ui`) | Done | 86+ components, Storybook, Tailwind v4 |
-| Shell & app switcher (`pops-shell`) | Done | Lazy-loaded apps, AppRail, responsive sidebar, app theme colour propagation |
-| API modularisation (`pops-api`) | Done | 4 domain modules (core, finance, inventory, media) |
-| DB schema patterns & migrations | Done | 28 tables, timestamp migrations, entity types |
-| Responsive foundation | Done | Tailwind v4 breakpoints, mobile-first, touch targets |
-| Drizzle ORM migration | Done | All modules use Drizzle ORM; raw SQL eliminated |
-| Platform search (Epic 07) | Partial | Search engine Done (PRD-057); UI in progress (PRD-056); contextual intelligence not started (PRD-058) |
+| Epic                                  | Status | Notes                                                                                                                  |
+| ------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------- |
+| Project bootstrap (pnpm, Turbo, mise) | Done   | pnpm v10, Turbo orchestration, mise task runner                                                                        |
+| UI component library (`@pops/ui`)     | Done   | 86+ components, Storybook, Tailwind v4                                                                                 |
+| Shell & app switcher (`pops-shell`)   | Done   | Lazy-loaded apps, AppRail, responsive sidebar, app theme colour propagation                                            |
+| API modularisation (`pops-api`)       | Done   | 4 domain modules (core, finance, inventory, media)                                                                     |
+| DB schema patterns & migrations       | Done   | 28 tables, timestamp migrations, entity types                                                                          |
+| Responsive foundation                 | Done   | Tailwind v4 breakpoints, mobile-first, touch targets                                                                   |
+| Drizzle ORM migration                 | Done   | All modules use Drizzle ORM; raw SQL eliminated                                                                        |
+| Platform search (Epic 07)             | Done   | All 3 PRDs complete: search engine (PRD-057), search UI with keyboard nav (PRD-056), contextual intelligence (PRD-058) |
 
 ### Phase 2 — Core Apps
 
 #### Finance
 
-| Area                                          | Status      | Notes                                   |
-| --------------------------------------------- | ----------- | --------------------------------------- |
-| Transaction ledger (CRUD, filtering, tagging) | Done        | 6 pages, inline editing                 |
-| Import pipeline (CSV wizard, entity matching) | Done        | 6-step wizard, ANZ/Amex/ING/Up          |
-| Entity registry                               | Done        | Aliases, default tags, AI fallback      |
-| Corrections (learned tagging rules)           | Done        | Pattern matching, confidence scoring    |
-| Budgets                                       | Done        | Monthly/yearly, active/inactive         |
-| Wishlist                                      | Done        | Savings goals with progress             |
-| AI categorisation                             | Done        | Claude Haiku, disk-cached, cost-tracked |
+| Area                                          | Status | Notes                                   |
+| --------------------------------------------- | ------ | --------------------------------------- |
+| Transaction ledger (CRUD, filtering, tagging) | Done   | 6 pages, inline editing                 |
+| Import pipeline (CSV wizard, entity matching) | Done   | 6-step wizard, ANZ/Amex/ING/Up          |
+| Entity registry                               | Done   | Aliases, default tags, AI fallback      |
+| Corrections (learned tagging rules)           | Done   | Pattern matching, confidence scoring    |
+| Budgets                                       | Done   | Monthly/yearly, active/inactive         |
+| Wishlist                                      | Done   | Savings goals with progress             |
+| AI categorisation                             | Done   | Claude Haiku, disk-cached, cost-tracked |
 
 #### Media
 
-| Epic | Status | Notes |
-|------|--------|-------|
-| Data model & API module | Done | Split tables, tRPC routers, 28 tables |
-| TMDB client (movies) | Done | Search, metadata, poster cache, rate limiting |
-| TheTVDB client (TV) | Done | Auth, search, seasons/episodes, poster cache |
-| App package & core UI | Done | 12 pages, MediaCard, grids, detail views |
-| Watchlist management | Done | Priority, filters, auto-remove on watch |
-| Watch history & tracking | Done | Episode-level, chronological history |
-| Ratings & comparisons | Done | Compare arena, ELO scoring, radar charts, rankings |
-| Discovery & recommendations | Done | Discover page (PRDs 038, 060) and shelf-based discovery (PRD-065) all done |
-| Plex sync | Done | Library import (paginated), watch history sync (local + Discover cloud), watchlist sync (bidirectional), auto-check on add, settings page |
-| Radarr & Sonarr | Done | Status badges, Radarr request management, Sonarr request management — all done |
+| Epic                        | Status | Notes                                                                                                                                     |
+| --------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Data model & API module     | Done   | Split tables, tRPC routers, 28 tables                                                                                                     |
+| TMDB client (movies)        | Done   | Search, metadata, poster cache, rate limiting                                                                                             |
+| TheTVDB client (TV)         | Done   | Auth, search, seasons/episodes, poster cache                                                                                              |
+| App package & core UI       | Done   | 12 pages, MediaCard, grids, detail views                                                                                                  |
+| Watchlist management        | Done   | Priority, filters, auto-remove on watch                                                                                                   |
+| Watch history & tracking    | Done   | Episode-level, chronological history                                                                                                      |
+| Ratings & comparisons       | Done   | Compare arena, ELO scoring, radar charts, rankings                                                                                        |
+| Discovery & recommendations | Done   | Discover page (PRDs 038, 060) and shelf-based discovery (PRD-065) all done                                                                |
+| Plex sync                   | Done   | Library import (paginated), watch history sync (local + Discover cloud), watchlist sync (bidirectional), auto-check on add, settings page |
+| Radarr & Sonarr             | Done   | Status badges, Radarr request management, Sonarr request management — all done                                                            |
 
 #### Inventory
 
-| Epic | Status | Notes |
-|------|--------|-------|
-| Schema (locations, connections, photos, asset IDs) | Done | Hierarchical locations, junction table |
-| App package & CRUD UI | Done | 6 pages, list/grid, detail, create/edit |
-| Location tree management | Done | Hierarchical browser, contents panel |
-| Connections & graph | Done | Bidirectional links, connection trace |
-| Paperless-ngx integration | Done | Document linking, thumbnails |
-| Warranty, value & reporting | Done | Insurance report, warranty page, value breakdown |
-| Notion import | Not done | One-time migration script; may no longer be needed |
+| Epic                                               | Status   | Notes                                              |
+| -------------------------------------------------- | -------- | -------------------------------------------------- |
+| Schema (locations, connections, photos, asset IDs) | Done     | Hierarchical locations, junction table             |
+| App package & CRUD UI                              | Done     | 6 pages, list/grid, detail, create/edit            |
+| Location tree management                           | Done     | Hierarchical browser, contents panel               |
+| Connections & graph                                | Done     | Bidirectional links, connection trace              |
+| Paperless-ngx integration                          | Done     | Document linking, thumbnails                       |
+| Warranty, value & reporting                        | Done     | Insurance report, warranty page, value breakdown   |
+| Notion import                                      | Not done | One-time migration script; may no longer be needed |
 
 #### AI Operations
 
-| Epic | Status | Notes |
-|------|--------|-------|
-| AI operations app (`@pops/app-ai`) | Done | Usage, model config, rules browser, prompt viewer, cache management — all pages built |
+| Epic                               | Status | Notes                                                                                 |
+| ---------------------------------- | ------ | ------------------------------------------------------------------------------------- |
+| AI operations app (`@pops/app-ai`) | Done   | Usage, model config, rules browser, prompt viewer, cache management — all pages built |
 
 #### Fitness
 
-| Epic | Status | Notes |
-|------|--------|-------|
+| Epic            | Status      | Notes          |
+| --------------- | ----------- | -------------- |
 | Fitness tracker | Not started | No code exists |
 
 #### Documents Vault
 
-| Epic | Status | Notes |
-|------|--------|-------|
+| Epic          | Status      | Notes                                          |
+| ------------- | ----------- | ---------------------------------------------- |
 | Documents app | Not started | Paperless integration exists in inventory only |
 
 ### Phase 3 — AI Layer
 
-| Epic | Status | Notes |
-|------|--------|-------|
-| AI overlay (contextual assistant) | Not started | |
-| AI inference & monitoring | Not started | |
+| Epic                              | Status      | Notes |
+| --------------------------------- | ----------- | ----- |
+| AI overlay (contextual assistant) | Not started |       |
+| AI inference & monitoring         | Not started |       |
 
 ### Phase 4 — Expansion Apps
 
-| Epic | Status | Notes |
-|------|--------|-------|
-| Travel planner | Not started | |
-| Books / Reading | Not started | |
-| Recipe book | Not started | |
+| Epic            | Status      | Notes |
+| --------------- | ----------- | ----- |
+| Travel planner  | Not started |       |
+| Books / Reading | Not started |       |
+| Recipe book     | Not started |       |
 
 ### Phase 5 — Mobile & Hardware
 
-| Epic | Status | Notes |
-|------|--------|-------|
-| Native iOS app | Not started | PWA works on mobile |
-| HomePad / wall mount | Not started | |
+| Epic                 | Status      | Notes               |
+| -------------------- | ----------- | ------------------- |
+| Native iOS app       | Not started | PWA works on mobile |
+| HomePad / wall mount | Not started |                     |
 
 ### Phase 6 — Long Tail
 
-| Epic | Status | Notes |
-|------|--------|-------|
-| Maintenance & chores | Not started | |
-| Contacts / CRM-lite | Not started | |
-| Home automation | Not started | |
+| Epic                 | Status      | Notes |
+| -------------------- | ----------- | ----- |
+| Maintenance & chores | Not started |       |
+| Contacts / CRM-lite  | Not started |       |
+| Home automation      | Not started |       |
 
 ---
 

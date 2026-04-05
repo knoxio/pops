@@ -3,6 +3,7 @@
  */
 import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useSetPageContext } from "@pops/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -76,6 +77,8 @@ const DEFAULT_FORM_VALUES: BudgetFormValues = {
 };
 
 export function BudgetsPage() {
+  useSetPageContext({ page: "budgets" });
+
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBudget, setEditingBudget] = useState<Budget | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);

@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from "react";
 import { useParams, Link } from "react-router";
+import { useSetPageContext } from "@pops/navigation";
 import {
   Alert,
   AlertTitle,
@@ -162,6 +163,16 @@ export function TvShowDetailPage() {
       }),
     [rawSeasons]
   );
+
+  useSetPageContext({
+    page: "tvshow-detail",
+    pageType: "drill-down",
+    entity: {
+      uri: `pops:media/tv/${showId}`,
+      type: "tvshow",
+      title: data?.data?.name ?? "",
+    },
+  });
 
   if (Number.isNaN(showId)) {
     return (

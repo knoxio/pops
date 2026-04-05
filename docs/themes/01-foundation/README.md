@@ -19,32 +19,32 @@ Build a multi-app platform from a shared foundation: one monorepo, one shell, on
 
 ## Epics
 
-| # | Epic | Summary | Status |
-|---|------|---------|--------|
-| 0 | [Project Bootstrap](epics/00-project-bootstrap.md) | pnpm monorepo, Turbo, mise, TypeScript strict, ESLint, Prettier, Vitest, Playwright | Partial |
-| 1 | [UI Component Library](epics/01-ui-component-library.md) | `@pops/ui` — Shadcn/Radix primitives, composites, design tokens, centralised styling, Storybook | Partial |
-| 2 | [Shell & App Switcher](epics/02-shell-app-switcher.md) | `pops-shell` — lazy-loaded apps, AppRail, responsive sidebar, app theme colour propagation | Done |
-| 3 | [API Server](epics/03-api-server.md) | `pops-api` — Express + tRPC, domain-grouped routers, middleware (auth, rate limiting, errors) | Done |
-| 4 | [DB Schema Patterns](epics/04-db-schema-patterns.md) | SQLite, timestamp migrations, shared entities, cross-domain FKs, seed data, UUIDs | Done |
-| 5 | [Responsive Foundation](epics/05-responsive-foundation.md) | Tailwind v4 breakpoints, mobile-first, 44x44px touch targets, component adaptations | Partial |
-| 6 | [Drizzle ORM](epics/06-drizzle-orm.md) | Type-safe queries and schema-as-code, replacing raw SQL | Done |
-| 7 | [Search](epics/07-search.md) | Platform-wide search from TopBar, context-aware results, structured query syntax, cross-domain via universal URIs | In progress |
+| #   | Epic                                                       | Summary                                                                                                           | Status  |
+| --- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------- |
+| 0   | [Project Bootstrap](epics/00-project-bootstrap.md)         | pnpm monorepo, Turbo, mise, TypeScript strict, ESLint, Prettier, Vitest, Playwright                               | Partial |
+| 1   | [UI Component Library](epics/01-ui-component-library.md)   | `@pops/ui` — Shadcn/Radix primitives, composites, design tokens, centralised styling, Storybook                   | Partial |
+| 2   | [Shell & App Switcher](epics/02-shell-app-switcher.md)     | `pops-shell` — lazy-loaded apps, AppRail, responsive sidebar, app theme colour propagation                        | Done    |
+| 3   | [API Server](epics/03-api-server.md)                       | `pops-api` — Express + tRPC, domain-grouped routers, middleware (auth, rate limiting, errors)                     | Done    |
+| 4   | [DB Schema Patterns](epics/04-db-schema-patterns.md)       | SQLite, timestamp migrations, shared entities, cross-domain FKs, seed data, UUIDs                                 | Done    |
+| 5   | [Responsive Foundation](epics/05-responsive-foundation.md) | Tailwind v4 breakpoints, mobile-first, 44x44px touch targets, component adaptations                               | Partial |
+| 6   | [Drizzle ORM](epics/06-drizzle-orm.md)                     | Type-safe queries and schema-as-code, replacing raw SQL                                                           | Done    |
+| 7   | [Search](epics/07-search.md)                               | Platform-wide search from TopBar, context-aware results, structured query syntax, cross-domain via universal URIs | Done    |
 
 Epic 0 is prerequisite to everything. Epics 1-5 can be built incrementally. Epic 6 is independent.
 
 ## Key Decisions
 
-| Decision | Choice | Rationale |
-|----------|--------|-----------|
-| Database | SQLite | One file, zero dependencies, good enough for single-user |
-| ORM | Drizzle (planned) | Type-safe queries, schema-as-code. Raw SQL doesn't scale to 40+ tables |
-| Frontend | React SPA, Vite | Fast dev server, code splitting, mature ecosystem |
-| Styling | Tailwind v4 only | Utility-first, design tokens as CSS variables, no CSS modules or inline styles |
-| Component base | Shadcn/Radix | Accessible primitives, unstyled, composable |
-| API | tRPC over Express | End-to-end type safety, no codegen |
-| Package manager | pnpm | Fast, strict, disk-efficient |
-| Task runner | mise | Polyglot, simple config |
-| Monorepo orchestration | Turbo | Caches builds, parallelises tasks |
+| Decision               | Choice            | Rationale                                                                      |
+| ---------------------- | ----------------- | ------------------------------------------------------------------------------ |
+| Database               | SQLite            | One file, zero dependencies, good enough for single-user                       |
+| ORM                    | Drizzle (planned) | Type-safe queries, schema-as-code. Raw SQL doesn't scale to 40+ tables         |
+| Frontend               | React SPA, Vite   | Fast dev server, code splitting, mature ecosystem                              |
+| Styling                | Tailwind v4 only  | Utility-first, design tokens as CSS variables, no CSS modules or inline styles |
+| Component base         | Shadcn/Radix      | Accessible primitives, unstyled, composable                                    |
+| API                    | tRPC over Express | End-to-end type safety, no codegen                                             |
+| Package manager        | pnpm              | Fast, strict, disk-efficient                                                   |
+| Task runner            | mise              | Polyglot, simple config                                                        |
+| Monorepo orchestration | Turbo             | Caches builds, parallelises tasks                                              |
 
 ## Risks
 

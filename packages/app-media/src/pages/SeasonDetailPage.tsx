@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import { useParams, Link } from "react-router";
+import { useSetPageContext } from "@pops/navigation";
 import {
   Alert,
   AlertTitle,
@@ -394,6 +395,16 @@ export function SeasonDetailPage() {
   const isSeasonWatched = seasonProgress
     ? seasonProgress.watched >= seasonProgress.total && seasonProgress.total > 0
     : false;
+
+  useSetPageContext({
+    page: "season-detail",
+    pageType: "drill-down",
+    entity: {
+      uri: `pops:media/tv/${showId}/season/${seasonNum}`,
+      type: "season",
+      title: showData?.data?.name ?? "",
+    },
+  });
 
   if (Number.isNaN(showId) || Number.isNaN(seasonNum)) {
     return (

@@ -4,6 +4,7 @@
  */
 import { useState } from "react";
 import { useParams, Link, useNavigate } from "react-router";
+import { useSetPageContext } from "@pops/navigation";
 import { toast } from "sonner";
 import Markdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
@@ -98,6 +99,16 @@ export function ItemDetailPage() {
     },
     onError: (err) => {
       toast.error(`Failed to disconnect: ${err.message}`);
+    },
+  });
+
+  useSetPageContext({
+    page: "item-detail",
+    pageType: "drill-down",
+    entity: {
+      uri: `pops:inventory/item/${id ?? ""}`,
+      type: "item",
+      title: itemData?.data?.itemName ?? "",
     },
   });
 
