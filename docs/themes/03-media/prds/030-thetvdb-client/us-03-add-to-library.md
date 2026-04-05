@@ -1,7 +1,7 @@
 # US-03: Add TV show to library flow
 
 > PRD: [030 — TheTVDB Client](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
