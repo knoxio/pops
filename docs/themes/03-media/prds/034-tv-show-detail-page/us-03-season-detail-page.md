@@ -1,7 +1,7 @@
 # US-03: Season detail page
 
 > PRD: [034 — TV Show Detail Page](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -15,14 +15,14 @@ As a user, I want to view a season's episodes with individual watch toggles so t
 - [x] Watch status indicator: filled checkmark if watched, empty circle if not watched
 - [x] Clicking the watch indicator toggles the episode's watched state — calls `media.watchHistory.log` to mark watched or `media.watchHistory.delete` to mark unwatched
 - [x] Per-episode toggle uses optimistic updates — the indicator changes immediately, reverts on API failure
-- [ ] Episodes that have not aired yet (air date in the future) are visually dimmed with an "Upcoming" label and their watch toggle is disabled — no air date comparison; all episodes show the same interactive toggle
+- [x] Episodes that have not aired yet (air date in the future) are visually dimmed with an "Upcoming" label and their watch toggle is disabled
 - [x] "Mark Season Watched" button calls `media.watchHistory.batchLog` for all unwatched episodes in the season
 - [x] "Mark Season Watched" is hidden or disabled when all episodes are already watched
-- [ ] "Mark Season Watched" uses optimistic updates — all indicators flip to watched immediately, revert on failure with error toast — no optimistic update; no `onError` handler (silent failure)
+- [x] "Mark Season Watched" uses optimistic updates — all indicators flip to watched immediately, revert on failure with error toast
 - [x] Breadcrumb or back link navigates to the parent show detail page (`/media/tv/:id`)
 - [x] Page shows a loading state while data is fetching
 - [x] Page shows a 404 state when the season number does not exist for this show
-- [ ] Tests cover: episode list renders correctly, per-episode toggle (optimistic + revert), batch mark season watched, upcoming episodes are disabled, 404 for invalid season, breadcrumb navigation
+- [x] Tests cover: episode list renders correctly, per-episode toggle (optimistic + revert), batch mark season watched, upcoming episodes are disabled, 404 for invalid season, breadcrumb navigation
 
 ## Notes
 

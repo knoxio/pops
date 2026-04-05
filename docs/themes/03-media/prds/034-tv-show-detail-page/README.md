@@ -120,8 +120,8 @@ Build the TV show detail page with season list and episode drill-down. Display s
 |---|-------|---------|--------|----------------|
 | 01 | [us-01-show-hero-metadata](us-01-show-hero-metadata.md) | Hero layout with backdrop, poster, title, year range, status, genres, networks, overview | Partial | No (first) |
 | 02 | [us-02-season-list](us-02-season-list.md) | Season cards with poster, number, episode count, per-season progress bar, click to season detail | Partial | Blocked by us-01 |
-| 03 | [us-03-season-detail-page](us-03-season-detail-page.md) | Season detail route, episode list with watch status toggles, mark season watched | Partial | Yes (parallel with us-02) |
-| 04 | [us-04-watch-progress](us-04-watch-progress.md) | Watch progress display (overall + per-season bars), next episode indicator, batch mark watched | Partial | Yes (parallel with us-02) |
+| 03 | [us-03-season-detail-page](us-03-season-detail-page.md) | Season detail route, episode list with watch status toggles, mark season watched | Done | Yes (parallel with us-02) |
+| 04 | [us-04-watch-progress](us-04-watch-progress.md) | Watch progress display (overall + per-season bars), next episode indicator, batch mark watched | Done | Yes (parallel with us-02) |
 
 US-02 depends on US-01 (needs the page shell). US-03 and US-04 are independent components that can be built in parallel with US-02 after the route structure is established.
 
