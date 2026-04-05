@@ -233,7 +233,7 @@ export function MovieDetailPage() {
               />
               <FreshnessBadge daysSinceWatch={daysSinceWatch} staleness={staleness} />
               {pendingDebrief && (
-                <Link to={`/media/debrief/${pendingDebrief.sessionId}`}>
+                <Link to={`/media/debrief/${movie.id}`}>
                   <Button variant="outline" size="sm">
                     Debrief this movie
                   </Button>
