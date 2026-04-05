@@ -28,6 +28,8 @@ export interface SearchResultsPanelProps {
   onClose: () => void;
   onResultClick?: (uri: string) => void;
   onShowMore?: (domain: string) => void;
+  /** Global index of the currently keyboard-selected result. -1 means no selection. */
+  selectedIndex?: number;
 }
 
 const COLOR_CLASSES: Record<string, string> = {
@@ -72,6 +74,7 @@ export function SearchResultsPanel({
   onClose,
   onResultClick,
   onShowMore,
+  selectedIndex = -1,
 }: SearchResultsPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -128,6 +131,9 @@ export function SearchResultsPanel({
     );
   }
 
+  // Global hit counter — reset on each render to assign stable indices across all sections
+  let globalHitIndex = 0;
+
   return (
     <div
       ref={panelRef}
@@ -150,25 +156,30 @@ export function SearchResultsPanel({
               color={section.color}
             />
             <ul className="px-1 pb-1">
-              {section.hits.map((hit) => (
-                <li key={hit.uri}>
-                  <button
-                    type="button"
-                    className="w-full cursor-pointer rounded-md px-2 py-1.5 text-left hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
-                    onClick={() => onResultClick?.(hit.uri)}
-                    data-uri={hit.uri}
-                  >
-                    <ResultComponent
-                      data={{
-                        ...hit.data,
-                        _query: query,
-                        _matchField: hit.matchField,
-                        _matchType: hit.matchType,
-                      }}
-                    />
-                  </button>
-                </li>
-              ))}
+              {section.hits.map((hit) => {
+                const hitIndex = globalHitIndex++;
+                const isSelected = hitIndex === selectedIndex;
+                return (
+                  <li key={hit.uri}>
+                    <button
+                      type="button"
+                      className={`w-full cursor-pointer rounded-md px-2 py-1.5 text-left hover:bg-accent focus-visible:bg-accent focus-visible:outline-none${isSelected ? " bg-accent" : ""}`}
+                      onClick={() => onResultClick?.(hit.uri)}
+                      data-uri={hit.uri}
+                      data-result-index={hitIndex}
+                    >
+                      <ResultComponent
+                        data={{
+                          ...hit.data,
+                          _query: query,
+                          _matchField: hit.matchField,
+                          _matchType: hit.matchType,
+                        }}
+                      />
+                    </button>
+                  </li>
+                );
+              })}
             </ul>
             {section.totalCount > section.hits.length && (
               <button

@@ -218,4 +218,114 @@ describe("SearchResultsPanel", () => {
     render(<SearchResultsPanel sections={sections} query="test" onClose={vi.fn()} />);
     expect(screen.queryByTestId("show-more-movies")).not.toBeInTheDocument();
   });
+
+  describe("keyboard navigation support", () => {
+    it("adds data-result-index to each hit button", () => {
+      const sections = [
+        makeSection({
+          hits: [
+            {
+              uri: "pops:media/movie/1",
+              score: 0.9,
+              matchField: "title",
+              matchType: "prefix",
+              data: {},
+            },
+            {
+              uri: "pops:media/movie/2",
+              score: 0.7,
+              matchField: "title",
+              matchType: "contains",
+              data: {},
+            },
+          ],
+          totalCount: 2,
+        }),
+      ];
+      render(<SearchResultsPanel sections={sections} query="test" onClose={vi.fn()} />);
+      const buttons = screen
+        .getAllByRole("button")
+        .filter((b) => b.dataset.resultIndex !== undefined);
+      expect(buttons[0]).toHaveAttribute("data-result-index", "0");
+      expect(buttons[1]).toHaveAttribute("data-result-index", "1");
+    });
+
+    it("applies bg-accent to the selected hit", () => {
+      const sections = [
+        makeSection({
+          hits: [
+            {
+              uri: "pops:media/movie/1",
+              score: 0.9,
+              matchField: "title",
+              matchType: "prefix",
+              data: {},
+            },
+            {
+              uri: "pops:media/movie/2",
+              score: 0.7,
+              matchField: "title",
+              matchType: "contains",
+              data: {},
+            },
+          ],
+          totalCount: 2,
+        }),
+      ];
+      render(
+        <SearchResultsPanel sections={sections} query="test" onClose={vi.fn()} selectedIndex={1} />
+      );
+      const buttons = screen
+        .getAllByRole("button")
+        .filter((b) => b.dataset.resultIndex !== undefined);
+      expect(buttons[0]!.className).not.toContain("bg-accent");
+      expect(buttons[1]!.className).toContain("bg-accent");
+    });
+
+    it("applies no highlight when selectedIndex is -1", () => {
+      render(
+        <SearchResultsPanel
+          sections={[makeSection()]}
+          query="test"
+          onClose={vi.fn()}
+          selectedIndex={-1}
+        />
+      );
+      const buttons = screen
+        .getAllByRole("button")
+        .filter((b) => b.dataset.resultIndex !== undefined);
+      buttons.forEach((b) => expect(b.className).not.toContain("bg-accent"));
+    });
+
+    it("assigns global indices across multiple sections", () => {
+      const sections = [
+        makeSection({
+          domain: "movies",
+          label: "Movies",
+          isContext: true,
+          hits: [{ uri: "m/1", score: 0.9, matchField: "t", matchType: "exact", data: {} }],
+          totalCount: 1,
+        }),
+        makeSection({
+          domain: "transactions",
+          label: "Transactions",
+          isContext: false,
+          hits: [
+            { uri: "tx/1", score: 0.5, matchField: "d", matchType: "contains", data: {} },
+            { uri: "tx/2", score: 0.3, matchField: "d", matchType: "contains", data: {} },
+          ],
+          totalCount: 2,
+        }),
+      ];
+      render(<SearchResultsPanel sections={sections} query="test" onClose={vi.fn()} />);
+      const buttons = screen
+        .getAllByRole("button")
+        .filter((b) => b.dataset.resultIndex !== undefined);
+      // Context (movies) first → index 0; then transactions → indices 1, 2
+      expect(buttons).toHaveLength(3);
+      expect(buttons[0]).toHaveAttribute("data-result-index", "0");
+      expect(buttons[1]).toHaveAttribute("data-result-index", "1");
+      expect(buttons[2]).toHaveAttribute("data-result-index", "2");
+    });
+  });
 });
