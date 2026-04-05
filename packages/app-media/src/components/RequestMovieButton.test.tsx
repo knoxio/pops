@@ -19,12 +19,13 @@ vi.mock("../lib/trpc", () => ({
   },
 }));
 
-vi.mock("sonner", () => ({
-  toast: { info: vi.fn(), success: vi.fn(), error: vi.fn() },
+// Mock the modal so tests don't need to stub its tRPC hooks
+vi.mock("./RequestMovieModal", () => ({
+  RequestMovieModal: ({ open }: { open: boolean }) =>
+    open ? <div data-testid="request-movie-modal">Modal</div> : null,
 }));
 
 import { RequestMovieButton } from "./RequestMovieButton";
-import { toast } from "sonner";
 
 describe("RequestMovieButton", () => {
   beforeEach(() => {
@@ -35,7 +36,7 @@ describe("RequestMovieButton", () => {
     mockGetConfigQuery.mockReturnValue({ data: { data: { radarrConfigured: false } } });
     mockGetMovieStatusQuery.mockReturnValue({ data: null, isLoading: false, error: null });
 
-    render(<RequestMovieButton tmdbId={123} title="Test Movie" />);
+    render(<RequestMovieButton tmdbId={123} title="Test Movie" year={2023} />);
 
     const button = screen.getByRole("button", { name: /request/i });
     expect(button).toBeDisabled();
@@ -46,7 +47,7 @@ describe("RequestMovieButton", () => {
     mockGetConfigQuery.mockReturnValue({ data: { data: { radarrConfigured: false } } });
     mockGetMovieStatusQuery.mockReturnValue({ data: null, isLoading: false, error: null });
 
-    render(<RequestMovieButton tmdbId={123} title="Test Movie" variant="compact" />);
+    render(<RequestMovieButton tmdbId={123} title="Test Movie" year={2023} variant="compact" />);
 
     const button = screen.getByRole("button", { name: /radarr not configured/i });
     expect(button).toBeDisabled();
@@ -60,7 +61,9 @@ describe("RequestMovieButton", () => {
       error: null,
     });
 
-    const { container } = render(<RequestMovieButton tmdbId={123} title="Test Movie" />);
+    const { container } = render(
+      <RequestMovieButton tmdbId={123} title="Test Movie" year={2023} />
+    );
     expect(container.innerHTML).toBe("");
   });
 
@@ -72,7 +75,9 @@ describe("RequestMovieButton", () => {
       error: null,
     });
 
-    const { container } = render(<RequestMovieButton tmdbId={123} title="Test Movie" />);
+    const { container } = render(
+      <RequestMovieButton tmdbId={123} title="Test Movie" year={2023} />
+    );
     expect(container.innerHTML).toBe("");
   });
 
@@ -84,7 +89,9 @@ describe("RequestMovieButton", () => {
       error: null,
     });
 
-    const { container } = render(<RequestMovieButton tmdbId={123} title="Test Movie" />);
+    const { container } = render(
+      <RequestMovieButton tmdbId={123} title="Test Movie" year={2023} />
+    );
     expect(container.innerHTML).toBe("");
   });
 
@@ -96,7 +103,9 @@ describe("RequestMovieButton", () => {
       error: new Error("Connection refused"),
     });
 
-    const { container } = render(<RequestMovieButton tmdbId={123} title="Test Movie" />);
+    const { container } = render(
+      <RequestMovieButton tmdbId={123} title="Test Movie" year={2023} />
+    );
     expect(container.innerHTML).toBe("");
   });
 
@@ -108,7 +117,7 @@ describe("RequestMovieButton", () => {
       error: null,
     });
 
-    render(<RequestMovieButton tmdbId={123} title="Test Movie" />);
+    render(<RequestMovieButton tmdbId={123} title="Test Movie" year={2023} />);
     expect(screen.getByRole("button", { name: /request/i })).toBeEnabled();
   });
 
@@ -120,7 +129,7 @@ describe("RequestMovieButton", () => {
       error: null,
     });
 
-    render(<RequestMovieButton tmdbId={123} title="Test Movie" variant="compact" />);
+    render(<RequestMovieButton tmdbId={123} title="Test Movie" year={2023} variant="compact" />);
     expect(screen.getByRole("button", { name: /request in radarr/i })).toBeEnabled();
   });
 
@@ -133,13 +142,15 @@ describe("RequestMovieButton", () => {
     });
 
     const onRequest = vi.fn();
-    render(<RequestMovieButton tmdbId={456} title="Test Movie" onRequest={onRequest} />);
+    render(
+      <RequestMovieButton tmdbId={456} title="Test Movie" year={2020} onRequest={onRequest} />
+    );
 
     fireEvent.click(screen.getByRole("button", { name: /request/i }));
     expect(onRequest).toHaveBeenCalledWith(456);
   });
 
-  it("shows toast when clicked without onRequest callback", () => {
+  it("opens modal when clicked without onRequest callback", () => {
     mockGetConfigQuery.mockReturnValue({ data: { data: { radarrConfigured: true } } });
     mockGetMovieStatusQuery.mockReturnValue({
       data: { data: { status: "not_found", label: "Not in Radarr" } },
@@ -147,10 +158,26 @@ describe("RequestMovieButton", () => {
       error: null,
     });
 
-    render(<RequestMovieButton tmdbId={789} title="Inception" />);
+    render(<RequestMovieButton tmdbId={789} title="Inception" year={2010} />);
 
+    expect(screen.queryByTestId("request-movie-modal")).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: /request/i }));
-    expect(toast.info).toHaveBeenCalledWith('Request "Inception" — modal coming soon');
+    expect(screen.getByTestId("request-movie-modal")).toBeTruthy();
+  });
+
+  it("opens modal when compact button clicked without onRequest callback", () => {
+    mockGetConfigQuery.mockReturnValue({ data: { data: { radarrConfigured: true } } });
+    mockGetMovieStatusQuery.mockReturnValue({
+      data: { data: { status: "not_found", label: "Not in Radarr" } },
+      isLoading: false,
+      error: null,
+    });
+
+    render(<RequestMovieButton tmdbId={789} title="Inception" year={2010} variant="compact" />);
+
+    expect(screen.queryByTestId("request-movie-modal")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: /request in radarr/i }));
+    expect(screen.getByTestId("request-movie-modal")).toBeTruthy();
   });
 
   it("returns null while loading", () => {
@@ -161,7 +188,9 @@ describe("RequestMovieButton", () => {
       error: null,
     });
 
-    const { container } = render(<RequestMovieButton tmdbId={123} title="Test Movie" />);
+    const { container } = render(
+      <RequestMovieButton tmdbId={123} title="Test Movie" year={2023} />
+    );
     expect(container.innerHTML).toBe("");
   });
 });

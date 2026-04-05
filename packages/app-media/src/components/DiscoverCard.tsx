@@ -196,7 +196,12 @@ export function DiscoverCard({
               )}
             </Button>
           )}
-          <RequestMovieButton tmdbId={tmdbId} title={title} variant="compact" />
+          <RequestMovieButton
+            tmdbId={tmdbId}
+            title={title}
+            year={year ? parseInt(year, 10) : new Date().getFullYear()}
+            variant="compact"
+          />
           <Button
             size="icon"
             variant="ghost"

@@ -5,16 +5,18 @@
  * Disabled when Radarr is not configured.
  * Returns null on query error (service unreachable).
  */
+import { useState } from "react";
 import { Button } from "@pops/ui";
 import { Download } from "lucide-react";
-import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
+import { RequestMovieModal } from "./RequestMovieModal";
 
 type ButtonVariant = "standard" | "compact";
 
 export interface RequestMovieButtonProps {
   tmdbId: number;
   title: string;
+  year: number;
   variant?: ButtonVariant;
   onRequest?: (tmdbId: number) => void;
 }
@@ -22,9 +24,12 @@ export interface RequestMovieButtonProps {
 export function RequestMovieButton({
   tmdbId,
   title,
+  year,
   variant = "standard",
   onRequest,
 }: RequestMovieButtonProps) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const { data: configData } = trpc.media.arr.getConfig.useQuery();
   const config = configData?.data;
 
@@ -71,29 +76,51 @@ export function RequestMovieButton({
     if (onRequest) {
       onRequest(tmdbId);
     } else {
-      toast.info(`Request "${title}" — modal coming soon`);
+      setIsModalOpen(true);
     }
   };
 
   if (variant === "compact") {
     return (
-      <Button
-        size="icon"
-        variant="ghost"
-        className="h-7 w-7 text-white hover:bg-white/20"
-        onClick={handleClick}
-        title="Request in Radarr"
-        aria-label="Request in Radarr"
-      >
-        <Download className="h-3.5 w-3.5" />
-      </Button>
+      <>
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7 text-white hover:bg-white/20"
+          onClick={handleClick}
+          title="Request in Radarr"
+          aria-label="Request in Radarr"
+        >
+          <Download className="h-3.5 w-3.5" />
+        </Button>
+        {!onRequest && (
+          <RequestMovieModal
+            open={isModalOpen}
+            onClose={() => setIsModalOpen(false)}
+            tmdbId={tmdbId}
+            title={title}
+            year={year}
+          />
+        )}
+      </>
     );
   }
 
   return (
-    <Button variant="outline" size="sm" onClick={handleClick}>
-      <Download className="h-4 w-4" />
-      Request
-    </Button>
+    <>
+      <Button variant="outline" size="sm" onClick={handleClick}>
+        <Download className="h-4 w-4" />
+        Request
+      </Button>
+      {!onRequest && (
+        <RequestMovieModal
+          open={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          tmdbId={tmdbId}
+          title={title}
+          year={year}
+        />
+      )}
+    </>
   );
 }
