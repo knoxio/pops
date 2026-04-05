@@ -226,7 +226,11 @@ export function MovieDetailPage() {
               <WatchlistToggle mediaType="movie" mediaId={movie.id} />
               <MarkAsWatchedButton mediaId={movie.id} />
               <ArrStatusBadge kind="movie" externalId={movie.tmdbId} />
-              <RequestMovieButton tmdbId={movie.tmdbId} title={movie.title} />
+              <RequestMovieButton
+                tmdbId={movie.tmdbId}
+                title={movie.title}
+                year={year ?? new Date().getFullYear()}
+              />
               <FreshnessBadge daysSinceWatch={daysSinceWatch} staleness={staleness} />
               {pendingDebrief && (
                 <Link to={`/media/debrief/${pendingDebrief.sessionId}`}>

@@ -155,7 +155,11 @@ export function SearchResultCard({
             </Button>
           )}
           {type === "movie" && tmdbId != null && (
-            <RequestMovieButton tmdbId={tmdbId} title={title} />
+            <RequestMovieButton
+              tmdbId={tmdbId}
+              title={title}
+              year={year ? parseInt(year, 10) : new Date().getFullYear()}
+            />
           )}
         </div>
       </div>
