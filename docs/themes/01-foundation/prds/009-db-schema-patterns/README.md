@@ -1,7 +1,7 @@
 # PRD-009: DB Schema Patterns
 
 > Epic: [04 — DB Schema Patterns](../../epics/04-db-schema-patterns.md)
-> Status: Partial
+> Status: Done
 
 ## Overview
 
@@ -138,8 +138,8 @@ Comprehensive test dataset for local development and e2e testing. Includes repre
 |---|-------|---------|--------|----------------|
 | 01 | [us-01-migration-conventions](us-01-migration-conventions.md) | Establish migration naming, template file, runner, fresh DB path | Done | No (first) |
 | 02 | [us-02-entity-types](us-02-entity-types.md) | Add entity type system (type column, supported values) | Done | Blocked by us-01 |
-| 03 | [us-03-cross-domain-fks](us-03-cross-domain-fks.md) | Document FK patterns, formalise existing cross-domain links, create schema registry | Not started | Blocked by us-01 |
-| 04 | [us-04-settings-table](us-04-settings-table.md) | Create core settings table for dynamic application configuration | Partial | Blocked by us-01 |
+| 03 | [us-03-cross-domain-fks](us-03-cross-domain-fks.md) | Document FK patterns, formalise existing cross-domain links, create schema registry | Done | Blocked by us-01 |
+| 04 | [us-04-settings-table](us-04-settings-table.md) | Create core settings table for dynamic application configuration | Done | Blocked by us-01 |
 | 05 | [us-05-seed-data](us-05-seed-data.md) | Create comprehensive seed dataset for dev and e2e testing | Done | Blocked by us-01 |
 
 US-02, US-03, US-04 can parallelise after US-01. US-05 depends on tables existing.
