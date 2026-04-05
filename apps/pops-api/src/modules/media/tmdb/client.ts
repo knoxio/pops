@@ -286,6 +286,10 @@ export class TmdbClient {
     keywordIds?: number[];
     sortBy?: string;
     voteCountGte?: number;
+    voteCountLte?: number;
+    voteAverageGte?: number;
+    releaseDateGte?: string;
+    releaseDateLte?: string;
     page?: number;
   }): Promise<TmdbSearchResponse> {
     const params = new URLSearchParams({ language: "en-US" });
@@ -301,6 +305,18 @@ export class TmdbClient {
     }
     if (opts.voteCountGte != null) {
       params.set("vote_count.gte", String(opts.voteCountGte));
+    }
+    if (opts.voteCountLte != null) {
+      params.set("vote_count.lte", String(opts.voteCountLte));
+    }
+    if (opts.voteAverageGte != null) {
+      params.set("vote_average.gte", String(opts.voteAverageGte));
+    }
+    if (opts.releaseDateGte) {
+      params.set("primary_release_date.gte", opts.releaseDateGte);
+    }
+    if (opts.releaseDateLte) {
+      params.set("primary_release_date.lte", opts.releaseDateLte);
     }
     params.set("page", String(opts.page ?? 1));
 
