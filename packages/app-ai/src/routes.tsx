@@ -23,6 +23,10 @@ const RulesBrowserPage = lazy(() =>
   import("./pages/RulesBrowserPage").then((m) => ({ default: m.RulesBrowserPage }))
 );
 
+const CacheManagementPage = lazy(() =>
+  import("./pages/CacheManagementPage").then((m) => ({ default: m.CacheManagementPage }))
+);
+
 /** Shared navigation types (mirrored from shell to avoid circular dependency) */
 export interface AppNavItem {
   path: string;
@@ -50,6 +54,7 @@ export const navConfig: AppNavConfig = {
     { path: "/prompts", label: "Prompt Templates", icon: "FileText" },
     { path: "/config", label: "Model Config", icon: "Settings" },
     { path: "/rules", label: "Rules", icon: "BookOpen" },
+    { path: "/cache", label: "Cache", icon: "Database" },
   ],
 };
 
@@ -58,4 +63,5 @@ export const routes: RouteObject[] = [
   { path: "prompts", element: <PromptViewerPage /> },
   { path: "config", element: <ModelConfigPage /> },
   { path: "rules", element: <RulesBrowserPage /> },
+  { path: "cache", element: <CacheManagementPage /> },
 ];
