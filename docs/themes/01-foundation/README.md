@@ -21,7 +21,7 @@ Build a multi-app platform from a shared foundation: one monorepo, one shell, on
 
 | #   | Epic                                                       | Summary                                                                                                           | Status  |
 | --- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------- |
-| 0   | [Project Bootstrap](epics/00-project-bootstrap.md)         | pnpm monorepo, Turbo, mise, TypeScript strict, ESLint, Prettier, Vitest, Playwright                               | Partial |
+| 0   | [Project Bootstrap](epics/00-project-bootstrap.md)         | pnpm monorepo, Turbo, mise, TypeScript strict, ESLint, Prettier, Vitest, Playwright                               | Done    |
 | 1   | [UI Component Library](epics/01-ui-component-library.md)   | `@pops/ui` — Shadcn/Radix primitives, composites, design tokens, centralised styling, Storybook                   | Partial |
 | 2   | [Shell & App Switcher](epics/02-shell-app-switcher.md)     | `pops-shell` — lazy-loaded apps, AppRail, responsive sidebar, app theme colour propagation                        | Done    |
 | 3   | [API Server](epics/03-api-server.md)                       | `pops-api` — Express + tRPC, domain-grouped routers, middleware (auth, rate limiting, errors)                     | Done    |
