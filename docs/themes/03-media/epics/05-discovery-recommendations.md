@@ -12,7 +12,7 @@ Build the recommendation engine and discovery page. Surfaces trending content, n
 |---|-----|---------|--------|
 | 038 | [Discovery & Recommendations](../prds/038-discovery-recommendations/README.md) | Initial discover page, recommendation algorithm (weighted scoring from genre affinity + comparison scores), trending from TMDB | Done |
 | 060 | [Discover Page](../prds/060-discover-page/README.md) | Full discover page redesign — 9 sections (recommendations, genre spotlight, watchlist-based, trending, rewatch, server, context-aware), Not Interested persistence, Watched action | Done |
-| 065 | [Shelf-Based Discovery](../prds/065-shelf-discovery/README.md) | Dynamic shelf pool system — 27 shelf definitions assembled per session via scoring, freshness, and variety constraints. Netflix-like page variation | Not started |
+| 065 | [Shelf-Based Discovery](../prds/065-shelf-discovery/README.md) | Dynamic shelf pool system — 27 shelf definitions assembled per session via scoring, freshness, and variety constraints. Netflix-like page variation | Done |
 
 ## Dependencies
 

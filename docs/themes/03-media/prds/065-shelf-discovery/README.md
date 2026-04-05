@@ -1,7 +1,7 @@
 # PRD-065: Shelf-Based Discovery
 
 > Epic: [05 — Discovery & Recommendations](../../epics/05-discovery-recommendations.md)
-> Status: In progress
+> Status: Done
 
 ## Overview
 
@@ -136,8 +136,8 @@ Cleanup: rows older than 30 days are deleted on startup or periodically.
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
 | 01 | [us-01-shelf-interface](us-01-shelf-interface.md) | ShelfDefinition + ShelfInstance interfaces, shelf registry, generate() contract | Done | No (first) |
-| 02 | [us-02-session-assembly](us-02-session-assembly.md) | Assembly algorithm: score, select, order, variety constraints, jitter | Not started | Blocked by us-01 |
-| 03 | [us-03-shelf-impressions](us-03-shelf-impressions.md) | shelf_impressions table, record shown shelves, compute freshness, cleanup | Not started | Yes |
+| 02 | [us-02-session-assembly](us-02-session-assembly.md) | Assembly algorithm: score, select, order, variety constraints, jitter | Done | Blocked by us-01 |
+| 03 | [us-03-shelf-impressions](us-03-shelf-impressions.md) | shelf_impressions table, record shown shelves, compute freshness, cleanup | Done | Yes |
 | 04 | [us-04-seed-shelves-watch](us-04-seed-shelves-watch.md) | "Because you watched {Movie}" shelf: rotation logic, TMDB recs per seed | Done | Blocked by us-01 |
 | 05 | [us-05-seed-shelves-credits](us-05-seed-shelves-credits.md) | Director + actor shelves: TMDB credits lookup, filmography query, caching | Done | Blocked by us-01 |
 | 06 | [us-06-seed-shelves-genre](us-06-seed-shelves-genre.md) | Genre, genre×genre, dimension-based, dimension+movie shelves | Done | Blocked by us-01 |
@@ -147,7 +147,7 @@ Cleanup: rows older than 30 days are deleted on startup or periodically.
 | 10 | [us-10-assembly-api](us-10-assembly-api.md) | tRPC endpoint: assembleDiscoverPage returns ordered shelf list with first page of items each | Done | Blocked by us-02, us-03, us-04 through us-09 |
 | 11 | [us-11-shelf-pagination](us-11-shelf-pagination.md) | tRPC endpoint: getShelfPage returns next page of items for a specific shelf instance | Done | Blocked by us-10 |
 | 12 | [us-12-dynamic-page-renderer](us-12-dynamic-page-renderer.md) | Frontend: render N shelf sections dynamically from assembly response, lazy load off-screen | Done | Blocked by us-10 |
-| 13 | [us-13-shelf-refresh](us-13-shelf-refresh.md) | Frontend: "Refresh" button re-runs assembly for a new shelf selection without full page reload | Not started | Blocked by us-12 |
+| 13 | [us-13-shelf-refresh](us-13-shelf-refresh.md) | Frontend: "Refresh" button re-runs assembly for a new shelf selection without full page reload | Done | Blocked by us-12 |
 
 US-01 and US-03 can parallelise. US-04 through US-09 (all shelf implementations) can parallelise after US-01. US-10 through US-13 are sequential.
 
