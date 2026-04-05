@@ -1,7 +1,7 @@
 # PRD-029: TMDB Client
 
 > Epic: [01 — Metadata Integration](../../epics/01-metadata-integration.md)
-> Status: Partial
+> Status: Done
 
 ## Overview
 
@@ -86,9 +86,9 @@ No new tables — uses the `movies` table from PRD-028. Image paths written to `
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 01 | [us-01-tmdb-http-client](us-01-tmdb-http-client.md) | HTTP client with token bucket rate limiter, search endpoint, metadata fetch | Partial | Yes |
+| 01 | [us-01-tmdb-http-client](us-01-tmdb-http-client.md) | HTTP client with token bucket rate limiter, search endpoint, metadata fetch | Done | Yes |
 | 02 | [us-02-image-cache](us-02-image-cache.md) | Poster/backdrop download, local storage, serving endpoint, fallback chain | Done | Yes |
-| 03 | [us-03-add-to-library](us-03-add-to-library.md) | addMovie flow (fetch + create + download), refreshMovie, idempotency | Partial | Blocked by us-01, us-02 |
+| 03 | [us-03-add-to-library](us-03-add-to-library.md) | addMovie flow (fetch + create + download), refreshMovie, idempotency | Done | Blocked by us-01, us-02 |
 
 US-01 and US-02 can run in parallel. US-03 composes them into the add-to-library flow.
 

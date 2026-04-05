@@ -91,7 +91,7 @@ describe("library.addMovie", () => {
     expect(result.data.tagline).toBe("Mischief. Mayhem. Soap.");
     expect(result.data.runtime).toBe(139);
     expect(result.data.genres).toEqual(["Drama", "Thriller"]);
-    expect(result.data.posterPath).toBe("/pB8BM7pdSp6B6Ih7QI4S2t015wi.jpg");
+    expect(result.data.posterPath).toBe("/media/images/movie/550/poster.jpg");
   });
 
   it("returns existing movie without calling TMDB (idempotent)", async () => {

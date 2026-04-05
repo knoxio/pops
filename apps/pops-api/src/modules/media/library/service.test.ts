@@ -138,8 +138,8 @@ describe("media.library.refreshMovie", () => {
     expect(result.data.voteAverage).toBe(8.5);
     expect(result.data.voteCount).toBe(26000);
     expect(result.data.genres).toEqual(["Drama", "Thriller"]);
-    expect(result.data.posterPath).toBe("/updated-poster.jpg");
-    expect(result.data.backdropPath).toBe("/updated-backdrop.jpg");
+    expect(result.data.posterPath).toBe("/media/images/movie/550/poster.jpg");
+    expect(result.data.backdropPath).toBe("/media/images/movie/550/backdrop.jpg");
   });
 
   it("preserves poster_override_path", async () => {

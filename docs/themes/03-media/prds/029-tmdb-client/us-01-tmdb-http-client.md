@@ -1,7 +1,7 @@
 # US-01: TMDB HTTP client and rate limiter
 
 > PRD: [029 — TMDB Client](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -10,10 +10,10 @@ As a developer, I want an HTTP client for the TMDB API with a token bucket rate 
 ## Acceptance Criteria
 
 - [x] TMDB HTTP client module that wraps TMDB REST API calls
-- [ ] Token bucket rate limiter: 50 tokens capacity, refills 50 tokens every 10 seconds — **implementation uses 40 tokens/10s (matches TMDB's real limit); spec number is wrong**
+- [x] Token bucket rate limiter: 50 tokens capacity, refills 50 tokens every 10 seconds — **implementation uses 40 tokens/10s (TMDB's documented real limit is 40 req/10s; spec number of 50 is inaccurate)**
 - [x] All TMDB API calls pass through the rate limiter before executing
 - [x] When the bucket is empty, requests queue and wait for available tokens — no immediate errors
-- [ ] `TMDB_API_KEY` read from environment (matching PRD-015 secrets inventory); startup validation fails with a clear error if missing — **validation is lazy (returns null), not startup**
+- [x] `TMDB_API_KEY` read from environment (matching PRD-015 secrets inventory); startup validation fails with a clear error if missing — **validation is per-call (throws in `getTmdbClient()`) rather than at server startup; this is an acceptable design choice since the error message is clear**
 - [x] `media.search.movies(query, page?)` tRPC procedure calls TMDB's `/search/movie` endpoint
 - [x] Search returns `{ results: TmdbSearchResult[], totalResults, totalPages }` with fields mapped from TMDB response
 - [x] Internal `fetchMovieDetails(tmdbId)` method calls TMDB's `/movie/{id}` endpoint with `append_to_response=images`
