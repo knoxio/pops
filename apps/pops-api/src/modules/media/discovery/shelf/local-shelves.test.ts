@@ -371,9 +371,7 @@ describe("franchiseCompletionsShelf", () => {
 
   it("returns empty when no watched movies", async () => {
     // Both queries return empty
-    let callCount = 0;
     const allFn = vi.fn().mockImplementation(() => {
-      callCount++;
       return []; // both watched-genres query and unwatched query return []
     });
 

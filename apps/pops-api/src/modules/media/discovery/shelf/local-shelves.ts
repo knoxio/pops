@@ -100,7 +100,7 @@ export const shortWatchShelf: ShelfDefinition = {
         subtitle: "Under 100 minutes, no commitment",
         emoji: "⚡",
         score: 0.6,
-        query: async ({ limit, offset }) => {
+        query: ({ limit, offset }) => {
           const db = getDrizzle();
           const rows = db
             .select(movieCols)
@@ -120,7 +120,7 @@ export const shortWatchShelf: ShelfDefinition = {
             .limit(limit)
             .offset(offset)
             .all();
-          return rows.map(toResult);
+          return Promise.resolve(rows.map(toResult));
         },
       },
     ];
@@ -143,7 +143,7 @@ export const longEpicShelf: ShelfDefinition = {
         subtitle: "150+ minutes — set aside an evening",
         emoji: "🎞️",
         score: 0.55,
-        query: async ({ limit, offset }) => {
+        query: ({ limit, offset }) => {
           const db = getDrizzle();
           const rows = db
             .select(movieCols)
@@ -163,7 +163,7 @@ export const longEpicShelf: ShelfDefinition = {
             .limit(limit)
             .offset(offset)
             .all();
-          return rows.map(toResult);
+          return Promise.resolve(rows.map(toResult));
         },
       },
     ];
@@ -186,7 +186,7 @@ export const comfortPicksShelf: ShelfDefinition = {
         subtitle: "Your most-rewatched movies",
         emoji: "🛋️",
         score: 0.7,
-        query: async ({ limit, offset }) => {
+        query: ({ limit, offset }) => {
           const db = getDrizzle();
           const rows = db
             .select({
@@ -204,10 +204,12 @@ export const comfortPicksShelf: ShelfDefinition = {
             .limit(limit)
             .offset(offset)
             .all();
-          return rows.map((r) => ({
-            ...toResult(r),
-            isWatched: true,
-          }));
+          return Promise.resolve(
+            rows.map((r) => ({
+              ...toResult(r),
+              isWatched: true,
+            }))
+          );
         },
       },
     ];
@@ -230,7 +232,7 @@ export const undiscoveredShelf: ShelfDefinition = {
         subtitle: "Library movies you've never touched",
         emoji: "🔍",
         score: 0.65,
-        query: async ({ limit, offset }) => {
+        query: ({ limit, offset }) => {
           const db = getDrizzle();
           const rows = db
             .select(movieCols)
@@ -251,7 +253,7 @@ export const undiscoveredShelf: ShelfDefinition = {
             .limit(limit)
             .offset(offset)
             .all();
-          return rows.map(toResult);
+          return Promise.resolve(rows.map(toResult));
         },
       },
     ];
@@ -274,7 +276,7 @@ export const polarizingShelf: ShelfDefinition = {
         subtitle: "Movies that split opinion across dimensions",
         emoji: "⚡",
         score: 0.5,
-        query: async ({ limit, offset }) => {
+        query: ({ limit, offset }) => {
           const db = getDrizzle();
           const rows = db
             .select({
@@ -292,10 +294,12 @@ export const polarizingShelf: ShelfDefinition = {
             .limit(limit)
             .offset(offset)
             .all();
-          return rows.map((r) => ({
-            ...toResult(r),
-            isWatched: true, // must have scores to be polarizing
-          }));
+          return Promise.resolve(
+            rows.map((r) => ({
+              ...toResult(r),
+              isWatched: true, // must have scores to be polarizing
+            }))
+          );
         },
       },
     ];
@@ -318,7 +322,7 @@ export const friendProofShelf: ShelfDefinition = {
         subtitle: "High entertainment value for any crowd",
         emoji: "🍿",
         score: 0.75,
-        query: async ({ limit, offset }) => {
+        query: ({ limit, offset }) => {
           const db = getDrizzle();
 
           // Get all movies with scores in both Entertainment and Rewatchability,
@@ -351,9 +355,9 @@ export const friendProofShelf: ShelfDefinition = {
           const threshold = sorted[p75Index]?.avgFriendScore ?? 1500;
 
           const filtered = allScored.filter((r) => r.avgFriendScore >= threshold);
-          return filtered
-            .slice(offset, offset + limit)
-            .map((r) => ({ ...toResult(r), isWatched: true }));
+          return Promise.resolve(
+            filtered.slice(offset, offset + limit).map((r) => ({ ...toResult(r), isWatched: true }))
+          );
         },
       },
     ];
@@ -376,7 +380,7 @@ export const recentlyAddedShelf: ShelfDefinition = {
         subtitle: "New to your library",
         emoji: "✨",
         score: 0.8,
-        query: async ({ limit, offset }) => {
+        query: ({ limit, offset }) => {
           const db = getDrizzle();
           const rows = db
             .select(movieCols)
@@ -392,7 +396,7 @@ export const recentlyAddedShelf: ShelfDefinition = {
             .limit(limit)
             .offset(offset)
             .all();
-          return rows.map(toResult);
+          return Promise.resolve(rows.map(toResult));
         },
       },
     ];
@@ -421,7 +425,7 @@ export const franchiseCompletionsShelf: ShelfDefinition = {
         subtitle: "More movies in genres you've watched",
         emoji: "🔗",
         score: 0.6,
-        query: async ({ limit, offset }) => {
+        query: ({ limit, offset }) => {
           const db = getDrizzle();
 
           // Find genres of watched movies
@@ -447,7 +451,7 @@ export const franchiseCompletionsShelf: ShelfDefinition = {
             }
           }
 
-          if (watchedGenres.size === 0) return [];
+          if (watchedGenres.size === 0) return Promise.resolve([]);
 
           // Find unwatched library movies whose genres overlap with watched genres
           const rows = db
@@ -479,7 +483,7 @@ export const franchiseCompletionsShelf: ShelfDefinition = {
             }
           });
 
-          return filtered.slice(offset, offset + limit).map(toResult);
+          return Promise.resolve(filtered.slice(offset, offset + limit).map(toResult));
         },
       },
     ];
