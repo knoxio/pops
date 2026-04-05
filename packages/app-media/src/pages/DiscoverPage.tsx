@@ -238,6 +238,15 @@ export function DiscoverPage() {
   const totalComparisons = profile.data?.data?.totalComparisons ?? 0;
   const hasEnoughComparisons = totalComparisons >= COMPARISON_THRESHOLD;
 
+  // Assembled session — dynamic shelf selection
+  const assembledSession = trpc.media.discovery.assembleSession.useQuery(undefined, {
+    staleTime: Infinity, // Never auto-refresh; only refresh on explicit user action
+  });
+
+  const handleRefreshSession = useCallback(() => {
+    void assembledSession.refetch();
+  }, [assembledSession.refetch]);
+
   // Dismissed movies — server-side
   const dismissed = trpc.media.discovery.getDismissed.useQuery(undefined, {
     staleTime: 5 * 60 * 1000,
@@ -405,11 +414,69 @@ export function DiscoverPage() {
       {/* Header */}
       <div className="flex items-center gap-3">
         <Compass className="h-6 w-6 text-muted-foreground" />
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold">Discover</h1>
           <p className="text-sm text-muted-foreground">Find your next favourite movie</p>
         </div>
+        <button
+          onClick={handleRefreshSession}
+          disabled={assembledSession.isFetching}
+          aria-label="Refresh shelf selection"
+          className="flex items-center gap-1.5 rounded-md border border-input bg-background px-3 py-1.5 text-sm font-medium ring-offset-background transition-colors hover:bg-accent hover:text-accent-foreground disabled:pointer-events-none disabled:opacity-50"
+        >
+          {assembledSession.isFetching ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <RefreshCw className="h-3.5 w-3.5" />
+          )}
+          Refresh
+        </button>
       </div>
+
+      {/* Dynamic assembled shelves */}
+      {(assembledSession.data?.shelves.length ?? 0) > 0 && (
+        <div
+          className={`space-y-8 transition-opacity duration-300 ${assembledSession.isFetching ? "opacity-30" : "opacity-100"}`}
+        >
+          {assembledSession.data?.shelves.map((shelf) => (
+            <HorizontalScrollRow
+              key={shelf.shelfId}
+              title={shelf.emoji ? `${shelf.emoji} ${shelf.title}` : shelf.title}
+              subtitle={shelf.subtitle}
+              isLoading={false}
+            >
+              {shelf.items
+                .filter((item) => !isDismissed(item.tmdbId))
+                .map((item) => (
+                  <DiscoverCard
+                    key={item.tmdbId}
+                    tmdbId={item.tmdbId}
+                    title={item.title}
+                    releaseDate={item.releaseDate ?? ""}
+                    posterPath={item.posterPath}
+                    posterUrl={item.posterUrl}
+                    voteAverage={item.voteAverage ?? 0}
+                    inLibrary={item.inLibrary}
+                    isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
+                    isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
+                    onAddToLibrary={handleAddToLibrary}
+                    onAddToWatchlist={handleAddToWatchlist}
+                    onMarkWatched={handleMarkWatched}
+                    isMarkingWatched={markingWatched.has(item.tmdbId)}
+                    isWatched={item.isWatched}
+                    onWatchlist={item.onWatchlist}
+                    onMarkRewatched={handleMarkRewatched}
+                    isMarkingRewatched={markingRewatched.has(item.tmdbId)}
+                    onNotInterested={handleNotInterested}
+                    isDismissing={dismissing.has(item.tmdbId)}
+                    matchPercentage={item.matchPercentage}
+                    matchReason={item.matchReason}
+                  />
+                ))}
+            </HorizontalScrollRow>
+          ))}
+        </div>
+      )}
 
       {/* Recommended for You — hidden below comparison threshold */}
       {!hasEnoughComparisons && !profile.isLoading ? (

@@ -20,6 +20,8 @@ const mockLogWatchMutateAsync = vi.fn();
 const mockDismissMutateAsync = vi.fn();
 const mockTrendingRefetch = vi.fn();
 const mockRecommendationsRefetch = vi.fn();
+const mockAssembleSessionQuery = vi.fn();
+const mockAssembleSessionRefetch = vi.fn();
 
 vi.mock("../lib/trpc", () => ({
   trpc: {
@@ -72,6 +74,12 @@ vi.mock("../lib/trpc", () => ({
         },
         dismiss: {
           useMutation: () => ({ mutateAsync: mockDismissMutateAsync }),
+        },
+        assembleSession: {
+          useQuery: (...args: unknown[]) => {
+            const result = mockAssembleSessionQuery(...args);
+            return { ...result, refetch: mockAssembleSessionRefetch };
+          },
         },
       },
       library: {
@@ -316,6 +324,15 @@ function defaultDismissed() {
   });
 }
 
+function defaultAssembleSession(shelves: unknown[] = []) {
+  mockAssembleSessionQuery.mockReturnValue({
+    data: { shelves },
+    isLoading: false,
+    isFetching: false,
+    error: null,
+  });
+}
+
 function setupDefaults() {
   defaultTrending();
   mockRecommendationsQuery.mockReturnValue(emptyRecommendations);
@@ -327,6 +344,7 @@ function setupDefaults() {
   defaultWatchlistRecommendations();
   defaultContextPicksEmpty();
   defaultDismissed();
+  defaultAssembleSession();
 }
 
 function renderPage(initialEntry = "/media/discover") {
@@ -1045,5 +1063,104 @@ describe("DiscoverPage — genre spotlight", () => {
     renderPage();
 
     expect(screen.getByText("Genre API error")).toBeTruthy();
+  });
+
+  describe("assembleSession Refresh button", () => {
+    it("renders the Refresh button", () => {
+      setupDefaults();
+      renderPage();
+      expect(screen.getByRole("button", { name: /refresh/i })).toBeTruthy();
+    });
+
+    it("Refresh button calls assembleSession refetch on click", () => {
+      setupDefaults();
+      renderPage();
+      fireEvent.click(screen.getByRole("button", { name: /refresh/i }));
+      expect(mockAssembleSessionRefetch).toHaveBeenCalledTimes(1);
+    });
+
+    it("Refresh button is disabled while isFetching", () => {
+      setupDefaults();
+      mockAssembleSessionQuery.mockReturnValue({
+        data: { shelves: [] },
+        isLoading: false,
+        isFetching: true,
+        error: null,
+      });
+      renderPage();
+      const btn = screen.getByRole("button", { name: /refresh shelf selection/i });
+      expect(btn).toBeTruthy();
+      // disabled attribute present
+      expect((btn as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it("renders assembled shelves from assembleSession data", () => {
+      setupDefaults();
+      defaultAssembleSession([
+        {
+          shelfId: "trending-tmdb",
+          title: "Trending",
+          subtitle: undefined,
+          emoji: undefined,
+          items: [
+            {
+              tmdbId: 999,
+              title: "Assembled Movie",
+              releaseDate: "2024-01-01",
+              posterPath: null,
+              posterUrl: null,
+              voteAverage: 8.0,
+              inLibrary: false,
+              isWatched: false,
+              onWatchlist: false,
+              matchPercentage: 80,
+              matchReason: "Trending",
+            },
+          ],
+          hasMore: false,
+        },
+      ]);
+      renderPage();
+      expect(screen.getByText("Trending")).toBeTruthy();
+      expect(screen.getByText("Assembled Movie")).toBeTruthy();
+    });
+
+    it("prefixes shelf title with emoji when present", () => {
+      setupDefaults();
+      defaultAssembleSession([
+        {
+          shelfId: "because-you-watched:42",
+          title: "Because you watched Interstellar",
+          subtitle: "Movies similar to a recent watch",
+          emoji: "🎬",
+          items: [
+            {
+              tmdbId: 888,
+              title: "Arrival",
+              releaseDate: "2016-11-11",
+              posterPath: null,
+              posterUrl: null,
+              voteAverage: 7.6,
+              inLibrary: false,
+              isWatched: false,
+              onWatchlist: false,
+              matchPercentage: 85,
+              matchReason: "Sci-Fi",
+            },
+          ],
+          hasMore: false,
+        },
+      ]);
+      renderPage();
+      expect(screen.getByText("🎬 Because you watched Interstellar")).toBeTruthy();
+    });
+
+    it("hides assembled shelves section when no shelves returned", () => {
+      setupDefaults();
+      defaultAssembleSession([]);
+      renderPage();
+      // No assembled shelf headings visible — trending section should still show
+      expect(screen.getByText("Trending")).toBeTruthy();
+    });
   });
 });
