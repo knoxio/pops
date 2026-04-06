@@ -14,6 +14,7 @@ const PAGE_SIZE = 20;
 export function ComparisonHistoryPage() {
   const [page, setPage] = useState(0);
   const [dimensionFilter, setDimensionFilter] = useState<string>("");
+  const [deletingId, setDeletingId] = useState<number | null>(null);
 
   const { data: dimensionsData } = trpc.media.comparisons.listDimensions.useQuery();
   const dimensions = dimensionsData?.data ?? [];
@@ -30,10 +31,14 @@ export function ComparisonHistoryPage() {
 
   const deleteMutation = trpc.media.comparisons.delete.useMutation({
     onSuccess: () => {
+      setDeletingId(null);
       utils.media.comparisons.listAll.invalidate();
       utils.media.comparisons.scores.invalidate();
       utils.media.comparisons.rankings.invalidate();
       refetch();
+    },
+    onError: () => {
+      setDeletingId(null);
     },
   });
 
@@ -51,6 +56,7 @@ export function ComparisonHistoryPage() {
   const dimensionMap = new Map(dimensions.map((d: { id: number; name: string }) => [d.id, d.name]));
 
   function handleDelete(id: number) {
+    setDeletingId(id);
     let cancelled = false;
     const toastId = toast("Comparison deleted", {
       duration: 5000,
@@ -58,6 +64,7 @@ export function ComparisonHistoryPage() {
         label: "Undo",
         onClick: () => {
           cancelled = true;
+          setDeletingId(null);
           toast.dismiss(toastId);
         },
       },
@@ -133,7 +140,7 @@ export function ComparisonHistoryPage() {
                 comparison={comp}
                 dimensionName={dimensionMap.get(comp.dimensionId) ?? "Unknown"}
                 onDelete={handleDelete}
-                isDeleting={deleteMutation.isPending}
+                isDeleting={deletingId === comp.id}
               />
             )
           )}
