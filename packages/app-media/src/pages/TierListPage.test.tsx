@@ -6,7 +6,6 @@ vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 
 const mockDimensionsQuery = vi.fn();
 const mockTierListQuery = vi.fn();
-const mockRefetch = vi.fn();
 const mockMutate = vi.fn();
 
 vi.mock("../lib/trpc", () => ({
@@ -24,10 +23,7 @@ vi.mock("../lib/trpc", () => ({
           useQuery: (...args: unknown[]) => mockDimensionsQuery(...args),
         },
         getTierListMovies: {
-          useQuery: (...args: unknown[]) => {
-            const result = mockTierListQuery(...args);
-            return { ...result, refetch: mockRefetch, isFetching: false };
-          },
+          useQuery: (...args: unknown[]) => mockTierListQuery(...args),
         },
         submitTierList: {
           useMutation: () => ({
@@ -39,6 +35,38 @@ vi.mock("../lib/trpc", () => ({
       },
     },
   },
+}));
+
+// TierListBoard uses @dnd-kit — mock it so drag events are not needed in page tests.
+// Drag behavior is tested in TierListBoard.test.tsx.
+vi.mock("../components/TierListBoard", () => ({
+  TierListBoard: ({
+    movies,
+    onSubmit,
+    submitPending,
+  }: {
+    movies: Array<{ mediaId: number; title: string }>;
+    onSubmit: (placements: Array<{ movieId: number; tier: string }>) => void;
+    submitPending: boolean;
+  }) => (
+    <div data-testid="tier-list-board">
+      <span>Unranked ({movies.length})</span>
+      {movies.map((m) => (
+        <span key={m.mediaId}>{m.title}</span>
+      ))}
+      <button
+        disabled={submitPending}
+        onClick={() =>
+          onSubmit([
+            { movieId: movies[0]!.mediaId, tier: "S" },
+            { movieId: movies[1]!.mediaId, tier: "A" },
+          ])
+        }
+      >
+        Submit Tier List
+      </button>
+    </div>
+  ),
 }));
 
 import { TierListPage } from "./TierListPage";
@@ -87,7 +115,7 @@ describe("TierListPage", () => {
     expect(tabs[1]?.getAttribute("aria-selected")).toBe("false");
   });
 
-  it("renders movie cards in unranked pool", () => {
+  it("renders movie cards in unranked pool via TierListBoard", () => {
     setupPage();
     renderPage();
 
@@ -96,7 +124,7 @@ describe("TierListPage", () => {
     expect(screen.getByText("Interstellar")).toBeTruthy();
   });
 
-  it("displays unranked count", () => {
+  it("displays unranked count from TierListBoard", () => {
     setupPage();
     renderPage();
 
@@ -118,23 +146,12 @@ describe("TierListPage", () => {
     setupPage();
     renderPage();
 
-    // First call is for dim1 (auto-selected)
     expect(mockTierListQuery).toHaveBeenCalledWith({ dimensionId: 1 }, expect.any(Object));
 
     const tabs = screen.getAllByRole("tab");
     fireEvent.click(tabs[1]!);
 
-    // After clicking dim2, should query with dimensionId: 2
     expect(mockTierListQuery).toHaveBeenCalledWith({ dimensionId: 2 }, expect.any(Object));
-  });
-
-  it("refresh button calls refetch", () => {
-    setupPage();
-    renderPage();
-
-    fireEvent.click(screen.getByLabelText("Refresh movie pool"));
-
-    expect(mockRefetch).toHaveBeenCalled();
   });
 
   it("shows empty state when no movies available", () => {
@@ -170,118 +187,45 @@ describe("TierListPage", () => {
     expect(screen.queryByText("Tier List")).toBeTruthy();
   });
 
-  it("submit button is disabled when fewer than 2 movies placed", () => {
+  it("passes correct movies to TierListBoard with mediaId mapped from id", () => {
     setupPage();
     renderPage();
 
-    const submitBtn = screen.getByRole("button", { name: /Submit Tier List/i });
-    expect(submitBtn).toBeDisabled();
+    // TierListBoard stub renders movie titles — verify all 3 appear
+    expect(screen.getByTestId("tier-list-board")).toBeTruthy();
+    expect(screen.getByText("The Matrix")).toBeTruthy();
+    expect(screen.getByText("Inception")).toBeTruthy();
+    expect(screen.getByText("Interstellar")).toBeTruthy();
   });
 
-  it("drag-drop: movie moves from pool to tier row", () => {
+  it("submit calls mutate with dimensionId and placements from TierListBoard", () => {
     setupPage();
     renderPage();
 
-    const movieCard = screen.getByLabelText("The Matrix");
-    const tierS = screen.getByLabelText("Tier S");
+    fireEvent.click(screen.getByRole("button", { name: /submit tier list/i }));
 
-    const movieData = JSON.stringify(movies[0]);
-    const dataTransfer = {
-      getData: () => movieData,
-      setData: vi.fn(),
-      effectAllowed: "",
-      dropEffect: "",
-    };
-
-    fireEvent.dragStart(movieCard, { dataTransfer });
-    fireEvent.dragOver(tierS, { dataTransfer });
-    fireEvent.drop(tierS, { dataTransfer });
-
-    // Movie should now be in tier S, not in unranked pool
-    expect(screen.getByText("Unranked (2)")).toBeTruthy();
-  });
-
-  it("drag-drop: movie moves between tiers (reposition)", () => {
-    setupPage();
-    renderPage();
-
-    const movieData = JSON.stringify(movies[0]);
-    const dataTransfer = {
-      getData: () => movieData,
-      setData: vi.fn(),
-      effectAllowed: "",
-      dropEffect: "",
-    };
-
-    // Drop into tier S
-    const tierS = screen.getByLabelText("Tier S");
-    fireEvent.drop(tierS, { dataTransfer });
-
-    // Now move from S to A
-    const tierA = screen.getByLabelText("Tier A");
-    fireEvent.drop(tierA, { dataTransfer });
-
-    // Still only 1 movie placed (moved, not duplicated)
-    expect(screen.getByText("Unranked (2)")).toBeTruthy();
-  });
-
-  it("drag-drop: movie removed from tier back to unranked pool", () => {
-    setupPage();
-    renderPage();
-
-    const movieData = JSON.stringify(movies[0]);
-    const dataTransfer = {
-      getData: () => movieData,
-      setData: vi.fn(),
-      effectAllowed: "",
-      dropEffect: "",
-    };
-
-    // Place in tier S
-    const tierS = screen.getByLabelText("Tier S");
-    fireEvent.drop(tierS, { dataTransfer });
-    expect(screen.getByText("Unranked (2)")).toBeTruthy();
-
-    // Drop back to unranked pool
-    const pool = screen.getByLabelText("Unranked movies");
-    fireEvent.dragOver(pool, { dataTransfer });
-    fireEvent.drop(pool, { dataTransfer });
-    expect(screen.getByText("Unranked (3)")).toBeTruthy();
-  });
-
-  it("submit button enables when 2+ movies placed and calls mutate", () => {
-    setupPage();
-    renderPage();
-
-    const dataTransfer1 = {
-      getData: () => JSON.stringify(movies[0]),
-      setData: vi.fn(),
-      effectAllowed: "",
-      dropEffect: "",
-    };
-    const dataTransfer2 = {
-      getData: () => JSON.stringify(movies[1]),
-      setData: vi.fn(),
-      effectAllowed: "",
-      dropEffect: "",
-    };
-
-    const tierS = screen.getByLabelText("Tier S");
-    const tierA = screen.getByLabelText("Tier A");
-
-    fireEvent.drop(tierS, { dataTransfer: dataTransfer1 });
-    fireEvent.drop(tierA, { dataTransfer: dataTransfer2 });
-
-    const submitBtn = screen.getByRole("button", { name: /Submit Tier List/i });
-    expect(submitBtn).not.toBeDisabled();
-
-    fireEvent.click(submitBtn);
     expect(mockMutate).toHaveBeenCalledWith({
       dimensionId: 1,
-      placements: expect.arrayContaining([
+      placements: [
         { movieId: 10, tier: "S" },
         { movieId: 20, tier: "A" },
-      ]),
+      ],
     });
+  });
+
+  it("shows error alert when movie query fails", () => {
+    mockDimensionsQuery.mockReturnValue({
+      data: { data: [dim1] },
+      isLoading: false,
+    });
+    mockTierListQuery.mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: new Error("fetch failed"),
+    });
+
+    renderPage();
+
+    expect(screen.getByText("Failed to load movies for tier list.")).toBeTruthy();
   });
 });
