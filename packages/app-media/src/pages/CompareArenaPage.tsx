@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link } from "react-router";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -41,7 +41,6 @@ interface ScoreDelta {
 }
 
 export function CompareArenaPage() {
-  const navigate = useNavigate();
   const [sessionCount, setSessionCount] = useState(0);
   const [manualDimensionId, setManualDimensionId] = useState<number | null>(null);
   const [scoreDelta, setScoreDelta] = useState<ScoreDelta | null>(null);

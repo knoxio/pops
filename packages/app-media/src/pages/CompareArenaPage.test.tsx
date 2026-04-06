@@ -519,9 +519,7 @@ describe("CompareArenaPage", () => {
     fireEvent.click(screen.getByLabelText("Equally great"));
 
     expect(mockRecordMutate).toHaveBeenCalledTimes(1);
-    expect(mockRecordMutate).toHaveBeenCalledWith(
-      expect.objectContaining({ winnerId: 0 })
-    );
+    expect(mockRecordMutate).toHaveBeenCalledWith(expect.objectContaining({ winnerId: 0 }));
   });
 
   it("renders history link in header", () => {
