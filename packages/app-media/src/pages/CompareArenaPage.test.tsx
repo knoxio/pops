@@ -20,13 +20,9 @@ const mockSkipMutate = vi.fn() as ReturnType<typeof vi.fn> & {
 const mockMarkStaleMutate = vi.fn() as ReturnType<typeof vi.fn> & {
   _opts?: Record<string, unknown>;
 };
-const mockExcludeMutateA = vi.fn() as ReturnType<typeof vi.fn> & {
+const mockExcludeMutate = vi.fn() as ReturnType<typeof vi.fn> & {
   _opts?: Record<string, unknown>;
 };
-const mockExcludeMutateB = vi.fn() as ReturnType<typeof vi.fn> & {
-  _opts?: Record<string, unknown>;
-};
-let excludeCallCount = 0;
 const mockBlacklistMutate = vi.fn() as ReturnType<typeof vi.fn> & {
   _opts?: Record<string, unknown>;
 };
@@ -68,10 +64,8 @@ vi.mock("../lib/trpc", () => ({
         },
         excludeFromDimension: {
           useMutation: (opts?: Record<string, unknown>) => {
-            excludeCallCount++;
-            const mockFn = excludeCallCount % 2 === 1 ? mockExcludeMutateA : mockExcludeMutateB;
-            if (opts) mockFn._opts = opts;
-            return { mutate: mockFn, isPending: false };
+            if (opts) mockExcludeMutate._opts = opts;
+            return { mutate: mockExcludeMutate, isPending: false };
           },
         },
         blacklistMovie: {
@@ -156,7 +150,6 @@ function setupArena() {
 describe("CompareArenaPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    excludeCallCount = 0;
     mockWatchlistListQuery.mockReturnValue({
       data: { data: [] },
       isLoading: false,
@@ -388,16 +381,26 @@ describe("CompareArenaPage", () => {
     expect(mockRecordMutate).not.toHaveBeenCalled();
   });
 
-  it("N/A button calls excludeFromDimension for both movies", () => {
+  it("N/A button for movie A calls excludeFromDimension with movie A id only", () => {
     setupArena();
     renderPage();
 
-    fireEvent.click(screen.getByLabelText(/Exclude both from/));
+    fireEvent.click(screen.getByLabelText("N/A: The Matrix"));
 
-    expect(mockExcludeMutateA).toHaveBeenCalledWith(
-      expect.objectContaining({ mediaType: "movie", mediaId: 10, dimensionId: 1 })
+    expect(mockExcludeMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ mediaType: "movie", mediaId: 10, dimensionId: 1 }),
+      expect.objectContaining({ onSuccess: expect.any(Function) })
     );
-    expect(mockExcludeMutateB).toHaveBeenCalledWith(
+    expect(mockRecordMutate).not.toHaveBeenCalled();
+  });
+
+  it("N/A button for movie B calls excludeFromDimension with movie B id only", () => {
+    setupArena();
+    renderPage();
+
+    fireEvent.click(screen.getByLabelText("N/A: Inception"));
+
+    expect(mockExcludeMutate).toHaveBeenCalledWith(
       expect.objectContaining({ mediaType: "movie", mediaId: 20, dimensionId: 1 }),
       expect.objectContaining({ onSuccess: expect.any(Function) })
     );
@@ -420,7 +423,7 @@ describe("CompareArenaPage", () => {
 
     expect(screen.getByText("Mark as not watched?")).toBeTruthy();
     expect(screen.getByText("Cancel")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Not Watched" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Not watched" })).toBeTruthy();
   });
 
   it("shows comparison count in confirmation dialog", () => {
@@ -442,7 +445,7 @@ describe("CompareArenaPage", () => {
     renderPage();
 
     fireEvent.click(screen.getByLabelText("Not watched Inception"));
-    fireEvent.click(screen.getByRole("button", { name: "Not Watched" }));
+    fireEvent.click(screen.getByRole("button", { name: "Not watched" }));
 
     expect(mockBlacklistMutate).toHaveBeenCalledWith({ mediaType: "movie", mediaId: 20 });
   });

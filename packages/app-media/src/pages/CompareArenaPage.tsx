@@ -180,26 +180,28 @@ export function CompareArenaPage() {
     [markStaleMutation]
   );
 
-  // N/A (dimension exclusion)
-  const excludeAMutation = trpc.media.comparisons.excludeFromDimension.useMutation();
-  const excludeBMutation = trpc.media.comparisons.excludeFromDimension.useMutation();
-  const naIsPending = excludeAMutation.isPending || excludeBMutation.isPending;
+  // N/A (dimension exclusion) — per-movie
+  const excludeMutation = trpc.media.comparisons.excludeFromDimension.useMutation();
+  const naIsPending = excludeMutation.isPending;
 
-  const handleNA = useCallback(() => {
-    if (!pairData?.data || !dimensionId || naIsPending) return;
+  const handleNA = useCallback(
+    (movieId: number) => {
+      if (!pairData?.data || !dimensionId || naIsPending) return;
 
-    const { movieA, movieB } = pairData.data;
-    excludeAMutation.mutate({ mediaType: "movie", mediaId: movieA.id, dimensionId });
-    excludeBMutation.mutate(
-      { mediaType: "movie", mediaId: movieB.id, dimensionId },
-      {
-        onSuccess: () => {
-          toast.success("Both excluded from this dimension");
-          utils.media.comparisons.getSmartPair.invalidate();
-        },
-      }
-    );
-  }, [pairData, dimensionId, naIsPending, excludeAMutation, excludeBMutation, utils]);
+      const { movieA, movieB } = pairData.data;
+      const movie = movieId === movieA.id ? movieA : movieB;
+      excludeMutation.mutate(
+        { mediaType: "movie", mediaId: movieId, dimensionId },
+        {
+          onSuccess: () => {
+            toast.success(`${movie.title} excluded from this dimension`);
+            utils.media.comparisons.getSmartPair.invalidate();
+          },
+        }
+      );
+    },
+    [pairData, dimensionId, naIsPending, excludeMutation, utils]
+  );
 
   // Blacklist (Not Watched)
   const [blacklistTarget, setBlacklistTarget] = useState<{
@@ -417,6 +419,8 @@ export function CompareArenaPage() {
             watchlistPending={addToWatchlistMutation.isPending}
             onMarkStale={() => handleMarkStale(pairData.data.movieA.id)}
             stalePending={markStaleMutation.isPending}
+            onNA={() => handleNA(pairData.data.movieA.id)}
+            naPending={naIsPending}
             onBlacklist={() => handleBlacklist(pairData.data.movieA)}
             blacklistPending={blacklistMutation.isPending}
             dimensionName={activeDimName}
@@ -484,22 +488,6 @@ export function CompareArenaPage() {
               <TooltipContent side="right">Skip pair</TooltipContent>
             </Tooltip>
 
-            {/* N/A — exclude both from dimension */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleNA}
-                  disabled={isPending || naIsPending}
-                  className="rounded-full h-10 w-10 bg-background hover:border-muted-foreground"
-                  aria-label={`Exclude both from ${activeDimName}`}
-                >
-                  <Ban className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">N/A for {activeDimName}</TooltipContent>
-            </Tooltip>
           </div>
 
           {/* Movie B */}
@@ -520,6 +508,8 @@ export function CompareArenaPage() {
             watchlistPending={addToWatchlistMutation.isPending}
             onMarkStale={() => handleMarkStale(pairData.data.movieB.id)}
             stalePending={markStaleMutation.isPending}
+            onNA={() => handleNA(pairData.data.movieB.id)}
+            naPending={naIsPending}
             onBlacklist={() => handleBlacklist(pairData.data.movieB)}
             blacklistPending={blacklistMutation.isPending}
             dimensionName={activeDimName}
@@ -561,7 +551,7 @@ export function CompareArenaPage() {
               onClick={confirmBlacklist}
               disabled={blacklistMutation.isPending}
             >
-              {blacklistMutation.isPending ? "Removing\u2026" : "Not Watched"}
+              {blacklistMutation.isPending ? "Removing\u2026" : "Not watched"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -582,6 +572,8 @@ function MovieCard({
   watchlistPending,
   onMarkStale,
   stalePending,
+  onNA,
+  naPending,
   onBlacklist,
   blacklistPending,
   dimensionName,
@@ -596,6 +588,8 @@ function MovieCard({
   watchlistPending?: boolean;
   onMarkStale?: () => void;
   stalePending?: boolean;
+  onNA?: () => void;
+  naPending?: boolean;
   onBlacklist?: () => void;
   blacklistPending?: boolean;
   dimensionName?: string;
@@ -672,6 +666,25 @@ function MovieCard({
 
         {/* BOTTOM ZONE — dismissing actions (visible on hover/touch) */}
         <div className="absolute bottom-0 inset-x-0 flex justify-center gap-2 p-2 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+          {onNA && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onNA();
+                  }}
+                  disabled={naPending}
+                  className="p-2 rounded-full bg-black/40 text-white/80 hover:text-white hover:bg-black/60 backdrop-blur-sm transition-colors"
+                  aria-label={`N/A: ${movie.title}`}
+                  data-testid={`na-button-${movie.id}`}
+                >
+                  <Ban className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>N/A — exclude from this dimension</TooltipContent>
+            </Tooltip>
+          )}
           {onMarkStale && (
             <Tooltip>
               <TooltipTrigger asChild>
