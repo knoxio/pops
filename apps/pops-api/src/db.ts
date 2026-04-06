@@ -2,6 +2,7 @@ import BetterSqlite3 from "better-sqlite3";
 import { drizzle, type BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
 import { AsyncLocalStorage } from "node:async_hooks";
+import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, unlinkSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -162,7 +163,10 @@ function markDrizzleMigrationsFromJournal(
 
     const entries = filter ? journal.entries.filter(filter) : journal.entries;
     for (const entry of entries) {
-      insert.run(entry.tag, Date.now());
+      const sqlPath = join(DRIZZLE_MIGRATIONS_DIR, `${entry.tag}.sql`);
+      const sql = readFileSync(sqlPath, "utf8");
+      const hash = createHash("sha256").update(sql).digest("hex");
+      insert.run(hash, Date.now());
     }
   } catch {
     // Non-fatal — Drizzle migrate will handle it on next startup
