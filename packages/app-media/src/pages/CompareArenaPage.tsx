@@ -304,6 +304,11 @@ export function CompareArenaPage() {
   );
 
   const isPending = recordMutation.isPending || scoreDelta !== null;
+  const activeDim = activeDimensions.find(
+    (d: { id: number; name: string; description?: string | null }) => d.id === dimensionId
+  );
+  const activeDimName = activeDim?.name ?? "Overall";
+  const activeDimDesc = activeDim?.description ?? null;
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-5">
@@ -398,118 +403,136 @@ export function CompareArenaPage() {
           )}
         </div>
       ) : pairData?.data ? (
-        <div className="relative grid grid-cols-[1fr_auto_1fr] gap-3 items-center">
-          {/* Movie A */}
-          <MovieCard
-            movie={pairData.data.movieA}
-            onPick={() => handlePick(pairData.data.movieA.id)}
-            disabled={isPending}
-            scoreDelta={
-              scoreDelta?.winnerId === pairData.data.movieA.id
-                ? (scoreDelta?.winnerDelta ?? null)
-                : scoreDelta?.loserId === pairData.data.movieA.id
-                  ? (scoreDelta?.loserDelta ?? null)
-                  : null
-            }
-            isWinner={scoreDelta?.winnerId === pairData.data.movieA.id}
-            onAddToWatchlist={() => handleAddToWatchlist(pairData.data.movieA.id)}
-            isOnWatchlist={watchlistedMovieIds.has(pairData.data.movieA.id)}
-            watchlistPending={addToWatchlistMutation.isPending}
-            onMarkStale={() => handleMarkStale(pairData.data.movieA.id)}
-            stalePending={markStaleMutation.isPending}
-            onNA={() => handleNA(pairData.data.movieA.id)}
-            naPending={naIsPending}
-            onBlacklist={() => handleBlacklist(pairData.data.movieA)}
-            blacklistPending={blacklistMutation.isPending}
-          />
+        <>
+          <p className="text-center text-muted-foreground text-sm">
+            Which movie has better{" "}
+            {activeDimDesc ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="font-medium text-foreground underline decoration-dotted cursor-help">
+                    {activeDimName}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>{activeDimDesc}</TooltipContent>
+              </Tooltip>
+            ) : (
+              <span className="font-medium text-foreground">{activeDimName}</span>
+            )}
+            ?
+          </p>
+          <div className="relative grid grid-cols-[1fr_auto_1fr] gap-3 items-center">
+            {/* Movie A */}
+            <MovieCard
+              movie={pairData.data.movieA}
+              onPick={() => handlePick(pairData.data.movieA.id)}
+              disabled={isPending}
+              scoreDelta={
+                scoreDelta?.winnerId === pairData.data.movieA.id
+                  ? (scoreDelta?.winnerDelta ?? null)
+                  : scoreDelta?.loserId === pairData.data.movieA.id
+                    ? (scoreDelta?.loserDelta ?? null)
+                    : null
+              }
+              isWinner={scoreDelta?.winnerId === pairData.data.movieA.id}
+              onAddToWatchlist={() => handleAddToWatchlist(pairData.data.movieA.id)}
+              isOnWatchlist={watchlistedMovieIds.has(pairData.data.movieA.id)}
+              watchlistPending={addToWatchlistMutation.isPending}
+              onMarkStale={() => handleMarkStale(pairData.data.movieA.id)}
+              stalePending={markStaleMutation.isPending}
+              onNA={() => handleNA(pairData.data.movieA.id)}
+              naPending={naIsPending}
+              onBlacklist={() => handleBlacklist(pairData.data.movieA)}
+              blacklistPending={blacklistMutation.isPending}
+            />
 
-          {/* Center column — actions for both movies */}
-          <div className="flex flex-col items-center gap-1.5">
-            {/* Draw tier buttons */}
-            {(
-              [
-                {
-                  tier: "high" as const,
-                  icon: ChevronUp,
-                  label: "Equally great",
-                  hoverColor: "hover:border-green-500 hover:text-green-500",
-                },
-                {
-                  tier: "mid" as const,
-                  icon: Minus,
-                  label: "Equally average",
-                  hoverColor: "hover:border-muted-foreground",
-                },
-                {
-                  tier: "low" as const,
-                  icon: ChevronDown,
-                  label: "Equally poor",
-                  hoverColor: "hover:border-red-500 hover:text-red-500",
-                },
-              ] as const
-            ).map(({ tier, icon: Icon, label, hoverColor }) => (
-              <Tooltip key={tier}>
+            {/* Center column — actions for both movies */}
+            <div className="flex flex-col items-center gap-1.5">
+              {/* Draw tier buttons */}
+              {(
+                [
+                  {
+                    tier: "high" as const,
+                    icon: ChevronUp,
+                    label: "Equally great",
+                    hoverColor: "hover:border-green-500 hover:text-green-500",
+                  },
+                  {
+                    tier: "mid" as const,
+                    icon: Minus,
+                    label: "Equally average",
+                    hoverColor: "hover:border-muted-foreground",
+                  },
+                  {
+                    tier: "low" as const,
+                    icon: ChevronDown,
+                    label: "Equally poor",
+                    hoverColor: "hover:border-red-500 hover:text-red-500",
+                  },
+                ] as const
+              ).map(({ tier, icon: Icon, label, hoverColor }) => (
+                <Tooltip key={tier}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => handleDraw(tier)}
+                      disabled={isPending}
+                      className={`rounded-full h-10 w-10 bg-background ${hoverColor}`}
+                      aria-label={label}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">{label}</TooltipContent>
+                </Tooltip>
+              ))}
+
+              {/* Separator */}
+              <div className="w-5 border-t border-border my-1" />
+
+              {/* Skip pair */}
+              <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
                     variant="outline"
                     size="icon"
-                    onClick={() => handleDraw(tier)}
-                    disabled={isPending}
-                    className={`rounded-full h-10 w-10 bg-background ${hoverColor}`}
-                    aria-label={label}
+                    onClick={handleSkip}
+                    disabled={isPending || skipMutation.isPending}
+                    className="rounded-full h-10 w-10 bg-background hover:border-muted-foreground"
+                    aria-label="Skip this pair"
                   >
-                    <Icon className="h-4 w-4" />
+                    <SkipForward className="h-4 w-4" />
                   </Button>
                 </TooltipTrigger>
-                <TooltipContent side="right">{label}</TooltipContent>
+                <TooltipContent side="right">Skip pair</TooltipContent>
               </Tooltip>
-            ))}
+            </div>
 
-            {/* Separator */}
-            <div className="w-5 border-t border-border my-1" />
-
-            {/* Skip pair */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleSkip}
-                  disabled={isPending || skipMutation.isPending}
-                  className="rounded-full h-10 w-10 bg-background hover:border-muted-foreground"
-                  aria-label="Skip this pair"
-                >
-                  <SkipForward className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="right">Skip pair</TooltipContent>
-            </Tooltip>
+            {/* Movie B */}
+            <MovieCard
+              movie={pairData.data.movieB}
+              onPick={() => handlePick(pairData.data.movieB.id)}
+              disabled={isPending}
+              scoreDelta={
+                scoreDelta?.winnerId === pairData.data.movieB.id
+                  ? (scoreDelta?.winnerDelta ?? null)
+                  : scoreDelta?.loserId === pairData.data.movieB.id
+                    ? (scoreDelta?.loserDelta ?? null)
+                    : null
+              }
+              isWinner={scoreDelta?.winnerId === pairData.data.movieB.id}
+              onAddToWatchlist={() => handleAddToWatchlist(pairData.data.movieB.id)}
+              isOnWatchlist={watchlistedMovieIds.has(pairData.data.movieB.id)}
+              watchlistPending={addToWatchlistMutation.isPending}
+              onMarkStale={() => handleMarkStale(pairData.data.movieB.id)}
+              stalePending={markStaleMutation.isPending}
+              onNA={() => handleNA(pairData.data.movieB.id)}
+              naPending={naIsPending}
+              onBlacklist={() => handleBlacklist(pairData.data.movieB)}
+              blacklistPending={blacklistMutation.isPending}
+            />
           </div>
-
-          {/* Movie B */}
-          <MovieCard
-            movie={pairData.data.movieB}
-            onPick={() => handlePick(pairData.data.movieB.id)}
-            disabled={isPending}
-            scoreDelta={
-              scoreDelta?.winnerId === pairData.data.movieB.id
-                ? (scoreDelta?.winnerDelta ?? null)
-                : scoreDelta?.loserId === pairData.data.movieB.id
-                  ? (scoreDelta?.loserDelta ?? null)
-                  : null
-            }
-            isWinner={scoreDelta?.winnerId === pairData.data.movieB.id}
-            onAddToWatchlist={() => handleAddToWatchlist(pairData.data.movieB.id)}
-            isOnWatchlist={watchlistedMovieIds.has(pairData.data.movieB.id)}
-            watchlistPending={addToWatchlistMutation.isPending}
-            onMarkStale={() => handleMarkStale(pairData.data.movieB.id)}
-            stalePending={markStaleMutation.isPending}
-            onNA={() => handleNA(pairData.data.movieB.id)}
-            naPending={naIsPending}
-            onBlacklist={() => handleBlacklist(pairData.data.movieB)}
-            blacklistPending={blacklistMutation.isPending}
-          />
-        </div>
+        </>
       ) : null}
 
       {/* Blacklist confirmation dialog */}
