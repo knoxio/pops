@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams, Link } from "react-router";
 import { useSetPageContext } from "@pops/navigation";
 import { Button, Select, Skeleton, TextInput } from "@pops/ui";
@@ -136,8 +136,16 @@ export function LibraryPage() {
   const [localSearch, setLocalSearch] = useState(searchQuery);
   const debouncedSearch = useDebouncedValue(localSearch, 300);
 
-  // Sync debounced search to URL
+  // Skip syncing on initial mount — localSearch is already initialised from the
+  // URL, so there is nothing to sync. Only sync after the user changes the search.
+  const hasMountedRef = useRef(false);
+
+  // Sync debounced search to URL (only after initial mount)
   useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
     setSearchParams(
       (prev) => {
         const next = new URLSearchParams(prev);
@@ -151,7 +159,12 @@ export function LibraryPage() {
       },
       { replace: true }
     );
-  }, [debouncedSearch, setSearchParams]);
+    // setSearchParams is intentionally omitted from deps — in React Router v7 it
+    // is not referentially stable (it changes whenever searchParams changes), so
+    // including it caused an infinite loop: effect → URL update → new setSearchParams
+    // reference → effect again. The functional-update form (prev => next) means we
+    // do not need the latest closure over searchParams.
+  }, [debouncedSearch]);
 
   const setParam = (key: string, value: string) => {
     setSearchParams(
@@ -181,14 +194,19 @@ export function LibraryPage() {
     pageSize,
   });
 
-  useSetPageContext({
-    page: "library",
-    filters: {
+  // Memoize filters so useSetPageContext's useEffect only re-runs when values
+  // actually change. An inline object literal would be a new reference every
+  // render, which would trigger the effect endlessly via AppContextProvider state.
+  const pageContextFilters = useMemo(
+    () => ({
       ...(typeFilter !== "all" && { type: typeFilter }),
       ...(sortBy !== "title" && { sort: sortBy }),
       ...(searchQuery && { search: searchQuery }),
-    },
-  });
+    }),
+    [typeFilter, sortBy, searchQuery]
+  );
+
+  useSetPageContext({ page: "library", filters: pageContextFilters });
 
   const totalItems = pagination.total;
   const totalPages = pagination.totalPages;
