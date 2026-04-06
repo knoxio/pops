@@ -6,10 +6,10 @@
     "jsx": "react-jsx",
     "isolatedModules": true,
     "noEmit": true,
-    "baseUrl": ".",
     "paths": {
       "@ui/*": ["./src/*"]
-    }
+    },
+    "types": []
   },
   "include": ["src"],
   "exclude": ["node_modules", "src/**/*.test.*"]
