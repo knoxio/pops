@@ -11,9 +11,9 @@ import { tmpdir } from "node:os";
 // Mock the Anthropic SDK
 const mockCreate = vi.fn();
 vi.mock("@anthropic-ai/sdk", () => ({
-  default: vi.fn().mockImplementation(() => ({
-    messages: { create: mockCreate },
-  })),
+  default: vi.fn().mockImplementation(function () {
+    return { messages: { create: mockCreate } };
+  }),
 }));
 
 // Mock the database

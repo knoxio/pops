@@ -25,10 +25,14 @@ const mockDisconnect = vi.fn();
 
 vi.stubGlobal(
   "IntersectionObserver",
-  vi.fn().mockImplementation((callback: IntersectionObserverCallback) => {
+  vi.fn().mockImplementation(function (
+    this: IntersectionObserver,
+    callback: IntersectionObserverCallback
+  ) {
     // Immediately fire as intersecting
     callback([{ isIntersecting: true } as IntersectionObserverEntry], {} as IntersectionObserver);
-    return { observe: mockObserve, disconnect: mockDisconnect };
+    this.observe = mockObserve;
+    this.disconnect = mockDisconnect;
   })
 );
 
