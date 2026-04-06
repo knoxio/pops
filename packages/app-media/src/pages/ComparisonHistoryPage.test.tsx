@@ -68,6 +68,23 @@ const COMPARISON = {
   mediaBId: 200,
   winnerType: "movie",
   winnerId: 100,
+  deltaA: 12,
+  deltaB: -12,
+  drawTier: null as string | null,
+  comparedAt: "2026-01-15T12:00:00Z",
+};
+const DRAW_COMPARISON = {
+  id: 11,
+  dimensionId: 1,
+  mediaAType: "movie",
+  mediaAId: 100,
+  mediaBType: "movie",
+  mediaBId: 200,
+  winnerType: "movie",
+  winnerId: 0,
+  deltaA: 0,
+  deltaB: 0,
+  drawTier: "high",
   comparedAt: "2026-01-15T12:00:00Z",
 };
 
@@ -124,6 +141,16 @@ describe("ComparisonHistoryPage", () => {
     expect(screen.getByText("beat")).toBeInTheDocument();
     expect(screen.getByText("Movie 200")).toBeInTheDocument();
     expect(screen.getAllByText("Overall").length).toBeGreaterThan(0);
+  });
+
+  it("shows tied display for draw comparisons (winnerId=0)", () => {
+    setupLoaded([DRAW_COMPARISON]);
+    renderPage();
+
+    expect(screen.getByText("tied")).toBeInTheDocument();
+    expect(screen.queryByText("beat")).not.toBeInTheDocument();
+    expect(screen.queryByText("Movie #0")).not.toBeInTheDocument();
+    expect(screen.getByText("high draw")).toBeInTheDocument();
   });
 
   it("shows empty state when no comparisons", () => {

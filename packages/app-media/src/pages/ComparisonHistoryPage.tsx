@@ -158,6 +158,7 @@ export function ComparisonHistoryPage() {
               winnerId: number;
               deltaA: number | null;
               deltaB: number | null;
+              drawTier: string | null;
               comparedAt: string;
             }) => (
               <ComparisonRow
@@ -231,12 +232,14 @@ function ComparisonRow({
     winnerId: number;
     deltaA: number | null;
     deltaB: number | null;
+    drawTier: string | null;
     comparedAt: string;
   };
   dimensionName: string;
   onDelete: (id: number) => void;
   isDeleting: boolean;
 }) {
+  const isDraw = comparison.winnerId === 0;
   const winnerId = comparison.winnerId;
   const loserId = comparison.mediaAId === winnerId ? comparison.mediaBId : comparison.mediaAId;
   const winnerDelta = comparison.mediaAId === winnerId ? comparison.deltaA : comparison.deltaB;
@@ -248,16 +251,36 @@ function ComparisonRow({
         <div className="flex items-center gap-4 min-w-0">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 text-sm">
-              <MovieTitle mediaId={winnerId} className="font-semibold text-foreground" />
-              <EloDelta delta={winnerDelta} />
-              <span className="text-muted-foreground">beat</span>
-              <MovieTitle mediaId={loserId} className="text-muted-foreground" />
-              <EloDelta delta={loserDelta} />
+              {isDraw ? (
+                <>
+                  <MovieTitle
+                    mediaId={comparison.mediaAId}
+                    className="font-semibold text-foreground"
+                  />
+                  <EloDelta delta={comparison.deltaA} />
+                  <span className="text-muted-foreground">tied</span>
+                  <MovieTitle mediaId={comparison.mediaBId} className="text-muted-foreground" />
+                  <EloDelta delta={comparison.deltaB} />
+                </>
+              ) : (
+                <>
+                  <MovieTitle mediaId={winnerId} className="font-semibold text-foreground" />
+                  <EloDelta delta={winnerDelta} />
+                  <span className="text-muted-foreground">beat</span>
+                  <MovieTitle mediaId={loserId} className="text-muted-foreground" />
+                  <EloDelta delta={loserDelta} />
+                </>
+              )}
             </div>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-2xs text-muted-foreground uppercase tracking-wider">
                 {dimensionName}
               </span>
+              {isDraw && comparison.drawTier && (
+                <span className="text-2xs text-muted-foreground capitalize">
+                  {comparison.drawTier} draw
+                </span>
+              )}
               <span className="text-2xs text-muted-foreground">
                 {new Date(comparison.comparedAt).toLocaleDateString()}
               </span>
