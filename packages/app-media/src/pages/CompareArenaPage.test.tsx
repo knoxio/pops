@@ -467,6 +467,63 @@ describe("CompareArenaPage", () => {
     expect(screen.getByLabelText("Equally poor")).toBeTruthy();
   });
 
+  it("draw high button records comparison with drawTier high", () => {
+    setupArena();
+    renderPage();
+
+    fireEvent.click(screen.getByLabelText("Equally great"));
+
+    expect(mockRecordMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dimensionId: 1,
+        mediaAId: 10,
+        mediaBId: 20,
+        winnerId: 0,
+        drawTier: "high",
+      })
+    );
+  });
+
+  it("draw mid button records comparison with drawTier mid", () => {
+    setupArena();
+    renderPage();
+
+    fireEvent.click(screen.getByLabelText("Equally average"));
+
+    expect(mockRecordMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        winnerId: 0,
+        drawTier: "mid",
+      })
+    );
+  });
+
+  it("draw low button records comparison with drawTier low", () => {
+    setupArena();
+    renderPage();
+
+    fireEvent.click(screen.getByLabelText("Equally poor"));
+
+    expect(mockRecordMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        winnerId: 0,
+        drawTier: "low",
+      })
+    );
+  });
+
+  it("draw buttons do not record a winner", () => {
+    setupArena();
+    renderPage();
+
+    fireEvent.click(screen.getByLabelText("Equally great"));
+
+    expect(mockRecordMutate).toHaveBeenCalledTimes(1);
+    expect(mockRecordMutate).toHaveBeenCalledWith(
+      expect.objectContaining({ winnerId: 0 })
+    );
+  });
+
   it("renders history link in header", () => {
     setupArena();
     renderPage();
