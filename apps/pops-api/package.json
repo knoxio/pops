@@ -35,12 +35,12 @@
     "ci": "pnpm typecheck && pnpm lint && pnpm format && pnpm test && pnpm build"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.74.0",
+    "@anthropic-ai/sdk": "^0.82.0",
     "@pops/db-types": "workspace:*",
-    "@trpc/server": "^11.0.0",
+    "@trpc/server": "^11.16.0",
     "better-sqlite3": "^11.7.0",
-    "dotenv": "^17.3.1",
-    "drizzle-orm": "^0.45.1",
+    "dotenv": "^17.4.1",
+    "drizzle-orm": "^0.45.2",
     "express": "^5.0.1",
     "express-rate-limit": "^7.5.0",
     "helmet": "^8.0.0",
@@ -56,8 +56,8 @@
     "@types/node": "^22.12.0",
     "@types/papaparse": "^5.5.2",
     "@types/supertest": "^6.0.3",
-    "@typescript-eslint/eslint-plugin": "^8.0.0",
-    "@typescript-eslint/parser": "^8.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.58.0",
+    "@typescript-eslint/parser": "^8.58.0",
     "drizzle-kit": "^0.31.10",
     "eslint": "^9.0.0",
     "msw": "^2.12.14",
@@ -66,7 +66,7 @@
     "supertest": "^7.2.2",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
-    "typescript-eslint": "^8.0.0",
+    "typescript-eslint": "^8.58.0",
     "vitest": "^3.0.0"
   }
 }

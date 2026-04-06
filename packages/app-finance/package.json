@@ -19,7 +19,7 @@
     "@pops/api-client": "workspace:*",
     "@pops/navigation": "workspace:*",
     "@pops/ui": "workspace:*",
-    "@tanstack/react-query": "5.90.20",
+    "@tanstack/react-query": "5.96.2",
     "@tanstack/react-table": "^8.21.3",
     "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
@@ -27,12 +27,12 @@
     "papaparse": "^5.5.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "react-hook-form": "^7.71.1",
-    "react-router": "^7.13.1",
-    "recharts": "^3.7.0",
+    "react-hook-form": "^7.72.1",
+    "react-router": "^7.14.0",
+    "recharts": "^3.8.1",
     "sonner": "^2.0.7",
     "zod": "^3.24.0",
-    "zustand": "5.0.2"
+    "zustand": "5.0.12"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.9.1",
@@ -44,7 +44,7 @@
     "eslint": "^10.0.3",
     "jsdom": "^26.1.0",
     "typescript": "^5.7.0",
-    "typescript-eslint": "^8.57.1",
+    "typescript-eslint": "^8.58.0",
     "vitest": "^3.2.4"
   }
 }
