@@ -21,7 +21,8 @@
     ],
     "overrides": {
       "cssstyle": "6.0.2",
-      "@asamuzakjp/css-color": "4.1.2"
+      "@asamuzakjp/css-color": "4.1.2",
+      "@asamuzakjp/dom-selector": "6.8.1"
     }
   },
   "devDependencies": {
