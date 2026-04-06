@@ -8,9 +8,6 @@
     "rootDir": "src",
     "isolatedModules": true,
     "noEmit": true,
-    "paths": {
-      "@/*": ["./src/*"]
-    },
     "types": []
   },
   "include": ["src"],
