@@ -304,8 +304,6 @@ export function CompareArenaPage() {
   );
 
   const isPending = recordMutation.isPending || scoreDelta !== null;
-  const activeDimName =
-    activeDimensions.find((d: { id: number }) => d.id === dimensionId)?.name ?? "Overall";
 
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-5">
@@ -423,7 +421,6 @@ export function CompareArenaPage() {
             naPending={naIsPending}
             onBlacklist={() => handleBlacklist(pairData.data.movieA)}
             blacklistPending={blacklistMutation.isPending}
-            dimensionName={activeDimName}
           />
 
           {/* Center column — actions for both movies */}
@@ -511,7 +508,6 @@ export function CompareArenaPage() {
             naPending={naIsPending}
             onBlacklist={() => handleBlacklist(pairData.data.movieB)}
             blacklistPending={blacklistMutation.isPending}
-            dimensionName={activeDimName}
           />
         </div>
       ) : null}
@@ -575,7 +571,6 @@ function MovieCard({
   naPending,
   onBlacklist,
   blacklistPending,
-  dimensionName,
 }: {
   movie: { id: number; title: string; posterPath: string | null; posterUrl: string | null };
   onPick: () => void;
@@ -591,7 +586,6 @@ function MovieCard({
   naPending?: boolean;
   onBlacklist?: () => void;
   blacklistPending?: boolean;
-  dimensionName?: string;
 }) {
   const posterSrc = movie.posterUrl ?? undefined;
   const [imgError, setImgError] = useState(false);
@@ -717,9 +711,7 @@ function MovieCard({
                   <EyeOff className="h-4 w-4" />
                 </button>
               </TooltipTrigger>
-              <TooltipContent>
-                Not watched — remove from {dimensionName ?? "rankings"}
-              </TooltipContent>
+              <TooltipContent>Not watched</TooltipContent>
             </Tooltip>
           )}
         </div>
