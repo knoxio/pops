@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import { TierListBoard, type TierMovie } from "./TierListBoard";
 
 const sampleMovies: TierMovie[] = [
@@ -95,5 +95,67 @@ describe("TierListBoard", () => {
     expect(screen.getByText("All movies placed!")).toBeTruthy();
     const submitBtn = screen.getByRole("button", { name: /submit tier list/i });
     expect(submitBtn.hasAttribute("disabled")).toBe(true);
+  });
+
+  it("enables submit button when 2 or more movies are pre-placed via initialPlacements", () => {
+    render(
+      <TierListBoard
+        movies={sampleMovies}
+        onSubmit={vi.fn()}
+        initialPlacements={{ S: [1], A: [2] }}
+      />
+    );
+
+    const submitBtn = screen.getByRole("button", { name: /submit tier list \(2 placed\)/i });
+    expect(submitBtn.hasAttribute("disabled")).toBe(false);
+  });
+
+  it("keeps submit disabled when only 1 movie is pre-placed", () => {
+    render(
+      <TierListBoard movies={sampleMovies} onSubmit={vi.fn()} initialPlacements={{ S: [1] }} />
+    );
+
+    const submitBtn = screen.getByRole("button", { name: /submit tier list/i });
+    expect(submitBtn.hasAttribute("disabled")).toBe(true);
+  });
+
+  it("calls onSubmit with correct {movieId, tier} placements when button clicked", () => {
+    const handleSubmit = vi.fn();
+    render(
+      <TierListBoard
+        movies={sampleMovies}
+        onSubmit={handleSubmit}
+        initialPlacements={{ S: [1, 3], B: [2] }}
+      />
+    );
+
+    const submitBtn = screen.getByRole("button", { name: /submit tier list \(3 placed\)/i });
+    fireEvent.click(submitBtn);
+
+    expect(handleSubmit).toHaveBeenCalledOnce();
+    const placements = handleSubmit.mock.calls[0]![0] as Array<{ movieId: number; tier: string }>;
+    expect(placements).toHaveLength(3);
+    expect(placements).toContainEqual({ movieId: 1, tier: "S" });
+    expect(placements).toContainEqual({ movieId: 3, tier: "S" });
+    expect(placements).toContainEqual({ movieId: 2, tier: "B" });
+  });
+
+  it("excludes placed movies from the unranked pool", () => {
+    render(
+      <TierListBoard movies={sampleMovies} onSubmit={vi.fn()} initialPlacements={{ A: [1, 2] }} />
+    );
+
+    // Placed movies should not appear in unranked count
+    expect(screen.getByText("Unranked (2)")).toBeTruthy();
+  });
+
+  it("does not call onSubmit when button is disabled", () => {
+    const handleSubmit = vi.fn();
+    render(<TierListBoard movies={sampleMovies} onSubmit={handleSubmit} />);
+
+    const submitBtn = screen.getByRole("button", { name: /submit tier list/i });
+    fireEvent.click(submitBtn);
+
+    expect(handleSubmit).not.toHaveBeenCalled();
   });
 });

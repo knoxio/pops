@@ -57,15 +57,22 @@ interface TierListBoardProps {
   movies: TierMovie[];
   onSubmit: (placements: Array<{ movieId: number; tier: Tier }>) => void;
   submitPending?: boolean;
+  /** Optional initial placements — useful for tests and pre-loading saved state. */
+  initialPlacements?: Partial<TierPlacements>;
 }
 
-export function TierListBoard({ movies, onSubmit, submitPending }: TierListBoardProps) {
+export function TierListBoard({
+  movies,
+  onSubmit,
+  submitPending,
+  initialPlacements,
+}: TierListBoardProps) {
   const [placements, setPlacements] = useState<TierPlacements>({
-    S: [],
-    A: [],
-    B: [],
-    C: [],
-    D: [],
+    S: initialPlacements?.S ?? [],
+    A: initialPlacements?.A ?? [],
+    B: initialPlacements?.B ?? [],
+    C: initialPlacements?.C ?? [],
+    D: initialPlacements?.D ?? [],
   });
   const [activeId, setActiveId] = useState<number | null>(null);
 
