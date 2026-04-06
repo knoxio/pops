@@ -10,6 +10,7 @@ const mockDeleteMutate = vi.fn();
 const mockWatchlistAddMutate = vi.fn();
 const mockInvalidateHistory = vi.fn();
 const mockInvalidateWatchlist = vi.fn();
+const mockInvalidatePendingDebriefs = vi.fn();
 
 const mockHistoryQuery = vi.fn();
 
@@ -46,6 +47,9 @@ vi.mock("../lib/trpc", () => ({
         },
         watchlist: {
           list: { invalidate: mockInvalidateWatchlist },
+        },
+        comparisons: {
+          getPendingDebriefs: { invalidate: mockInvalidatePendingDebriefs },
         },
       },
     }),
