@@ -15,11 +15,13 @@ import { TRPCError } from "@trpc/server";
 
 // Mock ImageCacheService so getImageCache() returns a stub
 vi.mock("../tmdb/image-cache.js", () => ({
-  ImageCacheService: vi.fn().mockImplementation(() => ({
-    downloadMovieImages: vi.fn().mockResolvedValue(undefined),
-    deleteMovieImages: vi.fn().mockResolvedValue(undefined),
-    getImagePath: vi.fn().mockResolvedValue(null),
-  })),
+  ImageCacheService: vi.fn().mockImplementation(function () {
+    return {
+      downloadMovieImages: vi.fn().mockResolvedValue(undefined),
+      deleteMovieImages: vi.fn().mockResolvedValue(undefined),
+      getImagePath: vi.fn().mockResolvedValue(null),
+    };
+  }),
   MEDIA_DIR_NAMES: { movie: "movies", tv: "tv" },
 }));
 
@@ -35,7 +37,9 @@ beforeEach(() => {
 
 afterEach(() => {
   ctx.teardown();
+  vi.clearAllMocks();
   vi.restoreAllMocks();
+  vi.unstubAllGlobals();
   vi.unstubAllEnvs();
 });
 

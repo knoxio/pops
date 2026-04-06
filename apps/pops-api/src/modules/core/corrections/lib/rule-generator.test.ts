@@ -3,9 +3,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 // Mock dependencies before imports
 const sharedMockCreate = vi.fn();
 vi.mock("@anthropic-ai/sdk", () => ({
-  default: vi.fn(() => ({
-    messages: { create: sharedMockCreate },
-  })),
+  default: vi.fn(function () {
+    return { messages: { create: sharedMockCreate } };
+  }),
 }));
 
 vi.mock("../../../../env.js", () => ({
