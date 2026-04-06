@@ -24,13 +24,13 @@ export function parseCsv<T extends Record<string, string>>(
 ): T[] {
   const content = readFileSync(filePath, options?.encoding ?? 'utf-8');
 
-  return parse(content, {
+  return parse<T>(content, {
     columns: true,
     skip_empty_lines: true,
     trim: true,
     delimiter: options?.delimiter ?? ',',
     from_line: (options?.skipLines ?? 0) + 1,
-  }) as T[];
+  });
 }
 
 /**
