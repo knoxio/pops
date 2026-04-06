@@ -10,7 +10,7 @@ import { Button } from "@pops/ui";
 import {
   DndContext,
   DragOverlay,
-  closestCenter,
+  pointerWithin,
   PointerSensor,
   useSensor,
   useSensors,
@@ -195,7 +195,7 @@ export function TierListBoard({ movies, onSubmit, submitPending }: TierListBoard
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={pointerWithin}
       onDragStart={handleDragStart}
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}

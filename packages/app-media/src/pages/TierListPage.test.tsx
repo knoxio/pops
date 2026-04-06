@@ -26,6 +26,7 @@ vi.mock("@dnd-kit/core", async () => {
     },
     DragOverlay: () => null,
     closestCenter: "closestCenter",
+    pointerWithin: "pointerWithin",
     PointerSensor: class PointerSensor {},
     useSensor: (sensor: unknown) => sensor,
     useSensors: (...sensors: unknown[]) => sensors,
