@@ -487,7 +487,6 @@ export function CompareArenaPage() {
               </TooltipTrigger>
               <TooltipContent side="right">Skip pair</TooltipContent>
             </Tooltip>
-
           </div>
 
           {/* Movie B */}
