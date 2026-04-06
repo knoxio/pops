@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useParams, Link } from "react-router";
 import { useSetPageContext } from "@pops/navigation";
 import {
@@ -74,15 +75,15 @@ export function MovieDetailPage() {
     { enabled: !Number.isNaN(movieId) }
   );
 
-  useSetPageContext({
-    page: "movie-detail",
-    pageType: "drill-down",
-    entity: {
+  const movieEntity = useMemo(
+    () => ({
       uri: `pops:media/movie/${movieId}`,
-      type: "movie",
+      type: "movie" as const,
       title: data?.data?.title ?? "",
-    },
-  });
+    }),
+    [movieId, data?.data?.title]
+  );
+  useSetPageContext({ page: "movie-detail", pageType: "drill-down", entity: movieEntity });
 
   if (Number.isNaN(movieId)) {
     return (

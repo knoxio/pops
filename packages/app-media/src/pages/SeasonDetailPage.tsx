@@ -396,15 +396,15 @@ export function SeasonDetailPage() {
     ? seasonProgress.watched >= seasonProgress.total && seasonProgress.total > 0
     : false;
 
-  useSetPageContext({
-    page: "season-detail",
-    pageType: "drill-down",
-    entity: {
+  const seasonEntity = useMemo(
+    () => ({
       uri: `pops:media/tv/${showId}/season/${seasonNum}`,
-      type: "season",
+      type: "season" as const,
       title: showData?.data?.name ?? "",
-    },
-  });
+    }),
+    [showId, seasonNum, showData?.data?.name]
+  );
+  useSetPageContext({ page: "season-detail", pageType: "drill-down", entity: seasonEntity });
 
   if (Number.isNaN(showId) || Number.isNaN(seasonNum)) {
     return (

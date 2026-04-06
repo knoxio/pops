@@ -238,15 +238,16 @@ export function ItemsPage() {
   const inUseFilter = searchParams.get("inUse") ?? "";
   const locationFilter = searchParams.get("locationId") ?? "";
 
-  useSetPageContext({
-    page: "items",
-    filters: {
+  const itemsFilters = useMemo(
+    () => ({
       ...(search && { search }),
       ...(typeFilter && { type: typeFilter }),
       ...(conditionFilter && { condition: conditionFilter }),
       ...(locationFilter && { locationId: locationFilter }),
-    },
-  });
+    }),
+    [search, typeFilter, conditionFilter, locationFilter]
+  );
+  useSetPageContext({ page: "items", filters: itemsFilters });
 
   const setParam = useCallback(
     (key: string, value: string) => {

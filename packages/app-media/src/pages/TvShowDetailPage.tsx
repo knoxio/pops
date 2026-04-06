@@ -164,15 +164,15 @@ export function TvShowDetailPage() {
     [rawSeasons]
   );
 
-  useSetPageContext({
-    page: "tvshow-detail",
-    pageType: "drill-down",
-    entity: {
+  const tvShowEntity = useMemo(
+    () => ({
       uri: `pops:media/tv/${showId}`,
-      type: "tvshow",
+      type: "tvshow" as const,
       title: data?.data?.name ?? "",
-    },
-  });
+    }),
+    [showId, data?.data?.name]
+  );
+  useSetPageContext({ page: "tvshow-detail", pageType: "drill-down", entity: tvShowEntity });
 
   if (Number.isNaN(showId)) {
     return (

@@ -2,7 +2,7 @@
  * Item detail page — shows item info and connected items.
  * Route: /inventory/items/:id
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router";
 import { useSetPageContext } from "@pops/navigation";
 import { toast } from "sonner";
@@ -102,15 +102,15 @@ export function ItemDetailPage() {
     },
   });
 
-  useSetPageContext({
-    page: "item-detail",
-    pageType: "drill-down",
-    entity: {
+  const itemEntity = useMemo(
+    () => ({
       uri: `pops:inventory/item/${id ?? ""}`,
-      type: "item",
+      type: "item" as const,
       title: itemData?.data?.itemName ?? "",
-    },
-  });
+    }),
+    [id, itemData?.data?.itemName]
+  );
+  useSetPageContext({ page: "item-detail", pageType: "drill-down", entity: itemEntity });
 
   if (isLoading) {
     return (
