@@ -38,7 +38,7 @@
     "@anthropic-ai/sdk": "^0.82.0",
     "@pops/db-types": "workspace:*",
     "@trpc/server": "^11.16.0",
-    "better-sqlite3": "^11.7.0",
+    "better-sqlite3": "^12.8.0",
     "dotenv": "^17.4.1",
     "drizzle-orm": "^0.45.2",
     "express": "^5.0.1",
