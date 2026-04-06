@@ -7,7 +7,10 @@
   "types": "src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./theme": "./src/theme/globals.css",
+    "./theme": {
+      "types": "./src/theme/globals.d.ts",
+      "default": "./src/theme/globals.css"
+    },
     "./primitives/*": "./src/primitives/*"
   },
   "scripts": {
@@ -65,7 +68,7 @@
     "eslint-plugin-react-hooks": "^7.0.0",
     "eslint-plugin-storybook": "^10.3.4",
     "prettier": "^3.0.0",
-    "typescript": "^5.7.0",
+    "typescript": "^6.0.0",
     "typescript-eslint": "^8.58.0",
     "vite": "^8.0.4",
     "vitest": "^4.1.2"
