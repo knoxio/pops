@@ -391,7 +391,7 @@ export function CompareArenaPage() {
         </div>
       ) : pairData?.data ? (
         <>
-          <p className="text-center text-muted-foreground text-sm">
+          <p className="text-center text-base font-medium">
             Which movie has better{" "}
             {(() => {
               const dim = activeDimensions.find((d: { id: number }) => d.id === dimensionId);
@@ -400,17 +400,17 @@ export function CompareArenaPage() {
               return desc ? (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <span className="font-medium text-foreground underline decoration-dotted cursor-help">
+                    <span className="text-primary underline decoration-dotted cursor-help">
                       {name}
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>{desc}</TooltipContent>
                 </Tooltip>
               ) : (
-                <span className="font-medium text-foreground">{name}</span>
+                <span className="text-primary">{name}</span>
               );
             })()}
-            ? Click to pick.
+            ?
           </p>
           <div className="relative grid grid-cols-2 gap-6">
             <MovieCard
