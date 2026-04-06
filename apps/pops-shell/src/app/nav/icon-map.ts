@@ -30,6 +30,10 @@ import {
   MapPin,
   Settings,
   BookOpen,
+  Layers,
+  Database,
+  History,
+  Shuffle,
   type LucideIcon,
 } from "lucide-react";
 
@@ -57,4 +61,8 @@ export const iconMap: Record<string, LucideIcon> = {
   MapPin,
   Settings,
   BookOpen,
+  Layers,
+  Database,
+  History,
+  Shuffle,
 };
