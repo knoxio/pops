@@ -107,6 +107,7 @@ export function useDiscoverCardActions() {
         });
         toast.success(`Marked "${libResult.data.title}" as watched`);
         void utils.media.discovery.assembleSession.invalidate();
+        void utils.media.comparisons.getPendingDebriefs.invalidate();
       } catch {
         toast.error("Failed to mark as watched");
       } finally {
@@ -130,6 +131,7 @@ export function useDiscoverCardActions() {
           mediaId: libResult.data.id,
         });
         toast.success(`Logged rewatch of "${libResult.data.title}"`);
+        void utils.media.comparisons.getPendingDebriefs.invalidate();
       } catch {
         toast.error("Failed to log rewatch");
       } finally {
@@ -140,7 +142,7 @@ export function useDiscoverCardActions() {
         });
       }
     },
-    [addMovieMutation, logWatchMutation]
+    [addMovieMutation, logWatchMutation, utils]
   );
 
   const onNotInterested = useCallback(

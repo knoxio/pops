@@ -66,6 +66,7 @@ export function MarkAsWatchedButton({ mediaId, className }: MarkAsWatchedButtonP
       });
       void utils.media.watchHistory.list.invalidate();
       void utils.media.watchlist.list.invalidate();
+      void utils.media.comparisons.getPendingDebriefs.invalidate();
       setShowDatePicker(false);
       setCustomDate("");
     },
