@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { ComparisonHistoryPage } from "./ComparisonHistoryPage";
 
@@ -229,11 +229,15 @@ describe("ComparisonHistoryPage", () => {
     const searchInput = screen.getByPlaceholderText("Search by movie title…");
     fireEvent.change(searchInput, { target: { value: "Dark" } });
 
-    // Before debounce: still called with no search
-    expect(mockListAllQuery).not.toHaveBeenLastCalledWith(expect.objectContaining({ search: "Dark" }));
+    // Before debounce fires: no search param
+    expect(mockListAllQuery).not.toHaveBeenLastCalledWith(
+      expect.objectContaining({ search: "Dark" })
+    );
 
-    // After 300ms debounce
-    vi.advanceTimersByTime(300);
+    // Fire debounce timer and flush React state updates
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
     expect(mockListAllQuery).toHaveBeenLastCalledWith(expect.objectContaining({ search: "Dark" }));
   });
 
@@ -243,7 +247,9 @@ describe("ComparisonHistoryPage", () => {
 
     const searchInput = screen.getByPlaceholderText("Search by movie title…");
     fireEvent.change(searchInput, { target: { value: "   " } });
-    vi.advanceTimersByTime(300);
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
 
     expect(mockListAllQuery).toHaveBeenLastCalledWith(
       expect.objectContaining({ search: undefined })

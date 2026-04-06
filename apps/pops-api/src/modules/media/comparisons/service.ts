@@ -468,7 +468,9 @@ export function listAllComparisons(
       .all()
       .map((r) => r.id);
     if (matchingIds.length === 0) return { rows: [], total: 0 };
-    conditions.push(or(inArray(comparisons.mediaAId, matchingIds), inArray(comparisons.mediaBId, matchingIds))!);
+    conditions.push(
+      or(inArray(comparisons.mediaAId, matchingIds), inArray(comparisons.mediaBId, matchingIds))!
+    );
   }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;

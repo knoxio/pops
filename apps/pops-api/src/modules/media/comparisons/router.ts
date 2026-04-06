@@ -109,7 +109,12 @@ export const comparisonsRouter = router({
   listAll: protectedProcedure.input(ComparisonHistoryQuerySchema).query(({ input }) => {
     const limit = input.limit ?? DEFAULT_LIMIT;
     const offset = input.offset ?? 0;
-    const { rows, total } = service.listAllComparisons(input.dimensionId, input.search, limit, offset);
+    const { rows, total } = service.listAllComparisons(
+      input.dimensionId,
+      input.search,
+      limit,
+      offset
+    );
     return {
       data: rows.map(toComparison),
       pagination: paginationMeta(total, limit, offset),
