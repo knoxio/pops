@@ -20,7 +20,8 @@
       "msw"
     ],
     "overrides": {
-      "cssstyle": "6.0.2"
+      "cssstyle": "6.0.2",
+      "@asamuzakjp/css-color": "4.1.2"
     }
   },
   "devDependencies": {
