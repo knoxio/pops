@@ -18,7 +18,9 @@ const mockImageCache = {
 };
 
 vi.mock("../tmdb/image-cache.js", () => ({
-  ImageCacheService: vi.fn().mockImplementation(() => mockImageCache),
+  ImageCacheService: vi.fn().mockImplementation(function () {
+    return mockImageCache;
+  }),
   MEDIA_DIR_NAMES: { movie: "movies", tv: "tv" },
 }));
 
@@ -63,15 +65,14 @@ beforeEach(async () => {
   // Reset the mock for each test
   const { TmdbClient } = await import("../tmdb/client.js");
   const MockTmdbClient = vi.mocked(TmdbClient);
-  MockTmdbClient.mockImplementation(
-    () =>
-      ({
-        getMovie: vi.fn().mockResolvedValue(MOCK_TMDB_DETAIL),
-        searchMovies: vi.fn(),
-        getMovieImages: vi.fn(),
-        getGenreList: vi.fn(),
-      }) as unknown as InstanceType<typeof TmdbClient>
-  );
+  MockTmdbClient.mockImplementation(function () {
+    return {
+      getMovie: vi.fn().mockResolvedValue(MOCK_TMDB_DETAIL),
+      searchMovies: vi.fn(),
+      getMovieImages: vi.fn(),
+      getGenreList: vi.fn(),
+    } as unknown as InstanceType<typeof TmdbClient>;
+  });
 });
 
 afterEach(() => {
