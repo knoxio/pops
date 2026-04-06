@@ -425,3 +425,21 @@ See [CONVENTIONS.md](CONVENTIONS.md) for coding conventions (styling, API patter
 - Keep files small, modular and reusable.
 - Aim for small, well named and well structured code.
 - REuse reuse reuse. DRY principles!
+
+## Design Context
+
+Full design context lives in [`.impeccable.md`](.impeccable.md). Key principles for all UI work:
+
+**Personality:** Precise, Warm, Confident. Linear's clarity + Up Bank's approachability.
+**Emotions:** Confidence ("everything is under control") and calm focus ("no noise, just signal").
+
+**Anti-patterns:** Generic SaaS dashboards, brutalist/raw developer aesthetics.
+
+**5 Design Principles:**
+1. **Earned density** — More data, less chrome. Every non-content pixel justifies itself.
+2. **Quiet confidence** — Prominent through hierarchy, not loudness. No visual shouting.
+3. **Warmth through craft** — Warmth from typography, spacing, and transitions — not decoration.
+4. **Domain identity** — Each module has its accent color but all feel like rooms in the same house.
+5. **Glanceability** — Key metrics legible from 1-2m on wall-mounted iPad. Design for two viewing distances.
+
+**Technical:** Dark mode primary, OKLCH colors, Plus Jakarta Sans, 44px+ touch targets, `prefers-reduced-motion` respected.
