@@ -68,7 +68,7 @@ const COMPARISON = {
   mediaBId: 200,
   winnerType: "movie",
   winnerId: 100,
-  drawTier: null,
+  drawTier: null as string | null,
   comparedAt: "2026-01-15T12:00:00Z",
 };
 const DRAW_COMPARISON = {
