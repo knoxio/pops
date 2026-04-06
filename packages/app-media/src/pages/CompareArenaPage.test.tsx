@@ -157,7 +157,6 @@ describe("CompareArenaPage", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     excludeCallCount = 0;
-    // Default mocks — overridden by setupArena but needed for standalone tests
     mockWatchlistListQuery.mockReturnValue({
       data: { data: [] },
       isLoading: false,
@@ -176,28 +175,19 @@ describe("CompareArenaPage", () => {
     expect(screen.getAllByText("Inception").length).toBeGreaterThan(0);
   });
 
-  it("displays current dimension name in prompt", () => {
+  it("renders dimension dropdown with active dimension selected", () => {
     setupArena();
     renderPage();
 
-    expect(screen.getAllByText("Cinematography").length).toBeGreaterThan(0);
-  });
-
-  it("shows dimension tabs with first active highlighted", () => {
-    setupArena();
-    renderPage();
-
-    const tabs = screen.getAllByRole("tab");
-    expect(tabs.length).toBe(3);
-    expect(tabs[0]?.getAttribute("aria-selected")).toBe("true");
-    expect(tabs[1]?.getAttribute("aria-selected")).toBe("false");
+    const select = screen.getByLabelText("Comparison dimension");
+    expect(select).toBeTruthy();
+    expect((select as HTMLSelectElement).value).toBe("1");
   });
 
   it("calls record mutation when picking a winner", () => {
     setupArena();
     renderPage();
 
-    // Click the movie card heading (not action bar buttons)
     fireEvent.click(screen.getAllByText("The Matrix")[0]!);
 
     expect(mockRecordMutate).toHaveBeenCalledWith(
@@ -210,19 +200,13 @@ describe("CompareArenaPage", () => {
     );
   });
 
-  it("skip button calls recordSkip mutation with correct pair details", () => {
+  it("skip button calls recordSkip mutation", () => {
     setupArena();
     renderPage();
 
-    // Initially on Cinematography (dim1)
-    const tabsBefore = screen.getAllByRole("tab");
-    expect(tabsBefore[0]?.getAttribute("aria-selected")).toBe("true");
+    fireEvent.click(screen.getByLabelText("Skip this pair"));
 
-    fireEvent.click(screen.getByText("Skip this pair"));
-
-    // No winner recording should be made
     expect(mockRecordMutate).not.toHaveBeenCalled();
-    // Skip mutation should be called with correct args
     expect(mockSkipMutate).toHaveBeenCalledWith({
       dimensionId: 1,
       mediaAType: "movie",
@@ -278,31 +262,12 @@ describe("CompareArenaPage", () => {
     expect(screen.getByRole("link", { name: "View watchlist" })).toBeTruthy();
   });
 
-  it("disables cards during pending mutation (double-click prevention)", () => {
-    mockDimensionsQuery.mockReturnValue({
-      data: { data: [dim1] },
-      isLoading: false,
-    });
-    mockPairQuery.mockReturnValue({
-      data: { data: { movieA, movieB, dimensionId: 1 } },
-      isLoading: false,
-      error: null,
-    });
+  it("disables cards during pending mutation", () => {
+    setupArena();
+    const { unmount } = renderPage();
 
-    // Override mutation to return isPending: true
-    vi.mocked(mockRecordMutate);
-    const { unmount } = render(
-      <MemoryRouter>
-        <TooltipProvider>
-          <CompareArenaPage />
-        </TooltipProvider>
-      </MemoryRouter>
-    );
-
-    // Simulate pending state by re-mocking
     unmount();
 
-    // Re-mock with isPending true
     const originalMock = vi.fn();
     vi.doMock("../lib/trpc", async () => {
       const mod = await vi.importActual("../lib/trpc");
@@ -320,28 +285,19 @@ describe("CompareArenaPage", () => {
       };
     });
 
-    // Instead, test that the guard in handlePick works
     setupArena();
     renderPage();
 
-    // First click should work — click the card heading
     fireEvent.click(screen.getAllByText("The Matrix")[0]!);
     expect(mockRecordMutate).toHaveBeenCalledTimes(1);
   });
 
-  it("rotates dimension after picking a winner", () => {
+  it("calls record mutation with correct dimension", () => {
     setupArena();
     renderPage();
 
-    // Initially on Cinematography (index 0)
-    const tabs = screen.getAllByRole("tab");
-    expect(tabs[0]?.getAttribute("aria-selected")).toBe("true");
-
-    // Pick a winner — click the card heading
     fireEvent.click(screen.getAllByText("The Matrix")[0]!);
 
-    // The onSuccess callback advances the dimension
-    // We can verify the mutation was called with the first dimension
     expect(mockRecordMutate).toHaveBeenCalledWith(expect.objectContaining({ dimensionId: 1 }));
   });
 
@@ -349,37 +305,26 @@ describe("CompareArenaPage", () => {
     setupArena();
     renderPage();
 
-    // Click the watchlist bookmark button for movie A (The Matrix)
     const bookmarkButtons = screen.getAllByRole("button", { name: /add .* to watchlist/i });
     expect(bookmarkButtons.length).toBeGreaterThan(0);
     fireEvent.click(bookmarkButtons[0]!);
 
-    // Should call watchlist add mutation
     expect(mockWatchlistAddMutate).toHaveBeenCalledWith({
       mediaType: "movie",
       mediaId: 10,
     });
 
-    // Should NOT call comparison record mutation
     expect(mockRecordMutate).not.toHaveBeenCalled();
-
-    // Should NOT trigger pair refresh
     expect(mockRefetchPair).not.toHaveBeenCalled();
-
-    // Should NOT invalidate random pair cache
     expect(mockInvalidateRandomPair).not.toHaveBeenCalled();
 
-    // Trigger onSuccess to verify it only invalidates watchlist + shows toast
     const onSuccess = mockWatchlistAddMutate._opts?.onSuccess as (
       data: unknown,
       variables: { mediaType: string; mediaId: number }
     ) => void;
     onSuccess(undefined, { mediaType: "movie", mediaId: 10 });
 
-    // Should invalidate watchlist cache
     expect(mockInvalidateWatchlistList).toHaveBeenCalled();
-
-    // Should still NOT refetch pair or record comparison
     expect(mockRefetchPair).not.toHaveBeenCalled();
     expect(mockInvalidateRandomPair).not.toHaveBeenCalled();
     expect(mockRecordMutate).not.toHaveBeenCalled();
@@ -443,53 +388,36 @@ describe("CompareArenaPage", () => {
     expect(mockRecordMutate).not.toHaveBeenCalled();
   });
 
-  it("renders N/A button in action bar", () => {
-    setupArena();
-    renderPage();
-
-    expect(screen.getByText("N/A")).toBeTruthy();
-  });
-
   it("N/A button calls excludeFromDimension for both movies", () => {
     setupArena();
     renderPage();
 
-    fireEvent.click(screen.getByText("N/A"));
+    fireEvent.click(screen.getByLabelText(/Exclude both from/));
 
-    // Should call exclude for movie A (id: 10) — no options arg
     expect(mockExcludeMutateA).toHaveBeenCalledWith(
       expect.objectContaining({ mediaType: "movie", mediaId: 10, dimensionId: 1 })
     );
-    // Should call exclude for movie B (id: 20) — with onSuccess options
     expect(mockExcludeMutateB).toHaveBeenCalledWith(
       expect.objectContaining({ mediaType: "movie", mediaId: 20, dimensionId: 1 }),
       expect.objectContaining({ onSuccess: expect.any(Function) })
     );
-    // Should NOT record a comparison
     expect(mockRecordMutate).not.toHaveBeenCalled();
   });
 
-  it("renders Not Watched buttons for both movies on cards and in action bar", () => {
+  it("renders Not Watched buttons on both cards", () => {
     setupArena();
     renderPage();
-    // Card buttons have aria-label, action bar buttons have data-testid + text
+
     expect(screen.getByLabelText("Not watched The Matrix")).toBeTruthy();
     expect(screen.getByLabelText("Not watched Inception")).toBeTruthy();
-    expect(screen.getByText("Not Watched: The Matrix")).toBeTruthy();
-    expect(screen.getByText("Not Watched: Inception")).toBeTruthy();
   });
 
-  it("renders Not Watched action bar buttons with movie titles", () => {
+  it("opens confirmation dialog when Not Watched button is clicked", () => {
     setupArena();
     renderPage();
-    expect(screen.getByText("Not Watched: The Matrix")).toBeTruthy();
-    expect(screen.getByText("Not Watched: Inception")).toBeTruthy();
-  });
 
-  it("opens confirmation dialog when action bar Not Watched button is clicked", () => {
-    setupArena();
-    renderPage();
-    fireEvent.click(screen.getByText("Not Watched: The Matrix"));
+    fireEvent.click(screen.getByLabelText("Not watched The Matrix"));
+
     expect(screen.getByText("Mark as not watched?")).toBeTruthy();
     expect(screen.getByText("Cancel")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Not Watched" })).toBeTruthy();
@@ -502,7 +430,9 @@ describe("CompareArenaPage", () => {
       isLoading: false,
     });
     renderPage();
-    fireEvent.click(screen.getByText("Not Watched: The Matrix"));
+
+    fireEvent.click(screen.getByLabelText("Not watched The Matrix"));
+
     expect(screen.getByText("5")).toBeTruthy();
     expect(screen.getByText(/comparisons involving/)).toBeTruthy();
   });
@@ -510,17 +440,37 @@ describe("CompareArenaPage", () => {
   it("calls blacklistMovie mutation on confirm", () => {
     setupArena();
     renderPage();
-    fireEvent.click(screen.getByText("Not Watched: Inception"));
+
+    fireEvent.click(screen.getByLabelText("Not watched Inception"));
     fireEvent.click(screen.getByRole("button", { name: "Not Watched" }));
+
     expect(mockBlacklistMutate).toHaveBeenCalledWith({ mediaType: "movie", mediaId: 20 });
   });
 
   it("closes dialog on cancel without calling blacklist", () => {
     setupArena();
     renderPage();
-    fireEvent.click(screen.getByText("Not Watched: The Matrix"));
+
+    fireEvent.click(screen.getByLabelText("Not watched The Matrix"));
     expect(screen.getByText("Mark as not watched?")).toBeTruthy();
+
     fireEvent.click(screen.getByText("Cancel"));
     expect(mockBlacklistMutate).not.toHaveBeenCalled();
+  });
+
+  it("renders draw tier buttons with tooltips", () => {
+    setupArena();
+    renderPage();
+
+    expect(screen.getByLabelText("Equally great")).toBeTruthy();
+    expect(screen.getByLabelText("Equally average")).toBeTruthy();
+    expect(screen.getByLabelText("Equally poor")).toBeTruthy();
+  });
+
+  it("renders history link in header", () => {
+    setupArena();
+    renderPage();
+
+    expect(screen.getByLabelText("Comparison history")).toBeTruthy();
   });
 });

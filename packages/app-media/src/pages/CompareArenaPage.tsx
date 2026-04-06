@@ -12,15 +12,26 @@ import {
   Badge,
   Skeleton,
   Button,
+  Select,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@pops/ui";
-import { ImageOff, Bookmark, ChevronUp, Minus, ChevronDown, X } from "lucide-react";
+import {
+  ImageOff,
+  Bookmark,
+  ChevronUp,
+  Minus,
+  ChevronDown,
+  Clock,
+  EyeOff,
+  SkipForward,
+  Ban,
+  History,
+} from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "../lib/trpc";
 import { DimensionManager } from "../components/DimensionManager";
-import { ArenaActionBar } from "../components/ArenaActionBar";
 
 interface ScoreDelta {
   winnerId: number;
@@ -35,7 +46,7 @@ export function CompareArenaPage() {
   const [manualDimensionId, setManualDimensionId] = useState<number | null>(null);
   const [scoreDelta, setScoreDelta] = useState<ScoreDelta | null>(null);
 
-  // Fetch dimensions for tab selector
+  // Fetch dimensions for selector
   const { data: dimensionsData, isLoading: dimsLoading } =
     trpc.media.comparisons.listDimensions.useQuery();
 
@@ -52,7 +63,6 @@ export function CompareArenaPage() {
     {
       enabled: activeDimensions.length > 0,
       refetchOnWindowFocus: false,
-      // Never cache — each call should return a fresh pair
       gcTime: 0,
       staleTime: 0,
     }
@@ -100,7 +110,6 @@ export function CompareArenaPage() {
             ?.score ?? 1500;
 
         if (isDraw) {
-          // Both get the same delta for draws
           const drawOutcome =
             variables.drawTier === "high" ? 0.7 : variables.drawTier === "low" ? 0.3 : 0.5;
           const expectedA = 1 / (1 + Math.pow(10, (scoreB - scoreA) / 400));
@@ -117,20 +126,16 @@ export function CompareArenaPage() {
 
       setSessionCount((c) => c + 1);
       setManualDimensionId(null);
-
-      // Invalidate pair cache so next fetch returns a fresh pair
       utils.media.comparisons.getSmartPair.invalidate();
 
-      // Show delta briefly, then clear it
       setTimeout(() => {
         setScoreDelta(null);
       }, 1500);
     },
   });
 
-  // Watchlist: check which movies are on it, add mutation
+  // Watchlist
   const movieAId = pairData?.data?.movieA?.id;
-  const _movieBId = pairData?.data?.movieB?.id;
 
   const { data: watchlistData } = trpc.media.watchlist.list.useQuery(
     { mediaType: "movie" },
@@ -152,7 +157,7 @@ export function CompareArenaPage() {
     },
   });
 
-  // Mark stale mutation
+  // Mark stale
   const markStaleMutation = trpc.media.comparisons.markStale.useMutation({
     onSuccess: (
       data: { data: { staleness: number } },
@@ -163,7 +168,6 @@ export function CompareArenaPage() {
       const staleness = data.data.staleness;
       const timesMarked = Math.round(Math.log(staleness) / Math.log(0.5));
       toast.success(`${movie?.title ?? "Movie"} marked stale (×${timesMarked})`);
-      // Advance to next pair
       setManualDimensionId(null);
       utils.media.comparisons.getSmartPair.invalidate();
     },
@@ -177,7 +181,7 @@ export function CompareArenaPage() {
     [markStaleMutation]
   );
 
-  // N/A (dimension exclusion) mutation
+  // N/A (dimension exclusion)
   const excludeAMutation = trpc.media.comparisons.excludeFromDimension.useMutation();
   const excludeBMutation = trpc.media.comparisons.excludeFromDimension.useMutation();
   const naIsPending = excludeAMutation.isPending || excludeBMutation.isPending;
@@ -191,20 +195,19 @@ export function CompareArenaPage() {
       { mediaType: "movie", mediaId: movieB.id, dimensionId },
       {
         onSuccess: () => {
-          toast.success("Both movies excluded from this dimension");
+          toast.success("Both excluded from this dimension");
           utils.media.comparisons.getSmartPair.invalidate();
         },
       }
     );
   }, [pairData, dimensionId, naIsPending, excludeAMutation, excludeBMutation, utils]);
 
-  // Blacklist (Not Watched) mutation
+  // Blacklist (Not Watched)
   const [blacklistTarget, setBlacklistTarget] = useState<{
     id: number;
     title: string;
   } | null>(null);
 
-  // Fetch comparison count for the blacklist target (shown in confirmation dialog)
   const { data: blacklistComparisonData } = trpc.media.comparisons.listForMedia.useQuery(
     { mediaType: "movie", mediaId: blacklistTarget?.id ?? 0, limit: 1 },
     { enabled: blacklistTarget !== null }
@@ -258,10 +261,10 @@ export function CompareArenaPage() {
     [pairData, dimensionId, recordMutation]
   );
 
-  // Skip pair with cooloff mutation
+  // Skip pair
   const skipMutation = trpc.media.comparisons.recordSkip.useMutation({
     onSuccess: () => {
-      toast.success("Pair skipped for 10 comparisons");
+      toast.success("Pair skipped");
       setManualDimensionId(null);
       utils.media.comparisons.getSmartPair.invalidate();
     },
@@ -299,59 +302,65 @@ export function CompareArenaPage() {
     [pairData, dimensionId, recordMutation]
   );
 
+  const isPending = recordMutation.isPending || scoreDelta !== null;
+  const activeDimName =
+    activeDimensions.find((d: { id: number }) => d.id === dimensionId)?.name ?? "Overall";
+
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6">
+    <div className="p-6 max-w-4xl mx-auto space-y-5">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Compare Arena</h1>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-sm">
-            {sessionCount} comparison{sessionCount !== 1 ? "s" : ""} this session
-          </Badge>
-          <Link to="/media/compare/history">
-            <Button variant="outline" size="sm">
-              History
-            </Button>
-          </Link>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold">Arena</h1>
+          {sessionCount > 0 && (
+            <Badge variant="outline" className="text-xs tabular-nums">
+              {sessionCount}
+            </Badge>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link to="/media/compare/history">
+                <Button variant="ghost" size="icon" aria-label="Comparison history">
+                  <History className="h-4.5 w-4.5" />
+                </Button>
+              </Link>
+            </TooltipTrigger>
+            <TooltipContent>History</TooltipContent>
+          </Tooltip>
           <DimensionManager />
         </div>
       </div>
 
-      {/* Dimension tabs */}
+      {/* Dimension selector */}
       {dimsLoading ? (
-        <div className="flex gap-2">
-          <Skeleton className="h-8 w-20" />
-          <Skeleton className="h-8 w-24" />
-          <Skeleton className="h-8 w-20" />
-        </div>
+        <Skeleton className="h-11 w-48" />
       ) : activeDimensions.length === 0 ? (
-        <p className="text-muted-foreground">No comparison dimensions configured yet.</p>
+        <p className="text-muted-foreground text-sm">No dimensions configured yet.</p>
       ) : (
-        <div className="flex gap-2 flex-wrap" role="tablist">
-          {activeDimensions.map((dim: { id: number; name: string }) => (
-            <button
-              key={dim.id}
-              role="tab"
-              aria-selected={dim.id === dimensionId}
-              onClick={() => {
-                setManualDimensionId(dim.id);
-                setScoreDelta(null);
-                utils.media.comparisons.getSmartPair.invalidate();
-              }}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors cursor-pointer ${
-                dim.id === dimensionId
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
-            >
-              {dim.name}
-            </button>
-          ))}
-        </div>
+        <Select
+          value={String(dimensionId ?? "")}
+          onChange={(e) => {
+            const id = Number(e.target.value);
+            setManualDimensionId(id);
+            setScoreDelta(null);
+            utils.media.comparisons.getSmartPair.invalidate();
+          }}
+          options={activeDimensions.map((dim: { id: number; name: string }) => ({
+            value: String(dim.id),
+            label: dim.name,
+          }))}
+          variant="ghost"
+          size="sm"
+          containerClassName="w-auto"
+          aria-label="Comparison dimension"
+        />
       )}
 
       {/* Arena */}
       {pairLoading ? (
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 gap-8">
           <MovieCardSkeleton />
           <MovieCardSkeleton />
         </div>
@@ -390,126 +399,134 @@ export function CompareArenaPage() {
           )}
         </div>
       ) : pairData?.data ? (
-        <>
-          <p className="text-center text-muted-foreground text-sm">
-            Which movie has better{" "}
-            {(() => {
-              const dim = activeDimensions.find((d: { id: number }) => d.id === dimensionId);
-              const name = dim?.name ?? "Overall";
-              const desc = dim?.description;
-              return desc ? (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="font-medium text-foreground underline decoration-dotted cursor-help">
-                      {name}
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>{desc}</TooltipContent>
-                </Tooltip>
-              ) : (
-                <span className="font-medium text-foreground">{name}</span>
-              );
-            })()}
-            ? Click to pick.
-          </p>
-          <div className="relative grid grid-cols-2 gap-6">
-            <MovieCard
-              movie={pairData.data.movieA}
-              onPick={() => handlePick(pairData.data.movieA.id)}
-              disabled={recordMutation.isPending || scoreDelta !== null}
-              scoreDelta={
-                scoreDelta?.winnerId === pairData.data.movieA.id
-                  ? (scoreDelta?.winnerDelta ?? null)
-                  : scoreDelta?.loserId === pairData.data.movieA.id
-                    ? (scoreDelta?.loserDelta ?? null)
-                    : null
-              }
-              isWinner={scoreDelta?.winnerId === pairData.data.movieA.id}
-              onAddToWatchlist={() => handleAddToWatchlist(pairData.data.movieA.id)}
-              isOnWatchlist={watchlistedMovieIds.has(pairData.data.movieA.id)}
-              watchlistPending={addToWatchlistMutation.isPending}
-              onBlacklist={() => handleBlacklist(pairData.data.movieA)}
-              blacklistPending={blacklistMutation.isPending}
-            />
+        <div className="relative grid grid-cols-[1fr_auto_1fr] gap-3 items-center">
+          {/* Movie A */}
+          <MovieCard
+            movie={pairData.data.movieA}
+            onPick={() => handlePick(pairData.data.movieA.id)}
+            disabled={isPending}
+            scoreDelta={
+              scoreDelta?.winnerId === pairData.data.movieA.id
+                ? (scoreDelta?.winnerDelta ?? null)
+                : scoreDelta?.loserId === pairData.data.movieA.id
+                  ? (scoreDelta?.loserDelta ?? null)
+                  : null
+            }
+            isWinner={scoreDelta?.winnerId === pairData.data.movieA.id}
+            onAddToWatchlist={() => handleAddToWatchlist(pairData.data.movieA.id)}
+            isOnWatchlist={watchlistedMovieIds.has(pairData.data.movieA.id)}
+            watchlistPending={addToWatchlistMutation.isPending}
+            onMarkStale={() => handleMarkStale(pairData.data.movieA.id)}
+            stalePending={markStaleMutation.isPending}
+            onBlacklist={() => handleBlacklist(pairData.data.movieA)}
+            blacklistPending={blacklistMutation.isPending}
+            dimensionName={activeDimName}
+          />
 
-            {/* Draw tier buttons — centered between cards */}
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10 flex flex-col gap-1.5">
-              {[
+          {/* Center column — actions for both movies */}
+          <div className="flex flex-col items-center gap-1.5">
+            {/* Draw tier buttons */}
+            {(
+              [
                 {
                   tier: "high" as const,
                   icon: ChevronUp,
                   label: "Equally great",
-                  color: "hover:border-green-500 hover:text-green-500",
+                  hoverColor: "hover:border-green-500 hover:text-green-500",
                 },
                 {
                   tier: "mid" as const,
                   icon: Minus,
                   label: "Equally average",
-                  color: "hover:border-muted-foreground",
+                  hoverColor: "hover:border-muted-foreground",
                 },
                 {
                   tier: "low" as const,
                   icon: ChevronDown,
                   label: "Equally poor",
-                  color: "hover:border-red-500 hover:text-red-500",
+                  hoverColor: "hover:border-red-500 hover:text-red-500",
                 },
-              ].map(({ tier, icon: Icon, label, color }) => (
-                <Tooltip key={tier}>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => handleDraw(tier)}
-                      disabled={recordMutation.isPending || scoreDelta !== null}
-                      className={`rounded-full h-10 w-10 shadow-lg hover:shadow-xl hover:scale-110 active:scale-95 bg-background ${color}`}
-                      aria-label={label}
-                    >
-                      <Icon className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">{label}</TooltipContent>
-                </Tooltip>
-              ))}
-            </div>
+              ] as const
+            ).map(({ tier, icon: Icon, label, hoverColor }) => (
+              <Tooltip key={tier}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handleDraw(tier)}
+                    disabled={isPending}
+                    className={`rounded-full h-10 w-10 bg-background ${hoverColor}`}
+                    aria-label={label}
+                  >
+                    <Icon className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">{label}</TooltipContent>
+              </Tooltip>
+            ))}
 
-            <MovieCard
-              movie={pairData.data.movieB}
-              onPick={() => handlePick(pairData.data.movieB.id)}
-              disabled={recordMutation.isPending || scoreDelta !== null}
-              scoreDelta={
-                scoreDelta?.winnerId === pairData.data.movieB.id
-                  ? (scoreDelta?.winnerDelta ?? null)
-                  : scoreDelta?.loserId === pairData.data.movieB.id
-                    ? (scoreDelta?.loserDelta ?? null)
-                    : null
-              }
-              isWinner={scoreDelta?.winnerId === pairData.data.movieB.id}
-              onAddToWatchlist={() => handleAddToWatchlist(pairData.data.movieB.id)}
-              isOnWatchlist={watchlistedMovieIds.has(pairData.data.movieB.id)}
-              watchlistPending={addToWatchlistMutation.isPending}
-              onBlacklist={() => handleBlacklist(pairData.data.movieB)}
-              blacklistPending={blacklistMutation.isPending}
-            />
+            {/* Separator */}
+            <div className="w-5 border-t border-border my-1" />
+
+            {/* Skip pair */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleSkip}
+                  disabled={isPending || skipMutation.isPending}
+                  className="rounded-full h-10 w-10 bg-background hover:border-muted-foreground"
+                  aria-label="Skip this pair"
+                >
+                  <SkipForward className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">Skip pair</TooltipContent>
+            </Tooltip>
+
+            {/* N/A — exclude both from dimension */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={handleNA}
+                  disabled={isPending || naIsPending}
+                  className="rounded-full h-10 w-10 bg-background hover:border-muted-foreground"
+                  aria-label={`Exclude both from ${activeDimName}`}
+                >
+                  <Ban className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">N/A for {activeDimName}</TooltipContent>
+            </Tooltip>
           </div>
-        </>
-      ) : null}
 
-      {/* Action bar */}
-      {pairData?.data && !recordMutation.isPending && !scoreDelta && (
-        <ArenaActionBar
-          movieA={pairData.data.movieA}
-          movieB={pairData.data.movieB}
-          onSkip={handleSkip}
-          onStale={handleMarkStale}
-          onNA={handleNA}
-          onBlacklist={handleBlacklist}
-          onDone={() => navigate("/media")}
-          skipPending={skipMutation.isPending}
-          stalePending={markStaleMutation.isPending}
-          naPending={naIsPending}
-          blacklistPending={blacklistMutation.isPending}
-        />
-      )}
+          {/* Movie B */}
+          <MovieCard
+            movie={pairData.data.movieB}
+            onPick={() => handlePick(pairData.data.movieB.id)}
+            disabled={isPending}
+            scoreDelta={
+              scoreDelta?.winnerId === pairData.data.movieB.id
+                ? (scoreDelta?.winnerDelta ?? null)
+                : scoreDelta?.loserId === pairData.data.movieB.id
+                  ? (scoreDelta?.loserDelta ?? null)
+                  : null
+            }
+            isWinner={scoreDelta?.winnerId === pairData.data.movieB.id}
+            onAddToWatchlist={() => handleAddToWatchlist(pairData.data.movieB.id)}
+            isOnWatchlist={watchlistedMovieIds.has(pairData.data.movieB.id)}
+            watchlistPending={addToWatchlistMutation.isPending}
+            onMarkStale={() => handleMarkStale(pairData.data.movieB.id)}
+            stalePending={markStaleMutation.isPending}
+            onBlacklist={() => handleBlacklist(pairData.data.movieB)}
+            blacklistPending={blacklistMutation.isPending}
+            dimensionName={activeDimName}
+          />
+        </div>
+      ) : null}
 
       {/* Blacklist confirmation dialog */}
       <AlertDialog
@@ -554,6 +571,7 @@ export function CompareArenaPage() {
   );
 }
 
+/** Single movie card with zone-based action layout. */
 function MovieCard({
   movie,
   onPick,
@@ -563,8 +581,11 @@ function MovieCard({
   onAddToWatchlist,
   isOnWatchlist,
   watchlistPending,
+  onMarkStale,
+  stalePending,
   onBlacklist,
   blacklistPending,
+  dimensionName,
 }: {
   movie: { id: number; title: string; posterPath: string | null; posterUrl: string | null };
   onPick: () => void;
@@ -574,99 +595,142 @@ function MovieCard({
   onAddToWatchlist?: () => void;
   isOnWatchlist?: boolean;
   watchlistPending?: boolean;
+  onMarkStale?: () => void;
+  stalePending?: boolean;
   onBlacklist?: () => void;
   blacklistPending?: boolean;
+  dimensionName?: string;
 }) {
   const posterSrc = movie.posterUrl ?? undefined;
   const [imgError, setImgError] = useState(false);
 
   return (
-    <div
-      className={`group relative flex flex-col items-center text-center rounded-lg border p-4 transition-all ${
-        isWinner
-          ? "border-green-500 shadow-lg scale-[1.02]"
-          : isWinner === false && scoreDelta != null
-            ? "border-red-500/50 opacity-75"
-            : "border-border hover:border-primary hover:shadow-lg hover:scale-[1.02]"
-      }`}
-    >
-      {/* Main clickable area for picking winner */}
+    <div className="flex flex-col gap-2">
+      <div
+        className={`group relative rounded-lg overflow-hidden transition-all ${
+          isWinner
+            ? "ring-2 ring-green-500 shadow-lg scale-[1.02]"
+            : isWinner === false && scoreDelta != null
+              ? "ring-2 ring-red-500/50 opacity-75"
+              : ""
+        }`}
+      >
+        {/* Main clickable poster area */}
+        <button
+          onClick={onPick}
+          disabled={disabled}
+          className={`w-full block ${disabled ? "cursor-default" : "cursor-pointer active:scale-[0.98]"} transition-transform`}
+        >
+          {imgError ? (
+            <div className="w-full aspect-[2/3] bg-muted flex items-center justify-center">
+              <ImageOff className="h-8 w-8 text-muted-foreground" />
+            </div>
+          ) : (
+            <img
+              src={posterSrc}
+              alt={`${movie.title} poster`}
+              className="w-full aspect-[2/3] object-cover"
+              onError={() => setImgError(true)}
+            />
+          )}
+        </button>
+
+        {/* TOP ZONE — non-dismissing actions */}
+        {onAddToWatchlist && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddToWatchlist();
+                }}
+                disabled={isOnWatchlist || watchlistPending}
+                className={`absolute top-2 left-2 p-1.5 rounded-full backdrop-blur-sm transition-colors ${
+                  isOnWatchlist
+                    ? "bg-app-accent/90 text-app-accent-foreground"
+                    : "bg-black/50 text-white/80 hover:text-white hover:bg-black/70"
+                }`}
+                aria-label={isOnWatchlist ? "On watchlist" : `Add ${movie.title} to watchlist`}
+              >
+                <Bookmark className={`h-4 w-4 ${isOnWatchlist ? "fill-current" : ""}`} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>{isOnWatchlist ? "On watchlist" : "Add to watchlist"}</TooltipContent>
+          </Tooltip>
+        )}
+
+        {/* Score delta animation */}
+        {scoreDelta != null && (
+          <div
+            className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-bold tabular-nums animate-bounce ${
+              scoreDelta > 0 ? "bg-green-500/90 text-white" : "bg-red-500/90 text-white"
+            }`}
+          >
+            {scoreDelta > 0 ? "+" : ""}
+            {scoreDelta}
+          </div>
+        )}
+
+        {/* BOTTOM ZONE — dismissing actions (visible on hover/touch) */}
+        <div className="absolute bottom-0 inset-x-0 flex justify-center gap-2 p-2 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
+          {onMarkStale && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onMarkStale();
+                  }}
+                  disabled={stalePending}
+                  className="p-2 rounded-full bg-black/40 text-white/80 hover:text-white hover:bg-black/60 backdrop-blur-sm transition-colors"
+                  aria-label={`Mark ${movie.title} as stale`}
+                >
+                  <Clock className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Stale — reduce score weight</TooltipContent>
+            </Tooltip>
+          )}
+          {onBlacklist && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onBlacklist();
+                  }}
+                  disabled={blacklistPending}
+                  className="p-2 rounded-full bg-black/40 text-white/80 hover:text-red-400 hover:bg-black/60 backdrop-blur-sm transition-colors"
+                  aria-label={`Not watched ${movie.title}`}
+                >
+                  <EyeOff className="h-4 w-4" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                Not watched — remove from {dimensionName ?? "rankings"}
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+      </div>
+
+      {/* Title — clickable, same as picking winner */}
       <button
         onClick={onPick}
         disabled={disabled}
-        className={`w-full flex flex-col items-center ${disabled ? "cursor-default" : "cursor-pointer active:scale-[0.98]"}`}
+        className={`font-semibold text-sm text-center truncate px-1 transition-colors hover:text-primary ${disabled ? "cursor-default" : "cursor-pointer"}`}
       >
-        {imgError ? (
-          <div className="w-full aspect-[2/3] rounded-md mb-3 bg-muted flex items-center justify-center">
-            <ImageOff className="h-8 w-8 text-muted-foreground" />
-          </div>
-        ) : (
-          <img
-            src={posterSrc}
-            alt={`${movie.title} poster`}
-            className="w-full aspect-[2/3] rounded-md object-cover mb-3"
-            onError={() => setImgError(true)}
-          />
-        )}
-        <h3 className="font-semibold text-sm group-hover:text-primary transition-colors">
-          {movie.title}
-        </h3>
+        {movie.title}
       </button>
-
-      {/* Add to watchlist button */}
-      {onAddToWatchlist && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onAddToWatchlist();
-          }}
-          disabled={isOnWatchlist || watchlistPending}
-          className={`absolute top-2 left-2 p-1.5 rounded-full transition-colors ${
-            isOnWatchlist
-              ? "bg-app-accent text-app-accent-foreground"
-              : "bg-background/80 text-muted-foreground hover:text-foreground hover:bg-background"
-          }`}
-          aria-label={isOnWatchlist ? "On watchlist" : `Add ${movie.title} to watchlist`}
-        >
-          <Bookmark className={`h-4 w-4 ${isOnWatchlist ? "fill-current" : ""}`} />
-        </button>
-      )}
-
-      {/* Not Watched (blacklist) button */}
-      {onBlacklist && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onBlacklist();
-          }}
-          disabled={blacklistPending}
-          className="absolute bottom-2 left-2 p-1.5 rounded-full transition-colors bg-background/80 text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 border border-red-200 dark:border-red-800"
-          aria-label={`Not watched ${movie.title}`}
-        >
-          <X className="h-4 w-4" />
-        </button>
-      )}
-
-      {/* Score delta animation */}
-      {scoreDelta != null && (
-        <div
-          className={`absolute top-3 right-3 px-2 py-1 rounded-full text-xs font-bold animate-bounce ${
-            scoreDelta > 0 ? "bg-green-500/90 text-white" : "bg-red-500/90 text-white"
-          }`}
-        >
-          {scoreDelta > 0 ? "+" : ""}
-          {scoreDelta}
-        </div>
-      )}
     </div>
   );
 }
 
 function MovieCardSkeleton() {
   return (
-    <div className="flex flex-col items-center rounded-lg border border-border p-4">
-      <Skeleton className="w-full aspect-[2/3] rounded-md mb-3" />
-      <Skeleton className="h-4 w-24" />
+    <div className="flex flex-col gap-2">
+      <Skeleton className="w-full aspect-[2/3] rounded-lg" />
+      <Skeleton className="h-4 w-24 mx-auto" />
     </div>
   );
 }
