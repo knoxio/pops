@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useSearchParams, Link } from "react-router";
 import { useSetPageContext } from "@pops/navigation";
 import { Button, Select, Skeleton, TextInput } from "@pops/ui";
@@ -194,14 +194,16 @@ export function LibraryPage() {
     pageSize,
   });
 
-  useSetPageContext({
-    page: "library",
-    filters: {
-      ...(typeFilter !== "all" && { type: typeFilter }),
-      ...(sortBy !== "title" && { sort: sortBy }),
-      ...(searchQuery && { search: searchQuery }),
-    },
-  });
+  const libraryFilters = useMemo(() => {
+    const f: Record<string, string> = {};
+    if (typeFilter !== "all") f.type = typeFilter;
+    if (sortBy !== "title") f.sort = sortBy;
+    if (searchQuery) f.search = searchQuery;
+    if (genreFilter) f.genre = genreFilter;
+    return f;
+  }, [typeFilter, sortBy, searchQuery, genreFilter]);
+
+  useSetPageContext({ page: "library", pageType: "top-level", filters: libraryFilters });
 
   const totalItems = pagination.total;
   const totalPages = pagination.totalPages;
