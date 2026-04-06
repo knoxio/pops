@@ -124,6 +124,9 @@ export const navConfig: AppNavConfig = {
     { path: "/rankings", label: "Rankings", icon: "Trophy" },
     { path: "/search", label: "Search", icon: "Search" },
     { path: "/compare", label: "Compare", icon: "ArrowLeftRight" },
+    { path: "/compare/history", label: "Compare History", icon: "History" },
+    { path: "/tier-list", label: "Tier List", icon: "Layers" },
+    { path: "/quick-pick", label: "Quick Pick", icon: "Shuffle" },
   ],
 };
 
