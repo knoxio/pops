@@ -88,6 +88,12 @@ vi.mock("../lib/trpc", () => ({
             return { mutate: mockWatchlistAddMutate, isPending: false };
           },
         },
+        remove: {
+          useMutation: () => ({
+            mutate: vi.fn(),
+            isPending: false,
+          }),
+        },
       },
     },
     useUtils: () => ({
