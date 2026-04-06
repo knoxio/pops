@@ -7,8 +7,8 @@ function findCollection(id: string) {
 }
 
 describe("CONTEXT_COLLECTIONS", () => {
-  it("defines 7 collections", () => {
-    expect(CONTEXT_COLLECTIONS).toHaveLength(7);
+  it("defines 11 collections", () => {
+    expect(CONTEXT_COLLECTIONS).toHaveLength(11);
   });
 
   it("each collection has required fields", () => {
@@ -132,6 +132,98 @@ describe("trigger — oscar-season", () => {
   });
 });
 
+describe("trigger — morning", () => {
+  const col = findCollection("morning");
+
+  it("matches 6am", () => {
+    expect(col.trigger(6, 6, 3)).toBe(true);
+  });
+
+  it("matches 10am (boundary)", () => {
+    expect(col.trigger(10, 6, 3)).toBe(true);
+  });
+
+  it("rejects 11am (after window)", () => {
+    expect(col.trigger(11, 6, 3)).toBe(false);
+  });
+
+  it("rejects 5am (before window)", () => {
+    expect(col.trigger(5, 6, 3)).toBe(false);
+  });
+
+  it("rejects 3pm", () => {
+    expect(col.trigger(15, 6, 3)).toBe(false);
+  });
+});
+
+describe("trigger — evening", () => {
+  const col = findCollection("evening");
+
+  it("matches 6pm", () => {
+    expect(col.trigger(18, 6, 3)).toBe(true);
+  });
+
+  it("matches 10pm (boundary)", () => {
+    expect(col.trigger(22, 6, 3)).toBe(true);
+  });
+
+  it("rejects 11pm (after window)", () => {
+    expect(col.trigger(23, 6, 3)).toBe(false);
+  });
+
+  it("rejects 5pm (before window)", () => {
+    expect(col.trigger(17, 6, 3)).toBe(false);
+  });
+
+  it("rejects noon", () => {
+    expect(col.trigger(12, 6, 3)).toBe(false);
+  });
+});
+
+describe("trigger — weekend", () => {
+  const col = findCollection("weekend");
+
+  it("matches Saturday", () => {
+    expect(col.trigger(14, 6, 6)).toBe(true);
+  });
+
+  it("matches Sunday", () => {
+    expect(col.trigger(14, 6, 0)).toBe(true);
+  });
+
+  it("rejects Monday", () => {
+    expect(col.trigger(14, 6, 1)).toBe(false);
+  });
+
+  it("rejects Friday", () => {
+    expect(col.trigger(14, 6, 5)).toBe(false);
+  });
+});
+
+describe("trigger — seasonal", () => {
+  const col = findCollection("seasonal");
+
+  it("matches June", () => {
+    expect(col.trigger(12, 6, 3)).toBe(true);
+  });
+
+  it("matches July", () => {
+    expect(col.trigger(12, 7, 3)).toBe(true);
+  });
+
+  it("matches August", () => {
+    expect(col.trigger(12, 8, 3)).toBe(true);
+  });
+
+  it("rejects May (before summer)", () => {
+    expect(col.trigger(12, 5, 3)).toBe(false);
+  });
+
+  it("rejects September (after summer)", () => {
+    expect(col.trigger(12, 9, 3)).toBe(false);
+  });
+});
+
 describe("trigger — rainy-day", () => {
   const col = findCollection("rainy-day");
 
@@ -148,17 +240,17 @@ describe("getActiveCollections", () => {
   });
 
   it("fills with rainy-day fallback when no triggers match", () => {
-    // Wednesday 3pm in June — nothing matches except rainy-day
-    const result = getActiveCollections(15, 6, 3);
+    // Wednesday 3pm in November — nothing matches except rainy-day
+    const result = getActiveCollections(15, 11, 3);
     expect(result[0]!.id).toBe("rainy-day");
     expect(result[1]!.id).toBe("rainy-day");
   });
 
   it("includes rainy-day when only 1 non-fallback matches", () => {
-    // Sunday 3pm in June — only sunday-flicks matches
-    const result = getActiveCollections(15, 6, 0);
+    // Wednesday 3pm in February — only oscar-season matches
+    const result = getActiveCollections(15, 2, 3);
     const ids = result.map((c) => c.id);
-    expect(ids).toContain("sunday-flicks");
+    expect(ids).toContain("oscar-season");
     expect(ids).toContain("rainy-day");
   });
 

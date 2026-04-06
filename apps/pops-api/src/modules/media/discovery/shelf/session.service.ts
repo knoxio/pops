@@ -10,8 +10,9 @@
  *   - at least 1 personal shelf (shelfId starts with 'recommendations' or 'because-you-watched')
  *
  * Scoring:
- *   score = instance.score × freshness × (1 + varietyBonus)
+ *   score = instance.score × freshness × (1 + varietyBonus + contextBonus)
  *   varietyBonus = 0.2 if category !== previous selected category, else 0
+ *   contextBonus = 0.3 if category === 'context' (time-triggered shelves), else 0
  */
 import type { PreferenceProfile, ShelfInstance, ShelfCategory } from "./types.js";
 import { getRegisteredShelves } from "./registry.js";
@@ -24,6 +25,7 @@ const MAX_GENRE_SHELVES = 2;
 const MAX_LOCAL_PER_WINDOW = 1;
 const LOCAL_WINDOW_SIZE = 3;
 const VARIETY_BONUS = 0.2;
+const CONTEXT_BOOST = 0.3;
 
 function isGenreShelf(shelfId: string): boolean {
   return shelfId.startsWith("best-in-genre") || shelfId.startsWith("genre-crossover");
@@ -39,11 +41,12 @@ interface ScoredCandidate {
   baseScore: number;
 }
 
-/** Compute scores for all candidates, applying variety bonus based on last category. */
+/** Compute scores for all candidates, applying variety bonus and context boost. */
 function computeScore(candidate: ScoredCandidate, lastCategory: ShelfCategory | null): number {
   const varietyBonus =
     lastCategory !== null && candidate.category !== lastCategory ? VARIETY_BONUS : 0;
-  return candidate.baseScore * (1 + varietyBonus);
+  const contextBonus = candidate.category === "context" ? CONTEXT_BOOST : 0;
+  return candidate.baseScore * (1 + varietyBonus + contextBonus);
 }
 
 /** Weighted random sample from candidates proportional to their scores. */

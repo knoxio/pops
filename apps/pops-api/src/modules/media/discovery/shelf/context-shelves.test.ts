@@ -284,6 +284,129 @@ describe("oscar-season instance", () => {
 });
 
 // ---------------------------------------------------------------------------
+// morning: active 6am–10am
+// ---------------------------------------------------------------------------
+
+describe("morning instance", () => {
+  it("generates instance at 8am", () => {
+    vi.setSystemTime(new Date("2024-06-12T08:00:00")); // Wednesday 8am
+    const instances = contextShelfDefinition.generate(stubProfile);
+    const instance = instances.find((i) => i.shelfId === "context:morning");
+    expect(instance).toBeDefined();
+    expect(instance!.shelfId).toBe("context:morning");
+    vi.useRealTimers();
+  });
+
+  it("generates instance at 6am (boundary)", () => {
+    vi.setSystemTime(new Date("2024-06-12T06:00:00"));
+    const instances = contextShelfDefinition.generate(stubProfile);
+    expect(instances.find((i) => i.shelfId === "context:morning")).toBeDefined();
+    vi.useRealTimers();
+  });
+
+  it("does not generate instance at 11am", () => {
+    vi.setSystemTime(new Date("2024-06-12T11:00:00"));
+    const instances = contextShelfDefinition.generate(stubProfile);
+    expect(instances.find((i) => i.shelfId === "context:morning")).toBeUndefined();
+    vi.useRealTimers();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// evening: active 6pm–10pm
+// ---------------------------------------------------------------------------
+
+describe("evening instance", () => {
+  it("generates instance at 8pm", () => {
+    vi.setSystemTime(new Date("2024-06-12T20:00:00")); // Wednesday 8pm
+    const instances = contextShelfDefinition.generate(stubProfile);
+    const instance = instances.find((i) => i.shelfId === "context:evening");
+    expect(instance).toBeDefined();
+    expect(instance!.shelfId).toBe("context:evening");
+    vi.useRealTimers();
+  });
+
+  it("does not generate instance at 11pm", () => {
+    vi.setSystemTime(new Date("2024-06-12T23:00:00"));
+    const instances = contextShelfDefinition.generate(stubProfile);
+    expect(instances.find((i) => i.shelfId === "context:evening")).toBeUndefined();
+    vi.useRealTimers();
+  });
+
+  it("does not generate instance at noon", () => {
+    vi.setSystemTime(new Date("2024-06-12T12:00:00"));
+    const instances = contextShelfDefinition.generate(stubProfile);
+    expect(instances.find((i) => i.shelfId === "context:evening")).toBeUndefined();
+    vi.useRealTimers();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// weekend: active on Saturday and Sunday
+// ---------------------------------------------------------------------------
+
+describe("weekend instance", () => {
+  it("generates instance on Saturday", () => {
+    vi.setSystemTime(new Date("2024-06-15T14:00:00")); // Saturday
+    const instances = contextShelfDefinition.generate(stubProfile);
+    const instance = instances.find((i) => i.shelfId === "context:weekend");
+    expect(instance).toBeDefined();
+    expect(instance!.shelfId).toBe("context:weekend");
+    vi.useRealTimers();
+  });
+
+  it("generates instance on Sunday", () => {
+    vi.setSystemTime(new Date("2024-06-16T14:00:00")); // Sunday
+    const instances = contextShelfDefinition.generate(stubProfile);
+    expect(instances.find((i) => i.shelfId === "context:weekend")).toBeDefined();
+    vi.useRealTimers();
+  });
+
+  it("does not generate instance on Friday", () => {
+    vi.setSystemTime(new Date("2024-06-14T14:00:00")); // Friday
+    const instances = contextShelfDefinition.generate(stubProfile);
+    expect(instances.find((i) => i.shelfId === "context:weekend")).toBeUndefined();
+    vi.useRealTimers();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// seasonal: active June–August (summer blockbusters)
+// ---------------------------------------------------------------------------
+
+describe("seasonal instance", () => {
+  it("generates instance in July", () => {
+    vi.setSystemTime(new Date("2024-07-10T12:00:00")); // July
+    const instances = contextShelfDefinition.generate(stubProfile);
+    const instance = instances.find((i) => i.shelfId === "context:seasonal");
+    expect(instance).toBeDefined();
+    expect(instance!.shelfId).toBe("context:seasonal");
+    vi.useRealTimers();
+  });
+
+  it("generates instance in June", () => {
+    vi.setSystemTime(new Date("2024-06-01T12:00:00")); // June
+    const instances = contextShelfDefinition.generate(stubProfile);
+    expect(instances.find((i) => i.shelfId === "context:seasonal")).toBeDefined();
+    vi.useRealTimers();
+  });
+
+  it("does not generate instance in May", () => {
+    vi.setSystemTime(new Date("2024-05-15T12:00:00")); // May
+    const instances = contextShelfDefinition.generate(stubProfile);
+    expect(instances.find((i) => i.shelfId === "context:seasonal")).toBeUndefined();
+    vi.useRealTimers();
+  });
+
+  it("does not generate instance in September", () => {
+    vi.setSystemTime(new Date("2024-09-01T12:00:00")); // September
+    const instances = contextShelfDefinition.generate(stubProfile);
+    expect(instances.find((i) => i.shelfId === "context:seasonal")).toBeUndefined();
+    vi.useRealTimers();
+  });
+});
+
+// ---------------------------------------------------------------------------
 // rainy-day: always active (fallback)
 // ---------------------------------------------------------------------------
 

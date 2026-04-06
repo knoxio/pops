@@ -218,6 +218,25 @@ describe("assembleSession", () => {
     expect(mockGetShelfFreshness).toHaveBeenCalledWith(0);
   });
 
+  it("applies +0.3 context boost — context shelves outscore equal tmdb shelves", () => {
+    // Context shelf with base score 0.5, tmdb shelf also 0.5 — context should win
+    const contextDef = makeDefinition("context", "context", [makeInstance("context:morning", 0.5)]);
+    // Register enough tmdb shelves to fill a session
+    const tmdbDefs = Array.from({ length: 15 }, (_, i) =>
+      makeDefinition(`tmdb-${i}`, "tmdb", [makeInstance(`tmdb-${i}`, 0.5)])
+    );
+    mockGetRegisteredShelves.mockReturnValue([contextDef, ...tmdbDefs]);
+
+    // Run many times — context shelf should consistently appear in results
+    let contextCount = 0;
+    for (let i = 0; i < 20; i++) {
+      const result = assembleSession(profile, new Map());
+      if (result.some((s) => s.shelfId === "context:morning")) contextCount++;
+    }
+    // With +0.3 boost over equal-scored competitors, context shelf appears far more often
+    expect(contextCount).toBeGreaterThanOrEqual(15);
+  });
+
   it("does not include duplicate shelf IDs in result", () => {
     const definitions = Array.from({ length: 15 }, (_, i) =>
       makeDefinition(`shelf-${i}`, "tmdb", [makeInstance(`shelf-${i}`, 0.8)])

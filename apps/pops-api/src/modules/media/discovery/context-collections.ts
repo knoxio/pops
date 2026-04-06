@@ -74,6 +74,38 @@ export const CONTEXT_COLLECTIONS: ContextCollection[] = [
     trigger: (_hour, month) => month === 2 || month === 3,
   },
   {
+    id: "morning",
+    title: "Morning Watch",
+    emoji: "🌅",
+    genreIds: [35, 16, 10751], // Comedy + Animation + Family
+    keywordIds: [],
+    trigger: (hour) => hour >= 6 && hour <= 10,
+  },
+  {
+    id: "evening",
+    title: "Evening Picks",
+    emoji: "🌆",
+    genreIds: [18, 53, 28], // Drama + Thriller + Action
+    keywordIds: [],
+    trigger: (hour) => hour >= 18 && hour <= 22,
+  },
+  {
+    id: "weekend",
+    title: "Weekend Watch",
+    emoji: "🎉",
+    genreIds: [28, 12, 35], // Action + Adventure + Comedy
+    keywordIds: [],
+    trigger: (_hour, _month, dayOfWeek) => dayOfWeek === SATURDAY || dayOfWeek === SUNDAY,
+  },
+  {
+    id: "seasonal",
+    title: "Summer Blockbusters",
+    emoji: "☀️",
+    genreIds: [28, 12, 878], // Action + Adventure + Science Fiction
+    keywordIds: [],
+    trigger: (_hour, month) => month >= 6 && month <= 8,
+  },
+  {
     id: FALLBACK_ID,
     title: "Rainy Day",
     emoji: "🌧️",
