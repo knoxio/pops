@@ -103,6 +103,7 @@ export const CONTEXT_COLLECTIONS: ContextCollection[] = [
     emoji: "🎊",
     genreIds: [10751, 35], // Family + Comedy
     keywordIds: [207317], // christmas keyword (covers broad holiday feel)
+    // Nov = pre-holiday lead-up, Jan = post-holiday aftermath; Dec intentionally excluded as rainy-day covers it
     trigger: (_hour, month) => month === 1 || month === 11,
   },
   {
