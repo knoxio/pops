@@ -1,0 +1,210 @@
+version: 2
+
+updates:
+  # ── GitHub Actions ──────────────────────────────────────────────────────────
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      actions-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  # ── Docker (infra/docker-compose.yml) ───────────────────────────────────────
+  - package-ecosystem: docker
+    directory: /infra
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      docker-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  # ── npm/pnpm — workspace root ────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: tuesday
+    open-pull-requests-limit: 5
+    groups:
+      root-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  # ── npm/pnpm — apps/pops-api ─────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /apps/pops-api
+    schedule:
+      interval: weekly
+      day: tuesday
+    open-pull-requests-limit: 3
+    groups:
+      pops-api-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  # ── npm/pnpm — apps/pops-shell ───────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /apps/pops-shell
+    schedule:
+      interval: weekly
+      day: tuesday
+    open-pull-requests-limit: 3
+    groups:
+      pops-shell-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  # ── npm/pnpm — apps/moltbot ──────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /apps/moltbot
+    schedule:
+      interval: weekly
+      day: tuesday
+    open-pull-requests-limit: 3
+    groups:
+      moltbot-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  # ── npm/pnpm — packages/ui ───────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /packages/ui
+    schedule:
+      interval: weekly
+      day: wednesday
+    open-pull-requests-limit: 3
+    groups:
+      ui-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  # ── npm/pnpm — packages/db-types ────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /packages/db-types
+    schedule:
+      interval: weekly
+      day: wednesday
+    open-pull-requests-limit: 3
+    groups:
+      db-types-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  # ── npm/pnpm — packages/api-client ──────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /packages/api-client
+    schedule:
+      interval: weekly
+      day: wednesday
+    open-pull-requests-limit: 3
+    groups:
+      api-client-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  # ── npm/pnpm — packages/navigation ──────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /packages/navigation
+    schedule:
+      interval: weekly
+      day: wednesday
+    open-pull-requests-limit: 3
+    groups:
+      navigation-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  # ── npm/pnpm — packages/app-finance ─────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /packages/app-finance
+    schedule:
+      interval: weekly
+      day: thursday
+    open-pull-requests-limit: 3
+    groups:
+      app-finance-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  # ── npm/pnpm — packages/app-media ───────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /packages/app-media
+    schedule:
+      interval: weekly
+      day: thursday
+    open-pull-requests-limit: 3
+    groups:
+      app-media-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  # ── npm/pnpm — packages/app-inventory ───────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /packages/app-inventory
+    schedule:
+      interval: weekly
+      day: thursday
+    open-pull-requests-limit: 3
+    groups:
+      app-inventory-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  # ── npm/pnpm — packages/app-ai ──────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /packages/app-ai
+    schedule:
+      interval: weekly
+      day: thursday
+    open-pull-requests-limit: 3
+    groups:
+      app-ai-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  # ── npm/pnpm — packages/types ────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /packages/types
+    schedule:
+      interval: weekly
+      day: thursday
+    open-pull-requests-limit: 3
+    groups:
+      types-minor-patch:
+        update-types:
+          - minor
+          - patch
+
+  # ── npm/pnpm — packages/import-tools ────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /packages/import-tools
+    schedule:
+      interval: weekly
+      day: friday
+    open-pull-requests-limit: 3
+    groups:
+      import-tools-minor-patch:
+        update-types:
+          - minor
+          - patch
