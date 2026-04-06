@@ -782,10 +782,16 @@ export function getSmartPair(dimensionId?: number): SmartPairResult | null {
     cooloffPairs.add(`${r.media_b_id}-${r.media_a_id}`);
   }
 
-  // Filter eligible movies
-  const eligible = watchedMovies.filter(
+  // Filter eligible movies (exclude watchlisted and dimension-excluded)
+  let eligible = watchedMovies.filter(
     (m) => !watchlistedIds.has(m.mediaId) && !excludedIds.has(m.mediaId)
   );
+
+  // Fallback: if fewer than 2 non-watchlisted movies remain, include watchlisted movies
+  // so the arena stays usable when most of the library is on the watchlist
+  if (eligible.length < 2) {
+    eligible = watchedMovies.filter((m) => !excludedIds.has(m.mediaId));
+  }
 
   if (eligible.length < 2) return null;
 

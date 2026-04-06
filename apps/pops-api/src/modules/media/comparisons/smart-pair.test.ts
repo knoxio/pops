@@ -5,6 +5,7 @@ import {
   seedDimension,
   seedMovie,
   seedWatchHistoryEntry,
+  seedWatchlistEntry,
 } from "../../../shared/test-utils.js";
 import { getSmartPair } from "./service.js";
 
@@ -290,6 +291,42 @@ describe("getSmartPair", () => {
 
     // With 10 movies (45 possible pairs) and jitter, we should see variety
     expect(uniquePairs.size).toBeGreaterThan(5);
+  });
+
+  it("excludes watchlisted movies when enough non-watchlisted movies remain", () => {
+    const dimId = seedDimension(db, { name: "Overall" });
+    const m1 = seedMovie(db, { tmdb_id: 550, title: "Fight Club" });
+    const m2 = seedMovie(db, { tmdb_id: 551, title: "The Matrix" });
+    const m3 = seedMovie(db, { tmdb_id: 552, title: "Inception" });
+    seedWatchHistoryEntry(db, { media_type: "movie", media_id: m1 });
+    seedWatchHistoryEntry(db, { media_type: "movie", media_id: m2 });
+    seedWatchHistoryEntry(db, { media_type: "movie", media_id: m3 });
+    seedWatchlistEntry(db, { media_type: "movie", media_id: m3 });
+
+    // m3 is watchlisted — should never appear since m1+m2 form a valid pair
+    for (let i = 0; i < 20; i++) {
+      const result = getSmartPair(dimId);
+      expect(result).not.toBeNull();
+      const ids = [result!.movieA.id, result!.movieB.id];
+      expect(ids).not.toContain(m3);
+    }
+  });
+
+  it("falls back to include watchlisted movies when fewer than 2 non-watchlisted remain", () => {
+    const dimId = seedDimension(db, { name: "Overall" });
+    const m1 = seedMovie(db, { tmdb_id: 550, title: "Fight Club" });
+    const m2 = seedMovie(db, { tmdb_id: 551, title: "The Matrix" });
+    seedWatchHistoryEntry(db, { media_type: "movie", media_id: m1 });
+    seedWatchHistoryEntry(db, { media_type: "movie", media_id: m2 });
+    // Both movies are on the watchlist — without fallback, would return null
+    seedWatchlistEntry(db, { media_type: "movie", media_id: m1 });
+    seedWatchlistEntry(db, { media_type: "movie", media_id: m2 });
+
+    // Should still return a pair using the watchlisted movies
+    const result = getSmartPair(dimId);
+    expect(result).not.toBeNull();
+    const ids = new Set([result!.movieA.id, result!.movieB.id]);
+    expect(ids.size).toBe(2);
   });
 
   it("falls back to any eligible pair when all scored pairs are on cooloff", () => {
