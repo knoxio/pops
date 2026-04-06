@@ -254,4 +254,62 @@ describe("LibraryPage", () => {
       expect(screen.getByText("Breaking Bad")).toBeInTheDocument();
     });
   });
+
+  describe("Debrief banner", () => {
+    it("shows debrief banner when pending debriefs exist", () => {
+      mockListQuery.mockReturnValue(emptyList);
+      mockGetPendingDebriefs.mockReturnValue({
+        data: {
+          data: [
+            {
+              sessionId: 42,
+              movieId: 1,
+              title: "The Matrix",
+              posterUrl: null,
+              status: "pending",
+              createdAt: "2026-04-01T00:00:00Z",
+              pendingDimensionCount: 3,
+            },
+          ],
+        },
+      });
+      renderPage();
+      expect(screen.getByTestId("debrief-banner")).toBeInTheDocument();
+      expect(screen.getByText("1 movie to debrief")).toBeInTheDocument();
+    });
+
+    it("hides debrief banner when no pending debriefs", () => {
+      mockListQuery.mockReturnValue(emptyList);
+      mockGetPendingDebriefs.mockReturnValue({ data: { data: [] } });
+      renderPage();
+      expect(screen.queryByTestId("debrief-banner")).not.toBeInTheDocument();
+    });
+
+    it("dismissing banner hides it without affecting library items", async () => {
+      const user = userEvent.setup();
+      mockListQuery.mockReturnValue(populatedList);
+      mockGetPendingDebriefs.mockReturnValue({
+        data: {
+          data: [
+            {
+              sessionId: 42,
+              movieId: 1,
+              title: "The Matrix",
+              posterUrl: null,
+              status: "pending",
+              createdAt: "2026-04-01T00:00:00Z",
+              pendingDimensionCount: 3,
+            },
+          ],
+        },
+      });
+      renderPage();
+      expect(screen.getByTestId("debrief-banner")).toBeInTheDocument();
+
+      await user.click(screen.getByLabelText("Dismiss debrief banner"));
+      expect(screen.queryByTestId("debrief-banner")).not.toBeInTheDocument();
+      // Library items unaffected
+      expect(screen.getAllByTestId("media-card")).toHaveLength(2);
+    });
+  });
 });

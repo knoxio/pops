@@ -329,6 +329,7 @@ export function DiscoverPage() {
         void utils.media.discovery.recommendations.invalidate();
         void utils.media.discovery.genreSpotlight.invalidate();
         void utils.media.discovery.rewatchSuggestions.invalidate();
+        void utils.media.comparisons.getPendingDebriefs.invalidate();
       } catch {
         toast.error("Failed to mark as watched");
       } finally {
