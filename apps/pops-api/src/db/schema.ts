@@ -365,6 +365,9 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       media_b_id    INTEGER NOT NULL,
       winner_type   TEXT NOT NULL,
       winner_id     INTEGER NOT NULL,
+      draw_tier     TEXT,
+      delta_a       INTEGER,
+      delta_b       INTEGER,
       compared_at   TEXT NOT NULL DEFAULT (datetime('now'))
     );
     CREATE INDEX IF NOT EXISTS idx_comparisons_dimension_id ON comparisons(dimension_id);
@@ -406,11 +409,12 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     CREATE UNIQUE INDEX IF NOT EXISTS idx_watchlist_media ON watchlist(media_type, media_id);
 
     CREATE TABLE IF NOT EXISTS watch_history (
-      id         INTEGER PRIMARY KEY AUTOINCREMENT,
-      media_type TEXT NOT NULL CHECK(media_type IN ('movie', 'episode')),
-      media_id   INTEGER NOT NULL,
-      watched_at TEXT NOT NULL DEFAULT (datetime('now')),
-      completed  INTEGER NOT NULL DEFAULT 1
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      media_type  TEXT NOT NULL CHECK(media_type IN ('movie', 'episode')),
+      media_id    INTEGER NOT NULL,
+      watched_at  TEXT NOT NULL DEFAULT (datetime('now')),
+      completed   INTEGER NOT NULL DEFAULT 1,
+      blacklisted INTEGER NOT NULL DEFAULT 0
     );
     CREATE INDEX IF NOT EXISTS idx_watch_history_media ON watch_history(media_type, media_id);
     CREATE INDEX IF NOT EXISTS idx_watch_history_watched_at ON watch_history(watched_at);
@@ -470,6 +474,50 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       comparison_id   INTEGER REFERENCES comparisons(id),
       created_at      TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS comparison_skip_cooloffs (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      dimension_id INTEGER NOT NULL REFERENCES comparison_dimensions(id),
+      media_a_type TEXT NOT NULL,
+      media_a_id   INTEGER NOT NULL,
+      media_b_type TEXT NOT NULL,
+      media_b_id   INTEGER NOT NULL,
+      skip_until   INTEGER NOT NULL,
+      created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_comparison_skip_cooloffs_pair
+      ON comparison_skip_cooloffs(dimension_id, media_a_type, media_a_id, media_b_type, media_b_id);
+
+    CREATE TABLE IF NOT EXISTS tier_overrides (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      media_type   TEXT NOT NULL,
+      media_id     INTEGER NOT NULL,
+      dimension_id INTEGER NOT NULL REFERENCES comparison_dimensions(id),
+      tier         TEXT NOT NULL,
+      created_at   TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_tier_overrides_unique
+      ON tier_overrides(media_type, media_id, dimension_id);
+
+    CREATE TABLE IF NOT EXISTS debrief_status (
+      id           INTEGER PRIMARY KEY AUTOINCREMENT,
+      media_type   TEXT NOT NULL,
+      media_id     INTEGER NOT NULL,
+      dimension_id INTEGER NOT NULL REFERENCES comparison_dimensions(id),
+      debriefed    INTEGER NOT NULL DEFAULT 0,
+      dismissed    INTEGER NOT NULL DEFAULT 0,
+      created_at   TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at   TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS debrief_status_media_dimension_idx
+      ON debrief_status(media_type, media_id, dimension_id);
+
+    CREATE TABLE IF NOT EXISTS shelf_impressions (
+      id       INTEGER PRIMARY KEY AUTOINCREMENT,
+      shelf_id TEXT NOT NULL,
+      shown_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_shelf_impressions_shelf_id ON shelf_impressions(shelf_id);
   `);
 
   // Pre-mark all migrations this schema already incorporates so that
