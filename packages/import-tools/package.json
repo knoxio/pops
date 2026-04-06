@@ -28,7 +28,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.82.0",
     "better-sqlite3": "^12.8.0",
-    "csv-parse": "^5.6.0"
+    "csv-parse": "^6.2.1"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
