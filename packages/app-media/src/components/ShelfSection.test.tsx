@@ -65,14 +65,16 @@ const noopActions = {
   dismissedSet: new Set<number>(),
   addingToLibrary: new Set<number>(),
   addingToWatchlist: new Set<number>(),
+  removingFromWatchlist: new Set<number>(),
   markingWatched: new Set<number>(),
   markingRewatched: new Set<number>(),
   dismissing: new Set<number>(),
-  onAddToLibrary: vi.fn(),
-  onAddToWatchlist: vi.fn(),
-  onMarkWatched: vi.fn(),
-  onMarkRewatched: vi.fn(),
-  onNotInterested: vi.fn(),
+  onAddToLibrary: vi.fn(async () => ({ ok: true })),
+  onAddToWatchlist: vi.fn(async () => ({ ok: true })),
+  onRemoveFromWatchlist: vi.fn(async () => ({ ok: true })),
+  onMarkWatched: vi.fn(async () => ({ ok: true })),
+  onMarkRewatched: vi.fn(async () => ({ ok: true })),
+  onNotInterested: vi.fn(async () => ({ ok: true })),
 };
 
 function renderShelf(
@@ -135,14 +137,16 @@ describe("ShelfSection — rendering", () => {
         dismissedSet={new Set([2])}
         addingToLibrary={new Set()}
         addingToWatchlist={new Set()}
+        removingFromWatchlist={new Set()}
         markingWatched={new Set()}
         markingRewatched={new Set()}
         dismissing={new Set()}
-        onAddToLibrary={vi.fn()}
-        onAddToWatchlist={vi.fn()}
-        onMarkWatched={vi.fn()}
-        onMarkRewatched={vi.fn()}
-        onNotInterested={vi.fn()}
+        onAddToLibrary={vi.fn(async () => ({ ok: true }))}
+        onAddToWatchlist={vi.fn(async () => ({ ok: true }))}
+        onRemoveFromWatchlist={vi.fn(async () => ({ ok: true }))}
+        onMarkWatched={vi.fn(async () => ({ ok: true }))}
+        onMarkRewatched={vi.fn(async () => ({ ok: true }))}
+        onNotInterested={vi.fn(async () => ({ ok: true }))}
       />
     );
     expect(screen.getByText("Movie 1")).toBeInTheDocument();

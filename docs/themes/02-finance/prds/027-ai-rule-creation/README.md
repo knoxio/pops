@@ -1,11 +1,13 @@
 # PRD-027: AI Rule Creation
 
 > Epic: [06 — AI Rule Creation](../../epics/06-ai-categorisation.md)
-> Status: Done
+> Status: To Review
 
 ## Overview
 
-Build AI-powered live rule creation for the import pipeline. When a user corrects a transaction's entity during import, Claude analyzes the correction and suggests a matching pattern. That pattern is added to the corrections table immediately and applies to remaining transactions in the same import. The result: correct "IKEA Tempe" → AI creates rule "starts with IKEA" → "IKEA Rhodes" later in the same import matches automatically.
+Build AI-assisted rule proposal generation for the import pipeline. When a user corrects a transaction during import review, the system uses AI to propose rule changes that generalise correctly and reduce future manual work.
+
+AI suggestions are always **proposals**. Rule changes are applied only after explicit user approval through the bundled ChangeSet workflow (PRD-028).
 
 ## How It Works
 
@@ -15,12 +17,12 @@ Build AI-powered live rule creation for the import pipeline. When a user correct
 1. Import processes 200 transactions
 2. Transaction "IKEA TEMPE NSW" → no match → uncertain
 3. User corrects to entity "IKEA"
-4. AI analyzes: description "IKEA TEMPE NSW", entity "IKEA"
-   → suggests pattern: { type: "prefix", pattern: "IKEA" }
-5. Pattern added to corrections table (confidence 0.5)
-6. Remaining unprocessed transactions re-evaluated against new corrections
-7. Transaction "IKEA RHODES" → prefix match on "IKEA" → auto-matched
-8. User sees fewer uncertain transactions as they work through the list
+4. AI proposes a bundled ChangeSet:
+   → e.g. add rule: matchType "prefix", pattern "IKEA", confidence 0.9
+5. User approves the ChangeSet
+6. Rules applied atomically
+7. Remaining transactions re-evaluated using the rules engine
+8. Transaction "IKEA RHODES" now matches and moves to matched automatically
 ```
 
 ### AI Analysis
@@ -54,12 +56,9 @@ The existing `corrections.generateRules` endpoint supports batch analysis — se
 
 ## Business Rules
 
-- AI suggestions are proposals — they must be confirmed before saving to corrections table
-- During import: suggestions are auto-applied if confidence >= 0.8 (with toast notification)
-- During import: suggestions with confidence < 0.8 are shown to user for confirmation
-- New rules apply immediately to remaining unmatched transactions in the same import
-- The corrections table is the only storage — no separate "AI rules" table
-- AI rule creation is non-fatal — if Claude is unavailable, manual correction still works (just no auto-pattern)
+- AI suggestions are proposals and require explicit user approval (PRD-028).
+- Approved rule changes apply immediately to remaining transactions in the same import.
+- AI rule creation is non-fatal — if AI is unavailable, the user can still proceed with Save Once; Save & Learn may offer a non-AI proposal flow.
 - Cost tracked in ai_usage table (same as entity matching AI fallback)
 
 ## Iterative Improvement
@@ -74,20 +73,18 @@ Each import makes the system smarter:
 
 | Case | Behaviour |
 |------|-----------|
-| AI suggests pattern that already exists | Upsert: confidence incremented (existing createOrUpdate behaviour) |
-| AI unavailable | Manual correction still works — no rule created, but entity assignment is saved |
-| AI suggests overly broad pattern ("A") | Min pattern length 3 chars. Low confidence (< 0.5) patterns rejected |
-| Pattern matches wrong entity for another description | Confidence system handles this — user rejects, confidence decreases, eventually auto-deleted |
-| Named environment (test) | AI calls skipped — no rule creation in test DBs |
+| AI proposes rule that overlaps an existing rule | Proposal may include an edit/disable operation; impact preview shows net effect |
+| AI unavailable | Save Once remains available; Save & Learn can fall back to a non-AI proposal flow |
+| AI proposes overly broad pattern | User rejects with feedback; follow-up proposal must narrow scope |
 
 ## User Stories
 
 | # | Story | Summary | Parallelisable | Status |
 |---|-------|---------|----------------|--------|
-| 01 | [us-01-correction-analysis](us-01-correction-analysis.md) | Send user correction to Claude, receive pattern suggestion | No (first) | Done |
-| 02 | [us-02-auto-apply-rules](us-02-auto-apply-rules.md) | High-confidence AI rules auto-saved and applied to remaining import transactions | Blocked by us-01 | Done |
-| 03 | [us-03-confirmation-flow](us-03-confirmation-flow.md) | Low-confidence AI rules shown to user for confirmation before saving | Blocked by us-01 | Done |
-| 04 | [us-04-batch-analysis](us-04-batch-analysis.md) | Batch correction analysis for better pattern suggestions | Blocked by us-01 | Done |
+| 01 | [us-01-correction-analysis](us-01-correction-analysis.md) | Send correction signal to AI, receive proposal inputs for ChangeSet generation | No (first) | To Review |
+| 02 | [us-02-auto-apply-rules](us-02-auto-apply-rules.md) | Replace auto-apply with ChangeSet proposal + approval + re-evaluation loop | Blocked by us-01 | To Review |
+| 03 | [us-03-confirmation-flow](us-03-confirmation-flow.md) | Proposal UI for approve/reject with required feedback on reject | Blocked by us-01 | To Review |
+| 04 | [us-04-batch-analysis](us-04-batch-analysis.md) | Batch context to improve proposals (still requires approval) | Blocked by us-01 | To Review |
 
 US-02 and US-03 can parallelise after US-01.
 

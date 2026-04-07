@@ -1,7 +1,7 @@
 # US-19: Per-transaction tag editing
 
 > PRD: [020 — Import Wizard UI](README.md)
-> Status: Done
+> Status: To Review
 
 ## Description
 
@@ -16,6 +16,8 @@ As a user, I want to edit tags on each transaction individually so that I can ac
 - [x] Remove tags by clicking X on chip
 - [x] Tags stored in Zustand per transaction (keyed by checksum)
 - [x] "Accept All Suggestions" button at top resets all tags to original suggestions
+- [ ] In an empty database (no existing tags), each transaction still receives tag suggestions in Tag Review.
+- [ ] Tag Review supports per-tag accept/reject for AI-suggested tags, including brand-new tags.
 
 ## Notes
 

@@ -1,24 +1,32 @@
 # US-14: Save & Learn correction
 
 > PRD: [020 — Import Wizard UI](README.md)
-> Status: Done
+> Status: To Review
 
 ## Description
 
-As a user, I want to save my manual entity assignment as a learned correction rule so that future imports automatically match the same pattern.
+As a user, I want the system to learn from my corrections during import review by proposing rule changes that I can approve, so that future imports require less manual work without sacrificing correctness.
 
 ## Acceptance Criteria
 
-- [x] "Save & Learn" option available after assigning an entity to an uncertain/failed transaction
-- [x] Creates correction via `core.corrections.createOrUpdate` with:
-  - `descriptionPattern`: normalized transaction description
-  - `matchType`: "exact" (default)
-  - `entityId` and `entityName`: from the assigned entity
-  - `confidence`: 0.5 (initial)
-- [x] Toast confirmation: "Rule saved — future imports will match this pattern"
-- [x] If pattern already exists, confidence incremented by 0.1 (upsert behaviour)
-- [x] Optional: user can choose "contains" match type for broader matching
+- [ ] A **Save & Learn** action is available when the user has made a change to a transaction during review that the system can learn from (entity assignment, transaction type, location override).
+- [ ] Clicking **Save & Learn** opens a **Correction Proposal** showing a bundled ChangeSet of rule operations.
+- [ ] The proposal includes:
+  - Proposed rule pattern(s) (as they would be stored)
+  - Proposed match type(s) (exact / contains / regex)
+  - Proposed confidence / activation semantics
+  - Brief rationale per operation
+  - An **impact preview** for the current import: how many remaining transactions would change, and a way to inspect the affected transactions
+- [ ] The user can **Approve** the ChangeSet. On approval:
+  - The system applies the ChangeSet atomically
+  - The import review re-evaluates remaining transactions using the same rules engine as processing
+  - Any newly matched transactions are moved accordingly (even if they belong to different visual groups)
+- [ ] The user can **Reject** the ChangeSet and must provide a short feedback message describing what is wrong.
+- [ ] After rejection, the system can generate a follow-up proposal that incorporates the feedback.
+- [ ] Save & Learn never changes rules without explicit approval.
 
 ## Notes
 
-This is how the system learns. Each manual correction during import can become a rule that prevents the same manual work next time. The correction is created immediately in the database (not deferred to executeImport).
+The Correction Proposal workflow is specified in PRD-028.
+
+This story covers the end-user guarantees: explicit approval, transparency, impact preview, and immediate within-import re-evaluation.

@@ -12,6 +12,7 @@ import { Loader2 } from "lucide-react";
 import { trpc } from "../lib/trpc";
 import { HorizontalScrollRow } from "./HorizontalScrollRow";
 import { DiscoverCard } from "./DiscoverCard";
+import type { DiscoverActionResult } from "../hooks/useDiscoverCardActions";
 
 interface ShelfItem {
   tmdbId: number;
@@ -38,14 +39,16 @@ export interface ShelfSectionProps {
   dismissedSet: Set<number>;
   addingToLibrary: Set<number>;
   addingToWatchlist: Set<number>;
+  removingFromWatchlist: Set<number>;
   markingWatched: Set<number>;
   markingRewatched: Set<number>;
   dismissing: Set<number>;
-  onAddToLibrary: (tmdbId: number) => void;
-  onAddToWatchlist: (tmdbId: number) => void;
-  onMarkWatched: (tmdbId: number) => void;
-  onMarkRewatched: (tmdbId: number) => void;
-  onNotInterested: (tmdbId: number) => void;
+  onAddToLibrary: (tmdbId: number) => Promise<DiscoverActionResult>;
+  onAddToWatchlist: (tmdbId: number) => Promise<DiscoverActionResult>;
+  onRemoveFromWatchlist: (tmdbId: number) => Promise<DiscoverActionResult>;
+  onMarkWatched: (tmdbId: number) => Promise<DiscoverActionResult>;
+  onMarkRewatched: (tmdbId: number) => Promise<DiscoverActionResult>;
+  onNotInterested: (tmdbId: number) => Promise<DiscoverActionResult>;
 }
 
 const LOAD_MORE_LIMIT = 20;
@@ -59,11 +62,13 @@ export function ShelfSection({
   dismissedSet,
   addingToLibrary,
   addingToWatchlist,
+  removingFromWatchlist,
   markingWatched,
   markingRewatched,
   dismissing,
   onAddToLibrary,
   onAddToWatchlist,
+  onRemoveFromWatchlist,
   onMarkWatched,
   onMarkRewatched,
   onNotInterested,
@@ -76,6 +81,50 @@ export function ShelfSection({
   const [offset, setOffset] = useState(initialItems.length);
 
   const utils = trpc.useUtils();
+
+  const patchItem = useCallback((tmdbId: number, patch: Partial<ShelfItem>) => {
+    setItems((prev) => prev.map((i) => (i.tmdbId === tmdbId ? { ...i, ...patch } : i)));
+  }, []);
+
+  const handleAddToLibrary = useCallback(
+    async (tmdbId: number) => {
+      const result = await onAddToLibrary(tmdbId);
+      if (result.ok) patchItem(tmdbId, { inLibrary: true });
+    },
+    [onAddToLibrary, patchItem]
+  );
+
+  const handleAddToWatchlist = useCallback(
+    async (tmdbId: number) => {
+      const result = await onAddToWatchlist(tmdbId);
+      if (result.ok) patchItem(tmdbId, { inLibrary: true, onWatchlist: true });
+    },
+    [onAddToWatchlist, patchItem]
+  );
+
+  const handleRemoveFromWatchlist = useCallback(
+    async (tmdbId: number) => {
+      const result = await onRemoveFromWatchlist(tmdbId);
+      if (result.ok) patchItem(tmdbId, { onWatchlist: false });
+    },
+    [onRemoveFromWatchlist, patchItem]
+  );
+
+  const handleMarkWatched = useCallback(
+    async (tmdbId: number) => {
+      const result = await onMarkWatched(tmdbId);
+      if (result.ok) patchItem(tmdbId, { inLibrary: true, isWatched: true, onWatchlist: false });
+    },
+    [onMarkWatched, patchItem]
+  );
+
+  const handleMarkRewatched = useCallback(
+    async (tmdbId: number) => {
+      const result = await onMarkRewatched(tmdbId);
+      if (result.ok) patchItem(tmdbId, { inLibrary: true, isWatched: true });
+    },
+    [onMarkRewatched, patchItem]
+  );
 
   // Observe sentinel div — becomes visible when scrolled into viewport
   useEffect(() => {
@@ -156,13 +205,15 @@ export function ShelfSection({
             matchReason={item.matchReason}
             isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
             isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
+            isRemovingFromWatchlist={removingFromWatchlist.has(item.tmdbId)}
             isMarkingWatched={markingWatched.has(item.tmdbId)}
             isMarkingRewatched={markingRewatched.has(item.tmdbId)}
             isDismissing={dismissing.has(item.tmdbId)}
-            onAddToLibrary={onAddToLibrary}
-            onAddToWatchlist={onAddToWatchlist}
-            onMarkWatched={onMarkWatched}
-            onMarkRewatched={onMarkRewatched}
+            onAddToLibrary={handleAddToLibrary}
+            onAddToWatchlist={handleAddToWatchlist}
+            onRemoveFromWatchlist={handleRemoveFromWatchlist}
+            onMarkWatched={handleMarkWatched}
+            onMarkRewatched={handleMarkRewatched}
             onNotInterested={onNotInterested}
           />
         ))}
