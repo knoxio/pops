@@ -136,11 +136,13 @@ export function DiscoverPage() {
             dismissedSet={dismissedSet}
             addingToLibrary={actions.addingToLibrary}
             addingToWatchlist={actions.addingToWatchlist}
+            removingFromWatchlist={actions.removingFromWatchlist}
             markingWatched={actions.markingWatched}
             markingRewatched={actions.markingRewatched}
             dismissing={actions.dismissing}
             onAddToLibrary={actions.onAddToLibrary}
             onAddToWatchlist={actions.onAddToWatchlist}
+            onRemoveFromWatchlist={actions.onRemoveFromWatchlist}
             onMarkWatched={actions.onMarkWatched}
             onMarkRewatched={actions.onMarkRewatched}
             onNotInterested={actions.onNotInterested}
