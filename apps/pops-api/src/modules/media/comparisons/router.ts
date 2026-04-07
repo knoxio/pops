@@ -366,4 +366,10 @@ export const comparisonsRouter = router({
         throw err;
       }
     }),
+
+  /** Recalculate ELO scores for all dimensions (replays all comparisons). */
+  recalcAll: protectedProcedure.mutation(() => {
+    const count = service.recalcAllDimensions();
+    return { data: { dimensionsRecalculated: count }, message: `Recalculated ${count} dimensions` };
+  }),
 });

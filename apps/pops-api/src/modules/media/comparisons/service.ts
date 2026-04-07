@@ -1321,6 +1321,22 @@ function recalcDimensionElo(dimensionId: number): void {
 }
 
 /**
+ * Recalculate ELO scores for all active dimensions.
+ * Used after bulk data changes (e.g. dedupe migration).
+ */
+export function recalcAllDimensions(): number {
+  const drizzleDb = getDrizzle();
+  const dims = drizzleDb
+    .select({ id: comparisonDimensions.id })
+    .from(comparisonDimensions)
+    .all();
+  for (const dim of dims) {
+    recalcDimensionElo(dim.id);
+  }
+  return dims.length;
+}
+
+/**
  * Exclude a media item from a dimension: sets excluded=1 on the media_scores row
  * (creates with score 1500 + excluded=1 if missing), deletes all comparisons
  * involving that item for this dimension, and recalculates ELO.
