@@ -1,7 +1,16 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { Database } from "better-sqlite3";
+
+// Prevent side-effect registration from throwing on import
+vi.mock("../../core/search/registry.js", () => ({
+  registerSearchAdapter: vi.fn(),
+  getAdapters: vi.fn(),
+  resetRegistry: vi.fn(),
+}));
+
 import { setupTestContext, seedTvShow } from "../../../shared/test-utils.js";
 import { tvShowsSearchAdapter } from "./tv-shows-adapter.js";
+import { registerSearchAdapter } from "../../core/search/registry.js";
 import type { SearchContext } from "../../core/search/types.js";
 
 const ctx = setupTestContext();
@@ -22,6 +31,7 @@ describe("tvShowsSearchAdapter", () => {
     expect(tvShowsSearchAdapter.domain).toBe("tv-shows");
     expect(tvShowsSearchAdapter.icon).toBe("Tv");
     expect(tvShowsSearchAdapter.color).toBe("purple");
+    expect(registerSearchAdapter).toHaveBeenCalledWith(tvShowsSearchAdapter);
   });
 
   it("returns empty array for empty query", async () => {

@@ -1,28 +1,31 @@
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import type { Database } from "better-sqlite3";
+
+// Prevent side-effect registration from throwing on import
+vi.mock("../../core/search/registry.js", () => ({
+  registerSearchAdapter: vi.fn(),
+  getAdapters: vi.fn(),
+  resetRegistry: vi.fn(),
+}));
+
 import { setupTestContext, seedBudget } from "../../../shared/test-utils.js";
-import { resetRegistry } from "../../core/search/index.js";
-import { registerBudgetsSearchAdapter, type BudgetHitData } from "./search-adapter.js";
+import { budgetsSearchAdapter, type BudgetHitData } from "./search-adapter.js";
+import { registerSearchAdapter } from "../../core/search/registry.js";
 import type { SearchHit } from "../../core/search/index.js";
-import { getAdapters } from "../../core/search/index.js";
 
 const ctx = setupTestContext();
 let db: Database;
 
 beforeEach(() => {
   ({ db } = ctx.setup());
-  resetRegistry();
-  registerBudgetsSearchAdapter();
 });
 
 afterEach(() => {
-  resetRegistry();
   ctx.teardown();
 });
 
 function search(query: string, limit?: number): SearchHit<BudgetHitData>[] {
-  const adapter = getAdapters().find((a) => a.domain === "budgets")!;
-  return adapter.search(
+  return budgetsSearchAdapter.search(
     { text: query },
     { app: "finance", page: "budgets" },
     limit ? { limit } : undefined
@@ -31,10 +34,10 @@ function search(query: string, limit?: number): SearchHit<BudgetHitData>[] {
 
 describe("budgets search adapter", () => {
   it("registers with correct metadata", () => {
-    const adapter = getAdapters().find((a) => a.domain === "budgets");
-    expect(adapter).toBeDefined();
-    expect(adapter!.icon).toBe("PiggyBank");
-    expect(adapter!.color).toBe("green");
+    expect(budgetsSearchAdapter.domain).toBe("budgets");
+    expect(budgetsSearchAdapter.icon).toBe("PiggyBank");
+    expect(budgetsSearchAdapter.color).toBe("green");
+    expect(registerSearchAdapter).toHaveBeenCalledWith(budgetsSearchAdapter);
   });
 
   it("returns empty results for empty query", () => {

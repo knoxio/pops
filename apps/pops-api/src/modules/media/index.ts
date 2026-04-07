@@ -3,6 +3,10 @@
  */
 import { router } from "../../trpc.js";
 import { moviesRouter } from "./movies/router.js";
+
+// Side-effect: register search adapters
+import "./search/movies-adapter.js";
+import "./search/tv-shows-adapter.js";
 import { tvShowsRouter } from "./tv-shows/index.js";
 import { comparisonsRouter } from "./comparisons/index.js";
 import { watchlistRouter } from "./watchlist/router.js";
