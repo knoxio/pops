@@ -98,7 +98,7 @@ export function TransactionCard({
                 Auto-matched
               </Badge>
             )}
-            {variant === "matched" && isRuleMatched && (
+            {isRuleMatched && (
               <Badge
                 variant="secondary"
                 className="text-xs"
@@ -120,7 +120,7 @@ export function TransactionCard({
           <div className="text-sm text-gray-600 dark:text-gray-400">
             {transaction.date} • ${Math.abs(transaction.amount).toFixed(2)}
           </div>
-          {variant === "matched" && ruleProvenance && (
+          {ruleProvenance && (
             <div className="mt-1 text-xs text-muted-foreground">
               <span className="font-mono">
                 {ruleProvenance.matchType}
@@ -128,7 +128,10 @@ export function TransactionCard({
                 {Math.round(ruleProvenance.confidence * 100)}%
               </span>
               {" • "}
-              <span className="font-mono truncate" title={ruleProvenance.pattern}>
+              <span
+                className="font-mono truncate inline-block max-w-[28ch] align-bottom"
+                title={ruleProvenance.pattern}
+              >
                 {ruleProvenance.pattern}
               </span>
             </div>

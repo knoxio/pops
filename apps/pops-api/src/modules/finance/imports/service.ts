@@ -103,7 +103,7 @@ function buildSuggestedTags(
   });
 }
 
-function applyLearnedCorrection(args: {
+export function applyLearnedCorrection(args: {
   transaction: ParsedTransaction;
   minConfidence: number;
   knownTags: string[];
