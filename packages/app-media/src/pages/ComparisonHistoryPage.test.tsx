@@ -1,3 +1,4 @@
+import type React from "react";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
@@ -5,10 +6,14 @@ import { ComparisonHistoryPage } from "./ComparisonHistoryPage";
 
 // Mock sonner
 const mockToast = vi.fn().mockReturnValue("toast-id-1");
+const mockToastCustom = vi.fn().mockReturnValue("toast-custom-1");
 const mockToastDismiss = vi.fn();
+const mockToastError = vi.fn();
 vi.mock("sonner", () => ({
   toast: Object.assign((...args: unknown[]) => mockToast(...args), {
+    custom: (...args: unknown[]) => mockToastCustom(...args),
     dismiss: (...args: unknown[]) => mockToastDismiss(...args),
+    error: (...args: unknown[]) => mockToastError(...args),
   }),
 }));
 
@@ -169,21 +174,24 @@ describe("ComparisonHistoryPage", () => {
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
-  it("shows undo toast on delete without immediately deleting", () => {
+  it("optimistically hides row and shows undo toast on delete", () => {
     setupLoaded();
     renderPage();
+
+    expect(screen.getByText("Movie 100")).toBeInTheDocument();
 
     const deleteBtn = screen.getByRole("button", { name: "" });
     fireEvent.click(deleteBtn);
 
-    expect(mockToast).toHaveBeenCalledWith(
-      "Comparison deleted",
-      expect.objectContaining({ duration: 5000 })
-    );
+    // Row removed optimistically
+    expect(screen.queryByText("Movie 100")).not.toBeInTheDocument();
+    // Custom toast shown with undo
+    expect(mockToastCustom).toHaveBeenCalled();
+    // Mutation not fired yet
     expect(mockDeleteMutate).not.toHaveBeenCalled();
   });
 
-  it("executes delete after 5-second window", () => {
+  it("executes delete after 5-second undo window", () => {
     setupLoaded();
     renderPage();
 
@@ -191,25 +199,38 @@ describe("ComparisonHistoryPage", () => {
     fireEvent.click(deleteBtn);
 
     expect(mockDeleteMutate).not.toHaveBeenCalled();
-    vi.advanceTimersByTime(5000);
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
     expect(mockDeleteMutate).toHaveBeenCalledWith({ id: COMPARISON.id });
   });
 
-  it("cancels delete when undo is clicked", () => {
+  it("cancels delete and restores row when undo is clicked", () => {
     setupLoaded();
     renderPage();
 
     const deleteBtn = screen.getByRole("button", { name: "" });
     fireEvent.click(deleteBtn);
 
-    // Simulate clicking undo via the action callback
-    const toastCall = mockToast.mock.calls[0];
-    const opts = toastCall?.[1] as { action?: { onClick: () => void } };
-    opts?.action?.onClick();
+    // Row gone
+    expect(screen.queryByText("Movie 100")).not.toBeInTheDocument();
 
-    vi.advanceTimersByTime(5000);
+    // Extract the render function passed to toast.custom and render it to get the Undo button
+    const renderFn = mockToastCustom.mock.calls[0]![0] as (
+      id: string | number
+    ) => React.ReactElement;
+    const toastElement = renderFn("toast-custom-1");
+    const { getByText: getToastByText } = render(toastElement);
+    fireEvent.click(getToastByText("Undo"));
+
+    // Row restored
+    expect(screen.getByText("Movie 100")).toBeInTheDocument();
+    // Timer should not fire delete
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
     expect(mockDeleteMutate).not.toHaveBeenCalled();
-    expect(mockToastDismiss).toHaveBeenCalledWith("toast-id-1");
+    expect(mockToastDismiss).toHaveBeenCalledWith("toast-custom-1");
   });
 
   it("invalidates queries on successful delete", () => {
@@ -217,12 +238,13 @@ describe("ComparisonHistoryPage", () => {
     renderPage();
 
     // Trigger the onSuccess callback directly
-    deleteMutationOpts.onSuccess?.();
+    act(() => {
+      deleteMutationOpts.onSuccess?.(undefined, { id: COMPARISON.id });
+    });
 
     expect(mockInvalidateListAll).toHaveBeenCalled();
     expect(mockInvalidateScores).toHaveBeenCalled();
     expect(mockInvalidateRankings).toHaveBeenCalled();
-    expect(mockRefetch).toHaveBeenCalled();
   });
 
   it("filters by dimension", () => {

@@ -2,14 +2,15 @@
  * ComparisonHistoryPage — paginated list of all comparisons with delete capability.
  * Allows users to review past comparisons and undo mistakes.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "react-router";
 import { toast } from "sonner";
 import { Button, Card, CardContent, Skeleton, Select, Input } from "@pops/ui";
-import { Trash2, ChevronLeft, ChevronRight, History } from "lucide-react";
+import { Trash2, ChevronLeft, ChevronRight, History, Undo2 } from "lucide-react";
 import { trpc } from "../lib/trpc";
 
 const PAGE_SIZE = 20;
+const UNDO_DELAY_MS = 5000;
 
 function useDebouncedValue(value: string, delay: number): string {
   const [debounced, setDebounced] = useState(value);
@@ -24,7 +25,8 @@ export function ComparisonHistoryPage() {
   const [page, setPage] = useState(0);
   const [dimensionFilter, setDimensionFilter] = useState<string>("");
   const [searchInput, setSearchInput] = useState<string>("");
-  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [pendingDeletes, setPendingDeletes] = useState<Set<number>>(new Set());
+  const pendingTimers = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
 
   const debouncedSearch = useDebouncedValue(searchInput, 300);
 
@@ -34,7 +36,7 @@ export function ComparisonHistoryPage() {
   const parsedDimensionId = dimensionFilter ? Number(dimensionFilter) : undefined;
   const searchParam = debouncedSearch.trim() || undefined;
 
-  const { data, isLoading, refetch } = trpc.media.comparisons.listAll.useQuery({
+  const { data, isLoading } = trpc.media.comparisons.listAll.useQuery({
     dimensionId: parsedDimensionId,
     search: searchParam,
     limit: PAGE_SIZE,
@@ -44,19 +46,40 @@ export function ComparisonHistoryPage() {
   const utils = trpc.useUtils();
 
   const deleteMutation = trpc.media.comparisons.delete.useMutation({
-    onSuccess: () => {
-      setDeletingId(null);
-      utils.media.comparisons.listAll.invalidate();
-      utils.media.comparisons.scores.invalidate();
-      utils.media.comparisons.rankings.invalidate();
-      refetch();
+    onSuccess: (_data, variables) => {
+      setPendingDeletes((prev) => {
+        const next = new Set(prev);
+        next.delete(variables.id);
+        return next;
+      });
+      void utils.media.comparisons.listAll.invalidate();
+      void utils.media.comparisons.scores.invalidate();
+      void utils.media.comparisons.rankings.invalidate();
     },
-    onError: () => {
-      setDeletingId(null);
+    onError: (_error, variables) => {
+      setPendingDeletes((prev) => {
+        const next = new Set(prev);
+        next.delete(variables.id);
+        return next;
+      });
+      toast.error("Failed to delete comparison");
     },
   });
 
-  const comparisons = data?.data ?? [];
+  const handleUndo = useCallback((id: number, toastId: string | number) => {
+    const timer = pendingTimers.current.get(id);
+    if (timer) clearTimeout(timer);
+    pendingTimers.current.delete(id);
+    setPendingDeletes((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
+    toast.dismiss(toastId);
+  }, []);
+
+  const allComparisons = data?.data ?? [];
+  const comparisons = allComparisons.filter((c: { id: number }) => !pendingDeletes.has(c.id));
   const totalPages = data?.pagination ? Math.ceil(data.pagination.total / PAGE_SIZE) : 0;
 
   const dimensionOptions = [
@@ -70,22 +93,20 @@ export function ComparisonHistoryPage() {
   const dimensionMap = new Map(dimensions.map((d: { id: number; name: string }) => [d.id, d.name]));
 
   function handleDelete(id: number) {
-    setDeletingId(id);
-    let cancelled = false;
-    const toastId = toast("Comparison deleted", {
-      duration: 5000,
-      action: {
-        label: "Undo",
-        onClick: () => {
-          cancelled = true;
-          setDeletingId(null);
-          toast.dismiss(toastId);
-        },
-      },
-    });
-    setTimeout(() => {
-      if (!cancelled) deleteMutation.mutate({ id });
-    }, 5000);
+    setPendingDeletes((prev) => new Set(prev).add(id));
+
+    const toastId = toast.custom(
+      (tId) => <UndoToast toastId={tId} onUndo={() => handleUndo(id, tId)} />,
+      { duration: UNDO_DELAY_MS + 500 }
+    );
+
+    const timer = setTimeout(() => {
+      pendingTimers.current.delete(id);
+      toast.dismiss(toastId);
+      deleteMutation.mutate({ id });
+    }, UNDO_DELAY_MS);
+
+    pendingTimers.current.set(id, timer);
   }
 
   return (
@@ -166,7 +187,6 @@ export function ComparisonHistoryPage() {
                 comparison={comp}
                 dimensionName={dimensionMap.get(comp.dimensionId) ?? "Unknown"}
                 onDelete={handleDelete}
-                isDeleting={deletingId === comp.id}
               />
             )
           )}
@@ -223,7 +243,6 @@ function ComparisonRow({
   comparison,
   dimensionName,
   onDelete,
-  isDeleting,
 }: {
   comparison: {
     id: number;
@@ -237,7 +256,6 @@ function ComparisonRow({
   };
   dimensionName: string;
   onDelete: (id: number) => void;
-  isDeleting: boolean;
 }) {
   const isDraw = comparison.winnerId === 0;
   const winnerId = comparison.winnerId;
@@ -291,13 +309,41 @@ function ComparisonRow({
           variant="ghost"
           size="sm"
           onClick={() => onDelete(comparison.id)}
-          disabled={isDeleting}
           className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
         >
           <Trash2 className="h-4 w-4" />
         </Button>
       </CardContent>
     </Card>
+  );
+}
+
+/** Toast with a shrinking progress bar and undo button. */
+function UndoToast({ toastId, onUndo }: { toastId: string | number; onUndo: () => void }) {
+  void toastId;
+  return (
+    <div className="bg-card border border-border rounded-lg shadow-lg px-4 py-3 w-72">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-sm text-foreground">Comparison deleted</span>
+        <button
+          onClick={onUndo}
+          className="flex items-center gap-1.5 text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+        >
+          <Undo2 className="h-3.5 w-3.5" />
+          Undo
+        </button>
+      </div>
+      <div className="mt-2 h-1 w-full rounded-full bg-muted overflow-hidden">
+        <div
+          className="h-full rounded-full bg-primary animate-shrink-bar"
+          style={
+            {
+              "--shrink-duration": `${UNDO_DELAY_MS}ms`,
+            } as React.CSSProperties
+          }
+        />
+      </div>
+    </div>
   );
 }
 

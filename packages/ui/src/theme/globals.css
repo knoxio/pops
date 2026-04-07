@@ -111,6 +111,17 @@
       height: 0;
     }
   }
+
+  @keyframes shrink-bar {
+    from {
+      width: 100%;
+    }
+    to {
+      width: 0%;
+    }
+  }
+
+  --animate-shrink-bar: shrink-bar var(--shrink-duration, 5000ms) linear forwards;
 }
 
 /*
