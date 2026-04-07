@@ -18,6 +18,7 @@ import { generateRules, analyzeCorrection } from "./lib/rule-generator.js";
 
 const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
+const PREVIEW_RULES_FETCH_LIMIT = 50_000;
 
 export const correctionsRouter = router({
   /** List all corrections with optional confidence filter */
@@ -200,13 +201,23 @@ export const correctionsRouter = router({
       })
     )
     .query(({ input }) => {
-      const dbRules = service.listCorrections(undefined, 10_000, 0).rows;
-      return service.previewChangeSetImpact({
-        rules: dbRules,
-        changeSet: input.changeSet,
-        transactions: input.transactions,
-        minConfidence: input.minConfidence,
-      });
+      // We need the full current rule set for deterministic previews.
+      // We fetch in a single page for simplicity; if this ever grows beyond the limit,
+      // switch this to a dedicated "list all corrections" service method with pagination.
+      const dbRules = service.listCorrections(undefined, PREVIEW_RULES_FETCH_LIMIT, 0).rows;
+      try {
+        return service.previewChangeSetImpact({
+          rules: dbRules,
+          changeSet: input.changeSet,
+          transactions: input.transactions,
+          minConfidence: input.minConfidence,
+        });
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+        }
+        throw err;
+      }
     }),
 
   /**
@@ -215,7 +226,14 @@ export const correctionsRouter = router({
   applyChangeSet: protectedProcedure
     .input(z.object({ changeSet: ChangeSetSchema }))
     .mutation(({ input }) => {
-      const rows = service.applyChangeSet(input.changeSet);
-      return { data: rows.map(toCorrection), message: "ChangeSet applied" };
+      try {
+        const rows = service.applyChangeSet(input.changeSet);
+        return { data: rows.map(toCorrection), message: "ChangeSet applied" };
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+        }
+        throw err;
+      }
     }),
 });

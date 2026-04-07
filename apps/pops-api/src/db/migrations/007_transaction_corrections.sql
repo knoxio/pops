@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS transaction_corrections (
   transaction_type TEXT CHECK(transaction_type IN ('purchase', 'transfer', 'income')),
 
   -- Metadata
+  is_active INTEGER NOT NULL DEFAULT 1,
   confidence REAL NOT NULL DEFAULT 0.5 CHECK(confidence >= 0.0 AND confidence <= 1.0),
   times_applied INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -32,5 +33,5 @@ CREATE INDEX IF NOT EXISTS idx_corrections_times_applied ON transaction_correcti
 -- View for high-confidence corrections
 CREATE VIEW IF NOT EXISTS v_active_corrections AS
 SELECT * FROM transaction_corrections
-WHERE confidence >= 0.7
+WHERE confidence >= 0.7 AND is_active = 1
 ORDER BY confidence DESC, times_applied DESC;

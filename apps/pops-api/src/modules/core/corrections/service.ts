@@ -63,6 +63,20 @@ export function findMatchingCorrectionFromRules(
 
   if (containsMatches[0]) return classifyCorrectionMatch(containsMatches[0]);
 
+  const regexMatches = eligible
+    .filter((r) => r.matchType === "regex" && r.descriptionPattern.length > 0)
+    .filter((r) => {
+      try {
+        return new RegExp(r.descriptionPattern).test(normalized);
+      } catch {
+        // Invalid regex patterns should never match (avoid preview/apply crashes on bad data).
+        return false;
+      }
+    })
+    .sort((a, b) => (b.confidence - a.confidence) || (b.timesApplied - a.timesApplied));
+
+  if (regexMatches[0]) return classifyCorrectionMatch(regexMatches[0]);
+
   return null;
 }
 
@@ -71,7 +85,11 @@ export function applyChangeSetToRules(rules: CorrectionRow[], changeSet: ChangeS
   const next: CorrectionRow[] = [...rules];
 
   let tempCounter = 0;
-  for (const op of changeSet.ops) {
+  // Deterministic ordering: add → edit → disable → remove (match DB apply semantics)
+  const order: Record<ChangeSetOp["op"], number> = { add: 1, edit: 2, disable: 3, remove: 4 };
+  const ops = [...changeSet.ops].sort((a, b) => order[a.op] - order[b.op]);
+
+  for (const op of ops) {
     if (op.op === "add") {
       tempCounter += 1;
       const now = new Date().toISOString();
@@ -94,7 +112,7 @@ export function applyChangeSetToRules(rules: CorrectionRow[], changeSet: ChangeS
     }
 
     const existing = byId.get(op.id);
-    if (!existing) continue;
+    if (!existing) throw new NotFoundError("Correction", op.id);
 
     const replace = (updated: CorrectionRow): void => {
       const idx = next.findIndex((r) => r.id === existing.id);
@@ -285,6 +303,30 @@ export function findMatchingCorrection(
 
   if (containsMatch) return classifyCorrectionMatch(containsMatch);
 
+  // Try regex match (JS-level evaluation; SQLite has no built-in REGEXP by default)
+  const regexCandidates = db
+    .select()
+    .from(transactionCorrections)
+    .where(
+      and(
+        eq(transactionCorrections.isActive, true),
+        eq(transactionCorrections.matchType, "regex"),
+        gte(transactionCorrections.confidence, minConfidence)
+      )
+    )
+    .orderBy(desc(transactionCorrections.confidence), desc(transactionCorrections.timesApplied))
+    .all();
+
+  for (const row of regexCandidates) {
+    try {
+      if (new RegExp(row.descriptionPattern).test(normalized)) {
+        return classifyCorrectionMatch(row);
+      }
+    } catch {
+      // Ignore invalid regex rules (treat as non-matching).
+    }
+  }
+
   return null;
 }
 
@@ -377,7 +419,25 @@ export function findAllMatchingCorrections(description: string): CorrectionRow[]
     .orderBy(desc(transactionCorrections.confidence), desc(transactionCorrections.timesApplied))
     .all();
 
-  return [...exactMatches, ...containsMatches];
+  const regexCandidates = db
+    .select()
+    .from(transactionCorrections)
+    .where(and(eq(transactionCorrections.isActive, true), eq(transactionCorrections.matchType, "regex")))
+    .orderBy(desc(transactionCorrections.confidence), desc(transactionCorrections.timesApplied))
+    .all();
+
+  const regexMatches: CorrectionRow[] = [];
+  for (const row of regexCandidates) {
+    try {
+      if (new RegExp(row.descriptionPattern).test(normalized)) {
+        regexMatches.push(row);
+      }
+    } catch {
+      // ignore invalid regex
+    }
+  }
+
+  return [...exactMatches, ...containsMatches, ...regexMatches];
 }
 
 /**
