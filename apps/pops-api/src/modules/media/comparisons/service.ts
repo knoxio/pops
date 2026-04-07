@@ -2077,7 +2077,7 @@ export function batchRecordComparisons(
 
   let insertedCount = 0;
   let skippedCount = 0;
-  const idsToDelete: number[] = [];
+  let hasOverrides = false;
 
   rawDb.transaction(() => {
     for (const item of items) {
@@ -2092,8 +2092,9 @@ export function batchRecordComparisons(
 
       if (existing) {
         if (sourceRank(source) >= sourceRank(existing.source)) {
-          // Override: mark old row for deletion
-          idsToDelete.push(existing.id);
+          // Override: delete old row immediately to prevent stale lookups
+          drizzleDb.delete(comparisons).where(eq(comparisons.id, existing.id)).run();
+          hasOverrides = true;
         } else {
           // Skip: existing has higher authority
           skippedCount++;
@@ -2101,45 +2102,60 @@ export function batchRecordComparisons(
         }
       }
 
-      const comparisonInput: RecordComparisonInput = {
-        dimensionId,
-        mediaAType: item.mediaAType,
-        mediaAId: item.mediaAId,
-        mediaBType: item.mediaBType,
-        mediaBId: item.mediaBId,
-        winnerType: item.winnerType,
-        winnerId: item.winnerId,
-        drawTier: item.drawTier ?? null,
-      };
+      // Insert without incremental ELO if any overrides — recalc will rebuild
+      if (hasOverrides) {
+        drizzleDb
+          .insert(comparisons)
+          .values({
+            dimensionId,
+            mediaAType: item.mediaAType,
+            mediaAId: item.mediaAId,
+            mediaBType: item.mediaBType,
+            mediaBId: item.mediaBId,
+            winnerType: item.winnerType,
+            winnerId: item.winnerId,
+            drawTier: item.drawTier ?? null,
+            source: source ?? null,
+          })
+          .run();
+      } else {
+        const comparisonInput: RecordComparisonInput = {
+          dimensionId,
+          mediaAType: item.mediaAType,
+          mediaAId: item.mediaAId,
+          mediaBType: item.mediaBType,
+          mediaBId: item.mediaBId,
+          winnerType: item.winnerType,
+          winnerId: item.winnerId,
+          drawTier: item.drawTier ?? null,
+        };
 
-      // Compute Elo deltas first so they can be stored on the comparison row
-      const { deltaA, deltaB } = updateEloScores(comparisonInput);
+        // No overrides yet — compute Elo deltas incrementally
+        const { deltaA, deltaB } = updateEloScores(comparisonInput);
 
-      const result = drizzleDb
-        .insert(comparisons)
-        .values({
-          dimensionId: comparisonInput.dimensionId,
-          mediaAType: comparisonInput.mediaAType,
-          mediaAId: comparisonInput.mediaAId,
-          mediaBType: comparisonInput.mediaBType,
-          mediaBId: comparisonInput.mediaBId,
-          winnerType: comparisonInput.winnerType,
-          winnerId: comparisonInput.winnerId,
-          drawTier: comparisonInput.drawTier ?? null,
-          source: source ?? null,
-          deltaA,
-          deltaB,
-        })
-        .run();
-
-      if (Number(result.lastInsertRowid) > 0) {
-        insertedCount++;
+        drizzleDb
+          .insert(comparisons)
+          .values({
+            dimensionId,
+            mediaAType: item.mediaAType,
+            mediaAId: item.mediaAId,
+            mediaBType: item.mediaBType,
+            mediaBId: item.mediaBId,
+            winnerType: item.winnerType,
+            winnerId: item.winnerId,
+            drawTier: item.drawTier ?? null,
+            source: source ?? null,
+            deltaA,
+            deltaB,
+          })
+          .run();
       }
+
+      insertedCount++;
     }
 
-    // Delete overridden rows and recalc inside the transaction for atomicity
-    if (idsToDelete.length > 0) {
-      drizzleDb.delete(comparisons).where(inArray(comparisons.id, idsToDelete)).run();
+    // Full recalc inside the transaction for atomicity
+    if (hasOverrides) {
       recalcDimensionElo(dimensionId);
     }
   })();
@@ -2296,6 +2312,7 @@ export function recordDebriefComparison(input: RecordDebriefComparisonInput): {
             : input.opponentType,
         winnerId: input.winnerId,
         drawTier: input.drawTier ?? null,
+        source: "arena",
       });
       comparisonId = compRow.id;
     }
