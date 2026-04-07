@@ -86,4 +86,3 @@ describe("applyLearnedCorrection ruleProvenance", () => {
     expect(res).toBeNull();
   });
 });
-

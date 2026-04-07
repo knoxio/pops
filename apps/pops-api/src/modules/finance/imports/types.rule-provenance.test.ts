@@ -26,4 +26,3 @@ describe("ruleProvenanceSchema", () => {
     ).toThrow();
   });
 });
-
