@@ -66,6 +66,7 @@ vi.mock("../lib/trpc", () => ({
       media: {
         comparisons: {
           getTierListMovies: { invalidate: vi.fn() },
+          getSmartPair: { invalidate: vi.fn() },
         },
       },
     }),
@@ -85,6 +86,24 @@ vi.mock("../lib/trpc", () => ({
             mutate: mockMutate,
             isPending: false,
             error: null,
+          }),
+        },
+        markStale: {
+          useMutation: () => ({
+            mutate: vi.fn(),
+            isPending: false,
+          }),
+        },
+        excludeFromDimension: {
+          useMutation: () => ({
+            mutate: vi.fn(),
+            isPending: false,
+          }),
+        },
+        blacklistMovie: {
+          useMutation: () => ({
+            mutate: vi.fn(),
+            isPending: false,
           }),
         },
       },

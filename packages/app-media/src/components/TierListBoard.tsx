@@ -56,24 +56,26 @@ export type TierPlacements = Record<Tier, number[]>;
 const DISMISS_ZONES = ["not-watched", "stale", "n-a"] as const;
 type DismissZone = (typeof DISMISS_ZONES)[number];
 
-const DISMISS_ZONE_CONFIG: Record<DismissZone, { label: string; icon: typeof EyeOff; color: string }> =
-  {
-    "not-watched": {
-      label: "Not Watched",
-      icon: EyeOff,
-      color: "border-red-500/40 text-red-400 bg-red-500/10",
-    },
-    stale: {
-      label: "Stale",
-      icon: Clock,
-      color: "border-yellow-500/40 text-yellow-400 bg-yellow-500/10",
-    },
-    "n-a": {
-      label: "N/A",
-      icon: Ban,
-      color: "border-muted-foreground/40 text-muted-foreground bg-muted/30",
-    },
-  };
+const DISMISS_ZONE_CONFIG: Record<
+  DismissZone,
+  { label: string; icon: typeof EyeOff; color: string }
+> = {
+  "not-watched": {
+    label: "Not Watched",
+    icon: EyeOff,
+    color: "border-red-500/40 text-red-400 bg-red-500/10",
+  },
+  stale: {
+    label: "Stale",
+    icon: Clock,
+    color: "border-yellow-500/40 text-yellow-400 bg-yellow-500/10",
+  },
+  "n-a": {
+    label: "N/A",
+    icon: Ban,
+    color: "border-muted-foreground/40 text-muted-foreground bg-muted/30",
+  },
+};
 
 interface TierListBoardProps {
   movies: TierMovie[];
