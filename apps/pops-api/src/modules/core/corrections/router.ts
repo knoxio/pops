@@ -263,7 +263,7 @@ export const correctionsRouter = router({
           userEmail: ctx.user.email,
           opCount: input.changeSet.ops.length,
           ops: input.changeSet.ops,
-          outcome: "approved",
+          outcome: "apply_failed",
           err,
         });
         if (err instanceof NotFoundError) {

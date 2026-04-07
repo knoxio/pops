@@ -388,13 +388,74 @@ describe("corrections", () => {
             userEmail: "test@example.com",
             opCount: 2,
             ops: expect.any(Array),
-            outcome: "approved",
+            outcome: "apply_failed",
             err: expect.anything(),
           })
         );
       } finally {
         errorSpy.mockRestore();
       }
+    });
+  });
+
+  describe("rejectChangeSet", () => {
+    it("logs rejection with feedback and returns success message", async () => {
+      const infoSpy = vi.spyOn(logger, "info").mockImplementation(() => {});
+      try {
+        const result = await caller.core.corrections.rejectChangeSet({
+          changeSet: {
+            ops: [
+              {
+                op: "add",
+                data: {
+                  descriptionPattern: "WOOLWORTHS",
+                  matchType: "contains",
+                  tags: [],
+                  confidence: 0.95,
+                },
+              },
+            ],
+          },
+          feedback: "Too broad — needs to be more specific",
+          impactSummary: { total: 2, newMatches: 1, removedMatches: 0, statusChanges: 0, netMatchedDelta: 1 },
+        });
+
+        expect(result.message).toBe("ChangeSet rejected");
+        expect(infoSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            event: "corrections.proposal.reject",
+            userEmail: "test@example.com",
+            opCount: 1,
+            ops: expect.any(Array),
+            outcome: "rejected",
+            feedback: "Too broad — needs to be more specific",
+            impactSummary: expect.objectContaining({ total: 2 }),
+          })
+        );
+      } finally {
+        infoSpy.mockRestore();
+      }
+    });
+
+    it("rejects empty feedback", async () => {
+      await expect(
+        caller.core.corrections.rejectChangeSet({
+          changeSet: {
+            ops: [
+              {
+                op: "add",
+                data: {
+                  descriptionPattern: "WOOLWORTHS",
+                  matchType: "contains",
+                  tags: [],
+                  confidence: 0.95,
+                },
+              },
+            ],
+          },
+          feedback: "",
+        })
+      ).rejects.toThrow();
     });
   });
 
