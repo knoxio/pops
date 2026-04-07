@@ -6,6 +6,9 @@
  */
 import { router } from "../../trpc.js";
 import { entitiesRouter } from "./entities/router.js";
+
+// Side-effect: register search adapters
+import "./entities/search-adapter.js";
 import { aiUsageRouter } from "./ai-usage/router.js";
 import { correctionsRouter } from "./corrections/router.js";
 import { settingsRouter } from "./settings/router.js";

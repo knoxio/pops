@@ -137,6 +137,4 @@ export const inventoryItemsSearchAdapter: SearchAdapter<InventoryItemHitData> = 
   },
 };
 
-export function registerInventoryItemsAdapter(): void {
-  registerSearchAdapter(inventoryItemsSearchAdapter);
-}
+registerSearchAdapter(inventoryItemsSearchAdapter);

@@ -23,7 +23,7 @@ function scoreHit(
   return null;
 }
 
-const budgetsSearchAdapter: SearchAdapter<BudgetHitData> = {
+export const budgetsSearchAdapter: SearchAdapter<BudgetHitData> = {
   domain: "budgets",
   icon: "PiggyBank",
   color: "green",
@@ -69,6 +69,4 @@ const budgetsSearchAdapter: SearchAdapter<BudgetHitData> = {
   },
 };
 
-export function registerBudgetsSearchAdapter(): void {
-  registerSearchAdapter(budgetsSearchAdapter);
-}
+registerSearchAdapter(budgetsSearchAdapter);

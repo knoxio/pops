@@ -8,6 +8,7 @@ import { like } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
 import { tvShows } from "@pops/db-types";
 import type { SearchAdapter, SearchHit, Query, SearchContext } from "../../core/search/types.js";
+import { registerSearchAdapter } from "../../core/search/index.js";
 
 export interface TvShowHitData {
   name: string;
@@ -83,3 +84,5 @@ export const tvShowsSearchAdapter: SearchAdapter<TvShowHitData> = {
       .sort((a, b) => b.score - a.score);
   },
 };
+
+registerSearchAdapter(tvShowsSearchAdapter);

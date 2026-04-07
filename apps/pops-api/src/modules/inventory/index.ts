@@ -3,6 +3,9 @@
  */
 import { router } from "../../trpc.js";
 import { inventoryRouter as itemsRouter } from "./items/router.js";
+
+// Side-effect: register search adapters
+import "./items/search-adapter.js";
 import { locationsRouter } from "./locations/router.js";
 import { connectionsRouter } from "./connections/index.js";
 import { photosRouter } from "./photos/index.js";

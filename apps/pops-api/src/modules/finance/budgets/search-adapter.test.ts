@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import type { Database } from "better-sqlite3";
 import { setupTestContext, seedBudget } from "../../../shared/test-utils.js";
-import { resetRegistry } from "../../core/search/index.js";
-import { registerBudgetsSearchAdapter, type BudgetHitData } from "./search-adapter.js";
+import { resetRegistry, registerSearchAdapter } from "../../core/search/index.js";
+import { budgetsSearchAdapter, type BudgetHitData } from "./search-adapter.js";
 import type { SearchHit } from "../../core/search/index.js";
 import { getAdapters } from "../../core/search/index.js";
 
@@ -12,7 +12,7 @@ let db: Database;
 beforeEach(() => {
   ({ db } = ctx.setup());
   resetRegistry();
-  registerBudgetsSearchAdapter();
+  registerSearchAdapter(budgetsSearchAdapter);
 });
 
 afterEach(() => {
