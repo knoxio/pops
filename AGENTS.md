@@ -446,3 +446,31 @@ Full design context lives in `.impeccable.md`. Key principles for all UI work:
 
 **Technical:** Dark mode primary, OKLCH colors, Plus Jakarta Sans, 44px+ touch targets, `prefers-reduced-motion` respected.
 
+## Cursor Cloud specific instructions
+
+### Services
+
+| Service | Port | Command |
+|---|---|---|
+| **pops-api** (Express + tRPC) | 3000 | `cd apps/pops-api && pnpm dev` |
+| **pops-shell** (Vite React PWA) | 5568 | `cd apps/pops-shell && pnpm dev` |
+
+### Node.js version
+
+Node.js 24.5.0 is managed via **mise** (see `mise.toml`). NVM must be disabled in `~/.bashrc` to avoid version conflicts. If you see `NODE_MODULE_VERSION` mismatch errors with `better-sqlite3`, the wrong Node version is active — ensure mise is providing the Node binary, not NVM.
+
+### Environment files
+
+- Root `.env` — copy from `.env.example`. The `SQLITE_PATH` variable must be an **absolute** path pointing at the SQLite DB file under `apps/pops-api/data/` because pops-api loads it from its own working directory via dotenvx.
+- `apps/pops-api/.env` — copy from `.env.example`. Set the database path to point at the SQLite file in the `data/` subdirectory. Only the database path and `PORT` are required for basic local dev. Media/AI API keys are optional.
+
+### Database setup
+
+Run `pnpm db:seed` from `apps/pops-api/` (or `mise db:seed`) to initialize and seed the SQLite database. This is idempotent — it clears and re-seeds each time.
+
+### Gotchas
+
+- `SQLITE_PATH` in root `.env` must be an **absolute path** because pops-api runs from `apps/pops-api/` and loads the root `.env` via dotenvx path traversal (`../../.env`). A relative path would resolve incorrectly from the API's working directory.
+- The pops-shell Vite dev server uses port **5568** (not the default 5173).
+- `pnpm.onlyBuiltDependencies` in root `package.json` already covers `better-sqlite3`, `esbuild`, and `msw` — no interactive `pnpm approve-builds` needed.
+
