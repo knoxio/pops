@@ -38,7 +38,11 @@ describe("TransactionCard rule provenance", () => {
 
   it("renders provenance for uncertain transactions too", () => {
     render(
-      <TransactionCard transaction={makeTx({ status: "uncertain" })} readonly={true} variant="uncertain" />
+      <TransactionCard
+        transaction={makeTx({ status: "uncertain" })}
+        readonly={true}
+        variant="uncertain"
+      />
     );
 
     expect(screen.getByText("Rule matched")).toBeInTheDocument();
@@ -60,4 +64,3 @@ describe("TransactionCard rule provenance", () => {
     expect(screen.queryByText("Rule matched")).toBeNull();
   });
 });
-
