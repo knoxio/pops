@@ -54,7 +54,7 @@ describe("TransactionCard rule provenance", () => {
       <TransactionCard
         transaction={makeTx({
           ruleProvenance: undefined,
-          entity: { matchType: "exact" as never, entityId: "ent_1", entityName: "Woolworths" },
+          entity: { matchType: "exact", entityId: "ent_1", entityName: "Woolworths" },
         })}
         readonly={true}
         variant="matched"
