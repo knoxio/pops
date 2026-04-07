@@ -126,7 +126,6 @@ export async function fetchPlexWatchlist(
   const allItems: PlexMediaItem[] = [];
   let start = 0;
 
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     const data = await fetchPlexWatchlistPage(token, clientId, start, WATCHLIST_PAGE_SIZE);
     const pageItems = data.MediaContainer.Metadata ?? [];

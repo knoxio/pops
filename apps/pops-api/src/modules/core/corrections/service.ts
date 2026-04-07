@@ -4,8 +4,9 @@
  */
 import { eq, gte, desc, count, sql, and } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
-import { transactionCorrections } from "@pops/db-types";
+import { transactionCorrections, transactions } from "@pops/db-types";
 import { NotFoundError } from "../../../shared/errors.js";
+import { parseJsonStringArray } from "../../../shared/json.js";
 import type {
   CorrectionRow,
   CreateCorrectionInput,
@@ -16,6 +17,10 @@ import type {
   ChangeSetPreviewDiff,
   ChangeSetPreviewSummary,
   CorrectionMatchSummary,
+  ChangeSetProposal,
+  CorrectionClassificationOutcome,
+  ChangeSetImpactCounts,
+  ChangeSetImpactItem,
 } from "./types.js";
 import { normalizeDescription, classifyCorrectionMatch } from "./types.js";
 
@@ -134,7 +139,8 @@ export function applyChangeSetToRules(
           op.data.transactionType !== undefined
             ? op.data.transactionType
             : existing.transactionType,
-        isActive: op.data.isActive !== undefined ? op.data.isActive : existing.isActive,
+        isActive:
+          op.data.isActive !== undefined ? Boolean(op.data.isActive) : Boolean(existing.isActive),
         confidence: op.data.confidence !== undefined ? op.data.confidence : existing.confidence,
       });
     } else if (op.op === "disable") {
@@ -186,6 +192,266 @@ export function previewChangeSetImpact(args: {
       removedMatches,
       statusChanges,
       netMatchedDelta: newMatches - removedMatches,
+    },
+  };
+}
+
+function outcomeFromMatch(match: CorrectionMatchResult | null): CorrectionClassificationOutcome {
+  if (!match) {
+    return {
+      ruleId: null,
+      entityId: null,
+      entityName: null,
+      location: null,
+      tags: [],
+      transactionType: null,
+    };
+  }
+
+  const r = match.correction;
+  return {
+    ruleId: r.id,
+    entityId: r.entityId ?? null,
+    entityName: r.entityName ?? null,
+    location: r.location ?? null,
+    tags: parseJsonStringArray(r.tags),
+    transactionType: r.transactionType ?? null,
+  };
+}
+
+function mergeTags(base: string[], add: string[]): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const t of base) {
+    if (!seen.has(t)) {
+      seen.add(t);
+      result.push(t);
+    }
+  }
+  for (const t of add) {
+    if (!seen.has(t)) {
+      seen.add(t);
+      result.push(t);
+    }
+  }
+  return result;
+}
+
+function outcomeChanged(
+  a: CorrectionClassificationOutcome,
+  b: CorrectionClassificationOutcome
+): boolean {
+  if (a.ruleId !== b.ruleId) return true;
+  if (a.entityId !== b.entityId) return true;
+  if (a.entityName !== b.entityName) return true;
+  if (a.location !== b.location) return true;
+  if (a.transactionType !== b.transactionType) return true;
+  if (a.tags.length !== b.tags.length) return true;
+  for (let i = 0; i < a.tags.length; i += 1) {
+    if (a.tags[i] !== b.tags[i]) return true;
+  }
+  return false;
+}
+
+function computeImpactCounts(items: ChangeSetImpactItem[]): ChangeSetImpactCounts {
+  let entityChanges = 0;
+  let locationChanges = 0;
+  let tagChanges = 0;
+  let typeChanges = 0;
+
+  for (const item of items) {
+    if (
+      item.before.entityId !== item.after.entityId ||
+      item.before.entityName !== item.after.entityName
+    ) {
+      entityChanges += 1;
+    }
+    if (item.before.location !== item.after.location) {
+      locationChanges += 1;
+    }
+    if (item.before.transactionType !== item.after.transactionType) {
+      typeChanges += 1;
+    }
+    if (
+      item.before.tags.length !== item.after.tags.length ||
+      item.before.tags.some((t, i) => item.after.tags[i] !== t)
+    ) {
+      tagChanges += 1;
+    }
+  }
+
+  return {
+    affected: items.length,
+    entityChanges,
+    locationChanges,
+    tagChanges,
+    typeChanges,
+  };
+}
+
+/**
+ * Generate a bundled ChangeSet proposal from a single correction signal.
+ *
+ * The "signal" is a concrete desired rule definition (pattern + attributes).
+ * If a rule already exists with the same normalized pattern + matchType, we propose an edit.
+ * Otherwise we propose an add.
+ *
+ * Preview is bounded by a DB prefilter on transaction descriptions, and includes
+ * transfer-only outcomes (type-only diffs) as affected items.
+ */
+export function proposeChangeSetFromCorrectionSignal(args: {
+  signal: {
+    descriptionPattern: string;
+    matchType: "exact" | "contains" | "regex";
+    entityId?: string | null;
+    entityName?: string | null;
+    location?: string | null;
+    tags?: string[];
+    transactionType?: "purchase" | "transfer" | "income" | null;
+  };
+  minConfidence: number;
+  maxPreviewItems: number;
+}): ChangeSetProposal {
+  const db = getDrizzle();
+
+  const normalizedPattern = normalizeDescription(args.signal.descriptionPattern);
+  const matchType = args.signal.matchType;
+
+  const existing = db
+    .select()
+    .from(transactionCorrections)
+    .where(
+      and(
+        eq(transactionCorrections.matchType, matchType),
+        eq(transactionCorrections.descriptionPattern, normalizedPattern)
+      )
+    )
+    .get();
+
+  const changeSet: ChangeSet = existing
+    ? {
+        source: "correction-signal",
+        reason: "Update existing correction rule from user correction signal",
+        ops: [
+          {
+            op: "edit",
+            id: existing.id,
+            data: {
+              entityId: args.signal.entityId,
+              entityName: args.signal.entityName,
+              location: args.signal.location,
+              tags: args.signal.tags,
+              transactionType: args.signal.transactionType,
+            },
+          },
+        ],
+      }
+    : {
+        source: "correction-signal",
+        reason: "Create new correction rule from user correction signal",
+        ops: [
+          {
+            op: "add",
+            data: {
+              descriptionPattern: normalizedPattern,
+              matchType,
+              entityId: args.signal.entityId ?? null,
+              entityName: args.signal.entityName ?? null,
+              location: args.signal.location ?? null,
+              tags: args.signal.tags ?? [],
+              transactionType: args.signal.transactionType ?? null,
+              confidence: 0.95,
+              isActive: true,
+            },
+          },
+        ],
+      };
+
+  // Bounded preview: prefilter candidates using LIKE where possible.
+  // Note: Our normalization strips digits and collapses whitespace; apply the same transformations in SQL
+  // so the prefilter doesn't miss legitimate candidates.
+  const sqlNormalizedDescription = sql`upper(${transactions.description})`;
+  const sqlNoDigits = sql`replace(replace(replace(replace(replace(replace(replace(replace(replace(replace(${sqlNormalizedDescription}, '0', ''), '1', ''), '2', ''), '3', ''), '4', ''), '5', ''), '6', ''), '7', ''), '8', ''), '9', '')`;
+  const sqlCollapsedSpaces = sql`replace(replace(replace(${sqlNoDigits}, '  ', ' '), '  ', ' '), '  ', ' ')`;
+
+  const sqlPrefilterExpression =
+    matchType === "regex" ? sqlNormalizedDescription : sqlCollapsedSpaces;
+  const upperPattern = normalizedPattern;
+  const candidates = db
+    .select({
+      id: transactions.id,
+      description: transactions.description,
+      type: transactions.type,
+      tags: transactions.tags,
+      entityId: transactions.entityId,
+      entityName: transactions.entityName,
+      location: transactions.location,
+    })
+    .from(transactions)
+    .where(
+      matchType === "regex"
+        ? undefined
+        : sql`${sqlPrefilterExpression} LIKE '%' || ${upperPattern} || '%'`
+    )
+    .limit(args.maxPreviewItems)
+    .all();
+
+  // Build a minimal in-memory rules list for deterministic before/after.
+  const rulesBefore = db.select().from(transactionCorrections).all();
+  const rulesAfter = applyChangeSetToRules(rulesBefore, changeSet);
+
+  const affected: ChangeSetImpactItem[] = [];
+
+  for (const t of candidates) {
+    // Compute correction-rule-derived outcomes before/after.
+    const matchBefore = findMatchingCorrectionFromRules(
+      t.description,
+      rulesBefore,
+      args.minConfidence
+    );
+    const matchAfter = findMatchingCorrectionFromRules(
+      t.description,
+      rulesAfter,
+      args.minConfidence
+    );
+
+    const beforeBase = outcomeFromMatch(matchBefore);
+    const afterBase = outcomeFromMatch(matchAfter);
+
+    // Apply rule tag semantics as "merge" (consistent with import bulk apply semantics).
+    const before: CorrectionClassificationOutcome = {
+      ...beforeBase,
+      tags: mergeTags(parseJsonStringArray(t.tags), beforeBase.tags).sort(),
+    };
+    const after: CorrectionClassificationOutcome = {
+      ...afterBase,
+      tags: mergeTags(parseJsonStringArray(t.tags), afterBase.tags).sort(),
+    };
+
+    // If the rule sets a transactionType, that classification outcome should surface even if it's the only change.
+    const changed = outcomeChanged(before, after);
+    if (!changed) continue;
+
+    affected.push({
+      transactionId: t.id,
+      description: t.description,
+      before,
+      after,
+    });
+  }
+
+  const counts = computeImpactCounts(affected);
+
+  const rationale = existing
+    ? `Edit correction rule ${existing.id} (${matchType}:${normalizedPattern}) based on correction signal`
+    : `Add new correction rule (${matchType}:${normalizedPattern}) based on correction signal`;
+
+  return {
+    changeSet,
+    rationale,
+    preview: {
+      counts,
+      affected,
     },
   };
 }

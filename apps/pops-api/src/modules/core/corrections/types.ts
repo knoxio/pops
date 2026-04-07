@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { TransactionCorrectionRow } from "@pops/db-types";
+import { parseJsonStringArray } from "../../../shared/json.js";
 
 export type CorrectionRow = TransactionCorrectionRow;
 
@@ -52,19 +53,9 @@ export function toCorrection(row: CorrectionRow): Correction {
     entityId: row.entityId,
     entityName: row.entityName,
     location: row.location,
-    tags: (() => {
-      try {
-        const parsed = JSON.parse(row.tags) as unknown;
-        if (Array.isArray(parsed)) {
-          return parsed.filter((item): item is string => typeof item === "string");
-        }
-        return [];
-      } catch {
-        return [];
-      }
-    })(),
+    tags: parseJsonStringArray(row.tags),
     transactionType: row.transactionType,
-    isActive: row.isActive,
+    isActive: Boolean(row.isActive),
     confidence: row.confidence,
     timesApplied: row.timesApplied,
     createdAt: row.createdAt,
@@ -178,6 +169,43 @@ export interface ChangeSetPreviewSummary {
   removedMatches: number;
   statusChanges: number;
   netMatchedDelta: number;
+}
+
+// ---------------------------------------------------------------------------
+// ChangeSet proposal + impact preview (Issue #1643)
+// ---------------------------------------------------------------------------
+
+export interface CorrectionClassificationOutcome {
+  ruleId: string | null;
+  entityId: string | null;
+  entityName: string | null;
+  location: string | null;
+  tags: string[];
+  transactionType: "purchase" | "transfer" | "income" | null;
+}
+
+export interface ChangeSetImpactCounts {
+  affected: number;
+  entityChanges: number;
+  locationChanges: number;
+  tagChanges: number;
+  typeChanges: number;
+}
+
+export interface ChangeSetImpactItem {
+  transactionId: string;
+  description: string;
+  before: CorrectionClassificationOutcome;
+  after: CorrectionClassificationOutcome;
+}
+
+export interface ChangeSetProposal {
+  changeSet: ChangeSet;
+  rationale: string;
+  preview: {
+    counts: ChangeSetImpactCounts;
+    affected: ChangeSetImpactItem[];
+  };
 }
 
 /**

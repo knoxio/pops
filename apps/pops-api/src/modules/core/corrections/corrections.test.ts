@@ -2,7 +2,7 @@
  * Corrections module tests — CRUD, pattern matching, and tags.
  */
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import { setupTestContext, seedEntity } from "../../../shared/test-utils.js";
+import { setupTestContext, seedEntity, seedTransaction } from "../../../shared/test-utils.js";
 
 const ctx = setupTestContext();
 
@@ -317,6 +317,100 @@ describe("corrections", () => {
       // Ensure the add op was not committed due to rollback.
       const list = await caller.core.corrections.list({});
       expect(list.data.some((r) => r.descriptionPattern === "WOOLWORTHS")).toBe(false);
+    });
+  });
+
+  describe("proposeChangeSet", () => {
+    it("generates a ChangeSet proposal and includes type-only outcomes", async () => {
+      const transactionId = seedTransaction(db, {
+        description: "TRANSFER TO SAVINGS",
+        account: "Up",
+        amount: -10,
+        date: "2026-01-01",
+        type: "purchase",
+        tags: "[]",
+        last_edited_time: new Date().toISOString(),
+      });
+
+      const result = await caller.core.corrections.proposeChangeSet({
+        signal: {
+          descriptionPattern: "TRANSFER TO SAVINGS",
+          matchType: "exact",
+          tags: [],
+          transactionType: "transfer",
+        },
+        minConfidence: 0,
+        maxPreviewItems: 200,
+      });
+
+      expect(result.changeSet.ops).toHaveLength(1);
+      expect(result.preview.counts.affected).toBeGreaterThan(0);
+      expect(result.preview.affected.some((a) => a.transactionId === transactionId)).toBe(true);
+
+      const affected = result.preview.affected.find((a) => a.transactionId === transactionId);
+      expect(affected?.before.transactionType).toBeNull();
+      expect(affected?.after.transactionType).toBe("transfer");
+    });
+
+    it("proposes edit when rule already exists", async () => {
+      const entityId = seedEntity(db, { name: "Woolworths" });
+      await caller.core.corrections.createOrUpdate({
+        descriptionPattern: "WOOLWORTHS",
+        matchType: "contains",
+        entityId,
+        entityName: "Woolworths",
+        tags: ["Groceries"],
+      });
+      const list = await caller.core.corrections.list({});
+      const existingId = list.data.find((r) => r.descriptionPattern === "WOOLWORTHS")?.id ?? null;
+      expect(existingId).not.toBeNull();
+
+      const result = await caller.core.corrections.proposeChangeSet({
+        signal: {
+          descriptionPattern: "WOOLWORTHS",
+          matchType: "contains",
+          tags: ["Groceries", "Online"],
+        },
+        minConfidence: 0,
+        maxPreviewItems: 10,
+      });
+
+      const op = result.changeSet.ops[0];
+      expect(op?.op).toBe("edit");
+      if (!op || op.op !== "edit") throw new Error("Expected edit op");
+      expect(op.id).toBe(existingId);
+    });
+
+    it("respects maxPreviewItems limit", async () => {
+      for (let i = 0; i < 5; i += 1) {
+        seedTransaction(db, {
+          description: `FOO ${i} BAR`,
+          last_edited_time: new Date().toISOString(),
+        });
+      }
+
+      const result = await caller.core.corrections.proposeChangeSet({
+        signal: { descriptionPattern: "FOO BAR", matchType: "contains", tags: [] },
+        minConfidence: 0,
+        maxPreviewItems: 2,
+      });
+
+      expect(result.preview.affected.length).toBeLessThanOrEqual(2);
+    });
+
+    it("does not miss candidates when digits are stripped during normalization", async () => {
+      const id = seedTransaction(db, {
+        description: "FOO 123 BAR",
+        last_edited_time: new Date().toISOString(),
+      });
+
+      const result = await caller.core.corrections.proposeChangeSet({
+        signal: { descriptionPattern: "FOO BAR", matchType: "contains", tags: [] },
+        minConfidence: 0,
+        maxPreviewItems: 50,
+      });
+
+      expect(result.preview.affected.some((a) => a.transactionId === id)).toBe(true);
     });
   });
 

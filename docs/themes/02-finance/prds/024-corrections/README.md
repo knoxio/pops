@@ -75,6 +75,11 @@ The corrections system must support:
 - applying usage tracking when a rule matches during processing
 - create/update/delete operations, invoked only through an approved ChangeSet (PRD-028)
 
+Additionally, the API exposes ChangeSet tooling for rule evolution:
+- `core.corrections.proposeChangeSet` — generate a bundled ChangeSet proposal from a correction signal, including rationale and a bounded impact preview (counts + affected list)
+- `core.corrections.previewChangeSet` — deterministic impact preview for a proposed ChangeSet against a set of transaction descriptions
+- `core.corrections.applyChangeSet` — apply a ChangeSet atomically
+
 ## Confidence and activation
 
 The system must define how confidence affects activation and matching:

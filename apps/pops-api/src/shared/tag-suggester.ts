@@ -13,6 +13,7 @@ import { getDrizzle } from "../db.js";
 import { entities } from "@pops/db-types";
 import { findAllMatchingCorrections } from "../modules/core/corrections/service.js";
 import type { SuggestedTag } from "../modules/finance/imports/types.js";
+import { parseJsonStringArray } from "./json.js";
 
 export interface SuggestTagsOptions {
   description: string;
@@ -44,7 +45,7 @@ export function suggestTags(opts: SuggestTagsOptions): SuggestedTag[] {
   } else {
     const corrections = findAllMatchingCorrections(description);
     for (const correction of corrections) {
-      const tags = parseJsonTags(correction.tags);
+      const tags = parseJsonStringArray(correction.tags);
       for (const tag of tags) {
         if (!seen.has(tag)) {
           seen.add(tag);
@@ -73,7 +74,7 @@ export function suggestTags(opts: SuggestTagsOptions): SuggestedTag[] {
       .get();
 
     if (entity?.defaultTags) {
-      const tags = parseJsonTags(entity.defaultTags);
+      const tags = parseJsonStringArray(entity.defaultTags);
       for (const tag of tags) {
         if (!seen.has(tag)) {
           seen.add(tag);
@@ -84,18 +85,4 @@ export function suggestTags(opts: SuggestTagsOptions): SuggestedTag[] {
   }
 
   return result;
-}
-
-/** Parse a JSON string expected to be a string array. Returns [] on failure. */
-function parseJsonTags(json: string | null | undefined): string[] {
-  if (!json) return [];
-  try {
-    const parsed = JSON.parse(json) as unknown;
-    if (Array.isArray(parsed)) {
-      return parsed.filter((t): t is string => typeof t === "string");
-    }
-  } catch {
-    // malformed JSON — ignore
-  }
-  return [];
 }

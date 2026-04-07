@@ -60,7 +60,6 @@ export class PlexClient {
     let start = 0;
     const pageSize = 100;
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- pagination loop
     while (true) {
       const raw = await this.get<RawPlexMediaContainer<RawPlexItemsContainer>>(
         `/library/sections/${sectionId}/all?includeGuids=1&X-Plex-Container-Start=${start}&X-Plex-Container-Size=${pageSize}`
@@ -96,7 +95,6 @@ export class PlexClient {
     let start = 0;
     const pageSize = 100;
 
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- pagination loop
     while (true) {
       const raw = await this.get<RawPlexMediaContainer<RawPlexEpisodesContainer>>(
         `/library/metadata/${showRatingKey}/allLeaves?X-Plex-Container-Start=${start}&X-Plex-Container-Size=${pageSize}`
