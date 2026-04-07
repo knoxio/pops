@@ -1,5 +1,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { processImport, processImportWithProgress, executeImport, createEntity } from "./service.js";
+import {
+  processImport,
+  processImportWithProgress,
+  executeImport,
+  createEntity,
+} from "./service.js";
 import type { ParsedTransaction, ConfirmedTransaction } from "./types.js";
 import { createTestDb, seedEntity, seedTransaction } from "../../../shared/test-utils.js";
 import { setDb, closeDb } from "../../../db.js";
