@@ -23,7 +23,7 @@ export type ParsedTransaction = z.infer<typeof parsedTransactionSchema>;
 export const entityMatchSchema = z.object({
   entityId: z.string().optional(),
   entityName: z.string().optional(),
-  matchType: z.enum(["alias", "exact", "prefix", "contains", "ai", "none"]),
+  matchType: z.enum(["alias", "exact", "prefix", "contains", "ai", "learned", "none"]),
   confidence: z.number().min(0).max(1).optional(),
 });
 

@@ -103,6 +103,71 @@ function buildSuggestedTags(
   });
 }
 
+function applyLearnedCorrection(args: {
+  transaction: ParsedTransaction;
+  minConfidence: number;
+  knownTags: string[];
+  index: number;
+  total: number;
+}): { processed: ProcessedTransaction; bucket: "matched" | "uncertain" } | null {
+  const { transaction, minConfidence, knownTags, index, total } = args;
+
+  const correctionResult = findMatchingCorrection(transaction.description, minConfidence);
+  if (!correctionResult) return null;
+
+  const { correction, status } = correctionResult;
+  const entityId = correction.entityId;
+
+  if (!entityId) {
+    logger.debug(
+      {
+        index,
+        total,
+        description: transaction.description.substring(0, 50),
+        confidence: correction.confidence,
+        status,
+      },
+      "[Import] Learned correction matched but has no entityId; falling through"
+    );
+    return null;
+  }
+
+  logger.debug(
+    {
+      index,
+      total,
+      description: transaction.description.substring(0, 50),
+      entityName: correction.entityName,
+      confidence: correction.confidence,
+      status,
+    },
+    "[Import] Applied learned correction"
+  );
+
+  return {
+    processed: {
+      ...transaction,
+      location: correction.location ?? transaction.location,
+      entity: {
+        entityId,
+        entityName: correction.entityName ?? "Unknown",
+        matchType: "learned",
+        confidence: correction.confidence,
+      },
+      status,
+      suggestedTags: buildSuggestedTags(
+        transaction.description,
+        entityId,
+        parseCorrectionTags(correction.tags),
+        null,
+        knownTags,
+        correction.descriptionPattern
+      ),
+    },
+    bucket: status === "matched" ? "matched" : "uncertain",
+  };
+}
+
 // Entity lookup and alias loading moved to lib/entity-lookup.ts
 
 /**
@@ -239,45 +304,18 @@ export async function processImport(
     try {
       // Step 1: Apply learned corrections (highest priority)
       // When a correction matches, skip all subsequent matching stages.
-      const correctionResult = findMatchingCorrection(transaction.description, 0.7);
+      const correctionApplied = applyLearnedCorrection({
+        transaction,
+        minConfidence: 0.7,
+        knownTags,
+        index: i + 1,
+        total: newTransactions.length,
+      });
 
-      if (correctionResult) {
-        const { correction, status } = correctionResult;
-        const entityId = correction.entityId;
-        if (entityId) {
-          logger.debug(
-            {
-              index: i + 1,
-              total: newTransactions.length,
-              description: transaction.description.substring(0, 50),
-              entityName: correction.entityName,
-              confidence: correction.confidence,
-              status,
-            },
-            "[Import] Applied learned correction"
-          );
-
-          matched.push({
-            ...transaction,
-            location: correction.location ?? transaction.location,
-            entity: {
-              entityId,
-              entityName: correction.entityName ?? "Unknown",
-              matchType: "learned" as never, // UI-only matchType
-              confidence: correction.confidence,
-            },
-            status,
-            suggestedTags: buildSuggestedTags(
-              transaction.description,
-              entityId,
-              parseCorrectionTags(correction.tags),
-              null,
-              knownTags,
-              correction.descriptionPattern
-            ),
-          });
-          continue; // Skip all subsequent matching stages
-        }
+      if (correctionApplied) {
+        if (correctionApplied.bucket === "matched") matched.push(correctionApplied.processed);
+        else uncertain.push(correctionApplied.processed);
+        continue;
       }
 
       // Step 2: Try universal entity matching
@@ -644,47 +682,20 @@ export async function processImportWithProgress(
       try {
         // Step 1: Apply learned corrections (highest priority)
         // When a correction matches, skip all subsequent matching stages.
-        const correctionResult = findMatchingCorrection(transaction.description, 0.7);
+        const correctionApplied = applyLearnedCorrection({
+          transaction,
+          minConfidence: 0.7,
+          knownTags,
+          index: i + 1,
+          total: newTransactions.length,
+        });
 
-        if (correctionResult) {
-          const { correction, status } = correctionResult;
-          const entityId = correction.entityId;
-          if (entityId) {
-            logger.debug(
-              {
-                index: i + 1,
-                total: newTransactions.length,
-                description: transaction.description.substring(0, 50),
-                entityName: correction.entityName,
-                confidence: correction.confidence,
-                status,
-              },
-              "[Import] Applied learned correction"
-            );
+        if (correctionApplied) {
+          if (correctionApplied.bucket === "matched") matched.push(correctionApplied.processed);
+          else uncertain.push(correctionApplied.processed);
 
-            matched.push({
-              ...transaction,
-              location: correction.location ?? transaction.location,
-              entity: {
-                entityId,
-                entityName: correction.entityName ?? "Unknown",
-                matchType: "learned" as never, // UI-only matchType
-                confidence: correction.confidence,
-              },
-              status,
-              suggestedTags: buildSuggestedTags(
-                transaction.description,
-                entityId,
-                parseCorrectionTags(correction.tags),
-                null,
-                knownTags,
-                correction.descriptionPattern
-              ),
-            });
-
-            batchItem.status = "success";
-            continue; // Skip all subsequent matching stages
-          }
+          batchItem.status = "success";
+          continue;
         }
 
         const match = matchEntity(transaction.description, entityLookup, aliases);
