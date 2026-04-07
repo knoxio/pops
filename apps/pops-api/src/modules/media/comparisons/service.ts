@@ -1235,11 +1235,7 @@ function recalcDimensionElo(dimensionId: number): void {
       drawTier: comp.drawTier as "high" | "mid" | "low" | null,
     });
 
-    drizzleDb
-      .update(comparisons)
-      .set({ deltaA, deltaB })
-      .where(eq(comparisons.id, comp.id))
-      .run();
+    drizzleDb.update(comparisons).set({ deltaA, deltaB }).where(eq(comparisons.id, comp.id)).run();
   }
 }
 
