@@ -1,8 +1,9 @@
 /**
  * Corrections module tests — CRUD, pattern matching, and tags.
  */
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { setupTestContext, seedEntity } from "../../../shared/test-utils.js";
+import { logger } from "../../../lib/logger.js";
 
 const ctx = setupTestContext();
 
@@ -209,6 +210,8 @@ describe("corrections", () => {
 
   describe("previewChangeSet", () => {
     it("previews added rule impact deterministically", async () => {
+      const infoSpy = vi.spyOn(logger, "info").mockImplementation(() => logger);
+
       const result = await caller.core.corrections.previewChangeSet({
         changeSet: {
           ops: [
@@ -238,6 +241,22 @@ describe("corrections", () => {
       expect(result.diffs[0]?.after.matched).toBe(true);
       expect(result.diffs[0]?.after.ruleId).toMatch(/^temp:/);
       expect(result.diffs[1]?.after.matched).toBe(false);
+
+      expect(infoSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: "corrections.proposal.preview",
+          userEmail: "test@example.com",
+          opCount: 1,
+          transactionCount: 2,
+          minConfidence: 0.7,
+          impactSummary: expect.objectContaining({
+            total: 2,
+            newMatches: 1,
+          }),
+        })
+      );
+
+      infoSpy.mockRestore();
     });
 
     it("previews disable removes matches", async () => {
@@ -262,6 +281,8 @@ describe("corrections", () => {
 
   describe("applyChangeSet", () => {
     it("applies operations atomically (disable + add)", async () => {
+      const infoSpy = vi.spyOn(logger, "info").mockImplementation(() => logger);
+
       const created = await caller.core.corrections.createOrUpdate({
         descriptionPattern: "NETFLIX",
         matchType: "exact",
@@ -290,9 +311,22 @@ describe("corrections", () => {
         result.data.some((r) => r.descriptionPattern === "NETFLIX" && r.isActive === false)
       ).toBe(true);
       expect(result.data.some((r) => r.descriptionPattern === "SPOTIFY")).toBe(true);
+
+      expect(infoSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: "corrections.proposal.apply",
+          userEmail: "test@example.com",
+          opCount: 2,
+          resultRuleCount: expect.any(Number),
+        })
+      );
+
+      infoSpy.mockRestore();
     });
 
     it("rolls back on invalid edit target", async () => {
+      const errorSpy = vi.spyOn(logger, "error").mockImplementation(() => logger);
+
       // seed a known correction
       await caller.core.corrections.createOrUpdate({
         descriptionPattern: "COLES",
@@ -317,6 +351,17 @@ describe("corrections", () => {
       // Ensure the add op was not committed due to rollback.
       const list = await caller.core.corrections.list({});
       expect(list.data.some((r) => r.descriptionPattern === "WOOLWORTHS")).toBe(false);
+
+      expect(errorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          event: "corrections.proposal.apply",
+          userEmail: "test@example.com",
+          opCount: 2,
+          err: expect.anything(),
+        })
+      );
+
+      errorSpy.mockRestore();
     });
   });
 
