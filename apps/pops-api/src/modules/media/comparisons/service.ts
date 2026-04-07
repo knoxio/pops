@@ -414,35 +414,9 @@ export function blacklistMovie(mediaType: string, mediaId: number): BlacklistMov
         .run(mediaType, mediaId, mediaType, mediaId);
     }
 
-    // 5. Replay ELO for each affected dimension
+    // 5. Replay ELO for each affected dimension (resets scores + updates stored deltas)
     for (const dimensionId of affectedDimensionIds) {
-      // Reset all scores in this dimension
-      drizzleDb
-        .update(mediaScores)
-        .set({ score: 1500.0, comparisonCount: 0, updatedAt: new Date().toISOString() })
-        .where(eq(mediaScores.dimensionId, dimensionId))
-        .run();
-
-      // Replay remaining comparisons chronologically
-      const remaining = drizzleDb
-        .select()
-        .from(comparisons)
-        .where(eq(comparisons.dimensionId, dimensionId))
-        .orderBy(asc(comparisons.comparedAt))
-        .all();
-
-      for (const comp of remaining) {
-        updateEloScores({
-          dimensionId: comp.dimensionId,
-          mediaAType: comp.mediaAType as "movie" | "tv_show",
-          mediaAId: comp.mediaAId,
-          mediaBType: comp.mediaBType as "movie" | "tv_show",
-          mediaBId: comp.mediaBId,
-          winnerType: comp.winnerType as "movie" | "tv_show",
-          winnerId: comp.winnerId,
-          drawTier: comp.drawTier as "high" | "mid" | "low" | null,
-        });
-      }
+      recalcDimensionElo(dimensionId);
     }
 
     return {
@@ -1241,7 +1215,7 @@ function recalcDimensionElo(dimensionId: number): void {
     .where(eq(mediaScores.dimensionId, dimensionId))
     .run();
 
-  // Replay all remaining comparisons in chronological order
+  // Replay all remaining comparisons in chronological order, updating stored deltas
   const remaining = drizzleDb
     .select()
     .from(comparisons)
@@ -1250,7 +1224,7 @@ function recalcDimensionElo(dimensionId: number): void {
     .all();
 
   for (const comp of remaining) {
-    updateEloScores({
+    const { deltaA, deltaB } = updateEloScores({
       dimensionId: comp.dimensionId,
       mediaAType: comp.mediaAType as "movie" | "tv_show",
       mediaAId: comp.mediaAId,
@@ -1260,6 +1234,8 @@ function recalcDimensionElo(dimensionId: number): void {
       winnerId: comp.winnerId,
       drawTier: comp.drawTier as "high" | "mid" | "low" | null,
     });
+
+    drizzleDb.update(comparisons).set({ deltaA, deltaB }).where(eq(comparisons.id, comp.id)).run();
   }
 }
 
@@ -1946,6 +1922,9 @@ export function batchRecordComparisons(
         drawTier: item.drawTier ?? null,
       };
 
+      // Compute Elo deltas first so they can be stored on the comparison row
+      const { deltaA, deltaB } = updateEloScores(comparisonInput);
+
       const result = drizzleDb
         .insert(comparisons)
         .values({
@@ -1957,11 +1936,12 @@ export function batchRecordComparisons(
           winnerType: comparisonInput.winnerType,
           winnerId: comparisonInput.winnerId,
           drawTier: comparisonInput.drawTier ?? null,
+          deltaA,
+          deltaB,
         })
         .run();
 
       if (Number(result.lastInsertRowid) > 0) {
-        updateEloScores(comparisonInput);
         count++;
       }
     }
