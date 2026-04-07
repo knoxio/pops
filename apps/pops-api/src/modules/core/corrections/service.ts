@@ -11,8 +11,256 @@ import type {
   CreateCorrectionInput,
   UpdateCorrectionInput,
   CorrectionMatchResult,
+  ChangeSet,
+  ChangeSetOp,
+  ChangeSetPreviewDiff,
+  ChangeSetPreviewSummary,
+  CorrectionMatchSummary,
 } from "./types.js";
 import { normalizeDescription, classifyCorrectionMatch } from "./types.js";
+
+export function summarizeMatch(match: CorrectionMatchResult | null): CorrectionMatchSummary {
+  if (!match) return { matched: false, status: null, ruleId: null, confidence: null };
+  return {
+    matched: true,
+    status: match.status,
+    ruleId: match.correction.id,
+    confidence: match.correction.confidence,
+  };
+}
+
+/**
+ * Pure in-memory matcher used for previews and determinism tests.
+ * Mirrors production semantics:
+ * - normalizeDescription
+ * - exact matches win over contains matches
+ * - ignore inactive rules
+ * - ignore rules below minConfidence
+ * - tie-break by confidence desc, then timesApplied desc
+ */
+export function findMatchingCorrectionFromRules(
+  description: string,
+  rules: CorrectionRow[],
+  minConfidence: number = 0.7
+): CorrectionMatchResult | null {
+  const normalized = normalizeDescription(description);
+  const eligible = rules.filter((r) => r.isActive && r.confidence >= minConfidence);
+
+  const exactMatches = eligible
+    .filter((r) => r.matchType === "exact" && r.descriptionPattern === normalized)
+    .sort((a, b) => b.confidence - a.confidence || b.timesApplied - a.timesApplied);
+
+  if (exactMatches[0]) return classifyCorrectionMatch(exactMatches[0]);
+
+  const containsMatches = eligible
+    .filter(
+      (r) =>
+        r.matchType === "contains" &&
+        r.descriptionPattern.length > 0 &&
+        normalized.includes(r.descriptionPattern)
+    )
+    .sort((a, b) => b.confidence - a.confidence || b.timesApplied - a.timesApplied);
+
+  if (containsMatches[0]) return classifyCorrectionMatch(containsMatches[0]);
+
+  const regexMatches = eligible
+    .filter((r) => r.matchType === "regex" && r.descriptionPattern.length > 0)
+    .filter((r) => {
+      try {
+        return new RegExp(r.descriptionPattern).test(normalized);
+      } catch {
+        // Invalid regex patterns should never match (avoid preview/apply crashes on bad data).
+        return false;
+      }
+    })
+    .sort((a, b) => b.confidence - a.confidence || b.timesApplied - a.timesApplied);
+
+  if (regexMatches[0]) return classifyCorrectionMatch(regexMatches[0]);
+
+  return null;
+}
+
+export function applyChangeSetToRules(
+  rules: CorrectionRow[],
+  changeSet: ChangeSet
+): CorrectionRow[] {
+  const byId = new Map(rules.map((r) => [r.id, r]));
+  const next: CorrectionRow[] = [...rules];
+
+  let tempCounter = 0;
+  // Deterministic ordering: add → edit → disable → remove (match DB apply semantics)
+  const order: Record<ChangeSetOp["op"], number> = { add: 1, edit: 2, disable: 3, remove: 4 };
+  const ops = [...changeSet.ops].sort((a, b) => order[a.op] - order[b.op]);
+
+  for (const op of ops) {
+    if (op.op === "add") {
+      tempCounter += 1;
+      const now = new Date().toISOString();
+      next.push({
+        id: `temp:${tempCounter}`,
+        descriptionPattern: normalizeDescription(op.data.descriptionPattern),
+        matchType: op.data.matchType,
+        entityId: op.data.entityId ?? null,
+        entityName: op.data.entityName ?? null,
+        location: op.data.location ?? null,
+        tags: JSON.stringify(op.data.tags ?? []),
+        transactionType: op.data.transactionType ?? null,
+        isActive: op.data.isActive ?? true,
+        confidence: op.data.confidence ?? 0.5,
+        timesApplied: 0,
+        createdAt: now,
+        lastUsedAt: null,
+      });
+      continue;
+    }
+
+    const existing = byId.get(op.id);
+    if (!existing) throw new NotFoundError("Correction", op.id);
+
+    const replace = (updated: CorrectionRow): void => {
+      const idx = next.findIndex((r) => r.id === existing.id);
+      if (idx !== -1) next[idx] = updated;
+      byId.set(existing.id, updated);
+    };
+
+    if (op.op === "edit") {
+      replace({
+        ...existing,
+        entityId: op.data.entityId !== undefined ? op.data.entityId : existing.entityId,
+        entityName: op.data.entityName !== undefined ? op.data.entityName : existing.entityName,
+        location: op.data.location !== undefined ? op.data.location : existing.location,
+        tags: op.data.tags !== undefined ? JSON.stringify(op.data.tags) : existing.tags,
+        transactionType:
+          op.data.transactionType !== undefined
+            ? op.data.transactionType
+            : existing.transactionType,
+        isActive: op.data.isActive !== undefined ? op.data.isActive : existing.isActive,
+        confidence: op.data.confidence !== undefined ? op.data.confidence : existing.confidence,
+      });
+    } else if (op.op === "disable") {
+      replace({ ...existing, isActive: false });
+    } else if (op.op === "remove") {
+      const idx = next.findIndex((r) => r.id === existing.id);
+      if (idx !== -1) next.splice(idx, 1);
+      byId.delete(existing.id);
+    }
+  }
+
+  return next;
+}
+
+export function previewChangeSetImpact(args: {
+  rules: CorrectionRow[];
+  changeSet: ChangeSet;
+  transactions: Array<{ checksum?: string; description: string }>;
+  minConfidence: number;
+}): { diffs: ChangeSetPreviewDiff[]; summary: ChangeSetPreviewSummary } {
+  const rulesAfter = applyChangeSetToRules(args.rules, args.changeSet);
+
+  const diffs: ChangeSetPreviewDiff[] = args.transactions.map((t) => {
+    const before = summarizeMatch(
+      findMatchingCorrectionFromRules(t.description, args.rules, args.minConfidence)
+    );
+    const after = summarizeMatch(
+      findMatchingCorrectionFromRules(t.description, rulesAfter, args.minConfidence)
+    );
+    const changed =
+      before.matched !== after.matched ||
+      before.status !== after.status ||
+      before.ruleId !== after.ruleId;
+
+    return { checksum: t.checksum, description: t.description, before, after, changed };
+  });
+
+  const newMatches = diffs.filter((d) => !d.before.matched && d.after.matched).length;
+  const removedMatches = diffs.filter((d) => d.before.matched && !d.after.matched).length;
+  const statusChanges = diffs.filter(
+    (d) => d.before.matched && d.after.matched && d.before.status !== d.after.status
+  ).length;
+
+  return {
+    diffs,
+    summary: {
+      total: diffs.length,
+      newMatches,
+      removedMatches,
+      statusChanges,
+      netMatchedDelta: newMatches - removedMatches,
+    },
+  };
+}
+
+export function applyChangeSet(changeSet: ChangeSet): CorrectionRow[] {
+  const db = getDrizzle();
+
+  return db.transaction((tx) => {
+    // Deterministic ordering: add → edit → disable → remove
+    const order: Record<ChangeSetOp["op"], number> = { add: 1, edit: 2, disable: 3, remove: 4 };
+    const ops = [...changeSet.ops].sort((a, b) => order[a.op] - order[b.op]);
+
+    for (const op of ops) {
+      if (op.op === "add") {
+        tx.insert(transactionCorrections)
+          .values({
+            descriptionPattern: normalizeDescription(op.data.descriptionPattern),
+            matchType: op.data.matchType,
+            entityId: op.data.entityId ?? null,
+            entityName: op.data.entityName ?? null,
+            location: op.data.location ?? null,
+            tags: JSON.stringify(op.data.tags ?? []),
+            transactionType: op.data.transactionType ?? null,
+            isActive: op.data.isActive ?? true,
+            confidence: op.data.confidence ?? 0.5,
+          })
+          .run();
+        continue;
+      }
+
+      // For edit/disable/remove we validate existence first.
+      const existing = tx
+        .select()
+        .from(transactionCorrections)
+        .where(eq(transactionCorrections.id, op.id))
+        .get();
+      if (!existing) throw new NotFoundError("Correction", op.id);
+
+      if (op.op === "edit") {
+        const updates: Partial<typeof transactionCorrections.$inferInsert> = {};
+        if (op.data.entityId !== undefined) updates.entityId = op.data.entityId;
+        if (op.data.entityName !== undefined) updates.entityName = op.data.entityName;
+        if (op.data.location !== undefined) updates.location = op.data.location;
+        if (op.data.tags !== undefined) updates.tags = JSON.stringify(op.data.tags);
+        if (op.data.transactionType !== undefined)
+          updates.transactionType = op.data.transactionType;
+        if (op.data.isActive !== undefined) updates.isActive = op.data.isActive;
+        if (op.data.confidence !== undefined) updates.confidence = op.data.confidence;
+
+        tx.update(transactionCorrections)
+          .set(updates)
+          .where(eq(transactionCorrections.id, op.id))
+          .run();
+        continue;
+      }
+
+      if (op.op === "disable") {
+        tx.update(transactionCorrections)
+          .set({ isActive: false })
+          .where(eq(transactionCorrections.id, op.id))
+          .run();
+        continue;
+      }
+
+      // remove
+      tx.delete(transactionCorrections).where(eq(transactionCorrections.id, op.id)).run();
+    }
+
+    return tx
+      .select()
+      .from(transactionCorrections)
+      .orderBy(desc(transactionCorrections.confidence), desc(transactionCorrections.timesApplied))
+      .all();
+  });
+}
 
 /**
  * Find the best matching correction for a description.
@@ -32,6 +280,7 @@ export function findMatchingCorrection(
     .from(transactionCorrections)
     .where(
       and(
+        eq(transactionCorrections.isActive, true),
         eq(transactionCorrections.matchType, "exact"),
         eq(transactionCorrections.descriptionPattern, normalized),
         gte(transactionCorrections.confidence, minConfidence)
@@ -50,6 +299,7 @@ export function findMatchingCorrection(
     .from(transactionCorrections)
     .where(
       and(
+        eq(transactionCorrections.isActive, true),
         eq(transactionCorrections.matchType, "contains"),
         sql`${normalized} LIKE '%' || ${transactionCorrections.descriptionPattern} || '%'`,
         gte(transactionCorrections.confidence, minConfidence)
@@ -60,6 +310,30 @@ export function findMatchingCorrection(
     .all();
 
   if (containsMatch) return classifyCorrectionMatch(containsMatch);
+
+  // Try regex match (JS-level evaluation; SQLite has no built-in REGEXP by default)
+  const regexCandidates = db
+    .select()
+    .from(transactionCorrections)
+    .where(
+      and(
+        eq(transactionCorrections.isActive, true),
+        eq(transactionCorrections.matchType, "regex"),
+        gte(transactionCorrections.confidence, minConfidence)
+      )
+    )
+    .orderBy(desc(transactionCorrections.confidence), desc(transactionCorrections.timesApplied))
+    .all();
+
+  for (const row of regexCandidates) {
+    try {
+      if (new RegExp(row.descriptionPattern).test(normalized)) {
+        return classifyCorrectionMatch(row);
+      }
+    } catch {
+      // Ignore invalid regex rules (treat as non-matching).
+    }
+  }
 
   return null;
 }
@@ -132,6 +406,7 @@ export function findAllMatchingCorrections(description: string): CorrectionRow[]
     .from(transactionCorrections)
     .where(
       and(
+        eq(transactionCorrections.isActive, true),
         eq(transactionCorrections.matchType, "exact"),
         eq(transactionCorrections.descriptionPattern, normalized)
       )
@@ -144,6 +419,7 @@ export function findAllMatchingCorrections(description: string): CorrectionRow[]
     .from(transactionCorrections)
     .where(
       and(
+        eq(transactionCorrections.isActive, true),
         eq(transactionCorrections.matchType, "contains"),
         sql`${normalized} LIKE '%' || ${transactionCorrections.descriptionPattern} || '%'`
       )
@@ -151,7 +427,27 @@ export function findAllMatchingCorrections(description: string): CorrectionRow[]
     .orderBy(desc(transactionCorrections.confidence), desc(transactionCorrections.timesApplied))
     .all();
 
-  return [...exactMatches, ...containsMatches];
+  const regexCandidates = db
+    .select()
+    .from(transactionCorrections)
+    .where(
+      and(eq(transactionCorrections.isActive, true), eq(transactionCorrections.matchType, "regex"))
+    )
+    .orderBy(desc(transactionCorrections.confidence), desc(transactionCorrections.timesApplied))
+    .all();
+
+  const regexMatches: CorrectionRow[] = [];
+  for (const row of regexCandidates) {
+    try {
+      if (new RegExp(row.descriptionPattern).test(normalized)) {
+        regexMatches.push(row);
+      }
+    } catch {
+      // ignore invalid regex
+    }
+  }
+
+  return [...exactMatches, ...containsMatches, ...regexMatches];
 }
 
 /**
@@ -188,6 +484,7 @@ export function createOrUpdateCorrection(input: CreateCorrectionInput): Correcti
         location: input.location ?? existing.location,
         tags: JSON.stringify(input.tags ?? []),
         transactionType: input.transactionType ?? existing.transactionType,
+        isActive: true,
       })
       .where(eq(transactionCorrections.id, existing.id))
       .run();
@@ -206,6 +503,7 @@ export function createOrUpdateCorrection(input: CreateCorrectionInput): Correcti
       location: input.location ?? null,
       tags: JSON.stringify(input.tags ?? []),
       transactionType: input.transactionType ?? null,
+      isActive: true,
     })
     .run();
 
@@ -252,6 +550,10 @@ export function updateCorrection(id: string, input: UpdateCorrectionInput): Corr
   }
   if (input.transactionType !== undefined) {
     updates.transactionType = input.transactionType;
+    hasUpdates = true;
+  }
+  if (input.isActive !== undefined) {
+    updates.isActive = input.isActive;
     hasUpdates = true;
   }
   if (input.confidence !== undefined) {

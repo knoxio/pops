@@ -143,6 +143,7 @@ CREATE TABLE transaction_corrections_new (
   location TEXT,
   tags TEXT NOT NULL DEFAULT '[]',
   transaction_type TEXT CHECK(transaction_type IN ('purchase', 'transfer', 'income')),
+  is_active INTEGER NOT NULL DEFAULT 1,
   confidence REAL NOT NULL DEFAULT 0.5 CHECK(confidence >= 0.0 AND confidence <= 1.0),
   times_applied INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
@@ -150,8 +151,8 @@ CREATE TABLE transaction_corrections_new (
   FOREIGN KEY (entity_id) REFERENCES entities(id) ON DELETE SET NULL
 );
 
-INSERT INTO transaction_corrections_new (id, description_pattern, match_type, entity_id, entity_name, location, tags, transaction_type, confidence, times_applied, created_at, last_used_at)
-  SELECT id, description_pattern, match_type, entity_id, entity_name, location, tags, transaction_type, confidence, times_applied, created_at, last_used_at
+INSERT INTO transaction_corrections_new (id, description_pattern, match_type, entity_id, entity_name, location, tags, transaction_type, is_active, confidence, times_applied, created_at, last_used_at)
+  SELECT id, description_pattern, match_type, entity_id, entity_name, location, tags, transaction_type, 1, confidence, times_applied, created_at, last_used_at
   FROM transaction_corrections;
 
 DROP TABLE transaction_corrections;
@@ -165,5 +166,5 @@ CREATE INDEX IF NOT EXISTS idx_corrections_times_applied ON transaction_correcti
 DROP VIEW IF EXISTS v_active_corrections;
 CREATE VIEW v_active_corrections AS
 SELECT * FROM transaction_corrections
-WHERE confidence >= 0.7
+WHERE confidence >= 0.7 AND is_active = 1
 ORDER BY confidence DESC, times_applied DESC;

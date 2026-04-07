@@ -21,6 +21,7 @@ export const transactionCorrections = sqliteTable(
     transactionType: text("transaction_type", {
       enum: ["purchase", "transfer", "income"],
     }),
+    isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
     // CHECK: confidence >= 0.0 AND confidence <= 1.0
     confidence: real("confidence").notNull().default(0.5),
     timesApplied: integer("times_applied").notNull().default(0),

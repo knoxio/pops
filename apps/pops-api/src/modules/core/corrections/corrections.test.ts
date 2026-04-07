@@ -207,6 +207,119 @@ describe("corrections", () => {
     });
   });
 
+  describe("previewChangeSet", () => {
+    it("previews added rule impact deterministically", async () => {
+      const result = await caller.core.corrections.previewChangeSet({
+        changeSet: {
+          ops: [
+            {
+              op: "add",
+              data: {
+                descriptionPattern: "WOOLWORTHS",
+                matchType: "contains",
+                entityId: null,
+                entityName: "Woolworths",
+                tags: [],
+                transactionType: null,
+                confidence: 0.95,
+              },
+            },
+          ],
+        },
+        transactions: [
+          { description: "WOOLWORTHS SUPERMARKETS AU" },
+          { description: "TOTALLY UNKNOWN" },
+        ],
+        minConfidence: 0.7,
+      });
+
+      expect(result.summary.total).toBe(2);
+      expect(result.summary.newMatches).toBe(1);
+      expect(result.diffs[0]?.after.matched).toBe(true);
+      expect(result.diffs[0]?.after.ruleId).toMatch(/^temp:/);
+      expect(result.diffs[1]?.after.matched).toBe(false);
+    });
+
+    it("previews disable removes matches", async () => {
+      const created = await caller.core.corrections.createOrUpdate({
+        descriptionPattern: "NETFLIX",
+        matchType: "exact",
+        tags: [],
+      });
+      await caller.core.corrections.update({ id: created.data.id, data: { confidence: 0.95 } });
+
+      const result = await caller.core.corrections.previewChangeSet({
+        changeSet: { ops: [{ op: "disable", id: created.data.id }] },
+        transactions: [{ description: "NETFLIX" }],
+        minConfidence: 0.7,
+      });
+
+      expect(result.summary.removedMatches).toBe(1);
+      expect(result.diffs[0]?.before.matched).toBe(true);
+      expect(result.diffs[0]?.after.matched).toBe(false);
+    });
+  });
+
+  describe("applyChangeSet", () => {
+    it("applies operations atomically (disable + add)", async () => {
+      const created = await caller.core.corrections.createOrUpdate({
+        descriptionPattern: "NETFLIX",
+        matchType: "exact",
+        tags: [],
+      });
+      await caller.core.corrections.update({ id: created.data.id, data: { confidence: 0.95 } });
+
+      const result = await caller.core.corrections.applyChangeSet({
+        changeSet: {
+          ops: [
+            { op: "disable", id: created.data.id },
+            {
+              op: "add",
+              data: {
+                descriptionPattern: "SPOTIFY",
+                matchType: "exact",
+                tags: [],
+                confidence: 0.95,
+              },
+            },
+          ],
+        },
+      });
+
+      expect(
+        result.data.some((r) => r.descriptionPattern === "NETFLIX" && r.isActive === false)
+      ).toBe(true);
+      expect(result.data.some((r) => r.descriptionPattern === "SPOTIFY")).toBe(true);
+    });
+
+    it("rolls back on invalid edit target", async () => {
+      // seed a known correction
+      await caller.core.corrections.createOrUpdate({
+        descriptionPattern: "COLES",
+        matchType: "exact",
+        tags: [],
+      });
+
+      await expect(
+        caller.core.corrections.applyChangeSet({
+          changeSet: {
+            ops: [
+              {
+                op: "add",
+                data: { descriptionPattern: "WOOLWORTHS", matchType: "exact", tags: [] },
+              },
+              { op: "edit", id: "does-not-exist", data: { confidence: 0.9 } },
+            ],
+          },
+        })
+      ).rejects.toThrow();
+
+      // Ensure the add op was not committed due to rollback.
+      const list = await caller.core.corrections.list({});
+      expect(list.data.some((r) => r.descriptionPattern === "WOOLWORTHS")).toBe(false);
+    });
+  });
+
   describe("update", () => {
     it("updates tags on existing correction", async () => {
       const created = await caller.core.corrections.createOrUpdate({

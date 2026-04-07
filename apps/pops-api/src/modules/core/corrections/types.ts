@@ -34,6 +34,7 @@ export interface Correction {
   location: string | null;
   tags: string[];
   transactionType: "purchase" | "transfer" | "income" | null;
+  isActive: boolean;
   confidence: number;
   timesApplied: number;
   createdAt: string;
@@ -63,6 +64,7 @@ export function toCorrection(row: CorrectionRow): Correction {
       }
     })(),
     transactionType: row.transactionType,
+    isActive: row.isActive,
     confidence: row.confidence,
     timesApplied: row.timesApplied,
     createdAt: row.createdAt,
@@ -104,9 +106,79 @@ export const UpdateCorrectionSchema = z.object({
   location: z.string().nullable().optional(),
   tags: z.array(z.string()).optional(),
   transactionType: z.enum(["purchase", "transfer", "income"]).nullable().optional(),
+  isActive: z.boolean().optional(),
   confidence: z.number().min(0).max(1).optional(),
 });
 export type UpdateCorrectionInput = z.infer<typeof UpdateCorrectionSchema>;
+
+// ---------------------------------------------------------------------------
+// ChangeSet contract (PRD-028 US-01 / Issue #1642) — classification corrections
+// ---------------------------------------------------------------------------
+
+export const CorrectionRuleDataSchema = CreateCorrectionSchema.extend({
+  confidence: z.number().min(0).max(1).optional(),
+  isActive: z.boolean().optional(),
+});
+export type CorrectionRuleData = z.infer<typeof CorrectionRuleDataSchema>;
+
+export const ChangeSetAddOpSchema = z.object({
+  op: z.literal("add"),
+  data: CorrectionRuleDataSchema,
+});
+
+export const ChangeSetEditOpSchema = z.object({
+  op: z.literal("edit"),
+  id: z.string().min(1),
+  data: UpdateCorrectionSchema,
+});
+
+export const ChangeSetDisableOpSchema = z.object({
+  op: z.literal("disable"),
+  id: z.string().min(1),
+});
+
+export const ChangeSetRemoveOpSchema = z.object({
+  op: z.literal("remove"),
+  id: z.string().min(1),
+});
+
+export const ChangeSetOpSchema = z.discriminatedUnion("op", [
+  ChangeSetAddOpSchema,
+  ChangeSetEditOpSchema,
+  ChangeSetDisableOpSchema,
+  ChangeSetRemoveOpSchema,
+]);
+export type ChangeSetOp = z.infer<typeof ChangeSetOpSchema>;
+
+export const ChangeSetSchema = z.object({
+  source: z.string().optional(),
+  reason: z.string().optional(),
+  ops: z.array(ChangeSetOpSchema).min(1),
+});
+export type ChangeSet = z.infer<typeof ChangeSetSchema>;
+
+export interface CorrectionMatchSummary {
+  matched: boolean;
+  status: CorrectionMatchStatus | null;
+  ruleId: string | null;
+  confidence: number | null;
+}
+
+export interface ChangeSetPreviewDiff {
+  checksum?: string;
+  description: string;
+  before: CorrectionMatchSummary;
+  after: CorrectionMatchSummary;
+  changed: boolean;
+}
+
+export interface ChangeSetPreviewSummary {
+  total: number;
+  newMatches: number;
+  removedMatches: number;
+  statusChanges: number;
+  netMatchedDelta: number;
+}
 
 /**
  * Zod schema for finding matching correction

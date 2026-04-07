@@ -9,6 +9,7 @@ import {
   CreateCorrectionSchema,
   UpdateCorrectionSchema,
   FindCorrectionSchema,
+  ChangeSetSchema,
   toCorrection,
 } from "./types.js";
 import * as service from "./service.js";
@@ -17,6 +18,7 @@ import { generateRules, analyzeCorrection } from "./lib/rule-generator.js";
 
 const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
+const PREVIEW_RULES_FETCH_LIMIT = 50_000;
 
 export const correctionsRouter = router({
   /** List all corrections with optional confidence filter */
@@ -176,5 +178,62 @@ export const correctionsRouter = router({
     .mutation(async ({ input }) => {
       const proposals = await generateRules(input.transactions);
       return { proposals };
+    }),
+
+  /**
+   * Preview impact of a ChangeSet against a set of transaction descriptions.
+   * Deterministic: uses the same matching semantics as processing.
+   */
+  previewChangeSet: protectedProcedure
+    .input(
+      z.object({
+        changeSet: ChangeSetSchema,
+        transactions: z
+          .array(
+            z.object({
+              checksum: z.string().optional(),
+              description: z.string().min(1),
+            })
+          )
+          .min(1)
+          .max(500),
+        minConfidence: z.number().min(0).max(1).default(0.7),
+      })
+    )
+    .query(({ input }) => {
+      // We need the full current rule set for deterministic previews.
+      // We fetch in a single page for simplicity; if this ever grows beyond the limit,
+      // switch this to a dedicated "list all corrections" service method with pagination.
+      const dbRules = service.listCorrections(undefined, PREVIEW_RULES_FETCH_LIMIT, 0).rows;
+      try {
+        return service.previewChangeSetImpact({
+          rules: dbRules,
+          changeSet: input.changeSet,
+          transactions: input.transactions,
+          minConfidence: input.minConfidence,
+        });
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+        }
+        throw err;
+      }
+    }),
+
+  /**
+   * Apply a ChangeSet atomically (single transaction).
+   */
+  applyChangeSet: protectedProcedure
+    .input(z.object({ changeSet: ChangeSetSchema }))
+    .mutation(({ input }) => {
+      try {
+        const rows = service.applyChangeSet(input.changeSet);
+        return { data: rows.map(toCorrection), message: "ChangeSet applied" };
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+        }
+        throw err;
+      }
     }),
 });
