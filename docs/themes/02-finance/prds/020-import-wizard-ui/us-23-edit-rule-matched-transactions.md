@@ -1,7 +1,7 @@
 # US-23: Edit rule-matched transactions (proposal-driven)
 
 > PRD: [020 — Import Wizard UI](README.md)
-> Status: Not started
+> Status: Partial
 
 ## Description
 
@@ -9,7 +9,7 @@ As a user, I want to safely correct transactions that were matched by learned ru
 
 ## Acceptance Criteria
 
-- [ ] Transactions that were matched by learned rules are clearly marked as such in the Matched tab, including the rule pattern and match type.
+- [x] Transactions that were matched by learned rules are clearly marked as such in the Matched tab, including the rule pattern and match type.
 - [ ] When the user edits a rule-matched transaction (entity, transaction type, location, or description), the UI does not immediately “just change the transaction”.
 - [ ] Instead, saving the edit opens a **bundled Correction Proposal ChangeSet** that may include rule operations such as:
   - Create a new rule that fits the corrected transaction

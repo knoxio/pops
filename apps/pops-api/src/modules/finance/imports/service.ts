@@ -154,6 +154,13 @@ function applyLearnedCorrection(args: {
         matchType: "learned",
         confidence: correction.confidence,
       },
+      ruleProvenance: {
+        source: "correction",
+        ruleId: correction.id,
+        pattern: correction.descriptionPattern,
+        matchType: correction.matchType,
+        confidence: correction.confidence,
+      },
       status,
       suggestedTags: buildSuggestedTags(
         transaction.description,

@@ -44,6 +44,19 @@ export const suggestedTagSchema = z.object({
 
 export type SuggestedTag = z.infer<typeof suggestedTagSchema>;
 
+/**
+ * Provenance for transactions matched by learned correction rules (rule transparency).
+ */
+export const ruleProvenanceSchema = z.object({
+  source: z.literal("correction"),
+  ruleId: z.string().min(1),
+  pattern: z.string().min(1),
+  matchType: z.enum(["exact", "contains", "regex"]),
+  confidence: z.number().min(0).max(1),
+});
+
+export type RuleProvenance = z.infer<typeof ruleProvenanceSchema>;
+
 export const processedTransactionSchema = parsedTransactionSchema.extend({
   entity: entityMatchSchema,
   status: z.enum(["matched", "uncertain", "failed", "skipped"]),
@@ -51,6 +64,7 @@ export const processedTransactionSchema = parsedTransactionSchema.extend({
   error: z.string().optional(), // For failed transactions
   transactionType: transactionTypeSchema.optional(), // User-set type; undefined = purchase (default)
   suggestedTags: z.array(suggestedTagSchema).optional(),
+  ruleProvenance: ruleProvenanceSchema.optional(),
 });
 
 export type ProcessedTransaction = z.infer<typeof processedTransactionSchema>;

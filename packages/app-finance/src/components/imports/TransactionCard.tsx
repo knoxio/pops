@@ -41,6 +41,9 @@ export function TransactionCard({
 
   const hasAiSuggestion = transaction.entity?.matchType === "ai" && transaction.entity?.entityName;
 
+  const ruleProvenance = transaction.ruleProvenance;
+  const isRuleMatched = Boolean(ruleProvenance) || transaction.entity?.matchType === "learned";
+
   // Check if AI-suggested entity actually exists in the entities list
   const aiSuggestedEntityExists =
     hasAiSuggestion &&
@@ -95,10 +98,41 @@ export function TransactionCard({
                 Auto-matched
               </Badge>
             )}
+            {variant === "matched" && isRuleMatched && (
+              <Badge
+                variant="secondary"
+                className="text-xs"
+                title={
+                  ruleProvenance
+                    ? [
+                        `Rule matched`,
+                        `Pattern: ${ruleProvenance.pattern}`,
+                        `Match type: ${ruleProvenance.matchType}`,
+                        `Confidence: ${Math.round(ruleProvenance.confidence * 100)}%`,
+                      ].join("\n")
+                    : "Rule matched"
+                }
+              >
+                Rule matched
+              </Badge>
+            )}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">
             {transaction.date} • ${Math.abs(transaction.amount).toFixed(2)}
           </div>
+          {variant === "matched" && ruleProvenance && (
+            <div className="mt-1 text-xs text-muted-foreground">
+              <span className="font-mono">
+                {ruleProvenance.matchType}
+                {" • "}
+                {Math.round(ruleProvenance.confidence * 100)}%
+              </span>
+              {" • "}
+              <span className="font-mono truncate" title={ruleProvenance.pattern}>
+                {ruleProvenance.pattern}
+              </span>
+            </div>
+          )}
         </div>
 
         {onEdit && !readonly && (

@@ -169,7 +169,7 @@ interface ImportStore {
 | 14 | [us-14-save-and-learn](us-14-save-and-learn.md) | "Save & Learn" uses bundled proposal + approval + reject-with-feedback, then re-evaluates remaining transactions | To Review | Blocked by us-10 |
 | 15 | [us-15-type-override](us-15-type-override.md) | Override type to transfer/income — makes entity optional, bypasses entity validation | Done | Blocked by us-09 |
 | 16 | [us-16-review-gate](us-16-review-gate.md) | Validation gate: all uncertain/failed must be resolved before advancing to Step 5 | Done | Blocked by us-10 |
-| 23 | [us-23-edit-rule-matched-transactions](us-23-edit-rule-matched-transactions.md) | Editing a rule-matched transaction triggers a bundled Correction Proposal ChangeSet (add/edit/remove rules) | Not started | Blocked by us-13 |
+| 23 | [us-23-edit-rule-matched-transactions](us-23-edit-rule-matched-transactions.md) | Editing a rule-matched transaction triggers a bundled Correction Proposal ChangeSet (add/edit/remove rules) | Partial | Blocked by us-13 |
 
 ### Tag Review (Step 5)
 
