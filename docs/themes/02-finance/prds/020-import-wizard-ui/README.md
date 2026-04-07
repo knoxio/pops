@@ -1,11 +1,13 @@
 # PRD-020: Import Wizard UI
 
 > Epic: [01 — Import Pipeline](../../epics/01-import-pipeline.md)
-> Status: Done
+> Status: To Review
 
 ## Overview
 
-Build a 6-step import wizard for ingesting bank transactions. The wizard guides the user from CSV upload through entity matching review and tag assignment to final database write. State managed via Zustand store. Backend processing runs in the background with progress polling.
+Build a 6-step import wizard for ingesting bank transactions into the transaction ledger. The wizard guides the user from CSV upload through processing, review, tag confirmation, and final write.
+
+The import experience must feel like a guided “cleanup session”: every unresolved item is surfaced, fixes are fast, and the system learns in a transparent, user-controlled way.
 
 ## Wizard Flow
 
@@ -14,14 +16,13 @@ Step 1: Upload CSV
   → Step 2: Column Mapping (auto-detect + manual)
     → Step 3: Processing (backend: dedup + match + AI, polled)
       → Step 4: Review Entities (resolve uncertain/failed matches)
-        → Step 5: Tag Review (accept/edit suggested tags)
+        → Step 5: Tag Review (accept/edit suggested tags + propose tag rules)
           → Step 6: Summary (import results)
 ```
 
 ### Step 1: Upload
 - User selects CSV file (max 25 MB)
-- Frontend parses with PapaParse (header: true, skip empty)
-- Extracts headers and rows into Zustand store
+- Parse CSV rows client-side
 - Validates: file required, CSV not empty, headers present
 
 ### Step 2: Column Mapping
@@ -34,38 +35,55 @@ Step 1: Upload CSV
   - Online detection: keyword heuristic (AMAZON, PAYPAL, .COM.AU, etc.)
   - Checksum: SHA-256 of full raw CSV row (JSON stringified)
 - Shows first 10 validation errors to user
-- Output: `ParsedTransaction[]` stored in Zustand
+- Output: list of parsed transactions ready for backend processing
 
 ### Step 3: Processing
 - Calls `finance.imports.processImport` mutation (returns session ID immediately)
-- Backend runs dedup + entity matching + AI categorisation in background (see PRD-021, PRD-022)
+- Backend runs dedup + entity/type classification + AI fallback in background (see PRD-021, PRD-022, PRD-024)
 - Frontend polls `finance.imports.getImportProgress` every 1 second
 - Shows progress: current step ("deduplicating", "matching", "writing"), processed count, current batch preview
 - Output categorised into: matched, uncertain, failed, skipped, warnings
 
 ### Step 4: Review Entities
 - Tabbed view: Matched | Uncertain | Failed | Skipped
-- **Matched tab:** Read-only transaction cards with edit option
+- **Matched tab:** Transaction cards that can be edited; rule-matched items must show rule provenance (see “Rule transparency”)
 - **Uncertain tab:** AI suggestion with "Accept" button, manual entity selection dropdown, "Create Entity" dialog
 - **Failed tab:** Same controls as uncertain — user can fix and promote to matched
 - **Skipped tab:** Read-only table with skip reason (duplicate checksum)
 - User actions:
   - Select entity from dropdown → auto-match similar transactions (toast: "Apply to N similar?")
-  - Create new entity → dialog, entity created in DB, assigned to transaction(s)
-  - Edit transaction → dialog for description, amount, account, entity, location, type
-  - Save & Learn → creates correction pattern for future imports
+  - Create new entity → entity created, then assigned to transaction(s)
+  - Edit transaction → edit description, amount, account, entity, location, and transaction type
+  - Save Once → applies the fix to this import only
+  - Save & Learn → opens a bundled **Correction Proposal** that the user must approve (PRD-028)
   - Override type to "transfer" or "income" → entity becomes optional
 - Gate: all uncertain/failed must be resolved before advancing
+
+#### Save & Learn (Correction Proposal)
+“Save & Learn” does not directly create or edit rules. Instead it triggers the Correction Proposal Engine (PRD-028) which proposes a bundled ChangeSet. The user can:
+- **Approve**: apply the ChangeSet, then immediately re-evaluate remaining transactions in this import using the same rules engine used by processing.
+- **Reject**: provide a required feedback message; the system uses that feedback to propose a better ChangeSet.
+
+#### Rule transparency (required)
+When a transaction is matched by a learned rule, the UI must show:
+- **Match source**: learned rule vs other match source
+- **Rule pattern** (as stored)
+- **Match type** (exact / contains / regex)
+- **Confidence**
+
+Edits to a rule-matched transaction must generate a new Correction Proposal ChangeSet rather than silently overriding the match.
 
 ### Step 5: Tag Review
 - Transactions grouped by entity name (collapsible, all expanded)
 - Per-transaction TagEditor with autocomplete
 - Pre-populated tags from Step 3 with source badges:
-  - 📋 Rule (from correction pattern — tooltip shows the pattern)
-  - 🤖 AI (category matched against known tags)
+  - 📋 Rule (from tag rules — tooltip shows the rule pattern)
+  - 🤖 AI (suggested tags, including brand-new tags marked as New)
   - 🏪 Entity (from entity default tags)
 - Group-level bulk tag application (merge semantics — never replaces individual edits)
 - "Accept All Suggestions" button (top-level)
+- Tag suggestions can be proposed at **group scope** (apply to all transactions in a group) and **transaction scope** (apply to one transaction). The UI must support accept/reject at both scopes, with transaction-level overrides.
+- Tag rule learning is separate from entity/type correction rules. If the user chooses to learn from tag edits, it must follow the same proposal + bundled approval + reject-with-feedback model, scoped to tag rules only (PRD-029).
 - On continue: calls `finance.imports.executeImport` → polls progress every 1.5s
 
 ### Step 6: Summary
@@ -103,7 +121,6 @@ interface ImportStore {
 
 ## Business Rules
 
-- Wizard resets on page load (ImportPage calls `reset()`)
 - Steps are sequential — can go back but can't skip ahead
 - Step 4 gates: all uncertain/failed must be resolved to proceed
 - Transfer/income type override makes entity optional
@@ -149,9 +166,10 @@ interface ImportStore {
 | 11 | [us-11-auto-match-similar](us-11-auto-match-similar.md) | When entity assigned, find similar transactions and offer "Apply to N similar?" toast | Done | Blocked by us-10 |
 | 12 | [us-12-entity-creation](us-12-entity-creation.md) | "Create Entity" dialog for on-the-fly entity creation during review | Done | Blocked by us-10 |
 | 13 | [us-13-edit-transaction](us-13-edit-transaction.md) | Edit dialog: modify description, amount, account, entity, location, type | Done | Blocked by us-09 |
-| 14 | [us-14-save-and-learn](us-14-save-and-learn.md) | "Save & Learn" action: create correction pattern from manual entity assignment | Done | Blocked by us-10 |
+| 14 | [us-14-save-and-learn](us-14-save-and-learn.md) | "Save & Learn" uses bundled proposal + approval + reject-with-feedback, then re-evaluates remaining transactions | To Review | Blocked by us-10 |
 | 15 | [us-15-type-override](us-15-type-override.md) | Override type to transfer/income — makes entity optional, bypasses entity validation | Done | Blocked by us-09 |
 | 16 | [us-16-review-gate](us-16-review-gate.md) | Validation gate: all uncertain/failed must be resolved before advancing to Step 5 | Done | Blocked by us-10 |
+| 23 | [us-23-edit-rule-matched-transactions](us-23-edit-rule-matched-transactions.md) | Editing a rule-matched transaction triggers a bundled Correction Proposal ChangeSet (add/edit/remove rules) | Not started | Blocked by us-13 |
 
 ### Tag Review (Step 5)
 
