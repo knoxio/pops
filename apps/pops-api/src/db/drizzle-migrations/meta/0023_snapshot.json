@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "032d0002-ff05-4c3c-8b13-2aa4b631b44c",
+  "id": "c5baa027-94e2-4d29-b2cf-91ef519b67af",
   "prevId": "050a1ae6-1ea1-42d5-98bf-3bc873086c66",
   "tables": {
     "ai_usage": {
@@ -461,6 +461,13 @@
           "notNull": false,
           "autoincrement": false
         },
+        "source": {
+          "name": "source",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
         "delta_a": {
           "name": "delta_a",
           "type": "integer",
@@ -588,14 +595,6 @@
           "primaryKey": false,
           "notNull": false,
           "autoincrement": false
-        },
-        "is_active": {
-          "name": "is_active",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": true
         },
         "confidence": {
           "name": "confidence",
