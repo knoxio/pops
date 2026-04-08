@@ -31,4 +31,3 @@ export const transactionTagRules = sqliteTable(
     index("idx_tag_rules_times_applied").on(table.timesApplied),
   ]
 );
-
