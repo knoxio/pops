@@ -25,6 +25,15 @@ export default [
       '@typescript-eslint': tseslint,
     },
     rules: {
+      'max-lines': ['error', { max: 1600, skipBlankLines: true, skipComments: true }],
+      'max-lines-per-function': [
+        'error',
+        { max: 900, skipBlankLines: true, skipComments: true, IIFEs: true },
+      ],
+      complexity: ['error', 60],
+      'max-statements': ['error', 220],
+      'max-params': ['error', 7],
+      'max-depth': ['error', 7],
       ...tseslint.configs['recommended'].rules,
       ...tseslint.configs['recommended-type-checked'].rules,
       '@typescript-eslint/no-explicit-any': 'error',

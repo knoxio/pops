@@ -13,6 +13,15 @@ export default tseslint.config(
       },
     },
     rules: {
+      "max-lines": ["error", { max: 2600, skipBlankLines: true, skipComments: true }],
+      "max-lines-per-function": [
+        "error",
+        { max: 600, skipBlankLines: true, skipComments: true, IIFEs: true },
+      ],
+      complexity: ["error", 45],
+      "max-statements": ["error", 220],
+      "max-params": ["error", 12],
+      "max-depth": ["error", 7],
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
@@ -32,9 +41,26 @@ export default tseslint.config(
     },
   },
   {
+    files: ["src/db/schema.ts", "src/db/seeder.ts"],
+    rules: {
+      "max-lines": "off",
+      "max-lines-per-function": "off",
+      complexity: "off",
+      "max-statements": "off",
+      "max-params": "off",
+      "max-depth": "off",
+    },
+  },
+  {
     // Relax strict type checking in test files for supertest responses
     files: ["**/*.test.ts", "**/*.spec.ts", "**/test-utils.ts"],
     rules: {
+      "max-lines": "off",
+      "max-lines-per-function": "off",
+      complexity: "off",
+      "max-statements": "off",
+      "max-params": "off",
+      "max-depth": "off",
       "@typescript-eslint/no-unsafe-assignment": "off",
       "@typescript-eslint/no-unsafe-member-access": "off",
       "@typescript-eslint/no-unsafe-call": "off",

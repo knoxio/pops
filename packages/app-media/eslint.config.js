@@ -7,6 +7,15 @@ export default tseslint.config(
   ...tseslint.configs.recommended,
   {
     rules: {
+      "max-lines": ["error", { max: 1600, skipBlankLines: true, skipComments: true }],
+      "max-lines-per-function": [
+        "error",
+        { max: 900, skipBlankLines: true, skipComments: true, IIFEs: true },
+      ],
+      complexity: ["error", 120],
+      "max-statements": ["error", 220],
+      "max-params": ["error", 7],
+      "max-depth": ["error", 7],
       "@typescript-eslint/no-unused-vars": [
         "error",
         {
@@ -14,7 +23,13 @@ export default tseslint.config(
           varsIgnorePattern: "^_",
         },
       ],
-      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-explicit-any": "error",
+    },
+  },
+  {
+    files: ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
     },
   }
 );
