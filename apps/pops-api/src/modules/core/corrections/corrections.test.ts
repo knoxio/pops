@@ -721,6 +721,54 @@ describe("corrections", () => {
       expect(result.changeSet.ops[0].data.matchType).toBe("contains");
     });
 
+    it("falls back to original signal when Haiku returns valid JSON but invalid schema", async () => {
+      await caller.core.corrections.rejectChangeSet({
+        signal: { descriptionPattern: "WOOLWORTHS", matchType: "contains", tags: [] },
+        changeSet: {
+          source: "correction-signal",
+          reason: "Initial proposal",
+          ops: [
+            {
+              op: "add",
+              data: { descriptionPattern: "WOOLWORTHS", matchType: "contains", tags: [] },
+            },
+          ],
+        },
+        feedback: "Use a different match type",
+      });
+
+      anthropicMocks.createMessage.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              adaptedSignal: {
+                descriptionPattern: "WOOLWORTHS",
+                matchType: "bogus",
+                entityId: null,
+                entityName: null,
+                location: null,
+                tags: [],
+                transactionType: null,
+              },
+            }),
+          },
+        ],
+        usage: { input_tokens: 10, output_tokens: 10 },
+      });
+
+      const result = await caller.core.corrections.proposeChangeSet({
+        signal: { descriptionPattern: "WOOLWORTHS", matchType: "contains", tags: [] },
+        minConfidence: 0,
+        maxPreviewItems: 10,
+      });
+
+      expect(result.changeSet.ops[0]?.op).toBe("add");
+      if (!result.changeSet.ops[0] || result.changeSet.ops[0].op !== "add")
+        throw new Error("Expected add op");
+      expect(result.changeSet.ops[0].data.matchType).toBe("contains");
+    });
+
     it("falls back to original signal when AI is unavailable", async () => {
       await caller.core.corrections.rejectChangeSet({
         signal: { descriptionPattern: "WOOLWORTHS", matchType: "contains", tags: [] },

@@ -11,6 +11,7 @@ import { aiUsage, settings, transactionCorrections, transactions } from "@pops/d
 import { NotFoundError } from "../../../shared/errors.js";
 import { parseJsonStringArray } from "../../../shared/json.js";
 import { logger } from "../../../lib/logger.js";
+import { withRateLimitRetry } from "../../../lib/ai-retry.js";
 import type {
   CorrectionRow,
   CreateCorrectionInput,
@@ -127,31 +128,7 @@ export function persistRejectedChangeSetFeedback(args: {
     .run();
 }
 
-const MAX_RETRIES = 5;
-const BASE_DELAY_MS = 1000;
-
-async function withRateLimitRetry<T>(fn: () => Promise<T>, description: string): Promise<T> {
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      const isRateLimit =
-        error instanceof Error && "status" in error && (error as { status: number }).status === 429;
-
-      if (!isRateLimit || attempt === MAX_RETRIES) {
-        throw error;
-      }
-
-      const delay = BASE_DELAY_MS * 2 ** attempt + Math.random() * 500;
-      logger.warn(
-        { description, attempt: attempt + 1, maxRetries: MAX_RETRIES, delayMs: Math.round(delay) },
-        "[AI] Rate limited (429) — retrying with backoff"
-      );
-      await new Promise((resolve) => setTimeout(resolve, delay));
-    }
-  }
-  throw new Error("Max retries exceeded");
-}
+// Shared AI retry helper lives in src/lib/ai-retry.ts
 
 export async function interpretRejectionFeedback(
   originalSignal: CorrectionSignal,
@@ -186,7 +163,8 @@ export async function interpretRejectionFeedback(
             },
           ],
         }),
-      "corrections.rejection.interpret"
+      "corrections.rejection.interpret",
+      { logger, logPrefix: "[AI]" }
     );
 
     const text = response.content[0]?.type === "text" ? response.content[0].text : null;
