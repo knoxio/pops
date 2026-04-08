@@ -4,6 +4,7 @@ import {
   processImportWithProgress,
   executeImport,
   createEntity,
+  reevaluateImportSessionResult,
 } from "./service.js";
 import type { ParsedTransaction, ConfirmedTransaction } from "./types.js";
 import { createTestDb, seedEntity, seedTransaction } from "../../../shared/test-utils.js";
@@ -611,6 +612,47 @@ describe("processImportWithProgress", () => {
     expect(result.matched.length).toBe(2);
     expect(result.matched.some((t) => t.entity.matchType === "learned")).toBe(true);
     expect(result.matched.some((t) => t.entity.matchType === "prefix")).toBe(true);
+  });
+});
+
+describe("reevaluateImportSessionResult", () => {
+  it("moves previously-uncertain transactions to matched after a new correction rule exists", async () => {
+    seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
+
+    // Start with an uncertain transaction (no match, AI null).
+    mockConfig.alwaysReturnNull = true;
+    const tx: ParsedTransaction = {
+      ...baseParsedTransaction,
+      description: "ACME SUPPLIES 1234",
+      rawRow: '{"Date":"13/02/2026","Description":"ACME SUPPLIES 1234"}',
+      checksum: "acme-123",
+    };
+    const initial = await processImport([tx], "Amex");
+    expect(initial.uncertain.length).toBe(1);
+
+    // Create a correction rule that will match this transaction.
+    orm()
+      .insert(transactionCorrections)
+      .values({
+        id: "corr-reeval-1",
+        descriptionPattern: "acme supplies",
+        matchType: "contains",
+        entityId: "woolworths-id",
+        entityName: "Woolworths",
+        tags: "[]",
+        confidence: 0.95,
+      })
+      .run();
+
+    const { nextResult, affectedCount } = reevaluateImportSessionResult({
+      result: initial,
+      minConfidence: 0.7,
+    });
+
+    expect(nextResult.uncertain.length).toBe(0);
+    expect(nextResult.matched.length).toBe(1);
+    expect(nextResult.matched[0]!.entity.matchType).toBe("learned");
+    expect(affectedCount).toBe(1);
   });
 });
 

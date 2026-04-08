@@ -32,6 +32,111 @@ import type {
   SuggestedTag,
 } from "./types.js";
 
+export function reevaluateImportSessionResult(args: {
+  result: ProcessImportOutput;
+  minConfidence: number;
+}): { nextResult: ProcessImportOutput; affectedCount: number } {
+  const { result, minConfidence } = args;
+
+  const { entityLookup, aliasMap: aliases } = loadEntityMaps();
+  const knownTags = loadKnownTags();
+
+  const nextMatched: ProcessedTransaction[] = [...result.matched];
+  const nextUncertain: ProcessedTransaction[] = [];
+  const nextFailed: ProcessedTransaction[] = [];
+
+  let affectedCount = 0;
+
+  const remaining: Array<{ tx: ProcessedTransaction; bucket: "uncertain" | "failed" }> = [
+    ...result.uncertain.map((tx) => ({ tx, bucket: "uncertain" as const })),
+    ...result.failed.map((tx) => ({ tx, bucket: "failed" as const })),
+  ];
+
+  for (let i = 0; i < remaining.length; i++) {
+    const item = remaining[i];
+    if (!item) continue;
+
+    const prevTx = item.tx;
+    const prevBucket = item.bucket;
+
+    // Stage 1: Corrections (learned rules)
+    const correctionApplied = applyLearnedCorrection({
+      transaction: prevTx,
+      minConfidence,
+      knownTags,
+      index: i + 1,
+      total: remaining.length,
+    });
+
+    if (correctionApplied) {
+      const nextBucket = correctionApplied.bucket;
+      const nextTx = correctionApplied.processed;
+
+      const changed =
+        prevBucket !== nextBucket ||
+        prevTx.status !== nextTx.status ||
+        prevTx.entity.entityId !== nextTx.entity.entityId ||
+        prevTx.entity.entityName !== nextTx.entity.entityName ||
+        prevTx.entity.matchType !== nextTx.entity.matchType;
+
+      if (changed) affectedCount += 1;
+
+      if (nextBucket === "matched") nextMatched.push(nextTx);
+      else nextUncertain.push(nextTx);
+      continue;
+    }
+
+    // Stage 2: Universal entity matching (aliases → exact → prefix → contains).
+    // We intentionally do NOT re-run AI in this synchronous path.
+    const match = matchEntity(prevTx.description, entityLookup, aliases);
+    if (match) {
+      const entityEntry = entityLookup.get(match.entityName.toLowerCase());
+      if (!entityEntry) {
+        // If lookup is inconsistent, fall back to leaving it as-is rather than crashing the session.
+        if (prevBucket === "failed") nextFailed.push(prevTx);
+        else nextUncertain.push(prevTx);
+        continue;
+      }
+
+      const nextTx: ProcessedTransaction = {
+        ...prevTx,
+        entity: {
+          entityId: entityEntry.id,
+          entityName: entityEntry.name,
+          matchType: match.matchType,
+        },
+        status: "matched",
+        error: undefined,
+        suggestedTags: buildSuggestedTags(prevTx.description, entityEntry.id, [], null, knownTags),
+      };
+
+      const changed =
+        prevTx.status !== nextTx.status ||
+        prevTx.entity.entityId !== nextTx.entity.entityId ||
+        prevTx.entity.entityName !== nextTx.entity.entityName ||
+        prevTx.entity.matchType !== nextTx.entity.matchType;
+
+      if (changed) affectedCount += 1;
+      nextMatched.push(nextTx);
+      continue;
+    }
+
+    // No deterministic match found: preserve current item as-is.
+    if (prevBucket === "failed") nextFailed.push(prevTx);
+    else nextUncertain.push(prevTx);
+  }
+
+  return {
+    nextResult: {
+      ...result,
+      matched: nextMatched,
+      uncertain: nextUncertain,
+      failed: nextFailed,
+    },
+    affectedCount,
+  };
+}
+
 /** Parse a JSON-encoded tags string from the corrections table into a string array. */
 function parseCorrectionTags(raw: string): string[] {
   try {

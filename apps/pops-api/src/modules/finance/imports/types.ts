@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ChangeSetSchema } from "../../core/corrections/types.js";
 
 /**
  * Transaction as parsed from CSV (client-side or transformer)
@@ -185,3 +186,26 @@ export const createEntityOutputSchema = z.object({
 });
 
 export type CreateEntityOutput = z.infer<typeof createEntityOutputSchema>;
+
+// ---------------------------------------------------------------------------
+// ChangeSet approval + synchronous import session re-evaluation (Issue #1644)
+// ---------------------------------------------------------------------------
+
+export const applyChangeSetAndReevaluateInputSchema = z.object({
+  sessionId: z.string().uuid(),
+  changeSet: ChangeSetSchema,
+  minConfidence: z.number().min(0).max(1).default(0.7),
+});
+
+export type ApplyChangeSetAndReevaluateInput = z.infer<
+  typeof applyChangeSetAndReevaluateInputSchema
+>;
+
+export const applyChangeSetAndReevaluateOutputSchema = z.object({
+  result: processImportOutputSchema,
+  affectedCount: z.number().int().nonnegative(),
+});
+
+export type ApplyChangeSetAndReevaluateOutput = z.infer<
+  typeof applyChangeSetAndReevaluateOutputSchema
+>;

@@ -9,14 +9,35 @@
  */
 import { z } from "zod";
 import crypto from "crypto";
+import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../../../trpc.js";
 import {
   processImportInputSchema,
   executeImportInputSchema,
   createEntityInputSchema,
+  applyChangeSetAndReevaluateInputSchema,
+  type ProcessImportOutput,
 } from "./types.js";
-import { processImportWithProgress, executeImportWithProgress, createEntity } from "./service.js";
-import { setProgress, getProgress } from "./progress-store.js";
+import {
+  processImportWithProgress,
+  executeImportWithProgress,
+  createEntity,
+  reevaluateImportSessionResult,
+} from "./service.js";
+import { setProgress, getProgress, updateProgress } from "./progress-store.js";
+import { applyChangeSet } from "../../core/corrections/service.js";
+import { NotFoundError } from "../../../shared/errors.js";
+
+function isProcessImportOutput(result: unknown): result is ProcessImportOutput {
+  return (
+    typeof result === "object" &&
+    result !== null &&
+    "matched" in result &&
+    "uncertain" in result &&
+    "failed" in result &&
+    "skipped" in result
+  );
+}
 
 export const importsRouter = router({
   /**
@@ -94,4 +115,54 @@ export const importsRouter = router({
   createEntity: protectedProcedure.input(createEntityInputSchema).mutation(({ input }) => {
     return createEntity(input.name);
   }),
+
+  /**
+   * Apply a bundled ChangeSet atomically, then immediately re-evaluate the current
+   * import session's remaining transactions (uncertain/failed) using the same
+   * deterministic matching stages as processing.
+   */
+  applyChangeSetAndReevaluate: protectedProcedure
+    .input(applyChangeSetAndReevaluateInputSchema)
+    .mutation(({ input }) => {
+      const progress = getProgress(input.sessionId);
+      if (!progress) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Import session not found" });
+      }
+      if (progress.status !== "completed" || !progress.result) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Import session is not ready for re-evaluation",
+        });
+      }
+
+      // Ensure this is a processImport session (not executeImport).
+      const result = progress.result;
+      if (!isProcessImportOutput(result)) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Import session result is not a processImport result",
+        });
+      }
+
+      // 1) Apply ChangeSet atomically (DB transaction)
+      // If this throws, we MUST NOT update the session result.
+      try {
+        applyChangeSet(input.changeSet);
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+        }
+        throw err;
+      }
+
+      // 2) Re-evaluate remaining transactions synchronously (no AI)
+      const { nextResult, affectedCount } = reevaluateImportSessionResult({
+        result,
+        minConfidence: input.minConfidence,
+      });
+
+      updateProgress(input.sessionId, { result: nextResult });
+
+      return { result: nextResult, affectedCount };
+    }),
 });

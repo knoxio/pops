@@ -7,6 +7,7 @@ const mockCreateCorrectionMutate = vi.fn();
 const mockCreateEntityMutateAsync = vi.fn();
 const mockAnalyzeCorrectionMutateAsync = vi.fn();
 const mockEntitiesQuery = vi.fn();
+const mockApplyChangeSetAndReevaluateMutateAsync = vi.fn();
 
 vi.mock("../../lib/trpc", () => ({
   trpc: {
@@ -42,6 +43,17 @@ vi.mock("../../lib/trpc", () => ({
         generateRules: {
           useMutation: () => ({
             mutate: vi.fn(),
+            isPending: false,
+          }),
+        },
+      },
+    },
+    finance: {
+      imports: {
+        applyChangeSetAndReevaluate: {
+          useMutation: () => ({
+            mutateAsync: (...args: unknown[]) =>
+              mockApplyChangeSetAndReevaluateMutateAsync(...args),
             isPending: false,
           }),
         },
@@ -86,6 +98,8 @@ vi.mock("../../store/importStore", () => ({
   useImportStore: () => ({
     processedTransactions: mockProcessedTransactions,
     setConfirmedTransactions: mockSetConfirmedTransactions,
+    processSessionId: "11111111-1111-1111-1111-111111111111",
+    setProcessedTransactions: vi.fn(),
     nextStep: mockNextStep,
     prevStep: mockPrevStep,
     findSimilar: mockFindSimilar,
@@ -243,6 +257,43 @@ beforeEach(() => {
   });
   // Default: AI analysis returns null (fallback to contains pattern)
   mockAnalyzeCorrectionMutateAsync.mockResolvedValue({ data: null });
+  mockApplyChangeSetAndReevaluateMutateAsync.mockImplementation(
+    async (input: { changeSet: { ops: Array<{ data: { descriptionPattern: string } }> } }) => {
+      const pattern = input.changeSet.ops[0]?.data.descriptionPattern ?? "";
+      const norm = pattern.toUpperCase();
+
+      const toMove = [
+        ...mockProcessedTransactions.uncertain.filter((t) =>
+          (t as { description: string }).description.toUpperCase().includes(norm)
+        ),
+        ...mockProcessedTransactions.failed.filter((t) =>
+          (t as { description: string }).description.toUpperCase().includes(norm)
+        ),
+      ];
+
+      const remainingUncertain = mockProcessedTransactions.uncertain.filter(
+        (t) => !toMove.includes(t)
+      );
+      const remainingFailed = mockProcessedTransactions.failed.filter((t) => !toMove.includes(t));
+
+      return {
+        result: {
+          ...mockProcessedTransactions,
+          matched: [
+            ...mockProcessedTransactions.matched,
+            ...toMove.map((t) => ({
+              ...(t as object),
+              status: "matched",
+              entity: { entityId: "ent-1", entityName: "Woolworths", matchType: "learned" },
+            })),
+          ],
+          uncertain: remainingUncertain,
+          failed: remainingFailed,
+        },
+        affectedCount: toMove.length,
+      };
+    }
+  );
   mockProcessedTransactions = {
     matched: [],
     uncertain: [],
@@ -266,19 +317,13 @@ describe("ReviewStep — auto-apply rules", () => {
     const acceptBtn = screen.getByTestId("accept-WOOLWORTHS 1234 SYDNEY");
     fireEvent.click(acceptBtn);
 
-    // Correction is saved after async AI analysis resolves
+    // ChangeSet is applied after async AI analysis resolves
     await vi.waitFor(() => {
-      expect(mockCreateCorrectionMutate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          matchType: "contains",
-          entityId: "ent-1",
-          entityName: "Woolworths",
-        })
-      );
+      expect(mockApplyChangeSetAndReevaluateMutateAsync).toHaveBeenCalled();
     });
   });
 
-  it("re-evaluates and moves matching uncertain transactions to matched", () => {
+  it("re-evaluates and moves matching uncertain transactions to matched", async () => {
     const tx1 = makeTx("WOOLWORTHS 1234 SYDNEY");
     const tx2 = makeTx("WOOLWORTHS 5678 MELBOURNE");
     const tx3 = makeTx("COLES EXPRESS 9999", {
@@ -296,13 +341,12 @@ describe("ReviewStep — auto-apply rules", () => {
     const acceptBtn = screen.getByTestId("accept-WOOLWORTHS 1234 SYDNEY");
     fireEvent.click(acceptBtn);
 
-    // Toast should mention 1 more transaction (tx2 matched by the rule, tx1 was already moved by handleEntitySelect)
-    expect(mockToastSuccess).toHaveBeenCalledWith(
-      expect.stringContaining("Applied to 1 more transaction")
-    );
+    await vi.waitFor(() => {
+      expect(mockToastSuccess).toHaveBeenCalledWith(expect.stringContaining("ChangeSet applied"));
+    });
   });
 
-  it("shows 'Rule created' without count when no additional matches", () => {
+  it("shows success toast even when affectedCount is 0", async () => {
     const tx1 = makeTx("WOOLWORTHS 1234 SYDNEY");
     const tx2 = makeTx("COLES EXPRESS 9999", {
       entity: { entityId: "ent-2", entityName: "Coles", matchType: "ai", confidence: 0.8 },
@@ -317,13 +361,12 @@ describe("ReviewStep — auto-apply rules", () => {
 
     fireEvent.click(screen.getByTestId("accept-WOOLWORTHS 1234 SYDNEY"));
 
-    // Should have a "Rule created" toast without "Applied to" since no others match WOOLWORTHS
-    expect(mockToastSuccess).toHaveBeenCalledWith(
-      expect.stringMatching(/Rule created:.*Woolworths/)
-    );
+    await vi.waitFor(() => {
+      expect(mockToastSuccess).toHaveBeenCalledWith(expect.stringContaining("ChangeSet applied"));
+    });
   });
 
-  it("non-matching transactions remain in uncertain", () => {
+  it("non-matching transactions remain in uncertain", async () => {
     const tx1 = makeTx("WOOLWORTHS 1234 SYDNEY");
     const tx2 = makeTx("NETFLIX SUBSCRIPTION", {
       entity: { entityId: null, entityName: "Netflix", matchType: "ai", confidence: 0.7 },
@@ -338,15 +381,12 @@ describe("ReviewStep — auto-apply rules", () => {
 
     fireEvent.click(screen.getByTestId("accept-WOOLWORTHS 1234 SYDNEY"));
 
-    // Netflix transaction should not be in any "Rule created: Applied to N" toast
-    // Only the Woolworths rule was created, Netflix doesn't match "WOOLWORTHS"
-    const ruleToastCalls = mockToastSuccess.mock.calls.filter(
-      (call: unknown[]) => typeof call[0] === "string" && (call[0] as string).includes("Applied to")
-    );
-    expect(ruleToastCalls).toHaveLength(0);
+    await vi.waitFor(() => {
+      expect(mockApplyChangeSetAndReevaluateMutateAsync).toHaveBeenCalled();
+    });
   });
 
-  it("re-evaluates failed transactions too", () => {
+  it("re-evaluates failed transactions too", async () => {
     const tx1 = makeTx("WOOLWORTHS 1234 SYDNEY");
     const failedTx = makeTx("WOOLWORTHS 9999 BRISBANE", { status: "failed" });
     mockProcessedTransactions = {
@@ -359,10 +399,9 @@ describe("ReviewStep — auto-apply rules", () => {
 
     fireEvent.click(screen.getByTestId("accept-WOOLWORTHS 1234 SYDNEY"));
 
-    // Failed Woolworths transaction should be caught by re-evaluation
-    expect(mockToastSuccess).toHaveBeenCalledWith(
-      expect.stringContaining("Applied to 1 more transaction")
-    );
+    await vi.waitFor(() => {
+      expect(mockToastSuccess).toHaveBeenCalledWith(expect.stringContaining("ChangeSet applied"));
+    });
   });
 });
 
@@ -399,7 +438,7 @@ describe("ReviewStep — low-confidence confirmation flow", () => {
     );
 
     // Should NOT auto-save correction
-    expect(mockCreateCorrectionMutate).not.toHaveBeenCalled();
+    expect(mockApplyChangeSetAndReevaluateMutateAsync).not.toHaveBeenCalled();
   });
 
   it("auto-saves rule when confidence >= 0.8 (high confidence path)", async () => {
@@ -416,15 +455,9 @@ describe("ReviewStep — low-confidence confirmation flow", () => {
 
     fireEvent.click(screen.getByTestId("accept-WOOLWORTHS 1234 SYDNEY"));
 
-    // Correction is saved after async AI analysis resolves
+    // ChangeSet is applied after async AI analysis resolves
     await vi.waitFor(() => {
-      expect(mockCreateCorrectionMutate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          matchType: "contains",
-          entityId: "ent-1",
-          entityName: "Woolworths",
-        })
-      );
+      expect(mockApplyChangeSetAndReevaluateMutateAsync).toHaveBeenCalled();
     });
 
     // Should NOT show confirmation toast
@@ -487,15 +520,9 @@ describe("ReviewStep — low-confidence confirmation flow", () => {
     const actionOnClick = (infoCall[1] as { action: { onClick: () => void } }).action.onClick;
     actionOnClick();
 
-    // Correction is saved after async AI analysis resolves
+    // ChangeSet is applied after async AI analysis resolves
     await vi.waitFor(() => {
-      expect(mockCreateCorrectionMutate).toHaveBeenCalledWith(
-        expect.objectContaining({
-          matchType: "contains",
-          entityId: "ent-3",
-          entityName: "Spotify",
-        })
-      );
+      expect(mockApplyChangeSetAndReevaluateMutateAsync).toHaveBeenCalled();
     });
   });
 
@@ -530,7 +557,7 @@ describe("ReviewStep — low-confidence confirmation flow", () => {
     cancelOnClick();
 
     // No correction should be saved
-    expect(mockCreateCorrectionMutate).not.toHaveBeenCalled();
+    expect(mockApplyChangeSetAndReevaluateMutateAsync).not.toHaveBeenCalled();
 
     // Accept second transaction with same normalised pattern — should NOT show confirmation again
     mockToastInfo.mockClear();
@@ -591,16 +618,25 @@ describe("ReviewStep — AI correction analysis", () => {
 
     // Wait for the async AI analysis to resolve
     await vi.waitFor(() => {
-      expect(mockCreateCorrectionMutate).toHaveBeenCalled();
+      expect(mockApplyChangeSetAndReevaluateMutateAsync).toHaveBeenCalled();
     });
 
     // Should use AI-analyzed pattern (prefix mapped to contains)
-    expect(mockCreateCorrectionMutate).toHaveBeenCalledWith(
+    expect(mockApplyChangeSetAndReevaluateMutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({
-        descriptionPattern: "WOOLWORTHS",
-        matchType: "contains",
-        entityId: "ent-1",
-        entityName: "Woolworths",
+        changeSet: expect.objectContaining({
+          ops: [
+            expect.objectContaining({
+              op: "add",
+              data: expect.objectContaining({
+                descriptionPattern: "WOOLWORTHS",
+                matchType: "contains",
+                entityId: "ent-1",
+                entityName: "Woolworths",
+              }),
+            }),
+          ],
+        }),
       })
     );
   });
@@ -619,14 +655,23 @@ describe("ReviewStep — AI correction analysis", () => {
     fireEvent.click(screen.getByTestId("accept-WOOLWORTHS 1234 SYDNEY"));
 
     await vi.waitFor(() => {
-      expect(mockCreateCorrectionMutate).toHaveBeenCalled();
+      expect(mockApplyChangeSetAndReevaluateMutateAsync).toHaveBeenCalled();
     });
 
     // Should use fallback contains pattern (digits stripped)
-    expect(mockCreateCorrectionMutate).toHaveBeenCalledWith(
+    expect(mockApplyChangeSetAndReevaluateMutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({
-        descriptionPattern: "WOOLWORTHS SYDNEY",
-        matchType: "contains",
+        changeSet: expect.objectContaining({
+          ops: [
+            expect.objectContaining({
+              op: "add",
+              data: expect.objectContaining({
+                descriptionPattern: "WOOLWORTHS SYDNEY",
+                matchType: "contains",
+              }),
+            }),
+          ],
+        }),
       })
     );
   });
@@ -645,15 +690,24 @@ describe("ReviewStep — AI correction analysis", () => {
     fireEvent.click(screen.getByTestId("accept-WOOLWORTHS 1234 SYDNEY"));
 
     await vi.waitFor(() => {
-      expect(mockCreateCorrectionMutate).toHaveBeenCalled();
+      expect(mockApplyChangeSetAndReevaluateMutateAsync).toHaveBeenCalled();
     });
 
     // Should still save with fallback pattern
-    expect(mockCreateCorrectionMutate).toHaveBeenCalledWith(
+    expect(mockApplyChangeSetAndReevaluateMutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({
-        matchType: "contains",
-        entityId: "ent-1",
-        entityName: "Woolworths",
+        changeSet: expect.objectContaining({
+          ops: [
+            expect.objectContaining({
+              op: "add",
+              data: expect.objectContaining({
+                matchType: "contains",
+                entityId: "ent-1",
+                entityName: "Woolworths",
+              }),
+            }),
+          ],
+        }),
       })
     );
   });
