@@ -203,11 +203,7 @@ export function ReviewStep() {
   // and leaves import-session re-evaluation as a follow-up task.
 
   const computeFallbackPattern = useCallback((description: string) => {
-    return description
-      .toUpperCase()
-      .replace(/\d+/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
+    return description.toUpperCase().replace(/\d+/g, "").replace(/\s+/g, " ").trim();
   }, []);
 
   const generateProposal = useCallback(
