@@ -103,6 +103,8 @@ export const CorrectionSignalSchema = z.object({
 });
 export type CorrectionSignal = z.infer<typeof CorrectionSignalSchema>;
 
+export const AdaptedSignalSchema = CorrectionSignalSchema;
+
 /**
  * Zod schema for updating a correction
  */

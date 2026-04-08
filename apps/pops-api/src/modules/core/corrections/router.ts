@@ -287,9 +287,9 @@ export const correctionsRouter = router({
         maxPreviewItems: z.coerce.number().int().positive().max(500).default(200),
       })
     )
-    .query(({ input }) => {
+    .query(async ({ input }) => {
       try {
-        return service.proposeChangeSetFromCorrectionSignal({
+        return await service.proposeChangeSetFromCorrectionSignal({
           signal: input.signal,
           minConfidence: input.minConfidence,
           maxPreviewItems: input.maxPreviewItems,
