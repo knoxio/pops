@@ -44,6 +44,32 @@ src/
 - **Page headers** — all drill-down pages use the shared PageHeader pattern (back button + breadcrumbs). No inline h1 styling.
 - **View toggles** — table/grid toggles use `ViewToggleGroup` from `@pops/ui`. Preference persisted in localStorage.
 
+### Page composition pattern (“page shell + sections + hooks”)
+
+For anything non-trivial (multiple queries/mutations, complex UI state, many subsections), follow this structure to keep pages readable and testable.
+
+**Goals**
+- Keep route components small and orchestration-only.
+- Keep data mapping close to data fetching (not buried in deep component trees).
+- Keep presentational sections reusable and easy to unit test.
+
+**Recommended structure**
+```
+pages/
+  SomePage.tsx                # route params + layout + wiring only
+  some-page/
+    useSomePageModel.ts       # derived state + query/mutation wiring
+    sections/
+      SummarySection.tsx      # presentational section(s) + local UI state
+      DetailsSection.tsx
+```
+
+**Rules of thumb**
+- **`Page.tsx` (the shell)**: read route params, own top-level layout, call `usePageModel()`, pass stable props down. Avoid building large derived objects inline.
+- **`usePageModel()`**: owns data fetching, mutation calls, derived state, and “domain view model” mapping (formatting, grouping, sorting).
+- **`sections/` components**: mostly presentational; allow local UI state (tabs, expanded rows, dialogs) but avoid firing network calls directly unless intentionally isolated.
+- **Avoid prop drilling**: if a section needs many props, that’s a hint to move mapping into `usePageModel()` or split the section further.
+
 ## Component Library (`@pops/ui`)
 
 - Primitives wrap Shadcn/Radix. Composites combine primitives.
