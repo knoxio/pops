@@ -403,6 +403,11 @@ describe("corrections", () => {
       const infoSpy = vi.spyOn(logger, "info").mockImplementation(() => {});
       try {
         const result = await caller.core.corrections.rejectChangeSet({
+          signal: {
+            descriptionPattern: "WOOLWORTHS",
+            matchType: "contains",
+            tags: [],
+          },
           changeSet: {
             ops: [
               {
@@ -446,6 +451,11 @@ describe("corrections", () => {
     it("rejects empty feedback", async () => {
       await expect(
         caller.core.corrections.rejectChangeSet({
+          signal: {
+            descriptionPattern: "WOOLWORTHS",
+            matchType: "contains",
+            tags: [],
+          },
           changeSet: {
             ops: [
               {
@@ -556,6 +566,41 @@ describe("corrections", () => {
       });
 
       expect(result.preview.affected.some((a) => a.transactionId === id)).toBe(true);
+    });
+
+    it("incorporates rejection feedback into follow-up proposals", async () => {
+      await caller.core.corrections.rejectChangeSet({
+        signal: { descriptionPattern: "WOOLWORTHS", matchType: "contains", tags: [] },
+        changeSet: {
+          source: "correction-signal",
+          reason: "Initial proposal",
+          ops: [
+            {
+              op: "add",
+              data: { descriptionPattern: "WOOLWORTHS", matchType: "contains", tags: [] },
+            },
+          ],
+        },
+        feedback: "Too broad, should be exact match",
+        impactSummary: {
+          total: 10,
+          newMatches: 10,
+          removedMatches: 0,
+          statusChanges: 0,
+          netMatchedDelta: 10,
+        },
+      });
+
+      const result = await caller.core.corrections.proposeChangeSet({
+        signal: { descriptionPattern: "WOOLWORTHS", matchType: "contains", tags: [] },
+        minConfidence: 0,
+        maxPreviewItems: 10,
+      });
+
+      expect(result.changeSet.source).toBe("correction-signal-followup");
+      expect(result.rationale).toContain("Follow-up");
+      expect(result.rationale).toContain("Too broad, should be exact match");
+      expect(result.changeSet.reason).toContain("Too broad, should be exact match");
     });
   });
 

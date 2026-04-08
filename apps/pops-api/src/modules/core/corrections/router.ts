@@ -315,6 +315,15 @@ export const correctionsRouter = router({
   rejectChangeSet: protectedProcedure
     .input(
       z.object({
+        signal: z.object({
+          descriptionPattern: z.string().min(1),
+          matchType: z.enum(["exact", "contains", "regex"]),
+          entityId: z.string().nullable().optional(),
+          entityName: z.string().nullable().optional(),
+          location: z.string().nullable().optional(),
+          tags: z.array(z.string()).optional(),
+          transactionType: z.enum(["purchase", "transfer", "income"]).nullable().optional(),
+        }),
         changeSet: ChangeSetSchema,
         feedback: z.string().min(1),
         impactSummary: z
@@ -329,6 +338,13 @@ export const correctionsRouter = router({
       })
     )
     .mutation(({ input, ctx }) => {
+      service.persistRejectedChangeSetFeedback({
+        signal: input.signal,
+        changeSet: input.changeSet,
+        feedback: input.feedback,
+        impactSummary: input.impactSummary ?? null,
+        userEmail: ctx.user.email,
+      });
       logger.info({
         event: "corrections.proposal.reject",
         userEmail: ctx.user.email,
