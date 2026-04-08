@@ -9,7 +9,7 @@
  */
 import { eq, and, isNotNull, ne, inArray } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
-import { transactions, entities } from "@pops/db-types";
+import { transactions, entities, tagVocabulary } from "@pops/db-types";
 import { logger } from "../../../lib/logger.js";
 import { formatImportError } from "../../../lib/errors.js";
 import { matchEntity } from "./lib/entity-matcher.js";
@@ -177,6 +177,16 @@ function loadKnownTags(): string[] {
     .all();
 
   const seen = new Set<string>();
+
+  const vocab = db
+    .select({ tag: tagVocabulary.tag })
+    .from(tagVocabulary)
+    .where(eq(tagVocabulary.isActive, true))
+    .all();
+  for (const row of vocab) {
+    if (row.tag) seen.add(row.tag);
+  }
+
   for (const row of rows) {
     try {
       const parsed = JSON.parse(row.tags) as unknown;

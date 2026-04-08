@@ -1,7 +1,7 @@
 # PRD-029: Tag Rule Proposals
 
 > Epic: [03 — Corrections](../../epics/03-corrections.md)
-> Status: Not started
+> Status: Done
 
 ## Overview
 
@@ -110,9 +110,9 @@ The UI must support accepting/rejecting suggestions at either scope:
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 01 | [us-01-tag-rule-contract](us-01-tag-rule-contract.md) | Define tag rule model + ChangeSet operations + impact preview | Not started | No (first) |
-| 02 | [us-02-generate-tag-proposal](us-02-generate-tag-proposal.md) | Generate bundled tag-rule proposal from tag edits | Not started | Blocked by us-01 |
-| 03 | [us-03-approve-reject-tag-proposals](us-03-approve-reject-tag-proposals.md) | Approve/apply or reject-with-feedback tag rule ChangeSets | Not started | Blocked by us-01 |
+| 01 | [us-01-tag-rule-contract](us-01-tag-rule-contract.md) | Define tag rule model + ChangeSet operations + impact preview | Done | No (first) |
+| 02 | [us-02-generate-tag-proposal](us-02-generate-tag-proposal.md) | Generate bundled tag-rule proposal from tag edits | Done | Blocked by us-01 |
+| 03 | [us-03-approve-reject-tag-proposals](us-03-approve-reject-tag-proposals.md) | Approve/apply or reject-with-feedback tag rule ChangeSets | Done | Blocked by us-01 |
 
 ## Verification
 

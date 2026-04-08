@@ -4,6 +4,8 @@ export { budgets } from "./budgets.js";
 export { homeInventory } from "./inventory.js";
 export { wishList } from "./wishlist.js";
 export { transactionCorrections } from "./corrections.js";
+export { tagVocabulary } from "./tag-vocabulary.js";
+export { transactionTagRules } from "./transaction-tag-rules.js";
 export { aiUsage } from "./ai-usage.js";
 export { environments } from "./environments.js";
 export { movies } from "./movies.js";

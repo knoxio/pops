@@ -92,7 +92,6 @@ describe("applyLearnedCorrection", () => {
 
     expect(res).toBeNull();
   });
-
   it("treats transfer-only corrections (transactionType without entity) as matched", () => {
     // Seed a learned correction rule that classifies transfers without assigning an entity.
     orm()

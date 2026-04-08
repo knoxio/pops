@@ -38,6 +38,8 @@ import type { debriefResults } from "./schema/debrief-results.js";
 import type { tierOverrides } from "./schema/tier-overrides.js";
 import type { debriefStatus } from "./schema/debrief-status.js";
 import type { shelfImpressions } from "./schema/shelf-impressions.js";
+import type { tagVocabulary } from "./schema/tag-vocabulary.js";
+import type { transactionTagRules } from "./schema/transaction-tag-rules.js";
 
 // Re-export Drizzle table objects for use in queries
 export {
@@ -47,6 +49,8 @@ export {
   homeInventory,
   wishList,
   transactionCorrections,
+  tagVocabulary,
+  transactionTagRules,
   aiUsage,
   environments,
   movies,
@@ -82,6 +86,8 @@ export type BudgetRow = InferSelectModel<typeof budgets>;
 export type InventoryRow = InferSelectModel<typeof homeInventory>;
 export type WishListRow = InferSelectModel<typeof wishList>;
 export type TransactionCorrectionRow = InferSelectModel<typeof transactionCorrections>;
+export type TagVocabularyRow = InferSelectModel<typeof tagVocabulary>;
+export type TransactionTagRuleRow = InferSelectModel<typeof transactionTagRules>;
 export type AiUsageRow = InferSelectModel<typeof aiUsage>;
 export type EnvironmentRow = InferSelectModel<typeof environments>;
 export type MovieRow = InferSelectModel<typeof movies>;

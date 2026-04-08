@@ -183,6 +183,13 @@
       "when": 1775569718681,
       "tag": "0025_youthful_hulk",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "6",
+      "when": 1775653615416,
+      "tag": "0026_little_frank_castle",
+      "breakpoints": true
     }
   ]
 }

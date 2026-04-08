@@ -16,6 +16,7 @@ import type BetterSqlite3 from "better-sqlite3";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { TAG_VOCABULARY_V1 } from "../shared/tag-vocabulary.js";
 
 /** All migration filenames that this schema already incorporates. */
 const INCLUDED_MIGRATIONS = [
@@ -246,6 +247,31 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     SELECT * FROM transaction_corrections
     WHERE confidence >= 0.7 AND is_active = 1
     ORDER BY confidence DESC, times_applied DESC;
+
+    CREATE TABLE IF NOT EXISTS tag_vocabulary (
+      tag TEXT PRIMARY KEY NOT NULL,
+      source TEXT NOT NULL DEFAULT 'seed' CHECK(source IN ('seed', 'user')),
+      is_active INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_tag_vocabulary_active ON tag_vocabulary(is_active);
+
+    CREATE TABLE IF NOT EXISTS transaction_tag_rules (
+      id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
+      description_pattern TEXT NOT NULL,
+      match_type TEXT CHECK(match_type IN ('exact', 'contains', 'regex')) NOT NULL DEFAULT 'exact',
+      entity_id TEXT REFERENCES entities(id) ON DELETE SET NULL,
+      tags TEXT NOT NULL DEFAULT '[]',
+      is_active INTEGER NOT NULL DEFAULT 1,
+      confidence REAL NOT NULL DEFAULT 0.5 CHECK(confidence >= 0.0 AND confidence <= 1.0),
+      times_applied INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      last_used_at TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_tag_rules_pattern ON transaction_tag_rules(description_pattern);
+    CREATE INDEX IF NOT EXISTS idx_tag_rules_entity_id ON transaction_tag_rules(entity_id);
+    CREATE INDEX IF NOT EXISTS idx_tag_rules_confidence ON transaction_tag_rules(confidence DESC);
+    CREATE INDEX IF NOT EXISTS idx_tag_rules_times_applied ON transaction_tag_rules(times_applied DESC);
 
     CREATE TABLE IF NOT EXISTS environments (
       name       TEXT    PRIMARY KEY CHECK(name != 'prod'),
@@ -521,6 +547,15 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     );
     CREATE INDEX IF NOT EXISTS idx_shelf_impressions_shelf_id ON shelf_impressions(shelf_id);
   `);
+
+  // Seed tag vocabulary (v1) for brand-new databases.
+  // Use INSERT OR IGNORE so repeated init is harmless.
+  const insertTag = db.prepare(
+    "INSERT OR IGNORE INTO tag_vocabulary (tag, source, is_active) VALUES (?, 'seed', 1)"
+  );
+  for (const tag of TAG_VOCABULARY_V1) {
+    insertTag.run(tag);
+  }
 
   // Pre-mark all migrations this schema already incorporates so that
   // runMigrations() treats them as already applied.
