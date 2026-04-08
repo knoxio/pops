@@ -187,6 +187,48 @@ export function ReviewStep() {
   const applyChangeSetAndReevaluateMutation =
     trpc.finance.imports.applyChangeSetAndReevaluate.useMutation();
 
+  const applyChangeSet = useCallback(
+    (args: {
+      pattern: string;
+      matchType: "exact" | "contains" | "regex";
+      entityId: string;
+      entityName: string;
+    }) => {
+      if (!processSessionId) return Promise.resolve();
+      return applyChangeSetAndReevaluateMutation
+        .mutateAsync({
+          sessionId: processSessionId,
+          changeSet: {
+            ops: [
+              {
+                op: "add",
+                data: {
+                  descriptionPattern: args.pattern,
+                  matchType: args.matchType,
+                  entityId: args.entityId,
+                  entityName: args.entityName,
+                },
+              },
+            ],
+          },
+        })
+        .then((r) => {
+          setLocalTransactions(r.result);
+          setProcessedTransactions(r.result);
+          toast.success(`ChangeSet applied — ${r.affectedCount} updated`);
+        })
+        .catch(() => {
+          toast.error("Failed to apply ChangeSet");
+        });
+    },
+    [
+      applyChangeSetAndReevaluateMutation,
+      processSessionId,
+      setProcessedTransactions,
+      setLocalTransactions,
+    ]
+  );
+
   /**
    * Auto-save a correction rule, re-evaluate remaining uncertain/failed transactions,
    * move matches to the matched tab, and show a toast with the result.
@@ -209,33 +251,15 @@ export function ReviewStep() {
           const analysis = res.data;
           if (analysis && analysis.pattern.length >= 3) {
             // Map "prefix" to "contains" for corrections table (prefix not a DB matchType)
-            const matchType = analysis.matchType === "prefix" ? "contains" : analysis.matchType;
+            const matchType: "exact" | "contains" | "regex" =
+              analysis.matchType === "prefix" ? "contains" : analysis.matchType;
             if (processSessionId) {
-              applyChangeSetAndReevaluateMutation
-                .mutateAsync({
-                  sessionId: processSessionId,
-                  changeSet: {
-                    ops: [
-                      {
-                        op: "add",
-                        data: {
-                          descriptionPattern: analysis.pattern,
-                          matchType,
-                          entityId,
-                          entityName,
-                        },
-                      },
-                    ],
-                  },
-                })
-                .then((r) => {
-                  setLocalTransactions(r.result);
-                  setProcessedTransactions(r.result);
-                  toast.success(`ChangeSet applied — ${r.affectedCount} updated`);
-                })
-                .catch(() => {
-                  toast.error("Failed to apply ChangeSet");
-                });
+              void applyChangeSet({
+                pattern: analysis.pattern,
+                matchType,
+                entityId,
+                entityName,
+              });
             } else {
               createCorrectionMutation.mutate({
                 descriptionPattern: analysis.pattern,
@@ -246,31 +270,12 @@ export function ReviewStep() {
             }
           } else {
             if (processSessionId) {
-              applyChangeSetAndReevaluateMutation
-                .mutateAsync({
-                  sessionId: processSessionId,
-                  changeSet: {
-                    ops: [
-                      {
-                        op: "add",
-                        data: {
-                          descriptionPattern: fallbackPattern,
-                          matchType: "contains",
-                          entityId,
-                          entityName,
-                        },
-                      },
-                    ],
-                  },
-                })
-                .then((r) => {
-                  setLocalTransactions(r.result);
-                  setProcessedTransactions(r.result);
-                  toast.success(`ChangeSet applied — ${r.affectedCount} updated`);
-                })
-                .catch(() => {
-                  toast.error("Failed to apply ChangeSet");
-                });
+              void applyChangeSet({
+                pattern: fallbackPattern,
+                matchType: "contains",
+                entityId,
+                entityName,
+              });
             } else {
               createCorrectionMutation.mutate({
                 descriptionPattern: fallbackPattern,
@@ -284,31 +289,12 @@ export function ReviewStep() {
         .catch(() => {
           // AI unavailable — use fallback pattern
           if (processSessionId) {
-            applyChangeSetAndReevaluateMutation
-              .mutateAsync({
-                sessionId: processSessionId,
-                changeSet: {
-                  ops: [
-                    {
-                      op: "add",
-                      data: {
-                        descriptionPattern: fallbackPattern,
-                        matchType: "contains",
-                        entityId,
-                        entityName,
-                      },
-                    },
-                  ],
-                },
-              })
-              .then((r) => {
-                setLocalTransactions(r.result);
-                setProcessedTransactions(r.result);
-                toast.success(`ChangeSet applied — ${r.affectedCount} updated`);
-              })
-              .catch(() => {
-                toast.error("Failed to apply ChangeSet");
-              });
+            void applyChangeSet({
+              pattern: fallbackPattern,
+              matchType: "contains",
+              entityId,
+              entityName,
+            });
           } else {
             createCorrectionMutation.mutate({
               descriptionPattern: fallbackPattern,
@@ -326,6 +312,7 @@ export function ReviewStep() {
       createCorrectionMutation,
       analyzeCorrectionMutation,
       applyChangeSetAndReevaluateMutation,
+      applyChangeSet,
       processSessionId,
       setProcessedTransactions,
     ]

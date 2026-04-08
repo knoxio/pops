@@ -61,6 +61,18 @@ async function waitForCompletion<T extends ProcessImportOutput | ExecuteImportOu
   throw new Error("Timeout waiting for import to complete");
 }
 
+function assertProcessImportOutput(result: unknown): asserts result is ProcessImportOutput {
+  if (!result || typeof result !== "object") throw new Error("Expected object result");
+  if (
+    !("matched" in result) ||
+    !("uncertain" in result) ||
+    !("failed" in result) ||
+    !("skipped" in result)
+  ) {
+    throw new Error("Expected ProcessImportOutput shape");
+  }
+}
+
 beforeEach(() => {
   ({ caller, db } = ctx.setup());
   resetMockAi();
@@ -469,6 +481,52 @@ describe("imports.applyChangeSetAndReevaluate", () => {
     expect(res.result.uncertain.some((t) => t.checksum === "abc123")).toBe(false);
   });
 
+  it("returns affectedCount=0 when apply succeeds but nothing re-evaluates", async () => {
+    seedEntity(db, { name: "Woolworths", id: "woolworths-id" });
+    mockConfig.alwaysReturnNull = true;
+
+    const { sessionId } = await caller.finance.imports.processImport({
+      transactions: [
+        {
+          date: "2026-02-13",
+          description: "ACME SUPPLIES 1234",
+          amount: -125.5,
+          account: "Amex",
+          rawRow: "{}",
+          checksum: "acme-affected-0",
+        },
+      ],
+      account: "Amex",
+    });
+
+    const before = await waitForCompletion<ProcessImportOutput>(sessionId);
+    expect(before.uncertain.length).toBe(1);
+
+    // Apply a ChangeSet that adds a rule that won't match any remaining transactions.
+    const res = await caller.finance.imports.applyChangeSetAndReevaluate({
+      sessionId,
+      changeSet: {
+        ops: [
+          {
+            op: "add",
+            data: {
+              descriptionPattern: "DOES NOT MATCH",
+              matchType: "contains",
+              entityId: "woolworths-id",
+              entityName: "Woolworths",
+              tags: [],
+              confidence: 0.95,
+            },
+          },
+        ],
+      },
+      minConfidence: 0.7,
+    });
+
+    expect(res.affectedCount).toBe(0);
+    expect(res.result.uncertain.some((t) => t.checksum === "acme-affected-0")).toBe(true);
+  });
+
   it("does not update the session result if ChangeSet apply fails", async () => {
     const { sessionId } = await caller.finance.imports.processImport({
       transactions: [
@@ -507,7 +565,8 @@ describe("imports.applyChangeSetAndReevaluate", () => {
 
     const afterProgress = await caller.finance.imports.getImportProgress({ sessionId });
     expect(afterProgress?.status).toBe("completed");
-    const after = afterProgress?.result as ProcessImportOutput;
+    const after = afterProgress?.result;
+    assertProcessImportOutput(after);
 
     // Still unchanged: the uncertain transaction remains.
     expect(after.uncertain.some((t) => t.checksum === "zzz999")).toBe(true);

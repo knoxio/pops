@@ -26,6 +26,7 @@ import {
 } from "./service.js";
 import { setProgress, getProgress, updateProgress } from "./progress-store.js";
 import { applyChangeSet } from "../../core/corrections/service.js";
+import { NotFoundError } from "../../../shared/errors.js";
 
 function isProcessImportOutput(result: unknown): result is ProcessImportOutput {
   return (
@@ -145,7 +146,14 @@ export const importsRouter = router({
 
       // 1) Apply ChangeSet atomically (DB transaction)
       // If this throws, we MUST NOT update the session result.
-      applyChangeSet(input.changeSet);
+      try {
+        applyChangeSet(input.changeSet);
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          throw new TRPCError({ code: "NOT_FOUND", message: err.message });
+        }
+        throw err;
+      }
 
       // 2) Re-evaluate remaining transactions synchronously (no AI)
       const { nextResult, affectedCount } = reevaluateImportSessionResult({
