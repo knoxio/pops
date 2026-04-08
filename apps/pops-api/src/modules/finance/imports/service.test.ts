@@ -54,6 +54,45 @@ afterEach(() => {
 });
 
 describe("applyLearnedCorrection", () => {
+  it("returns null when a correction has neither entity nor transactionType (falls through)", () => {
+    // Seed a learned correction rule that matches but doesn't actually provide a change.
+    // This should fall through to other matchers (applyLearnedCorrection returns null).
+    orm()
+      .insert(transactionCorrections)
+      .values({
+        id: "corr-null-null",
+        descriptionPattern: "NOOP RULE",
+        matchType: "contains",
+        entityId: null,
+        entityName: null,
+        location: null,
+        tags: "[]",
+        transactionType: null,
+        confidence: 0.95,
+        timesApplied: 0,
+        createdAt: new Date().toISOString(),
+        lastUsedAt: null,
+        isActive: true,
+      })
+      .run();
+
+    const tx: ParsedTransaction = {
+      ...baseParsedTransaction,
+      description: "NOOP RULE 1234",
+      checksum: "noop-1",
+    };
+
+    const res = applyLearnedCorrection({
+      transaction: tx,
+      minConfidence: 0.7,
+      knownTags: [],
+      index: 1,
+      total: 1,
+    });
+
+    expect(res).toBeNull();
+  });
+
   it("treats transfer-only corrections (transactionType without entity) as matched", () => {
     // Seed a learned correction rule that classifies transfers without assigning an entity.
     orm()
@@ -96,6 +135,60 @@ describe("applyLearnedCorrection", () => {
     expect(res!.processed.entity.matchType).toBe("learned");
     expect(res!.processed.entity.entityId).toBeUndefined();
     expect(res!.processed.entity.entityName).toBeUndefined();
+
+    // Should also populate rule transparency fields + suggestedTags for type-only matches.
+    expect(res!.processed.ruleProvenance).toEqual({
+      source: "correction",
+      ruleId: "corr-transfer-only",
+      pattern: "TRANSFER TO SAVINGS",
+      matchType: "contains",
+      confidence: 0.95,
+    });
+    expect(Array.isArray(res!.processed.suggestedTags)).toBe(true);
+  });
+
+  it("treats income-only corrections (transactionType without entity) as matched", () => {
+    orm()
+      .insert(transactionCorrections)
+      .values({
+        id: "corr-income-only",
+        descriptionPattern: "PAYROLL",
+        matchType: "contains",
+        entityId: null,
+        entityName: null,
+        location: null,
+        tags: "[]",
+        transactionType: "income",
+        confidence: 0.95,
+        timesApplied: 0,
+        createdAt: new Date().toISOString(),
+        lastUsedAt: null,
+        isActive: true,
+      })
+      .run();
+
+    const tx: ParsedTransaction = {
+      ...baseParsedTransaction,
+      description: "PAYROLL ACME PTY LTD",
+      checksum: "income-only-1",
+    };
+
+    const res = applyLearnedCorrection({
+      transaction: tx,
+      minConfidence: 0.7,
+      knownTags: [],
+      index: 1,
+      total: 1,
+    });
+
+    expect(res).not.toBeNull();
+    expect(res!.bucket).toBe("matched");
+    expect(res!.processed.status).toBe("matched");
+    expect(res!.processed.transactionType).toBe("income");
+    expect(res!.processed.entity.matchType).toBe("learned");
+    expect(res!.processed.entity.entityId).toBeUndefined();
+    expect(res!.processed.entity.entityName).toBeUndefined();
+    expect(res!.processed.ruleProvenance?.ruleId).toBe("corr-income-only");
   });
 });
 
