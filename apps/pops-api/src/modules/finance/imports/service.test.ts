@@ -5,6 +5,7 @@ import {
   executeImport,
   createEntity,
   reevaluateImportSessionResult,
+  applyLearnedCorrection,
 } from "./service.js";
 import type { ParsedTransaction, ConfirmedTransaction } from "./types.js";
 import { createTestDb, seedEntity, seedTransaction } from "../../../shared/test-utils.js";
@@ -50,6 +51,52 @@ beforeEach(() => {
 
 afterEach(() => {
   closeDb();
+});
+
+describe("applyLearnedCorrection", () => {
+  it("treats transfer-only corrections (transactionType without entity) as matched", () => {
+    // Seed a learned correction rule that classifies transfers without assigning an entity.
+    orm()
+      .insert(transactionCorrections)
+      .values({
+        id: "corr-transfer-only",
+        descriptionPattern: "TRANSFER TO SAVINGS",
+        matchType: "contains",
+        entityId: null,
+        entityName: null,
+        location: null,
+        tags: "[]",
+        transactionType: "transfer",
+        confidence: 0.95,
+        timesApplied: 0,
+        createdAt: new Date().toISOString(),
+        lastUsedAt: null,
+        isActive: true,
+      })
+      .run();
+
+    const tx: ParsedTransaction = {
+      ...baseParsedTransaction,
+      description: "TRANSFER TO SAVINGS 1234",
+      checksum: "transfer-only-1",
+    };
+
+    const res = applyLearnedCorrection({
+      transaction: tx,
+      minConfidence: 0.7,
+      knownTags: [],
+      index: 1,
+      total: 1,
+    });
+
+    expect(res).not.toBeNull();
+    expect(res!.bucket).toBe("matched");
+    expect(res!.processed.status).toBe("matched");
+    expect(res!.processed.transactionType).toBe("transfer");
+    expect(res!.processed.entity.matchType).toBe("learned");
+    expect(res!.processed.entity.entityId).toBeUndefined();
+    expect(res!.processed.entity.entityName).toBeUndefined();
+  });
 });
 
 /** Reused across processImport and suggestedTags test suites */
@@ -340,6 +387,53 @@ describe("processImport", () => {
       expect(result.matched[0]!.location).toBeUndefined();
       expect(result.matched[0]!.online).toBeUndefined();
     });
+  });
+});
+
+describe("reevaluateImportSessionResult", () => {
+  it("counts affectedCount when a type-only correction moves a transaction to matched", () => {
+    orm()
+      .insert(transactionCorrections)
+      .values({
+        id: "corr-transfer-only-reeval",
+        descriptionPattern: "TRANSFER TO SAVINGS",
+        matchType: "contains",
+        entityId: null,
+        entityName: null,
+        location: null,
+        tags: "[]",
+        transactionType: "transfer",
+        confidence: 0.95,
+        timesApplied: 0,
+        createdAt: new Date().toISOString(),
+        lastUsedAt: null,
+        isActive: true,
+      })
+      .run();
+
+    const result = {
+      matched: [],
+      uncertain: [
+        {
+          ...baseParsedTransaction,
+          description: "TRANSFER TO SAVINGS 1234",
+          checksum: "transfer-only-reeval-1",
+          entity: { matchType: "none" as const },
+          status: "uncertain" as const,
+        },
+      ],
+      failed: [],
+      skipped: [],
+    };
+
+    const { nextResult, affectedCount } = reevaluateImportSessionResult({
+      result,
+      minConfidence: 0.7,
+    });
+
+    expect(affectedCount).toBe(1);
+    expect(nextResult.matched.length).toBe(1);
+    expect(nextResult.matched[0]!.transactionType).toBe("transfer");
   });
 });
 

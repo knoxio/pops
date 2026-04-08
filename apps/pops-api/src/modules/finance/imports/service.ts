@@ -75,6 +75,7 @@ export function reevaluateImportSessionResult(args: {
       const changed =
         prevBucket !== nextBucket ||
         prevTx.status !== nextTx.status ||
+        prevTx.transactionType !== nextTx.transactionType ||
         prevTx.entity.entityId !== nextTx.entity.entityId ||
         prevTx.entity.entityName !== nextTx.entity.entityName ||
         prevTx.entity.matchType !== nextTx.entity.matchType;
@@ -112,6 +113,7 @@ export function reevaluateImportSessionResult(args: {
 
       const changed =
         prevTx.status !== nextTx.status ||
+        prevTx.transactionType !== nextTx.transactionType ||
         prevTx.entity.entityId !== nextTx.entity.entityId ||
         prevTx.entity.entityName !== nextTx.entity.entityName ||
         prevTx.entity.matchType !== nextTx.entity.matchType;
@@ -224,6 +226,49 @@ export function applyLearnedCorrection(args: {
   const entityId = correction.entityId;
 
   if (!entityId) {
+    // Transfer/income rules are allowed to classify without assigning an entity.
+    if (correction.transactionType) {
+      logger.debug(
+        {
+          index,
+          total,
+          description: transaction.description.substring(0, 50),
+          transactionType: correction.transactionType,
+          confidence: correction.confidence,
+        },
+        "[Import] Applied learned type-only correction"
+      );
+
+      return {
+        processed: {
+          ...transaction,
+          location: correction.location ?? transaction.location,
+          transactionType: correction.transactionType,
+          entity: {
+            matchType: "learned",
+            confidence: correction.confidence,
+          },
+          ruleProvenance: {
+            source: "correction",
+            ruleId: correction.id,
+            pattern: correction.descriptionPattern,
+            matchType: correction.matchType,
+            confidence: correction.confidence,
+          },
+          status: "matched",
+          suggestedTags: buildSuggestedTags(
+            transaction.description,
+            null,
+            parseCorrectionTags(correction.tags),
+            null,
+            knownTags,
+            correction.descriptionPattern
+          ),
+        },
+        bucket: "matched",
+      };
+    }
+
     logger.debug(
       {
         index,
