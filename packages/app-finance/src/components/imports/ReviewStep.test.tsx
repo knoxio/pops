@@ -115,9 +115,16 @@ vi.mock("./EntityCreateDialog", () => ({
   EntityCreateDialog: () => null,
 }));
 
-vi.mock("./CorrectionProposalDialog", () => ({
-  CorrectionProposalDialog: () => null,
-}));
+let lastProposalDialogProps: unknown = null;
+vi.mock("./CorrectionProposalDialog", async () => {
+  const React = await import("react");
+  return {
+    CorrectionProposalDialog: (props: unknown) => {
+      lastProposalDialogProps = props;
+      return React.createElement("div", { "data-testid": "proposal-dialog" });
+    },
+  };
+});
 
 vi.mock("./TransactionCard", async () => {
   const React = await import("react");
@@ -260,6 +267,7 @@ function makeTx(description: string, overrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  lastProposalDialogProps = null;
   mockEntitiesQuery.mockReturnValue({
     data: {
       data: [
@@ -319,6 +327,9 @@ beforeEach(() => {
 
 describe("ReviewStep — Save & Learn proposal flow", () => {
   it("generates a proposal when accepting AI suggestion", async () => {
+    mockAnalyzeCorrectionMutateAsync.mockResolvedValue({
+      data: { matchType: "prefix", pattern: "WOOLWORTHS", confidence: 0.9 },
+    });
     mockProcessedTransactions = {
       matched: [],
       uncertain: [makeTx("WOOLWORTHS 1234 SYDNEY")],
@@ -332,6 +343,18 @@ describe("ReviewStep — Save & Learn proposal flow", () => {
 
     await vi.waitFor(() => {
       expect(mockAnalyzeCorrectionMutateAsync).toHaveBeenCalled();
+    });
+    await vi.waitFor(() => {
+      expect(lastProposalDialogProps).not.toBeNull();
+      const props = lastProposalDialogProps as { signal?: unknown };
+      expect(props.signal).toEqual(
+        expect.objectContaining({
+          descriptionPattern: "WOOLWORTHS",
+          matchType: "contains", // prefix → contains mapping
+          entityId: "ent-1",
+          entityName: "Woolworths",
+        })
+      );
     });
     expect(mockToastSuccess).toHaveBeenCalledWith(
       expect.stringContaining("Proposal generated — review and approve to learn")
@@ -571,6 +594,17 @@ describe("ReviewStep — AI correction analysis", () => {
     await vi.waitFor(() => {
       expect(mockAnalyzeCorrectionMutateAsync).toHaveBeenCalled();
     });
+    await vi.waitFor(() => {
+      const props = lastProposalDialogProps as { signal?: unknown };
+      expect(props.signal).toEqual(
+        expect.objectContaining({
+          descriptionPattern: "WOOLWORTHS",
+          matchType: "contains",
+          entityId: "ent-1",
+          entityName: "Woolworths",
+        })
+      );
+    });
     expect(mockToastSuccess).toHaveBeenCalledWith(
       expect.stringContaining("Proposal generated — review and approve to learn")
     );
@@ -591,6 +625,17 @@ describe("ReviewStep — AI correction analysis", () => {
 
     await vi.waitFor(() => {
       expect(mockAnalyzeCorrectionMutateAsync).toHaveBeenCalled();
+    });
+    await vi.waitFor(() => {
+      const props = lastProposalDialogProps as { signal?: unknown };
+      expect(props.signal).toEqual(
+        expect.objectContaining({
+          descriptionPattern: "WOOLWORTHS SYDNEY",
+          matchType: "contains",
+          entityId: "ent-1",
+          entityName: "Woolworths",
+        })
+      );
     });
     expect(mockToastSuccess).toHaveBeenCalledWith(
       expect.stringContaining("Proposal generated — review and approve to learn")
