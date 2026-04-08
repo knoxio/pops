@@ -2,11 +2,16 @@
  * Transaction corrections service
  * Manages learned patterns from user edits — Drizzle ORM
  */
+import Anthropic from "@anthropic-ai/sdk";
 import { eq, gte, desc, count, sql, and } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
-import { settings, transactionCorrections, transactions } from "@pops/db-types";
+import { isNamedEnvContext } from "../../../db.js";
+import { getEnv } from "../../../env.js";
+import { aiUsage, settings, transactionCorrections, transactions } from "@pops/db-types";
 import { NotFoundError } from "../../../shared/errors.js";
 import { parseJsonStringArray } from "../../../shared/json.js";
+import { logger } from "../../../lib/logger.js";
+import { withRateLimitRetry } from "../../../lib/ai-retry.js";
 import type {
   CorrectionRow,
   CreateCorrectionInput,
@@ -30,6 +35,7 @@ import {
   ChangeSetSchema,
   ChangeSetImpactSummarySchema,
 } from "./types.js";
+import { AdaptedSignalSchema } from "./types.js";
 
 interface RejectedChangeSetFeedbackRecord {
   createdAt: string;
@@ -122,33 +128,87 @@ export function persistRejectedChangeSetFeedback(args: {
     .run();
 }
 
-function deriveFollowupSignal(args: {
-  signal: CorrectionSignal;
-  feedbackRecord: RejectedChangeSetFeedbackRecord;
-}): CorrectionSignal {
-  const feedbackLower = args.feedbackRecord.feedback.toLowerCase();
+// Shared AI retry helper lives in src/lib/ai-retry.ts
 
-  // Minimal heuristic adaptation: if feedback asks for a different match type, comply.
-  // This ensures follow-up proposals can meaningfully differ even before a richer engine exists.
-  if (feedbackLower.includes("exact") && args.signal.matchType !== "exact") {
-    return { ...args.signal, matchType: "exact" };
-  }
-  if (feedbackLower.includes("contains") && args.signal.matchType !== "contains") {
-    return { ...args.signal, matchType: "contains" };
-  }
-  if (feedbackLower.includes("regex") && args.signal.matchType !== "regex") {
-    return { ...args.signal, matchType: "regex" };
+export async function interpretRejectionFeedback(
+  originalSignal: CorrectionSignal,
+  rejectedChangeSet: ChangeSet,
+  feedback: string
+): Promise<CorrectionSignal> {
+  // Named envs are isolated test databases — skip calling external AI.
+  if (isNamedEnvContext()) {
+    return originalSignal;
   }
 
-  // Common broad/narrow nudge.
-  if (feedbackLower.includes("too broad") && args.signal.matchType === "contains") {
-    return { ...args.signal, matchType: "exact" };
-  }
-  if (feedbackLower.includes("too narrow") && args.signal.matchType === "exact") {
-    return { ...args.signal, matchType: "contains" };
+  const apiKey = getEnv("CLAUDE_API_KEY");
+  if (!apiKey) {
+    return originalSignal;
   }
 
-  return args.signal;
+  const sanitizedFeedback = feedback.trim().slice(0, 500);
+
+  // maxRetries=0: SDK-level retries disabled — we handle retries ourselves via withRateLimitRetry
+  const client = new Anthropic({ apiKey, maxRetries: 0 });
+
+  try {
+    const response = await withRateLimitRetry(
+      () =>
+        client.messages.create({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 250,
+          messages: [
+            {
+              role: "user",
+              content: `You are improving a transaction correction rule proposal.\n\nGiven:\n- originalSignal (the user's intended correction rule)\n- rejectedChangeSet (the proposal that was rejected)\n- feedback (free text)\n\nReturn an adapted signal that better matches the user's feedback.\n\nRules:\n- Reply in JSON only as: {"adaptedSignal": { ... }}\n- adaptedSignal MUST be a full signal object with keys: descriptionPattern, matchType, entityId, entityName, location, tags, transactionType.\n- Keep descriptionPattern semantically the same unless feedback explicitly requests changing it.\n- Prefer changing matchType (exact/contains/regex) when feedback indicates specificity.\n\noriginalSignal: ${JSON.stringify(originalSignal)}\nrejectedChangeSet: ${JSON.stringify(rejectedChangeSet)}\nfeedback: ${JSON.stringify(sanitizedFeedback)}\n`,
+            },
+          ],
+        }),
+      "corrections.rejection.interpret",
+      { logger, logPrefix: "[AI]" }
+    );
+
+    const text = response.content[0]?.type === "text" ? response.content[0].text : null;
+    if (!text) return originalSignal;
+
+    const cleanedText = text
+      .trim()
+      .replace(/^```(?:json)?\s*\n?/gm, "")
+      .replace(/\n?```\s*$/gm, "");
+
+    const parsed = JSON.parse(cleanedText) as unknown;
+    if (!parsed || typeof parsed !== "object") return originalSignal;
+    const adaptedUnknown = (parsed as Record<string, unknown>)["adaptedSignal"];
+
+    const adaptedResult = AdaptedSignalSchema.safeParse(adaptedUnknown);
+    if (!adaptedResult.success) return originalSignal;
+
+    const inputTokens = response.usage.input_tokens;
+    const outputTokens = response.usage.output_tokens;
+    const costUsd = (inputTokens / 1_000_000) * 1.0 + (outputTokens / 1_000_000) * 5.0;
+
+    getDrizzle()
+      .insert(aiUsage)
+      .values({
+        description: sanitizedFeedback,
+        entityName: null,
+        category: "corrections.rejection_interpretation",
+        inputTokens,
+        outputTokens,
+        costUsd,
+        cached: 0,
+        importBatchId: null,
+        createdAt: new Date().toISOString(),
+      })
+      .run();
+
+    return adaptedResult.data;
+  } catch (error) {
+    logger.error(
+      { error: error instanceof Error ? error.message : String(error) },
+      "[AI] Rejection feedback interpretation failed"
+    );
+    return originalSignal;
+  }
 }
 
 export function summarizeMatch(match: CorrectionMatchResult | null): CorrectionMatchSummary {
@@ -426,21 +486,28 @@ function computeImpactCounts(items: ChangeSetImpactItem[]): ChangeSetImpactCount
  * Preview is bounded by a DB prefilter on transaction descriptions, and includes
  * transfer-only outcomes (type-only diffs) as affected items.
  */
-export function proposeChangeSetFromCorrectionSignal(args: {
+export async function proposeChangeSetFromCorrectionSignal(args: {
   signal: CorrectionSignal;
   minConfidence: number;
   maxPreviewItems: number;
-}): ChangeSetProposal {
+}): Promise<ChangeSetProposal> {
   const db = getDrizzle();
 
-  const normalizedPattern = normalizeDescription(args.signal.descriptionPattern);
+  const normalizedPatternForLookup = normalizeDescription(args.signal.descriptionPattern);
   const latestFeedback = loadLatestRejectedFeedback({
     matchType: args.signal.matchType,
-    normalizedPattern,
+    normalizedPattern: normalizedPatternForLookup,
   });
+
   const effectiveSignal = latestFeedback
-    ? deriveFollowupSignal({ signal: args.signal, feedbackRecord: latestFeedback })
+    ? await interpretRejectionFeedback(
+        args.signal,
+        latestFeedback.changeSet,
+        latestFeedback.feedback
+      )
     : args.signal;
+
+  const normalizedPattern = normalizeDescription(effectiveSignal.descriptionPattern);
   const matchType = effectiveSignal.matchType;
 
   const existing = db

@@ -2,6 +2,22 @@
  * Corrections module tests — CRUD, pattern matching, and tags.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+
+const anthropicMocks = vi.hoisted(() => ({
+  createMessage: vi.fn(),
+}));
+
+vi.mock("@anthropic-ai/sdk", () => {
+  class AnthropicMock {
+    messages = {
+      create: anthropicMocks.createMessage,
+    };
+    constructor(_opts: unknown) {}
+  }
+
+  return { default: AnthropicMock };
+});
+
 import { setupTestContext, seedEntity, seedTransaction } from "../../../shared/test-utils.js";
 import { logger } from "../../../lib/logger.js";
 import * as service from "./service.js";
@@ -16,9 +32,12 @@ describe("corrections", () => {
     const result = ctx.setup();
     caller = result.caller;
     db = result.db;
+    anthropicMocks.createMessage.mockReset();
+    process.env["CLAUDE_API_KEY"] = "test-key";
   });
 
   afterEach(() => {
+    delete process.env["CLAUDE_API_KEY"];
     ctx.teardown();
   });
 
@@ -632,6 +651,26 @@ describe("corrections", () => {
         },
       });
 
+      anthropicMocks.createMessage.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              adaptedSignal: {
+                descriptionPattern: "WOOLWORTHS",
+                matchType: "exact",
+                entityId: null,
+                entityName: null,
+                location: null,
+                tags: [],
+                transactionType: null,
+              },
+            }),
+          },
+        ],
+        usage: { input_tokens: 10, output_tokens: 10 },
+      });
+
       const result = await caller.core.corrections.proposeChangeSet({
         signal: { descriptionPattern: "WOOLWORTHS", matchType: "contains", tags: [] },
         minConfidence: 0,
@@ -642,11 +681,123 @@ describe("corrections", () => {
       expect(result.rationale).toContain("Follow-up");
       expect(result.rationale).toContain("Too broad, should be exact match");
       expect(result.changeSet.reason).toContain("Too broad, should be exact match");
-      // Heuristic adaptation: feedback requested exact match.
       expect(result.changeSet.ops[0]?.op).toBe("add");
       if (!result.changeSet.ops[0] || result.changeSet.ops[0].op !== "add")
         throw new Error("Expected add op");
       expect(result.changeSet.ops[0].data.matchType).toBe("exact");
+      expect(anthropicMocks.createMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it("falls back to original signal when Haiku returns invalid JSON", async () => {
+      await caller.core.corrections.rejectChangeSet({
+        signal: { descriptionPattern: "WOOLWORTHS", matchType: "contains", tags: [] },
+        changeSet: {
+          source: "correction-signal",
+          reason: "Initial proposal",
+          ops: [
+            {
+              op: "add",
+              data: { descriptionPattern: "WOOLWORTHS", matchType: "contains", tags: [] },
+            },
+          ],
+        },
+        feedback: "Only match the full description",
+      });
+
+      anthropicMocks.createMessage.mockResolvedValue({
+        content: [{ type: "text", text: "not json" }],
+        usage: { input_tokens: 10, output_tokens: 10 },
+      });
+
+      const result = await caller.core.corrections.proposeChangeSet({
+        signal: { descriptionPattern: "WOOLWORTHS", matchType: "contains", tags: [] },
+        minConfidence: 0,
+        maxPreviewItems: 10,
+      });
+
+      expect(result.changeSet.ops[0]?.op).toBe("add");
+      if (!result.changeSet.ops[0] || result.changeSet.ops[0].op !== "add")
+        throw new Error("Expected add op");
+      expect(result.changeSet.ops[0].data.matchType).toBe("contains");
+    });
+
+    it("falls back to original signal when Haiku returns valid JSON but invalid schema", async () => {
+      await caller.core.corrections.rejectChangeSet({
+        signal: { descriptionPattern: "WOOLWORTHS", matchType: "contains", tags: [] },
+        changeSet: {
+          source: "correction-signal",
+          reason: "Initial proposal",
+          ops: [
+            {
+              op: "add",
+              data: { descriptionPattern: "WOOLWORTHS", matchType: "contains", tags: [] },
+            },
+          ],
+        },
+        feedback: "Use a different match type",
+      });
+
+      anthropicMocks.createMessage.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              adaptedSignal: {
+                descriptionPattern: "WOOLWORTHS",
+                matchType: "bogus",
+                entityId: null,
+                entityName: null,
+                location: null,
+                tags: [],
+                transactionType: null,
+              },
+            }),
+          },
+        ],
+        usage: { input_tokens: 10, output_tokens: 10 },
+      });
+
+      const result = await caller.core.corrections.proposeChangeSet({
+        signal: { descriptionPattern: "WOOLWORTHS", matchType: "contains", tags: [] },
+        minConfidence: 0,
+        maxPreviewItems: 10,
+      });
+
+      expect(result.changeSet.ops[0]?.op).toBe("add");
+      if (!result.changeSet.ops[0] || result.changeSet.ops[0].op !== "add")
+        throw new Error("Expected add op");
+      expect(result.changeSet.ops[0].data.matchType).toBe("contains");
+    });
+
+    it("falls back to original signal when AI is unavailable", async () => {
+      await caller.core.corrections.rejectChangeSet({
+        signal: { descriptionPattern: "WOOLWORTHS", matchType: "contains", tags: [] },
+        changeSet: {
+          source: "correction-signal",
+          reason: "Initial proposal",
+          ops: [
+            {
+              op: "add",
+              data: { descriptionPattern: "WOOLWORTHS", matchType: "contains", tags: [] },
+            },
+          ],
+        },
+        feedback: "Only match the full description",
+      });
+
+      delete process.env["CLAUDE_API_KEY"];
+
+      const result = await caller.core.corrections.proposeChangeSet({
+        signal: { descriptionPattern: "WOOLWORTHS", matchType: "contains", tags: [] },
+        minConfidence: 0,
+        maxPreviewItems: 10,
+      });
+
+      expect(result.changeSet.ops[0]?.op).toBe("add");
+      if (!result.changeSet.ops[0] || result.changeSet.ops[0].op !== "add")
+        throw new Error("Expected add op");
+      expect(result.changeSet.ops[0].data.matchType).toBe("contains");
+      expect(anthropicMocks.createMessage).not.toHaveBeenCalled();
     });
 
     it("overwrites rejection feedback for the same signal (latest wins)", async () => {
