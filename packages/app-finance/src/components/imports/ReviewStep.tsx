@@ -256,7 +256,7 @@ export function ReviewStep() {
           tags: [],
         });
         setProposalOpen(true);
-        toast.success("Proposal generated — review and approve to learn");
+        toast.info("Proposal generated (fallback) — review and approve to learn");
       }
     },
     [analyzeCorrectionMutation, computeFallbackPattern]
@@ -273,10 +273,6 @@ export function ReviewStep() {
     [generateProposal]
   );
 
-  /**
-   * Count how many remaining uncertain/failed transactions would match a pattern.
-   * Excludes the transaction being accepted (identified by checksum).
-   */
   /**
    * Accept AI suggestion for a single transaction.
    * Always generates a bundled Correction Proposal (ChangeSet) for the user to approve/reject.

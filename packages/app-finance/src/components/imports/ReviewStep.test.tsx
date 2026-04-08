@@ -659,8 +659,19 @@ describe("ReviewStep — AI correction analysis", () => {
       expect(mockAnalyzeCorrectionMutateAsync).toHaveBeenCalled();
     });
     await vi.waitFor(() => {
-      expect(mockToastSuccess).toHaveBeenCalledWith(
-        expect.stringContaining("Proposal generated — review and approve to learn")
+      const props = lastProposalDialogProps as { signal?: unknown };
+      expect(props.signal).toEqual(
+        expect.objectContaining({
+          descriptionPattern: "WOOLWORTHS SYDNEY",
+          matchType: "contains",
+          entityId: "ent-1",
+          entityName: "Woolworths",
+        })
+      );
+    });
+    await vi.waitFor(() => {
+      expect(mockToastInfo).toHaveBeenCalledWith(
+        expect.stringContaining("Proposal generated (fallback) — review and approve to learn")
       );
     });
   });
