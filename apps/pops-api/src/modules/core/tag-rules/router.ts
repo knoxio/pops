@@ -2,6 +2,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../../../trpc.js";
 import { NotFoundError } from "../../../shared/errors.js";
+import { logger } from "../../../lib/logger.js";
 import * as service from "./service.js";
 import { TagRuleChangeSetSchema } from "./types.js";
 
@@ -24,6 +25,7 @@ export const tagRulesRouter = router({
             z.object({
               transactionId: z.string().min(1),
               description: z.string().min(1),
+              entityId: z.string().nullable().optional(),
               userTags: z.array(z.string()).optional(),
             })
           )
@@ -47,6 +49,7 @@ export const tagRulesRouter = router({
           z.object({
             transactionId: z.string().min(1),
             description: z.string().min(1),
+            entityId: z.string().nullable().optional(),
             userTags: z.array(z.string()).optional(),
           })
         ),
@@ -69,6 +72,11 @@ export const tagRulesRouter = router({
       })
     )
     .mutation(({ input }) => {
+      logger.info(
+        { opCount: input.changeSet.ops.length, acceptedNewTags: input.acceptedNewTags.length },
+        "[TagRules] Apply ChangeSet"
+      );
+
       // Persist newly-accepted tags into vocabulary before applying rules.
       for (const t of input.acceptedNewTags) {
         if (t.trim()) service.upsertVocabularyTag(t.trim(), "user");
@@ -92,7 +100,11 @@ export const tagRulesRouter = router({
         feedback: z.string().min(1),
       })
     )
-    .mutation(() => {
+    .mutation(({ input }) => {
+      logger.info(
+        { opCount: input.changeSet.ops.length, feedbackLength: input.feedback.length },
+        "[TagRules] Reject ChangeSet"
+      );
       // v1: audit persistence can be added later; ensure feedback required and no changes are applied.
       return { message: "Tag rule ChangeSet rejected" };
     }),

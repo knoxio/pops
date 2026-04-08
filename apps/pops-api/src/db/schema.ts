@@ -16,6 +16,7 @@ import type BetterSqlite3 from "better-sqlite3";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { TAG_VOCABULARY_V1 } from "../shared/tag-vocabulary.js";
 
 /** All migration filenames that this schema already incorporates. */
 const INCLUDED_MIGRATIONS = [
@@ -549,47 +550,12 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
 
   // Seed tag vocabulary (v1) for brand-new databases.
   // Use INSERT OR IGNORE so repeated init is harmless.
-  db.exec(`
-    INSERT OR IGNORE INTO tag_vocabulary (tag, source, is_active) VALUES
-      ('Income', 'seed', 1),
-      ('Transfer', 'seed', 1),
-      ('Groceries', 'seed', 1),
-      ('Eat Out', 'seed', 1),
-      ('Coffee', 'seed', 1),
-      ('Transport', 'seed', 1),
-      ('Fuel', 'seed', 1),
-      ('Charging', 'seed', 1),
-      ('Novated Lease', 'seed', 1),
-      ('Parking', 'seed', 1),
-      ('Tolls', 'seed', 1),
-      ('Public Transport', 'seed', 1),
-      ('Shopping', 'seed', 1),
-      ('Home', 'seed', 1),
-      ('Online', 'seed', 1),
-      ('Utilities', 'seed', 1),
-      ('Internet', 'seed', 1),
-      ('Mobile', 'seed', 1),
-      ('Subscriptions', 'seed', 1),
-      ('Entertainment', 'seed', 1),
-      ('Pub', 'seed', 1),
-      ('Bar', 'seed', 1),
-      ('Club', 'seed', 1),
-      ('Restaurant', 'seed', 1),
-      ('Health', 'seed', 1),
-      ('Pharmacy', 'seed', 1),
-      ('Insurance', 'seed', 1),
-      ('Rent', 'seed', 1),
-      ('Mortgage', 'seed', 1),
-      ('Travel', 'seed', 1),
-      ('Education', 'seed', 1),
-      ('Gifts', 'seed', 1),
-      ('Donations', 'seed', 1),
-      ('Fees', 'seed', 1),
-      ('Interest', 'seed', 1),
-      ('Taxes', 'seed', 1),
-      ('Deductible', 'seed', 1),
-      ('Unknown', 'seed', 1);
-  `);
+  const insertTag = db.prepare(
+    "INSERT OR IGNORE INTO tag_vocabulary (tag, source, is_active) VALUES (?, 'seed', 1)"
+  );
+  for (const tag of TAG_VOCABULARY_V1) {
+    insertTag.run(tag);
+  }
 
   // Pre-mark all migrations this schema already incorporates so that
   // runMigrations() treats them as already applied.

@@ -83,7 +83,7 @@ function applyOp(tx: ReturnType<typeof getDrizzle>, op: TagRuleChangeSetOp): voi
 
     tx.update(transactionTagRules)
       .set({
-        entityId: op.data.entityId ?? undefined,
+        entityId: op.data.entityId !== undefined ? op.data.entityId : undefined,
         tags: op.data.tags ? JSON.stringify(op.data.tags) : undefined,
         confidence: op.data.confidence ?? undefined,
         isActive: op.data.isActive ?? undefined,
@@ -114,6 +114,7 @@ function applyOp(tx: ReturnType<typeof getDrizzle>, op: TagRuleChangeSetOp): voi
 export interface PreviewInputTransaction {
   transactionId: string;
   description: string;
+  entityId?: string | null;
   /** Optional: user-entered tags in current import; if present, rule suggestions must not override. */
   userTags?: string[];
 }
@@ -132,7 +133,7 @@ export function previewTagRuleChangeSet(args: {
   const affected: TagRuleImpactItem[] = [];
   for (const t of txs) {
     const before: TagSuggestion[] = [];
-    const after = suggestFromRules(t.description, proposedRules, vocabulary);
+    const after = suggestFromRules(t.description, t.entityId ?? null, proposedRules, vocabulary);
 
     if (t.userTags && t.userTags.length > 0) {
       // Must not overwrite user-entered tags; preview still shows suggestions, but does not
@@ -168,11 +169,13 @@ export function previewTagRuleChangeSet(args: {
 function materializeProposedRules(changeSet: TagRuleChangeSet): Array<{
   descriptionPattern: string;
   matchType: "exact" | "contains" | "regex";
+  entityId: string | null;
   tags: string[];
 }> {
   const rules: Array<{
     descriptionPattern: string;
     matchType: "exact" | "contains" | "regex";
+    entityId: string | null;
     tags: string[];
   }> = [];
   for (const op of changeSet.ops) {
@@ -180,6 +183,7 @@ function materializeProposedRules(changeSet: TagRuleChangeSet): Array<{
       rules.push({
         descriptionPattern: op.data.descriptionPattern,
         matchType: op.data.matchType,
+        entityId: op.data.entityId ?? null,
         tags: op.data.tags,
       });
     }
@@ -190,9 +194,11 @@ function materializeProposedRules(changeSet: TagRuleChangeSet): Array<{
 
 function suggestFromRules(
   description: string,
+  entityId: string | null,
   rules: Array<{
     descriptionPattern: string;
     matchType: "exact" | "contains" | "regex";
+    entityId: string | null;
     tags: string[];
   }>,
   vocabulary: Set<string>
@@ -202,6 +208,7 @@ function suggestFromRules(
   const out: TagSuggestion[] = [];
 
   for (const rule of rules) {
+    if (rule.entityId && rule.entityId !== entityId) continue;
     const pattern = rule.descriptionPattern.toUpperCase();
     const matches =
       rule.matchType === "exact"
@@ -210,7 +217,7 @@ function suggestFromRules(
           ? normalized.includes(pattern)
           : (() => {
               try {
-                return new RegExp(rule.descriptionPattern).test(normalized);
+                return new RegExp(rule.descriptionPattern, "i").test(description);
               } catch {
                 return false;
               }
