@@ -1,8 +1,9 @@
 /**
  * Corrections module tests — CRUD, pattern matching, and tags.
  */
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { setupTestContext, seedEntity, seedTransaction } from "../../../shared/test-utils.js";
+import { logger } from "../../../lib/logger.js";
 
 const ctx = setupTestContext();
 
@@ -209,35 +210,55 @@ describe("corrections", () => {
 
   describe("previewChangeSet", () => {
     it("previews added rule impact deterministically", async () => {
-      const result = await caller.core.corrections.previewChangeSet({
-        changeSet: {
-          ops: [
-            {
-              op: "add",
-              data: {
-                descriptionPattern: "WOOLWORTHS",
-                matchType: "contains",
-                entityId: null,
-                entityName: "Woolworths",
-                tags: [],
-                transactionType: null,
-                confidence: 0.95,
+      const infoSpy = vi.spyOn(logger, "info").mockImplementation(() => {});
+      try {
+        const result = await caller.core.corrections.previewChangeSet({
+          changeSet: {
+            ops: [
+              {
+                op: "add",
+                data: {
+                  descriptionPattern: "WOOLWORTHS",
+                  matchType: "contains",
+                  entityId: null,
+                  entityName: "Woolworths",
+                  tags: [],
+                  transactionType: null,
+                  confidence: 0.95,
+                },
               },
-            },
+            ],
+          },
+          transactions: [
+            { description: "WOOLWORTHS SUPERMARKETS AU" },
+            { description: "TOTALLY UNKNOWN" },
           ],
-        },
-        transactions: [
-          { description: "WOOLWORTHS SUPERMARKETS AU" },
-          { description: "TOTALLY UNKNOWN" },
-        ],
-        minConfidence: 0.7,
-      });
+          minConfidence: 0.7,
+        });
 
-      expect(result.summary.total).toBe(2);
-      expect(result.summary.newMatches).toBe(1);
-      expect(result.diffs[0]?.after.matched).toBe(true);
-      expect(result.diffs[0]?.after.ruleId).toMatch(/^temp:/);
-      expect(result.diffs[1]?.after.matched).toBe(false);
+        expect(result.summary.total).toBe(2);
+        expect(result.summary.newMatches).toBe(1);
+        expect(result.diffs[0]?.after.matched).toBe(true);
+        expect(result.diffs[0]?.after.ruleId).toMatch(/^temp:/);
+        expect(result.diffs[1]?.after.matched).toBe(false);
+
+        expect(infoSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            event: "corrections.proposal.preview",
+            userEmail: "test@example.com",
+            opCount: 1,
+            ops: expect.any(Array),
+            transactionCount: 2,
+            minConfidence: 0.7,
+            impactSummary: expect.objectContaining({
+              total: 2,
+              newMatches: 1,
+            }),
+          })
+        );
+      } finally {
+        infoSpy.mockRestore();
+      }
     });
 
     it("previews disable removes matches", async () => {
@@ -258,65 +279,189 @@ describe("corrections", () => {
       expect(result.diffs[0]?.before.matched).toBe(true);
       expect(result.diffs[0]?.after.matched).toBe(false);
     });
+
+    it("logs error when ChangeSet references missing rule id", async () => {
+      const errorSpy = vi.spyOn(logger, "error").mockImplementation(() => {});
+      try {
+        await expect(
+          caller.core.corrections.previewChangeSet({
+            changeSet: { ops: [{ op: "disable", id: "does-not-exist" }] },
+            transactions: [{ description: "NETFLIX" }],
+            minConfidence: 0.7,
+          })
+        ).rejects.toThrow();
+
+        expect(errorSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            event: "corrections.proposal.preview",
+            userEmail: "test@example.com",
+            opCount: 1,
+            ops: expect.any(Array),
+            err: expect.anything(),
+          })
+        );
+      } finally {
+        errorSpy.mockRestore();
+      }
+    });
   });
 
   describe("applyChangeSet", () => {
     it("applies operations atomically (disable + add)", async () => {
-      const created = await caller.core.corrections.createOrUpdate({
-        descriptionPattern: "NETFLIX",
-        matchType: "exact",
-        tags: [],
-      });
-      await caller.core.corrections.update({ id: created.data.id, data: { confidence: 0.95 } });
+      const infoSpy = vi.spyOn(logger, "info").mockImplementation(() => {});
+      try {
+        const created = await caller.core.corrections.createOrUpdate({
+          descriptionPattern: "NETFLIX",
+          matchType: "exact",
+          tags: [],
+        });
+        await caller.core.corrections.update({ id: created.data.id, data: { confidence: 0.95 } });
 
-      const result = await caller.core.corrections.applyChangeSet({
-        changeSet: {
-          ops: [
-            { op: "disable", id: created.data.id },
-            {
-              op: "add",
-              data: {
-                descriptionPattern: "SPOTIFY",
-                matchType: "exact",
-                tags: [],
-                confidence: 0.95,
+        const result = await caller.core.corrections.applyChangeSet({
+          changeSet: {
+            ops: [
+              { op: "disable", id: created.data.id },
+              {
+                op: "add",
+                data: {
+                  descriptionPattern: "SPOTIFY",
+                  matchType: "exact",
+                  tags: [],
+                  confidence: 0.95,
+                },
               },
-            },
-          ],
-        },
-      });
+            ],
+          },
+        });
 
-      expect(
-        result.data.some((r) => r.descriptionPattern === "NETFLIX" && r.isActive === false)
-      ).toBe(true);
-      expect(result.data.some((r) => r.descriptionPattern === "SPOTIFY")).toBe(true);
+        expect(
+          result.data.some((r) => r.descriptionPattern === "NETFLIX" && r.isActive === false)
+        ).toBe(true);
+        expect(result.data.some((r) => r.descriptionPattern === "SPOTIFY")).toBe(true);
+
+        expect(infoSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            event: "corrections.proposal.apply",
+            userEmail: "test@example.com",
+            opCount: 2,
+            ops: expect.any(Array),
+            outcome: "approved",
+            resultRuleCount: expect.any(Number),
+          })
+        );
+      } finally {
+        infoSpy.mockRestore();
+      }
     });
 
     it("rolls back on invalid edit target", async () => {
-      // seed a known correction
-      await caller.core.corrections.createOrUpdate({
-        descriptionPattern: "COLES",
-        matchType: "exact",
-        tags: [],
-      });
+      const errorSpy = vi.spyOn(logger, "error").mockImplementation(() => {});
+      try {
+        // seed a known correction
+        await caller.core.corrections.createOrUpdate({
+          descriptionPattern: "COLES",
+          matchType: "exact",
+          tags: [],
+        });
 
-      await expect(
-        caller.core.corrections.applyChangeSet({
+        await expect(
+          caller.core.corrections.applyChangeSet({
+            changeSet: {
+              ops: [
+                {
+                  op: "add",
+                  data: { descriptionPattern: "WOOLWORTHS", matchType: "exact", tags: [] },
+                },
+                { op: "edit", id: "does-not-exist", data: { confidence: 0.9 } },
+              ],
+            },
+          })
+        ).rejects.toThrow();
+
+        // Ensure the add op was not committed due to rollback.
+        const list = await caller.core.corrections.list({});
+        expect(list.data.some((r) => r.descriptionPattern === "WOOLWORTHS")).toBe(false);
+
+        expect(errorSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            event: "corrections.proposal.apply",
+            userEmail: "test@example.com",
+            opCount: 2,
+            ops: expect.any(Array),
+            outcome: "apply_failed",
+            err: expect.anything(),
+          })
+        );
+      } finally {
+        errorSpy.mockRestore();
+      }
+    });
+  });
+
+  describe("rejectChangeSet", () => {
+    it("logs rejection with feedback and returns success message", async () => {
+      const infoSpy = vi.spyOn(logger, "info").mockImplementation(() => {});
+      try {
+        const result = await caller.core.corrections.rejectChangeSet({
           changeSet: {
             ops: [
               {
                 op: "add",
-                data: { descriptionPattern: "WOOLWORTHS", matchType: "exact", tags: [] },
+                data: {
+                  descriptionPattern: "WOOLWORTHS",
+                  matchType: "contains",
+                  tags: [],
+                  confidence: 0.95,
+                },
               },
-              { op: "edit", id: "does-not-exist", data: { confidence: 0.9 } },
             ],
           },
+          feedback: "Too broad — needs to be more specific",
+          impactSummary: {
+            total: 2,
+            newMatches: 1,
+            removedMatches: 0,
+            statusChanges: 0,
+            netMatchedDelta: 1,
+          },
+        });
+
+        expect(result.message).toBe("ChangeSet rejected");
+        expect(infoSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            event: "corrections.proposal.reject",
+            userEmail: "test@example.com",
+            opCount: 1,
+            ops: expect.any(Array),
+            outcome: "rejected",
+            feedback: "Too broad — needs to be more specific",
+            impactSummary: expect.objectContaining({ total: 2 }),
+          })
+        );
+      } finally {
+        infoSpy.mockRestore();
+      }
+    });
+
+    it("rejects empty feedback", async () => {
+      await expect(
+        caller.core.corrections.rejectChangeSet({
+          changeSet: {
+            ops: [
+              {
+                op: "add",
+                data: {
+                  descriptionPattern: "WOOLWORTHS",
+                  matchType: "contains",
+                  tags: [],
+                  confidence: 0.95,
+                },
+              },
+            ],
+          },
+          feedback: "",
         })
       ).rejects.toThrow();
-
-      // Ensure the add op was not committed due to rollback.
-      const list = await caller.core.corrections.list({});
-      expect(list.data.some((r) => r.descriptionPattern === "WOOLWORTHS")).toBe(false);
     });
   });
 

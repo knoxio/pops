@@ -5,6 +5,7 @@ import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { router, protectedProcedure } from "../../../trpc.js";
 import { paginationMeta } from "../../../shared/pagination.js";
+import { logger } from "../../../lib/logger.js";
 import {
   CreateCorrectionSchema,
   UpdateCorrectionSchema,
@@ -200,19 +201,38 @@ export const correctionsRouter = router({
         minConfidence: z.number().min(0).max(1).default(0.7),
       })
     )
-    .query(({ input }) => {
+    .query(({ input, ctx }) => {
       // We need the full current rule set for deterministic previews.
       // We fetch in a single page for simplicity; if this ever grows beyond the limit,
       // switch this to a dedicated "list all corrections" service method with pagination.
       const dbRules = service.listCorrections(undefined, PREVIEW_RULES_FETCH_LIMIT, 0).rows;
       try {
-        return service.previewChangeSetImpact({
+        const result = service.previewChangeSetImpact({
           rules: dbRules,
           changeSet: input.changeSet,
           transactions: input.transactions,
           minConfidence: input.minConfidence,
         });
+        logger.info({
+          event: "corrections.proposal.preview",
+          userEmail: ctx.user.email,
+          opCount: input.changeSet.ops.length,
+          ops: input.changeSet.ops,
+          transactionCount: input.transactions.length,
+          minConfidence: input.minConfidence,
+          impactSummary: result.summary,
+        });
+        return result;
       } catch (err) {
+        logger.error({
+          event: "corrections.proposal.preview",
+          userEmail: ctx.user.email,
+          opCount: input.changeSet.ops.length,
+          ops: input.changeSet.ops,
+          transactionCount: input.transactions.length,
+          minConfidence: input.minConfidence,
+          err,
+        });
         if (err instanceof NotFoundError) {
           throw new TRPCError({ code: "NOT_FOUND", message: err.message });
         }
@@ -225,11 +245,27 @@ export const correctionsRouter = router({
    */
   applyChangeSet: protectedProcedure
     .input(z.object({ changeSet: ChangeSetSchema }))
-    .mutation(({ input }) => {
+    .mutation(({ input, ctx }) => {
       try {
         const rows = service.applyChangeSet(input.changeSet);
+        logger.info({
+          event: "corrections.proposal.apply",
+          userEmail: ctx.user.email,
+          opCount: input.changeSet.ops.length,
+          ops: input.changeSet.ops,
+          outcome: "approved",
+          resultRuleCount: rows.length,
+        });
         return { data: rows.map(toCorrection), message: "ChangeSet applied" };
       } catch (err) {
+        logger.error({
+          event: "corrections.proposal.apply",
+          userEmail: ctx.user.email,
+          opCount: input.changeSet.ops.length,
+          ops: input.changeSet.ops,
+          outcome: "apply_failed",
+          err,
+        });
         if (err instanceof NotFoundError) {
           throw new TRPCError({ code: "NOT_FOUND", message: err.message });
         }
@@ -270,5 +306,38 @@ export const correctionsRouter = router({
         }
         throw err;
       }
+    }),
+
+  /**
+   * Reject a proposed ChangeSet (audit only; applies no rule changes).
+   * This provides traceability for rejection feedback even before the full proposal engine exists.
+   */
+  rejectChangeSet: protectedProcedure
+    .input(
+      z.object({
+        changeSet: ChangeSetSchema,
+        feedback: z.string().min(1),
+        impactSummary: z
+          .object({
+            total: z.number().int().nonnegative(),
+            newMatches: z.number().int().nonnegative(),
+            removedMatches: z.number().int().nonnegative(),
+            statusChanges: z.number().int().nonnegative(),
+            netMatchedDelta: z.number().int(),
+          })
+          .optional(),
+      })
+    )
+    .mutation(({ input, ctx }) => {
+      logger.info({
+        event: "corrections.proposal.reject",
+        userEmail: ctx.user.email,
+        opCount: input.changeSet.ops.length,
+        ops: input.changeSet.ops,
+        outcome: "rejected",
+        feedback: input.feedback,
+        impactSummary: input.impactSummary ?? null,
+      });
+      return { message: "ChangeSet rejected" };
     }),
 });

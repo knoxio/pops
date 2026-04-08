@@ -1,7 +1,7 @@
 # PRD-028: Correction Proposal Engine
 
 > Epic: [03 — Corrections](../../epics/03-corrections.md)
-> Status: Not started
+> Status: Partial
 
 ## Overview
 
@@ -113,7 +113,7 @@ On rejection:
 | 02 | [us-02-generate-proposal](us-02-generate-proposal.md) | Generate bundled ChangeSet proposal from a correction signal | Not started | Blocked by us-01 |
 | 03 | [us-03-approve-apply](us-03-approve-apply.md) | Approve and apply ChangeSet atomically, then re-evaluate remaining transactions | Not started | Blocked by us-01 |
 | 04 | [us-04-reject-feedback](us-04-reject-feedback.md) | Reject with required feedback, produce follow-up proposal that incorporates feedback | Not started | Blocked by us-01 |
-| 05 | [us-05-audit-trail](us-05-audit-trail.md) | Record proposal attempts and outcomes for traceability | Not started | Blocked by us-01 |
+| 05 | [us-05-audit-trail](us-05-audit-trail.md) | Record proposal attempts and outcomes for traceability | Done | Blocked by us-01 |
 
 ## Verification
 
