@@ -975,4 +975,247 @@ describe("corrections", () => {
       expect(result.data.entityName).toBe("Woolworths");
     });
   });
+
+  describe("reviseChangeSet", () => {
+    const baseSignal = {
+      descriptionPattern: "WOOLWORTHS",
+      matchType: "contains" as const,
+      tags: [] as string[],
+    };
+
+    const baseChangeSet = {
+      source: "correction-signal",
+      reason: "Initial proposal",
+      ops: [
+        {
+          op: "add" as const,
+          data: {
+            descriptionPattern: "WOOLWORTHS",
+            matchType: "contains" as const,
+            tags: [] as string[],
+          },
+        },
+      ],
+    };
+
+    it("returns a revised ChangeSet and rationale from a valid AI response (service level)", async () => {
+      anthropicMocks.createMessage.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              changeSet: {
+                source: "ai-revise",
+                reason: "Tighten pattern per user instruction",
+                ops: [
+                  {
+                    op: "add",
+                    data: {
+                      descriptionPattern: "WOOLWORTHS METRO",
+                      matchType: "exact",
+                      tags: [],
+                    },
+                  },
+                ],
+              },
+              rationale: "Narrowed pattern to match only Metro stores",
+            }),
+          },
+        ],
+        usage: { input_tokens: 120, output_tokens: 60 },
+      });
+
+      const result = await service.reviseChangeSet({
+        signal: baseSignal,
+        currentChangeSet: baseChangeSet,
+        instruction: "narrow it to WOOLWORTHS METRO only",
+        triggeringTransactions: [
+          { checksum: "abc", description: "WOOLWORTHS METRO 1234 SYDNEY" },
+          { checksum: "def", description: "WOOLWORTHS METRO 5678 BONDI" },
+        ],
+      });
+
+      expect(result.changeSet.ops).toHaveLength(1);
+      const firstOp = result.changeSet.ops[0];
+      if (!firstOp || firstOp.op !== "add") throw new Error("Expected add op");
+      expect(firstOp.data.descriptionPattern).toBe("WOOLWORTHS METRO");
+      expect(firstOp.data.matchType).toBe("exact");
+      expect(result.rationale).toBe("Narrowed pattern to match only Metro stores");
+      expect(anthropicMocks.createMessage).toHaveBeenCalledTimes(1);
+    });
+
+    it("includes the current ChangeSet and the instruction in the prompt", async () => {
+      anthropicMocks.createMessage.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              changeSet: baseChangeSet,
+              rationale: "No change",
+            }),
+          },
+        ],
+        usage: { input_tokens: 10, output_tokens: 10 },
+      });
+
+      const instruction = "split location into its own rule";
+      await service.reviseChangeSet({
+        signal: baseSignal,
+        currentChangeSet: baseChangeSet,
+        instruction,
+        triggeringTransactions: [{ description: "WOOLWORTHS 1234 SYDNEY" }],
+      });
+
+      const callArgs = anthropicMocks.createMessage.mock.calls[0]?.[0] as
+        | { messages: Array<{ content: string }> }
+        | undefined;
+      const promptContent = callArgs?.messages[0]?.content ?? "";
+      expect(promptContent).toContain("WOOLWORTHS 1234 SYDNEY");
+      expect(promptContent).toContain("currentChangeSet");
+      expect(promptContent).toContain('"op": "add"');
+      expect(promptContent).toContain("split location into its own rule");
+    });
+
+    it("throws when the LLM returns non-JSON text", async () => {
+      anthropicMocks.createMessage.mockResolvedValue({
+        content: [{ type: "text", text: "this is definitely not JSON" }],
+        usage: { input_tokens: 10, output_tokens: 10 },
+      });
+
+      await expect(
+        service.reviseChangeSet({
+          signal: baseSignal,
+          currentChangeSet: baseChangeSet,
+          instruction: "do something",
+          triggeringTransactions: [{ description: "WOOLWORTHS 1234" }],
+        })
+      ).rejects.toThrow(/invalid JSON/i);
+    });
+
+    it("throws when the LLM returns JSON that fails ChangeSetSchema validation", async () => {
+      anthropicMocks.createMessage.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              changeSet: {
+                // Missing required `ops` array
+                source: "ai-revise",
+                reason: "broken",
+              },
+              rationale: "whatever",
+            }),
+          },
+        ],
+        usage: { input_tokens: 10, output_tokens: 10 },
+      });
+
+      await expect(
+        service.reviseChangeSet({
+          signal: baseSignal,
+          currentChangeSet: baseChangeSet,
+          instruction: "do something",
+          triggeringTransactions: [{ description: "WOOLWORTHS 1234" }],
+        })
+      ).rejects.toThrow(/schema validation/i);
+    });
+
+    it("throws when the LLM returns an op kind that is not in the allowed discriminated union", async () => {
+      anthropicMocks.createMessage.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              changeSet: {
+                source: "ai-revise",
+                reason: "bogus op",
+                ops: [{ op: "explode", id: "abc" }],
+              },
+              rationale: "nope",
+            }),
+          },
+        ],
+        usage: { input_tokens: 10, output_tokens: 10 },
+      });
+
+      await expect(
+        service.reviseChangeSet({
+          signal: baseSignal,
+          currentChangeSet: baseChangeSet,
+          instruction: "do something",
+          triggeringTransactions: [{ description: "WOOLWORTHS 1234" }],
+        })
+      ).rejects.toThrow(/schema validation/i);
+    });
+
+    it("throws when CLAUDE_API_KEY is not configured", async () => {
+      delete process.env["CLAUDE_API_KEY"];
+
+      await expect(
+        service.reviseChangeSet({
+          signal: baseSignal,
+          currentChangeSet: baseChangeSet,
+          instruction: "narrow it",
+          triggeringTransactions: [{ description: "WOOLWORTHS 1234" }],
+        })
+      ).rejects.toThrow(/CLAUDE_API_KEY/);
+      expect(anthropicMocks.createMessage).not.toHaveBeenCalled();
+    });
+
+    it("exposes the endpoint via the tRPC router and returns the revised ChangeSet", async () => {
+      anthropicMocks.createMessage.mockResolvedValue({
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              changeSet: {
+                source: "ai-revise",
+                reason: "user instruction",
+                ops: [
+                  {
+                    op: "add",
+                    data: {
+                      descriptionPattern: "WOOLWORTHS",
+                      matchType: "exact",
+                      tags: [],
+                    },
+                  },
+                ],
+              },
+              rationale: "Tightened to exact match",
+            }),
+          },
+        ],
+        usage: { input_tokens: 20, output_tokens: 20 },
+      });
+
+      const result = await caller.core.corrections.reviseChangeSet({
+        signal: baseSignal,
+        currentChangeSet: baseChangeSet,
+        instruction: "make it exact",
+        triggeringTransactions: [{ description: "WOOLWORTHS 1234 SYDNEY" }],
+      });
+
+      expect(result.rationale).toBe("Tightened to exact match");
+      const op = result.changeSet.ops[0];
+      if (!op || op.op !== "add") throw new Error("Expected add op");
+      expect(op.data.matchType).toBe("exact");
+    });
+
+    it("wraps service errors in a TRPCError when invoked through the router", async () => {
+      anthropicMocks.createMessage.mockResolvedValue({
+        content: [{ type: "text", text: "not json at all" }],
+        usage: { input_tokens: 10, output_tokens: 10 },
+      });
+
+      await expect(
+        caller.core.corrections.reviseChangeSet({
+          signal: baseSignal,
+          currentChangeSet: baseChangeSet,
+          instruction: "whatever",
+          triggeringTransactions: [{ description: "WOOLWORTHS 1234" }],
+        })
+      ).rejects.toThrow(/Failed to revise ChangeSet/);
+    });
+  });
 });

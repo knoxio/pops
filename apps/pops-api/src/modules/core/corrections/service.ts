@@ -211,6 +211,184 @@ export async function interpretRejectionFeedback(
   }
 }
 
+/**
+ * Revise an in-progress ChangeSet via a free-text instruction from the US-06 AI helper.
+ *
+ * The LLM is given:
+ * - the triggering transactions for the current import session (scoped per PRD-028)
+ * - the user's current ChangeSet
+ * - a free-text instruction describing how to refine it
+ * - the allowed op kinds and their JSON schemas
+ *
+ * It must return a complete revised ChangeSet plus a one-line rationale, as strict JSON.
+ * Unlike {@link interpretRejectionFeedback}, this function does NOT silently fall back on
+ * errors — callers need to know when the model failed so the dialog can surface the error.
+ */
+export async function reviseChangeSet(args: {
+  signal: CorrectionSignal;
+  currentChangeSet: ChangeSet;
+  instruction: string;
+  triggeringTransactions: Array<{ checksum?: string; description: string }>;
+}): Promise<{ changeSet: ChangeSet; rationale: string }> {
+  if (isNamedEnvContext()) {
+    // Named envs are isolated test databases — skip external AI.
+    // Return the ChangeSet unchanged with a neutral rationale so integration tests
+    // can still exercise the endpoint shape.
+    return {
+      changeSet: args.currentChangeSet,
+      rationale: "Named env context — AI revision skipped",
+    };
+  }
+
+  const apiKey = getEnv("CLAUDE_API_KEY");
+  if (!apiKey) {
+    throw new Error("CLAUDE_API_KEY not configured");
+  }
+
+  const sanitizedInstruction = args.instruction.trim().slice(0, 2000);
+  if (sanitizedInstruction.length === 0) {
+    throw new Error("reviseChangeSet: instruction must be non-empty");
+  }
+
+  const triggeringLines = args.triggeringTransactions
+    .slice(0, 100)
+    .map((t, i) => `${i + 1}. "${t.description}"`)
+    .join("\n");
+
+  const currentChangeSetJson = JSON.stringify(args.currentChangeSet, null, 2);
+  const signalJson = JSON.stringify(args.signal);
+
+  const prompt = `You are refining a bundled correction rule ChangeSet for a personal finance app.
+
+You are given:
+- the triggering correction signal (the user's original intent)
+- the user's current in-progress ChangeSet
+- a list of triggering transactions from the current import session
+- a free-text instruction from the user describing how to revise the ChangeSet
+
+A ChangeSet is a bundle of rule operations. Each operation has one of four "op" kinds:
+
+1. add     — { "op": "add",     "data": { "descriptionPattern": string, "matchType": "exact"|"contains"|"regex", "entityId"?: string|null, "entityName"?: string|null, "location"?: string|null, "tags"?: string[], "transactionType"?: "purchase"|"transfer"|"income"|null, "confidence"?: number, "isActive"?: boolean } }
+2. edit    — { "op": "edit",    "id": string (existing rule id), "data": { same fields as add.data but all optional, no descriptionPattern/matchType } }
+3. disable — { "op": "disable", "id": string (existing rule id) }
+4. remove  — { "op": "remove",  "id": string (existing rule id) }
+
+The ChangeSet wrapper is: { "source"?: string, "reason"?: string, "ops": Op[] } and MUST contain at least one op.
+
+You may freely add, edit, split, merge, or remove any operation in the supplied ChangeSet — including operations the user manually added. Preserve any "id" values on edit/disable/remove ops unless the user explicitly asks to target a different rule. Do not invent rule ids that were not present in the input. Do not include tag rule learning. Patterns should be normalized to uppercase with digits stripped.
+
+originalSignal: ${signalJson}
+
+triggeringTransactions:
+${triggeringLines || "(none provided)"}
+
+currentChangeSet:
+${currentChangeSetJson}
+
+instruction: ${JSON.stringify(sanitizedInstruction)}
+
+Return ONLY a single JSON object, no markdown, no explanation:
+{"changeSet": <revised ChangeSet>, "rationale": "<one-line explanation>"}`;
+
+  // maxRetries=0: SDK-level retries disabled — we handle retries ourselves via withRateLimitRetry
+  const client = new Anthropic({ apiKey, maxRetries: 0 });
+
+  let response;
+  try {
+    response = await withRateLimitRetry(
+      () =>
+        client.messages.create({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 2000,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      "corrections.revise",
+      { logger, logPrefix: "[AI]" }
+    );
+  } catch (error) {
+    logger.error(
+      { error: error instanceof Error ? error.message : String(error) },
+      "[AI] reviseChangeSet call failed"
+    );
+    throw new Error(
+      `reviseChangeSet: AI call failed — ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+
+  const text = response.content[0]?.type === "text" ? response.content[0].text : null;
+  if (!text) {
+    throw new Error("reviseChangeSet: AI returned empty content");
+  }
+
+  const cleanedText = text
+    .trim()
+    .replace(/^```(?:json)?\s*\n?/gm, "")
+    .replace(/\n?```\s*$/gm, "");
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(cleanedText);
+  } catch (error) {
+    logger.error({ text: cleanedText }, "[AI] reviseChangeSet: failed to parse JSON");
+    throw new Error(
+      `reviseChangeSet: AI returned invalid JSON — ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("reviseChangeSet: AI response was not a JSON object");
+  }
+
+  const container = parsed as Record<string, unknown>;
+  const changeSetResult = ChangeSetSchema.safeParse(container["changeSet"]);
+  if (!changeSetResult.success) {
+    logger.error(
+      { issues: changeSetResult.error.issues, raw: container["changeSet"] },
+      "[AI] reviseChangeSet: ChangeSet failed schema validation"
+    );
+    throw new Error(
+      `reviseChangeSet: AI returned a ChangeSet that failed schema validation — ${changeSetResult.error.issues
+        .map((i) => `${i.path.join(".")}: ${i.message}`)
+        .join("; ")}`
+    );
+  }
+
+  const rationaleRaw = container["rationale"];
+  const rationale =
+    typeof rationaleRaw === "string" && rationaleRaw.trim().length > 0
+      ? rationaleRaw.trim()
+      : "ChangeSet revised by AI helper";
+
+  // Best-effort AI usage tracking — matches interpretRejectionFeedback pattern.
+  try {
+    const inputTokens = response.usage.input_tokens;
+    const outputTokens = response.usage.output_tokens;
+    const costUsd = (inputTokens / 1_000_000) * 1.0 + (outputTokens / 1_000_000) * 5.0;
+
+    getDrizzle()
+      .insert(aiUsage)
+      .values({
+        description: sanitizedInstruction,
+        entityName: null,
+        category: "corrections.revise_changeset",
+        inputTokens,
+        outputTokens,
+        costUsd,
+        cached: 0,
+        importBatchId: null,
+        createdAt: new Date().toISOString(),
+      })
+      .run();
+  } catch {
+    // ai_usage tracking is best-effort — don't fail the request
+  }
+
+  return {
+    changeSet: changeSetResult.data,
+    rationale,
+  };
+}
+
 export function summarizeMatch(match: CorrectionMatchResult | null): CorrectionMatchSummary {
   if (!match) return { matched: false, status: null, ruleId: null, confidence: null };
   return {

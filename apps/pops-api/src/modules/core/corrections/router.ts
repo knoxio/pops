@@ -186,6 +186,14 @@ export const correctionsRouter = router({
   /**
    * Preview impact of a ChangeSet against a set of transaction descriptions.
    * Deterministic: uses the same matching semantics as processing.
+   *
+   * Implemented as a .mutation() (POST) rather than a .query() (GET) despite
+   * being a pure read. Reason: large import sessions produce input payloads
+   * that blow past the httpBatchLink URL budget (2083 bytes), causing tRPC
+   * to throw "Input is too big for a single dispatch". POST has no URL
+   * length limit, so we can preview a full session in one call. The endpoint
+   * is still side-effect free; the mutation verb is purely a transport
+   * mechanism. Callers should treat the result as cacheable.
    */
   previewChangeSet: protectedProcedure
     .input(
@@ -199,11 +207,11 @@ export const correctionsRouter = router({
             })
           )
           .min(1)
-          .max(500),
+          .max(2000),
         minConfidence: z.number().min(0).max(1).default(0.7),
       })
     )
-    .query(({ input, ctx }) => {
+    .mutation(({ input, ctx }) => {
       // We need the full current rule set for deterministic previews.
       // We fetch in a single page for simplicity; if this ever grows beyond the limit,
       // switch this to a dedicated "list all corrections" service method with pagination.
@@ -299,6 +307,70 @@ export const correctionsRouter = router({
           throw new TRPCError({ code: "NOT_FOUND", message: err.message });
         }
         throw err;
+      }
+    }),
+
+  /**
+   * Revise an in-progress ChangeSet via a free-text AI helper instruction.
+   *
+   * Implemented as a .mutation() (POST) because:
+   * - It hits the LLM, so it is a write-like external side-effecting call.
+   * - ChangeSets and triggering-transaction lists can be large, which would blow
+   *   past the httpBatchLink URL budget if dispatched as a .query() (GET).
+   *
+   * The revised ChangeSet is NEVER applied automatically. The caller must still
+   * drive approval through the existing apply path (US-03).
+   */
+  reviseChangeSet: protectedProcedure
+    .input(
+      z.object({
+        signal: CorrectionSignalSchema,
+        currentChangeSet: ChangeSetSchema,
+        instruction: z.string().min(1).max(2000),
+        triggeringTransactions: z
+          .array(
+            z.object({
+              checksum: z.string().optional(),
+              description: z.string(),
+            })
+          )
+          .max(500),
+      })
+    )
+    .mutation(async ({ input, ctx }) => {
+      try {
+        const result = await service.reviseChangeSet({
+          signal: input.signal,
+          currentChangeSet: input.currentChangeSet,
+          instruction: input.instruction,
+          triggeringTransactions: input.triggeringTransactions,
+        });
+        logger.info({
+          event: "corrections.proposal.revise",
+          userEmail: ctx.user.email,
+          instructionLength: input.instruction.length,
+          inputOpCount: input.currentChangeSet.ops.length,
+          outputOpCount: result.changeSet.ops.length,
+          triggeringTransactionCount: input.triggeringTransactions.length,
+        });
+        return result;
+      } catch (err) {
+        logger.error({
+          event: "corrections.proposal.revise",
+          userEmail: ctx.user.email,
+          instructionLength: input.instruction.length,
+          inputOpCount: input.currentChangeSet.ops.length,
+          triggeringTransactionCount: input.triggeringTransactions.length,
+          err,
+        });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            err instanceof Error
+              ? `Failed to revise ChangeSet: ${err.message}`
+              : "Failed to revise ChangeSet",
+          cause: err,
+        });
       }
     }),
 
