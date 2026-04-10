@@ -403,6 +403,22 @@ cd apps/pops-shell && pnpm format --check && pnpm lint && pnpm typecheck
 
 **Do NOT push if any of these fail.** Fix the issue first, commit the fix, then push. A PR with red CI is not a PR — it's a draft at best. This is non-negotiable.
 
+### PRD-First Rule (mandatory, no exceptions)
+
+**Every change must be checked against the PRDs and USs first.** Before writing code — whether you're shipping a feature, fixing a bug, or tweaking existing behavior — locate the relevant PRD and user story and confirm:
+
+1. **The PRD exists and is current.** If the area you're touching has no PRD, stop and write one before coding. If the PRD is stale (behavior described there no longer matches the goal spec), update the PRD before coding.
+2. **The user story covers what you're about to do.** If it doesn't, add or update the US. If you're changing behavior, update the acceptance criteria to reflect the new goal spec.
+3. **Your change matches the PRD's intent.** Not just what it says today — what it *should* say. If the PRD intent is unclear, stop and clarify before implementing.
+
+**PRDs and USs are greenfield artifacts.** They describe the goal specification of the system and the correct implementation, not the change history. Do not treat them as a changelog. When code and PRD disagree, one of them is wrong — decide which, and fix it.
+
+**Track every change through the docs.**
+- **Implementing** something new → mark the relevant acceptance criteria and US progress as you land the work.
+- **Fixing or changing** existing behavior → update the PRD/US to match the new correct behavior, even if the goal spec hasn't drifted. The docs should always describe the system as it is supposed to be after your change.
+
+If you cannot find a PRD for what you're changing, that's a blocker, not a shortcut. Write the PRD first.
+
 ### Documentation Sync Rule
 
 **Every code change must update related documentation.** When completing a user story, fixing a bug, or adding a feature:

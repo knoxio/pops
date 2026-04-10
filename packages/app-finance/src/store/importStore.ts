@@ -113,10 +113,53 @@ const initialState = {
   importResult: null,
 };
 
+/**
+ * Shape returned when the user starts a brand-new import (new file selected).
+ * Resets every wizard-step result that was computed from the *previous* file,
+ * so Step 3 doesn't short-circuit with "Already processed" using stale data.
+ * We intentionally keep `currentStep` and `columnMap` untouched — the user is
+ * still inside the wizard, and re-using their column mapping is a nicety.
+ */
+const downstreamReset: Pick<
+  ImportStore,
+  | "headers"
+  | "rows"
+  | "parsedTransactions"
+  | "processSessionId"
+  | "processedTransactions"
+  | "confirmedTransactions"
+  | "executeSessionId"
+  | "importResult"
+> = {
+  headers: initialState.headers,
+  rows: initialState.rows,
+  parsedTransactions: initialState.parsedTransactions,
+  processSessionId: initialState.processSessionId,
+  processedTransactions: initialState.processedTransactions,
+  confirmedTransactions: initialState.confirmedTransactions,
+  executeSessionId: initialState.executeSessionId,
+  importResult: initialState.importResult,
+};
+
+function isSameFile(a: File | null, b: File | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return a.name === b.name && a.size === b.size && a.lastModified === b.lastModified;
+}
+
 export const useImportStore = create<ImportStore>((set) => ({
   ...initialState,
 
-  setFile: (file) => set({ file }),
+  setFile: (file) =>
+    set((state) => {
+      // Selecting a different file means the previous parse/process/review
+      // results belong to a stale input. Wipe them so Step 3 doesn't reuse
+      // prior `processedTransactions` and render "Already processed".
+      if (!isSameFile(state.file, file)) {
+        return { ...downstreamReset, file };
+      }
+      return { file };
+    }),
   setBankType: (bankType) => set({ bankType }),
   setHeaders: (headers) => set({ headers }),
   setRows: (rows) => set({ rows }),

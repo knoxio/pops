@@ -1,7 +1,7 @@
 # PRD-028: Correction Proposal Engine
 
 > Epic: [03 — Corrections](../../epics/03-corrections.md)
-> Status: Partial
+> Status: Done
 
 ## Overview
 
@@ -64,29 +64,43 @@ The response also includes an **impact preview** for the current import session.
 
 ### Proposal creation
 
-When the user triggers Save & Learn or edits a rule-matched transaction, the system generates a bundled ChangeSet proposal.
+When the user triggers Save & Learn or edits a rule-matched transaction, the system generates a bundled ChangeSet proposal. A proposal is always a **set of N rule operations** (add/edit/disable/remove), never a single rule — even the simplest cases are modelled as a ChangeSet of one.
 
 The proposal UI must show:
 
-- the list of rule operations in the ChangeSet
-- an impact preview (count + inspectable list) for this import
-- explicit **Approve** and **Reject** actions
+- the triggering transaction(s) and the user's original correction intent
+- the full list of rule operations in the ChangeSet, individually selectable and editable
+- a deterministic impact preview per operation, plus a combined-effect view for the whole ChangeSet
+- an AI helper with full scope over the entire ChangeSet
+- explicit **Cancel**, **Apply**, and **Reject with feedback** actions
+
+### Editable refinement (primary path)
+
+The proposal dialog is a diff editor for the ChangeSet. The user refines it in place:
+
+- the operations list lets the user inspect, select, add, and delete any operation — including operations that target existing rules (`edit` / `disable` / `remove`) and operations that propose new rules (`add`)
+- a detail editor lets the user change pattern, match type, target entity, and optional attributes on the currently selected operation without closing the dialog
+- editing any field marks that operation's impact preview stale; previews can be regenerated on demand using the same deterministic matcher as processing
+- the impact preview can be scoped to a single selected operation or to the combined net effect of the whole ChangeSet
+- the AI helper accepts free-text instructions and may add, edit, split, merge, or remove any operation in the ChangeSet ("make it broader", "split location into its own rule", "disable the old IKEA rule", "exclude transfers")
+- AI-revised ChangeSets are never applied automatically
 
 ### Approval
 
-On approval:
+On approval (Apply):
 
 - the ChangeSet is applied atomically
 - the import review re-evaluates remaining transactions using the same rules engine as processing
 - newly matched transactions are surfaced immediately
 
-### Rejection with feedback
+### Rejection with feedback (escape hatch)
 
-On rejection:
+Rejection is reserved for the "this whole direction is wrong, start over" case — day-to-day refinement uses the editor and AI helper. On rejection:
 
 - the user must provide a short feedback message
-- the system can generate a follow-up ChangeSet proposal using that feedback
-- rejected proposals do not apply any rule changes
+- the dialog closes
+- the rejection is persisted for training/audit
+- no rule changes are applied
 
 ## Business Rules
 
@@ -101,19 +115,22 @@ On rejection:
 | Case | Behaviour |
 |------|-----------|
 | Proposal has zero impact in current import | Still allowed; UI must make that clear. |
-| Proposal is overly broad | User rejects with feedback; follow-up proposal must narrow scope. |
-| Multiple rules already match | Proposal may suggest disabling one or increasing specificity; impact preview must show net effect. |
+| Proposal is overly broad | User narrows it in place via the editor or AI helper ([US-06](us-06-editable-proposal.md)). Reject-with-feedback is reserved for "this whole direction is wrong, start over". |
+| Multiple rules already match | Proposal may include `disable`/`edit` operations alongside new `add` operations; the combined-effect preview must show the net outcome before Apply. |
+| User edits an AI suggestion, then asks AI to revise again | Revise call receives the current (user-edited) ChangeSet plus the new instruction; the AI may further edit, add, split, merge, or remove any operation. |
 | AI unavailable | The system can still offer a non-AI rule proposal flow, but must preserve the approval model and previews. |
 
 ## User Stories
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 01 | [us-01-changeset-contract](us-01-changeset-contract.md) | Define ChangeSet schema, impact preview contract, and invariants | Not started | No (first) |
-| 02 | [us-02-generate-proposal](us-02-generate-proposal.md) | Generate bundled ChangeSet proposal from a correction signal | Not started | Blocked by us-01 |
+| 01 | [us-01-changeset-contract](us-01-changeset-contract.md) | Define ChangeSet schema, impact preview contract, and invariants | Done | No (first) |
+| 02 | [us-02-generate-proposal](us-02-generate-proposal.md) | Generate bundled ChangeSet proposal from a correction signal | Done | Blocked by us-01 |
 | 03 | [us-03-approve-apply](us-03-approve-apply.md) | Approve and apply ChangeSet atomically, then re-evaluate remaining transactions | Done | Blocked by us-01 |
-| 04 | [us-04-reject-feedback](us-04-reject-feedback.md) | Reject with required feedback, produce follow-up proposal that incorporates feedback | Not started | Blocked by us-01 |
+| 04 | [us-04-reject-feedback](us-04-reject-feedback.md) | Reject with required feedback, persist rejection for training/audit | Done | Blocked by us-01 |
 | 05 | [us-05-audit-trail](us-05-audit-trail.md) | Record proposal attempts and outcomes for traceability | Done | Blocked by us-01 |
+| 06 | [us-06-editable-proposal](us-06-editable-proposal.md) | Editable proposal dialog with live impact preview and AI helper for in-place refinement | Done | Blocked by us-01, us-02 |
+| 07 | [us-07-trigger-context-and-prompt](us-07-trigger-context-and-prompt.md) | Reframe proposal prompt around "how to match future txns" and surface the triggering transaction in the dialog | Done | Blocked by us-02, us-06 |
 
 ## Verification
 

@@ -28,9 +28,20 @@ const mockNextStep = vi.fn();
 const mockSetProcessSessionId = vi.fn();
 const mockSetProcessedTransactions = vi.fn();
 
+const emptyProcessed = {
+  matched: [],
+  uncertain: [],
+  failed: [],
+  skipped: [],
+  warnings: undefined,
+};
+
+let mockProcessedTransactions: typeof emptyProcessed = emptyProcessed;
+
 vi.mock("../../store/importStore", () => ({
   useImportStore: () => ({
     parsedTransactions: [{ date: "2026-01-01", description: "Test", amount: -50 }],
+    processedTransactions: mockProcessedTransactions,
     setProcessSessionId: mockSetProcessSessionId,
     processSessionId: null,
     setProcessedTransactions: mockSetProcessedTransactions,
@@ -60,6 +71,7 @@ beforeEach(() => {
   mockProgressQuery.mockReturnValue({
     data: undefined,
   });
+  mockProcessedTransactions = emptyProcessed;
 });
 
 describe("ProcessingStep", () => {
@@ -113,5 +125,31 @@ describe("ProcessingStep", () => {
     render(<ProcessingStep />);
     expect(screen.getByText("Processing Failed")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+  });
+
+  describe("when already processed (Back navigation)", () => {
+    it("does NOT re-run the AI pipeline and shows Continue instead", () => {
+      mockProcessedTransactions = {
+        ...emptyProcessed,
+        matched: [
+          // Minimal shape — ProcessingStep only checks array lengths.
+          { description: "Existing" } as never,
+        ],
+      };
+      render(<ProcessingStep />);
+      expect(mockMutate).not.toHaveBeenCalled();
+      expect(screen.getByText("Already processed")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Continue to Review" })).toBeInTheDocument();
+    });
+
+    it("calls nextStep when Continue is clicked", () => {
+      mockProcessedTransactions = {
+        ...emptyProcessed,
+        uncertain: [{ description: "Existing" } as never],
+      };
+      render(<ProcessingStep />);
+      fireEvent.click(screen.getByRole("button", { name: "Continue to Review" }));
+      expect(mockNextStep).toHaveBeenCalledTimes(1);
+    });
   });
 });
