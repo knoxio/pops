@@ -49,23 +49,99 @@ export function normalizeForMatch(value: string): string {
   return value.toUpperCase().replace(/\d+/g, "").replace(/\s+/g, " ").trim();
 }
 
+/**
+ * Mirror the server matcher in `findMatchingCorrectionFromRules` / the
+ * preview pipeline. Semantics:
+ *  - For `exact`/`contains`: both sides are normalized via `normalizeForMatch`
+ *    (patterns are stored already-normalized in the DB, but we normalize the
+ *    client-side pattern too because the user can type a raw value in the
+ *    detail editor before the server has a chance to normalize it).
+ *  - For `regex`: pattern is kept raw (server stores regex patterns raw) and
+ *    tested with `new RegExp(pattern)` — **no `i` flag** — against the
+ *    *normalized* description. Using the `i` flag here, or testing against
+ *    the raw description, would silently diverge from what the server preview
+ *    engine matches and scope out transactions that actually hit on apply.
+ */
 export function transactionMatchesSignal(
   description: string,
   pattern: string,
   matchType: "exact" | "contains" | "regex"
 ): boolean {
+  const normDesc = normalizeForMatch(description);
   if (matchType === "regex") {
+    if (pattern.length === 0) return false;
     try {
-      return new RegExp(pattern, "i").test(description);
+      return new RegExp(pattern).test(normDesc);
     } catch {
       return false;
     }
   }
-  const normDesc = normalizeForMatch(description);
   const normPattern = normalizeForMatch(pattern);
   if (!normPattern) return false;
   if (matchType === "exact") return normDesc === normPattern;
   return normDesc.includes(normPattern);
+}
+
+/**
+ * Server-side cap on `transactions` in `core.corrections.previewChangeSet`
+ * (enforced by a zod `.max(2000)`). We mirror it here so the dialog never
+ * ships a request that will be rejected. If the user imports more rows than
+ * this, we slice the scoped list and surface a "preview truncated" hint in
+ * the impact panel so they know the delta numbers are an under-count, not
+ * the full picture.
+ */
+export const PREVIEW_CHANGESET_MAX_TRANSACTIONS = 2000;
+
+interface ScopedPreviewTxnResult<T> {
+  txns: T[];
+  truncated: boolean;
+}
+
+/**
+ * Build the scoped transaction list to feed into `previewChangeSet`. For
+ * each op in the ChangeSet, keep any transaction whose description would
+ * actually be matched by that op (so previews aren't polluted with rows
+ * that don't interact with this edit). For `edit`/`disable`/`remove` ops
+ * we rely on the hydrated `targetRule`; if hydration is missing for any
+ * non-`add` op we bail out of scoping for that entire preview and fall
+ * through to the full `previewTransactions` list — otherwise the op's
+ * real impact would be invisible in the preview panel.
+ *
+ * After scoping, the result is hard-capped at
+ * `PREVIEW_CHANGESET_MAX_TRANSACTIONS` so we never trip the server zod
+ * limit. `truncated === true` if that cap kicked in.
+ *
+ * Exported for unit testing.
+ */
+export function scopePreviewTransactions<T extends { description: string }>(
+  ops: LocalOp[],
+  previewTransactions: readonly T[]
+): ScopedPreviewTxnResult<T> {
+  const hasUnscopedRuleOp = ops.some((op) => op.kind !== "add" && !op.targetRule);
+  const filtered = hasUnscopedRuleOp
+    ? [...previewTransactions]
+    : previewTransactions.filter((t) =>
+        ops.some((op) => {
+          if (op.kind === "add") {
+            return transactionMatchesSignal(
+              t.description,
+              op.data.descriptionPattern,
+              op.data.matchType
+            );
+          }
+          const rule = op.targetRule;
+          if (!rule) return false;
+          return transactionMatchesSignal(t.description, rule.descriptionPattern, rule.matchType);
+        })
+      );
+
+  if (filtered.length <= PREVIEW_CHANGESET_MAX_TRANSACTIONS) {
+    return { txns: filtered, truncated: false };
+  }
+  return {
+    txns: filtered.slice(0, PREVIEW_CHANGESET_MAX_TRANSACTIONS),
+    truncated: true,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -82,7 +158,7 @@ export function transactionMatchesSignal(
  *  - a snapshot of the target rule for edit/disable/remove, so the detail panel
  *    can render rule context without re-fetching
  */
-type LocalOp =
+export type LocalOp =
   | {
       kind: "add";
       clientId: string;
@@ -122,16 +198,32 @@ function newClientId(prefix: OpKind): string {
   return `${prefix}-${clientIdCounter}-${Date.now().toString(36)}`;
 }
 
-function serverOpToLocalOp(op: ServerChangeSetOp): LocalOp {
+/**
+ * Convert a server ChangeSet op into its client-side counterpart. For
+ * `edit`/`disable`/`remove` ops we hydrate `targetRule` from the
+ * `targetRules` map returned alongside the proposal (or revise) response
+ * so the preview-scoping filter in the dialog can correctly match
+ * existing-rule patterns against the current import's transactions.
+ *
+ * If the lookup misses (shouldn't happen for server-issued ops, but can
+ * for forward-compatibility), we leave `targetRule` as `null` and the
+ * preview-scoping effect downstream falls back to using the full
+ * `previewTransactions` list for that op.
+ */
+export function serverOpToLocalOp(
+  op: ServerChangeSetOp,
+  targetRules: Record<string, CorrectionRule>
+): LocalOp {
   if (op.op === "add") {
     return { kind: "add", clientId: newClientId("add"), data: op.data, dirty: false };
   }
+  const hydrated = targetRules[op.id] ?? null;
   if (op.op === "edit") {
     return {
       kind: "edit",
       clientId: newClientId("edit"),
       targetRuleId: op.id,
-      targetRule: null,
+      targetRule: hydrated,
       data: op.data,
       dirty: false,
     };
@@ -141,7 +233,7 @@ function serverOpToLocalOp(op: ServerChangeSetOp): LocalOp {
       kind: "disable",
       clientId: newClientId("disable"),
       targetRuleId: op.id,
-      targetRule: null,
+      targetRule: hydrated,
       rationale: "",
       dirty: false,
     };
@@ -150,7 +242,7 @@ function serverOpToLocalOp(op: ServerChangeSetOp): LocalOp {
     kind: "remove",
     clientId: newClientId("remove"),
     targetRuleId: op.id,
-    targetRule: null,
+    targetRule: hydrated,
     rationale: "",
     dirty: false,
   };
@@ -288,9 +380,11 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
 
   const [combinedPreview, setCombinedPreview] = useState<PreviewChangeSetOutput | null>(null);
   const [combinedPreviewError, setCombinedPreviewError] = useState<string | null>(null);
+  const [combinedPreviewTruncated, setCombinedPreviewTruncated] = useState(false);
 
   const [selectedOpPreview, setSelectedOpPreview] = useState<PreviewChangeSetOutput | null>(null);
   const [selectedOpPreviewError, setSelectedOpPreviewError] = useState<string | null>(null);
+  const [selectedOpPreviewTruncated, setSelectedOpPreviewTruncated] = useState(false);
   const selectedOpPreviewKey = useRef<string | null>(null);
 
   const [rejectMode, setRejectMode] = useState(false);
@@ -345,7 +439,7 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
     if (seededForSignalRef.current === signalKey) return;
     seededForSignalRef.current = signalKey;
 
-    const seeded = data.changeSet.ops.map(serverOpToLocalOp);
+    const seeded = data.changeSet.ops.map((o) => serverOpToLocalOp(o, data.targetRules ?? {}));
     // Mark all as clean because the combined preview we're about to run
     // reflects exactly these ops.
     const clean = seeded.map((o) => ({ ...o, dirty: false }));
@@ -354,8 +448,10 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
     setRationale(data.rationale ?? null);
     setCombinedPreview(null);
     setCombinedPreviewError(null);
+    setCombinedPreviewTruncated(false);
     setSelectedOpPreview(null);
     setSelectedOpPreviewError(null);
+    setSelectedOpPreviewTruncated(false);
     selectedOpPreviewKey.current = null;
   }, [props.open, props.signal, proposeQuery.data]);
 
@@ -419,23 +515,10 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
     const changeSet = localOpsToChangeSet(ops);
     if (!changeSet) return;
 
-    // Inline the scope filter to avoid callback identity churn from a
-    // useCallback wrapper that would pull props.previewTransactions in as
-    // a dep on a function, compounding the instability story.
-    const txns = props.previewTransactions.filter((t) =>
-      ops.some((op) => {
-        if (op.kind === "add") {
-          return transactionMatchesSignal(
-            t.description,
-            op.data.descriptionPattern,
-            op.data.matchType
-          );
-        }
-        const rule = op.targetRule;
-        if (!rule) return false;
-        return transactionMatchesSignal(t.description, rule.descriptionPattern, rule.matchType);
-      })
-    );
+    // Scope + cap via shared helper so we stay under the server's
+    // `.max(2000)` zod limit and reuse the hydrated-targetRule fallback.
+    const { txns, truncated } = scopePreviewTransactions(ops, props.previewTransactions);
+    setCombinedPreviewTruncated(truncated);
 
     if (txns.length === 0) {
       setCombinedPreview({ diffs: [], summary: EMPTY_PREVIEW_SUMMARY });
@@ -496,18 +579,8 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
     const changeSet = localOpsToChangeSet([op]);
     if (!changeSet) return;
 
-    const txns = props.previewTransactions.filter((t) => {
-      if (op.kind === "add") {
-        return transactionMatchesSignal(
-          t.description,
-          op.data.descriptionPattern,
-          op.data.matchType
-        );
-      }
-      const rule = op.targetRule;
-      if (!rule) return false;
-      return transactionMatchesSignal(t.description, rule.descriptionPattern, rule.matchType);
-    });
+    const { txns, truncated } = scopePreviewTransactions([op], props.previewTransactions);
+    setSelectedOpPreviewTruncated(truncated);
 
     if (txns.length === 0) {
       setSelectedOpPreview({ diffs: [], summary: EMPTY_PREVIEW_SUMMARY });
@@ -716,7 +789,7 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
       triggeringTransactions: props.previewTransactions.slice(0, 100),
     })
       .then((res) => {
-        const revised = res.changeSet.ops.map(serverOpToLocalOp);
+        const revised = res.changeSet.ops.map((o) => serverOpToLocalOp(o, res.targetRules ?? {}));
         setLocalOps(revised);
         setSelectedClientId(revised[0]?.clientId ?? null);
         setRationale(res.rationale ?? null);
@@ -757,8 +830,10 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
       setPreviewView("selected");
       setCombinedPreview(null);
       setCombinedPreviewError(null);
+      setCombinedPreviewTruncated(false);
       setSelectedOpPreview(null);
       setSelectedOpPreviewError(null);
+      setSelectedOpPreviewTruncated(false);
       setRejectMode(false);
       setRejectFeedback("");
       setAiInstruction("");
@@ -778,6 +853,8 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
 
   const previewResult = previewView === "combined" ? combinedPreview : selectedOpPreview;
   const previewError = previewView === "combined" ? combinedPreviewError : selectedOpPreviewError;
+  const previewTruncated =
+    previewView === "combined" ? combinedPreviewTruncated : selectedOpPreviewTruncated;
   const previewLabel =
     previewView === "combined"
       ? "Combined effect of entire ChangeSet"
@@ -854,6 +931,7 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
                 previewError={previewError}
                 isPending={previewMutation.isPending}
                 stale={hasDirty}
+                truncated={previewTruncated}
                 onRerun={handleRerunPreview}
                 disabled={isBusy || localOps.length === 0}
               />
@@ -1445,6 +1523,7 @@ function ImpactPanel(props: {
   previewError: string | null;
   isPending: boolean;
   stale: boolean;
+  truncated: boolean;
   onRerun: () => void;
   disabled: boolean;
 }) {
@@ -1486,6 +1565,14 @@ function ImpactPanel(props: {
       <div className="px-4 py-2 text-xs text-muted-foreground">
         {props.label}
         {props.stale && <span className="ml-2 text-amber-600">(stale)</span>}
+        {props.truncated && (
+          <span
+            className="ml-2 text-amber-600"
+            title={`Previewed against the first ${PREVIEW_CHANGESET_MAX_TRANSACTIONS} matching transactions. The counts below are an under-count — narrow the pattern or re-run after importing in smaller batches to see full impact.`}
+          >
+            (preview truncated)
+          </span>
+        )}
       </div>
       <div className="flex-1 overflow-auto px-4 pb-4">
         {previewError ? (

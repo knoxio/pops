@@ -37,10 +37,14 @@ const emptyProcessed = {
 };
 
 let mockProcessedTransactions: typeof emptyProcessed = emptyProcessed;
+let mockParsedTransactionsFingerprint = "fp-current";
+let mockProcessedForFingerprint: string | null = null;
 
 vi.mock("../../store/importStore", () => ({
   useImportStore: () => ({
     parsedTransactions: [{ date: "2026-01-01", description: "Test", amount: -50 }],
+    parsedTransactionsFingerprint: mockParsedTransactionsFingerprint,
+    processedForFingerprint: mockProcessedForFingerprint,
     processedTransactions: mockProcessedTransactions,
     setProcessSessionId: mockSetProcessSessionId,
     processSessionId: null,
@@ -72,6 +76,8 @@ beforeEach(() => {
     data: undefined,
   });
   mockProcessedTransactions = emptyProcessed;
+  mockParsedTransactionsFingerprint = "fp-current";
+  mockProcessedForFingerprint = null;
 });
 
 describe("ProcessingStep", () => {
@@ -128,7 +134,7 @@ describe("ProcessingStep", () => {
   });
 
   describe("when already processed (Back navigation)", () => {
-    it("does NOT re-run the AI pipeline and shows Continue instead", () => {
+    it("does NOT re-run the AI pipeline and shows Continue instead (fingerprints match)", () => {
       mockProcessedTransactions = {
         ...emptyProcessed,
         matched: [
@@ -136,6 +142,8 @@ describe("ProcessingStep", () => {
           { description: "Existing" } as never,
         ],
       };
+      mockParsedTransactionsFingerprint = "fp-same";
+      mockProcessedForFingerprint = "fp-same";
       render(<ProcessingStep />);
       expect(mockMutate).not.toHaveBeenCalled();
       expect(screen.getByText("Already processed")).toBeInTheDocument();
@@ -147,9 +155,38 @@ describe("ProcessingStep", () => {
         ...emptyProcessed,
         uncertain: [{ description: "Existing" } as never],
       };
+      mockParsedTransactionsFingerprint = "fp-same";
+      mockProcessedForFingerprint = "fp-same";
       render(<ProcessingStep />);
       fireEvent.click(screen.getByRole("button", { name: "Continue to Review" }));
       expect(mockNextStep).toHaveBeenCalledTimes(1);
+    });
+
+    it("DOES re-run the pipeline when the parsed fingerprint has diverged from processedForFingerprint", () => {
+      // Stale cached results (fingerprint was 'old'), but the live parsed
+      // input now fingerprints to 'new' — the user re-mapped columns in
+      // Step 2 and came forward again. Short-circuit must NOT fire.
+      mockProcessedTransactions = {
+        ...emptyProcessed,
+        matched: [{ description: "Stale" } as never],
+      };
+      mockParsedTransactionsFingerprint = "fp-new";
+      mockProcessedForFingerprint = "fp-old";
+      render(<ProcessingStep />);
+      expect(screen.queryByText("Already processed")).not.toBeInTheDocument();
+      expect(mockMutate).toHaveBeenCalledTimes(1);
+    });
+
+    it("DOES re-run the pipeline when processedForFingerprint is still null (first run)", () => {
+      // Processed arrays happen to be empty but processedForFingerprint is
+      // null, meaning no successful run has pinned them yet. Short-circuit
+      // gate must not fire off null equality alone.
+      mockProcessedTransactions = emptyProcessed;
+      mockParsedTransactionsFingerprint = "fp-current";
+      mockProcessedForFingerprint = null;
+      render(<ProcessingStep />);
+      expect(screen.queryByText("Already processed")).not.toBeInTheDocument();
+      expect(mockMutate).toHaveBeenCalledTimes(1);
     });
   });
 });

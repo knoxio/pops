@@ -23,6 +23,7 @@ import type {
   ChangeSetPreviewSummary,
   CorrectionMatchSummary,
   ChangeSetProposal,
+  Correction,
   CorrectionClassificationOutcome,
   ChangeSetImpactCounts,
   ChangeSetImpactItem,
@@ -34,6 +35,7 @@ import {
   classifyCorrectionMatch,
   ChangeSetSchema,
   ChangeSetImpactSummarySchema,
+  toCorrection,
 } from "./types.js";
 import { AdaptedSignalSchema } from "./types.js";
 
@@ -229,7 +231,19 @@ export async function reviseChangeSet(args: {
   currentChangeSet: ChangeSet;
   instruction: string;
   triggeringTransactions: Array<{ checksum?: string; description: string }>;
-}): Promise<{ changeSet: ChangeSet; rationale: string }> {
+}): Promise<{
+  changeSet: ChangeSet;
+  rationale: string;
+  targetRules: Record<string, Correction>;
+}> {
+  /**
+   * Hydrate targetRules for any non-add op referenced by the final
+   * ChangeSet. Done against a single snapshot of `transactionCorrections`
+   * at the top of the call so the map is consistent with whichever
+   * ChangeSet we ultimately return (passthrough or AI-revised).
+   */
+  const rulesBefore = getDrizzle().select().from(transactionCorrections).all();
+
   if (isNamedEnvContext()) {
     // Named envs are isolated test databases — skip external AI.
     // Return the ChangeSet unchanged with a neutral rationale so integration tests
@@ -237,6 +251,7 @@ export async function reviseChangeSet(args: {
     return {
       changeSet: args.currentChangeSet,
       rationale: "Named env context — AI revision skipped",
+      targetRules: buildTargetRulesMap(args.currentChangeSet, rulesBefore),
     };
   }
 
@@ -386,6 +401,7 @@ Return ONLY a single JSON object, no markdown, no explanation:
   return {
     changeSet: changeSetResult.data,
     rationale,
+    targetRules: buildTargetRulesMap(changeSetResult.data, rulesBefore),
   };
 }
 
@@ -397,6 +413,37 @@ export function summarizeMatch(match: CorrectionMatchResult | null): CorrectionM
     ruleId: match.correction.id,
     confidence: match.correction.confidence,
   };
+}
+
+/**
+ * Given a ChangeSet and a list of existing rules, build a map of
+ * `{ ruleId → Correction }` containing only the rules referenced by
+ * `edit` / `disable` / `remove` ops. Used to hydrate `targetRules` on
+ * proposal / revise responses so the frontend can scope preview re-runs
+ * without a separate round-trip through `core.corrections.list`.
+ *
+ * Missing ids (referenced by a ChangeSet but not present in `rules`) are
+ * silently omitted — the client already tolerates a missing `targetRule`
+ * by falling back to the full preview set.
+ */
+export function buildTargetRulesMap(
+  changeSet: ChangeSet,
+  rules: CorrectionRow[]
+): Record<string, Correction> {
+  const referencedIds = new Set<string>();
+  for (const op of changeSet.ops) {
+    if (op.op === "add") continue;
+    referencedIds.add(op.id);
+  }
+  if (referencedIds.size === 0) return {};
+
+  const byId = new Map(rules.map((r) => [r.id, r]));
+  const out: Record<string, Correction> = {};
+  for (const id of referencedIds) {
+    const row = byId.get(id);
+    if (row) out[id] = toCorrection(row);
+  }
+  return out;
 }
 
 /**
@@ -831,6 +878,7 @@ export async function proposeChangeSetFromCorrectionSignal(args: {
       counts,
       affected,
     },
+    targetRules: buildTargetRulesMap(changeSet, rulesBefore),
   };
 }
 

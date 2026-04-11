@@ -232,6 +232,15 @@ export interface ChangeSetProposal {
     counts: ChangeSetImpactCounts;
     affected: ChangeSetImpactItem[];
   };
+  /**
+   * Hydrated snapshots of every existing rule referenced by a non-`add` op
+   * in the `changeSet` (keyed by rule id). The frontend uses this to scope
+   * preview re-runs correctly for `edit`/`disable`/`remove` ops without
+   * having to round-trip through `core.corrections.list`.
+   *
+   * Always populated (even if empty) so callers don't need optional chaining.
+   */
+  targetRules: Record<string, Correction>;
 }
 
 /**

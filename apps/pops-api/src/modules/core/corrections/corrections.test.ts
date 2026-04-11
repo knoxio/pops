@@ -594,6 +594,33 @@ describe("corrections", () => {
       expect(op?.op).toBe("edit");
       if (!op || op.op !== "edit") throw new Error("Expected edit op");
       expect(op.id).toBe(existingId);
+
+      // targetRules must include a hydrated snapshot of every rule referenced
+      // by a non-`add` op so the frontend can scope preview re-runs without a
+      // separate round-trip through `core.corrections.list`. Missing would
+      // silently force the client to fall back to the full preview set.
+      expect(result.targetRules).toBeDefined();
+      expect(Object.keys(result.targetRules)).toContain(existingId!);
+      const hydrated = result.targetRules[existingId!];
+      expect(hydrated).toBeDefined();
+      expect(hydrated?.descriptionPattern).toBe("WOOLWORTHS");
+      expect(hydrated?.matchType).toBe("contains");
+      expect(hydrated?.tags).toEqual(["Groceries"]);
+    });
+
+    it("returns an empty targetRules map when the proposal contains only add ops", async () => {
+      seedTransaction(db, {
+        description: "BRAND NEW VENDOR",
+        last_edited_time: new Date().toISOString(),
+      });
+      const result = await caller.core.corrections.proposeChangeSet({
+        signal: { descriptionPattern: "BRAND NEW VENDOR", matchType: "contains", tags: [] },
+        minConfidence: 0,
+        maxPreviewItems: 5,
+      });
+      // Sanity: the op is an add, and therefore no targetRules entries.
+      expect(result.changeSet.ops[0]?.op).toBe("add");
+      expect(result.targetRules).toEqual({});
     });
 
     it("respects maxPreviewItems limit", async () => {
@@ -1216,6 +1243,96 @@ describe("corrections", () => {
           triggeringTransactions: [{ description: "WOOLWORTHS 1234" }],
         })
       ).rejects.toThrow(/Failed to revise ChangeSet/);
+    });
+  });
+
+  describe("buildTargetRulesMap", () => {
+    // These tests exercise the helper in isolation — no DB, no caller — so a
+    // future refactor of the proposeChangeSet pipeline cannot silently drop
+    // hydration behavior without a failure here.
+    type Row = Parameters<typeof service.buildTargetRulesMap>[1][number];
+
+    function row(id: string, pattern: string, overrides: Partial<Row> = {}): Row {
+      return {
+        id,
+        descriptionPattern: pattern,
+        matchType: "contains",
+        entityId: null,
+        entityName: null,
+        location: null,
+        tags: "[]",
+        transactionType: null,
+        isActive: true,
+        confidence: 0.9,
+        timesApplied: 1,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        lastUsedAt: null,
+        ...overrides,
+      };
+    }
+
+    it("returns an empty map when the ChangeSet only contains add ops", () => {
+      const out = service.buildTargetRulesMap(
+        {
+          ops: [
+            {
+              op: "add",
+              data: { descriptionPattern: "NEW", matchType: "contains", tags: [] },
+            },
+          ],
+        },
+        [row("r1", "WOOLWORTHS")]
+      );
+      expect(out).toEqual({});
+    });
+
+    it("hydrates exactly the rules referenced by edit/disable/remove ops", () => {
+      const rules = [row("r1", "WOOLWORTHS"), row("r2", "COLES"), row("r3", "ALDI")];
+      const out = service.buildTargetRulesMap(
+        {
+          ops: [
+            { op: "edit", id: "r1", data: { entityName: "Woolies" } },
+            { op: "disable", id: "r3" },
+            {
+              op: "add",
+              data: { descriptionPattern: "NEW", matchType: "contains", tags: [] },
+            },
+          ],
+        },
+        rules
+      );
+      expect(Object.keys(out).sort()).toEqual(["r1", "r3"]);
+      expect(out["r1"]?.descriptionPattern).toBe("WOOLWORTHS");
+      expect(out["r3"]?.descriptionPattern).toBe("ALDI");
+      // `r2` is present in `rules` but not referenced → must not be hydrated.
+      expect(out["r2"]).toBeUndefined();
+    });
+
+    it("silently omits referenced ids that are not present in the rules list", () => {
+      const out = service.buildTargetRulesMap({ ops: [{ op: "remove", id: "ghost" }] }, [
+        row("r1", "WOOLWORTHS"),
+      ]);
+      expect(out).toEqual({});
+    });
+
+    it("dedupes when the same rule id is referenced by multiple ops", () => {
+      const out = service.buildTargetRulesMap(
+        {
+          ops: [
+            { op: "edit", id: "r1", data: { entityName: "One" } },
+            { op: "disable", id: "r1" },
+          ],
+        },
+        [row("r1", "WOOLWORTHS")]
+      );
+      expect(Object.keys(out)).toEqual(["r1"]);
+    });
+
+    it("converts raw tags JSON to an array on the hydrated entry", () => {
+      const out = service.buildTargetRulesMap({ ops: [{ op: "edit", id: "r1", data: {} }] }, [
+        row("r1", "WOOLWORTHS", { tags: '["Groceries","Weekly"]' }),
+      ]);
+      expect(out["r1"]?.tags).toEqual(["Groceries", "Weekly"]);
     });
   });
 });

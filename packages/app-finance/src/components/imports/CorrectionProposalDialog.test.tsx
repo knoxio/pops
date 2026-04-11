@@ -4,7 +4,12 @@ import {
   CorrectionProposalDialog,
   normalizeForMatch,
   transactionMatchesSignal,
+  scopePreviewTransactions,
+  serverOpToLocalOp,
+  PREVIEW_CHANGESET_MAX_TRANSACTIONS,
+  type LocalOp,
 } from "./CorrectionProposalDialog";
+import type { CorrectionRule } from "./RulePicker";
 
 // ---------------------------------------------------------------------------
 // Mock state
@@ -168,8 +173,25 @@ describe("transactionMatchesSignal", () => {
   });
 
   describe("regex", () => {
-    it("matches via case-insensitive regex", () => {
-      expect(transactionMatchesSignal("PayID from John", "payid", "regex")).toBe(true);
+    // These tests mirror the server's `findMatchingCorrectionFromRules`
+    // semantics: `new RegExp(pattern).test(normalizeDescription(desc))` —
+    // no flags, and the description is uppercased + digit-stripped + space-
+    // collapsed BEFORE the regex runs. Client-side preview must match.
+    it("tests against the normalized (uppercased) description, so patterns must be uppercase", () => {
+      // Positive: uppercase pattern matches normalized description.
+      expect(transactionMatchesSignal("PayID from John", "PAYID", "regex")).toBe(true);
+      // Negative: lowercase pattern does NOT match because normalization
+      // uppercases "PayID from John" to "PAYID FROM JOHN" and the regex
+      // runs without the /i flag (server parity).
+      expect(transactionMatchesSignal("PayID from John", "payid", "regex")).toBe(false);
+    });
+
+    it("tests against the digit-stripped description, so \\d+ cannot match digits in the input", () => {
+      // "TXN42" normalizes to "TXN " (digits stripped), so TXN\d+ cannot
+      // match. Users must write patterns against the normalized form.
+      expect(transactionMatchesSignal("TXN42", "TXN\\d+", "regex")).toBe(false);
+      // The same input DOES match a pattern written for the normalized form.
+      expect(transactionMatchesSignal("TXN42", "^TXN\\s*$", "regex")).toBe(true);
     });
 
     it("honours anchors in the pattern", () => {
@@ -180,10 +202,170 @@ describe("transactionMatchesSignal", () => {
     it("returns false (not throws) for an invalid regex pattern", () => {
       expect(transactionMatchesSignal("anything", "[unclosed", "regex")).toBe(false);
     });
+
+    it("returns false for an empty regex pattern", () => {
+      expect(transactionMatchesSignal("anything", "", "regex")).toBe(false);
+    });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// serverOpToLocalOp — hydration of targetRule from the server-provided map
+// ---------------------------------------------------------------------------
+
+function makeRule(overrides: Partial<CorrectionRule> = {}): CorrectionRule {
+  return {
+    id: "rule-1",
+    descriptionPattern: "WOOLWORTHS",
+    matchType: "contains",
+    entityId: null,
+    entityName: "Woolworths",
+    location: null,
+    tags: [],
+    transactionType: null,
+    isActive: true,
+    confidence: 0.95,
+    timesApplied: 3,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    lastUsedAt: null,
+    ...overrides,
+  };
+}
+
+describe("serverOpToLocalOp", () => {
+  it("maps 'add' op without consulting targetRules", () => {
+    const local = serverOpToLocalOp(
+      {
+        op: "add",
+        data: {
+          descriptionPattern: "NETFLIX",
+          matchType: "contains",
+          entityName: "Netflix",
+          tags: [],
+        },
+      },
+      {}
+    );
+    expect(local.kind).toBe("add");
+    if (local.kind !== "add") throw new Error("kind narrow");
+    expect(local.data.descriptionPattern).toBe("NETFLIX");
+    expect(local.dirty).toBe(false);
   });
 
-  it("regex does NOT apply the digit-stripping normalization", () => {
-    expect(transactionMatchesSignal("TXN42", "TXN\\d+", "regex")).toBe(true);
+  it("hydrates targetRule on 'edit' from the targetRules map", () => {
+    const rule = makeRule({ id: "rule-42" });
+    const local = serverOpToLocalOp(
+      { op: "edit", id: "rule-42", data: { entityName: "Woolies" } },
+      { "rule-42": rule }
+    );
+    expect(local.kind).toBe("edit");
+    if (local.kind !== "edit") throw new Error("kind narrow");
+    expect(local.targetRuleId).toBe("rule-42");
+    expect(local.targetRule).toBe(rule);
+  });
+
+  it("leaves targetRule as null when hydration misses on 'disable'", () => {
+    const local = serverOpToLocalOp({ op: "disable", id: "orphan" }, {});
+    expect(local.kind).toBe("disable");
+    if (local.kind !== "disable") throw new Error("kind narrow");
+    expect(local.targetRuleId).toBe("orphan");
+    expect(local.targetRule).toBeNull();
+  });
+
+  it("hydrates targetRule on 'remove' when present in the map", () => {
+    const rule = makeRule({ id: "rule-99" });
+    const local = serverOpToLocalOp(
+      { op: "remove", id: "rule-99" },
+      { "rule-99": rule, other: makeRule({ id: "other" }) }
+    );
+    expect(local.kind).toBe("remove");
+    if (local.kind !== "remove") throw new Error("kind narrow");
+    expect(local.targetRule).toBe(rule);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// scopePreviewTransactions — per-op filter + cap at the server zod max
+// ---------------------------------------------------------------------------
+
+function addOp(pattern: string, matchType: "exact" | "contains" | "regex" = "contains"): LocalOp {
+  return {
+    kind: "add",
+    clientId: `add-${pattern}`,
+    data: { descriptionPattern: pattern, matchType, entityName: "E", tags: [] },
+    dirty: false,
+  };
+}
+
+function editOp(rule: CorrectionRule | null): LocalOp {
+  return {
+    kind: "edit",
+    clientId: `edit-${rule?.id ?? "orphan"}`,
+    targetRuleId: rule?.id ?? "orphan",
+    targetRule: rule,
+    data: { entityName: "Renamed" },
+    dirty: false,
+  };
+}
+
+describe("scopePreviewTransactions", () => {
+  it("filters transactions to only those matching at least one add op's signal", () => {
+    const txns = [
+      { checksum: "1", description: "WOOLWORTHS 1234 SYD" },
+      { checksum: "2", description: "COLES 9999 NEW" },
+      { checksum: "3", description: "NETFLIX 1X" },
+    ];
+    const { txns: scoped, truncated } = scopePreviewTransactions(
+      [addOp("WOOLWORTHS"), addOp("NETFLIX")],
+      txns
+    );
+    expect(scoped.map((t) => t.checksum)).toEqual(["1", "3"]);
+    expect(truncated).toBe(false);
+  });
+
+  it("uses a hydrated edit op's targetRule pattern for scoping", () => {
+    const rule = makeRule({ id: "r1", descriptionPattern: "COLES", matchType: "contains" });
+    const txns = [
+      { checksum: "1", description: "WOOLWORTHS 1" },
+      { checksum: "2", description: "COLES 5 NEW" },
+    ];
+    const { txns: scoped } = scopePreviewTransactions([editOp(rule)], txns);
+    expect(scoped.map((t) => t.checksum)).toEqual(["2"]);
+  });
+
+  it("falls back to the full preview list when any non-add op lacks a hydrated targetRule", () => {
+    const txns = [
+      { checksum: "1", description: "WOOLWORTHS 1" },
+      { checksum: "2", description: "COLES 5" },
+    ];
+    // edit op without hydrated targetRule (null) — scope must not guess.
+    const { txns: scoped, truncated } = scopePreviewTransactions([editOp(null)], txns);
+    expect(scoped).toHaveLength(2);
+    expect(truncated).toBe(false);
+  });
+
+  it("caps the scoped list at PREVIEW_CHANGESET_MAX_TRANSACTIONS and reports truncated=true", () => {
+    const total = PREVIEW_CHANGESET_MAX_TRANSACTIONS + 50;
+    const txns = Array.from({ length: total }, (_, i) => ({
+      checksum: String(i),
+      description: `WOOLWORTHS ${i}`,
+    }));
+    const { txns: scoped, truncated } = scopePreviewTransactions([addOp("WOOLWORTHS")], txns);
+    expect(scoped).toHaveLength(PREVIEW_CHANGESET_MAX_TRANSACTIONS);
+    expect(truncated).toBe(true);
+  });
+
+  it("does not report truncated when scoped length exactly equals the cap", () => {
+    const txns = Array.from({ length: PREVIEW_CHANGESET_MAX_TRANSACTIONS }, (_, i) => ({
+      checksum: String(i),
+      description: `WOOLWORTHS ${i}`,
+    }));
+    const { scoped, truncated } = (() => {
+      const r = scopePreviewTransactions([addOp("WOOLWORTHS")], txns);
+      return { scoped: r.txns, truncated: r.truncated };
+    })();
+    expect(scoped).toHaveLength(PREVIEW_CHANGESET_MAX_TRANSACTIONS);
+    expect(truncated).toBe(false);
   });
 });
 

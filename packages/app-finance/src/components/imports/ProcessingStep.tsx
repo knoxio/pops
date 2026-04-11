@@ -12,6 +12,8 @@ import type { ProcessImportOutput, ImportWarning } from "@pops/api/modules/finan
 export function ProcessingStep() {
   const {
     parsedTransactions,
+    parsedTransactionsFingerprint,
+    processedForFingerprint,
     processedTransactions,
     setProcessSessionId,
     processSessionId,
@@ -21,16 +23,24 @@ export function ProcessingStep() {
   const [pollingEnabled, setPollingEnabled] = useState(false);
 
   /**
-   * If we already have processed transactions in the store (e.g. user navigated
-   * here via browser history or a Back→Continue bounce), skip re-running the AI
-   * pipeline and let the user advance. Processing is expensive and deterministic
-   * over the same input — no reason to burn tokens re-doing it.
+   * Skip the expensive AI processing pipeline when the cached
+   * `processedTransactions` in the store were demonstrably computed from the
+   * *current* `parsedTransactions` — tracked via `processedForFingerprint`
+   * matching `parsedTransactionsFingerprint`. The typical trigger is a
+   * Back→Continue bounce inside the wizard that never actually mutated the
+   * parsed input. Any real change (new file, re-mapped columns, different
+   * row set) invalidates the fingerprint upstream in `setParsedTransactions`
+   * and this gate will correctly re-run processing.
    */
-  const hasAlreadyProcessed =
+  const hasProcessedResults =
     processedTransactions.matched.length > 0 ||
     processedTransactions.uncertain.length > 0 ||
     processedTransactions.failed.length > 0 ||
     processedTransactions.skipped.length > 0;
+  const hasAlreadyProcessed =
+    hasProcessedResults &&
+    processedForFingerprint !== null &&
+    processedForFingerprint === parsedTransactionsFingerprint;
 
   const processImportMutation = trpc.finance.imports.processImport.useMutation({
     onSuccess: (data) => {
