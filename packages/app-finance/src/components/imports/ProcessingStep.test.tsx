@@ -28,9 +28,24 @@ const mockNextStep = vi.fn();
 const mockSetProcessSessionId = vi.fn();
 const mockSetProcessedTransactions = vi.fn();
 
+const emptyProcessed = {
+  matched: [],
+  uncertain: [],
+  failed: [],
+  skipped: [],
+  warnings: undefined,
+};
+
+let mockProcessedTransactions: typeof emptyProcessed = emptyProcessed;
+let mockParsedTransactionsFingerprint = "fp-current";
+let mockProcessedForFingerprint: string | null = null;
+
 vi.mock("../../store/importStore", () => ({
   useImportStore: () => ({
     parsedTransactions: [{ date: "2026-01-01", description: "Test", amount: -50 }],
+    parsedTransactionsFingerprint: mockParsedTransactionsFingerprint,
+    processedForFingerprint: mockProcessedForFingerprint,
+    processedTransactions: mockProcessedTransactions,
     setProcessSessionId: mockSetProcessSessionId,
     processSessionId: null,
     setProcessedTransactions: mockSetProcessedTransactions,
@@ -60,6 +75,9 @@ beforeEach(() => {
   mockProgressQuery.mockReturnValue({
     data: undefined,
   });
+  mockProcessedTransactions = emptyProcessed;
+  mockParsedTransactionsFingerprint = "fp-current";
+  mockProcessedForFingerprint = null;
 });
 
 describe("ProcessingStep", () => {
@@ -113,5 +131,62 @@ describe("ProcessingStep", () => {
     render(<ProcessingStep />);
     expect(screen.getByText("Processing Failed")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+  });
+
+  describe("when already processed (Back navigation)", () => {
+    it("does NOT re-run the AI pipeline and shows Continue instead (fingerprints match)", () => {
+      mockProcessedTransactions = {
+        ...emptyProcessed,
+        matched: [
+          // Minimal shape — ProcessingStep only checks array lengths.
+          { description: "Existing" } as never,
+        ],
+      };
+      mockParsedTransactionsFingerprint = "fp-same";
+      mockProcessedForFingerprint = "fp-same";
+      render(<ProcessingStep />);
+      expect(mockMutate).not.toHaveBeenCalled();
+      expect(screen.getByText("Already processed")).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Continue to Review" })).toBeInTheDocument();
+    });
+
+    it("calls nextStep when Continue is clicked", () => {
+      mockProcessedTransactions = {
+        ...emptyProcessed,
+        uncertain: [{ description: "Existing" } as never],
+      };
+      mockParsedTransactionsFingerprint = "fp-same";
+      mockProcessedForFingerprint = "fp-same";
+      render(<ProcessingStep />);
+      fireEvent.click(screen.getByRole("button", { name: "Continue to Review" }));
+      expect(mockNextStep).toHaveBeenCalledTimes(1);
+    });
+
+    it("DOES re-run the pipeline when the parsed fingerprint has diverged from processedForFingerprint", () => {
+      // Stale cached results (fingerprint was 'old'), but the live parsed
+      // input now fingerprints to 'new' — the user re-mapped columns in
+      // Step 2 and came forward again. Short-circuit must NOT fire.
+      mockProcessedTransactions = {
+        ...emptyProcessed,
+        matched: [{ description: "Stale" } as never],
+      };
+      mockParsedTransactionsFingerprint = "fp-new";
+      mockProcessedForFingerprint = "fp-old";
+      render(<ProcessingStep />);
+      expect(screen.queryByText("Already processed")).not.toBeInTheDocument();
+      expect(mockMutate).toHaveBeenCalledTimes(1);
+    });
+
+    it("DOES re-run the pipeline when processedForFingerprint is still null (first run)", () => {
+      // Processed arrays happen to be empty but processedForFingerprint is
+      // null, meaning no successful run has pinned them yet. Short-circuit
+      // gate must not fire off null equality alone.
+      mockProcessedTransactions = emptyProcessed;
+      mockParsedTransactionsFingerprint = "fp-current";
+      mockProcessedForFingerprint = null;
+      render(<ProcessingStep />);
+      expect(screen.queryByText("Already processed")).not.toBeInTheDocument();
+      expect(mockMutate).toHaveBeenCalledTimes(1);
+    });
   });
 });

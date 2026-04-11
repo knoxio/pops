@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Save, X, ChevronRight } from "lucide-react";
-import { Button, CheckboxInput } from "@pops/ui";
+import { Button } from "@pops/ui";
 import { Input } from "@pops/ui";
 import { Label } from "@pops/ui";
 import { Select as UiSelect } from "@pops/ui";
@@ -34,7 +34,6 @@ export function EditableTransactionCard({
     amount: transaction.amount,
     date: transaction.date,
     location: transaction.location || "",
-    online: transaction.online ?? false,
     account: transaction.account,
     transactionType: transaction.transactionType ?? "purchase",
   });
@@ -176,17 +175,6 @@ export function EditableTransactionCard({
             onChange={(e) => setEditedFields({ ...editedFields, location: e.target.value })}
             placeholder="Optional"
             className="bg-white dark:bg-gray-800"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <CheckboxInput
-            id="online"
-            label="Online transaction"
-            checked={editedFields.online || false}
-            onCheckedChange={(checked) =>
-              setEditedFields({ ...editedFields, online: checked === true })
-            }
           />
         </div>
       </div>

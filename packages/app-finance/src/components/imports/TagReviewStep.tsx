@@ -192,7 +192,6 @@ export function TagReviewStep() {
       entityId: t.entityId,
       entityName: t.entityName,
       location: t.location,
-      online: t.online,
       tags: localTags[t.checksum] ?? t.tags ?? [],
     }));
     executeImportMutation.mutate({ transactions: withTags });

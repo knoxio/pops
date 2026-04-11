@@ -35,9 +35,26 @@ interface ImportStore {
     location?: string;
   };
   parsedTransactions: ParsedTransaction[];
+  /**
+   * Content fingerprint of the current `parsedTransactions` list — a
+   * concatenation of their `checksum` fields. Rebuilt inside
+   * `setParsedTransactions` and compared against `processedForFingerprint`
+   * so the Step 3 "already processed" short-circuit cannot fire with a
+   * processed-transactions set that was computed from a *different* parse
+   * of the CSV (e.g. after the user went back to Step 2 and re-mapped
+   * columns).
+   */
+  parsedTransactionsFingerprint: string;
 
   // Step 3: Processing
   processSessionId: string | null;
+  /**
+   * The `parsedTransactionsFingerprint` value that the current
+   * `processedTransactions` were derived from. `null` until the first
+   * successful processing run, or after any reset. Compared in
+   * `ProcessingStep` to decide whether cached results are still valid.
+   */
+  processedForFingerprint: string | null;
 
   // Step 4: Review (entity confirmation, no execute here)
 
@@ -100,7 +117,9 @@ const initialState = {
     amount: "",
   },
   parsedTransactions: [],
+  parsedTransactionsFingerprint: "",
   processSessionId: null,
+  processedForFingerprint: null,
   processedTransactions: {
     matched: [],
     uncertain: [],
@@ -113,17 +132,102 @@ const initialState = {
   importResult: null,
 };
 
+/**
+ * Produce a content fingerprint for a list of parsed transactions. Uses the
+ * `checksum` fields (SHA-256 of each raw row) joined with a separator —
+ * cheap to compute, deterministic, and changes whenever either the rows
+ * themselves or their order change. Empty list → empty string.
+ */
+function fingerprintParsedTransactions(txns: ParsedTransaction[]): string {
+  if (txns.length === 0) return "";
+  return txns.map((t) => t.checksum).join("|");
+}
+
+/**
+ * Shape returned when the user starts a brand-new import (new file selected).
+ * Resets every wizard-step result that was computed from the *previous* file,
+ * so Step 3 doesn't short-circuit with "Already processed" using stale data.
+ * We intentionally keep `currentStep` and `columnMap` untouched — the user is
+ * still inside the wizard, and re-using their column mapping is a nicety.
+ */
+const downstreamReset: Pick<
+  ImportStore,
+  | "headers"
+  | "rows"
+  | "parsedTransactions"
+  | "parsedTransactionsFingerprint"
+  | "processSessionId"
+  | "processedForFingerprint"
+  | "processedTransactions"
+  | "confirmedTransactions"
+  | "executeSessionId"
+  | "importResult"
+> = {
+  headers: initialState.headers,
+  rows: initialState.rows,
+  parsedTransactions: initialState.parsedTransactions,
+  parsedTransactionsFingerprint: initialState.parsedTransactionsFingerprint,
+  processSessionId: initialState.processSessionId,
+  processedForFingerprint: initialState.processedForFingerprint,
+  processedTransactions: initialState.processedTransactions,
+  confirmedTransactions: initialState.confirmedTransactions,
+  executeSessionId: initialState.executeSessionId,
+  importResult: initialState.importResult,
+};
+
+function isSameFile(a: File | null, b: File | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return a.name === b.name && a.size === b.size && a.lastModified === b.lastModified;
+}
+
 export const useImportStore = create<ImportStore>((set) => ({
   ...initialState,
 
-  setFile: (file) => set({ file }),
+  setFile: (file) =>
+    set((state) => {
+      // Selecting a different file means the previous parse/process/review
+      // results belong to a stale input. Wipe them so Step 3 doesn't reuse
+      // prior `processedTransactions` and render "Already processed".
+      if (!isSameFile(state.file, file)) {
+        return { ...downstreamReset, file };
+      }
+      return { file };
+    }),
   setBankType: (bankType) => set({ bankType }),
   setHeaders: (headers) => set({ headers }),
   setRows: (rows) => set({ rows }),
   setColumnMap: (columnMap) => set({ columnMap }),
-  setParsedTransactions: (parsedTransactions) => set({ parsedTransactions }),
+  setParsedTransactions: (parsedTransactions) =>
+    set((state) => {
+      const nextFingerprint = fingerprintParsedTransactions(parsedTransactions);
+      // If the parsed input is byte-for-byte identical to what's already in
+      // the store (e.g. the user bounced back to Step 2 and hit Continue
+      // without touching the column mapping), keep downstream processing
+      // state intact so Step 3 can short-circuit legitimately.
+      if (nextFingerprint === state.parsedTransactionsFingerprint) {
+        return { parsedTransactions };
+      }
+      // Input has actually changed — downstream caches are stale and must
+      // be invalidated. We also clear `processedForFingerprint` explicitly
+      // (belt-and-suspenders: it's covered by downstreamReset, but being
+      // explicit here makes the invariant easier to audit).
+      return {
+        ...downstreamReset,
+        parsedTransactions,
+        parsedTransactionsFingerprint: nextFingerprint,
+      };
+    }),
   setProcessSessionId: (processSessionId) => set({ processSessionId }),
-  setProcessedTransactions: (processedTransactions) => set({ processedTransactions }),
+  setProcessedTransactions: (processedTransactions) =>
+    set((state) => ({
+      processedTransactions,
+      // Pin the processed results to the fingerprint of the parsed input
+      // they were computed from. ProcessingStep compares this against the
+      // live `parsedTransactionsFingerprint` to decide whether a Back→
+      // Continue cycle can skip re-processing.
+      processedForFingerprint: state.parsedTransactionsFingerprint,
+    })),
   setConfirmedTransactions: (confirmedTransactions) => set({ confirmedTransactions }),
   setExecuteSessionId: (executeSessionId) => set({ executeSessionId }),
   setImportResult: (importResult) => set({ importResult }),

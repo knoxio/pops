@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef, useEffect } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { CheckCircle, AlertTriangle, XCircle, AlertCircle, List, Layers } from "lucide-react";
 import { useImportStore } from "../../store/importStore";
 import type { ProcessedTransaction } from "../../store/importStore";
@@ -9,13 +9,10 @@ import { EntityCreateDialog } from "./EntityCreateDialog";
 import { TransactionCard } from "./TransactionCard";
 import { TransactionGroup } from "./TransactionGroup";
 import { EditableTransactionCard } from "./EditableTransactionCard";
-import { BatchProposalsPanel } from "./BatchProposalsPanel";
 import { CorrectionProposalDialog } from "./CorrectionProposalDialog";
 import { toast } from "sonner";
 import type { ConfirmedTransaction } from "@pops/api/modules/finance/imports";
 import { groupTransactionsByEntity } from "../../lib/transaction-utils";
-import { useBatchAnalysis } from "../../lib/useBatchAnalysis";
-import type { CorrectionEntry } from "../../lib/useBatchAnalysis";
 
 type ViewMode = "list" | "grouped";
 
@@ -28,7 +25,7 @@ export function ReviewStep() {
     processSessionId,
     setConfirmedTransactions,
     nextStep,
-    prevStep,
+    goToStep,
     findSimilar,
   } = useImportStore();
 
@@ -50,30 +47,19 @@ export function ReviewStep() {
     tags?: string[];
     transactionType?: "purchase" | "transfer" | "income" | null;
   } | null>(null);
+  const [proposalTriggeringTransaction, setProposalTriggeringTransaction] = useState<{
+    description: string;
+    amount: number;
+    date: string;
+    account: string;
+    location?: string | null;
+    previousEntityName?: string | null;
+    previousTransactionType?: "purchase" | "transfer" | "income" | null;
+  } | null>(null);
 
   // Default to Uncertain tab when uncertain transactions exist, otherwise Matched
   const initialTab = localTransactions.uncertain.length > 0 ? "uncertain" : "matched";
   const [activeTab, setActiveTab] = useState(initialTab);
-
-  // Batch analysis — accumulate corrections, trigger AI analysis
-  const batchAnalysis = useBatchAnalysis();
-
-  // Seed batch analysis with matched transactions on mount
-  const seededRef = useRef(false);
-  useEffect(() => {
-    if (seededRef.current) return;
-    seededRef.current = true;
-    const seed: CorrectionEntry[] = localTransactions.matched
-      .filter((t) => t.entity?.entityName)
-      .map((t) => ({
-        description: t.description,
-        entityName: t.entity?.entityName ?? null,
-        amount: t.amount,
-        account: t.account,
-        currentTags: (t.suggestedTags ?? []).map((s) => s.tag),
-      }));
-    if (seed.length > 0) batchAnalysis.seedTransactions(seed);
-  }, [batchAnalysis, localTransactions.matched]);
 
   // Preserve scroll position per tab
   const scrollPositions = useRef<Map<string, number>>(new Map());
@@ -107,51 +93,110 @@ export function ReviewStep() {
     [localTransactions]
   );
 
-  /**
-   * Auto-match similar transactions
-   */
-  const handleAutoMatchSimilar = useCallback(
-    (transactions: ProcessedTransaction[], entityId: string, entityName: string) => {
-      setLocalTransactions((prev) => {
-        let updated = { ...prev };
-        for (const transaction of transactions) {
-          updated = {
-            ...updated,
-            uncertain: updated.uncertain.filter((t: ProcessedTransaction) => t !== transaction),
-            failed: updated.failed.filter((t: ProcessedTransaction) => t !== transaction),
-            matched: [
-              ...updated.matched,
-              {
-                ...transaction,
-                entity: {
-                  entityId,
-                  entityName,
-                  matchType: "auto-matched" as never, // UI-only matchType
-                  confidence: 1,
-                },
-                status: "matched" as const,
-              } as ProcessedTransaction,
-            ],
-          };
-        }
-        return updated;
-      });
-      toast.success(
-        `Applied entity to ${transactions.length} transaction${transactions.length !== 1 ? "s" : ""}`
-      );
+  const handleCreateEntity = useCallback((transaction: ProcessedTransaction) => {
+    setSelectedTransaction(transaction);
+    setShowCreateDialog(true);
+  }, []);
+
+  const analyzeCorrectionMutation = trpc.core.corrections.analyzeCorrection.useMutation();
+
+  const computeFallbackPattern = useCallback((description: string) => {
+    return description.toUpperCase().replace(/\d+/g, "").replace(/\s+/g, " ").trim();
+  }, []);
+
+  const generateProposal = useCallback(
+    async (args: {
+      /** The triggering transaction in its original (pre-correction) state. */
+      triggeringTransaction: ProcessedTransaction;
+      /** The user's correction — the entity/type/location they intend to apply. */
+      entityId: string | null;
+      entityName: string | null;
+      location?: string | null;
+      transactionType?: "purchase" | "transfer" | "income" | null;
+    }) => {
+      // The AI must analyse the ORIGINAL description, not the user's
+      // correction. Otherwise the rule it learns will only ever match the
+      // (already-corrected) value the user entered, defeating the point.
+      const originalDescription = args.triggeringTransaction.description;
+      const originalAmount = args.triggeringTransaction.amount;
+      const fallbackPattern = computeFallbackPattern(originalDescription);
+
+      const triggeringContext = {
+        description: originalDescription,
+        amount: originalAmount,
+        date: args.triggeringTransaction.date,
+        account: args.triggeringTransaction.account,
+        location: args.triggeringTransaction.location ?? null,
+        previousEntityName: args.triggeringTransaction.entity?.entityName ?? null,
+        previousTransactionType: args.triggeringTransaction.transactionType ?? null,
+      };
+
+      try {
+        const res = await analyzeCorrectionMutation.mutateAsync({
+          description: originalDescription,
+          entityName: args.entityName ?? "unknown",
+          amount: originalAmount,
+        });
+        const analysis = res.data;
+
+        const suggestedPattern =
+          analysis && analysis.pattern.length >= 3 ? analysis.pattern : fallbackPattern;
+        const suggestedMatchType =
+          analysis && analysis.pattern.length >= 3 ? analysis.matchType : "contains";
+
+        setProposalSignal({
+          descriptionPattern: suggestedPattern,
+          matchType: suggestedMatchType,
+          entityId: args.entityId,
+          entityName: args.entityName,
+          location: args.location ?? null,
+          transactionType: args.transactionType ?? null,
+          tags: [],
+        });
+        setProposalTriggeringTransaction(triggeringContext);
+        setProposalOpen(true);
+        toast.success("Proposal generated — review and approve to learn");
+      } catch {
+        setProposalSignal({
+          descriptionPattern: fallbackPattern,
+          matchType: "contains",
+          entityId: args.entityId,
+          entityName: args.entityName,
+          location: args.location ?? null,
+          transactionType: args.transactionType ?? null,
+          tags: [],
+        });
+        setProposalTriggeringTransaction(triggeringContext);
+        setProposalOpen(true);
+        toast.info("Proposal generated (fallback) — review and approve to learn");
+      }
     },
-    []
+    [analyzeCorrectionMutation, computeFallbackPattern]
   );
 
   /**
-   * Handle entity selection with auto-matching for similar transactions
+   * Generate a Correction Proposal (ChangeSet) from a correction signal.
+   * Rule changes only happen after explicit approval in the proposal dialog.
+   */
+  const autoSaveRuleAndReEvaluate = useCallback(
+    (triggeringTransaction: ProcessedTransaction, entityId: string, entityName: string) => {
+      void generateProposal({ triggeringTransaction, entityId, entityName });
+    },
+    [generateProposal]
+  );
+
+  /**
+   * Handle entity selection. Always resolves the one transaction the user
+   * picked for, then — if there are similar transactions in the session —
+   * opens the CorrectionProposalDialog so the user can confirm the cascade
+   * AND learn a persistent rule. No silent bulk automation; no hidden side
+   * effects.
    */
   const handleEntitySelect = useCallback(
     (transaction: ProcessedTransaction, entityId: string, entityName: string) => {
-      // Find similar transactions before updating
       const similar = findSimilar(transaction);
 
-      // Move transaction from uncertain/failed to matched (functional setState avoids stale closure)
+      // Resolve the single transaction the user explicitly picked for.
       setLocalTransactions((prev) => ({
         ...prev,
         uncertain: prev.uncertain.filter((t: ProcessedTransaction) => t !== transaction),
@@ -171,110 +216,20 @@ export function ReviewStep() {
         ],
       }));
 
-      // Show toast with option to apply to similar transactions
+      // If there are similar txns in the session, route through the proposal
+      // dialog so the user sees the matching transactions, the rule that
+      // would be learned, and must explicitly approve before the cascade.
       if (similar.length > 0) {
-        toast.info(
-          `Found ${similar.length} similar transaction${similar.length !== 1 ? "s" : ""}`,
-          {
-            description: "Would you like to apply this entity to all similar transactions?",
-            action: {
-              label: "Apply to All",
-              onClick: () => {
-                handleAutoMatchSimilar(similar, entityId, entityName);
-              },
-            },
-          }
-        );
-      }
-
-      // Feed batch analysis so the AI-suggested rules panel remains useful.
-      batchAnalysis.addCorrection({
-        description: transaction.description,
-        entityName,
-        amount: transaction.amount,
-        account: transaction.account,
-        currentTags: (transaction.suggestedTags ?? []).map((s) => s.tag),
-      });
-    },
-    [batchAnalysis, findSimilar, handleAutoMatchSimilar]
-  );
-
-  const handleCreateEntity = useCallback((transaction: ProcessedTransaction) => {
-    setSelectedTransaction(transaction);
-    setShowCreateDialog(true);
-  }, []);
-
-  const analyzeCorrectionMutation = trpc.core.corrections.analyzeCorrection.useMutation();
-
-  const computeFallbackPattern = useCallback((description: string) => {
-    return description.toUpperCase().replace(/\d+/g, "").replace(/\s+/g, " ").trim();
-  }, []);
-
-  const generateProposal = useCallback(
-    async (args: {
-      description: string;
-      entityId: string | null;
-      entityName: string | null;
-      amount: number;
-      location?: string | null;
-      transactionType?: "purchase" | "transfer" | "income" | null;
-    }) => {
-      const fallbackPattern = computeFallbackPattern(args.description);
-
-      try {
-        const res = await analyzeCorrectionMutation.mutateAsync({
-          description: args.description,
-          entityName: args.entityName ?? "unknown",
-          amount: args.amount,
+        void generateProposal({
+          triggeringTransaction: transaction,
+          entityId,
+          entityName,
+          location: transaction.location ?? null,
+          transactionType: transaction.transactionType ?? null,
         });
-        const analysis = res.data;
-
-        const suggestedPattern =
-          analysis && analysis.pattern.length >= 3 ? analysis.pattern : fallbackPattern;
-        const suggestedMatchType =
-          analysis && analysis.pattern.length >= 3
-            ? analysis.matchType === "prefix"
-              ? "contains"
-              : analysis.matchType
-            : "contains";
-
-        setProposalSignal({
-          descriptionPattern: suggestedPattern,
-          matchType: suggestedMatchType,
-          entityId: args.entityId,
-          entityName: args.entityName,
-          location: args.location ?? null,
-          transactionType: args.transactionType ?? null,
-          tags: [],
-        });
-        setProposalOpen(true);
-        toast.success("Proposal generated — review and approve to learn");
-      } catch {
-        setProposalSignal({
-          descriptionPattern: fallbackPattern,
-          matchType: "contains",
-          entityId: args.entityId,
-          entityName: args.entityName,
-          location: args.location ?? null,
-          transactionType: args.transactionType ?? null,
-          tags: [],
-        });
-        setProposalOpen(true);
-        toast.info("Proposal generated (fallback) — review and approve to learn");
       }
     },
-    [analyzeCorrectionMutation, computeFallbackPattern]
-  );
-
-  /**
-   * Generate a Correction Proposal (ChangeSet) from a correction signal.
-   * Rule changes only happen after explicit approval in the proposal dialog.
-   */
-  const autoSaveRuleAndReEvaluate = useCallback(
-    (description: string, entityId: string, entityName: string, amount: number) => {
-      void generateProposal({ description, entityId, entityName, amount });
-    },
-    [generateProposal]
+    [findSimilar, generateProposal]
   );
 
   /**
@@ -307,7 +262,7 @@ export function ReviewStep() {
       // Always accept the transaction itself
       handleEntitySelect(transaction, entityId, entityName);
 
-      autoSaveRuleAndReEvaluate(transaction.description, entityId, entityName, transaction.amount);
+      autoSaveRuleAndReEvaluate(transaction, entityId, entityName);
     },
     [handleEntitySelect, entities, handleCreateEntity, autoSaveRuleAndReEvaluate]
   );
@@ -371,14 +326,9 @@ export function ReviewStep() {
           `Accepted ${transactions.length} transaction${transactions.length !== 1 ? "s" : ""}`
         );
 
-        // Auto-save correction rule using the first transaction's description and re-evaluate
+        // Auto-save correction rule using the first transaction and re-evaluate
         if (firstTx) {
-          autoSaveRuleAndReEvaluate(
-            firstTx.description,
-            resolvedEntityId,
-            entityName,
-            firstTx.amount
-          );
+          autoSaveRuleAndReEvaluate(firstTx, resolvedEntityId, entityName);
         }
       } catch (error) {
         toast.error(
@@ -409,6 +359,11 @@ export function ReviewStep() {
       // Handle bulk assignment if pending
       if (pendingBulkTransactions && pendingBulkTransactions.length > 0) {
         const bulkCount = pendingBulkTransactions.length;
+        // Capture the first transaction BEFORE we clear pendingBulkTransactions —
+        // we need its description/amount/type to seed the proposal signal so a
+        // rule actually gets learned (otherwise next import re-surfaces the
+        // same uncertain matches).
+        const firstTx = pendingBulkTransactions[0] ?? null;
         setLocalTransactions((prev) => {
           let updated = { ...prev };
           for (const transaction of pendingBulkTransactions) {
@@ -438,13 +393,28 @@ export function ReviewStep() {
         toast.success(
           `Created "${entity.entityName}" and assigned to ${bulkCount} transaction${bulkCount !== 1 ? "s" : ""}`
         );
+
+        // Route through the CorrectionProposalDialog so a persistent rule is
+        // learned against the NEWLY-RENAMED entity. Using firstTx (the
+        // ORIGINAL pre-correction transaction) gives the signal analyzer a
+        // better shot at a broad pattern (e.g. "IKEA") instead of the
+        // txn-specific one the original AI suggestion would have produced.
+        if (firstTx) {
+          void generateProposal({
+            triggeringTransaction: firstTx,
+            entityId: entity.entityId,
+            entityName: entity.entityName,
+            location: firstTx.location ?? null,
+            transactionType: firstTx.transactionType ?? null,
+          });
+        }
       } else if (selectedTransaction) {
         // Handle single transaction assignment
         handleEntitySelect(selectedTransaction, entity.entityId, entity.entityName);
         setSelectedTransaction(null);
       }
     },
-    [selectedTransaction, pendingBulkTransactions, handleEntitySelect]
+    [selectedTransaction, pendingBulkTransactions, handleEntitySelect, generateProposal]
   );
 
   const handleEdit = useCallback((transaction: ProcessedTransaction) => {
@@ -466,7 +436,6 @@ export function ReviewStep() {
         editedFields.amount !== transaction.amount ||
         editedFields.entity?.entityId !== transaction.entity?.entityId ||
         editedFields.location !== transaction.location ||
-        editedFields.online !== transaction.online ||
         editedFields.transactionType !== transaction.transactionType;
 
       if (isRuleMatched && hasChanges) {
@@ -475,30 +444,20 @@ export function ReviewStep() {
         const entityId = editedFields.entity?.entityId ?? transaction.entity?.entityId ?? null;
         const entityName =
           editedFields.entity?.entityName ?? transaction.entity?.entityName ?? null;
-        const updatedDescription = editedFields.description ?? transaction.description;
-        const updatedAmount = editedFields.amount ?? transaction.amount;
         const updatedLocation = editedFields.location ?? transaction.location ?? null;
         const updatedType =
           editedFields.transactionType ?? transaction.transactionType ?? "purchase";
 
+        // Pass the ORIGINAL transaction so the AI analyzes the unedited
+        // description — using the user's edited string would learn a rule
+        // that only matches the (already-corrected) value the user typed.
         void generateProposal({
-          description: updatedDescription,
+          triggeringTransaction: transaction,
           entityId,
           entityName,
-          amount: updatedAmount,
           location: updatedLocation,
           transactionType: updatedType,
         });
-
-        if (entityName) {
-          batchAnalysis.addCorrection({
-            description: updatedDescription,
-            entityName,
-            amount: updatedAmount,
-            account: transaction.account,
-            currentTags: (transaction.suggestedTags ?? []).map((s) => s.tag),
-          });
-        }
 
         return;
       }
@@ -549,29 +508,17 @@ export function ReviewStep() {
         const entityId = editedFields.entity?.entityId ?? transaction.entity?.entityId ?? null;
         const entityName =
           editedFields.entity?.entityName ?? transaction.entity?.entityName ?? null;
-        const updatedDescription = editedFields.description ?? transaction.description;
-        const updatedAmount = editedFields.amount ?? transaction.amount;
         const updatedLocation = editedFields.location ?? transaction.location ?? null;
         const updatedType =
           editedFields.transactionType ?? transaction.transactionType ?? "purchase";
+        // Same reasoning as above: feed the AI the original transaction.
         void generateProposal({
-          description: updatedDescription,
+          triggeringTransaction: transaction,
           entityId,
           entityName,
-          amount: updatedAmount,
           location: updatedLocation,
           transactionType: updatedType,
         });
-
-        if (entityName) {
-          batchAnalysis.addCorrection({
-            description: updatedDescription,
-            entityName,
-            amount: updatedAmount,
-            account: transaction.account,
-            currentTags: (transaction.suggestedTags ?? []).map((s) => s.tag),
-          });
-        }
       } else if (hasChanges && !shouldLearn) {
         // Show toast asking if they want to learn
         toast.info("Apply this correction to future imports?", {
@@ -588,7 +535,7 @@ export function ReviewStep() {
         toast.success("Transaction updated");
       }
     },
-    [batchAnalysis, generateProposal]
+    [generateProposal]
   );
 
   const handleCancelEdit = useCallback(() => {
@@ -607,7 +554,6 @@ export function ReviewStep() {
         amount: t.amount,
         account: t.account,
         location: t.location,
-        online: t.online,
         rawRow: t.rawRow,
         checksum: t.checksum,
         transactionType: t.transactionType,
@@ -641,6 +587,7 @@ export function ReviewStep() {
         onOpenChange={setProposalOpen}
         sessionId={processSessionId ?? ""}
         signal={proposalSignal}
+        triggeringTransaction={proposalTriggeringTransaction}
         previewTransactions={[
           ...localTransactions.matched,
           ...localTransactions.uncertain,
@@ -775,15 +722,8 @@ export function ReviewStep() {
         </TabsContent>
       </Tabs>
 
-      <BatchProposalsPanel
-        proposals={batchAnalysis.proposals}
-        isAnalyzing={batchAnalysis.isAnalyzing}
-        onAccept={batchAnalysis.acceptProposal}
-        onDismiss={batchAnalysis.dismissProposal}
-      />
-
       <div className="flex justify-between gap-3 items-center">
-        <Button variant="outline" onClick={prevStep}>
+        <Button variant="outline" onClick={() => goToStep(2)} title="Back to column mapping">
           Back
         </Button>
         <div className="flex flex-col items-end gap-1">

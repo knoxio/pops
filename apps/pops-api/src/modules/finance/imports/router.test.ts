@@ -147,7 +147,6 @@ describe("imports.processImport", () => {
           amount: -125.5,
           account: "Amex",
           location: "Sydney",
-          online: false,
           rawRow: "{}",
           checksum: "abc123",
         },
@@ -203,7 +202,7 @@ describe("imports.processImport", () => {
     expect(total).toBe(100);
   });
 
-  it("accepts optional fields (location, online)", async () => {
+  it("accepts optional location field", async () => {
     const { sessionId } = await caller.finance.imports.processImport({
       transactions: [
         {
@@ -214,7 +213,6 @@ describe("imports.processImport", () => {
           rawRow: "{}",
           checksum: "abc123",
           location: "Sydney",
-          online: true,
         },
       ],
       account: "Amex",
@@ -259,7 +257,6 @@ describe("imports.executeImport", () => {
           amount: -125.5,
           account: "Amex",
           location: "Sydney",
-          online: false,
           rawRow: "{}",
           checksum: "abc123",
           entityId: "woolworths-id",

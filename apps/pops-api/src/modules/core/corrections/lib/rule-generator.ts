@@ -10,6 +10,7 @@ import { getDrizzle } from "../../../../db.js";
 import { aiUsage, transactions as transactionsTable } from "@pops/db-types";
 import { logger } from "../../../../lib/logger.js";
 import { withRateLimitRetry } from "../../../../lib/ai-retry.js";
+import { normalizeDescription } from "../types.js";
 
 /**
  * Load all distinct tag values from existing transactions.
@@ -50,9 +51,45 @@ export interface ProposedRule {
 }
 
 export interface CorrectionAnalysis {
-  matchType: "exact" | "prefix" | "contains";
+  matchType: "exact" | "contains" | "regex";
   pattern: string;
   confidence: number;
+}
+
+/**
+ * Verify that a proposed (pattern, matchType) actually matches the original
+ * description after normalization. Mirrors the semantics of
+ * `findMatchingCorrectionFromRules` so that anything we accept here will
+ * match the triggering transaction at apply time.
+ *
+ * Pure helper — exported for unit testing.
+ */
+export function patternMatchesDescription(
+  pattern: string,
+  matchType: "exact" | "contains" | "regex",
+  description: string
+): boolean {
+  const normalizedDescription = normalizeDescription(description);
+  // Patterns are stored normalized in the DB; mirror that here so the
+  // validation matches what would actually persist.
+  const normalizedPattern = matchType === "regex" ? pattern : normalizeDescription(pattern);
+
+  if (normalizedPattern.length === 0) return false;
+
+  if (matchType === "exact") {
+    return normalizedPattern === normalizedDescription;
+  }
+
+  if (matchType === "contains") {
+    return normalizedDescription.includes(normalizedPattern);
+  }
+
+  // regex
+  try {
+    return new RegExp(normalizedPattern).test(normalizedDescription);
+  } catch {
+    return false;
+  }
 }
 
 interface CorrectionInput {
@@ -208,26 +245,36 @@ export async function analyzeCorrection(
 
   const client = new Anthropic({ apiKey, maxRetries: 0 });
 
-  const prompt = `You are a bank transaction pattern analyzer. A user has corrected a transaction by assigning it to an entity. Analyze the description to suggest a reusable matching pattern.
+  const prompt = `You are a bank transaction pattern analyzer. A user has assigned a transaction to an entity and we need a reusable rule that will identify FUTURE transactions belonging to the same entity.
 
 Transaction description: "${input.description}"
-Assigned entity: "${input.entityName}"
+Entity (context only — may not appear in the description): "${input.entityName}"
 Amount: ${input.amount}
 
-Identify which part of the description is the entity/merchant name versus location, branch, reference numbers, or noise.
+Your job is to answer: **how would we recognise future transactions for this entity?**
+
+Hard rules — read carefully:
+1. The rule MUST match the transaction description shown above. Verify before answering.
+2. The entity name is context only. Do NOT put the entity name into the pattern unless it literally appears (case-insensitive) in the description. If it does not appear, derive the pattern entirely from the description.
+3. Pick any stable identifier you can find in the description: a merchant/company name, a recurring keyword, a payment-processor token, an invoice prefix, or — if nothing shorter is reliable — the entire description verbatim. Prefer the shortest stable substring, but a longer pattern (or the full description) is acceptable when no shorter identifier is reliable.
+4. Strip volatile parts: numeric codes, branch IDs, dates, dollar amounts, and trailing reference numbers. Keep alphabetic merchant tokens.
 
 Return a single JSON object:
-- "matchType": "exact" (full description matches), "prefix" (description starts with pattern), or "contains" (pattern found anywhere in description)
-- "pattern": the matching pattern string (min ${MIN_PATTERN_LENGTH} chars, uppercase)
-- "confidence": 0.0-1.0 (how confident you are this pattern will correctly match future transactions for this entity)
+- "matchType": one of:
+  - "exact"   — the full normalized description is the identifier
+  - "contains" — the pattern is a substring of the description (preferred default)
+  - "regex"   — a regular expression that will match this and similar descriptions; use only when neither exact nor a literal substring is sufficient
+- "pattern": the matching pattern string (min ${MIN_PATTERN_LENGTH} chars, uppercase). For "exact" and "contains" the pattern must appear verbatim (case-insensitive) inside the description. For "regex" the pattern must be a valid JavaScript regular expression that tests true against the description.
+- "confidence": 0.0-1.0 (how confident you are this rule correctly identifies future transactions for this entity)
 
-Guidelines:
-- "IKEA TEMPE NSW" → entity is "IKEA", location is "TEMPE NSW" → prefix match on "IKEA"
-- "PAYMENT TO NETFLIX" → entity is "NETFLIX", prefix is "PAYMENT TO" → contains match on "NETFLIX"
-- "WOOLWORTHS 1234 SYDNEY" → entity is "WOOLWORTHS", rest is branch/location → prefix match on "WOOLWORTHS"
-- Prefer prefix over contains when the entity name starts the description
-- Prefer contains when the entity name appears after a generic prefix
-- Use exact only when the full description is a consistent identifier
+Examples:
+- description "IKEA TEMPE NSW", entity "IKEA"            → {"matchType":"contains","pattern":"IKEA","confidence":0.95}
+- description "PAYMENT TO NETFLIX", entity "Netflix"       → {"matchType":"contains","pattern":"NETFLIX","confidence":0.95}
+- description "WOOLWORTHS 1234 SYDNEY", entity "Woolworths"→ {"matchType":"contains","pattern":"WOOLWORTHS","confidence":0.95}
+- description "MEMBERSHIP FEE", entity "American Express"  → {"matchType":"exact","pattern":"MEMBERSHIP FEE","confidence":0.7}
+  (entity name does NOT appear in description → use the description itself as the identifier)
+- description "DD AMEX 4521", entity "American Express"    → {"matchType":"contains","pattern":"AMEX","confidence":0.85}
+  ("AMEX" is in the description, so it is a valid stable identifier)
 
 Return ONLY the JSON object, no markdown, no explanation.`;
 
@@ -269,7 +316,7 @@ Return ONLY the JSON object, no markdown, no explanation.`;
     const confidence = typeof rawConfidence === "number" ? rawConfidence : 0;
 
     if (
-      !["exact", "prefix", "contains"].includes(matchType) ||
+      !["exact", "contains", "regex"].includes(matchType) ||
       pattern.length < MIN_PATTERN_LENGTH ||
       confidence < 0 ||
       confidence > 1
@@ -278,8 +325,22 @@ Return ONLY the JSON object, no markdown, no explanation.`;
       return null;
     }
 
+    const typedMatchType = matchType as "exact" | "contains" | "regex";
+
+    // Defence in depth: the rule MUST match the triggering description.
+    // Catches AI hallucinations (e.g. echoing the entity name when it isn't in
+    // the description) and bad regexes — anything we accept here will also
+    // match at apply time via findMatchingCorrectionFromRules.
+    if (!patternMatchesDescription(pattern, typedMatchType, input.description)) {
+      logger.warn(
+        { parsed, description: input.description },
+        "[RuleGen] AI proposed pattern does not match the triggering description — rejecting"
+      );
+      return null;
+    }
+
     result = {
-      matchType: matchType as "exact" | "prefix" | "contains",
+      matchType: typedMatchType,
       pattern,
       confidence,
     };

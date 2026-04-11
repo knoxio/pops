@@ -35,7 +35,7 @@ vi.mock("../../../../lib/logger.js", () => ({
   },
 }));
 
-import { analyzeCorrection } from "./rule-generator.js";
+import { analyzeCorrection, patternMatchesDescription } from "./rule-generator.js";
 import type { CorrectionAnalysis } from "./rule-generator.js";
 
 const mockCreate = sharedMockCreate;
@@ -52,9 +52,9 @@ beforeEach(() => {
 });
 
 describe("analyzeCorrection", () => {
-  it("returns AI-suggested pattern on success", async () => {
+  it("returns AI-suggested pattern when entity name is present in description", async () => {
     mockCreate.mockResolvedValue(
-      makeAiResponse('{"matchType":"prefix","pattern":"WOOLWORTHS","confidence":0.9}')
+      makeAiResponse('{"matchType":"contains","pattern":"WOOLWORTHS","confidence":0.9}')
     );
 
     const result = await analyzeCorrection({
@@ -64,13 +64,13 @@ describe("analyzeCorrection", () => {
     });
 
     expect(result).toEqual({
-      matchType: "prefix",
+      matchType: "contains",
       pattern: "WOOLWORTHS",
       confidence: 0.9,
     } satisfies CorrectionAnalysis);
   });
 
-  it("handles contains matchType", async () => {
+  it("handles contains matchType when entity appears after prefix", async () => {
     mockCreate.mockResolvedValue(
       makeAiResponse('{"matchType":"contains","pattern":"NETFLIX","confidence":0.85}')
     );
@@ -86,6 +86,74 @@ describe("analyzeCorrection", () => {
       pattern: "NETFLIX",
       confidence: 0.85,
     });
+  });
+
+  it("rejects AI response when proposed pattern does not match the description", async () => {
+    // Reproduces the bug: entity name "American Express" has zero textual
+    // overlap with description "MEMBERSHIP FEE", AI hallucinates and echoes
+    // the entity name back as the pattern. The validator must reject it so
+    // the frontend fallback takes over.
+    mockCreate.mockResolvedValue(
+      makeAiResponse('{"matchType":"contains","pattern":"AMERICAN EXPRESS","confidence":0.8}')
+    );
+
+    const result = await analyzeCorrection({
+      description: "MEMBERSHIP FEE",
+      entityName: "American Express",
+      amount: -450,
+    });
+
+    expect(result).toBeNull();
+  });
+
+  it("accepts the full description as the pattern when no shorter identifier exists", async () => {
+    mockCreate.mockResolvedValue(
+      makeAiResponse('{"matchType":"exact","pattern":"MEMBERSHIP FEE","confidence":0.7}')
+    );
+
+    const result = await analyzeCorrection({
+      description: "MEMBERSHIP FEE",
+      entityName: "American Express",
+      amount: -450,
+    });
+
+    expect(result).toEqual({
+      matchType: "exact",
+      pattern: "MEMBERSHIP FEE",
+      confidence: 0.7,
+    });
+  });
+
+  it("accepts a regex matchType that matches the description", async () => {
+    mockCreate.mockResolvedValue(
+      makeAiResponse('{"matchType":"regex","pattern":"WOOLWORTHS.*","confidence":0.8}')
+    );
+
+    const result = await analyzeCorrection({
+      description: "WOOLWORTHS 1234 SYDNEY",
+      entityName: "Woolworths",
+      amount: -42.5,
+    });
+
+    expect(result).toEqual({
+      matchType: "regex",
+      pattern: "WOOLWORTHS.*",
+      confidence: 0.8,
+    });
+  });
+
+  it("rejects a regex matchType that does not match the description", async () => {
+    mockCreate.mockResolvedValue(
+      makeAiResponse('{"matchType":"regex","pattern":"^NETFLIX$","confidence":0.8}')
+    );
+
+    const result = await analyzeCorrection({
+      description: "WOOLWORTHS 1234",
+      entityName: "Woolworths",
+      amount: -42.5,
+    });
+
+    expect(result).toBeNull();
   });
 
   it("returns null when API key is not configured", async () => {
@@ -130,7 +198,7 @@ describe("analyzeCorrection", () => {
 
   it("returns null when pattern is too short (< 3 chars)", async () => {
     mockCreate.mockResolvedValue(
-      makeAiResponse('{"matchType":"prefix","pattern":"AB","confidence":0.8}')
+      makeAiResponse('{"matchType":"contains","pattern":"AB","confidence":0.8}')
     );
 
     const result = await analyzeCorrection({
@@ -142,9 +210,9 @@ describe("analyzeCorrection", () => {
     expect(result).toBeNull();
   });
 
-  it("returns null for invalid matchType", async () => {
+  it("returns null for invalid matchType (e.g. legacy 'prefix')", async () => {
     mockCreate.mockResolvedValue(
-      makeAiResponse('{"matchType":"regex","pattern":"WOOLWORTHS.*","confidence":0.7}')
+      makeAiResponse('{"matchType":"prefix","pattern":"WOOLWORTHS","confidence":0.7}')
     );
 
     const result = await analyzeCorrection({
@@ -153,13 +221,13 @@ describe("analyzeCorrection", () => {
       amount: -42.5,
     });
 
-    // regex is not valid for analyzeCorrection (only exact/prefix/contains)
+    // "prefix" is no longer in the supported union (schema is exact/contains/regex).
     expect(result).toBeNull();
   });
 
   it("returns null for confidence out of range", async () => {
     mockCreate.mockResolvedValue(
-      makeAiResponse('{"matchType":"prefix","pattern":"WOOLWORTHS","confidence":1.5}')
+      makeAiResponse('{"matchType":"contains","pattern":"WOOLWORTHS","confidence":1.5}')
     );
 
     const result = await analyzeCorrection({
@@ -173,7 +241,9 @@ describe("analyzeCorrection", () => {
 
   it("strips markdown code fences from response", async () => {
     mockCreate.mockResolvedValue(
-      makeAiResponse('```json\n{"matchType":"prefix","pattern":"WOOLWORTHS","confidence":0.9}\n```')
+      makeAiResponse(
+        '```json\n{"matchType":"contains","pattern":"WOOLWORTHS","confidence":0.9}\n```'
+      )
     );
 
     const result = await analyzeCorrection({
@@ -183,7 +253,7 @@ describe("analyzeCorrection", () => {
     });
 
     expect(result).toEqual({
-      matchType: "prefix",
+      matchType: "contains",
       pattern: "WOOLWORTHS",
       confidence: 0.9,
     });
@@ -191,7 +261,7 @@ describe("analyzeCorrection", () => {
 
   it("does not send account information to the AI", async () => {
     mockCreate.mockResolvedValue(
-      makeAiResponse('{"matchType":"prefix","pattern":"WOOLWORTHS","confidence":0.9}')
+      makeAiResponse('{"matchType":"contains","pattern":"WOOLWORTHS","confidence":0.9}')
     );
 
     await analyzeCorrection({
@@ -205,5 +275,37 @@ describe("analyzeCorrection", () => {
     const promptContent = promptArg?.messages?.[0]?.content as string;
     expect(promptContent).not.toContain("Account:");
     expect(promptContent).not.toContain("account:");
+  });
+});
+
+describe("patternMatchesDescription", () => {
+  it("matches contains when pattern is a normalized substring", () => {
+    expect(patternMatchesDescription("WOOLWORTHS", "contains", "WOOLWORTHS 1234 SYDNEY")).toBe(
+      true
+    );
+  });
+
+  it("normalizes case and digits before comparing", () => {
+    expect(patternMatchesDescription("woolworths", "contains", "Woolworths 1234")).toBe(true);
+  });
+
+  it("does not match when pattern is absent from description", () => {
+    expect(patternMatchesDescription("AMERICAN EXPRESS", "contains", "MEMBERSHIP FEE")).toBe(false);
+  });
+
+  it("matches exact when normalized pattern equals normalized description", () => {
+    expect(patternMatchesDescription("MEMBERSHIP FEE", "exact", "Membership Fee")).toBe(true);
+  });
+
+  it("rejects exact when description has additional tokens", () => {
+    expect(patternMatchesDescription("MEMBERSHIP", "exact", "MEMBERSHIP FEE")).toBe(false);
+  });
+
+  it("matches regex patterns against the normalized description", () => {
+    expect(patternMatchesDescription("WOOLWORTHS.*", "regex", "WOOLWORTHS 1234 SYDNEY")).toBe(true);
+  });
+
+  it("returns false for invalid regex patterns", () => {
+    expect(patternMatchesDescription("[unclosed", "regex", "ANYTHING")).toBe(false);
   });
 });

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronRight, Globe, Store, Sparkles, Zap, Pencil } from "lucide-react";
+import { ChevronRight, Sparkles, Zap, Pencil } from "lucide-react";
 import { Badge } from "@pops/ui";
 import { Button } from "@pops/ui";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@pops/ui";
@@ -164,20 +164,6 @@ export function TransactionCard({
             <LocationField transaction={transaction} />
           </div>
         )}
-
-        <div className="flex items-center gap-2 text-sm">
-          {transaction.online ? (
-            <>
-              <Globe className="w-4 h-4 text-blue-500" />
-              <span>Online</span>
-            </>
-          ) : (
-            <>
-              <Store className="w-4 h-4 text-gray-500" />
-              <span>In-person</span>
-            </>
-          )}
-        </div>
       </div>
 
       {/* Entity selector with AI suggestions */}
@@ -202,7 +188,7 @@ export function TransactionCard({
                     {aiSuggestedEntityExists ? "✓" : "+"} Accept "{transaction.entity.entityName}"
                   </Button>
                 )}
-                {onCreateEntity && (
+                {onCreateEntity && !aiSuggestedEntityExists && (
                   <Button
                     variant="outline"
                     size="sm"

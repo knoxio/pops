@@ -37,19 +37,28 @@ vi.mock("../../lib/trpc", () => ({
           useQuery: () => ({ data: null, isFetching: false }),
         },
         previewChangeSet: {
-          useQuery: () => ({ data: null, isFetching: false }),
+          useMutation: () => ({
+            mutate: vi.fn(),
+            mutateAsync: vi.fn().mockResolvedValue({
+              diffs: [],
+              summary: {
+                total: 0,
+                newMatches: 0,
+                removedMatches: 0,
+                statusChanges: 0,
+                netMatchedDelta: 0,
+              },
+            }),
+            isPending: false,
+            isError: false,
+            error: null,
+          }),
         },
         applyChangeSet: {
           useMutation: () => ({ mutate: vi.fn(), isPending: false }),
         },
         rejectChangeSet: {
           useMutation: () => ({ mutate: vi.fn(), isPending: false }),
-        },
-        generateRules: {
-          useMutation: () => ({
-            mutate: vi.fn(),
-            isPending: false,
-          }),
         },
       },
     },
@@ -255,10 +264,6 @@ vi.mock("./EditableTransactionCard", async () => {
   };
 });
 
-vi.mock("./BatchProposalsPanel", () => ({
-  BatchProposalsPanel: () => null,
-}));
-
 vi.mock("../../lib/transaction-utils", () => ({
   groupTransactionsByEntity: (txs: unknown[]) =>
     txs.length > 0
@@ -308,7 +313,6 @@ function makeTx(description: string, overrides: Record<string, unknown> = {}) {
     amount: -42.5,
     account: "Amex",
     location: null,
-    online: false,
     rawRow: {},
     checksum: `chk-${description}`,
     transactionType: "purchase",
@@ -389,7 +393,7 @@ beforeEach(() => {
 describe("ReviewStep — Save & Learn proposal flow", () => {
   it("generates a proposal when accepting AI suggestion", async () => {
     mockAnalyzeCorrectionMutateAsync.mockResolvedValue({
-      data: { matchType: "prefix", pattern: "WOOLWORTHS", confidence: 0.9 },
+      data: { matchType: "contains", pattern: "WOOLWORTHS", confidence: 0.9 },
     });
     mockProcessedTransactions = {
       matched: [],
@@ -723,7 +727,7 @@ describe("ReviewStep — AI correction analysis", () => {
 
   it("uses AI-suggested pattern when analysis succeeds", async () => {
     mockAnalyzeCorrectionMutateAsync.mockResolvedValue({
-      data: { matchType: "prefix", pattern: "WOOLWORTHS", confidence: 0.9 },
+      data: { matchType: "contains", pattern: "WOOLWORTHS", confidence: 0.9 },
     });
     const tx = makeTx("WOOLWORTHS 1234 SYDNEY");
     mockProcessedTransactions = {

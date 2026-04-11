@@ -12,7 +12,6 @@ function makeTx(overrides: Partial<ProcessedTransaction> = {}): ProcessedTransac
     rawRow: "{}",
     checksum: "abc",
     location: undefined,
-    online: undefined,
     entity: { matchType: "learned", confidence: 0.92, entityId: "ent_1", entityName: "Woolworths" },
     status: "matched",
     ruleProvenance: {

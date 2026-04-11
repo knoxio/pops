@@ -1,7 +1,7 @@
 # US-01: ChangeSet contract + impact preview contract
 
 > PRD: [028 — Correction Proposal Engine](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 

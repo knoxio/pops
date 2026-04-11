@@ -176,7 +176,6 @@ describe("E2E: Complete Import Flow", () => {
         amount: t.amount,
         account: t.account,
         location: t.location,
-        online: t.online,
         rawRow: t.rawRow,
         checksum: t.checksum,
         entityId: t.entity.entityId ?? "",
@@ -294,7 +293,6 @@ describe("E2E: Complete Import Flow", () => {
       amount: -125.5,
       account: "Amex",
       location: "Sydney",
-      online: false,
       rawRow: '{"test": "data"}',
       checksum: "unique-checksum-123",
     };
@@ -386,7 +384,6 @@ describe("E2E: Complete Import Flow", () => {
       amount: -125.5,
       account: "Amex",
       location: "North Sydney",
-      online: false,
       rawRow: '{"original": "data"}',
       checksum: "preserve123",
     };
@@ -449,21 +446,8 @@ describe("E2E: CSV Transformer Accuracy", () => {
     expect(result.amount).toBe(-125.5); // Inverted
     expect(result.account).toBe("Amex");
     expect(result.location).toBe("North Sydney"); // Title-cased, first line only
-    expect(result.online).toBe(false);
     expect(result.checksum).toHaveLength(64); // SHA-256
     expect(result.rawRow).toBe(JSON.stringify(row));
-  });
-
-  it("detects online transactions", () => {
-    const row = {
-      Date: "13/02/2026",
-      Description: "PAYPAL *NETFLIX",
-      Amount: "15.99",
-    };
-
-    const result = transformAmex(row);
-
-    expect(result.online).toBe(true);
   });
 
   it("handles refunds (negative amounts)", () => {

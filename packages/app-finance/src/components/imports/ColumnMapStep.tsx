@@ -81,7 +81,6 @@ export function ColumnMapStep() {
         amount: parsedAmount,
         account: "Amex",
         location: location ? extractLocation(location) : undefined,
-        online: detectOnline(description),
         rawRow,
         checksum,
       });
@@ -335,22 +334,4 @@ function extractLocation(townCity: string): string | undefined {
     .split(" ")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
-}
-
-/**
- * Detect if transaction is online
- */
-function detectOnline(description: string): boolean {
-  const upper = description.toUpperCase();
-  const indicators = [
-    "HELP.UBER.COM",
-    "PAYPAL",
-    "AMAZON",
-    "NETFLIX",
-    "SPOTIFY",
-    "APPLE.COM",
-    ".COM.AU",
-    ".CO.UK",
-  ];
-  return indicators.some((indicator) => upper.includes(indicator));
 }

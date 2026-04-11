@@ -12,12 +12,35 @@ import type { ProcessImportOutput, ImportWarning } from "@pops/api/modules/finan
 export function ProcessingStep() {
   const {
     parsedTransactions,
+    parsedTransactionsFingerprint,
+    processedForFingerprint,
+    processedTransactions,
     setProcessSessionId,
     processSessionId,
     setProcessedTransactions,
     nextStep,
   } = useImportStore();
   const [pollingEnabled, setPollingEnabled] = useState(false);
+
+  /**
+   * Skip the expensive AI processing pipeline when the cached
+   * `processedTransactions` in the store were demonstrably computed from the
+   * *current* `parsedTransactions` — tracked via `processedForFingerprint`
+   * matching `parsedTransactionsFingerprint`. The typical trigger is a
+   * Back→Continue bounce inside the wizard that never actually mutated the
+   * parsed input. Any real change (new file, re-mapped columns, different
+   * row set) invalidates the fingerprint upstream in `setParsedTransactions`
+   * and this gate will correctly re-run processing.
+   */
+  const hasProcessedResults =
+    processedTransactions.matched.length > 0 ||
+    processedTransactions.uncertain.length > 0 ||
+    processedTransactions.failed.length > 0 ||
+    processedTransactions.skipped.length > 0;
+  const hasAlreadyProcessed =
+    hasProcessedResults &&
+    processedForFingerprint !== null &&
+    processedForFingerprint === parsedTransactionsFingerprint;
 
   const processImportMutation = trpc.finance.imports.processImport.useMutation({
     onSuccess: (data) => {
@@ -68,9 +91,11 @@ export function ProcessingStep() {
   }, [progressQuery.data, setProcessedTransactions, nextStep]);
 
   useEffect(() => {
-    // Start processing automatically when step loads
+    // Start processing automatically when step loads, unless we already have
+    // results from a prior run (avoids re-running the AI pipeline on Back nav).
     if (
       parsedTransactions.length > 0 &&
+      !hasAlreadyProcessed &&
       !processImportMutation.isPending &&
       !processImportMutation.isSuccess
     ) {
@@ -79,7 +104,7 @@ export function ProcessingStep() {
         account: "Amex",
       });
     }
-  }, [parsedTransactions.length]);
+  }, [parsedTransactions.length, hasAlreadyProcessed]);
 
   const handleRetry = (): void => {
     processImportMutation.reset();
@@ -91,6 +116,23 @@ export function ProcessingStep() {
 
   const progress = progressQuery.data;
   const isProcessing = pollingEnabled && progress?.status === "processing";
+
+  // Short-circuit: already processed (user came back via Back nav). Let them
+  // click Continue without re-running the pipeline.
+  if (hasAlreadyProcessed) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12 space-y-6">
+        <CheckCircle className="w-16 h-16 text-green-500" />
+        <div className="text-center space-y-2">
+          <h2 className="text-2xl font-semibold">Already processed</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            Your transactions are ready for review. Nothing to re-run.
+          </p>
+        </div>
+        <Button onClick={nextStep}>Continue to Review</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center py-12 space-y-6">

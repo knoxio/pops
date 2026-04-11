@@ -69,7 +69,6 @@ describe("transactions.list", () => {
     expect(txn).not.toHaveProperty("entity_id");
     expect(txn).not.toHaveProperty("last_edited_time");
     // Removed boolean fields
-    expect(txn).not.toHaveProperty("online");
     expect(txn).not.toHaveProperty("novatedLease");
     expect(txn).not.toHaveProperty("taxReturn");
   });

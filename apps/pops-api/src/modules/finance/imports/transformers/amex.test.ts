@@ -24,7 +24,6 @@ describe("transformAmex", () => {
     expect(result.amount).toBe(-125.5); // Inverted
     expect(result.account).toBe("Amex");
     expect(result.location).toBe("North Sydney"); // Title-cased first line
-    expect(result.online).toBe(false);
     expect(result.rawRow).toBe(JSON.stringify(row));
     expect(result.checksum).toBe(
       crypto.createHash("sha256").update(JSON.stringify(row)).digest("hex")
@@ -64,30 +63,6 @@ describe("transformAmex", () => {
     expect(result1.checksum).not.toBe(result2.checksum);
   });
 
-  it("detects online transaction", () => {
-    const row = {
-      Date: "13/02/2026",
-      Description: "HELP.UBER.COM",
-      Amount: "25.00",
-    };
-
-    const result = transformAmex(row);
-
-    expect(result.online).toBe(true);
-  });
-
-  it("detects offline transaction", () => {
-    const row = {
-      Date: "13/02/2026",
-      Description: "WOOLWORTHS 1234",
-      Amount: "125.50",
-    };
-
-    const result = transformAmex(row);
-
-    expect(result.online).toBe(false);
-  });
-
   it("handles missing optional fields", () => {
     const row = {
       Date: "13/02/2026",
@@ -99,7 +74,6 @@ describe("transformAmex", () => {
     const result = transformAmex(row);
 
     expect(result.location).toBeUndefined();
-    expect(result.online).toBe(false);
   });
 
   it("throws error for missing required Date field", () => {
@@ -380,83 +354,6 @@ describe("extractLocation", () => {
       Amount: "100",
     };
     expect(transformAmex(row).location).toBeUndefined();
-  });
-});
-
-describe("detectOnline", () => {
-  it("returns true for HELP.UBER.COM", () => {
-    const row = { Date: "13/02/2026", Description: "HELP.UBER.COM", Amount: "100" };
-    expect(transformAmex(row).online).toBe(true);
-  });
-
-  it("returns true for PAYPAL", () => {
-    const row = { Date: "13/02/2026", Description: "PAYPAL *MERCHANT", Amount: "100" };
-    expect(transformAmex(row).online).toBe(true);
-  });
-
-  it("returns true for AMAZON", () => {
-    const row = { Date: "13/02/2026", Description: "AMAZON.COM.AU", Amount: "100" };
-    expect(transformAmex(row).online).toBe(true);
-  });
-
-  it("returns true for NETFLIX", () => {
-    const row = { Date: "13/02/2026", Description: "NETFLIX.COM", Amount: "100" };
-    expect(transformAmex(row).online).toBe(true);
-  });
-
-  it("returns true for SPOTIFY", () => {
-    const row = { Date: "13/02/2026", Description: "SPOTIFY P1234567", Amount: "100" };
-    expect(transformAmex(row).online).toBe(true);
-  });
-
-  it("returns true for APPLE.COM", () => {
-    const row = { Date: "13/02/2026", Description: "APPLE.COM/BILL", Amount: "100" };
-    expect(transformAmex(row).online).toBe(true);
-  });
-
-  it("returns true for .COM.AU domain", () => {
-    const row = { Date: "13/02/2026", Description: "RANDOMSTORE.COM.AU", Amount: "100" };
-    expect(transformAmex(row).online).toBe(true);
-  });
-
-  it("returns true for .CO.UK domain", () => {
-    const row = { Date: "13/02/2026", Description: "AMAZON.CO.UK", Amount: "100" };
-    expect(transformAmex(row).online).toBe(true);
-  });
-
-  it("returns false for no indicators", () => {
-    const row = { Date: "13/02/2026", Description: "WOOLWORTHS 1234", Amount: "100" };
-    expect(transformAmex(row).online).toBe(false);
-  });
-
-  it("is case-insensitive (lowercase paypal)", () => {
-    const row = { Date: "13/02/2026", Description: "paypal *merchant", Amount: "100" };
-    expect(transformAmex(row).online).toBe(true);
-  });
-
-  it("is case-insensitive (mixed case PayPal)", () => {
-    const row = { Date: "13/02/2026", Description: "PayPal *Merchant", Amount: "100" };
-    expect(transformAmex(row).online).toBe(true);
-  });
-
-  it("returns true for partial match (PAYPALEXPRESS)", () => {
-    const row = { Date: "13/02/2026", Description: "PAYPALEXPRESS", Amount: "100" };
-    expect(transformAmex(row).online).toBe(true);
-  });
-
-  it("returns false for empty string", () => {
-    const row = { Date: "13/02/2026", Description: "", Amount: "100" };
-    expect(transformAmex(row).online).toBe(false);
-  });
-
-  it("returns true if multiple indicators present", () => {
-    const row = { Date: "13/02/2026", Description: "AMAZON PAYPAL", Amount: "100" };
-    expect(transformAmex(row).online).toBe(true);
-  });
-
-  it("returns false for offline merchants", () => {
-    const row = { Date: "13/02/2026", Description: "COLES SUPERMARKET", Amount: "100" };
-    expect(transformAmex(row).online).toBe(false);
   });
 });
 

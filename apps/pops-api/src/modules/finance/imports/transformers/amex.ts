@@ -48,27 +48,6 @@ function extractLocation(townCity: string): string | undefined {
 }
 
 /**
- * Detect if transaction is online
- * Heuristics: certain domains/patterns in description
- */
-function detectOnline(description: string): boolean {
-  const upper = description.toUpperCase();
-
-  const onlineIndicators = [
-    "HELP.UBER.COM",
-    "PAYPAL",
-    "AMAZON",
-    "NETFLIX",
-    "SPOTIFY",
-    "APPLE.COM",
-    ".COM.AU",
-    ".CO.UK",
-  ];
-
-  return onlineIndicators.some((indicator) => upper.includes(indicator));
-}
-
-/**
  * Clean merchant name from Amex description
  * Removes excessive whitespace
  */
@@ -101,7 +80,6 @@ export function transformAmex(row: Record<string, string>): ParsedTransaction {
     amount: normaliseAmount(row["Amount"] ?? ""),
     account: "Amex",
     location: extractLocation(row["Town/City"] ?? ""),
-    online: detectOnline(row["Description"] ?? ""),
     rawRow,
     checksum,
   };

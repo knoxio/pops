@@ -11,7 +11,6 @@ export const parsedTransactionSchema = z.object({
   amount: z.number(),
   account: z.string().min(1),
   location: z.string().optional(),
-  online: z.boolean().optional(),
   rawRow: z.string(), // Full CSV row as JSON string (for audit trail)
   checksum: z.string(), // SHA-256 hash of rawRow (for deduplication)
 });

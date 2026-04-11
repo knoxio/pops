@@ -198,7 +198,6 @@ const baseParsedTransaction: ParsedTransaction = {
   amount: -125.5,
   account: "Amex",
   location: "North Sydney",
-  online: false,
   rawRow: '{"Date":"13/02/2026","Description":"WOOLWORTHS 1234"}',
   checksum: "abc123def456",
 };
@@ -477,7 +476,6 @@ describe("processImport", () => {
 
       expect(result.matched.length).toBe(1);
       expect(result.matched[0]!.location).toBeUndefined();
-      expect(result.matched[0]!.online).toBeUndefined();
     });
   });
 });
@@ -849,7 +847,6 @@ describe("executeImport", () => {
     amount: -125.5,
     account: "Amex",
     location: "North Sydney",
-    online: false,
     rawRow: '{"Date":"13/02/2026"}',
     checksum: "abc123",
     entityId: "woolworths-id",
