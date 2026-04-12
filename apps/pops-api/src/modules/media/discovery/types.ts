@@ -76,6 +76,8 @@ export interface DiscoverResult {
   isWatched: boolean;
   /** Whether this movie is on the user's watchlist. */
   onWatchlist: boolean;
+  /** ISO timestamp when the movie is scheduled to leave (rotation). */
+  rotationExpiresAt?: string;
 }
 
 /** A discover result enriched with preference-based match scoring. */

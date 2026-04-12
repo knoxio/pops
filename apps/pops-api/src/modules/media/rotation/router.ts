@@ -4,7 +4,10 @@
  * PRD-070
  */
 import { z } from 'zod';
+import { eq, asc } from 'drizzle-orm';
+import { movies } from '@pops/db-types';
 import { router, protectedProcedure } from '../../../trpc.js';
+import { getDrizzle } from '../../../db.js';
 import { cancelLeaving } from './leaving-lifecycle.js';
 import {
   startRotationScheduler,
@@ -54,5 +57,23 @@ export const rotationRouter = router({
       return { success: false, message: 'A rotation cycle is already in progress' };
     }
     return { success: true, result };
+  }),
+
+  /** Get movies currently in the 'leaving' state, sorted by expiry. */
+  getLeavingMovies: protectedProcedure.query(() => {
+    const db = getDrizzle();
+    return db
+      .select({
+        id: movies.id,
+        tmdbId: movies.tmdbId,
+        title: movies.title,
+        posterPath: movies.posterPath,
+        rotationExpiresAt: movies.rotationExpiresAt,
+        rotationMarkedAt: movies.rotationMarkedAt,
+      })
+      .from(movies)
+      .where(eq(movies.rotationStatus, 'leaving'))
+      .orderBy(asc(movies.rotationExpiresAt))
+      .all();
   }),
 });
