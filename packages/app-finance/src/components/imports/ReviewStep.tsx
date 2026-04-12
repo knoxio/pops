@@ -13,6 +13,8 @@ import { CorrectionProposalDialog } from "./CorrectionProposalDialog";
 import { toast } from "sonner";
 import type { ConfirmedTransaction } from "@pops/api/modules/finance/imports";
 import { groupTransactionsByEntity } from "../../lib/transaction-utils";
+import { computeMergedEntities, computeMergedRules } from "../../lib/merged-state";
+import { reevaluateTransactions } from "../../lib/local-re-evaluation";
 
 type ViewMode = "list" | "grouped";
 
@@ -77,15 +79,18 @@ export function ReviewStep() {
     [activeTab]
   );
 
-  const { data: entities } = trpc.core.entities.list.useQuery({});
+  const { data: dbEntitiesData } = trpc.core.entities.list.useQuery({});
+  const { data: dbRulesData } = trpc.core.corrections.list.useQuery({});
+  const pendingEntities = useImportStore((s) => s.pendingEntities);
+  const addPendingEntity = useImportStore((s) => s.addPendingEntity);
 
-  const utils = trpc.useUtils();
-  const createEntityMutation = trpc.core.entities.create.useMutation({
-    onSuccess: () => {
-      // Refresh entities list
-      utils.core.entities.list.invalidate();
-    },
-  });
+  const entities = useMemo(
+    () =>
+      dbEntitiesData?.data
+        ? computeMergedEntities(dbEntitiesData.data, pendingEntities)
+        : undefined,
+    [dbEntitiesData?.data, pendingEntities]
+  );
 
   // Count unresolved transactions
   const unresolvedCount = useMemo(
@@ -242,9 +247,10 @@ export function ReviewStep() {
 
       // Try to find entity by name if entityId is missing
       let entityId = transaction.entity.entityId;
-      if (!entityId && entities?.data) {
-        const matchingEntity = entities.data.find(
-          (e) => e.name.toLowerCase() === transaction.entity?.entityName?.toLowerCase()
+      if (!entityId && entities) {
+        const matchingEntity = entities.find(
+          (e: { name: string; id: string }) =>
+            e.name.toLowerCase() === transaction.entity?.entityName?.toLowerCase()
         );
         if (matchingEntity) {
           entityId = matchingEntity.id;
@@ -283,16 +289,15 @@ export function ReviewStep() {
 
       try {
         // Check if entity exists
-        let entityId = entities?.data?.find(
-          (e) => e.name.toLowerCase() === entityName.toLowerCase()
-        )?.id;
+        let entityId = entities?.find((e) => e.name.toLowerCase() === entityName.toLowerCase())?.id;
 
-        // Create entity if it doesn't exist
+        // Create a pending entity if it doesn't exist
         if (!entityId) {
-          const result = await createEntityMutation.mutateAsync({
-            name: entityName,
-          });
-          entityId = result.data.id;
+          const pending = addPendingEntity(
+            { name: entityName, type: "company" },
+            dbEntitiesData?.data
+          );
+          entityId = pending.tempId;
         }
 
         const resolvedEntityId = entityId;
@@ -336,7 +341,7 @@ export function ReviewStep() {
         );
       }
     },
-    [entities, createEntityMutation, autoSaveRuleAndReEvaluate]
+    [entities, addPendingEntity, dbEntitiesData?.data, autoSaveRuleAndReEvaluate]
   );
 
   /**
@@ -594,11 +599,30 @@ export function ReviewStep() {
           ...localTransactions.failed,
           ...localTransactions.skipped,
         ].map((t) => ({ checksum: t.checksum, description: t.description }))}
-        onApproved={(result, affectedCount) => {
-          setLocalTransactions(result);
-          toast.success(
-            `Rules applied — ${affectedCount} transaction${affectedCount === 1 ? "" : "s"} re-evaluated`
+        onApproved={() => {
+          // Read fresh pending changeSets from the store (the Zustand update
+          // from addPendingChangeSet is synchronous, but useMemo hasn't
+          // re-derived mergedRules yet because React hasn't re-rendered).
+          const freshPending = useImportStore.getState().pendingChangeSets;
+          const freshRules = dbRulesData?.data
+            ? computeMergedRules(dbRulesData.data, freshPending)
+            : [];
+          const reeval = reevaluateTransactions(
+            localTransactions.uncertain,
+            localTransactions.failed,
+            freshRules
           );
+          setLocalTransactions((prev) => ({
+            ...prev,
+            matched: [...prev.matched, ...reeval.matched],
+            uncertain: reeval.uncertain,
+            failed: reeval.failed,
+          }));
+          if (reeval.affectedCount > 0) {
+            toast.success(
+              `Rules saved — ${reeval.affectedCount} transaction${reeval.affectedCount === 1 ? "" : "s"} re-evaluated`
+            );
+          }
         }}
       />
       <div>
@@ -675,7 +699,7 @@ export function ReviewStep() {
             editingTransaction={editingTransaction}
             onSaveEdit={handleSaveEdit}
             onCancelEdit={handleCancelEdit}
-            entities={entities?.data}
+            entities={entities}
           />
         </TabsContent>
 
@@ -694,7 +718,7 @@ export function ReviewStep() {
             editingTransaction={editingTransaction}
             onSaveEdit={handleSaveEdit}
             onCancelEdit={handleCancelEdit}
-            entities={entities?.data}
+            entities={entities}
           />
         </TabsContent>
 
@@ -713,7 +737,7 @@ export function ReviewStep() {
             editingTransaction={editingTransaction}
             onSaveEdit={handleSaveEdit}
             onCancelEdit={handleCancelEdit}
-            entities={entities?.data}
+            entities={entities}
           />
         </TabsContent>
 
@@ -750,6 +774,7 @@ export function ReviewStep() {
         }}
         onEntityCreated={handleEntityCreated}
         suggestedName={selectedTransaction?.entity?.entityName}
+        dbEntities={dbEntitiesData?.data}
       />
     </div>
   );

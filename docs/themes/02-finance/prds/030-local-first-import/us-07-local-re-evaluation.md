@@ -1,7 +1,7 @@
 # US-07: Local re-evaluation engine
 
 > PRD: [030 — Local-First Import State Layer](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -11,14 +11,14 @@ Re-evaluation runs `findMatchingCorrectionFromRules` against the merged rule set
 
 ## Acceptance Criteria
 
-- [ ] A re-evaluation function exists that takes the current `processedTransactions` (uncertain + failed) and the merged rule set, and returns updated transaction buckets.
-- [ ] For each uncertain/failed transaction, `findMatchingCorrectionFromRules` is called with the transaction's description and the merged rule set.
-- [ ] Transactions that now produce a match with status `matched` are moved from their current bucket to `matched`, with the match result (entity, confidence, rule ID) populated.
-- [ ] Transactions that still do not match remain in their current bucket (`uncertain` or `failed`).
-- [ ] The re-evaluation updates `processedTransactions` in the import store.
-- [ ] Re-evaluation completes synchronously (no server call) if `findMatchingCorrectionFromRules` is available client-side, or via a single stateless server endpoint if the function cannot be shared.
-- [ ] Unit tests cover: no transactions change, one uncertain becomes matched, multiple transactions promoted, failed transaction remains failed, re-evaluation with empty merged rules.
-- [ ] Re-evaluation is triggered after every `addPendingChangeSet` and `removePendingChangeSet` call.
+- [x] A re-evaluation function exists that takes the current `processedTransactions` (uncertain + failed) and the merged rule set, and returns updated transaction buckets.
+- [x] For each uncertain/failed transaction, `findMatchingCorrectionFromRules` is called with the transaction's description and the merged rule set.
+- [x] Transactions that now produce a match with status `matched` are moved from their current bucket to `matched`, with the match result (entity, confidence, rule ID) populated.
+- [x] Transactions that still do not match remain in their current bucket (`uncertain` or `failed`).
+- [x] The re-evaluation updates `processedTransactions` in the import store.
+- [x] Re-evaluation completes synchronously (no server call) if `findMatchingCorrectionFromRules` is available client-side, or via a single stateless server endpoint if the function cannot be shared.
+- [x] Unit tests cover: no transactions change, one uncertain becomes matched, multiple transactions promoted, failed transaction remains failed, re-evaluation with empty merged rules.
+- [x] Re-evaluation is triggered after every `addPendingChangeSet` and `removePendingChangeSet` call.
 
 ## Notes
 

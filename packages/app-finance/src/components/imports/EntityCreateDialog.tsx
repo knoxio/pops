@@ -1,5 +1,4 @@
 import { useState, useCallback, useEffect } from "react";
-import { trpc } from "../../lib/trpc";
 import {
   Dialog,
   DialogContent,
@@ -11,76 +10,74 @@ import {
 import { Input } from "@pops/ui";
 import { Label } from "@pops/ui";
 import { Button } from "@pops/ui";
+import { useImportStore } from "../../store/importStore";
 
 interface EntityCreateDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEntityCreated: (entity: { entityId: string; entityName: string }) => void;
   suggestedName?: string;
+  /** DB entities for uniqueness check */
+  dbEntities?: Array<{ name: string }>;
 }
 
 /**
- * Dialog for creating a new entity during import
+ * Dialog for creating a new entity during import.
+ * Writes to the local pending entity store instead of the server.
  */
 export function EntityCreateDialog({
   open,
   onOpenChange,
   onEntityCreated,
   suggestedName = "",
+  dbEntities = [],
 }: EntityCreateDialogProps) {
   const [name, setName] = useState(suggestedName);
   const [touched, setTouched] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const addPendingEntity = useImportStore((s) => s.addPendingEntity);
 
   // Sync name with suggestedName when dialog opens or suggestedName changes
   useEffect(() => {
     if (open) {
       setName(suggestedName);
       setTouched(false);
+      setError(null);
     }
   }, [open, suggestedName]);
-
-  const utils = trpc.useUtils();
-  const createEntityMutation = trpc.finance.imports.createEntity.useMutation({
-    onSuccess: (data) => {
-      // Refresh entities list
-      utils.core.entities.list.invalidate();
-      onEntityCreated(data);
-      onOpenChange(false);
-      setName("");
-    },
-  });
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
+      setError(null);
 
-      if (!name.trim()) {
-        return;
+      const trimmed = name.trim();
+      if (!trimmed) return;
+
+      try {
+        const entity = addPendingEntity({ name: trimmed, type: "company" }, dbEntities);
+        onEntityCreated({ entityId: entity.tempId, entityName: entity.name });
+        onOpenChange(false);
+        setName("");
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Failed to create entity");
       }
-
-      createEntityMutation.mutate({ name: name.trim() });
     },
-    [name, createEntityMutation]
+    [name, addPendingEntity, dbEntities, onEntityCreated, onOpenChange],
   );
 
   const handleOpenChange = useCallback(
     (newOpen: boolean) => {
-      if (!createEntityMutation.isPending) {
-        onOpenChange(newOpen);
-        if (!newOpen) {
-          setName("");
-          setTouched(false);
-          createEntityMutation.reset();
-        }
+      onOpenChange(newOpen);
+      if (!newOpen) {
+        setName("");
+        setTouched(false);
+        setError(null);
       }
     },
-    [onOpenChange, createEntityMutation]
+    [onOpenChange],
   );
-
-  const handleRetry = useCallback(() => {
-    createEntityMutation.reset();
-    createEntityMutation.mutate({ name: name.trim() });
-  }, [name, createEntityMutation]);
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -89,7 +86,7 @@ export function EntityCreateDialog({
           <DialogHeader>
             <DialogTitle>Create New Entity</DialogTitle>
             <DialogDescription>
-              Add a new merchant or payee to your entities database.
+              Add a new merchant or payee. It will be committed with the import.
             </DialogDescription>
           </DialogHeader>
 
@@ -102,10 +99,10 @@ export function EntityCreateDialog({
                 onChange={(e) => {
                   setName(e.target.value);
                   setTouched(true);
+                  setError(null);
                 }}
                 onBlur={() => setTouched(true)}
                 placeholder="e.g., Woolworths"
-                disabled={createEntityMutation.isPending}
                 autoFocus
               />
               {touched && !name.trim() && (
@@ -113,33 +110,19 @@ export function EntityCreateDialog({
               )}
             </div>
 
-            {createEntityMutation.isError && (
+            {error && (
               <div className="p-3 text-sm text-red-700 bg-red-100 dark:bg-red-900 dark:text-red-200 rounded-md">
-                <p>{createEntityMutation.error.message}</p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="mt-2"
-                  onClick={handleRetry}
-                >
-                  Retry
-                </Button>
+                <p>{error}</p>
               </div>
             )}
           </div>
 
           <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleOpenChange(false)}
-              disabled={createEntityMutation.isPending}
-            >
+            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={!name.trim() || createEntityMutation.isPending}>
-              {createEntityMutation.isPending ? "Creating..." : "Create Entity"}
+            <Button type="submit" disabled={!name.trim()}>
+              Create Entity
             </Button>
           </DialogFooter>
         </form>

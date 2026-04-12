@@ -19,6 +19,7 @@ import type { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
 import { toast } from "sonner";
 import type { AppRouter } from "@pops/api-client";
 import { trpc } from "../../lib/trpc";
+import { useImportStore } from "../../store/importStore";
 import { RulePicker, type CorrectionRule } from "./RulePicker";
 
 // ---------------------------------------------------------------------------
@@ -27,8 +28,6 @@ import { RulePicker, type CorrectionRule } from "./RulePicker";
 
 type CorrectionSignal =
   inferRouterInputs<AppRouter>["core"]["corrections"]["proposeChangeSet"]["signal"];
-type ApplyChangeSetAndReevaluateOutput =
-  inferRouterOutputs<AppRouter>["finance"]["imports"]["applyChangeSetAndReevaluate"];
 type PreviewChangeSetOutput =
   inferRouterOutputs<AppRouter>["core"]["corrections"]["previewChangeSet"];
 type ProposeChangeSetOutput =
@@ -355,7 +354,7 @@ export interface CorrectionProposalDialogProps {
    *  current ChangeSet before sending. */
   previewTransactions: Array<{ checksum?: string; description: string }>;
   minConfidence?: number;
-  onApproved?: (result: ApplyChangeSetAndReevaluateOutput["result"], affectedCount: number) => void;
+  onApproved?: (changeSet: ServerChangeSet) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -619,16 +618,21 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
 
   // ---- apply / reject mutations ------------------------------------------
 
-  const applyMutation = trpc.finance.imports.applyChangeSetAndReevaluate.useMutation({
-    onSuccess: (res) => {
-      toast.success("Rules applied");
-      props.onApproved?.(res.result, res.affectedCount);
-      handleOpenChange(false);
+  const addPendingChangeSet = useImportStore((s) => s.addPendingChangeSet);
+
+  const handleApplyLocal = useCallback(
+    (changeSet: ServerChangeSet) => {
+      try {
+        addPendingChangeSet({ changeSet, source: "correction-proposal" });
+        toast.success("Rules applied locally");
+        props.onApproved?.(changeSet);
+        handleOpenChange(false);
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Failed to apply rules");
+      }
     },
-    onError: (err) => {
-      toast.error(err.message);
-    },
-  });
+    [addPendingChangeSet, props, handleOpenChange]
+  );
 
   const rejectMutation = trpc.core.corrections.rejectChangeSet.useMutation({
     onSuccess: () => {
@@ -646,11 +650,7 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
   const reviseMutateAsync = reviseMutation.mutateAsync;
 
   const isBusy =
-    proposeQuery.isFetching ||
-    previewMutation.isPending ||
-    applyMutation.isPending ||
-    rejectMutation.isPending ||
-    aiBusy;
+    proposeQuery.isFetching || previewMutation.isPending || rejectMutation.isPending || aiBusy;
 
   const canApply =
     !isBusy &&
@@ -741,9 +741,9 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
 
   const handleApprove = useCallback(() => {
     const changeSet = localOpsToChangeSet(localOps);
-    if (!changeSet || !props.sessionId) return;
-    applyMutation.mutate({ sessionId: props.sessionId, changeSet, minConfidence });
-  }, [applyMutation, localOps, props.sessionId, minConfidence]);
+    if (!changeSet) return;
+    handleApplyLocal(changeSet);
+  }, [localOps, handleApplyLocal]);
 
   const handleConfirmReject = useCallback(() => {
     if (!props.signal) return;
@@ -981,7 +981,7 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
             </Button>
           )}
           <Button onClick={handleApprove} disabled={!canApply}>
-            {applyMutation.isPending ? "Applying…" : "Apply ChangeSet"}
+            Apply ChangeSet
           </Button>
         </DialogFooter>
       </DialogContent>
