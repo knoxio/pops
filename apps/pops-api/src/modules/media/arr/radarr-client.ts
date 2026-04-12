@@ -4,6 +4,7 @@
 import { ArrBaseClient } from './base-client.js';
 import type {
   RadarrMovie,
+  RadarrDiskSpace,
   RadarrQueueResponse,
   ArrStatusResult,
   RadarrQualityProfile,
@@ -74,6 +75,16 @@ export class RadarrClient extends ArrBaseClient {
       name: 'MoviesSearch',
       movieIds: [radarrId],
     });
+  }
+
+  /** Fetch disk space info from Radarr. */
+  async getDiskSpace(): Promise<RadarrDiskSpace[]> {
+    return this.get<RadarrDiskSpace[]>('/diskspace');
+  }
+
+  /** Delete a movie from Radarr by its Radarr ID. Set deleteFiles to also remove files. */
+  async deleteMovie(radarrId: number, deleteFiles = true): Promise<void> {
+    await this.delete(`/movie/${radarrId}?deleteFiles=${deleteFiles}`);
   }
 
   /**
