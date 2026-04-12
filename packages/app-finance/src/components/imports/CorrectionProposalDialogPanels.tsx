@@ -15,7 +15,7 @@ import {
   type LocalOp,
   type PreviewChangeSetOutput,
   type TriggeringTransactionContext,
-} from './CorrectionProposalDialog';
+} from './correction-proposal-shared';
 
 // ---------------------------------------------------------------------------
 // Local types used only by panels
