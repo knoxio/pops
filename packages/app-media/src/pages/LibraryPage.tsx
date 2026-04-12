@@ -7,6 +7,7 @@ import { MediaGrid } from '../components/MediaGrid';
 import { MediaCard } from '../components/MediaCard';
 import { DebriefBanner } from '../components/DebriefBanner';
 import { DownloadQueue } from '../components/DownloadQueue';
+import { LeavingSoonShelf } from '../components/LeavingSoonShelf';
 import { QuickPickDialog } from '../components/QuickPickDialog';
 import { useMediaLibrary, type MediaType, type SortOption } from '../hooks/useMediaLibrary';
 
@@ -253,6 +254,9 @@ export function LibraryPage() {
 
       {/* Download queue */}
       <DownloadQueue />
+
+      {/* Leaving soon shelf — shows movies scheduled for removal */}
+      <LeavingSoonShelf />
 
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-3">
