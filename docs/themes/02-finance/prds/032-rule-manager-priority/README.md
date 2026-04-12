@@ -1,7 +1,7 @@
 # PRD-032: Global Rule Manager & Priority Ordering
 
 > Epic: [03 — Corrections](../../epics/03-corrections.md)
-> Status: Not started
+> Status: In progress
 
 ## Overview
 
@@ -61,7 +61,7 @@ No new endpoints. Existing endpoints change:
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 01 | [us-01-priority-column-migration](us-01-priority-column-migration.md) | Add `priority` column, backfill, update types and schemas | Not started | Yes |
+| 01 | [us-01-priority-column-migration](us-01-priority-column-migration.md) | Add `priority` column, backfill, update types and schemas | Done | Yes |
 | 02 | [us-02-priority-aware-matching](us-02-priority-aware-matching.md) | Update matching algorithm to sort by priority ASC | Not started | Blocked by us-01 |
 | 03 | [us-03-browse-all-mode](us-03-browse-all-mode.md) | Browse-all mode for CorrectionProposalDialog | Not started | Blocked by PRD-030 us-03 |
 | 04 | [us-04-manage-rules-button](us-04-manage-rules-button.md) | "Manage Rules" button in ReviewStep | Not started | Blocked by us-03 |

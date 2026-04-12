@@ -36,6 +36,7 @@ export interface Correction {
   tags: string[];
   transactionType: "purchase" | "transfer" | "income" | null;
   isActive: boolean;
+  priority: number;
   confidence: number;
   timesApplied: number;
   createdAt: string;
@@ -56,6 +57,7 @@ export function toCorrection(row: CorrectionRow): Correction {
     tags: parseJsonStringArray(row.tags),
     transactionType: row.transactionType,
     isActive: Boolean(row.isActive),
+    priority: row.priority,
     confidence: row.confidence,
     timesApplied: row.timesApplied,
     createdAt: row.createdAt,
@@ -85,6 +87,7 @@ export const CreateCorrectionSchema = z.object({
   location: z.string().nullable().optional(),
   tags: z.array(z.string()).optional().default([]),
   transactionType: z.enum(["purchase", "transfer", "income"]).nullable().optional(),
+  priority: z.number().int().nonnegative().optional(),
 });
 export type CreateCorrectionInput = z.infer<typeof CreateCorrectionSchema>;
 
@@ -116,6 +119,7 @@ export const UpdateCorrectionSchema = z.object({
   transactionType: z.enum(["purchase", "transfer", "income"]).nullable().optional(),
   isActive: z.boolean().optional(),
   confidence: z.number().min(0).max(1).optional(),
+  priority: z.number().int().nonnegative().optional(),
 });
 export type UpdateCorrectionInput = z.infer<typeof UpdateCorrectionSchema>;
 
