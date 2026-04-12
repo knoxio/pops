@@ -1264,6 +1264,7 @@ describe("corrections", () => {
         transactionType: null,
         isActive: true,
         confidence: 0.9,
+        priority: 0,
         timesApplied: 1,
         createdAt: "2026-01-01T00:00:00.000Z",
         lastUsedAt: null,

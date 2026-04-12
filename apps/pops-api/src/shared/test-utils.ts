@@ -183,12 +183,14 @@ export function createTestDb(): Database {
       transaction_type TEXT CHECK(transaction_type IN ('purchase', 'transfer', 'income')),
       is_active INTEGER NOT NULL DEFAULT 1,
       confidence REAL NOT NULL DEFAULT 0.5 CHECK(confidence >= 0.0 AND confidence <= 1.0),
+      priority INTEGER NOT NULL DEFAULT 0,
       times_applied INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       last_used_at TEXT,
       FOREIGN KEY (entity_id) REFERENCES entities(id) ON DELETE SET NULL
     );
     CREATE INDEX IF NOT EXISTS idx_corrections_pattern ON transaction_corrections(description_pattern);
+    CREATE INDEX IF NOT EXISTS idx_corrections_priority ON transaction_corrections(priority);
     CREATE INDEX IF NOT EXISTS idx_corrections_confidence ON transaction_corrections(confidence DESC);
     CREATE INDEX IF NOT EXISTS idx_corrections_times_applied ON transaction_corrections(times_applied DESC);
 
@@ -208,12 +210,14 @@ export function createTestDb(): Database {
       tags TEXT NOT NULL DEFAULT '[]',
       is_active INTEGER NOT NULL DEFAULT 1,
       confidence REAL NOT NULL DEFAULT 0.5 CHECK(confidence >= 0.0 AND confidence <= 1.0),
+      priority INTEGER NOT NULL DEFAULT 0,
       times_applied INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       last_used_at TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_tag_rules_pattern ON transaction_tag_rules(description_pattern);
     CREATE INDEX IF NOT EXISTS idx_tag_rules_entity_id ON transaction_tag_rules(entity_id);
+    CREATE INDEX IF NOT EXISTS idx_tag_rules_priority ON transaction_tag_rules(priority);
     CREATE INDEX IF NOT EXISTS idx_tag_rules_confidence ON transaction_tag_rules(confidence DESC);
     CREATE INDEX IF NOT EXISTS idx_tag_rules_times_applied ON transaction_tag_rules(times_applied DESC);
 

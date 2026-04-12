@@ -34,6 +34,7 @@ describe("applyLearnedCorrection ruleProvenance", () => {
         transactionType: null,
         isActive: true,
         confidence: 0.92,
+        priority: 0,
         timesApplied: 10,
         createdAt: "2026-01-01T00:00:00.000Z",
         lastUsedAt: null,

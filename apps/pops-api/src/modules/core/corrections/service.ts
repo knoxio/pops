@@ -524,6 +524,7 @@ export function applyChangeSetToRules(
         transactionType: op.data.transactionType ?? null,
         isActive: op.data.isActive ?? true,
         confidence: op.data.confidence ?? 0.5,
+        priority: op.data.priority ?? 0,
         timesApplied: 0,
         createdAt: now,
         lastUsedAt: null,
@@ -1176,6 +1177,7 @@ export function createOrUpdateCorrection(input: CreateCorrectionInput): Correcti
         location: input.location ?? existing.location,
         tags: JSON.stringify(input.tags ?? []),
         transactionType: input.transactionType ?? existing.transactionType,
+        priority: input.priority ?? existing.priority,
         isActive: true,
       })
       .where(eq(transactionCorrections.id, existing.id))
@@ -1195,6 +1197,7 @@ export function createOrUpdateCorrection(input: CreateCorrectionInput): Correcti
       location: input.location ?? null,
       tags: JSON.stringify(input.tags ?? []),
       transactionType: input.transactionType ?? null,
+      priority: input.priority ?? 0,
       isActive: true,
     })
     .run();
@@ -1250,6 +1253,10 @@ export function updateCorrection(id: string, input: UpdateCorrectionInput): Corr
   }
   if (input.confidence !== undefined) {
     updates.confidence = input.confidence;
+    hasUpdates = true;
+  }
+  if (input.priority !== undefined) {
+    updates.priority = input.priority;
     hasUpdates = true;
   }
 

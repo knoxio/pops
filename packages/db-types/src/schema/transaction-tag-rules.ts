@@ -18,6 +18,7 @@ export const transactionTagRules = sqliteTable(
     isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
     // CHECK: confidence >= 0.0 AND confidence <= 1.0
     confidence: real("confidence").notNull().default(0.5),
+    priority: integer("priority").notNull().default(0),
     timesApplied: integer("times_applied").notNull().default(0),
     createdAt: text("created_at")
       .notNull()
@@ -27,6 +28,7 @@ export const transactionTagRules = sqliteTable(
   (table) => [
     index("idx_tag_rules_pattern").on(table.descriptionPattern),
     index("idx_tag_rules_entity_id").on(table.entityId),
+    index("idx_tag_rules_priority").on(table.priority),
     index("idx_tag_rules_confidence").on(table.confidence),
     index("idx_tag_rules_times_applied").on(table.timesApplied),
   ]

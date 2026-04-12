@@ -11,6 +11,7 @@ export const TagRuleDataSchema = z.object({
   tags: z.array(z.string()).min(1),
   confidence: z.number().min(0).max(1).optional(),
   isActive: z.boolean().optional(),
+  priority: z.number().int().nonnegative().optional(),
 });
 export type TagRuleData = z.infer<typeof TagRuleDataSchema>;
 
@@ -19,6 +20,7 @@ export const TagRuleUpdateSchema = z.object({
   tags: z.array(z.string()).optional(),
   confidence: z.number().min(0).max(1).optional(),
   isActive: z.boolean().optional(),
+  priority: z.number().int().nonnegative().optional(),
 });
 export type TagRuleUpdate = z.infer<typeof TagRuleUpdateSchema>;
 

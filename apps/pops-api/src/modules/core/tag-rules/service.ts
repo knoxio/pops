@@ -68,6 +68,7 @@ function applyOp(tx: ReturnType<typeof getDrizzle>, op: TagRuleChangeSetOp): voi
         tags: JSON.stringify(op.data.tags ?? []),
         confidence: op.data.confidence ?? 0.95,
         isActive: op.data.isActive ?? true,
+        priority: op.data.priority ?? 0,
         timesApplied: 0,
       })
       .run();
@@ -87,6 +88,7 @@ function applyOp(tx: ReturnType<typeof getDrizzle>, op: TagRuleChangeSetOp): voi
         tags: op.data.tags ? JSON.stringify(op.data.tags) : undefined,
         confidence: op.data.confidence ?? undefined,
         isActive: op.data.isActive ?? undefined,
+        priority: op.data.priority ?? undefined,
       })
       .where(eq(transactionTagRules.id, op.id))
       .run();

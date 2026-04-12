@@ -24,6 +24,7 @@ export const transactionCorrections = sqliteTable(
     isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
     // CHECK: confidence >= 0.0 AND confidence <= 1.0
     confidence: real("confidence").notNull().default(0.5),
+    priority: integer("priority").notNull().default(0),
     timesApplied: integer("times_applied").notNull().default(0),
     createdAt: text("created_at")
       .notNull()
@@ -34,6 +35,7 @@ export const transactionCorrections = sqliteTable(
     index("idx_corrections_pattern").on(table.descriptionPattern),
     // Note: SQL schema uses DESC sort order on these indexes;
     // Drizzle's index().on() does not support sort direction
+    index("idx_corrections_priority").on(table.priority),
     index("idx_corrections_confidence").on(table.confidence),
     index("idx_corrections_times_applied").on(table.timesApplied),
   ]
