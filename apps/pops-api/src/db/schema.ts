@@ -307,11 +307,15 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       vote_count           INTEGER,
       genres               TEXT,
       created_at           TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at           TEXT NOT NULL DEFAULT (datetime('now'))
+      updated_at           TEXT NOT NULL DEFAULT (datetime('now')),
+      rotation_status      TEXT,
+      rotation_expires_at  TEXT,
+      rotation_marked_at   TEXT
     );
     CREATE UNIQUE INDEX IF NOT EXISTS idx_movies_tmdb_id ON movies(tmdb_id);
     CREATE INDEX IF NOT EXISTS idx_movies_title ON movies(title);
     CREATE INDEX IF NOT EXISTS idx_movies_release_date ON movies(release_date);
+    CREATE INDEX IF NOT EXISTS idx_movies_rotation_status ON movies(rotation_status);
 
     CREATE TABLE IF NOT EXISTS tv_shows (
       id                   INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -546,6 +550,19 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       shown_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
     CREATE INDEX IF NOT EXISTS idx_shelf_impressions_shelf_id ON shelf_impressions(shelf_id);
+
+    CREATE TABLE IF NOT EXISTS rotation_log (
+      id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+      executed_at           TEXT NOT NULL,
+      movies_marked_leaving INTEGER NOT NULL,
+      movies_removed        INTEGER NOT NULL,
+      movies_added          INTEGER NOT NULL,
+      removals_failed       INTEGER NOT NULL,
+      free_space_gb         REAL NOT NULL,
+      target_free_gb        REAL NOT NULL,
+      skipped_reason        TEXT,
+      details               TEXT
+    );
   `);
 
   // Seed tag vocabulary (v1) for brand-new databases.

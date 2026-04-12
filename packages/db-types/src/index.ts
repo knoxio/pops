@@ -38,6 +38,7 @@ import type { debriefResults } from './schema/debrief-results.js';
 import type { tierOverrides } from './schema/tier-overrides.js';
 import type { debriefStatus } from './schema/debrief-status.js';
 import type { shelfImpressions } from './schema/shelf-impressions.js';
+import type { rotationLog } from './schema/rotation-log.js';
 import type { tagVocabulary } from './schema/tag-vocabulary.js';
 import type { transactionTagRules } from './schema/transaction-tag-rules.js';
 
@@ -77,6 +78,7 @@ export {
   tierOverrides,
   debriefStatus,
   shelfImpressions,
+  rotationLog,
 } from './schema/index.js';
 
 // Select types (what you get back from a SELECT query)
@@ -148,6 +150,8 @@ export type DebriefStatusRow = InferSelectModel<typeof debriefStatus>;
 export type DebriefStatusInsert = InferInsertModel<typeof debriefStatus>;
 export type ShelfImpressionRow = InferSelectModel<typeof shelfImpressions>;
 export type ShelfImpressionInsert = InferInsertModel<typeof shelfImpressions>;
+export type RotationLogRow = InferSelectModel<typeof rotationLog>;
+export type RotationLogInsert = InferInsertModel<typeof rotationLog>;
 
 // Constants
 export const ENTITY_TYPES = ['company', 'person', 'place', 'brand', 'organisation'] as const;
