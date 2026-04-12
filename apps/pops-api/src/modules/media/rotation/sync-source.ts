@@ -42,7 +42,9 @@ export async function syncSource(sourceId: number): Promise<SyncSourceResult> {
     );
   }
 
-  const config: Record<string, unknown> = source.config ? JSON.parse(source.config) : {};
+  const config: Record<string, unknown> = source.config
+    ? (JSON.parse(source.config) as Record<string, unknown>)
+    : {};
 
   const candidates = await adapter.fetchCandidates(config);
 

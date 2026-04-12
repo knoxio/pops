@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { eq } from 'drizzle-orm';
 import { rotationCandidates, rotationSources } from '@pops/db-types';
 import { getDrizzle } from '../../../db.js';
+import { setupTestContext } from '../../../shared/test-utils.js';
 import { registerSourceAdapter } from './source-registry.js';
 import { syncSource } from './sync-source.js';
 import type { CandidateMovie, RotationSourceAdapter } from './source-types.js';
@@ -40,10 +41,13 @@ function createTestSource(overrides: Partial<typeof rotationSources.$inferInsert
 // Tests
 // ---------------------------------------------------------------------------
 
+const ctx = setupTestContext();
+
 describe('syncSource', () => {
   let adapter: RotationSourceAdapter;
 
   beforeEach(() => {
+    ctx.setup();
     adapter = createMockAdapter([
       { tmdbId: 550, title: 'Fight Club', year: 1999, rating: 8.4, posterPath: '/poster1.jpg' },
       { tmdbId: 680, title: 'Pulp Fiction', year: 1994, rating: 8.9, posterPath: '/poster2.jpg' },
@@ -52,9 +56,7 @@ describe('syncSource', () => {
   });
 
   afterEach(() => {
-    const db = getDrizzle();
-    db.delete(rotationCandidates).run();
-    db.delete(rotationSources).run();
+    ctx.teardown();
   });
 
   it('inserts candidates from the adapter', async () => {
