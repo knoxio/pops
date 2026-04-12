@@ -1,5 +1,6 @@
-import { and, desc, eq } from 'drizzle-orm';
 import { mediaScores } from '@pops/db-types';
+import { and, desc, eq } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../db.js';
 import type { MediaScoreRow } from './types.js';
 

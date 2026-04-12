@@ -1,9 +1,9 @@
 /**
  * Document thumbnail proxy endpoint tests.
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import express from 'express';
 import request from 'supertest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the paperless client module
 interface MockPaperlessClient {

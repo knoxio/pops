@@ -1,5 +1,5 @@
-import { z } from 'zod';
 import type { ItemConnectionRow } from '@pops/db-types';
+import { z } from 'zod';
 
 export type { ItemConnectionRow };
 

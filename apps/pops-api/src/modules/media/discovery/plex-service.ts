@@ -2,12 +2,13 @@
  * Discovery Plex service — trending movies from the Plex Discover API,
  * enriched with library membership status and dismissed filtering.
  */
-import { getDrizzle } from '../../../db.js';
 import { movies } from '@pops/db-types';
+
+import { getDrizzle } from '../../../db.js';
 import { getPlexClient } from '../plex/service.js';
-import type { DiscoverResult } from './types.js';
 import type { PlexMediaItem } from '../plex/types.js';
 import { getWatchedTmdbIds, getWatchlistTmdbIds } from './flags.js';
+import type { DiscoverResult } from './types.js';
 
 /** Get all TMDB IDs currently in the library for quick lookup. */
 function getLibraryTmdbIds(): Set<number> {

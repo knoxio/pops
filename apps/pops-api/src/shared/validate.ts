@@ -2,8 +2,9 @@
  * Zod validation middleware factory.
  * Validates request body or query against a Zod schema.
  */
-import type { Request, Response, NextFunction } from 'express';
-import type { ZodType, ZodIssue } from 'zod';
+import type { NextFunction, Request, Response } from 'express';
+import type { ZodIssue, ZodType } from 'zod';
+
 import { ValidationError } from './errors.js';
 
 type RequestField = 'body' | 'query' | 'params';

@@ -1,9 +1,10 @@
 /**
  * Inventory reports tRPC router — warranty tracking and insurance reports.
  */
-import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { router, protectedProcedure } from '../../../trpc.js';
+import { z } from 'zod';
+
+import { protectedProcedure, router } from '../../../trpc.js';
 import { toInventoryItem } from '../items/types.js';
 import * as service from './service.js';
 

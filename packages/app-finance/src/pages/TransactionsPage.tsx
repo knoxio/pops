@@ -1,16 +1,17 @@
 /**
  * Transactions page - list and manage transactions
  */
-import type { ColumnDef } from '@tanstack/react-table';
-import { useCallback } from 'react';
 import { useSetPageContext } from '@pops/navigation';
-import { trpc } from '../lib/trpc';
+import type { ColumnFilter } from '@pops/ui';
 import { DataTable, SortableHeader } from '@pops/ui';
 import { Badge } from '@pops/ui';
 import { Alert, Button, PageHeader } from '@pops/ui';
 import { Skeleton } from '@pops/ui';
+import type { ColumnDef } from '@tanstack/react-table';
+import { useCallback } from 'react';
+
 import { TagEditor } from '../components/TagEditor';
-import type { ColumnFilter } from '@pops/ui';
+import { trpc } from '../lib/trpc';
 
 interface Transaction {
   id: string;

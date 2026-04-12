@@ -4,7 +4,7 @@
  * Stores real-time progress updates that can be polled by the frontend.
  * Progress entries auto-expire after 5 minutes to prevent memory leaks.
  */
-import type { ProcessImportOutput, ExecuteImportOutput } from './types.js';
+import type { ExecuteImportOutput, ProcessImportOutput } from './types.js';
 
 export interface ImportProgress {
   sessionId: string;

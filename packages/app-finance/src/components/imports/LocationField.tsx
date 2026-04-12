@@ -1,7 +1,8 @@
-import { MapPin, Info } from 'lucide-react';
+import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
 import { Badge } from '@pops/ui';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@pops/ui';
-import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
+import { Info, MapPin } from 'lucide-react';
+
 import { extractLocationDetails } from '../../lib/transaction-utils';
 
 interface LocationFieldProps {

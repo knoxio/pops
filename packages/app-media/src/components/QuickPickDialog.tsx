@@ -4,19 +4,20 @@
  * Shows a single random recommendation at a time.
  * "Not this one" cycles to next, "Watch this!" adds to watchlist.
  */
-import { useState, useCallback } from 'react';
-import { toast } from 'sonner';
 import {
   Badge,
+  Button,
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  Button,
   Skeleton,
 } from '@pops/ui';
-import { Sparkles, SkipForward, Play } from 'lucide-react';
+import { Play, SkipForward, Sparkles } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { toast } from 'sonner';
+
 import { trpc } from '../lib/trpc';
 
 export function QuickPickDialog() {

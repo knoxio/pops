@@ -2,12 +2,13 @@
  * Entity service — CRUD operations using Drizzle ORM.
  * SQLite is the source of truth. All operations are local.
  */
-import crypto from 'crypto';
-import { eq, like, count, and, ne, sql } from 'drizzle-orm';
-import { getDrizzle } from '../../../db.js';
 import { entities, transactions } from '@pops/db-types';
-import { NotFoundError, ConflictError } from '../../../shared/errors.js';
-import type { EntityRow, CreateEntityInput, UpdateEntityInput } from './types.js';
+import crypto from 'crypto';
+import { and, count, eq, like, ne, sql } from 'drizzle-orm';
+
+import { getDrizzle } from '../../../db.js';
+import { ConflictError, NotFoundError } from '../../../shared/errors.js';
+import type { CreateEntityInput, EntityRow, UpdateEntityInput } from './types.js';
 
 /** Entity row enriched with transaction count. */
 export interface EntityWithCount extends EntityRow {

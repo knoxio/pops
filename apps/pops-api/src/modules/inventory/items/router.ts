@@ -1,18 +1,19 @@
 /**
  * Inventory tRPC router — CRUD procedures for inventory items.
  */
-import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { router, protectedProcedure } from '../../../trpc.js';
+import { z } from 'zod';
+
+import { NotFoundError } from '../../../shared/errors.js';
 import { paginationMeta } from '../../../shared/pagination.js';
+import { protectedProcedure, router } from '../../../trpc.js';
+import * as service from './service.js';
 import {
   CreateInventoryItemSchema,
-  UpdateInventoryItemSchema,
   InventoryQuerySchema,
   toInventoryItem,
+  UpdateInventoryItemSchema,
 } from './types.js';
-import * as service from './service.js';
-import { NotFoundError } from '../../../shared/errors.js';
 
 /** Default pagination values. */
 const DEFAULT_LIMIT = 50;
@@ -28,19 +29,19 @@ export const inventoryRouter = router({
     const deductible =
       input.deductible === 'true' ? true : input.deductible === 'false' ? false : undefined;
 
-    const { rows, total, totalReplacementValue, totalResaleValue } = service.listInventoryItems(
-      input.search,
-      input.room,
-      input.type,
-      input.condition,
+    const { rows, total, totalReplacementValue, totalResaleValue } = service.listInventoryItems({
+      search: input.search,
+      room: input.room,
+      type: input.type,
+      condition: input.condition,
       inUse,
       deductible,
       limit,
       offset,
-      input.locationId,
-      input.assetId,
-      input.includeChildren
-    );
+      locationId: input.locationId,
+      assetId: input.assetId,
+      includeChildren: input.includeChildren,
+    });
 
     return {
       data: rows.map(toInventoryItem),

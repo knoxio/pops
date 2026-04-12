@@ -1,18 +1,19 @@
 /**
  * Debrief service — auto-queue and manage post-watch debrief sessions.
  */
-import { eq, and, inArray, asc } from 'drizzle-orm';
-import { getDrizzle } from '../../../db.js';
 import {
-  debriefSessions,
-  debriefResults,
-  debriefStatus,
-  watchHistory,
   comparisonDimensions,
+  debriefResults,
+  debriefSessions,
+  debriefStatus,
   movies,
+  watchHistory,
 } from '@pops/db-types';
-import { getDebriefOpponent } from '../comparisons/service.js';
+import { and, asc, eq, inArray } from 'drizzle-orm';
+
+import { getDrizzle } from '../../../db.js';
 import { NotFoundError } from '../../../shared/errors.js';
+import { getDebriefOpponent } from '../comparisons/service.js';
 
 /**
  * Create a pending debrief session for a watch history entry.

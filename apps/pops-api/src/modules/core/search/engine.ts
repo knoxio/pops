@@ -3,9 +3,9 @@
  * Promise.allSettled, groups results into sections, and orders context
  * sections (current app) first.
  */
-import type { Query, SearchContext, SearchHit } from './types.js';
-import { getAdapters } from './registry.js';
 import { isContextDomain } from './domain-app-mapping.js';
+import { getAdapters } from './registry.js';
+import type { Query, SearchContext, SearchHit } from './types.js';
 
 export interface SearchSection {
   domain: string;

@@ -6,14 +6,16 @@
  * Desktop: always-visible search input.
  * All interactive elements meet 44x44px minimum touch targets.
  */
+import { Button } from '@pops/ui';
+import { Menu, Moon, Search, Sun } from 'lucide-react';
 import { useState } from 'react';
+
 import { useThemeStore } from '@/store/themeStore';
 import { useUIStore } from '@/store/uiStore';
-import { Menu, Sun, Moon, Search } from 'lucide-react';
-import { Button } from '@pops/ui';
+
 import { BuildVersion } from './BuildVersion';
-import { SearchInput } from './SearchInput';
 import { MobileSearchOverlay } from './MobileSearchOverlay';
+import { SearchInput } from './SearchInput';
 
 export function TopBar() {
   const theme = useThemeStore((state) => state.theme);

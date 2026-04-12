@@ -1,8 +1,11 @@
 /**
  * Arr service — factory functions and in-memory status cache for Radarr/Sonarr.
  */
-import { eq } from 'drizzle-orm';
 import { settings } from '@pops/db-types';
+import { eq } from 'drizzle-orm';
+
+import { getDrizzle } from '../../../db.js';
+import { getEnv } from '../../../env.js';
 import { RadarrClient } from './radarr-client.js';
 import { SonarrClient } from './sonarr-client.js';
 import type {
@@ -19,8 +22,6 @@ import type {
   SonarrRootFolder,
   SonarrSeriesFull,
 } from './types.js';
-import { getEnv } from '../../../env.js';
-import { getDrizzle } from '../../../db.js';
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 

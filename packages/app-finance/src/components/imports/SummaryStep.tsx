@@ -1,7 +1,8 @@
-import { CheckCircle, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
-import { useImportStore } from '../../store/importStore';
 import { Button } from '@pops/ui';
+import { AlertCircle, CheckCircle, RefreshCw, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router';
+
+import { useImportStore } from '../../store/importStore';
 
 /**
  * Step 7: Import summary — reads CommitResult from store (PRD-031 US-06).

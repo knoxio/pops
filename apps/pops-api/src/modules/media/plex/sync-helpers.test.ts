@@ -2,8 +2,9 @@
  * Tests for shared Plex sync helpers — external ID extraction,
  * movie watch logging, and episode watch syncing.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { PlexMediaItem, PlexEpisode } from './types.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { PlexEpisode, PlexMediaItem } from './types.js';
 
 // Mock dependencies
 vi.mock('../../../db.js', () => ({
@@ -28,10 +29,10 @@ vi.mock('drizzle-orm', () => ({
   and: vi.fn((...args: unknown[]) => ({ type: 'and', args })),
 }));
 
-import { extractExternalIdAsNumber, logMovieWatch, syncEpisodeWatches } from './sync-helpers.js';
+import { getDrizzle } from '../../../db.js';
 import { getTvShowByTvdbId } from '../tv-shows/service.js';
 import { logWatch } from '../watch-history/service.js';
-import { getDrizzle } from '../../../db.js';
+import { extractExternalIdAsNumber, logMovieWatch, syncEpisodeWatches } from './sync-helpers.js';
 
 const mockGetTvShowByTvdbId = vi.mocked(getTvShowByTvdbId);
 const mockLogWatch = vi.mocked(logWatch);

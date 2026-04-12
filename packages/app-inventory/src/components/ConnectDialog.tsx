@@ -3,20 +3,21 @@
  * Opens a dialog with a search input that queries inventory.items.list,
  * displays results, and connects the selected item.
  */
-import { useState } from 'react';
-import { toast } from 'sonner';
 import {
+  Button,
   Dialog,
-  DialogTrigger,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  Button,
-  TextInput,
+  DialogTrigger,
   Skeleton,
+  TextInput,
 } from '@pops/ui';
 import { Link2, Search } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
 import { trpc } from '../lib/trpc';
 
 interface ConnectDialogProps {

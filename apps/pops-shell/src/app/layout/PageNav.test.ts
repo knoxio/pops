@@ -1,7 +1,8 @@
 /**
  * Tests for PageNav helper functions
  */
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { findActiveApp, isPageActive } from '@/app/nav/path-utils';
 import type { AppNavConfig } from '@/app/nav/types';
 

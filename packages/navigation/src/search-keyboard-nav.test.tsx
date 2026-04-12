@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
-import { useSearchKeyboardNav } from './search-keyboard-nav';
+import { act, renderHook } from '@testing-library/react';
 import { useRef } from 'react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { useSearchKeyboardNav } from './search-keyboard-nav';
 
 function createContainer(resultCount: number): HTMLDivElement {
   const container = document.createElement('div');

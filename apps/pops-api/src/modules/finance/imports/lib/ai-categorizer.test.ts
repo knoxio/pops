@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { categorizeWithAi, clearCache, AiCategorizationError } from './ai-categorizer.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { AiCategorizationError, categorizeWithAi, clearCache } from './ai-categorizer.js';
 
 /**
  * Unit tests for AI categorization with mocked Anthropic API.

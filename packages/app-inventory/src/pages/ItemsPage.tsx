@@ -2,36 +2,37 @@
  * ItemsPage — inventory item list with search, filters, table/grid toggle,
  * and summary statistics. PRD-019/US-2.
  */
-import { useState, useMemo, useCallback } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
 import { useSetPageContext } from '@pops/navigation';
+import type { Condition } from '@pops/ui';
 import {
-  Package,
-  LayoutGrid,
-  LayoutList,
-  Search,
-  DollarSign,
-  Shield,
-  Clock,
-  Plus,
-} from 'lucide-react';
-import {
-  Skeleton,
-  Select,
-  type SelectOption,
   Button,
-  TextInput,
   Card,
   CardContent,
+  PageHeader,
+  Select,
+  type SelectOption,
+  Skeleton,
+  TextInput,
   TypeBadge,
   ViewToggleGroup,
-  PageHeader,
 } from '@pops/ui';
-import type { Condition } from '@pops/ui';
-import { trpc } from '../lib/trpc';
-import { InventoryTable } from '../components/InventoryTable';
+import {
+  Clock,
+  DollarSign,
+  LayoutGrid,
+  LayoutList,
+  Package,
+  Plus,
+  Search,
+  Shield,
+} from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router';
+
 import { InventoryCard } from '../components/InventoryCard';
+import { InventoryTable } from '../components/InventoryTable';
 import { ValueByTypeCard } from '../components/ValueBreakdown';
+import { trpc } from '../lib/trpc';
 import { formatCurrency } from '../lib/utils';
 type ViewMode = 'table' | 'grid';
 

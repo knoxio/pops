@@ -1,16 +1,17 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import type { Database } from 'better-sqlite3';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
 import {
-  setupTestContext,
-  seedWatchHistoryEntry,
-  seedWatchlistEntry,
-  seedTvShow,
-  seedSeason,
   seedEpisode,
   seedMovie,
+  seedSeason,
+  seedTvShow,
+  seedWatchHistoryEntry,
+  seedWatchlistEntry,
+  setupTestContext,
 } from '../../../shared/test-utils.js';
-import * as service from './service.js';
 import * as watchlistService from '../watchlist/service.js';
-import type { Database } from 'better-sqlite3';
+import * as service from './service.js';
 
 const ctx = setupTestContext();
 let db: Database;

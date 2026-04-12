@@ -2,16 +2,17 @@
  * Location service — CRUD operations for the location tree.
  * SQLite is the source of truth. All operations are local.
  */
-import { eq, asc, count, inArray } from 'drizzle-orm';
-import { locations, homeInventory } from '@pops/db-types';
+import { homeInventory, locations } from '@pops/db-types';
+import { asc, count, eq, inArray } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../db.js';
-import { NotFoundError, ConflictError } from '../../../shared/errors.js';
+import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 import type {
-  LocationRow,
   CreateLocationInput,
-  UpdateLocationInput,
-  LocationTreeNode,
   DeleteLocationStats,
+  LocationRow,
+  LocationTreeNode,
+  UpdateLocationInput,
 } from './types.js';
 import { toLocation } from './types.js';
 

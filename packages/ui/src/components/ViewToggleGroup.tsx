@@ -2,7 +2,8 @@
  * ViewToggleGroup — segmented button toggle for switching between views
  * (e.g. table/grid). Persists selection to localStorage via storageKey.
  */
-import { useState, useCallback, type ReactNode } from 'react';
+import { type ReactNode, useCallback, useState } from 'react';
+
 import { cn } from '../lib/utils';
 
 export interface ViewToggleOption<T extends string> {

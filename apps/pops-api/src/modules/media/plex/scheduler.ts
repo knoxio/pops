@@ -5,15 +5,16 @@
  * Tracks sync timestamps and handles errors gracefully.
  * Persists scheduler config and sync logs to the settings table.
  */
-import { eq, desc } from 'drizzle-orm';
 import { settings, syncLogs } from '@pops/db-types';
+import { desc, eq } from 'drizzle-orm';
+
+import { getDrizzle } from '../../../db.js';
 import type { PlexClient } from './client.js';
+import { getPlexClient, getPlexSectionIds, getPlexToken } from './service.js';
+import { isJobRunning } from './sync-job-manager.js';
 import { importMoviesFromPlex } from './sync-movies.js';
 import { importTvShowsFromPlex } from './sync-tv.js';
 import { syncWatchlistFromPlex } from './sync-watchlist.js';
-import { getPlexClient, getPlexSectionIds, getPlexToken } from './service.js';
-import { isJobRunning } from './sync-job-manager.js';
-import { getDrizzle } from '../../../db.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -204,7 +205,7 @@ export function resumeSchedulerIfEnabled(): SchedulerStatus | null {
   const persisted = getPersistedSchedulerState();
   if (!persisted?.enabled) return null;
 
-  console.log(`[Plex Scheduler] Auto-resuming with interval ${persisted.intervalMs}ms`);
+  console.warn(`[Plex Scheduler] Auto-resuming with interval ${persisted.intervalMs}ms`);
   return startScheduler({ intervalMs: persisted.intervalMs });
 }
 
@@ -270,7 +271,7 @@ async function executeSyncCycle(
 
   if (movieSectionId) {
     if (isJobRunning('syncMovies')) {
-      console.log('[Plex Scheduler] Skipping movie sync — manual job in progress');
+      console.warn('[Plex Scheduler] Skipping movie sync — manual job in progress');
     } else {
       const movieResult = await importMoviesFromPlex(client, movieSectionId);
       movieCount = movieResult.synced;
@@ -285,7 +286,7 @@ async function executeSyncCycle(
 
   if (tvSectionId) {
     if (isJobRunning('syncTvShows')) {
-      console.log('[Plex Scheduler] Skipping TV sync — manual job in progress');
+      console.warn('[Plex Scheduler] Skipping TV sync — manual job in progress');
     } else {
       const tvResult = await importTvShowsFromPlex(client, tvSectionId);
       tvCount = tvResult.synced;
@@ -302,7 +303,7 @@ async function executeSyncCycle(
   const token = getPlexToken();
   if (token) {
     if (isJobRunning('syncWatchlist')) {
-      console.log('[Plex Scheduler] Skipping watchlist sync — manual job in progress');
+      console.warn('[Plex Scheduler] Skipping watchlist sync — manual job in progress');
     } else {
       try {
         const watchlistResult = await syncWatchlistFromPlex(token);

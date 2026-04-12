@@ -1,14 +1,15 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { HomeIcon, SlashIcon } from 'lucide-react';
+
 import {
   Breadcrumb,
-  BreadcrumbList,
+  BreadcrumbEllipsis,
   BreadcrumbItem,
   BreadcrumbLink,
+  BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-  BreadcrumbEllipsis,
 } from './breadcrumb';
-import { HomeIcon, SlashIcon } from 'lucide-react';
 
 const meta: Meta = {
   title: 'Navigation/Breadcrumb',

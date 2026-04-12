@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Request, Response } from 'express';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock cloudflare-jwt before importing auth middleware
 vi.mock('./cloudflare-jwt.js', () => ({

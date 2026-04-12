@@ -4,21 +4,21 @@
  * Handles authentication (Bearer token), request construction,
  * response parsing, and error mapping. Contains no business logic.
  */
+import type { TokenBucketRateLimiter } from './rate-limiter.js';
 import {
+  type RawTmdbImageResponse,
+  type RawTmdbMovieDetail,
+  type RawTmdbRecommendationsResponse,
+  type RawTmdbSearchResponse,
+  type RawTmdbTrendingResponse,
   TmdbApiError,
-  type TmdbSearchResponse,
-  type TmdbMovieDetail,
-  type TmdbImageResponse,
   type TmdbGenreListResponse,
   type TmdbImage,
+  type TmdbImageResponse,
   type TmdbMovieCredits,
-  type RawTmdbSearchResponse,
-  type RawTmdbMovieDetail,
-  type RawTmdbImageResponse,
-  type RawTmdbTrendingResponse,
-  type RawTmdbRecommendationsResponse,
+  type TmdbMovieDetail,
+  type TmdbSearchResponse,
 } from './types.js';
-import type { TokenBucketRateLimiter } from './rate-limiter.js';
 
 const BASE_URL = 'https://api.themoviedb.org';
 

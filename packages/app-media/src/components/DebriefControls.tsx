@@ -4,18 +4,19 @@
  *
  * Designed as composable components for integration into the DebriefPage.
  */
-import { useNavigate } from 'react-router';
-import { Button, Card, CardContent, CardHeader, CardTitle, Badge } from '@pops/ui';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@pops/ui';
 import {
-  SkipForward,
-  DoorOpen,
-  Trophy,
   ArrowRight,
   CheckCircle,
-  XCircle,
   Clock,
+  DoorOpen,
+  SkipForward,
+  Trophy,
+  XCircle,
 } from 'lucide-react';
+import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
+
 import { trpc } from '../lib/trpc';
 
 // ── Types ──

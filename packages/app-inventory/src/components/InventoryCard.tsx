@@ -7,17 +7,17 @@
  * - "horizontal" (default): compact row with small thumbnail — used in list views
  * - "vertical": photo on top with consistent aspect ratio — used in grid views
  */
-import { useState } from 'react';
-import {
-  cn,
-  Skeleton,
-  AssetIdBadge,
-  ConditionBadge,
-  TypeBadge,
-  LocationBreadcrumb,
-} from '@pops/ui';
 import type { Condition, LocationSegment } from '@pops/ui';
-import { Package, MapPin } from 'lucide-react';
+import {
+  AssetIdBadge,
+  cn,
+  ConditionBadge,
+  LocationBreadcrumb,
+  Skeleton,
+  TypeBadge,
+} from '@pops/ui';
+import { MapPin, Package } from 'lucide-react';
+import { useState } from 'react';
 
 export interface InventoryCardProps {
   id: string;

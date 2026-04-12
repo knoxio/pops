@@ -4,13 +4,14 @@
  * Extracted from service.ts, sync-movies.ts, and sync-tv.ts to eliminate
  * duplicated watch-history logging and external ID extraction logic.
  */
-import { eq, and } from 'drizzle-orm';
 import { episodes, seasons } from '@pops/db-types';
-import type { PlexClient } from './client.js';
-import type { PlexMediaItem, PlexEpisode } from './types.js';
+import { and, eq } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../db.js';
 import { getTvShowByTvdbId } from '../tv-shows/service.js';
 import { logWatch } from '../watch-history/service.js';
+import type { PlexClient } from './client.js';
+import type { PlexEpisode, PlexMediaItem } from './types.js';
 
 // ---------------------------------------------------------------------------
 // Types

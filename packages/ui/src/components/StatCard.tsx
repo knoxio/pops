@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { Card } from '../primitives/card';
+
 import { cn } from '../lib/utils';
+import { Card } from '../primitives/card';
 
 const statCardColorMap = {
   emerald: {

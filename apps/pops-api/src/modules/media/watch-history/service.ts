@@ -5,35 +5,36 @@
  *   - Movie: removed from watchlist when marked as watched.
  *   - Episode: TV show removed from watchlist when all episodes are watched.
  */
+import { episodes, mediaWatchlist, movies, seasons, tvShows, watchHistory } from '@pops/db-types';
 import {
+  and,
   count,
   countDistinct,
   desc,
   eq,
-  and,
-  inArray,
   gte,
-  lte,
+  inArray,
   isNotNull,
+  lte,
   type SQL,
 } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../db.js';
-import { watchHistory, mediaWatchlist, episodes, seasons, movies, tvShows } from '@pops/db-types';
 import { NotFoundError } from '../../../shared/errors.js';
-import { resequencePriorities } from '../watchlist/service.js';
 import { resetStaleness } from '../comparisons/staleness.js';
 import { createDebriefSession, queueDebriefStatus } from '../debrief/service.js';
+import { resequencePriorities } from '../watchlist/service.js';
 import type {
-  WatchHistoryRow,
-  LogWatchInput,
-  WatchHistoryFilters,
   BatchLogWatchInput,
-  TvShowProgress,
-  SeasonProgress,
-  NextEpisode,
   BatchProgressEntry,
-  RecentWatchHistoryFilters,
+  LogWatchInput,
+  NextEpisode,
   RecentWatchHistoryEntry,
+  RecentWatchHistoryFilters,
+  SeasonProgress,
+  TvShowProgress,
+  WatchHistoryFilters,
+  WatchHistoryRow,
 } from './types.js';
 
 /** Count + rows for a paginated list. */

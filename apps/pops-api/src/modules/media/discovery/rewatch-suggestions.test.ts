@@ -1,9 +1,10 @@
 /**
  * Rewatch suggestions service tests — uses real in-memory SQLite.
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { Database } from 'better-sqlite3';
-import { setupTestContext, seedMovie, seedWatchHistoryEntry } from '../../../shared/test-utils.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import { seedMovie, seedWatchHistoryEntry, setupTestContext } from '../../../shared/test-utils.js';
 import { getRewatchSuggestions } from './service.js';
 
 const ctx = setupTestContext();

@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { TierListSummary, type ScoreChange } from './TierListSummary';
+import { describe, expect, it, vi } from 'vitest';
+
+import { type ScoreChange, TierListSummary } from './TierListSummary';
 
 const sampleChanges: ScoreChange[] = [
   { movieId: 1, title: 'The Matrix', oldScore: 1200, newScore: 1245 },

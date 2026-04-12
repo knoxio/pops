@@ -1,5 +1,5 @@
-import { registerResultComponent } from '@pops/navigation';
 import type { ResultComponentProps } from '@pops/navigation';
+import { registerResultComponent } from '@pops/navigation';
 
 interface TransactionData {
   description: string;

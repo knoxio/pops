@@ -4,26 +4,8 @@
  * Shows cache stats (total entries, disk size, hit rate) and provides
  * controls to clear stale or all cache entries. PRD-053/US-03.
  */
-import { useState } from 'react';
-import { Link } from 'react-router';
-import { toast } from 'sonner';
-import { Database, Trash2 } from 'lucide-react';
-import { trpc } from '../lib/trpc';
 import {
-  Button,
-  Input,
-  Label,
-  Skeleton,
   Alert,
-  StatCard,
-  PageHeader,
-  Card,
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbSeparator,
-  BreadcrumbPage,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -33,7 +15,26 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+  Button,
+  Card,
+  Input,
+  Label,
+  PageHeader,
+  Skeleton,
+  StatCard,
 } from '@pops/ui';
+import { Database, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { Link } from 'react-router';
+import { toast } from 'sonner';
+
+import { trpc } from '../lib/trpc';
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';

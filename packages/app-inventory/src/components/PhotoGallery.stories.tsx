@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+
 import { PhotoGallery, type PhotoItem } from './PhotoGallery';
 
 const meta: Meta<typeof PhotoGallery> = {

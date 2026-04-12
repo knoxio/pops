@@ -1,15 +1,16 @@
+import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import express from 'express';
 import helmet from 'helmet';
-import { createExpressMiddleware } from '@trpc/server/adapters/express';
+
 import { authMiddleware } from './middleware/auth.js';
-import { rateLimiter } from './middleware/rate-limit.js';
 import { envContextMiddleware } from './middleware/env-context.js';
-import healthRouter from './routes/health.js';
-import upBankRouter from './routes/webhooks/up-bank.js';
+import { rateLimiter } from './middleware/rate-limit.js';
 import { envRouter } from './modules/core/envs/router.js';
-import mediaImagesRouter from './routes/media/images.js';
-import documentThumbnailRouter from './routes/inventory/documents.js';
 import { appRouter } from './router.js';
+import healthRouter from './routes/health.js';
+import documentThumbnailRouter from './routes/inventory/documents.js';
+import mediaImagesRouter from './routes/media/images.js';
+import upBankRouter from './routes/webhooks/up-bank.js';
 import { createContext } from './trpc.js';
 
 /**

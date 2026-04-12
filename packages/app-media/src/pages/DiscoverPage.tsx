@@ -5,14 +5,15 @@
  * then renders each as a lazy-loaded ShelfSection. All card interactions
  * (add to library, watchlist, watched, dismiss) are handled by useDiscoverCardActions.
  */
+import { Button, Skeleton } from '@pops/ui';
+import { Compass, Loader2, RefreshCw, Swords } from 'lucide-react';
 import { useMemo } from 'react';
 import { Link } from 'react-router';
-import { Compass, Swords, Loader2, RefreshCw } from 'lucide-react';
-import { Button, Skeleton } from '@pops/ui';
-import { trpc } from '../lib/trpc';
-import { ShelfSection } from '../components/ShelfSection';
+
 import { PreferenceProfile } from '../components/PreferenceProfile';
+import { ShelfSection } from '../components/ShelfSection';
 import { useDiscoverCardActions } from '../hooks/useDiscoverCardActions';
+import { trpc } from '../lib/trpc';
 
 const COMPARISON_THRESHOLD = 5;
 

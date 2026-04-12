@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { TransactionCard } from './TransactionCard';
 import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
+import { render, screen } from '@testing-library/react';
+import { describe, expect, it } from 'vitest';
+
+import { TransactionCard } from './TransactionCard';
 
 function makeTx(overrides: Partial<ProcessedTransaction> = {}): ProcessedTransaction {
   return {

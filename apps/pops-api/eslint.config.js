@@ -1,43 +1,28 @@
-import tseslint from 'typescript-eslint';
+import { createBaseConfig } from '../../eslint.config.base.mjs';
 
-export default tseslint.config(
+export default [
+  ...createBaseConfig({ typeChecked: true, tsconfigRootDir: import.meta.dirname }),
   {
-    ignores: ['node_modules', 'dist', 'coverage', '*.config.js', '*.config.mjs'],
-  },
-  ...tseslint.configs.recommendedTypeChecked,
-  {
-    languageOptions: {
-      parserOptions: {
-        projectService: true,
-        tsconfigRootDir: import.meta.dirname,
-      },
-    },
     rules: {
-      'max-lines': ['error', { max: 2600, skipBlankLines: true, skipComments: true }],
+      // pops-api has larger files than frontend packages — override base limits
+      'max-lines': ['error', { max: 2000, skipBlankLines: true, skipComments: true }],
       'max-lines-per-function': [
         'error',
-        { max: 600, skipBlankLines: true, skipComments: true, IIFEs: true },
+        { max: 450, skipBlankLines: true, skipComments: true, IIFEs: true },
       ],
-      complexity: ['error', 45],
-      'max-statements': ['error', 220],
-      'max-params': ['error', 12],
-      'max-depth': ['error', 7],
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-        },
-      ],
+      // existing update functions (inventory/items, media/movies) have complexity ~41
+      complexity: ['error', 42],
+      'max-params': ['error', 10],
+
+      '@typescript-eslint/no-non-null-assertion': 'error',
       '@typescript-eslint/explicit-function-return-type': [
         'error',
         {
           allowExpressions: true,
+          allowTypedFunctionExpressions: true,
+          allowHigherOrderFunctions: true,
         },
       ],
-      '@typescript-eslint/no-explicit-any': 'error',
-      '@typescript-eslint/no-non-null-assertion': 'error',
-      'no-console': 'off',
     },
   },
   {
@@ -52,7 +37,6 @@ export default tseslint.config(
     },
   },
   {
-    // Relax strict type checking in test files for supertest responses
     files: ['**/*.test.ts', '**/*.spec.ts', '**/test-utils.ts'],
     rules: {
       'max-lines': 'off',
@@ -70,5 +54,5 @@ export default tseslint.config(
       '@typescript-eslint/no-floating-promises': 'off',
       '@typescript-eslint/require-await': 'off',
     },
-  }
-);
+  },
+];

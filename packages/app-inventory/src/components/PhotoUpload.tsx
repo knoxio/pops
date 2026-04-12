@@ -4,9 +4,10 @@
  * Handles file selection, shows upload progress per file,
  * and allows deleting individual queued/uploaded photos.
  */
-import { useState, useCallback, useRef } from 'react';
-import { Upload, X, ImageIcon, Camera } from 'lucide-react';
 import { Button, Progress } from '@pops/ui';
+import { Camera, ImageIcon, Upload, X } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
+
 import { cn } from '../lib/utils';
 
 export interface UploadedFile {

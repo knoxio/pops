@@ -1,21 +1,22 @@
 /**
  * Transaction tRPC router — CRUD procedures for transactions.
  */
-import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { router, protectedProcedure } from '../../../trpc.js';
+import { z } from 'zod';
+
+import { getDb } from '../../../db.js';
+import { NotFoundError } from '../../../shared/errors.js';
 import { paginationMeta } from '../../../shared/pagination.js';
+import { suggestTags } from '../../../shared/tag-suggester.js';
+import { protectedProcedure, router } from '../../../trpc.js';
+import * as service from './service.js';
 import {
   CreateTransactionSchema,
-  UpdateTransactionSchema,
-  TransactionQuerySchema,
   toTransaction,
   type TransactionFilters,
+  TransactionQuerySchema,
+  UpdateTransactionSchema,
 } from './types.js';
-import * as service from './service.js';
-import { NotFoundError } from '../../../shared/errors.js';
-import { suggestTags } from '../../../shared/tag-suggester.js';
-import { getDb } from '../../../db.js';
 
 /** Default pagination values. */
 const DEFAULT_LIMIT = 50;

@@ -3,10 +3,10 @@
  */
 
 export type {
+  MatchType,
   Query,
+  SearchAdapter,
   SearchContext,
   SearchHit,
-  SearchAdapter,
   StructuredFilter,
-  MatchType,
 } from './search.js';

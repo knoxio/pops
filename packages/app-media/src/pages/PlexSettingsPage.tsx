@@ -4,41 +4,42 @@
  * Shows connection health, available libraries, and sync buttons
  * for importing movies and TV shows from Plex into the local library.
  */
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router';
 import {
-  Button,
-  Label,
-  Skeleton,
-  Input,
-  Select,
   Breadcrumb,
-  BreadcrumbList,
   BreadcrumbItem,
   BreadcrumbLink,
-  BreadcrumbSeparator,
+  BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
+  Button,
+  Input,
+  Label,
+  Select,
+  Skeleton,
 } from '@pops/ui';
 import {
-  ArrowLeft,
-  RefreshCw,
-  Film,
-  Tv,
   AlertTriangle,
-  Server,
-  Save,
-  Clock,
-  Copy,
+  ArrowLeft,
+  Bookmark,
   ChevronDown,
   ChevronUp,
-  History,
-  Bookmark,
+  Clock,
+  Copy,
   Eye,
+  Film,
+  History,
+  RefreshCw,
+  Save,
+  Server,
+  Tv,
 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
 import { toast } from 'sonner';
-import { trpc } from '../lib/trpc';
+
 import { ConnectionBadge } from '../components/ConnectionBadge';
 import { useSyncJob } from '../hooks/useSyncJob';
+import { trpc } from '../lib/trpc';
 
 interface SyncResult {
   synced: number;

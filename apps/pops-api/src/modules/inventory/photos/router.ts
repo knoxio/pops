@@ -1,19 +1,20 @@
 /**
  * Item photos tRPC router — attach/remove/reorder photos per inventory item.
  */
-import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { router, protectedProcedure } from '../../../trpc.js';
+import { z } from 'zod';
+
+import { NotFoundError, ValidationError } from '../../../shared/errors.js';
 import { paginationMeta } from '../../../shared/pagination.js';
+import { protectedProcedure, router } from '../../../trpc.js';
+import * as service from './service.js';
 import {
   AttachPhotoSchema,
-  UpdatePhotoSchema,
   PhotoQuerySchema,
   ReorderPhotosSchema,
   toPhoto,
+  UpdatePhotoSchema,
 } from './types.js';
-import * as service from './service.js';
-import { NotFoundError, ValidationError } from '../../../shared/errors.js';
 
 const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;

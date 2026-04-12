@@ -4,18 +4,18 @@
  * Columns: Asset ID, Name, Brand, Type, Condition, Location, Value, In Use.
  * Click row navigates to detail page.
  */
-import { useMemo } from 'react';
-import { useNavigate } from 'react-router';
-import type { ColumnDef } from '@tanstack/react-table';
-import { Check, X } from 'lucide-react';
 import {
+  AssetIdBadge,
+  type Condition,
+  ConditionBadge,
   DataTable,
   SortableHeader,
-  AssetIdBadge,
-  ConditionBadge,
   TypeBadge,
-  type Condition,
 } from '@pops/ui';
+import type { ColumnDef } from '@tanstack/react-table';
+import { Check, X } from 'lucide-react';
+import { useMemo } from 'react';
+import { useNavigate } from 'react-router';
 
 export interface InventoryTableItem {
   id: string;

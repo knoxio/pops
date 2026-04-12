@@ -1,22 +1,23 @@
 /**
  * TV Shows tRPC router — CRUD procedures for shows, seasons, and episodes.
  */
-import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { router, protectedProcedure } from '../../../trpc.js';
+import { z } from 'zod';
+
+import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 import { paginationMeta } from '../../../shared/pagination.js';
-import {
-  CreateTvShowSchema,
-  UpdateTvShowSchema,
-  TvShowQuerySchema,
-  CreateSeasonSchema,
-  CreateEpisodeSchema,
-  toTvShow,
-  toSeason,
-  toEpisode,
-} from './types.js';
+import { protectedProcedure, router } from '../../../trpc.js';
 import * as service from './service.js';
-import { NotFoundError, ConflictError } from '../../../shared/errors.js';
+import {
+  CreateEpisodeSchema,
+  CreateSeasonSchema,
+  CreateTvShowSchema,
+  toEpisode,
+  toSeason,
+  toTvShow,
+  TvShowQuerySchema,
+  UpdateTvShowSchema,
+} from './types.js';
 
 const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;

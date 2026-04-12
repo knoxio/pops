@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
+import { beforeEach, describe, expect, it } from 'vitest';
+
 import {
-  registerResultComponent,
-  getResultComponent,
-  GenericResultComponent,
   _clearRegistry,
+  GenericResultComponent,
+  getResultComponent,
+  registerResultComponent,
 } from './result-component-registry';
 
 beforeEach(() => {

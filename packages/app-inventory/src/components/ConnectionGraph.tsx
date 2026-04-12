@@ -4,18 +4,19 @@
  * Uses d3-force for layout physics and renders to HTML5 Canvas for performance.
  * Nodes are colored by item type. Click navigates to item detail. Zoom/pan supported.
  */
-import { useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router';
+import { Skeleton } from '@pops/ui';
 import {
-  forceSimulation,
-  forceLink,
-  forceManyBody,
   forceCenter,
   forceCollide,
-  type SimulationNodeDatum,
+  forceLink,
+  forceManyBody,
+  forceSimulation,
   type SimulationLinkDatum,
+  type SimulationNodeDatum,
 } from 'd3-force';
-import { Skeleton } from '@pops/ui';
+import { useCallback, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router';
+
 import { trpc } from '../lib/trpc';
 
 // ---------------------------------------------------------------------------

@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dependencies before imports
 const sharedMockCreate = vi.fn();
@@ -35,8 +35,8 @@ vi.mock('../../../../lib/logger.js', () => ({
   },
 }));
 
-import { analyzeCorrection, patternMatchesDescription } from './rule-generator.js';
 import type { CorrectionAnalysis } from './rule-generator.js';
+import { analyzeCorrection, patternMatchesDescription } from './rule-generator.js';
 
 const mockCreate = sharedMockCreate;
 

@@ -8,9 +8,10 @@
  * Both maps are loaded once per import batch and shared across
  * all matching stages (correction, prefix, contains, etc.).
  */
-import { isNotNull } from 'drizzle-orm';
-import { getDrizzle } from '../../../../db.js';
 import { entities } from '@pops/db-types';
+import { isNotNull } from 'drizzle-orm';
+
+import { getDrizzle } from '../../../../db.js';
 
 export interface EntityEntry {
   id: string;

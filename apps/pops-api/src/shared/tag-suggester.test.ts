@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { suggestTags } from './tag-suggester.js';
 
 // Mock entity lookup via DB

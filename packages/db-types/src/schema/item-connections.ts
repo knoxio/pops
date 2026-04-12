@@ -1,5 +1,6 @@
-import { sqliteTable, text, integer, index, unique, check } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
+import { check, index, integer, sqliteTable, text, unique } from 'drizzle-orm/sqlite-core';
+
 import { homeInventory } from './inventory.js';
 
 export const itemConnections = sqliteTable(

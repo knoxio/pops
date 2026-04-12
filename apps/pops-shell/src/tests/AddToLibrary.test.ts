@@ -8,7 +8,7 @@
  * in SearchPage. Component-level rendering tests require
  * @testing-library/react + jsdom.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 // ── makeKey helper ───────────────────────────────────────────────────
 

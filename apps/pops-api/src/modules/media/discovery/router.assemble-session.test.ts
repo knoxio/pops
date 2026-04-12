@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { ShelfInstance } from './shelf/types.js';
 import type { ScoredDiscoverResult } from './types.js';
 
@@ -94,8 +95,8 @@ vi.mock('./shelf/registry.js', () => ({
 }));
 
 import { setupTestContext } from '../../../shared/test-utils.js';
-import { assembleSession } from './shelf/session.service.js';
 import { recordImpressions } from './shelf/impressions.service.js';
+import { assembleSession } from './shelf/session.service.js';
 
 const mockAssembleSession = vi.mocked(assembleSession);
 const mockRecordImpressions = vi.mocked(recordImpressions);

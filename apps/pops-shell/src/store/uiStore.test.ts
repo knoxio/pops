@@ -1,7 +1,8 @@
 /**
  * Tests for UI store — sidebar and rail state
  */
-import { describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+
 import { useUIStore } from './uiStore';
 
 describe('uiStore', () => {

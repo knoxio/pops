@@ -1,29 +1,30 @@
-import { useMemo } from 'react';
-import { useParams, Link } from 'react-router';
 import { useSetPageContext } from '@pops/navigation';
 import {
   Alert,
-  AlertTitle,
   AlertDescription,
+  AlertTitle,
   Badge,
-  Skeleton,
   Breadcrumb,
-  BreadcrumbList,
   BreadcrumbItem,
   BreadcrumbLink,
-  BreadcrumbSeparator,
+  BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
+  Skeleton,
 } from '@pops/ui';
-import { trpc } from '../lib/trpc';
-import { formatCurrency, formatLanguage, formatRuntime } from '../lib/format';
 import { Button } from '@pops/ui';
-import { WatchlistToggle } from '../components/WatchlistToggle';
-import { ComparisonScores } from '../components/ComparisonScores';
-import { MarkAsWatchedButton } from '../components/MarkAsWatchedButton';
+import { useMemo } from 'react';
+import { Link, useParams } from 'react-router';
+
 import { ArrStatusBadge } from '../components/ArrStatusBadge';
-import { RequestMovieButton } from '../components/RequestMovieButton';
-import { FreshnessBadge } from '../components/FreshnessBadge';
+import { ComparisonScores } from '../components/ComparisonScores';
 import { ExcludedDimensions } from '../components/ExcludedDimensions';
+import { FreshnessBadge } from '../components/FreshnessBadge';
+import { MarkAsWatchedButton } from '../components/MarkAsWatchedButton';
+import { RequestMovieButton } from '../components/RequestMovieButton';
+import { WatchlistToggle } from '../components/WatchlistToggle';
+import { formatCurrency, formatLanguage, formatRuntime } from '../lib/format';
+import { trpc } from '../lib/trpc';
 
 function MovieDetailSkeleton() {
   return (

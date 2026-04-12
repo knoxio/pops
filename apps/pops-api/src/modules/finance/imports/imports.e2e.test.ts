@@ -1,22 +1,23 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { readFileSync } from 'fs';
-import { join } from 'path';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import Papa from 'papaparse';
-import type { Database } from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import { eq, count, isNull } from 'drizzle-orm';
 import { transactions as transactionsTable } from '@pops/db-types';
+import type { Database } from 'better-sqlite3';
+import { count, eq, isNull } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { readFileSync } from 'fs';
+import Papa from 'papaparse';
+import { join } from 'path';
+import { dirname } from 'path';
+import { fileURLToPath } from 'url';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
-  seedEntity,
-  seedTransaction,
   createCaller,
   createTestDb,
+  seedEntity,
+  seedTransaction,
 } from '../../../shared/test-utils.js';
-import { transformAmex } from './transformers/amex.js';
 import { clearCache } from './lib/ai-categorizer.js';
-import type { ConfirmedTransaction, ProcessImportOutput, ExecuteImportOutput } from './types.js';
+import { transformAmex } from './transformers/amex.js';
+import type { ConfirmedTransaction, ExecuteImportOutput, ProcessImportOutput } from './types.js';
 
 /**
  * E2E Integration Test for Complete Import Flow
@@ -44,8 +45,8 @@ vi.mock('./lib/ai-categorizer.js', async (importOriginal) => {
   };
 });
 
-import { resetMockAi, mockConfig } from './lib/ai-categorizer.mock.js';
-import { setDb, closeDb } from '../../../db.js';
+import { closeDb, setDb } from '../../../db.js';
+import { mockConfig, resetMockAi } from './lib/ai-categorizer.mock.js';
 
 let caller: ReturnType<typeof createCaller>;
 let db: Database;

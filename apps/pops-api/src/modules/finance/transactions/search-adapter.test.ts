@@ -1,9 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { Database } from 'better-sqlite3';
-import { setDb, closeDb } from '../../../db.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import { closeDb, setDb } from '../../../db.js';
 import { createTestDb, seedTransaction } from '../../../shared/test-utils.js';
 import type { SearchHit } from '../../core/search/index.js';
-import { transactionsSearchAdapter, type TransactionHitData } from './search-adapter.js';
+import { type TransactionHitData, transactionsSearchAdapter } from './search-adapter.js';
 
 let db: Database;
 

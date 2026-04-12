@@ -3,38 +3,39 @@
  * Manages learned patterns from user edits — Drizzle ORM
  */
 import Anthropic from '@anthropic-ai/sdk';
-import { eq, gte, desc, asc, count, sql, and } from 'drizzle-orm';
+import { aiUsage, settings, transactionCorrections, transactions } from '@pops/db-types';
+import { and, asc, count, desc, eq, gte, sql } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../db.js';
 import { isNamedEnvContext } from '../../../db.js';
 import { getEnv } from '../../../env.js';
-import { aiUsage, settings, transactionCorrections, transactions } from '@pops/db-types';
+import { withRateLimitRetry } from '../../../lib/ai-retry.js';
+import { logger } from '../../../lib/logger.js';
 import { NotFoundError } from '../../../shared/errors.js';
 import { parseJsonStringArray } from '../../../shared/json.js';
-import { logger } from '../../../lib/logger.js';
-import { withRateLimitRetry } from '../../../lib/ai-retry.js';
 import type {
-  CorrectionRow,
-  CreateCorrectionInput,
-  UpdateCorrectionInput,
-  CorrectionMatchResult,
   ChangeSet,
+  ChangeSetImpactCounts,
+  ChangeSetImpactItem,
+  ChangeSetImpactSummary,
   ChangeSetOp,
   ChangeSetPreviewDiff,
   ChangeSetPreviewSummary,
-  CorrectionMatchSummary,
   ChangeSetProposal,
   Correction,
   CorrectionClassificationOutcome,
-  ChangeSetImpactCounts,
-  ChangeSetImpactItem,
+  CorrectionMatchResult,
+  CorrectionMatchSummary,
+  CorrectionRow,
   CorrectionSignal,
-  ChangeSetImpactSummary,
+  CreateCorrectionInput,
+  UpdateCorrectionInput,
 } from './types.js';
 import {
-  normalizeDescription,
-  classifyCorrectionMatch,
-  ChangeSetSchema,
   ChangeSetImpactSummarySchema,
+  ChangeSetSchema,
+  classifyCorrectionMatch,
+  normalizeDescription,
   toCorrection,
 } from './types.js';
 import { AdaptedSignalSchema } from './types.js';
@@ -326,7 +327,8 @@ Return ONLY a single JSON object, no markdown, no explanation:
       '[AI] reviseChangeSet call failed'
     );
     throw new Error(
-      `reviseChangeSet: AI call failed — ${error instanceof Error ? error.message : String(error)}`
+      `reviseChangeSet: AI call failed — ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error }
     );
   }
 
@@ -346,7 +348,8 @@ Return ONLY a single JSON object, no markdown, no explanation:
   } catch (error) {
     logger.error({ text: cleanedText }, '[AI] reviseChangeSet: failed to parse JSON');
     throw new Error(
-      `reviseChangeSet: AI returned invalid JSON — ${error instanceof Error ? error.message : String(error)}`
+      `reviseChangeSet: AI returned invalid JSON — ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error }
     );
   }
 

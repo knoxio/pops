@@ -1,11 +1,12 @@
 /**
  * Movie service — CRUD operations against SQLite via Drizzle ORM.
  */
-import { count, desc, eq, like, and, sql, type SQL } from 'drizzle-orm';
-import { getDrizzle } from '../../../db.js';
 import { movies } from '@pops/db-types';
-import { NotFoundError, ConflictError } from '../../../shared/errors.js';
-import type { MovieRow, CreateMovieInput, UpdateMovieInput, MovieFilters } from './types.js';
+import { and, count, desc, eq, like, type SQL, sql } from 'drizzle-orm';
+
+import { getDrizzle } from '../../../db.js';
+import { ConflictError, NotFoundError } from '../../../shared/errors.js';
+import type { CreateMovieInput, MovieFilters, MovieRow, UpdateMovieInput } from './types.js';
 
 /** Count + rows for a paginated list. */
 export interface MovieListResult {

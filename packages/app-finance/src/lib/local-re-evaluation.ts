@@ -6,13 +6,14 @@
  * Runs entirely client-side with no server round-trip.
  */
 import type {
-  CorrectionRow,
   CorrectionMatchResult,
+  CorrectionRow,
 } from '@pops/api/modules/core/corrections/types';
 import {
-  normalizeDescription,
   classifyCorrectionMatch,
+  normalizeDescription,
 } from '@pops/api/modules/core/corrections/types';
+
 import type { ProcessedTransaction } from '../store/importStore';
 
 export interface ReEvaluationResult {

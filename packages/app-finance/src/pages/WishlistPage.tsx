@@ -1,30 +1,10 @@
 /**
  * Wishlist page - savings goals
  */
-import { useState } from 'react';
-import type { ColumnDef } from '@tanstack/react-table';
-import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { trpc } from '../lib/trpc';
+import type { ColumnFilter } from '@pops/ui';
 import {
-  DataTable,
-  SortableHeader,
-  Badge,
   Alert,
-  Skeleton,
-  Progress,
-  Button,
-  TextInput,
-  Select,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DropdownMenu,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -33,10 +13,31 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Badge,
+  Button,
+  DataTable,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  Progress,
+  Select,
+  Skeleton,
+  SortableHeader,
+  TextInput,
 } from '@pops/ui';
-import { MoreHorizontal, Plus, ExternalLink, Pencil, Trash2, Loader2 } from 'lucide-react';
+import type { ColumnDef } from '@tanstack/react-table';
+import { ExternalLink, Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
-import type { ColumnFilter } from '@pops/ui';
+import { z } from 'zod';
+
+import { trpc } from '../lib/trpc';
 
 // Schema matching the API
 const WishlistItemSchema = z.object({

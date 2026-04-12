@@ -1,13 +1,14 @@
-import { create } from 'zustand';
+import type { ChangeSet } from '@pops/api/modules/core/corrections/types';
 import type {
-  ParsedTransaction,
-  ProcessedTransaction as BaseProcessedTransaction,
   ConfirmedTransaction,
   ImportResult,
   ImportWarning,
+  ParsedTransaction,
+  ProcessedTransaction as BaseProcessedTransaction,
 } from '@pops/api/modules/finance/imports';
-import type { ChangeSet } from '@pops/api/modules/core/corrections/types';
 import type { CommitResult } from '@pops/api/modules/finance/imports';
+import { create } from 'zustand';
+
 import { findSimilarTransactions } from '../lib/transaction-utils';
 
 export type BankType = 'Amex';

@@ -2,21 +2,22 @@
  * DataTableFilters - Filter components for DataTable
  * Supports text, select, multi-select, date range, and number range filters
  */
-import { useState } from 'react';
 import type { Column, Row, Table } from '@tanstack/react-table';
-import { X, SlidersHorizontal } from 'lucide-react';
-import { TextInput } from './TextInput';
-import { Select, type SelectOption } from './Select';
-import { Button } from './Button';
-import { NumberInput } from './NumberInput';
-import { ComboboxSelect } from './ComboboxSelect';
+import { SlidersHorizontal, X } from 'lucide-react';
+import { useState } from 'react';
+
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '../primitives/dialog';
+import { Button } from './Button';
+import { ComboboxSelect } from './ComboboxSelect';
+import { NumberInput } from './NumberInput';
+import { Select, type SelectOption } from './Select';
+import { TextInput } from './TextInput';
 
 export interface ColumnFilter {
   id: string;

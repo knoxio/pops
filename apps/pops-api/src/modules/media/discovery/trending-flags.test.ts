@@ -1,7 +1,8 @@
 /**
  * Tests for isWatched + onWatchlist flags on discover results from getTrending.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { TmdbClient } from '../tmdb/client.js';
 import type { TmdbSearchResult } from '../tmdb/types.js';
 
@@ -26,7 +27,7 @@ vi.mock('./service.js', () => ({
 }));
 
 import { getDrizzle } from '../../../db.js';
-import { getWatchedTmdbIds, getWatchlistTmdbIds, getDismissedTmdbIds } from './flags.js';
+import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from './flags.js';
 import { getTrending } from './tmdb-service.js';
 
 const mockGetDrizzle = vi.mocked(getDrizzle);

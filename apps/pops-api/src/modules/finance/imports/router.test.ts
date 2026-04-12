@@ -1,23 +1,24 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { entities as entitiesTable } from '@pops/db-types';
 import { TRPCError } from '@trpc/server';
 import type { Database } from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
-import { entities as entitiesTable } from '@pops/db-types';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { getDrizzle } from '../../../db.js';
 import {
-  setupTestContext,
+  createCaller,
   seedEntity,
   seedTransaction,
-  createCaller,
+  setupTestContext,
 } from '../../../shared/test-utils.js';
+import type { ChangeSet } from '../../core/corrections/types.js';
 import { clearCache } from './lib/ai-categorizer.js';
 import type {
-  ProcessImportOutput,
+  ConfirmedTransaction,
   ExecuteImportOutput,
   ParsedTransaction,
-  ConfirmedTransaction,
+  ProcessImportOutput,
 } from './types.js';
-import type { ChangeSet } from '../../core/corrections/types.js';
 
 /**
  * Unit tests for imports tRPC router.

@@ -34,34 +34,34 @@ export * from './primitives/tooltip';
 // Import directly from "@pops/ui/primitives/button" etc. if primitive versions are needed
 export { Button as ButtonPrimitive, buttonVariants } from './primitives/button';
 export {
-  Select as SelectPrimitive,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuPortal,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenu as DropdownMenuRoot,
+  DropdownMenuSeparator,
+  DropdownMenuShortcut,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from './primitives/dropdown-menu';
+export {
   SelectContent,
   SelectGroup,
   SelectItem,
   SelectLabel,
+  Select as SelectPrimitive,
   SelectScrollDownButton,
   SelectScrollUpButton,
   SelectSeparator,
   SelectTrigger,
   SelectValue,
 } from './primitives/select';
-export {
-  DropdownMenu as DropdownMenuRoot,
-  DropdownMenuPortal,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuLabel,
-  DropdownMenuItem,
-  DropdownMenuCheckboxItem,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-} from './primitives/dropdown-menu';
 
 // Composite components
 export * from './components/Autocomplete';
@@ -90,6 +90,6 @@ export * from './components/ViewToggleGroup';
 // Inventory composites
 export * from './components/AssetIdBadge';
 export * from './components/ConditionBadge';
+export * from './components/LocationBreadcrumb';
 export * from './components/TypeBadge';
 export * from './components/WarrantyBadge';
-export * from './components/LocationBreadcrumb';

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+
 import { TypeBadge } from './TypeBadge';
 
 const meta: Meta<typeof TypeBadge> = {

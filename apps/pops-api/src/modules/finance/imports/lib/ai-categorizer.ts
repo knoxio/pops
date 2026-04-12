@@ -6,14 +6,16 @@
  * Only the merchant description is sent to the API — no account numbers,
  * card numbers, or personal identifiers.
  */
-import Anthropic from '@anthropic-ai/sdk';
-import { existsSync, readFileSync, writeFileSync, mkdirSync, statSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-import { getEnv } from '../../../../env.js';
-import { getDrizzle, isNamedEnvContext } from '../../../../db.js';
+
+import Anthropic from '@anthropic-ai/sdk';
 import { aiUsage } from '@pops/db-types';
-import { logger } from '../../../../lib/logger.js';
+
+import { getDrizzle, isNamedEnvContext } from '../../../../db.js';
+import { getEnv } from '../../../../env.js';
 import { withRateLimitRetry } from '../../../../lib/ai-retry.js';
+import { logger } from '../../../../lib/logger.js';
 
 export interface AiCacheEntry {
   description: string;

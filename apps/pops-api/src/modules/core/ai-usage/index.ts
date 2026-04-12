@@ -3,8 +3,8 @@
  */
 export { aiUsageRouter } from './router.js';
 export type {
-  AiUsageStatsOutput,
-  GetHistoryInput,
   AiUsageHistoryOutput,
   AiUsageHistoryRecord,
+  AiUsageStatsOutput,
+  GetHistoryInput,
 } from './types.js';

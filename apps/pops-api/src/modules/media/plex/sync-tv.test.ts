@@ -1,10 +1,11 @@
 /**
  * Tests for Plex TV show import — batch sync with episode watch matching.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { PlexMediaItem, PlexEpisode } from './types.js';
-import type { PlexClient } from './client.js';
 import type BetterSqlite3 from 'better-sqlite3';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { PlexClient } from './client.js';
+import type { PlexEpisode, PlexMediaItem } from './types.js';
 
 // Mock dependencies
 vi.mock('../thetvdb/index.js', () => ({
@@ -38,12 +39,12 @@ vi.mock('drizzle-orm', () => ({
   and: vi.fn((...args: unknown[]) => ({ type: 'and', args })),
 }));
 
-import { importTvShowsFromPlex } from './sync-tv.js';
-import { getTvdbClient } from '../thetvdb/index.js';
+import { getDb, getDrizzle } from '../../../db.js';
 import * as tvShowService from '../library/tv-show-service.js';
+import { getTvdbClient } from '../thetvdb/index.js';
 import { getTvShowByTvdbId } from '../tv-shows/service.js';
 import { logWatch } from '../watch-history/service.js';
-import { getDb, getDrizzle } from '../../../db.js';
+import { importTvShowsFromPlex } from './sync-tv.js';
 
 const mockGetTvdbClient = vi.mocked(getTvdbClient);
 const mockAddTvShow = vi.mocked(tvShowService.addTvShow);

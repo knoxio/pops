@@ -1,14 +1,15 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { useSearchParams, Link } from 'react-router';
 import { useSetPageContext } from '@pops/navigation';
 import { Button, Select, Skeleton, TextInput } from '@pops/ui';
-import { Sparkles, Settings, Search, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
-import { MediaGrid } from '../components/MediaGrid';
-import { MediaCard } from '../components/MediaCard';
+import { AlertCircle, ChevronLeft, ChevronRight, Search, Settings, Sparkles } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useSearchParams } from 'react-router';
+
 import { DebriefBanner } from '../components/DebriefBanner';
 import { DownloadQueue } from '../components/DownloadQueue';
+import { MediaCard } from '../components/MediaCard';
+import { MediaGrid } from '../components/MediaGrid';
 import { QuickPickDialog } from '../components/QuickPickDialog';
-import { useMediaLibrary, type MediaType, type SortOption } from '../hooks/useMediaLibrary';
+import { type MediaType, type SortOption, useMediaLibrary } from '../hooks/useMediaLibrary';
 
 const TYPE_OPTIONS: { value: MediaType; label: string }[] = [
   { value: 'all', label: 'All' },

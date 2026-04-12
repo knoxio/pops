@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { SearchResultsPanel } from './SearchResultsPanel';
-import type { SearchResultSection } from './SearchResultsPanel';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { _clearRegistry, registerResultComponent } from './result-component-registry';
+import type { SearchResultSection } from './SearchResultsPanel';
+import { SearchResultsPanel } from './SearchResultsPanel';
 
 beforeEach(() => {
   _clearRegistry();

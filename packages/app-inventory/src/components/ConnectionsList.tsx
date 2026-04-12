@@ -3,7 +3,7 @@
  * Shows connection count header, list of connected items with badges,
  * and a "Connect to…" button placeholder.
  */
-import { cn, AssetIdBadge, TypeBadge, Button } from '@pops/ui';
+import { AssetIdBadge, Button, cn, TypeBadge } from '@pops/ui';
 import { Link2, Plus } from 'lucide-react';
 
 export interface ConnectedItem {

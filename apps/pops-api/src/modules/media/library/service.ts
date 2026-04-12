@@ -2,17 +2,18 @@
  * Library service — orchestrates adding media to the local library
  * by fetching metadata from external APIs and inserting records.
  */
-import { sql, type SQL } from 'drizzle-orm';
-import { getDrizzle } from '../../../db.js';
+import type { MovieRow } from '@pops/db-types';
 import { movies, tvShows, watchHistory } from '@pops/db-types';
+import { type SQL, sql } from 'drizzle-orm';
+
+import { getDrizzle } from '../../../db.js';
+import { createMovie, getMovie, getMovieByTmdbId, updateMovie } from '../movies/service.js';
+import type { Movie, UpdateMovieInput } from '../movies/types.js';
+import { toMovie } from '../movies/types.js';
 import type { TmdbClient } from '../tmdb/client.js';
 import type { ImageCacheService } from '../tmdb/image-cache.js';
 import type { TmdbMovieDetail } from '../tmdb/types.js';
-import { getMovieByTmdbId, getMovie, createMovie, updateMovie } from '../movies/service.js';
-import { toMovie } from '../movies/types.js';
-import type { Movie, UpdateMovieInput } from '../movies/types.js';
-import type { MovieRow } from '@pops/db-types';
-import type { LibraryListInput, LibraryItem, LibrarySortOption } from './types.js';
+import type { LibraryItem, LibraryListInput, LibrarySortOption } from './types.js';
 
 /**
  * Add a movie to the library by TMDB ID.

@@ -1,10 +1,12 @@
 /**
  * Image serving endpoint tests.
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { join } from 'node:path';
+
 import express from 'express';
 import request from 'supertest';
-import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import imagesRouter from './images.js';
 
 // Mock node:fs/promises

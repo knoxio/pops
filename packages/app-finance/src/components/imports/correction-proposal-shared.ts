@@ -6,8 +6,9 @@
  * Panels, and Panels imports types/utils from Dialog. This shared module is
  * imported by both without either importing the other for these symbols.
  */
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@pops/api-client';
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
 import type { CorrectionRule } from './RulePicker';
 
 // ---------------------------------------------------------------------------

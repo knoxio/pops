@@ -1,5 +1,6 @@
-import { type Router as ExpressRouter, Router } from 'express';
 import { sql } from 'drizzle-orm';
+import { type Router as ExpressRouter, Router } from 'express';
+
 import { getDrizzle } from '../db.js';
 
 const router: ExpressRouter = Router();

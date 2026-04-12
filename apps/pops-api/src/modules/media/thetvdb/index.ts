@@ -1,18 +1,18 @@
+import { requireEnv } from '../../../env.js';
 import { TheTvdbAuth } from './auth.js';
 import { TheTvdbClient } from './client.js';
-import { requireEnv } from '../../../env.js';
 
 export { TheTvdbAuth, TheTvdbClient };
-export { TvdbApiError } from './types.js';
-export { refreshTvShow } from './service.js';
 export type { RefreshTvShowInput, RefreshTvShowResult } from './service.js';
+export { refreshTvShow } from './service.js';
 export type {
-  TvdbSearchResult,
-  TvdbShowDetail,
-  TvdbSeasonSummary,
   TvdbArtwork,
   TvdbEpisode,
+  TvdbSearchResult,
+  TvdbSeasonSummary,
+  TvdbShowDetail,
 } from './types.js';
+export { TvdbApiError } from './types.js';
 
 /**
  * Validate that THETVDB_API_KEY is configured.

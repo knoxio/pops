@@ -1,11 +1,12 @@
 /**
  * TMDB client unit tests — all HTTP calls mocked via vi.stubGlobal("fetch").
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { TmdbClient } from './client.js';
-import { TmdbApiError } from './types.js';
 import { TokenBucketRateLimiter } from './rate-limiter.js';
-import type { RawTmdbSearchResponse, RawTmdbMovieDetail, RawTmdbImageResponse } from './types.js';
+import type { RawTmdbImageResponse, RawTmdbMovieDetail, RawTmdbSearchResponse } from './types.js';
+import { TmdbApiError } from './types.js';
 
 /** Helper to create a mocked Response. */
 function mockResponse(body: unknown, status = 200, statusText = 'OK'): Response {

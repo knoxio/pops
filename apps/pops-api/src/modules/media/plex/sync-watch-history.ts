@@ -6,16 +6,16 @@
  * import new media. It only updates watch history for existing items,
  * returning detailed diagnostics about what matched and what was missed.
  */
+import { getDb } from '../../../db.js';
+import { getMovieByTmdbId } from '../movies/service.js';
 import type { PlexClient } from './client.js';
-import type { PlexMediaItem } from './types.js';
 import {
+  type EpisodeSyncDiagnostics,
   extractExternalIdAsNumber,
   logMovieWatch,
   syncEpisodeWatches,
-  type EpisodeSyncDiagnostics,
 } from './sync-helpers.js';
-import { getMovieByTmdbId } from '../movies/service.js';
-import { getDb } from '../../../db.js';
+import type { PlexMediaItem } from './types.js';
 
 // ---------------------------------------------------------------------------
 // Types

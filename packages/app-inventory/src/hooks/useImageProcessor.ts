@@ -4,8 +4,8 @@
  * Processes selected files before upload: converts HEIC/HEIF to JPEG,
  * compresses images to fit within a 1920x1920 bounding box, and strips EXIF.
  */
-import { useCallback, useState } from 'react';
 import imageCompression from 'browser-image-compression';
+import { useCallback, useState } from 'react';
 
 const MAX_DIMENSION = 1920;
 const QUALITY = 0.8;

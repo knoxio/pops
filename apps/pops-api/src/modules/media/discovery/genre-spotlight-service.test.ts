@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { TmdbClient } from '../tmdb/client.js';
 import type { TmdbSearchResponse } from '../tmdb/types.js';
 import type { PreferenceProfile } from './types.js';
@@ -11,9 +12,9 @@ vi.mock('./flags.js', () => ({
 
 import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from './flags.js';
 import {
-  selectTopGenres,
   getGenreSpotlight,
   getGenreSpotlightPage,
+  selectTopGenres,
 } from './genre-spotlight-service.js';
 
 const mockGetDismissedTmdbIds = vi.mocked(getDismissedTmdbIds);

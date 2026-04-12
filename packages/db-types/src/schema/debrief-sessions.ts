@@ -1,5 +1,6 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
+import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+
 import { watchHistory } from './watch-history.js';
 
 export const debriefSessions = sqliteTable('debrief_sessions', {

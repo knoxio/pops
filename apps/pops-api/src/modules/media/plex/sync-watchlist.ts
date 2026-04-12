@@ -11,18 +11,19 @@
  *   - Items removed from Plex with source="plex" → remove from POPS
  *   - Items removed from Plex with source="both" → downgrade to "manual"
  */
-import { eq, and, isNotNull } from 'drizzle-orm';
 import { mediaWatchlist } from '@pops/db-types';
+import { and, eq, isNotNull } from 'drizzle-orm';
+
+import { getDb, getDrizzle } from '../../../db.js';
+import * as tvShowService from '../library/tv-show-service.js';
+import { createMovie, getMovieByTmdbId } from '../movies/service.js';
+import { getTvdbClient } from '../thetvdb/index.js';
+import { getTmdbClient } from '../tmdb/index.js';
+import { getTvShowByTvdbId } from '../tv-shows/service.js';
+import { getPlexClientId } from './service.js';
+import { extractExternalIdAsNumber } from './sync-helpers.js';
 import type { PlexMediaItem } from './types.js';
 import { PlexApiError } from './types.js';
-import { extractExternalIdAsNumber } from './sync-helpers.js';
-import { getPlexClientId } from './service.js';
-import { getDb, getDrizzle } from '../../../db.js';
-import { getMovieByTmdbId, createMovie } from '../movies/service.js';
-import { getTvShowByTvdbId } from '../tv-shows/service.js';
-import { getTmdbClient } from '../tmdb/index.js';
-import { getTvdbClient } from '../thetvdb/index.js';
-import * as tvShowService from '../library/tv-show-service.js';
 
 // ---------------------------------------------------------------------------
 // Types

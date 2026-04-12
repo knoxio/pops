@@ -1,21 +1,22 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { TRPCError } from '@trpc/server';
 import type { Database } from 'better-sqlite3';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
 import {
-  setupTestContext,
+  createCaller,
   seedDimension,
   seedMovie,
   seedWatchHistoryEntry,
-  createCaller,
+  setupTestContext,
 } from '../../../shared/test-utils.js';
 import {
+  batchRecordComparisons,
   blacklistMovie,
   excludeFromDimension,
-  includeInDimension,
   getDebriefOpponent,
   getPendingDebriefs,
   getTierListMovies,
-  batchRecordComparisons,
+  includeInDimension,
 } from './service.js';
 
 const ctx = setupTestContext();

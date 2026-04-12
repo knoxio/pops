@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { wishList as wishListTable } from '@pops/db-types';
 import { TRPCError } from '@trpc/server';
 import type { Database } from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
-import { wishList as wishListTable } from '@pops/db-types';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
 import { getDrizzle } from '../../../db.js';
-import { setupTestContext, seedWishListItem, createCaller } from '../../../shared/test-utils.js';
+import { createCaller, seedWishListItem, setupTestContext } from '../../../shared/test-utils.js';
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;

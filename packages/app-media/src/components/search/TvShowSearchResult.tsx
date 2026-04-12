@@ -4,9 +4,9 @@
  * Renders poster thumbnail, name (highlighted), year, status badge, and season count.
  * Registered for domain "tv-shows" in the search result component registry.
  */
-import { Tv } from 'lucide-react';
-import { cn, Badge } from '@pops/ui';
 import type { ResultComponentProps } from '@pops/navigation';
+import { Badge, cn } from '@pops/ui';
+import { Tv } from 'lucide-react';
 
 interface TvShowHitData {
   name: string;
@@ -26,15 +26,7 @@ export function highlightMatch(text: string, query: string, matchType: string): 
 
   const lowerText = text.toLowerCase();
   const lowerQuery = query.toLowerCase();
-  let start = -1;
-
-  if (matchType === 'exact') {
-    start = 0;
-  } else if (matchType === 'prefix') {
-    start = 0;
-  } else {
-    start = lowerText.indexOf(lowerQuery);
-  }
+  const start = matchType === 'exact' || matchType === 'prefix' ? 0 : lowerText.indexOf(lowerQuery);
 
   if (start === -1) return text;
 

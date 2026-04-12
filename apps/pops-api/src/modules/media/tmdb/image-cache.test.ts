@@ -1,10 +1,12 @@
 /**
  * Image cache service tests — mocks fetch and filesystem.
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { ImageCacheService } from './image-cache.js';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { ImageCacheService } from './image-cache.js';
 
 vi.mock('node:fs/promises');
 

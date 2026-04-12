@@ -4,20 +4,20 @@
  * Handles request construction, response parsing, error mapping,
  * and automatic 401 re-authentication retry.
  */
-import { TheTvdbAuth } from './auth.js';
+import type { TheTvdbAuth } from './auth.js';
 import { fetchWithRetry } from './rate-limiter.js';
 import {
+  type RawTvdbArtwork,
+  type RawTvdbEpisodesResponse,
+  type RawTvdbSearchResponse,
+  type RawTvdbSeasonSummary,
+  type RawTvdbSeriesExtendedResponse,
   TvdbApiError,
-  type TvdbSearchResult,
-  type TvdbShowDetail,
-  type TvdbSeasonSummary,
   type TvdbArtwork,
   type TvdbEpisode,
-  type RawTvdbSearchResponse,
-  type RawTvdbSeriesExtendedResponse,
-  type RawTvdbEpisodesResponse,
-  type RawTvdbSeasonSummary,
-  type RawTvdbArtwork,
+  type TvdbSearchResult,
+  type TvdbSeasonSummary,
+  type TvdbShowDetail,
 } from './types.js';
 
 const BASE_URL = 'https://api4.thetvdb.com/v4';

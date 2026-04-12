@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { setupTestContext } from '../../../shared/test-utils.js';
-import { getDrizzle } from '../../../db.js';
 import { tagVocabulary, transactionTagRules } from '@pops/db-types';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import { getDrizzle } from '../../../db.js';
+import { setupTestContext } from '../../../shared/test-utils.js';
 
 const ctx = setupTestContext();
 

@@ -5,14 +5,15 @@
  * Single click navigates to the app's basePath.
  * Collapsible via toggle (state persisted in uiStore).
  */
-import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router';
-import { registeredApps } from '@/app/nav/registry';
+import { cn, Tooltip, TooltipContent, TooltipTrigger } from '@pops/ui';
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router';
+
 import { iconMap } from '@/app/nav/icon-map';
 import { matchesAtBoundary } from '@/app/nav/path-utils';
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { registeredApps } from '@/app/nav/registry';
 import { useUIStore } from '@/store/uiStore';
-import { Tooltip, TooltipContent, TooltipTrigger, cn } from '@pops/ui';
 
 interface AppRailProps {
   className?: string;

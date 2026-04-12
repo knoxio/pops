@@ -12,16 +12,17 @@
  *       reachable.
  */
 import { type Router as ExpressRouter, Router } from 'express';
+
+import type { EnvRecord } from './registry.js';
 import {
-  validateEnvName,
   createEnv,
+  deleteEnv,
   getEnvRecord,
   listEnvs,
-  updateEnvTtl,
-  deleteEnv,
   ttlRemaining,
+  updateEnvTtl,
+  validateEnvName,
 } from './registry.js';
-import type { EnvRecord } from './registry.js';
 
 interface EnvRequestBody {
   seed?: unknown;

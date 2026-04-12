@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { MapPin, ShieldCheck } from 'lucide-react';
-import { PageHeader } from './PageHeader';
+
 import { Button } from './Button';
+import { PageHeader } from './PageHeader';
 
 const meta: Meta<typeof PageHeader> = {
   title: 'Layout/PageHeader',

@@ -1,8 +1,9 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
-import { debriefSessions } from './debrief-sessions.js';
+import { integer, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+
 import { comparisonDimensions } from './comparison-dimensions.js';
 import { comparisons } from './comparisons.js';
+import { debriefSessions } from './debrief-sessions.js';
 
 export const debriefResults = sqliteTable('debrief_results', {
   id: integer('id').primaryKey({ autoIncrement: true }),

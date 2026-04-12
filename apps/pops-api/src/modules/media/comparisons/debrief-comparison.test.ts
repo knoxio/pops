@@ -1,12 +1,13 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { Database } from 'better-sqlite3';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import type { createCaller } from '../../../shared/test-utils.js';
 import {
-  setupTestContext,
+  seedDebriefStatus,
   seedDimension,
   seedMovie,
   seedWatchHistoryEntry,
-  seedDebriefStatus,
-  createCaller,
+  setupTestContext,
 } from '../../../shared/test-utils.js';
 
 const ctx = setupTestContext();

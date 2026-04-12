@@ -8,16 +8,16 @@
  */
 import {
   PlexApiError,
-  type RawPlexMediaContainer,
-  type RawPlexLibrariesContainer,
-  type RawPlexItemsContainer,
-  type RawPlexEpisodesContainer,
-  type PlexLibrary,
-  type PlexMediaItem,
   type PlexEpisode,
   type PlexExternalId,
-  type RawPlexMediaItem,
+  type PlexLibrary,
+  type PlexMediaItem,
   type RawPlexEpisode,
+  type RawPlexEpisodesContainer,
+  type RawPlexItemsContainer,
+  type RawPlexLibrariesContainer,
+  type RawPlexMediaContainer,
+  type RawPlexMediaItem,
 } from './types.js';
 
 export class PlexClient {

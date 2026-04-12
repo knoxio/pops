@@ -5,7 +5,7 @@
  * inactive collections return no instance, query delegates to discoverMovies,
  * dismissed filter applied, shelfId format enables getShelfPage pagination.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dependencies before any imports
 vi.mock('../../tmdb/index.js', () => ({ getTmdbClient: vi.fn() }));
@@ -21,12 +21,11 @@ vi.mock('../flags.js', () => ({
 vi.mock('./registry.js', () => ({ registerShelf: vi.fn() }));
 
 import { getTmdbClient } from '../../tmdb/index.js';
-import * as tmdbService from '../tmdb-service.js';
 import * as flags from '../flags.js';
-import { registerShelf } from './registry.js';
-
+import * as tmdbService from '../tmdb-service.js';
 // Import module under test — triggers self-registration side effects
 import { contextShelfDefinition } from './context-shelves.js';
+import { registerShelf } from './registry.js';
 
 const mockGetTmdbClient = vi.mocked(getTmdbClient);
 const mockToDiscoverResults = vi.mocked(tmdbService.toDiscoverResults);

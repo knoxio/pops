@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { TmdbClient } from '../tmdb/client.js';
 import type { TmdbSearchResponse } from '../tmdb/types.js';
 
@@ -28,8 +29,8 @@ vi.mock('../../../db.js', () => ({
   })),
 }));
 
-import { getContextPicks } from './context-picks-service.js';
 import { getActiveCollections } from './context-collections.js';
+import { getContextPicks } from './context-picks-service.js';
 import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from './flags.js';
 
 /** Build a mock TMDB search response. */

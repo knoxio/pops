@@ -1,7 +1,8 @@
 /**
  * Base *arr client tests — uses mocked fetch.
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { ArrBaseClient } from './base-client.js';
 import { ArrApiError } from './types.js';
 

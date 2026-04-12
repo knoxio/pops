@@ -3,9 +3,10 @@
  * User taps one to select the winner. Calls recordDebriefComparison mutation,
  * then fires onResult with the outcome.
  */
-import { useState } from 'react';
 import { Skeleton } from '@pops/ui';
 import { ImageOff } from 'lucide-react';
+import { useState } from 'react';
+
 import { trpc } from '../lib/trpc';
 
 export interface DebriefMovie {

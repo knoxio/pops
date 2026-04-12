@@ -3,6 +3,7 @@
  * Express 5 types params as string | string[] — these helpers normalize to string.
  */
 import type { Request } from 'express';
+
 import { HttpError } from './errors.js';
 
 /** Extract a required route param as a single string. Throws 400 if missing or array. */

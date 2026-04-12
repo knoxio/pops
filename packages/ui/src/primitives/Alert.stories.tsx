@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { CircleCheckIcon, InfoIcon, OctagonXIcon, TriangleAlertIcon } from 'lucide-react';
+
 import { Alert, AlertDescription, AlertTitle } from './alert';
-import { InfoIcon, TriangleAlertIcon, OctagonXIcon, CircleCheckIcon } from 'lucide-react';
 
 const meta: Meta<typeof Alert> = {
   title: 'Feedback/Alert',

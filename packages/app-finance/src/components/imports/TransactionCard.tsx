@@ -1,11 +1,12 @@
-import { useState } from 'react';
-import { ChevronRight, Sparkles, Zap, Pencil } from 'lucide-react';
+import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
 import { Badge } from '@pops/ui';
 import { Button } from '@pops/ui';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@pops/ui';
-import { LocationField } from './LocationField';
+import { ChevronRight, Pencil, Sparkles, Zap } from 'lucide-react';
+import { useState } from 'react';
+
 import { EntitySelect } from './EntitySelect';
-import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
+import { LocationField } from './LocationField';
 
 interface TransactionCardProps {
   transaction: ProcessedTransaction;
@@ -54,7 +55,7 @@ export function TransactionCard({
     .manuallyEdited;
 
   // Parse raw row for display
-  let rawData: Record<string, string> = {};
+  let rawData: Record<string, string>;
   try {
     rawData = JSON.parse(transaction.rawRow);
   } catch {

@@ -5,23 +5,24 @@
  * warranty status, value, and photo thumbnail. Summary totals at bottom.
  * PRD-023/US-4 (tb-133).
  */
-import { useMemo, useCallback } from 'react';
-import { useSearchParams, useNavigate } from 'react-router';
-import { FileText, Printer, Download } from 'lucide-react';
 import {
-  Skeleton,
   AssetIdBadge,
-  ConditionBadge,
   Badge,
-  PageHeader,
   Button,
-  Select,
   CheckboxInput,
-  Label,
   type Condition,
+  ConditionBadge,
+  Label,
+  PageHeader,
+  Select,
+  Skeleton,
 } from '@pops/ui';
-import { trpc } from '../lib/trpc';
+import { Download, FileText, Printer } from 'lucide-react';
+import { useCallback, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router';
+
 import { LocationPicker } from '../components/LocationPicker';
+import { trpc } from '../lib/trpc';
 
 type SortBy = 'value' | 'name' | 'type';
 

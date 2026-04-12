@@ -2,7 +2,8 @@
  * Autocomplete component - Text input with suggestions using shadcn primitives
  * Built on Popover + Command for proper positioning and filtering
  */
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
 import { cn } from '../lib/utils';
 import {
   Command,

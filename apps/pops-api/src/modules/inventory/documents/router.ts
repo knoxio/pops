@@ -1,13 +1,14 @@
 /**
  * Item documents tRPC router — link/unlink Paperless-ngx documents to inventory items.
  */
-import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { router, protectedProcedure } from '../../../trpc.js';
+import { z } from 'zod';
+
+import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 import { paginationMeta } from '../../../shared/pagination.js';
-import { LinkDocumentSchema, DocumentQuerySchema, toItemDocument } from './types.js';
+import { protectedProcedure, router } from '../../../trpc.js';
 import * as service from './service.js';
-import { NotFoundError, ConflictError } from '../../../shared/errors.js';
+import { DocumentQuerySchema, LinkDocumentSchema, toItemDocument } from './types.js';
 
 const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;

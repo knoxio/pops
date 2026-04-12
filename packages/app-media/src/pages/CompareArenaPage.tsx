@@ -1,5 +1,3 @@
-import { useState, useCallback } from 'react';
-import { Link } from 'react-router';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,28 +8,31 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   Badge,
-  Skeleton,
   Button,
   Select,
+  Skeleton,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@pops/ui';
 import {
-  ImageOff,
+  Ban,
   Bookmark,
-  ChevronUp,
-  Minus,
   ChevronDown,
+  ChevronUp,
   Clock,
   EyeOff,
-  SkipForward,
-  Ban,
   History,
+  ImageOff,
+  Minus,
+  SkipForward,
 } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { Link } from 'react-router';
 import { toast } from 'sonner';
-import { trpc } from '../lib/trpc';
+
 import { DimensionManager } from '../components/DimensionManager';
+import { trpc } from '../lib/trpc';
 
 interface ScoreDelta {
   winnerId: number;

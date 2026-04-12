@@ -5,11 +5,12 @@
  * verifying that VACUUM INTO backups are created, preserved, or deleted
  * as specified in PRD-060 US-03.
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import BetterSqlite3 from 'better-sqlite3';
-import { mkdtempSync, writeFileSync, readdirSync, mkdirSync, unlinkSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import BetterSqlite3 from 'better-sqlite3';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 /** Minimal reproduction of the backup logic from db.ts for testability. */
 function getPendingMigrations(database: BetterSqlite3.Database, migrationsDir: string): string[] {

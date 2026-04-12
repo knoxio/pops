@@ -5,9 +5,9 @@
  * imports from. The shell owns the Provider; app packages just
  * consume the hooks.
  */
+import type { AppRouter } from '@pops/api';
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCReact } from '@trpc/react-query';
-import type { AppRouter } from '@pops/api';
 
 /** React Query hooks for tRPC — shared across all app packages. */
 export const trpc = createTRPCReact<AppRouter>();

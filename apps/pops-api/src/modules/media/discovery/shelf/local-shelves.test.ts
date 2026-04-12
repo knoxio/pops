@@ -6,7 +6,7 @@
  * flexible chain helper that accepts any method sequence and calls `.all()` at
  * the end.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../../../db.js', () => ({
   getDrizzle: vi.fn(),
@@ -55,14 +55,14 @@ vi.mock('./registry.js', () => ({
 
 import { getDrizzle } from '../../../../db.js';
 import {
-  shortWatchShelf,
-  longEpicShelf,
   comfortPicksShelf,
-  undiscoveredShelf,
-  polarizingShelf,
-  friendProofShelf,
-  recentlyAddedShelf,
   franchiseCompletionsShelf,
+  friendProofShelf,
+  longEpicShelf,
+  polarizingShelf,
+  recentlyAddedShelf,
+  shortWatchShelf,
+  undiscoveredShelf,
 } from './local-shelves.js';
 
 const mockGetDrizzle = vi.mocked(getDrizzle);

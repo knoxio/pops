@@ -4,13 +4,15 @@
  * Overlay sidebar for mobile (<768px) with backdrop.
  * Desktop navigation is handled by AppRail + PageNav.
  */
+import { Button } from '@pops/ui';
+import { X } from 'lucide-react';
 import { Link, useLocation } from 'react-router';
-import { registeredApps } from '@/app/nav/registry';
+
 import { iconMap } from '@/app/nav/icon-map';
 import { isPageActive } from '@/app/nav/path-utils';
+import { registeredApps } from '@/app/nav/registry';
 import { useUIStore } from '@/store/uiStore';
-import { X } from 'lucide-react';
-import { Button } from '@pops/ui';
+
 import { BuildVersion } from './BuildVersion';
 
 interface SidebarProps {

@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import { normaliseDate, normaliseAmount } from './csv-parser.js';
+import { describe, expect, it } from 'vitest';
+
+import { normaliseAmount, normaliseDate } from './csv-parser.js';
 
 describe('normaliseDate', () => {
   it('should parse DD/MM/YYYY format', () => {

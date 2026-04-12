@@ -2,10 +2,10 @@
  * PreferenceProfile — visualisation of genre distribution, genre affinity,
  * and dimension weights on the Discover page.
  */
-import { Link } from 'react-router';
 import { Skeleton } from '@pops/ui';
-import { Swords, BarChart3, Heart, Weight } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { BarChart3, Heart, Swords, Weight } from 'lucide-react';
+import { Link } from 'react-router';
+import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 interface GenreDistribution {
   genre: string;

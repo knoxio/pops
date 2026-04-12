@@ -1,16 +1,17 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { Database } from 'better-sqlite3';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
 import {
-  setupTestContext,
   seedDimension,
   seedMovie,
   seedWatchHistoryEntry,
+  setupTestContext,
 } from '../../../shared/test-utils.js';
 import {
-  recordSkip,
-  isPairOnCooloff,
   getGlobalComparisonCount,
+  isPairOnCooloff,
   recordComparison,
+  recordSkip,
 } from './service.js';
 
 const ctx = setupTestContext();

@@ -1,8 +1,9 @@
-import { like, sql } from 'drizzle-orm';
-import { getDrizzle } from '../../../db.js';
 import { transactions } from '@pops/db-types';
+import { like, sql } from 'drizzle-orm';
+
+import { getDrizzle } from '../../../db.js';
+import type { Query, SearchAdapter, SearchContext, SearchHit } from '../../core/search/index.js';
 import { registerSearchAdapter } from '../../core/search/index.js';
-import type { SearchAdapter, SearchHit, Query, SearchContext } from '../../core/search/index.js';
 
 export interface TransactionHitData {
   description: string;

@@ -1,13 +1,14 @@
 /**
  * Locations tRPC router — CRUD procedures for the location tree.
  */
-import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { router, protectedProcedure } from '../../../trpc.js';
-import { CreateLocationSchema, UpdateLocationSchema, toLocation } from './types.js';
+import { z } from 'zod';
+
+import { ConflictError, NotFoundError } from '../../../shared/errors.js';
+import { protectedProcedure, router } from '../../../trpc.js';
 import { toInventoryItem } from '../items/types.js';
 import * as service from './service.js';
-import { NotFoundError, ConflictError } from '../../../shared/errors.js';
+import { CreateLocationSchema, toLocation, UpdateLocationSchema } from './types.js';
 
 export const locationsRouter = router({
   /** Get the full location tree as nested nodes. */

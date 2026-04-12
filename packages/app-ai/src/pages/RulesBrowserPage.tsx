@@ -2,30 +2,31 @@
  * RulesBrowserPage — browse, filter, adjust, and delete AI categorisation rules.
  * PRD-053/US-02 (tb-542).
  */
-import { useState, useCallback, useRef, useEffect } from 'react';
-import type { ColumnDef } from '@tanstack/react-table';
-import { Trash2, BookOpen } from 'lucide-react';
 import {
-  DataTable,
-  SortableHeader,
-  Skeleton,
   Alert,
   Badge,
   Button,
-  TextInput,
-  Select,
-  type SelectOption,
   Card,
+  DataTable,
   Dialog,
+  DialogClose,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
+  DialogHeader,
+  DialogTitle,
   PageHeader,
+  Select,
+  type SelectOption,
+  Skeleton,
   Slider,
+  SortableHeader,
+  TextInput,
 } from '@pops/ui';
+import type { ColumnDef } from '@tanstack/react-table';
+import { BookOpen, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
 import { trpc } from '../lib/trpc';
 
 type MatchType = 'exact' | 'contains' | 'regex';

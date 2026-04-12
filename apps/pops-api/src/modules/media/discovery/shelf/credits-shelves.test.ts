@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { TmdbSearchResult, TmdbMovieCredits } from '../../tmdb/types.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { TmdbMovieCredits, TmdbSearchResult } from '../../tmdb/types.js';
 
 // Hoist mutable state for mock overrides
 const mockDismissedIds = vi.hoisted(() => ({ value: new Set<number>() }));
@@ -101,7 +102,7 @@ vi.mock('./registry.js', () => ({
 }));
 
 import { getDrizzle } from '../../../../db.js';
-import { moreFromDirectorShelf, moreFromActorShelf, _creditsCache } from './credits-shelves.js';
+import { _creditsCache, moreFromActorShelf, moreFromDirectorShelf } from './credits-shelves.js';
 
 const mockGetDrizzle = vi.mocked(getDrizzle);
 

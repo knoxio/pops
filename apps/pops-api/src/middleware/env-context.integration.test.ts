@@ -8,16 +8,18 @@
  *  - Requests with a valid ?env are routed to the named env DB via AsyncLocalStorage,
  *    so tRPC queries see the env's data instead of prod data.
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdirSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import BetterSqlite3 from 'better-sqlite3';
 import request from 'supertest';
-import { setDb, closeDb } from '../db.js';
-import { initializeSchema } from '../db/schema.js';
-import { createEnv, closeEnvDb, listEnvs } from '../modules/core/envs/registry.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
 import { createApp } from '../app.js';
+import { closeDb, setDb } from '../db.js';
+import { initializeSchema } from '../db/schema.js';
+import { closeEnvDb, createEnv, listEnvs } from '../modules/core/envs/registry.js';
 
 let tmpDir: string;
 let app: ReturnType<typeof createApp>;

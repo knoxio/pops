@@ -2,16 +2,17 @@
  * Transaction service — CRUD operations against SQLite via Drizzle ORM.
  * SQLite is the source of truth. All operations are local.
  */
-import crypto from 'crypto';
-import { count, desc, eq, like, gte, lte, and, sql, type SQL } from 'drizzle-orm';
-import { getDrizzle } from '../../../db.js';
 import { transactions } from '@pops/db-types';
+import crypto from 'crypto';
+import { and, count, desc, eq, gte, like, lte, type SQL, sql } from 'drizzle-orm';
+
+import { getDrizzle } from '../../../db.js';
 import { NotFoundError } from '../../../shared/errors.js';
 import type {
-  TransactionRow,
   CreateTransactionInput,
-  UpdateTransactionInput,
   TransactionFilters,
+  TransactionRow,
+  UpdateTransactionInput,
 } from './types.js';
 
 /** Count + rows for a paginated list. */

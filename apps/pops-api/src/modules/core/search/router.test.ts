@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TRPCError } from '@trpc/server';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { createCaller } from '../../../shared/test-utils.js';
 import { registerSearchAdapter, resetRegistry } from './registry.js';
 import type { SearchAdapter, SearchHit } from './types.js';

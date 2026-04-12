@@ -5,17 +5,18 @@
  * as a recursive tree. Each node shows item name, AssetIdBadge, and TypeBadge.
  * Click navigates to the item detail page.
  */
+import {
+  AssetIdBadge,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  Skeleton,
+  TypeBadge,
+} from '@pops/ui';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import {
-  Skeleton,
-  AssetIdBadge,
-  TypeBadge,
-  Collapsible,
-  CollapsibleTrigger,
-  CollapsibleContent,
-} from '@pops/ui';
-import { ChevronRight, ChevronDown } from 'lucide-react';
+
 import { trpc } from '../lib/trpc';
 
 interface TraceNode {

@@ -1,12 +1,13 @@
-import { useState } from 'react';
-import { ChevronRight, Sparkles } from 'lucide-react';
+import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
 import { Button, Label, Select as UiSelect } from '@pops/ui';
 import { Badge } from '@pops/ui';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@pops/ui';
-import { TransactionCard } from './TransactionCard';
-import { EditableTransactionCard } from './EditableTransactionCard';
-import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
+import { ChevronRight, Sparkles } from 'lucide-react';
+import { useState } from 'react';
+
 import type { TransactionGroup as TransactionGroupType } from '../../lib/transaction-utils';
+import { EditableTransactionCard } from './EditableTransactionCard';
+import { TransactionCard } from './TransactionCard';
 
 interface TransactionGroupProps {
   group: TransactionGroupType;

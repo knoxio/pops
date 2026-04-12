@@ -1,7 +1,7 @@
 /**
  * Plex service tests — client factory, connection, and status.
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dependencies before importing service
 vi.mock('./client.js', () => ({
@@ -52,12 +52,11 @@ vi.mock('drizzle-orm', () => ({
 }));
 
 // Now import the service
-import { getPlexClient, testConnection, getSyncStatus } from './service.js';
-import { PlexClient } from './client.js';
-import { getEnv } from '../../../env.js';
-
-import { getDrizzle } from '../../../db.js';
 import type { BetterSQLite3Database } from '../../../db.js';
+import { getDrizzle } from '../../../db.js';
+import { getEnv } from '../../../env.js';
+import { PlexClient } from './client.js';
+import { getPlexClient, getSyncStatus, testConnection } from './service.js';
 
 const mockGetEnv = vi.mocked(getEnv);
 const mockGetDrizzle = vi.mocked(getDrizzle);

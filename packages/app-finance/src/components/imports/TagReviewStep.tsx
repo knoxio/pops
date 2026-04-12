@@ -1,13 +1,14 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { ChevronDown, ChevronRight, Loader2, X } from 'lucide-react';
-import { useImportStore } from '../../store/importStore';
-import { trpc } from '../../lib/trpc';
+import type { ConfirmedTransaction, SuggestedTag } from '@pops/api/modules/finance/imports';
 import { Button } from '@pops/ui';
 import { Badge } from '@pops/ui';
-import { TagEditor, type TagMetaEntry } from '../TagEditor';
+import { ChevronDown, ChevronRight, Loader2, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
-import type { ConfirmedTransaction, SuggestedTag } from '@pops/api/modules/finance/imports';
+
+import { trpc } from '../../lib/trpc';
 import { cn } from '../../lib/utils';
+import { useImportStore } from '../../store/importStore';
+import { TagEditor, type TagMetaEntry } from '../TagEditor';
 
 // ---------------------------------------------------------------------------
 // Types

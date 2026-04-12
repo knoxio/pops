@@ -1,12 +1,13 @@
-import { useState } from 'react';
-import { Save, X, ChevronRight } from 'lucide-react';
+import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
 import { Button } from '@pops/ui';
 import { Input } from '@pops/ui';
 import { Label } from '@pops/ui';
 import { Select as UiSelect } from '@pops/ui';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@pops/ui';
+import { ChevronRight, Save, X } from 'lucide-react';
+import { useState } from 'react';
+
 import { EntitySelect } from './EntitySelect';
-import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
 
 interface EditableTransactionCardProps {
   transaction: ProcessedTransaction;
@@ -41,7 +42,7 @@ export function EditableTransactionCard({
   const transactionType = editedFields.transactionType ?? 'purchase';
 
   // Parse raw row for reference
-  let rawData: Record<string, string> = {};
+  let rawData: Record<string, string>;
   try {
     rawData = JSON.parse(transaction.rawRow);
   } catch {

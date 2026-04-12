@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Capture mutation options
 let dismissOpts: Record<string, (...args: unknown[]) => unknown> = {};
@@ -37,10 +37,10 @@ vi.mock('sonner', () => ({
 }));
 
 import {
-  SkipDimensionButton,
-  DoneForNowButton,
   CompletionSummary,
   DebriefActionBar,
+  DoneForNowButton,
+  SkipDimensionButton,
 } from './DebriefControls';
 
 function renderWithRouter(ui: React.ReactElement) {

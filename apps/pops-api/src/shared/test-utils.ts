@@ -4,7 +4,8 @@
  */
 import type { Database } from 'better-sqlite3';
 import BetterSqlite3 from 'better-sqlite3';
-import { setDb, closeDb } from '../db.js';
+
+import { closeDb, setDb } from '../db.js';
 import { appRouter } from '../router.js';
 import type { Context } from '../trpc.js';
 import { TAG_VOCABULARY_V1 } from './tag-vocabulary.js';

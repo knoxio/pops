@@ -1,8 +1,9 @@
-import { useState, useCallback } from 'react';
-import Papa from 'papaparse';
-import { FileUpload } from './FileUpload';
-import { useImportStore } from '../../store/importStore';
 import { Button } from '@pops/ui';
+import Papa from 'papaparse';
+import { useCallback, useState } from 'react';
+
+import { useImportStore } from '../../store/importStore';
+import { FileUpload } from './FileUpload';
 
 /**
  * Step 1: Upload CSV file and parse it

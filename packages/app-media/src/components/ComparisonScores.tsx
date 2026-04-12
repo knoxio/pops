@@ -5,13 +5,14 @@
  */
 import { Skeleton } from '@pops/ui';
 import {
-  RadarChart,
-  PolarGrid,
   PolarAngleAxis,
+  PolarGrid,
   Radar,
+  RadarChart,
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
+
 import { trpc } from '../lib/trpc';
 
 /** Normalize an Elo score (typically 1000–2000) to a 0–100 scale. */

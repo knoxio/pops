@@ -1,6 +1,7 @@
-import { type Router as ExpressRouter, Router } from 'express';
 import { createHmac } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+
+import { type Router as ExpressRouter, Router } from 'express';
 
 const router: ExpressRouter = Router();
 
@@ -52,7 +53,7 @@ router.post('/webhooks/up', (req, res) => {
   const eventType = payload.data?.attributes?.eventType;
   const transactionId = payload.data?.relationships?.transaction?.data?.id;
 
-  console.log(`[webhook/up] Event: ${eventType}, Transaction: ${transactionId}`);
+  console.warn(`[webhook/up] Event: ${eventType}, Transaction: ${transactionId}`);
 
   // TODO: Re-fetch transaction from Up API to verify it exists
   // TODO: Run entity matching

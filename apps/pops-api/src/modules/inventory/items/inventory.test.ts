@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { TRPCError } from '@trpc/server';
 import type { Database } from 'better-sqlite3';
-import { setupTestContext, seedInventoryItem, createCaller } from '../../../shared/test-utils.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import { createCaller, seedInventoryItem, setupTestContext } from '../../../shared/test-utils.js';
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;

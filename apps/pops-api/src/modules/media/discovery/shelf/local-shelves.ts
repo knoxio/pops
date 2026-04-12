@@ -16,12 +16,13 @@
  *   franchise-completions — unwatched library movies in genres of watched movies
  *                         (approximation; proper impl needs belongs_to_collection column)
  */
-import { sql, and, eq, isNotNull, lt, gt } from 'drizzle-orm';
+import { comparisonDimensions, mediaScores, movies, watchHistory } from '@pops/db-types';
+import { and, eq, gt, isNotNull, lt, sql } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../../db.js';
-import { movies, watchHistory, mediaScores, comparisonDimensions } from '@pops/db-types';
+import type { DiscoverResult, PreferenceProfile } from '../types.js';
 import { registerShelf } from './registry.js';
 import type { ShelfDefinition, ShelfInstance } from './types.js';
-import type { PreferenceProfile, DiscoverResult } from '../types.js';
 
 // ---------------------------------------------------------------------------
 // Helpers

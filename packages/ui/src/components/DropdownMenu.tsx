@@ -3,13 +3,14 @@
  * Provides a simpler API for common use cases
  */
 import { type ReactNode } from 'react';
+
 import {
   DropdownMenu as DropdownMenuPrimitive,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
   DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '../primitives/dropdown-menu';
 
 export interface DropdownMenuItem {
@@ -132,10 +133,10 @@ export function DropdownMenu({
 
 // Re-export shadcn components for advanced usage
 export {
-  DropdownMenu as DropdownMenuRoot,
-  DropdownMenuTrigger,
   DropdownMenuContent,
   DropdownMenuItem as DropdownMenuItemPrimitive,
-  DropdownMenuSeparator,
   DropdownMenuLabel,
+  DropdownMenu as DropdownMenuRoot,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from '../primitives/dropdown-menu';

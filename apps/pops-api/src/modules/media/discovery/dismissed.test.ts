@@ -1,5 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { setupTestContext, createCaller } from '../../../shared/test-utils.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import type { createCaller } from '../../../shared/test-utils.js';
+import { setupTestContext } from '../../../shared/test-utils.js';
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;

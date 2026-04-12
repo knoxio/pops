@@ -1,16 +1,17 @@
 /**
  * TV Shows service — CRUD operations for tv_shows, seasons, and episodes.
  */
-import { eq, and, like, asc, count } from 'drizzle-orm';
+import type { EpisodeRow, SeasonRow, TvShowRow } from '@pops/db-types';
+import { episodes, seasons, tvShows } from '@pops/db-types';
+import { and, asc, count, eq, like } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../db.js';
-import { tvShows, seasons, episodes } from '@pops/db-types';
-import type { TvShowRow, SeasonRow, EpisodeRow } from '@pops/db-types';
-import { NotFoundError, ConflictError } from '../../../shared/errors.js';
+import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 import type {
+  CreateEpisodeInput,
+  CreateSeasonInput,
   CreateTvShowInput,
   UpdateTvShowInput,
-  CreateSeasonInput,
-  CreateEpisodeInput,
 } from './types.js';
 
 // ── TV Shows ──

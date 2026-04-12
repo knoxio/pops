@@ -1,7 +1,8 @@
-import { useState } from 'react';
 import { Button, DateInput } from '@pops/ui';
-import { Eye, CircleCheck, CalendarDays } from 'lucide-react';
+import { CalendarDays, CircleCheck, Eye } from 'lucide-react';
+import { useState } from 'react';
 import { toast } from 'sonner';
+
 import { trpc } from '../lib/trpc';
 
 export interface MarkAsWatchedButtonProps {

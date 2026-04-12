@@ -3,18 +3,18 @@
  */
 import { ArrBaseClient } from './base-client.js';
 import type {
-  SonarrSeries,
-  SonarrSeriesFull,
-  SonarrQueueResponse,
   ArrStatusResult,
+  SonarrAddSeriesInput,
   SonarrCalendarEpisode,
+  SonarrCommandResponse,
   SonarrEpisode,
   SonarrEpisodeMonitorInput,
-  SonarrQualityProfile,
-  SonarrRootFolder,
   SonarrLanguageProfile,
-  SonarrAddSeriesInput,
-  SonarrCommandResponse,
+  SonarrQualityProfile,
+  SonarrQueueResponse,
+  SonarrRootFolder,
+  SonarrSeries,
+  SonarrSeriesFull,
 } from './types.js';
 
 export class SonarrClient extends ArrBaseClient {

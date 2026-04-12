@@ -5,11 +5,8 @@
  * Dimension can be switched via chips. After placing movies in tiers, submit to
  * record pairwise comparisons.
  */
-import { useState, useMemo, useCallback } from 'react';
-import { useNavigate } from 'react-router';
 import {
   Alert,
-  AlertTitle,
   AlertDescription,
   AlertDialog,
   AlertDialogAction,
@@ -19,15 +16,19 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  Skeleton,
+  AlertTitle,
   cn,
+  Skeleton,
 } from '@pops/ui';
 import { LayoutGrid, RefreshCw } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
-import { trpc } from '../lib/trpc';
-import { useTierListSubmit } from '../hooks/useTierListSubmit';
-import { TierListBoard, type TierMovie, type Tier } from '../components/TierListBoard';
+
+import { type Tier, TierListBoard, type TierMovie } from '../components/TierListBoard';
 import { TierListSummary } from '../components/TierListSummary';
+import { useTierListSubmit } from '../hooks/useTierListSubmit';
+import { trpc } from '../lib/trpc';
 
 function MovieCardSkeleton() {
   return (

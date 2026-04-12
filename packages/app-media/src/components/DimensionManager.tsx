@@ -4,7 +4,6 @@
  * Accessed from CompareArenaPage via a gear icon. Lets users add,
  * edit, deactivate, and reorder comparison dimensions.
  */
-import { useState, useCallback } from 'react';
 import {
   Badge,
   Button,
@@ -19,8 +18,10 @@ import {
   Switch,
   Textarea,
 } from '@pops/ui';
+import { Check, ChevronDown, ChevronUp, Pencil, Plus, Settings, X } from 'lucide-react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
-import { Settings, Plus, ChevronUp, ChevronDown, Pencil, Check, X } from 'lucide-react';
+
 import { trpc } from '../lib/trpc';
 
 interface Dimension {

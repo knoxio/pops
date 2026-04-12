@@ -1,11 +1,12 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen, act, waitFor } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
+import { useState } from 'react';
 import { MemoryRouter } from 'react-router';
+import { describe, expect, it } from 'vitest';
+
 import { AppContextProvider } from './AppContextProvider';
+import type { SetPageContextOptions } from './hooks';
 import { useAppContext } from './hooks';
 import { useSetPageContext } from './hooks';
-import type { SetPageContextOptions } from './hooks';
-import { useState } from 'react';
 
 /** Renders children inside a MemoryRouter + AppContextProvider at the given path. */
 function renderAt(path: string, ui: React.ReactNode) {

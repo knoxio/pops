@@ -1,5 +1,7 @@
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+
 import Anthropic from '@anthropic-ai/sdk';
-import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+
 import type { AiCacheEntry } from './types.js';
 
 const CACHE_PATH = process.env['AI_CACHE_PATH'] ?? './ai_entity_cache.json';

@@ -5,23 +5,23 @@
  * Movies can be dragged between tiers and back to unranked.
  * Submit button is disabled until at least 2 movies are placed.
  */
-import { useState, useCallback, useMemo } from 'react';
-import { Button } from '@pops/ui';
 import {
   DndContext,
-  DragOverlay,
-  pointerWithin,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  type DragStartEvent,
   type DragEndEvent,
   type DragOverEvent,
+  DragOverlay,
+  type DragStartEvent,
+  PointerSensor,
+  pointerWithin,
+  useSensor,
+  useSensors,
 } from '@dnd-kit/core';
-import { useSortable, SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { useDroppable } from '@dnd-kit/core';
-import { ImageOff, GripVertical, EyeOff, Clock, Ban } from 'lucide-react';
+import { horizontalListSortingStrategy, SortableContext, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { Button } from '@pops/ui';
+import { Ban, Clock, EyeOff, GripVertical, ImageOff } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 
 const TIERS = ['S', 'A', 'B', 'C', 'D'] as const;
 export type Tier = (typeof TIERS)[number];

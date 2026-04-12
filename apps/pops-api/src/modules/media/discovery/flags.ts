@@ -2,9 +2,10 @@
  * Shared helpers for building Sets of TMDB IDs used by discovery services
  * to filter and annotate DiscoverResult objects.
  */
+import { mediaWatchlist, movies, watchHistory } from '@pops/db-types';
 import { eq } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../db.js';
-import { movies, watchHistory, mediaWatchlist } from '@pops/db-types';
 
 /** Build a Set of TMDB IDs the user has watched (any entry in watch_history). */
 export function getWatchedTmdbIds(): Set<number> {

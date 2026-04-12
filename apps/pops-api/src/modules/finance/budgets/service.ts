@@ -2,10 +2,11 @@
  * Budget service — CRUD operations against SQLite via Drizzle ORM.
  * SQLite is the source of truth. All operations are local.
  */
-import { eq, and, like, asc, count, isNull } from 'drizzle-orm';
-import { getDrizzle } from '../../../db.js';
 import { budgets } from '@pops/db-types';
-import { NotFoundError, ConflictError } from '../../../shared/errors.js';
+import { and, asc, count, eq, isNull, like } from 'drizzle-orm';
+
+import { getDrizzle } from '../../../db.js';
+import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 import type { BudgetRow, CreateBudgetInput, UpdateBudgetInput } from './types.js';
 
 /** Count + rows for a paginated list. */

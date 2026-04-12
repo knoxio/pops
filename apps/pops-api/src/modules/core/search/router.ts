@@ -2,7 +2,8 @@
  * Search tRPC router — exposes search query and show-more as protected procedures.
  */
 import { z } from 'zod';
-import { router, protectedProcedure } from '../../../trpc.js';
+
+import { protectedProcedure, router } from '../../../trpc.js';
 import { searchAll, showMore } from './engine.js';
 
 const SearchContextSchema = z

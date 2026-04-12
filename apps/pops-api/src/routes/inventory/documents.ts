@@ -8,6 +8,7 @@
  * with cache headers. Returns 404 if document is not found in Paperless.
  */
 import { type Router as ExpressRouter, Router } from 'express';
+
 import { getPaperlessClient } from '../../modules/inventory/paperless/index.js';
 import { PaperlessApiError } from '../../modules/inventory/paperless/types.js';
 

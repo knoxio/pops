@@ -2,14 +2,15 @@
  * Discovery TMDB service — trending movies and recommendations from TMDB,
  * enriched with library membership status.
  */
+import { mediaWatchlist, movies } from '@pops/db-types';
 import { desc, eq, isNotNull } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../db.js';
-import { movies, mediaWatchlist } from '@pops/db-types';
 import type { TmdbClient } from '../tmdb/client.js';
 import type { TmdbSearchResult } from '../tmdb/types.js';
-import type { DiscoverResult, ScoredDiscoverResult } from './types.js';
+import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from './flags.js';
 import { getPreferenceProfile, scoreDiscoverResults } from './service.js';
-import { getWatchedTmdbIds, getWatchlistTmdbIds, getDismissedTmdbIds } from './flags.js';
+import type { DiscoverResult, ScoredDiscoverResult } from './types.js';
 
 /** Get all TMDB IDs currently in the library for quick lookup. */
 export function getLibraryTmdbIds(): Set<number> {

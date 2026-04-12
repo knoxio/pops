@@ -14,9 +14,9 @@
  *   varietyBonus = 0.2 if category !== previous selected category, else 0
  *   contextBonus = 0.3 if category === 'context' (time-triggered shelves), else 0
  */
-import type { PreferenceProfile, ShelfInstance, ShelfCategory } from './types.js';
-import { getRegisteredShelves } from './registry.js';
 import { getShelfFreshness } from './impressions.service.js';
+import { getRegisteredShelves } from './registry.js';
+import type { PreferenceProfile, ShelfCategory, ShelfInstance } from './types.js';
 
 const SESSION_TARGET_MIN = 10;
 const SESSION_TARGET_MAX = 15;

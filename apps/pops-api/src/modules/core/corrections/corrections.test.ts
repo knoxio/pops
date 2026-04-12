@@ -1,7 +1,7 @@
 /**
  * Corrections module tests — CRUD, pattern matching, and tags.
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const anthropicMocks = vi.hoisted(() => ({
   createMessage: vi.fn(),
@@ -18,8 +18,8 @@ vi.mock('@anthropic-ai/sdk', () => {
   return { default: AnthropicMock };
 });
 
-import { setupTestContext, seedEntity, seedTransaction } from '../../../shared/test-utils.js';
 import { logger } from '../../../lib/logger.js';
+import { seedEntity, seedTransaction, setupTestContext } from '../../../shared/test-utils.js';
 import * as service from './service.js';
 
 const ctx = setupTestContext();

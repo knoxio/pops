@@ -2,9 +2,9 @@
  * HorizontalScrollRow — a titled section with horizontally scrollable content.
  * Used on the Discover page for trending, recommendations, and similar sections.
  */
-import { useRef } from 'react';
-import { cn, Button, Skeleton } from '@pops/ui';
+import { Button, cn, Skeleton } from '@pops/ui';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useRef } from 'react';
 
 export interface HorizontalScrollRowProps {
   /** Section title. */

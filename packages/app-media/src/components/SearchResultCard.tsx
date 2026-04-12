@@ -3,10 +3,11 @@
  * Shows poster from external CDN, title, year, overview, genres, rating,
  * and an "Add to Library" / "In Library" action.
  */
+import { Badge, Button, cn, Skeleton } from '@pops/ui';
+import { Check, Film, Loader2, Plus, Tv } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { cn, Badge, Button, Skeleton } from '@pops/ui';
-import { Film, Tv, Loader2, Check, Plus } from 'lucide-react';
+
 import { RequestMovieButton } from './RequestMovieButton';
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w342';

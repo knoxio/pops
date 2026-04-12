@@ -1,11 +1,7 @@
 /**
  * AI Usage page - view AI categorization costs and usage
  */
-import { useState } from 'react';
-import type { ColumnDef } from '@tanstack/react-table';
-import { toast } from 'sonner';
-import { trpc } from '../lib/trpc';
-import { DataTable, SortableHeader, StatCard, DateInput } from '@pops/ui';
+import { DataTable, DateInput, SortableHeader, StatCard } from '@pops/ui';
 import { Badge, Button, Input, Label } from '@pops/ui';
 import { Alert, PageHeader } from '@pops/ui';
 import { Skeleton } from '@pops/ui';
@@ -21,8 +17,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@pops/ui';
+import type { ColumnDef } from '@tanstack/react-table';
 import { Database, Trash2 } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { useState } from 'react';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { toast } from 'sonner';
+
+import { trpc } from '../lib/trpc';
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';

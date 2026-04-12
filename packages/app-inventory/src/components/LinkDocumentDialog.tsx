@@ -3,21 +3,22 @@
  * Opens a dialog with search input, results with thumbnails, document type selector,
  * and link action per result.
  */
-import { useState } from 'react';
-import { toast } from 'sonner';
 import {
+  Button,
   Dialog,
-  DialogTrigger,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  Button,
-  TextInput,
+  DialogTrigger,
   Select,
   Skeleton,
+  TextInput,
 } from '@pops/ui';
-import { FileText, Search, Link2 } from 'lucide-react';
+import { FileText, Link2, Search } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
 import { trpc } from '../lib/trpc';
 
 /** Shape of a document info result from the paperless search API. */
