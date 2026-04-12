@@ -600,7 +600,9 @@ describe("imports.commitImport", () => {
     expect(result.message).toBe("Import committed");
 
     // Verify transaction written to DB
-    const rows = db.prepare("SELECT * FROM transactions WHERE description = ?").all("COLES SUPERMARKET");
+    const rows = db
+      .prepare("SELECT * FROM transactions WHERE description = ?")
+      .all("COLES SUPERMARKET");
     expect(rows).toHaveLength(1);
   });
 
@@ -623,12 +625,17 @@ describe("imports.commitImport", () => {
     expect(result.data.transactionsImported).toBe(1);
 
     // Verify entity was created
-    const entity = db.prepare("SELECT * FROM entities WHERE name = ?").get("Woolworths") as { id: string; type: string };
+    const entity = db.prepare("SELECT * FROM entities WHERE name = ?").get("Woolworths") as {
+      id: string;
+      type: string;
+    };
     expect(entity).toBeDefined();
     expect(entity.type).toBe("company");
 
     // Verify transaction has the real entity ID (not temp ID)
-    const txn = db.prepare("SELECT entity_id FROM transactions WHERE description = ?").get("WOOLWORTHS 1234") as { entity_id: string };
+    const txn = db
+      .prepare("SELECT entity_id FROM transactions WHERE description = ?")
+      .get("WOOLWORTHS 1234") as { entity_id: string };
     expect(txn.entity_id).toBe(entity.id);
     expect(txn.entity_id).not.toBe(tempId);
   });
@@ -641,7 +648,9 @@ describe("imports.commitImport", () => {
       transactions: [makeTxn()],
     });
 
-    const entity = db.prepare("SELECT type FROM entities WHERE name = ?").get("ATO") as { type: string };
+    const entity = db.prepare("SELECT type FROM entities WHERE name = ?").get("ATO") as {
+      type: string;
+    };
     expect(entity.type).toBe("government");
   });
 
@@ -672,8 +681,12 @@ describe("imports.commitImport", () => {
     expect(result.data.rulesApplied).toEqual({ add: 1, edit: 0, disable: 0, remove: 0 });
 
     // Verify the correction rule has the real entity ID
-    const entity = db.prepare("SELECT id FROM entities WHERE name = ?").get("TestCorp") as { id: string };
-    const rule = db.prepare("SELECT entity_id FROM transaction_corrections WHERE description_pattern = ?").get("TESTCORP") as { entity_id: string };
+    const entity = db.prepare("SELECT id FROM entities WHERE name = ?").get("TestCorp") as {
+      id: string;
+    };
+    const rule = db
+      .prepare("SELECT entity_id FROM transaction_corrections WHERE description_pattern = ?")
+      .get("TESTCORP") as { entity_id: string };
     expect(rule.entity_id).toBe(entity.id);
   });
 

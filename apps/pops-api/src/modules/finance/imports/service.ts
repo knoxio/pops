@@ -1109,10 +1109,7 @@ export function commitImport(payload: CommitPayload): CommitResult {
 
       // Update entity type if not default
       if (pending.type !== "company") {
-        db.update(entities)
-          .set({ type: pending.type })
-          .where(eq(entities.id, entityId))
-          .run();
+        db.update(entities).set({ type: pending.type }).where(eq(entities.id, entityId)).run();
       }
     }
 
@@ -1135,7 +1132,7 @@ export function commitImport(payload: CommitPayload): CommitResult {
 
     for (const txn of payload.transactions) {
       const entityId = txn.entityId?.startsWith(TEMP_ENTITY_PREFIX)
-        ? tempIdMap.get(txn.entityId) ?? txn.entityId
+        ? (tempIdMap.get(txn.entityId) ?? txn.entityId)
         : txn.entityId;
 
       try {
