@@ -1336,4 +1336,87 @@ describe("corrections", () => {
       expect(out["r1"]?.tags).toEqual(["Groceries", "Weekly"]);
     });
   });
+
+  describe("findMatchingCorrectionFromRules — priority ordering", () => {
+    function makeRule(
+      id: string,
+      pattern: string,
+      overrides: Partial<import("./types.js").CorrectionRow> = {}
+    ): import("./types.js").CorrectionRow {
+      return {
+        id,
+        descriptionPattern: pattern,
+        matchType: "exact",
+        entityId: null,
+        entityName: null,
+        location: null,
+        tags: "[]",
+        transactionType: null,
+        isActive: true,
+        confidence: 0.9,
+        priority: 0,
+        timesApplied: 0,
+        createdAt: "2026-01-01T00:00:00.000Z",
+        lastUsedAt: null,
+        ...overrides,
+      };
+    }
+
+    it("lower priority number wins regardless of match type", () => {
+      // normalizeDescription("woolworths 1234") => "WOOLWORTHS"
+      const rules = [
+        makeRule("r-contains", "WOOLW", { matchType: "contains", priority: 10 }),
+        makeRule("r-exact", "WOOLWORTHS", { matchType: "exact", priority: 20 }),
+      ];
+      const result = service.findMatchingCorrectionFromRules("woolworths 1234", rules);
+      expect(result).not.toBeNull();
+      expect(result!.correction.id).toBe("r-contains");
+    });
+
+    it("same priority tie-breaks by id ASC", () => {
+      const rules = [
+        makeRule("b-rule", "WOOLWORTHS", { matchType: "exact", priority: 5 }),
+        makeRule("a-rule", "WOOLWORTHS", { matchType: "exact", priority: 5 }),
+      ];
+      const result = service.findMatchingCorrectionFromRules("woolworths", rules);
+      expect(result).not.toBeNull();
+      expect(result!.correction.id).toBe("a-rule");
+    });
+
+    it("disabled rule is skipped; next-priority active rule wins", () => {
+      const rules = [
+        makeRule("r1", "WOOLWORTHS", { matchType: "exact", priority: 0, isActive: false }),
+        makeRule("r2", "WOOLWORTHS", { matchType: "exact", priority: 10 }),
+      ];
+      const result = service.findMatchingCorrectionFromRules("woolworths", rules);
+      expect(result).not.toBeNull();
+      expect(result!.correction.id).toBe("r2");
+    });
+
+    it("regex rule at lower priority wins over exact at higher priority", () => {
+      const rules = [
+        makeRule("r-regex", "WOOL.*", { matchType: "regex", priority: 5 }),
+        makeRule("r-exact", "WOOLWORTHS", { matchType: "exact", priority: 50 }),
+      ];
+      const result = service.findMatchingCorrectionFromRules("woolworths", rules);
+      expect(result).not.toBeNull();
+      expect(result!.correction.id).toBe("r-regex");
+    });
+
+    it("returns null when no rules match", () => {
+      const rules = [makeRule("r1", "COLES", { matchType: "exact", priority: 0 })];
+      const result = service.findMatchingCorrectionFromRules("woolworths", rules);
+      expect(result).toBeNull();
+    });
+
+    it("skips rules below minConfidence", () => {
+      const rules = [
+        makeRule("r-low", "WOOLWORTHS", { matchType: "exact", priority: 0, confidence: 0.3 }),
+        makeRule("r-high", "WOOLWORTHS", { matchType: "exact", priority: 10, confidence: 0.9 }),
+      ];
+      const result = service.findMatchingCorrectionFromRules("woolworths", rules, 0.7);
+      expect(result).not.toBeNull();
+      expect(result!.correction.id).toBe("r-high");
+    });
+  });
 });
