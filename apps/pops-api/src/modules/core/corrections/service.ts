@@ -3,7 +3,7 @@
  * Manages learned patterns from user edits — Drizzle ORM
  */
 import Anthropic from "@anthropic-ai/sdk";
-import { eq, gte, desc, count, sql, and } from "drizzle-orm";
+import { eq, gte, desc, asc, count, sql, and } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
 import { isNamedEnvContext } from "../../../db.js";
 import { getEnv } from "../../../env.js";
@@ -449,11 +449,11 @@ export function buildTargetRulesMap(
 /**
  * Pure in-memory matcher used for previews and determinism tests.
  * Mirrors production semantics:
- * - normalizeDescription
- * - exact matches win over contains matches
+ * - normalizeDescription on input
+ * - rules sorted by priority ASC (lower = higher priority), id ASC tie-breaker
  * - ignore inactive rules
  * - ignore rules below minConfidence
- * - tie-break by confidence desc, then timesApplied desc
+ * - first matching rule in priority order wins
  */
 export function findMatchingCorrectionFromRules(
   description: string,
@@ -461,40 +461,37 @@ export function findMatchingCorrectionFromRules(
   minConfidence: number = 0.7
 ): CorrectionMatchResult | null {
   const normalized = normalizeDescription(description);
-  const eligible = rules.filter((r) => r.isActive && r.confidence >= minConfidence);
+  const eligible = rules
+    .filter((r) => r.isActive && r.confidence >= minConfidence)
+    .sort((a, b) => a.priority - b.priority || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
-  const exactMatches = eligible
-    .filter((r) => r.matchType === "exact" && r.descriptionPattern === normalized)
-    .sort((a, b) => b.confidence - a.confidence || b.timesApplied - a.timesApplied);
-
-  if (exactMatches[0]) return classifyCorrectionMatch(exactMatches[0]);
-
-  const containsMatches = eligible
-    .filter(
-      (r) =>
-        r.matchType === "contains" &&
-        r.descriptionPattern.length > 0 &&
-        normalized.includes(r.descriptionPattern)
-    )
-    .sort((a, b) => b.confidence - a.confidence || b.timesApplied - a.timesApplied);
-
-  if (containsMatches[0]) return classifyCorrectionMatch(containsMatches[0]);
-
-  const regexMatches = eligible
-    .filter((r) => r.matchType === "regex" && r.descriptionPattern.length > 0)
-    .filter((r) => {
-      try {
-        return new RegExp(r.descriptionPattern).test(normalized);
-      } catch {
-        // Invalid regex patterns should never match (avoid preview/apply crashes on bad data).
-        return false;
-      }
-    })
-    .sort((a, b) => b.confidence - a.confidence || b.timesApplied - a.timesApplied);
-
-  if (regexMatches[0]) return classifyCorrectionMatch(regexMatches[0]);
+  for (const rule of eligible) {
+    if (ruleMatchesDescription(rule, normalized)) {
+      return classifyCorrectionMatch(rule);
+    }
+  }
 
   return null;
+}
+
+/** Test whether a single rule's pattern matches a normalized description. */
+function ruleMatchesDescription(rule: CorrectionRow, normalized: string): boolean {
+  const pattern = rule.descriptionPattern;
+  switch (rule.matchType) {
+    case "exact":
+      return pattern.toUpperCase() === normalized;
+    case "contains":
+      return pattern.length > 0 && normalized.includes(pattern.toUpperCase());
+    case "regex":
+      if (pattern.length === 0) return false;
+      try {
+        return new RegExp(pattern, "i").test(normalized);
+      } catch {
+        return false;
+      }
+    default:
+      return false;
+  }
 }
 
 export function applyChangeSetToRules(
@@ -967,64 +964,22 @@ export function findMatchingCorrection(
   const db = getDrizzle();
   const normalized = normalizeDescription(description);
 
-  // Try exact match first (highest priority)
-  const [exactMatch] = db
+  // Fetch all active eligible rules ordered by priority ASC, id ASC
+  const candidates = db
     .select()
     .from(transactionCorrections)
     .where(
       and(
         eq(transactionCorrections.isActive, true),
-        eq(transactionCorrections.matchType, "exact"),
-        eq(transactionCorrections.descriptionPattern, normalized),
         gte(transactionCorrections.confidence, minConfidence)
       )
     )
-    .orderBy(desc(transactionCorrections.confidence), desc(transactionCorrections.timesApplied))
-    .limit(1)
+    .orderBy(asc(transactionCorrections.priority), asc(transactionCorrections.id))
     .all();
 
-  if (exactMatch) return classifyCorrectionMatch(exactMatch);
-
-  // Try contains match (pattern is substring of description)
-  // This uses SQL LIKE which needs raw SQL for the dynamic pattern
-  const [containsMatch] = db
-    .select()
-    .from(transactionCorrections)
-    .where(
-      and(
-        eq(transactionCorrections.isActive, true),
-        eq(transactionCorrections.matchType, "contains"),
-        sql`${normalized} LIKE '%' || ${transactionCorrections.descriptionPattern} || '%'`,
-        gte(transactionCorrections.confidence, minConfidence)
-      )
-    )
-    .orderBy(desc(transactionCorrections.confidence), desc(transactionCorrections.timesApplied))
-    .limit(1)
-    .all();
-
-  if (containsMatch) return classifyCorrectionMatch(containsMatch);
-
-  // Try regex match (JS-level evaluation; SQLite has no built-in REGEXP by default)
-  const regexCandidates = db
-    .select()
-    .from(transactionCorrections)
-    .where(
-      and(
-        eq(transactionCorrections.isActive, true),
-        eq(transactionCorrections.matchType, "regex"),
-        gte(transactionCorrections.confidence, minConfidence)
-      )
-    )
-    .orderBy(desc(transactionCorrections.confidence), desc(transactionCorrections.timesApplied))
-    .all();
-
-  for (const row of regexCandidates) {
-    try {
-      if (new RegExp(row.descriptionPattern).test(normalized)) {
-        return classifyCorrectionMatch(row);
-      }
-    } catch {
-      // Ignore invalid regex rules (treat as non-matching).
+  for (const rule of candidates) {
+    if (ruleMatchesDescription(rule, normalized)) {
+      return classifyCorrectionMatch(rule);
     }
   }
 
