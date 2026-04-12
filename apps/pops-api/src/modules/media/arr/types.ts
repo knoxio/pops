@@ -49,6 +49,16 @@ export interface RadarrMovie {
   tmdbId: number;
   monitored: boolean;
   hasFile: boolean;
+  /** Size of the movie file on disk in bytes (0 if no file). */
+  sizeOnDisk?: number;
+}
+
+/** Disk space info returned by Radarr /diskspace endpoint. */
+export interface RadarrDiskSpace {
+  path: string;
+  label: string;
+  freeSpace: number;
+  totalSpace: number;
 }
 
 export interface RadarrQualityProfile {
