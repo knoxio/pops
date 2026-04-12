@@ -11,6 +11,18 @@
     "./modules/finance/imports": {
       "types": "./src/modules/finance/imports/types.ts",
       "default": "./src/modules/finance/imports/types.ts"
+    },
+    "./modules/core/corrections/service": {
+      "types": "./src/modules/core/corrections/service.ts",
+      "default": "./src/modules/core/corrections/service.ts"
+    },
+    "./modules/core/corrections/types": {
+      "types": "./src/modules/core/corrections/types.ts",
+      "default": "./src/modules/core/corrections/types.ts"
+    },
+    "./modules/core/entities/types": {
+      "types": "./src/modules/core/entities/types.ts",
+      "default": "./src/modules/core/entities/types.ts"
     }
   },
   "scripts": {

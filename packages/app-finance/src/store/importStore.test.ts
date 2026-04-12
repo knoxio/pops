@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import type { ParsedTransaction } from "@pops/api/modules/finance/imports";
-import { useImportStore, type ProcessedTransaction, type ChangeSetData } from "./importStore";
+import { useImportStore, type ProcessedTransaction, type ChangeSet } from "./importStore";
 
 // ---------------------------------------------------------------------------
 // importStore — parsedTransactionsFingerprint / processedForFingerprint tests
@@ -147,10 +147,10 @@ describe("importStore — step range", () => {
 // Pending entities (PRD-030 US-01)
 // ---------------------------------------------------------------------------
 
-const sampleChangeSet: ChangeSetData = {
+const sampleChangeSet: ChangeSet = {
   source: "ai",
   reason: "test",
-  ops: [{ op: "add", data: {} }],
+  ops: [{ op: "add", data: { descriptionPattern: "TEST", matchType: "exact" } }],
 };
 
 describe("importStore — pendingEntities (PRD-030 US-01)", () => {

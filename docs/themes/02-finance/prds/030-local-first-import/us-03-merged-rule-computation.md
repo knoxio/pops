@@ -1,7 +1,7 @@
 # US-03: Merged rule set computation
 
 > PRD: [030 — Local-First Import State Layer](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -11,13 +11,13 @@ The function folds `applyChangeSetToRules` (from `corrections/service.ts`) over 
 
 ## Acceptance Criteria
 
-- [ ] A pure function `computeMergedRules(dbRules: CorrectionRow[], pendingChangeSets: PendingChangeSet[]) => CorrectionRow[]` exists and is exported.
-- [ ] The function applies each pending ChangeSet's `.changeSet` to the accumulator in insertion order using `applyChangeSetToRules`.
-- [ ] With zero pending ChangeSets, the function returns the DB rules array unchanged (referential equality).
-- [ ] With one pending ChangeSet containing an `add` operation, the result includes the new rule with a temp ID.
-- [ ] With multiple pending ChangeSets, later ChangeSets see the cumulative effect of earlier ones (e.g. a ChangeSet that edits a rule added by a prior ChangeSet works correctly).
-- [ ] The function is memoized so that identical inputs (by reference) return the same output reference.
-- [ ] Unit tests cover: zero pending, single add, single edit, multiple sequential (add then edit same rule), remove then reference (error case), mixed operations.
+- [x] A pure function `computeMergedRules(dbRules: CorrectionRow[], pendingChangeSets: PendingChangeSet[]) => CorrectionRow[]` exists and is exported.
+- [x] The function applies each pending ChangeSet's `.changeSet` to the accumulator in insertion order using `applyChangeSetToRules`.
+- [x] With zero pending ChangeSets, the function returns the DB rules array unchanged (referential equality).
+- [x] With one pending ChangeSet containing an `add` operation, the result includes the new rule with a temp ID.
+- [x] With multiple pending ChangeSets, later ChangeSets see the cumulative effect of earlier ones (e.g. a ChangeSet that edits a rule added by a prior ChangeSet works correctly).
+- [x] The function is memoized so that identical inputs (by reference) return the same output reference.
+- [x] Unit tests cover: zero pending, single add, single edit, multiple sequential (add then edit same rule), remove then reference (error case), mixed operations.
 
 ## Notes
 

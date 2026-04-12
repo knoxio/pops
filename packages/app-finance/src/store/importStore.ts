@@ -6,9 +6,11 @@ import type {
   ImportResult,
   ImportWarning,
 } from "@pops/api/modules/finance/imports";
+import type { ChangeSet } from "@pops/api/modules/core/corrections/types";
 import { findSimilarTransactions } from "../lib/transaction-utils";
 
 export type BankType = "Amex";
+export type { ChangeSet };
 
 // ---------------------------------------------------------------------------
 // Pending entity — created during import, stored locally until step 7 commit.
@@ -30,23 +32,16 @@ export interface AddPendingEntityInput {
 // Pending changeset — rule ChangeSet approved during import, not yet committed.
 // ---------------------------------------------------------------------------
 
-/** Mirrors the server ChangeSet shape (source, reason, ops). */
-export interface ChangeSetData {
-  source?: string;
-  reason?: string;
-  ops: Record<string, unknown>[];
-}
-
 export interface PendingChangeSet {
   tempId: string; // Format: temp:changeset:{uuid}
-  changeSet: ChangeSetData;
+  changeSet: ChangeSet;
   appliedAt: string; // ISO-8601
   source: string;
 }
 
 /** Input for creating a pending changeset (tempId and appliedAt are generated internally). */
 export interface AddPendingChangeSetInput {
-  changeSet: ChangeSetData;
+  changeSet: ChangeSet;
   source: string;
 }
 
