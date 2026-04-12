@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import type { AppRouter } from "@pops/api-client";
 import { trpc } from "../../lib/trpc";
 import { useImportStore } from "../../store/importStore";
-import { RulePicker, type CorrectionRule } from "./RulePicker";
+import type { CorrectionRule } from "./RulePicker";
 import { computeMergedRules } from "../../lib/merged-state";
 import {
   AiHelperPanel,
@@ -996,7 +996,6 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
     }
     // handleOpenChange will detect the count change via onBrowseClose
     handleOpenChange(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [localOps, addPendingChangeSet]);
 
   function handleOpenChange(open: boolean) {
@@ -1061,7 +1060,6 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
     }
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isBrowseMode, props.open, browseFilteredRules, browseSelectedRuleId]);
 
   // ---- render -------------------------------------------------------------
