@@ -4,7 +4,12 @@ import type { Database } from "better-sqlite3";
 import { eq } from "drizzle-orm";
 import { entities as entitiesTable } from "@pops/db-types";
 import { getDrizzle } from "../../../db.js";
-import { setupTestContext, seedEntity, createCaller } from "../../../shared/test-utils.js";
+import {
+  setupTestContext,
+  seedEntity,
+  seedTransaction,
+  createCaller,
+} from "../../../shared/test-utils.js";
 import { clearCache } from "./lib/ai-categorizer.js";
 import type {
   ProcessImportOutput,
@@ -812,5 +817,236 @@ describe("imports.commitImport", () => {
     await expect(
       unauthCaller.finance.imports.commitImport({ transactions: [makeTxn()] })
     ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// retroactive reclassification (US-04)
+// ---------------------------------------------------------------------------
+
+describe("imports.commitImport — retroactive reclassification", () => {
+  it("reclassifies existing transactions when new rules match", async () => {
+    // Seed an entity and a pre-existing transaction with no entity link
+    const entityId = seedEntity(db, { name: "Woolworths" });
+    seedTransaction(db, {
+      description: "WOOLWORTHS 9999",
+      entity_id: null,
+      entity_name: null,
+      checksum: "pre-existing-chk-1",
+    });
+
+    // Commit adds a rule matching "WOOLWORTHS" to the entity
+    const result = await caller.finance.imports.commitImport({
+      changeSets: [
+        {
+          ops: [
+            {
+              op: "add" as const,
+              data: {
+                descriptionPattern: "WOOLWORTHS",
+                matchType: "contains" as const,
+                entityId,
+                entityName: "Woolworths",
+                confidence: 0.95,
+              },
+            },
+          ],
+        },
+      ],
+      transactions: [makeTxn({ description: "NEW IMPORT TXN" })],
+    });
+
+    expect(result.data.retroactiveReclassifications).toBe(1);
+
+    // Verify the existing transaction was updated
+    const txn = db
+      .prepare("SELECT entity_id, entity_name FROM transactions WHERE checksum = ?")
+      .get("pre-existing-chk-1") as { entity_id: string | null; entity_name: string | null };
+    expect(txn.entity_id).toBe(entityId);
+    expect(txn.entity_name).toBe("Woolworths");
+  });
+
+  it("excludes current import batch from reclassification", async () => {
+    const entityId = seedEntity(db, { name: "Coles" });
+    const importChecksum = "import-batch-chk-1";
+
+    // Commit with a rule that matches the imported transaction's description
+    const result = await caller.finance.imports.commitImport({
+      changeSets: [
+        {
+          ops: [
+            {
+              op: "add" as const,
+              data: {
+                descriptionPattern: "COLES",
+                matchType: "contains" as const,
+                entityId,
+                entityName: "Coles",
+                confidence: 0.95,
+              },
+            },
+          ],
+        },
+      ],
+      transactions: [
+        makeTxn({
+          description: "COLES SUPERMARKET",
+          checksum: importChecksum,
+        }),
+      ],
+    });
+
+    // The imported transaction should NOT be reclassified (it was part of this batch)
+    expect(result.data.retroactiveReclassifications).toBe(0);
+  });
+
+  it("returns 0 when no existing transactions are affected", async () => {
+    // No pre-existing transactions in DB, just a new import
+    const result = await caller.finance.imports.commitImport({
+      changeSets: [
+        {
+          ops: [
+            {
+              op: "add" as const,
+              data: {
+                descriptionPattern: "NONEXISTENT",
+                matchType: "exact" as const,
+                confidence: 0.9,
+              },
+            },
+          ],
+        },
+      ],
+      transactions: [makeTxn({ description: "SOME OTHER TXN" })],
+    });
+
+    expect(result.data.retroactiveReclassifications).toBe(0);
+  });
+
+  it("does not update transactions whose classification did not change", async () => {
+    const entityId = seedEntity(db, { name: "Netflix" });
+
+    // Pre-existing transaction already correctly linked
+    seedTransaction(db, {
+      description: "NETFLIX SUBSCRIPTION",
+      entity_id: entityId,
+      entity_name: "Netflix",
+      checksum: "already-correct-chk",
+    });
+
+    // Add a rule that matches but points to the same entity
+    const result = await caller.finance.imports.commitImport({
+      changeSets: [
+        {
+          ops: [
+            {
+              op: "add" as const,
+              data: {
+                descriptionPattern: "NETFLIX",
+                matchType: "contains" as const,
+                entityId,
+                entityName: "Netflix",
+                confidence: 0.95,
+              },
+            },
+          ],
+        },
+      ],
+      transactions: [makeTxn({ description: "UNRELATED" })],
+    });
+
+    // Same entity — no reclassification
+    expect(result.data.retroactiveReclassifications).toBe(0);
+  });
+
+  it("reclassifies type and location when rule specifies them", async () => {
+    const entityId = seedEntity(db, { name: "Rent Corp" });
+
+    // Pre-existing transaction with different type and no location
+    seedTransaction(db, {
+      description: "RENT CORP PAYMENT",
+      entity_id: entityId,
+      entity_name: "Rent Corp",
+      type: "Expense",
+      location: null,
+      checksum: "type-location-chk",
+    });
+
+    // Add a rule that changes type to Transfer and sets location
+    const result = await caller.finance.imports.commitImport({
+      changeSets: [
+        {
+          ops: [
+            {
+              op: "add" as const,
+              data: {
+                descriptionPattern: "RENT CORP",
+                matchType: "contains" as const,
+                entityId,
+                entityName: "Rent Corp",
+                transactionType: "transfer" as const,
+                location: "Melbourne",
+                confidence: 0.95,
+              },
+            },
+          ],
+        },
+      ],
+      transactions: [makeTxn({ description: "UNRELATED" })],
+    });
+
+    expect(result.data.retroactiveReclassifications).toBe(1);
+
+    // Verify type and location were updated
+    const txn = db
+      .prepare("SELECT type, location FROM transactions WHERE checksum = ?")
+      .get("type-location-chk") as { type: string; location: string | null };
+    expect(txn.type).toBe("Transfer");
+    expect(txn.location).toBe("Melbourne");
+  });
+
+  it("reclassification is part of the same transaction (rollback on error)", async () => {
+    const entitiesBefore = db.prepare("SELECT count(*) as c FROM entities").get() as { c: number };
+    const txnsBefore = db.prepare("SELECT count(*) as c FROM transactions").get() as { c: number };
+    const rulesBefore = db.prepare("SELECT count(*) as c FROM transaction_corrections").get() as {
+      c: number;
+    };
+
+    // Use a changeSet with an invalid edit op to trigger a rollback
+    const tempId = "temp:entity:00000000-0000-0000-0000-000000000099";
+    await expect(
+      caller.finance.imports.commitImport({
+        entities: [{ tempId, name: "RollbackReclassify" }],
+        changeSets: [
+          {
+            ops: [
+              {
+                op: "add" as const,
+                data: {
+                  descriptionPattern: "ROLLBACK",
+                  matchType: "exact" as const,
+                  entityId: tempId,
+                  entityName: "RollbackReclassify",
+                  confidence: 0.9,
+                },
+              },
+              // Invalid edit triggers rollback
+              { op: "edit" as const, id: "non-existent-id", data: { confidence: 0.5 } },
+            ],
+          },
+        ],
+        transactions: [makeTxn()],
+      })
+    ).rejects.toThrow();
+
+    // Everything rolled back
+    const entitiesAfter = db.prepare("SELECT count(*) as c FROM entities").get() as { c: number };
+    const txnsAfter = db.prepare("SELECT count(*) as c FROM transactions").get() as { c: number };
+    const rulesAfter = db.prepare("SELECT count(*) as c FROM transaction_corrections").get() as {
+      c: number;
+    };
+    expect(entitiesAfter.c).toBe(entitiesBefore.c);
+    expect(txnsAfter.c).toBe(txnsBefore.c);
+    expect(rulesAfter.c).toBe(rulesBefore.c);
   });
 });

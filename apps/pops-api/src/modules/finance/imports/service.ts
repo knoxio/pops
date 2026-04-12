@@ -7,16 +7,19 @@
  * - AI fallback with full row context
  * - Batch writes to SQLite
  */
-import { eq, and, isNotNull, ne, inArray } from "drizzle-orm";
+import { eq, and, isNotNull, ne, inArray, notInArray, asc } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
-import { transactions, entities, tagVocabulary } from "@pops/db-types";
+import { transactions, entities, tagVocabulary, transactionCorrections } from "@pops/db-types";
 import { logger } from "../../../lib/logger.js";
 import { formatImportError } from "../../../lib/errors.js";
 import { matchEntity } from "./lib/entity-matcher.js";
 import { loadEntityMaps } from "./lib/entity-lookup.js";
 import { categorizeWithAi, AiCategorizationError } from "./lib/ai-categorizer.js";
 import { updateProgress } from "./progress-store.js";
-import { findMatchingCorrection } from "../../core/corrections/service.js";
+import {
+  findMatchingCorrection,
+  findMatchingCorrectionFromRules,
+} from "../../core/corrections/service.js";
 import { suggestTags } from "../../../shared/tag-suggester.js";
 import type { TransactionRow } from "../transactions/types.js";
 import { applyChangeSet } from "../../core/corrections/service.js";
@@ -1170,12 +1173,110 @@ export function commitImport(payload: CommitPayload): CommitResult {
       }
     }
 
+    // Phase 4: Retroactive reclassification — re-evaluate existing transactions
+    // against the updated rule set and update any whose classification changed.
+    const retroactiveReclassifications = reclassifyExistingTransactions(
+      db,
+      payload.transactions.map((t) => t.checksum).filter((c): c is string => c != null)
+    );
+
     return {
       entitiesCreated,
       rulesApplied,
       transactionsImported,
       transactionsFailed,
-      retroactiveReclassifications: 0,
+      retroactiveReclassifications,
     };
   });
+}
+
+const RECLASSIFY_BATCH_SIZE = 500;
+
+/**
+ * Re-evaluate all existing transactions against the current (updated) rule set.
+ * Excludes transactions from the current import batch (by checksum).
+ * Returns the count of transactions whose classification was updated.
+ */
+function reclassifyExistingTransactions(
+  db: ReturnType<typeof getDrizzle>,
+  importedChecksums: string[]
+): number {
+  // Fetch the full updated rule set
+  const allRules = db
+    .select()
+    .from(transactionCorrections)
+    .orderBy(asc(transactionCorrections.priority), asc(transactionCorrections.id))
+    .all();
+
+  if (allRules.length === 0) return 0;
+
+  let reclassified = 0;
+  let offset = 0;
+
+  while (true) {
+    // Fetch existing transactions in batches, excluding current import's checksums
+    let batchQuery = db
+      .select({
+        id: transactions.id,
+        description: transactions.description,
+        entityId: transactions.entityId,
+        type: transactions.type,
+        location: transactions.location,
+      })
+      .from(transactions)
+      .$dynamic();
+
+    if (importedChecksums.length > 0) {
+      batchQuery = batchQuery.where(notInArray(transactions.checksum, importedChecksums));
+    }
+
+    const batch = batchQuery
+      .orderBy(asc(transactions.id))
+      .limit(RECLASSIFY_BATCH_SIZE)
+      .offset(offset)
+      .all();
+
+    if (batch.length === 0) break;
+
+    for (const txn of batch) {
+      const match = findMatchingCorrectionFromRules(txn.description, allRules);
+
+      if (!match) continue;
+
+      const rule = match.correction;
+      const newEntityId = rule.entityId ?? null;
+      const newType = rule.transactionType
+        ? rule.transactionType === "transfer"
+          ? "Transfer"
+          : rule.transactionType === "income"
+            ? "Income"
+            : "Expense"
+        : null;
+      const newLocation = rule.location ?? null;
+
+      // Check if classification actually changed
+      const entityChanged = newEntityId !== (txn.entityId ?? null);
+      const typeChanged = newType !== null && newType !== txn.type;
+      const locationChanged = newLocation !== null && newLocation !== (txn.location ?? null);
+
+      if (!entityChanged && !typeChanged && !locationChanged) continue;
+
+      const updates: Record<string, unknown> = {};
+      if (entityChanged) {
+        updates.entityId = newEntityId;
+        updates.entityName = rule.entityName ?? null;
+      }
+      if (typeChanged) updates.type = newType;
+      if (locationChanged) updates.location = newLocation;
+      updates.lastEditedTime = new Date().toISOString();
+
+      db.update(transactions).set(updates).where(eq(transactions.id, txn.id)).run();
+
+      reclassified++;
+    }
+
+    offset += RECLASSIFY_BATCH_SIZE;
+  }
+
+  return reclassified;
 }
