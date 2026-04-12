@@ -16,10 +16,11 @@ export interface Entity {
   defaultTags: string[];
   notes: string | null;
   lastEditedTime: string;
+  transactionCount?: number;
 }
 
 /** Map a SQLite row to the API response shape. */
-export function toEntity(row: EntityRow): Entity {
+export function toEntity(row: EntityRow & { transactionCount?: number }): Entity {
   return {
     id: row.id,
     name: row.name,
@@ -47,6 +48,7 @@ export function toEntity(row: EntityRow): Entity {
       : [],
     notes: row.notes,
     lastEditedTime: row.lastEditedTime,
+    transactionCount: row.transactionCount,
   };
 }
 

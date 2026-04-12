@@ -351,3 +351,38 @@ describe("entities.delete", () => {
     expect(row.entity_name).toBe("Woolworths"); // denormalized name preserved
   });
 });
+
+describe("entities.list transactionCount", () => {
+  it("returns transactionCount=0 for entity with no transactions", async () => {
+    seedEntity(db, { name: "Orphaned Corp" });
+
+    const result = await caller.core.entities.list({});
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0]!.transactionCount).toBe(0);
+  });
+
+  it("returns correct transactionCount for entity with transactions", async () => {
+    const entityId = seedEntity(db, { name: "Woolworths" });
+    seedTransaction(db, { entity_id: entityId, description: "WOOLWORTHS 1" });
+    seedTransaction(db, { entity_id: entityId, description: "WOOLWORTHS 2" });
+    seedTransaction(db, { entity_id: entityId, description: "WOOLWORTHS 3" });
+
+    const result = await caller.core.entities.list({});
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0]!.transactionCount).toBe(3);
+  });
+
+  it("returns mixed counts for multiple entities", async () => {
+    const woolId = seedEntity(db, { name: "Woolworths" });
+    seedEntity(db, { name: "Orphaned Co" });
+    seedTransaction(db, { entity_id: woolId, description: "WOOLWORTHS" });
+
+    const result = await caller.core.entities.list({});
+    expect(result.data).toHaveLength(2);
+    // Sorted by name: Orphaned Co, Woolworths
+    expect(result.data[0]!.name).toBe("Orphaned Co");
+    expect(result.data[0]!.transactionCount).toBe(0);
+    expect(result.data[1]!.name).toBe("Woolworths");
+    expect(result.data[1]!.transactionCount).toBe(1);
+  });
+});

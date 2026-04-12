@@ -68,7 +68,7 @@ No new endpoints. Existing endpoints change:
 | 05 | [us-05-drag-to-reorder](us-05-drag-to-reorder.md) | Drag-to-reorder priority in browse-mode sidebar | Not started | Blocked by us-01, us-03 |
 | 06 | [us-06-impact-preview-db-transactions](us-06-impact-preview-db-transactions.md) | Impact preview includes existing DB transactions | Not started | Blocked by us-03 |
 | 07 | [us-07-override-indicators](us-07-override-indicators.md) | Override indicators when multiple rules match | Not started | Blocked by us-02 |
-| 08 | [us-08-orphaned-entity-indicators](us-08-orphaned-entity-indicators.md) | Orphaned entity badges on /finance/entities | Not started | Yes |
+| 08 | [us-08-orphaned-entity-indicators](us-08-orphaned-entity-indicators.md) | Orphaned entity badges on /finance/entities | Done | Yes |
 
 ## Out of Scope
 

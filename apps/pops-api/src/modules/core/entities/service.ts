@@ -3,19 +3,24 @@
  * SQLite is the source of truth. All operations are local.
  */
 import crypto from "crypto";
-import { eq, like, count, and, ne } from "drizzle-orm";
+import { eq, like, count, and, ne, sql } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
-import { entities } from "@pops/db-types";
+import { entities, transactions } from "@pops/db-types";
 import { NotFoundError, ConflictError } from "../../../shared/errors.js";
 import type { EntityRow, CreateEntityInput, UpdateEntityInput } from "./types.js";
 
+/** Entity row enriched with transaction count. */
+export interface EntityWithCount extends EntityRow {
+  transactionCount: number;
+}
+
 /** Count + rows for a paginated list. */
 export interface EntityListResult {
-  rows: EntityRow[];
+  rows: EntityWithCount[];
   total: number;
 }
 
-/** List entities with optional search and type filters. */
+/** List entities with optional search and type filters, including transaction count. */
 export function listEntities(
   search: string | undefined,
   type: string | undefined,
@@ -23,9 +28,6 @@ export function listEntities(
   offset: number
 ): EntityListResult {
   const db = getDrizzle();
-
-  let query = db.select().from(entities).$dynamic();
-  let countQuery = db.select({ total: count() }).from(entities).$dynamic();
 
   const conditions = [];
   if (search) {
@@ -35,17 +37,39 @@ export function listEntities(
     conditions.push(eq(entities.type, type));
   }
 
-  if (conditions.length > 0) {
-    const where = and(...conditions);
-    query = query.where(where);
-    countQuery = countQuery.where(where);
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  // LEFT JOIN to get transaction count per entity
+  const rows = db
+    .select({
+      id: entities.id,
+      notionId: entities.notionId,
+      name: entities.name,
+      type: entities.type,
+      abn: entities.abn,
+      aliases: entities.aliases,
+      defaultTransactionType: entities.defaultTransactionType,
+      defaultTags: entities.defaultTags,
+      notes: entities.notes,
+      lastEditedTime: entities.lastEditedTime,
+      transactionCount: sql<number>`CAST(COUNT(${transactions.id}) AS INTEGER)`,
+    })
+    .from(entities)
+    .leftJoin(transactions, eq(entities.id, transactions.entityId))
+    .where(whereClause)
+    .groupBy(entities.id)
+    .orderBy(entities.name)
+    .limit(limit)
+    .offset(offset)
+    .all();
+
+  let countQuery = db.select({ total: count() }).from(entities).$dynamic();
+  if (whereClause) {
+    countQuery = countQuery.where(whereClause);
   }
-
-  const rows = query.orderBy(entities.name).limit(limit).offset(offset).all();
-
   const [countResult] = countQuery.all();
 
-  return { rows: rows, total: countResult?.total ?? 0 };
+  return { rows, total: countResult?.total ?? 0 };
 }
 
 /** Get a single entity by id. Throws NotFoundError if missing. */
