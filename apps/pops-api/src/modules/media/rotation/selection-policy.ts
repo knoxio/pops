@@ -143,11 +143,13 @@ export function weightedSample<T extends { weight: number }>(items: T[], count: 
     let r = Math.random() * totalWeight;
     let idx = 0;
     for (; idx < pool.length - 1; idx++) {
-      r -= pool[idx]!.weight;
+      const item = pool[idx];
+      if (item) r -= item.weight;
       if (r <= 0) break;
     }
 
-    selected.push(pool[idx]!);
+    const chosen = pool[idx];
+    if (chosen) selected.push(chosen);
     pool.splice(idx, 1);
   }
 
