@@ -13,7 +13,6 @@ import {
   type CorrectionSignal,
   type EditRuleData,
   type LocalOp,
-  type OpKind,
   type PreviewChangeSetOutput,
   type TriggeringTransactionContext,
 } from "./CorrectionProposalDialog";

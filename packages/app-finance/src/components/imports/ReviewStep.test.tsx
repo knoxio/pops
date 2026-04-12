@@ -141,9 +141,11 @@ vi.mock("./CorrectionProposalDialog", async () => {
     CorrectionProposalDialog: (props: unknown) => {
       lastProposalDialogProps = props;
       const p = props as {
+        open?: boolean;
         onApproved?: (result: unknown, affectedCount: number) => void;
         sessionId?: string;
       };
+      if (!p.open) return null;
       return React.createElement(
         "div",
         { "data-testid": "proposal-dialog" },
