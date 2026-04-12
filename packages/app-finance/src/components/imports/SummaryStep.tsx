@@ -8,7 +8,8 @@ import { useNavigate } from "react-router";
  * Guards against direct navigation without a commit.
  */
 export function SummaryStep() {
-  const { commitResult, reset } = useImportStore();
+  const commitResult = useImportStore((s) => s.commitResult);
+  const reset = useImportStore((s) => s.reset);
   const navigate = useNavigate();
 
   if (!commitResult) {
@@ -93,6 +94,33 @@ export function SummaryStep() {
           </div>
         )}
       </div>
+
+      {/* Failure details (US-06 AC-5) */}
+      {commitResult.failedDetails && commitResult.failedDetails.length > 0 && (
+        <div className="border border-red-200 dark:border-red-800 rounded-lg p-4">
+          <div className="flex items-center gap-2 mb-2">
+            <XCircle className="h-4 w-4 text-red-600" />
+            <h3 className="text-sm font-semibold text-red-800 dark:text-red-200">
+              Failed Transactions
+            </h3>
+          </div>
+          <div className="space-y-2">
+            {commitResult.failedDetails.map((detail, idx) => (
+              <div
+                key={idx}
+                className="flex items-start gap-3 text-sm py-1 border-b border-red-100 dark:border-red-900 last:border-0"
+              >
+                {detail.checksum && (
+                  <span className="font-mono text-xs text-red-600 dark:text-red-400 shrink-0">
+                    {detail.checksum.slice(0, 12)}
+                  </span>
+                )}
+                <span className="text-red-700 dark:text-red-300 text-xs">{detail.error}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Rule breakdown */}
       {totalRules > 0 && (

@@ -27,6 +27,7 @@ function makeCommitResult(overrides: Record<string, unknown> = {}) {
     rulesApplied: { add: 2, edit: 1, disable: 0, remove: 0 },
     transactionsImported: 10,
     transactionsFailed: 1,
+    failedDetails: [{ checksum: "abc123def456", error: "Duplicate checksum" }],
     retroactiveReclassifications: 4,
     ...overrides,
   };
@@ -79,8 +80,39 @@ describe("SummaryStep", () => {
     expect(card.querySelector(".text-2xl")!.textContent).toBe("1");
   });
 
+  it("shows failure details section with checksum and error", () => {
+    storeState = {
+      commitResult: makeCommitResult({
+        transactionsFailed: 2,
+        failedDetails: [
+          { checksum: "abc123def456", error: "Duplicate checksum" },
+          { checksum: "xyz789012345", error: "Invalid amount" },
+        ],
+      }),
+      reset: mockReset,
+    };
+    render(<SummaryStep />);
+    expect(screen.getByText("Failed Transactions")).toBeDefined();
+    expect(screen.getByText("abc123def456")).toBeDefined();
+    expect(screen.getByText("Duplicate checksum")).toBeDefined();
+    expect(screen.getByText("xyz789012345")).toBeDefined();
+    expect(screen.getByText("Invalid amount")).toBeDefined();
+  });
+
+  it("hides failure details section when no failures", () => {
+    storeState = {
+      commitResult: makeCommitResult({ transactionsFailed: 0, failedDetails: [] }),
+      reset: mockReset,
+    };
+    render(<SummaryStep />);
+    expect(screen.queryByText("Failed Transactions")).toBeNull();
+  });
+
   it("displays 0 failed in neutral style when no failures", () => {
-    storeState = { commitResult: makeCommitResult({ transactionsFailed: 0 }), reset: mockReset };
+    storeState = {
+      commitResult: makeCommitResult({ transactionsFailed: 0, failedDetails: [] }),
+      reset: mockReset,
+    };
     render(<SummaryStep />);
     const failedLabel = screen.getByText("Transactions Failed");
     const card = failedLabel.closest(".rounded-lg")!;

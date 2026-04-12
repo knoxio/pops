@@ -66,6 +66,7 @@ function makeStoreState(overrides: Partial<typeof storeState> = {}) {
       failed: [],
       skipped: [],
     },
+    commitResult: null,
     prevStep: mockPrevStep,
     nextStep: mockNextStep,
     setCommitResult: mockSetCommitResult,
@@ -216,6 +217,7 @@ describe("FinalReviewStep", () => {
         rulesApplied: { add: 1, edit: 0, disable: 0, remove: 0 },
         transactionsImported: 5,
         transactionsFailed: 0,
+        failedDetails: [],
         retroactiveReclassifications: 3,
       },
     });
@@ -226,9 +228,34 @@ describe("FinalReviewStep", () => {
         rulesApplied: { add: 1, edit: 0, disable: 0, remove: 0 },
         transactionsImported: 5,
         transactionsFailed: 0,
+        failedDetails: [],
         retroactiveReclassifications: 3,
       });
       expect(screen.getByText("Continue")).toBeDefined();
+    });
+  });
+
+  it("shows inline result summary after successful commit (US-05 AC-4)", async () => {
+    const resultData = {
+      entitiesCreated: 2,
+      rulesApplied: { add: 1, edit: 0, disable: 0, remove: 0 },
+      transactionsImported: 5,
+      transactionsFailed: 0,
+      failedDetails: [],
+      retroactiveReclassifications: 3,
+    };
+    storeState = makeStoreState({ commitResult: resultData });
+    render(<FinalReviewStep />);
+    fireEvent.click(screen.getByText("Approve & Commit All"));
+
+    mutationCallbacks.onSuccess?.({ data: resultData });
+
+    await waitFor(() => {
+      expect(screen.getByText("Commit Successful")).toBeDefined();
+      expect(screen.getByText("Entities created:")).toBeDefined();
+      expect(screen.getByText("Transactions imported:")).toBeDefined();
+      expect(screen.getByText("Rules applied:")).toBeDefined();
+      expect(screen.getByText("Reclassifications:")).toBeDefined();
     });
   });
 

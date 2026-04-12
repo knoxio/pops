@@ -600,6 +600,7 @@ describe("imports.commitImport", () => {
     expect(result.data.entitiesCreated).toBe(0);
     expect(result.data.transactionsImported).toBe(1);
     expect(result.data.transactionsFailed).toBe(0);
+    expect(result.data.failedDetails).toEqual([]);
     expect(result.data.rulesApplied).toEqual({ add: 0, edit: 0, disable: 0, remove: 0 });
     expect(result.data.retroactiveReclassifications).toBe(0);
     expect(result.message).toBe("Import committed");

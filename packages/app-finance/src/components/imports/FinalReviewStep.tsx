@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import {
+  CheckCircle,
   ChevronDown,
   ChevronRight,
   Plus,
@@ -105,6 +106,7 @@ export function FinalReviewStep() {
   const prevStep = useImportStore((s) => s.prevStep);
   const nextStep = useImportStore((s) => s.nextStep);
   const setCommitResult = useImportStore((s) => s.setCommitResult);
+  const commitResult = useImportStore((s) => s.commitResult);
 
   const [commitError, setCommitError] = useState<string | null>(null);
   const [committed, setCommitted] = useState(false);
@@ -272,6 +274,86 @@ export function FinalReviewStep() {
             <p className="font-medium">Commit failed</p>
             <p className="text-xs mt-1">{commitError}</p>
           </div>
+        </div>
+      )}
+
+      {/* Inline result after successful commit (US-05 AC-4) */}
+      {committed && commitResult && (
+        <div className="space-y-3 border rounded-lg p-4 bg-green-50/50 dark:bg-green-950/30 border-green-200 dark:border-green-800">
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <h3 className="font-semibold text-green-900 dark:text-green-100">Commit Successful</h3>
+          </div>
+          <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Entities created:</span>
+              <span className="font-medium">{commitResult.entitiesCreated}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Transactions imported:</span>
+              <span className="font-medium">{commitResult.transactionsImported}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Rules applied:</span>
+              <span className="font-medium">
+                {commitResult.rulesApplied.add +
+                  commitResult.rulesApplied.edit +
+                  commitResult.rulesApplied.disable +
+                  commitResult.rulesApplied.remove}
+              </span>
+            </div>
+            {commitResult.transactionsFailed > 0 && (
+              <div className="flex justify-between">
+                <span className="text-red-600 dark:text-red-400">Transactions failed:</span>
+                <span className="font-medium text-red-600 dark:text-red-400">
+                  {commitResult.transactionsFailed}
+                </span>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Reclassifications:</span>
+              <span className="font-medium">{commitResult.retroactiveReclassifications}</span>
+            </div>
+          </div>
+          {/* Rule breakdown by op type */}
+          {commitResult.rulesApplied.add +
+            commitResult.rulesApplied.edit +
+            commitResult.rulesApplied.disable +
+            commitResult.rulesApplied.remove >
+            0 && (
+            <div className="flex gap-3 text-xs text-muted-foreground pt-1 border-t">
+              {commitResult.rulesApplied.add > 0 && (
+                <span>{commitResult.rulesApplied.add} added</span>
+              )}
+              {commitResult.rulesApplied.edit > 0 && (
+                <span>{commitResult.rulesApplied.edit} edited</span>
+              )}
+              {commitResult.rulesApplied.disable > 0 && (
+                <span>{commitResult.rulesApplied.disable} disabled</span>
+              )}
+              {commitResult.rulesApplied.remove > 0 && (
+                <span>{commitResult.rulesApplied.remove} removed</span>
+              )}
+            </div>
+          )}
+          {/* Inline failure details */}
+          {commitResult.failedDetails && commitResult.failedDetails.length > 0 && (
+            <div className="pt-1 border-t">
+              <p className="text-xs font-medium text-red-600 dark:text-red-400 mb-1">
+                Failed transactions:
+              </p>
+              <ul className="space-y-1">
+                {commitResult.failedDetails.map((detail, idx) => (
+                  <li key={idx} className="text-xs text-red-700 dark:text-red-300 flex gap-2">
+                    {detail.checksum && (
+                      <span className="font-mono shrink-0">{detail.checksum.slice(0, 12)}</span>
+                    )}
+                    <span className="truncate">{detail.error}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 

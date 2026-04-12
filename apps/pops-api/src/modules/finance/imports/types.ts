@@ -241,11 +241,19 @@ export const rulesAppliedSchema = z.object({
 
 export type RulesApplied = z.infer<typeof rulesAppliedSchema>;
 
+export const failedTransactionDetailSchema = z.object({
+  checksum: z.string().nullable(),
+  error: z.string(),
+});
+
+export type FailedTransactionDetail = z.infer<typeof failedTransactionDetailSchema>;
+
 export const commitResultSchema = z.object({
   entitiesCreated: z.number().int().nonnegative(),
   rulesApplied: rulesAppliedSchema,
   transactionsImported: z.number().int().nonnegative(),
   transactionsFailed: z.number().int().nonnegative(),
+  failedDetails: z.array(failedTransactionDetailSchema),
   retroactiveReclassifications: z.number().int().nonnegative(),
 });
 
