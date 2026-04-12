@@ -21,6 +21,7 @@ function makeRule(overrides: Partial<CorrectionRow> = {}): CorrectionRow {
     isActive: true,
     confidence: 0.95,
     timesApplied: 10,
+    priority: 0,
     createdAt: "2026-01-01T00:00:00Z",
     lastUsedAt: "2026-03-01T00:00:00Z",
     ...overrides,
