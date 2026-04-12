@@ -27,8 +27,9 @@ Build a personal media intelligence app — not just a tracker, but a system tha
 | 5 | [Discovery & Recommendations](epics/05-discovery-recommendations.md) | Trending, new releases, personalised suggestions | Done |
 | 6 | [Plex Sync](epics/06-plex-sync.md) | Library import, watch history sync (local + Discover cloud), watchlist sync, auto-check on add | Done |
 | 7 | [Radarr & Sonarr](epics/07-radarr-sonarr.md) | Status display, request management — evolves toward full Overseerr replacement | Done |
+| 8 | [Library Rotation](epics/08-library-rotation.md) | Automated movie lifecycle: source lists, daily add/remove cycle, disk space gating | Not started |
 
-Epic 0 is prerequisite to everything. Epic 1 prerequisite to 2. Epics 3-4 parallel after 2. Epic 5 depends on 4. Epics 6-7 parallel after 3.
+Epic 0 is prerequisite to everything. Epic 1 prerequisite to 2. Epics 3-4 parallel after 2. Epic 5 depends on 4. Epics 6-7 parallel after 3. Epic 8 depends on 3, 6, and 7.
 
 ## Key Decisions
 
@@ -44,6 +45,8 @@ Epic 0 is prerequisite to everything. Epic 1 prerequisite to 2. Epics 3-4 parall
 | Plex sync | Polling | Simpler than webhooks, no network config |
 | Radarr/Sonarr | Status + request management | Starts read-only, evolves to full request/management (replacing Overseerr) |
 | Library ownership | POPS-owned, multi-source | Library and watch history live in POPS — Plex, manual add, and future sources feed into it |
+| Library rotation | Automated daily cycle | Source-fed candidates, weighted random selection, disk-space-gated, 10-day leaving grace period |
+| Removal strategy | Radarr delete + file removal | Space > bandwidth; re-downloading is the feature, not a cost |
 
 ## Risks
 
