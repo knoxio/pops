@@ -15,6 +15,8 @@ import {
   getRotationSchedulerStatus,
   runRotationCycleNow,
 } from './scheduler.js';
+import { getRegisteredTypes } from './source-registry.js';
+import { syncSource } from './sync-source.js';
 
 export const rotationRouter = router({
   /** Cancel leaving status for a specific movie. */
@@ -75,5 +77,17 @@ export const rotationRouter = router({
       .where(eq(movies.rotationStatus, 'leaving'))
       .orderBy(asc(movies.rotationExpiresAt))
       .all();
+  }),
+
+  /** Sync a specific rotation source (fetch candidates from adapter). */
+  syncSource: protectedProcedure
+    .input(z.object({ sourceId: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      return syncSource(input.sourceId);
+    }),
+
+  /** List registered source adapter types. */
+  sourceTypes: protectedProcedure.query(() => {
+    return { types: getRegisteredTypes() };
   }),
 });
