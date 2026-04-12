@@ -1,8 +1,8 @@
 /**
  * Local re-evaluation engine (PRD-030 US-07).
  *
- * Re-evaluates uncertain and failed transactions against a merged rule set
- * using the same matching logic as the server-side findMatchingCorrectionFromRules.
+ * Re-evaluates uncertain and failed transactions against a merged rule set using
+ * the same matching logic as the server-side findMatchingCorrectionFromRules.
  * Runs entirely client-side with no server round-trip.
  */
 import type {
