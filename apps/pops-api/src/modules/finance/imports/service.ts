@@ -19,7 +19,10 @@ import { updateProgress } from "./progress-store.js";
 import {
   findMatchingCorrection,
   findMatchingCorrectionFromRules,
+  listCorrections,
+  applyChangeSetToRules,
 } from "../../core/corrections/service.js";
+import type { CorrectionRow, ChangeSet } from "../../core/corrections/types.js";
 import { suggestTags } from "../../../shared/tag-suggester.js";
 import type { TransactionRow } from "../transactions/types.js";
 import { applyChangeSet } from "../../core/corrections/service.js";
@@ -339,6 +342,204 @@ export function applyLearnedCorrection(args: {
       ),
     },
     bucket: status === "matched" ? "matched" : "uncertain",
+  };
+}
+
+/**
+ * Like applyLearnedCorrection but uses a provided rule set instead of reading from DB.
+ * Used for re-evaluation against merged rules (DB + pending ChangeSets).
+ */
+function applyLearnedCorrectionFromRules(args: {
+  transaction: ParsedTransaction;
+  rules: CorrectionRow[];
+  minConfidence: number;
+  knownTags: string[];
+}): { processed: ProcessedTransaction; bucket: "matched" | "uncertain" } | null {
+  const { transaction, rules, minConfidence, knownTags } = args;
+
+  const correctionResult = findMatchingCorrectionFromRules(
+    transaction.description,
+    rules,
+    minConfidence
+  );
+  if (!correctionResult) return null;
+
+  const { correction, status } = correctionResult;
+  const entityId = correction.entityId;
+
+  if (!entityId) {
+    if (correction.transactionType) {
+      return {
+        processed: {
+          ...transaction,
+          location: correction.location ?? transaction.location,
+          transactionType: correction.transactionType,
+          entity: {
+            matchType: "learned",
+            confidence: correction.confidence,
+          },
+          ruleProvenance: {
+            source: "correction",
+            ruleId: correction.id,
+            pattern: correction.descriptionPattern,
+            matchType: correction.matchType,
+            confidence: correction.confidence,
+          },
+          status: "matched",
+          suggestedTags: buildSuggestedTags(
+            transaction.description,
+            null,
+            parseCorrectionTags(correction.tags),
+            null,
+            knownTags,
+            correction.descriptionPattern
+          ),
+        },
+        bucket: "matched",
+      };
+    }
+    return null;
+  }
+
+  return {
+    processed: {
+      ...transaction,
+      location: correction.location ?? transaction.location,
+      entity: {
+        entityId,
+        entityName: correction.entityName ?? "Unknown",
+        matchType: "learned",
+        confidence: correction.confidence,
+      },
+      ruleProvenance: {
+        source: "correction",
+        ruleId: correction.id,
+        pattern: correction.descriptionPattern,
+        matchType: correction.matchType,
+        confidence: correction.confidence,
+      },
+      status,
+      suggestedTags: buildSuggestedTags(
+        transaction.description,
+        entityId,
+        parseCorrectionTags(correction.tags),
+        null,
+        knownTags,
+        correction.descriptionPattern
+      ),
+    },
+    bucket: status === "matched" ? "matched" : "uncertain",
+  };
+}
+
+/**
+ * Re-evaluate import session using merged rules (DB + pending ChangeSets).
+ * Same logic as reevaluateImportSessionResult but uses the provided merged
+ * rules for correction matching instead of reading from DB.
+ */
+export function reevaluateImportSessionWithRules(args: {
+  result: ProcessImportOutput;
+  minConfidence: number;
+  pendingChangeSets: { changeSet: ChangeSet }[];
+}): { nextResult: ProcessImportOutput; affectedCount: number } {
+  const { result, minConfidence, pendingChangeSets } = args;
+
+  // Build merged rules: DB rules + pending ChangeSets applied in order
+  const dbRules = listCorrections(undefined, 50_000, 0).rows;
+  const mergedRules =
+    pendingChangeSets.length > 0
+      ? pendingChangeSets.reduce((acc, pcs) => applyChangeSetToRules(acc, pcs.changeSet), dbRules)
+      : dbRules;
+
+  const { entityLookup, aliasMap: aliases } = loadEntityMaps();
+  const knownTags = loadKnownTags();
+
+  const nextMatched: ProcessedTransaction[] = [...result.matched];
+  const nextUncertain: ProcessedTransaction[] = [];
+  const nextFailed: ProcessedTransaction[] = [];
+
+  let affectedCount = 0;
+
+  const remaining: Array<{ tx: ProcessedTransaction; bucket: "uncertain" | "failed" }> = [
+    ...result.uncertain.map((tx) => ({ tx, bucket: "uncertain" as const })),
+    ...result.failed.map((tx) => ({ tx, bucket: "failed" as const })),
+  ];
+
+  for (let i = 0; i < remaining.length; i++) {
+    const item = remaining[i];
+    if (!item) continue;
+
+    const prevTx = item.tx;
+    const prevBucket = item.bucket;
+
+    // Stage 1: Corrections using merged rules
+    const correctionApplied = applyLearnedCorrectionFromRules({
+      transaction: prevTx,
+      rules: mergedRules,
+      minConfidence,
+      knownTags,
+    });
+
+    if (correctionApplied) {
+      const nextBucket = correctionApplied.bucket;
+      const nextTx = correctionApplied.processed;
+
+      const changed =
+        prevBucket !== nextBucket ||
+        prevTx.status !== nextTx.status ||
+        prevTx.transactionType !== nextTx.transactionType ||
+        prevTx.entity.entityId !== nextTx.entity.entityId ||
+        prevTx.entity.entityName !== nextTx.entity.entityName ||
+        prevTx.entity.matchType !== nextTx.entity.matchType;
+
+      if (changed) affectedCount += 1;
+
+      if (nextBucket === "matched") nextMatched.push(nextTx);
+      else nextUncertain.push(nextTx);
+      continue;
+    }
+
+    // Stage 2: Universal entity matching
+    const match = matchEntity(prevTx.description, entityLookup, aliases);
+    if (match) {
+      const entityEntry = entityLookup.get(match.entityName.toLowerCase());
+      if (!entityEntry) {
+        if (prevBucket === "failed") nextFailed.push(prevTx);
+        else nextUncertain.push(prevTx);
+        continue;
+      }
+
+      const nextTx: ProcessedTransaction = {
+        ...prevTx,
+        entity: {
+          entityId: entityEntry.id,
+          entityName: entityEntry.name,
+          matchType: match.matchType,
+        },
+        status: "matched",
+        error: undefined,
+        suggestedTags: buildSuggestedTags(prevTx.description, entityEntry.id, [], null, knownTags),
+      };
+
+      // Entity match found for a previously uncertain/failed tx — always counts as affected.
+      affectedCount += 1;
+      nextMatched.push(nextTx);
+      continue;
+    }
+
+    // No deterministic match found: preserve current item as-is.
+    if (prevBucket === "failed") nextFailed.push(prevTx);
+    else nextUncertain.push(prevTx);
+  }
+
+  return {
+    nextResult: {
+      ...result,
+      matched: nextMatched,
+      uncertain: nextUncertain,
+      failed: nextFailed,
+    },
+    affectedCount,
   };
 }
 

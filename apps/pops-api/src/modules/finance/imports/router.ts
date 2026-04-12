@@ -25,10 +25,12 @@ import {
   executeImportWithProgress,
   createEntity,
   reevaluateImportSessionResult,
+  reevaluateImportSessionWithRules,
   commitImport,
 } from "./service.js";
 import { setProgress, getProgress, updateProgress } from "./progress-store.js";
 import { applyChangeSet } from "../../core/corrections/service.js";
+import { ChangeSetSchema } from "../../core/corrections/types.js";
 import { NotFoundError, ValidationError } from "../../../shared/errors.js";
 
 function isProcessImportOutput(result: unknown): result is ProcessImportOutput {
@@ -184,4 +186,48 @@ export const importsRouter = router({
       throw err;
     }
   }),
+
+  /**
+   * Re-evaluate import session transactions using merged rules (DB + pending ChangeSets).
+   * Used after browse-mode rule edits where ChangeSets are buffered locally.
+   * Does NOT apply any ChangeSets to the DB — purely re-evaluates using merged rules.
+   */
+  reevaluateWithPendingRules: protectedProcedure
+    .input(
+      z.object({
+        sessionId: z.string().uuid(),
+        minConfidence: z.number().min(0).max(1).default(0.7),
+        pendingChangeSets: z.array(z.object({ changeSet: ChangeSetSchema })).min(1),
+      })
+    )
+    .mutation(({ input }) => {
+      const progress = getProgress(input.sessionId);
+      if (!progress) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Import session not found" });
+      }
+      if (progress.status !== "completed" || !progress.result) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Import session is not ready for re-evaluation",
+        });
+      }
+
+      const result = progress.result;
+      if (!isProcessImportOutput(result)) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Import session result is not a processImport result",
+        });
+      }
+
+      const { nextResult, affectedCount } = reevaluateImportSessionWithRules({
+        result,
+        minConfidence: input.minConfidence,
+        pendingChangeSets: input.pendingChangeSets,
+      });
+
+      updateProgress(input.sessionId, { result: nextResult });
+
+      return { result: nextResult, affectedCount };
+    }),
 });

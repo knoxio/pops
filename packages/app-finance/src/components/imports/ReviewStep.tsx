@@ -35,6 +35,7 @@ export function ReviewStep() {
     nextStep,
     goToStep,
     findSimilar,
+    pendingChangeSets,
   } = useImportStore();
 
   const [localTransactions, setLocalTransactions] = useState(processedTransactions);
@@ -193,6 +194,9 @@ export function ReviewStep() {
     },
     [generateProposal]
   );
+
+  const reevaluateWithPendingRulesMutation =
+    trpc.finance.imports.reevaluateWithPendingRules.useMutation();
 
   /**
    * Handle entity selection. Always resolves the one transaction the user
@@ -624,9 +628,26 @@ export function ReviewStep() {
           ...localTransactions.skipped,
         ].map((t) => ({ checksum: t.checksum, description: t.description }))}
         onBrowseClose={(hadChanges) => {
-          if (hadChanges) {
-            toast.success(
-              "Rule changes saved — they will be applied when the import is committed."
+          if (hadChanges && processSessionId && pendingChangeSets.length > 0) {
+            reevaluateWithPendingRulesMutation.mutate(
+              {
+                sessionId: processSessionId,
+                minConfidence: 0.7,
+                pendingChangeSets: pendingChangeSets.map((pcs) => ({
+                  changeSet: pcs.changeSet,
+                })),
+              },
+              {
+                onSuccess: ({ result, affectedCount }) => {
+                  setLocalTransactions(result);
+                  toast.success(
+                    `Rules applied — ${affectedCount} transaction${affectedCount === 1 ? "" : "s"} re-evaluated`
+                  );
+                },
+                onError: () => {
+                  toast.error("Failed to re-evaluate transactions against updated rules");
+                },
+              }
             );
           }
         }}
