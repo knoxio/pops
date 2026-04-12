@@ -1,7 +1,7 @@
 # PRD-023: Entities
 
 > Epic: [02 — Entities](../../epics/02-entities.md)
-> Status: Partial
+> Status: Done
 
 ## Overview
 
@@ -64,7 +64,7 @@ Build the entity registry — the merchant/payee database that transactions and 
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 01 | [us-01-schema-api](us-01-schema-api.md) | Entity table, CRUD procedures, alias/tag serialization | Partial | No (first) |
+| 01 | [us-01-schema-api](us-01-schema-api.md) | Entity table, CRUD procedures, alias/tag serialization | Done | No (first) |
 | 02 | [us-02-entities-page](us-02-entities-page.md) | DataTable with search, type filter, alias/tag display | Done | Blocked by us-01 |
 | 03 | [us-03-entity-crud-ui](us-03-entity-crud-ui.md) | Create/edit/delete dialogs on the entities page | Done | Blocked by us-02 |
 

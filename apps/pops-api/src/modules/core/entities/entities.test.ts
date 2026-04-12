@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { TRPCError } from "@trpc/server";
 import type { Database } from "better-sqlite3";
-import { setupTestContext, seedEntity, createCaller } from "../../../shared/test-utils.js";
+import {
+  setupTestContext,
+  seedEntity,
+  seedTransaction,
+  createCaller,
+} from "../../../shared/test-utils.js";
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;
@@ -283,6 +288,25 @@ describe("entities.update", () => {
       code: "BAD_REQUEST",
     });
   });
+
+  it("throws CONFLICT when renaming to an existing name", async () => {
+    seedEntity(db, { name: "Woolworths" });
+    const colesId = seedEntity(db, { name: "Coles" });
+
+    await expect(
+      caller.core.entities.update({ id: colesId, data: { name: "Woolworths" } })
+    ).rejects.toThrow(TRPCError);
+    await expect(
+      caller.core.entities.update({ id: colesId, data: { name: "Woolworths" } })
+    ).rejects.toMatchObject({ code: "CONFLICT" });
+  });
+
+  it("allows renaming to the same name (no false conflict)", async () => {
+    const id = seedEntity(db, { name: "Woolworths" });
+
+    const result = await caller.core.entities.update({ id, data: { name: "Woolworths" } });
+    expect(result.data.name).toBe("Woolworths");
+  });
 });
 
 describe("entities.delete", () => {
@@ -312,5 +336,18 @@ describe("entities.delete", () => {
     await expect(caller.core.entities.delete({ id })).rejects.toMatchObject({
       code: "NOT_FOUND",
     });
+  });
+
+  it("sets entity_id to NULL on related transactions (FK cascade)", async () => {
+    const entityId = seedEntity(db, { name: "Woolworths" });
+    const txnId = seedTransaction(db, { entity_id: entityId, entity_name: "Woolworths" });
+
+    await caller.core.entities.delete({ id: entityId });
+
+    const row = db
+      .prepare("SELECT entity_id, entity_name FROM transactions WHERE id = ?")
+      .get(txnId) as { entity_id: string | null; entity_name: string | null };
+    expect(row.entity_id).toBeNull();
+    expect(row.entity_name).toBe("Woolworths"); // denormalized name preserved
   });
 });

@@ -3,7 +3,7 @@
  * SQLite is the source of truth. All operations are local.
  */
 import crypto from "crypto";
-import { eq, like, count, and } from "drizzle-orm";
+import { eq, like, count, and, ne } from "drizzle-orm";
 import { getDrizzle } from "../../../db.js";
 import { entities } from "@pops/db-types";
 import { NotFoundError, ConflictError } from "../../../shared/errors.js";
@@ -103,6 +103,19 @@ export function updateEntity(id: string, input: UpdateEntityInput): EntityRow {
 
   // Verify it exists first
   getEntity(id);
+
+  // Check for duplicate name (excluding current entity)
+  if (input.name !== undefined) {
+    const [existing] = db
+      .select({ id: entities.id })
+      .from(entities)
+      .where(and(eq(entities.name, input.name), ne(entities.id, id)))
+      .all();
+
+    if (existing) {
+      throw new ConflictError(`Entity with name '${input.name}' already exists`);
+    }
+  }
 
   const updates: Partial<typeof entities.$inferInsert> = {};
   let hasUpdates = false;

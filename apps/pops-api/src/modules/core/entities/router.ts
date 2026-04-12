@@ -75,6 +75,9 @@ export const entitiesRouter = router({
         if (err instanceof NotFoundError) {
           throw new TRPCError({ code: "NOT_FOUND", message: err.message });
         }
+        if (err instanceof ConflictError) {
+          throw new TRPCError({ code: "CONFLICT", message: err.message });
+        }
         throw err;
       }
     }),
