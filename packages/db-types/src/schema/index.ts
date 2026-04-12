@@ -32,3 +32,4 @@ export { debriefResults } from './debrief-results.js';
 export { tierOverrides } from './tier-overrides.js';
 export { debriefStatus } from './debrief-status.js';
 export { shelfImpressions } from './shelf-impressions.js';
+export { rotationLog } from './rotation-log.js';

@@ -166,11 +166,15 @@ export function createTestDb(): Database {
       vote_count         INTEGER,
       genres             TEXT,
       created_at         TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at         TEXT NOT NULL DEFAULT (datetime('now'))
+      updated_at         TEXT NOT NULL DEFAULT (datetime('now')),
+      rotation_status      TEXT,
+      rotation_expires_at  TEXT,
+      rotation_marked_at   TEXT
     );
     CREATE UNIQUE INDEX IF NOT EXISTS idx_movies_tmdb_id ON movies(tmdb_id);
     CREATE INDEX IF NOT EXISTS idx_movies_title ON movies(title);
     CREATE INDEX IF NOT EXISTS idx_movies_release_date ON movies(release_date);
+    CREATE INDEX IF NOT EXISTS idx_movies_rotation_status ON movies(rotation_status);
 
     CREATE TABLE IF NOT EXISTS transaction_corrections (
       id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),

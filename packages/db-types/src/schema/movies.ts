@@ -31,8 +31,13 @@ export const movies = sqliteTable(
     updatedAt: text('updated_at')
       .notNull()
       .default(sql`(datetime('now'))`),
+    // Rotation fields (PRD-070)
+    rotationStatus: text('rotation_status', { enum: ['leaving', 'protected'] }),
+    rotationExpiresAt: text('rotation_expires_at'),
+    rotationMarkedAt: text('rotation_marked_at'),
   },
   (table) => [
+    index('idx_movies_rotation_status').on(table.rotationStatus),
     uniqueIndex('idx_movies_tmdb_id').on(table.tmdbId),
     index('idx_movies_title').on(table.title),
     index('idx_movies_release_date').on(table.releaseDate),
