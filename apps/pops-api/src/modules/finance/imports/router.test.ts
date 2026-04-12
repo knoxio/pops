@@ -569,3 +569,248 @@ describe("imports.applyChangeSetAndReevaluate", () => {
     expect(after.uncertain.some((t) => t.checksum === "zzz999")).toBe(true);
   });
 });
+
+// ---------------------------------------------------------------------------
+// commitImport
+// ---------------------------------------------------------------------------
+
+function makeTxn(overrides: Partial<ConfirmedTransaction> = {}): ConfirmedTransaction {
+  return {
+    date: "2025-01-15",
+    description: overrides.description ?? "WOOLWORTHS 1234",
+    amount: overrides.amount ?? -42.5,
+    account: overrides.account ?? "Amex",
+    rawRow: overrides.rawRow ?? '{"line":"test"}',
+    checksum: overrides.checksum ?? `chk-${Math.random().toString(36).slice(2, 10)}`,
+    ...overrides,
+  };
+}
+
+describe("imports.commitImport", () => {
+  it("commits transactions only (no entities or changeSets)", async () => {
+    const result = await caller.finance.imports.commitImport({
+      transactions: [makeTxn({ description: "COLES SUPERMARKET" })],
+    });
+
+    expect(result.data.entitiesCreated).toBe(0);
+    expect(result.data.transactionsImported).toBe(1);
+    expect(result.data.transactionsFailed).toBe(0);
+    expect(result.data.rulesApplied).toEqual({ add: 0, edit: 0, disable: 0, remove: 0 });
+    expect(result.data.retroactiveReclassifications).toBe(0);
+    expect(result.message).toBe("Import committed");
+
+    // Verify transaction written to DB
+    const rows = db
+      .prepare("SELECT * FROM transactions WHERE description = ?")
+      .all("COLES SUPERMARKET");
+    expect(rows).toHaveLength(1);
+  });
+
+  it("creates pending entities and resolves temp IDs in transactions", async () => {
+    const tempId = "temp:entity:00000000-0000-0000-0000-000000000001";
+
+    const result = await caller.finance.imports.commitImport({
+      entities: [{ tempId, name: "Woolworths", type: "company" }],
+      changeSets: [],
+      transactions: [
+        makeTxn({
+          description: "WOOLWORTHS 1234",
+          entityId: tempId,
+          entityName: "Woolworths",
+        }),
+      ],
+    });
+
+    expect(result.data.entitiesCreated).toBe(1);
+    expect(result.data.transactionsImported).toBe(1);
+
+    // Verify entity was created
+    const entity = db.prepare("SELECT * FROM entities WHERE name = ?").get("Woolworths") as {
+      id: string;
+      type: string;
+    };
+    expect(entity).toBeDefined();
+    expect(entity.type).toBe("company");
+
+    // Verify transaction has the real entity ID (not temp ID)
+    const txn = db
+      .prepare("SELECT entity_id FROM transactions WHERE description = ?")
+      .get("WOOLWORTHS 1234") as { entity_id: string };
+    expect(txn.entity_id).toBe(entity.id);
+    expect(txn.entity_id).not.toBe(tempId);
+  });
+
+  it("creates entities with non-default type", async () => {
+    const tempId = "temp:entity:00000000-0000-0000-0000-000000000002";
+
+    await caller.finance.imports.commitImport({
+      entities: [{ tempId, name: "ATO", type: "government" }],
+      transactions: [makeTxn()],
+    });
+
+    const entity = db.prepare("SELECT type FROM entities WHERE name = ?").get("ATO") as {
+      type: string;
+    };
+    expect(entity.type).toBe("government");
+  });
+
+  it("resolves temp IDs in changeSet add ops", async () => {
+    const tempId = "temp:entity:00000000-0000-0000-0000-000000000003";
+
+    const result = await caller.finance.imports.commitImport({
+      entities: [{ tempId, name: "TestCorp" }],
+      changeSets: [
+        {
+          ops: [
+            {
+              op: "add" as const,
+              data: {
+                descriptionPattern: "TESTCORP",
+                matchType: "exact" as const,
+                entityId: tempId,
+                entityName: "TestCorp",
+              },
+            },
+          ],
+        },
+      ],
+      transactions: [makeTxn()],
+    });
+
+    expect(result.data.entitiesCreated).toBe(1);
+    expect(result.data.rulesApplied).toEqual({ add: 1, edit: 0, disable: 0, remove: 0 });
+
+    // Verify the correction rule has the real entity ID
+    const entity = db.prepare("SELECT id FROM entities WHERE name = ?").get("TestCorp") as {
+      id: string;
+    };
+    const rule = db
+      .prepare("SELECT entity_id FROM transaction_corrections WHERE description_pattern = ?")
+      .get("TESTCORP") as { entity_id: string };
+    expect(rule.entity_id).toBe(entity.id);
+  });
+
+  it("skips empty entities and changeSets without error", async () => {
+    const result = await caller.finance.imports.commitImport({
+      entities: [],
+      changeSets: [],
+      transactions: [makeTxn()],
+    });
+
+    expect(result.data.entitiesCreated).toBe(0);
+    expect(result.data.rulesApplied).toEqual({ add: 0, edit: 0, disable: 0, remove: 0 });
+    expect(result.data.transactionsImported).toBe(1);
+  });
+
+  it("rejects unknown temp IDs with BAD_REQUEST", async () => {
+    const unknownTempId = "temp:entity:00000000-0000-0000-0000-999999999999";
+
+    await expect(
+      caller.finance.imports.commitImport({
+        transactions: [makeTxn({ entityId: unknownTempId })],
+      })
+    ).rejects.toThrow(TRPCError);
+
+    await expect(
+      caller.finance.imports.commitImport({
+        transactions: [makeTxn({ entityId: unknownTempId })],
+      })
+    ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+
+  it("rejects duplicate temp IDs", async () => {
+    const tempId = "temp:entity:00000000-0000-0000-0000-000000000004";
+
+    await expect(
+      caller.finance.imports.commitImport({
+        entities: [
+          { tempId, name: "Entity A" },
+          { tempId, name: "Entity B" },
+        ],
+        transactions: [makeTxn()],
+      })
+    ).rejects.toThrow(TRPCError);
+  });
+
+  it("rejects duplicate entity names", async () => {
+    const tempId1 = "temp:entity:00000000-0000-0000-0000-000000000005";
+    const tempId2 = "temp:entity:00000000-0000-0000-0000-000000000006";
+
+    await expect(
+      caller.finance.imports.commitImport({
+        entities: [
+          { tempId: tempId1, name: "Woolworths" },
+          { tempId: tempId2, name: "woolworths" },
+        ],
+        transactions: [makeTxn()],
+      })
+    ).rejects.toThrow(TRPCError);
+  });
+
+  it("rejects malformed temp ID format", async () => {
+    await expect(
+      caller.finance.imports.commitImport({
+        entities: [{ tempId: "bad-format", name: "Test" }],
+        transactions: [makeTxn()],
+      })
+    ).rejects.toThrow();
+  });
+
+  it("rolls back all writes if changeSet application fails", async () => {
+    const tempId = "temp:entity:00000000-0000-0000-0000-000000000007";
+    const entitiesBefore = db.prepare("SELECT count(*) as c FROM entities").get() as { c: number };
+    const txnsBefore = db.prepare("SELECT count(*) as c FROM transactions").get() as { c: number };
+
+    // This should fail because the edit op references a non-existent rule ID
+    await expect(
+      caller.finance.imports.commitImport({
+        entities: [{ tempId, name: "RollbackTest" }],
+        changeSets: [
+          {
+            ops: [{ op: "edit" as const, id: "non-existent-rule-id", data: { confidence: 0.9 } }],
+          },
+        ],
+        transactions: [makeTxn({ entityId: tempId, entityName: "RollbackTest" })],
+      })
+    ).rejects.toThrow();
+
+    // Verify entity was NOT created (rolled back)
+    const entitiesAfter = db.prepare("SELECT count(*) as c FROM entities").get() as { c: number };
+    expect(entitiesAfter.c).toBe(entitiesBefore.c);
+
+    // Verify no transactions were written (rolled back)
+    const txnsAfter = db.prepare("SELECT count(*) as c FROM transactions").get() as { c: number };
+    expect(txnsAfter.c).toBe(txnsBefore.c);
+  });
+
+  it("handles multiple entities and multiple transactions", async () => {
+    const tempId1 = "temp:entity:00000000-0000-0000-0000-000000000008";
+    const tempId2 = "temp:entity:00000000-0000-0000-0000-000000000009";
+
+    const result = await caller.finance.imports.commitImport({
+      entities: [
+        { tempId: tempId1, name: "Woolworths" },
+        { tempId: tempId2, name: "Coles", type: "company" },
+      ],
+      changeSets: [],
+      transactions: [
+        makeTxn({ description: "WOOLWORTHS 1", entityId: tempId1, entityName: "Woolworths" }),
+        makeTxn({ description: "COLES 1", entityId: tempId2, entityName: "Coles" }),
+        makeTxn({ description: "TRANSFER", transactionType: "transfer" }),
+      ],
+    });
+
+    expect(result.data.entitiesCreated).toBe(2);
+    expect(result.data.transactionsImported).toBe(3);
+  });
+
+  it("throws UNAUTHORIZED without auth", async () => {
+    const unauthCaller = createCaller(false);
+    await expect(
+      unauthCaller.finance.imports.commitImport({ transactions: [makeTxn()] })
+    ).rejects.toThrow(TRPCError);
+    await expect(
+      unauthCaller.finance.imports.commitImport({ transactions: [makeTxn()] })
+    ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+});

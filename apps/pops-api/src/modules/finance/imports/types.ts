@@ -208,3 +208,45 @@ export const applyChangeSetAndReevaluateOutputSchema = z.object({
 export type ApplyChangeSetAndReevaluateOutput = z.infer<
   typeof applyChangeSetAndReevaluateOutputSchema
 >;
+
+// ---------------------------------------------------------------------------
+// Commit import (PRD-031 US-03)
+// ---------------------------------------------------------------------------
+
+export const pendingEntitySchema = z.object({
+  tempId: z.string().regex(/^temp:entity:[0-9a-f-]{36}$/, "Temp ID must match temp:entity:{uuid}"),
+  name: z.string().min(1),
+  type: z.enum(["company", "person", "government", "bank"]).default("company"),
+});
+
+export type PendingEntity = z.infer<typeof pendingEntitySchema>;
+
+export const pendingChangeSetSchema = ChangeSetSchema;
+export type PendingChangeSet = z.infer<typeof pendingChangeSetSchema>;
+
+export const commitPayloadSchema = z.object({
+  entities: z.array(pendingEntitySchema).default([]),
+  changeSets: z.array(pendingChangeSetSchema).default([]),
+  transactions: z.array(confirmedTransactionSchema),
+});
+
+export type CommitPayload = z.infer<typeof commitPayloadSchema>;
+
+export const rulesAppliedSchema = z.object({
+  add: z.number().int().nonnegative(),
+  edit: z.number().int().nonnegative(),
+  disable: z.number().int().nonnegative(),
+  remove: z.number().int().nonnegative(),
+});
+
+export type RulesApplied = z.infer<typeof rulesAppliedSchema>;
+
+export const commitResultSchema = z.object({
+  entitiesCreated: z.number().int().nonnegative(),
+  rulesApplied: rulesAppliedSchema,
+  transactionsImported: z.number().int().nonnegative(),
+  transactionsFailed: z.number().int().nonnegative(),
+  retroactiveReclassifications: z.number().int().nonnegative(),
+});
+
+export type CommitResult = z.infer<typeof commitResultSchema>;

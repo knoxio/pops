@@ -6,6 +6,7 @@
  * - executeImport: Write confirmed transactions to SQLite - returns session ID for polling
  * - getImportProgress: Poll for import progress by session ID
  * - createEntity: Create new entity in SQLite
+ * - commitImport: Atomically create entities, apply changeSets, and write transactions
  */
 import { z } from "zod";
 import crypto from "crypto";
@@ -16,6 +17,7 @@ import {
   executeImportInputSchema,
   createEntityInputSchema,
   applyChangeSetAndReevaluateInputSchema,
+  commitPayloadSchema,
   type ProcessImportOutput,
 } from "./types.js";
 import {
@@ -23,10 +25,11 @@ import {
   executeImportWithProgress,
   createEntity,
   reevaluateImportSessionResult,
+  commitImport,
 } from "./service.js";
 import { setProgress, getProgress, updateProgress } from "./progress-store.js";
 import { applyChangeSet } from "../../core/corrections/service.js";
-import { NotFoundError } from "../../../shared/errors.js";
+import { NotFoundError, ValidationError } from "../../../shared/errors.js";
 
 function isProcessImportOutput(result: unknown): result is ProcessImportOutput {
   return (
@@ -165,4 +168,20 @@ export const importsRouter = router({
 
       return { result: nextResult, affectedCount };
     }),
+
+  /**
+   * Commit an import atomically: create entities, apply rule changeSets,
+   * and write transactions in a single SQLite transaction.
+   */
+  commitImport: protectedProcedure.input(commitPayloadSchema).mutation(({ input }) => {
+    try {
+      const result = commitImport(input);
+      return { data: result, message: "Import committed" };
+    } catch (err) {
+      if (err instanceof ValidationError) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: err.message });
+      }
+      throw err;
+    }
+  }),
 });

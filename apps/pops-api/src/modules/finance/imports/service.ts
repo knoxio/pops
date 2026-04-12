@@ -19,6 +19,8 @@ import { updateProgress } from "./progress-store.js";
 import { findMatchingCorrection } from "../../core/corrections/service.js";
 import { suggestTags } from "../../../shared/tag-suggester.js";
 import type { TransactionRow } from "../transactions/types.js";
+import { applyChangeSet } from "../../core/corrections/service.js";
+import { ValidationError } from "../../../shared/errors.js";
 import type {
   ParsedTransaction,
   ProcessedTransaction,
@@ -30,6 +32,8 @@ import type {
   ImportWarning,
   AiUsageStats,
   SuggestedTag,
+  CommitPayload,
+  CommitResult,
 } from "./types.js";
 
 export function reevaluateImportSessionResult(args: {
@@ -1001,4 +1005,177 @@ export function executeImportWithProgress(
       ],
     });
   }
+}
+
+// ---------------------------------------------------------------------------
+// Commit import (PRD-031 US-03) — atomic write of entities + rules + transactions
+// ---------------------------------------------------------------------------
+
+const TEMP_ENTITY_PREFIX = "temp:entity:";
+
+/**
+ * Validate a commit payload before executing the transaction.
+ * Checks that all temp ID references in changeSets and transactions
+ * can be resolved against the provided pending entities.
+ */
+function validateCommitPayload(payload: CommitPayload): void {
+  const tempIds = new Set(payload.entities.map((e) => e.tempId));
+
+  // Check for duplicate temp IDs
+  if (tempIds.size !== payload.entities.length) {
+    throw new ValidationError("Duplicate temp IDs in entities array");
+  }
+
+  // Check for duplicate entity names (case-insensitive)
+  const names = new Set<string>();
+  for (const entity of payload.entities) {
+    const lower = entity.name.toLowerCase();
+    if (names.has(lower)) {
+      throw new ValidationError(`Duplicate entity name: '${entity.name}'`);
+    }
+    names.add(lower);
+  }
+
+  // Collect all temp entity ID references in changeSets and transactions
+  const referencedTempIds = new Set<string>();
+
+  for (const cs of payload.changeSets) {
+    for (const op of cs.ops) {
+      if (op.op === "add" && op.data.entityId?.startsWith(TEMP_ENTITY_PREFIX)) {
+        referencedTempIds.add(op.data.entityId);
+      }
+      if (op.op === "edit" && op.data.entityId?.startsWith(TEMP_ENTITY_PREFIX)) {
+        referencedTempIds.add(op.data.entityId);
+      }
+    }
+  }
+
+  for (const txn of payload.transactions) {
+    if (txn.entityId?.startsWith(TEMP_ENTITY_PREFIX)) {
+      referencedTempIds.add(txn.entityId);
+    }
+  }
+
+  // Verify all referenced temp IDs exist in the entities array
+  for (const ref of referencedTempIds) {
+    if (!tempIds.has(ref)) {
+      throw new ValidationError(`Unknown temp ID referenced: '${ref}'`);
+    }
+  }
+}
+
+/**
+ * Replace temp entity IDs with real DB IDs in a ChangeSet's ops (returns a new ChangeSet).
+ */
+function resolveChangeSetTempIds(
+  cs: CommitPayload["changeSets"][number],
+  tempIdMap: Map<string, string>
+): CommitPayload["changeSets"][number] {
+  return {
+    ...cs,
+    ops: cs.ops.map((op) => {
+      if (op.op === "add" && op.data.entityId?.startsWith(TEMP_ENTITY_PREFIX)) {
+        const realId = tempIdMap.get(op.data.entityId);
+        return { ...op, data: { ...op.data, entityId: realId ?? op.data.entityId } };
+      }
+      if (op.op === "edit" && op.data.entityId?.startsWith(TEMP_ENTITY_PREFIX)) {
+        const realId = tempIdMap.get(op.data.entityId);
+        return { ...op, data: { ...op.data, entityId: realId ?? op.data.entityId } };
+      }
+      return op;
+    }),
+  };
+}
+
+/**
+ * Atomically commit an import: create entities, apply rule changeSets,
+ * and write transactions inside a single SQLite transaction.
+ */
+export function commitImport(payload: CommitPayload): CommitResult {
+  // Validate before starting the transaction
+  validateCommitPayload(payload);
+
+  const db = getDrizzle();
+
+  return db.transaction(() => {
+    // Phase 1: Create entities, build tempId -> realId map
+    const tempIdMap = new Map<string, string>();
+    let entitiesCreated = 0;
+
+    for (const pending of payload.entities) {
+      const { entityId } = createEntity(pending.name);
+      tempIdMap.set(pending.tempId, entityId);
+      entitiesCreated++;
+
+      // Update entity type if not default
+      if (pending.type !== "company") {
+        db.update(entities).set({ type: pending.type }).where(eq(entities.id, entityId)).run();
+      }
+    }
+
+    // Phase 2: Apply changeSets with resolved temp IDs
+    const rulesApplied = { add: 0, edit: 0, disable: 0, remove: 0 };
+
+    for (const cs of payload.changeSets) {
+      const resolved = resolveChangeSetTempIds(cs, tempIdMap);
+      applyChangeSet(resolved);
+
+      // Count ops by type
+      for (const op of resolved.ops) {
+        rulesApplied[op.op]++;
+      }
+    }
+
+    // Phase 3: Write transactions with resolved temp IDs
+    let transactionsImported = 0;
+    let transactionsFailed = 0;
+
+    for (const txn of payload.transactions) {
+      const entityId = txn.entityId?.startsWith(TEMP_ENTITY_PREFIX)
+        ? (tempIdMap.get(txn.entityId) ?? txn.entityId)
+        : txn.entityId;
+
+      try {
+        const type =
+          txn.transactionType === "transfer"
+            ? "Transfer"
+            : txn.transactionType === "income"
+              ? "Income"
+              : "Expense";
+
+        insertTransaction({
+          description: txn.description,
+          account: txn.account,
+          amount: txn.amount,
+          date: txn.date,
+          type,
+          tags: txn.tags ?? [],
+          entityId: entityId ?? null,
+          entityName: txn.entityName ?? null,
+          location: txn.location ?? null,
+          rawRow: txn.rawRow,
+          checksum: txn.checksum,
+        });
+
+        transactionsImported++;
+      } catch (error) {
+        logger.error(
+          {
+            description: txn.description.substring(0, 50),
+            error: error instanceof Error ? error.message : String(error),
+          },
+          "[CommitImport] Transaction write failed"
+        );
+        transactionsFailed++;
+      }
+    }
+
+    return {
+      entitiesCreated,
+      rulesApplied,
+      transactionsImported,
+      transactionsFailed,
+      retroactiveReclassifications: 0,
+    };
+  });
 }

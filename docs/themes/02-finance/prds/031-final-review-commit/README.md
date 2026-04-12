@@ -68,7 +68,7 @@ CommitResult {
 |---|-------|---------|--------|----------------|
 | 01 | [us-01-step-scaffold](us-01-step-scaffold.md) | Add Step 6 to the wizard, shift Summary to Step 7, create FinalReviewStep shell | Not started | Yes |
 | 02 | [us-02-pending-changes-summary](us-02-pending-changes-summary.md) | Display all pending changes in FinalReviewStep with collapsible detail views | Not started | Blocked by us-01 + PRD-030 |
-| 03 | [us-03-commit-endpoint](us-03-commit-endpoint.md) | `commitImport` tRPC endpoint with single-transaction atomic writes | Not started | Blocked by PRD-030 US-09 |
+| 03 | [us-03-commit-endpoint](us-03-commit-endpoint.md) | `commitImport` tRPC endpoint with single-transaction atomic writes | Done | Blocked by PRD-030 US-09 |
 | 04 | [us-04-retroactive-reclassification](us-04-retroactive-reclassification.md) | Reclassify existing DB transactions against new rule set within the commit transaction | Not started | Blocked by us-03 |
 | 05 | [us-05-commit-progress-result](us-05-commit-progress-result.md) | "Approve & Commit All" button, progress indicator, and result display | Not started | Blocked by us-03, us-04 |
 | 06 | [us-06-summary-step-update](us-06-summary-step-update.md) | Update Summary step (now Step 7) with retroactive reclassification results | Not started | Blocked by us-05 |
