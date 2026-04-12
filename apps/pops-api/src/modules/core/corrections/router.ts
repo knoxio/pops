@@ -209,6 +209,13 @@ export const correctionsRouter = router({
           .min(1)
           .max(2000),
         minConfidence: z.number().min(0).max(1).default(0.7),
+        /** Optional pending ChangeSets to merge with DB rules before preview.
+         *  When provided, the "before" baseline includes the cumulative effect
+         *  of these ChangeSets applied in order on top of the DB rules. */
+        pendingChangeSets: z
+          .array(z.object({ changeSet: ChangeSetSchema }))
+          .max(200)
+          .optional(),
       })
     )
     .mutation(({ input, ctx }) => {
@@ -216,9 +223,19 @@ export const correctionsRouter = router({
       // We fetch in a single page for simplicity; if this ever grows beyond the limit,
       // switch this to a dedicated "list all corrections" service method with pagination.
       const dbRules = service.listCorrections(undefined, PREVIEW_RULES_FETCH_LIMIT, 0).rows;
+
+      // Merge pending ChangeSets into the baseline if provided (PRD-030 US-08).
+      const baselineRules =
+        input.pendingChangeSets && input.pendingChangeSets.length > 0
+          ? input.pendingChangeSets.reduce(
+              (acc, pcs) => service.applyChangeSetToRules(acc, pcs.changeSet),
+              dbRules
+            )
+          : dbRules;
+
       try {
         const result = service.previewChangeSetImpact({
-          rules: dbRules,
+          rules: baselineRules,
           changeSet: input.changeSet,
           transactions: input.transactions,
           minConfidence: input.minConfidence,

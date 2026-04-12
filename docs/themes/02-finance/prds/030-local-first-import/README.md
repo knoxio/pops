@@ -88,8 +88,8 @@ No new backend endpoints. All operations are zustand store actions and pure func
 | 05 | [us-05-redirect-entity-creation](us-05-redirect-entity-creation.md) | EntityCreateDialog writes to local store instead of tRPC | Not started | Blocked by US-01, US-04 |
 | 06 | [us-06-redirect-changeset-approval](us-06-redirect-changeset-approval.md) | CorrectionProposalDialog stores ChangeSet locally instead of calling server | Not started | Blocked by US-02, US-03, US-07 |
 | 07 | [us-07-local-re-evaluation](us-07-local-re-evaluation.md) | Re-evaluate transactions against merged rule set after local approval | Not started | Blocked by US-03 |
-| 08 | [us-08-preview-with-merged-rules](us-08-preview-with-merged-rules.md) | ChangeSet previews use merged rule set as baseline | Not started | Blocked by US-03 |
-| 09 | [us-09-commit-payload-builder](us-09-commit-payload-builder.md) | Build structured commit payload resolving temp IDs | Not started | Blocked by US-01, US-02 |
+| 08 | [us-08-preview-with-merged-rules](us-08-preview-with-merged-rules.md) | ChangeSet previews use merged rule set as baseline | Done | Blocked by US-03 |
+| 09 | [us-09-commit-payload-builder](us-09-commit-payload-builder.md) | Build structured commit payload resolving temp IDs | Done | Blocked by US-01, US-02 |
 
 ## Out of Scope
 
