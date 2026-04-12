@@ -63,8 +63,8 @@ No new endpoints. Existing endpoints change:
 |---|-------|---------|--------|----------------|
 | 01 | [us-01-priority-column-migration](us-01-priority-column-migration.md) | Add `priority` column, backfill, update types and schemas | Done | Yes |
 | 02 | [us-02-priority-aware-matching](us-02-priority-aware-matching.md) | Update matching algorithm to sort by priority ASC | Done | Blocked by us-01 |
-| 03 | [us-03-browse-all-mode](us-03-browse-all-mode.md) | Browse-all mode for CorrectionProposalDialog | Not started | Blocked by PRD-030 us-03 |
-| 04 | [us-04-manage-rules-button](us-04-manage-rules-button.md) | "Manage Rules" button in ReviewStep | Not started | Blocked by us-03 |
+| 03 | [us-03-browse-all-mode](us-03-browse-all-mode.md) | Browse-all mode for CorrectionProposalDialog | Done | Blocked by PRD-030 us-03 |
+| 04 | [us-04-manage-rules-button](us-04-manage-rules-button.md) | "Manage Rules" button in ReviewStep | Done | Blocked by us-03 |
 | 05 | [us-05-drag-to-reorder](us-05-drag-to-reorder.md) | Drag-to-reorder priority in browse-mode sidebar | Not started | Blocked by us-01, us-03 |
 | 06 | [us-06-impact-preview-db-transactions](us-06-impact-preview-db-transactions.md) | Impact preview includes existing DB transactions | Not started | Blocked by us-03 |
 | 07 | [us-07-override-indicators](us-07-override-indicators.md) | Override indicators when multiple rules match | Not started | Blocked by us-02 |

@@ -1,7 +1,7 @@
 # US-04: Manage Rules button
 
 > PRD: [032 — Global Rule Manager & Priority Ordering](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,12 +9,12 @@ As a user, I want a "Manage Rules" button on the Review step so that I can open 
 
 ## Acceptance Criteria
 
-- [ ] A "Manage Rules" button is visible in the ReviewStep header or toolbar area.
-- [ ] Clicking the button opens `CorrectionProposalDialog` in `browse` mode.
-- [ ] The button is disabled while the dialog is already open (prevents double-open).
-- [ ] On dialog close, if any ChangeSet ops were produced during the session, the import's transactions are re-evaluated against the updated rule set (same re-evaluation logic as PRD-028 US-03 approval path).
-- [ ] On dialog close with no changes, no re-evaluation occurs.
-- [ ] The button is rendered with an icon and label consistent with the existing ReviewStep toolbar styling.
+- [x] A "Manage Rules" button is visible in the ReviewStep header or toolbar area.
+- [x] Clicking the button opens `CorrectionProposalDialog` in `browse` mode.
+- [x] The button is disabled while the dialog is already open (prevents double-open).
+- [x] On dialog close, if any ChangeSet ops were produced during the session, the import's transactions are re-evaluated against the updated rule set (same re-evaluation logic as PRD-028 US-03 approval path).
+- [x] On dialog close with no changes, no re-evaluation occurs.
+- [x] The button is rendered with an icon and label consistent with the existing ReviewStep toolbar styling.
 
 ## Notes
 

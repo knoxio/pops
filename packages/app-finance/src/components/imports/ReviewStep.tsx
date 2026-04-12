@@ -1,5 +1,13 @@
 import { useState, useCallback, useMemo, useRef } from "react";
-import { CheckCircle, AlertTriangle, XCircle, AlertCircle, List, Layers } from "lucide-react";
+import {
+  CheckCircle,
+  AlertTriangle,
+  XCircle,
+  AlertCircle,
+  List,
+  Layers,
+  Settings2,
+} from "lucide-react";
 import { useImportStore } from "../../store/importStore";
 import type { ProcessedTransaction } from "../../store/importStore";
 import { trpc } from "../../lib/trpc";
@@ -56,6 +64,7 @@ export function ReviewStep() {
     previousEntityName?: string | null;
     previousTransactionType?: "purchase" | "transfer" | "income" | null;
   } | null>(null);
+  const [browseOpen, setBrowseOpen] = useState(false);
 
   // Default to Uncertain tab when uncertain transactions exist, otherwise Matched
   const initialTab = localTransactions.uncertain.length > 0 ? "uncertain" : "matched";
@@ -601,13 +610,45 @@ export function ReviewStep() {
           );
         }}
       />
-      <div>
-        <h2 className="text-2xl font-semibold mb-2">Review</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          {unresolvedCount > 0
-            ? `${unresolvedCount} transaction(s) need your attention`
-            : "All transactions are ready to import"}
-        </p>
+      <CorrectionProposalDialog
+        open={browseOpen}
+        onOpenChange={setBrowseOpen}
+        mode="browse"
+        sessionId={processSessionId ?? ""}
+        signal={null}
+        triggeringTransaction={null}
+        previewTransactions={[
+          ...localTransactions.matched,
+          ...localTransactions.uncertain,
+          ...localTransactions.failed,
+          ...localTransactions.skipped,
+        ].map((t) => ({ checksum: t.checksum, description: t.description }))}
+        onBrowseClose={(hadChanges) => {
+          if (hadChanges) {
+            toast.success(
+              "Rule changes saved — they will be applied when the import is committed."
+            );
+          }
+        }}
+      />
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold mb-2">Review</h2>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {unresolvedCount > 0
+              ? `${unresolvedCount} transaction(s) need your attention`
+              : "All transactions are ready to import"}
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setBrowseOpen(true)}
+          disabled={browseOpen}
+        >
+          <Settings2 className="mr-1.5 h-4 w-4" />
+          Manage Rules
+        </Button>
       </div>
 
       {/* Show warnings if present */}

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Trash2, RefreshCcw, Sparkles, X } from "lucide-react";
+import { Plus, Trash2, RefreshCcw, Sparkles, X, Search } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,7 @@ import type { AppRouter } from "@pops/api-client";
 import { trpc } from "../../lib/trpc";
 import { useImportStore } from "../../store/importStore";
 import { RulePicker, type CorrectionRule } from "./RulePicker";
+import { computeMergedRules } from "../../lib/merged-state";
 
 // ---------------------------------------------------------------------------
 // tRPC type helpers
@@ -357,6 +358,12 @@ export interface CorrectionProposalDialogProps {
   previewTransactions: Array<{ checksum?: string; description: string }>;
   minConfidence?: number;
   onApproved?: (result: ApplyChangeSetAndReevaluateOutput["result"], affectedCount: number) => void;
+  /** Dialog mode: 'proposal' (default) shows the AI proposal flow;
+   *  'browse' shows all rules for manual CRUD management. */
+  mode?: "proposal" | "browse";
+  /** Called when browse mode closes with pending changes committed.
+   *  The parent can trigger re-evaluation. */
+  onBrowseClose?: (hadChanges: boolean) => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -373,9 +380,7 @@ interface AiMessage {
 
 export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
   const minConfidence = props.minConfidence ?? 0.7;
-
-  // ---- pending store (PRD-030 US-08: merged-rule preview) -----------------
-  const pendingChangeSets = useImportStore((s) => s.pendingChangeSets);
+  const isBrowseMode = props.mode === "browse";
 
   // ---- local state --------------------------------------------------------
   const [localOps, setLocalOps] = useState<LocalOp[]>([]);
@@ -400,6 +405,59 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
 
   const [rationale, setRationale] = useState<string | null>(null);
 
+  // ---- browse mode state --------------------------------------------------
+  const [browseSearch, setBrowseSearch] = useState("");
+  const [browseSelectedRuleId, setBrowseSelectedRuleId] = useState<string | null>(null);
+  /** Snapshot of pendingChangeSets length when browse mode opened — used to
+   *  detect whether the user made changes during this session. */
+  const browseInitialPendingCountRef = useRef<number>(0);
+
+  const pendingChangeSets = useImportStore((s) => s.pendingChangeSets);
+  const addPendingChangeSet = useImportStore((s) => s.addPendingChangeSet);
+
+  // Fetch all rules only in browse mode
+  const browseListQuery = trpc.core.corrections.list.useQuery(
+    { limit: 500, offset: 0 },
+    { enabled: isBrowseMode && props.open, staleTime: 30_000 }
+  );
+
+  const browseDbRules = browseListQuery.data?.data ?? [];
+
+  /** Merged rules: DB rules + pending ChangeSets applied in order.
+   *  CorrectionRule (tRPC output) and CorrectionRow are structurally
+   *  compatible for merge — the extra fields (isActive, priority) are
+   *  preserved through the fold. We cast to satisfy the function signature. */
+  const browseMergedRules: CorrectionRule[] = useMemo(() => {
+    if (!isBrowseMode) return [];
+    if (pendingChangeSets.length === 0) return browseDbRules;
+    return computeMergedRules(
+      browseDbRules as unknown as Parameters<typeof computeMergedRules>[0],
+      pendingChangeSets
+    ) as unknown as CorrectionRule[];
+  }, [isBrowseMode, browseDbRules, pendingChangeSets]);
+
+  const browseFilteredRules = useMemo(() => {
+    const needle = browseSearch.trim().toLowerCase();
+    if (!needle) return browseMergedRules;
+    return browseMergedRules.filter((r) => {
+      const haystack =
+        `${r.descriptionPattern} ${r.entityName ?? ""} ${r.matchType} ${r.location ?? ""}`.toLowerCase();
+      return haystack.includes(needle);
+    });
+  }, [browseMergedRules, browseSearch]);
+
+  const browseSelectedRule = useMemo(
+    () => browseMergedRules.find((r) => r.id === browseSelectedRuleId) ?? null,
+    [browseMergedRules, browseSelectedRuleId]
+  );
+
+  // Seed browseInitialPendingCount when dialog opens in browse mode
+  useEffect(() => {
+    if (isBrowseMode && props.open) {
+      browseInitialPendingCountRef.current = useImportStore.getState().pendingChangeSets.length;
+    }
+  }, [isBrowseMode, props.open]);
+
   const selectedOp = useMemo(
     () => localOps.find((o) => o.clientId === selectedClientId) ?? null,
     [localOps, selectedClientId]
@@ -422,7 +480,7 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
   const proposeQuery = trpc.core.corrections.proposeChangeSet.useQuery(
     proposeInput ?? { signal: disabledSignal, minConfidence, maxPreviewItems: 200 },
     {
-      enabled: Boolean(props.open && proposeInput),
+      enabled: Boolean(!isBrowseMode && props.open && proposeInput),
       staleTime: 0,
       retry: false,
     }
@@ -702,11 +760,27 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
   );
 
   const handleAddNewRuleOp = useCallback(() => {
+    if (isBrowseMode) {
+      // In browse mode, create a blank add op
+      const newOp: LocalOp = {
+        kind: "add",
+        clientId: newClientId("add"),
+        data: {
+          descriptionPattern: "",
+          matchType: "contains",
+          tags: [],
+        },
+        dirty: true,
+      };
+      setLocalOps((prev) => [...prev, newOp]);
+      setSelectedClientId(newOp.clientId);
+      return;
+    }
     if (!props.signal) return;
     const newOp = newAddOpFromSignal(props.signal);
     setLocalOps((prev) => [...prev, newOp]);
     setSelectedClientId(newOp.clientId);
-  }, [props.signal]);
+  }, [props.signal, isBrowseMode]);
 
   const handleAddTargetedOp = useCallback(
     (kind: "edit" | "disable" | "remove", rule: CorrectionRule) => {
@@ -844,7 +918,97 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
       });
   }, [aiInstruction, props.signal, props.previewTransactions, localOps, reviseMutateAsync]);
 
+  // ---- browse mode: load rule into editor ----------------------------------
+  const handleBrowseSelectRule = useCallback(
+    (ruleId: string) => {
+      setBrowseSelectedRuleId(ruleId);
+      // If there's already a pending localOp editing this rule, select it
+      const existingOp = localOps.find((o) => o.kind !== "add" && o.targetRuleId === ruleId);
+      if (existingOp) {
+        setSelectedClientId(existingOp.clientId);
+      } else {
+        setSelectedClientId(null);
+      }
+    },
+    [localOps]
+  );
+
+  const handleBrowseEditRule = useCallback((rule: CorrectionRule) => {
+    const newOp: LocalOp = {
+      kind: "edit",
+      clientId: newClientId("edit"),
+      targetRuleId: rule.id,
+      targetRule: rule,
+      data: {
+        entityId: rule.entityId ?? undefined,
+        entityName: rule.entityName ?? undefined,
+        location: rule.location ?? undefined,
+        tags: rule.tags,
+        transactionType: rule.transactionType ?? undefined,
+        isActive: rule.isActive,
+        confidence: rule.confidence,
+      },
+      dirty: true,
+    };
+    setLocalOps((prev) => [...prev, newOp]);
+    setSelectedClientId(newOp.clientId);
+  }, []);
+
+  const handleBrowseDisableRule = useCallback((rule: CorrectionRule) => {
+    const newOp: LocalOp = {
+      kind: "disable",
+      clientId: newClientId("disable"),
+      targetRuleId: rule.id,
+      targetRule: rule,
+      rationale: "",
+      dirty: true,
+    };
+    setLocalOps((prev) => [...prev, newOp]);
+    setSelectedClientId(newOp.clientId);
+  }, []);
+
+  const handleBrowseRemoveRule = useCallback((rule: CorrectionRule) => {
+    const newOp: LocalOp = {
+      kind: "remove",
+      clientId: newClientId("remove"),
+      targetRuleId: rule.id,
+      targetRule: rule,
+      rationale: "",
+      dirty: true,
+    };
+    setLocalOps((prev) => [...prev, newOp]);
+    setSelectedClientId(newOp.clientId);
+  }, []);
+
+  /** Commit current localOps as a PendingChangeSet and close. */
+  const handleBrowseSave = useCallback(() => {
+    if (localOps.length === 0) {
+      handleOpenChange(false);
+      return;
+    }
+    const changeSet = localOpsToChangeSet(localOps, { source: "browse-rule-manager" });
+    if (changeSet) {
+      addPendingChangeSet({ changeSet, source: "browse-rule-manager" });
+      toast.success(`${localOps.length} rule change${localOps.length === 1 ? "" : "s"} saved`);
+    }
+    // handleOpenChange will detect the count change via onBrowseClose
+    handleOpenChange(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localOps, addPendingChangeSet]);
+
   function handleOpenChange(open: boolean) {
+    if (!open && isBrowseMode) {
+      const currentCount = useImportStore.getState().pendingChangeSets.length;
+      const hadChanges = currentCount !== browseInitialPendingCountRef.current;
+      // Reset browse-specific state
+      setBrowseSearch("");
+      setBrowseSelectedRuleId(null);
+      setLocalOps([]);
+      setSelectedClientId(null);
+      props.onOpenChange(false);
+      props.onBrowseClose?.(hadChanges);
+      return;
+    }
     props.onOpenChange(open);
     if (!open) {
       setLocalOps([]);
@@ -871,7 +1035,200 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
     }
   }
 
+  // ---- browse mode keyboard nav -------------------------------------------
+  const browseListRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isBrowseMode || !props.open) return;
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        handleOpenChange(false);
+        return;
+      }
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const list = browseFilteredRules;
+        if (list.length === 0) return;
+        const currentIdx = list.findIndex((r) => r.id === browseSelectedRuleId);
+        let nextIdx: number;
+        if (e.key === "ArrowDown") {
+          nextIdx = currentIdx < list.length - 1 ? currentIdx + 1 : 0;
+        } else {
+          nextIdx = currentIdx > 0 ? currentIdx - 1 : list.length - 1;
+        }
+        const nextRule = list[nextIdx];
+        if (nextRule) handleBrowseSelectRule(nextRule.id);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isBrowseMode, props.open, browseFilteredRules, browseSelectedRuleId]);
+
   // ---- render -------------------------------------------------------------
+
+  if (isBrowseMode) {
+    return (
+      <Dialog open={props.open} onOpenChange={handleOpenChange}>
+        <DialogContent
+          className="
+            max-w-[92vw] max-h-[88vh] w-[1180px]
+            md:max-w-[92vw] md:w-[1180px]
+            flex flex-col gap-0 overflow-hidden p-0
+          "
+        >
+          <DialogHeader className="px-6 pt-6 pb-3">
+            <DialogTitle>Manage Rules</DialogTitle>
+            <DialogDescription>
+              Browse, search, and edit classification rules. Changes are buffered locally until
+              import is committed.
+            </DialogDescription>
+          </DialogHeader>
+
+          {browseListQuery.isError ? (
+            <div className="px-6 pb-6 text-sm text-destructive">
+              {browseListQuery.error.message}
+            </div>
+          ) : browseListQuery.isLoading ? (
+            <div className="px-6 pb-6 text-sm text-muted-foreground">Loading rules…</div>
+          ) : (
+            <div className="grid grid-cols-[300px_minmax(0,1fr)] gap-0 border-y flex-1 min-h-0">
+              {/* Sidebar: rule list with search */}
+              <div className="flex flex-col min-h-0 border-r" ref={browseListRef}>
+                <div className="px-3 py-2 border-b">
+                  <div className="relative">
+                    <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                    <Input
+                      value={browseSearch}
+                      onChange={(e) => setBrowseSearch(e.target.value)}
+                      placeholder="Search rules…"
+                      className="pl-7 h-8 text-xs"
+                    />
+                  </div>
+                </div>
+                <div className="px-3 py-1.5 text-[10px] text-muted-foreground border-b">
+                  {browseFilteredRules.length} rule{browseFilteredRules.length === 1 ? "" : "s"}
+                  {browseSearch && ` matching "${browseSearch}"`}
+                </div>
+                <div className="flex-1 overflow-auto">
+                  {browseFilteredRules.length === 0 ? (
+                    <div className="p-4 text-sm text-muted-foreground">No rules found.</div>
+                  ) : (
+                    <ul className="divide-y">
+                      {browseFilteredRules.map((rule) => {
+                        const selected = rule.id === browseSelectedRuleId;
+                        const isPending = rule.id.startsWith("temp:");
+                        const hasLocalOp = localOps.some(
+                          (o) => o.kind !== "add" && o.targetRuleId === rule.id
+                        );
+                        return (
+                          <li
+                            key={rule.id}
+                            className={`px-3 py-2 cursor-pointer hover:bg-muted/50 ${
+                              selected ? "bg-muted" : ""
+                            }`}
+                            onClick={() => handleBrowseSelectRule(rule.id)}
+                          >
+                            <div className="flex items-start gap-2">
+                              <div className="flex-1 min-w-0 space-y-1">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <code className="text-xs truncate max-w-[180px]">
+                                    {rule.descriptionPattern}
+                                  </code>
+                                  <Badge variant="outline" className="text-[10px] h-4 px-1.5">
+                                    {rule.matchType}
+                                  </Badge>
+                                  {isPending && (
+                                    <Badge
+                                      variant="default"
+                                      className="text-[10px] h-4 px-1.5 bg-amber-500"
+                                    >
+                                      pending
+                                    </Badge>
+                                  )}
+                                  {hasLocalOp && (
+                                    <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
+                                      edited
+                                    </Badge>
+                                  )}
+                                  {!rule.isActive && (
+                                    <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
+                                      disabled
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="text-[11px] text-muted-foreground truncate">
+                                  {[rule.entityName, rule.location, rule.transactionType]
+                                    .filter(Boolean)
+                                    .join(" · ") || "no outcome set"}
+                                </div>
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+                <div className="border-t p-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="w-full justify-start"
+                    onClick={handleAddNewRuleOp}
+                  >
+                    <Plus className="mr-1 h-3.5 w-3.5" /> Add new rule
+                  </Button>
+                </div>
+              </div>
+
+              {/* Detail: show selected rule or selected op editor */}
+              <div className="flex flex-col min-h-0 overflow-auto">
+                {selectedOp ? (
+                  <DetailPanel
+                    op={selectedOp}
+                    onChange={(mutator) => {
+                      if (!selectedOp) return;
+                      updateOp(selectedOp.clientId, mutator);
+                    }}
+                    disabled={false}
+                  />
+                ) : browseSelectedRule ? (
+                  <BrowseRuleDetailPanel
+                    rule={browseSelectedRule}
+                    onEdit={handleBrowseEditRule}
+                    onDisable={handleBrowseDisableRule}
+                    onRemove={handleBrowseRemoveRule}
+                  />
+                ) : (
+                  <div className="p-6 text-sm text-muted-foreground">
+                    Select a rule on the left to view or edit it.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          <DialogFooter className="px-6 py-4 border-t">
+            <div className="flex-1 text-xs text-muted-foreground">
+              {localOps.length > 0 && (
+                <span>
+                  {localOps.length} unsaved change{localOps.length === 1 ? "" : "s"}
+                </span>
+              )}
+            </div>
+            <Button variant="outline" onClick={() => handleOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleBrowseSave} disabled={localOps.length === 0}>
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // ---- proposal mode render -----------------------------------------------
 
   const previewResult = previewView === "combined" ? combinedPreview : selectedOpPreview;
   const previewError = previewView === "combined" ? combinedPreviewError : selectedOpPreviewError;
@@ -1730,6 +2087,85 @@ function AiHelperPanel(props: {
         />
         <Button onClick={props.onSubmit} disabled={props.busy || !props.instruction.trim()}>
           {props.busy ? "…" : "Send"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function BrowseRuleDetailPanel(props: {
+  rule: CorrectionRule;
+  onEdit: (rule: CorrectionRule) => void;
+  onDisable: (rule: CorrectionRule) => void;
+  onRemove: (rule: CorrectionRule) => void;
+}) {
+  const { rule } = props;
+  const isPending = rule.id.startsWith("temp:");
+  return (
+    <div className="p-6 space-y-4">
+      <div className="flex items-center gap-2">
+        <div className="text-xs uppercase tracking-wide text-muted-foreground flex-1">
+          Rule details
+        </div>
+        {isPending && (
+          <Badge variant="default" className="text-[10px] bg-amber-500">
+            pending
+          </Badge>
+        )}
+        {!rule.isActive && (
+          <Badge variant="secondary" className="text-[10px]">
+            disabled
+          </Badge>
+        )}
+      </div>
+
+      <div className="rounded-md border bg-muted/30 p-3 space-y-2">
+        <div className="space-y-1">
+          <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Pattern</div>
+          <code className="text-sm rounded bg-background px-1 py-0.5">
+            {rule.descriptionPattern}
+          </code>
+          <span className="ml-2 text-xs text-muted-foreground">{rule.matchType}</span>
+        </div>
+        {rule.entityName && (
+          <div className="space-y-0.5">
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Entity</div>
+            <div className="text-sm">{rule.entityName}</div>
+          </div>
+        )}
+        {rule.transactionType && (
+          <div className="space-y-0.5">
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Type</div>
+            <div className="text-sm">{rule.transactionType}</div>
+          </div>
+        )}
+        {rule.location && (
+          <div className="space-y-0.5">
+            <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+              Location
+            </div>
+            <div className="text-sm">{rule.location}</div>
+          </div>
+        )}
+        <div className="flex gap-4 text-xs text-muted-foreground pt-1">
+          <span>confidence: {(rule.confidence * 100).toFixed(0)}%</span>
+          {rule.timesApplied != null && <span>applied: {rule.timesApplied}×</span>}
+        </div>
+      </div>
+
+      <Separator />
+
+      <div className="flex gap-2">
+        <Button size="sm" variant="outline" onClick={() => props.onEdit(rule)}>
+          Edit
+        </Button>
+        {rule.isActive ? (
+          <Button size="sm" variant="outline" onClick={() => props.onDisable(rule)}>
+            Disable
+          </Button>
+        ) : null}
+        <Button size="sm" variant="destructive" onClick={() => props.onRemove(rule)}>
+          Remove
         </Button>
       </div>
     </div>
