@@ -38,7 +38,7 @@ if (resumedScheduler) {
 // Auto-resume rotation scheduler if it was previously running
 const resumedRotation = resumeRotationSchedulerIfEnabled();
 if (resumedRotation) {
-  console.log(`[pops-api] Rotation scheduler resumed (cron: ${resumedRotation.cronExpression})`);
+  console.warn(`[pops-api] Rotation scheduler resumed (cron: ${resumedRotation.cronExpression})`);
 }
 
 // Periodically purge expired named environments
