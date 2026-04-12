@@ -45,7 +45,7 @@ function makeEntity(overrides: Partial<Entity> = {}): Entity {
   return {
     id: "entity-1",
     name: "Woolworths",
-    type: "merchant",
+    type: "company",
     abn: null,
     aliases: [],
     defaultTransactionType: null,
@@ -60,7 +60,7 @@ function makePendingEntity(overrides: Partial<PendingEntity> = {}): PendingEntit
   return {
     tempId: `temp:entity:${crypto.randomUUID()}`,
     name: "New Merchant",
-    type: "merchant",
+    type: "company",
     ...overrides,
   };
 }
@@ -248,7 +248,7 @@ describe("computeMergedEntities", () => {
   });
 
   it("replaces DB entity when pending entity has same name", () => {
-    const dbEntities = [makeEntity({ id: "e1", name: "Woolworths", type: "merchant" })];
+    const dbEntities = [makeEntity({ id: "e1", name: "Woolworths", type: "company" })];
     const pending = [makePendingEntity({ name: "Woolworths", type: "supermarket" })];
 
     const result = computeMergedEntities(dbEntities, pending);

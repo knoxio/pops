@@ -7,10 +7,13 @@ import type {
   ImportWarning,
 } from "@pops/api/modules/finance/imports";
 import type { ChangeSet } from "@pops/api/modules/core/corrections/types";
+import type { CommitResult } from "@pops/api/modules/finance/imports";
 import { findSimilarTransactions } from "../lib/transaction-utils";
 
 export type BankType = "Amex";
 export type { ChangeSet };
+
+export type EntityType = "company" | "person" | "government" | "bank";
 
 // ---------------------------------------------------------------------------
 // Pending entity — created during import, stored locally until step 7 commit.
@@ -19,13 +22,13 @@ export type { ChangeSet };
 export interface PendingEntity {
   tempId: string; // Format: temp:entity:{uuid}
   name: string;
-  type: string;
+  type: EntityType;
 }
 
 /** Input for creating a pending entity (tempId is generated internally). */
 export interface AddPendingEntityInput {
   name: string;
-  type: string;
+  type: EntityType;
 }
 
 // ---------------------------------------------------------------------------
@@ -110,6 +113,7 @@ interface ImportStore {
     failed: ImportResult[];
     skipped: number;
   } | null;
+  commitResult: CommitResult | null;
 
   // Local-first pending state (PRD-030)
   pendingEntities: PendingEntity[];
@@ -127,6 +131,7 @@ interface ImportStore {
   setConfirmedTransactions: (confirmed: ConfirmedTransaction[]) => void;
   setExecuteSessionId: (sessionId: string | null) => void;
   setImportResult: (result: ImportStore["importResult"]) => void;
+  setCommitResult: (result: CommitResult | null) => void;
 
   nextStep: () => void;
   prevStep: () => void;
@@ -182,6 +187,7 @@ const initialState = {
   confirmedTransactions: [],
   executeSessionId: null,
   importResult: null,
+  commitResult: null,
   pendingEntities: [],
   pendingChangeSets: [],
 };
@@ -216,6 +222,7 @@ const downstreamReset: Pick<
   | "confirmedTransactions"
   | "executeSessionId"
   | "importResult"
+  | "commitResult"
   | "pendingEntities"
   | "pendingChangeSets"
 > = {
@@ -229,6 +236,7 @@ const downstreamReset: Pick<
   confirmedTransactions: initialState.confirmedTransactions,
   executeSessionId: initialState.executeSessionId,
   importResult: initialState.importResult,
+  commitResult: initialState.commitResult,
   pendingEntities: initialState.pendingEntities,
   pendingChangeSets: initialState.pendingChangeSets,
 };
@@ -289,6 +297,7 @@ export const useImportStore = create<ImportStore>((set) => ({
   setConfirmedTransactions: (confirmedTransactions) => set({ confirmedTransactions }),
   setExecuteSessionId: (executeSessionId) => set({ executeSessionId }),
   setImportResult: (importResult) => set({ importResult }),
+  setCommitResult: (commitResult) => set({ commitResult }),
 
   nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 7) })),
   prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 1) })),

@@ -12,7 +12,7 @@ function makePendingEntity(overrides: Partial<PendingEntity> = {}): PendingEntit
   return {
     tempId: `temp:entity:${crypto.randomUUID()}`,
     name: "Test Merchant",
-    type: "merchant",
+    type: "company",
     ...overrides,
   };
 }

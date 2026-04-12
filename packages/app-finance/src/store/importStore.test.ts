@@ -165,16 +165,16 @@ describe("importStore — pendingEntities (PRD-030 US-01)", () => {
   it("addPendingEntity generates a temp ID in the format temp:entity:{uuid}", () => {
     const entity = useImportStore.getState().addPendingEntity({
       name: "Test Merchant",
-      type: "merchant",
+      type: "company",
     });
     expect(entity.tempId).toMatch(/^temp:entity:[0-9a-f-]{36}$/);
     expect(entity.name).toBe("Test Merchant");
-    expect(entity.type).toBe("merchant");
+    expect(entity.type).toBe("company");
   });
 
   it("addPendingEntity appends to the pending list in insertion order", () => {
-    useImportStore.getState().addPendingEntity({ name: "First", type: "merchant" });
-    useImportStore.getState().addPendingEntity({ name: "Second", type: "employer" });
+    useImportStore.getState().addPendingEntity({ name: "First", type: "company" });
+    useImportStore.getState().addPendingEntity({ name: "Second", type: "person" });
 
     const entities = useImportStore.getState().pendingEntities;
     expect(entities).toHaveLength(2);
@@ -183,10 +183,10 @@ describe("importStore — pendingEntities (PRD-030 US-01)", () => {
   });
 
   it("addPendingEntity rejects duplicate name in pending list (case-insensitive)", () => {
-    useImportStore.getState().addPendingEntity({ name: "Woolworths", type: "merchant" });
+    useImportStore.getState().addPendingEntity({ name: "Woolworths", type: "company" });
 
     expect(() =>
-      useImportStore.getState().addPendingEntity({ name: "woolworths", type: "merchant" })
+      useImportStore.getState().addPendingEntity({ name: "woolworths", type: "company" })
     ).toThrow(/already exists in pending list/);
 
     expect(useImportStore.getState().pendingEntities).toHaveLength(1);
@@ -196,15 +196,15 @@ describe("importStore — pendingEntities (PRD-030 US-01)", () => {
     const dbEntities = [{ name: "Coles" }, { name: "Woolworths" }];
 
     expect(() =>
-      useImportStore.getState().addPendingEntity({ name: "coles", type: "merchant" }, dbEntities)
+      useImportStore.getState().addPendingEntity({ name: "coles", type: "company" }, dbEntities)
     ).toThrow(/already exists in the database/);
 
     expect(useImportStore.getState().pendingEntities).toHaveLength(0);
   });
 
   it("removePendingEntity removes by tempId", () => {
-    const e1 = useImportStore.getState().addPendingEntity({ name: "First", type: "merchant" });
-    useImportStore.getState().addPendingEntity({ name: "Second", type: "merchant" });
+    const e1 = useImportStore.getState().addPendingEntity({ name: "First", type: "company" });
+    useImportStore.getState().addPendingEntity({ name: "Second", type: "company" });
 
     useImportStore.getState().removePendingEntity(e1.tempId);
 
@@ -214,28 +214,28 @@ describe("importStore — pendingEntities (PRD-030 US-01)", () => {
   });
 
   it("removePendingEntity with unknown id is a no-op", () => {
-    useImportStore.getState().addPendingEntity({ name: "First", type: "merchant" });
+    useImportStore.getState().addPendingEntity({ name: "First", type: "company" });
     useImportStore.getState().removePendingEntity("nonexistent");
     expect(useImportStore.getState().pendingEntities).toHaveLength(1);
   });
 
   it("listPendingEntities returns all pending entities in insertion order", () => {
-    useImportStore.getState().addPendingEntity({ name: "A", type: "merchant" });
-    useImportStore.getState().addPendingEntity({ name: "B", type: "employer" });
-    useImportStore.getState().addPendingEntity({ name: "C", type: "merchant" });
+    useImportStore.getState().addPendingEntity({ name: "A", type: "company" });
+    useImportStore.getState().addPendingEntity({ name: "B", type: "person" });
+    useImportStore.getState().addPendingEntity({ name: "C", type: "company" });
 
     const list = useImportStore.getState().listPendingEntities();
     expect(list.map((e) => e.name)).toEqual(["A", "B", "C"]);
   });
 
   it("reset clears all pending entities", () => {
-    useImportStore.getState().addPendingEntity({ name: "Test", type: "merchant" });
+    useImportStore.getState().addPendingEntity({ name: "Test", type: "company" });
     useImportStore.getState().reset();
     expect(useImportStore.getState().pendingEntities).toEqual([]);
   });
 
   it("setFile with a different file clears pending entities", () => {
-    useImportStore.getState().addPendingEntity({ name: "Test", type: "merchant" });
+    useImportStore.getState().addPendingEntity({ name: "Test", type: "company" });
     const fakeFile = { name: "new.csv", size: 10, lastModified: 1 } as unknown as File;
     useImportStore.getState().setFile(fakeFile);
     expect(useImportStore.getState().pendingEntities).toEqual([]);

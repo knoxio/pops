@@ -1,16 +1,54 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 // --- Store mock state ---
 
 const mockPrevStep = vi.fn();
 const mockNextStep = vi.fn();
+const mockSetCommitResult = vi.fn();
 
 let storeState: Record<string, unknown> = {};
 
 vi.mock("../../store/importStore", () => ({
   useImportStore: (selector?: (s: Record<string, unknown>) => unknown) =>
     selector ? selector(storeState) : storeState,
+}));
+
+// --- tRPC mock ---
+
+const mockMutate = vi.fn();
+let mutationCallbacks: {
+  onSuccess?: (data: unknown) => void;
+  onError?: (err: unknown) => void;
+} = {};
+let mockIsPending = false;
+
+vi.mock("../../lib/trpc", () => ({
+  trpc: {
+    finance: {
+      imports: {
+        commitImport: {
+          useMutation: (opts: typeof mutationCallbacks) => {
+            mutationCallbacks = opts;
+            return {
+              mutate: mockMutate,
+              isPending: mockIsPending,
+            };
+          },
+        },
+      },
+    },
+  },
+}));
+
+vi.mock("../../lib/commit-payload", () => ({
+  buildCommitPayload: vi.fn(
+    (entities: unknown[], changeSets: unknown[], transactions: unknown[]) => ({
+      entities,
+      changeSets: (changeSets as Array<{ changeSet: unknown }>).map((pcs) => pcs.changeSet),
+      transactions,
+    })
+  ),
 }));
 
 import { FinalReviewStep } from "./FinalReviewStep";
@@ -30,6 +68,7 @@ function makeStoreState(overrides: Partial<typeof storeState> = {}) {
     },
     prevStep: mockPrevStep,
     nextStep: mockNextStep,
+    setCommitResult: mockSetCommitResult,
     ...overrides,
   };
 }
@@ -37,6 +76,7 @@ function makeStoreState(overrides: Partial<typeof storeState> = {}) {
 beforeEach(() => {
   vi.clearAllMocks();
   storeState = makeStoreState();
+  mockIsPending = false;
 });
 
 // --- Tests ---
@@ -58,8 +98,8 @@ describe("FinalReviewStep", () => {
   it("shows new entities section when pendingEntities present", () => {
     storeState = makeStoreState({
       pendingEntities: [
-        { tempId: "temp:entity:1", name: "Woolworths", type: "merchant" },
-        { tempId: "temp:entity:2", name: "Coles", type: "merchant" },
+        { tempId: "temp:entity:1", name: "Woolworths", type: "company" },
+        { tempId: "temp:entity:2", name: "Coles", type: "company" },
       ],
     });
     render(<FinalReviewStep />);
@@ -128,7 +168,7 @@ describe("FinalReviewStep", () => {
     const manyEntities = Array.from({ length: 12 }, (_, i) => ({
       tempId: `temp:entity:${i}`,
       name: `Entity ${i}`,
-      type: "merchant",
+      type: "company",
     }));
     storeState = makeStoreState({ pendingEntities: manyEntities });
     render(<FinalReviewStep />);
@@ -141,7 +181,7 @@ describe("FinalReviewStep", () => {
     const manyEntities = Array.from({ length: 12 }, (_, i) => ({
       tempId: `temp:entity:${i}`,
       name: `Entity ${i}`,
-      type: "merchant",
+      type: "company",
     }));
     storeState = makeStoreState({ pendingEntities: manyEntities });
     render(<FinalReviewStep />);
@@ -150,11 +190,91 @@ describe("FinalReviewStep", () => {
     expect(screen.getByText("Entity 0")).toBeDefined();
   });
 
-  it("calls prevStep and nextStep on button clicks", () => {
+  it("shows 'Approve & Commit All' button instead of 'Continue to Import'", () => {
+    render(<FinalReviewStep />);
+    expect(screen.getByText("Approve & Commit All")).toBeDefined();
+    expect(screen.queryByText("Continue to Import")).toBeNull();
+  });
+
+  it("calls commitImport mutation on Approve & Commit All click", () => {
+    storeState = makeStoreState({
+      confirmedTransactions: [{ id: "t1", checksum: "abc" }],
+    });
+    render(<FinalReviewStep />);
+    fireEvent.click(screen.getByText("Approve & Commit All"));
+    expect(mockMutate).toHaveBeenCalledOnce();
+  });
+
+  it("stores commitResult and shows Continue on success", async () => {
+    render(<FinalReviewStep />);
+    fireEvent.click(screen.getByText("Approve & Commit All"));
+
+    // Simulate successful mutation
+    mutationCallbacks.onSuccess?.({
+      data: {
+        entitiesCreated: 2,
+        rulesApplied: { add: 1, edit: 0, disable: 0, remove: 0 },
+        transactionsImported: 5,
+        transactionsFailed: 0,
+        retroactiveReclassifications: 3,
+      },
+    });
+
+    await waitFor(() => {
+      expect(mockSetCommitResult).toHaveBeenCalledWith({
+        entitiesCreated: 2,
+        rulesApplied: { add: 1, edit: 0, disable: 0, remove: 0 },
+        transactionsImported: 5,
+        transactionsFailed: 0,
+        retroactiveReclassifications: 3,
+      });
+      expect(screen.getByText("Continue")).toBeDefined();
+    });
+  });
+
+  it("hides Back button after successful commit", async () => {
+    render(<FinalReviewStep />);
+    expect(screen.getByText("Back")).toBeDefined();
+
+    mutationCallbacks.onSuccess?.({ data: {} });
+
+    await waitFor(() => {
+      expect(screen.queryByText("Back")).toBeNull();
+    });
+  });
+
+  it("shows error message on commit failure", async () => {
+    render(<FinalReviewStep />);
+    fireEvent.click(screen.getByText("Approve & Commit All"));
+
+    mutationCallbacks.onError?.({ message: "Database constraint violated" });
+
+    await waitFor(() => {
+      expect(screen.getByText("Commit failed")).toBeDefined();
+      expect(screen.getByText("Database constraint violated")).toBeDefined();
+    });
+  });
+
+  it("disables Back button during commit", () => {
+    mockIsPending = true;
+    render(<FinalReviewStep />);
+    const backButton = screen.getByText("Back");
+    expect(backButton.closest("button")?.disabled).toBe(true);
+  });
+
+  it("Continue button calls nextStep", async () => {
+    render(<FinalReviewStep />);
+    mutationCallbacks.onSuccess?.({ data: {} });
+
+    await waitFor(() => {
+      fireEvent.click(screen.getByText("Continue"));
+      expect(mockNextStep).toHaveBeenCalledOnce();
+    });
+  });
+
+  it("calls prevStep on Back click", () => {
     render(<FinalReviewStep />);
     fireEvent.click(screen.getByText("Back"));
     expect(mockPrevStep).toHaveBeenCalledOnce();
-    fireEvent.click(screen.getByText("Continue to Import"));
-    expect(mockNextStep).toHaveBeenCalledOnce();
   });
 });
