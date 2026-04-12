@@ -6,10 +6,13 @@
  *
  * PRD-070 US-05
  */
-import { eq, asc } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { settings, rotationCandidates } from '@pops/db-types';
 import { getDrizzle } from '../../../db.js';
 import { getRadarrClient } from '../arr/service.js';
+import { aggregateCandidates } from './selection-policy.js';
+import { addMovie as addMovieToLibrary } from '../library/service.js';
+import { getTmdbClient, getImageCache } from '../tmdb/index.js';
 
 // ---------------------------------------------------------------------------
 // Settings
@@ -74,11 +77,14 @@ export interface AdditionResult {
 }
 
 /**
- * Pull up to `budget` pending candidates from the queue and add them to
- * Radarr. Updates candidate status to 'added' on success or 'skipped' on
- * failure.
+ * Select and add up to `budget` movies from the candidate queue using the
+ * weighted selection policy (PRD-071 US-05). For each selected candidate:
+ * 1. Add to Radarr with searchForMovie: true
+ * 2. Create a POPS library entry via TMDB metadata
+ * 3. Update candidate status to 'added'
  *
- * Returns the number of movies successfully added.
+ * On failure, marks the candidate as 'skipped' and continues to fill the
+ * requested count.
  */
 export async function addMoviesFromQueue(budget: number): Promise<AdditionResult> {
   if (budget <= 0) {
@@ -101,27 +107,28 @@ export async function addMoviesFromQueue(budget: number): Promise<AdditionResult
   }
 
   const db = getDrizzle();
-  const candidates = db
-    .select()
-    .from(rotationCandidates)
-    .where(eq(rotationCandidates.status, 'pending'))
-    .orderBy(asc(rotationCandidates.discoveredAt))
-    .limit(budget)
-    .all();
+
+  // Use weighted selection policy instead of simple ordering
+  const selected = aggregateCandidates(budget);
+
+  if (selected.length === 0) {
+    return { added: 0, skippedReason: 'no pending candidates in queue' };
+  }
 
   let added = 0;
-  for (const candidate of candidates) {
+  for (const candidate of selected) {
     try {
       // Check if already in Radarr
       const check = await client.checkMovie(candidate.tmdbId);
       if (check.exists) {
         db.update(rotationCandidates)
           .set({ status: 'skipped' })
-          .where(eq(rotationCandidates.id, candidate.id))
+          .where(eq(rotationCandidates.id, candidate.candidateId))
           .run();
         continue;
       }
 
+      // Add to Radarr
       await client.addMovie({
         tmdbId: candidate.tmdbId,
         title: candidate.title,
@@ -130,11 +137,28 @@ export async function addMoviesFromQueue(budget: number): Promise<AdditionResult
         rootFolderPath,
       });
 
+      // Create POPS library entry (idempotent — returns existing if already present)
+      try {
+        const tmdbClient = getTmdbClient();
+        const imageCache = getImageCache();
+        await addMovieToLibrary(candidate.tmdbId, tmdbClient, imageCache);
+      } catch (libErr) {
+        // Log but don't fail the addition — the movie is in Radarr
+        const msg = libErr instanceof Error ? libErr.message : String(libErr);
+        console.warn(
+          `[Rotation] Library entry creation failed for ${candidate.title} (tmdb=${candidate.tmdbId}): ${msg}`
+        );
+      }
+
       db.update(rotationCandidates)
         .set({ status: 'added' })
-        .where(eq(rotationCandidates.id, candidate.id))
+        .where(eq(rotationCandidates.id, candidate.candidateId))
         .run();
       added++;
+
+      console.log(
+        `[Rotation] Added: ${candidate.title} (tmdb=${candidate.tmdbId}, weight=${candidate.weight.toFixed(2)})`
+      );
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error(
@@ -143,7 +167,7 @@ export async function addMoviesFromQueue(budget: number): Promise<AdditionResult
       );
       db.update(rotationCandidates)
         .set({ status: 'skipped' })
-        .where(eq(rotationCandidates.id, candidate.id))
+        .where(eq(rotationCandidates.id, candidate.candidateId))
         .run();
     }
   }
