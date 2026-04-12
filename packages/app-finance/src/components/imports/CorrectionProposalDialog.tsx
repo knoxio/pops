@@ -416,6 +416,7 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
   const addPendingChangeSet = useImportStore((s) => s.addPendingChangeSet);
 
   // Fetch all rules only in browse mode
+  // TODO: add pagination or "load more" if rule counts grow beyond 500
   const browseListQuery = trpc.core.corrections.list.useQuery(
     { limit: 500, offset: 0 },
     { enabled: isBrowseMode && props.open, staleTime: 30_000 }
@@ -426,7 +427,8 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
   /** Merged rules: DB rules + pending ChangeSets applied in order.
    *  CorrectionRule (tRPC output) and CorrectionRow are structurally
    *  compatible for merge — the extra fields (isActive, priority) are
-   *  preserved through the fold. We cast to satisfy the function signature. */
+   *  preserved through the fold. We cast to satisfy the function signature.
+   *  TODO: add a shared adapter or structural type test to catch silent drift. */
   const browseMergedRules: CorrectionRule[] = useMemo(() => {
     if (!isBrowseMode) return [];
     if (pendingChangeSets.length === 0) return browseDbRules;
@@ -1040,10 +1042,7 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
   useEffect(() => {
     if (!isBrowseMode || !props.open) return;
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
-        handleOpenChange(false);
-        return;
-      }
+      // Escape is handled by Radix Dialog — only handle arrow keys here.
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
         e.preventDefault();
         const list = browseFilteredRules;
