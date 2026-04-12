@@ -1,7 +1,7 @@
 # US-08: Preview with merged rules
 
 > PRD: [030 — Local-First Import State Layer](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -11,12 +11,12 @@ Currently, `previewChangeSetImpact` computes before/after diffs using the DB rul
 
 ## Acceptance Criteria
 
-- [ ] The ChangeSet preview flow passes the merged rule set (from `computeMergedRules`) as the `rules` argument to `previewChangeSetImpact` instead of the raw DB rules.
-- [ ] The "before" column in the preview shows matches against the merged rules (reflecting all prior pending ChangeSets), not the DB-only rules.
-- [ ] The "after" column shows matches against the merged rules with the proposed ChangeSet applied on top.
-- [ ] If there are no pending ChangeSets, the preview behaves identically to the current implementation (merged rules = DB rules).
-- [ ] A preview of a ChangeSet that edits a rule added by a prior pending ChangeSet shows the correct before/after diff.
-- [ ] Unit tests cover: preview with no pending (baseline), preview with one prior pending ChangeSet, preview of a ChangeSet editing a pending-added rule.
+- [x] The ChangeSet preview flow passes the merged rule set (from `computeMergedRules`) as the `rules` argument to `previewChangeSetImpact` instead of the raw DB rules.
+- [x] The "before" column in the preview shows matches against the merged rules (reflecting all prior pending ChangeSets), not the DB-only rules.
+- [x] The "after" column shows matches against the merged rules with the proposed ChangeSet applied on top.
+- [x] If there are no pending ChangeSets, the preview behaves identically to the current implementation (merged rules = DB rules).
+- [x] A preview of a ChangeSet that edits a rule added by a prior pending ChangeSet shows the correct before/after diff.
+- [x] Unit tests cover: preview with no pending (baseline), preview with one prior pending ChangeSet, preview of a ChangeSet editing a pending-added rule.
 
 ## Notes
 

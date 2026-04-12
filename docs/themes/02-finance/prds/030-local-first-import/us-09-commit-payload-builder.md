@@ -1,7 +1,7 @@
 # US-09: Commit payload builder
 
 > PRD: [030 — Local-First Import State Layer](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -11,14 +11,14 @@ The builder resolves temp entity IDs by mapping each `temp:entity:{uuid}` to a p
 
 ## Acceptance Criteria
 
-- [ ] A pure function `buildCommitPayload(pendingEntities: PendingEntity[], pendingChangeSets: PendingChangeSet[], confirmedTransactions: ConfirmedTransaction[]) => CommitPayload` exists and is exported.
-- [ ] The `CommitPayload` type includes: `entities: PendingEntity[]`, `changeSets: ChangeSet[]` (in order), and `transactions: ConfirmedTransaction[]`.
-- [ ] The function validates that every temp entity ID (`temp:entity:*`) referenced in any ChangeSet operation's `entityId` field exists in the `pendingEntities` list. If not, it throws a descriptive error.
-- [ ] The function validates that no ChangeSet operation references a temp entity ID that was removed from the pending list (dangling reference check).
-- [ ] Confirmed transactions that reference a temp entity ID in their `entityId` field are included with the temp ID intact — the commit endpoint resolves them.
-- [ ] The ordering of ChangeSets in the payload matches the insertion order from the pending store (the commit endpoint must apply them in this order).
-- [ ] The function returns a frozen/immutable payload (or a plain object — the key requirement is that it is a snapshot, not a live reference to store state).
-- [ ] Unit tests cover: empty payload (no pending anything), entities only, changeSets only, mixed payload with temp entity references, dangling reference error, ordering preservation, confirmed transactions with temp entity IDs.
+- [x] A pure function `buildCommitPayload(pendingEntities: PendingEntity[], pendingChangeSets: PendingChangeSet[], confirmedTransactions: ConfirmedTransaction[]) => CommitPayload` exists and is exported.
+- [x] The `CommitPayload` type includes: `entities: PendingEntity[]`, `changeSets: ChangeSet[]` (in order), and `transactions: ConfirmedTransaction[]`.
+- [x] The function validates that every temp entity ID (`temp:entity:*`) referenced in any ChangeSet operation's `entityId` field exists in the `pendingEntities` list. If not, it throws a descriptive error.
+- [x] The function validates that no ChangeSet operation references a temp entity ID that was removed from the pending list (dangling reference check).
+- [x] Confirmed transactions that reference a temp entity ID in their `entityId` field are included with the temp ID intact — the commit endpoint resolves them.
+- [x] The ordering of ChangeSets in the payload matches the insertion order from the pending store (the commit endpoint must apply them in this order).
+- [x] The function returns a frozen/immutable payload (or a plain object — the key requirement is that it is a snapshot, not a live reference to store state).
+- [x] Unit tests cover: empty payload (no pending anything), entities only, changeSets only, mixed payload with temp entity references, dangling reference error, ordering preservation, confirmed transactions with temp entity IDs.
 
 ## Notes
 
