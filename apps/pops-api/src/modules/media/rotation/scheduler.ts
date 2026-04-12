@@ -266,7 +266,7 @@ export async function runRotationCycle(): Promise<RotationCycleResult> {
     const moviesAdded = additionResult.added;
 
     if (budget === 0) {
-      console.log('[Rotation] Additions skipped — below target free space');
+      console.warn('[Rotation] Additions skipped — below target free space');
     }
 
     const result: RotationCycleResult = {
