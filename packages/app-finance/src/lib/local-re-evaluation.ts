@@ -5,7 +5,10 @@
  * using the same matching logic as the server-side findMatchingCorrectionFromRules.
  * Runs entirely client-side with no server round-trip.
  */
-import type { CorrectionRow, CorrectionMatchResult } from "@pops/api/modules/core/corrections/types";
+import type {
+  CorrectionRow,
+  CorrectionMatchResult,
+} from "@pops/api/modules/core/corrections/types";
 import {
   normalizeDescription,
   classifyCorrectionMatch,
@@ -25,12 +28,10 @@ export interface ReEvaluationResult {
 function findMatchingRule(
   description: string,
   rules: CorrectionRow[],
-  minConfidence: number = 0.7,
+  minConfidence: number = 0.7
 ): CorrectionMatchResult | null {
   const normalized = normalizeDescription(description);
-  const eligible = rules.filter(
-    (r) => (r.isActive === true || r.isActive === 1) && r.confidence >= minConfidence,
-  );
+  const eligible = rules.filter((r) => !!r.isActive && r.confidence >= minConfidence);
 
   const exactMatches = eligible
     .filter((r) => r.matchType === "exact" && r.descriptionPattern === normalized)
@@ -43,7 +44,7 @@ function findMatchingRule(
       (r) =>
         r.matchType === "contains" &&
         r.descriptionPattern.length > 0 &&
-        normalized.includes(r.descriptionPattern),
+        normalized.includes(r.descriptionPattern)
     )
     .sort((a, b) => b.confidence - a.confidence || b.timesApplied - a.timesApplied);
 
@@ -74,7 +75,7 @@ export function reevaluateTransactions(
   uncertain: ProcessedTransaction[],
   failed: ProcessedTransaction[],
   mergedRules: CorrectionRow[],
-  minConfidence: number = 0.7,
+  minConfidence: number = 0.7
 ): ReEvaluationResult {
   const newMatched: ProcessedTransaction[] = [];
   const stillUncertain: ProcessedTransaction[] = [];

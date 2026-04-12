@@ -610,7 +610,7 @@ export function ReviewStep() {
           const reeval = reevaluateTransactions(
             localTransactions.uncertain,
             localTransactions.failed,
-            freshRules
+            freshRules as Parameters<typeof reevaluateTransactions>[2]
           );
           setLocalTransactions((prev) => ({
             ...prev,
