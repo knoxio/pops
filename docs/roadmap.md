@@ -83,6 +83,7 @@ Live status of every theme and epic. Updated as work completes.
 | Discovery & recommendations | Done   | Discover page (PRDs 038, 060) and shelf-based discovery (PRD-065) all done                                                                |
 | Plex sync                   | Done   | Library import (paginated), watch history sync (local + Discover cloud), watchlist sync (bidirectional), auto-check on add, settings page |
 | Radarr & Sonarr             | Done   | Status badges, Radarr request management, Sonarr request management — all done                                                            |
+| Library rotation            | Not started | Automated movie lifecycle: source lists, daily add/remove cycle, disk space gating (PRDs 070-072)                                    |
 
 #### Inventory
 
