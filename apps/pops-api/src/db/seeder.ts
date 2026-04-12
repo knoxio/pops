@@ -1676,7 +1676,7 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
     const seasonCount = 5;
     const episodeCount = 16;
 
-    console.log(
+    console.warn(
       `[seeder] Seeded ${entities.length} entities, ${transactions.length} transactions, ` +
         `${budgets.length} budgets, ${homeInventory.length} inventory items, ${wishList.length} wish list items, ` +
         `${movies.length} movies, ${tvShowsData.length} tv shows, ${seasonCount} seasons, ${episodeCount} episodes, ` +

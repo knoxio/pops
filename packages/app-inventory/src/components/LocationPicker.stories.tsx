@@ -1,5 +1,7 @@
-import { useState } from "react";
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import type React from "react";
+import { useState } from "react";
+
 import { LocationPicker, type LocationTreeNode } from "./LocationPicker";
 
 const mockLocations: LocationTreeNode[] = [
@@ -85,18 +87,20 @@ export const WithSelection: Story = {
   },
 };
 
+function InteractiveRender(): React.JSX.Element {
+  const [value, setValue] = useState<string | null>("6");
+  return (
+    <LocationPicker
+      locations={mockLocations}
+      value={value}
+      onChange={setValue}
+      onCreateLocation={(name, parentId) => alert(`Create "${name}" under ${parentId ?? "root"}`)}
+    />
+  );
+}
+
 export const Interactive: Story = {
-  render: () => {
-    const [value, setValue] = useState<string | null>("6");
-    return (
-      <LocationPicker
-        locations={mockLocations}
-        value={value}
-        onChange={setValue}
-        onCreateLocation={(name, parentId) => alert(`Create "${name}" under ${parentId ?? "root"}`)}
-      />
-    );
-  },
+  render: () => <InteractiveRender />,
 };
 
 export const EmptyTree: Story = {

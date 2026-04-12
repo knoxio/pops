@@ -1,5 +1,3 @@
-import { useState, useCallback, useEffect } from "react";
-import { trpc } from "../../lib/trpc";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +9,9 @@ import {
 import { Input } from "@pops/ui";
 import { Label } from "@pops/ui";
 import { Button } from "@pops/ui";
+import { useCallback, useEffect, useState } from "react";
+
+import { trpc } from "../../lib/trpc";
 
 interface EntityCreateDialogProps {
   open: boolean;

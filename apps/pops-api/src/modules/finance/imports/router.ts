@@ -8,28 +8,29 @@
  * - createEntity: Create new entity in SQLite
  * - commitImport: Atomically create entities, apply changeSets, and write transactions
  */
-import { z } from "zod";
-import crypto from "crypto";
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure } from "../../../trpc.js";
+import crypto from "crypto";
+import { z } from "zod";
+
+import { NotFoundError, ValidationError } from "../../../shared/errors.js";
+import { protectedProcedure, router } from "../../../trpc.js";
+import { applyChangeSet } from "../../core/corrections/service.js";
+import { getProgress, setProgress, updateProgress } from "./progress-store.js";
 import {
-  processImportInputSchema,
-  executeImportInputSchema,
-  createEntityInputSchema,
+  commitImport,
+  createEntity,
+  executeImportWithProgress,
+  processImportWithProgress,
+  reevaluateImportSessionResult,
+} from "./service.js";
+import {
   applyChangeSetAndReevaluateInputSchema,
   commitPayloadSchema,
+  createEntityInputSchema,
+  executeImportInputSchema,
+  processImportInputSchema,
   type ProcessImportOutput,
 } from "./types.js";
-import {
-  processImportWithProgress,
-  executeImportWithProgress,
-  createEntity,
-  reevaluateImportSessionResult,
-  commitImport,
-} from "./service.js";
-import { setProgress, getProgress, updateProgress } from "./progress-store.js";
-import { applyChangeSet } from "../../core/corrections/service.js";
-import { NotFoundError, ValidationError } from "../../../shared/errors.js";
 
 function isProcessImportOutput(result: unknown): result is ProcessImportOutput {
   return (

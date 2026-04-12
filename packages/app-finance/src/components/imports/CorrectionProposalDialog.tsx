@@ -1,26 +1,27 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Plus, Trash2, RefreshCcw, Sparkles, X } from "lucide-react";
+import type { AppRouter } from "@pops/api-client";
 import {
+  Badge,
+  Button,
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  Button,
-  Textarea,
-  Badge,
-  Separator,
   Input,
   Label,
   Select,
+  Separator,
+  Textarea,
 } from "@pops/ui";
 import type { inferRouterInputs, inferRouterOutputs } from "@trpc/server";
+import { Plus, RefreshCcw, Sparkles, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import type { AppRouter } from "@pops/api-client";
+
 import { trpc } from "../../lib/trpc";
 import { useImportStore } from "../../store/importStore";
-import { RulePicker, type CorrectionRule } from "./RulePicker";
+import { type CorrectionRule, RulePicker } from "./RulePicker";
 
 // ---------------------------------------------------------------------------
 // tRPC type helpers

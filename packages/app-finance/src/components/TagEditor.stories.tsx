@@ -3,7 +3,9 @@
  * Demonstrates inline tag editing for transactions
  */
 import type { Meta, StoryObj } from "@storybook/react-vite";
+import type React from "react";
 import { useState } from "react";
+
 import { TagEditor } from "./TagEditor";
 
 const meta: Meta<typeof TagEditor> = {
@@ -69,26 +71,28 @@ export const WithSuggest: Story = {
 };
 
 // Controlled — tracks state changes in the story
-export const Controlled: Story = {
-  render: (args) => {
-    const [saved, setSaved] = useState<string[]>(["Groceries"]);
+function ControlledRender(args: React.ComponentProps<typeof TagEditor>): React.JSX.Element {
+  const [saved, setSaved] = useState<string[]>(["Groceries"]);
 
-    return (
-      <div className="space-y-4">
-        <TagEditor
-          {...args}
-          currentTags={saved}
-          onSave={(tags) => {
-            setSaved(tags);
-            console.log("Saved:", tags);
-          }}
-        />
-        <div className="text-xs text-muted-foreground">
-          Saved tags: {saved.length > 0 ? saved.join(", ") : "none"}
-        </div>
+  return (
+    <div className="space-y-4">
+      <TagEditor
+        {...args}
+        currentTags={saved}
+        onSave={(tags) => {
+          setSaved(tags);
+          console.log("Saved:", tags);
+        }}
+      />
+      <div className="text-xs text-muted-foreground">
+        Saved tags: {saved.length > 0 ? saved.join(", ") : "none"}
       </div>
-    );
-  },
+    </div>
+  );
+}
+
+export const Controlled: Story = {
+  render: (args) => <ControlledRender {...args} />,
 };
 
 // Simulates save latency

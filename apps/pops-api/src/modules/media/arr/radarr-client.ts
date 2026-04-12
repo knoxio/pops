@@ -3,14 +3,14 @@
  */
 import { ArrBaseClient } from "./base-client.js";
 import type {
-  RadarrMovie,
-  RadarrQueueResponse,
   ArrStatusResult,
-  RadarrQualityProfile,
-  RadarrRootFolder,
   RadarrAddMovieInput,
   RadarrCheckResult,
   RadarrCommandResponse,
+  RadarrMovie,
+  RadarrQualityProfile,
+  RadarrQueueResponse,
+  RadarrRootFolder,
 } from "./types.js";
 
 export class RadarrClient extends ArrBaseClient {

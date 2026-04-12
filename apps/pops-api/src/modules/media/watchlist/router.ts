@@ -1,21 +1,22 @@
 /**
  * Watchlist tRPC router — CRUD procedures for media watchlist.
  */
-import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { router, protectedProcedure } from "../../../trpc.js";
+import { z } from "zod";
+
+import { ConflictError, NotFoundError } from "../../../shared/errors.js";
 import { paginationMeta } from "../../../shared/pagination.js";
-import {
-  AddToWatchlistSchema,
-  UpdateWatchlistSchema,
-  WatchlistQuerySchema,
-  toWatchlistEntry,
-  type WatchlistFilters,
-} from "./types.js";
-import * as service from "./service.js";
-import { NotFoundError, ConflictError } from "../../../shared/errors.js";
+import { protectedProcedure, router } from "../../../trpc.js";
 import { getPlexClient } from "../plex/service.js";
 import { pushToPlexWatchlist } from "./plex-push.js";
+import * as service from "./service.js";
+import {
+  AddToWatchlistSchema,
+  toWatchlistEntry,
+  UpdateWatchlistSchema,
+  type WatchlistFilters,
+  WatchlistQuerySchema,
+} from "./types.js";
 
 const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
@@ -75,7 +76,7 @@ export const watchlistRouter = router({
           const client = getPlexClient();
           if (client) {
             await client.addToWatchlist(plexRatingKey);
-            console.log(`[Plex] Pushed watchlist add for ratingKey=${plexRatingKey}`);
+            console.warn(`[Plex] Pushed watchlist add for ratingKey=${plexRatingKey}`);
           }
         } catch (err) {
           console.warn(
@@ -149,7 +150,7 @@ export const watchlistRouter = router({
   /** Remove an entry from the watchlist. Pushes removal to Plex if connected (best-effort). */
   remove: protectedProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
     // Fetch entry before removing to get plexRatingKey
-    let plexRatingKey: string | null = null;
+    let plexRatingKey: string | null;
     try {
       const entry = service.getWatchlistEntry(input.id);
       plexRatingKey = (entry as Record<string, unknown>).plexRatingKey as string | null;
@@ -175,7 +176,7 @@ export const watchlistRouter = router({
         const client = getPlexClient();
         if (client) {
           await client.removeFromWatchlist(plexRatingKey);
-          console.log(`[Plex] Pushed watchlist removal for ratingKey=${plexRatingKey}`);
+          console.warn(`[Plex] Pushed watchlist removal for ratingKey=${plexRatingKey}`);
         }
       } catch (err) {
         console.warn(

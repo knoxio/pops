@@ -8,7 +8,7 @@
  * Full component rendering is out of scope (no DOM environment in this package).
  * We test the pure predicate/state logic that controls the behaviour.
  */
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 // ---------------------------------------------------------------------------
 // Mobile search toggle state
@@ -21,16 +21,14 @@ describe("mobile search toggle", () => {
   });
 
   it("opens when the search icon button is tapped", () => {
-    let mobileSearchOpen = false;
     // Simulate onClick={() => setMobileSearchOpen(true)}
-    mobileSearchOpen = true;
+    const mobileSearchOpen = true;
     expect(mobileSearchOpen).toBe(true);
   });
 
   it("closes when the overlay back button is pressed", () => {
-    let mobileSearchOpen = true;
     // Simulate onClose={() => setMobileSearchOpen(false)}
-    mobileSearchOpen = false;
+    const mobileSearchOpen = false;
     expect(mobileSearchOpen).toBe(false);
   });
 

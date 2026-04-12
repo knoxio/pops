@@ -1,35 +1,19 @@
-import tseslint from "typescript-eslint";
+import { createBaseConfig } from '../../eslint.config.base.mjs';
 
-export default tseslint.config(
+export default [
+  ...createBaseConfig({ react: true }),
   {
-    ignores: ["node_modules", "dist", "coverage", "*.config.js", "*.config.mjs"],
-  },
-  ...tseslint.configs.recommended,
-  {
+    // Media page components have high complexity due to rich interactive UIs
+    files: ['src/pages/**/*.tsx'],
     rules: {
-      "max-lines": ["error", { max: 1600, skipBlankLines: true, skipComments: true }],
-      "max-lines-per-function": [
-        "error",
-        { max: 900, skipBlankLines: true, skipComments: true, IIFEs: true },
-      ],
-      complexity: ["error", 120],
-      "max-statements": ["error", 220],
-      "max-params": ["error", 7],
-      "max-depth": ["error", 7],
-      "@typescript-eslint/no-unused-vars": [
-        "error",
-        {
-          argsIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
-        },
-      ],
-      "@typescript-eslint/no-explicit-any": "error",
+      complexity: ['error', 105],
+      'max-lines-per-function': ['error', { max: 650, skipBlankLines: true, skipComments: true, IIFEs: true }],
     },
   },
   {
-    files: ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}"],
+    files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}'],
     rules: {
-      "@typescript-eslint/no-explicit-any": "off",
+      '@typescript-eslint/no-explicit-any': 'off',
     },
-  }
-);
+  },
+];

@@ -6,7 +6,7 @@
  * button rendering). These tests cover the helper functions and pure logic used
  * to transform tRPC API sections into panel-ready sections.
  */
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 
 /** Replicated from SearchInput — must stay in sync. */
 function domainToLabel(domain: string): string {
@@ -77,9 +77,10 @@ describe("showMore offset calculation", () => {
   });
 
   it("resets extra hits to empty object on query change", () => {
-    let extraHits: Record<string, unknown[]> = { movies: [{ uri: "a" }] };
-    // Simulate useEffect on query change
-    extraHits = {};
+    // Verify reset produces empty object (simulates useEffect on query change)
+    const previousHits: Record<string, unknown[]> = { movies: [{ uri: "a" }] };
+    expect(previousHits).toHaveProperty("movies");
+    const extraHits: Record<string, unknown[]> = {};
     expect(extraHits).toEqual({});
   });
 });
