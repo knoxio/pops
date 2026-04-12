@@ -23,10 +23,10 @@ export async function getRadarrDiskSpace(): Promise<number> {
   const client = getRadarrClient();
   if (!client) throw new Error('Radarr not configured');
   const disks = await client.getDiskSpace();
-  const disk = disks[0];
-  if (!disk) throw new Error('Radarr returned no disk space info');
   // Use the first root folder disk (primary media disk)
-  return disk.freeSpace / BYTES_PER_GB;
+  const primaryDisk = disks[0];
+  if (!primaryDisk) throw new Error('Radarr returned no disk space info');
+  return primaryDisk.freeSpace / BYTES_PER_GB;
 }
 
 /** Fetch sizeOnDisk for all movies from Radarr, returning a map of TMDB ID → size in GB. */
