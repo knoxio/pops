@@ -13,6 +13,7 @@ Build the corrections system — learned tagging rules that improve over time. W
 | 024 | [Corrections](../prds/024-corrections/README.md) | Classification corrections: pattern matching, confidence/activation semantics, transfer-only support | To Review |
 | 028 | [Correction Proposal Engine](../prds/028-correction-proposal-engine/README.md) | Bundled ChangeSet proposals with impact preview, approve/apply, reject-with-feedback | Done |
 | 029 | [Tag Rule Proposals](../prds/029-tag-rule-proposals/README.md) | Tag-rule learning proposals, separate from classification rules | Done |
+| 032 | [Global Rule Manager & Priority Ordering](../prds/032-rule-manager-priority/README.md) | Browse-all mode for CorrectionProposalDialog, priority column, drag-to-reorder, override indicators, orphaned entities | Not started |
 
 ## Dependencies
 
@@ -22,4 +23,3 @@ Build the corrections system — learned tagging rules that improve over time. W
 ## Out of Scope
 
 - AI-generated correction rules (Epic 06)
-- Manual correction management UI (could be a future enhancement)

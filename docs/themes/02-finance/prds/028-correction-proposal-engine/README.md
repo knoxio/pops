@@ -31,9 +31,10 @@ Manual correction work during import is repetitive. A “learning” system is o
 
 ## Non-Goals
 
-- A full UI for browsing and managing all rules outside the import wizard
 - Automatic, silent rule edits without explicit user approval
 - Tag rule learning (specified separately in PRD-029)
+
+> **Note:** A full UI for browsing and managing all rules was previously a non-goal. It is now in scope — see PRD-032 (Global Rule Manager & Priority Ordering) which adds a browse mode to CorrectionProposalDialog.
 
 ## Inputs
 
@@ -89,9 +90,10 @@ The proposal dialog is a diff editor for the ChangeSet. The user refines it in p
 
 On approval (Apply):
 
-- the ChangeSet is applied atomically
-- the import review re-evaluates remaining transactions using the same rules engine as processing
+- the ChangeSet is stored in the local pending ChangeSet store (PRD-030 US-06) — no DB write occurs at this stage
+- the import review re-evaluates remaining transactions against the merged rule set (DB rules + all pending ChangeSets) using the local re-evaluation engine (PRD-030 US-07)
 - newly matched transactions are surfaced immediately
+- all pending ChangeSets are committed atomically in Step 6 (PRD-031)
 
 ### Rejection with feedback (escape hatch)
 
@@ -106,7 +108,7 @@ Rejection is reserved for the "this whole direction is wrong, start over" case �
 
 - **No silent learning**: rule changes always require explicit approval.
 - **Bundled decision**: proposals are approved/rejected as a bundle.
-- **Deterministic preview**: impact preview must be computed by the same matching engine used for processing.
+- **Deterministic preview**: impact preview must be computed by the same matching engine used for processing, using the merged rule set (DB + pending ChangeSets) as the baseline (PRD-030 US-08).
 - **Transfer-only learning supported**: rules may classify a transaction as transfer/income without requiring an entity.
 - **Scope control**: proposal generation must be bounded (avoid sending unbounded rule sets or unbounded transaction histories).
 

@@ -47,6 +47,7 @@ Build the entity registry — the merchant/payee database that transactions and 
 - DataTable with columns: Name (sortable), Type badge, ABN (monospace), Aliases (badges with +N overflow), Default Type badge, Default Tags (badges)
 - Search by name
 - Filter by type
+- "Show orphaned only" filter: entities with zero transactions, marked with an "Orphaned" badge (see PRD-032 US-08)
 - Read-only in current implementation (CRUD via import pipeline and API)
 
 ## Edge Cases
@@ -56,6 +57,7 @@ Build the entity registry — the merchant/payee database that transactions and 
 | Duplicate entity name | Create returns 409 CONFLICT |
 | Entity with aliases containing only whitespace | Whitespace-only aliases stripped during parsing |
 | Entity deleted while import is running | Import uses cached entity lookup — deletion won't affect in-flight imports |
+| Entity with zero transactions | Marked as "Orphaned" on the entities page (PRD-032 US-08) |
 | Entity referenced by inventory item | `entity_id` on inventory item becomes null (FK SET NULL) |
 
 ## User Stories

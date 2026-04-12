@@ -5,9 +5,11 @@
 
 ## Overview
 
-Build a 6-step import wizard for ingesting bank transactions into the transaction ledger. The wizard guides the user from CSV upload through processing, review, tag confirmation, and final write.
+Build a 7-step import wizard for ingesting bank transactions into the transaction ledger. The wizard guides the user from CSV upload through processing, review, tag confirmation, final review with commit, and summary.
 
 The import experience must feel like a guided “cleanup session”: every unresolved item is surfaced, fixes are fast, and the system learns in a transparent, user-controlled way.
+
+Nothing touches the database until the user explicitly commits in Step 6. All entity creations, rule changes, and tag assignments are buffered locally during Steps 1-5 (see PRD-030).
 
 ## Wizard Flow
 
@@ -17,7 +19,8 @@ Step 1: Upload CSV
     → Step 3: Processing (backend: dedup + match + AI, polled)
       → Step 4: Review Entities (resolve uncertain/failed matches)
         → Step 5: Tag Review (accept/edit suggested tags + propose tag rules)
-          → Step 6: Summary (import results)
+          → Step 6: Final Review & Commit (review all pending changes, atomic commit)
+            → Step 7: Summary (import results + reclassification counts)
 ```
 
 ### Step 1: Upload
@@ -52,17 +55,20 @@ Step 1: Upload CSV
 - **Skipped tab:** Read-only table with skip reason (duplicate checksum)
 - User actions:
   - Select entity from dropdown → auto-match similar transactions (toast: "Apply to N similar?")
-  - Create new entity → entity created, then assigned to transaction(s)
+  - Create new entity → buffered locally with temp ID (PRD-030 US-01), then assigned to transaction(s)
   - Edit transaction → edit description, amount, account, entity, location, and transaction type
   - Save Once → applies the fix to this import only
-  - Save & Learn → opens a bundled **Correction Proposal** that the user must approve (PRD-028)
+  - Save & Learn → opens a bundled **Correction Proposal** that the user must approve (PRD-028); on approval, ChangeSet is stored locally (PRD-030 US-06), not written to the DB
+  - Manage Rules → opens the rule manager in browse mode (PRD-032 US-04) for full CRUD over all rules (DB + pending)
   - Override type to "transfer" or "income" → entity becomes optional
 - Gate: all uncertain/failed must be resolved before advancing
 
 #### Save & Learn (Correction Proposal)
 “Save & Learn” does not directly create or edit rules. Instead it triggers the Correction Proposal Engine (PRD-028) which proposes a bundled ChangeSet. The user can:
-- **Approve**: apply the ChangeSet, then immediately re-evaluate remaining transactions in this import using the same rules engine used by processing.
+- **Approve**: store the ChangeSet in the local pending store (PRD-030 US-06), then immediately re-evaluate remaining transactions using the merged rule set (DB + pending ChangeSets).
 - **Reject**: provide a required feedback message; the system uses that feedback to propose a better ChangeSet.
+
+All approved ChangeSets are deferred — no DB writes happen until Step 6.
 
 #### Rule transparency (required)
 When a transaction is matched by a learned rule, the UI must show:
@@ -84,17 +90,24 @@ Edits to a rule-matched transaction must generate a new Correction Proposal Chan
 - "Accept All Suggestions" button (top-level)
 - Tag suggestions can be proposed at **group scope** (apply to all transactions in a group) and **transaction scope** (apply to one transaction). The UI must support accept/reject at both scopes, with transaction-level overrides.
 - Tag rule learning is separate from entity/type correction rules. If the user chooses to learn from tag edits, it must follow the same proposal + bundled approval + reject-with-feedback model, scoped to tag rules only (PRD-029).
-- On continue: calls `finance.imports.executeImport` → polls progress every 1.5s
+- On continue: advances to Step 6 (Final Review & Commit)
 
-### Step 6: Summary
-- Displays: imported count (✅), failed count with error details (❌), skipped count (⏸️)
+### Step 6: Final Review & Commit
+- Displays all pending changes in a read-only summary: new entities, rule changes (grouped by ChangeSet with add/edit/disable/remove badges), transaction count, tag assignment count
+- "Approve & Commit All" button triggers `finance.imports.commitImport` (PRD-031 US-03), which atomically writes entities, rules, transactions, and runs retroactive reclassification (PRD-031 US-04)
+- Progress indicator during commit
+- On completion: displays entity/rule/transaction/reclassification counts, then advances to Summary
+- Editing goes back to the relevant earlier step
+
+### Step 7: Summary
+- Displays: imported count, failed count with error details, skipped count, retroactive reclassification count
 - Buttons: "New Import" (resets wizard), "View Transactions" (navigates to list)
 
 ## State Management (Zustand)
 
 ```typescript
 interface ImportStore {
-  currentStep: 1..6
+  currentStep: 1..7
   // Step 1
   file: File | null
   bankType: string
@@ -103,19 +116,27 @@ interface ImportStore {
   rows: Record<string, string>[]
   columnMap: { date, description, amount, location? }
   parsedTransactions: ParsedTransaction[]
+  parsedTransactionsFingerprint: string
   // Step 3
   processSessionId: string | null
   processedTransactions: { matched, uncertain, failed, skipped, warnings? }
+  processedForFingerprint: string | null
+  // Step 4 — local-first pending state (PRD-030)
+  pendingEntities: PendingEntity[]
+  pendingChangeSets: PendingChangeSet[]
   // Step 5
   confirmedTransactions: ConfirmedTransaction[]
-  executeSessionId: string | null
-  // Step 6
-  importResult: { imported, failed, skipped } | null
+  // Step 6 — commit
+  commitResult: CommitResult | null
+  // Step 7
+  importResult: { imported, failed, skipped, reclassified } | null
   // Actions
   nextStep(), prevStep(), goToStep(n), reset()
   updateTransaction(t, updates)
   findSimilar(t)
   updateTransactionTags(checksum, tags)
+  addPendingEntity(entity), removePendingEntity(tempId)
+  addPendingChangeSet(entry), removePendingChangeSet(tempId)
 }
 ```
 
@@ -181,11 +202,15 @@ interface ImportStore {
 | 20 | [us-20-bulk-tag-apply](us-20-bulk-tag-apply.md) | Group-level bulk tag application (merge semantics, never replaces individual edits) | Done | Blocked by us-19 |
 | 21 | [us-21-execute-import](us-21-execute-import.md) | Call executeImport, poll progress every 1.5s, show write status | Done | Blocked by us-19 |
 
-### Summary (Step 6)
+### Final Review & Commit (Step 6)
+
+See PRD-031 for the full spec and user stories for this step.
+
+### Summary (Step 7)
 
 | # | Story | Summary | Status | Parallelisable |
 |---|-------|---------|--------|----------------|
-| 22 | [us-22-summary](us-22-summary.md) | Display import results (imported/failed/skipped counts), "New Import" and "View Transactions" buttons | Done | Blocked by us-21 |
+| 22 | [us-22-summary](us-22-summary.md) | Display import results (imported/failed/skipped/reclassified counts), "New Import" and "View Transactions" buttons | Done | Blocked by us-21 |
 
 US-03 and US-04 can parallelise. US-11, US-12, US-13, US-14, US-15 can parallelise after US-10. US-18 and US-19 can parallelise after US-17.
 
