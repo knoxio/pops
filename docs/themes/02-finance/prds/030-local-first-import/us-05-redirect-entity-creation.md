@@ -1,7 +1,7 @@
 # US-05: Redirect entity creation to local store
 
 > PRD: [030 — Local-First Import State Layer](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -11,13 +11,13 @@ Entity dropdowns throughout the import wizard must include pending entities alon
 
 ## Acceptance Criteria
 
-- [ ] `EntityCreateDialog` calls `addPendingEntity` (from US-01) on submit instead of `trpc.finance.imports.createEntity.useMutation`.
-- [ ] After a pending entity is added, the `onEntityCreated` callback is called with `{ entityId: tempId, entityName: name }` so the calling component receives the temp ID.
-- [ ] Entity dropdowns (entity select/combobox components used during review) display the merged entity list (`computeMergedEntities` from US-04) instead of only the DB entity query.
-- [ ] Pending entities are visually distinguishable in dropdowns (e.g. a badge, italic text, or subtle indicator) so the user knows which entities are not yet committed.
-- [ ] If the user tries to create an entity with a name that already exists in DB or pending, the dialog shows an inline validation error and does not add the entity.
-- [ ] The `trpc.core.entities.list.invalidate()` call is removed from the entity creation flow (no server query invalidation needed since nothing was written).
-- [ ] Existing tests for EntityCreateDialog are updated to verify local-store behavior instead of tRPC mutation calls.
+- [x] `EntityCreateDialog` calls `addPendingEntity` (from US-01) on submit instead of `trpc.finance.imports.createEntity.useMutation`.
+- [x] After a pending entity is added, the `onEntityCreated` callback is called with `{ entityId: tempId, entityName: name }` so the calling component receives the temp ID.
+- [x] Entity dropdowns (entity select/combobox components used during review) display the merged entity list (`computeMergedEntities` from US-04) instead of only the DB entity query.
+- [x] Pending entities are visually distinguishable in dropdowns (e.g. a badge, italic text, or subtle indicator) so the user knows which entities are not yet committed.
+- [x] If the user tries to create an entity with a name that already exists in DB or pending, the dialog shows an inline validation error and does not add the entity.
+- [x] The `trpc.core.entities.list.invalidate()` call is removed from the entity creation flow (no server query invalidation needed since nothing was written).
+- [x] Existing tests for EntityCreateDialog are updated to verify local-store behavior instead of tRPC mutation calls.
 
 ## Notes
 

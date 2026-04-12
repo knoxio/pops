@@ -26,13 +26,19 @@ type ProposeData = {
 
 let mockProposeData: ProposeData = null;
 const mockPreviewMutateAsync = vi.fn();
-const mockApplyMutate = vi.fn();
 const mockRejectMutate = vi.fn();
 const mockListQuery = vi.fn();
 const mockReviseMutateAsync = vi.fn();
+const mockAddPendingChangeSet = vi.fn();
 
-let applyOnSuccess: ((res: unknown) => void) | undefined;
 let rejectOnSuccess: (() => void) | undefined;
+
+vi.mock("../../store/importStore", () => ({
+  useImportStore: (selector: (s: Record<string, unknown>) => unknown) => {
+    const state = { addPendingChangeSet: mockAddPendingChangeSet, pendingChangeSets: [] };
+    return selector(state);
+  },
+}));
 
 vi.mock("../../lib/trpc", () => ({
   trpc: {
@@ -73,33 +79,6 @@ vi.mock("../../lib/trpc", () => ({
             mutateAsync: mockReviseMutateAsync,
             isPending: false,
           }),
-        },
-      },
-    },
-    finance: {
-      imports: {
-        applyChangeSetAndReevaluate: {
-          useMutation: (opts: {
-            onSuccess?: (res: { result: unknown; affectedCount: number }) => void;
-            onError?: (err: Error) => void;
-          }) => {
-            applyOnSuccess = opts.onSuccess as (res: unknown) => void;
-            return {
-              mutate: (...args: unknown[]) => {
-                mockApplyMutate(...args);
-                applyOnSuccess?.({
-                  result: {
-                    matched: [],
-                    uncertain: [],
-                    failed: [],
-                    skipped: [],
-                  },
-                  affectedCount: 3,
-                });
-              },
-              isPending: false,
-            };
-          },
         },
       },
     },
@@ -462,7 +441,7 @@ beforeEach(() => {
   mockProposeData = null;
   mockPreviewMutateAsync.mockReset();
   mockPreviewMutateAsync.mockResolvedValue({ diffs: [], summary: EMPTY_SUMMARY });
-  mockApplyMutate.mockReset();
+  mockAddPendingChangeSet.mockReset();
   mockRejectMutate.mockReset();
   mockListQuery.mockReset();
   mockReviseMutateAsync.mockReset();
@@ -574,7 +553,7 @@ describe("CorrectionProposalDialog", () => {
     });
   });
 
-  it("calls applyChangeSetAndReevaluate with the current ChangeSet on Apply", async () => {
+  it("stores ChangeSet locally via addPendingChangeSet on Apply", async () => {
     seedTwoAddOps();
     const { props } = renderDialog();
 
@@ -590,14 +569,16 @@ describe("CorrectionProposalDialog", () => {
 
     fireEvent.click(applyBtn);
 
-    expect(mockApplyMutate).toHaveBeenCalledTimes(1);
-    const call = mockApplyMutate.mock.calls[0]?.[0] as {
-      sessionId: string;
+    expect(mockAddPendingChangeSet).toHaveBeenCalledTimes(1);
+    const call = mockAddPendingChangeSet.mock.calls[0]?.[0] as {
       changeSet: { ops: unknown[] };
+      source: string;
     };
-    expect(call.sessionId).toBe("11111111-1111-1111-1111-111111111111");
     expect(call.changeSet.ops).toHaveLength(2);
-    expect(props.onApproved).toHaveBeenCalledWith(expect.objectContaining({ matched: [] }), 3);
+    expect(call.source).toBe("correction-proposal");
+    expect(props.onApproved).toHaveBeenCalledWith(
+      expect.objectContaining({ ops: expect.any(Array) })
+    );
   });
 
   it("reject flow requires feedback and calls rejectChangeSet", async () => {

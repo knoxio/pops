@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import {
   CheckCircle,
   AlertTriangle,
@@ -21,6 +21,8 @@ import { CorrectionProposalDialog } from "./CorrectionProposalDialog";
 import { toast } from "sonner";
 import type { ConfirmedTransaction } from "@pops/api/modules/finance/imports";
 import { groupTransactionsByEntity } from "../../lib/transaction-utils";
+import { computeMergedEntities, computeMergedRules } from "../../lib/merged-state";
+import { reevaluateTransactions } from "../../lib/local-re-evaluation";
 
 type ViewMode = "list" | "grouped";
 
@@ -35,7 +37,6 @@ export function ReviewStep() {
     nextStep,
     goToStep,
     findSimilar,
-    pendingChangeSets,
   } = useImportStore();
 
   const [localTransactions, setLocalTransactions] = useState(processedTransactions);
@@ -87,15 +88,58 @@ export function ReviewStep() {
     [activeTab]
   );
 
-  const { data: entities } = trpc.core.entities.list.useQuery({});
+  const { data: dbEntitiesData } = trpc.core.entities.list.useQuery({});
+  const { data: dbRulesData } = trpc.core.corrections.list.useQuery({});
+  const pendingEntities = useImportStore((s) => s.pendingEntities);
+  const addPendingEntity = useImportStore((s) => s.addPendingEntity);
+  const pendingChangeSets = useImportStore((s) => s.pendingChangeSets);
 
-  const utils = trpc.useUtils();
-  const createEntityMutation = trpc.core.entities.create.useMutation({
-    onSuccess: () => {
-      // Refresh entities list
-      utils.core.entities.list.invalidate();
-    },
-  });
+  const entities = useMemo(
+    () =>
+      dbEntitiesData?.data
+        ? computeMergedEntities(dbEntitiesData.data, pendingEntities)
+        : undefined,
+    [dbEntitiesData?.data, pendingEntities]
+  );
+
+  // Re-evaluate transactions when pending changeSets change (US-07 AC-8).
+  // Covers both addPendingChangeSet and removePendingChangeSet.
+  // On removal, rule-promoted transactions are demoted back to uncertain/failed,
+  // then all are re-evaluated against the updated merged rules.
+  const prevChangeSetsRef = useRef(pendingChangeSets);
+  const localTxRef = useRef(localTransactions);
+  localTxRef.current = localTransactions;
+  useEffect(() => {
+    if (prevChangeSetsRef.current === pendingChangeSets) return;
+    prevChangeSetsRef.current = pendingChangeSets;
+    if (!dbRulesData?.data) return;
+
+    // tags is string[] from tRPC but string in CorrectionRow (SQLite JSON) — cast through unknown
+    const freshRules = computeMergedRules(
+      dbRulesData.data as unknown as Parameters<typeof computeMergedRules>[0],
+      pendingChangeSets
+    );
+    const current = localTxRef.current;
+    // Demote rule-promoted transactions back to uncertain for re-evaluation
+    const rulePromoted = current.matched.filter((t) => t.ruleProvenance);
+    const manuallyMatched = current.matched.filter((t) => !t.ruleProvenance);
+    const candidateUncertain = [...current.uncertain, ...rulePromoted];
+
+    const reeval = reevaluateTransactions(
+      candidateUncertain,
+      current.failed,
+      freshRules as unknown as Parameters<typeof reevaluateTransactions>[2]
+    );
+
+    const updated = {
+      ...current,
+      matched: [...manuallyMatched, ...reeval.matched],
+      uncertain: reeval.uncertain,
+      failed: reeval.failed,
+    };
+    setLocalTransactions(updated);
+    useImportStore.getState().setProcessedTransactions(updated);
+  }, [pendingChangeSets, dbRulesData?.data]);
 
   // Count unresolved transactions
   const unresolvedCount = useMemo(
@@ -255,9 +299,10 @@ export function ReviewStep() {
 
       // Try to find entity by name if entityId is missing
       let entityId = transaction.entity.entityId;
-      if (!entityId && entities?.data) {
-        const matchingEntity = entities.data.find(
-          (e) => e.name.toLowerCase() === transaction.entity?.entityName?.toLowerCase()
+      if (!entityId && entities) {
+        const matchingEntity = entities.find(
+          (e: { name: string; id: string }) =>
+            e.name.toLowerCase() === transaction.entity?.entityName?.toLowerCase()
         );
         if (matchingEntity) {
           entityId = matchingEntity.id;
@@ -296,16 +341,15 @@ export function ReviewStep() {
 
       try {
         // Check if entity exists
-        let entityId = entities?.data?.find(
-          (e) => e.name.toLowerCase() === entityName.toLowerCase()
-        )?.id;
+        let entityId = entities?.find((e) => e.name.toLowerCase() === entityName.toLowerCase())?.id;
 
-        // Create entity if it doesn't exist
+        // Create a pending entity if it doesn't exist
         if (!entityId) {
-          const result = await createEntityMutation.mutateAsync({
-            name: entityName,
-          });
-          entityId = result.data.id;
+          const pending = addPendingEntity(
+            { name: entityName, type: "company" },
+            dbEntitiesData?.data
+          );
+          entityId = pending.tempId;
         }
 
         const resolvedEntityId = entityId;
@@ -349,7 +393,7 @@ export function ReviewStep() {
         );
       }
     },
-    [entities, createEntityMutation, autoSaveRuleAndReEvaluate]
+    [entities, addPendingEntity, dbEntitiesData?.data, autoSaveRuleAndReEvaluate]
   );
 
   /**
@@ -607,11 +651,10 @@ export function ReviewStep() {
           ...localTransactions.failed,
           ...localTransactions.skipped,
         ].map((t) => ({ checksum: t.checksum, description: t.description }))}
-        onApproved={(result, affectedCount) => {
-          setLocalTransactions(result);
-          toast.success(
-            `Rules applied — ${affectedCount} transaction${affectedCount === 1 ? "" : "s"} re-evaluated`
-          );
+        onApproved={() => {
+          // Re-evaluation is handled by the pendingChangeSets useEffect (US-07 AC-8).
+          // The effect fires on next render when pendingChangeSets ref changes.
+          toast.success("Rules saved locally");
         }}
       />
       <CorrectionProposalDialog
@@ -737,7 +780,7 @@ export function ReviewStep() {
             editingTransaction={editingTransaction}
             onSaveEdit={handleSaveEdit}
             onCancelEdit={handleCancelEdit}
-            entities={entities?.data}
+            entities={entities}
           />
         </TabsContent>
 
@@ -756,7 +799,7 @@ export function ReviewStep() {
             editingTransaction={editingTransaction}
             onSaveEdit={handleSaveEdit}
             onCancelEdit={handleCancelEdit}
-            entities={entities?.data}
+            entities={entities}
           />
         </TabsContent>
 
@@ -775,7 +818,7 @@ export function ReviewStep() {
             editingTransaction={editingTransaction}
             onSaveEdit={handleSaveEdit}
             onCancelEdit={handleCancelEdit}
-            entities={entities?.data}
+            entities={entities}
           />
         </TabsContent>
 
@@ -812,6 +855,7 @@ export function ReviewStep() {
         }}
         onEntityCreated={handleEntityCreated}
         suggestedName={selectedTransaction?.entity?.entityName}
+        dbEntities={dbEntitiesData?.data}
       />
     </div>
   );

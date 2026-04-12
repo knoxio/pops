@@ -77,7 +77,16 @@ export function EntitySelect({
                   <Check
                     className={`mr-2 h-4 w-4 ${value === entity.id ? "opacity-100" : "opacity-0"}`}
                   />
-                  <span className="truncate">{entity.name}</span>
+                  <span
+                    className={`truncate ${entity.id.startsWith("temp:entity:") ? "italic" : ""}`}
+                  >
+                    {entity.name}
+                  </span>
+                  {entity.id.startsWith("temp:entity:") && (
+                    <Badge variant="secondary" className="ml-1 text-xs shrink-0">
+                      Pending
+                    </Badge>
+                  )}
                   <Badge variant="outline" className="ml-auto text-xs capitalize shrink-0">
                     {entity.type}
                   </Badge>
