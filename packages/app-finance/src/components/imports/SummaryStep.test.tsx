@@ -25,6 +25,7 @@ function makeCommitResult(overrides: Record<string, unknown> = {}) {
   return {
     entitiesCreated: 3,
     rulesApplied: { add: 2, edit: 1, disable: 0, remove: 0 },
+    tagRulesApplied: 0,
     transactionsImported: 10,
     transactionsFailed: 1,
     failedDetails: [{ checksum: 'abc123def456', error: 'Duplicate checksum' }],

@@ -1,12 +1,18 @@
 import { logger } from '../../../../lib/logger.js';
 import {
   applyChangeSetToRules,
-  findMatchingCorrection,
-  findMatchingCorrectionFromRules,
+  findAllMatchingCorrectionFromDB,
+  findAllMatchingCorrectionFromRules,
   listCorrections,
 } from '../../../core/corrections/service.js';
 import type { ChangeSet, CorrectionRow } from '../../../core/corrections/types.js';
-import type { ParsedTransaction, ProcessedTransaction, ProcessImportOutput } from '../types.js';
+import { classifyCorrectionMatch } from '../../../core/corrections/types.js';
+import type {
+  MatchedRule,
+  ParsedTransaction,
+  ProcessedTransaction,
+  ProcessImportOutput,
+} from '../types.js';
 import { loadEntityMaps } from './entity-lookup.js';
 import { matchEntity } from './entity-matcher.js';
 import { buildSuggestedTags, loadKnownTags, parseCorrectionTags } from './tag-management.js';
@@ -22,13 +28,28 @@ export function applyLearnedCorrection(args: {
 }): { processed: ProcessedTransaction; bucket: 'matched' | 'uncertain' } | null {
   const { transaction, minConfidence, knownTags, index, total, rules } = args;
 
-  const correctionResult = rules
-    ? findMatchingCorrectionFromRules(transaction.description, rules, minConfidence)
-    : findMatchingCorrection(transaction.description, minConfidence);
-  if (!correctionResult) return null;
+  // Collect ALL matching rules in priority order — first is the winner, rest are overridden.
+  const allMatchingRules = rules
+    ? findAllMatchingCorrectionFromRules(transaction.description, rules, minConfidence)
+    : findAllMatchingCorrectionFromDB(transaction.description, minConfidence);
 
-  const { correction, status } = correctionResult;
+  if (allMatchingRules.length === 0) return null;
+
+  const correction = allMatchingRules[0];
+  if (!correction) return null;
+  const { status } = classifyCorrectionMatch(correction);
   const entityId = correction.entityId;
+
+  // Build the matchedRules array for override indicators (US-07).
+  const matchedRules: MatchedRule[] = allMatchingRules.map((rule) => ({
+    ruleId: rule.id,
+    pattern: rule.descriptionPattern,
+    matchType: rule.matchType,
+    confidence: rule.confidence,
+    priority: rule.priority,
+    entityId: rule.entityId ?? null,
+    entityName: rule.entityName ?? null,
+  }));
 
   if (!entityId) {
     // Transfer/income rules are allowed to classify without assigning an entity.
@@ -60,6 +81,7 @@ export function applyLearnedCorrection(args: {
             matchType: correction.matchType,
             confidence: correction.confidence,
           },
+          matchedRules,
           status: 'matched',
           suggestedTags: buildSuggestedTags(
             transaction.description,
@@ -116,6 +138,7 @@ export function applyLearnedCorrection(args: {
         matchType: correction.matchType,
         confidence: correction.confidence,
       },
+      matchedRules,
       status,
       suggestedTags: buildSuggestedTags(
         transaction.description,

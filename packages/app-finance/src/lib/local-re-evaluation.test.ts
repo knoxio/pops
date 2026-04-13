@@ -248,4 +248,70 @@ describe('reevaluateTransactions', () => {
 
     expect(result.matched).toHaveLength(1);
   });
+
+  it('populates matchedRules with only winner when single rule matches', () => {
+    const uncertain = [makeTxn({ description: 'WOOLWORTHS 1234', status: 'uncertain' })];
+    const rules = [makeRule({ id: 'rule-solo', descriptionPattern: 'WOOLWORTHS' })];
+
+    const result = reevaluateTransactions(uncertain, [], rules);
+
+    expect(result.matched[0]!.matchedRules).toHaveLength(1);
+    expect(result.matched[0]!.matchedRules?.[0]?.ruleId).toBe('rule-solo');
+  });
+
+  it('populates matchedRules with winner first and overridden second when two rules match', () => {
+    const uncertain = [makeTxn({ description: 'WOOLWORTHS 1234', status: 'uncertain' })];
+    const rules = [
+      makeRule({
+        id: 'r-winner',
+        descriptionPattern: 'WOOLWORTHS',
+        matchType: 'exact',
+        confidence: 0.95,
+        entityName: 'Winner Entity',
+      }),
+      makeRule({
+        id: 'r-overridden',
+        descriptionPattern: 'WOOLWORTHS',
+        matchType: 'contains',
+        confidence: 0.9,
+        entityName: 'Overridden Entity',
+      }),
+    ];
+
+    const result = reevaluateTransactions(uncertain, [], rules);
+
+    expect(result.matched[0]!.entity.entityName).toBe('Winner Entity');
+    expect(result.matched[0]!.matchedRules).toHaveLength(2);
+    expect(result.matched[0]!.matchedRules?.[0]?.ruleId).toBe('r-winner');
+    expect(result.matched[0]!.matchedRules?.[1]?.ruleId).toBe('r-overridden');
+  });
+
+  it('promotes second rule to winner when first is disabled (re-evaluation with merged rules)', () => {
+    const uncertain = [makeTxn({ description: 'WOOLWORTHS 1234', status: 'uncertain' })];
+    // Only the second rule is active (first rule has been disabled via a pending op)
+    const rules = [
+      makeRule({
+        id: 'r-disabled',
+        descriptionPattern: 'WOOLWORTHS',
+        matchType: 'exact',
+        confidence: 0.95,
+        entityName: 'Disabled Rule Entity',
+        isActive: false,
+      }),
+      makeRule({
+        id: 'r-active',
+        descriptionPattern: 'WOOLWORTHS',
+        matchType: 'contains',
+        confidence: 0.9,
+        entityName: 'Active Rule Entity',
+        isActive: true,
+      }),
+    ];
+
+    const result = reevaluateTransactions(uncertain, [], rules);
+
+    expect(result.matched[0]!.entity.entityName).toBe('Active Rule Entity');
+    expect(result.matched[0]!.matchedRules).toHaveLength(1);
+    expect(result.matched[0]!.matchedRules?.[0]?.ruleId).toBe('r-active');
+  });
 });

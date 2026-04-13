@@ -6,6 +6,8 @@ import { logger } from '../../../../lib/logger.js';
 import { ValidationError } from '../../../../shared/errors.js';
 import { findMatchingCorrectionFromRules } from '../../../core/corrections/service.js';
 import { applyChangeSet } from '../../../core/corrections/service.js';
+import { applyTagRuleChangeSet, upsertVocabularyTag } from '../../../core/tag-rules/service.js';
+import type { TagRuleChangeSet } from '../../../core/tag-rules/types.js';
 import type { TransactionRow } from '../../transactions/types.js';
 import type { CommitPayload, CommitResult, FailedTransactionDetail } from '../types.js';
 
@@ -94,6 +96,17 @@ function validateCommitPayload(payload: CommitPayload): void {
     }
   }
 
+  for (const cs of payload.tagRuleChangeSets) {
+    for (const op of cs.ops) {
+      if (op.op === 'add' && op.data.entityId?.startsWith(TEMP_ENTITY_PREFIX)) {
+        referencedTempIds.add(op.data.entityId);
+      }
+      if (op.op === 'edit' && op.data.entityId?.startsWith(TEMP_ENTITY_PREFIX)) {
+        referencedTempIds.add(op.data.entityId);
+      }
+    }
+  }
+
   for (const txn of payload.transactions) {
     if (txn.entityId?.startsWith(TEMP_ENTITY_PREFIX)) {
       referencedTempIds.add(txn.entityId);
@@ -129,6 +142,39 @@ function resolveChangeSetTempIds(
       return op;
     }),
   };
+}
+
+function resolveTagRuleChangeSetTempIds(
+  cs: TagRuleChangeSet,
+  tempIdMap: Map<string, string>
+): TagRuleChangeSet {
+  return {
+    ...cs,
+    ops: cs.ops.map((op) => {
+      if (op.op === 'add' && op.data.entityId?.startsWith(TEMP_ENTITY_PREFIX)) {
+        const realId = tempIdMap.get(op.data.entityId);
+        return { ...op, data: { ...op.data, entityId: realId ?? op.data.entityId } };
+      }
+      if (op.op === 'edit' && op.data.entityId?.startsWith(TEMP_ENTITY_PREFIX)) {
+        const realId = tempIdMap.get(op.data.entityId);
+        return { ...op, data: { ...op.data, entityId: realId ?? op.data.entityId } };
+      }
+      return op;
+    }),
+  };
+}
+
+function collectTagsFromTagRuleChangeSet(cs: TagRuleChangeSet): string[] {
+  const tags = new Set<string>();
+  for (const op of cs.ops) {
+    if (op.op === 'add' && op.data.tags) {
+      for (const t of op.data.tags) {
+        const s = t.trim();
+        if (s) tags.add(s);
+      }
+    }
+  }
+  return [...tags];
 }
 
 /**
@@ -187,6 +233,17 @@ export function commitImport(payload: CommitPayload): CommitResult {
       for (const op of resolved.ops) {
         rulesApplied[op.op]++;
       }
+    }
+
+    // Phase 2b: Apply pending tag-rule ChangeSets (PRD-029) with resolved temp IDs
+    let tagRulesApplied = 0;
+    for (const cs of payload.tagRuleChangeSets) {
+      const resolved = resolveTagRuleChangeSetTempIds(cs, tempIdMap);
+      for (const tag of collectTagsFromTagRuleChangeSet(resolved)) {
+        upsertVocabularyTag(tag, 'user');
+      }
+      applyTagRuleChangeSet(resolved);
+      tagRulesApplied += resolved.ops.length;
     }
 
     // Phase 3: Write transactions with resolved temp IDs
@@ -249,6 +306,7 @@ export function commitImport(payload: CommitPayload): CommitResult {
     return {
       entitiesCreated,
       rulesApplied,
+      tagRulesApplied,
       transactionsImported,
       transactionsFailed,
       failedDetails,

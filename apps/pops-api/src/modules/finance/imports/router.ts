@@ -6,7 +6,7 @@
  * - executeImport: Write confirmed transactions to SQLite - returns session ID for polling
  * - getImportProgress: Poll for import progress by session ID
  * - createEntity: Create new entity in SQLite
- * - commitImport: Atomically create entities, apply changeSets, and write transactions
+ * - commitImport: Atomically create entities, apply changeSets + tag rule changeSets, and write transactions
  */
 import { TRPCError } from '@trpc/server';
 import crypto from 'crypto';

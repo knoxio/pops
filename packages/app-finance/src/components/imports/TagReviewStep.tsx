@@ -5,10 +5,15 @@ import { ChevronDown, ChevronRight, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
+import {
+  computeLearnableTags,
+  descriptionPatternFromGroup,
+} from '../../lib/tag-rule-learn-helpers';
 import { trpc } from '../../lib/trpc';
 import { cn } from '../../lib/utils';
 import { useImportStore } from '../../store/importStore';
 import { TagEditor, type TagMetaEntry } from '../TagEditor';
+import { type TagRuleLearnSignal, TagRuleProposalDialog } from './TagRuleProposalDialog';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -102,6 +107,48 @@ export function TagReviewStep() {
     );
   }
 
+  const [learnOpen, setLearnOpen] = useState(false);
+  const [learnSignal, setLearnSignal] = useState<TagRuleLearnSignal | null>(null);
+
+  const previewTransactionsForRules = useMemo(
+    () =>
+      confirmedTransactions.map((t) => ({
+        transactionId: t.checksum,
+        description: t.description,
+        entityId: t.entityId ?? null,
+      })),
+    [confirmedTransactions]
+  );
+
+  const openLearnForGroup = useCallback(
+    (group: ConfirmedGroup) => {
+      const snap = initialTagsRef.current;
+      if (!snap || group.transactions.length === 0) return;
+      const learnable = computeLearnableTags(group.transactions, localTags, snap);
+      const fallback = unionTags(group.transactions.map((t) => localTags[t.checksum] ?? []));
+      const tags = learnable.length > 0 ? learnable : fallback;
+      if (tags.length === 0) {
+        toast.error('Add at least one tag to this group before saving a rule.');
+        return;
+      }
+      const pattern = descriptionPatternFromGroup(group.transactions.map((t) => t.description));
+      const eids = [
+        ...new Set(group.transactions.map((t) => t.entityId).filter(Boolean)),
+      ] as string[];
+      const entityId = eids.length === 1 ? eids[0]! : null;
+      const firstDesc = group.transactions[0]!.description;
+      setLearnSignal({
+        descriptionPattern:
+          pattern || firstDesc.slice(0, 16).toUpperCase().replace(/\s+/g, ' ').trim() || 'IMPORT',
+        matchType: 'contains',
+        entityId,
+        tags,
+      });
+      setLearnOpen(true);
+    },
+    [localTags]
+  );
+
   const groups = useMemo(() => groupByEntity(confirmedTransactions), [confirmedTransactions]);
 
   const { data: serverTags } = trpc.finance.transactions.availableTags.useQuery();
@@ -157,6 +204,13 @@ export function TagReviewStep() {
 
   return (
     <div className="space-y-6">
+      <TagRuleProposalDialog
+        open={learnOpen}
+        onOpenChange={setLearnOpen}
+        signal={learnSignal}
+        previewTransactions={previewTransactionsForRules}
+      />
+
       <div>
         <h2 className="text-2xl font-semibold mb-2">Tag Review</h2>
         <p className="text-sm text-muted-foreground">
@@ -184,6 +238,7 @@ export function TagReviewStep() {
             availableTags={availableTags ?? []}
             onUpdateTag={updateTag}
             onApplyGroupTags={handleApplyGroupTags}
+            onOpenTagRule={openLearnForGroup}
           />
         ))}
 
@@ -220,6 +275,7 @@ interface EntityGroupProps {
   availableTags: string[];
   onUpdateTag: (checksum: string, tags: string[]) => void;
   onApplyGroupTags: (group: ConfirmedGroup, tags: string[]) => void;
+  onOpenTagRule: (group: ConfirmedGroup) => void;
 }
 
 /**
@@ -234,6 +290,7 @@ function EntityGroup({
   availableTags,
   onUpdateTag,
   onApplyGroupTags,
+  onOpenTagRule,
 }: EntityGroupProps) {
   const [expanded, setExpanded] = useState(true);
 
@@ -329,6 +386,16 @@ function EntityGroup({
               Apply suggestions
             </Button>
           )}
+
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => onOpenTagRule(group)}
+            className="text-xs px-2 py-1 h-auto whitespace-nowrap"
+            title="Preview and save a reusable tag rule for this merchant group"
+          >
+            Save tag rule…
+          </Button>
         </div>
       </div>
 

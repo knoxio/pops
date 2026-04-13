@@ -1,7 +1,12 @@
 import type { ChangeSet } from '@pops/api/modules/core/corrections/types';
+import type { TagRuleChangeSet } from '@pops/api/modules/core/tag-rules/types';
 import type { ConfirmedTransaction } from '@pops/api/modules/finance/imports';
 
-import type { PendingChangeSet, PendingEntity } from '../store/importStore';
+import type {
+  PendingChangeSet,
+  PendingEntity,
+  PendingTagRuleChangeSet,
+} from '../store/importStore';
 
 // ---------------------------------------------------------------------------
 // CommitPayload — PRD-030 US-09
@@ -12,6 +17,7 @@ import type { PendingChangeSet, PendingEntity } from '../store/importStore';
 export interface CommitPayload {
   entities: PendingEntity[];
   changeSets: ChangeSet[];
+  tagRuleChangeSets: TagRuleChangeSet[];
   transactions: ConfirmedTransaction[];
 }
 
@@ -34,6 +40,7 @@ export interface DanglingEntityRefError {
 export function buildCommitPayload(
   pendingEntities: PendingEntity[],
   pendingChangeSets: PendingChangeSet[],
+  pendingTagRuleChangeSets: PendingTagRuleChangeSet[],
   confirmedTransactions: ConfirmedTransaction[]
 ): CommitPayload {
   // Build lookup of valid temp entity IDs
@@ -61,9 +68,31 @@ export function buildCommitPayload(
     }
   }
 
+  for (const pcs of pendingTagRuleChangeSets) {
+    for (const op of pcs.changeSet.ops) {
+      const entityId =
+        (op.op === 'add' || op.op === 'edit') && op.data.entityId ? op.data.entityId : null;
+
+      if (entityId?.startsWith('temp:entity:') && !validTempEntityIds.has(entityId)) {
+        const err: DanglingEntityRefError = {
+          type: 'dangling-entity-ref',
+          tempId: entityId,
+          changeSetTempId: pcs.tempId,
+        };
+        throw Object.assign(
+          new Error(
+            `Dangling entity reference: Tag rule ChangeSet ${pcs.tempId} references temp entity ${entityId} which does not exist in the pending entity list`
+          ),
+          err
+        );
+      }
+    }
+  }
+
   return {
     entities: [...pendingEntities],
     changeSets: pendingChangeSets.map((pcs) => pcs.changeSet),
+    tagRuleChangeSets: pendingTagRuleChangeSets.map((pcs) => pcs.changeSet),
     transactions: [...confirmedTransactions],
   };
 }

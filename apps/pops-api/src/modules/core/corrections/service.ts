@@ -451,6 +451,26 @@ export function buildTargetRulesMap(
 
 /**
  * Pure in-memory matcher used for previews and determinism tests.
+ * Returns ALL matching correction rules in priority order (priority ASC, id ASC).
+ * The first entry is the winner; subsequent entries are overridden alternatives.
+ * Reuses the same eligibility filtering and ruleMatchesDescription logic as
+ * findMatchingCorrectionFromRules — no separate matching pass.
+ */
+export function findAllMatchingCorrectionFromRules(
+  description: string,
+  rules: CorrectionRow[],
+  minConfidence: number = 0.7
+): CorrectionRow[] {
+  const normalized = normalizeDescription(description);
+  const eligible = rules
+    .filter((r) => r.isActive && r.confidence >= minConfidence)
+    .sort((a, b) => a.priority - b.priority || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+
+  return eligible.filter((rule) => ruleMatchesDescription(rule, normalized));
+}
+
+/**
+ * Pure in-memory matcher used for previews and determinism tests.
  * Mirrors production semantics:
  * - normalizeDescription on input
  * - rules sorted by priority ASC (lower = higher priority), id ASC tie-breaker
@@ -463,18 +483,10 @@ export function findMatchingCorrectionFromRules(
   rules: CorrectionRow[],
   minConfidence: number = 0.7
 ): CorrectionMatchResult | null {
-  const normalized = normalizeDescription(description);
-  const eligible = rules
-    .filter((r) => r.isActive && r.confidence >= minConfidence)
-    .sort((a, b) => a.priority - b.priority || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
-
-  for (const rule of eligible) {
-    if (ruleMatchesDescription(rule, normalized)) {
-      return classifyCorrectionMatch(rule);
-    }
-  }
-
-  return null;
+  const allMatches = findAllMatchingCorrectionFromRules(description, rules, minConfidence);
+  const first = allMatches[0];
+  if (!first) return null;
+  return classifyCorrectionMatch(first);
 }
 
 /** Test whether a single rule's pattern matches a normalized description. */
@@ -960,10 +972,15 @@ export function applyChangeSet(changeSet: ChangeSet): CorrectionRow[] {
  * Returns a classified result ("matched" if confidence >= 0.9, "uncertain" otherwise).
  * When a match is found, callers should skip all subsequent matching stages.
  */
-export function findMatchingCorrection(
+/**
+ * Find all correction rules that match a description, ordered by priority ASC.
+ * The first entry is the winner; subsequent entries are overridden alternatives.
+ * Reads active rules from the database (DB path for the initial import pipeline).
+ */
+export function findAllMatchingCorrectionFromDB(
   description: string,
   minConfidence: number = 0.7
-): CorrectionMatchResult | null {
+): CorrectionRow[] {
   const db = getDrizzle();
   const normalized = normalizeDescription(description);
 
@@ -980,13 +997,17 @@ export function findMatchingCorrection(
     .orderBy(asc(transactionCorrections.priority), asc(transactionCorrections.id))
     .all();
 
-  for (const rule of candidates) {
-    if (ruleMatchesDescription(rule, normalized)) {
-      return classifyCorrectionMatch(rule);
-    }
-  }
+  return candidates.filter((rule) => ruleMatchesDescription(rule, normalized));
+}
 
-  return null;
+export function findMatchingCorrection(
+  description: string,
+  minConfidence: number = 0.7
+): CorrectionMatchResult | null {
+  const allMatches = findAllMatchingCorrectionFromDB(description, minConfidence);
+  const first = allMatches[0];
+  if (!first) return null;
+  return classifyCorrectionMatch(first);
 }
 
 /**

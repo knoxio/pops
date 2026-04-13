@@ -17,7 +17,16 @@ import {
   Skeleton,
   Switch,
 } from '@pops/ui';
-import { AlertTriangle, ArrowLeft, Clock, HardDrive, Play, RefreshCw, Save } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Clock,
+  HardDrive,
+  Play,
+  RefreshCw,
+  Save,
+  ScrollText,
+} from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
@@ -404,6 +413,22 @@ export function RotationSettingsPage() {
           </div>
         </div>
       )}
+
+      {/* Rotation Log link */}
+      <div className="rounded-lg border bg-card p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold">Rotation Log</h2>
+            <p className="text-sm text-muted-foreground">View full history of rotation cycles</p>
+          </div>
+          <Link to="/media/rotation/log">
+            <Button variant="outline" size="sm">
+              <ScrollText className="h-3.5 w-3.5 mr-1.5" />
+              View Log
+            </Button>
+          </Link>
+        </div>
+      </div>
 
       {/* Run Now */}
       <div className="rounded-lg border bg-card p-6">

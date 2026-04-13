@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { ChangeSetSchema } from '../../core/corrections/types.js';
+import { TagRuleChangeSetSchema } from '../../core/tag-rules/types.js';
 
 /**
  * Transaction as parsed from CSV (client-side or transformer)
@@ -58,6 +59,23 @@ export const ruleProvenanceSchema = z.object({
 
 export type RuleProvenance = z.infer<typeof ruleProvenanceSchema>;
 
+/**
+ * Minimal rule info for override indicator display (US-07).
+ * Represents one entry in the `matchedRules` array — first entry is the winner,
+ * subsequent entries are rules that also matched but were superseded.
+ */
+export const matchedRuleSchema = z.object({
+  ruleId: z.string().min(1),
+  pattern: z.string().min(1),
+  matchType: z.enum(['exact', 'contains', 'regex']),
+  confidence: z.number().min(0).max(1),
+  priority: z.number(),
+  entityId: z.string().nullable().optional(),
+  entityName: z.string().nullable().optional(),
+});
+
+export type MatchedRule = z.infer<typeof matchedRuleSchema>;
+
 export const processedTransactionSchema = parsedTransactionSchema.extend({
   entity: entityMatchSchema,
   status: z.enum(['matched', 'uncertain', 'failed', 'skipped']),
@@ -66,6 +84,12 @@ export const processedTransactionSchema = parsedTransactionSchema.extend({
   transactionType: transactionTypeSchema.optional(), // User-set type; undefined = purchase (default)
   suggestedTags: z.array(suggestedTagSchema).optional(),
   ruleProvenance: ruleProvenanceSchema.optional(),
+  /**
+   * All correction rules that matched this transaction, ordered by priority ASC.
+   * First entry is the winning rule; subsequent entries are overridden alternatives.
+   * Only populated when at least one correction rule matched (US-07).
+   */
+  matchedRules: z.array(matchedRuleSchema).optional(),
 });
 
 export type ProcessedTransaction = z.infer<typeof processedTransactionSchema>;
@@ -228,6 +252,7 @@ export type PendingChangeSet = z.infer<typeof pendingChangeSetSchema>;
 export const commitPayloadSchema = z.object({
   entities: z.array(pendingEntitySchema).default([]),
   changeSets: z.array(pendingChangeSetSchema).default([]),
+  tagRuleChangeSets: z.array(TagRuleChangeSetSchema).default([]),
   transactions: z.array(confirmedTransactionSchema),
 });
 
@@ -252,6 +277,8 @@ export type FailedTransactionDetail = z.infer<typeof failedTransactionDetailSche
 export const commitResultSchema = z.object({
   entitiesCreated: z.number().int().nonnegative(),
   rulesApplied: rulesAppliedSchema,
+  /** Count of tag-rule ChangeSet operations applied during commit (add/edit/disable/remove). */
+  tagRulesApplied: z.number().int().nonnegative(),
   transactionsImported: z.number().int().nonnegative(),
   transactionsFailed: z.number().int().nonnegative(),
   failedDetails: z.array(failedTransactionDetailSchema),

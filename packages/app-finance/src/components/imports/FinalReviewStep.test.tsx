@@ -43,9 +43,17 @@ vi.mock('../../lib/trpc', () => ({
 
 vi.mock('../../lib/commit-payload', () => ({
   buildCommitPayload: vi.fn(
-    (entities: unknown[], changeSets: unknown[], transactions: unknown[]) => ({
+    (
+      entities: unknown[],
+      changeSets: unknown[],
+      tagRuleChangeSets: unknown[],
+      transactions: unknown[]
+    ) => ({
       entities,
       changeSets: (changeSets as Array<{ changeSet: unknown }>).map((pcs) => pcs.changeSet),
+      tagRuleChangeSets: (tagRuleChangeSets as Array<{ changeSet: unknown }>).map(
+        (pcs) => pcs.changeSet
+      ),
       transactions,
     })
   ),
@@ -59,6 +67,7 @@ function makeStoreState(overrides: Partial<typeof storeState> = {}) {
   return {
     pendingEntities: [],
     pendingChangeSets: [],
+    pendingTagRuleChangeSets: [],
     confirmedTransactions: [],
     processedTransactions: {
       matched: [],
@@ -91,7 +100,7 @@ describe('FinalReviewStep', () => {
   it('hides sections with zero items', () => {
     render(<FinalReviewStep />);
     expect(screen.queryByText('New Entities')).toBeNull();
-    expect(screen.queryByText('Rule Changes')).toBeNull();
+    expect(screen.queryByText('Classification Rule Changes')).toBeNull();
     expect(screen.queryByText('Transactions to Import')).toBeNull();
     expect(screen.queryByText('Tag Assignments')).toBeNull();
   });
@@ -215,6 +224,7 @@ describe('FinalReviewStep', () => {
       data: {
         entitiesCreated: 2,
         rulesApplied: { add: 1, edit: 0, disable: 0, remove: 0 },
+        tagRulesApplied: 0,
         transactionsImported: 5,
         transactionsFailed: 0,
         failedDetails: [],
@@ -226,6 +236,7 @@ describe('FinalReviewStep', () => {
       expect(mockSetCommitResult).toHaveBeenCalledWith({
         entitiesCreated: 2,
         rulesApplied: { add: 1, edit: 0, disable: 0, remove: 0 },
+        tagRulesApplied: 0,
         transactionsImported: 5,
         transactionsFailed: 0,
         failedDetails: [],
@@ -239,6 +250,7 @@ describe('FinalReviewStep', () => {
     const resultData = {
       entitiesCreated: 2,
       rulesApplied: { add: 1, edit: 0, disable: 0, remove: 0 },
+      tagRulesApplied: 0,
       transactionsImported: 5,
       transactionsFailed: 0,
       failedDetails: [],
@@ -254,7 +266,8 @@ describe('FinalReviewStep', () => {
       expect(screen.getByText('Commit Successful')).toBeDefined();
       expect(screen.getByText('Entities created:')).toBeDefined();
       expect(screen.getByText('Transactions imported:')).toBeDefined();
-      expect(screen.getByText('Rules applied:')).toBeDefined();
+      expect(screen.getByText('Classification rules applied:')).toBeDefined();
+      expect(screen.getByText('Tag rules applied:')).toBeDefined();
       expect(screen.getByText('Reclassifications:')).toBeDefined();
     });
   });

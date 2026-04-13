@@ -20,6 +20,10 @@
       "types": "./src/modules/core/corrections/types.ts",
       "default": "./src/modules/core/corrections/types.ts"
     },
+    "./modules/core/tag-rules/types": {
+      "types": "./src/modules/core/tag-rules/types.ts",
+      "default": "./src/modules/core/tag-rules/types.ts"
+    },
     "./modules/core/entities/types": {
       "types": "./src/modules/core/entities/types.ts",
       "default": "./src/modules/core/entities/types.ts"

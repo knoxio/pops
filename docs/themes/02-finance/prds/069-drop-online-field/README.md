@@ -1,9 +1,7 @@
 # PRD-069: Drop the `online` transaction field
 
 > Epic: [01 — Import Pipeline](../../epics/01-import-pipeline.md)
-> Status: Partial
-
-Manual e2e verification tracked in GitHub knoxio/pops#1747.
+> Status: Done
 
 ## Overview
 
@@ -49,7 +47,7 @@ Tag-related procedures are untouched; they already handle the use case.
 
 | #   | Story                                                 | Summary                                                                   | Status                                   | Parallelisable            |
 | --- | ----------------------------------------------------- | ------------------------------------------------------------------------- | ---------------------------------------- | ------------------------- |
-| 01  | [us-01-drop-online-field](us-01-drop-online-field.md) | Delete `online` from import schemas, parsers, edit form, badge, and tests | Partial (manual e2e walkthrough pending) | No (single atomic change) |
+| 01  | [us-01-drop-online-field](us-01-drop-online-field.md) | Delete `online` from import schemas, parsers, edit form, badge, and tests | Done | No (single atomic change) |
 
 ## Out of Scope
 

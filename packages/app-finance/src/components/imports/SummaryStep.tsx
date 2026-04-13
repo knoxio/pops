@@ -28,7 +28,8 @@ export function SummaryStep() {
     commitResult.rulesApplied.add +
     commitResult.rulesApplied.edit +
     commitResult.rulesApplied.disable +
-    commitResult.rulesApplied.remove;
+    commitResult.rulesApplied.remove +
+    (commitResult.tagRulesApplied ?? 0);
 
   return (
     <div className="space-y-6">

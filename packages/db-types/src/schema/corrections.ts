@@ -48,3 +48,7 @@ export const transactionCorrections = sqliteTable(
 //   WHERE confidence >= 0.7
 //   ORDER BY confidence DESC, times_applied DESC;
 // Drizzle views require separate handling — not represented here.
+//
+// IMPORTANT (PRD-024): Runtime matching no longer uses this view's ordering.
+// Priority-aware matching (PRD-032) orders by priority ASC, id ASC.
+// The view is legacy — kept for ad-hoc queries but not used in application code.

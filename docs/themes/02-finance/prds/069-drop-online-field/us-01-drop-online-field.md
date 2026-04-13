@@ -20,7 +20,7 @@ As a maintainer, I want the `online` boolean removed from every layer of the imp
 - [x] The `not.toHaveProperty("online")` assertion in `transactions.test.ts` is removed (no longer meaningful — the field is gone everywhere).
 - [x] `pnpm --filter @pops/api typecheck` and `pnpm --filter @pops/api test` pass.
 - [x] `pnpm --filter @pops/app-finance typecheck` and `pnpm --filter @pops/app-finance test` pass.
-- [ ] An end-to-end import (CSV → review → confirm) completes without referencing `online` anywhere.
+- [x] An end-to-end import (CSV → review → confirm) completes without referencing `online` anywhere.
 
 ## Notes
 
