@@ -1,31 +1,23 @@
 import type { ConfirmedTransaction } from '@pops/api/modules/finance/imports';
 import { Button } from '@pops/ui';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@pops/ui';
-import {
-  AlertCircle,
-  AlertTriangle,
-  CheckCircle,
-  Layers,
-  List,
-  Settings2,
-  XCircle,
-} from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AlertCircle, AlertTriangle, CheckCircle, Settings2, XCircle } from 'lucide-react';
+import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import { reevaluateTransactions } from '../../lib/local-re-evaluation';
-import { computeMergedEntities, computeMergedRules } from '../../lib/merged-state';
-import { groupTransactionsByEntity } from '../../lib/transaction-utils';
 import { trpc } from '../../lib/trpc';
 import type { ProcessedTransaction } from '../../store/importStore';
 import { useImportStore } from '../../store/importStore';
 import { CorrectionProposalDialog } from './CorrectionProposalDialog';
-import { EditableTransactionCard } from './EditableTransactionCard';
 import { EntityCreateDialog } from './EntityCreateDialog';
-import { TransactionCard } from './TransactionCard';
-import { TransactionGroup } from './TransactionGroup';
-
-type ViewMode = 'list' | 'grouped';
+import { useBulkAssignment } from './hooks/useBulkAssignment';
+import { useProposalGeneration } from './hooks/useProposalGeneration';
+import { useTransactionEditing } from './hooks/useTransactionEditing';
+import { useTransactionReview } from './hooks/useTransactionReview';
+import { FailedTab } from './review/FailedTab';
+import { MatchedTab } from './review/MatchedTab';
+import { SkippedTab } from './review/SkippedTab';
+import { UncertainTab } from './review/UncertainTab';
 
 /**
  * Step 4: Review transactions and resolve uncertain/failed matches
@@ -40,215 +32,36 @@ export function ReviewStep() {
     findSimilar,
   } = useImportStore();
 
-  const [localTransactions, setLocalTransactions] = useState(processedTransactions);
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<ProcessedTransaction | null>(null);
-  const [pendingBulkTransactions, setPendingBulkTransactions] = useState<
-    ProcessedTransaction[] | null
-  >(null);
-  const [editingTransaction, setEditingTransaction] = useState<ProcessedTransaction | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('grouped');
-  const [proposalOpen, setProposalOpen] = useState(false);
-  const [proposalSignal, setProposalSignal] = useState<{
-    descriptionPattern: string;
-    matchType: 'exact' | 'contains' | 'regex';
-    entityId?: string | null;
-    entityName?: string | null;
-    location?: string | null;
-    tags?: string[];
-    transactionType?: 'purchase' | 'transfer' | 'income' | null;
-  } | null>(null);
-  const [proposalTriggeringTransaction, setProposalTriggeringTransaction] = useState<{
-    description: string;
-    amount: number;
-    date: string;
-    account: string;
-    location?: string | null;
-    previousEntityName?: string | null;
-    previousTransactionType?: 'purchase' | 'transfer' | 'income' | null;
-  } | null>(null);
-  const [browseOpen, setBrowseOpen] = useState(false);
-
-  // Default to Uncertain tab when uncertain transactions exist, otherwise Matched
-  const initialTab = localTransactions.uncertain.length > 0 ? 'uncertain' : 'matched';
-  const [activeTab, setActiveTab] = useState(initialTab);
-
-  // Preserve scroll position per tab
-  const scrollPositions = useRef<Map<string, number>>(new Map());
-  const handleTabChange = useCallback(
-    (value: string) => {
-      // Save current scroll position
-      scrollPositions.current.set(activeTab, window.scrollY);
-      setActiveTab(value);
-      // Restore scroll position for the new tab (defer to after render)
-      requestAnimationFrame(() => {
-        const saved = scrollPositions.current.get(value);
-        window.scrollTo(0, saved ?? 0);
-      });
-    },
-    [activeTab]
-  );
-
-  const { data: dbEntitiesData } = trpc.core.entities.list.useQuery({});
-  const { data: dbRulesData } = trpc.core.corrections.list.useQuery({});
-  const pendingEntities = useImportStore((s) => s.pendingEntities);
-  const addPendingEntity = useImportStore((s) => s.addPendingEntity);
   const pendingChangeSets = useImportStore((s) => s.pendingChangeSets);
 
-  const entities = useMemo(
-    () =>
-      dbEntitiesData?.data
-        ? computeMergedEntities(dbEntitiesData.data, pendingEntities)
-        : undefined,
-    [dbEntitiesData?.data, pendingEntities]
-  );
+  const {
+    localTransactions,
+    setLocalTransactions,
+    viewMode,
+    setViewMode,
+    activeTab,
+    handleTabChange,
+    unresolvedCount,
+    uncertainGroups,
+    failedGroups,
+  } = useTransactionReview();
 
-  // Re-evaluate transactions when pending changeSets change (US-07 AC-8).
-  // Covers both addPendingChangeSet and removePendingChangeSet.
-  // On removal, rule-promoted transactions are demoted back to uncertain/failed,
-  // then all are re-evaluated against the updated merged rules.
-  const prevChangeSetsRef = useRef(pendingChangeSets);
-  const localTxRef = useRef(localTransactions);
-  localTxRef.current = localTransactions;
-  useEffect(() => {
-    if (prevChangeSetsRef.current === pendingChangeSets) return;
-    prevChangeSetsRef.current = pendingChangeSets;
-    if (!dbRulesData?.data) return;
-
-    // tags is string[] from tRPC but string in CorrectionRow (SQLite JSON) — cast through unknown
-    const freshRules = computeMergedRules(
-      dbRulesData.data as unknown as Parameters<typeof computeMergedRules>[0],
-      pendingChangeSets
-    );
-    const current = localTxRef.current;
-    // Demote rule-promoted transactions back to uncertain for re-evaluation
-    const rulePromoted = current.matched.filter((t) => t.ruleProvenance);
-    const manuallyMatched = current.matched.filter((t) => !t.ruleProvenance);
-    const candidateUncertain = [...current.uncertain, ...rulePromoted];
-
-    const reeval = reevaluateTransactions(
-      candidateUncertain,
-      current.failed,
-      freshRules as unknown as Parameters<typeof reevaluateTransactions>[2]
-    );
-
-    const updated = {
-      ...current,
-      matched: [...manuallyMatched, ...reeval.matched],
-      uncertain: reeval.uncertain,
-      failed: reeval.failed,
-    };
-    setLocalTransactions(updated);
-    useImportStore.getState().setProcessedTransactions(updated);
-  }, [pendingChangeSets, dbRulesData?.data]);
-
-  // Count unresolved transactions
-  const unresolvedCount = useMemo(
-    () => localTransactions.uncertain.length + localTransactions.failed.length,
-    [localTransactions]
-  );
-
-  const handleCreateEntity = useCallback((transaction: ProcessedTransaction) => {
-    setSelectedTransaction(transaction);
-    setShowCreateDialog(true);
-  }, []);
-
-  const analyzeCorrectionMutation = trpc.core.corrections.analyzeCorrection.useMutation();
-
-  const computeFallbackPattern = useCallback((description: string) => {
-    return description.toUpperCase().replace(/\d+/g, '').replace(/\s+/g, ' ').trim();
-  }, []);
-
-  const generateProposal = useCallback(
-    async (args: {
-      /** The triggering transaction in its original (pre-correction) state. */
-      triggeringTransaction: ProcessedTransaction;
-      /** The user's correction — the entity/type/location they intend to apply. */
-      entityId: string | null;
-      entityName: string | null;
-      location?: string | null;
-      transactionType?: 'purchase' | 'transfer' | 'income' | null;
-    }) => {
-      // The AI must analyse the ORIGINAL description, not the user's
-      // correction. Otherwise the rule it learns will only ever match the
-      // (already-corrected) value the user entered, defeating the point.
-      const originalDescription = args.triggeringTransaction.description;
-      const originalAmount = args.triggeringTransaction.amount;
-      const fallbackPattern = computeFallbackPattern(originalDescription);
-
-      const triggeringContext = {
-        description: originalDescription,
-        amount: originalAmount,
-        date: args.triggeringTransaction.date,
-        account: args.triggeringTransaction.account,
-        location: args.triggeringTransaction.location ?? null,
-        previousEntityName: args.triggeringTransaction.entity?.entityName ?? null,
-        previousTransactionType: args.triggeringTransaction.transactionType ?? null,
-      };
-
-      try {
-        const res = await analyzeCorrectionMutation.mutateAsync({
-          description: originalDescription,
-          entityName: args.entityName ?? 'unknown',
-          amount: originalAmount,
-        });
-        const analysis = res.data;
-
-        const suggestedPattern =
-          analysis && analysis.pattern.length >= 3 ? analysis.pattern : fallbackPattern;
-        const suggestedMatchType =
-          analysis && analysis.pattern.length >= 3 ? analysis.matchType : 'contains';
-
-        setProposalSignal({
-          descriptionPattern: suggestedPattern,
-          matchType: suggestedMatchType,
-          entityId: args.entityId,
-          entityName: args.entityName,
-          location: args.location ?? null,
-          transactionType: args.transactionType ?? null,
-          tags: [],
-        });
-        setProposalTriggeringTransaction(triggeringContext);
-        setProposalOpen(true);
-        toast.success('Proposal generated — review and approve to learn');
-      } catch {
-        setProposalSignal({
-          descriptionPattern: fallbackPattern,
-          matchType: 'contains',
-          entityId: args.entityId,
-          entityName: args.entityName,
-          location: args.location ?? null,
-          transactionType: args.transactionType ?? null,
-          tags: [],
-        });
-        setProposalTriggeringTransaction(triggeringContext);
-        setProposalOpen(true);
-        toast.info('Proposal generated (fallback) — review and approve to learn');
-      }
-    },
-    [analyzeCorrectionMutation, computeFallbackPattern]
-  );
-
-  /**
-   * Generate a Correction Proposal (ChangeSet) from a correction signal.
-   * Rule changes only happen after explicit approval in the proposal dialog.
-   */
-  const autoSaveRuleAndReEvaluate = useCallback(
-    (triggeringTransaction: ProcessedTransaction, entityId: string, entityName: string) => {
-      void generateProposal({ triggeringTransaction, entityId, entityName });
-    },
-    [generateProposal]
-  );
-
-  const reevaluateWithPendingRulesMutation =
-    trpc.finance.imports.reevaluateWithPendingRules.useMutation();
+  const {
+    proposalOpen,
+    setProposalOpen,
+    proposalSignal,
+    proposalTriggeringTransaction,
+    browseOpen,
+    setBrowseOpen,
+    generateProposal,
+    autoSaveRuleAndReEvaluate,
+  } = useProposalGeneration();
 
   /**
    * Handle entity selection. Always resolves the one transaction the user
    * picked for, then — if there are similar transactions in the session —
    * opens the CorrectionProposalDialog so the user can confirm the cascade
-   * AND learn a persistent rule. No silent bulk automation; no hidden side
-   * effects.
+   * AND learn a persistent rule.
    */
   const handleEntitySelect = useCallback(
     (transaction: ProcessedTransaction, entityId: string, entityName: string) => {
@@ -287,318 +100,37 @@ export function ReviewStep() {
         });
       }
     },
-    [findSimilar, generateProposal]
+    [findSimilar, generateProposal, setLocalTransactions]
   );
 
-  /**
-   * Accept AI suggestion for a single transaction.
-   * Always generates a bundled Correction Proposal (ChangeSet) for the user to approve/reject.
-   */
-  const handleAcceptAiSuggestion = useCallback(
-    (transaction: ProcessedTransaction) => {
-      if (!transaction.entity?.entityName) return;
+  const { editingTransaction, handleEdit, handleSaveEdit, handleCancelEdit } =
+    useTransactionEditing({
+      setLocalTransactions,
+      generateProposal,
+    });
 
-      // Try to find entity by name if entityId is missing
-      let entityId = transaction.entity.entityId;
-      if (!entityId && entities) {
-        const matchingEntity = entities.find(
-          (e: { name: string; id: string }) =>
-            e.name.toLowerCase() === transaction.entity?.entityName?.toLowerCase()
-        );
-        if (matchingEntity) {
-          entityId = matchingEntity.id;
-        }
-      }
+  const {
+    showCreateDialog,
+    setShowCreateDialog,
+    selectedTransaction,
+    setSelectedTransaction,
+    setPendingBulkTransactions,
+    entities,
+    dbEntitiesData,
+    handleCreateEntity,
+    handleAcceptAiSuggestion,
+    handleAcceptAll,
+    handleCreateAndAssignAll,
+    handleEntityCreated,
+  } = useBulkAssignment({
+    setLocalTransactions,
+    handleEntitySelect,
+    autoSaveRuleAndReEvaluate,
+    generateProposal,
+  });
 
-      // Entity doesn't exist yet, need to create it first
-      if (!entityId) {
-        handleCreateEntity(transaction);
-        return;
-      }
-
-      const entityName = transaction.entity.entityName;
-
-      // Always accept the transaction itself
-      handleEntitySelect(transaction, entityId, entityName);
-
-      autoSaveRuleAndReEvaluate(transaction, entityId, entityName);
-    },
-    [handleEntitySelect, entities, handleCreateEntity, autoSaveRuleAndReEvaluate]
-  );
-
-  /**
-   * Accept all transactions in a group (create entity if needed)
-   */
-  const handleAcceptAll = useCallback(
-    async (transactions: ProcessedTransaction[]) => {
-      if (transactions.length === 0) return;
-
-      const firstTx = transactions[0];
-      const entityName = firstTx?.entity?.entityName;
-      if (!entityName) {
-        toast.error('No entity name found');
-        return;
-      }
-
-      try {
-        // Check if entity exists
-        let entityId = entities?.find((e) => e.name.toLowerCase() === entityName.toLowerCase())?.id;
-
-        // Create a pending entity if it doesn't exist
-        if (!entityId) {
-          const pending = addPendingEntity(
-            { name: entityName, type: 'company' },
-            dbEntitiesData?.data
-          );
-          entityId = pending.tempId;
-        }
-
-        const resolvedEntityId = entityId;
-
-        // Assign to all transactions (functional setState avoids stale closure)
-        setLocalTransactions((prev) => {
-          let updated = { ...prev };
-          for (const transaction of transactions) {
-            updated = {
-              ...updated,
-              uncertain: updated.uncertain.filter((t: ProcessedTransaction) => t !== transaction),
-              failed: updated.failed.filter((t: ProcessedTransaction) => t !== transaction),
-              matched: [
-                ...updated.matched,
-                {
-                  ...transaction,
-                  entity: {
-                    entityId: resolvedEntityId,
-                    entityName,
-                    matchType: 'ai' as const,
-                    confidence: 1,
-                  },
-                  status: 'matched' as const,
-                } as ProcessedTransaction,
-              ],
-            };
-          }
-          return updated;
-        });
-        toast.success(
-          `Accepted ${transactions.length} transaction${transactions.length !== 1 ? 's' : ''}`
-        );
-
-        // Auto-save correction rule using the first transaction and re-evaluate
-        if (firstTx) {
-          autoSaveRuleAndReEvaluate(firstTx, resolvedEntityId, entityName);
-        }
-      } catch (error) {
-        toast.error(
-          `Failed to accept: ${error instanceof Error ? error.message : 'Unknown error'}`
-        );
-      }
-    },
-    [entities, addPendingEntity, dbEntitiesData?.data, autoSaveRuleAndReEvaluate]
-  );
-
-  /**
-   * Open dialog to create entity and assign to all transactions in group
-   */
-  const handleCreateAndAssignAll = useCallback(
-    (transactions: ProcessedTransaction[], _entityName: string) => {
-      // Store transactions for bulk assignment after creation
-      setPendingBulkTransactions(transactions);
-      // Use first transaction as the "selected" one to get the suggested name
-      const first = transactions[0];
-      setSelectedTransaction(first ?? null);
-      setShowCreateDialog(true);
-    },
-    []
-  );
-
-  const handleEntityCreated = useCallback(
-    (entity: { entityId: string; entityName: string }) => {
-      // Handle bulk assignment if pending
-      if (pendingBulkTransactions && pendingBulkTransactions.length > 0) {
-        const bulkCount = pendingBulkTransactions.length;
-        // Capture the first transaction BEFORE we clear pendingBulkTransactions —
-        // we need its description/amount/type to seed the proposal signal so a
-        // rule actually gets learned (otherwise next import re-surfaces the
-        // same uncertain matches).
-        const firstTx = pendingBulkTransactions[0] ?? null;
-        setLocalTransactions((prev) => {
-          let updated = { ...prev };
-          for (const transaction of pendingBulkTransactions) {
-            updated = {
-              ...updated,
-              uncertain: updated.uncertain.filter((t: ProcessedTransaction) => t !== transaction),
-              failed: updated.failed.filter((t: ProcessedTransaction) => t !== transaction),
-              matched: [
-                ...updated.matched,
-                {
-                  ...transaction,
-                  entity: {
-                    entityId: entity.entityId,
-                    entityName: entity.entityName,
-                    matchType: 'ai' as const,
-                    confidence: 1,
-                  },
-                  status: 'matched' as const,
-                } as ProcessedTransaction,
-              ],
-            };
-          }
-          return updated;
-        });
-        setPendingBulkTransactions(null);
-        setSelectedTransaction(null);
-        toast.success(
-          `Created "${entity.entityName}" and assigned to ${bulkCount} transaction${bulkCount !== 1 ? 's' : ''}`
-        );
-
-        // Route through the CorrectionProposalDialog so a persistent rule is
-        // learned against the NEWLY-RENAMED entity. Using firstTx (the
-        // ORIGINAL pre-correction transaction) gives the signal analyzer a
-        // better shot at a broad pattern (e.g. "IKEA") instead of the
-        // txn-specific one the original AI suggestion would have produced.
-        if (firstTx) {
-          void generateProposal({
-            triggeringTransaction: firstTx,
-            entityId: entity.entityId,
-            entityName: entity.entityName,
-            location: firstTx.location ?? null,
-            transactionType: firstTx.transactionType ?? null,
-          });
-        }
-      } else if (selectedTransaction) {
-        // Handle single transaction assignment
-        handleEntitySelect(selectedTransaction, entity.entityId, entity.entityName);
-        setSelectedTransaction(null);
-      }
-    },
-    [selectedTransaction, pendingBulkTransactions, handleEntitySelect, generateProposal]
-  );
-
-  const handleEdit = useCallback((transaction: ProcessedTransaction) => {
-    setEditingTransaction(transaction);
-  }, []);
-
-  const handleSaveEdit = useCallback(
-    (
-      transaction: ProcessedTransaction,
-      editedFields: Partial<ProcessedTransaction>,
-      shouldLearn: boolean = false
-    ) => {
-      const isRuleMatched =
-        Boolean(transaction.ruleProvenance) || transaction.entity?.matchType === 'learned';
-
-      // Detect what changed (include description/amount changes so Save & Learn works for any edit)
-      const hasChanges =
-        editedFields.description !== transaction.description ||
-        editedFields.amount !== transaction.amount ||
-        editedFields.entity?.entityId !== transaction.entity?.entityId ||
-        editedFields.location !== transaction.location ||
-        editedFields.transactionType !== transaction.transactionType;
-
-      if (isRuleMatched && hasChanges) {
-        setEditingTransaction(null);
-
-        const entityId = editedFields.entity?.entityId ?? transaction.entity?.entityId ?? null;
-        const entityName =
-          editedFields.entity?.entityName ?? transaction.entity?.entityName ?? null;
-        const updatedLocation = editedFields.location ?? transaction.location ?? null;
-        const updatedType =
-          editedFields.transactionType ?? transaction.transactionType ?? 'purchase';
-
-        // Pass the ORIGINAL transaction so the AI analyzes the unedited
-        // description — using the user's edited string would learn a rule
-        // that only matches the (already-corrected) value the user typed.
-        void generateProposal({
-          triggeringTransaction: transaction,
-          entityId,
-          entityName,
-          location: updatedLocation,
-          transactionType: updatedType,
-        });
-
-        return;
-      }
-
-      const updatedTx: ProcessedTransaction = {
-        ...transaction,
-        ...editedFields,
-        manuallyEdited: true,
-      };
-      const isNoEntityType =
-        updatedTx.transactionType === 'transfer' || updatedTx.transactionType === 'income';
-
-      setLocalTransactions((prev) => {
-        // Transfers and income don't need an entity — promote them straight to matched.
-        if (isNoEntityType) {
-          return {
-            ...prev,
-            matched: prev.matched.some((t) => t === transaction)
-              ? prev.matched.map((t) =>
-                  t === transaction ? { ...updatedTx, status: 'matched' as const } : t
-                )
-              : [...prev.matched, { ...updatedTx, status: 'matched' as const }],
-            uncertain: prev.uncertain.filter((t) => t !== transaction),
-            failed: prev.failed.filter((t) => t !== transaction),
-            skipped: prev.skipped.filter((t) => t !== transaction),
-          };
-        }
-
-        return {
-          ...prev,
-          matched: prev.matched.map((t: ProcessedTransaction) =>
-            t === transaction ? { ...t, ...editedFields, manuallyEdited: true } : t
-          ),
-          uncertain: prev.uncertain.map((t: ProcessedTransaction) =>
-            t === transaction ? { ...t, ...editedFields, manuallyEdited: true } : t
-          ),
-          failed: prev.failed.map((t: ProcessedTransaction) =>
-            t === transaction ? { ...t, ...editedFields, manuallyEdited: true } : t
-          ),
-          skipped: prev.skipped.map((t: ProcessedTransaction) =>
-            t === transaction ? { ...t, ...editedFields, manuallyEdited: true } : t
-          ),
-        };
-      });
-      setEditingTransaction(null);
-
-      if (shouldLearn && hasChanges) {
-        const entityId = editedFields.entity?.entityId ?? transaction.entity?.entityId ?? null;
-        const entityName =
-          editedFields.entity?.entityName ?? transaction.entity?.entityName ?? null;
-        const updatedLocation = editedFields.location ?? transaction.location ?? null;
-        const updatedType =
-          editedFields.transactionType ?? transaction.transactionType ?? 'purchase';
-        // Same reasoning as above: feed the AI the original transaction.
-        void generateProposal({
-          triggeringTransaction: transaction,
-          entityId,
-          entityName,
-          location: updatedLocation,
-          transactionType: updatedType,
-        });
-      } else if (hasChanges && !shouldLearn) {
-        // Show toast asking if they want to learn
-        toast.info('Apply this correction to future imports?', {
-          description: 'This will help auto-match similar transactions next time.',
-          action: {
-            label: 'Save & Learn',
-            onClick: () => {
-              handleSaveEdit(transaction, editedFields, true);
-            },
-          },
-        });
-        toast.success('Transaction updated');
-      } else {
-        toast.success('Transaction updated');
-      }
-    },
-    [generateProposal]
-  );
-
-  const handleCancelEdit = useCallback(() => {
-    setEditingTransaction(null);
-  }, []);
+  const reevaluateWithPendingRulesMutation =
+    trpc.finance.imports.reevaluateWithPendingRules.useMutation();
 
   const handleContinueToTagReview = useCallback(() => {
     const confirmed: ConfirmedTransaction[] = localTransactions.matched
@@ -627,16 +159,12 @@ export function ReviewStep() {
     nextStep();
   }, [localTransactions, setConfirmedTransactions, nextStep]);
 
-  // Group transactions for uncertain/failed tabs
-  const uncertainGroups = useMemo(
-    () => groupTransactionsByEntity(localTransactions.uncertain),
-    [localTransactions.uncertain]
-  );
-
-  const failedGroups = useMemo(
-    () => groupTransactionsByEntity(localTransactions.failed),
-    [localTransactions.failed]
-  );
+  const allPreviewTransactions = [
+    ...localTransactions.matched,
+    ...localTransactions.uncertain,
+    ...localTransactions.failed,
+    ...localTransactions.skipped,
+  ].map((t) => ({ checksum: t.checksum, description: t.description }));
 
   return (
     <div className="space-y-6">
@@ -646,15 +174,9 @@ export function ReviewStep() {
         sessionId={processSessionId ?? ''}
         signal={proposalSignal}
         triggeringTransaction={proposalTriggeringTransaction}
-        previewTransactions={[
-          ...localTransactions.matched,
-          ...localTransactions.uncertain,
-          ...localTransactions.failed,
-          ...localTransactions.skipped,
-        ].map((t) => ({ checksum: t.checksum, description: t.description }))}
+        previewTransactions={allPreviewTransactions}
         onApproved={() => {
           // Re-evaluation is handled by the pendingChangeSets useEffect (US-07 AC-8).
-          // The effect fires on next render when pendingChangeSets ref changes.
           toast.success('Rules saved locally');
         }}
       />
@@ -665,12 +187,7 @@ export function ReviewStep() {
         sessionId={processSessionId ?? ''}
         signal={null}
         triggeringTransaction={null}
-        previewTransactions={[
-          ...localTransactions.matched,
-          ...localTransactions.uncertain,
-          ...localTransactions.failed,
-          ...localTransactions.skipped,
-        ].map((t) => ({ checksum: t.checksum, description: t.description }))}
+        previewTransactions={allPreviewTransactions}
         onBrowseClose={(hadChanges) => {
           if (hadChanges && processSessionId && pendingChangeSets.length > 0) {
             reevaluateWithPendingRulesMutation.mutate(
@@ -858,327 +375,6 @@ export function ReviewStep() {
         suggestedName={selectedTransaction?.entity?.entityName}
         dbEntities={dbEntitiesData?.data}
       />
-    </div>
-  );
-}
-
-/**
- * Matched tab - read-only list
- */
-function MatchedTab({
-  transactions,
-  onEdit,
-  onEntitySelect,
-  onCreateEntity,
-  editingTransaction,
-  onSaveEdit,
-  onCancelEdit,
-  entities,
-}: {
-  transactions: ProcessedTransaction[];
-  onEdit: (t: ProcessedTransaction) => void;
-  onEntitySelect: (t: ProcessedTransaction, entityId: string, entityName: string) => void;
-  onCreateEntity: (t: ProcessedTransaction) => void;
-  editingTransaction: ProcessedTransaction | null;
-  onSaveEdit: (t: ProcessedTransaction, edited: Partial<ProcessedTransaction>) => void;
-  onCancelEdit: () => void;
-  entities?: Array<{ id: string; name: string; type: string }>;
-}) {
-  if (transactions.length === 0) {
-    return <div className="text-center py-12 text-gray-500">No matched transactions</div>;
-  }
-
-  return (
-    <div className="space-y-3">
-      {transactions.map((t, idx) =>
-        editingTransaction === t ? (
-          <EditableTransactionCard
-            key={idx}
-            transaction={t}
-            onSave={onSaveEdit}
-            onCancel={onCancelEdit}
-            entities={entities}
-          />
-        ) : (
-          <TransactionCard
-            key={idx}
-            transaction={t}
-            onEdit={onEdit}
-            onEntitySelect={onEntitySelect}
-            onCreateEntity={onCreateEntity}
-            entities={entities}
-            readonly={false}
-            showMatchType={true}
-            variant="matched"
-          />
-        )
-      )}
-    </div>
-  );
-}
-
-/**
- * Uncertain tab - needs user review
- */
-function UncertainTab({
-  transactions,
-  groups,
-  viewMode,
-  onViewModeChange,
-  onEntitySelect,
-  onCreateEntity,
-  onAcceptAiSuggestion,
-  onAcceptAll,
-  onCreateAndAssignAll,
-  onEdit,
-  editingTransaction,
-  onSaveEdit,
-  onCancelEdit,
-  entities,
-}: {
-  transactions: ProcessedTransaction[];
-  groups: ReturnType<typeof groupTransactionsByEntity>;
-  viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
-  onEntitySelect: (t: ProcessedTransaction, entityId: string, entityName: string) => void;
-  onCreateEntity: (t: ProcessedTransaction) => void;
-  onAcceptAiSuggestion: (t: ProcessedTransaction) => void;
-  onAcceptAll: (transactions: ProcessedTransaction[]) => void;
-  onCreateAndAssignAll: (transactions: ProcessedTransaction[], entityName: string) => void;
-  onEdit: (t: ProcessedTransaction) => void;
-  editingTransaction: ProcessedTransaction | null;
-  onSaveEdit: (t: ProcessedTransaction, edited: Partial<ProcessedTransaction>) => void;
-  onCancelEdit: () => void;
-  entities?: Array<{ id: string; name: string; type: string }>;
-}) {
-  if (transactions.length === 0) {
-    return <div className="text-center py-12 text-gray-500">No uncertain transactions</div>;
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* View mode toggle */}
-      <div className="flex items-center justify-end gap-2">
-        <Button
-          variant={viewMode === 'list' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => onViewModeChange('list')}
-          aria-pressed={viewMode === 'list'}
-        >
-          <List className="w-4 h-4 mr-1" aria-hidden="true" />
-          List
-        </Button>
-        <Button
-          variant={viewMode === 'grouped' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => onViewModeChange('grouped')}
-          aria-pressed={viewMode === 'grouped'}
-        >
-          <Layers className="w-4 h-4 mr-1" aria-hidden="true" />
-          Grouped
-        </Button>
-      </div>
-
-      {/* Grouped view */}
-      {viewMode === 'grouped' ? (
-        <div className="space-y-3">
-          {groups.map((group, idx) => (
-            <TransactionGroup
-              key={idx}
-              group={group}
-              onAcceptAll={onAcceptAll}
-              onCreateAndAssignAll={onCreateAndAssignAll}
-              onEntitySelect={onEntitySelect}
-              onCreateEntity={onCreateEntity}
-              onAcceptAiSuggestion={onAcceptAiSuggestion}
-              onEdit={onEdit}
-              editingTransaction={editingTransaction}
-              onSaveEdit={onSaveEdit}
-              onCancelEdit={onCancelEdit}
-              entities={entities}
-              variant="uncertain"
-            />
-          ))}
-        </div>
-      ) : (
-        /* List view */
-        <div className="space-y-3">
-          {transactions.map((t, idx) =>
-            editingTransaction === t ? (
-              <EditableTransactionCard
-                key={idx}
-                transaction={t}
-                onSave={onSaveEdit}
-                onCancel={onCancelEdit}
-                entities={entities}
-              />
-            ) : (
-              <TransactionCard
-                key={idx}
-                transaction={t}
-                onEntitySelect={onEntitySelect}
-                onCreateEntity={onCreateEntity}
-                onAcceptAiSuggestion={onAcceptAiSuggestion}
-                onEdit={onEdit}
-                entities={entities}
-                variant="uncertain"
-              />
-            )
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/**
- * Failed tab - needs user action
- */
-function FailedTab({
-  transactions,
-  groups,
-  viewMode,
-  onViewModeChange,
-  onEntitySelect,
-  onCreateEntity,
-  onAcceptAiSuggestion,
-  onAcceptAll,
-  onCreateAndAssignAll,
-  onEdit,
-  editingTransaction,
-  onSaveEdit,
-  onCancelEdit,
-  entities,
-}: {
-  transactions: ProcessedTransaction[];
-  groups: ReturnType<typeof groupTransactionsByEntity>;
-  viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
-  onEntitySelect: (t: ProcessedTransaction, entityId: string, entityName: string) => void;
-  onCreateEntity: (t: ProcessedTransaction) => void;
-  onAcceptAiSuggestion: (t: ProcessedTransaction) => void;
-  onAcceptAll: (transactions: ProcessedTransaction[]) => void;
-  onCreateAndAssignAll: (transactions: ProcessedTransaction[], entityName: string) => void;
-  onEdit: (t: ProcessedTransaction) => void;
-  editingTransaction: ProcessedTransaction | null;
-  onSaveEdit: (t: ProcessedTransaction, edited: Partial<ProcessedTransaction>) => void;
-  onCancelEdit: () => void;
-  entities?: Array<{ id: string; name: string; type: string }>;
-}) {
-  if (transactions.length === 0) {
-    return <div className="text-center py-12 text-gray-500">No failed transactions</div>;
-  }
-
-  return (
-    <div className="space-y-4">
-      {/* View mode toggle */}
-      <div className="flex items-center justify-end gap-2">
-        <Button
-          variant={viewMode === 'list' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => onViewModeChange('list')}
-          aria-pressed={viewMode === 'list'}
-        >
-          <List className="w-4 h-4 mr-1" aria-hidden="true" />
-          List
-        </Button>
-        <Button
-          variant={viewMode === 'grouped' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => onViewModeChange('grouped')}
-          aria-pressed={viewMode === 'grouped'}
-        >
-          <Layers className="w-4 h-4 mr-1" aria-hidden="true" />
-          Grouped
-        </Button>
-      </div>
-
-      {/* Grouped view */}
-      {viewMode === 'grouped' ? (
-        <div className="space-y-3">
-          {groups.map((group, idx) => (
-            <TransactionGroup
-              key={idx}
-              group={group}
-              onAcceptAll={onAcceptAll}
-              onCreateAndAssignAll={onCreateAndAssignAll}
-              onEntitySelect={onEntitySelect}
-              onCreateEntity={onCreateEntity}
-              onAcceptAiSuggestion={onAcceptAiSuggestion}
-              onEdit={onEdit}
-              editingTransaction={editingTransaction}
-              onSaveEdit={onSaveEdit}
-              onCancelEdit={onCancelEdit}
-              entities={entities}
-              variant="failed"
-            />
-          ))}
-        </div>
-      ) : (
-        /* List view */
-        <div className="space-y-3">
-          {transactions.map((t, idx) =>
-            editingTransaction === t ? (
-              <EditableTransactionCard
-                key={idx}
-                transaction={t}
-                onSave={onSaveEdit}
-                onCancel={onCancelEdit}
-                entities={entities}
-              />
-            ) : (
-              <TransactionCard
-                key={idx}
-                transaction={t}
-                onEntitySelect={onEntitySelect}
-                onCreateEntity={onCreateEntity}
-                onAcceptAiSuggestion={onAcceptAiSuggestion}
-                onEdit={onEdit}
-                entities={entities}
-                variant="failed"
-              />
-            )
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/**
- * Skipped tab - read-only list
- */
-function SkippedTab({ transactions }: { transactions: ProcessedTransaction[] }) {
-  if (transactions.length === 0) {
-    return <div className="text-center py-12 text-gray-500">No skipped transactions</div>;
-  }
-
-  return (
-    <div className="border rounded-lg overflow-hidden">
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-50 dark:bg-gray-800">
-            <tr>
-              <th className="px-4 py-2 text-left font-medium">Date</th>
-              <th className="px-4 py-2 text-left font-medium">Description</th>
-              <th className="px-4 py-2 text-left font-medium">Amount</th>
-              <th className="px-4 py-2 text-left font-medium">Reason</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y dark:divide-gray-700">
-            {transactions.map((t, idx) => (
-              <tr key={idx} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                <td className="px-4 py-2">{t.date}</td>
-                <td className="px-4 py-2">{t.description}</td>
-                <td className="px-4 py-2">${Math.abs(t.amount).toFixed(2)}</td>
-                <td className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400">
-                  {t.skipReason}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
     </div>
   );
 }
