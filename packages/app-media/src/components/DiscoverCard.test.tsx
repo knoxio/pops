@@ -3,8 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { DiscoverCard } from './DiscoverCard';
 
-vi.mock('./RequestMovieButton', () => ({
-  RequestMovieButton: ({ tmdbId }: { tmdbId: number; title: string; variant?: string }) => (
+vi.mock('./MovieActionButtons', () => ({
+  MovieActionButtons: ({ tmdbId }: { tmdbId: number; title: string; variant?: string }) => (
     <button data-testid={`request-${tmdbId}`}>Request</button>
   ),
 }));

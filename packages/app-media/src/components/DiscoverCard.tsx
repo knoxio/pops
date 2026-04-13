@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 
-import { RequestMovieButton } from './RequestMovieButton';
+import { MovieActionButtons } from './MovieActionButtons';
 
 export interface DiscoverCardProps {
   tmdbId: number;
@@ -204,10 +204,11 @@ export function DiscoverCard({
             </Button>
           )}
           {!inLibrary && (
-            <RequestMovieButton
+            <MovieActionButtons
               tmdbId={tmdbId}
               title={title}
               year={year ? parseInt(year, 10) : new Date().getFullYear()}
+              rating={voteAverage}
               variant="compact"
             />
           )}

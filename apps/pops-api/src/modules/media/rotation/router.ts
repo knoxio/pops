@@ -394,4 +394,88 @@ export const rotationRouter = router({
 
       return { success: result.changes > 0 };
     }),
+
+  /** Add a movie to the rotation queue manually. PRD-072 US-05. */
+  addToQueue: protectedProcedure
+    .input(
+      z.object({
+        tmdbId: z.number().int().positive(),
+        title: z.string().min(1),
+        year: z.number().int().optional(),
+        rating: z.number().optional(),
+        posterPath: z.string().optional(),
+      })
+    )
+    .mutation(({ input }) => {
+      const db = getDrizzle();
+
+      // Ensure a manual source exists (upsert)
+      let manualSource = db
+        .select()
+        .from(rotationSources)
+        .where(eq(rotationSources.type, 'manual'))
+        .get();
+
+      if (!manualSource) {
+        manualSource = db
+          .insert(rotationSources)
+          .values({ type: 'manual', name: 'Manual Queue', priority: 5, enabled: 1 })
+          .returning()
+          .get();
+      }
+
+      // Insert candidate (ignore if already exists)
+      db.insert(rotationCandidates)
+        .values({
+          sourceId: manualSource.id,
+          tmdbId: input.tmdbId,
+          title: input.title,
+          year: input.year ?? null,
+          rating: input.rating ?? null,
+          posterPath: input.posterPath ?? null,
+          status: 'pending',
+        })
+        .onConflictDoNothing()
+        .run();
+
+      return { success: true };
+    }),
+
+  /** Check candidate/exclusion status for a movie. PRD-072 US-05. */
+  getCandidateStatus: protectedProcedure
+    .input(z.object({ tmdbId: z.number().int().positive() }))
+    .query(({ input }) => {
+      const db = getDrizzle();
+
+      const candidate = db
+        .select({ status: rotationCandidates.status, id: rotationCandidates.id })
+        .from(rotationCandidates)
+        .where(eq(rotationCandidates.tmdbId, input.tmdbId))
+        .get();
+
+      const excluded = db
+        .select({ id: rotationExclusions.id })
+        .from(rotationExclusions)
+        .where(eq(rotationExclusions.tmdbId, input.tmdbId))
+        .get();
+
+      return {
+        inQueue: candidate?.status === 'pending',
+        candidateId: candidate?.id ?? null,
+        candidateStatus: candidate?.status ?? null,
+        isExcluded: !!excluded,
+      };
+    }),
+
+  /** Remove a movie from the rotation queue. PRD-072 US-05. */
+  removeFromQueue: protectedProcedure
+    .input(z.object({ tmdbId: z.number().int().positive() }))
+    .mutation(({ input }) => {
+      const db = getDrizzle();
+      const result = db
+        .delete(rotationCandidates)
+        .where(eq(rotationCandidates.tmdbId, input.tmdbId))
+        .run();
+      return { success: result.changes > 0 };
+    }),
 });

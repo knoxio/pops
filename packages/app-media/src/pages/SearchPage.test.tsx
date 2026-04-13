@@ -70,8 +70,8 @@ vi.mock('../components/SearchResultCard', () => ({
   },
 }));
 
-vi.mock('../components/RequestMovieButton', () => ({
-  RequestMovieButton: () => null,
+vi.mock('../components/MovieActionButtons', () => ({
+  MovieActionButtons: () => null,
 }));
 
 vi.mock('sonner', () => ({
