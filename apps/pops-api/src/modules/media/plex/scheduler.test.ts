@@ -3,6 +3,8 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { SETTINGS_KEYS } from '../../core/settings/keys.js';
+
 // Mock dependencies
 const settingsStore = new Map<string, string>();
 const mockInsertSyncLog = vi.fn();
@@ -151,8 +153,8 @@ describe('startScheduler', () => {
   it('persists scheduler config to settings', () => {
     startScheduler({ intervalMs: 30000 });
 
-    expect(settingsStore.get('plex_scheduler_enabled')).toBe('true');
-    expect(settingsStore.get('plex_scheduler_interval_ms')).toBe('30000');
+    expect(settingsStore.get(SETTINGS_KEYS.PLEX_SCHEDULER_ENABLED)).toBe('true');
+    expect(settingsStore.get(SETTINGS_KEYS.PLEX_SCHEDULER_INTERVAL_MS)).toBe('30000');
   });
 });
 
@@ -172,12 +174,12 @@ describe('stopScheduler', () => {
 
   it('clears persisted scheduler config', () => {
     startScheduler({ intervalMs: 5000 });
-    expect(settingsStore.get('plex_scheduler_enabled')).toBe('true');
+    expect(settingsStore.get(SETTINGS_KEYS.PLEX_SCHEDULER_ENABLED)).toBe('true');
 
     stopScheduler();
 
-    expect(settingsStore.has('plex_scheduler_enabled')).toBe(false);
-    expect(settingsStore.has('plex_scheduler_interval_ms')).toBe(false);
+    expect(settingsStore.has(SETTINGS_KEYS.PLEX_SCHEDULER_ENABLED)).toBe(false);
+    expect(settingsStore.has(SETTINGS_KEYS.PLEX_SCHEDULER_INTERVAL_MS)).toBe(false);
   });
 });
 
@@ -460,16 +462,16 @@ describe('persistence', () => {
   });
 
   it('getPersistedSchedulerState returns config when enabled', () => {
-    settingsStore.set('plex_scheduler_enabled', 'true');
-    settingsStore.set('plex_scheduler_interval_ms', '45000');
+    settingsStore.set(SETTINGS_KEYS.PLEX_SCHEDULER_ENABLED, 'true');
+    settingsStore.set(SETTINGS_KEYS.PLEX_SCHEDULER_INTERVAL_MS, '45000');
 
     const state = getPersistedSchedulerState();
     expect(state).toEqual({ enabled: true, intervalMs: 45000 });
   });
 
   it('resumeSchedulerIfEnabled starts scheduler with persisted config', () => {
-    settingsStore.set('plex_scheduler_enabled', 'true');
-    settingsStore.set('plex_scheduler_interval_ms', '60000');
+    settingsStore.set(SETTINGS_KEYS.PLEX_SCHEDULER_ENABLED, 'true');
+    settingsStore.set(SETTINGS_KEYS.PLEX_SCHEDULER_INTERVAL_MS, '60000');
 
     const status = resumeSchedulerIfEnabled();
     expect(status).not.toBeNull();

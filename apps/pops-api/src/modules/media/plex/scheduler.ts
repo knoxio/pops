@@ -9,6 +9,7 @@ import { settings, syncLogs } from '@pops/db-types';
 import { desc, eq } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
+import { SETTINGS_KEYS } from '../../core/settings/keys.js';
 import type { PlexClient } from './client.js';
 import { getPlexClient, getPlexSectionIds, getPlexToken } from './service.js';
 import { isJobRunning } from './sync-job-manager.js';
@@ -50,12 +51,12 @@ export interface SyncLogEntry {
 
 const DEFAULT_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
-// Settings keys for scheduler persistence
-const SETTINGS_KEYS = {
-  enabled: 'plex_scheduler_enabled',
-  intervalMs: 'plex_scheduler_interval_ms',
-  movieSectionId: 'plex_movie_section_id',
-  tvSectionId: 'plex_tv_section_id',
+// Local aliases for scheduler-specific settings keys
+const SCHEDULER_KEYS = {
+  enabled: SETTINGS_KEYS.PLEX_SCHEDULER_ENABLED,
+  intervalMs: SETTINGS_KEYS.PLEX_SCHEDULER_INTERVAL_MS,
+  movieSectionId: SETTINGS_KEYS.PLEX_MOVIE_SECTION_ID,
+  tvSectionId: SETTINGS_KEYS.PLEX_TV_SECTION_ID,
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -96,13 +97,13 @@ function deleteSetting(key: string): void {
 }
 
 function persistSchedulerConfig(): void {
-  saveSetting(SETTINGS_KEYS.enabled, 'true');
-  saveSetting(SETTINGS_KEYS.intervalMs, String(intervalMs));
+  saveSetting(SCHEDULER_KEYS.enabled, 'true');
+  saveSetting(SCHEDULER_KEYS.intervalMs, String(intervalMs));
 }
 
 function clearSchedulerConfig(): void {
-  deleteSetting(SETTINGS_KEYS.enabled);
-  deleteSetting(SETTINGS_KEYS.intervalMs);
+  deleteSetting(SCHEDULER_KEYS.enabled);
+  deleteSetting(SCHEDULER_KEYS.intervalMs);
 }
 
 function writeSyncLog(
@@ -188,9 +189,9 @@ export function getPersistedSchedulerState(): {
   enabled: boolean;
   intervalMs: number;
 } | null {
-  const enabled = getSetting(SETTINGS_KEYS.enabled);
+  const enabled = getSetting(SCHEDULER_KEYS.enabled);
   if (enabled !== 'true') return null;
-  const interval = getSetting(SETTINGS_KEYS.intervalMs);
+  const interval = getSetting(SCHEDULER_KEYS.intervalMs);
   return {
     enabled: true,
     intervalMs: interval ? Number(interval) : DEFAULT_INTERVAL_MS,

@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { NotFoundError } from '../../../shared/errors.js';
 import { paginationMeta } from '../../../shared/pagination.js';
 import { protectedProcedure, router } from '../../../trpc.js';
+import type { SettingsKey } from './keys.js';
 import * as service from './service.js';
 import { SetSettingSchema, SettingListSchema, toSetting } from './types.js';
 
@@ -29,7 +30,7 @@ export const settingsRouter = router({
 
   /** Get a single setting by key (returns null when key does not exist) */
   get: protectedProcedure.input(z.object({ key: z.string() })).query(({ input }) => {
-    const row = service.getSettingOrNull(input.key);
+    const row = service.getSettingOrNull(input.key as SettingsKey);
     return { data: row ? toSetting(row) : null };
   }),
 
@@ -45,7 +46,7 @@ export const settingsRouter = router({
   /** Delete a setting by key */
   delete: protectedProcedure.input(z.object({ key: z.string() })).mutation(({ input }) => {
     try {
-      service.deleteSetting(input.key);
+      service.deleteSetting(input.key as SettingsKey);
       return { message: 'Setting deleted' };
     } catch (err) {
       if (err instanceof NotFoundError) {

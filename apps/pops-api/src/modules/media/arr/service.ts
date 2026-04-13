@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
 import { getEnv } from '../../../env.js';
+import { SETTINGS_KEYS } from '../../core/settings/keys.js';
 import { RadarrClient } from './radarr-client.js';
 import { SonarrClient } from './sonarr-client.js';
 import type {
@@ -69,10 +70,10 @@ export function getArrSettings(): {
   sonarrApiKey: string | null;
 } {
   return {
-    radarrUrl: getArrSetting('radarr_url', 'RADARR_URL'),
-    radarrApiKey: getArrSetting('radarr_api_key', 'RADARR_API_KEY'),
-    sonarrUrl: getArrSetting('sonarr_url', 'SONARR_URL'),
-    sonarrApiKey: getArrSetting('sonarr_api_key', 'SONARR_API_KEY'),
+    radarrUrl: getArrSetting(SETTINGS_KEYS.RADARR_URL, 'RADARR_URL'),
+    radarrApiKey: getArrSetting(SETTINGS_KEYS.RADARR_API_KEY, 'RADARR_API_KEY'),
+    sonarrUrl: getArrSetting(SETTINGS_KEYS.SONARR_URL, 'SONARR_URL'),
+    sonarrApiKey: getArrSetting(SETTINGS_KEYS.SONARR_API_KEY, 'SONARR_API_KEY'),
   };
 }
 
@@ -84,35 +85,35 @@ export function saveArrSettings(config: {
   sonarrApiKey?: string;
 }): void {
   if (config.radarrUrl !== undefined) {
-    if (config.radarrUrl) saveSetting('radarr_url', config.radarrUrl);
-    else deleteSetting('radarr_url');
+    if (config.radarrUrl) saveSetting(SETTINGS_KEYS.RADARR_URL, config.radarrUrl);
+    else deleteSetting(SETTINGS_KEYS.RADARR_URL);
   }
   if (config.radarrApiKey !== undefined) {
-    if (config.radarrApiKey) saveSetting('radarr_api_key', config.radarrApiKey);
-    else deleteSetting('radarr_api_key');
+    if (config.radarrApiKey) saveSetting(SETTINGS_KEYS.RADARR_API_KEY, config.radarrApiKey);
+    else deleteSetting(SETTINGS_KEYS.RADARR_API_KEY);
   }
   if (config.sonarrUrl !== undefined) {
-    if (config.sonarrUrl) saveSetting('sonarr_url', config.sonarrUrl);
-    else deleteSetting('sonarr_url');
+    if (config.sonarrUrl) saveSetting(SETTINGS_KEYS.SONARR_URL, config.sonarrUrl);
+    else deleteSetting(SETTINGS_KEYS.SONARR_URL);
   }
   if (config.sonarrApiKey !== undefined) {
-    if (config.sonarrApiKey) saveSetting('sonarr_api_key', config.sonarrApiKey);
-    else deleteSetting('sonarr_api_key');
+    if (config.sonarrApiKey) saveSetting(SETTINGS_KEYS.SONARR_API_KEY, config.sonarrApiKey);
+    else deleteSetting(SETTINGS_KEYS.SONARR_API_KEY);
   }
 }
 
 /** Create a Radarr client if configured (settings table or env vars). */
 export function getRadarrClient(): RadarrClient | null {
-  const url = getArrSetting('radarr_url', 'RADARR_URL');
-  const key = getArrSetting('radarr_api_key', 'RADARR_API_KEY');
+  const url = getArrSetting(SETTINGS_KEYS.RADARR_URL, 'RADARR_URL');
+  const key = getArrSetting(SETTINGS_KEYS.RADARR_API_KEY, 'RADARR_API_KEY');
   if (!url || !key) return null;
   return new RadarrClient(url, key);
 }
 
 /** Create a Sonarr client if configured (settings table or env vars). */
 export function getSonarrClient(): SonarrClient | null {
-  const url = getArrSetting('sonarr_url', 'SONARR_URL');
-  const key = getArrSetting('sonarr_api_key', 'SONARR_API_KEY');
+  const url = getArrSetting(SETTINGS_KEYS.SONARR_URL, 'SONARR_URL');
+  const key = getArrSetting(SETTINGS_KEYS.SONARR_API_KEY, 'SONARR_API_KEY');
   if (!url || !key) return null;
   return new SonarrClient(url, key);
 }

@@ -321,6 +321,9 @@ importers:
       '@pops/api-client':
         specifier: workspace:*
         version: link:../api-client
+      '@pops/types':
+        specifier: workspace:*
+        version: link:../types
       '@pops/ui':
         specifier: workspace:*
         version: link:../ui

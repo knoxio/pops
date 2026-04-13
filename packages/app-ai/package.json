@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@pops/api-client": "workspace:*",
+    "@pops/types": "workspace:*",
     "@pops/ui": "workspace:*",
     "@tanstack/react-query": "5.96.2",
     "@tanstack/react-table": "8.21.3",

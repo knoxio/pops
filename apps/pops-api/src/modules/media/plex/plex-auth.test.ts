@@ -8,6 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getDrizzle } from '../../../db.js';
 import type { createCaller } from '../../../shared/test-utils.js';
 import { setupTestContext } from '../../../shared/test-utils.js';
+import { SETTINGS_KEYS } from '../../core/settings/keys.js';
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;
@@ -97,7 +98,11 @@ describe('checkAuthPin', () => {
 
     // Verify token is stored encrypted (not plaintext)
     const drizzle = getDrizzle();
-    const tokenRecord = drizzle.select().from(settings).where(eq(settings.key, 'plex_token')).get();
+    const tokenRecord = drizzle
+      .select()
+      .from(settings)
+      .where(eq(settings.key, SETTINGS_KEYS.PLEX_TOKEN))
+      .get();
     expect(tokenRecord).toBeTruthy();
     expect(tokenRecord!.value).not.toBe('my-plex-token');
 
@@ -105,7 +110,7 @@ describe('checkAuthPin', () => {
     const usernameRecord = drizzle
       .select()
       .from(settings)
-      .where(eq(settings.key, 'plex_username'))
+      .where(eq(settings.key, SETTINGS_KEYS.PLEX_USERNAME))
       .get();
     expect(usernameRecord?.value).toBe('plexuser');
   });
@@ -162,24 +167,28 @@ describe('disconnect', () => {
     // Seed token and username
     drizzle
       .insert(settings)
-      .values({ key: 'plex_token', value: 'encrypted-token' })
+      .values({ key: SETTINGS_KEYS.PLEX_TOKEN, value: 'encrypted-token' })
       .onConflictDoUpdate({ target: settings.key, set: { value: 'encrypted-token' } })
       .run();
     drizzle
       .insert(settings)
-      .values({ key: 'plex_username', value: 'plexuser' })
+      .values({ key: SETTINGS_KEYS.PLEX_USERNAME, value: 'plexuser' })
       .onConflictDoUpdate({ target: settings.key, set: { value: 'plexuser' } })
       .run();
 
     const result = await caller.media.plex.disconnect();
     expect(result.message).toBe('Disconnected from Plex');
 
-    const tokenRecord = drizzle.select().from(settings).where(eq(settings.key, 'plex_token')).get();
+    const tokenRecord = drizzle
+      .select()
+      .from(settings)
+      .where(eq(settings.key, SETTINGS_KEYS.PLEX_TOKEN))
+      .get();
     expect(tokenRecord).toBeUndefined();
     const usernameRecord = drizzle
       .select()
       .from(settings)
-      .where(eq(settings.key, 'plex_username'))
+      .where(eq(settings.key, SETTINGS_KEYS.PLEX_USERNAME))
       .get();
     expect(usernameRecord).toBeUndefined();
   });
@@ -191,7 +200,7 @@ describe('disconnect', () => {
 describe('getPlexUsername', () => {
   it('returns stored username', async () => {
     const drizzle = getDrizzle();
-    drizzle.insert(settings).values({ key: 'plex_username', value: 'plexuser' }).run();
+    drizzle.insert(settings).values({ key: SETTINGS_KEYS.PLEX_USERNAME, value: 'plexuser' }).run();
 
     const result = await caller.media.plex.getPlexUsername();
     expect(result.data).toBe('plexuser');

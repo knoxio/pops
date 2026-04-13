@@ -12,6 +12,7 @@ import { z } from 'zod';
 
 import { getDrizzle } from '../../../db.js';
 import { protectedProcedure, router } from '../../../trpc.js';
+import { SETTINGS_KEYS } from '../../core/settings/keys.js';
 import { PlexClient } from './client.js';
 import * as scheduler from './scheduler.js';
 import * as plexService from './service.js';
@@ -141,7 +142,11 @@ export const plexRouter = router({
       }
 
       const db = getDrizzle();
-      const tokenRecord = db.select().from(settings).where(eq(settings.key, 'plex_token')).get();
+      const tokenRecord = db
+        .select()
+        .from(settings)
+        .where(eq(settings.key, SETTINGS_KEYS.PLEX_TOKEN))
+        .get();
       const token = tokenRecord?.value;
 
       try {
@@ -176,7 +181,7 @@ export const plexRouter = router({
 
       console.warn(`[Plex] Updating server URL to: ${finalUrl}`);
       db.insert(settings)
-        .values({ key: 'plex_url', value: finalUrl })
+        .values({ key: SETTINGS_KEYS.PLEX_URL, value: finalUrl })
         .onConflictDoUpdate({ target: settings.key, set: { value: finalUrl } })
         .run();
 
@@ -302,13 +307,13 @@ export const plexRouter = router({
         console.warn(`[Plex] Encrypting and saving token to database...`);
         const encryptedToken = plexService.encryptToken(data.authToken);
         db.insert(settings)
-          .values({ key: 'plex_token', value: encryptedToken })
+          .values({ key: SETTINGS_KEYS.PLEX_TOKEN, value: encryptedToken })
           .onConflictDoUpdate({ target: settings.key, set: { value: encryptedToken } })
           .run();
 
         if (data.username) {
           db.insert(settings)
-            .values({ key: 'plex_username', value: data.username })
+            .values({ key: SETTINGS_KEYS.PLEX_USERNAME, value: data.username })
             .onConflictDoUpdate({ target: settings.key, set: { value: data.username } })
             .run();
         }
@@ -325,7 +330,7 @@ export const plexRouter = router({
   disconnect: protectedProcedure.mutation(() => {
     const db = getDrizzle();
     db.delete(settings)
-      .where(inArray(settings.key, ['plex_token', 'plex_username']))
+      .where(inArray(settings.key, [SETTINGS_KEYS.PLEX_TOKEN, SETTINGS_KEYS.PLEX_USERNAME]))
       .run();
     return { message: 'Disconnected from Plex' };
   }),

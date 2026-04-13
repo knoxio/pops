@@ -4,6 +4,7 @@
  * Allows configuring which AI model to use, monthly token budget,
  * and fallback behaviour when budget is exceeded. PRD-053/US-01.
  */
+import { SETTINGS_KEYS } from '@pops/types';
 import {
   Alert,
   Breadcrumb,
@@ -27,9 +28,9 @@ import { toast } from 'sonner';
 import { trpc } from '../lib/trpc';
 
 const SETTING_KEYS = {
-  model: 'ai.model',
-  budget: 'ai.monthlyTokenBudget',
-  fallback: 'ai.budgetExceededFallback',
+  model: SETTINGS_KEYS.AI_MODEL,
+  budget: SETTINGS_KEYS.AI_MONTHLY_TOKEN_BUDGET,
+  fallback: SETTINGS_KEYS.AI_BUDGET_EXCEEDED_FALLBACK,
 } as const;
 
 const SUPPORTED_MODELS = [
