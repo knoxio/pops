@@ -8,13 +8,13 @@ As a system, I need a weighted random selection policy so that higher-priority s
 
 ## Acceptance Criteria
 
-- [ ] `aggregateCandidates(count)` selects `count` movies from `rotation_candidates` where `status = 'pending'`
-- [ ] Selection weight per candidate = `source_priority × (rating / 10)`. If rating is null, use `source_priority × 0.5`
-- [ ] If multiple sources contributed the same `tmdb_id`, the effective priority is the maximum across those sources
-- [ ] Candidates whose `tmdb_id` exists in the `movies` library table are excluded (already in library)
-- [ ] Candidates whose `tmdb_id` exists in `rotation_exclusions` are excluded
-- [ ] Selection uses weighted random sampling without replacement (once a movie is picked, it can't be picked again in the same cycle)
-- [ ] The function returns the selected candidates with their computed weights for logging
+- [x] `aggregateCandidates(count)` selects `count` movies from `rotation_candidates` where `status = 'pending'`
+- [x] Selection weight per candidate = `source_priority × (rating / 10)`. If rating is null, use `source_priority × 0.5`
+- [x] If multiple sources contributed the same `tmdb_id`, the effective priority is the maximum across those sources
+- [x] Candidates whose `tmdb_id` exists in the `movies` library table are excluded (already in library)
+- [x] Candidates whose `tmdb_id` exists in `rotation_exclusions` are excluded
+- [x] Selection uses weighted random sampling without replacement (once a movie is picked, it can't be picked again in the same cycle)
+- [x] The function returns the selected candidates with their computed weights for logging
 
 ## Notes
 
