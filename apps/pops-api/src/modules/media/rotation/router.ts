@@ -1,7 +1,7 @@
 /**
  * Rotation tRPC router — endpoints for the library rotation system.
  *
- * PRD-070 + PRD-071
+ * PRD-070 + PRD-071 + PRD-072
  */
 import {
   movies,
@@ -12,7 +12,7 @@ import {
   settings,
 } from '@pops/db-types';
 import { TRPCError } from '@trpc/server';
-import { asc, count, desc, eq } from 'drizzle-orm';
+import { asc, count, desc, eq, isNull, sql, sum } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { getDrizzle } from '../../../db.js';
@@ -394,4 +394,82 @@ export const rotationRouter = router({
 
       return { success: result.changes > 0 };
     }),
+
+  /** Paginated rotation log entries, newest first. PRD-072 US-06. */
+  listRotationLog: protectedProcedure
+    .input(
+      z
+        .object({
+          limit: z.number().int().min(1).max(100).default(20),
+          offset: z.number().int().min(0).default(0),
+        })
+        .default({})
+    )
+    .query(({ input }) => {
+      const db = getDrizzle();
+      const items = db
+        .select()
+        .from(rotationLog)
+        .orderBy(desc(rotationLog.executedAt))
+        .limit(input.limit)
+        .offset(input.offset)
+        .all();
+      const countRow = db.select({ total: count() }).from(rotationLog).get();
+      return { items, total: countRow?.total ?? 0 };
+    }),
+
+  /** Summary statistics for the rotation log page. PRD-072 US-06. */
+  getRotationLogStats: protectedProcedure.query(() => {
+    const db = getDrizzle();
+
+    // Total movies rotated (sum of removed + added across all non-skipped cycles)
+    const totals = db
+      .select({
+        totalRemoved: sum(rotationLog.moviesRemoved),
+        totalAdded: sum(rotationLog.moviesAdded),
+        cycleCount: count(),
+      })
+      .from(rotationLog)
+      .where(isNull(rotationLog.skippedReason))
+      .get();
+
+    const totalRotated = (Number(totals?.totalRemoved) || 0) + (Number(totals?.totalAdded) || 0);
+
+    // Date range for avg per day
+    const range = db
+      .select({
+        minDate: sql<string>`MIN(${rotationLog.executedAt})`,
+        maxDate: sql<string>`MAX(${rotationLog.executedAt})`,
+      })
+      .from(rotationLog)
+      .where(isNull(rotationLog.skippedReason))
+      .get();
+
+    let avgPerDay = 0;
+    if (range?.minDate && range.maxDate) {
+      const days = Math.max(
+        1,
+        (new Date(range.maxDate).getTime() - new Date(range.minDate).getTime()) /
+          (1000 * 60 * 60 * 24)
+      );
+      avgPerDay = Math.round((totalRotated / days) * 10) / 10;
+    }
+
+    // Current streak: consecutive cycles (newest first) without a skip
+    const allLogs = db
+      .select({
+        skippedReason: rotationLog.skippedReason,
+      })
+      .from(rotationLog)
+      .orderBy(desc(rotationLog.executedAt))
+      .all();
+
+    let streak = 0;
+    for (const log of allLogs) {
+      if (log.skippedReason) break;
+      streak++;
+    }
+
+    return { totalRotated, avgPerDay, streak };
+  }),
 });

@@ -68,6 +68,11 @@ const RotationSettingsPage = lazy(() =>
     default: m.RotationSettingsPage,
   }))
 );
+const RotationLogPage = lazy(() =>
+  import('./pages/RotationLogPage').then((m) => ({
+    default: m.RotationLogPage,
+  }))
+);
 const HistoryPage = lazy(() =>
   import('./pages/HistoryPage').then((m) => ({
     default: m.HistoryPage,
@@ -149,6 +154,7 @@ export const routes: RouteObject[] = [
   { path: 'plex', element: <PlexSettingsPage /> },
   { path: 'arr', element: <ArrSettingsPage /> },
   { path: 'rotation', element: <RotationSettingsPage /> },
+  { path: 'rotation/log', element: <RotationLogPage /> },
   { path: 'arr/calendar', element: <CalendarPage /> },
   { path: 'tier-list', element: <TierListPage /> },
   { path: 'debrief/:movieId', element: <DebriefPage /> },
