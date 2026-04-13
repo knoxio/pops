@@ -3,6 +3,8 @@
 > Epic: [01 — Import Pipeline](../../epics/01-import-pipeline.md)
 > Status: Partial
 
+Manual e2e verification tracked in GitHub knoxio/pops#1747.
+
 ## Overview
 
 Remove the `online` boolean from the import pipeline and its UI surfaces. The field never persisted to the `transactions` table — it was an in-flight import attribute used to drive a Globe/Store badge and a hardcoded Amex description heuristic. Anything users want to express about "online vs in-person" is expressed instead as a regular tag, applied via the existing `transaction_tag_rules` system. One model, one mechanism, no parallel taxonomy.

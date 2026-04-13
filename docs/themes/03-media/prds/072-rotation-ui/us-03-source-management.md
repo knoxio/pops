@@ -8,14 +8,14 @@ As a user, I want to add, edit, and remove rotation sources so that I control wh
 
 ## Acceptance Criteria
 
-- [ ] Source list page shows all configured sources: name, type icon, priority (visual bar or number), enabled toggle, last synced timestamp, candidate count
-- [ ] "Add Source" button opens a create modal with: type selector (dropdown), name input, priority slider (1-10), type-specific config fields, sync interval input
-- [ ] Type-specific config fields render dynamically based on selected type (see PRD-072 table)
-- [ ] Edit modal pre-fills existing values; allows changing name, priority, config, enabled, interval
-- [ ] Delete source shows confirmation dialog warning that its candidates will also be removed
-- [ ] "Sync Now" button per source triggers immediate sync with loading indicator
-- [ ] The `manual` source appears in the list but cannot be deleted or have its type changed
-- [ ] Sources can be reordered by dragging (updates priority values) or priority can be set numerically
+- [x] Source list page shows all configured sources: name, type icon, priority (visual bar or number), enabled toggle, last synced timestamp, candidate count
+- [x] "Add Source" button opens a create modal with: type selector (dropdown), name input, priority slider (1-10), type-specific config fields, sync interval input
+- [x] Type-specific config fields render dynamically based on selected type (see PRD-072 table)
+- [x] Edit modal pre-fills existing values; allows changing name, priority, config, enabled, interval
+- [x] Delete source shows confirmation dialog warning that its candidates will also be removed
+- [x] "Sync Now" button per source triggers immediate sync with loading indicator
+- [x] The `manual` source appears in the list but cannot be deleted or have its type changed
+- [x] Sources can be reordered by dragging (updates priority values) or priority can be set numerically
 
 ## Notes
 

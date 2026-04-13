@@ -47,10 +47,10 @@ Build a search page that queries TMDB for movies and TheTVDB for TV shows. Displ
 
 ## API Dependencies
 
-| Procedure                   | Usage                                                              |
-| --------------------------- | ------------------------------------------------------------------ |
-| `media.tmdb.searchMovies`   | Search TMDB by query string                                        |
-| `media.thetvdb.searchShows` | Search TheTVDB by query string                                     |
+| Procedure                 | Usage                                                              |
+| ------------------------- | ------------------------------------------------------------------ |
+| `media.search.movies`     | Search TMDB by query string (tRPC namespace `media.search`)       |
+| `media.search.tvShows`    | Search TheTVDB by query string (tRPC namespace `media.search`)    |
 | `media.library.addMovie`    | Add a movie to the library by TMDB ID (fetches full metadata)      |
 | `media.library.addTvShow`   | Add a TV show to the library by TheTVDB ID (fetches full metadata) |
 | `media.library.list`        | Check which tmdbIds/tvdbIds are already in the library             |

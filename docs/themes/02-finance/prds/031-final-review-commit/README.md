@@ -1,11 +1,13 @@
 # PRD-031: Import Final Review & Commit Step
 
 > Epic: [01 — Import Pipeline](../../epics/01-import-pipeline.md)
-> Status: Done
+> Status: Partial
 
 ## Overview
 
 Add a new Step 6 ("Final Review & Commit") between the current Tag Review (Step 5) and Summary (now Step 7). This step presents a complete summary of all pending changes — new entities, new/edited/disabled/removed rules, tag assignments, transaction counts — and commits everything atomically to the database in a single request. On commit, retroactive reclassification applies the new rules to existing DB transactions that now match (or no longer match).
+
+**Open gap:** Tag Review still invokes `executeImport` before this step, so the atomic commit path is not the sole writer yet. Depends on PRD-030 [US-10](../030-local-first-import/us-10-single-commit-write-path.md) (GitHub knoxio/pops#1740).
 
 ## Dependencies
 
@@ -71,7 +73,7 @@ CommitResult {
 | 03  | [us-03-commit-endpoint](us-03-commit-endpoint.md)                           | `commitImport` tRPC endpoint with single-transaction atomic writes                     | Done   | Blocked by PRD-030 US-09   |
 | 04  | [us-04-retroactive-reclassification](us-04-retroactive-reclassification.md) | Reclassify existing DB transactions against new rule set within the commit transaction | Done   | Blocked by us-03           |
 | 05  | [us-05-commit-progress-result](us-05-commit-progress-result.md)             | "Approve & Commit All" button, progress indicator, and result display                  | Done   | Blocked by us-03, us-04    |
-| 06  | [us-06-summary-step-update](us-06-summary-step-update.md)                   | Update Summary step (now Step 7) with retroactive reclassification results             | Done   | Blocked by us-05           |
+| 06  | [us-06-summary-step-update](us-06-summary-step-update.md)                   | Update Summary step (now Step 7) with retroactive reclassification results             | Partial | Blocked by us-05 + PRD-030 US-10 |
 
 ## Out of Scope
 

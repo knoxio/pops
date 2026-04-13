@@ -1,7 +1,7 @@
 # PRD-024: Corrections (Classification Rules)
 
 > Epic: [03 — Corrections](../../epics/03-corrections.md)
-> Status: To Review
+> Status: Partial
 
 ## Overview
 
@@ -16,6 +16,8 @@ Classification rules can:
 Rules are learned through an explicit proposal flow (PRD-028): rule changes are always proposed, previewed, and approved by the user.
 
 Tag rule learning is specified separately (PRD-029) and must not be coupled to classification rules.
+
+**Open gap:** `v_active_corrections` view ordering in SQL may not match **priority-first** runtime matching (PRD-032). Tracked in GitHub knoxio/pops#1745.
 
 ## Data Model
 
@@ -117,10 +119,10 @@ The system must distinguish between:
 
 | #   | Story                                         | Summary                                                 | Status    | Parallelisable   |
 | --- | --------------------------------------------- | ------------------------------------------------------- | --------- | ---------------- |
-| 01  | [us-01-schema-api](us-01-schema-api.md)       | Corrections storage and matching primitives             | To Review | No (first)       |
-| 02  | [us-02-upsert-logic](us-02-upsert-logic.md)   | Rule create/update semantics consistent with ChangeSets | To Review | Blocked by us-01 |
-| 03  | [us-03-auto-cleanup](us-03-auto-cleanup.md)   | Rule lifecycle management (deactivation / removal)      | To Review | Blocked by us-01 |
-| 04  | [us-04-normalization](us-04-normalization.md) | Normalization contract for storage and matching         | To Review | Blocked by us-01 |
+| 01  | [us-01-schema-api](us-01-schema-api.md)       | Corrections storage and matching primitives             | Done   | No (first)       |
+| 02  | [us-02-upsert-logic](us-02-upsert-logic.md)   | Rule create/update semantics consistent with ChangeSets | Done   | Blocked by us-01 |
+| 03  | [us-03-auto-cleanup](us-03-auto-cleanup.md)   | Rule lifecycle management (deactivation / removal)      | Done   | Blocked by us-01 |
+| 04  | [us-04-normalization](us-04-normalization.md) | Normalization contract for storage and matching         | Done   | Blocked by us-01 |
 
 ## Verification
 

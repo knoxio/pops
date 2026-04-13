@@ -8,6 +8,7 @@ import {
   rotationCandidates,
   rotationExclusions,
   rotationLog,
+  rotationSources,
   settings,
 } from '@pops/db-types';
 import { asc, count, desc, eq, isNull, sql, sum } from 'drizzle-orm';
@@ -202,6 +203,120 @@ export const rotationRouter = router({
       };
     }
   }),
+
+  /** List all configured sources with candidate counts. */
+  listSources: protectedProcedure.query(() => {
+    const db = getDrizzle();
+    const sources = db
+      .select({
+        id: rotationSources.id,
+        type: rotationSources.type,
+        name: rotationSources.name,
+        priority: rotationSources.priority,
+        enabled: rotationSources.enabled,
+        config: rotationSources.config,
+        lastSyncedAt: rotationSources.lastSyncedAt,
+        syncIntervalHours: rotationSources.syncIntervalHours,
+        createdAt: rotationSources.createdAt,
+        candidateCount: count(rotationCandidates.id),
+      })
+      .from(rotationSources)
+      .leftJoin(rotationCandidates, eq(rotationSources.id, rotationCandidates.sourceId))
+      .groupBy(rotationSources.id)
+      .orderBy(desc(rotationSources.priority))
+      .all();
+    return sources;
+  }),
+
+  /** Create a new rotation source. */
+  createSource: protectedProcedure
+    .input(
+      z.object({
+        type: z.string().min(1),
+        name: z.string().min(1),
+        priority: z.number().int().min(1).max(10).default(5),
+        enabled: z.boolean().default(true),
+        config: z.record(z.unknown()).default({}),
+        syncIntervalHours: z.number().int().min(1).default(24),
+      })
+    )
+    .mutation(({ input }) => {
+      const db = getDrizzle();
+      return db
+        .insert(rotationSources)
+        .values({
+          type: input.type,
+          name: input.name,
+          priority: input.priority,
+          enabled: input.enabled ? 1 : 0,
+          config: JSON.stringify(input.config),
+          syncIntervalHours: input.syncIntervalHours,
+        })
+        .returning()
+        .get();
+    }),
+
+  /** Update an existing rotation source. */
+  updateSource: protectedProcedure
+    .input(
+      z.object({
+        id: z.number().int().positive(),
+        name: z.string().min(1).optional(),
+        priority: z.number().int().min(1).max(10).optional(),
+        enabled: z.boolean().optional(),
+        config: z.record(z.unknown()).optional(),
+        syncIntervalHours: z.number().int().min(1).optional(),
+      })
+    )
+    .mutation(({ input }) => {
+      const db = getDrizzle();
+      const updates: Record<string, unknown> = {};
+      if (input.name !== undefined) updates.name = input.name;
+      if (input.priority !== undefined) updates.priority = input.priority;
+      if (input.enabled !== undefined) updates.enabled = input.enabled ? 1 : 0;
+      if (input.config !== undefined) updates.config = JSON.stringify(input.config);
+      if (input.syncIntervalHours !== undefined)
+        updates.syncIntervalHours = input.syncIntervalHours;
+
+      if (Object.keys(updates).length === 0) {
+        return { success: false, message: 'No fields to update' };
+      }
+
+      const result = db
+        .update(rotationSources)
+        .set(updates)
+        .where(eq(rotationSources.id, input.id))
+        .run();
+
+      return { success: result.changes > 0 };
+    }),
+
+  /** Delete a rotation source and its candidates. */
+  deleteSource: protectedProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(({ input }) => {
+      const db = getDrizzle();
+
+      // Check if it's the manual source (cannot delete)
+      const source = db
+        .select({ type: rotationSources.type })
+        .from(rotationSources)
+        .where(eq(rotationSources.id, input.id))
+        .get();
+
+      if (!source) {
+        return { success: false, message: 'Source not found' };
+      }
+      if (source.type === 'manual') {
+        return { success: false, message: 'Cannot delete the manual source' };
+      }
+
+      // Delete candidates first, then the source
+      db.delete(rotationCandidates).where(eq(rotationCandidates.sourceId, input.id)).run();
+      db.delete(rotationSources).where(eq(rotationSources.id, input.id)).run();
+
+      return { success: true };
+    }),
 
   /** List exclusion entries, ordered by most recent first. */
   listExclusions: protectedProcedure

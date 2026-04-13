@@ -3,6 +3,7 @@
  * upserts them into the rotation_candidates table.
  *
  * PRD-071 US-02: syncSource(sourceId) implementation.
+ * PRD-071 US-07: syncAllSources() — batch sync with interval gating.
  */
 import { rotationCandidates, rotationExclusions, rotationSources } from '@pops/db-types';
 import { eq, sql } from 'drizzle-orm';
@@ -97,4 +98,77 @@ export async function syncSource(sourceId: number): Promise<SyncSourceResult> {
     candidatesInserted: inserted,
     candidatesSkipped: skipped,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Concurrency guard — prevents duplicate syncs for the same source
+// ---------------------------------------------------------------------------
+
+const syncingSourceIds = new Set<number>();
+
+export function isSourceSyncing(sourceId: number): boolean {
+  return syncingSourceIds.has(sourceId);
+}
+
+// ---------------------------------------------------------------------------
+// syncAllSources — batch sync with per-source interval gating
+// ---------------------------------------------------------------------------
+
+export interface SyncAllResult {
+  synced: SyncSourceResult[];
+  skipped: number;
+  errors: { sourceId: number; sourceName: string; error: string }[];
+}
+
+/**
+ * Sync all enabled sources whose sync interval has elapsed.
+ * Each source is synced independently — one failure does not block others.
+ */
+export async function syncAllSources(): Promise<SyncAllResult> {
+  const db = getDrizzle();
+
+  const sources = db.select().from(rotationSources).where(eq(rotationSources.enabled, 1)).all();
+
+  const synced: SyncSourceResult[] = [];
+  const errors: SyncAllResult['errors'] = [];
+  let skipped = 0;
+
+  for (const source of sources) {
+    // Check interval: skip if synced recently
+    if (source.lastSyncedAt) {
+      const lastSynced = new Date(source.lastSyncedAt).getTime();
+      const intervalMs = (source.syncIntervalHours ?? 24) * 60 * 60 * 1000;
+      if (Date.now() - lastSynced < intervalMs) {
+        skipped++;
+        continue;
+      }
+    }
+
+    // Concurrency guard
+    if (syncingSourceIds.has(source.id)) {
+      skipped++;
+      continue;
+    }
+
+    syncingSourceIds.add(source.id);
+    try {
+      const result = await syncSource(source.id);
+      synced.push(result);
+      console.warn(
+        `[Rotation] Synced source "${source.name}" (${source.type}): ${result.candidatesFetched} fetched, ${result.candidatesInserted} new`
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      errors.push({ sourceId: source.id, sourceName: source.name, error: message });
+      console.error(`[Rotation] Sync failed for source "${source.name}": ${message}`);
+    } finally {
+      syncingSourceIds.delete(source.id);
+    }
+  }
+
+  console.warn(
+    `[Rotation] Source sync complete: ${synced.length} synced, ${skipped} skipped, ${errors.length} errors`
+  );
+
+  return { synced, skipped, errors };
 }
