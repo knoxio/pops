@@ -4,7 +4,7 @@
  *
  * PRD-071 US-02: syncSource(sourceId) implementation.
  */
-import { rotationCandidates, rotationSources } from '@pops/db-types';
+import { rotationCandidates, rotationExclusions, rotationSources } from '@pops/db-types';
 import { eq, sql } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
@@ -49,10 +49,20 @@ export async function syncSource(sourceId: number): Promise<SyncSourceResult> {
 
   const candidates = await adapter.fetchCandidates(config);
 
+  // Build set of excluded tmdb_ids for status assignment during upsert
+  const excludedTmdbIds = new Set(
+    db
+      .select({ tmdbId: rotationExclusions.tmdbId })
+      .from(rotationExclusions)
+      .all()
+      .map((r) => r.tmdbId)
+  );
+
   let inserted = 0;
   let skipped = 0;
 
   for (const candidate of candidates) {
+    const status = excludedTmdbIds.has(candidate.tmdbId) ? 'excluded' : 'pending';
     const result = db
       .insert(rotationCandidates)
       .values({
@@ -62,6 +72,7 @@ export async function syncSource(sourceId: number): Promise<SyncSourceResult> {
         year: candidate.year,
         rating: candidate.rating,
         posterPath: candidate.posterPath,
+        status,
       })
       .onConflictDoNothing()
       .run();

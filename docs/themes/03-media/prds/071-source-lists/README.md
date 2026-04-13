@@ -122,7 +122,7 @@ interface CandidateMovie {
 | 03  | [us-03-plex-friends-source](us-03-plex-friends-source.md)         | Plex friends watchlist source adapter                                           | Done        | Blocked by US-02                  |
 | 04  | [us-04-external-list-source](us-04-external-list-source.md)       | IMDB/external list source adapter (web scraping or API)                         | Done        | Blocked by US-02                  |
 | 05  | [us-05-selection-policy](us-05-selection-policy.md)               | Weighted random selection from candidate pool                                   | Done        | Blocked by US-01                  |
-| 06  | [us-06-exclusion-list](us-06-exclusion-list.md)                   | Exclusion list CRUD + filtering during selection                                | Not started | Blocked by US-01                  |
+| 06  | [us-06-exclusion-list](us-06-exclusion-list.md)                   | Exclusion list CRUD + filtering during selection                                | Done        | Blocked by US-01                  |
 | 07  | [us-07-source-sync-scheduler](us-07-source-sync-scheduler.md)     | Scheduled source syncing based on per-source intervals                          | Not started | Blocked by US-02                  |
 
 ## Out of Scope
