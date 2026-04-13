@@ -493,6 +493,48 @@ export function createTestDb(): Database {
     );
     CREATE INDEX IF NOT EXISTS idx_shelf_impressions_shelf_id
       ON shelf_impressions(shelf_id);
+
+    CREATE TABLE IF NOT EXISTS rotation_sources (
+      id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+      type                TEXT    NOT NULL,
+      name                TEXT    NOT NULL,
+      priority            INTEGER NOT NULL DEFAULT 5,
+      enabled             INTEGER NOT NULL DEFAULT 1,
+      config              TEXT,
+      last_synced_at      TEXT,
+      sync_interval_hours INTEGER NOT NULL DEFAULT 24,
+      created_at          TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_rotation_sources_type
+      ON rotation_sources(type);
+
+    CREATE TABLE IF NOT EXISTS rotation_candidates (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      source_id     INTEGER NOT NULL REFERENCES rotation_sources(id) ON DELETE CASCADE,
+      tmdb_id       INTEGER NOT NULL,
+      title         TEXT    NOT NULL,
+      year          INTEGER,
+      rating        REAL,
+      poster_path   TEXT,
+      status        TEXT    NOT NULL DEFAULT 'pending',
+      discovered_at TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_rotation_candidates_tmdb_id
+      ON rotation_candidates(tmdb_id);
+    CREATE INDEX IF NOT EXISTS idx_rotation_candidates_source_id
+      ON rotation_candidates(source_id);
+    CREATE INDEX IF NOT EXISTS idx_rotation_candidates_status
+      ON rotation_candidates(status);
+
+    CREATE TABLE IF NOT EXISTS rotation_exclusions (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT,
+      tmdb_id     INTEGER NOT NULL,
+      title       TEXT    NOT NULL,
+      reason      TEXT,
+      excluded_at TEXT    NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_rotation_exclusions_tmdb_id
+      ON rotation_exclusions(tmdb_id);
   `);
 
   // Seed tag vocabulary (v1) for tests to match dev/prod init behavior.
