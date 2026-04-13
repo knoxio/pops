@@ -67,7 +67,7 @@ No new endpoints. Existing endpoints change:
 | 04  | [us-04-manage-rules-button](us-04-manage-rules-button.md)                       | "Manage Rules" button in ReviewStep                       | Done        | Blocked by us-03         |
 | 05  | [us-05-drag-to-reorder](us-05-drag-to-reorder.md)                               | Drag-to-reorder priority in browse-mode sidebar           | Not started | Blocked by us-01, us-03; knoxio/pops#1742 |
 | 06  | [us-06-impact-preview-db-transactions](us-06-impact-preview-db-transactions.md) | Impact preview includes existing DB transactions          | Not started | Blocked by us-03; knoxio/pops#1743        |
-| 07  | [us-07-override-indicators](us-07-override-indicators.md)                       | Override indicators when multiple rules match             | Not started | Blocked by us-02; knoxio/pops#1744        |
+| 07  | [us-07-override-indicators](us-07-override-indicators.md)                       | Override indicators when multiple rules match             | Done        | Blocked by us-02; knoxio/pops#1744        |
 | 08  | [us-08-orphaned-entity-indicators](us-08-orphaned-entity-indicators.md)         | Orphaned entity badges on /finance/entities               | Done        | Yes                      |
 
 ## Out of Scope
