@@ -14,32 +14,24 @@ import {
   Button,
   Input,
   Label,
-  Select,
   Skeleton,
 } from '@pops/ui';
-import {
-  AlertTriangle,
-  ArrowLeft,
-  Bookmark,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  Copy,
-  Eye,
-  Film,
-  History,
-  RefreshCw,
-  Save,
-  Server,
-  Tv,
-} from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { ArrowLeft, ChevronDown, ChevronUp, RefreshCw, Save, Server } from 'lucide-react';
+import { useState } from 'react';
 import { Link } from 'react-router';
-import { toast } from 'sonner';
 
 import { ConnectionBadge } from '../components/ConnectionBadge';
-import { useSyncJob } from '../hooks/useSyncJob';
-import { trpc } from '../lib/trpc';
+import { usePlexMutations } from './plex-settings/hooks/usePlexMutations';
+import { usePlexSettings } from './plex-settings/hooks/usePlexSettings';
+import { PlexAuthFlow } from './plex-settings/PlexAuthFlow';
+import { PlexMediaSync } from './plex-settings/PlexMediaSync';
+import { PlexScheduler } from './plex-settings/PlexScheduler';
+import { PlexSyncHistory } from './plex-settings/PlexSyncHistory';
+import { PlexWatchSync } from './plex-settings/PlexWatchSync';
+
+// ---------------------------------------------------------------------------
+// Result display components (tb-367 scope — left in-place for now)
+// ---------------------------------------------------------------------------
 
 interface SyncResult {
   synced: number;
@@ -431,149 +423,24 @@ function WatchHistorySyncResultDisplay({ result }: { result: WatchHistorySyncRes
   );
 }
 
+// ---------------------------------------------------------------------------
+// Main page component
+// ---------------------------------------------------------------------------
+
 export function PlexSettingsPage() {
-  const [movieSectionId, setMovieSectionId] = useState<string>('');
-  const [tvSectionId, setTvSectionId] = useState<string>('');
-  const [pinId, setPinId] = useState<number | null>(null);
-  const [pinCode, setPinCode] = useState<string | null>(null);
-  const [plexUrl, setPlexUrl] = useState<string>('');
-  const [schedulerHours, setSchedulerHours] = useState<number>(6);
-
-  // Background sync jobs
-  const movieSync = useSyncJob('syncMovies');
-  const tvSync = useSyncJob('syncTvShows');
-  const watchlistSync = useSyncJob('syncWatchlist');
-  const watchHistorySync = useSyncJob('syncWatchHistory');
-  const discoverSync = useSyncJob('syncDiscoverWatches');
-  const syncStatus = trpc.media.plex.getSyncStatus.useQuery();
-  const currentUrl = trpc.media.plex.getPlexUrl.useQuery();
-  const savedSectionIds = trpc.media.plex.getSectionIds.useQuery();
-  const schedulerStatus = trpc.media.plex.getSchedulerStatus.useQuery();
-  const syncLogs = trpc.media.plex.getSyncLogs.useQuery({ limit: 10 });
-
-  useEffect(() => {
-    if (currentUrl.data?.data) {
-      setPlexUrl(currentUrl.data.data);
-    }
-  }, [currentUrl.data?.data]);
-
-  useEffect(() => {
-    if (savedSectionIds.data?.data) {
-      const { movieSectionId: savedMovie, tvSectionId: savedTv } = savedSectionIds.data.data;
-      if (savedMovie) setMovieSectionId(savedMovie);
-      if (savedTv) setTvSectionId(savedTv);
-    }
-  }, [savedSectionIds.data?.data]);
-
-  useEffect(() => {
-    if (schedulerStatus.data?.data) {
-      const ms = schedulerStatus.data.data.intervalMs;
-      setSchedulerHours(Math.max(1, Math.round(ms / (60 * 60 * 1000))));
-    }
-  }, [schedulerStatus.data?.data]);
-
-  const connectionTest = trpc.media.plex.testConnection.useQuery(undefined, {
-    enabled: syncStatus.data?.data.configured === true,
-    retry: false,
-  });
-  const libraries = trpc.media.plex.getLibraries.useQuery(undefined, {
-    enabled: connectionTest.data?.data.connected === true,
+  const settings = usePlexSettings();
+  const mutations = usePlexMutations({
+    pinId: settings.pinId,
+    setPinId: settings.setPinId,
+    setPinCode: settings.setPinCode,
+    syncStatus: settings.syncStatus,
+    connectionTest: settings.connectionTest,
+    currentUrl: settings.currentUrl,
+    schedulerStatus: settings.schedulerStatus,
+    syncLogs: settings.syncLogs,
   });
 
-  const saveSectionIds = trpc.media.plex.saveSectionIds.useMutation({
-    onError: (err: { message: string }) =>
-      toast.error(`Failed to save library selection: ${err.message}`),
-  });
-
-  const saveUrl = trpc.media.plex.setUrl.useMutation({
-    onSuccess: () => {
-      toast.success('Server URL saved');
-      syncStatus.refetch();
-      connectionTest.refetch();
-      currentUrl.refetch();
-    },
-    onError: (err: { message: string }) => {
-      toast.error(`Failed to save URL: ${err.message}`);
-    },
-  });
-
-  const getPin = trpc.media.plex.getAuthPin.useMutation({
-    onSuccess: (res: { data: { id: number; code: string; clientId: string } }) => {
-      const { id, code } = res.data;
-      setPinId(id);
-      setPinCode(code);
-    },
-    onError: (err: { message: string }) => {
-      toast.error(`Failed to start auth: ${err.message}`);
-    },
-  });
-
-  const checkPin = trpc.media.plex.checkAuthPin.useMutation({
-    onSuccess: (res: { data: { connected: boolean } }) => {
-      if (res.data.connected) {
-        toast.success('Plex account connected');
-        setPinId(null);
-        setPinCode(null);
-        syncStatus.refetch();
-        connectionTest.refetch();
-      }
-    },
-    onError: (err: { message: string }) => {
-      toast.error(`Auth check failed: ${err.message}`);
-    },
-  });
-
-  const disconnect = trpc.media.plex.disconnect.useMutation({
-    onSuccess: () => {
-      toast.success('Plex account disconnected');
-      syncStatus.refetch();
-      connectionTest.refetch();
-    },
-    onError: (err: { message: string }) => toast.error(`Failed to disconnect: ${err.message}`),
-  });
-
-  const startScheduler = trpc.media.plex.startScheduler.useMutation({
-    onSuccess: () => {
-      toast.success('Scheduler started');
-      schedulerStatus.refetch();
-      syncLogs.refetch();
-    },
-    onError: (err: { message: string }) => toast.error(`Failed to start scheduler: ${err.message}`),
-  });
-
-  const stopScheduler = trpc.media.plex.stopScheduler.useMutation({
-    onSuccess: () => {
-      toast.success('Scheduler stopped');
-      schedulerStatus.refetch();
-    },
-    onError: (err: { message: string }) => toast.error(`Failed to stop scheduler: ${err.message}`),
-  });
-
-  useEffect(() => {
-    if (!pinId) return;
-    const interval = setInterval(() => {
-      checkPin.mutate({ id: pinId });
-    }, 3000);
-    return () => clearInterval(interval);
-  }, [pinId]);
-
-  const status = syncStatus.data?.data;
-  const connected = connectionTest.data?.data.connected ?? false;
-  const connectionError =
-    connectionTest.data?.data && 'error' in connectionTest.data.data
-      ? connectionTest.data.data.error
-      : undefined;
-  const libraryList = libraries.data?.data ?? [];
-
-  const movieLibraries = libraryList.filter((lib: { type: string }) => lib.type === 'movie');
-  const tvLibraries = libraryList.filter((lib: { type: string }) => lib.type === 'show');
-
-  const scheduler = schedulerStatus.data?.data;
-  const isSchedulerRunning = scheduler?.isRunning ?? false;
-
-  const isLoading = syncStatus.isLoading || currentUrl.isLoading;
-
-  if (isLoading) {
+  if (settings.isLoading) {
     return (
       <div className="space-y-6 p-6">
         <Skeleton className="h-8 w-48" />
@@ -610,15 +477,15 @@ export function PlexSettingsPage() {
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <h1 className="text-2xl font-bold tracking-tight">Plex Settings</h1>
-        {status?.configured && <ConnectionBadge connected={connected} />}
+        {settings.status?.configured && <ConnectionBadge connected={settings.connected} />}
 
         <div className="flex-1" />
-        {status?.hasToken && (
+        {settings.status?.hasToken && (
           <Button
             variant="outline"
             size="sm"
-            onClick={() => disconnect.mutate()}
-            disabled={disconnect.isPending}
+            onClick={() => mutations.disconnect.mutate()}
+            disabled={mutations.disconnect.isPending}
           >
             Disconnect
           </Button>
@@ -642,25 +509,31 @@ export function PlexSettingsPage() {
             <div className="flex gap-2">
               <Input
                 placeholder="http://192.168.1.100:32400"
-                value={plexUrl}
-                onChange={(e) => setPlexUrl(e.target.value)}
+                value={settings.plexUrl}
+                onChange={(e) => settings.setPlexUrl(e.target.value)}
                 className="flex-1"
-                disabled={saveUrl.isPending}
+                disabled={mutations.saveUrl.isPending}
               />
               <Button
                 variant="outline"
-                onClick={() => saveUrl.mutate({ url: plexUrl })}
-                disabled={saveUrl.isPending || !plexUrl || plexUrl === currentUrl.data?.data}
+                onClick={() => mutations.saveUrl.mutate({ url: settings.plexUrl })}
+                disabled={
+                  mutations.saveUrl.isPending ||
+                  !settings.plexUrl ||
+                  settings.plexUrl === settings.currentUrl.data?.data
+                }
               >
-                {saveUrl.isPending ? (
+                {mutations.saveUrl.isPending ? (
                   <RefreshCw className="h-4 w-4 animate-spin" />
                 ) : (
                   <Save className="h-4 w-4" />
                 )}
               </Button>
             </div>
-            {saveUrl.error && <p className="text-xs text-red-400 mt-1">{saveUrl.error.message}</p>}
-            {!status?.hasUrl && (
+            {mutations.saveUrl.error && (
+              <p className="text-xs text-red-400 mt-1">{mutations.saveUrl.error.message}</p>
+            )}
+            {!settings.status?.hasUrl && (
               <p className="text-xs text-amber-400">
                 Please set your Plex server URL to enable connection.
               </p>
@@ -668,436 +541,60 @@ export function PlexSettingsPage() {
           </div>
         </div>
 
-        {/* Authentication */}
-        {!status?.hasToken ? (
-          <div className="rounded-lg border bg-card p-6 text-center space-y-4">
-            <div className="space-y-2">
-              <h2 className="text-lg font-semibold">Plex Account</h2>
-              <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                Link your Plex account to enable library syncing and watch history tracking.
-              </p>
-            </div>
-
-            <div className="pt-2">
-              {pinId && pinCode ? (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">
-                      Enter this code at{' '}
-                      <a
-                        href="https://plex.tv/link"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-400 hover:text-blue-300 underline"
-                      >
-                        plex.tv/link
-                      </a>
-                    </p>
-                    <div className="flex items-center justify-center gap-2">
-                      <code className="text-3xl font-mono font-bold tracking-widest bg-muted px-4 py-2 rounded-lg">
-                        {pinCode}
-                      </code>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          navigator.clipboard.writeText(pinCode);
-                          toast.success('Code copied');
-                        }}
-                        aria-label="Copy PIN code"
-                      >
-                        <Copy className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-center gap-2 text-sm text-amber-400">
-                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                    <span>Checking for authentication...</span>
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setPinId(null);
-                      setPinCode(null);
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              ) : (
-                <Button onClick={() => getPin.mutate()} disabled={getPin.isPending}>
-                  {getPin.isPending ? 'Requesting...' : 'Connect to Plex'}
-                </Button>
-              )}
-              {getPin.error && <p className="text-xs text-red-400 mt-2">{getPin.error.message}</p>}
-            </div>
-          </div>
-        ) : !status?.configured ? (
-          <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-4 flex items-center gap-3">
-            <AlertTriangle className="h-5 w-5 text-amber-500 shrink-0" />
-            <div className="text-sm text-amber-200">
-              Authenticated with Plex account, but server URL is missing. Set the URL above to
-              finish setup.
-            </div>
-          </div>
-        ) : null}
-
-        {/* Connection error */}
-        {connectionError && (
-          <div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-400">
-            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-            <div className="space-y-1">
-              <p className="font-semibold">Connection Failed</p>
-              <p>{connectionError}</p>
-              <p className="text-xs opacity-70">
-                Verify that the server URL is correct and the server is reachable from this
-                application.
-              </p>
-            </div>
-          </div>
-        )}
+        <PlexAuthFlow
+          status={settings.status}
+          pinId={settings.pinId}
+          pinCode={settings.pinCode}
+          setPinId={settings.setPinId}
+          setPinCode={settings.setPinCode}
+          getPin={mutations.getPin}
+          connectionError={settings.connectionError}
+        />
 
         {/* Sync controls */}
-        {connected && (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {/* Movie sync */}
-            <div className="rounded-lg border bg-card p-4 space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <Film className="h-4 w-4" />
-                Sync Movies
-              </div>
-
-              {movieLibraries.length > 0 ? (
-                <>
-                  <Select
-                    value={movieSectionId}
-                    onChange={(e) => {
-                      const id = e.target.value;
-                      setMovieSectionId(id);
-                      if (id) saveSectionIds.mutate({ movieSectionId: id });
-                    }}
-                    size="sm"
-                    placeholder="Select library..."
-                    options={movieLibraries.map(
-                      (lib: { key: string; title: string; type: string }) => ({
-                        value: lib.key,
-                        label: lib.title,
-                      })
-                    )}
-                    aria-label="Select movie library"
-                  />
-
-                  <Button
-                    size="sm"
-                    disabled={!movieSectionId || movieSync.isRunning || movieSync.isStarting}
-                    onClick={() => movieSync.start({ sectionId: movieSectionId })}
-                    className="w-full"
-                  >
-                    {movieSync.isRunning ? (
-                      <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                    ) : (
-                      <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                    )}
-                    {movieSync.isRunning && movieSync.progress
-                      ? `Syncing... ${movieSync.progress.processed}/${movieSync.progress.total}`
-                      : 'Sync Movies'}
-                  </Button>
-
-                  {movieSync.result != null && (
-                    <SyncResultDisplay result={movieSync.result as SyncResult} label="Movie" />
-                  )}
-                </>
-              ) : (
-                <p className="text-xs text-muted-foreground">No movie libraries found</p>
-              )}
-            </div>
-
-            {/* TV sync */}
-            <div className="rounded-lg border bg-card p-4 space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium">
-                <Tv className="h-4 w-4" />
-                Sync TV Shows
-              </div>
-
-              {tvLibraries.length > 0 ? (
-                <>
-                  <Select
-                    value={tvSectionId}
-                    onChange={(e) => {
-                      const id = e.target.value;
-                      setTvSectionId(id);
-                      if (id) saveSectionIds.mutate({ tvSectionId: id });
-                    }}
-                    size="sm"
-                    placeholder="Select library..."
-                    options={tvLibraries.map(
-                      (lib: { key: string; title: string; type: string }) => ({
-                        value: lib.key,
-                        label: lib.title,
-                      })
-                    )}
-                    aria-label="Select TV library"
-                  />
-
-                  <Button
-                    size="sm"
-                    disabled={!tvSectionId || tvSync.isRunning || tvSync.isStarting}
-                    onClick={() => tvSync.start({ sectionId: tvSectionId })}
-                    className="w-full"
-                  >
-                    {tvSync.isRunning ? (
-                      <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                    ) : (
-                      <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-                    )}
-                    {tvSync.isRunning && tvSync.progress
-                      ? `Syncing... ${tvSync.progress.processed}/${tvSync.progress.total}`
-                      : 'Sync TV Shows'}
-                  </Button>
-
-                  {tvSync.result != null && (
-                    <SyncResultDisplay result={tvSync.result as SyncResult} label="TV" />
-                  )}
-                </>
-              ) : (
-                <p className="text-xs text-muted-foreground">No TV libraries found</p>
-              )}
-            </div>
-          </div>
+        {settings.connected && (
+          <PlexMediaSync
+            movieSectionId={settings.movieSectionId}
+            setMovieSectionId={settings.setMovieSectionId}
+            tvSectionId={settings.tvSectionId}
+            setTvSectionId={settings.setTvSectionId}
+            movieLibraries={settings.movieLibraries}
+            tvLibraries={settings.tvLibraries}
+            movieSync={settings.movieSync}
+            tvSync={settings.tvSync}
+            saveSectionIds={mutations.saveSectionIds}
+            SyncResultDisplay={SyncResultDisplay}
+          />
         )}
 
-        {/* Watchlist Sync */}
-        {connected && (
-          <div className="rounded-lg border bg-card p-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <Bookmark className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">Watchlist Sync</h2>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Sync your Plex watchlist to POPS. Items added or removed on Plex will be reflected
-              locally.
-            </p>
-            <Button
-              size="sm"
-              disabled={watchlistSync.isRunning || watchlistSync.isStarting}
-              onClick={() => watchlistSync.start()}
-            >
-              {watchlistSync.isRunning ? (
-                <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-              ) : (
-                <RefreshCw className="h-3.5 w-3.5 mr-1.5" />
-              )}
-              {watchlistSync.isRunning && watchlistSync.progress
-                ? `Syncing... ${watchlistSync.progress.processed}/${watchlistSync.progress.total}`
-                : 'Sync Watchlist'}
-            </Button>
-            {watchlistSync.result != null && (
-              <WatchlistSyncResultDisplay result={watchlistSync.result as WatchlistSyncResult} />
-            )}
-          </div>
+        {settings.connected && (
+          <PlexWatchSync
+            movieSectionId={settings.movieSectionId}
+            tvSectionId={settings.tvSectionId}
+            watchlistSync={settings.watchlistSync}
+            watchHistorySync={settings.watchHistorySync}
+            discoverSync={settings.discoverSync}
+            WatchlistSyncResultDisplay={WatchlistSyncResultDisplay}
+            WatchHistorySyncResultDisplay={WatchHistorySyncResultDisplay}
+            DiscoverSyncResultDisplay={DiscoverSyncResultDisplay}
+          />
         )}
 
-        {/* Watch History Sync */}
-        {connected && (
-          <div className="rounded-lg border bg-card p-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <History className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">Watch History Sync</h2>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Re-sync watch history from Plex for movies and TV shows already in your library. Shows
-              detailed diagnostics about what matched and what was missed.
-            </p>
-            <Button
-              size="sm"
-              disabled={
-                watchHistorySync.isRunning ||
-                watchHistorySync.isStarting ||
-                (!movieSectionId && !tvSectionId)
-              }
-              onClick={() =>
-                watchHistorySync.start({
-                  movieSectionId: movieSectionId || undefined,
-                  tvSectionId: tvSectionId || undefined,
-                })
-              }
-            >
-              {watchHistorySync.isRunning ? (
-                <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-              ) : (
-                <History className="h-3.5 w-3.5 mr-1.5" />
-              )}
-              {watchHistorySync.isRunning && watchHistorySync.progress
-                ? `Syncing... ${watchHistorySync.progress.processed}/${watchHistorySync.progress.total}`
-                : 'Sync Watch History'}
-            </Button>
-            {!movieSectionId && !tvSectionId && (
-              <p className="text-xs text-amber-400">Select a movie or TV library above first.</p>
-            )}
-            {watchHistorySync.result != null && (
-              <WatchHistorySyncResultDisplay
-                result={watchHistorySync.result as WatchHistorySyncResult}
-              />
-            )}
-          </div>
+        {settings.connected && (
+          <PlexScheduler
+            schedulerHours={settings.schedulerHours}
+            setSchedulerHours={settings.setSchedulerHours}
+            movieSectionId={settings.movieSectionId}
+            tvSectionId={settings.tvSectionId}
+            scheduler={settings.scheduler}
+            isSchedulerRunning={settings.isSchedulerRunning}
+            startScheduler={mutations.startScheduler}
+            stopScheduler={mutations.stopScheduler}
+          />
         )}
 
-        {/* Plex Discover Cloud Watch Sync */}
-        {connected && (
-          <div className="rounded-lg border bg-card p-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <Eye className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">Plex Cloud Watch Sync</h2>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Sync your full Plex cloud activity history into POPS. For each movie and TV episode
-              you&apos;ve watched — adds it to your library if missing and logs the watch if not
-              already tracked. Catches streaming services (Netflix, Disney+, etc.) and other Plex
-              servers. This may take several minutes on first run.
-            </p>
-            <Button
-              size="sm"
-              disabled={discoverSync.isRunning || discoverSync.isStarting}
-              onClick={() => discoverSync.start()}
-            >
-              {discoverSync.isRunning ? (
-                <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-              ) : (
-                <Eye className="h-3.5 w-3.5 mr-1.5" />
-              )}
-              {discoverSync.isRunning && discoverSync.progress
-                ? `Checking... ${discoverSync.progress.processed}/${discoverSync.progress.total}`
-                : 'Sync Cloud Watches'}
-            </Button>
-            <DiscoverSyncResultDisplay
-              result={discoverSync.result as DiscoverWatchSyncResult | null}
-              isRunning={discoverSync.isRunning}
-            />
-          </div>
-        )}
-
-        {/* Scheduler */}
-        {connected && (
-          <div className="rounded-lg border bg-card p-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">Auto Sync Scheduler</h2>
-            </div>
-
-            <div className="flex items-center gap-4 flex-wrap">
-              <div className="flex items-center gap-2">
-                <Label htmlFor="scheduler-hours" className="text-muted-foreground font-normal">
-                  Sync every
-                </Label>
-                <Input
-                  id="scheduler-hours"
-                  type="number"
-                  min={1}
-                  max={168}
-                  value={schedulerHours}
-                  onChange={(e) => setSchedulerHours(Math.max(1, parseInt(e.target.value) || 1))}
-                  className="w-20"
-                  disabled={isSchedulerRunning}
-                />
-                <span className="text-sm text-muted-foreground">hours</span>
-              </div>
-
-              {isSchedulerRunning ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => stopScheduler.mutate()}
-                  disabled={stopScheduler.isPending}
-                >
-                  {stopScheduler.isPending ? (
-                    <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                  ) : null}
-                  Stop Scheduler
-                </Button>
-              ) : (
-                <Button
-                  size="sm"
-                  onClick={() =>
-                    startScheduler.mutate({
-                      intervalMs: schedulerHours * 60 * 60 * 1000,
-                      movieSectionId: movieSectionId || undefined,
-                      tvSectionId: tvSectionId || undefined,
-                    })
-                  }
-                  disabled={startScheduler.isPending}
-                >
-                  {startScheduler.isPending ? (
-                    <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                  ) : null}
-                  Start Scheduler
-                </Button>
-              )}
-            </div>
-
-            {/* Scheduler status */}
-            <div className="text-sm text-muted-foreground space-y-1">
-              {isSchedulerRunning ? (
-                <>
-                  <p className="text-emerald-400">
-                    Scheduler active — syncing every{' '}
-                    {Math.round((scheduler?.intervalMs ?? 0) / (60 * 60 * 1000))} hours
-                  </p>
-                  {scheduler?.nextSyncAt && (
-                    <p>Next sync: {new Date(scheduler.nextSyncAt).toLocaleTimeString()}</p>
-                  )}
-                </>
-              ) : (
-                <p>Scheduler off</p>
-              )}
-              {scheduler?.lastSyncAt && (
-                <p>Last sync: {new Date(scheduler.lastSyncAt).toLocaleString()}</p>
-              )}
-              {scheduler?.lastSyncError && (
-                <p className="text-red-400">Last error: {scheduler.lastSyncError}</p>
-              )}
-              {(scheduler?.moviesSynced ?? 0) > 0 && (
-                <p>Total movies synced: {scheduler?.moviesSynced}</p>
-              )}
-              {(scheduler?.tvShowsSynced ?? 0) > 0 && (
-                <p>Total TV shows synced: {scheduler?.tvShowsSynced}</p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Sync History */}
-        {connected && syncLogs.data?.data && syncLogs.data.data.length > 0 && (
-          <div className="rounded-lg border bg-card p-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <History className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">Sync History</h2>
-            </div>
-
-            <div className="space-y-2">
-              {syncLogs.data.data.map((log) => (
-                <div
-                  key={log.id}
-                  className="flex items-center gap-3 flex-wrap rounded-md border bg-muted/30 px-3 py-2 text-sm"
-                >
-                  <span className="text-muted-foreground min-w-[140px]">
-                    {new Date(log.syncedAt).toLocaleString()}
-                  </span>
-                  <span className="text-emerald-400">{log.moviesSynced} movies</span>
-                  <span className="text-blue-400">{log.tvShowsSynced} TV</span>
-                  {log.durationMs != null && (
-                    <span className="text-muted-foreground text-xs">
-                      {(log.durationMs / 1000).toFixed(1)}s
-                    </span>
-                  )}
-                  {log.errors && log.errors.length > 0 && (
-                    <span className="text-red-400 text-xs">
-                      {log.errors.length} error{log.errors.length > 1 ? 's' : ''}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
+        {settings.connected && settings.syncLogs.data?.data && (
+          <PlexSyncHistory syncLogs={settings.syncLogs.data.data} />
         )}
       </div>
     </div>
