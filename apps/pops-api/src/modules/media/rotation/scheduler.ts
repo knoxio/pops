@@ -29,6 +29,7 @@ import {
   processExpiredMovies,
   selectMoviesForRemoval,
 } from './removal-selection.js';
+import { syncAllSources } from './sync-source.js';
 
 // ---------------------------------------------------------------------------
 // Settings keys
@@ -214,6 +215,9 @@ export async function runRotationCycle(): Promise<RotationCycleResult> {
   const leavingDays = getLeavingDays();
 
   try {
+    // Step 0: Sync all rotation sources (refresh candidate queue)
+    await syncAllSources();
+
     // Step 1: Process expired leaving movies (Radarr delete)
     const expiredResults = await processExpiredMovies();
     const moviesRemoved = expiredResults.filter((r) => r.success).length;
