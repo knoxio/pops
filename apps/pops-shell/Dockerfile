@@ -15,15 +15,20 @@ COPY packages/app-inventory/package.json ./packages/app-inventory/
 COPY packages/app-ai/package.json ./packages/app-ai/
 COPY packages/api-client/package.json ./packages/api-client/
 COPY packages/navigation/package.json ./packages/navigation/
+COPY packages/types/package.json ./packages/types/
 
 # Install pnpm and dependencies (cached across builds)
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
     corepack enable && pnpm install --frozen-lockfile
 
-# Copy db-types source and build it first (same pattern as pops-api Dockerfile)
+# Build shared packages first (same pattern as pops-api Dockerfile)
 COPY packages/db-types/src ./packages/db-types/src
 COPY packages/db-types/tsconfig.json ./packages/db-types/
+COPY packages/types/src ./packages/types/src
+COPY packages/types/tsconfig.json ./packages/types/
 WORKDIR /app/packages/db-types
+RUN pnpm build
+WORKDIR /app/packages/types
 RUN pnpm build
 
 # Copy remaining source files

@@ -6,6 +6,7 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
 
 # Copy all workspace packages
 COPY packages/db-types/package.json ./packages/db-types/
+COPY packages/types/package.json ./packages/types/
 COPY apps/pops-api/package.json ./apps/pops-api/
 
 # Install pnpm and dependencies (cached across builds)
@@ -15,11 +16,15 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 # Copy source files
 COPY packages/db-types/src ./packages/db-types/src
 COPY packages/db-types/tsconfig.json ./packages/db-types/
+COPY packages/types/src ./packages/types/src
+COPY packages/types/tsconfig.json ./packages/types/
 COPY apps/pops-api/tsconfig.json ./apps/pops-api/
 COPY apps/pops-api/src ./apps/pops-api/src
 
-# Build db-types first
+# Build shared packages first
 WORKDIR /app/packages/db-types
+RUN pnpm build
+WORKDIR /app/packages/types
 RUN pnpm build
 
 # Build pops-api
@@ -43,9 +48,11 @@ COPY --from=builder /app/apps/pops-api/dist ./dist
 COPY --from=builder /app/apps/pops-api/src/db/migrations ./dist/db/migrations
 COPY --from=builder /app/apps/pops-api/src/db/drizzle-migrations ./dist/db/drizzle-migrations
 
-# Copy db-types built output into node_modules
+# Copy shared package built output into node_modules
 COPY --from=builder /app/packages/db-types/dist ./node_modules/@pops/db-types/dist
 COPY --from=builder /app/packages/db-types/package.json ./node_modules/@pops/db-types/
+COPY --from=builder /app/packages/types/dist ./node_modules/@pops/types/dist
+COPY --from=builder /app/packages/types/package.json ./node_modules/@pops/types/
 
 ARG BUILD_VERSION=dev
 ENV BUILD_VERSION=$BUILD_VERSION

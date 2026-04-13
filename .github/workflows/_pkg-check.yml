@@ -64,9 +64,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
         if: inputs.skip != 'true'
-      - name: Build db-types
+      - name: Build shared packages
         if: inputs.skip != 'true' && inputs.needs-db-build
-        run: pnpm --filter @pops/db-types build
+        run: |
+          pnpm --filter @pops/db-types build
+          pnpm --filter @pops/types build
       - run: cd ${{ inputs.package-path }} && pnpm typecheck
         if: inputs.skip != 'true'
 
@@ -89,9 +91,11 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
         if: inputs.skip != 'true'
-      - name: Build db-types
+      - name: Build shared packages
         if: inputs.skip != 'true' && inputs.needs-db-build
-        run: pnpm --filter @pops/db-types build
+        run: |
+          pnpm --filter @pops/db-types build
+          pnpm --filter @pops/types build
       - run: cd ${{ inputs.package-path }} && pnpm test
         if: inputs.skip != 'true'
 
