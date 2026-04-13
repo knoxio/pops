@@ -1,12 +1,7 @@
 import { Button, Select } from '@pops/ui';
 import { Film, RefreshCw, Tv } from 'lucide-react';
 
-interface SyncResult {
-  synced: number;
-  skipped: number;
-  errors: { title: string; reason: string; year: number | null }[];
-  skipReasons?: { title: string; reason: string; year: number | null }[];
-}
+import type { SyncResult } from './types';
 
 interface SyncJob {
   isRunning: boolean;

@@ -1,69 +1,7 @@
 import { Button } from '@pops/ui';
 import { Bookmark, Eye, History, RefreshCw } from 'lucide-react';
 
-interface WatchlistSyncResult {
-  added: number;
-  removed: number;
-  skipped: number;
-  errors: { title: string; reason: string }[];
-  skipReasons?: { title: string; reason: string }[];
-}
-
-interface EpisodeMismatch {
-  seasonNumber: number;
-  episodeNumber: number;
-  title: string;
-}
-
-interface ShowWatchDiagnostics {
-  title: string;
-  tvdbId: number;
-  plexViewedLeafCount: number | null;
-  diagnostics: {
-    plexTotal: number;
-    plexWatched: number;
-    matched: number;
-    alreadyLogged: number;
-    seasonNotFound: number;
-    episodeNotFound: number;
-    missingSeasonsPreview: number[];
-    missingEpisodesPreview: EpisodeMismatch[];
-  };
-}
-
-interface WatchHistorySyncResult {
-  movies: {
-    total: number;
-    watched: number;
-    logged: number;
-    alreadyLogged: number;
-    noLocalMatch: number;
-  } | null;
-  shows: ShowWatchDiagnostics[];
-  summary: {
-    moviesLogged: number;
-    episodesLogged: number;
-    episodesAlreadyLogged: number;
-    showsProcessed: number;
-    showsWithGaps: number;
-  };
-}
-
-interface DiscoverMediaResult {
-  total: number;
-  watched: number;
-  logged: number;
-  alreadyLogged: number;
-  added: number;
-  notFound: number;
-  errors: number;
-  errorSamples?: string[];
-}
-
-interface DiscoverWatchSyncResult {
-  movies: DiscoverMediaResult;
-  tvShows: DiscoverMediaResult;
-}
+import type { DiscoverWatchSyncResult, WatchHistorySyncResult, WatchlistSyncResult } from './types';
 
 interface SyncJob {
   isRunning: boolean;
