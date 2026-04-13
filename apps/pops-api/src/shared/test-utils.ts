@@ -536,6 +536,19 @@ export function createTestDb(): Database {
     );
     CREATE UNIQUE INDEX IF NOT EXISTS idx_rotation_exclusions_tmdb_id
       ON rotation_exclusions(tmdb_id);
+
+    CREATE TABLE IF NOT EXISTS rotation_log (
+      id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+      executed_at           TEXT    NOT NULL,
+      movies_marked_leaving INTEGER NOT NULL,
+      movies_removed        INTEGER NOT NULL,
+      movies_added          INTEGER NOT NULL,
+      removals_failed       INTEGER NOT NULL,
+      free_space_gb         REAL    NOT NULL,
+      target_free_gb        REAL    NOT NULL,
+      skipped_reason        TEXT,
+      details               TEXT
+    );
   `);
 
   // Seed tag vocabulary (v1) for tests to match dev/prod init behavior.
