@@ -8,6 +8,8 @@ const mockGenresQuery = vi.fn();
 const mockRefetch = vi.fn();
 const mockGetPendingDebriefs = vi.fn();
 
+const mockGetLeavingMovies = vi.fn();
+
 vi.mock('../lib/trpc', () => ({
   trpc: {
     media: {
@@ -17,6 +19,12 @@ vi.mock('../lib/trpc', () => ({
       },
       comparisons: {
         getPendingDebriefs: { useQuery: () => mockGetPendingDebriefs() },
+      },
+      rotation: {
+        getLeavingMovies: { useQuery: () => mockGetLeavingMovies() },
+        cancelLeaving: {
+          useMutation: () => ({ mutate: vi.fn(), isPending: false }),
+        },
       },
     },
   },
@@ -34,6 +42,10 @@ vi.mock('../components/MediaCard', () => ({
 
 vi.mock('../components/DownloadQueue', () => ({
   DownloadQueue: () => <div data-testid="download-queue" />,
+}));
+
+vi.mock('../components/LeavingSoonShelf', () => ({
+  LeavingSoonShelf: () => <div data-testid="leaving-soon-shelf" />,
 }));
 
 vi.mock('../components/QuickPickDialog', () => ({
@@ -101,6 +113,7 @@ describe('LibraryPage', () => {
     vi.clearAllMocks();
     mockGenresQuery.mockReturnValue({ data: { data: ['Drama', 'Sci-Fi'] } });
     mockGetPendingDebriefs.mockReturnValue({ data: null });
+    mockGetLeavingMovies.mockReturnValue({ data: [], isLoading: false });
   });
 
   describe('Loading state', () => {

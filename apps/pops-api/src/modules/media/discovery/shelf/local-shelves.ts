@@ -492,6 +492,59 @@ export const franchiseCompletionsShelf: ShelfDefinition = {
 };
 
 // ---------------------------------------------------------------------------
+// leaving-soon: movies scheduled for removal (rotation_status = 'leaving')
+// ---------------------------------------------------------------------------
+
+export const leavingSoonShelf: ShelfDefinition = {
+  id: 'leaving-soon',
+  template: false,
+  category: 'local',
+  generate(_profile: PreferenceProfile): ShelfInstance[] {
+    const db = getDrizzle();
+    // Only generate the shelf when there are leaving movies
+    const count = db
+      .select({ id: movies.id })
+      .from(movies)
+      .where(eq(movies.rotationStatus, 'leaving'))
+      .limit(1)
+      .all();
+
+    if (count.length === 0) return [];
+
+    return [
+      {
+        shelfId: 'leaving-soon',
+        title: 'Leaving Soon',
+        subtitle: 'Watch before they go',
+        emoji: '⏳',
+        score: 0.95, // pinned near top
+        query: ({ limit, offset }) => {
+          const db = getDrizzle();
+          const rows = db
+            .select({
+              ...movieCols,
+              rotationExpiresAt: movies.rotationExpiresAt,
+            })
+            .from(movies)
+            .where(eq(movies.rotationStatus, 'leaving'))
+            .orderBy(sql`${movies.rotationExpiresAt} ASC NULLS LAST`)
+            .limit(limit)
+            .offset(offset)
+            .all();
+          return Promise.resolve(
+            rows.map((r) => ({
+              ...toResult(r),
+              inLibrary: true,
+              rotationExpiresAt: r.rotationExpiresAt ?? undefined,
+            }))
+          );
+        },
+      },
+    ];
+  },
+};
+
+// ---------------------------------------------------------------------------
 // Register all shelves on module load
 // ---------------------------------------------------------------------------
 
@@ -503,3 +556,4 @@ registerShelf(polarizingShelf);
 registerShelf(friendProofShelf);
 registerShelf(recentlyAddedShelf);
 registerShelf(franchiseCompletionsShelf);
+registerShelf(leavingSoonShelf);

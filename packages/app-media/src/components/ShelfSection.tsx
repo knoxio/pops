@@ -5,15 +5,17 @@
  * Once visible, renders a HorizontalScrollRow with DiscoverCard items. Supports
  * "Show more" pagination via the getShelfPage tRPC endpoint.
  */
-import { Button, Skeleton } from '@pops/ui';
-import { Loader2 } from 'lucide-react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
+
+import { Button, Skeleton } from '@pops/ui';
 
 import type { DiscoverActionResult } from '../hooks/useDiscoverCardActions';
 import { trpc } from '../lib/trpc';
 import { DiscoverCard } from './DiscoverCard';
 import { HorizontalScrollRow } from './HorizontalScrollRow';
+import { LeavingBadge } from './LeavingBadge';
 
 interface ShelfItem {
   tmdbId: number;
@@ -27,6 +29,7 @@ interface ShelfItem {
   onWatchlist?: boolean;
   matchPercentage?: number;
   matchReason?: string;
+  rotationExpiresAt?: string;
 }
 
 export interface ShelfSectionProps {
@@ -191,32 +194,38 @@ export function ShelfSection({
     <div ref={sentinelRef} className="space-y-3">
       <HorizontalScrollRow title={title} subtitle={subtitle}>
         {visibleItems.map((item) => (
-          <DiscoverCard
-            key={item.tmdbId}
-            tmdbId={item.tmdbId}
-            title={item.title}
-            releaseDate={item.releaseDate}
-            posterPath={item.posterPath}
-            posterUrl={item.posterUrl}
-            voteAverage={item.voteAverage}
-            inLibrary={item.inLibrary}
-            isWatched={item.isWatched}
-            onWatchlist={item.onWatchlist}
-            matchPercentage={item.matchPercentage}
-            matchReason={item.matchReason}
-            isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
-            isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
-            isRemovingFromWatchlist={removingFromWatchlist.has(item.tmdbId)}
-            isMarkingWatched={markingWatched.has(item.tmdbId)}
-            isMarkingRewatched={markingRewatched.has(item.tmdbId)}
-            isDismissing={dismissing.has(item.tmdbId)}
-            onAddToLibrary={handleAddToLibrary}
-            onAddToWatchlist={handleAddToWatchlist}
-            onRemoveFromWatchlist={handleRemoveFromWatchlist}
-            onMarkWatched={handleMarkWatched}
-            onMarkRewatched={handleMarkRewatched}
-            onNotInterested={onNotInterested}
-          />
+          <div key={item.tmdbId} className="relative">
+            <DiscoverCard
+              tmdbId={item.tmdbId}
+              title={item.title}
+              releaseDate={item.releaseDate}
+              posterPath={item.posterPath}
+              posterUrl={item.posterUrl}
+              voteAverage={item.voteAverage}
+              inLibrary={item.inLibrary}
+              isWatched={item.isWatched}
+              onWatchlist={item.onWatchlist}
+              matchPercentage={item.matchPercentage}
+              matchReason={item.matchReason}
+              isAddingToLibrary={addingToLibrary.has(item.tmdbId)}
+              isAddingToWatchlist={addingToWatchlist.has(item.tmdbId)}
+              isRemovingFromWatchlist={removingFromWatchlist.has(item.tmdbId)}
+              isMarkingWatched={markingWatched.has(item.tmdbId)}
+              isMarkingRewatched={markingRewatched.has(item.tmdbId)}
+              isDismissing={dismissing.has(item.tmdbId)}
+              onAddToLibrary={handleAddToLibrary}
+              onAddToWatchlist={handleAddToWatchlist}
+              onRemoveFromWatchlist={handleRemoveFromWatchlist}
+              onMarkWatched={handleMarkWatched}
+              onMarkRewatched={handleMarkRewatched}
+              onNotInterested={onNotInterested}
+            />
+            {item.rotationExpiresAt && (
+              <div className="absolute top-2 right-2 z-10">
+                <LeavingBadge rotationExpiresAt={item.rotationExpiresAt} />
+              </div>
+            )}
+          </div>
         ))}
         {hasMore && (
           <div className="flex shrink-0 items-center px-2">

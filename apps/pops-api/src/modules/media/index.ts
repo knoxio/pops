@@ -4,6 +4,8 @@
 // Side-effect: register search adapters
 import './search/movies-adapter.js';
 import './search/tv-shows-adapter.js';
+// Side-effect: register rotation source adapters
+import './rotation/register-sources.js';
 
 import { router } from '../../trpc.js';
 import { arrRouter } from './arr/index.js';

@@ -1,11 +1,21 @@
-import { useSetPageContext } from '@pops/navigation';
-import { Button, Select, Skeleton, TextInput } from '@pops/ui';
-import { AlertCircle, ChevronLeft, ChevronRight, Search, Settings, Sparkles } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
+import {
+  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  RefreshCw,
+  Search,
+  Settings,
+  Sparkles,
+} from 'lucide-react';
+
+import { useSetPageContext } from '@pops/navigation';
+import { Button, Select, Skeleton, TextInput } from '@pops/ui';
 
 import { DebriefBanner } from '../components/DebriefBanner';
 import { DownloadQueue } from '../components/DownloadQueue';
+import { LeavingSoonShelf } from '../components/LeavingSoonShelf';
 import { MediaCard } from '../components/MediaCard';
 import { MediaGrid } from '../components/MediaGrid';
 import { QuickPickDialog } from '../components/QuickPickDialog';
@@ -240,6 +250,12 @@ export function LibraryPage() {
               Arr
             </Button>
           </Link>
+          <Link to="/media/rotation">
+            <Button variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-1.5" />
+              Rotation
+            </Button>
+          </Link>
           <Link
             to="/media/search"
             className="text-sm font-medium text-app-accent hover:text-app-accent/80 transition-colors"
@@ -254,6 +270,9 @@ export function LibraryPage() {
 
       {/* Download queue */}
       <DownloadQueue />
+
+      {/* Leaving soon shelf — shows movies scheduled for removal */}
+      <LeavingSoonShelf />
 
       {/* Filter bar */}
       <div className="flex flex-wrap items-center gap-3">
