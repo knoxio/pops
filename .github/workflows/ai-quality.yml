@@ -7,6 +7,7 @@ on:
       - "packages/app-ai/**"
       - "packages/ui/**"
       - "packages/db-types/**"
+      - "packages/types/**"
       - "packages/api-client/**"
       - ".github/workflows/ai-quality.yml"
       - ".github/workflows/_pkg-check.yml"
@@ -29,6 +30,7 @@ jobs:
               - 'packages/app-ai/**'
               - 'packages/ui/**'
               - 'packages/db-types/**'
+              - 'packages/types/**'
               - 'packages/api-client/**'
               - '.github/workflows/ai-quality.yml'
               - '.github/workflows/_pkg-check.yml'
@@ -40,4 +42,5 @@ jobs:
     with:
       package-path: packages/app-ai
       needs-db-build: true
+      needs-types-build: true
       skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}

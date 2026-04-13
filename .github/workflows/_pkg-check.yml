@@ -11,6 +11,10 @@ on:
         description: "Whether to build @pops/db-types before running checks"
         type: boolean
         default: false
+      needs-types-build:
+        description: "Whether to build @pops/types before running checks"
+        type: boolean
+        default: false
       has-test:
         description: "Whether the package has a test script"
         type: boolean
@@ -67,6 +71,9 @@ jobs:
       - name: Build db-types
         if: inputs.skip != 'true' && inputs.needs-db-build
         run: pnpm --filter @pops/db-types build
+      - name: Build types
+        if: inputs.skip != 'true' && inputs.needs-types-build
+        run: pnpm --filter @pops/types build
       - run: cd ${{ inputs.package-path }} && pnpm typecheck
         if: inputs.skip != 'true'
 
@@ -92,6 +99,9 @@ jobs:
       - name: Build db-types
         if: inputs.skip != 'true' && inputs.needs-db-build
         run: pnpm --filter @pops/db-types build
+      - name: Build types
+        if: inputs.skip != 'true' && inputs.needs-types-build
+        run: pnpm --filter @pops/types build
       - run: cd ${{ inputs.package-path }} && pnpm test
         if: inputs.skip != 'true'
 

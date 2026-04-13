@@ -8,6 +8,7 @@ on:
     paths:
       - "apps/pops-api/**"
       - "packages/db-types/**"
+      - "packages/types/**"
       - ".github/workflows/api-quality.yml"
 
 jobs:
@@ -26,6 +27,7 @@ jobs:
             api:
               - 'apps/pops-api/**'
               - 'packages/db-types/**'
+              - 'packages/types/**'
               - '.github/workflows/api-quality.yml'
 
   quality-checks:
@@ -60,7 +62,7 @@ jobs:
 
       - name: Build shared packages
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: cd packages/db-types && pnpm build
+        run: cd packages/db-types && pnpm build && cd ../types && pnpm build
 
       - name: Type check
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
