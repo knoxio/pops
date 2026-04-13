@@ -8,13 +8,13 @@ As a user, I want to use my Plex friends' watchlists as a source of movie candid
 
 ## Acceptance Criteria
 
-- [ ] `plex_friends` adapter accepts a friend username (or Plex user ID) in the source `config`
-- [ ] Adapter fetches the friend's public watchlist via Plex Discover API
-- [ ] Extracts TMDB IDs from Plex metadata, resolves movie details from TMDB
-- [ ] Only returns movies (filters out TV shows)
-- [ ] If the friend's watchlist is private or inaccessible, returns empty array and logs a warning
-- [ ] Multiple `plex_friends` sources can exist (one per friend), each with independent priority and sync interval
-- [ ] tRPC endpoint or helper to list available Plex friends (for the source config UI picker)
+- [x] `plex_friends` adapter accepts a friend username (or Plex user ID) in the source `config`
+- [x] Adapter fetches the friend's public watchlist via Plex Discover API
+- [x] Extracts TMDB IDs from Plex metadata, resolves movie details from TMDB
+- [x] Only returns movies (filters out TV shows)
+- [x] If the friend's watchlist is private or inaccessible, returns empty array and logs a warning
+- [x] Multiple `plex_friends` sources can exist (one per friend), each with independent priority and sync interval
+- [x] tRPC endpoint or helper to list available Plex friends (for the source config UI picker)
 
 ## Notes
 

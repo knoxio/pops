@@ -1,7 +1,7 @@
 /**
  * Rotation tRPC router — endpoints for the library rotation system.
  *
- * PRD-070
+ * PRD-070 + PRD-071
  */
 import { z } from 'zod';
 import { eq, asc, desc } from 'drizzle-orm';
@@ -16,6 +16,10 @@ import {
   runRotationCycleNow,
 } from './scheduler.js';
 import { getRadarrClient } from '../arr/service.js';
+import { getRegisteredTypes } from './source-registry.js';
+import { syncSource } from './sync-source.js';
+import { getPlexToken } from '../plex/service.js';
+import { fetchPlexFriends } from '../plex/friends.js';
 
 /** All rotation setting keys and their defaults. */
 const ROTATION_SETTING_KEYS = {
@@ -159,6 +163,35 @@ export const rotationRouter = router({
       return {
         available: false,
         disks: [] as { path: string; label: string; freeSpace: number; totalSpace: number }[],
+      };
+    }
+  }),
+
+  /** Sync a specific rotation source (fetch candidates from adapter). */
+  syncSource: protectedProcedure
+    .input(z.object({ sourceId: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      return syncSource(input.sourceId);
+    }),
+
+  /** List registered source adapter types. */
+  sourceTypes: protectedProcedure.query(() => {
+    return { types: getRegisteredTypes() };
+  }),
+
+  /** List available Plex friends (for source config UI picker). */
+  listPlexFriends: protectedProcedure.query(async () => {
+    const token = getPlexToken();
+    if (!token) {
+      return { friends: [], error: 'Plex token not configured' };
+    }
+    try {
+      const friends = await fetchPlexFriends(token);
+      return { friends, error: null };
+    } catch (err) {
+      return {
+        friends: [],
+        error: err instanceof Error ? err.message : 'Failed to fetch Plex friends',
       };
     }
   }),

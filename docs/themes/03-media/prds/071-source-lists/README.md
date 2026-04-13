@@ -119,7 +119,7 @@ interface CandidateMovie {
 | --- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------- | ----------- | --------------------------------- |
 | 01  | [us-01-source-schema](us-01-source-schema.md)                     | Schema: `rotation_sources`, `rotation_candidates`, `rotation_exclusions` tables | Not started | Yes (parallel with PRD-070 US-01) |
 | 02  | [us-02-source-plugin-interface](us-02-source-plugin-interface.md) | Plugin interface + Plex watchlist adapter                                       | Not started | Blocked by US-01                  |
-| 03  | [us-03-plex-friends-source](us-03-plex-friends-source.md)         | Plex friends watchlist source adapter                                           | Not started | Blocked by US-02                  |
+| 03  | [us-03-plex-friends-source](us-03-plex-friends-source.md)         | Plex friends watchlist source adapter                                           | Done        | Blocked by US-02                  |
 | 04  | [us-04-external-list-source](us-04-external-list-source.md)       | IMDB/external list source adapter (web scraping or API)                         | Not started | Blocked by US-02                  |
 | 05  | [us-05-selection-policy](us-05-selection-policy.md)               | Weighted random selection from candidate pool                                   | Not started | Blocked by US-01                  |
 | 06  | [us-06-exclusion-list](us-06-exclusion-list.md)                   | Exclusion list CRUD + filtering during selection                                | Not started | Blocked by US-01                  |
