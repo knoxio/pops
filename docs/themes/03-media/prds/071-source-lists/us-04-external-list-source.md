@@ -8,12 +8,12 @@ As a user, I want to add external movie lists (IMDB Top 100, Letterboxd lists) a
 
 ## Acceptance Criteria
 
-- [ ] `imdb_top_100` adapter fetches the IMDB Top 100 (or Top 250) list and extracts movie identifiers
-- [ ] IMDB IDs are resolved to TMDB IDs via the TMDB "find by external ID" endpoint
-- [ ] `letterboxd` adapter accepts a list URL in the source `config` and scrapes or fetches the list contents
-- [ ] Both adapters return `CandidateMovie[]` conforming to the plugin interface
-- [ ] Adapters handle pagination if the external list is large
-- [ ] Graceful degradation: if the external source is unreachable or the page structure changes, return empty array and log the error
+- [x] `tmdb_top_rated` adapter fetches top-rated movies via TMDB discover endpoint (used instead of IMDB scraping per notes — more maintainable)
+- [x] TMDB IDs come directly from the TMDB API response (no external ID resolution needed)
+- [x] `letterboxd` adapter accepts a list URL in the source `config` and scrapes the list contents
+- [x] Both adapters return `CandidateMovie[]` conforming to the plugin interface
+- [x] Adapters handle pagination if the external list is large
+- [x] Graceful degradation: if the external source is unreachable or the page structure changes, return empty array and log the error
 
 ## Notes
 
