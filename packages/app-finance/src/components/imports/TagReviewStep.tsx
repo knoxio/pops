@@ -1,7 +1,7 @@
 import type { ConfirmedTransaction, SuggestedTag } from '@pops/api/modules/finance/imports';
 import { Button } from '@pops/ui';
 import { Badge } from '@pops/ui';
-import { ChevronDown, ChevronRight, Loader2, X } from 'lucide-react';
+import { ChevronDown, ChevronRight, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -60,7 +60,7 @@ function buildTagMetaMap(suggestedTags: SuggestedTag[]): Map<string, TagMetaEntr
 // ---------------------------------------------------------------------------
 
 /**
- * Step 5: Tag Review — review and adjust tags before writing to Notion.
+ * Step 5: Tag Review — review and adjust tags before Final Review (no DB write here).
  *
  * Confirmed transactions arrive with tags pre-populated from AI/rule/entity
  * suggestions. This step lets the user accept, modify, or clear tags before
@@ -74,20 +74,20 @@ function buildTagMetaMap(suggestedTags: SuggestedTag[]): Map<string, TagMetaEntr
  * - Rule pattern shown via tooltip on badge hover
  */
 export function TagReviewStep() {
-  const {
-    confirmedTransactions,
-    updateTransactionTags,
-    nextStep,
-    prevStep,
-    setImportResult,
-    setExecuteSessionId,
-    executeSessionId,
-  } = useImportStore();
+  const { confirmedTransactions, updateTransactionTags, nextStep, prevStep } = useImportStore();
 
-  // Local tag state keyed by checksum — edits don't touch the store until Import
+  // Local tag state keyed by checksum — persisted to the store on Continue (still no DB write).
   const [localTags, setLocalTags] = useState<Record<string, string[]>>(() =>
     Object.fromEntries(confirmedTransactions.map((t) => [t.checksum, t.tags ?? []]))
   );
+
+  useEffect(() => {
+    setLocalTags((prev) =>
+      Object.fromEntries(
+        confirmedTransactions.map((t) => [t.checksum, prev[t.checksum] ?? t.tags ?? []])
+      )
+    );
+  }, [confirmedTransactions]);
 
   // Immutable snapshot of original suggested tags per checksum — for source badges
   const originalSuggestedTags = useMemo<Record<string, SuggestedTag[]>>(
@@ -95,8 +95,12 @@ export function TagReviewStep() {
     [confirmedTransactions]
   );
 
-  const [pollingEnabled, setPollingEnabled] = useState(false);
-  const [importError, setImportError] = useState<string | null>(null);
+  const initialTagsRef = useRef<Record<string, string[]> | null>(null);
+  if (initialTagsRef.current === null && confirmedTransactions.length > 0) {
+    initialTagsRef.current = Object.fromEntries(
+      confirmedTransactions.map((t) => [t.checksum, [...(t.tags ?? [])]])
+    );
+  }
 
   const groups = useMemo(() => groupByEntity(confirmedTransactions), [confirmedTransactions]);
 
@@ -108,42 +112,6 @@ export function TagReviewStep() {
     const local = Object.values(localTags).flat();
     return [...new Set([...(serverTags ?? []), ...local])].sort();
   }, [serverTags, localTags]);
-
-  const executeImportMutation = trpc.finance.imports.executeImport.useMutation({
-    onSuccess: (data) => {
-      setExecuteSessionId(data.sessionId);
-      setPollingEnabled(true);
-    },
-    onError: (err) => {
-      setImportError(err.message);
-    },
-  });
-
-  const progressQuery = trpc.finance.imports.getImportProgress.useQuery(
-    { sessionId: executeSessionId ?? '' },
-    { enabled: pollingEnabled && !!executeSessionId, refetchInterval: 1500 }
-  );
-
-  useEffect(() => {
-    if (!progressQuery.data) return;
-    const { status } = progressQuery.data;
-    if (status === 'completed') {
-      setPollingEnabled(false);
-      const result = progressQuery.data.result;
-      // Narrow to ExecuteImportOutput (has `imported` count) vs ProcessImportOutput
-      if (result && 'imported' in result) {
-        setImportResult({
-          imported: result.imported,
-          failed: result.failed,
-          skipped: result.skipped,
-        });
-        nextStep();
-      }
-    } else if (status === 'failed') {
-      setPollingEnabled(false);
-      setImportError('Import failed. Please try again.');
-    }
-  }, [progressQuery.data, nextStep, setImportResult]);
 
   const updateTag = useCallback((checksum: string, tags: string[]) => {
     setLocalTags((prev) => ({ ...prev, [checksum]: tags }));
@@ -175,85 +143,26 @@ export function TagReviewStep() {
     });
   }, []);
 
-  const handleImport = useCallback(() => {
-    setImportError(null);
-    // Sync local tags back into the store first
+  const handleContinue = useCallback(() => {
     for (const [checksum, tags] of Object.entries(localTags)) {
       updateTransactionTags(checksum, tags);
     }
-    // Build the final payload with updated tags (omit suggestedTags — metadata only)
-    const withTags: ConfirmedTransaction[] = confirmedTransactions.map((t) => ({
-      date: t.date,
-      description: t.description,
-      amount: t.amount,
-      account: t.account,
-      rawRow: t.rawRow,
-      checksum: t.checksum,
-      transactionType: t.transactionType,
-      entityId: t.entityId,
-      entityName: t.entityName,
-      location: t.location,
-      tags: localTags[t.checksum] ?? t.tags ?? [],
-    }));
-    executeImportMutation.mutate({ transactions: withTags });
-  }, [localTags, confirmedTransactions, updateTransactionTags, executeImportMutation]);
+    nextStep();
+  }, [localTags, updateTransactionTags, nextStep]);
 
-  const isImporting = pollingEnabled || executeImportMutation.isPending;
-
-  // ── Error state ──────────────────────────────────────────────────────────
-  if (importError) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-2xl font-semibold mb-2">Import failed</h2>
-          <p className="text-sm text-destructive">{importError}</p>
-        </div>
-        <div className="flex justify-between">
-          <Button variant="outline" onClick={prevStep}>
-            Back
-          </Button>
-          <Button
-            onClick={() => {
-              setImportError(null);
-              handleImport();
-            }}
-          >
-            Retry
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const continueLabel =
+    confirmedTransactions.length === 1
+      ? 'Continue to final review (1 transaction)'
+      : `Continue to final review (${confirmedTransactions.length} transactions)`;
 
   return (
     <div className="space-y-6">
-      {/* Progress overlay during import */}
-      {isImporting && (
-        <div
-          data-testid="import-progress-overlay"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm"
-        >
-          <div className="bg-card border rounded-xl p-8 shadow-xl flex flex-col items-center gap-4 max-w-sm w-full mx-4">
-            <Loader2 className="w-8 h-8 animate-spin text-primary" />
-            <div className="text-center space-y-1">
-              <p className="font-semibold">Importing transactions…</p>
-              {progressQuery.data?.status === 'processing' && (
-                <p className="text-sm text-muted-foreground">
-                  {progressQuery.data.currentStep === 'writing'
-                    ? `Writing ${progressQuery.data.processedCount ?? 0} / ${progressQuery.data.totalTransactions ?? confirmedTransactions.length}`
-                    : (progressQuery.data.currentStep ?? 'Processing…')}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       <div>
         <h2 className="text-2xl font-semibold mb-2">Tag Review</h2>
         <p className="text-sm text-muted-foreground">
-          Review and adjust tags before importing. Tags are pre-filled from AI suggestions, learned
-          rules, and entity defaults.
+          Review and adjust tags before the final step. Nothing is written to the database until you
+          commit on Final Review. Tags are pre-filled from AI suggestions, learned rules, and entity
+          defaults.
         </p>
       </div>
 
@@ -279,19 +188,21 @@ export function TagReviewStep() {
         ))}
 
         {confirmedTransactions.length === 0 && (
-          <p className="text-center py-8 text-muted-foreground text-sm">
-            No transactions to import.
-          </p>
+          <p className="text-center py-8 text-muted-foreground text-sm">No transactions to tag.</p>
         )}
       </div>
 
       {/* Footer navigation */}
       <div className="flex justify-between items-center pt-2">
-        <Button variant="outline" onClick={prevStep} disabled={isImporting}>
+        <Button variant="outline" onClick={prevStep}>
           Back
         </Button>
-        <Button onClick={handleImport} disabled={isImporting || confirmedTransactions.length === 0}>
-          {`Import ${confirmedTransactions.length} transaction${confirmedTransactions.length !== 1 ? 's' : ''} →`}
+        <Button
+          onClick={handleContinue}
+          disabled={confirmedTransactions.length === 0}
+          aria-label="Continue to final review"
+        >
+          {continueLabel}
         </Button>
       </div>
     </div>

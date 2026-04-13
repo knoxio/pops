@@ -157,16 +157,16 @@ describe('rotation.updateSource', () => {
     expect(updated?.enabled).toBe(0);
   });
 
-  it('returns failure when no fields provided', async () => {
+  it('throws when no fields provided', async () => {
     const src = insertSource();
 
     const caller = createCaller();
-    const result = await caller.media.rotation.updateSource({ id: src.id });
-
-    expect(result).toEqual({ success: false, message: 'No fields to update' });
+    await expect(caller.media.rotation.updateSource({ id: src.id })).rejects.toThrow(
+      'No fields to update'
+    );
   });
 
-  it('returns failure for nonexistent source', async () => {
+  it('returns no changes for nonexistent source', async () => {
     const caller = createCaller();
     const result = await caller.media.rotation.updateSource({ id: 99999, name: 'X' });
 
@@ -204,19 +204,19 @@ describe('rotation.deleteSource', () => {
     const src = insertSource({ type: 'manual', name: 'Manual Queue' });
 
     const caller = createCaller();
-    const result = await caller.media.rotation.deleteSource({ id: src.id });
-
-    expect(result).toEqual({ success: false, message: 'Cannot delete the manual source' });
+    await expect(caller.media.rotation.deleteSource({ id: src.id })).rejects.toThrow(
+      'Cannot delete the manual source'
+    );
 
     const db = getDrizzle();
     const sources = db.select().from(rotationSources).all();
     expect(sources).toHaveLength(1);
   });
 
-  it('returns failure for nonexistent source', async () => {
+  it('throws for nonexistent source', async () => {
     const caller = createCaller();
-    const result = await caller.media.rotation.deleteSource({ id: 99999 });
-
-    expect(result).toEqual({ success: false, message: 'Source not found' });
+    await expect(caller.media.rotation.deleteSource({ id: 99999 })).rejects.toThrow(
+      'Source not found'
+    );
   });
 });

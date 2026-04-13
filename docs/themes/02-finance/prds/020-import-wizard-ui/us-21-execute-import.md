@@ -1,23 +1,24 @@
-# US-21: Execute import
+# US-21: Advance from Tag Review (no database write)
 
 > PRD: [020 — Import Wizard UI](README.md)
 > Status: Done
 
 ## Description
 
-As a user, I want to finalize the import and write transactions to the database so that the import is complete.
+As a user, I want to finish tagging and move to Final Review so that I can confirm the full payload before anything is written to the database.
 
 ## Acceptance Criteria
 
-- [x] "Import" button calls `finance.imports.executeImport` with confirmed transactions
-- [x] Returns session ID for progress tracking
-- [x] Polls `getImportProgress` every 1.5 seconds
-- [x] Shows write progress: count / total
-- [x] On completion: stores import result (imported/failed/skipped counts) in Zustand
-- [x] Advances to Step 6 (Summary) on completion
-- [x] Button disabled while executing (no double-submit)
-- [x] Error handling: if execution fails, show error with retry option
+- [x] Primary action on Tag Review (Step 5) advances to Final Review (Step 6) without calling `executeImport` or any other import write procedure
+- [x] Per-transaction tag edits from Step 5 are persisted to the in-memory import session via `updateTransactionTags` (checksum-keyed) before advancing
+- [x] Copy on Step 5 states that the database is not updated until Final Review / commit (aligned with PRD-031 single write path)
+- [x] No progress polling or import-result state on Step 5 for a write operation — those belong to `commitImport` on Step 6 and the summary step
 
 ## Notes
 
-The execute step writes to SQLite synchronously (no async queue). Tags are JSON stringified. Each transaction gets a generated UUID.
+The single SQLite write path for the wizard is **`commitImport` on Step 6** (PRD-031). Step 5 only updates local/session state; `executeImport` is not part of the Tag Review flow.
+
+## Dependencies
+
+- Blocked by: US-19 (per-transaction tags)
+- Blocks: US-22 (summary shows `commitResult` after Step 6)

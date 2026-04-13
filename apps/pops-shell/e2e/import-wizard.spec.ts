@@ -13,16 +13,16 @@ import {
 } from './fixtures/csv-samples';
 
 /**
- * E2E tests for Import Wizard (6-step flow)
+ * E2E tests for Import Wizard (7-step flow)
  *
  * Comprehensive test coverage:
  * 1. Upload CSV file
  * 2. Map columns
  * 3. Process transactions (with progress polling)
  * 4. Review and resolve uncertain matches
- * 5. Tag Review — confirm/adjust tags before import
- * 6. Execute import (with write overlay)
- * 7. View summary
+ * 5. Tag Review — confirm/adjust tags (session only; no DB write)
+ * 6. Final Review — `commitImport` (single DB write)
+ * 7. Summary — reads `commitResult` from the store
  *
  * Features tested:
  * - Transaction editing (Save Once vs Save & Learn)
@@ -30,7 +30,7 @@ import {
  * - Bulk operations (accept all, create for all, auto-match similar)
  * - Grouped vs List view modes
  * - Entity creation during review
- * - Progress polling for both process and execute phases
+ * - Progress polling for the process phase
  * - Warnings and errors handling
  * - Review tab navigation
  * - Real-world scenarios
@@ -223,6 +223,46 @@ const setupMockAPIs = async (page: Page, options: SetupMockAPIsOptions = {}) => 
     const isBatch = url.searchParams.has('batch');
     const responseData = { result: { data: { sessionId: 'execute-session-456' } } };
 
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(isBatch ? [responseData] : responseData),
+    });
+  });
+
+  await page.route(/\/trpc\/imports\.commitImport/, async (route) => {
+    if (executeError) {
+      await route.fulfill({
+        status: 500,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            error: {
+              json: {
+                message: 'Commit failed',
+                code: -32603,
+                data: { code: 'INTERNAL_SERVER_ERROR', httpStatus: 500 },
+              },
+            },
+          },
+        ]),
+      });
+      return;
+    }
+
+    const url = new URL(route.request().url());
+    const isBatch = url.searchParams.has('batch');
+    const commitPayload = {
+      entitiesCreated: 0,
+      rulesApplied: { add: 0, edit: 0, disable: 0, remove: 0 },
+      transactionsImported: 2,
+      transactionsFailed: 0,
+      failedDetails: [] as Array<{ checksum?: string; error: string }>,
+      retroactiveReclassifications: 0,
+    };
+    const responseData = {
+      result: { data: { data: commitPayload, message: 'Import committed' } },
+    };
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -481,16 +521,23 @@ test.describe.skip('Import Wizard - Complete Flow', () => {
         timeout: 5000,
       });
 
-      // Import button should be visible
-      const importButton = page.getByRole('button', { name: /import.*transaction/i });
-      await expect(importButton).toBeEnabled();
-      await importButton.click();
+      const continueToFinal = page.getByRole('button', { name: /continue to final review/i });
+      await expect(continueToFinal).toBeEnabled();
+      await continueToFinal.click();
     });
 
-    // Step 6: Summary
-    await test.step('View summary', async () => {
+    // Step 6–7: Final Review (commit) → Summary
+    await test.step('Final review and summary', async () => {
+      await expect(page.getByRole('heading', { name: 'Final Review' })).toBeVisible({
+        timeout: 5000,
+      });
+      await page.getByRole('button', { name: /approve & commit all/i }).click();
+      await expect(page.getByRole('button', { name: /^continue$/i })).toBeVisible({
+        timeout: 10000,
+      });
+      await page.getByRole('button', { name: /^continue$/i }).click();
       await expect(page.getByText('Import Complete')).toBeVisible({ timeout: 10000 });
-      await expect(page.getByText('1 imported, 0 failed, 0 skipped')).toBeVisible();
+      await expect(page.getByText('Transactions Imported')).toBeVisible();
       await expect(page.getByRole('button', { name: /new import/i })).toBeVisible();
     });
   });
@@ -741,28 +788,40 @@ test.describe.skip('Import Wizard - Transfer and Income Transactions', () => {
     });
   });
 
-  test('should include transfer in import payload without entityId', async ({ page }) => {
+  test('should include transfer in commit payload without entityId', async ({ page }) => {
     let capturedTransactions: Array<Record<string, unknown>> = [];
 
     // Simple scenario: 1 matched + 1 uncertain, no failed
     await setupMockAPIs(page);
 
-    // Override executeImport AFTER setupMockAPIs so this handler runs first (last-registered wins)
-    await page.route(/\/trpc\/imports\.executeImport/, async (route) => {
+    // Override commitImport AFTER setupMockAPIs (last-registered wins) to capture payload
+    await page.route(/\/trpc\/imports\.commitImport/, async (route) => {
       const body = JSON.parse(route.request().postData() || '{}') as Record<string, unknown>;
-      // tRPC batch body format: {"0": {"transactions": [...]}} (no .json wrapper in this client version)
-      const item = body['0'] as
-        | { json?: { transactions?: unknown[] }; transactions?: unknown[] }
-        | undefined;
-      const txns = item?.json?.transactions ?? item?.transactions ?? [];
+      const item = body['0'] as { json?: { transactions?: unknown[] } } | undefined;
+      const txns = item?.json?.transactions ?? [];
       capturedTransactions = txns as Array<Record<string, unknown>>;
 
       const url = new URL(route.request().url());
-      const responseData = { result: { data: { sessionId: 'execute-session-456' } } };
+      const isBatch = url.searchParams.has('batch');
+      const responseData = {
+        result: {
+          data: {
+            data: {
+              entitiesCreated: 0,
+              rulesApplied: { add: 0, edit: 0, disable: 0, remove: 0 },
+              transactionsImported: 2,
+              transactionsFailed: 0,
+              failedDetails: [],
+              retroactiveReclassifications: 0,
+            },
+            message: 'Import committed',
+          },
+        },
+      };
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify(url.searchParams.has('batch') ? [responseData] : responseData),
+        body: JSON.stringify(isBatch ? [responseData] : responseData),
       });
     });
 
@@ -775,14 +834,16 @@ test.describe.skip('Import Wizard - Transfer and Income Transactions', () => {
     await page.locator('select[name="type"]').selectOption('transfer');
     await page.getByRole('button', { name: /save once/i }).click();
 
-    // Continue to Tag Review then click Import
     await page.getByRole('button', { name: /continue to tag review/i }).click();
     await expect(page.getByRole('heading', { name: 'Tag Review' })).toBeVisible({ timeout: 5000 });
-    await page.getByRole('button', { name: /import.*transaction/i }).click();
+    await page.getByRole('button', { name: /continue to final review/i }).click();
+    await expect(page.getByRole('heading', { name: 'Final Review' })).toBeVisible({
+      timeout: 5000,
+    });
+    await page.getByRole('button', { name: /approve & commit all/i }).click();
 
     await page.waitForTimeout(1000);
 
-    // The transfer should appear in the payload without an entityId
     const transfer = capturedTransactions.find((t) => t['transactionType'] === 'transfer');
     expect(transfer).toBeDefined();
     expect(transfer?.['entityId']).toBeFalsy();
@@ -992,72 +1053,18 @@ test.describe.skip('Import Wizard - Progress Polling', () => {
     // The mock returns 4 stages: deduplicating → matching → writing → completed
   });
 
-  test('should poll for execute progress with write overlay', async ({ page }) => {
+  test('should advance from Tag Review to Final Review without execute overlay', async ({
+    page,
+  }) => {
     await setupMockAPIs(page, { scenario: 'simple', progressStages: 'instant' });
 
     await navigateToTagReviewStep(page);
 
-    // Override the progress mock for the execute session to return processing first
-    let executeProgressCalls = 0;
-    const mockData = createMockData('simple');
-    await page.route(/\/trpc\/imports\.getImportProgress/, async (route) => {
-      const url = new URL(route.request().url());
-      let sessionId = '';
-      try {
-        const raw = url.searchParams.get('input') ?? '{}';
-        sessionId = JSON.parse(decodeURIComponent(raw))['0']?.sessionId ?? '';
-      } catch {
-        /* ignore */
-      }
-
-      if (sessionId === 'execute-session-456') {
-        executeProgressCalls++;
-        if (executeProgressCalls < 2) {
-          await route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify({
-              result: {
-                data: {
-                  status: 'processing',
-                  currentStep: 'writing',
-                  processedCount: 0,
-                  totalTransactions: 1,
-                  currentBatch: [],
-                },
-              },
-            }),
-          });
-        } else {
-          await route.fulfill({
-            status: 200,
-            contentType: 'application/json',
-            body: JSON.stringify({
-              result: {
-                data: { status: 'completed', result: { imported: 1, failed: [], skipped: 0 } },
-              },
-            }),
-          });
-        }
-      } else {
-        await route.fulfill({
-          status: 200,
-          contentType: 'application/json',
-          body: JSON.stringify({
-            result: { data: { status: 'completed', result: mockData } },
-          }),
-        });
-      }
+    await page.getByRole('button', { name: /continue to final review/i }).click();
+    await expect(page.getByRole('heading', { name: 'Final Review' })).toBeVisible({
+      timeout: 5000,
     });
-
-    // Click Import on Tag Review step
-    await page.getByRole('button', { name: /import.*transaction/i }).click();
-
-    // Verify overlay modal shown during write phase
-    await expect(page.getByTestId('import-progress-overlay')).toBeVisible({ timeout: 5000 });
-
-    // Wait for completion
-    await expect(page.getByText('Import Complete')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('import-progress-overlay')).not.toBeVisible();
   });
 
   test('should handle process failure with error display', async ({ page }) => {
@@ -1191,16 +1198,18 @@ test.describe.skip('Import Wizard - Warnings and Errors', () => {
     await expect(page.getByRole('heading', { name: 'Review' })).not.toBeVisible();
   });
 
-  test('should handle write failures in execute phase', async ({ page }) => {
+  test('should handle commit failure on Final Review', async ({ page }) => {
     await setupMockAPIs(page, { executeError: true });
 
     await navigateToTagReviewStep(page);
 
-    // Try to import from Tag Review step
-    await page.getByRole('button', { name: /import.*transaction/i }).click();
+    await page.getByRole('button', { name: /continue to final review/i }).click();
+    await expect(page.getByRole('heading', { name: 'Final Review' })).toBeVisible({
+      timeout: 5000,
+    });
+    await page.getByRole('button', { name: /approve & commit all/i }).click();
 
-    // Should show error - the component displays "Import failed" heading
-    await expect(page.getByText('Import failed')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Commit failed')).toBeVisible({ timeout: 10000 });
   });
 });
 
@@ -1351,18 +1360,25 @@ test.describe.skip('Import Wizard - Complete Import Flows', () => {
       .click();
     await page.waitForTimeout(500);
 
-    // Continue to Tag Review then import
+    // Continue to Tag Review → Final Review → commit → Summary
     await page.getByRole('tab', { name: /matched/i }).click();
     const continueButton = page.getByRole('button', { name: /continue to tag review/i });
     await expect(continueButton).toBeEnabled();
     await continueButton.click();
 
     await expect(page.getByRole('heading', { name: 'Tag Review' })).toBeVisible({ timeout: 5000 });
-    await page.getByRole('button', { name: /import.*transaction/i }).click();
+    await page.getByRole('button', { name: /continue to final review/i }).click();
+    await expect(page.getByRole('heading', { name: 'Final Review' })).toBeVisible({
+      timeout: 5000,
+    });
+    await page.getByRole('button', { name: /approve & commit all/i }).click();
+    await expect(page.getByRole('button', { name: /^continue$/i })).toBeVisible({
+      timeout: 10000,
+    });
+    await page.getByRole('button', { name: /^continue$/i }).click();
 
-    // Verify Summary (mock returns base matched count, not the resolved total)
     await expect(page.getByText('Import Complete')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText(/\d+ imported/i)).toBeVisible();
+    await expect(page.getByText('Transactions Imported')).toBeVisible();
   });
 
   test('should handle duplicate detection workflow', async ({ page }) => {
@@ -1557,19 +1573,19 @@ test.describe.skip('Import Wizard - Error Recovery', () => {
     await expect(page.getByRole('dialog')).not.toBeVisible();
   });
 
-  test('should handle network timeout during import', async ({ page }) => {
+  test('should surface commit errors on Final Review', async ({ page }) => {
     await setupMockAPIs(page, { executeError: true });
 
     await navigateToTagReviewStep(page);
 
-    // Try to import from Tag Review step
-    await page.getByRole('button', { name: /import.*transaction/i }).click();
+    await page.getByRole('button', { name: /continue to final review/i }).click();
+    await expect(page.getByRole('heading', { name: 'Final Review' })).toBeVisible({
+      timeout: 5000,
+    });
+    await page.getByRole('button', { name: /approve & commit all/i }).click();
 
-    // Component shows "Import failed" heading in the error state
-    await expect(page.getByText('Import failed')).toBeVisible({ timeout: 10000 });
-
-    // Should have retry button (from TagReviewStep error state)
-    await expect(page.getByRole('button', { name: /retry/i })).toBeVisible();
+    await expect(page.getByText('Commit failed')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('button', { name: /approve & commit all/i })).toBeVisible();
   });
 
   test('should preserve state when navigating back', async ({ page }) => {

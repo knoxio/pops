@@ -1,7 +1,6 @@
 import type { ChangeSet } from '@pops/api/modules/core/corrections/types';
 import type {
   ConfirmedTransaction,
-  ImportResult,
   ImportWarning,
   ParsedTransaction,
   ProcessedTransaction as BaseProcessedTransaction,
@@ -17,7 +16,7 @@ export type { ChangeSet };
 export type EntityType = 'company' | 'person' | 'government' | 'bank';
 
 // ---------------------------------------------------------------------------
-// Pending entity — created during import, stored locally until step 7 commit.
+// Pending entity — created during import, stored locally until Step 6 commit.
 // ---------------------------------------------------------------------------
 
 export interface PendingEntity {
@@ -98,7 +97,6 @@ interface ImportStore {
   // Step 4: Review (entity confirmation, no execute here)
 
   // Step 5: Tag Review
-  executeSessionId: string | null;
   processedTransactions: {
     matched: ProcessedTransaction[]; // Uses extended type
     uncertain: ProcessedTransaction[];
@@ -108,12 +106,7 @@ interface ImportStore {
   };
   confirmedTransactions: ConfirmedTransaction[];
 
-  // Step 7: Summary
-  importResult: {
-    imported: number;
-    failed: ImportResult[];
-    skipped: number;
-  } | null;
+  // Step 6 commit / Step 7 summary
   commitResult: CommitResult | null;
 
   // Local-first pending state (PRD-030)
@@ -130,8 +123,6 @@ interface ImportStore {
   setProcessSessionId: (sessionId: string | null) => void;
   setProcessedTransactions: (processed: ImportStore['processedTransactions']) => void;
   setConfirmedTransactions: (confirmed: ConfirmedTransaction[]) => void;
-  setExecuteSessionId: (sessionId: string | null) => void;
-  setImportResult: (result: ImportStore['importResult']) => void;
   setCommitResult: (result: CommitResult | null) => void;
 
   nextStep: () => void;
@@ -186,8 +177,6 @@ const initialState = {
     warnings: undefined,
   },
   confirmedTransactions: [],
-  executeSessionId: null,
-  importResult: null,
   commitResult: null,
   pendingEntities: [],
   pendingChangeSets: [],
@@ -221,8 +210,6 @@ const downstreamReset: Pick<
   | 'processedForFingerprint'
   | 'processedTransactions'
   | 'confirmedTransactions'
-  | 'executeSessionId'
-  | 'importResult'
   | 'commitResult'
   | 'pendingEntities'
   | 'pendingChangeSets'
@@ -235,8 +222,6 @@ const downstreamReset: Pick<
   processedForFingerprint: initialState.processedForFingerprint,
   processedTransactions: initialState.processedTransactions,
   confirmedTransactions: initialState.confirmedTransactions,
-  executeSessionId: initialState.executeSessionId,
-  importResult: initialState.importResult,
   commitResult: initialState.commitResult,
   pendingEntities: initialState.pendingEntities,
   pendingChangeSets: initialState.pendingChangeSets,
@@ -296,8 +281,6 @@ export const useImportStore = create<ImportStore>((set) => ({
       processedForFingerprint: state.parsedTransactionsFingerprint,
     })),
   setConfirmedTransactions: (confirmedTransactions) => set({ confirmedTransactions }),
-  setExecuteSessionId: (executeSessionId) => set({ executeSessionId }),
-  setImportResult: (importResult) => set({ importResult }),
   setCommitResult: (commitResult) => set({ commitResult }),
 
   nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 7) })),

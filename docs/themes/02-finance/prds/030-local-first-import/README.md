@@ -60,7 +60,7 @@ No new backend endpoints. All operations are zustand store actions and pure func
 
 ## Business Rules
 
-- No DB writes occur during Steps 1-6 of the import wizard. Entity creation, rule changes, and ChangeSet approvals are all buffered locally.
+- No DB writes occur during Steps 1–5 of the import wizard. Entity creation, rule changes, and ChangeSet approvals are all buffered locally. Step 6 performs the single write via `commitImport` (PRD-031).
 - Pending entities receive temp IDs (`temp:entity:{uuid}`) that must be resolved to real DB IDs at commit time.
 - The merged rule set is the single source of truth for all matching, preview, and re-evaluation during the import session.
 - When a pending entity is referenced by a pending rule, the rule stores the temp entity ID. The commit step resolves both in the correct dependency order (entities first, then rules).

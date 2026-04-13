@@ -137,10 +137,9 @@ interface ImportStore {
   pendingChangeSets: PendingChangeSet[]
   // Step 5
   confirmedTransactions: ConfirmedTransaction[]
-  // Step 6 — commit
+  // Step 6 — commit (single DB write)
   commitResult: CommitResult | null
-  // Step 7
-  importResult: { imported, failed, skipped, reclassified } | null
+  // Step 7 — summary reads commitResult
   // Actions
   nextStep(), prevStep(), goToStep(n), reset()
   updateTransaction(t, updates)
@@ -211,7 +210,7 @@ interface ImportStore {
 | 18  | [us-18-tag-source-badges](us-18-tag-source-badges.md)       | Source badges on suggested tags: rule (with pattern tooltip), AI, entity            | Done   | Blocked by us-17 |
 | 19  | [us-19-per-transaction-tags](us-19-per-transaction-tags.md) | Per-transaction TagEditor with autocomplete (server + session tags)                 | Done   | Blocked by us-17 |
 | 20  | [us-20-bulk-tag-apply](us-20-bulk-tag-apply.md)             | Group-level bulk tag application (merge semantics, never replaces individual edits) | Done   | Blocked by us-19 |
-| 21  | [us-21-execute-import](us-21-execute-import.md)             | Call executeImport, poll progress every 1.5s, show write status                     | Done   | Blocked by us-19 |
+| 21  | [us-21-execute-import](us-21-execute-import.md)             | Advance to Final Review; persist tags to session only — no DB write until Step 6      | Done   | Blocked by us-19 |
 
 ### Final Review & Commit (Step 6)
 
@@ -221,13 +220,13 @@ See PRD-031 for the full spec and user stories for this step.
 
 | #   | Story                             | Summary                                                                                                            | Status | Parallelisable   |
 | --- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ------ | ---------------- |
-| 22  | [us-22-summary](us-22-summary.md) | Display import results (imported/failed/skipped/reclassified counts), "New Import" and "View Transactions" buttons | Done   | Blocked by us-21 |
+| 22  | [us-22-summary](us-22-summary.md) | Display commit results from Step 6, "New Import" and "View Transactions" buttons                                     | Done   | Blocked by PRD-031 / Step 6 commit |
 
 US-03 and US-04 can parallelise. US-11, US-12, US-13, US-14, US-15 can parallelise after US-10. US-18 and US-19 can parallelise after US-17.
 
 ## Verification
 
-- Full import flow works end-to-end: CSV → review → tags → database
+- Full import flow works end-to-end: CSV → review → tags → Final Review → `commitImport` → database
 - Duplicate CSVs are detected and skipped
 - Entity matching results categorise correctly (matched vs uncertain)
 - Tags from corrections, AI, and entity defaults all appear with correct source badges

@@ -18,4 +18,4 @@ As a user, I want to edit a transaction's details during review so that I can fi
 
 ## Notes
 
-Edits are local (Zustand) until the final executeImport in Step 5. This dialog modifies the in-memory transaction, not the database.
+Edits are local (Zustand) until `commitImport` on Step 6. This dialog modifies the in-memory transaction, not the database.
