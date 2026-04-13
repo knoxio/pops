@@ -69,15 +69,11 @@ function SourceCard({ source, onEdit }: SourceCardProps) {
   });
 
   const deleteMutation = trpc.media.rotation.deleteSource.useMutation({
-    onSuccess: (data) => {
-      if (data.success) {
-        toast.success(`Deleted "${source.name}"`);
-        void utils.media.rotation.listSources.invalidate();
-      } else {
-        toast.error('message' in data ? data.message : 'Failed to delete source');
-      }
+    onSuccess: () => {
+      toast.success(`Deleted "${source.name}"`);
+      void utils.media.rotation.listSources.invalidate();
     },
-    onError: () => toast.error('Failed to delete source'),
+    onError: (err) => toast.error(err.message || 'Failed to delete source'),
   });
 
   const isManual = source.type === 'manual';

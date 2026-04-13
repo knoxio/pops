@@ -11,6 +11,7 @@ import {
   rotationSources,
   settings,
 } from '@pops/db-types';
+import { TRPCError } from '@trpc/server';
 import { asc, count, desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
 
@@ -279,7 +280,7 @@ export const rotationRouter = router({
         updates.syncIntervalHours = input.syncIntervalHours;
 
       if (Object.keys(updates).length === 0) {
-        return { success: false, message: 'No fields to update' };
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'No fields to update' });
       }
 
       const result = db
@@ -305,15 +306,17 @@ export const rotationRouter = router({
         .get();
 
       if (!source) {
-        return { success: false, message: 'Source not found' };
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Source not found' });
       }
       if (source.type === 'manual') {
-        return { success: false, message: 'Cannot delete the manual source' };
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Cannot delete the manual source' });
       }
 
-      // Delete candidates first, then the source
-      db.delete(rotationCandidates).where(eq(rotationCandidates.sourceId, input.id)).run();
-      db.delete(rotationSources).where(eq(rotationSources.id, input.id)).run();
+      // Delete candidates first, then the source — in a transaction
+      db.transaction(() => {
+        db.delete(rotationCandidates).where(eq(rotationCandidates.sourceId, input.id)).run();
+        db.delete(rotationSources).where(eq(rotationSources.id, input.id)).run();
+      });
 
       return { success: true };
     }),
