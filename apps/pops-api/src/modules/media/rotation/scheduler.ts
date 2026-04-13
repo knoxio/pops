@@ -7,6 +7,7 @@
  * PRD-070 US-06
  */
 import cron, { type ScheduledTask } from 'node-cron';
+import { CronExpressionParser } from 'cron-parser';
 import { eq } from 'drizzle-orm';
 import { settings, rotationLog } from '@pops/db-types';
 import { getDrizzle } from '../../../db.js';
@@ -53,6 +54,7 @@ export interface RotationSchedulerStatus {
   cronExpression: string;
   lastCycleAt: string | null;
   lastCycleError: string | null;
+  nextRunAt: string | null;
 }
 
 export interface RotationCycleResult {
@@ -148,12 +150,23 @@ export function stopRotationScheduler(): RotationSchedulerStatus {
 
 /** Get current scheduler status. */
 export function getRotationSchedulerStatus(): RotationSchedulerStatus {
+  let nextRunAt: string | null = null;
+  if (task && cronExpression) {
+    try {
+      const interval = CronExpressionParser.parse(cronExpression);
+      nextRunAt = interval.next().toISOString();
+    } catch {
+      // Invalid cron — leave null
+    }
+  }
+
   return {
     isRunning: task !== null,
     isCycleRunning,
     cronExpression,
     lastCycleAt,
     lastCycleError,
+    nextRunAt,
   };
 }
 

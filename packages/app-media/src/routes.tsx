@@ -63,6 +63,11 @@ const ArrSettingsPage = lazy(() =>
     default: m.ArrSettingsPage,
   }))
 );
+const RotationSettingsPage = lazy(() =>
+  import('./pages/RotationSettingsPage').then((m) => ({
+    default: m.RotationSettingsPage,
+  }))
+);
 const HistoryPage = lazy(() =>
   import('./pages/HistoryPage').then((m) => ({
     default: m.HistoryPage,
@@ -143,6 +148,7 @@ export const routes: RouteObject[] = [
   { path: 'quick-pick', element: <QuickPickPage /> },
   { path: 'plex', element: <PlexSettingsPage /> },
   { path: 'arr', element: <ArrSettingsPage /> },
+  { path: 'rotation', element: <RotationSettingsPage /> },
   { path: 'arr/calendar', element: <CalendarPage /> },
   { path: 'tier-list', element: <TierListPage /> },
   { path: 'debrief/:movieId', element: <DebriefPage /> },

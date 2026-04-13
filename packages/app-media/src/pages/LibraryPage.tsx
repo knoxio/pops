@@ -2,7 +2,15 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useSearchParams, Link } from 'react-router';
 import { useSetPageContext } from '@pops/navigation';
 import { Button, Select, Skeleton, TextInput } from '@pops/ui';
-import { Sparkles, Settings, Search, ChevronLeft, ChevronRight, AlertCircle } from 'lucide-react';
+import {
+  Sparkles,
+  Settings,
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  AlertCircle,
+  RefreshCw,
+} from 'lucide-react';
 import { MediaGrid } from '../components/MediaGrid';
 import { MediaCard } from '../components/MediaCard';
 import { DebriefBanner } from '../components/DebriefBanner';
@@ -238,6 +246,12 @@ export function LibraryPage() {
             <Button variant="outline" size="sm">
               <Settings className="h-4 w-4 mr-1.5" />
               Arr
+            </Button>
+          </Link>
+          <Link to="/media/rotation">
+            <Button variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-1.5" />
+              Rotation
             </Button>
           </Link>
           <Link
