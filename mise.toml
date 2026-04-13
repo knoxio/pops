@@ -92,12 +92,12 @@ dir = "apps/pops-api"
 run = "pnpm dev:init"
 
 [tasks."db:clear"]
-description = "Clear all data from database (preserves schema)"
+description = "Wipe all application tables, then restore bare-minimum system rows (tags, Manual Queue)"
 dir = "apps/pops-api"
 run = "pnpm db:clear"
 
 [tasks."db:seed"]
-description = "Clear and seed database with comprehensive test data"
+description = "Full wipe (all app tables) then seed comprehensive cross-domain test data"
 dir = "apps/pops-api"
 run = "pnpm db:seed"
 
