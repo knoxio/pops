@@ -8,8 +8,6 @@
  * - Batch writes to SQLite
  */
 import { entities } from '@pops/db-types';
-import { eq } from 'drizzle-orm';
-
 import { getDrizzle } from '../../../db.js';
 import { formatImportError } from '../../../lib/errors.js';
 import { logger } from '../../../lib/logger.js';
