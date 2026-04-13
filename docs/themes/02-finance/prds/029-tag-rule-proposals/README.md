@@ -111,22 +111,6 @@ The UI must support accepting/rejecting suggestions at either scope:
 
 ## User Stories
 
-<<<<<<< Updated upstream
-| #   | Story                                                                       | Summary                                                       | Status | Parallelisable   |
-| --- | --------------------------------------------------------------------------- | ------------------------------------------------------------- | ------ | ---------------- |
-| 01  | [us-01-tag-rule-contract](us-01-tag-rule-contract.md)                       | Define tag rule model + ChangeSet operations + impact preview | Done   | No (first)       |
-| 02  | [us-02-generate-tag-proposal](us-02-generate-tag-proposal.md)               | Generate bundled tag-rule proposal from tag edits             | Partial | Blocked by us-01 |
-| 03  | [us-03-approve-reject-tag-proposals](us-03-approve-reject-tag-proposals.md) | Approve/apply or reject-with-feedback tag rule ChangeSets     | Partial | Blocked by us-01 |
-
-## Verification
-
-<<<<<<< HEAD
-- Tag edits in the current import can produce a proposal that increases the quality of future tag suggestions. *(API ready; import wizard integration pending — knoxio/pops#1741.)*
-- Approving a tag rule proposal immediately improves suggested tags for remaining transactions in the current import without altering entity/type classification. *(Same — #1741.)*
-=======
-- Tag edits in the current import can produce a proposal that increases the quality of future tag suggestions.
-- Approving a tag rule proposal immediately improves suggested tags for remaining transactions in the current import without altering entity/type classification.
-=======
 | #   | Story                                                                       | Summary                                                       | Status  | Parallelisable   |
 | --- | --------------------------------------------------------------------------- | ------------------------------------------------------------- | ------- | ---------------- |
 | 01  | [us-01-tag-rule-contract](us-01-tag-rule-contract.md)                       | Define tag rule model + ChangeSet operations + impact preview | Done    | No (first)       |
@@ -137,5 +121,3 @@ The UI must support accepting/rejecting suggestions at either scope:
 
 - Tag edits in the current import can produce a proposal that increases the quality of future tag suggestions. _(API ready; import wizard integration pending — knoxio/pops#1741.)_
 - Approving a tag rule proposal immediately improves suggested tags for remaining transactions in the current import without altering entity/type classification. _(Same — #1741.)_
->>>>>>> Stashed changes
->>>>>>> 0095213a (fix(finance): fix trailing space in rule pattern and resolve lint/format issues)

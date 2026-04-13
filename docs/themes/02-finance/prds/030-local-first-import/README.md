@@ -81,22 +81,6 @@ No new backend endpoints. All operations are zustand store actions and pure func
 
 ## User Stories
 
-<<<<<<< Updated upstream
-| #   | Story                                                                     | Summary                                                                     | Status | Parallelisable                 |
-| --- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ------ | ------------------------------ |
-| 01  | [us-01-pending-entity-store](us-01-pending-entity-store.md)               | Zustand slice buffering entity creations with temp IDs                      | Done   | Yes                            |
-| 02  | [us-02-pending-changeset-store](us-02-pending-changeset-store.md)         | Zustand slice buffering approved ChangeSets in order                        | Done   | Yes                            |
-| 03  | [us-03-merged-rule-computation](us-03-merged-rule-computation.md)         | Pure function computing merged rules from DB + pending ChangeSets           | Done   | Blocked by US-02               |
-| 04  | [us-04-merged-entity-list](us-04-merged-entity-list.md)                   | Pure function computing merged entities from DB + pending                   | Done   | Blocked by US-01               |
-| 05  | [us-05-redirect-entity-creation](us-05-redirect-entity-creation.md)       | EntityCreateDialog writes to local store instead of tRPC                    | Done   | Blocked by US-01, US-04        |
-| 06  | [us-06-redirect-changeset-approval](us-06-redirect-changeset-approval.md) | CorrectionProposalDialog stores ChangeSet locally instead of calling server | Done   | Blocked by US-02, US-03, US-07 |
-| 07  | [us-07-local-re-evaluation](us-07-local-re-evaluation.md)                 | Re-evaluate transactions against merged rule set after local approval       | Done   | Blocked by US-03               |
-| 08  | [us-08-preview-with-merged-rules](us-08-preview-with-merged-rules.md)     | ChangeSet previews use merged rule set as baseline                          | Done   | Blocked by US-03               |
-| 09  | [us-09-commit-payload-builder](us-09-commit-payload-builder.md)           | Build structured commit payload resolving temp IDs                          | Done   | Blocked by US-01, US-02        |
-<<<<<<< HEAD
-| 10  | [us-10-single-commit-write-path](us-10-single-commit-write-path.md)       | Wizard uses commitImport only — no executeImport before Final Review        | Not started | knoxio/pops#1740                         |
-=======
-=======
 | #   | Story                                                                     | Summary                                                                     | Status      | Parallelisable                 |
 | --- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------- | ----------- | ------------------------------ |
 | 01  | [us-01-pending-entity-store](us-01-pending-entity-store.md)               | Zustand slice buffering entity creations with temp IDs                      | Done        | Yes                            |
@@ -109,8 +93,6 @@ No new backend endpoints. All operations are zustand store actions and pure func
 | 08  | [us-08-preview-with-merged-rules](us-08-preview-with-merged-rules.md)     | ChangeSet previews use merged rule set as baseline                          | Done        | Blocked by US-03               |
 | 09  | [us-09-commit-payload-builder](us-09-commit-payload-builder.md)           | Build structured commit payload resolving temp IDs                          | Done        | Blocked by US-01, US-02        |
 | 10  | [us-10-single-commit-write-path](us-10-single-commit-write-path.md)       | Wizard uses commitImport only — no executeImport before Final Review        | Not started | knoxio/pops#1740               |
->>>>>>> Stashed changes
->>>>>>> 0095213a (fix(finance): fix trailing space in rule pattern and resolve lint/format issues)
 
 ## Out of Scope
 

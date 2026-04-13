@@ -117,27 +117,12 @@ The system must distinguish between:
 
 ## User Stories
 
-<<<<<<< Updated upstream
-| #   | Story                                         | Summary                                                 | Status    | Parallelisable   |
-| --- | --------------------------------------------- | ------------------------------------------------------- | --------- | ---------------- |
-<<<<<<< HEAD
-=======
-| 01  | [us-01-schema-api](us-01-schema-api.md)       | Corrections storage and matching primitives             | To Review | No (first)       |
-| 02  | [us-02-upsert-logic](us-02-upsert-logic.md)   | Rule create/update semantics consistent with ChangeSets | To Review | Blocked by us-01 |
-| 03  | [us-03-auto-cleanup](us-03-auto-cleanup.md)   | Rule lifecycle management (deactivation / removal)      | To Review | Blocked by us-01 |
-| 04  | [us-04-normalization](us-04-normalization.md) | Normalization contract for storage and matching         | To Review | Blocked by us-01 |
-=======
 | #   | Story                                         | Summary                                                 | Status | Parallelisable   |
 | --- | --------------------------------------------- | ------------------------------------------------------- | ------ | ---------------- |
->>>>>>> 0095213a (fix(finance): fix trailing space in rule pattern and resolve lint/format issues)
 | 01  | [us-01-schema-api](us-01-schema-api.md)       | Corrections storage and matching primitives             | Done   | No (first)       |
 | 02  | [us-02-upsert-logic](us-02-upsert-logic.md)   | Rule create/update semantics consistent with ChangeSets | Done   | Blocked by us-01 |
 | 03  | [us-03-auto-cleanup](us-03-auto-cleanup.md)   | Rule lifecycle management (deactivation / removal)      | Done   | Blocked by us-01 |
 | 04  | [us-04-normalization](us-04-normalization.md) | Normalization contract for storage and matching         | Done   | Blocked by us-01 |
-<<<<<<< HEAD
-=======
->>>>>>> Stashed changes
->>>>>>> 0095213a (fix(finance): fix trailing space in rule pattern and resolve lint/format issues)
 
 ## Verification
 
