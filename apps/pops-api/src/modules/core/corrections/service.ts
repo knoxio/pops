@@ -13,7 +13,6 @@ import { withRateLimitRetry } from '../../../lib/ai-retry.js';
 import { logger } from '../../../lib/logger.js';
 import { NotFoundError } from '../../../shared/errors.js';
 import { parseJsonStringArray } from '../../../shared/json.js';
-export * from './pure-service.js';
 import {
   applyChangeSetToRules,
   buildTargetRulesMap,
@@ -45,6 +44,8 @@ import {
   normalizeDescription,
 } from './types.js';
 import { AdaptedSignalSchema } from './types.js';
+
+export * from './pure-service.js';
 
 interface RejectedChangeSetFeedbackRecord {
   createdAt: string;

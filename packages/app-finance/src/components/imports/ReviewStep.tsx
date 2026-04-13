@@ -66,8 +66,12 @@ export function ReviewStep() {
         for (const transaction of transactions) {
           updated = {
             ...updated,
-            uncertain: updated.uncertain.filter((t: ProcessedTransaction) => t !== transaction),
-            failed: updated.failed.filter((t: ProcessedTransaction) => t !== transaction),
+            uncertain: updated.uncertain.filter(
+              (t: ProcessedTransaction) => t.checksum !== transaction.checksum
+            ),
+            failed: updated.failed.filter(
+              (t: ProcessedTransaction) => t.checksum !== transaction.checksum
+            ),
             matched: [
               ...updated.matched,
               {
@@ -75,7 +79,7 @@ export function ReviewStep() {
                 entity: {
                   entityId,
                   entityName,
-                  matchType: 'manual' as never,
+                  matchType: 'manual',
                   confidence: 1,
                 },
                 status: 'matched' as const,
@@ -115,8 +119,12 @@ export function ReviewStep() {
       // Resolve the single transaction the user explicitly picked for.
       setLocalTransactions((prev) => ({
         ...prev,
-        uncertain: prev.uncertain.filter((t: ProcessedTransaction) => t !== transaction),
-        failed: prev.failed.filter((t: ProcessedTransaction) => t !== transaction),
+        uncertain: prev.uncertain.filter(
+          (t: ProcessedTransaction) => t.checksum !== transaction.checksum
+        ),
+        failed: prev.failed.filter(
+          (t: ProcessedTransaction) => t.checksum !== transaction.checksum
+        ),
         matched: [
           ...prev.matched,
           {
@@ -124,7 +132,7 @@ export function ReviewStep() {
             entity: {
               entityId,
               entityName,
-              matchType: 'manual' as never, // UI-only matchType
+              matchType: 'manual', // UI-only matchType
               confidence: 1,
             },
             status: 'matched' as const,

@@ -59,17 +59,6 @@ Live status of every theme and epic. Updated as work completes.
 
 #### Finance
 
-<<<<<<< Updated upstream
-| Area                                          | Status | Notes                                   |
-| --------------------------------------------- | ------ | --------------------------------------- |
-| Transaction ledger (CRUD, filtering, tagging) | Done   | 6 pages, inline editing                 |
-| Import pipeline (CSV wizard, entity matching) | Partial  | 7-step wizard; atomic `commitImport` path still blocked by Tag Review `executeImport` (knoxio/pops#1740) |
-| Entity registry                               | Done   | Aliases, default tags, AI fallback      |
-| Corrections (learned rules)                   | Partial  | Classification + proposals; tag-rule wizard UI open (knoxio/pops#1741); rule manager gaps #1743–#1744 |
-| Budgets                                       | Done   | Monthly/yearly, active/inactive         |
-| Wishlist                                      | Done   | Savings goals with progress             |
-| AI categorisation                             | Done   | Claude Haiku, disk-cached, cost-tracked |
-=======
 | Area                                          | Status  | Notes                                                                                                    |
 | --------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------- |
 | Transaction ledger (CRUD, filtering, tagging) | Done    | 6 pages, inline editing                                                                                  |
@@ -79,7 +68,6 @@ Live status of every theme and epic. Updated as work completes.
 | Budgets                                       | Done    | Monthly/yearly, active/inactive                                                                          |
 | Wishlist                                      | Done    | Savings goals with progress                                                                              |
 | AI categorisation                             | Done    | Claude Haiku, disk-cached, cost-tracked                                                                  |
->>>>>>> Stashed changes
 
 #### Media
 
