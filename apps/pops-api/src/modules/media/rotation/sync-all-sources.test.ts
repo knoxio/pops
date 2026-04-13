@@ -81,7 +81,6 @@ describe('syncAllSources', () => {
   });
 
   it('skips recently synced sources within interval', async () => {
-    const db = getDrizzle();
     insertSource({
       type: 'mock_a',
       name: 'Recent',
