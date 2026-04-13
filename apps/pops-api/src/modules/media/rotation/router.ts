@@ -12,14 +12,16 @@ import {
   settings,
 } from '@pops/db-types';
 import { TRPCError } from '@trpc/server';
-import { asc, count, desc, eq, isNull, sql, sum } from 'drizzle-orm';
+import { and, asc, count, desc, eq, isNull, like, sql, sum } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { getDrizzle } from '../../../db.js';
 import { protectedProcedure, router } from '../../../trpc.js';
 import { getRadarrClient } from '../arr/service.js';
+import { addMovie as addMovieToLibrary } from '../library/service.js';
 import { fetchPlexFriends } from '../plex/friends.js';
 import { getPlexToken } from '../plex/service.js';
+import { getImageCache, getTmdbClient } from '../tmdb/index.js';
 import { cancelLeaving } from './leaving-lifecycle.js';
 import {
   getRotationSchedulerStatus,
@@ -472,4 +474,146 @@ export const rotationRouter = router({
 
     return { totalRotated, avgPerDay, streak };
   }),
+
+  /** List candidates with pagination, status filter, and title search. */
+  listCandidates: protectedProcedure
+    .input(
+      z
+        .object({
+          status: z.enum(['pending', 'added', 'skipped', 'excluded']).default('pending'),
+          search: z.string().optional(),
+          limit: z.number().int().min(1).max(100).default(20),
+          offset: z.number().int().min(0).default(0),
+        })
+        .default({})
+    )
+    .query(({ input }) => {
+      const db = getDrizzle();
+
+      const statusFilter = eq(rotationCandidates.status, input.status);
+      const whereClause = input.search
+        ? and(statusFilter, like(rotationCandidates.title, `%${input.search}%`))
+        : statusFilter;
+
+      const items = db
+        .select({
+          id: rotationCandidates.id,
+          sourceId: rotationCandidates.sourceId,
+          tmdbId: rotationCandidates.tmdbId,
+          title: rotationCandidates.title,
+          year: rotationCandidates.year,
+          rating: rotationCandidates.rating,
+          posterPath: rotationCandidates.posterPath,
+          status: rotationCandidates.status,
+          discoveredAt: rotationCandidates.discoveredAt,
+          sourceName: rotationSources.name,
+          sourcePriority: rotationSources.priority,
+        })
+        .from(rotationCandidates)
+        .leftJoin(rotationSources, eq(rotationCandidates.sourceId, rotationSources.id))
+        .where(whereClause)
+        .orderBy(desc(rotationCandidates.discoveredAt))
+        .limit(input.limit)
+        .offset(input.offset)
+        .all();
+
+      const totalResult = db
+        .select({ value: count() })
+        .from(rotationCandidates)
+        .where(whereClause)
+        .get();
+      const total = totalResult?.value ?? 0;
+
+      return { items, total };
+    }),
+
+  /** Download a candidate: add to Radarr, create POPS library entry, mark as added. */
+  downloadCandidate: protectedProcedure
+    .input(z.object({ candidateId: z.number().int().positive() }))
+    .mutation(async ({ input }) => {
+      const db = getDrizzle();
+      const candidate = db
+        .select()
+        .from(rotationCandidates)
+        .where(eq(rotationCandidates.id, input.candidateId))
+        .get();
+
+      if (!candidate) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Candidate not found' });
+      }
+      if (candidate.status !== 'pending') {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: `Candidate is already ${candidate.status}`,
+        });
+      }
+
+      const client = getRadarrClient();
+      if (!client) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'Radarr not configured',
+        });
+      }
+
+      const qualityProfileId = db
+        .select()
+        .from(settings)
+        .where(eq(settings.key, 'rotation_quality_profile_id'))
+        .get()?.value;
+      const rootFolderPath = db
+        .select()
+        .from(settings)
+        .where(eq(settings.key, 'rotation_root_folder_path'))
+        .get()?.value;
+
+      if (!qualityProfileId || !rootFolderPath) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'Radarr quality profile or root folder not configured',
+        });
+      }
+
+      // Check if already in Radarr
+      const check = await client.checkMovie(candidate.tmdbId);
+      if (check.exists) {
+        db.update(rotationCandidates)
+          .set({ status: 'added' })
+          .where(eq(rotationCandidates.id, input.candidateId))
+          .run();
+        return { success: true, alreadyInRadarr: true };
+      }
+
+      // Add to Radarr
+      await client.addMovie({
+        tmdbId: candidate.tmdbId,
+        title: candidate.title,
+        year: candidate.year ?? new Date().getFullYear(),
+        qualityProfileId: Number(qualityProfileId),
+        rootFolderPath,
+      });
+
+      // Create POPS library entry
+      try {
+        const tmdbClient = getTmdbClient();
+        const imageCache = getImageCache();
+        await addMovieToLibrary(candidate.tmdbId, tmdbClient, imageCache);
+      } catch (err) {
+        console.warn('[rotation] Failed to create library entry for tmdb=%d:', candidate.tmdbId, err);
+      }
+
+      // Mark as added and set protected status
+      db.update(rotationCandidates)
+        .set({ status: 'added' })
+        .where(eq(rotationCandidates.id, input.candidateId))
+        .run();
+
+      // Set rotation_status = 'protected' on the POPS movie
+      db.update(movies)
+        .set({ rotationStatus: 'protected' })
+        .where(eq(movies.tmdbId, candidate.tmdbId))
+        .run();
+
+      return { success: true, alreadyInRadarr: false };
+    }),
 });

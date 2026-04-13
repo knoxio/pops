@@ -73,6 +73,11 @@ const RotationLogPage = lazy(() =>
     default: m.RotationLogPage,
   }))
 );
+const CandidateQueuePage = lazy(() =>
+  import('./pages/CandidateQueuePage').then((m) => ({
+    default: m.CandidateQueuePage,
+  }))
+);
 const HistoryPage = lazy(() =>
   import('./pages/HistoryPage').then((m) => ({
     default: m.HistoryPage,
@@ -155,6 +160,7 @@ export const routes: RouteObject[] = [
   { path: 'arr', element: <ArrSettingsPage /> },
   { path: 'rotation', element: <RotationSettingsPage /> },
   { path: 'rotation/log', element: <RotationLogPage /> },
+  { path: 'rotation/candidates', element: <CandidateQueuePage /> },
   { path: 'arr/calendar', element: <CalendarPage /> },
   { path: 'tier-list', element: <TierListPage /> },
   { path: 'debrief/:movieId', element: <DebriefPage /> },
