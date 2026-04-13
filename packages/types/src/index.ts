@@ -10,4 +10,4 @@ export type {
   SearchHit,
   StructuredFilter,
 } from './search.js';
-export { SETTINGS_KEYS, type SettingsKey } from './settings-keys.js';
+export { SETTINGS_KEY_VALUES, SETTINGS_KEYS, type SettingsKey } from './settings-keys.js';

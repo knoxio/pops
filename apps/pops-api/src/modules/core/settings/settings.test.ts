@@ -44,9 +44,9 @@ describe('settings.list', () => {
   });
 
   it('paginates results', async () => {
-    seedSetting(db, { key: 'a', value: '1' });
-    seedSetting(db, { key: 'b', value: '2' });
-    seedSetting(db, { key: 'c', value: '3' });
+    seedSetting(db, { key: SETTINGS_KEYS.PLEX_URL, value: 'http://plex:32400' });
+    seedSetting(db, { key: SETTINGS_KEYS.PLEX_TOKEN, value: 'abc' });
+    seedSetting(db, { key: SETTINGS_KEYS.THEME, value: 'dark' });
 
     const result = await caller.core.settings.list({ limit: 2, offset: 0 });
     expect(result.data).toHaveLength(2);
@@ -74,7 +74,7 @@ describe('settings.get', () => {
   });
 
   it('returns null for missing key', async () => {
-    const result = await caller.core.settings.get({ key: 'nonexistent' });
+    const result = await caller.core.settings.get({ key: SETTINGS_KEYS.RADARR_URL });
     expect(result.data).toBeNull();
   });
 });
@@ -99,17 +99,19 @@ describe('settings.set', () => {
   });
 
   it('persists to the database', async () => {
-    await caller.core.settings.set({ key: 'new_key', value: 'new_value' });
-    const row = db.prepare('SELECT * FROM settings WHERE key = ?').get('new_key') as {
+    await caller.core.settings.set({ key: SETTINGS_KEYS.RADARR_URL, value: 'http://radarr:7878' });
+    const row = db
+      .prepare('SELECT * FROM settings WHERE key = ?')
+      .get(SETTINGS_KEYS.RADARR_URL) as {
       key: string;
       value: string;
     };
     expect(row).toBeDefined();
-    expect(row.value).toBe('new_value');
+    expect(row.value).toBe('http://radarr:7878');
   });
 
   it('allows empty string value', async () => {
-    const result = await caller.core.settings.set({ key: 'empty', value: '' });
+    const result = await caller.core.settings.set({ key: SETTINGS_KEYS.SONARR_URL, value: '' });
     expect(result.data.value).toBe('');
   });
 });
@@ -127,8 +129,12 @@ describe('settings.delete', () => {
   });
 
   it('throws NOT_FOUND for missing key', async () => {
-    await expect(caller.core.settings.delete({ key: 'nonexistent' })).rejects.toThrow(TRPCError);
-    await expect(caller.core.settings.delete({ key: 'nonexistent' })).rejects.toMatchObject({
+    await expect(
+      caller.core.settings.delete({ key: SETTINGS_KEYS.SONARR_API_KEY })
+    ).rejects.toThrow(TRPCError);
+    await expect(
+      caller.core.settings.delete({ key: SETTINGS_KEYS.SONARR_API_KEY })
+    ).rejects.toMatchObject({
       code: 'NOT_FOUND',
     });
   });

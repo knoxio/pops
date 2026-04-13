@@ -7,9 +7,9 @@ import { z } from 'zod';
 import { NotFoundError } from '../../../shared/errors.js';
 import { paginationMeta } from '../../../shared/pagination.js';
 import { protectedProcedure, router } from '../../../trpc.js';
-import type { SettingsKey } from './keys.js';
+import { SETTINGS_KEY_VALUES } from './keys.js';
 import * as service from './service.js';
-import { SetSettingSchema, SettingListSchema, toSetting } from './types.js';
+import { SettingListSchema, toSetting } from './types.js';
 
 const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
@@ -29,30 +29,36 @@ export const settingsRouter = router({
   }),
 
   /** Get a single setting by key (returns null when key does not exist) */
-  get: protectedProcedure.input(z.object({ key: z.string() })).query(({ input }) => {
-    const row = service.getSettingOrNull(input.key as SettingsKey);
-    return { data: row ? toSetting(row) : null };
-  }),
+  get: protectedProcedure
+    .input(z.object({ key: z.enum(SETTINGS_KEY_VALUES) }))
+    .query(({ input }) => {
+      const row = service.getSettingOrNull(input.key);
+      return { data: row ? toSetting(row) : null };
+    }),
 
   /** Set a setting value (upsert — creates or updates) */
-  set: protectedProcedure.input(SetSettingSchema).mutation(({ input }) => {
-    const row = service.setSetting(input);
-    return {
-      data: toSetting(row),
-      message: 'Setting saved',
-    };
-  }),
+  set: protectedProcedure
+    .input(z.object({ key: z.enum(SETTINGS_KEY_VALUES), value: z.string() }))
+    .mutation(({ input }) => {
+      const row = service.setSetting(input);
+      return {
+        data: toSetting(row),
+        message: 'Setting saved',
+      };
+    }),
 
   /** Delete a setting by key */
-  delete: protectedProcedure.input(z.object({ key: z.string() })).mutation(({ input }) => {
-    try {
-      service.deleteSetting(input.key as SettingsKey);
-      return { message: 'Setting deleted' };
-    } catch (err) {
-      if (err instanceof NotFoundError) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+  delete: protectedProcedure
+    .input(z.object({ key: z.enum(SETTINGS_KEY_VALUES) }))
+    .mutation(({ input }) => {
+      try {
+        service.deleteSetting(input.key);
+        return { message: 'Setting deleted' };
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+        }
+        throw err;
       }
-      throw err;
-    }
-  }),
+    }),
 });

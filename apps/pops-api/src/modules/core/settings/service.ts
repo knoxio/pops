@@ -64,7 +64,7 @@ export function setSetting(input: SetSettingInput): SettingRow {
     })
     .run();
 
-  return getSetting(input.key as SettingsKey);
+  return getSetting(input.key);
 }
 
 /** Delete a setting by key */

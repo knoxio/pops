@@ -6,7 +6,7 @@ import { eq } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
 import { getEnv } from '../../../env.js';
-import { SETTINGS_KEYS } from '../../core/settings/keys.js';
+import { SETTINGS_KEYS, type SettingsKey } from '../../core/settings/keys.js';
 import { RadarrClient } from './radarr-client.js';
 import { SonarrClient } from './sonarr-client.js';
 import type {
@@ -38,18 +38,18 @@ const showStatusCache = new Map<number, CacheEntry>();
 // Settings helpers (settings table with env var fallback, like Plex)
 // ---------------------------------------------------------------------------
 
-function getSetting(key: string): string | null {
+function getSetting(key: SettingsKey): string | null {
   const db = getDrizzle();
   const record = db.select().from(settings).where(eq(settings.key, key)).get();
   if (record?.value) return record.value;
   return null;
 }
 
-function getArrSetting(key: string, envName: string): string | null {
+function getArrSetting(key: SettingsKey, envName: string): string | null {
   return getSetting(key) || getEnv(envName) || null;
 }
 
-function saveSetting(key: string, value: string): void {
+function saveSetting(key: SettingsKey, value: string): void {
   const db = getDrizzle();
   db.insert(settings)
     .values({ key, value })
@@ -57,7 +57,7 @@ function saveSetting(key: string, value: string): void {
     .run();
 }
 
-function deleteSetting(key: string): void {
+function deleteSetting(key: SettingsKey): void {
   const db = getDrizzle();
   db.delete(settings).where(eq(settings.key, key)).run();
 }

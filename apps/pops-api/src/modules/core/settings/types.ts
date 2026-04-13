@@ -1,4 +1,5 @@
 import type { SettingRow } from '@pops/db-types';
+import type { SettingsKey } from '@pops/types';
 import { z } from 'zod';
 
 export type { SettingRow };
@@ -17,12 +18,11 @@ export function toSetting(row: SettingRow): Setting {
   };
 }
 
-/** Schema for setting a value (upsert) */
-export const SetSettingSchema = z.object({
-  key: z.string().min(1, 'Key is required'),
-  value: z.string(),
-});
-export type SetSettingInput = z.infer<typeof SetSettingSchema>;
+/** Input for setting a value (upsert) — used internally by the service */
+export interface SetSettingInput {
+  key: SettingsKey;
+  value: string;
+}
 
 /** Schema for list query */
 export const SettingListSchema = z.object({

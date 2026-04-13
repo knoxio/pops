@@ -1,3 +1,4 @@
+import { SETTINGS_KEYS } from '@pops/types';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router';
@@ -104,9 +105,9 @@ describe('ModelConfigPage', () => {
   it('populates form with existing settings', () => {
     setupDefaults({
       settings: {
-        'ai.model': 'claude-haiku-4-5-20251001',
-        'ai.monthlyTokenBudget': '500000',
-        'ai.budgetExceededFallback': 'alert',
+        [SETTINGS_KEYS.AI_MODEL]: 'claude-haiku-4-5-20251001',
+        [SETTINGS_KEYS.AI_MONTHLY_TOKEN_BUDGET]: '500000',
+        [SETTINGS_KEYS.AI_BUDGET_EXCEEDED_FALLBACK]: 'alert',
       },
     });
     renderPage();
@@ -128,15 +129,15 @@ describe('ModelConfigPage', () => {
     });
 
     expect(mockMutateAsync).toHaveBeenCalledWith({
-      key: 'ai.model',
+      key: SETTINGS_KEYS.AI_MODEL,
       value: 'claude-haiku-4-5-20251001',
     });
     expect(mockMutateAsync).toHaveBeenCalledWith({
-      key: 'ai.monthlyTokenBudget',
+      key: SETTINGS_KEYS.AI_MONTHLY_TOKEN_BUDGET,
       value: '',
     });
     expect(mockMutateAsync).toHaveBeenCalledWith({
-      key: 'ai.budgetExceededFallback',
+      key: SETTINGS_KEYS.AI_BUDGET_EXCEEDED_FALLBACK,
       value: 'skip',
     });
     expect(mockToastSuccess).toHaveBeenCalledWith('AI configuration saved');
@@ -157,7 +158,7 @@ describe('ModelConfigPage', () => {
 
   it('displays current usage stats', () => {
     setupDefaults({
-      settings: { 'ai.monthlyTokenBudget': '200000' },
+      settings: { [SETTINGS_KEYS.AI_MONTHLY_TOKEN_BUDGET]: '200000' },
     });
     renderPage();
     expect(screen.getByText('Current Month Tokens')).toBeInTheDocument();
@@ -169,8 +170,8 @@ describe('ModelConfigPage', () => {
   it('shows budget exceeded alert when over limit', () => {
     setupDefaults({
       settings: {
-        'ai.monthlyTokenBudget': '1000',
-        'ai.budgetExceededFallback': 'skip',
+        [SETTINGS_KEYS.AI_MONTHLY_TOKEN_BUDGET]: '1000',
+        [SETTINGS_KEYS.AI_BUDGET_EXCEEDED_FALLBACK]: 'skip',
       },
       stats: {
         last30Days: {
@@ -196,7 +197,7 @@ describe('ModelConfigPage', () => {
 
   it('shows progress bar when budget is set', () => {
     setupDefaults({
-      settings: { 'ai.monthlyTokenBudget': '200000' },
+      settings: { [SETTINGS_KEYS.AI_MONTHLY_TOKEN_BUDGET]: '200000' },
     });
     renderPage();
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
