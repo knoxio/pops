@@ -1,21 +1,21 @@
-import { useState } from 'react';
-import { Plus, Trash2, RefreshCcw, Sparkles, X } from 'lucide-react';
 import { Badge, Button, Input, Label, Select, Separator, Textarea } from '@pops/ui';
+import { Plus, RefreshCcw, Sparkles, Trash2, X } from 'lucide-react';
+import { useState } from 'react';
 
-import { RulePicker, type CorrectionRule } from './RulePicker';
 import {
-  PREVIEW_CHANGESET_MAX_TRANSACTIONS,
-  matchTypeLabel,
-  opKindBadgeVariant,
-  opKindLabel,
-  opSummary,
   type AddRuleData,
   type CorrectionSignal,
   type EditRuleData,
   type LocalOp,
+  matchTypeLabel,
+  opKindBadgeVariant,
+  opKindLabel,
+  opSummary,
+  PREVIEW_CHANGESET_MAX_TRANSACTIONS,
   type PreviewChangeSetOutput,
   type TriggeringTransactionContext,
 } from './correction-proposal-shared';
+import { type CorrectionRule, RulePicker } from './RulePicker';
 
 // ---------------------------------------------------------------------------
 // Local types used only by panels

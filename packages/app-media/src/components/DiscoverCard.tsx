@@ -2,19 +2,20 @@
  * DiscoverCard — poster card for a TMDB discovery result.
  * Displays poster, title, year, TMDB rating, and action buttons.
  */
-import { useState } from 'react';
-import { cn, Badge, Button, Skeleton } from '@pops/ui';
+import { Badge, Button, cn, Skeleton } from '@pops/ui';
 import {
-  Film,
-  Plus,
   Bookmark,
   BookmarkCheck,
   Check,
   Eye,
+  Film,
   Loader2,
+  Plus,
   RotateCw,
   X,
 } from 'lucide-react';
+import { useState } from 'react';
+
 import { RequestMovieButton } from './RequestMovieButton';
 
 export interface DiscoverCardProps {

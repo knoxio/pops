@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { TmdbSearchResult } from '../../tmdb/types.js';
 
 // Hoist mutable state for mock overrides

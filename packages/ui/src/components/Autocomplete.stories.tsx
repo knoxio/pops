@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
+
 import { Autocomplete } from './Autocomplete';
 
 const meta: Meta<typeof Autocomplete> = {

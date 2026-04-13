@@ -1,17 +1,18 @@
 /**
  * Media library service tests — refreshMovie with mocked TMDB client.
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { TRPCError } from '@trpc/server';
 import type { Database } from 'better-sqlite3';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
-  setupTestContext,
   createCaller,
   seedMovie,
   seedTvShow,
+  setupTestContext,
 } from '../../../shared/test-utils.js';
-import { listLibrary, listLibraryGenres } from './service.js';
 import type { TmdbMovieDetail } from '../tmdb/types.js';
-import { TRPCError } from '@trpc/server';
+import { listLibrary, listLibraryGenres } from './service.js';
 
 // Mock ImageCacheService so getImageCache() returns a stub
 vi.mock('../tmdb/image-cache.js', () => ({

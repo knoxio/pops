@@ -7,8 +7,8 @@ config({ path: '../../.env', override: false }); // loads root .env without over
 
 import { createApp } from './app.js';
 import { closeDb } from './db.js';
-import { startTtlWatcher } from './modules/core/envs/ttl-watcher.js';
 import { startupCleanup } from './modules/core/envs/registry.js';
+import { startTtlWatcher } from './modules/core/envs/ttl-watcher.js';
 import { resumeSchedulerIfEnabled, stopScheduler } from './modules/media/plex/scheduler.js';
 import {
   resumeRotationSchedulerIfEnabled,
@@ -21,31 +21,31 @@ const app = createApp();
 // Clean up expired and orphaned env DBs left over from any previous crash
 const { expired, orphaned } = startupCleanup();
 if (expired.length > 0)
-  console.log(`[pops-api] Cleaned up ${expired.length} expired env(s): ${expired.join(', ')}`);
+  console.warn(`[pops-api] Cleaned up ${expired.length} expired env(s): ${expired.join(', ')}`);
 if (orphaned.length > 0)
-  console.log(`[pops-api] Removed ${orphaned.length} orphaned env DB(s): ${orphaned.join(', ')}`);
+  console.warn(`[pops-api] Removed ${orphaned.length} orphaned env DB(s): ${orphaned.join(', ')}`);
 
 const server = app.listen(port, () => {
-  console.log(`[pops-api] Listening on port ${port}`);
+  console.warn(`[pops-api] Listening on port ${port}`);
 });
 
 // Auto-resume Plex sync scheduler if it was previously running
 const resumedScheduler = resumeSchedulerIfEnabled();
 if (resumedScheduler) {
-  console.log(`[pops-api] Plex scheduler resumed (interval: ${resumedScheduler.intervalMs}ms)`);
+  console.warn(`[pops-api] Plex scheduler resumed (interval: ${resumedScheduler.intervalMs}ms)`);
 }
 
 // Auto-resume rotation scheduler if it was previously running
 const resumedRotation = resumeRotationSchedulerIfEnabled();
 if (resumedRotation) {
-  console.log(`[pops-api] Rotation scheduler resumed (cron: ${resumedRotation.cronExpression})`);
+  console.warn(`[pops-api] Rotation scheduler resumed (cron: ${resumedRotation.cronExpression})`);
 }
 
 // Periodically purge expired named environments
 const ttlWatcher = startTtlWatcher();
 
 function shutdown(): void {
-  console.log('[pops-api] Shutting down...');
+  console.warn('[pops-api] Shutting down...');
   stopScheduler();
   stopRotationScheduler();
   clearInterval(ttlWatcher);

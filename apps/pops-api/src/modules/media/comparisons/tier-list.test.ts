@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { Database } from 'better-sqlite3';
-import { setupTestContext, seedDimension, seedMovie } from '../../../shared/test-utils.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import { seedDimension, seedMovie, setupTestContext } from '../../../shared/test-utils.js';
 import { deriveTierList } from './tier-list.js';
 
 const ctx = setupTestContext();

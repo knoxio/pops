@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { registerShelf, getRegisteredShelves, _clearRegistry } from './registry.js';
+import { beforeEach, describe, expect, it } from 'vitest';
+
+import { _clearRegistry, getRegisteredShelves, registerShelf } from './registry.js';
 import type { ShelfDefinition, ShelfInstance } from './types.js';
 
 const makeInstance = (id: string): ShelfInstance => ({

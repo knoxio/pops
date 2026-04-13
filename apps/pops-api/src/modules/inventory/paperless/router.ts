@@ -1,9 +1,10 @@
 /**
  * Paperless-ngx tRPC router — connection status, health check, and document search.
  */
-import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { router, protectedProcedure } from '../../../trpc.js';
+import { z } from 'zod';
+
+import { protectedProcedure, router } from '../../../trpc.js';
 import { getPaperlessClient } from './index.js';
 import { PaperlessApiError } from './types.js';
 

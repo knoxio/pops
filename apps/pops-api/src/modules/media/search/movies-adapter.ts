@@ -4,11 +4,12 @@
  * Registered domain: "movies"
  * Scoring: exact=1.0, prefix=0.8, contains=0.5
  */
-import { like } from 'drizzle-orm';
-import { getDrizzle } from '../../../db.js';
 import { movies } from '@pops/db-types';
-import type { SearchAdapter, SearchHit, Query, SearchContext } from '../../core/search/types.js';
+import { like } from 'drizzle-orm';
+
+import { getDrizzle } from '../../../db.js';
 import { registerSearchAdapter } from '../../core/search/index.js';
+import type { Query, SearchAdapter, SearchContext, SearchHit } from '../../core/search/types.js';
 
 export interface MovieHitData {
   title: string;

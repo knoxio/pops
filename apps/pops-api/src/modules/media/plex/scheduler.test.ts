@@ -1,7 +1,7 @@
 /**
  * Tests for Plex sync scheduler — periodic polling, lifecycle, and persistence.
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dependencies
 const settingsStore = new Map<string, string>();
@@ -84,20 +84,20 @@ vi.mock('@pops/db-types', () => ({
   syncLogs: { syncedAt: 'synced_at', id: 'id' },
 }));
 
+import type { PlexClient } from './client.js';
 import {
-  startScheduler,
-  stopScheduler,
-  getSchedulerStatus,
-  getPersistedSchedulerState,
-  resumeSchedulerIfEnabled,
-  getSyncLogs,
   _resetScheduler,
   _triggerSync,
+  getPersistedSchedulerState,
+  getSchedulerStatus,
+  getSyncLogs,
+  resumeSchedulerIfEnabled,
+  startScheduler,
+  stopScheduler,
 } from './scheduler.js';
 import { getPlexClient, getPlexSectionIds } from './service.js';
 import { importMoviesFromPlex } from './sync-movies.js';
 import { importTvShowsFromPlex } from './sync-tv.js';
-import type { PlexClient } from './client.js';
 
 const mockGetPlexClient = vi.mocked(getPlexClient);
 const mockGetPlexSectionIds = vi.mocked(getPlexSectionIds);

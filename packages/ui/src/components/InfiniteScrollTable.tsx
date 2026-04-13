@@ -2,8 +2,9 @@
  * InfiniteScrollTable - DataTable variant with infinite scroll instead of pagination
  * Built on TanStack Table with virtual scrolling
  */
-import { useEffect, useRef, useCallback } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
+import { useCallback, useEffect, useRef } from 'react';
+
 import { DataTable } from './DataTable';
 
 export interface InfiniteScrollTableProps<TData, TValue = unknown> {

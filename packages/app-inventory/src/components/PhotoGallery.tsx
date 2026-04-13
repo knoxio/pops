@@ -4,9 +4,9 @@
  * Shows the selected photo at full width, a thumbnail strip below (for 2+ photos),
  * and a lightbox overlay on primary click. Click a thumbnail to swap it into primary.
  */
-import { useState, useCallback, useEffect } from 'react';
-import { X, ChevronLeft, ChevronRight, Trash2, Package } from 'lucide-react';
 import { Button } from '@pops/ui';
+import { ChevronLeft, ChevronRight, Package, Trash2, X } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
 
 export interface PhotoItem {
   id: number;

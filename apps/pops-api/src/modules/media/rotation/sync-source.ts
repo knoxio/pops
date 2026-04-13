@@ -4,8 +4,9 @@
  *
  * PRD-071 US-02: syncSource(sourceId) implementation.
  */
-import { eq, sql } from 'drizzle-orm';
 import { rotationCandidates, rotationSources } from '@pops/db-types';
+import { eq, sql } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../db.js';
 import { getRegisteredTypes, getSourceAdapter } from './source-registry.js';
 

@@ -2,9 +2,10 @@
  * Shelf impressions service — tracks how often each shelf has been shown
  * so that freshness scores can down-rank recently-surfaced shelves.
  */
-import { gte, lt, count } from 'drizzle-orm';
-import { getDrizzle } from '../../../../db.js';
 import { shelfImpressions } from '@pops/db-types';
+import { count, gte, lt } from 'drizzle-orm';
+
+import { getDrizzle } from '../../../../db.js';
 
 /** Insert impression rows for each shelf ID shown in a session. */
 export function recordImpressions(shelfIds: string[]): void {

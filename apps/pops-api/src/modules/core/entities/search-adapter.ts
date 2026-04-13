@@ -1,8 +1,9 @@
-import { like } from 'drizzle-orm';
-import { getDrizzle } from '../../../db.js';
 import { entities } from '@pops/db-types';
+import { like } from 'drizzle-orm';
+
+import { getDrizzle } from '../../../db.js';
 import { registerSearchAdapter } from '../search/registry.js';
-import type { SearchAdapter, SearchHit, Query, SearchContext } from '../search/types.js';
+import type { Query, SearchAdapter, SearchContext, SearchHit } from '../search/types.js';
 
 export interface EntityHitData {
   name: string;

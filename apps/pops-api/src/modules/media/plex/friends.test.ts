@@ -5,8 +5,8 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { fetchFriendWatchlist, fetchPlexFriends } from './friends.js';
 import { PlexApiError } from './types.js';
-import { fetchPlexFriends, fetchFriendWatchlist } from './friends.js';
 
 // Mock global fetch
 const mockFetch = vi.fn();

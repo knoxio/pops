@@ -1,12 +1,13 @@
 /**
  * Watchlist recommendations tests — uses real in-memory SQLite + mocked TMDB client.
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Database } from 'better-sqlite3';
-import { setupTestContext, seedMovie, seedWatchlistEntry } from '../../../shared/test-utils.js';
-import { getWatchlistRecommendations } from './tmdb-service.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { seedMovie, seedWatchlistEntry, setupTestContext } from '../../../shared/test-utils.js';
 import type { TmdbClient } from '../tmdb/client.js';
 import type { TmdbSearchResponse, TmdbSearchResult } from '../tmdb/types.js';
+import { getWatchlistRecommendations } from './tmdb-service.js';
 
 const ctx = setupTestContext();
 let db: Database;

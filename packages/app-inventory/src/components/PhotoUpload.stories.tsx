@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+
 import { PhotoUpload, type UploadedFile } from './PhotoUpload';
 
 const meta: Meta<typeof PhotoUpload> = {

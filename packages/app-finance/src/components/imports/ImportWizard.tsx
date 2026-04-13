@@ -1,12 +1,13 @@
+import { Progress } from '@pops/ui';
+
 import { useImportStore } from '../../store/importStore';
-import { UploadStep } from './UploadStep';
 import { ColumnMapStep } from './ColumnMapStep';
+import { FinalReviewStep } from './FinalReviewStep';
 import { ProcessingStep } from './ProcessingStep';
 import { ReviewStep } from './ReviewStep';
-import { TagReviewStep } from './TagReviewStep';
-import { FinalReviewStep } from './FinalReviewStep';
 import { SummaryStep } from './SummaryStep';
-import { Progress } from '@pops/ui';
+import { TagReviewStep } from './TagReviewStep';
+import { UploadStep } from './UploadStep';
 
 /**
  * Import wizard orchestrator - manages 7-step flow

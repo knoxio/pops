@@ -6,17 +6,18 @@
  * Director shelf queries /discover/movie?with_crew={personId}.
  * Actor shelf queries /discover/movie?with_cast={personId}.
  */
-import { sql, eq } from 'drizzle-orm';
+import { mediaScores, movies } from '@pops/db-types';
+import { eq, sql } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../../db.js';
-import { movies, mediaScores } from '@pops/db-types';
 import { getTmdbClient } from '../../tmdb/index.js';
 import type { TmdbMovieCredits } from '../../tmdb/types.js';
-import { getLibraryTmdbIds, toDiscoverResults } from '../tmdb-service.js';
 import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from '../flags.js';
 import { scoreDiscoverResults } from '../service.js';
+import { getLibraryTmdbIds, toDiscoverResults } from '../tmdb-service.js';
+import type { PreferenceProfile } from '../types.js';
 import { registerShelf } from './registry.js';
 import type { ShelfDefinition, ShelfInstance } from './types.js';
-import type { PreferenceProfile } from '../types.js';
 
 const MAX_SEEDS = 10;
 const LEAD_CAST_COUNT = 3;

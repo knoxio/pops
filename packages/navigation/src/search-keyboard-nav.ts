@@ -4,7 +4,7 @@
  * Handles ArrowUp/Down to move selection, Enter to select,
  * Escape to close, and auto-scrolls selected items into view.
  */
-import { useState, useCallback, useEffect, type RefObject } from 'react';
+import { type RefObject, useCallback, useEffect, useState } from 'react';
 
 interface UseSearchKeyboardNavOptions {
   /** Total number of navigable results across all sections. */

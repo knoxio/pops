@@ -1,4 +1,5 @@
-import { sqliteTable, text, real, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { index, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+
 import { entities } from './entities.js';
 
 export const transactions = sqliteTable(

@@ -4,18 +4,19 @@
  * Presents quality profile, root folder, and language profile dropdowns,
  * season monitoring checkboxes with smart defaults, then submits to Sonarr.
  */
-import { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
-  Select,
   Label,
+  Select,
 } from '@pops/ui';
 import { Button } from '@pops/ui';
-import { RefreshCw, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, RefreshCw } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+
 import { trpc } from '../lib/trpc';
 
 export interface SeasonInfo {

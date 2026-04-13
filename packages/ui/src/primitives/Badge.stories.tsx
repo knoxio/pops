@@ -1,13 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Badge } from './badge';
 import {
-  CheckIcon,
-  XIcon,
-  ClockIcon,
   AlertTriangleIcon,
-  TrendingUpIcon,
+  CheckIcon,
+  ClockIcon,
   TrendingDownIcon,
+  TrendingUpIcon,
+  XIcon,
 } from 'lucide-react';
+
+import { Badge } from './badge';
 
 const meta: Meta<typeof Badge> = {
   title: 'Data Display/Badge',

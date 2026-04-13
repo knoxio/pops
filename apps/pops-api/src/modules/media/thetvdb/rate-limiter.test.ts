@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { TokenBucketRateLimiter } from '../../../shared/rate-limiter.js';
-import { getTvdbRateLimiter, setTvdbRateLimiter, fetchWithRetry } from './rate-limiter.js';
+import { fetchWithRetry, getTvdbRateLimiter, setTvdbRateLimiter } from './rate-limiter.js';
 
 describe('getTvdbRateLimiter', () => {
   afterEach(() => {

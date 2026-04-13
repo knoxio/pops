@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { PreferenceProfile } from '../types.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { TmdbSearchResult } from '../../tmdb/types.js';
+import type { PreferenceProfile } from '../types.js';
 
 // ── Mutable state for overridable mocks ──────────────────────────────────────
 const mockDismissedIds = vi.hoisted(() => ({ value: new Set<number>() }));
@@ -82,13 +83,13 @@ vi.mock('../service.js', () => ({
 vi.mock('./registry.js', () => ({ registerShelf: vi.fn() }));
 
 import { getDrizzle } from '../../../../db.js';
+import { getTmdbClient } from '../../tmdb/index.js';
 import {
   bestInGenreShelf,
+  dimensionInspiredShelf,
   genreCrossoverShelf,
   topDimensionShelf,
-  dimensionInspiredShelf,
 } from './genre-shelves.js';
-import { getTmdbClient } from '../../tmdb/index.js';
 
 const mockGetDrizzle = vi.mocked(getDrizzle);
 const mockGetTmdbClient = vi.mocked(getTmdbClient);

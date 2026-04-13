@@ -3,6 +3,7 @@
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { MemoryRouter } from 'react-router';
+
 import { SearchResultCard } from './SearchResultCard';
 
 const meta: Meta<typeof SearchResultCard> = {

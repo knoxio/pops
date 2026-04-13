@@ -1,5 +1,6 @@
-import { eq } from 'drizzle-orm';
 import { comparisonDimensions } from '@pops/db-types';
+import { eq } from 'drizzle-orm';
+
 import { getDb, getDrizzle } from '../../../db.js';
 import { calculateConfidence, calculateOverallConfidence, type RankedMediaEntry } from './types.js';
 

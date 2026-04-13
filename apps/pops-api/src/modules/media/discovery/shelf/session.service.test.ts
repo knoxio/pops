@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { ShelfDefinition, ShelfInstance, PreferenceProfile } from './types.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { PreferenceProfile, ShelfDefinition, ShelfInstance } from './types.js';
 
 // Mock registry and impressions service before imports
 vi.mock('./registry.js', () => ({
@@ -10,8 +11,8 @@ vi.mock('./impressions.service.js', () => ({
   getShelfFreshness: vi.fn().mockReturnValue(1.0),
 }));
 
-import { getRegisteredShelves } from './registry.js';
 import { getShelfFreshness } from './impressions.service.js';
+import { getRegisteredShelves } from './registry.js';
 import { assembleSession } from './session.service.js';
 
 const mockGetRegisteredShelves = vi.mocked(getRegisteredShelves);

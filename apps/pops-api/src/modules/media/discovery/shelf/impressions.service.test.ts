@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../../../db.js', () => ({
   getDrizzle: vi.fn(),
@@ -13,11 +13,11 @@ vi.mock('@pops/db-types', () => ({
 
 import { getDrizzle } from '../../../../db.js';
 import {
-  recordImpressions,
+  cleanupOldImpressions,
   getRecentImpressions,
   getShelfFreshness,
-  cleanupOldImpressions,
   initImpressionsService,
+  recordImpressions,
 } from './impressions.service.js';
 
 const mockGetDrizzle = vi.mocked(getDrizzle);

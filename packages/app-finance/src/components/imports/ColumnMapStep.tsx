@@ -1,9 +1,10 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
-import crypto from 'crypto-js';
-import { useImportStore } from '../../store/importStore';
-import { Button, Label, Select as UiSelect } from '@pops/ui';
-import { AlertCircle, CheckCircle } from 'lucide-react';
 import type { ParsedTransaction } from '@pops/api/modules/finance/imports';
+import { Button, Label, Select as UiSelect } from '@pops/ui';
+import crypto from 'crypto-js';
+import { AlertCircle, CheckCircle } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+
+import { useImportStore } from '../../store/importStore';
 
 /**
  * Step 2: Map CSV columns to schema fields and validate parsing

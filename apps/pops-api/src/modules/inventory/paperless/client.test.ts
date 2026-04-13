@@ -1,7 +1,8 @@
 /**
  * Paperless-ngx client unit tests — all HTTP calls mocked via vi.stubGlobal("fetch").
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { PaperlessClient } from './client.js';
 import { PaperlessApiError } from './types.js';
 

@@ -9,14 +9,15 @@
  * - clearAllCache: Clear entire AI cache
  */
 import { z } from 'zod';
-import { router, protectedProcedure } from '../../../trpc.js';
-import { getStats, getHistory } from './service.js';
-import { getHistoryInputSchema } from './types.js';
+
+import { protectedProcedure, router } from '../../../trpc.js';
 import {
-  getCacheStats,
-  clearStaleCache,
   clearAllCache,
+  clearStaleCache,
+  getCacheStats,
 } from '../../finance/imports/lib/ai-categorizer.js';
+import { getHistory, getStats } from './service.js';
+import { getHistoryInputSchema } from './types.js';
 
 export const aiUsageRouter = router({
   /**

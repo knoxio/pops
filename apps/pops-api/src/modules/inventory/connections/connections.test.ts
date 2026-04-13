@@ -1,16 +1,17 @@
 /**
  * Item connections router tests.
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import type { Database } from 'better-sqlite3';
 import { TRPCError } from '@trpc/server';
-import type { TraceNode } from './types.js';
+import type { Database } from 'better-sqlite3';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
 import {
-  setupTestContext,
   createCaller,
   seedInventoryItem,
   seedItemConnection,
+  setupTestContext,
 } from '../../../shared/test-utils.js';
+import type { TraceNode } from './types.js';
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;

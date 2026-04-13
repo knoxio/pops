@@ -2,14 +2,15 @@
  * TheTVDB library service — orchestrates fetching from TheTVDB and
  * upserting into the local database.
  */
+import { episodes, seasons } from '@pops/db-types';
 import { eq } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../db.js';
-import { seasons, episodes } from '@pops/db-types';
+import { selectBestArtwork } from '../library/tv-show-service.js';
+import type { ImageCacheService } from '../tmdb/image-cache.js';
 import * as tvShowsService from '../tv-shows/service.js';
 import type { TheTvdbClient } from './client.js';
 import type { TvdbEpisode, TvdbSeasonSummary } from './types.js';
-import type { ImageCacheService } from '../tmdb/image-cache.js';
-import { selectBestArtwork } from '../library/tv-show-service.js';
 
 export interface RefreshTvShowInput {
   id: number;

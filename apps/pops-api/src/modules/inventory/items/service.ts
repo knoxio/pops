@@ -2,13 +2,14 @@
  * Inventory service — CRUD operations using Drizzle ORM.
  * SQLite is the source of truth. All operations are local.
  */
-import crypto from 'crypto';
-import { eq, like, count, and, sum, inArray, sql, isNotNull } from 'drizzle-orm';
-import { getDrizzle } from '../../../db.js';
 import { homeInventory } from '@pops/db-types';
+import crypto from 'crypto';
+import { and, count, eq, inArray, isNotNull, like, sql, sum } from 'drizzle-orm';
+
+import { getDrizzle } from '../../../db.js';
 import { NotFoundError } from '../../../shared/errors.js';
 import { getDescendantLocationIds } from '../locations/service.js';
-import type { InventoryRow, CreateInventoryItemInput, UpdateInventoryItemInput } from './types.js';
+import type { CreateInventoryItemInput, InventoryRow, UpdateInventoryItemInput } from './types.js';
 
 /** Count + rows + value aggregates for a paginated list. */
 export interface InventoryListResult {
@@ -18,20 +19,36 @@ export interface InventoryListResult {
   totalResaleValue: number;
 }
 
+/** Options for listing inventory items. */
+export interface ListInventoryItemsOptions {
+  search?: string;
+  room?: string;
+  type?: string;
+  condition?: string;
+  inUse?: boolean;
+  deductible?: boolean;
+  limit: number;
+  offset: number;
+  locationId?: string;
+  assetId?: string;
+  includeChildren?: boolean;
+}
+
 /** List inventory items with optional filters. */
-export function listInventoryItems(
-  search: string | undefined,
-  room: string | undefined,
-  type: string | undefined,
-  condition: string | undefined,
-  inUse: boolean | undefined,
-  deductible: boolean | undefined,
-  limit: number,
-  offset: number,
-  locationId?: string,
-  assetId?: string,
-  includeChildren?: boolean
-): InventoryListResult {
+export function listInventoryItems(opts: ListInventoryItemsOptions): InventoryListResult {
+  const {
+    search,
+    room,
+    type,
+    condition,
+    inUse,
+    deductible,
+    limit,
+    offset,
+    locationId,
+    assetId,
+    includeChildren,
+  } = opts;
   const db = getDrizzle();
 
   let query = db.select().from(homeInventory).$dynamic();

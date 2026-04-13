@@ -1,21 +1,6 @@
 /**
  * Discovery tRPC router — preference profile, quick pick, trending, and recommendations.
  */
-import { z } from 'zod';
-import { TRPCError } from '@trpc/server';
-import { router, protectedProcedure } from '../../../trpc.js';
-import { getTmdbClient } from '../tmdb/index.js';
-import { TrendingQuerySchema, RecommendationsQuerySchema } from './types.js';
-import * as service from './service.js';
-import * as tmdbService from './tmdb-service.js';
-import * as contextPicksService from './context-picks-service.js';
-import * as genreSpotlightService from './genre-spotlight-service.js';
-import * as plexService from './plex-service.js';
-import { getDrizzle } from '../../../db.js';
-import { movies } from '@pops/db-types';
-import { assembleSession } from './shelf/session.service.js';
-import { getRecentImpressions, recordImpressions } from './shelf/impressions.service.js';
-import { getRegisteredShelves } from './shelf/registry.js';
 // Side-effect imports — trigger self-registration of all shelf implementations
 import './shelf/existing-shelves.js';
 import './shelf/local-shelves.js';
@@ -24,6 +9,23 @@ import './shelf/credits-shelves.js';
 import './shelf/because-you-watched.shelf.js';
 import './shelf/genre-shelves.js';
 import './shelf/context-shelves.js';
+
+import { movies } from '@pops/db-types';
+import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
+
+import { getDrizzle } from '../../../db.js';
+import { protectedProcedure, router } from '../../../trpc.js';
+import { getTmdbClient } from '../tmdb/index.js';
+import * as contextPicksService from './context-picks-service.js';
+import * as genreSpotlightService from './genre-spotlight-service.js';
+import * as plexService from './plex-service.js';
+import * as service from './service.js';
+import { getRecentImpressions, recordImpressions } from './shelf/impressions.service.js';
+import { getRegisteredShelves } from './shelf/registry.js';
+import { assembleSession } from './shelf/session.service.js';
+import * as tmdbService from './tmdb-service.js';
+import { RecommendationsQuerySchema, TrendingQuerySchema } from './types.js';
 
 export const discoveryRouter = router({
   /** Dismiss a movie by tmdbId. Idempotent. */

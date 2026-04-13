@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'react';
-import { Badge } from '../primitives/badge';
+
 import { cn } from '../lib/utils';
+import { Badge } from '../primitives/badge';
 
 export interface AssetIdBadgeProps extends Omit<
   ComponentProps<typeof Badge>,

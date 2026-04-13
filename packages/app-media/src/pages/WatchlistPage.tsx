@@ -5,32 +5,33 @@
  * Mobile: compact list with up/down reorder buttons.
  * Desktop (md+): responsive poster card grid with priority badges.
  */
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router';
-import { Alert, AlertTitle, AlertDescription, Badge, Skeleton, Textarea } from '@pops/ui';
-import { Button } from '@pops/ui';
-import { ArrowUp, ArrowDown, Trash2, Film, GripVertical } from 'lucide-react';
-import { toast } from 'sonner';
-import { trpc } from '../lib/trpc';
 import {
-  DndContext,
   closestCenter,
+  DndContext,
+  type DragEndEvent,
+  type DraggableAttributes,
+  DragOverlay,
+  type DragStartEvent,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
-  DragOverlay,
-  type DragStartEvent,
-  type DragEndEvent,
-  type DraggableAttributes,
 } from '@dnd-kit/core';
 import {
+  arrayMove,
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
-  arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Alert, AlertDescription, AlertTitle, Badge, Skeleton, Textarea } from '@pops/ui';
+import { Button } from '@pops/ui';
+import { ArrowDown, ArrowUp, Film, GripVertical, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router';
+import { toast } from 'sonner';
+
+import { trpc } from '../lib/trpc';
 
 type WatchlistFilter = 'all' | 'movie' | 'tv_show';
 

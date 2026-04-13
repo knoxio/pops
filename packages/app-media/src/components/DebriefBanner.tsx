@@ -3,10 +3,11 @@
  *
  * Dismissible (session-scoped via useState). Hidden when no pending debriefs.
  */
+import { Alert, AlertDescription, AlertTitle } from '@pops/ui';
+import { ClipboardList, X } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { Alert, AlertTitle, AlertDescription } from '@pops/ui';
-import { ClipboardList, X } from 'lucide-react';
+
 import { trpc } from '../lib/trpc';
 
 export function DebriefBanner() {

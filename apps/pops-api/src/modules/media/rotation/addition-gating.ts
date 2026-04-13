@@ -6,13 +6,14 @@
  *
  * PRD-070 US-05
  */
+import { rotationCandidates, settings } from '@pops/db-types';
 import { eq } from 'drizzle-orm';
-import { settings, rotationCandidates } from '@pops/db-types';
+
 import { getDrizzle } from '../../../db.js';
 import { getRadarrClient } from '../arr/service.js';
-import { aggregateCandidates } from './selection-policy.js';
 import { addMovie as addMovieToLibrary } from '../library/service.js';
-import { getTmdbClient, getImageCache } from '../tmdb/index.js';
+import { getImageCache, getTmdbClient } from '../tmdb/index.js';
+import { aggregateCandidates } from './selection-policy.js';
 
 // ---------------------------------------------------------------------------
 // Settings
@@ -156,7 +157,7 @@ export async function addMoviesFromQueue(budget: number): Promise<AdditionResult
         .run();
       added++;
 
-      console.log(
+      console.warn(
         `[Rotation] Added: ${candidate.title} (tmdb=${candidate.tmdbId}, weight=${candidate.weight.toFixed(2)})`
       );
     } catch (err) {

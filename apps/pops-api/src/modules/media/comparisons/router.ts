@@ -1,39 +1,40 @@
 /**
  * Comparisons tRPC router — dimensions, comparisons, and scores.
  */
-import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { router, protectedProcedure } from '../../../trpc.js';
+import { z } from 'zod';
+
+import { ConflictError, NotFoundError, ValidationError } from '../../../shared/errors.js';
 import { paginationMeta } from '../../../shared/pagination.js';
+import { protectedProcedure, router } from '../../../trpc.js';
+import * as debriefService from '../debrief/service.js';
+import * as service from './service.js';
+import * as stalenessService from './staleness.js';
 import {
-  CreateDimensionSchema,
-  UpdateDimensionSchema,
-  RecordComparisonSchema,
-  ComparisonQuerySchema,
-  ComparisonHistoryQuerySchema,
-  DeleteComparisonSchema,
+  BatchRecordComparisonsSchema,
   BlacklistMovieSchema,
-  ScoreQuerySchema,
-  SmartPairQuerySchema,
-  RankingsQuerySchema,
+  ComparisonHistoryQuerySchema,
+  ComparisonQuerySchema,
+  CreateDimensionSchema,
+  DeleteComparisonSchema,
   DimensionExclusionSchema,
-  StalenessSchema,
-  RecordSkipSchema,
+  DismissDebriefDimensionSchema,
   GetDebriefOpponentSchema,
   GetDebriefSchema,
   GetTierListMoviesSchema,
-  SubmitTierListSchema,
-  DismissDebriefDimensionSchema,
+  RankingsQuerySchema,
+  RecordComparisonSchema,
   RecordDebriefComparisonSchema,
-  BatchRecordComparisonsSchema,
-  toDimension,
+  RecordSkipSchema,
+  ScoreQuerySchema,
+  SmartPairQuerySchema,
+  StalenessSchema,
+  SubmitTierListSchema,
   toComparison,
+  toDimension,
   toMediaScore,
+  UpdateDimensionSchema,
 } from './types.js';
-import * as service from './service.js';
-import * as stalenessService from './staleness.js';
-import * as debriefService from '../debrief/service.js';
-import { NotFoundError, ConflictError, ValidationError } from '../../../shared/errors.js';
 
 const DEFAULT_LIMIT = 50;
 

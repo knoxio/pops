@@ -1,9 +1,10 @@
 /**
  * Tests for standalone Plex watch history sync.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { PlexMediaItem, PlexEpisode } from './types.js';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { PlexClient } from './client.js';
+import type { PlexEpisode, PlexMediaItem } from './types.js';
 
 // Mock dependencies
 vi.mock('../movies/service.js', () => ({
@@ -33,11 +34,11 @@ vi.mock('drizzle-orm', () => ({
   and: vi.fn((...args: unknown[]) => ({ type: 'and', args })),
 }));
 
-import { syncWatchHistoryFromPlex } from './sync-watch-history.js';
+import { getDb, getDrizzle } from '../../../db.js';
 import { getMovieByTmdbId } from '../movies/service.js';
 import { getTvShowByTvdbId } from '../tv-shows/service.js';
 import { logWatch } from '../watch-history/service.js';
-import { getDb, getDrizzle } from '../../../db.js';
+import { syncWatchHistoryFromPlex } from './sync-watch-history.js';
 
 const mockGetMovieByTmdbId = vi.mocked(getMovieByTmdbId);
 const mockGetTvShowByTvdbId = vi.mocked(getTvShowByTvdbId);

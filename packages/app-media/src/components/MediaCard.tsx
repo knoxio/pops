@@ -3,10 +3,10 @@
  * Displays poster image, title (2-line truncate), year, and optional type badge.
  * Implements a 3-tier image fallback: posterUrl → fallbackPosterUrl → placeholder SVG.
  */
+import { Badge, cn, Skeleton } from '@pops/ui';
+import { Film } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
-import { cn, Badge, Skeleton } from '@pops/ui';
-import { Film } from 'lucide-react';
 
 export type MediaType = 'movie' | 'tv';
 

@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest';
 import type { CorrectionRow } from '@pops/api/modules/core/corrections/types';
+import { describe, expect, it } from 'vitest';
+
 import type { ProcessedTransaction } from '../store/importStore';
 import { reevaluateTransactions } from './local-re-evaluation';
 

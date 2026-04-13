@@ -24,7 +24,7 @@ export function startTtlWatcher(): ReturnType<typeof setInterval> {
     try {
       const deleted = deleteExpiredEnvs();
       if (deleted.length > 0) {
-        console.log(`[env-watcher] Purged expired environments: ${deleted.join(', ')}`);
+        console.warn(`[env-watcher] Purged expired environments: ${deleted.join(', ')}`);
       }
     } catch (err) {
       console.error('[env-watcher] Error purging expired environments:', err);

@@ -1,3 +1,3 @@
 export { arrRouter } from './router.js';
-export { getRadarrClient, getSonarrClient, getArrConfig } from './service.js';
-export { ArrApiError, type ArrStatusResult, type ArrConfig } from './types.js';
+export { getArrConfig, getRadarrClient, getSonarrClient } from './service.js';
+export { ArrApiError, type ArrConfig, type ArrStatusResult } from './types.js';

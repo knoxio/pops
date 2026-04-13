@@ -3,23 +3,24 @@
  *
  * PRD-070 + PRD-071
  */
+import { movies, rotationLog, settings } from '@pops/db-types';
+import { asc, desc, eq } from 'drizzle-orm';
 import { z } from 'zod';
-import { eq, asc, desc } from 'drizzle-orm';
-import { movies, settings, rotationLog } from '@pops/db-types';
-import { router, protectedProcedure } from '../../../trpc.js';
+
 import { getDrizzle } from '../../../db.js';
+import { protectedProcedure, router } from '../../../trpc.js';
+import { getRadarrClient } from '../arr/service.js';
+import { fetchPlexFriends } from '../plex/friends.js';
+import { getPlexToken } from '../plex/service.js';
 import { cancelLeaving } from './leaving-lifecycle.js';
 import {
-  startRotationScheduler,
-  stopRotationScheduler,
   getRotationSchedulerStatus,
   runRotationCycleNow,
+  startRotationScheduler,
+  stopRotationScheduler,
 } from './scheduler.js';
-import { getRadarrClient } from '../arr/service.js';
 import { getRegisteredTypes } from './source-registry.js';
 import { syncSource } from './sync-source.js';
-import { getPlexToken } from '../plex/service.js';
-import { fetchPlexFriends } from '../plex/friends.js';
 
 /** All rotation setting keys and their defaults. */
 const ROTATION_SETTING_KEYS = {

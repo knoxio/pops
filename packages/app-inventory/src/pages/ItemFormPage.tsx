@@ -2,44 +2,45 @@
  * Item create/edit form page.
  * Supports /inventory/items/new (create) and /inventory/items/:id/edit (edit).
  */
-import { useEffect, useState, useCallback } from 'react';
-import { useParams, useNavigate, Link } from 'react-router';
-import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Badge,
   Button,
-  TextInput,
-  Select,
   CheckboxInput,
   DateInput,
-  Textarea,
-  Alert,
-  AlertTitle,
-  AlertDescription,
-  Skeleton,
-  Badge,
-  PageHeader,
   Label,
+  PageHeader,
+  Select,
+  Skeleton,
+  Textarea,
+  TextInput,
 } from '@pops/ui';
 import {
-  Save,
-  Link2,
-  X,
-  Search,
-  Wand2,
-  Loader2,
-  ImageIcon,
-  Trash2,
   Eye,
+  ImageIcon,
+  Link2,
+  Loader2,
   PenLine,
+  Save,
+  Search,
+  Trash2,
+  Wand2,
+  X,
 } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { useForm } from 'react-hook-form';
 import Markdown from 'react-markdown';
+import { Link, useNavigate, useParams } from 'react-router';
 import rehypeSanitize from 'rehype-sanitize';
-import { trpc } from '../lib/trpc';
+import { toast } from 'sonner';
+
+import { LocationPicker } from '../components/LocationPicker';
+import type { PhotoItem } from '../components/PhotoGallery';
 import { PhotoUpload, type UploadedFile } from '../components/PhotoUpload';
 import { useImageProcessor } from '../hooks/useImageProcessor';
-import type { PhotoItem } from '../components/PhotoGallery';
-import { LocationPicker } from '../components/LocationPicker';
+import { trpc } from '../lib/trpc';
 
 interface PendingConnection {
   id: string;

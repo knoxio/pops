@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { Check, ChevronDown, ChevronRight, HardDrive } from 'lucide-react';
 import { Switch } from '@pops/ui';
+import { Check, ChevronDown, ChevronRight, HardDrive } from 'lucide-react';
+import { useState } from 'react';
+
 import { formatRuntime } from '../lib/utils';
 
 interface Episode {

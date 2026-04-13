@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { SearchContext } from '../search/types.js';
 
 const mockAll = vi.fn().mockReturnValue([]);
@@ -21,9 +22,9 @@ vi.mock('../search/registry.js', () => ({
   resetRegistry: vi.fn(),
 }));
 
-import { entitiesSearchAdapter, type EntityHitData } from './search-adapter.js';
 import { registerSearchAdapter } from '../search/registry.js';
 import type { SearchHit } from '../search/types.js';
+import { entitiesSearchAdapter, type EntityHitData } from './search-adapter.js';
 
 const ctx: SearchContext = { app: 'finance', page: 'entities' };
 

@@ -12,10 +12,12 @@
  * The schema_migrations table is populated so that runMigrations() is a no-op
  * when it later runs against a database initialized by this function.
  */
-import type BetterSqlite3 from 'better-sqlite3';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import type BetterSqlite3 from 'better-sqlite3';
+
 import { TAG_VOCABULARY_V1 } from '../shared/tag-vocabulary.js';
 
 /** All migration filenames that this schema already incorporates. */

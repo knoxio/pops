@@ -4,26 +4,27 @@
  * Allows configuring which AI model to use, monthly token budget,
  * and fallback behaviour when budget is exceeded. PRD-053/US-01.
  */
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router';
-import { toast } from 'sonner';
-import { ArrowLeft } from 'lucide-react';
-import { trpc } from '../lib/trpc';
 import {
-  Select,
-  Button,
-  Skeleton,
   Alert,
-  StatCard,
-  Input,
-  Label,
   Breadcrumb,
-  BreadcrumbList,
   BreadcrumbItem,
   BreadcrumbLink,
-  BreadcrumbSeparator,
+  BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
+  Button,
+  Input,
+  Label,
+  Select,
+  Skeleton,
+  StatCard,
 } from '@pops/ui';
+import { ArrowLeft } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
+import { toast } from 'sonner';
+
+import { trpc } from '../lib/trpc';
 
 const SETTING_KEYS = {
   model: 'ai.model',

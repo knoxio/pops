@@ -4,10 +4,11 @@
  * Fetches 30 days of episodes, groups by air date, renders date headers
  * with today highlighted, episode cards with poster/title/S##E##/status.
  */
+import { Alert, AlertDescription, AlertTitle, Badge, Skeleton } from '@pops/ui';
+import { Calendar, CheckCircle, Clock, Film } from 'lucide-react';
 import { useMemo } from 'react';
 import { Link } from 'react-router';
-import { Alert, AlertTitle, AlertDescription, Badge, Skeleton } from '@pops/ui';
-import { Calendar, CheckCircle, Clock, Film } from 'lucide-react';
+
 import { trpc } from '../lib/trpc';
 
 function formatEpisodeCode(season: number, episode: number): string {

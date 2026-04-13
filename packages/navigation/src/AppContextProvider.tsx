@@ -1,5 +1,6 @@
 import { type ReactNode, useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router';
+
 import { AppContextCtx } from './context.js';
 import type { AppContext, AppName } from './types.js';
 import { DEFAULT_APP_CONTEXT } from './types.js';

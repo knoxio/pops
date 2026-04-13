@@ -2,8 +2,9 @@
  * Example tests demonstrating how to use the AI categorizer mock.
  * Shows how to test different AI response scenarios.
  */
-import { describe, it, expect, beforeEach } from 'vitest';
-import { mockCategorizeWithAi, resetMockAi, mockConfig } from './ai-categorizer.mock.js';
+import { beforeEach, describe, expect, it } from 'vitest';
+
+import { mockCategorizeWithAi, mockConfig, resetMockAi } from './ai-categorizer.mock.js';
 
 describe('AI Categorizer Mock Examples', () => {
   beforeEach(() => {

@@ -2,8 +2,9 @@
  * Chip component for tags, labels, and removable items
  * Supports multiple colors, sizes, and optional remove button
  */
-import { forwardRef, type HTMLAttributes, type ReactNode } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { forwardRef, type HTMLAttributes, type ReactNode } from 'react';
+
 import { cn } from '../lib/utils';
 
 const chipVariants = cva(

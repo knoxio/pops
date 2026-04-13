@@ -2,10 +2,11 @@
  * Add TV show to library — fetches TheTVDB metadata and inserts
  * show + seasons + episodes in a single transaction.
  */
+import type { SeasonRow, TvShowRow } from '@pops/db-types';
+import { episodes, seasons, tvShows } from '@pops/db-types';
 import { eq } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../db.js';
-import { tvShows, seasons, episodes } from '@pops/db-types';
-import type { TvShowRow, SeasonRow } from '@pops/db-types';
 import type { TheTvdbClient } from '../thetvdb/client.js';
 import type { TvdbArtwork, TvdbEpisode } from '../thetvdb/types.js';
 import type { ImageCacheService } from '../tmdb/image-cache.js';

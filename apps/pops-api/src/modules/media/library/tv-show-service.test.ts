@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { setupTestContext, seedTvShow } from '../../../shared/test-utils.js';
-import type { TheTvdbClient } from '../thetvdb/client.js';
-import type { TvdbShowDetail, TvdbEpisode, TvdbArtwork } from '../thetvdb/types.js';
-import { addTvShow, selectBestArtwork } from './tv-show-service.js';
-import type { ImageCacheService } from '../tmdb/image-cache.js';
 import type { Database } from 'better-sqlite3';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { seedTvShow, setupTestContext } from '../../../shared/test-utils.js';
+import type { TheTvdbClient } from '../thetvdb/client.js';
+import type { TvdbArtwork, TvdbEpisode, TvdbShowDetail } from '../thetvdb/types.js';
+import type { ImageCacheService } from '../tmdb/image-cache.js';
+import { addTvShow, selectBestArtwork } from './tv-show-service.js';
 
 const ctx = setupTestContext();
 let db: Database;

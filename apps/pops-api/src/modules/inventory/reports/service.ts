@@ -1,11 +1,12 @@
 /**
  * Inventory reports service — warranty tracking and insurance report queries.
  */
-import { isNotNull, asc, sql, desc, and, gte, lte, count, eq } from 'drizzle-orm';
+import { homeInventory, itemDocuments, itemPhotos, locations } from '@pops/db-types';
+import { and, asc, count, desc, eq, gte, isNotNull, lte, sql } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../db.js';
-import { homeInventory, locations, itemPhotos, itemDocuments } from '@pops/db-types';
 import type { InventoryRow } from '../items/types.js';
-import type { ValueBreakdownEntry, DashboardSummary, RecentItem } from './types.js';
+import type { DashboardSummary, RecentItem, ValueBreakdownEntry } from './types.js';
 
 /** Warranty "expiring soon" window in days. */
 const WARRANTY_WINDOW_DAYS = 90;

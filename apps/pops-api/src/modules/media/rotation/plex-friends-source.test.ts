@@ -24,8 +24,8 @@ vi.mock('../plex/friends.js', () => ({
 }));
 
 import { logger } from '../../../lib/logger.js';
-import { getPlexToken } from '../plex/service.js';
 import { fetchFriendWatchlist } from '../plex/friends.js';
+import { getPlexToken } from '../plex/service.js';
 import { plexFriendsSource } from './plex-friends-source.js';
 
 const mockGetPlexToken = vi.mocked(getPlexToken);

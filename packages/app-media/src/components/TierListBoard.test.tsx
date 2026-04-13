@@ -1,5 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
 import { TierListBoard, type TierMovie } from './TierListBoard';
 
 // Capture DndContext handlers so tests can simulate drag-end events

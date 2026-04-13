@@ -4,34 +4,31 @@
  * Shared navigation and search-panel utilities accessible to both
  * the shell and all app packages.
  */
-export {
-  registerResultComponent,
-  getResultComponent,
-  GenericResultComponent,
-  _clearRegistry,
-} from './result-component-registry';
-export type { ResultComponent, ResultComponentProps } from './result-component-registry';
-
 export { AppContextProvider } from './AppContextProvider';
+export type { SetPageContextOptions } from './hooks';
 export {
   useAppContext,
-  useSetPageContext,
   useCurrentApp,
   useCurrentEntity,
   useSearchResultNavigation,
+  useSetPageContext,
 } from './hooks';
-export type { SetPageContextOptions } from './hooks';
-export { resolveUri } from './uri-resolver';
-export type { AppContext, AppContextEntity, AppName } from './types';
-export { DEFAULT_APP_CONTEXT } from './types';
-
 export { useRecentSearches } from './recent-searches';
 export { RecentSearches } from './RecentSearches';
+export type { ResultComponent, ResultComponentProps } from './result-component-registry';
+export {
+  _clearRegistry,
+  GenericResultComponent,
+  getResultComponent,
+  registerResultComponent,
+} from './result-component-registry';
 export { useSearchKeyboardNav } from './search-keyboard-nav';
-
-export { SearchResultsPanel } from './SearchResultsPanel';
 export type {
   SearchResultHit,
   SearchResultSection,
   SearchResultsPanelProps,
 } from './SearchResultsPanel';
+export { SearchResultsPanel } from './SearchResultsPanel';
+export type { AppContext, AppContextEntity, AppName } from './types';
+export { DEFAULT_APP_CONTEXT } from './types';
+export { resolveUri } from './uri-resolver';

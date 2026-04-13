@@ -1,9 +1,10 @@
 /**
  * TheTVDB client + auth unit tests — all HTTP calls mocked via vi.stubGlobal("fetch").
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { TheTvdbClient } from './client.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { TheTvdbAuth } from './auth.js';
+import { TheTvdbClient } from './client.js';
 import { TvdbApiError } from './types.js';
 
 /** Helper to create a mocked Response. */

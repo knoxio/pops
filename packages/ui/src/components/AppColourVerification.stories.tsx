@@ -6,9 +6,10 @@
  * or view the "AllColours" story to see every variant side-by-side.
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Button } from './Button';
+
 import { Badge } from '../primitives/badge';
 import { Progress } from '../primitives/progress';
+import { Button } from './Button';
 
 const APP_COLOURS = [
   { className: 'app-emerald', label: 'Finance (Emerald)' },

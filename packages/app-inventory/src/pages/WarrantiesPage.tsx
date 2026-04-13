@@ -4,10 +4,11 @@
  * 5-tier system: <30d (red), 30-60d (yellow), 60-90d (orange),
  * >90d active (green), expired (grey). PRD-050/US-01.
  */
+import { AssetIdBadge, Badge, Button, PageHeader, Skeleton } from '@pops/ui';
+import { AlertCircle, ChevronDown, ChevronRight, ShieldCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { useNavigate, Link } from 'react-router';
-import { ShieldCheck, ChevronDown, ChevronRight, AlertCircle } from 'lucide-react';
-import { Skeleton, AssetIdBadge, Badge, PageHeader, Button } from '@pops/ui';
+import { Link, useNavigate } from 'react-router';
+
 import { trpc } from '../lib/trpc';
 
 interface WarrantyItem {

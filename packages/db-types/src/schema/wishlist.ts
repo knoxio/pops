@@ -1,4 +1,4 @@
-import { sqliteTable, text, real } from 'drizzle-orm/sqlite-core';
+import { real, sqliteTable, text } from 'drizzle-orm/sqlite-core';
 
 export const wishList = sqliteTable('wish_list', {
   id: text('id')

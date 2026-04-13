@@ -1,11 +1,13 @@
-import BetterSqlite3 from 'better-sqlite3';
-import { drizzle, type BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
-import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, unlinkSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import BetterSqlite3 from 'better-sqlite3';
+import { type BetterSQLite3Database, drizzle } from 'drizzle-orm/better-sqlite3';
+import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+
 import { initializeSchema } from './db/schema.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -63,7 +65,7 @@ function runMigrations(database: BetterSqlite3.Database): void {
       database.prepare('INSERT INTO schema_migrations (version) VALUES (?)').run(file);
     })();
 
-    console.log(`[db] Applied migration: ${file}`);
+    console.warn(`[db] Applied migration: ${file}`);
   }
 }
 
@@ -130,7 +132,7 @@ function createPreMigrationBackup(
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const backupPath = `${dbPath}.pre-migration-${timestamp}.bak`;
 
-  console.log(`[db] Backing up database before applying ${pendingCount} migration(s)...`);
+  console.warn(`[db] Backing up database before applying ${pendingCount} migration(s)...`);
   database.exec(`VACUUM INTO '${backupPath.replace(/'/g, "''")}'`);
   return backupPath;
 }
@@ -206,11 +208,11 @@ function openDatabase(path: string): BetterSqlite3.Database {
 
   // Fresh database: initialize full schema (creates all tables + marks migrations as applied)
   if (isFreshDatabase(db)) {
-    console.log('[db] Fresh database detected — initializing schema...');
+    console.warn('[db] Fresh database detected — initializing schema...');
     initializeSchema(db);
     // Mark all Drizzle migrations as applied (schema already includes their changes)
     markDrizzleMigrationsApplied(db);
-    console.log('[db] Schema initialized successfully.');
+    console.warn('[db] Schema initialized successfully.');
     return db;
   }
 

@@ -5,6 +5,7 @@
  * or when neither service is configured.
  */
 import { Badge } from '@pops/ui';
+
 import { trpc } from '../lib/trpc';
 
 export function DownloadQueue() {

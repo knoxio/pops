@@ -8,16 +8,16 @@
  */
 import {
   PaperlessApiError,
-  type RawPaperlessPaginatedResponse,
-  type RawPaperlessDocument,
-  type RawPaperlessCorrespondent,
-  type RawPaperlessTag,
-  type RawPaperlessDocumentType,
-  type PaperlessDocument,
   type PaperlessCorrespondent,
-  type PaperlessTag,
+  type PaperlessDocument,
   type PaperlessDocumentType,
   type PaperlessSearchResult,
+  type PaperlessTag,
+  type RawPaperlessCorrespondent,
+  type RawPaperlessDocument,
+  type RawPaperlessDocumentType,
+  type RawPaperlessPaginatedResponse,
+  type RawPaperlessTag,
 } from './types.js';
 
 export class PaperlessClient {

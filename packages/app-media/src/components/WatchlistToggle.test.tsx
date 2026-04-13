@@ -1,6 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { WatchlistToggle } from './WatchlistToggle';
 
 // Capture mutation options so we can call onMutate/onError/onSettled directly
@@ -149,7 +150,7 @@ describe('WatchlistToggle', () => {
       expect(context).toEqual({ previous: previousData });
 
       // Verify the updater sets onWatchlist: true
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const updater = mockSetData.mock.calls[0]![1] as any;
       const result = updater(previousData);
       expect(result.onWatchlist).toBe(true);
@@ -222,7 +223,7 @@ describe('WatchlistToggle', () => {
       expect(context).toEqual({ previous: previousData });
 
       // Verify the updater clears the status
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
       const updater = mockSetData.mock.calls[0]![1] as any;
       const result = updater(previousData);
       expect(result.onWatchlist).toBe(false);

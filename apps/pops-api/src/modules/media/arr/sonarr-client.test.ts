@@ -1,7 +1,8 @@
 /**
  * Sonarr client tests — uses mocked fetch.
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { SonarrClient } from './sonarr-client.js';
 import { ArrApiError } from './types.js';
 

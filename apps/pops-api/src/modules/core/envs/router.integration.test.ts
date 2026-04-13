@@ -4,16 +4,18 @@
  * Uses supertest + createApp() so the full Express middleware stack is exercised
  * (body parsing, env router, env context middleware, etc.).
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { mkdirSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import BetterSqlite3 from 'better-sqlite3';
 import request from 'supertest';
-import { setDb, closeDb } from '../../../db.js';
-import { initializeSchema } from '../../../db/schema.js';
-import { listEnvs, closeEnvDb } from './registry.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
 import { createApp } from '../../../app.js';
+import { closeDb, setDb } from '../../../db.js';
+import { initializeSchema } from '../../../db/schema.js';
+import { closeEnvDb, listEnvs } from './registry.js';
 
 let tmpDir: string;
 let app: ReturnType<typeof createApp>;

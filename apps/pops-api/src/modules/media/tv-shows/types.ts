@@ -1,7 +1,7 @@
+import type { EpisodeRow, SeasonRow, TvShowRow } from '@pops/db-types';
 import { z } from 'zod';
-import type { TvShowRow, SeasonRow, EpisodeRow } from '@pops/db-types';
 
-export type { TvShowRow, SeasonRow, EpisodeRow };
+export type { EpisodeRow, SeasonRow, TvShowRow };
 
 /** API response shape for a TV show. */
 export interface TvShow {

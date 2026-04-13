@@ -1,26 +1,27 @@
-import { useMemo, useRef, useState } from 'react';
-import { useParams, Link } from 'react-router';
 import { useSetPageContext } from '@pops/navigation';
 import {
   Alert,
-  AlertTitle,
   AlertDescription,
+  AlertTitle,
   Badge,
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
   Button,
   Skeleton,
   Switch,
-  Breadcrumb,
-  BreadcrumbList,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbSeparator,
-  BreadcrumbPage,
 } from '@pops/ui';
+import { useMemo, useRef, useState } from 'react';
+import { Link, useParams } from 'react-router';
 import { toast } from 'sonner';
-import { trpc } from '../lib/trpc';
-import { formatYearRange } from '../lib/format';
-import { ProgressBar } from '../components/ProgressBar';
+
 import { ArrStatusBadge } from '../components/ArrStatusBadge';
+import { ProgressBar } from '../components/ProgressBar';
+import { formatYearRange } from '../lib/format';
+import { trpc } from '../lib/trpc';
 
 function TvShowDetailSkeleton() {
   return (

@@ -1,17 +1,18 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
-import { Search, X, Film, Tv, Box, ArrowRightLeft, PiggyBank, Building2 } from 'lucide-react';
-import { Input, Button } from '@pops/ui';
-import { useSearchStore } from '@/store/searchStore';
-import { trpc } from '@/lib/trpc';
 import {
-  SearchResultsPanel,
-  type SearchResultSection,
   type SearchResultHit,
+  type SearchResultSection,
+  SearchResultsPanel,
   useCurrentApp,
-  useSearchResultNavigation,
   useSearchKeyboardNav,
+  useSearchResultNavigation,
 } from '@pops/navigation';
+import { Button, Input } from '@pops/ui';
+import { ArrowRightLeft, Box, Building2, Film, PiggyBank, Search, Tv, X } from 'lucide-react';
+import type { ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { trpc } from '@/lib/trpc';
+import { useSearchStore } from '@/store/searchStore';
 
 const DEBOUNCE_MS = 300;
 

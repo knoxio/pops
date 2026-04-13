@@ -4,11 +4,13 @@
  *
  * PRD-060 US-04: CI tests that verify migrations don't lose data.
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import BetterSqlite3 from 'better-sqlite3';
-import { mkdtempSync, writeFileSync, readdirSync, mkdirSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import BetterSqlite3 from 'better-sqlite3';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
 import { initializeSchema } from './schema.js';
 import { seedDatabase } from './seeder.js';
 

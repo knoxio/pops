@@ -1,6 +1,6 @@
-import { z } from 'zod';
 import type { MediaWatchlistRow } from '@pops/db-types';
 import { MEDIA_TYPES } from '@pops/db-types';
+import { z } from 'zod';
 
 export type { MediaWatchlistRow };
 

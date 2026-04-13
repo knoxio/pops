@@ -8,17 +8,18 @@
  *  4. award-winners     — TMDB keyword IDs for academy-award / golden-globe + top genres
  *  5. decade-picks      — Year range of the decade with most watches in watch_history
  */
+import { movies, watchHistory } from '@pops/db-types';
 import { sql } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../../db.js';
-import { watchHistory, movies } from '@pops/db-types';
 import { getTmdbClient } from '../../tmdb/index.js';
-import { TMDB_GENRE_MAP } from '../types.js';
-import { getLibraryTmdbIds, toDiscoverResults } from '../tmdb-service.js';
 import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from '../flags.js';
 import { scoreDiscoverResults } from '../service.js';
+import { getLibraryTmdbIds, toDiscoverResults } from '../tmdb-service.js';
+import type { PreferenceProfile } from '../types.js';
+import { TMDB_GENRE_MAP } from '../types.js';
 import { registerShelf } from './registry.js';
 import type { ShelfDefinition, ShelfInstance } from './types.js';
-import type { PreferenceProfile } from '../types.js';
 
 // TMDB keyword IDs for award-winners shelf
 const ACADEMY_AWARD_KEYWORD_ID = 154712;

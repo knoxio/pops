@@ -10,13 +10,15 @@
  *
  * Falls back to 404 only when there is genuinely no image source.
  */
-import { type Router as ExpressRouter, Router } from 'express';
-import { open, stat, unlink } from 'node:fs/promises';
-import { join, resolve, extname, basename } from 'node:path';
 import { createHash } from 'node:crypto';
+import { open, stat, unlink } from 'node:fs/promises';
+import { basename, extname, join, resolve } from 'node:path';
+
+import { type Router as ExpressRouter, Router } from 'express';
+
+import { getDb } from '../../db.js';
 import { MEDIA_DIR_NAMES } from '../../modules/media/tmdb/image-cache.js';
 import { getImageCache } from '../../modules/media/tmdb/index.js';
-import { getDb } from '../../db.js';
 
 const VALID_MEDIA_TYPES = ['movie', 'tv'] as const;
 const VALID_FILENAMES = ['poster.jpg', 'backdrop.jpg', 'logo.png', 'override.jpg'] as const;

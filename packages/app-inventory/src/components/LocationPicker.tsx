@@ -3,10 +3,10 @@
  * Shows trigger button with breadcrumb path, opens popover with expandable
  * location tree, type-to-filter, and optional inline create.
  */
-import { useState, useMemo, useCallback } from 'react';
 import { cn, Popover, PopoverContent, PopoverTrigger } from '@pops/ui';
 import { Button } from '@pops/ui';
-import { ChevronRight, ChevronDown, MapPin, X, Plus } from 'lucide-react';
+import { ChevronDown, ChevronRight, MapPin, Plus, X } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 
 export interface LocationTreeNode {
   id: string;

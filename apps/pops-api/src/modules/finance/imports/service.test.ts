@@ -1,25 +1,26 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
-  processImport,
-  processImportWithProgress,
-  executeImport,
-  createEntity,
-  reevaluateImportSessionResult,
-  applyLearnedCorrection,
-} from './service.js';
-import type { ParsedTransaction, ConfirmedTransaction } from './types.js';
-import { createTestDb, seedEntity, seedTransaction } from '../../../shared/test-utils.js';
-import { setDb, closeDb } from '../../../db.js';
-import type { Database } from 'better-sqlite3';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import { eq, count } from 'drizzle-orm';
-import {
-  transactions as transactionsTable,
   entities as entitiesTable,
   transactionCorrections,
+  transactions as transactionsTable,
 } from '@pops/db-types';
+import type { Database } from 'better-sqlite3';
+import { count, eq } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { closeDb, setDb } from '../../../db.js';
+import { createTestDb, seedEntity, seedTransaction } from '../../../shared/test-utils.js';
 import { clearCache } from './lib/ai-categorizer.js';
-import { setProgress, getProgress } from './progress-store.js';
+import { getProgress, setProgress } from './progress-store.js';
+import {
+  applyLearnedCorrection,
+  createEntity,
+  executeImport,
+  processImport,
+  processImportWithProgress,
+  reevaluateImportSessionResult,
+} from './service.js';
+import type { ConfirmedTransaction, ParsedTransaction } from './types.js';
 
 /**
  * Unit tests for import service with SQLite-only writes.
@@ -36,7 +37,7 @@ vi.mock('./lib/ai-categorizer.js', async (importOriginal) => {
   };
 });
 
-import { resetMockAi, mockConfig } from './lib/ai-categorizer.mock.js';
+import { mockConfig, resetMockAi } from './lib/ai-categorizer.mock.js';
 
 let db: Database;
 const orm = () => drizzle(db);

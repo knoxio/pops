@@ -4,8 +4,9 @@
  * Uses native HTML5 drag-and-drop. On drop, calls onReorder with the
  * new ordered array of photo IDs.
  */
-import { useState, useCallback, useRef } from 'react';
 import { GripVertical } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
+
 import type { PhotoItem } from './PhotoGallery';
 
 interface SortablePhotoGridProps {

@@ -8,17 +8,18 @@
  *  3. top-dimension      — One per active ELO dimension, shows local movies ranked highest
  *  4. dimension-inspired — High-scoring movie+dimension pair, queries TMDB recommendations
  */
-import { eq, and, desc } from 'drizzle-orm';
+import { comparisonDimensions, mediaScores, movies } from '@pops/db-types';
+import { and, desc, eq } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../../db.js';
-import { movies, mediaScores, comparisonDimensions } from '@pops/db-types';
 import { getTmdbClient } from '../../tmdb/index.js';
-import { TMDB_GENRE_MAP } from '../types.js';
-import { getLibraryTmdbIds, toDiscoverResults } from '../tmdb-service.js';
 import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from '../flags.js';
 import { scoreDiscoverResults } from '../service.js';
+import { getLibraryTmdbIds, toDiscoverResults } from '../tmdb-service.js';
+import type { PreferenceProfile } from '../types.js';
+import { TMDB_GENRE_MAP } from '../types.js';
 import { registerShelf } from './registry.js';
 import type { ShelfDefinition, ShelfInstance } from './types.js';
-import type { PreferenceProfile } from '../types.js';
 
 const MAX_BEST_IN_GENRE = 5;
 const MAX_CROSSOVER_PAIRS = 6;

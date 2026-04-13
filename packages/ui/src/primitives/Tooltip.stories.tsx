@@ -1,7 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
+import { HelpCircleIcon, InfoIcon } from 'lucide-react';
+
 import { Button } from '../components/Button';
-import { InfoIcon, HelpCircleIcon } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './tooltip';
 
 const meta: Meta<typeof Tooltip> = {
   title: 'Feedback/Tooltip',

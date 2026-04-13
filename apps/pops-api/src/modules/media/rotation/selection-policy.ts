@@ -7,8 +7,9 @@
  *
  * PRD-071 US-05
  */
+import { movies, rotationCandidates, rotationExclusions, rotationSources } from '@pops/db-types';
 import { eq } from 'drizzle-orm';
-import { rotationCandidates, rotationSources, rotationExclusions, movies } from '@pops/db-types';
+
 import { getDrizzle } from '../../../db.js';
 
 // ---------------------------------------------------------------------------

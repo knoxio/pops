@@ -2,14 +2,15 @@
  * Plex watchlist push — resolves Plex Discover ratingKeys for manually added
  * watchlist items so they can be pushed to the Plex cloud watchlist.
  */
-import { eq } from 'drizzle-orm';
 import { mediaWatchlist } from '@pops/db-types';
+import { eq } from 'drizzle-orm';
+
+import { getDrizzle } from '../../../db.js';
+import { getMovie } from '../movies/service.js';
+import type { PlexClient as PlexClientType } from '../plex/client.js';
 import { getPlexClient } from '../plex/service.js';
 import { findDiscoverMatch } from '../plex/sync-helpers.js';
-import { getMovie } from '../movies/service.js';
 import { getTvShow } from '../tv-shows/service.js';
-import { getDrizzle } from '../../../db.js';
-import type { PlexClient as PlexClientType } from '../plex/client.js';
 
 /**
  * Look up a Plex Discover ratingKey for a local media item by searching the
@@ -61,7 +62,7 @@ export async function pushToPlexWatchlist(
   try {
     const ratingKey = await lookupPlexRatingKey(mediaType, mediaId);
     if (!ratingKey) {
-      console.log(`[Plex] No Discover ratingKey found for ${mediaType}/${mediaId}`);
+      console.warn(`[Plex] No Discover ratingKey found for ${mediaType}/${mediaId}`);
       return;
     }
 
@@ -77,7 +78,9 @@ export async function pushToPlexWatchlist(
       .where(eq(mediaWatchlist.id, watchlistId))
       .run();
 
-    console.log(`[Plex] Pushed watchlist add for ${mediaType}/${mediaId} (ratingKey=${ratingKey})`);
+    console.warn(
+      `[Plex] Pushed watchlist add for ${mediaType}/${mediaId} (ratingKey=${ratingKey})`
+    );
   } catch (err) {
     console.warn(
       `[Plex] Failed to push watchlist add for ${mediaType}/${mediaId}:`,

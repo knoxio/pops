@@ -1,8 +1,9 @@
 /**
  * TheTVDB index module tests — startup validation and client factory.
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { validateTvdbConfig, getTvdbClient, setTvdbClient } from './index.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { getTvdbClient, setTvdbClient, validateTvdbConfig } from './index.js';
 
 // Mock auth + client so getTvdbClient doesn't make real HTTP calls
 vi.mock('./auth.js', () => ({

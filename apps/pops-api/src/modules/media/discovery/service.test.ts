@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import { scoreDiscoverResults } from './service.js';
 import type { DiscoverResult, PreferenceProfile } from './types.js';
 import { TMDB_GENRE_MAP } from './types.js';

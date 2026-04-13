@@ -4,17 +4,18 @@
  * Presents quality profile and root folder dropdowns,
  * then submits to Radarr's addMovie endpoint.
  */
-import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   Select,
 } from '@pops/ui';
 import { Button } from '@pops/ui';
-import { RefreshCw, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, RefreshCw } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
 import { trpc } from '../lib/trpc';
 
 interface RequestMovieModalProps {

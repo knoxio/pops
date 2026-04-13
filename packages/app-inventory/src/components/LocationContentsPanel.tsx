@@ -5,10 +5,11 @@
  * Supports "Include sub-locations" toggle, shows item count + total value,
  * and provides navigation to item detail and item creation.
  */
-import { useState, useMemo } from 'react';
-import { useNavigate } from 'react-router';
+import { AssetIdBadge, Button, Label, Skeleton, Switch, TypeBadge } from '@pops/ui';
 import { Package, Plus } from 'lucide-react';
-import { Skeleton, Button, Switch, Label, AssetIdBadge, TypeBadge } from '@pops/ui';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
+
 import { trpc } from '../lib/trpc';
 
 interface LocationTreeNode {

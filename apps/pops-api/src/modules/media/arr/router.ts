@@ -1,13 +1,14 @@
 /**
  * Arr tRPC router — Radarr/Sonarr integration endpoints.
  */
-import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { router, protectedProcedure } from '../../../trpc.js';
-import { ArrApiError } from './types.js';
+import { z } from 'zod';
+
+import { protectedProcedure, router } from '../../../trpc.js';
 import { RadarrClient } from './radarr-client.js';
-import { SonarrClient } from './sonarr-client.js';
 import * as arrService from './service.js';
+import { SonarrClient } from './sonarr-client.js';
+import { ArrApiError } from './types.js';
 
 const TestConnectionInput = z.object({
   url: z.string().min(1),

@@ -1,11 +1,12 @@
 /**
  * Tests for Plex movie import — batch sync with progress tracking and fallback matching.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import type { PlexMediaItem } from './types.js';
+import type BetterSqlite3 from 'better-sqlite3';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { TmdbClient } from '../tmdb/client.js';
 import type { PlexClient } from './client.js';
-import type BetterSqlite3 from 'better-sqlite3';
+import type { PlexMediaItem } from './types.js';
 
 // Mock dependencies
 vi.mock('../tmdb/index.js', () => ({
@@ -29,11 +30,11 @@ vi.mock('../watch-history/service.js', () => ({
   logWatch: vi.fn(),
 }));
 
-import { importMoviesFromPlex } from './sync-movies.js';
-import { getTmdbClient } from '../tmdb/index.js';
 import { getDb } from '../../../db.js';
-import { getMovieByTmdbId, createMovie } from '../movies/service.js';
+import { createMovie, getMovieByTmdbId } from '../movies/service.js';
+import { getTmdbClient } from '../tmdb/index.js';
 import { logWatch } from '../watch-history/service.js';
+import { importMoviesFromPlex } from './sync-movies.js';
 
 const mockGetTmdbClient = vi.mocked(getTmdbClient);
 const mockGetDb = vi.mocked(getDb);

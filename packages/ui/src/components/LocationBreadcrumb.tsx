@@ -1,3 +1,4 @@
+import { cn } from '../lib/utils';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -6,7 +7,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from '../primitives/breadcrumb';
-import { cn } from '../lib/utils';
 
 export interface LocationSegment {
   id: string;

@@ -2,12 +2,14 @@
  * Plex sync service — orchestrates importing movies and TV shows
  * from a Plex Media Server into the local library, and syncs watch history.
  */
-import { eq } from 'drizzle-orm';
+import { createCipheriv, createDecipheriv, randomBytes, randomUUID, scryptSync } from 'node:crypto';
+
 import { settings } from '@pops/db-types';
-import { randomUUID, createCipheriv, createDecipheriv, scryptSync, randomBytes } from 'node:crypto';
-import { PlexClient } from './client.js';
-import { getEnv } from '../../../env.js';
+import { eq } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../db.js';
+import { getEnv } from '../../../env.js';
+import { PlexClient } from './client.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -80,7 +82,7 @@ export function getPlexClientId(): string {
   const record = db.select().from(settings).where(eq(settings.key, 'plex_client_identifier')).get();
   if (!record) {
     const newId = randomUUID();
-    console.log(`[Plex] Generating new client identifier: ${newId}`);
+    console.warn(`[Plex] Generating new client identifier: ${newId}`);
     db.insert(settings)
       .values({ key: 'plex_client_identifier', value: newId })
       .onConflictDoNothing()
@@ -105,7 +107,7 @@ export function getPlexUrl(): string | null {
 export function getPlexClient(): PlexClient | null {
   const url = getPlexUrl();
   if (!url) {
-    console.log('[Plex] PLEX_URL not set in settings or environment');
+    console.warn('[Plex] PLEX_URL not set in settings or environment');
     return null;
   }
 
@@ -114,7 +116,7 @@ export function getPlexClient(): PlexClient | null {
   const encryptedToken = tokenRecord?.value;
 
   if (!encryptedToken) {
-    console.log('[Plex] No plex_token found in settings table');
+    console.warn('[Plex] No plex_token found in settings table');
     return null;
   }
 
@@ -122,7 +124,7 @@ export function getPlexClient(): PlexClient | null {
     const token = decryptToken(encryptedToken);
     return new PlexClient(url, token);
   } catch {
-    console.log('[Plex] Failed to decrypt token — trying raw value (legacy).');
+    console.warn('[Plex] Failed to decrypt token — trying raw value (legacy).');
     return new PlexClient(url, encryptedToken);
   }
 }

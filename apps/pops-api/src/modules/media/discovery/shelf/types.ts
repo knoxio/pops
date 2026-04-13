@@ -6,7 +6,7 @@
  * "Because you watched X" shelf per recent watch). Static shelves produce a
  * single instance (e.g. "Trending").
  */
-import type { PreferenceProfile, DiscoverResult } from '../types.js';
+import type { DiscoverResult, PreferenceProfile } from '../types.js';
 
 export type { PreferenceProfile };
 

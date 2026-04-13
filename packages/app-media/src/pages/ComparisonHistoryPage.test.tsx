@@ -1,7 +1,8 @@
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import type React from 'react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { ComparisonHistoryPage } from './ComparisonHistoryPage';
 
 // Mock sonner

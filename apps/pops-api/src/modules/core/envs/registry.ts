@@ -4,9 +4,11 @@
  * Each environment is an isolated SQLite database with its own data.
  * The registry table lives in the prod DB; env DBs live under ./data/envs/.
  */
-import type BetterSqlite3 from 'better-sqlite3';
 import { mkdirSync, readdirSync, unlinkSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
+
+import type BetterSqlite3 from 'better-sqlite3';
+
 import { getDb, openEnvDatabase } from '../../../db.js';
 import { seedDatabase } from '../../../db/seeder.js';
 

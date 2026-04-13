@@ -1,19 +1,20 @@
-import { useState, useMemo } from 'react';
+import { Button } from '@pops/ui';
 import {
+  AlertCircle,
+  Ban,
   CheckCircle,
   ChevronDown,
   ChevronRight,
-  Plus,
-  Pencil,
-  Ban,
-  Trash2,
   Loader2,
-  AlertCircle,
+  Pencil,
+  Plus,
+  Trash2,
 } from 'lucide-react';
-import { Button } from '@pops/ui';
-import { useImportStore } from '../../store/importStore';
-import { trpc } from '../../lib/trpc';
+import { useMemo, useState } from 'react';
+
 import { buildCommitPayload } from '../../lib/commit-payload';
+import { trpc } from '../../lib/trpc';
+import { useImportStore } from '../../store/importStore';
 
 type ChangeSetOp =
   | { op: 'add'; data: { descriptionPattern: string; [k: string]: unknown } }

@@ -4,8 +4,8 @@
  * Verifies: delegation to registry + service, NOT_FOUND cases,
  * hasMore logic, template shelf ID parsing, and error handling.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TRPCError } from '@trpc/server';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('./shelf/registry.js', () => ({
   getRegisteredShelves: vi.fn(() => []),
@@ -55,9 +55,9 @@ vi.mock('../../../db.js', () => ({
   })),
 }));
 
-import * as registry from './shelf/registry.js';
-import * as service from './service.js';
 import { createCaller } from '../../../shared/test-utils.js';
+import * as service from './service.js';
+import * as registry from './shelf/registry.js';
 
 const mockGetRegisteredShelves = vi.mocked(registry.getRegisteredShelves);
 const mockGetProfile = vi.mocked(service.getPreferenceProfile);

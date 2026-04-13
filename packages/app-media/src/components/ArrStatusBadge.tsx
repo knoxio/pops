@@ -4,6 +4,7 @@
  * Hidden when the respective service is not configured.
  */
 import { Badge } from '@pops/ui';
+
 import { trpc } from '../lib/trpc';
 
 type MediaKind = 'movie' | 'show';

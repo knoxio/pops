@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
+
 import { getResultComponent } from './result-component-registry';
 
 /** A single search hit within a section. */

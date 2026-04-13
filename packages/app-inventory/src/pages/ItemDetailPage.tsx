@@ -2,52 +2,53 @@
  * Item detail page — shows item info and connected items.
  * Route: /inventory/items/:id
  */
-import { useMemo, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router';
 import { useSetPageContext } from '@pops/navigation';
-import { toast } from 'sonner';
-import Markdown from 'react-markdown';
-import rehypeSanitize from 'rehype-sanitize';
 import {
-  Badge,
-  Button,
   Alert,
-  AlertTitle,
   AlertDescription,
   AlertDialog,
-  AlertDialogTrigger,
-  AlertDialogContent,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogAction,
   AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+  AlertTitle,
+  Badge,
+  Button,
+  type Condition,
+  ConditionBadge,
+  PageHeader,
   Skeleton,
   TypeBadge,
-  ConditionBadge,
   WarrantyBadge,
-  PageHeader,
-  type Condition,
 } from '@pops/ui';
 import {
-  Pencil,
-  Link2,
-  Unlink,
-  GitBranch,
-  FileText,
-  X,
-  Network,
-  Trash2,
-  MapPin,
+  Camera,
   ChevronRight,
   ExternalLink,
+  FileText,
+  GitBranch,
+  Link2,
+  MapPin,
+  Network,
+  Pencil,
   Store,
-  Camera,
+  Trash2,
+  Unlink,
+  X,
 } from 'lucide-react';
-import { trpc } from '../lib/trpc';
+import { useMemo, useState } from 'react';
+import Markdown from 'react-markdown';
+import { Link, useNavigate, useParams } from 'react-router';
+import rehypeSanitize from 'rehype-sanitize';
+import { toast } from 'sonner';
+
 import { PhotoGallery } from '../components/PhotoGallery';
 import { SortablePhotoGrid } from '../components/SortablePhotoGrid';
+import { trpc } from '../lib/trpc';
 
 const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   receipt: 'Receipts',
@@ -57,9 +58,9 @@ const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   other: 'Other',
 };
 import { ConnectDialog } from '../components/ConnectDialog';
+import { ConnectionGraph } from '../components/ConnectionGraph';
 import { ConnectionTracePanel } from '../components/ConnectionTracePanel';
 import { LinkDocumentDialog } from '../components/LinkDocumentDialog';
-import { ConnectionGraph } from '../components/ConnectionGraph';
 
 export function ItemDetailPage() {
   const { id } = useParams<{ id: string }>();

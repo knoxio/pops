@@ -5,26 +5,28 @@
  * seeding, TTL handling, and file cleanup are exercised end-to-end while
  * remaining fully isolated from the production SQLite database.
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { existsSync, mkdirSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import BetterSqlite3 from 'better-sqlite3';
-import { getDb, setDb, closeDb } from '../../../db.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import { closeDb, getDb, setDb } from '../../../db.js';
 import { initializeSchema } from '../../../db/schema.js';
 import {
-  validateEnvName,
-  createEnv,
-  getEnvRecord,
-  listEnvs,
-  getOrOpenEnvDb,
   closeEnvDb,
-  updateEnvTtl,
+  createEnv,
   deleteEnv,
   deleteExpiredEnvs,
+  type EnvRecord,
+  getEnvRecord,
+  getOrOpenEnvDb,
+  listEnvs,
   startupCleanup,
   ttlRemaining,
-  type EnvRecord,
+  updateEnvTtl,
+  validateEnvName,
 } from './registry.js';
 
 let tmpDir: string;

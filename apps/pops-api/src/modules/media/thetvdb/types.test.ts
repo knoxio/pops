@@ -1,21 +1,22 @@
 /**
  * TheTVDB response mapping tests with realistic fixture data.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
+
 import {
-  mapSearchResult,
-  mapShowDetail,
-  mapEpisode,
-  mapArtworks,
   extractGenreNames,
   extractNetworkNames,
-  toTvShowInsert,
-  toSeasonInsert,
-  toEpisodeInsert,
-  TvdbApiError,
+  mapArtworks,
+  mapEpisode,
+  mapSearchResult,
+  mapShowDetail,
+  type RawTvdbEpisode,
   type RawTvdbSearchResult,
   type RawTvdbSeriesExtended,
-  type RawTvdbEpisode,
+  toEpisodeInsert,
+  toSeasonInsert,
+  toTvShowInsert,
+  TvdbApiError,
   type TvdbArtwork,
 } from './types.js';
 

@@ -1,13 +1,14 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
   CorrectionProposalDialog,
+  type LocalOp,
   normalizeForMatch,
-  transactionMatchesSignal,
+  PREVIEW_CHANGESET_MAX_TRANSACTIONS,
   scopePreviewTransactions,
   serverOpToLocalOp,
-  PREVIEW_CHANGESET_MAX_TRANSACTIONS,
-  type LocalOp,
+  transactionMatchesSignal,
 } from './CorrectionProposalDialog';
 import type { CorrectionRule } from './RulePicker';
 

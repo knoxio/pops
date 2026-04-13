@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dependencies before imports
 vi.mock('../../../db.js', () => ({
@@ -16,7 +16,7 @@ vi.mock('drizzle-orm', () => ({
 }));
 
 import { getDrizzle } from '../../../db.js';
-import { getWatchedTmdbIds, getWatchlistTmdbIds, getDismissedTmdbIds } from './flags.js';
+import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from './flags.js';
 
 const mockGetDrizzle = vi.mocked(getDrizzle);
 

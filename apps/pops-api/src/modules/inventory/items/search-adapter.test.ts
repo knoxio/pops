@@ -1,10 +1,11 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { Database } from 'better-sqlite3';
-import { setupTestContext, seedInventoryItem } from '../../../shared/test-utils.js';
-import { resetRegistry } from '../../core/search/index.js';
-import { inventoryItemsSearchAdapter } from './search-adapter.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import { seedInventoryItem, setupTestContext } from '../../../shared/test-utils.js';
 import type { SearchHit } from '../../core/search/index.js';
+import { resetRegistry } from '../../core/search/index.js';
 import type { InventoryItemHitData } from './search-adapter.js';
+import { inventoryItemsSearchAdapter } from './search-adapter.js';
 
 const ctx = setupTestContext();
 let db: Database;

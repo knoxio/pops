@@ -2,11 +2,12 @@
  * Wish list service — CRUD operations against SQLite via Drizzle ORM.
  * SQLite is the source of truth. All operations are local.
  */
-import { eq, and, like, asc, count } from 'drizzle-orm';
-import { getDrizzle } from '../../../db.js';
 import { wishList } from '@pops/db-types';
+import { and, asc, count, eq, like } from 'drizzle-orm';
+
+import { getDrizzle } from '../../../db.js';
 import { NotFoundError } from '../../../shared/errors.js';
-import type { WishListRow, CreateWishListItemInput, UpdateWishListItemInput } from './types.js';
+import type { CreateWishListItemInput, UpdateWishListItemInput, WishListRow } from './types.js';
 
 /** Count + rows for a paginated list. */
 export interface WishListListResult {

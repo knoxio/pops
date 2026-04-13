@@ -1,6 +1,7 @@
-import type { ConfirmedTransaction } from '@pops/api/modules/finance/imports';
 import type { ChangeSet } from '@pops/api/modules/core/corrections/types';
-import type { PendingEntity, PendingChangeSet } from '../store/importStore';
+import type { ConfirmedTransaction } from '@pops/api/modules/finance/imports';
+
+import type { PendingChangeSet, PendingEntity } from '../store/importStore';
 
 // ---------------------------------------------------------------------------
 // CommitPayload — PRD-030 US-09

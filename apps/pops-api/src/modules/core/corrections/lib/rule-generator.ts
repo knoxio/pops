@@ -4,18 +4,33 @@
  * Uses the same withRateLimitRetry / ai_usage tracking pattern as ai-categorizer.ts.
  */
 import Anthropic from '@anthropic-ai/sdk';
-import { and, isNotNull, ne } from 'drizzle-orm';
-import { getEnv } from '../../../../env.js';
-import { getDrizzle } from '../../../../db.js';
 import { aiUsage, transactions as transactionsTable } from '@pops/db-types';
-import { logger } from '../../../../lib/logger.js';
+import { and, isNotNull, ne } from 'drizzle-orm';
+
+import { getDrizzle } from '../../../../db.js';
+import { getEnv } from '../../../../env.js';
 import { withRateLimitRetry } from '../../../../lib/ai-retry.js';
+import { logger } from '../../../../lib/logger.js';
 import { normalizeDescription } from '../types.js';
 
 /**
  * Load all distinct tag values from existing transactions.
  * Used to inform LLM prompts with real tags from the database.
  */
+/** Parse a JSON tags column value into an array of trimmed tag strings. */
+function parseTagsColumn(raw: string): string[] {
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((t): t is string => typeof t === 'string' && t.trim().length > 0)
+      .map((t) => t.trim());
+  } catch {
+    // malformed JSON — ignore
+    return [];
+  }
+}
+
 function loadAvailableTagsFromDb(): string[] {
   try {
     const rows = getDrizzle()
@@ -26,15 +41,8 @@ function loadAvailableTagsFromDb(): string[] {
 
     const tagSet = new Set<string>();
     for (const row of rows) {
-      try {
-        const parsed = JSON.parse(row.tags) as unknown;
-        if (Array.isArray(parsed)) {
-          for (const t of parsed) {
-            if (typeof t === 'string' && t.trim()) tagSet.add(t.trim());
-          }
-        }
-      } catch {
-        // malformed JSON — ignore
+      for (const tag of parseTagsColumn(row.tags)) {
+        tagSet.add(tag);
       }
     }
     return [...tagSet].sort();
@@ -303,7 +311,7 @@ Return ONLY the JSON object, no markdown, no explanation.`;
     .replace(/^```(?:json)?\s*\n?/gm, '')
     .replace(/\n?```\s*$/gm, '');
 
-  let result: CorrectionAnalysis | null = null;
+  let result: CorrectionAnalysis | null;
   try {
     const parsed = JSON.parse(cleanedText) as Record<string, unknown>;
 

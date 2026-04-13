@@ -5,16 +5,17 @@
  * Each seed generates one ShelfInstance that queries TMDB recommendations for that movie.
  * Instance score is derived from genre alignment between the seed movie and the user profile.
  */
-import { sql, and, eq } from 'drizzle-orm';
+import { mediaScores, movies, watchHistory } from '@pops/db-types';
+import { and, eq, sql } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../../db.js';
-import { movies, watchHistory, mediaScores } from '@pops/db-types';
 import { getTmdbClient } from '../../tmdb/index.js';
-import { getLibraryTmdbIds, toDiscoverResults } from '../tmdb-service.js';
 import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from '../flags.js';
 import { scoreDiscoverResults } from '../service.js';
+import { getLibraryTmdbIds, toDiscoverResults } from '../tmdb-service.js';
+import type { PreferenceProfile } from '../types.js';
 import { registerShelf } from './registry.js';
 import type { ShelfDefinition, ShelfInstance } from './types.js';
-import type { PreferenceProfile } from '../types.js';
 
 const MAX_SEEDS = 10;
 const RECENT_DAYS = 30;

@@ -1,14 +1,16 @@
 /**
  * Root App component with all providers
  */
-import { useEffect } from 'react';
+import { Toaster, TooltipProvider } from '@pops/ui';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { trpc, trpcClient } from '@/lib/trpc';
-import { router } from './router';
+import { useEffect } from 'react';
 import { RouterProvider } from 'react-router';
+
+import { trpc, trpcClient } from '@/lib/trpc';
 import { useThemeStore } from '@/store/themeStore';
-import { Toaster, TooltipProvider } from '@pops/ui';
+
+import { router } from './router';
 
 const queryClient = new QueryClient({
   defaultOptions: {

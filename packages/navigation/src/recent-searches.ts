@@ -3,7 +3,7 @@
  *
  * Stores up to MAX_RECENT queries (deduped, most-recent-first).
  */
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 
 const STORAGE_KEY = 'pops:recent-searches';
 const MAX_RECENT = 10;

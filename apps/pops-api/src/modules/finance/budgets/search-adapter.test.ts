@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Database } from 'better-sqlite3';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Prevent side-effect registration from throwing on import
 vi.mock('../../core/search/registry.js', () => ({
@@ -8,10 +8,10 @@ vi.mock('../../core/search/registry.js', () => ({
   resetRegistry: vi.fn(),
 }));
 
-import { setupTestContext, seedBudget } from '../../../shared/test-utils.js';
-import { budgetsSearchAdapter, type BudgetHitData } from './search-adapter.js';
-import { registerSearchAdapter } from '../../core/search/registry.js';
+import { seedBudget, setupTestContext } from '../../../shared/test-utils.js';
 import type { SearchHit } from '../../core/search/index.js';
+import { registerSearchAdapter } from '../../core/search/registry.js';
+import { type BudgetHitData, budgetsSearchAdapter } from './search-adapter.js';
 
 const ctx = setupTestContext();
 let db: Database;

@@ -1,5 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { normalizeScore } from './ComparisonScores';
 
 // Mock recharts to avoid rendering SVG in jsdom

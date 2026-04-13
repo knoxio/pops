@@ -20,12 +20,12 @@
  *   context:rainy-day         — Always active (fallback), Comedy + Drama + Animation
  */
 import { getTmdbClient } from '../../tmdb/index.js';
-import { toDiscoverResults, getLibraryTmdbIds } from '../tmdb-service.js';
-import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from '../flags.js';
 import { CONTEXT_COLLECTIONS, type ContextCollection } from '../context-collections.js';
+import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from '../flags.js';
+import { getLibraryTmdbIds, toDiscoverResults } from '../tmdb-service.js';
+import type { PreferenceProfile } from '../types.js';
 import { registerShelf } from './registry.js';
 import type { ShelfDefinition, ShelfInstance } from './types.js';
-import type { PreferenceProfile } from '../types.js';
 
 /** Score for a context shelf that is always active (rainy-day fallback). */
 const FALLBACK_SCORE = 0.4;

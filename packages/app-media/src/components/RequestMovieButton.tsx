@@ -5,9 +5,10 @@
  * Disabled when Radarr is not configured.
  * Returns null on query error (service unreachable).
  */
-import { useState } from 'react';
 import { Button } from '@pops/ui';
 import { Download } from 'lucide-react';
+import { useState } from 'react';
+
 import { trpc } from '../lib/trpc';
 import { RequestMovieModal } from './RequestMovieModal';
 

@@ -2,13 +2,12 @@
  * DataTable component - Comprehensive table with sorting, filtering, pagination, and editing
  * Built on TanStack Table and shadcn primitives
  */
-import { useState, useMemo } from 'react';
 import type {
   ColumnDef,
   ColumnFiltersState,
   SortingState,
-  VisibilityState,
   Table as TanStackTable,
+  VisibilityState,
 } from '@tanstack/react-table';
 import {
   flexRender,
@@ -19,17 +18,19 @@ import {
   useReactTable,
 } from '@tanstack/react-table';
 import { ArrowUpDown, ChevronDown, Search } from 'lucide-react';
+import { useMemo, useState } from 'react';
+
 import { cn } from '../lib/utils';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../primitives/table';
-import { Button } from './Button';
-import { TextInput } from './TextInput';
 import {
   DropdownMenu,
-  DropdownMenuContent,
   DropdownMenuCheckboxItem,
+  DropdownMenuContent,
   DropdownMenuTrigger,
 } from '../primitives/dropdown-menu';
-import { FilterBar, type ColumnFilter } from './DataTableFilters';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../primitives/table';
+import { Button } from './Button';
+import { type ColumnFilter, FilterBar } from './DataTableFilters';
+import { TextInput } from './TextInput';
 
 export interface DataTableProps<TData, TValue = unknown> {
   /**

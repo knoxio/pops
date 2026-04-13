@@ -3,24 +3,25 @@
  *
  * PRD-072 US-02
  */
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router';
 import {
-  Button,
-  Label,
-  Skeleton,
-  Switch,
-  NumberInput,
-  Select,
   Breadcrumb,
-  BreadcrumbList,
   BreadcrumbItem,
   BreadcrumbLink,
-  BreadcrumbSeparator,
+  BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
+  Button,
+  Label,
+  NumberInput,
+  Select,
+  Skeleton,
+  Switch,
 } from '@pops/ui';
-import { ArrowLeft, Save, RefreshCw, Play, HardDrive, Clock, AlertTriangle } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, Clock, HardDrive, Play, RefreshCw, Save } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
 import { toast } from 'sonner';
+
 import { trpc } from '../lib/trpc';
 
 const SCHEDULE_PRESETS = [

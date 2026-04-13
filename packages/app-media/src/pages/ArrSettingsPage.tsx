@@ -4,24 +4,25 @@
  * Allows users to configure Radarr and Sonarr URLs and API keys
  * via the settings table (replacing env-var-only configuration).
  */
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router';
 import {
-  Button,
-  Label,
-  Skeleton,
-  Input,
   Breadcrumb,
-  BreadcrumbList,
   BreadcrumbItem,
   BreadcrumbLink,
-  BreadcrumbSeparator,
+  BreadcrumbList,
   BreadcrumbPage,
+  BreadcrumbSeparator,
+  Button,
+  Input,
+  Label,
+  Skeleton,
 } from '@pops/ui';
-import { ArrowLeft, RefreshCw, Film, Tv, Save } from 'lucide-react';
+import { ArrowLeft, Film, RefreshCw, Save, Tv } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
 import { toast } from 'sonner';
-import { trpc } from '../lib/trpc';
+
 import { ConnectionBadge } from '../components/ConnectionBadge';
+import { trpc } from '../lib/trpc';
 
 function ServiceCard({
   label,

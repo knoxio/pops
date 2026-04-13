@@ -5,14 +5,14 @@
  * (via Plex Guid or title+year search), adds to the local library, and
  * logs watch history for watched items.
  */
-import type { PlexClient } from './client.js';
-import type { PlexMediaItem } from './types.js';
+import { getDb } from '../../../db.js';
+import { createMovie, getMovieByTmdbId } from '../movies/service.js';
+import { toMovie } from '../movies/types.js';
 import type { TmdbClient } from '../tmdb/client.js';
 import { getTmdbClient } from '../tmdb/index.js';
-import { getDb } from '../../../db.js';
-import { getMovieByTmdbId, createMovie } from '../movies/service.js';
-import { toMovie } from '../movies/types.js';
+import type { PlexClient } from './client.js';
 import { logMovieWatch } from './sync-helpers.js';
+import type { PlexMediaItem } from './types.js';
 
 // ---------------------------------------------------------------------------
 // Types

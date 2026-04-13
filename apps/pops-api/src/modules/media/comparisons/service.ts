@@ -1,8 +1,6 @@
 /**
  * Comparisons service — dimensions, 1v1 comparisons, and Elo scores.
  */
-import { eq, and, or, asc, count, desc, like, inArray, type SQL } from 'drizzle-orm';
-import { getDb, getDrizzle } from '../../../db.js';
 import {
   comparisonDimensions,
   comparisons,
@@ -11,40 +9,43 @@ import {
   debriefSessions,
   debriefStatus,
   mediaScores,
-  watchHistory,
   movies,
+  watchHistory,
 } from '@pops/db-types';
-import { NotFoundError, ConflictError, ValidationError } from '../../../shared/errors.js';
-import {
-  type ComparisonRow,
-  type MediaScoreRow,
-  type RecordComparisonInput,
-  type BlacklistMovieResult,
-  type DebriefOpponent,
-  type PendingDebrief,
-  type TierListMovie,
-  type SubmitTierListInput,
-  type SubmitTierListResult,
-  type ScoreChange,
-  type RecordDebriefComparisonInput,
-  type BatchComparisonItem,
-  type BatchRecordResult,
-} from './types.js';
-import { setTierOverride } from './tier-overrides.js';
-import { convertTierPlacements } from './tier-conversion.js';
+import { and, asc, count, desc, eq, inArray, like, or, type SQL } from 'drizzle-orm';
+
+import { getDb, getDrizzle } from '../../../db.js';
+import { ConflictError, NotFoundError, ValidationError } from '../../../shared/errors.js';
 import { getDimension } from './dimensions.service.js';
 import { getGlobalComparisonCount } from './global-count.js';
+import { convertTierPlacements } from './tier-conversion.js';
+import { setTierOverride } from './tier-overrides.js';
+import {
+  type BatchComparisonItem,
+  type BatchRecordResult,
+  type BlacklistMovieResult,
+  type ComparisonRow,
+  type DebriefOpponent,
+  type MediaScoreRow,
+  type PendingDebrief,
+  type RecordComparisonInput,
+  type RecordDebriefComparisonInput,
+  type ScoreChange,
+  type SubmitTierListInput,
+  type SubmitTierListResult,
+  type TierListMovie,
+} from './types.js';
 export {
   createDimension,
   listDimensions,
   seedDefaultDimensions,
   updateDimension,
 } from './dimensions.service.js';
+export { getGlobalComparisonCount } from './global-count.js';
 export { getRandomPair } from './pairs/random-pair.js';
 export { getSmartPair } from './pairs/smart-pair.js';
-export { getGlobalComparisonCount } from './global-count.js';
+export { getRankings, type RankingsResult, resolvePosterUrl } from './rankings.service.js';
 export { getScoresForMedia } from './scores.service.js';
-export { getRankings, resolvePosterUrl, type RankingsResult } from './rankings.service.js';
 
 // ── Source Hierarchy ──
 

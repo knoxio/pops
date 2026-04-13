@@ -1,5 +1,6 @@
-import { sqliteTable, text, integer, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
+import { integer, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+
 import { comparisonDimensions } from './comparison-dimensions.js';
 
 export const comparisonSkipCooloffs = sqliteTable(

@@ -4,18 +4,19 @@
  *
  * Fetches session data via getDebrief and current scores for the movie.
  */
-import { useNavigate } from 'react-router';
-import { Button, Card, CardContent, CardHeader, CardTitle, Badge, Skeleton } from '@pops/ui';
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Skeleton } from '@pops/ui';
 import {
-  Trophy,
-  CheckCircle,
-  XCircle,
-  Clock,
+  ArrowDownRight,
   ArrowLeft,
   ArrowUpRight,
-  ArrowDownRight,
+  CheckCircle,
+  Clock,
   Minus,
+  Trophy,
+  XCircle,
 } from 'lucide-react';
+import { useNavigate } from 'react-router';
+
 import { trpc } from '../lib/trpc';
 
 interface DebriefResultsSummaryProps {

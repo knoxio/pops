@@ -1,11 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { Database } from 'better-sqlite3';
-import { setupTestContext, seedDimension } from '../../../shared/test-utils.js';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import { seedDimension, setupTestContext } from '../../../shared/test-utils.js';
 import {
-  setTierOverride,
-  removeTierOverride,
-  getTierOverrides,
   getTierOverrideForMedia,
+  getTierOverrides,
+  removeTierOverride,
+  setTierOverride,
 } from './tier-overrides.js';
 
 const ctx = setupTestContext();

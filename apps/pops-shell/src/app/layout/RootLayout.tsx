@@ -5,17 +5,19 @@
  * Tablet (768–1023px): AppRail visible, PageNav as overlay on app icon click
  * Mobile (<768px): Hamburger opens Sidebar overlay with all pages
  */
+import { AppContextProvider } from '@pops/navigation';
+import { cn, ErrorBoundary } from '@pops/ui';
 import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router';
-import { TopBar } from './TopBar';
+
+import { findActiveApp } from '@/app/nav/path-utils';
+import { registeredApps } from '@/app/nav/registry';
+import { useUIStore } from '@/store/uiStore';
+
 import { AppRail } from './AppRail';
 import { PageNav } from './PageNav';
 import { Sidebar } from './Sidebar';
-import { ErrorBoundary, cn } from '@pops/ui';
-import { AppContextProvider } from '@pops/navigation';
-import { useUIStore } from '@/store/uiStore';
-import { registeredApps } from '@/app/nav/registry';
-import { findActiveApp } from '@/app/nav/path-utils';
+import { TopBar } from './TopBar';
 
 export function RootLayout() {
   const sidebarOpen = useUIStore((state) => state.sidebarOpen);

@@ -1,9 +1,10 @@
 /**
  * Media search router tests — TMDB movie search and TheTVDB series search.
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { setupTestContext, createCaller } from '../../../shared/test-utils.js';
 import { TRPCError } from '@trpc/server';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { createCaller, setupTestContext } from '../../../shared/test-utils.js';
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;

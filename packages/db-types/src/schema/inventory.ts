@@ -1,8 +1,9 @@
-import { sqliteTable, text, integer, real, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
-import { transactions } from './transactions.js';
+import { index, integer, real, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
+
 import { entities } from './entities.js';
 import { locations } from './locations.js';
+import { transactions } from './transactions.js';
 
 export const homeInventory = sqliteTable(
   'home_inventory',

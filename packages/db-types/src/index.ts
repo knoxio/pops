@@ -5,86 +5,87 @@
  * previous hand-written Zod schemas. This ensures types stay in sync
  * with the actual database schema used by drizzle-kit migrations.
  */
-import type { InferSelectModel, InferInsertModel } from 'drizzle-orm';
-import type { transactions } from './schema/transactions.js';
-import type { entities } from './schema/entities.js';
-import type { budgets } from './schema/budgets.js';
-import type { homeInventory } from './schema/inventory.js';
-import type { wishList } from './schema/wishlist.js';
-import type { transactionCorrections } from './schema/corrections.js';
+import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
+
 import type { aiUsage } from './schema/ai-usage.js';
-import type { environments } from './schema/environments.js';
-import type { movies } from './schema/movies.js';
-import type { tvShows } from './schema/tv-shows.js';
-import type { seasons } from './schema/seasons.js';
-import type { episodes } from './schema/episodes.js';
-import type { mediaWatchlist } from './schema/media-watchlist.js';
-import type { watchHistory } from './schema/watch-history.js';
+import type { budgets } from './schema/budgets.js';
 import type { comparisonDimensions } from './schema/comparison-dimensions.js';
-import type { comparisons } from './schema/comparisons.js';
-import type { mediaScores } from './schema/media-scores.js';
-import type { locations } from './schema/locations.js';
-import type { itemConnections } from './schema/item-connections.js';
-import type { itemPhotos } from './schema/item-photos.js';
-import type { itemDocuments } from './schema/item-documents.js';
-import type { settings } from './schema/settings.js';
-import type { syncLogs } from './schema/sync-logs.js';
-import type { syncJobResults } from './schema/sync-job-results.js';
-import type { dismissedDiscover } from './schema/dismissed-discover.js';
 import type { comparisonSkipCooloffs } from './schema/comparison-skip-cooloffs.js';
 import type { comparisonStaleness } from './schema/comparison-staleness.js';
-import type { debriefSessions } from './schema/debrief-sessions.js';
+import type { comparisons } from './schema/comparisons.js';
+import type { transactionCorrections } from './schema/corrections.js';
 import type { debriefResults } from './schema/debrief-results.js';
-import type { tierOverrides } from './schema/tier-overrides.js';
+import type { debriefSessions } from './schema/debrief-sessions.js';
 import type { debriefStatus } from './schema/debrief-status.js';
-import type { shelfImpressions } from './schema/shelf-impressions.js';
-import type { rotationLog } from './schema/rotation-log.js';
-import type { rotationSources } from './schema/rotation-sources.js';
+import type { dismissedDiscover } from './schema/dismissed-discover.js';
+import type { entities } from './schema/entities.js';
+import type { environments } from './schema/environments.js';
+import type { episodes } from './schema/episodes.js';
+import type { homeInventory } from './schema/inventory.js';
+import type { itemConnections } from './schema/item-connections.js';
+import type { itemDocuments } from './schema/item-documents.js';
+import type { itemPhotos } from './schema/item-photos.js';
+import type { locations } from './schema/locations.js';
+import type { mediaScores } from './schema/media-scores.js';
+import type { mediaWatchlist } from './schema/media-watchlist.js';
+import type { movies } from './schema/movies.js';
 import type { rotationCandidates } from './schema/rotation-candidates.js';
 import type { rotationExclusions } from './schema/rotation-exclusions.js';
+import type { rotationLog } from './schema/rotation-log.js';
+import type { rotationSources } from './schema/rotation-sources.js';
+import type { seasons } from './schema/seasons.js';
+import type { settings } from './schema/settings.js';
+import type { shelfImpressions } from './schema/shelf-impressions.js';
+import type { syncJobResults } from './schema/sync-job-results.js';
+import type { syncLogs } from './schema/sync-logs.js';
 import type { tagVocabulary } from './schema/tag-vocabulary.js';
+import type { tierOverrides } from './schema/tier-overrides.js';
 import type { transactionTagRules } from './schema/transaction-tag-rules.js';
+import type { transactions } from './schema/transactions.js';
+import type { tvShows } from './schema/tv-shows.js';
+import type { watchHistory } from './schema/watch-history.js';
+import type { wishList } from './schema/wishlist.js';
 
 // Re-export Drizzle table objects for use in queries
 export {
-  transactions,
-  entities,
-  budgets,
-  homeInventory,
-  wishList,
-  transactionCorrections,
-  tagVocabulary,
-  transactionTagRules,
   aiUsage,
-  environments,
-  movies,
-  tvShows,
-  seasons,
-  episodes,
-  mediaWatchlist,
-  watchHistory,
+  budgets,
   comparisonDimensions,
   comparisons,
-  mediaScores,
-  locations,
-  itemConnections,
-  itemPhotos,
-  itemDocuments,
-  settings,
-  syncLogs,
-  syncJobResults,
-  dismissedDiscover,
   comparisonSkipCooloffs,
   comparisonStaleness,
-  debriefSessions,
   debriefResults,
-  tierOverrides,
+  debriefSessions,
   debriefStatus,
-  shelfImpressions,
-  rotationLog,
-  rotationSources,
+  dismissedDiscover,
+  entities,
+  environments,
+  episodes,
+  homeInventory,
+  itemConnections,
+  itemDocuments,
+  itemPhotos,
+  locations,
+  mediaScores,
+  mediaWatchlist,
+  movies,
   rotationCandidates,
   rotationExclusions,
+  rotationLog,
+  rotationSources,
+  seasons,
+  settings,
+  shelfImpressions,
+  syncJobResults,
+  syncLogs,
+  tagVocabulary,
+  tierOverrides,
+  transactionCorrections,
+  transactions,
+  transactionTagRules,
+  tvShows,
+  watchHistory,
+  wishList,
 } from './schema/index.js';
 
 // Select types (what you get back from a SELECT query)

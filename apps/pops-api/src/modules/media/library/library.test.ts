@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { TRPCError } from '@trpc/server';
 import type { Database } from 'better-sqlite3';
-import { setupTestContext, seedMovie, createCaller } from '../../../shared/test-utils.js';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { createCaller, seedMovie, setupTestContext } from '../../../shared/test-utils.js';
 import type { TmdbMovieDetail } from '../tmdb/types.js';
 import { TmdbApiError } from '../tmdb/types.js';
 

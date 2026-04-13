@@ -4,19 +4,20 @@
  * Supports per-dimension tabs (Overall + each active dimension).
  * Uses the comparisons.rankings tRPC query with pagination.
  */
-import { useState, useMemo, useCallback } from 'react';
-import { Link, useSearchParams } from 'react-router';
 import {
   Alert,
-  AlertTitle,
   AlertDescription,
+  AlertTitle,
   Badge,
+  cn,
   Skeleton,
   Tabs,
   TabsContent,
-  cn,
 } from '@pops/ui';
 import { Trophy } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router';
+
 import { trpc } from '../lib/trpc';
 
 const PAGE_SIZE = 25;

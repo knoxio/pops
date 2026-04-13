@@ -1,8 +1,9 @@
-import { and, desc, eq } from 'drizzle-orm';
-import { getDrizzle } from '../../../../db.js';
 import { comparisons, mediaWatchlist, movies, watchHistory } from '@pops/db-types';
-import type { RandomPair } from '../types.js';
+import { and, desc, eq } from 'drizzle-orm';
+
+import { getDrizzle } from '../../../../db.js';
 import { getDimension } from '../dimensions.service.js';
+import type { RandomPair } from '../types.js';
 
 /**
  * Get a random pair of watched movies for comparison, avoiding recently

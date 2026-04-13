@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { registerSearchAdapter, getAdapters, resetRegistry } from './registry.js';
-import type { SearchAdapter, SearchHit, Query, SearchContext } from './types.js';
+import { beforeEach, describe, expect, it } from 'vitest';
+
+import { getAdapters, registerSearchAdapter, resetRegistry } from './registry.js';
+import type { Query, SearchAdapter, SearchContext, SearchHit } from './types.js';
 
 function makeAdapter(domain: string): SearchAdapter {
   return {

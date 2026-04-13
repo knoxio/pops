@@ -4,7 +4,7 @@
  * Each shelf is tested by mocking the underlying service function it wraps.
  * No business logic is re-tested — we verify delegation and interface mapping.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../tmdb/index.js', () => ({
   getTmdbClient: vi.fn(() => ({})),
@@ -33,16 +33,16 @@ vi.mock('./registry.js', () => ({
   _clearRegistry: vi.fn(),
 }));
 
-import * as tmdbService from '../tmdb-service.js';
 import * as plexService from '../plex-service.js';
 import * as service from '../service.js';
+import * as tmdbService from '../tmdb-service.js';
 import {
-  trendingTmdbShelf,
-  trendingPlexShelf,
-  recommendationsShelf,
-  fromYourWatchlistShelf,
-  worthRewatchingShelf,
   fromYourServerShelf,
+  fromYourWatchlistShelf,
+  recommendationsShelf,
+  trendingPlexShelf,
+  trendingTmdbShelf,
+  worthRewatchingShelf,
 } from './existing-shelves.js';
 
 const mockTrendingService = vi.mocked(tmdbService.getTrending);

@@ -1,38 +1,6 @@
-import tseslint from 'typescript-eslint';
+import { createBaseConfig } from '../../eslint.config.base.mjs';
 
-export default tseslint.config(
-  {
-    ignores: [
-      'node_modules',
-      'dist',
-      'coverage',
-      '*.config.js',
-      '*.config.mjs',
-      '*.config.ts',
-      'playwright-report',
-      'test-results',
-    ],
-  },
-  ...tseslint.configs.recommended,
-  {
-    rules: {
-      'max-lines': ['error', { max: 1600, skipBlankLines: true, skipComments: true }],
-      'max-lines-per-function': [
-        'error',
-        { max: 900, skipBlankLines: true, skipComments: true, IIFEs: true },
-      ],
-      complexity: ['error', 60],
-      'max-statements': ['error', 220],
-      'max-params': ['error', 7],
-      'max-depth': ['error', 7],
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-        },
-      ],
-      '@typescript-eslint/no-explicit-any': 'error',
-    },
-  }
-);
+export default createBaseConfig({
+  react: true,
+  ignores: ['playwright-report', 'test-results'],
+});

@@ -2,11 +2,12 @@
  * Item connections service — connect/disconnect inventory items using Drizzle ORM.
  * Enforces A<B ordering to prevent duplicate bidirectional pairs.
  */
-import { eq, and, or, count } from 'drizzle-orm';
+import { homeInventory, itemConnections } from '@pops/db-types';
+import { and, count, eq, or } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../db.js';
-import { itemConnections, homeInventory } from '@pops/db-types';
-import { NotFoundError, ConflictError } from '../../../shared/errors.js';
-import type { ItemConnectionRow, TraceNode, GraphData, GraphNode, GraphEdge } from './types.js';
+import { ConflictError, NotFoundError } from '../../../shared/errors.js';
+import type { GraphData, GraphEdge, GraphNode, ItemConnectionRow, TraceNode } from './types.js';
 
 /** Count + rows for a paginated list. */
 export interface ConnectionListResult {

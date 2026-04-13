@@ -1,11 +1,12 @@
-import { eq } from 'drizzle-orm';
-import { getDb, getDrizzle } from '../../../../db.js';
 import { mediaWatchlist } from '@pops/db-types';
-import { calculateConfidence } from '../types.js';
-import type { RandomPair, SmartPairResult } from '../types.js';
-import { getStaleness } from '../staleness.js';
+import { eq } from 'drizzle-orm';
+
+import { getDb, getDrizzle } from '../../../../db.js';
 import { getDimension } from '../dimensions.service.js';
 import { getGlobalComparisonCount } from '../global-count.js';
+import { getStaleness } from '../staleness.js';
+import type { RandomPair, SmartPairResult } from '../types.js';
+import { calculateConfidence } from '../types.js';
 
 /** Candidate movie with metadata needed for weighted scoring. */
 interface CandidateMovie {

@@ -4,6 +4,7 @@
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { MemoryRouter } from 'react-router';
+
 import { MediaCard } from './MediaCard';
 
 const meta: Meta<typeof MediaCard> = {

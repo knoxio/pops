@@ -1,13 +1,14 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { Database } from 'better-sqlite3';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
 import {
-  setupTestContext,
-  seedMovie,
   seedDimension,
+  seedMovie,
   seedWatchHistoryEntry,
+  setupTestContext,
 } from '../../../shared/test-utils.js';
-import { createDebriefSession, getDebrief, queueDebriefStatus } from './service.js';
 import * as watchHistoryService from '../watch-history/service.js';
+import { createDebriefSession, getDebrief, queueDebriefStatus } from './service.js';
 
 const ctx = setupTestContext();
 let db: Database;

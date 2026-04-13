@@ -4,8 +4,9 @@
  *
  * PRD-070 US-02
  */
-import { eq, and, asc, ne, inArray, sql } from 'drizzle-orm';
-import { movies, mediaWatchlist } from '@pops/db-types';
+import { mediaWatchlist, movies } from '@pops/db-types';
+import { and, asc, eq, inArray, ne, sql } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../db.js';
 import { getRadarrClient } from '../arr/service.js';
 

@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
-import { InventoryItemSearchResult, highlightMatch } from './InventoryItemSearchResult';
 import { _clearRegistry, getResultComponent, registerResultComponent } from '@pops/navigation';
+import { render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it } from 'vitest';
+
+import { highlightMatch, InventoryItemSearchResult } from './InventoryItemSearchResult';
 
 beforeEach(() => {
   _clearRegistry();

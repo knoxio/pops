@@ -7,40 +7,41 @@
  * - AI fallback with full row context
  * - Batch writes to SQLite
  */
-import { eq, and, isNotNull, ne, inArray, notInArray, asc } from 'drizzle-orm';
+import { entities, tagVocabulary, transactionCorrections, transactions } from '@pops/db-types';
+import { and, asc, eq, inArray, isNotNull, ne, notInArray } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../db.js';
-import { transactions, entities, tagVocabulary, transactionCorrections } from '@pops/db-types';
-import { logger } from '../../../lib/logger.js';
 import { formatImportError } from '../../../lib/errors.js';
-import { matchEntity } from './lib/entity-matcher.js';
-import { loadEntityMaps } from './lib/entity-lookup.js';
-import { categorizeWithAi, AiCategorizationError } from './lib/ai-categorizer.js';
-import { updateProgress } from './progress-store.js';
+import { logger } from '../../../lib/logger.js';
+import { ValidationError } from '../../../shared/errors.js';
+import { suggestTags } from '../../../shared/tag-suggester.js';
 import {
+  applyChangeSetToRules,
   findMatchingCorrection,
   findMatchingCorrectionFromRules,
   listCorrections,
-  applyChangeSetToRules,
 } from '../../core/corrections/service.js';
-import type { CorrectionRow, ChangeSet } from '../../core/corrections/types.js';
-import { suggestTags } from '../../../shared/tag-suggester.js';
-import type { TransactionRow } from '../transactions/types.js';
 import { applyChangeSet } from '../../core/corrections/service.js';
-import { ValidationError } from '../../../shared/errors.js';
+import type { ChangeSet, CorrectionRow } from '../../core/corrections/types.js';
+import type { TransactionRow } from '../transactions/types.js';
+import { AiCategorizationError, categorizeWithAi } from './lib/ai-categorizer.js';
+import { loadEntityMaps } from './lib/entity-lookup.js';
+import { matchEntity } from './lib/entity-matcher.js';
+import { updateProgress } from './progress-store.js';
 import type {
-  ParsedTransaction,
-  ProcessedTransaction,
-  ConfirmedTransaction,
-  ProcessImportOutput,
-  ExecuteImportOutput,
-  CreateEntityOutput,
-  ImportResult,
-  ImportWarning,
   AiUsageStats,
-  SuggestedTag,
   CommitPayload,
   CommitResult,
+  ConfirmedTransaction,
+  CreateEntityOutput,
+  ExecuteImportOutput,
   FailedTransactionDetail,
+  ImportResult,
+  ImportWarning,
+  ParsedTransaction,
+  ProcessedTransaction,
+  ProcessImportOutput,
+  SuggestedTag,
 } from './types.js';
 
 export function reevaluateImportSessionResult(args: {

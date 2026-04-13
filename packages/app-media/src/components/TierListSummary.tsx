@@ -5,7 +5,7 @@
  * green/red delta badges, and action buttons.
  */
 import { Button } from '@pops/ui';
-import { ArrowUpRight, ArrowDownRight, Minus } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
 
 export interface ScoreChange {
   movieId: number;

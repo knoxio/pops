@@ -4,8 +4,8 @@
  * PRD-071 US-02: fetches the user's Plex Discover watchlist and
  * extracts TMDB IDs for rotation candidate discovery.
  */
-import { extractExternalIdAsNumber } from '../plex/sync-helpers.js';
 import { getPlexClientId, getPlexToken } from '../plex/service.js';
+import { extractExternalIdAsNumber } from '../plex/sync-helpers.js';
 import { fetchPlexWatchlist } from '../plex/sync-watchlist.js';
 import type { CandidateMovie, RotationSourceAdapter } from './source-types.js';
 

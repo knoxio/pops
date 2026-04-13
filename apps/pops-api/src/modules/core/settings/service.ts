@@ -1,11 +1,12 @@
 /**
  * Settings service — key-value store for application configuration
  */
-import { eq, like, count } from 'drizzle-orm';
-import { getDrizzle } from '../../../db.js';
 import { settings } from '@pops/db-types';
+import { count, eq, like } from 'drizzle-orm';
+
+import { getDrizzle } from '../../../db.js';
 import { NotFoundError } from '../../../shared/errors.js';
-import type { SettingRow, SetSettingInput } from './types.js';
+import type { SetSettingInput, SettingRow } from './types.js';
 
 /** Get a single setting by key */
 export function getSetting(key: string): SettingRow {

@@ -1,28 +1,29 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import {
-  CheckCircle,
-  AlertTriangle,
-  XCircle,
-  AlertCircle,
-  List,
-  Layers,
-  Settings2,
-} from 'lucide-react';
-import { useImportStore } from '../../store/importStore';
-import type { ProcessedTransaction } from '../../store/importStore';
-import { trpc } from '../../lib/trpc';
+import type { ConfirmedTransaction } from '@pops/api/modules/finance/imports';
 import { Button } from '@pops/ui';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@pops/ui';
+import {
+  AlertCircle,
+  AlertTriangle,
+  CheckCircle,
+  Layers,
+  List,
+  Settings2,
+  XCircle,
+} from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
+
+import { reevaluateTransactions } from '../../lib/local-re-evaluation';
+import { computeMergedEntities, computeMergedRules } from '../../lib/merged-state';
+import { groupTransactionsByEntity } from '../../lib/transaction-utils';
+import { trpc } from '../../lib/trpc';
+import type { ProcessedTransaction } from '../../store/importStore';
+import { useImportStore } from '../../store/importStore';
+import { CorrectionProposalDialog } from './CorrectionProposalDialog';
+import { EditableTransactionCard } from './EditableTransactionCard';
 import { EntityCreateDialog } from './EntityCreateDialog';
 import { TransactionCard } from './TransactionCard';
 import { TransactionGroup } from './TransactionGroup';
-import { EditableTransactionCard } from './EditableTransactionCard';
-import { CorrectionProposalDialog } from './CorrectionProposalDialog';
-import { toast } from 'sonner';
-import type { ConfirmedTransaction } from '@pops/api/modules/finance/imports';
-import { groupTransactionsByEntity } from '../../lib/transaction-utils';
-import { computeMergedEntities, computeMergedRules } from '../../lib/merged-state';
-import { reevaluateTransactions } from '../../lib/local-re-evaluation';
 
 type ViewMode = 'list' | 'grouped';
 

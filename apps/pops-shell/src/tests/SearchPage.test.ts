@@ -4,7 +4,7 @@
  * These are pure logic tests that run without a DOM. Component-level tests
  * (render, user interaction) require @testing-library/react + jsdom setup.
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 type SearchMode = 'movies' | 'tv' | 'both';
 
@@ -141,10 +141,11 @@ describe('SearchPage clear button logic', () => {
   });
 
   it('should reset query to empty on clear', () => {
-    let query = 'some search';
-    // Simulate onClear callback
-    query = '';
+    const _before = 'some search';
+    // Simulate onClear callback — previous query (_before) is discarded
+    const query = '';
     expect(query).toBe('');
+    expect(_before).toBeDefined();
   });
 });
 

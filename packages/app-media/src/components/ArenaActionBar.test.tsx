@@ -1,6 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
 import { TooltipProvider } from '@pops/ui';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
 import { ArenaActionBar } from './ArenaActionBar';
 
 const movieA = { id: 1, title: 'The Matrix' };

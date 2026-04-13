@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { render, screen, act } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router';
+import { describe, expect, it } from 'vitest';
+
 import { AppContextProvider } from './AppContextProvider';
 import { useSearchResultNavigation } from './hooks';
 

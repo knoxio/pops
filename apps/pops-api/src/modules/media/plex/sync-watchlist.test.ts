@@ -2,7 +2,8 @@
  * Tests for Plex watchlist sync — polling Plex Discover API and syncing
  * watchlist items into the POPS watchlist with source tracking.
  */
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { PlexMediaItem } from './types.js';
 
 // Mock dependencies before imports
@@ -51,12 +52,12 @@ vi.mock('../library/tv-show-service.js', () => ({
   addTvShow: vi.fn(),
 }));
 
-import { fetchPlexWatchlist, syncWatchlistFromPlex } from './sync-watchlist.js';
 import { getDrizzle } from '../../../db.js';
 import { getMovieByTmdbId } from '../movies/service.js';
-import { getTvShowByTvdbId } from '../tv-shows/service.js';
-import { getTmdbClient } from '../tmdb/index.js';
 import { getTvdbClient } from '../thetvdb/index.js';
+import { getTmdbClient } from '../tmdb/index.js';
+import { getTvShowByTvdbId } from '../tv-shows/service.js';
+import { fetchPlexWatchlist, syncWatchlistFromPlex } from './sync-watchlist.js';
 
 const mockGetMovieByTmdbId = vi.mocked(getMovieByTmdbId);
 const mockGetTvShowByTvdbId = vi.mocked(getTvShowByTvdbId);

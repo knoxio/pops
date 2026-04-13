@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { setupTestContext, seedMovie } from '../../../shared/test-utils.js';
-import * as service from './service.js';
 import type { Database } from 'better-sqlite3';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import { seedMovie, setupTestContext } from '../../../shared/test-utils.js';
+import * as service from './service.js';
 
 const ctx = setupTestContext();
 let db: Database;

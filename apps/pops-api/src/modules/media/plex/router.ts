@@ -5,23 +5,24 @@
  * The startSyncJob mutation returns immediately with a job ID.
  * The frontend polls getSyncJobStatus for progress and results.
  */
-import { z } from 'zod';
+import { settings } from '@pops/db-types';
 import { TRPCError } from '@trpc/server';
 import { eq, inArray } from 'drizzle-orm';
-import { settings } from '@pops/db-types';
-import { router, protectedProcedure } from '../../../trpc.js';
-import { PlexApiError } from './types.js';
-import { PlexClient } from './client.js';
-import * as plexService from './service.js';
-import * as scheduler from './scheduler.js';
-import {
-  SYNC_JOB_TYPES,
-  startJob,
-  getJob,
-  getActiveJobs,
-  getLastCompletedJobs,
-} from './sync-job-manager.js';
+import { z } from 'zod';
+
 import { getDrizzle } from '../../../db.js';
+import { protectedProcedure, router } from '../../../trpc.js';
+import { PlexClient } from './client.js';
+import * as scheduler from './scheduler.js';
+import * as plexService from './service.js';
+import {
+  getActiveJobs,
+  getJob,
+  getLastCompletedJobs,
+  startJob,
+  SYNC_JOB_TYPES,
+} from './sync-job-manager.js';
+import { PlexApiError } from './types.js';
 
 function requirePlexClient(): PlexClient {
   const client = plexService.getPlexClient();
@@ -145,11 +146,11 @@ export const plexRouter = router({
 
       try {
         if (token) {
-          console.log(`[Plex] Validating full connection to ${finalUrl}...`);
+          console.warn(`[Plex] Validating full connection to ${finalUrl}...`);
           const testClient = new PlexClient(finalUrl, token);
           await testClient.getLibraries();
         } else {
-          console.log(`[Plex] Validating reachability for ${finalUrl}...`);
+          console.warn(`[Plex] Validating reachability for ${finalUrl}...`);
           const controller = new AbortController();
           const id = setTimeout(() => controller.abort(), 5000);
 
@@ -173,7 +174,7 @@ export const plexRouter = router({
         });
       }
 
-      console.log(`[Plex] Updating server URL to: ${finalUrl}`);
+      console.warn(`[Plex] Updating server URL to: ${finalUrl}`);
       db.insert(settings)
         .values({ key: 'plex_url', value: finalUrl })
         .onConflictDoUpdate({ target: settings.key, set: { value: finalUrl } })
@@ -291,14 +292,14 @@ export const plexRouter = router({
         }
       }
 
-      console.log(
+      console.warn(
         `[Plex] PIN check response for ${input.id}:`,
         data.authToken ? 'Token received' : 'No token yet'
       );
 
       if (data.authToken) {
         const db = getDrizzle();
-        console.log(`[Plex] Encrypting and saving token to database...`);
+        console.warn(`[Plex] Encrypting and saving token to database...`);
         const encryptedToken = plexService.encryptToken(data.authToken);
         db.insert(settings)
           .values({ key: 'plex_token', value: encryptedToken })

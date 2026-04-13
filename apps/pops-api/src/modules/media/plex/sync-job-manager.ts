@@ -8,16 +8,18 @@
  * the sync_job_results SQLite table.
  */
 import { randomUUID } from 'node:crypto';
-import { eq, desc, sql } from 'drizzle-orm';
+
 import { syncJobResults } from '@pops/db-types';
+import { desc, eq, sql } from 'drizzle-orm';
+
+import { getDrizzle } from '../../../db.js';
 import type { PlexClient } from './client.js';
 import { getPlexClient, getPlexToken } from './service.js';
+import { syncDiscoverWatches } from './sync-discover-watches.js';
 import { importMoviesFromPlex } from './sync-movies.js';
 import { importTvShowsFromPlex } from './sync-tv.js';
-import { syncWatchlistFromPlex } from './sync-watchlist.js';
 import { syncWatchHistoryFromPlex } from './sync-watch-history.js';
-import { syncDiscoverWatches } from './sync-discover-watches.js';
-import { getDrizzle } from '../../../db.js';
+import { syncWatchlistFromPlex } from './sync-watchlist.js';
 
 // ---------------------------------------------------------------------------
 // Types

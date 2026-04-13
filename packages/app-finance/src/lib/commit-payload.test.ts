@@ -1,7 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import type { ConfirmedTransaction } from '@pops/api/modules/finance/imports';
 import type { ChangeSet } from '@pops/api/modules/core/corrections/types';
-import type { PendingEntity, PendingChangeSet } from '../store/importStore';
+import type { ConfirmedTransaction } from '@pops/api/modules/finance/imports';
+import { describe, expect, it } from 'vitest';
+
+import type { PendingChangeSet, PendingEntity } from '../store/importStore';
 import { buildCommitPayload, type DanglingEntityRefError } from './commit-payload';
 
 // ---------------------------------------------------------------------------

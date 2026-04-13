@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import type { PlexMediaItem } from '../plex/types.js';
 
 // Mock dependencies before imports
@@ -20,8 +21,8 @@ vi.mock('./flags.js', () => ({
 }));
 
 // Now import mocked modules
-import { getPlexClient } from '../plex/service.js';
 import { getDrizzle } from '../../../db.js';
+import { getPlexClient } from '../plex/service.js';
 import { getWatchedTmdbIds, getWatchlistTmdbIds } from './flags.js';
 import { getTrendingFromPlex } from './plex-service.js';
 

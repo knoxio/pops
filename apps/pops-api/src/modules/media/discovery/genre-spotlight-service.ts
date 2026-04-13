@@ -3,16 +3,16 @@
  * high-rated TMDB movies per genre, scored by user preference.
  */
 import type { TmdbClient } from '../tmdb/client.js';
+import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from './flags.js';
+import { scoreDiscoverResults } from './service.js';
 import type {
   DiscoverResult,
-  ScoredDiscoverResult,
-  PreferenceProfile,
   GenreAffinity,
   GenreDistribution,
+  PreferenceProfile,
+  ScoredDiscoverResult,
 } from './types.js';
 import { TMDB_GENRE_MAP } from './types.js';
-import { scoreDiscoverResults } from './service.js';
-import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from './flags.js';
 
 /** Genre name → TMDB genre ID reverse map. */
 const GENRE_NAME_TO_ID: Record<string, number> = {};

@@ -1,17 +1,17 @@
 /**
  * Paperless-ngx API client — re-exports and factory.
  */
-import { PaperlessClient } from './client.js';
 import { getEnv } from '../../../env.js';
+import { PaperlessClient } from './client.js';
 
 export { PaperlessClient } from './client.js';
 export {
   PaperlessApiError,
-  type PaperlessDocument,
   type PaperlessCorrespondent,
-  type PaperlessTag,
+  type PaperlessDocument,
   type PaperlessDocumentType,
   type PaperlessSearchResult,
+  type PaperlessTag,
 } from './types.js';
 
 /**

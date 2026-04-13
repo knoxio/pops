@@ -4,8 +4,8 @@
  * Renders poster thumbnail, title (highlighted), year, and vote average.
  * Registered for domain "movies" in the search result component registry.
  */
-import { Film, Star } from 'lucide-react';
 import type { ResultComponentProps } from '@pops/navigation';
+import { Film, Star } from 'lucide-react';
 
 interface MovieHitData {
   title: string;
@@ -23,13 +23,7 @@ export function highlightMatch(text: string, query: string, matchType: string): 
 
   const lowerText = text.toLowerCase();
   const lowerQuery = query.toLowerCase();
-  let start = -1;
-
-  if (matchType === 'exact' || matchType === 'prefix') {
-    start = 0;
-  } else {
-    start = lowerText.indexOf(lowerQuery);
-  }
+  const start = matchType === 'exact' || matchType === 'prefix' ? 0 : lowerText.indexOf(lowerQuery);
 
   if (start === -1) return text;
 

@@ -3,8 +3,8 @@
  * Validates Cf-Access-Jwt-Assertion header and extracts user email
  */
 
-import jwt from 'jsonwebtoken';
 import type { JwtPayload } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 
 /**
  * Cloudflare Access JWT payload structure

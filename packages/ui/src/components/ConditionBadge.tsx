@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'react';
-import { Badge } from '../primitives/badge';
+
 import { cn } from '../lib/utils';
+import { Badge } from '../primitives/badge';
 
 export type Condition = 'Excellent' | 'Good' | 'Fair' | 'Poor';
 

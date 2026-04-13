@@ -4,8 +4,9 @@
  * Starts a job via mutation (returns immediately), polls for progress,
  * and auto-restores running jobs on mount (survives page navigation).
  */
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
+
 import { trpc } from '../lib/trpc';
 
 type SyncJobType =

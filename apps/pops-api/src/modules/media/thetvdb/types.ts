@@ -1,7 +1,7 @@
 /**
  * TheTVDB v4 API response types, mapping functions, and Drizzle insert builders.
  */
-import type { TvShowInsert, SeasonInsert, EpisodeInsert } from '@pops/db-types';
+import type { EpisodeInsert, SeasonInsert, TvShowInsert } from '@pops/db-types';
 
 /** Typed error for TheTVDB API failures. */
 export class TvdbApiError extends Error {

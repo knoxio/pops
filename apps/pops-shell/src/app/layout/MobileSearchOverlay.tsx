@@ -1,6 +1,7 @@
+import { Button, Input } from '@pops/ui';
+import { ArrowLeft, Search, X } from 'lucide-react';
 import { useCallback, useEffect, useRef } from 'react';
-import { Search, X, ArrowLeft } from 'lucide-react';
-import { Input, Button } from '@pops/ui';
+
 import { useSearchStore } from '@/store/searchStore';
 
 const DEBOUNCE_MS = 300;

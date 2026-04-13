@@ -1,6 +1,7 @@
-import { describe, it, expect, vi } from 'vitest';
-import type { PreferenceProfile } from '../types.js';
+import { describe, expect, it, vi } from 'vitest';
+
 import type { TmdbSearchResponse } from '../../tmdb/types.js';
+import type { PreferenceProfile } from '../types.js';
 
 // Mock dependencies before imports
 vi.mock('../../../../db.js', () => ({ getDrizzle: vi.fn() }));
@@ -23,12 +24,12 @@ vi.mock('../service.js', () => ({
 }));
 vi.mock('./registry.js', () => ({ registerShelf: vi.fn() }));
 
+// Import the module under test — registers shelves as a side effect
+import './tmdb-shelves.js';
+
 import { getDrizzle } from '../../../../db.js';
 import { getTmdbClient } from '../../tmdb/index.js';
 import { registerShelf } from './registry.js';
-
-// Import the module under test — registers shelves as a side effect
-import './tmdb-shelves.js';
 
 const mockGetDrizzle = vi.mocked(getDrizzle);
 const mockGetTmdbClient = vi.mocked(getTmdbClient);

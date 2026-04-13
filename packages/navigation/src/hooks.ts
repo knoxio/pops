@@ -1,5 +1,6 @@
 import { useCallback, useContext, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router';
+
 import { AppContextCtx } from './context.js';
 import type { AppContext, AppContextEntity, AppName } from './types.js';
 import { resolveUri } from './uri-resolver.js';

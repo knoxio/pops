@@ -2,11 +2,10 @@
  * ComboboxSelect - Advanced select with filtering using shadcn primitives
  * Built on Popover + Command for proper positioning and filtering
  */
-import { useState } from 'react';
 import { Check, ChevronsUpDown } from 'lucide-react';
+import { useState } from 'react';
+
 import { cn } from '../lib/utils';
-import { Button } from './Button';
-import { Chip } from './Chip';
 import {
   Command,
   CommandEmpty,
@@ -16,6 +15,8 @@ import {
   CommandList,
 } from '../primitives/command';
 import { Popover, PopoverContent, PopoverTrigger } from '../primitives/popover';
+import { Button } from './Button';
+import { Chip } from './Chip';
 
 export interface ComboboxOption {
   label: string;

@@ -4,8 +4,9 @@
  * Encapsulates add-to-library, watchlist, watched, rewatch, and dismiss mutations
  * so they can be reused across the discover page and dynamic shelf sections.
  */
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
+
 import { trpc } from '../lib/trpc';
 
 export type DiscoverActionResult =

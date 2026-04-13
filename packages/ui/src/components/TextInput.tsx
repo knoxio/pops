@@ -2,8 +2,9 @@
  * TextInput component with variants, prefix/suffix, and clear functionality
  * Supports controlled and uncontrolled modes
  */
-import { forwardRef, useState, type InputHTMLAttributes, type ReactNode } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { forwardRef, type InputHTMLAttributes, type ReactNode, useState } from 'react';
+
 import { cn } from '../lib/utils';
 
 const containerVariants = cva(

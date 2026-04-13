@@ -4,8 +4,9 @@
  */
 import { Alert, AlertDescription, Button, Card, CardContent, Skeleton } from '@pops/ui';
 import { AlertCircle, RefreshCw, Tag } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { useNavigate } from 'react-router';
+import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+
 import { trpc } from '../lib/trpc';
 import { formatCurrency } from '../lib/utils';
 

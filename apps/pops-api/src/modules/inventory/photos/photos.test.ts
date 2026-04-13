@@ -1,17 +1,19 @@
 /**
  * Item photos router tests.
  */
-import { mkdirSync, writeFileSync, existsSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import type { Database } from 'better-sqlite3';
+import { join } from 'node:path';
+
 import { TRPCError } from '@trpc/server';
+import type { Database } from 'better-sqlite3';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
 import {
-  setupTestContext,
   createCaller,
   seedInventoryItem,
   seedPhoto,
+  setupTestContext,
 } from '../../../shared/test-utils.js';
 
 const ctx = setupTestContext();

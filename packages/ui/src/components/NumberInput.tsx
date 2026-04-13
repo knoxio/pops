@@ -2,15 +2,16 @@
  * NumberInput component with stepper arrows and drag to change
  * Extends TextInput with number-specific functionality
  */
+import { cva, type VariantProps } from 'class-variance-authority';
 import {
   forwardRef,
-  useState,
-  useRef,
-  useEffect,
   type InputHTMLAttributes,
   type ReactNode,
+  useEffect,
+  useRef,
+  useState,
 } from 'react';
-import { cva, type VariantProps } from 'class-variance-authority';
+
 import { cn } from '../lib/utils';
 
 const containerVariants = cva(

@@ -3,8 +3,9 @@
  *
  * PRD-070 US-03
  */
-import { eq } from 'drizzle-orm';
 import { movies } from '@pops/db-types';
+import { eq } from 'drizzle-orm';
+
 import { getDrizzle } from '../../../db.js';
 
 /**

@@ -1,5 +1,5 @@
-import { Clock, MoreHorizontal, Ban, EyeOff } from 'lucide-react';
-import { Button, Tooltip, TooltipContent, TooltipTrigger, DropdownMenu } from '@pops/ui';
+import { Button, DropdownMenu, Tooltip, TooltipContent, TooltipTrigger } from '@pops/ui';
+import { Ban, Clock, EyeOff, MoreHorizontal } from 'lucide-react';
 
 export interface ArenaMovie {
   id: number;

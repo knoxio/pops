@@ -2,26 +2,27 @@
  * Discovery service — computes preference profile from watch history,
  * comparison scores, and genre data.
  */
-import { count, desc, eq, sql, and, notInArray } from 'drizzle-orm';
-import { getDrizzle } from '../../../db.js';
 import {
-  movies,
-  mediaScores,
   comparisonDimensions,
-  watchHistory,
   comparisons,
-  mediaWatchlist,
   dismissedDiscover,
+  mediaScores,
+  mediaWatchlist,
+  movies,
+  watchHistory,
 } from '@pops/db-types';
+import { and, count, desc, eq, notInArray, sql } from 'drizzle-orm';
+
+import { getDrizzle } from '../../../db.js';
 import type {
-  GenreAffinity,
   DimensionWeight,
+  DiscoverResult,
+  GenreAffinity,
   GenreDistribution,
   PreferenceProfile,
   QuickPickMovie,
-  DiscoverResult,
-  ScoredDiscoverResult,
   RewatchSuggestion,
+  ScoredDiscoverResult,
 } from './types.js';
 import { TMDB_GENRE_MAP } from './types.js';
 

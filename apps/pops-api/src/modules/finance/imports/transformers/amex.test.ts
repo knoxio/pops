@@ -1,6 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { transformAmex } from './amex.js';
 import crypto from 'crypto';
+import { describe, expect, it } from 'vitest';
+
+import { transformAmex } from './amex.js';
 
 /**
  * Unit tests for Amex CSV transformer functions.

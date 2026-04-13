@@ -4,13 +4,14 @@
  *
  * PRD-072 US-01
  */
-import { toast } from 'sonner';
-import { X } from 'lucide-react';
 import { Button, Skeleton } from '@pops/ui';
+import { X } from 'lucide-react';
+import { toast } from 'sonner';
+
 import { trpc } from '../lib/trpc';
 import { HorizontalScrollRow } from './HorizontalScrollRow';
-import { MediaCard } from './MediaCard';
 import { LeavingBadge } from './LeavingBadge';
+import { MediaCard } from './MediaCard';
 
 export function LeavingSoonShelf() {
   const { data: movies, isLoading, refetch } = trpc.media.rotation.getLeavingMovies.useQuery();

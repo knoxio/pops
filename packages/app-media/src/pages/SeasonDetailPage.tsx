@@ -1,19 +1,20 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { useParams, Link } from 'react-router';
 import { useSetPageContext } from '@pops/navigation';
 import {
   Alert,
-  AlertTitle,
   AlertDescription,
-  PageHeader,
+  AlertTitle,
   Button,
-  Switch,
+  PageHeader,
   Skeleton,
+  Switch,
 } from '@pops/ui';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Link, useParams } from 'react-router';
 import { toast } from 'sonner';
-import { trpc } from '../lib/trpc';
+
 import { EpisodeList } from '../components/EpisodeList';
 import { ProgressBar } from '../components/ProgressBar';
+import { trpc } from '../lib/trpc';
 
 function SeasonDetailSkeleton() {
   return (

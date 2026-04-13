@@ -5,17 +5,18 @@
  */
 import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
+
 import { trpc } from '../../../lib/trpc';
 import { useImportStore } from '../../../store/importStore';
-import type { AiMessage } from '../CorrectionProposalDialogPanels';
 import type {
   CorrectionSignal,
   LocalOp,
   PreviewChangeSetOutput,
   ServerChangeSet,
 } from '../correction-proposal-shared';
-import { localOpsToChangeSet, serverOpToLocalOp } from './useLocalOps';
+import type { AiMessage } from '../CorrectionProposalDialogPanels';
 import type { CorrectionRule } from '../RulePicker';
+import { localOpsToChangeSet, serverOpToLocalOp } from './useLocalOps';
 
 // ---------------------------------------------------------------------------
 // Hook

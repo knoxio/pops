@@ -4,6 +4,7 @@
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
+
 import { NumberInput } from './NumberInput';
 
 const meta: Meta<typeof NumberInput> = {

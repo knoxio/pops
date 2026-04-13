@@ -3,7 +3,7 @@
  *
  * Handles login via POST /login, token caching, and auto-refresh.
  */
-import { TvdbApiError, type RawTvdbLoginResponse } from './types.js';
+import { type RawTvdbLoginResponse, TvdbApiError } from './types.js';
 
 const LOGIN_URL = 'https://api4.thetvdb.com/v4/login';
 

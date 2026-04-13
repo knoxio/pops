@@ -1,5 +1,5 @@
+import { WISH_LIST_PRIORITIES, type WishListPriority, type WishListRow } from '@pops/db-types';
 import { z } from 'zod';
-import { WISH_LIST_PRIORITIES, type WishListRow, type WishListPriority } from '@pops/db-types';
 
 export { WISH_LIST_PRIORITIES, type WishListPriority, type WishListRow };
 

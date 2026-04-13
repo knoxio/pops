@@ -1,7 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
  * Integration tests for AI categorizer disk cache persistence.
@@ -60,7 +61,9 @@ afterEach(() => {
 
   try {
     rmSync(tmpDir, { recursive: true, force: true });
-  } catch {}
+  } catch {
+    // cleanup failure is non-fatal in tests
+  }
 });
 
 describe('AI categorizer disk cache', () => {

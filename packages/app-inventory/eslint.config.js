@@ -1,29 +1,12 @@
-import tseslint from 'typescript-eslint';
+import { createBaseConfig } from '../../eslint.config.base.mjs';
 
-export default tseslint.config(
+export default [
+  ...createBaseConfig({ react: true }),
   {
-    ignores: ['node_modules', 'dist', 'coverage', '*.config.js', '*.config.mjs'],
-  },
-  ...tseslint.configs.recommended,
-  {
+    // ItemFormPage is a large multi-section form — needs a higher function line limit
+    files: ['src/pages/ItemFormPage.tsx'],
     rules: {
-      'max-lines': ['error', { max: 1600, skipBlankLines: true, skipComments: true }],
-      'max-lines-per-function': [
-        'error',
-        { max: 900, skipBlankLines: true, skipComments: true, IIFEs: true },
-      ],
-      complexity: ['error', 60],
-      'max-statements': ['error', 220],
-      'max-params': ['error', 7],
-      'max-depth': ['error', 7],
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        {
-          argsIgnorePattern: '^_',
-          varsIgnorePattern: '^_',
-        },
-      ],
-      '@typescript-eslint/no-explicit-any': 'error',
+      'max-lines-per-function': ['error', { max: 750, skipBlankLines: true, skipComments: true, IIFEs: true }],
     },
-  }
-);
+  },
+];

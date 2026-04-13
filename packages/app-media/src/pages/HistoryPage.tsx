@@ -4,11 +4,8 @@
  * Mobile: compact list. Desktop (md+): responsive poster card grid.
  * Each entry has a delete action with confirmation dialog.
  */
-import { useState, useCallback, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router';
 import {
   Alert,
-  AlertTitle,
   AlertDescription,
   AlertDialog,
   AlertDialogAction,
@@ -18,14 +15,18 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertTitle,
   Badge,
   Button,
   Skeleton,
 } from '@pops/ui';
 import { ClipboardCheck, Film, Trash2 } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
-import { trpc } from '../lib/trpc';
+
 import { formatEpisodeCode } from '../lib/format';
+import { trpc } from '../lib/trpc';
 
 const PAGE_SIZE = 50;
 

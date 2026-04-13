@@ -2,8 +2,9 @@
  * Select component - styled dropdown for choosing from options
  * Native select with custom styling to match design system
  */
-import { forwardRef, useState, type SelectHTMLAttributes, type ReactNode } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { forwardRef, type ReactNode, type SelectHTMLAttributes, useState } from 'react';
+
 import { cn } from '../lib/utils';
 
 const containerVariants = cva(

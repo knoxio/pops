@@ -14,12 +14,12 @@
  *   from-your-server   — Unwatched library movies scored by preference profile
  */
 import { getTmdbClient } from '../../tmdb/index.js';
-import * as tmdbService from '../tmdb-service.js';
 import * as plexService from '../plex-service.js';
 import * as service from '../service.js';
+import * as tmdbService from '../tmdb-service.js';
+import type { DiscoverResult, PreferenceProfile, RewatchSuggestion } from '../types.js';
 import { registerShelf } from './registry.js';
 import type { ShelfDefinition, ShelfInstance } from './types.js';
-import type { PreferenceProfile, DiscoverResult, RewatchSuggestion } from '../types.js';
 
 /** Map a RewatchSuggestion to the DiscoverResult interface. */
 function rewatchToDiscoverResult(r: RewatchSuggestion): DiscoverResult {

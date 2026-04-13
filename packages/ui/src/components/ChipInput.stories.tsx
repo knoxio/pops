@@ -4,6 +4,7 @@
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
+
 import { ChipInput } from './ChipInput';
 
 const meta: Meta<typeof ChipInput> = {

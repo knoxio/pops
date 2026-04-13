@@ -5,59 +5,60 @@
  * tree with item count badges. Supports adding root/child locations,
  * inline renaming, move-to-parent modal, and sibling reordering.
  */
-import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
-import { toast } from 'sonner';
 import {
-  Badge,
-  Button,
-  Skeleton,
-  Collapsible,
-  CollapsibleTrigger,
-  CollapsibleContent,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-  PageHeader,
-} from '@pops/ui';
-import {
-  DndContext,
-  DragOverlay,
   closestCenter,
+  DndContext,
+  type DragEndEvent,
+  type DragOverEvent,
+  DragOverlay,
+  type DragStartEvent,
   PointerSensor,
   useSensor,
   useSensors,
-  type DragStartEvent,
-  type DragEndEvent,
-  type DragOverEvent,
 } from '@dnd-kit/core';
 import {
+  arrayMove,
   SortableContext,
   useSortable,
   verticalListSortingStrategy,
-  arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
-  MapPin,
-  ChevronRight,
-  ChevronDown,
-  FolderOpen,
-  Folder,
-  Plus,
-  FolderPlus,
-  ArrowUp,
+  Badge,
+  Button,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  PageHeader,
+  Skeleton,
+} from '@pops/ui';
+import {
   ArrowDown,
-  MoveRight,
-  Trash2,
+  ArrowUp,
+  ChevronDown,
+  ChevronRight,
   FileText,
+  Folder,
+  FolderOpen,
+  FolderPlus,
   GripVertical,
+  MapPin,
+  MoveRight,
+  Plus,
+  Trash2,
 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
-import { trpc } from '../lib/trpc';
+import { toast } from 'sonner';
+
 import { LocationContentsPanel } from '../components/LocationContentsPanel';
+import { trpc } from '../lib/trpc';
 
 interface LocationTreeNode {
   id: string;

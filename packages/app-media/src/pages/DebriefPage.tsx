@@ -8,21 +8,22 @@
  * and recordDebriefComparison mutation. Advances through pending
  * dimensions; shows CompletionSummary when all are done.
  */
-import { useState } from 'react';
-import { useParams, useNavigate, Link } from 'react-router';
 import { Badge, Button, Skeleton, Tooltip, TooltipContent, TooltipTrigger } from '@pops/ui';
 import {
-  ImageOff,
-  CheckCircle,
-  Circle,
-  ChevronUp,
-  Minus,
-  ChevronDown,
   ArrowLeft,
+  CheckCircle,
+  ChevronDown,
+  ChevronUp,
+  Circle,
+  ImageOff,
+  Minus,
 } from 'lucide-react';
+import { useState } from 'react';
+import { Link, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
-import { trpc } from '../lib/trpc';
+
 import { DebriefActionBar } from '../components/DebriefControls';
+import { trpc } from '../lib/trpc';
 
 export function DebriefPage() {
   const { movieId: rawId } = useParams<{ movieId: string }>();

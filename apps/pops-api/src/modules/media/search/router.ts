@@ -1,12 +1,13 @@
 /**
  * Media search tRPC router — exposes TMDB movie search and TheTVDB series search.
  */
-import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { router, protectedProcedure } from '../../../trpc.js';
-import { getTmdbClient, TmdbApiError } from '../tmdb/index.js';
+import { z } from 'zod';
+
+import { protectedProcedure, router } from '../../../trpc.js';
 import { getTvdbClient } from '../thetvdb/index.js';
 import { TvdbApiError } from '../thetvdb/types.js';
+import { getTmdbClient, TmdbApiError } from '../tmdb/index.js';
 
 const SearchMoviesSchema = z.object({
   query: z.string().min(1).max(200),

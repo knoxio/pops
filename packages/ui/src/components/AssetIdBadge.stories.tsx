@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
+
 import { AssetIdBadge } from './AssetIdBadge';
 
 const meta: Meta<typeof AssetIdBadge> = {

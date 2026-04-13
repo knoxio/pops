@@ -7,18 +7,19 @@
  * Router-agnostic: pass `renderLink` to use your router's Link component
  * for client-side navigation. Defaults to `<a>`.
  */
-import { Fragment, type ReactNode, type ComponentType } from 'react';
 import { ArrowLeft } from 'lucide-react';
+import { type ComponentType, Fragment, type ReactNode } from 'react';
+
+import { cn } from '../lib/utils';
 import {
   Breadcrumb,
-  BreadcrumbList,
+  BreadcrumbEllipsis,
   BreadcrumbItem,
   BreadcrumbLink,
+  BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-  BreadcrumbEllipsis,
 } from '../primitives/breadcrumb';
-import { cn } from '../lib/utils';
 
 export interface BreadcrumbSegment {
   label: string;

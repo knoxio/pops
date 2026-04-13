@@ -1,8 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { InfiniteScrollTable } from './InfiniteScrollTable';
+import { useState } from 'react';
+
 import { SortableHeader } from './DataTable';
+import { InfiniteScrollTable } from './InfiniteScrollTable';
 
 const meta: Meta<typeof InfiniteScrollTable> = {
   title: 'Data Display/Table/Infinite Scroll',

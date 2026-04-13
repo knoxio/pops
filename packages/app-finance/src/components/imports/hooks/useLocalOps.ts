@@ -4,7 +4,7 @@
  * Extracted from CorrectionProposalDialog (tb-364).
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { CorrectionRule } from '../RulePicker';
+
 import type {
   CorrectionSignal,
   LocalOp,
@@ -12,6 +12,7 @@ import type {
   ServerChangeSet,
   ServerChangeSetOp,
 } from '../correction-proposal-shared';
+import type { CorrectionRule } from '../RulePicker';
 
 // ---------------------------------------------------------------------------
 // Helpers

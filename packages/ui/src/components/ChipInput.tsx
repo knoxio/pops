@@ -2,8 +2,9 @@
  * ChipInput component for multi-value input like email tags
  * Similar to Gmail's "To" field where entries become chips
  */
-import { forwardRef, useState, useRef, type InputHTMLAttributes, type KeyboardEvent } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
+import { forwardRef, type InputHTMLAttributes, type KeyboardEvent, useRef, useState } from 'react';
+
 import { cn } from '../lib/utils';
 import { Chip } from './Chip';
 

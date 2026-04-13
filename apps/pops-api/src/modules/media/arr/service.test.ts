@@ -1,7 +1,7 @@
 /**
  * Arr service tests — tests client factory and status caching.
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the database so settings table lookups return nothing by default
 vi.mock('../../../db.js', () => ({
@@ -25,7 +25,7 @@ vi.mock('../../../db.js', () => ({
   })),
 }));
 
-import { getRadarrClient, getSonarrClient, getArrConfig, clearStatusCache } from './service.js';
+import { clearStatusCache, getArrConfig, getRadarrClient, getSonarrClient } from './service.js';
 
 describe('Arr service', () => {
   const originalEnv = { ...process.env };

@@ -1,21 +1,23 @@
 /**
  * Library tRPC router — high-level procedures for adding media to the library.
  */
-import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { router, protectedProcedure } from '../../../trpc.js';
-import { getTmdbClient, TmdbClient, TmdbApiError, getImageCache } from '../tmdb/index.js';
+import { z } from 'zod';
+
 import { NotFoundError } from '../../../shared/errors.js';
+import { protectedProcedure, router } from '../../../trpc.js';
 import { toMovie } from '../movies/types.js';
-import { toTvShow, toSeason } from '../tv-shows/types.js';
-import { RefreshMovieSchema, QuickPickSchema, LibraryListSchema } from './types.js';
-import * as libraryService from './service.js';
 import { getPlexClient } from '../plex/service.js';
 import { checkAndLogMovieWatch } from '../plex/sync-discover-watches.js';
 import { getTvdbClient } from '../thetvdb/index.js';
-import { TvdbApiError } from '../thetvdb/types.js';
 import { refreshTvShow } from '../thetvdb/service.js';
+import { TvdbApiError } from '../thetvdb/types.js';
+import type { TmdbClient } from '../tmdb/index.js';
+import { getImageCache, getTmdbClient, TmdbApiError } from '../tmdb/index.js';
+import { toSeason, toTvShow } from '../tv-shows/types.js';
+import * as libraryService from './service.js';
 import * as tvShowService from './tv-show-service.js';
+import { LibraryListSchema, QuickPickSchema, RefreshMovieSchema } from './types.js';
 
 function requireTmdbClient(): TmdbClient {
   return getTmdbClient();

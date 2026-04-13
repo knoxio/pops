@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { DropdownMenu } from './DropdownMenu';
+
 import { Button } from './Button';
+import { DropdownMenu } from './DropdownMenu';
 
 const meta: Meta<typeof DropdownMenu> = {
   title: 'Navigation/DropdownMenu',

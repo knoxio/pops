@@ -6,28 +6,29 @@
  *
  * PRD-070 US-06
  */
-import cron, { type ScheduledTask } from 'node-cron';
+import { rotationLog, settings } from '@pops/db-types';
 import { CronExpressionParser } from 'cron-parser';
 import { eq } from 'drizzle-orm';
-import { settings, rotationLog } from '@pops/db-types';
+import cron, { type ScheduledTask } from 'node-cron';
+
 import { getDrizzle } from '../../../db.js';
 import {
+  addMoviesFromQueue,
+  getAdditionBudget,
+  getAvgMovieGb,
+  getDailyAdditions,
+} from './addition-gating.js';
+import {
+  calculateRemovalDeficit,
+  getDownloadingTmdbIds,
+  getEligibleForRemoval,
+  getLeavingMovieSizeGb,
   getRadarrDiskSpace,
   getRadarrMovieSizes,
-  calculateRemovalDeficit,
-  getEligibleForRemoval,
-  getDownloadingTmdbIds,
-  selectMoviesForRemoval,
   markMoviesAsLeaving,
-  getLeavingMovieSizeGb,
   processExpiredMovies,
+  selectMoviesForRemoval,
 } from './removal-selection.js';
-import {
-  getAdditionBudget,
-  addMoviesFromQueue,
-  getDailyAdditions,
-  getAvgMovieGb,
-} from './addition-gating.js';
 
 // ---------------------------------------------------------------------------
 // Settings keys
@@ -130,7 +131,7 @@ export function startRotationScheduler(options?: {
   saveSetting(SETTINGS_KEYS.enabled, 'true');
   saveSetting(SETTINGS_KEYS.cronExpression, cronExpression);
 
-  console.log(`[Rotation] Scheduler started (cron: ${cronExpression})`);
+  console.warn(`[Rotation] Scheduler started (cron: ${cronExpression})`);
   return getRotationSchedulerStatus();
 }
 
@@ -144,7 +145,7 @@ export function stopRotationScheduler(): RotationSchedulerStatus {
   deleteSetting(SETTINGS_KEYS.enabled);
   deleteSetting(SETTINGS_KEYS.cronExpression);
 
-  console.log('[Rotation] Scheduler stopped');
+  console.warn('[Rotation] Scheduler stopped');
   return getRotationSchedulerStatus();
 }
 
@@ -176,14 +177,14 @@ export function resumeRotationSchedulerIfEnabled(): RotationSchedulerStatus | nu
   if (enabled !== 'true') return null;
 
   const savedCron = getSetting(SETTINGS_KEYS.cronExpression) ?? DEFAULT_CRON;
-  console.log(`[Rotation] Auto-resuming scheduler (cron: ${savedCron})`);
+  console.warn(`[Rotation] Auto-resuming scheduler (cron: ${savedCron})`);
   return startRotationScheduler({ cronExpression: savedCron });
 }
 
 /** Trigger an immediate rotation cycle. Returns null if a cycle is already running. */
 export async function runRotationCycleNow(): Promise<RotationCycleResult | null> {
   if (isCycleRunning) {
-    console.log('[Rotation] Cycle already in progress — skipping');
+    console.warn('[Rotation] Cycle already in progress — skipping');
     return null;
   }
   return runRotationCycle();
@@ -278,7 +279,7 @@ export async function runRotationCycle(): Promise<RotationCycleResult> {
     const moviesAdded = additionResult.added;
 
     if (budget === 0) {
-      console.log('[Rotation] Additions skipped — below target free space');
+      console.warn('[Rotation] Additions skipped — below target free space');
     }
 
     const result: RotationCycleResult = {
@@ -295,7 +296,7 @@ export async function runRotationCycle(): Promise<RotationCycleResult> {
     lastCycleAt = new Date().toISOString();
     lastCycleError = null;
 
-    console.log(
+    console.warn(
       `[Rotation] Cycle complete: ${moviesRemoved} removed, ${moviesMarkedLeaving} marked leaving, ${moviesAdded} added, ${freeSpaceGb.toFixed(1)} GB free`
     );
 

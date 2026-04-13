@@ -5,17 +5,18 @@
  * responsive result grid, "Add to Library" with loading state,
  * "In Library" badge for items already in the collection.
  */
-import { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'react-router';
-import { Button, TextInput, Skeleton, Tabs, TabsList, TabsTrigger } from '@pops/ui';
+import { Button, Skeleton, Tabs, TabsList, TabsTrigger, TextInput } from '@pops/ui';
 import { AlertTriangle, Search } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { toast } from 'sonner';
-import { trpc } from '../lib/trpc';
+
 import {
-  SearchResultCard,
   buildPosterUrl,
+  SearchResultCard,
   type SearchResultType,
 } from '../components/SearchResultCard';
+import { trpc } from '../lib/trpc';
 
 type SearchMode = 'movies' | 'tv' | 'both';
 

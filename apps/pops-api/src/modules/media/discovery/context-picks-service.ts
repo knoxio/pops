@@ -2,12 +2,13 @@
  * Context-aware picks service — fetches TMDB discover results
  * for the currently active context collections.
  */
-import { getDrizzle } from '../../../db.js';
 import { movies } from '@pops/db-types';
+
+import { getDrizzle } from '../../../db.js';
 import type { TmdbClient } from '../tmdb/client.js';
-import type { DiscoverResult } from './types.js';
-import { getActiveCollections, type ContextCollection } from './context-collections.js';
+import { type ContextCollection, getActiveCollections } from './context-collections.js';
 import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from './flags.js';
+import type { DiscoverResult } from './types.js';
 
 /** A context collection result set for the API response. */
 export interface ContextPicksCollection {
