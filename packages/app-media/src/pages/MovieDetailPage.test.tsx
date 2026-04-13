@@ -40,8 +40,8 @@ vi.mock('../components/ComparisonScores', () => ({
 vi.mock('../components/ArrStatusBadge', () => ({
   ArrStatusBadge: () => <span>Arr Status</span>,
 }));
-vi.mock('../components/RequestMovieButton', () => ({
-  RequestMovieButton: () => null,
+vi.mock('../components/MovieActionButtons', () => ({
+  MovieActionButtons: () => null,
 }));
 vi.mock('../components/FreshnessBadge', () => ({
   FreshnessBadge: () => null,

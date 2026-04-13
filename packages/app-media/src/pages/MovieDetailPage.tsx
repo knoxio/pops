@@ -21,7 +21,7 @@ import { ComparisonScores } from '../components/ComparisonScores';
 import { ExcludedDimensions } from '../components/ExcludedDimensions';
 import { FreshnessBadge } from '../components/FreshnessBadge';
 import { MarkAsWatchedButton } from '../components/MarkAsWatchedButton';
-import { RequestMovieButton } from '../components/RequestMovieButton';
+import { MovieActionButtons } from '../components/MovieActionButtons';
 import { WatchlistToggle } from '../components/WatchlistToggle';
 import { formatCurrency, formatLanguage, formatRuntime } from '../lib/format';
 import { trpc } from '../lib/trpc';
@@ -239,10 +239,12 @@ export function MovieDetailPage() {
               <WatchlistToggle mediaType="movie" mediaId={movie.id} />
               <MarkAsWatchedButton mediaId={movie.id} />
               <ArrStatusBadge kind="movie" externalId={movie.tmdbId} />
-              <RequestMovieButton
+              <MovieActionButtons
                 tmdbId={movie.tmdbId}
                 title={movie.title}
                 year={year ?? new Date().getFullYear()}
+                rating={movie.voteAverage ?? undefined}
+                posterPath={movie.posterPath ?? undefined}
               />
               <FreshnessBadge daysSinceWatch={daysSinceWatch} staleness={staleness} />
               {pendingDebrief && (

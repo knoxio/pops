@@ -8,7 +8,7 @@ import { Check, Film, Loader2, Plus, Tv } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 
-import { RequestMovieButton } from './RequestMovieButton';
+import { MovieActionButtons } from './MovieActionButtons';
 
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w342';
 
@@ -156,10 +156,11 @@ export function SearchResultCard({
             </Button>
           )}
           {type === 'movie' && tmdbId != null && (
-            <RequestMovieButton
+            <MovieActionButtons
               tmdbId={tmdbId}
               title={title}
               year={year ? parseInt(year, 10) : new Date().getFullYear()}
+              rating={voteAverage ?? undefined}
             />
           )}
         </div>
