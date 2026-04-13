@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { ChangeSetSchema } from '../../core/corrections/types.js';
+import { TagRuleChangeSetSchema } from '../../core/tag-rules/types.js';
 
 /**
  * Transaction as parsed from CSV (client-side or transformer)
@@ -251,6 +252,7 @@ export type PendingChangeSet = z.infer<typeof pendingChangeSetSchema>;
 export const commitPayloadSchema = z.object({
   entities: z.array(pendingEntitySchema).default([]),
   changeSets: z.array(pendingChangeSetSchema).default([]),
+  tagRuleChangeSets: z.array(TagRuleChangeSetSchema).default([]),
   transactions: z.array(confirmedTransactionSchema),
 });
 
@@ -275,6 +277,8 @@ export type FailedTransactionDetail = z.infer<typeof failedTransactionDetailSche
 export const commitResultSchema = z.object({
   entitiesCreated: z.number().int().nonnegative(),
   rulesApplied: rulesAppliedSchema,
+  /** Count of tag-rule ChangeSet operations applied during commit (add/edit/disable/remove). */
+  tagRulesApplied: z.number().int().nonnegative(),
   transactionsImported: z.number().int().nonnegative(),
   transactionsFailed: z.number().int().nonnegative(),
   failedDetails: z.array(failedTransactionDetailSchema),

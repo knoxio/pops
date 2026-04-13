@@ -1,8 +1,13 @@
 import type { ChangeSet } from '@pops/api/modules/core/corrections/types';
+import type { TagRuleChangeSet } from '@pops/api/modules/core/tag-rules/types';
 import type { ConfirmedTransaction } from '@pops/api/modules/finance/imports';
 import { describe, expect, it } from 'vitest';
 
-import type { PendingChangeSet, PendingEntity } from '../store/importStore';
+import type {
+  PendingChangeSet,
+  PendingEntity,
+  PendingTagRuleChangeSet,
+} from '../store/importStore';
 import { buildCommitPayload, type DanglingEntityRefError } from './commit-payload';
 
 // ---------------------------------------------------------------------------
@@ -24,6 +29,19 @@ function makePendingChangeSet(
 ): PendingChangeSet {
   return {
     tempId: `temp:changeset:${crypto.randomUUID()}`,
+    changeSet,
+    appliedAt: '2026-04-12T00:00:00Z',
+    source: 'test',
+    ...overrides,
+  };
+}
+
+function makePendingTagRuleChangeSet(
+  changeSet: TagRuleChangeSet,
+  overrides: Partial<PendingTagRuleChangeSet> = {}
+): PendingTagRuleChangeSet {
+  return {
+    tempId: `temp:tagrules:${crypto.randomUUID()}`,
     changeSet,
     appliedAt: '2026-04-12T00:00:00Z',
     source: 'test',
@@ -55,33 +73,61 @@ const sampleChangeSet: ChangeSet = {
   ops: [{ op: 'add', data: { descriptionPattern: 'TEST', matchType: 'exact' } }],
 };
 
+const sampleTagRuleChangeSet: TagRuleChangeSet = {
+  source: 'test',
+  reason: 'unit test',
+  ops: [
+    {
+      op: 'add',
+      data: {
+        descriptionPattern: 'WOOLWORTHS',
+        matchType: 'contains',
+        tags: ['Groceries'],
+      },
+    },
+  ],
+};
+
 // ---------------------------------------------------------------------------
 // Tests — PRD-030 US-09
 // ---------------------------------------------------------------------------
 
 describe('buildCommitPayload', () => {
   it('returns empty payload when no pending data', () => {
-    const payload = buildCommitPayload([], [], []);
+    const payload = buildCommitPayload([], [], [], []);
     expect(payload.entities).toEqual([]);
     expect(payload.changeSets).toEqual([]);
+    expect(payload.tagRuleChangeSets).toEqual([]);
     expect(payload.transactions).toEqual([]);
   });
 
   it('returns entities only when no changeSets or transactions', () => {
     const entity = makePendingEntity({ name: 'Coles' });
-    const payload = buildCommitPayload([entity], [], []);
+    const payload = buildCommitPayload([entity], [], [], []);
     expect(payload.entities).toHaveLength(1);
     expect(payload.entities[0].name).toBe('Coles');
     expect(payload.changeSets).toEqual([]);
+    expect(payload.tagRuleChangeSets).toEqual([]);
     expect(payload.transactions).toEqual([]);
   });
 
   it('returns changeSets only when no entities or transactions', () => {
     const pcs = makePendingChangeSet(sampleChangeSet);
-    const payload = buildCommitPayload([], [pcs], []);
+    const payload = buildCommitPayload([], [pcs], [], []);
     expect(payload.entities).toEqual([]);
     expect(payload.changeSets).toHaveLength(1);
     expect(payload.changeSets[0]).toEqual(sampleChangeSet);
+    expect(payload.tagRuleChangeSets).toEqual([]);
+    expect(payload.transactions).toEqual([]);
+  });
+
+  it('returns tagRuleChangeSets only when no entities or transactions', () => {
+    const pcs = makePendingTagRuleChangeSet(sampleTagRuleChangeSet);
+    const payload = buildCommitPayload([], [], [pcs], []);
+    expect(payload.entities).toEqual([]);
+    expect(payload.changeSets).toEqual([]);
+    expect(payload.tagRuleChangeSets).toHaveLength(1);
+    expect(payload.tagRuleChangeSets[0]).toEqual(sampleTagRuleChangeSet);
     expect(payload.transactions).toEqual([]);
   });
 
@@ -104,7 +150,7 @@ describe('buildCommitPayload', () => {
     const pcs = makePendingChangeSet(cs);
     const txn = makeConfirmedTransaction({ entityId: entity.tempId, entityName: 'New Corp' });
 
-    const payload = buildCommitPayload([entity], [pcs], [txn]);
+    const payload = buildCommitPayload([entity], [pcs], [], [txn]);
     expect(payload.entities).toHaveLength(1);
     expect(payload.changeSets).toHaveLength(1);
     expect(payload.transactions).toHaveLength(1);
@@ -128,10 +174,10 @@ describe('buildCommitPayload', () => {
     };
     const pcs = makePendingChangeSet(cs);
 
-    expect(() => buildCommitPayload([], [pcs], [])).toThrow(/Dangling entity reference/);
+    expect(() => buildCommitPayload([], [pcs], [], [])).toThrow(/Dangling entity reference/);
 
     try {
-      buildCommitPayload([], [pcs], []);
+      buildCommitPayload([], [pcs], [], []);
     } catch (err) {
       const e = err as Error & DanglingEntityRefError;
       expect(e.type).toBe('dangling-entity-ref');
@@ -148,7 +194,28 @@ describe('buildCommitPayload', () => {
     };
     const pcs = makePendingChangeSet(cs);
 
-    expect(() => buildCommitPayload([], [pcs], [])).toThrow(/Dangling entity reference/);
+    expect(() => buildCommitPayload([], [pcs], [], [])).toThrow(/Dangling entity reference/);
+  });
+
+  it('throws descriptive error for dangling entity reference in tag rule add op', () => {
+    const danglingId = 'temp:entity:does-not-exist';
+    const cs: TagRuleChangeSet = {
+      source: 'test',
+      ops: [
+        {
+          op: 'add',
+          data: {
+            descriptionPattern: 'BAD',
+            matchType: 'exact',
+            entityId: danglingId,
+            tags: ['Groceries'],
+          },
+        },
+      ],
+    };
+    const pcs = makePendingTagRuleChangeSet(cs);
+
+    expect(() => buildCommitPayload([], [], [pcs], [])).toThrow(/Dangling entity reference/);
   });
 
   it('does not throw for non-temp entity IDs in changeSets', () => {
@@ -166,7 +233,7 @@ describe('buildCommitPayload', () => {
       ],
     };
     const pcs = makePendingChangeSet(cs);
-    expect(() => buildCommitPayload([], [pcs], [])).not.toThrow();
+    expect(() => buildCommitPayload([], [pcs], [], [])).not.toThrow();
   });
 
   it('preserves ChangeSet insertion order', () => {
@@ -192,7 +259,7 @@ describe('buildCommitPayload', () => {
       { appliedAt: '2026-04-12T03:00:00Z' }
     );
 
-    const payload = buildCommitPayload([], [pcs1, pcs2, pcs3], []);
+    const payload = buildCommitPayload([], [pcs1, pcs2, pcs3], [], []);
     expect(payload.changeSets.map((cs) => cs.source)).toEqual(['first', 'second', 'third']);
   });
 
@@ -201,7 +268,7 @@ describe('buildCommitPayload', () => {
     const txn1 = makeConfirmedTransaction({ entityId: entity.tempId, entityName: 'Temp Corp' });
     const txn2 = makeConfirmedTransaction({ entityId: 'real-id', entityName: 'Real Corp' });
 
-    const payload = buildCommitPayload([entity], [], [txn1, txn2]);
+    const payload = buildCommitPayload([entity], [], [], [txn1, txn2]);
     expect(payload.transactions).toHaveLength(2);
     expect(payload.transactions[0].entityId).toBe(entity.tempId);
     expect(payload.transactions[1].entityId).toBe('real-id');
@@ -216,7 +283,7 @@ describe('buildCommitPayload', () => {
 
     // Transactions are NOT validated — only ChangeSet ops are.
     // Temp entity ID resolution in transactions is the commit endpoint's job.
-    const payload = buildCommitPayload([], [], [txn]);
+    const payload = buildCommitPayload([], [], [], [txn]);
     expect(payload.transactions).toHaveLength(1);
     expect(payload.transactions[0].entityId).toBe(danglingTempId);
   });
@@ -224,17 +291,20 @@ describe('buildCommitPayload', () => {
   it('returns a snapshot, not a live reference', () => {
     const entities = [makePendingEntity()];
     const changeSets = [makePendingChangeSet(sampleChangeSet)];
+    const tagRuleChangeSets = [makePendingTagRuleChangeSet(sampleTagRuleChangeSet)];
     const transactions = [makeConfirmedTransaction()];
 
-    const payload = buildCommitPayload(entities, changeSets, transactions);
+    const payload = buildCommitPayload(entities, changeSets, tagRuleChangeSets, transactions);
 
     // Mutating the input arrays should not affect the payload
     entities.push(makePendingEntity({ name: 'Extra' }));
     changeSets.push(makePendingChangeSet(sampleChangeSet));
+    tagRuleChangeSets.push(makePendingTagRuleChangeSet(sampleTagRuleChangeSet));
     transactions.push(makeConfirmedTransaction());
 
     expect(payload.entities).toHaveLength(1);
     expect(payload.changeSets).toHaveLength(1);
+    expect(payload.tagRuleChangeSets).toHaveLength(1);
     expect(payload.transactions).toHaveLength(1);
   });
 });

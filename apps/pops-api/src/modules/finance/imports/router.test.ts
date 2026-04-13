@@ -603,6 +603,7 @@ describe('imports.commitImport', () => {
     expect(result.data.transactionsFailed).toBe(0);
     expect(result.data.failedDetails).toEqual([]);
     expect(result.data.rulesApplied).toEqual({ add: 0, edit: 0, disable: 0, remove: 0 });
+    expect(result.data.tagRulesApplied).toBe(0);
     expect(result.data.retroactiveReclassifications).toBe(0);
     expect(result.message).toBe('Import committed');
 
@@ -686,6 +687,7 @@ describe('imports.commitImport', () => {
 
     expect(result.data.entitiesCreated).toBe(1);
     expect(result.data.rulesApplied).toEqual({ add: 1, edit: 0, disable: 0, remove: 0 });
+    expect(result.data.tagRulesApplied).toBe(0);
 
     // Verify the correction rule has the real entity ID
     const entity = db.prepare('SELECT id FROM entities WHERE name = ?').get('TestCorp') as {
@@ -706,6 +708,7 @@ describe('imports.commitImport', () => {
 
     expect(result.data.entitiesCreated).toBe(0);
     expect(result.data.rulesApplied).toEqual({ add: 0, edit: 0, disable: 0, remove: 0 });
+    expect(result.data.tagRulesApplied).toBe(0);
     expect(result.data.transactionsImported).toBe(1);
   });
 
@@ -809,6 +812,38 @@ describe('imports.commitImport', () => {
 
     expect(result.data.entitiesCreated).toBe(2);
     expect(result.data.transactionsImported).toBe(3);
+  });
+
+  it('applies pending tag rule change sets during commit', async () => {
+    const result = await caller.finance.imports.commitImport({
+      entities: [],
+      changeSets: [],
+      tagRuleChangeSets: [
+        {
+          source: 'unit-test',
+          ops: [
+            {
+              op: 'add' as const,
+              data: {
+                descriptionPattern: 'SAVE_A_TAG_RULE_TEST',
+                matchType: 'contains' as const,
+                tags: ['UnitTestTag'],
+              },
+            },
+          ],
+        },
+      ],
+      transactions: [makeTxn({ description: 'SAVE_A_TAG_RULE_TEST 1', tags: ['UnitTestTag'] })],
+    });
+
+    expect(result.data.tagRulesApplied).toBe(1);
+
+    const rule = db
+      .prepare(
+        'SELECT description_pattern FROM transaction_tag_rules WHERE description_pattern = ?'
+      )
+      .get('SAVE_A_TAG_RULE_TEST') as { description_pattern: string } | undefined;
+    expect(rule?.description_pattern).toBe('SAVE_A_TAG_RULE_TEST');
   });
 
   it('throws UNAUTHORIZED without auth', async () => {

@@ -1,4 +1,5 @@
 import type { ChangeSet } from '@pops/api/modules/core/corrections/types';
+import type { TagRuleChangeSet } from '@pops/api/modules/core/tag-rules/types';
 import type {
   ConfirmedTransaction,
   ImportWarning,
@@ -45,6 +46,22 @@ export interface PendingChangeSet {
 /** Input for creating a pending changeset (tempId and appliedAt are generated internally). */
 export interface AddPendingChangeSetInput {
   changeSet: ChangeSet;
+  source: string;
+}
+
+// ---------------------------------------------------------------------------
+// Pending tag-rule ChangeSet — PRD-029 (bundled with import commit)
+// ---------------------------------------------------------------------------
+
+export interface PendingTagRuleChangeSet {
+  tempId: string; // Format: temp:tagrules:{uuid}
+  changeSet: TagRuleChangeSet;
+  appliedAt: string; // ISO-8601
+  source: string;
+}
+
+export interface AddPendingTagRuleChangeSetInput {
+  changeSet: TagRuleChangeSet;
   source: string;
 }
 
@@ -112,6 +129,7 @@ interface ImportStore {
   // Local-first pending state (PRD-030)
   pendingEntities: PendingEntity[];
   pendingChangeSets: PendingChangeSet[];
+  pendingTagRuleChangeSets: PendingTagRuleChangeSet[];
 
   // Actions
   setFile: (file: File | null) => void;
@@ -142,6 +160,11 @@ interface ImportStore {
   addPendingChangeSet: (input: AddPendingChangeSetInput) => PendingChangeSet;
   listPendingChangeSets: () => PendingChangeSet[];
   removePendingChangeSet: (tempId: string) => void;
+
+  // Pending tag-rule ChangeSets (PRD-029)
+  addPendingTagRuleChangeSet: (input: AddPendingTagRuleChangeSetInput) => PendingTagRuleChangeSet;
+  listPendingTagRuleChangeSets: () => PendingTagRuleChangeSet[];
+  removePendingTagRuleChangeSet: (tempId: string) => void;
 
   // Transaction management
   updateTransaction: (
@@ -180,6 +203,7 @@ const initialState = {
   commitResult: null,
   pendingEntities: [],
   pendingChangeSets: [],
+  pendingTagRuleChangeSets: [],
 };
 
 /**
@@ -213,6 +237,7 @@ const downstreamReset: Pick<
   | 'commitResult'
   | 'pendingEntities'
   | 'pendingChangeSets'
+  | 'pendingTagRuleChangeSets'
 > = {
   headers: initialState.headers,
   rows: initialState.rows,
@@ -225,6 +250,7 @@ const downstreamReset: Pick<
   commitResult: initialState.commitResult,
   pendingEntities: initialState.pendingEntities,
   pendingChangeSets: initialState.pendingChangeSets,
+  pendingTagRuleChangeSets: initialState.pendingTagRuleChangeSets,
 };
 
 function isSameFile(a: File | null, b: File | null): boolean {
@@ -338,6 +364,26 @@ export const useImportStore = create<ImportStore>((set) => ({
     set((state) => ({
       pendingChangeSets: state.pendingChangeSets.filter(
         (c: PendingChangeSet) => c.tempId !== tempId
+      ),
+    })),
+
+  addPendingTagRuleChangeSet: (input: AddPendingTagRuleChangeSetInput): PendingTagRuleChangeSet => {
+    const entry: PendingTagRuleChangeSet = {
+      tempId: `temp:tagrules:${crypto.randomUUID()}`,
+      changeSet: input.changeSet,
+      appliedAt: new Date().toISOString(),
+      source: input.source,
+    };
+
+    set((prev) => ({ pendingTagRuleChangeSets: [...prev.pendingTagRuleChangeSets, entry] }));
+    return entry;
+  },
+  listPendingTagRuleChangeSets: (): PendingTagRuleChangeSet[] =>
+    useImportStore.getState().pendingTagRuleChangeSets,
+  removePendingTagRuleChangeSet: (tempId: string) =>
+    set((state) => ({
+      pendingTagRuleChangeSets: state.pendingTagRuleChangeSets.filter(
+        (c: PendingTagRuleChangeSet) => c.tempId !== tempId
       ),
     })),
 

@@ -22,6 +22,12 @@ type ChangeSetOp =
   | { op: 'disable'; id: string }
   | { op: 'remove'; id: string };
 
+type TagRuleChangeSetOp =
+  | { op: 'add'; data: { descriptionPattern: string; tags?: string[]; [k: string]: unknown } }
+  | { op: 'edit'; id: string; data: Record<string, unknown> }
+  | { op: 'disable'; id: string }
+  | { op: 'remove'; id: string };
+
 // ---------------------------------------------------------------------------
 // Collapsible section wrapper
 // ---------------------------------------------------------------------------
@@ -99,9 +105,24 @@ function opDisplayLabel(op: ChangeSetOp): string {
   }
 }
 
+function tagRuleOpDisplayLabel(op: TagRuleChangeSetOp): string {
+  switch (op.op) {
+    case 'add': {
+      const tags = op.data.tags?.length ? ` → ${op.data.tags.join(', ')}` : '';
+      return `${op.data.descriptionPattern}${tags}`;
+    }
+    case 'edit':
+      return `Rule ${op.id.slice(0, 8)}`;
+    case 'disable':
+    case 'remove':
+      return `Rule ${op.id.slice(0, 8)}`;
+  }
+}
+
 export function FinalReviewStep() {
   const pendingEntities = useImportStore((s) => s.pendingEntities);
   const pendingChangeSets = useImportStore((s) => s.pendingChangeSets);
+  const pendingTagRuleChangeSets = useImportStore((s) => s.pendingTagRuleChangeSets);
   const confirmedTransactions = useImportStore((s) => s.confirmedTransactions);
   const processedTransactions = useImportStore((s) => s.processedTransactions);
   const prevStep = useImportStore((s) => s.prevStep);
@@ -125,7 +146,12 @@ export function FinalReviewStep() {
 
   const handleCommit = () => {
     setCommitError(null);
-    const payload = buildCommitPayload(pendingEntities, pendingChangeSets, confirmedTransactions);
+    const payload = buildCommitPayload(
+      pendingEntities,
+      pendingChangeSets,
+      pendingTagRuleChangeSets,
+      confirmedTransactions
+    );
     commitMutation.mutate(payload);
   };
 
@@ -155,8 +181,14 @@ export function FinalReviewStep() {
     [pendingChangeSets]
   );
 
+  const totalTagRuleOps = useMemo(
+    () => pendingTagRuleChangeSets.reduce((sum, pcs) => sum + pcs.changeSet.ops.length, 0),
+    [pendingTagRuleChangeSets]
+  );
+
   const hasEntities = pendingEntities.length > 0;
   const hasRuleChanges = totalOps > 0;
+  const hasTagRuleChanges = totalTagRuleOps > 0;
   const hasTransactions = txnBreakdown.total > 0;
   const hasTags = tagAssignmentCount > 0;
   const isCommitting = commitMutation.isPending;
@@ -187,7 +219,7 @@ export function FinalReviewStep() {
 
         {/* Rule changes */}
         {hasRuleChanges && (
-          <Section title="Rule Changes" count={totalOps}>
+          <Section title="Classification Rule Changes" count={totalOps}>
             <div className="space-y-3">
               {pendingChangeSets.map((pcs) => (
                 <div key={pcs.tempId} className="space-y-1">
@@ -195,11 +227,52 @@ export function FinalReviewStep() {
                     <p className="text-xs text-muted-foreground">Source: {pcs.changeSet.source}</p>
                   )}
                   <ul className="space-y-1">
-                    {pcs.changeSet.ops.map((op, idx) => {
+                    {pcs.changeSet.ops.map((op) => {
                       const badge = OP_BADGE[op.op];
                       const label = opDisplayLabel(op as ChangeSetOp);
+                      const rowKey =
+                        op.op === 'add'
+                          ? `${pcs.tempId}-cor-add-${op.data.descriptionPattern}`
+                          : `${pcs.tempId}-cor-${op.op}-${op.id}`;
                       return (
-                        <li key={idx} className="flex items-center gap-2 text-sm py-0.5">
+                        <li key={rowKey} className="flex items-center gap-2 text-sm py-0.5">
+                          {badge && (
+                            <span
+                              className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium ${badge.className}`}
+                            >
+                              {badge.icon}
+                              {badge.label}
+                            </span>
+                          )}
+                          <span className="font-mono text-xs truncate">{label}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {hasTagRuleChanges && (
+          <Section title="Tag Rule Changes" count={totalTagRuleOps}>
+            <div className="space-y-3">
+              {pendingTagRuleChangeSets.map((pcs) => (
+                <div key={pcs.tempId} className="space-y-1">
+                  {pcs.changeSet.source && (
+                    <p className="text-xs text-muted-foreground">Source: {pcs.changeSet.source}</p>
+                  )}
+                  <ul className="space-y-1">
+                    {pcs.changeSet.ops.map((op) => {
+                      const badge = OP_BADGE[op.op];
+                      const label = tagRuleOpDisplayLabel(op as TagRuleChangeSetOp);
+                      const rowKey =
+                        op.op === 'add'
+                          ? `${pcs.tempId}-add-${op.data.descriptionPattern}`
+                          : `${pcs.tempId}-${op.op}-${op.id}`;
+                      return (
+                        <li key={rowKey} className="flex items-center gap-2 text-sm py-0.5">
                           {badge && (
                             <span
                               className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium ${badge.className}`}
@@ -260,7 +333,7 @@ export function FinalReviewStep() {
         )}
 
         {/* Empty state */}
-        {!hasEntities && !hasRuleChanges && !hasTransactions && !hasTags && (
+        {!hasEntities && !hasRuleChanges && !hasTagRuleChanges && !hasTransactions && !hasTags && (
           <p className="text-sm text-muted-foreground text-center py-8">
             No pending changes to review.
           </p>
@@ -295,13 +368,17 @@ export function FinalReviewStep() {
               <span className="font-medium">{commitResult.transactionsImported}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Rules applied:</span>
+              <span className="text-muted-foreground">Classification rules applied:</span>
               <span className="font-medium">
                 {commitResult.rulesApplied.add +
                   commitResult.rulesApplied.edit +
                   commitResult.rulesApplied.disable +
                   commitResult.rulesApplied.remove}
               </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Tag rules applied:</span>
+              <span className="font-medium">{commitResult.tagRulesApplied ?? 0}</span>
             </div>
             {commitResult.transactionsFailed > 0 && (
               <div className="flex justify-between">
@@ -344,8 +421,11 @@ export function FinalReviewStep() {
                 Failed transactions:
               </p>
               <ul className="space-y-1">
-                {commitResult.failedDetails.map((detail, idx) => (
-                  <li key={idx} className="text-xs text-red-700 dark:text-red-300 flex gap-2">
+                {commitResult.failedDetails.map((detail) => (
+                  <li
+                    key={`${detail.checksum ?? 'no-chk'}-${detail.error}`}
+                    className="text-xs text-red-700 dark:text-red-300 flex gap-2"
+                  >
                     {detail.checksum && (
                       <span className="font-mono shrink-0">{detail.checksum.slice(0, 12)}</span>
                     )}
