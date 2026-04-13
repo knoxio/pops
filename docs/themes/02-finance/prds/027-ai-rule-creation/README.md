@@ -99,7 +99,7 @@ Each import makes the system smarter:
 | #   | Story                                                     | Summary                                                                        | Parallelisable   | Status    |
 | --- | --------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------------- | --------- |
 | 01  | [us-01-correction-analysis](us-01-correction-analysis.md) | Send correction signal to AI, receive proposal inputs for ChangeSet generation | No (first)       | To Review |
-| 02  | [us-02-auto-apply-rules](us-02-auto-apply-rules.md)       | Replace auto-apply with ChangeSet proposal + approval + re-evaluation loop     | Blocked by us-01 | To Review |
+| 02  | [us-02-auto-apply-rules](us-02-auto-apply-rules.md)       | Replace auto-apply with ChangeSet proposal + approval + re-evaluation loop     | Blocked by us-01 | Partial   |
 | 03  | [us-03-confirmation-flow](us-03-confirmation-flow.md)     | Proposal UI for approve/reject with required feedback on reject                | Blocked by us-01 | To Review |
 | 04  | [us-04-batch-analysis](us-04-batch-analysis.md)           | Batch context to improve proposals (still requires approval)                   | Blocked by us-01 | To Review |
 
@@ -107,12 +107,13 @@ US-02 and US-03 can parallelise after US-01.
 
 ## Verification
 
-- Correcting "IKEA Tempe" creates a prefix rule, "IKEA Rhodes" later in the same import matches
-- High-confidence rules auto-apply with toast notification
-- Low-confidence rules prompt for confirmation
-- AI unavailability doesn't break the correction flow
-- Cost tracked per AI call
-- Rules persist across imports (next import benefits from rules created in previous)
+- Correcting "IKEA Tempe" produces a proposal that generalises so "IKEA Rhodes" matches **after approval** and local re-evaluation in the same import.
+- **No** silent DB rule writes: the user always passes through the proposal / approval path (PRD-028) before persistence via `commitImport`.
+- AI unavailability still yields a deterministic fallback proposal signal.
+- Cost tracked per AI call where Claude is invoked.
+- Rules persist across imports once committed (next import benefits from rules written in a prior commit).
+
+Documentation alignment: knoxio/pops#1746.
 
 ## Out of Scope
 

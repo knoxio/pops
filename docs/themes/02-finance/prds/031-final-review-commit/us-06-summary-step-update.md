@@ -1,7 +1,7 @@
 # US-06: Summary step update
 
 > PRD: [031 — Import Final Review & Commit Step](README.md)
-> Status: Done
+> Status: Partial
 
 ## Description
 
@@ -14,7 +14,7 @@ As a user, I want the Summary step to include retroactive reclassification resul
 - [x] If the reclassification count is 0, the section reads "No existing transactions were affected" rather than being hidden.
 - [x] The existing Summary sections (transactions imported, entities created, rules applied) continue to display correctly with data sourced from `CommitResult`.
 - [x] If any transactions failed to import, the Summary surfaces the failure count and details (checksum + error) in a dedicated "Failures" section.
-- [x] The Summary step is reachable only after a successful commit — navigating directly to Step 7 without committing is prevented.
+- [ ] The Summary step is reachable only after a successful commit — navigating directly to Step 7 without committing is prevented **once Tag Review stops using `executeImport` and every import finishes via `commitImport`** (PRD-030 US-10 / knoxio/pops#1740).
 
 ## Notes
 
