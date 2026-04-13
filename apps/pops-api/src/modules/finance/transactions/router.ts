@@ -1,8 +1,8 @@
 /**
  * Transaction tRPC router — CRUD procedures for transactions.
  */
-import { TRPCError } from '@trpc/server';
 import { transactions as transactionsTable } from '@pops/db-types';
+import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { getDb, getDrizzle } from '../../../db.js';
