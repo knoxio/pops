@@ -2,18 +2,13 @@ import type { ConfirmedTransaction, SuggestedTag } from '@pops/api/modules/finan
 import { Button } from '@pops/ui';
 import { Badge } from '@pops/ui';
 import { ChevronDown, ChevronRight, X } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
-import {
-  computeLearnableTags,
-  descriptionPatternFromGroup,
-} from '../../lib/tag-rule-learn-helpers';
 import { trpc } from '../../lib/trpc';
 import { cn } from '../../lib/utils';
 import { useImportStore } from '../../store/importStore';
 import { TagEditor, type TagMetaEntry } from '../TagEditor';
-import { type TagRuleLearnSignal, TagRuleProposalDialog } from './TagRuleProposalDialog';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -65,11 +60,12 @@ function buildTagMetaMap(suggestedTags: SuggestedTag[]): Map<string, TagMetaEntr
 // ---------------------------------------------------------------------------
 
 /**
- * Step 5: Tag Review — review and adjust tags before Final Review (no DB write here).
+ * Step 5: Tag Review — review and adjust tags before Final Review (PRD-030 / PRD-031).
  *
  * Confirmed transactions arrive with tags pre-populated from AI/rule/entity
- * suggestions. This step lets the user accept, modify, or clear tags before
- * the final import is triggered.
+ * suggestions. This step lets the user accept, modify, or clear tags. **No DB
+ * writes** — Continue syncs tags into the store and advances to Step 6; the
+ * single write path is `commitImport` on Final Review.
  *
  * Features:
  * - All groups expanded by default (including those with no suggestions)
@@ -81,72 +77,33 @@ function buildTagMetaMap(suggestedTags: SuggestedTag[]): Map<string, TagMetaEntr
 export function TagReviewStep() {
   const { confirmedTransactions, updateTransactionTags, nextStep, prevStep } = useImportStore();
 
-  // Local tag state keyed by checksum — persisted to the store on Continue (still no DB write).
+  // Local tag state keyed by checksum — edits don't touch the store until Continue
   const [localTags, setLocalTags] = useState<Record<string, string[]>>(() =>
     Object.fromEntries(confirmedTransactions.map((t) => [t.checksum, t.tags ?? []]))
   );
 
+  // If the user returns from Step 6, remount may reuse flow; keep local state aligned
+  // when confirmed transaction tag lists change from the store.
   useEffect(() => {
-    setLocalTags((prev) =>
-      Object.fromEntries(
-        confirmedTransactions.map((t) => [t.checksum, prev[t.checksum] ?? t.tags ?? []])
-      )
-    );
+    setLocalTags((prev) => {
+      const next = { ...prev };
+      for (const t of confirmedTransactions) {
+        if (next[t.checksum] === undefined) {
+          next[t.checksum] = t.tags ?? [];
+        }
+      }
+      const keys = new Set(confirmedTransactions.map((t) => t.checksum));
+      for (const k of Object.keys(next)) {
+        if (!keys.has(k)) delete next[k];
+      }
+      return next;
+    });
   }, [confirmedTransactions]);
 
   // Immutable snapshot of original suggested tags per checksum — for source badges
   const originalSuggestedTags = useMemo<Record<string, SuggestedTag[]>>(
     () => Object.fromEntries(confirmedTransactions.map((t) => [t.checksum, t.suggestedTags ?? []])),
     [confirmedTransactions]
-  );
-
-  const initialTagsRef = useRef<Record<string, string[]> | null>(null);
-  if (initialTagsRef.current === null && confirmedTransactions.length > 0) {
-    initialTagsRef.current = Object.fromEntries(
-      confirmedTransactions.map((t) => [t.checksum, [...(t.tags ?? [])]])
-    );
-  }
-
-  const [learnOpen, setLearnOpen] = useState(false);
-  const [learnSignal, setLearnSignal] = useState<TagRuleLearnSignal | null>(null);
-
-  const previewTransactionsForRules = useMemo(
-    () =>
-      confirmedTransactions.map((t) => ({
-        transactionId: t.checksum,
-        description: t.description,
-        entityId: t.entityId ?? null,
-      })),
-    [confirmedTransactions]
-  );
-
-  const openLearnForGroup = useCallback(
-    (group: ConfirmedGroup) => {
-      const snap = initialTagsRef.current;
-      if (!snap || group.transactions.length === 0) return;
-      const learnable = computeLearnableTags(group.transactions, localTags, snap);
-      const fallback = unionTags(group.transactions.map((t) => localTags[t.checksum] ?? []));
-      const tags = learnable.length > 0 ? learnable : fallback;
-      if (tags.length === 0) {
-        toast.error('Add at least one tag to this group before saving a rule.');
-        return;
-      }
-      const pattern = descriptionPatternFromGroup(group.transactions.map((t) => t.description));
-      const eids = [
-        ...new Set(group.transactions.map((t) => t.entityId).filter(Boolean)),
-      ] as string[];
-      const entityId = eids.length === 1 ? eids[0]! : null;
-      const firstDesc = group.transactions[0]!.description;
-      setLearnSignal({
-        descriptionPattern:
-          pattern || firstDesc.slice(0, 16).toUpperCase().replace(/\s+/g, ' ').trim() || 'IMPORT',
-        matchType: 'contains',
-        entityId,
-        tags,
-      });
-      setLearnOpen(true);
-    },
-    [localTags]
   );
 
   const groups = useMemo(() => groupByEntity(confirmedTransactions), [confirmedTransactions]);
@@ -197,26 +154,13 @@ export function TagReviewStep() {
     nextStep();
   }, [localTags, updateTransactionTags, nextStep]);
 
-  const continueLabel =
-    confirmedTransactions.length === 1
-      ? 'Continue to final review (1 transaction)'
-      : `Continue to final review (${confirmedTransactions.length} transactions)`;
-
   return (
     <div className="space-y-6">
-      <TagRuleProposalDialog
-        open={learnOpen}
-        onOpenChange={setLearnOpen}
-        signal={learnSignal}
-        previewTransactions={previewTransactionsForRules}
-      />
-
       <div>
         <h2 className="text-2xl font-semibold mb-2">Tag Review</h2>
         <p className="text-sm text-muted-foreground">
-          Review and adjust tags before the final step. Nothing is written to the database until you
-          commit on Final Review. Tags are pre-filled from AI suggestions, learned rules, and entity
-          defaults.
+          Review and adjust tags. Nothing is written to the database until you approve on Final
+          Review. Tags are pre-filled from AI suggestions, learned rules, and entity defaults.
         </p>
       </div>
 
@@ -238,12 +182,13 @@ export function TagReviewStep() {
             availableTags={availableTags ?? []}
             onUpdateTag={updateTag}
             onApplyGroupTags={handleApplyGroupTags}
-            onOpenTagRule={openLearnForGroup}
           />
         ))}
 
         {confirmedTransactions.length === 0 && (
-          <p className="text-center py-8 text-muted-foreground text-sm">No transactions to tag.</p>
+          <p className="text-center py-8 text-muted-foreground text-sm">
+            No transactions to import.
+          </p>
         )}
       </div>
 
@@ -257,7 +202,9 @@ export function TagReviewStep() {
           disabled={confirmedTransactions.length === 0}
           aria-label="Continue to final review"
         >
-          {continueLabel}
+          {confirmedTransactions.length === 0
+            ? 'Continue to final review'
+            : `Continue to final review (${confirmedTransactions.length} transaction${confirmedTransactions.length !== 1 ? 's' : ''})`}
         </Button>
       </div>
     </div>
@@ -275,7 +222,6 @@ interface EntityGroupProps {
   availableTags: string[];
   onUpdateTag: (checksum: string, tags: string[]) => void;
   onApplyGroupTags: (group: ConfirmedGroup, tags: string[]) => void;
-  onOpenTagRule: (group: ConfirmedGroup) => void;
 }
 
 /**
@@ -290,7 +236,6 @@ function EntityGroup({
   availableTags,
   onUpdateTag,
   onApplyGroupTags,
-  onOpenTagRule,
 }: EntityGroupProps) {
   const [expanded, setExpanded] = useState(true);
 
@@ -386,16 +331,6 @@ function EntityGroup({
               Apply suggestions
             </Button>
           )}
-
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => onOpenTagRule(group)}
-            className="text-xs px-2 py-1 h-auto whitespace-nowrap"
-            title="Preview and save a reusable tag rule for this merchant group"
-          >
-            Save tag rule…
-          </Button>
         </div>
       </div>
 
