@@ -2,7 +2,7 @@ import type { ConfirmedTransaction, SuggestedTag } from '@pops/api/modules/finan
 import { Button } from '@pops/ui';
 import { Badge } from '@pops/ui';
 import { ChevronDown, ChevronRight, X } from 'lucide-react';
-import { useCallback, useMemo, useRef, useState, useEffect } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { trpc } from '../../lib/trpc';
