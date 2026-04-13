@@ -21,8 +21,10 @@ COPY packages/types/tsconfig.json ./packages/types/
 COPY apps/pops-api/tsconfig.json ./apps/pops-api/
 COPY apps/pops-api/src ./apps/pops-api/src
 
-# Build db-types first
+# Build shared packages first
 WORKDIR /app/packages/db-types
+RUN pnpm build
+WORKDIR /app/packages/types
 RUN pnpm build
 
 # Build pops-api
@@ -46,9 +48,11 @@ COPY --from=builder /app/apps/pops-api/dist ./dist
 COPY --from=builder /app/apps/pops-api/src/db/migrations ./dist/db/migrations
 COPY --from=builder /app/apps/pops-api/src/db/drizzle-migrations ./dist/db/drizzle-migrations
 
-# Copy db-types built output into node_modules
+# Copy shared package built output into node_modules
 COPY --from=builder /app/packages/db-types/dist ./node_modules/@pops/db-types/dist
 COPY --from=builder /app/packages/db-types/package.json ./node_modules/@pops/db-types/
+COPY --from=builder /app/packages/types/dist ./node_modules/@pops/types/dist
+COPY --from=builder /app/packages/types/package.json ./node_modules/@pops/types/
 
 # Copy types source into node_modules (source-only package, no build step)
 COPY --from=builder /app/packages/types/src ./node_modules/@pops/types/src

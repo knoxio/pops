@@ -105,6 +105,8 @@ services:
     image: moltbot/moltbot:latest
     container_name: pops-moltbot
     restart: unless-stopped
+    profiles:
+      - moltbot
     networks:
       - backend
     volumes:
