@@ -8,6 +8,7 @@ on:
     paths:
       - "apps/pops-api/**"
       - "packages/db-types/**"
+      - "packages/types/**"
       - ".github/workflows/api-quality.yml"
 
 jobs:
@@ -26,6 +27,7 @@ jobs:
             api:
               - 'apps/pops-api/**'
               - 'packages/db-types/**'
+              - 'packages/types/**'
               - '.github/workflows/api-quality.yml'
 
   quality-checks:

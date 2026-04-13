@@ -11,6 +11,7 @@ on:
       - "packages/api-client/**"
       - "packages/widgets/**"
       - "packages/navigation/**"
+      - "packages/types/**"
       - ".github/workflows/fe-quality.yml"
   pull_request:
 
@@ -35,6 +36,7 @@ jobs:
               - 'packages/api-client/**'
               - 'packages/widgets/**'
               - 'packages/navigation/**'
+              - 'packages/types/**'
               - '.github/workflows/fe-quality.yml'
 
   quality:

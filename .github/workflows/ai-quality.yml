@@ -8,6 +8,7 @@ on:
       - "packages/ui/**"
       - "packages/db-types/**"
       - "packages/api-client/**"
+      - "packages/types/**"
       - ".github/workflows/ai-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
@@ -30,6 +31,7 @@ jobs:
               - 'packages/ui/**'
               - 'packages/db-types/**'
               - 'packages/api-client/**'
+              - 'packages/types/**'
               - '.github/workflows/ai-quality.yml'
               - '.github/workflows/_pkg-check.yml'
 
