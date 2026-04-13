@@ -12,12 +12,14 @@ import {
   movies,
   watchHistory,
 } from '@pops/db-types';
-import { and, asc, count, desc, eq, inArray, like, or, type SQL } from 'drizzle-orm';
+import { and, asc, count, desc, eq, or } from 'drizzle-orm';
 
 import { getDb, getDrizzle } from '../../../db.js';
 import { ConflictError, NotFoundError, ValidationError } from '../../../shared/errors.js';
 import { getDimension } from './dimensions.service.js';
 import { getGlobalComparisonCount } from './global-count.js';
+import { findExistingComparison, normalizePairOrder } from './lib/comparison-queries.js';
+import { recalcDimensionElo, updateEloScores } from './lib/score-management.js';
 import { convertTierPlacements } from './tier-conversion.js';
 import { setTierOverride } from './tier-overrides.js';
 import {
@@ -26,7 +28,6 @@ import {
   type BlacklistMovieResult,
   type ComparisonRow,
   type DebriefOpponent,
-  type MediaScoreRow,
   type PendingDebrief,
   type RecordComparisonInput,
   type RecordDebriefComparisonInput,
@@ -42,6 +43,17 @@ export {
   updateDimension,
 } from './dimensions.service.js';
 export { getGlobalComparisonCount } from './global-count.js';
+export {
+  type ComparisonListResult,
+  listAllComparisons,
+  listComparisonsForMedia,
+} from './lib/comparison-queries.js';
+export { drawTierOutcome, ELO_K, expectedScore } from './lib/elo-calculator.js';
+export {
+  recalcAllDimensions,
+  recalcDimensionElo,
+  updateEloScores,
+} from './lib/score-management.js';
 export { getRandomPair } from './pairs/random-pair.js';
 export { getSmartPair } from './pairs/smart-pair.js';
 export { getRankings, type RankingsResult, resolvePosterUrl } from './rankings.service.js';
@@ -61,70 +73,7 @@ function sourceRank(source: string | null | undefined): number {
   }
 }
 
-/**
- * Find an existing comparison for the same normalized pair on a dimension.
- * Returns the row if found, undefined otherwise.
- */
-function findExistingComparison(
-  dimensionId: number,
-  mediaAType: string,
-  mediaAId: number,
-  mediaBType: string,
-  mediaBId: number
-): ComparisonRow | undefined {
-  const drizzleDb = getDrizzle();
-  const [normAType, normAId, normBType, normBId] = normalizePairOrder(
-    mediaAType,
-    mediaAId,
-    mediaBType,
-    mediaBId
-  );
-  return drizzleDb
-    .select()
-    .from(comparisons)
-    .where(
-      and(
-        eq(comparisons.dimensionId, dimensionId),
-        or(
-          and(
-            eq(comparisons.mediaAType, normAType),
-            eq(comparisons.mediaAId, normAId),
-            eq(comparisons.mediaBType, normBType),
-            eq(comparisons.mediaBId, normBId)
-          ),
-          and(
-            eq(comparisons.mediaAType, normBType),
-            eq(comparisons.mediaAId, normBId),
-            eq(comparisons.mediaBType, normAType),
-            eq(comparisons.mediaBId, normAId)
-          )
-        )
-      )
-    )
-    .get();
-}
-
 // ── Comparisons ──
-
-/** Elo K-factor for score updates. */
-const ELO_K = 32;
-
-/** Map draw tier to ELO outcome value. High = both gain, Mid = neutral, Low = both lose. */
-function drawTierOutcome(tier: string | null | undefined): number {
-  switch (tier) {
-    case 'high':
-      return 0.7;
-    case 'low':
-      return 0.3;
-    default:
-      return 0.5;
-  }
-}
-
-/** Calculate expected score for player A given ratings. */
-function expectedScore(ratingA: number, ratingB: number): number {
-  return 1 / (1 + Math.pow(10, (ratingB - ratingA) / 400));
-}
 
 /**
  * Record a 1v1 comparison and update Elo scores.
@@ -235,132 +184,6 @@ export function recordComparison(input: RecordComparisonInput): ComparisonRow {
   return row;
 }
 
-function getOrCreateScore(mediaType: string, mediaId: number, dimensionId: number): MediaScoreRow {
-  const db = getDrizzle();
-
-  const existing = db
-    .select()
-    .from(mediaScores)
-    .where(
-      and(
-        eq(mediaScores.mediaType, mediaType),
-        eq(mediaScores.mediaId, mediaId),
-        eq(mediaScores.dimensionId, dimensionId)
-      )
-    )
-    .get();
-
-  if (existing) return existing;
-
-  db.insert(mediaScores)
-    .values({
-      mediaType,
-      mediaId,
-      dimensionId,
-      score: 1500.0,
-      comparisonCount: 0,
-    })
-    .run();
-
-  const score: MediaScoreRow | undefined = db
-    .select()
-    .from(mediaScores)
-    .where(
-      and(
-        eq(mediaScores.mediaType, mediaType),
-        eq(mediaScores.mediaId, mediaId),
-        eq(mediaScores.dimensionId, dimensionId)
-      )
-    )
-    .get();
-
-  if (!score) throw new Error(`Score not found for ${mediaType}:${mediaId}:${dimensionId}`);
-  return score;
-}
-
-function updateEloScores(input: RecordComparisonInput): { deltaA: number; deltaB: number } {
-  const db = getDrizzle();
-
-  const scoreA = getOrCreateScore(input.mediaAType, input.mediaAId, input.dimensionId);
-  const scoreB = getOrCreateScore(input.mediaBType, input.mediaBId, input.dimensionId);
-
-  const expectedA = expectedScore(scoreA.score, scoreB.score);
-  const expectedB = expectedScore(scoreB.score, scoreA.score);
-
-  const isDraw = input.winnerId === 0;
-  const drawOutcome = isDraw ? drawTierOutcome(input.drawTier) : 0.5;
-  const actualA = isDraw
-    ? drawOutcome
-    : input.winnerType === input.mediaAType && input.winnerId === input.mediaAId
-      ? 1
-      : 0;
-  const actualB = isDraw ? drawOutcome : 1 - actualA;
-
-  const newScoreA = scoreA.score + ELO_K * (actualA - expectedA);
-  const newScoreB = scoreB.score + ELO_K * (actualB - expectedB);
-  const deltaA = Math.round(newScoreA - scoreA.score);
-  const deltaB = Math.round(newScoreB - scoreB.score);
-  const now = new Date().toISOString();
-
-  db.update(mediaScores)
-    .set({
-      score: newScoreA,
-      comparisonCount: scoreA.comparisonCount + 1,
-      updatedAt: now,
-    })
-    .where(eq(mediaScores.id, scoreA.id))
-    .run();
-
-  db.update(mediaScores)
-    .set({
-      score: newScoreB,
-      comparisonCount: scoreB.comparisonCount + 1,
-      updatedAt: now,
-    })
-    .where(eq(mediaScores.id, scoreB.id))
-    .run();
-
-  return { deltaA, deltaB };
-}
-
-export interface ComparisonListResult {
-  rows: ComparisonRow[];
-  total: number;
-}
-
-export function listComparisonsForMedia(
-  mediaType: string,
-  mediaId: number,
-  dimensionId: number | undefined,
-  limit: number,
-  offset: number
-): ComparisonListResult {
-  const db = getDrizzle();
-
-  const mediaCondition = or(
-    and(eq(comparisons.mediaAType, mediaType), eq(comparisons.mediaAId, mediaId)),
-    and(eq(comparisons.mediaBType, mediaType), eq(comparisons.mediaBId, mediaId))
-  );
-
-  const conditions = dimensionId
-    ? and(mediaCondition, eq(comparisons.dimensionId, dimensionId))
-    : mediaCondition;
-
-  const rows = db
-    .select()
-    .from(comparisons)
-    .where(conditions)
-    .orderBy(desc(comparisons.comparedAt))
-    .limit(limit)
-    .offset(offset)
-    .all();
-
-  const countRow = db.select({ total: count() }).from(comparisons).where(conditions).all()[0];
-  const total = countRow?.total ?? 0;
-
-  return { rows, total };
-}
-
 /**
  * Delete a comparison and recalculate Elo scores for the affected dimension.
  * Replays all remaining comparisons in chronological order to ensure accuracy.
@@ -442,107 +265,7 @@ export function blacklistMovie(mediaType: string, mediaId: number): BlacklistMov
   })();
 }
 
-/**
- * List all comparisons across all dimensions, ordered by most recent first.
- */
-export function listAllComparisons(
-  dimensionId: number | undefined,
-  search: string | undefined,
-  limit: number,
-  offset: number
-): ComparisonListResult {
-  const db = getDrizzle();
-
-  const conditions: SQL[] = [];
-  if (dimensionId) conditions.push(eq(comparisons.dimensionId, dimensionId));
-  if (search) {
-    const matchingIds = db
-      .select({ id: movies.id })
-      .from(movies)
-      .where(like(movies.title, `%${search}%`))
-      .all()
-      .map((r) => r.id);
-    if (matchingIds.length === 0) return { rows: [], total: 0 };
-    const movieFilter = or(
-      inArray(comparisons.mediaAId, matchingIds),
-      inArray(comparisons.mediaBId, matchingIds)
-    );
-    if (movieFilter) conditions.push(movieFilter);
-  }
-
-  const where = conditions.length > 0 ? and(...conditions) : undefined;
-
-  const rows = db
-    .select()
-    .from(comparisons)
-    .where(where)
-    .orderBy(desc(comparisons.comparedAt))
-    .limit(limit)
-    .offset(offset)
-    .all();
-
-  const countRow = db.select({ total: count() }).from(comparisons).where(where).all()[0];
-  const total = countRow?.total ?? 0;
-
-  return { rows, total };
-}
-
 // ── Dimension Exclusion ──
-
-/**
- * Recalculate ELO scores for a dimension by resetting all scores and replaying
- * all comparisons in chronological order.
- */
-function recalcDimensionElo(dimensionId: number): void {
-  const drizzleDb = getDrizzle();
-
-  // Reset all scores for this dimension
-  drizzleDb
-    .update(mediaScores)
-    .set({ score: 1500.0, comparisonCount: 0, updatedAt: new Date().toISOString() })
-    .where(eq(mediaScores.dimensionId, dimensionId))
-    .run();
-
-  // Replay all remaining comparisons in chronological order, updating stored deltas
-  const remaining = drizzleDb
-    .select()
-    .from(comparisons)
-    .where(eq(comparisons.dimensionId, dimensionId))
-    .orderBy(asc(comparisons.comparedAt))
-    .all();
-
-  for (const comp of remaining) {
-    const { deltaA, deltaB } = updateEloScores({
-      dimensionId: comp.dimensionId,
-      mediaAType: comp.mediaAType as 'movie' | 'tv_show',
-      mediaAId: comp.mediaAId,
-      mediaBType: comp.mediaBType as 'movie' | 'tv_show',
-      mediaBId: comp.mediaBId,
-      winnerType: comp.winnerType as 'movie' | 'tv_show',
-      winnerId: comp.winnerId,
-      drawTier: comp.drawTier as 'high' | 'mid' | 'low' | null,
-    });
-
-    drizzleDb.update(comparisons).set({ deltaA, deltaB }).where(eq(comparisons.id, comp.id)).run();
-  }
-}
-
-/**
- * Recalculate ELO scores for all active dimensions.
- * Used after bulk data changes (e.g. dedupe migration).
- */
-export function recalcAllDimensions(): number {
-  const drizzleDb = getDrizzle();
-  const dims = drizzleDb
-    .select({ id: comparisonDimensions.id })
-    .from(comparisonDimensions)
-    .where(eq(comparisonDimensions.active, 1))
-    .all();
-  for (const dim of dims) {
-    recalcDimensionElo(dim.id);
-  }
-  return dims.length;
-}
 
 /**
  * Exclude a media item from a dimension: sets excluded=1 on the media_scores row
@@ -1209,22 +932,6 @@ export function dismissDebriefDimension(sessionId: number, dimensionId: number):
       .where(eq(debriefSessions.id, sessionId))
       .run();
   }
-}
-
-/**
- * Normalize pair ordering so A-vs-B and B-vs-A map to the same row.
- * Sorts by (mediaType, mediaId) to ensure consistent key.
- */
-function normalizePairOrder(
-  aType: string,
-  aId: number,
-  bType: string,
-  bId: number
-): [string, number, string, number] {
-  const keyA = `${aType}:${aId}`;
-  const keyB = `${bType}:${bId}`;
-  if (keyA <= keyB) return [aType, aId, bType, bId];
-  return [bType, bId, aType, aId];
 }
 
 // ── Batch Record Comparisons ──
