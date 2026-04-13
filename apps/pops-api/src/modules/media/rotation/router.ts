@@ -599,7 +599,11 @@ export const rotationRouter = router({
         const imageCache = getImageCache();
         await addMovieToLibrary(candidate.tmdbId, tmdbClient, imageCache);
       } catch (err) {
-        console.warn('[rotation] Failed to create library entry for tmdb=%d:', candidate.tmdbId, err);
+        console.warn(
+          '[rotation] Failed to create library entry for tmdb=%d:',
+          candidate.tmdbId,
+          err
+        );
       }
 
       // Mark as added and set protected status
