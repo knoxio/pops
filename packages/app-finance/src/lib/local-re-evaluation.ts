@@ -5,14 +5,12 @@
  * the same matching logic as the server-side findMatchingCorrectionFromRules.
  * Runs entirely client-side with no server round-trip.
  */
-import type {
-  CorrectionMatchResult,
-  CorrectionRow,
-} from '@pops/api/modules/core/corrections/types';
+import type { CorrectionRow } from '@pops/api/modules/core/corrections/types';
 import {
   classifyCorrectionMatch,
   normalizeDescription,
 } from '@pops/api/modules/core/corrections/types';
+import type { MatchedRule } from '@pops/api/modules/finance/imports';
 
 import type { ProcessedTransaction } from '../store/importStore';
 
@@ -24,13 +22,19 @@ export interface ReEvaluationResult {
 }
 
 /**
- * Pure in-memory matcher — mirrors server-side findMatchingCorrectionFromRules.
+ * Returns ALL rules that match `description`, sorted by the old type-priority
+ * order (exact → contains → regex), with confidence/timesApplied tie-breaking
+ * within each type. First entry is the winner; subsequent entries are overridden.
+ *
+ * NOTE: This mirrors the local matching heuristic used before the server-side
+ * priority column was introduced. The `matchedRules` array is populated using
+ * the same single pass — no separate matching pass.
  */
-function findMatchingRule(
+function findAllMatchingRules(
   description: string,
   rules: CorrectionRow[],
   minConfidence: number = 0.7
-): CorrectionMatchResult | null {
+): CorrectionRow[] {
   const normalized = normalizeDescription(description);
   // isActive is stored as integer in SQLite but typed as boolean via Drizzle mode: "boolean".
   // Use truthiness to handle both representations (1/true).
@@ -40,8 +44,6 @@ function findMatchingRule(
     .filter((r) => r.matchType === 'exact' && r.descriptionPattern === normalized)
     .sort((a, b) => b.confidence - a.confidence || b.timesApplied - a.timesApplied);
 
-  if (exactMatches[0]) return classifyCorrectionMatch(exactMatches[0]);
-
   const containsMatches = eligible
     .filter(
       (r) =>
@@ -50,8 +52,6 @@ function findMatchingRule(
         normalized.includes(r.descriptionPattern)
     )
     .sort((a, b) => b.confidence - a.confidence || b.timesApplied - a.timesApplied);
-
-  if (containsMatches[0]) return classifyCorrectionMatch(containsMatches[0]);
 
   const regexMatches = eligible
     .filter((r) => r.matchType === 'regex' && r.descriptionPattern.length > 0)
@@ -64,9 +64,16 @@ function findMatchingRule(
     })
     .sort((a, b) => b.confidence - a.confidence || b.timesApplied - a.timesApplied);
 
-  if (regexMatches[0]) return classifyCorrectionMatch(regexMatches[0]);
-
-  return null;
+  // Exact matches beat contains which beat regex (type-priority ordering).
+  // Within each group collect ALL matches so overrides can be shown.
+  if (exactMatches.length > 0) {
+    // Winner is the first exact match; any contains/regex matches are also overridden
+    return [...exactMatches, ...containsMatches, ...regexMatches];
+  }
+  if (containsMatches.length > 0) {
+    return [...containsMatches, ...regexMatches];
+  }
+  return regexMatches;
 }
 
 /**
@@ -86,8 +93,18 @@ export function reevaluateTransactions(
   let affectedCount = 0;
 
   for (const txn of uncertain) {
-    const match = findMatchingRule(txn.description, mergedRules, minConfidence);
+    const allMatches = findAllMatchingRules(txn.description, mergedRules, minConfidence);
+    const match = allMatches.length > 0 ? classifyCorrectionMatch(allMatches[0]!) : null;
     if (match && match.status === 'matched') {
+      const matchedRules: MatchedRule[] = allMatches.map((rule) => ({
+        ruleId: rule.id,
+        pattern: rule.descriptionPattern,
+        matchType: rule.matchType,
+        confidence: rule.confidence,
+        priority: rule.priority,
+        entityId: rule.entityId ?? null,
+        entityName: rule.entityName ?? null,
+      }));
       newMatched.push({
         ...txn,
         entity: {
@@ -105,6 +122,7 @@ export function reevaluateTransactions(
           matchType: match.correction.matchType,
           confidence: match.correction.confidence,
         },
+        matchedRules,
       });
       affectedCount++;
     } else {
@@ -113,8 +131,18 @@ export function reevaluateTransactions(
   }
 
   for (const txn of failed) {
-    const match = findMatchingRule(txn.description, mergedRules, minConfidence);
+    const allMatches = findAllMatchingRules(txn.description, mergedRules, minConfidence);
+    const match = allMatches.length > 0 ? classifyCorrectionMatch(allMatches[0]!) : null;
     if (match && match.status === 'matched') {
+      const matchedRules: MatchedRule[] = allMatches.map((rule) => ({
+        ruleId: rule.id,
+        pattern: rule.descriptionPattern,
+        matchType: rule.matchType,
+        confidence: rule.confidence,
+        priority: rule.priority,
+        entityId: rule.entityId ?? null,
+        entityName: rule.entityName ?? null,
+      }));
       newMatched.push({
         ...txn,
         entity: {
@@ -132,6 +160,7 @@ export function reevaluateTransactions(
           matchType: match.correction.matchType,
           confidence: match.correction.confidence,
         },
+        matchedRules,
       });
       affectedCount++;
     } else {

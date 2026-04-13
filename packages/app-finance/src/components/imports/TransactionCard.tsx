@@ -2,6 +2,7 @@ import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
 import { Badge } from '@pops/ui';
 import { Button } from '@pops/ui';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@pops/ui';
+import { Popover, PopoverContent, PopoverTrigger } from '@pops/ui';
 import { ChevronRight, Pencil, Sparkles, Zap } from 'lucide-react';
 import { useState } from 'react';
 
@@ -44,6 +45,9 @@ export function TransactionCard({
 
   const ruleProvenance = transaction.ruleProvenance;
   const isRuleMatched = Boolean(ruleProvenance) || transaction.entity?.matchType === 'learned';
+
+  // Overridden rules: all matched rules after the first (winner) entry (US-07).
+  const overriddenRules = transaction.matchedRules?.slice(1) ?? [];
 
   // Check if AI-suggested entity actually exists in the entities list
   const aiSuggestedEntityExists =
@@ -116,6 +120,42 @@ export function TransactionCard({
               >
                 Rule matched
               </Badge>
+            )}
+            {overriddenRules.length > 0 && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Badge
+                    variant="outline"
+                    className="text-xs cursor-pointer hover:bg-accent"
+                    aria-label={`${overriddenRules.length} rule${overriddenRules.length === 1 ? '' : 's'} overridden`}
+                  >
+                    +{overriddenRules.length} overridden
+                  </Badge>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 p-3" align="start">
+                  <p className="text-xs font-medium text-muted-foreground mb-2">
+                    Overridden rules (lower priority)
+                  </p>
+                  <ul className="space-y-2">
+                    {overriddenRules.map((rule) => (
+                      <li key={rule.ruleId} className="text-xs border rounded p-2 space-y-0.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <code className="font-mono truncate max-w-[18ch]" title={rule.pattern}>
+                            {rule.pattern}
+                          </code>
+                          <Badge variant="outline" className="text-[10px] shrink-0">
+                            {rule.matchType}
+                          </Badge>
+                        </div>
+                        <div className="text-muted-foreground">
+                          Priority: {rule.priority} • {Math.round(rule.confidence * 100)}%
+                          {rule.entityName && ` • ${rule.entityName}`}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </PopoverContent>
+              </Popover>
             )}
           </div>
           <div className="text-sm text-gray-600 dark:text-gray-400">
