@@ -224,6 +224,19 @@ describe('computeMergedRules', () => {
     expect(result1[0].confidence).toBe(0.8);
     expect(result2[0].confidence).toBe(0.9);
   });
+
+  it('preserves tags as string[] (not a JSON-encoded string) after applying ops', () => {
+    // Regression guard: the previous implementation leaked CorrectionRow (tags: string)
+    // out of the merge, which caused downstream edit ops to send `tags: "[\"grocery\"]"`
+    // and fail server-side Zod validation.
+    const dbRules = [makeRule({ id: 'r1', tags: ['grocery'] })];
+    const cs = makePendingChangeSet({
+      ops: [{ op: 'edit', id: 'r1', data: { confidence: 0.9 } }],
+    });
+    const [merged] = computeMergedRules(dbRules, [cs]);
+    expect(Array.isArray(merged?.tags)).toBe(true);
+    expect(merged?.tags).toEqual(['grocery']);
+  });
 });
 
 // ---------------------------------------------------------------------------

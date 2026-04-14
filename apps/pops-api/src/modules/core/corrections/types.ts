@@ -67,6 +67,30 @@ export function toCorrection(row: CorrectionRow): Correction {
 }
 
 /**
+ * Inverse of `toCorrection`: map the API response shape back to the DB row
+ * shape. Used by frontend code that needs to feed API-shaped rules into pure
+ * helpers (e.g. `applyChangeSetToRules`) that operate on DB rows.
+ */
+export function correctionToRow(c: Correction): CorrectionRow {
+  return {
+    id: c.id,
+    descriptionPattern: c.descriptionPattern,
+    matchType: c.matchType,
+    entityId: c.entityId,
+    entityName: c.entityName,
+    location: c.location,
+    tags: JSON.stringify(c.tags),
+    transactionType: c.transactionType,
+    isActive: c.isActive,
+    confidence: c.confidence,
+    priority: c.priority,
+    timesApplied: c.timesApplied,
+    createdAt: c.createdAt,
+    lastUsedAt: c.lastUsedAt,
+  };
+}
+
+/**
  * Normalize description for pattern matching
  */
 export function normalizeDescription(description: string): string {

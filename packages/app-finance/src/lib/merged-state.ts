@@ -1,6 +1,6 @@
 import { applyChangeSetToRules } from '@pops/api/modules/core/corrections/pure-service';
 import type { Correction, CorrectionRow } from '@pops/api/modules/core/corrections/types';
-import { toCorrection } from '@pops/api/modules/core/corrections/types';
+import { correctionToRow, toCorrection } from '@pops/api/modules/core/corrections/types';
 import type { Entity } from '@pops/api/modules/core/entities/types';
 
 import type { PendingChangeSet, PendingEntity } from '../store/importStore';
@@ -11,30 +11,6 @@ import type { PendingChangeSet, PendingEntity } from '../store/importStore';
 
 let _cachedRulesInput: { dbRules: Correction[]; pending: PendingChangeSet[] } | null = null;
 let _cachedRulesOutput: Correction[] | null = null;
-
-/**
- * Convert an API-shaped `Correction` (tags: string[]) into the DB row shape
- * (`CorrectionRow`, tags: JSON string) so it can be fed into the pure-service
- * helpers that operate on DB rows.
- */
-function correctionToRow(c: Correction): CorrectionRow {
-  return {
-    id: c.id,
-    descriptionPattern: c.descriptionPattern,
-    matchType: c.matchType,
-    entityId: c.entityId,
-    entityName: c.entityName,
-    location: c.location,
-    tags: JSON.stringify(c.tags),
-    transactionType: c.transactionType,
-    isActive: c.isActive,
-    confidence: c.confidence,
-    priority: c.priority,
-    timesApplied: c.timesApplied,
-    createdAt: c.createdAt,
-    lastUsedAt: c.lastUsedAt,
-  };
-}
 
 /**
  * Fold `applyChangeSetToRules` over each pending ChangeSet in insertion order,

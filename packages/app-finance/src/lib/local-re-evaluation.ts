@@ -49,9 +49,7 @@ function findAllMatchingRules(
   minConfidence: number = 0.7
 ): Correction[] {
   const normalized = normalizeDescription(description);
-  // isActive is stored as integer in SQLite but typed as boolean via Drizzle mode: "boolean".
-  // Use truthiness to handle both representations (1/true).
-  const eligible = rules.filter((r) => !!r.isActive && r.confidence >= minConfidence);
+  const eligible = rules.filter((r) => r.isActive && r.confidence >= minConfidence);
 
   const exactMatches = eligible
     .filter((r) => r.matchType === 'exact' && r.descriptionPattern === normalized)
