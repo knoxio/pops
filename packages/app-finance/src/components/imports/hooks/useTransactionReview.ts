@@ -13,10 +13,11 @@ export type ViewMode = 'list' | 'grouped';
  * unresolved count, and entity grouping for the ReviewStep.
  */
 export function useTransactionReview() {
-  const { processedTransactions, pendingChangeSets } = useImportStore((s) => ({
-    processedTransactions: s.processedTransactions,
-    pendingChangeSets: s.pendingChangeSets,
-  }));
+  // Select individually — returning a fresh object from the selector breaks
+  // Zustand v5 (useSyncExternalStore-based) and produces an infinite render
+  // loop (React #185). Use `useShallow` if you ever need object grouping here.
+  const processedTransactions = useImportStore((s) => s.processedTransactions);
+  const pendingChangeSets = useImportStore((s) => s.pendingChangeSets);
 
   const [localTransactions, setLocalTransactions] = useState(processedTransactions);
   const [viewMode, setViewMode] = useState<ViewMode>('grouped');
