@@ -234,10 +234,7 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
     if (!isBrowseMode) return [];
     const browseDbRules = browseListQuery.data?.data ?? [];
     if (pendingChangeSets.length === 0) return browseDbRules;
-    return computeMergedRules(
-      browseDbRules as unknown as Parameters<typeof computeMergedRules>[0],
-      pendingChangeSets
-    ) as unknown as CorrectionRule[];
+    return computeMergedRules(browseDbRules, pendingChangeSets);
   }, [isBrowseMode, browseListQuery.data?.data, pendingChangeSets]);
 
   const browseOrderedMerged = useMemo(

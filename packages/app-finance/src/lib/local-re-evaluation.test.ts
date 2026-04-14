@@ -1,10 +1,10 @@
-import type { CorrectionRow } from '@pops/api/modules/core/corrections/types';
+import type { Correction } from '@pops/api/modules/core/corrections/types';
 import { describe, expect, it } from 'vitest';
 
 import type { ProcessedTransaction } from '../store/importStore';
 import { reevaluateTransactions } from './local-re-evaluation';
 
-function makeRule(overrides: Partial<CorrectionRow> = {}): CorrectionRow {
+function makeRule(overrides: Partial<Correction> = {}): Correction {
   return {
     id: overrides.id ?? 'rule-1',
     descriptionPattern: overrides.descriptionPattern ?? 'WOOLWORTHS',
@@ -12,7 +12,7 @@ function makeRule(overrides: Partial<CorrectionRow> = {}): CorrectionRow {
     entityId: overrides.entityId ?? 'entity-1',
     entityName: overrides.entityName ?? 'Woolworths',
     location: overrides.location ?? null,
-    tags: overrides.tags ?? '[]',
+    tags: overrides.tags ?? [],
     transactionType: overrides.transactionType ?? 'purchase',
     isActive: overrides.isActive ?? true,
     confidence: overrides.confidence ?? 0.95,
@@ -20,7 +20,7 @@ function makeRule(overrides: Partial<CorrectionRow> = {}): CorrectionRow {
     timesApplied: overrides.timesApplied ?? 5,
     createdAt: '2025-01-01T00:00:00.000Z',
     lastUsedAt: null,
-  } as CorrectionRow;
+  };
 }
 
 function makeTxn(overrides: Partial<ProcessedTransaction> = {}): ProcessedTransaction {

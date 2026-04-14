@@ -56,22 +56,14 @@ export function useTransactionReview() {
     prevChangeSetsRef.current = pendingChangeSets;
     if (!dbRulesData?.data) return;
 
-    // tags is string[] from tRPC but string in CorrectionRow (SQLite JSON) — cast through unknown
-    const freshRules = computeMergedRules(
-      dbRulesData.data as unknown as Parameters<typeof computeMergedRules>[0],
-      pendingChangeSets
-    );
+    const freshRules = computeMergedRules(dbRulesData.data, pendingChangeSets);
     const current = localTxRef.current;
     // Demote rule-promoted transactions back to uncertain for re-evaluation
     const rulePromoted = current.matched.filter((t) => t.ruleProvenance);
     const manuallyMatched = current.matched.filter((t) => !t.ruleProvenance);
     const candidateUncertain = [...current.uncertain, ...rulePromoted];
 
-    const reeval = reevaluateTransactions(
-      candidateUncertain,
-      current.failed,
-      freshRules as unknown as Parameters<typeof reevaluateTransactions>[2]
-    );
+    const reeval = reevaluateTransactions(candidateUncertain, current.failed, freshRules);
 
     const updated = {
       ...current,

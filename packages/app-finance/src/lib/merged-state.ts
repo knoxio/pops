@@ -1,5 +1,6 @@
 import { applyChangeSetToRules } from '@pops/api/modules/core/corrections/pure-service';
-import type { CorrectionRow } from '@pops/api/modules/core/corrections/types';
+import type { Correction, CorrectionRow } from '@pops/api/modules/core/corrections/types';
+import { toCorrection } from '@pops/api/modules/core/corrections/types';
 import type { Entity } from '@pops/api/modules/core/entities/types';
 
 import type { PendingChangeSet, PendingEntity } from '../store/importStore';
@@ -8,18 +9,45 @@ import type { PendingChangeSet, PendingEntity } from '../store/importStore';
 // computeMergedRules — PRD-030 US-03
 // ---------------------------------------------------------------------------
 
-let _cachedRulesInput: { dbRules: CorrectionRow[]; pending: PendingChangeSet[] } | null = null;
-let _cachedRulesOutput: CorrectionRow[] | null = null;
+let _cachedRulesInput: { dbRules: Correction[]; pending: PendingChangeSet[] } | null = null;
+let _cachedRulesOutput: Correction[] | null = null;
+
+/**
+ * Convert an API-shaped `Correction` (tags: string[]) into the DB row shape
+ * (`CorrectionRow`, tags: JSON string) so it can be fed into the pure-service
+ * helpers that operate on DB rows.
+ */
+function correctionToRow(c: Correction): CorrectionRow {
+  return {
+    id: c.id,
+    descriptionPattern: c.descriptionPattern,
+    matchType: c.matchType,
+    entityId: c.entityId,
+    entityName: c.entityName,
+    location: c.location,
+    tags: JSON.stringify(c.tags),
+    transactionType: c.transactionType,
+    isActive: c.isActive,
+    confidence: c.confidence,
+    priority: c.priority,
+    timesApplied: c.timesApplied,
+    createdAt: c.createdAt,
+    lastUsedAt: c.lastUsedAt,
+  };
+}
 
 /**
  * Fold `applyChangeSetToRules` over each pending ChangeSet in insertion order,
  * starting from the DB rules as the base. Memoized by reference equality on
  * both input arrays.
+ *
+ * Operates on the API `Correction` shape (tags: string[]) at the boundary so
+ * the frontend never has to juggle the DB's JSON-encoded tags string.
  */
 export function computeMergedRules(
-  dbRules: CorrectionRow[],
+  dbRules: Correction[],
   pendingChangeSets: PendingChangeSet[]
-): CorrectionRow[] {
+): Correction[] {
   // Memoization: same input refs → same output ref
   if (
     _cachedRulesInput &&
@@ -30,15 +58,17 @@ export function computeMergedRules(
     return _cachedRulesOutput;
   }
 
-  let result: CorrectionRow[];
+  let result: Correction[];
 
   if (pendingChangeSets.length === 0) {
     result = dbRules;
   } else {
-    result = pendingChangeSets.reduce<CorrectionRow[]>(
+    const baseRows = dbRules.map(correctionToRow);
+    const mergedRows = pendingChangeSets.reduce<CorrectionRow[]>(
       (acc, pcs) => applyChangeSetToRules(acc, pcs.changeSet),
-      dbRules
+      baseRows
     );
+    result = mergedRows.map(toCorrection);
   }
 
   _cachedRulesInput = { dbRules, pending: pendingChangeSets };

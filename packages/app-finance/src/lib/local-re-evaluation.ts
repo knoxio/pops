@@ -5,9 +5,9 @@
  * the same matching logic as the server-side findMatchingCorrectionFromRules.
  * Runs entirely client-side with no server round-trip.
  */
-import type { CorrectionRow } from '@pops/api/modules/core/corrections/types';
+import type { Correction } from '@pops/api/modules/core/corrections/types';
 import {
-  classifyCorrectionMatch,
+  HIGH_CONFIDENCE_THRESHOLD,
   normalizeDescription,
 } from '@pops/api/modules/core/corrections/types';
 import type { MatchedRule } from '@pops/api/modules/finance/imports';
@@ -21,6 +21,19 @@ export interface ReEvaluationResult {
   affectedCount: number;
 }
 
+interface LocalMatchResult {
+  correction: Correction;
+  status: 'matched' | 'uncertain';
+}
+
+/** Local classifier for `Correction` (the upstream helper is typed on CorrectionRow). */
+function classifyCorrection(correction: Correction): LocalMatchResult {
+  return {
+    correction,
+    status: correction.confidence >= HIGH_CONFIDENCE_THRESHOLD ? 'matched' : 'uncertain',
+  };
+}
+
 /**
  * Returns ALL rules that match `description`, sorted by the old type-priority
  * order (exact → contains → regex), with confidence/timesApplied tie-breaking
@@ -32,9 +45,9 @@ export interface ReEvaluationResult {
  */
 function findAllMatchingRules(
   description: string,
-  rules: CorrectionRow[],
+  rules: Correction[],
   minConfidence: number = 0.7
-): CorrectionRow[] {
+): Correction[] {
   const normalized = normalizeDescription(description);
   // isActive is stored as integer in SQLite but typed as boolean via Drizzle mode: "boolean".
   // Use truthiness to handle both representations (1/true).
@@ -84,7 +97,7 @@ function findAllMatchingRules(
 export function reevaluateTransactions(
   uncertain: ProcessedTransaction[],
   failed: ProcessedTransaction[],
-  mergedRules: CorrectionRow[],
+  mergedRules: Correction[],
   minConfidence: number = 0.7
 ): ReEvaluationResult {
   const newMatched: ProcessedTransaction[] = [];
@@ -94,7 +107,7 @@ export function reevaluateTransactions(
 
   for (const txn of uncertain) {
     const allMatches = findAllMatchingRules(txn.description, mergedRules, minConfidence);
-    const match = allMatches.length > 0 ? classifyCorrectionMatch(allMatches[0]!) : null;
+    const match = allMatches.length > 0 ? classifyCorrection(allMatches[0]!) : null;
     if (match && match.status === 'matched') {
       const matchedRules: MatchedRule[] = allMatches.map((rule) => ({
         ruleId: rule.id,
@@ -132,7 +145,7 @@ export function reevaluateTransactions(
 
   for (const txn of failed) {
     const allMatches = findAllMatchingRules(txn.description, mergedRules, minConfidence);
-    const match = allMatches.length > 0 ? classifyCorrectionMatch(allMatches[0]!) : null;
+    const match = allMatches.length > 0 ? classifyCorrection(allMatches[0]!) : null;
     if (match && match.status === 'matched') {
       const matchedRules: MatchedRule[] = allMatches.map((rule) => ({
         ruleId: rule.id,
