@@ -15,7 +15,7 @@ on:
 jobs:
   changes:
     name: Detect changes
-    runs-on: ubuntu-latest
+    runs-on: blacksmith-4vcpu-ubuntu-2404
     if: github.event_name == 'pull_request'
     outputs:
       relevant: ${{ steps.filter.outputs.relevant }}
