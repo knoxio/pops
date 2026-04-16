@@ -18,7 +18,7 @@ As a platform operator, I enqueue content for embedding and it gets processed in
 - [ ] Embedding API calls are tracked in `ai_usage` (model, tokens, cost)
 - [ ] Embedding results are cached in Redis (content_hash → vector) to avoid redundant API calls for identical content
 - [ ] A periodic cleanup job (BullMQ repeatable) removes embeddings whose `source_id` no longer exists in the source table
-- [ ] `embedEontent(sourceType, sourceId)` utility function enqueues an embedding job — used by other modules when content changes
+- [ ] `embedContent(sourceType, sourceId)` utility function enqueues an embedding job — used by other modules when content changes
 - [ ] Integration test: create content, enqueue embedding, verify vector is stored and searchable
 
 ## Notes

@@ -37,7 +37,7 @@ No new procedures — adapters are managed through the Plexus adapter API (PRD-0
 
 ## Business Rules
 
-- All three adapters extend `BaseAdapter` (PRD-090) and implement `ingest()` and `healthCheck()`. The email adapter also implements `emit()` for sending email summaries
+- All three adapters extend `BaseAdapter` (PRD-090) and implement `ingest()` and `healthCheck()`. The email adapter also implements the optional `emit()` method for sending email summaries — calendar and GitHub adapters do not implement `emit()`
 - Email adapter connects via IMAP (or API for providers like Gmail) and polls configured folders at a configurable interval (default every 15 minutes). Each email is converted to an engram with: subject as title, email body (text/plain or stripped HTML) as Markdown body, sender/recipients as tags, and the configured scope
 - Email adapter tracks the last synced UID/timestamp per folder to enable incremental sync — only new emails since the last sync are fetched
 - Calendar adapter connects via CalDAV (or API for Google Calendar, Outlook) and syncs events within a configurable window (default 7 days behind to 30 days ahead). Each event becomes an engram with: event title as title, description + attendees + location as body, event date/time in frontmatter custom fields, and the configured scope

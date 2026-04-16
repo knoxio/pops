@@ -34,7 +34,7 @@ Define the Plexus adapter interface, plugin lifecycle system, plugin registry, a
 | adapter_id      | TEXT    | FK → plexus_adapters.id, NOT NULL  | Parent adapter                                 |
 | filter_type     | TEXT    | NOT NULL                           | `include` or `exclude`                         |
 | field           | TEXT    | NOT NULL                           | Field to match (adapter-specific)              |
-| pattern         | TEXT    | NOT NULL                           | Regex or glob pattern                          |
+| pattern         | TEXT    | NOT NULL                           | Regex pattern (anchored — full match unless `.*` is used) |
 | enabled         | BOOLEAN | NOT NULL DEFAULT TRUE              | Whether this filter is active                  |
 
 **Indexes:** `adapter_id`
@@ -54,7 +54,7 @@ Define the Plexus adapter interface, plugin lifecycle system, plugin registry, a
 
 ## Business Rules
 
-- Every adapter implements the `PlexusAdapter` TypeScript interface: `initialize(config): Promise<void>`, `ingest(config): Promise<EngineData[]>`, `emit(config, content): Promise<void>`, `healthCheck(): Promise<AdapterStatus>`, `shutdown(): Promise<void>`
+- Every adapter implements the `PlexusAdapter` TypeScript interface: `initialize(config): Promise<void>`, `ingest(options): Promise<EngineData[]>`, `healthCheck(): Promise<AdapterStatus>`, `shutdown(): Promise<void>`. The `emit(options, content): Promise<void>` method is optional — only adapters that support output (e.g., email) implement it
 - The `EngineData` return type from `ingest` is a pre-engram structure: `{ body: string, title?: string, type?: string, scopes?: string[], tags?: string[], source: string, customFields?: object }` — it is fed directly into the ingestion pipeline (PRD-081)
 - Adapter lifecycle: `registered → initializing → healthy`. Health checks run periodically (configurable, default every 5 minutes). A failing health check transitions the adapter to `degraded` (intermittent failure) or `error` (persistent failure after 3 consecutive failures). An `error` adapter is disabled until manually re-initialized
 - Error isolation is mandatory — one adapter crashing does not affect other adapters. Each adapter runs in its own BullMQ job context with error boundaries. Unhandled exceptions are caught, logged, and the adapter is transitioned to `error` status

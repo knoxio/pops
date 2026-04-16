@@ -12,7 +12,7 @@ As a system, I need a query-time scope filtering service so that outputs only in
 - [ ] A `filterByScopes` function queries the `engram_scopes` table using SQL prefix matching (`WHERE scope LIKE 'work.%'`) and returns engram IDs that match any of the requested scope prefixes
 - [ ] Secret scope hard-blocking: engrams with any `*.secret.*` scope are excluded from results by default — even if the engram also has a non-secret scope that matches the query
 - [ ] Secret scopes are included only when the caller explicitly passes `includeSecret: true` — there is no implicit way to access secret content
-- [ ] Prefix matching handles all hierarchy levels: querying `work` matches `work.projects`, `work.projects.karbon`, and `work.secret.jobsearch` (the last excluded unless secret opt-in is active)
+- [ ] Prefix matching handles all hierarchy levels: querying `work` matches all stored scopes starting with `work.` (e.g., `work.projects`, `work.projects.karbon`, `work.secret.jobsearch`). Filter prefixes can be 1+ segments — this is distinct from stored scopes which must be 2-6 segments. The last example is excluded unless secret opt-in is active
 - [ ] An empty scopes array in the query input returns all non-secret engrams (no scope filter applied, but secret blocking still active)
 - [ ] The service supports context-inferred scope selection: a `inferScopesFromContext` utility maps contextual hints (e.g., `"at work"` maps to `["work"]`, `"personal"` maps to `["personal"]`) to scope prefixes for downstream filtering
 - [ ] The filtering service composes with the existing `cerebrum.engrams.list` query — it provides a scope filter clause that integrates into the list query's WHERE conditions rather than being a separate post-filter

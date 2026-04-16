@@ -8,7 +8,7 @@ As a user, I need per-adapter ingestion filter rules so that I can control which
 
 ## Acceptance Criteria
 
-- [ ] Each adapter can have zero or more filter rules stored in the `plexus_filters` table, with fields: `filter_type` (`include` or `exclude`), `field` (adapter-specific field name to match against), `pattern` (regex or glob pattern), and `enabled` (boolean)
+- [ ] Each adapter can have zero or more filter rules stored in the `plexus_filters` table, with fields: `filter_type` (`include` or `exclude`), `field` (adapter-specific field name to match against), `pattern` (regex pattern), and `enabled` (boolean)
 - [ ] Filters are also definable in `plexus.toml` under each adapter's section as an array of filter objects — these are synced to the database on load:
   ```toml
   [adapters.email]
