@@ -12,11 +12,11 @@
     "@pops/app-inventory": "workspace:*",
     "@pops/app-media": "workspace:*",
     "@pops/ui": "workspace:*",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react": "^19.2.5",
+    "react-dom": "^19.2.5"
   },
   "devDependencies": {
-    "@chromatic-com/storybook": "^5.1.1",
+    "@chromatic-com/storybook": "^5.1.2",
     "@storybook/addon-a11y": "^10.3.5",
     "@storybook/react-vite": "^10.3.5",
     "@tailwindcss/vite": "4.2.2",
@@ -25,6 +25,6 @@
     "eslint-plugin-storybook": "^10.3.5",
     "storybook": "^10.3.5",
     "typescript": "^6.0.0",
-    "vite": "^8.0.7"
+    "vite": "^8.0.8"
   }
 }
