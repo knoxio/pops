@@ -1,7 +1,7 @@
 # PRD-054: AI Overlay
 
 > Epic: [01 — AI Overlay](../../epics/01-ai-overlay.md)
-> Status: Not started
+> Status: Superseded by [PRD-087 — Ego Core](../../../06-cerebrum/prds/087-ego-core/README.md)
 
 ## Overview
 

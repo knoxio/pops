@@ -42,6 +42,15 @@ Live status of every theme and epic. Updated as work completes.
 | Backups (Backblaze B2)             | Done   | rclone encrypted                    |
 | Monitoring & health checks         | Done   | Docker health checks on api + shell |
 
+#### Cortex Infrastructure
+
+| Epic                           | Status      | Notes                                                              |
+| ------------------------------ | ----------- | ------------------------------------------------------------------ |
+| Redis container & connection   | Not started | Redis 7 Alpine, ioredis, Ansible provisioning                      |
+| Job queue (BullMQ)             | Not started | Typed queues, worker process, migrate Plex sync from in-memory     |
+| OpenAPI secondary contract     | Not started | trpc-openapi, spec at /api/docs, CI validation                     |
+| Vector storage (sqlite-vec)    | Not started | Embedding schema, similarity search, background embedding pipeline |
+
 ### Phase 1 — Foundation
 
 | Epic                                  | Status | Notes                                                                                                                  |
@@ -115,12 +124,35 @@ Live status of every theme and epic. Updated as work completes.
 | ------------- | ----------- | ---------------------------------------------- |
 | Documents app | Not started | Paperless integration exists in inventory only |
 
+### Cerebrum — Phase 1 (MVP)
+
+| Epic                          | Status      | Notes                                                              |
+| ----------------------------- | ----------- | ------------------------------------------------------------------ |
+| Engram Storage (format, CRUD) | Not started | File format, templates, directory, scope model, API                |
+| Thalamus (indexing/retrieval) | Not started | File watcher, frontmatter sync, embedding trigger, retrieval engine |
+| Ingest (input pipeline)       | Not started | Manual, agent, capture channels + classification + scope inference |
+| Emit (output production)      | Not started | Query engine, document generation, proactive nudges                |
+
+### Cerebrum — Phase 2 (Curation & Interface)
+
+| Epic                           | Status      | Notes                                                            |
+| ------------------------------ | ----------- | ---------------------------------------------------------------- |
+| Glia (curation workers)        | Not started | Pruner, consolidator, linker, auditor + trust graduation         |
+| Ego (chat agent)               | Not started | Conversation engine, shell panel, MCP, Moltbot. Supersedes PRD-054 |
+
+### Cerebrum — Phase 3 (Automation & Ecosystem)
+
+| Epic                            | Status      | Notes                                                          |
+| ------------------------------- | ----------- | -------------------------------------------------------------- |
+| Reflex (automation)             | Not started | reflexes.toml, event/threshold/scheduled triggers              |
+| Plexus (plugin system)          | Not started | Adapter interface, core integrations (email, calendar, GitHub) |
+
 ### Phase 3 — AI Layer
 
-| Epic                              | Status      | Notes |
-| --------------------------------- | ----------- | ----- |
-| AI overlay (contextual assistant) | Not started |       |
-| AI inference & monitoring         | Not started |       |
+| Epic                              | Status      | Notes                                  |
+| --------------------------------- | ----------- | -------------------------------------- |
+| AI overlay (contextual assistant) | Superseded  | Absorbed by Cerebrum Epic 05 (Ego)     |
+| AI inference & monitoring         | Not started |                                        |
 
 ### Phase 4 — Expansion Apps
 
@@ -158,9 +190,10 @@ Live status of every theme and epic. Updated as work completes.
 - **CI/CD** — GitHub Actions, automated quality gates, deployment workflows
 - **Secrets** — Ansible Vault, Docker secrets, environment management
 - **Backups** — Encrypted offsite to Backblaze B2
+- **Cortex Infrastructure** — Redis (job queue + cache), BullMQ (durable workers), OpenAPI (secondary API contract), sqlite-vec (vector storage)
 
 **Depends on:** Nothing.
-**Unlocks:** Production deployment for all phases.
+**Unlocks:** Production deployment for all phases. Cortex Infrastructure unlocks the Cortex service and Phase 3 AI Layer.
 
 ### Phase 1 — Foundation
 
@@ -188,15 +221,31 @@ Live status of every theme and epic. Updated as work completes.
 **Depends on:** Phase 1 (shell, shared UI, modular API).
 **Unlocks:** Cross-domain linking, AI layer, remaining apps.
 
+### Cerebrum
+
+> Personal cognitive infrastructure — a self-curating knowledge base that compounds over a lifetime.
+
+- **Engram Storage** — Markdown files with YAML frontmatter, template system, hierarchical scope model
+- **Thalamus** — Indexing middleware: file watcher, frontmatter sync, embedding generation, cross-source retrieval
+- **Ingest** — Input pipeline: manual, agent, capture channels with classification, entity extraction, scope inference
+- **Emit** — Output production: natural language Q&A, document generation, proactive nudges
+- **Glia** — Autonomous curation: pruner, consolidator, linker, auditor with trust graduation
+- **Ego** — Chat agent: shell panel, MCP tools, Moltbot, CLI. Supersedes AI Overlay
+- **Reflex** — Automation: event/threshold/scheduled triggers via reflexes.toml
+- **Plexus** — Plugin system: adapter interface, email/calendar/GitHub integrations
+
+**Depends on:** Infrastructure Epic 08 (Redis, BullMQ, sqlite-vec, OpenAPI). Phase 2 core apps for cross-domain queries.
+**Unlocks:** The "system does more for me" promise. Lifetime personal knowledge base.
+
 ### Phase 3 — AI Layer
 
 > The intelligence layers that make POPS proactive.
 
-- **AI Overlay** — Contextual assistant in the shell. Knows which app you're in, queries across domains, suggests actions
+- **AI Overlay** — Superseded by Cerebrum Epic 05 (Ego)
 - **AI Categorisation & Input** — Automated data entry, entity matching, transaction categorisation. Extends import pipeline patterns to new domains
 - **AI Inference & Monitoring** — Proactive insights, anomaly detection, smart automations. Moltbot alerts, scheduled analysis
 
-**Depends on:** Phase 2 (needs multiple domains with real data).
+**Depends on:** Phase 2 (needs multiple domains with real data). Cerebrum (Ego replaces AI Overlay).
 **Unlocks:** The "system does more for me" promise.
 
 ### Phase 4 — Expansion Apps
@@ -234,9 +283,15 @@ Live status of every theme and epic. Updated as work completes.
 
 ```
 Infrastructure → Foundation → Core Apps ──→ AI Layer → Expansion Apps → Mobile → Long Tail
-                                 │                         ^
-                                 └── AI Categorisation ────┘
-                                     (grows with each domain)
+       │                          │                         ^
+       │                          └── AI Categorisation ────┘
+       │                               (grows with each domain)
+       │
+       └── Cortex Infra → Cerebrum (Phase 1: Store/Index/Ingest/Emit)
+                              │
+                              ├── Phase 2: Glia + Ego
+                              │
+                              └── Phase 3: Reflex + Plexus
 ```
 
 ## Cross-cutting (not phased)
