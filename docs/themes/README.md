@@ -11,7 +11,8 @@ See [roadmap.md](../roadmap.md) for sequencing, dependencies, and implementation
 | **[Infrastructure](00-infrastructure/README.md)** | Provision the hardware, networking, deployment pipeline, and CI/CD that runs everything        | 0     | Done                                          |
 | **[Foundation](01-foundation/README.md)**         | Build the shared shell, UI library, modular API, and DB patterns that all apps run on          | 1     | Done (Drizzle migration pending)              |
 | **AI — Categorisation**                           | Automated data entry, entity matching, tagging across all domains                              | 2+    | Partial (finance done, other domains pending) |
-| **AI — Overlay**                                  | Contextual assistant in the shell. Interactive — query across domains, suggest actions         | 3     | Not started                                   |
+| **AI — Overlay**                                  | Superseded by Cerebrum Epic 05 (Ego)                                                          | —     | Superseded                                    |
+| **[Cerebrum](06-cerebrum/README.md)**             | Personal cognitive infrastructure — self-curating knowledge base that compounds over a lifetime | 2-3   | Not started                                   |
 | **AI — Inference**                                | Proactive monitoring, anomaly detection, smart automations. Moltbot alerts, scheduled analysis | 3     | Not started                                   |
 | **Mobile**                                        | Native iOS app and wall-mounted dashboard/HomePad mode                                         | 5     | Not started                                   |
 

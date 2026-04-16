@@ -27,9 +27,10 @@ Set up a self-hosted production environment on dedicated hardware with zero-trus
 | 4   | [CI/CD Pipelines](epics/04-cicd-pipelines.md)          | GitHub Actions workflows for quality gates, deployment, validation                  | Done    |
 | 5   | [Backups](epics/05-backups.md)                         | Encrypted offsite to Backblaze B2 via rclone                                        | Partial |
 | 6   | [Monitoring](epics/06-monitoring.md)                   | Health checks, log aggregation, alerting                                            | Done    |
-| 7   | [Database Operations](epics/07-database-operations.md) | Unified migration system, production guards, pre-migration backups, go-live runbook | Done    |
+| 7   | [Database Operations](epics/07-database-operations.md) | Unified migration system, production guards, pre-migration backups, go-live runbook | Done        |
+| 8   | [Cortex Infrastructure](epics/08-cortex-infrastructure.md) | Redis, BullMQ job queue, OpenAPI secondary contract, sqlite-vec vector storage      | Not started |
 
-Epics 0-2 are sequential (hardware before Docker before networking). Epics 3-6 can be parallelised after 1. Epic 7 depends on Epic 5 (backup system).
+Epics 0-2 are sequential (hardware before Docker before networking). Epics 3-6 can be parallelised after 1. Epic 7 depends on Epic 5 (backup system). Epic 8 depends on Epics 1 and 7.
 
 ## Key Decisions
 
@@ -43,12 +44,16 @@ Epics 0-2 are sequential (hardware before Docker before networking). Epics 3-6 c
 | CI/CD              | GitHub Actions        | Free for public repos, manual deploy trigger for safety       |
 | Backups            | Backblaze B2 + rclone | Cheap, encrypted, S3-compatible                               |
 | Deployment trigger | Manual only           | Self-hosted runner on production — never auto-deploy from PRs |
+| Job queue          | Redis + BullMQ        | Durable, retryable, dashboard-ready, TypeScript-native        |
+| API contract       | tRPC + OpenAPI bolt-on | tRPC primary, OpenAPI for external consumers via trpc-openapi |
+| Vector storage     | sqlite-vec            | Same DB, same backups, sufficient for single-user scale       |
 
 ## Risks
 
 - **Self-hosted runner compromise** — Compromised runner has access to production DB and secrets. Mitigation: manual deploy trigger only, never on PR events
 - **Single point of failure** — One computer runs everything. Mitigation: encrypted backups, documented recovery
 - **Cloudflare dependency** — If Cloudflare goes down, no external access. Mitigation: SSH for local network management, local network direct access to server bypassing cloudflare/login.
+- **Redis failure** — Job queue and cache unavailable. Mitigation: API degrades gracefully, no source-of-truth data in Redis, auto-reconnect on recovery
 
 ## Out of Scope
 

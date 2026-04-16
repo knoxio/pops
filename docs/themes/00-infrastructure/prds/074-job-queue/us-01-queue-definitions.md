@@ -1,0 +1,22 @@
+# US-01: Queue Definitions
+
+> PRD: [Job Queue Infrastructure](README.md)
+> Status: Not started
+
+## Description
+
+As a backend developer, I import typed queue definitions from a shared module so that every job enqueued has a known data shape and every handler receives typed input.
+
+## Acceptance Criteria
+
+- [ ] `src/jobs/queues.ts` exports queue name constants (`SYNC_QUEUE`, `EMBEDDINGS_QUEUE`, `CURATION_QUEUE`, `DEFAULT_QUEUE`)
+- [ ] `src/jobs/types.ts` defines a discriminated union of job data interfaces per queue (e.g., `SyncJobData`, `EmbeddingJobData`)
+- [ ] Each job data interface includes a `type` discriminator field for routing within a queue
+- [ ] `createQueue(name)` factory function returns a typed `Queue<T>` instance connected to the shared Redis client
+- [ ] Default job options (retry count, backoff, timeout) defined per queue as constants
+- [ ] All queue names are prefixed with `pops:` to namespace in Redis
+- [ ] Unit test verifies queue creation succeeds when Redis is available and throws descriptively when not
+
+## Notes
+
+Keep job data interfaces minimal — include only what the handler needs. Large payloads (file contents, API responses) should be stored in Redis or SQLite and referenced by ID.
