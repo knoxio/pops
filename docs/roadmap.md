@@ -147,12 +147,19 @@ Live status of every theme and epic. Updated as work completes.
 | Reflex (automation)             | Not started | reflexes.toml, event/threshold/scheduled triggers              |
 | Plexus (plugin system)          | Not started | Adapter interface, core integrations (email, calendar, GitHub) |
 
+### Phase 1 — Foundation (continued)
+
+| Epic                           | Status      | Notes                                                                        |
+| ------------------------------ | ----------- | ---------------------------------------------------------------------------- |
+| Unified Settings System        | Not started | Self-registering settings page, replaces scattered Plex/Arr/Rotation/AI UIs  |
+
 ### Phase 3 — AI Layer
 
-| Epic                              | Status      | Notes                                  |
-| --------------------------------- | ----------- | -------------------------------------- |
-| AI overlay (contextual assistant) | Superseded  | Absorbed by Cerebrum Epic 05 (Ego)     |
-| AI inference & monitoring         | Not started |                                        |
+| Epic                              | Status      | Notes                                                                             |
+| --------------------------------- | ----------- | --------------------------------------------------------------------------------- |
+| AI overlay (contextual assistant) | Superseded  | Absorbed by Cerebrum Epic 05 (Ego)                                                |
+| AI inference & monitoring         | Not started | Proactive insights, anomaly detection                                              |
+| AI observability                  | Not started | Multi-provider tracking, budget enforcement, latency/quality metrics, local models |
 
 ### Phase 4 — Expansion Apps
 

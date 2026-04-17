@@ -29,8 +29,9 @@ Build a multi-app platform from a shared foundation: one monorepo, one shell, on
 | 5   | [Responsive Foundation](epics/05-responsive-foundation.md) | Tailwind v4 breakpoints, mobile-first, 44x44px touch targets, component adaptations                               | Partial |
 | 6   | [Drizzle ORM](epics/06-drizzle-orm.md)                     | Type-safe queries and schema-as-code, replacing raw SQL                                                           | Done    |
 | 7   | [Search](epics/07-search.md)                               | Platform-wide search from TopBar, context-aware results, structured query syntax, cross-domain via universal URIs | Done    |
+| 8   | [Settings System](epics/08-settings-system.md)             | Unified, self-registering settings page — modular sections per app, replaces scattered settings UIs               | Not started |
 
-Epic 0 is prerequisite to everything. Epics 1-5 can be built incrementally. Epic 6 is independent.
+Epic 0 is prerequisite to everything. Epics 1-5 can be built incrementally. Epic 6 is independent. Epic 8 depends on Epic 4 (settings table) and Epic 2 (shell routing).
 
 ## Key Decisions
 
