@@ -106,4 +106,4 @@ US-02 can parallelise with US-01 (scope inference is a separable module). US-03 
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

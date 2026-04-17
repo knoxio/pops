@@ -97,4 +97,4 @@ US-02 depends on us-01 (needs file events to process). US-03 depends on us-02 (n
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

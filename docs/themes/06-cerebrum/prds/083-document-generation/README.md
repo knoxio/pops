@@ -106,4 +106,4 @@ US-01 establishes the core generation pipeline (retrieval, synthesis, formatting
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

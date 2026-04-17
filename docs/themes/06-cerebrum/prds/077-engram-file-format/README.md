@@ -234,4 +234,4 @@ US-03 and US-04 can parallelise with each other and with US-02. US-05 depends on
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

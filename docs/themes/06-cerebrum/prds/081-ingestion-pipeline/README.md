@@ -125,4 +125,4 @@ US-01, US-02, and US-03 define the three input channels and can parallelise. US-
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

@@ -91,4 +91,4 @@ US-01 and US-02 can parallelise. US-03 merges their outputs and requires both. U
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

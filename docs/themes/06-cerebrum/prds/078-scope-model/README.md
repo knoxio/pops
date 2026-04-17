@@ -153,4 +153,4 @@ US-02 and US-03 can parallelise with each other after US-01 is complete. US-04 d
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17
