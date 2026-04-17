@@ -29,7 +29,7 @@ function BrowseRuleSidebarRowContent(props: { rule: CorrectionRule; hasLocalOp: 
   return (
     <div className="flex-1 min-w-0 space-y-1">
       <div className="flex items-center gap-1.5 flex-wrap">
-        <code className="text-xs truncate max-w-[180px]">{rule.descriptionPattern}</code>
+        <code className="text-xs truncate max-w-45">{rule.descriptionPattern}</code>
         <Badge variant="outline" className="text-[10px] h-4 px-1.5">
           {rule.matchType}
         </Badge>

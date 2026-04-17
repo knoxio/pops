@@ -85,6 +85,7 @@
   --font-size-2xs--line-height: 0.75rem;
 
   /* Radius */
+  --radius-xs: 2px;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -143,6 +144,15 @@
   --tree-indent-step: 1.25rem; /* 20px — main tree row indent per depth */
   --tree-indent-base: 0.5rem; /* 8px — base left padding at depth 0 */
   --tree-picker-step: 1rem; /* 16px — compact picker indent per depth */
+
+  /* Dialog sizing tokens — values without clean Tailwind scale equivalents */
+  --size-dialog-sm: 425px;
+  --size-dialog-xl: 1180px;
+  --size-dialog-max-vw: 92vw;
+  --size-dialog-max-vh: 88vh;
+
+  /* Tooltip arrow positioning */
+  --tooltip-arrow-offset: calc(-50% - 2px);
 
   /* Light mode - Clean, Warm, Efficient with subtle indigo tint */
   --background: oklch(

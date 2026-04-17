@@ -385,7 +385,7 @@ export function ConnectionGraph({ itemId }: ConnectionGraphProps): React.ReactEl
   }, [draw, findNodeAt, itemId, navigate]);
 
   if (isLoading) {
-    return <Skeleton className="h-[400px] w-full rounded-lg" />;
+    return <Skeleton className="h-100 w-full rounded-lg" />;
   }
 
   if (error) {
@@ -401,7 +401,7 @@ export function ConnectionGraph({ itemId }: ConnectionGraphProps): React.ReactEl
   return (
     <div
       ref={containerRef}
-      className="relative h-[400px] w-full border rounded-lg bg-muted/20 overflow-hidden"
+      className="relative h-100 w-full border rounded-lg bg-muted/20 overflow-hidden"
     >
       <canvas ref={canvasRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
       <div className="absolute bottom-2 right-2 text-xs text-muted-foreground">

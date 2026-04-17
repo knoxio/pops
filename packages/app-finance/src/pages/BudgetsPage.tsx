@@ -328,7 +328,7 @@ export function BudgetsPage() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={(open) => !isSubmitting && setIsDialogOpen(open)}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-(--size-dialog-sm)">
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader>
               <DialogTitle>{editingBudget ? 'Edit Budget' : 'New Budget'}</DialogTitle>

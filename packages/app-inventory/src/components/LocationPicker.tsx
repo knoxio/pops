@@ -119,7 +119,7 @@ function TreeNode({
             )}
           </span>
         ) : (
-          <span className="w-[18px] shrink-0" />
+          <span className="w-4.5 shrink-0" />
         )}
         <span className="truncate">{node.name}</span>
       </button>
@@ -230,7 +230,7 @@ export function LocationPicker({
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent className="w-[280px] p-0" align="start">
+      <PopoverContent className="w-70 p-0" align="start">
         {/* Search */}
         <div className="border-b px-3 py-2">
           <input
@@ -243,7 +243,7 @@ export function LocationPicker({
         </div>
 
         {/* Tree */}
-        <div className="max-h-[240px] overflow-y-auto p-1">
+        <div className="max-h-60 overflow-y-auto p-1">
           {locations.length === 0 ? (
             <p className="py-4 text-center text-sm text-muted-foreground">No locations found</p>
           ) : (

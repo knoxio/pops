@@ -341,7 +341,7 @@ export function InsuranceReportPage(): React.ReactElement {
                           <img
                             src={`/inventory/photos/${item.photoPath}`}
                             alt={`Photo of ${item.itemName}`}
-                            className="w-8 h-8 rounded object-cover print:w-auto print:h-auto print:max-w-[200px] print:break-inside-avoid"
+                            className="w-8 h-8 rounded object-cover print:w-auto print:h-auto print:max-w-50 print:break-inside-avoid"
                           />
                         ) : (
                           <div

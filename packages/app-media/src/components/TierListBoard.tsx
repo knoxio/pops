@@ -302,7 +302,7 @@ function TierRow({
     <div
       ref={setNodeRef}
       aria-label={`Tier ${tier}`}
-      className={`flex items-stretch min-h-[80px] rounded-lg border transition-colors ${
+      className={`flex items-stretch min-h-20 rounded-lg border transition-colors ${
         TIER_COLORS[tier]
       } ${isOver ? 'ring-2 ring-primary' : ''}`}
     >
@@ -312,7 +312,7 @@ function TierRow({
         {tier}
       </div>
       <SortableContext items={movieIds.map(String)} strategy={horizontalListSortingStrategy}>
-        <div className="flex-1 flex items-center gap-2 p-2 min-h-[80px]">
+        <div className="flex-1 flex items-center gap-2 p-2 min-h-20">
           {movies.length === 0 && (
             <span className="text-muted-foreground text-sm px-2">Drop movies here</span>
           )}
@@ -405,7 +405,7 @@ function DraggableMovieCard({ movie }: { movie: TierMovie }) {
           <ImageOff className="h-3 w-3 text-muted-foreground" />
         </div>
       )}
-      <span className="text-xs font-medium truncate max-w-[100px]">{movie.title}</span>
+      <span className="text-xs font-medium truncate max-w-25">{movie.title}</span>
     </div>
   );
 }
@@ -425,7 +425,7 @@ function MovieCardOverlay({ movie }: { movie: TierMovie }) {
           <ImageOff className="h-3 w-3 text-muted-foreground" />
         </div>
       )}
-      <span className="text-xs font-medium truncate max-w-[100px]">{movie.title}</span>
+      <span className="text-xs font-medium truncate max-w-25">{movie.title}</span>
     </div>
   );
 }

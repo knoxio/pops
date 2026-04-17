@@ -121,7 +121,7 @@ function ConfidenceSlider({
   }, []);
 
   return (
-    <div className="flex items-center gap-2 min-w-[140px]">
+    <div className="flex items-center gap-2 min-w-35">
       <Slider
         min={0}
         max={1}

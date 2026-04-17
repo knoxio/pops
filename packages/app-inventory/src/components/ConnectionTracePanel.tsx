@@ -71,7 +71,7 @@ function TraceNodeRow({ node, depth, currentItemId }: TraceNodeRowProps) {
             </button>
           </CollapsibleTrigger>
         ) : (
-          <span className="w-[18px]" />
+          <span className="w-4.5" />
         )}
 
         <span className={`text-sm truncate ${isCurrent ? 'font-semibold' : 'font-medium'}`}>

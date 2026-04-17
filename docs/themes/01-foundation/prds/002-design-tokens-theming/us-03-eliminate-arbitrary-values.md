@@ -1,7 +1,7 @@
 # US-03: Eliminate arbitrary Tailwind values
 
 > PRD: [002 — Design Tokens & Theming](README.md)
-> Status: Partial
+> Status: Partial (further progress — all issue-listed files clean)
 
 ## Description
 
@@ -9,11 +9,11 @@ As a developer, I want all arbitrary Tailwind values replaced with token-based c
 
 ## Acceptance Criteria
 
-- [ ] All `w-[Npx]`, `h-[Npx]`, `min-w-[Npx]`, `max-h-[Npx]` replaced with Tailwind scale values
+- [x] All `w-[Npx]`, `h-[Npx]`, `min-w-[Npx]`, `max-h-[Npx]` replaced with Tailwind scale values — all files listed in issue #1783 are clean
 - [ ] All centering hacks (`top-[50%]`, `translate-x-[-50%]`) replaced with built-in utilities
 - [ ] Arbitrary padding/margin (`p-[3px]`, `bottom-[-5px]`) replaced with closest token or custom token added to `@theme`
 - [x] Radix CSS variable bindings (`w-[var(--radix-*)]`) documented as permitted exception and left in place
-- [ ] `grep` for arbitrary value patterns returns only permitted Radix exceptions
+- [ ] `grep` for arbitrary value patterns returns only permitted Radix exceptions — some files outside issue scope still have viewport-relative (`min-h-[60vh]`, `max-h-[90vh]`) and character-unit (`max-w-[18ch]`) values to resolve
 - [ ] No visual regressions — components render identically before and after
 
 ## Notes

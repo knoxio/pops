@@ -412,8 +412,8 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
       <Dialog open={props.open} onOpenChange={handleOpenChange}>
         <DialogContent
           className="
-            max-w-[92vw] max-h-[88vh] w-[1180px]
-            md:max-w-[92vw] md:w-[1180px]
+            max-w-(--size-dialog-max-vw) max-h-(--size-dialog-max-vh) w-(--size-dialog-xl)
+            md:max-w-(--size-dialog-max-vw) md:w-(--size-dialog-xl)
             flex flex-col gap-0 overflow-hidden p-0
           "
         >

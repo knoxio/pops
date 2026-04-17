@@ -29,7 +29,7 @@ export function PlexSyncHistory({ syncLogs }: PlexSyncHistoryProps) {
             key={log.id}
             className="flex items-center gap-3 flex-wrap rounded-md border bg-muted/30 px-3 py-2 text-sm"
           >
-            <span className="text-muted-foreground min-w-[140px]">
+            <span className="text-muted-foreground min-w-35">
               {new Date(log.syncedAt).toLocaleString()}
             </span>
             <span className="text-emerald-400">{log.moviesSynced} movies</span>

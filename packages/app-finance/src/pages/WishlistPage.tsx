@@ -236,7 +236,7 @@ export function WishlistPage() {
         }
         const percentage = Math.min(100, Math.round((saved / targetAmount) * 100));
         return (
-          <div className="flex items-center gap-2 min-w-[120px]">
+          <div className="flex items-center gap-2 min-w-30">
             <Progress value={percentage} className="h-2 flex-1" />
             <span className="text-xs font-medium tabular-nums w-10 text-right">{percentage}%</span>
           </div>
@@ -337,7 +337,7 @@ export function WishlistPage() {
 
       {/* Add/Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={(open) => !isSubmitting && setIsDialogOpen(open)}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-(--size-dialog-sm)">
           <form onSubmit={form.handleSubmit(onSubmit)}>
             <DialogHeader>
               <DialogTitle>{editingItem ? 'Edit Item' : 'New Wishlist Item'}</DialogTitle>

@@ -177,7 +177,7 @@ function InlineInput({
       onKeyDown={handleKeyDown}
       onBlur={onCancel}
       placeholder={placeholder}
-      className="text-sm font-medium bg-transparent border-b border-app-accent outline-none px-0.5 py-0 w-full max-w-[200px]"
+      className="text-sm font-medium bg-transparent border-b border-app-accent outline-none px-0.5 py-0 w-full max-w-50"
     />
   );
 }
@@ -393,7 +393,7 @@ function LocationNode({
               </button>
             </CollapsibleTrigger>
           ) : (
-            <span className="w-[22px]" />
+            <span className="w-5.5" />
           )}
 
           {hasChildren && open ? (
@@ -532,7 +532,7 @@ function LocationNode({
                       paddingLeft: `calc(${depth + 1} * var(--tree-indent-step) + var(--tree-indent-base))`,
                     }}
                   >
-                    <span className="w-[22px]" />
+                    <span className="w-5.5" />
                     <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
                     <InlineInput
                       onSave={onNewChildSave}
@@ -873,7 +873,7 @@ export function LocationTreePage() {
                   className="flex items-center gap-1.5 py-1.5 px-2"
                   style={{ paddingLeft: 'var(--tree-indent-base)' }}
                 >
-                  <span className="w-[22px]" />
+                  <span className="w-5.5" />
                   <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
                   <InlineInput
                     onSave={handleNewRootSave}

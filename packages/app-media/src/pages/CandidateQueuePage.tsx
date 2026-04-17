@@ -90,7 +90,7 @@ function CandidateCard({ candidate, actions = 'none' }: CandidateCardProps) {
 
   return (
     <div className="flex items-center gap-3 rounded-md border p-3">
-      <div className="h-[72px] w-[48px] shrink-0 overflow-hidden rounded bg-muted">
+      <div className="h-18 w-12 shrink-0 overflow-hidden rounded bg-muted">
         {candidate.posterPath ? (
           <img
             src={`${TMDB_IMG}${candidate.posterPath}`}
@@ -233,7 +233,7 @@ function CandidateList({ status, actions }: CandidateListProps) {
       {query.isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-[88px] w-full rounded-md" />
+            <Skeleton key={i} className="h-22 w-full rounded-md" />
           ))}
         </div>
       ) : !query.data?.items.length ? (
