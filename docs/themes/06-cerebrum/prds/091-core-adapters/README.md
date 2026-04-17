@@ -93,3 +93,7 @@ All three adapters are independent implementations of the same interface and can
 - Real-time push notifications from external sources (adapters poll on configurable intervals)
 - Adapters beyond the three reference implementations (community or future work)
 - Two-way calendar sync (creating calendar events from engrams — emit direction is future)
+
+## Drift Check
+
+last checked: never

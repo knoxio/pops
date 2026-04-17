@@ -144,3 +144,7 @@ All existing — no new endpoints:
 - Redesign of Rankings, Tier List, or Debrief pages
 - Mobile-specific layout breakpoints
 - Animations or transitions between pairs
+
+## Drift Check
+
+last checked: never

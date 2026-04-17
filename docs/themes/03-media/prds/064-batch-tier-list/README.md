@@ -118,3 +118,7 @@ US-01, US-02, US-03 can parallelise. US-05 and US-06 can parallelise once US-04 
 - TV show tier lists
 - Cross-dimension tier lists (one dimension per session)
 - Undo individual implied comparisons after submission (delete the batch via history if needed)
+
+## Drift Check
+
+last checked: never

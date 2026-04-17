@@ -156,3 +156,7 @@ All three stories can be built in parallel — they are independent sections of 
 - Temporal pattern analysis (e.g., "you watch comedies on weekends")
 - TV show recommendations (movie-only for now)
 - Caching TMDB trending data locally
+
+## Drift Check
+
+last checked: never

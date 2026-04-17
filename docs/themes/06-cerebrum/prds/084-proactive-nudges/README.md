@@ -134,3 +134,7 @@ US-01 establishes the nudge data model, storage, and action framework. US-02 and
 - Custom nudge types defined by the user (future — initial system has four fixed types)
 - Nudge delivery via email or push notifications (future — initial channels are shell and Moltbot only)
 - Nudge aggregation dashboards (future — initial implementation is a flat list)
+
+## Drift Check
+
+last checked: never

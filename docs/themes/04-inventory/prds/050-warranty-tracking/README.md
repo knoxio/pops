@@ -76,3 +76,7 @@ US-02 and US-03 can parallelise after US-01.
 - Automated warranty date extraction from receipts
 - Extended warranty purchase tracking
 - Depreciation calculations
+
+## Drift Check
+
+last checked: never

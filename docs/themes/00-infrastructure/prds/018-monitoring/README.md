@@ -34,3 +34,7 @@ Set up monitoring so that service failures are detected without manual checking.
 - Metrics dashboards (Prometheus, Grafana)
 - External uptime monitoring
 - Alerting (email, Slack, Telegram) — future enhancement
+
+## Drift Check
+
+last checked: never

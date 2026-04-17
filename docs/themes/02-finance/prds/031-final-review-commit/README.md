@@ -80,3 +80,7 @@ CommitResult {
 - The local-first stores and merge layer (PRD-030)
 - The global rule manager UI (PRD-032)
 - Undo/rollback after commit is completed
+
+## Drift Check
+
+last checked: never

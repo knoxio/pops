@@ -142,3 +142,7 @@ US-01 depends on US-02 (arena needs Elo scoring to record comparisons). US-03 th
 - Smart pair selection based on score uncertainty
 - AI-driven comparison prompts
 - Radar charts on detail pages (detail pages own their own display)
+
+## Drift Check
+
+last checked: never

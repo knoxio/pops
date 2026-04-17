@@ -190,3 +190,7 @@ Every US is only done when:
 - Storybook configuration (PRD-004)
 - Responsive design audit (PRD-010)
 - Domain-specific components (stay in app packages)
+
+## Drift Check
+
+last checked: never

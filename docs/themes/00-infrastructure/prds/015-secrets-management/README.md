@@ -59,3 +59,7 @@ Ansible Vault (encrypted at rest)
 - Secret rotation automation
 - Key management services (KMS)
 - Secret scanning in CI
+
+## Drift Check
+
+last checked: never

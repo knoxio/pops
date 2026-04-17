@@ -120,3 +120,7 @@ Documentation alignment: knoxio/pops#1746.
 - AI usage tracking UI (AI theme, PRD-052)
 - Corrections management UI (future enhancement)
 - Regex pattern suggestions (AI could suggest regex, but start with prefix/contains/exact)
+
+## Drift Check
+
+last checked: never

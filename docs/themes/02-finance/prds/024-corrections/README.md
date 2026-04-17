@@ -134,3 +134,7 @@ The system must distinguish between:
 
 - Tag rule learning (PRD-029)
 - A standalone rules management UI outside the import flow
+
+## Drift Check
+
+last checked: never

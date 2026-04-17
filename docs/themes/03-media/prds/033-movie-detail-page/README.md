@@ -129,3 +129,7 @@ US-01 builds the page shell. US-02, US-03, and US-04 are independent components 
 - Cast/crew information (future enhancement)
 - Similar movies recommendations (Epic 05)
 - External links (TMDB page, streaming availability)
+
+## Drift Check
+
+last checked: never

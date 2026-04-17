@@ -62,3 +62,7 @@ All Ansible commands run from the `infra/ansible/` directory due to relative `ro
 - Docker Compose service definitions (PRD-013)
 - Cloudflare Tunnel setup (PRD-014)
 - Application deployment
+
+## Drift Check
+
+last checked: never

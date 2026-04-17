@@ -158,3 +158,7 @@ US-01 and US-03 can parallelise. US-04 through US-09 (all shelf implementations)
 - AI-generated shelf titles or descriptions
 - Editorial/curated shelves (all algorithmic)
 - Streaming availability data (no API integration with Netflix/etc.)
+
+## Drift Check
+
+last checked: never

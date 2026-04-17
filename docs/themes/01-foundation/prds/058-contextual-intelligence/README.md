@@ -53,3 +53,7 @@ interface AppContext {
 - What consumers do with the context (each PRD owns its own logic)
 - Persisting context across sessions
 - Analytics or tracking of user navigation patterns
+
+## Drift Check
+
+last checked: never

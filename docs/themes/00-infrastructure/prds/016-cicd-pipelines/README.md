@@ -48,3 +48,7 @@ Set up GitHub Actions workflows for quality gates and deployment. Every PR runs 
 - Auto-deployment from PRs
 - Release versioning or changelogs
 - Multiple deployment environments
+
+## Drift Check
+
+last checked: never

@@ -61,3 +61,7 @@ The Matrix  +12  beat  Inception  -12    CINEMATOGRAPHY  4/6/2026  [🗑]
 | #   | Story                                 | Summary                                                                      | Status |
 | --- | ------------------------------------- | ---------------------------------------------------------------------------- | ------ |
 | 01  | [us-01-elo-delta](us-01-elo-delta.md) | Store ELO deltas on comparison record; display as coloured badges in history | Done   |
+
+## Drift Check
+
+last checked: never

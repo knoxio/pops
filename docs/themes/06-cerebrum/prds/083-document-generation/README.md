@@ -103,3 +103,7 @@ US-01 establishes the core generation pipeline (retrieval, synthesis, formatting
 - Automated scheduled report generation (Epic 06 — Reflex triggers generation)
 - Template-based output formatting (future — initial output is Markdown only)
 - Collaborative document editing (single-user system)
+
+## Drift Check
+
+last checked: never

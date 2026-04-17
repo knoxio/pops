@@ -159,3 +159,7 @@ US-01 and US-02 can run in parallel (independent tables). US-03 needs US-01. US-
 - Connection graph visualisation (Epic 03)
 - Paperless-ngx integration (Epic 04)
 - Warranty and value reporting (Epic 05)
+
+## Drift Check
+
+last checked: never

@@ -125,3 +125,7 @@ US-01 defines the reflex format and parsing — all other stories depend on it. 
 - Complex conditional logic or branching (reflexes are simple trigger-action rules, not workflows)
 - External webhook receivers (future — Plexus adapters could emit events that trigger reflexes)
 - User-facing reflex creation UI (reflexes are configured via TOML file — a UI editor is future work)
+
+## Drift Check
+
+last checked: never

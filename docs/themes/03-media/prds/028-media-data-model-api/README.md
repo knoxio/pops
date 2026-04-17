@@ -275,3 +275,7 @@ US-01 and US-02 can run in parallel (independent tables). US-03 needs US-01. US-
 - UI pages and components (Epic 02)
 - Plex sync (Epic 06)
 - Recommendation engine (Epic 05)
+
+## Drift Check
+
+last checked: never

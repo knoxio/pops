@@ -56,3 +56,7 @@ The `cloudflared` container maintains an outbound connection to Cloudflare. No i
 - VPN or Tailscale (decided against in ADR-015)
 - SSL certificate management (Cloudflare handles it)
 - Application-level auth
+
+## Drift Check
+
+last checked: never

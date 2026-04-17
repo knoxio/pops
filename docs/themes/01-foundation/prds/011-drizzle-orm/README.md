@@ -89,3 +89,7 @@ US-03, US-04, US-05 can parallelise after US-02. US-06 can parallelise with US-0
 - Changing the database engine (stays SQLite)
 - Async queries (synchronous mode preserved)
 - New domain schemas (those come from their respective themes)
+
+## Drift Check
+
+last checked: never

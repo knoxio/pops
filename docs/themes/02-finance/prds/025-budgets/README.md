@@ -54,3 +54,7 @@ Build budget tracking — spending categories with monthly or yearly limits. Sho
 - Spend vs target calculation (requires transaction aggregation by tag/category — future enhancement)
 - Budget alerts or notifications
 - Forecasting
+
+## Drift Check
+
+last checked: never

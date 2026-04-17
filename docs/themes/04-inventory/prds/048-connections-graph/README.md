@@ -77,3 +77,7 @@ US-02 and US-03 can parallelise after US-01.
 - Connection types or labels (power, data, audio — item metadata carries this)
 - Automated connection discovery
 - Connection weight or bandwidth metadata
+
+## Drift Check
+
+last checked: never

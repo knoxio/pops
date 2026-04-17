@@ -78,3 +78,7 @@ No database changes. The colour is declared in the app's `navConfig` (already pa
 ## Dependencies
 
 PRD-007 propagation is only effective when PRD-002 US-02 (define `--app-accent` CSS variable values) and PRD-002 US-04 (replace hardcoded colour classes with `bg-app-accent` tokens) are both complete. Without those, the shell sets variables that no component consumes.
+
+## Drift Check
+
+last checked: never

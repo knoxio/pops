@@ -80,3 +80,7 @@ US-03 can run in parallel with US-02 (API reads from queues, worker writes — i
 - Cortex-specific job types (defined in the Cortex theme)
 - Rate limiting per queue (add when needed)
 - Multi-node worker deployment (single worker process is sufficient)
+
+## Drift Check
+
+last checked: never

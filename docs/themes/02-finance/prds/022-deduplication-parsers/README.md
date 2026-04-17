@@ -121,3 +121,7 @@ US-02 through US-05 can all parallelise (independent parsers). US-06 is shared u
 - Entity matching (PRD-021)
 - Import wizard UI (PRD-020)
 - New bank format support (add a new parser when needed)
+
+## Drift Check
+
+last checked: never

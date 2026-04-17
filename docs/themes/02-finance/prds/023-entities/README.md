@@ -80,3 +80,7 @@ Build the entity registry — the merchant/payee database that transactions and 
 
 - Entity matching logic (PRD-021)
 - Cross-domain entity usage beyond finance (future domains will reference the same entity table)
+
+## Drift Check
+
+last checked: never

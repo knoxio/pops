@@ -136,3 +136,7 @@ Paginated history of rotation cycles. Each entry shows:
 - Calendar view of rotation schedule
 - Drag-to-reorder candidate queue priority
 - Public sharing of rotation stats
+
+## Drift Check
+
+last checked: never

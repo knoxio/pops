@@ -76,3 +76,7 @@ No new endpoints. Existing endpoints change:
 - The commit endpoint and retroactive reclassification (PRD-031)
 - Tag rule management (PRD-029)
 - Entity editing/creation from the rule manager (handled by existing EntityCreateDialog)
+
+## Drift Check
+
+last checked: never

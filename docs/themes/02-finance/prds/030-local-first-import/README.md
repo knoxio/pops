@@ -101,3 +101,7 @@ No new backend endpoints. All operations are zustand store actions and pure func
 - The global rule manager UI (PRD-032)
 - Tag rule changes (already local in current implementation, covered by PRD-029)
 - Undo/redo within the pending state (future enhancement)
+
+## Drift Check
+
+last checked: never

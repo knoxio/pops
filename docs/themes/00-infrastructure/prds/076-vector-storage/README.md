@@ -99,3 +99,7 @@ US-03 and US-04 can parallelise after US-02.
 - Hybrid search (combining vector + keyword) — future enhancement
 - Local embedding model inference — remote API only
 - Cross-database vector queries (e.g., querying vectors from a different SQLite file)
+
+## Drift Check
+
+last checked: never

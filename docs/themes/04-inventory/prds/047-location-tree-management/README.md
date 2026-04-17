@@ -77,3 +77,7 @@ US-02, US-03, and US-04 can parallelise after US-01.
 - AI-assisted location path suggestions
 - Map or floor plan view
 - Bulk item reassignment between locations
+
+## Drift Check
+
+last checked: never

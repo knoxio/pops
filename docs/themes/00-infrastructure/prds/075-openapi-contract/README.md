@@ -86,3 +86,7 @@ US-02 and US-03 can parallelise after US-01. US-04 can start after US-01 (valida
 - API key authentication (Cloudflare Access handles auth)
 - GraphQL or gRPC alternatives
 - Versioning beyond `/api/v1/` (cross that bridge when breaking changes happen)
+
+## Drift Check
+
+last checked: never

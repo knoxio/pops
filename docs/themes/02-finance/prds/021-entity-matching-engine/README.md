@@ -118,3 +118,7 @@ US-02, US-03, US-04 can parallelise after US-01.
 - Import wizard UI (PRD-020)
 - Deduplication (PRD-022)
 - AI rule creation from corrections (PRD-027)
+
+## Drift Check
+
+last checked: never

@@ -54,3 +54,7 @@ Build the wishlist — savings goals with target amounts, progress tracking, and
 - Price tracking or alerts
 - Integration with inventory (linking purchased items)
 - Automatic "saved" updates from transactions
+
+## Drift Check
+
+last checked: never

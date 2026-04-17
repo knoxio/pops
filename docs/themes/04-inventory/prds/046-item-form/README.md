@@ -128,3 +128,7 @@ All four stories can be built in parallel. US-01 provides the form shell; US-02,
 - Barcode/QR code scanning for asset IDs
 - Auto-populating item details from a product database
 - Connection management from the form (done on the detail page)
+
+## Drift Check
+
+last checked: never

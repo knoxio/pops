@@ -50,3 +50,7 @@ All USs can parallelise — independent pages.
 - AI overlay (PRD-054)
 - AI inference (PRD-055)
 - Custom prompt editing (prompts live in code)
+
+## Drift Check
+
+last checked: never
