@@ -9,6 +9,10 @@ export interface ParsedTransaction {
   location?: string;
   country?: string;
   online?: boolean;
+  /** Full source row as JSON string (for audit trail) */
+  rawRow?: string;
+  /** SHA-256 hash for deduplication */
+  checksum?: string;
 }
 
 /** Entity lookup entry: name -> entity ID */
