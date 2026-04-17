@@ -24,6 +24,11 @@ const WarrantiesPage = lazy(() =>
     default: m.WarrantiesPage,
   }))
 );
+const ReportDashboardPage = lazy(() =>
+  import('./pages/ReportDashboardPage').then((m) => ({
+    default: m.ReportDashboardPage,
+  }))
+);
 const InsuranceReportPage = lazy(() =>
   import('./pages/InsuranceReportPage').then((m) => ({
     default: m.InsuranceReportPage,
@@ -55,7 +60,7 @@ export const navConfig = {
     { path: '', label: 'Items', icon: 'Package' },
     { path: '/warranties', label: 'Warranties', icon: 'ShieldCheck' },
     { path: '/locations', label: 'Locations', icon: 'MapPin' },
-    { path: '/report', label: 'Insurance Report', icon: 'FileText' },
+    { path: '/report', label: 'Reports', icon: 'BarChart3' },
   ],
 } satisfies AppNavConfigShape;
 
@@ -66,5 +71,11 @@ export const routes: RouteObject[] = [
   { path: 'items/:id/edit', element: <ItemFormPage /> },
   { path: 'warranties', element: <WarrantiesPage /> },
   { path: 'locations', element: <LocationTreePage /> },
-  { path: 'report', element: <InsuranceReportPage /> },
+  {
+    path: 'report',
+    children: [
+      { index: true, element: <ReportDashboardPage /> },
+      { path: 'insurance', element: <InsuranceReportPage /> },
+    ],
+  },
 ];

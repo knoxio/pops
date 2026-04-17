@@ -480,7 +480,7 @@ function LocationNode({
               <FolderPlus className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
             <Link
-              to={`/inventory/report?locationId=${node.id}`}
+              to={`/inventory/report/insurance?locationId=${node.id}`}
               onClick={(e) => {
                 e.stopPropagation();
               }}
@@ -818,7 +818,7 @@ export function LocationTreePage() {
         actions={
           <>
             <Link
-              to="/inventory/report"
+              to="/inventory/report/insurance"
               className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
             >
               <FileText className="h-4 w-4" />
