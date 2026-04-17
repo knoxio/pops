@@ -1,0 +1,28 @@
+name: Package Scripts Check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "**/package.json"
+      - "pnpm-workspace.yaml"
+      - "scripts/check-package-scripts.mjs"
+      - ".github/workflows/package-scripts-check.yml"
+  pull_request:
+    paths:
+      - "**/package.json"
+      - "pnpm-workspace.yaml"
+      - "scripts/check-package-scripts.mjs"
+      - ".github/workflows/package-scripts-check.yml"
+
+jobs:
+  check:
+    name: Verify workspace package scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+      - name: Ensure every workspace package exposes ci:fix / test / quality scripts
+        run: node scripts/check-package-scripts.mjs

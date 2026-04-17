@@ -20,7 +20,8 @@
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format:check": "oxfmt -c ../../.oxfmtrc.json --check \"src/**/*.{ts,tsx,css}\"",
-    "format:fix": "oxfmt -c ../../.oxfmtrc.json --write \"src/**/*.{ts,tsx,css}\""
+    "format:fix": "oxfmt -c ../../.oxfmtrc.json --write \"src/**/*.{ts,tsx,css}\"",
+    "ci:fix": "pnpm format:fix && pnpm lint:fix && pnpm typecheck && pnpm format:check && pnpm lint"
   },
   "dependencies": {
     "@fontsource-variable/plus-jakarta-sans": "^5.2.8",

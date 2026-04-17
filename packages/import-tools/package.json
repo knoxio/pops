@@ -14,7 +14,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "ci": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test",
-    "ci:fix": "pnpm lint:fix && pnpm format:fix && pnpm typecheck && pnpm lint && pnpm format:check",
+    "ci:fix": "pnpm format:fix && pnpm lint:fix && pnpm typecheck && pnpm format:check && pnpm lint",
     "import:anz": "tsx src/import-anz.ts",
     "import:amex": "tsx src/import-amex.ts",
     "import:ing": "tsx src/import-ing.ts",

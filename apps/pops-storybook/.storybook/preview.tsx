@@ -1,5 +1,6 @@
+import '@pops/ui/theme';
+
 import type { Preview } from '@storybook/react-vite';
-import '@pops/ui/theme/globals.css';
 
 const APP_COLOURS = [
   { value: 'app-emerald', title: 'Emerald', left: '🟢' },

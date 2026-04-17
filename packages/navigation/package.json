@@ -15,7 +15,8 @@
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format:check": "oxfmt -c ../../.oxfmtrc.json --check \"src/**/*.{ts,tsx}\"",
-    "format:fix": "oxfmt -c ../../.oxfmtrc.json --write \"src/**/*.{ts,tsx}\""
+    "format:fix": "oxfmt -c ../../.oxfmtrc.json --write \"src/**/*.{ts,tsx}\"",
+    "ci:fix": "pnpm format:fix && pnpm lint:fix && pnpm typecheck && pnpm format:check && pnpm lint"
   },
   "dependencies": {
     "react": "^19.2.5",

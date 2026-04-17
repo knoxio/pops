@@ -1,8 +1,8 @@
 import type { StorybookConfig } from '@storybook/react-vite';
-import { mergeConfig } from 'vite';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { mergeConfig } from 'vite';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -13,7 +13,7 @@ const config: StorybookConfig = {
     '../../../packages/ui/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
     '../../../packages/*/src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
   ],
-  addons: ['@storybook/addon-essentials', '@storybook/addon-a11y', '@chromatic-com/storybook'],
+  addons: ['@storybook/addon-a11y', '@chromatic-com/storybook'],
   framework: {
     name: '@storybook/react-vite',
     options: {},

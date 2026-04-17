@@ -51,7 +51,8 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:all": "vitest run && vitest run --config vitest.integration.config.ts",
     "test:watch": "vitest",
-    "ci": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build"
+    "ci": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build",
+    "ci:fix": "pnpm format:fix && pnpm lint:fix && pnpm typecheck && pnpm format:check && pnpm lint"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.90.0",

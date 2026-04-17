@@ -22,7 +22,9 @@
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "format:check": "oxfmt -c ../../.oxfmtrc.json --check \"src/**/*.ts\"",
-    "format:fix": "oxfmt -c ../../.oxfmtrc.json --write \"src/**/*.ts\""
+    "format:fix": "oxfmt -c ../../.oxfmtrc.json --write \"src/**/*.ts\"",
+    "test": "echo \"(no tests in @pops/db-types)\"",
+    "ci:fix": "pnpm format:fix && pnpm lint:fix && pnpm typecheck && pnpm format:check && pnpm lint"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2"

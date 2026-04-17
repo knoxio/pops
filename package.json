@@ -10,7 +10,8 @@
     "lint:fix": "turbo lint:fix",
     "format:check": "turbo format:check",
     "format:fix": "turbo format:fix",
-    "ci:fix": "turbo run lint:fix && turbo run format:fix && turbo run typecheck lint format:check",
+    "ci:fix": "turbo run format:fix && turbo run lint:fix && turbo run typecheck format:check lint",
+    "check:package-scripts": "node scripts/check-package-scripts.mjs",
     "prepare": "husky"
   },
   "devDependencies": {

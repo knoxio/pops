@@ -5,7 +5,14 @@
   "type": "module",
   "scripts": {
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .storybook",
+    "lint:fix": "eslint .storybook --fix",
+    "format:check": "oxfmt -c ../../.oxfmtrc.json --check \".storybook/**/*.{ts,tsx}\"",
+    "format:fix": "oxfmt -c ../../.oxfmtrc.json --write \".storybook/**/*.{ts,tsx}\"",
+    "test": "echo \"(no tests in @pops/storybook)\"",
+    "ci:fix": "pnpm format:fix && pnpm lint:fix && pnpm typecheck && pnpm format:check && pnpm lint"
   },
   "dependencies": {
     "@pops/app-finance": "workspace:*",
