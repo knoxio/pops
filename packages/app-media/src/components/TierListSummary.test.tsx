@@ -48,7 +48,7 @@ describe('TierListSummary', () => {
     );
     const delta = screen.getByTestId('delta-1');
     expect(delta).toHaveTextContent('+45');
-    expect(delta.className).toContain('green');
+    expect(delta.className).toContain('success');
   });
 
   it('shows red delta for negative score changes', () => {
@@ -62,7 +62,7 @@ describe('TierListSummary', () => {
     );
     const delta = screen.getByTestId('delta-2');
     expect(delta).toHaveTextContent('-25');
-    expect(delta.className).toContain('red');
+    expect(delta.className).toContain('destructive');
   });
 
   it('shows neutral delta for no change', () => {

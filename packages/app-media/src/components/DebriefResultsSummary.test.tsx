@@ -108,7 +108,7 @@ describe('DebriefResultsSummary', () => {
 
     const positiveDelta = screen.getByTestId('score-delta-1');
     expect(positiveDelta).toHaveTextContent('+45');
-    expect(positiveDelta.className).toContain('green');
+    expect(positiveDelta.className).toContain('success');
 
     const neutralDelta = screen.getByTestId('score-delta-2');
     expect(neutralDelta).toHaveTextContent('0');
@@ -116,7 +116,7 @@ describe('DebriefResultsSummary', () => {
 
     const negativeDelta = screen.getByTestId('score-delta-3');
     expect(negativeDelta).toHaveTextContent('-25');
-    expect(negativeDelta.className).toContain('red');
+    expect(negativeDelta.className).toContain('destructive');
   });
 
   it('back to movie button links to movie detail', () => {
