@@ -17,7 +17,6 @@ import {
   ViewToggleGroup,
 } from '@pops/ui';
 
-import { DashboardWidgets } from '../components/DashboardWidgets';
 import { InventoryCard } from '../components/InventoryCard';
 import { InventoryTable } from '../components/InventoryTable';
 import { trpc } from '../lib/trpc';
@@ -200,8 +199,6 @@ export function ItemsPage() {
   return (
     <div className="space-y-6">
       <PageHeader title="Inventory" />
-
-      {!hasActiveFilters && !search && <DashboardWidgets />}
 
       {/* Search + Filters + View Toggle */}
       <div className="flex flex-wrap items-end gap-3">

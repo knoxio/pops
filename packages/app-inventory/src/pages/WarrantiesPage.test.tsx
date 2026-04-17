@@ -56,12 +56,15 @@ function makeItem(
   };
 }
 
-/** Return an ISO date string N days from today. */
+/** Return a YYYY-MM-DD string N local calendar days from today. */
 function daysFromNow(days: number): string {
   const d = new Date();
   d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
 }
 
 beforeEach(() => {
@@ -365,10 +368,7 @@ describe('WarrantiesPage', () => {
   });
 
   it('shows urgency badge for expiring soon items', () => {
-    // Set warranty to expire in 10 days from now
-    const soon = new Date();
-    soon.setDate(soon.getDate() + 10);
-    const soonStr = soon.toISOString().slice(0, 10);
+    const soonStr = daysFromNow(10);
 
     mockWarrantiesQuery.mockReturnValue({
       data: {

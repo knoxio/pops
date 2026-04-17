@@ -43,8 +43,9 @@ function formatDate(dateStr: string): string {
 function daysUntil(dateStr: string): number {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
-  const target = new Date(dateStr);
-  target.setHours(0, 0, 0, 0);
+  // Parse as local calendar date to avoid UTC-offset shifting
+  const [year, month, day] = dateStr.split('-').map(Number);
+  const target = new Date(year!, month! - 1, day!);
   return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 

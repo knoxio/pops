@@ -33,7 +33,7 @@ export function DashboardWidgets() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         {Array.from({ length: 4 }).map((_, i) => (
           <Card key={i}>
             <CardContent className="p-4 space-y-2">
@@ -42,6 +42,20 @@ export function DashboardWidgets() {
             </CardContent>
           </Card>
         ))}
+        <Card className="col-span-full">
+          <CardContent className="p-4 space-y-2">
+            <Skeleton className="h-4 w-28" />
+            {Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-6 w-full" />
+            ))}
+          </CardContent>
+        </Card>
+        <Card className="col-span-full">
+          <CardContent className="p-4 space-y-2">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-24 w-full" />
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -57,7 +71,7 @@ export function DashboardWidgets() {
   } = data.data;
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 gap-4">
       <Card>
         <CardContent className="p-4">
           <div className="flex items-center gap-2 text-muted-foreground mb-1">
@@ -114,7 +128,7 @@ export function DashboardWidgets() {
         </CardContent>
       </Card>
 
-      <Card className="col-span-2">
+      <Card className="col-span-full">
         <CardContent className="p-4">
           <div className="flex items-center gap-2 text-muted-foreground mb-3">
             <Clock className="h-4 w-4" />
@@ -153,7 +167,7 @@ export function DashboardWidgets() {
         </CardContent>
       </Card>
 
-      <ValueByTypeCard className="col-span-2" />
+      <ValueByTypeCard className="col-span-full" />
     </div>
   );
 }

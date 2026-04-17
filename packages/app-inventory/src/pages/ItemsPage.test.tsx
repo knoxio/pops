@@ -3,21 +3,15 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-  dashboardQuery: vi.fn(),
   itemsQuery: vi.fn(),
   typesQuery: vi.fn(),
   treeQuery: vi.fn(),
   searchByAssetId: vi.fn(),
-  valueByTypeQuery: vi.fn(),
 }));
 
 vi.mock('../lib/trpc', () => ({
   trpc: {
     inventory: {
-      reports: {
-        dashboard: { useQuery: () => mocks.dashboardQuery() },
-        valueByType: { useQuery: () => mocks.valueByTypeQuery() },
-      },
       items: {
         list: { useQuery: () => mocks.itemsQuery() },
         distinctTypes: { useQuery: () => mocks.typesQuery() },
@@ -43,10 +37,6 @@ vi.mock('../components/InventoryCard', () => ({
   InventoryCard: () => <div data-testid="inventory-card" />,
 }));
 
-vi.mock('../components/ValueBreakdown', () => ({
-  ValueByTypeCard: () => <div data-testid="value-by-type" />,
-}));
-
 import { ItemsPage } from './ItemsPage';
 
 /** Renders ItemsPage and a catch-all route so we can detect navigation. */
@@ -63,45 +53,6 @@ function renderPage(initialPath = '/inventory') {
   );
 }
 
-const emptyDashboard = {
-  data: {
-    data: {
-      itemCount: 0,
-      totalReplacementValue: 0,
-      totalResaleValue: 0,
-      warrantiesExpiringSoon: 0,
-      recentlyAdded: [],
-    },
-  },
-};
-
-const populatedDashboard = {
-  data: {
-    data: {
-      itemCount: 42,
-      totalReplacementValue: 15000,
-      totalResaleValue: 8000,
-      warrantiesExpiringSoon: 3,
-      recentlyAdded: [
-        {
-          id: 'item-1',
-          itemName: 'MacBook Pro',
-          type: 'Electronics',
-          assetId: 'ELEC-001',
-          lastEditedTime: new Date().toISOString(),
-        },
-        {
-          id: 'item-2',
-          itemName: 'Standing Desk',
-          type: 'Furniture',
-          assetId: null,
-          lastEditedTime: new Date().toISOString(),
-        },
-      ],
-    },
-  },
-};
-
 describe('ItemsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -115,85 +66,9 @@ describe('ItemsPage', () => {
     });
     mocks.typesQuery.mockReturnValue({ data: { data: [] } });
     mocks.treeQuery.mockReturnValue({ data: { data: [] } });
-    mocks.valueByTypeQuery.mockReturnValue({ data: null, isLoading: false });
-  });
-
-  describe('DashboardWidgets', () => {
-    it('renders loading skeletons while data is loading', () => {
-      mocks.dashboardQuery.mockReturnValue({ data: null, isLoading: true });
-      renderPage();
-      expect(screen.queryByText('Warranties')).not.toBeInTheDocument();
-    });
-
-    it('renders all widget values with populated data', () => {
-      mocks.dashboardQuery.mockReturnValue({ ...populatedDashboard, isLoading: false });
-      renderPage();
-
-      expect(screen.getByText('42')).toBeInTheDocument();
-      expect(screen.getByText('3')).toBeInTheDocument();
-      expect(screen.getByText('expiring')).toBeInTheDocument();
-      expect(screen.getByText('MacBook Pro')).toBeInTheDocument();
-      expect(screen.getByText('Standing Desk')).toBeInTheDocument();
-    });
-
-    it('renders empty state values when inventory is empty', () => {
-      mocks.dashboardQuery.mockReturnValue({ ...emptyDashboard, isLoading: false });
-      renderPage();
-
-      // Item count shows 0, warranties shows 0 with "expiring" label
-      const zeros = screen.getAllByText('0');
-      expect(zeros.length).toBeGreaterThanOrEqual(2);
-      expect(screen.getByText('No items yet')).toBeInTheDocument();
-    });
-
-    it('navigates to /inventory/warranties when warranty widget is clicked', () => {
-      mocks.dashboardQuery.mockReturnValue({ ...populatedDashboard, isLoading: false });
-      renderPage();
-
-      const warrantyCard = screen.getByText('Warranties').closest("[role='button']");
-      expect(warrantyCard).toBeInTheDocument();
-      fireEvent.click(warrantyCard!);
-      expect(screen.getByTestId('warranties-page')).toBeInTheDocument();
-    });
-
-    it('navigates to /inventory/warranties on Enter key', () => {
-      mocks.dashboardQuery.mockReturnValue({ ...populatedDashboard, isLoading: false });
-      renderPage();
-
-      const warrantyCard = screen.getByText('Warranties').closest("[role='button']");
-      fireEvent.keyDown(warrantyCard!, { key: 'Enter' });
-      expect(screen.getByTestId('warranties-page')).toBeInTheDocument();
-    });
-
-    it('navigates to /inventory/warranties on Space key', () => {
-      mocks.dashboardQuery.mockReturnValue({ ...populatedDashboard, isLoading: false });
-      renderPage();
-
-      const warrantyCard = screen.getByText('Warranties').closest("[role='button']");
-      fireEvent.keyDown(warrantyCard!, { key: ' ' });
-      expect(screen.getByTestId('warranties-page')).toBeInTheDocument();
-    });
-
-    it('navigates to item detail when recently added item is clicked', () => {
-      mocks.dashboardQuery.mockReturnValue({ ...populatedDashboard, isLoading: false });
-      renderPage();
-
-      fireEvent.click(screen.getByText('MacBook Pro'));
-      expect(screen.getByTestId('item-detail-page')).toBeInTheDocument();
-    });
-
-    it('does not render dashboard when search is active', () => {
-      mocks.dashboardQuery.mockReturnValue({ ...populatedDashboard, isLoading: false });
-      renderPage('/inventory?q=test');
-      expect(screen.queryByText('Warranties')).not.toBeInTheDocument();
-    });
   });
 
   describe('Filters', () => {
-    beforeEach(() => {
-      mocks.dashboardQuery.mockReturnValue({ ...emptyDashboard, isLoading: false });
-    });
-
     it('renders Type select dropdown with dynamic options from database', () => {
       mocks.typesQuery.mockReturnValue({
         data: { data: ['Electronics', 'Furniture', 'Appliances'] },
@@ -239,7 +114,6 @@ describe('ItemsPage', () => {
     });
 
     it('shows Clear filters button when a filter is active', () => {
-      mocks.dashboardQuery.mockReturnValue({ ...populatedDashboard, isLoading: false });
       renderPage('/inventory?type=Electronics');
 
       expect(screen.getByText('Clear filters')).toBeInTheDocument();
@@ -252,10 +126,6 @@ describe('ItemsPage', () => {
   });
 
   describe('Query parameter persistence', () => {
-    beforeEach(() => {
-      mocks.dashboardQuery.mockReturnValue({ ...emptyDashboard, isLoading: false });
-    });
-
     it('reads search query from URL params', () => {
       renderPage('/inventory?q=MacBook');
 
@@ -281,10 +151,6 @@ describe('ItemsPage', () => {
   });
 
   describe('Asset ID search', () => {
-    beforeEach(() => {
-      mocks.dashboardQuery.mockReturnValue({ ...emptyDashboard, isLoading: false });
-    });
-
     it('navigates to item detail on Enter when asset ID matches', async () => {
       mocks.searchByAssetId.mockResolvedValue({
         data: { id: 'item-99', itemName: 'Test Item' },
@@ -331,10 +197,6 @@ describe('ItemsPage', () => {
   });
 
   describe('Empty state', () => {
-    beforeEach(() => {
-      mocks.dashboardQuery.mockReturnValue({ ...emptyDashboard, isLoading: false });
-    });
-
     it('shows empty state with Add button when no items exist', () => {
       renderPage();
 

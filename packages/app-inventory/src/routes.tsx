@@ -58,7 +58,7 @@ export const navConfig = {
     { path: '', label: 'Items', icon: 'Package' },
     { path: '/warranties', label: 'Warranties', icon: 'ShieldCheck' },
     { path: '/locations', label: 'Locations', icon: 'MapPin' },
-    { path: '/report', label: 'Reports', icon: 'BarChart2' },
+    { path: '/report', label: 'Reports', icon: 'BarChart3' },
   ],
 } satisfies AppNavConfigShape;
 
