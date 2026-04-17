@@ -1,7 +1,7 @@
 # US-01: TopBar search bar
 
 > PRD: [056 — Search UI](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -15,7 +15,7 @@ As a user, I want a search bar in the TopBar so that I can search the entire pla
 - [x] Debounced input (300ms) before triggering search
 - [x] Clear button when text is present
 - [x] Mobile: collapses to search icon, expands on tap
-- [ ] Focus trap when results panel is open
+- [x] Focus trap when results panel is open
 
 ## Notes
 

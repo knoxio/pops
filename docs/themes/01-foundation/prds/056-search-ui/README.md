@@ -41,4 +41,4 @@ Build the search UI — a TopBar search bar with a results panel that shows cont
 
 ## Drift Check
 
-last checked: 2026-04-17
+last checked: 2026-04-18

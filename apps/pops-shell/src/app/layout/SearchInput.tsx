@@ -9,6 +9,7 @@ import {
   RecentSearches,
   SearchResultsPanel,
   useCurrentApp,
+  useFocusTrap,
   useRecentSearches,
   useSearchKeyboardNav,
   useSearchResultNavigation,
@@ -187,6 +188,10 @@ export function SearchInput() {
   }, []);
 
   const showPanel = isOpen && (query.length > 0 || (isFocused && queries.length > 0));
+
+  // Trap Tab focus within the container when the results panel is open.
+  // Escape is already handled by useSearchKeyboardNav (calls handleClose).
+  useFocusTrap({ containerRef, active: showPanel });
 
   return (
     <div ref={containerRef} className="hidden md:flex relative items-center max-w-sm w-full mx-4">

@@ -22,6 +22,7 @@ export {
   getResultComponent,
   registerResultComponent,
 } from './result-component-registry';
+export { useFocusTrap } from './useFocusTrap';
 export { useSearchKeyboardNav } from './search-keyboard-nav';
 export type {
   SearchResultHit,
