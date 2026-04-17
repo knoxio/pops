@@ -410,7 +410,7 @@ function WatchlistCard({
 
         {/* Remove button (hover) */}
         <Button
-          variant="destructive"
+          variant="ghost"
           size="icon"
           onClick={(e) => {
             e.stopPropagation();
@@ -418,7 +418,7 @@ function WatchlistCard({
           }}
           disabled={isRemoving}
           aria-label={`Remove ${title} from watchlist`}
-          className="absolute bottom-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity h-auto w-auto p-1.5"
+          className="absolute bottom-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity h-auto w-auto p-1.5 text-destructive hover:text-destructive"
         >
           <Trash2 className="h-3.5 w-3.5" />
         </Button>

@@ -1,7 +1,7 @@
 # US-06: Enforce action icon standards
 
 > PRD: [003 — Components](README.md)
-> Status: Partial — aria-label and doc done, full icon sweep pending
+> Status: Partial — destructive button pattern now fixed across all app packages; compact/prominent audit pending
 
 ## Description
 

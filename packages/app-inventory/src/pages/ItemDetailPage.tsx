@@ -183,11 +183,7 @@ export function ItemDetailPage() {
             </Link>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-destructive border-destructive/20 hover:bg-destructive/5"
-                >
+                <Button variant="ghost" size="sm" className="text-destructive">
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete
                 </Button>

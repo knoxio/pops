@@ -489,9 +489,11 @@ function LocationNode({
             >
               <FileText className="h-3.5 w-3.5 text-muted-foreground" />
             </Link>
-            <button
+            <Button
               type="button"
-              className="p-0.5 rounded hover:bg-muted"
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 p-0.5 text-destructive"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete(node.id);
@@ -499,8 +501,8 @@ function LocationNode({
               aria-label={`Delete ${node.name}`}
               title="Delete location"
             >
-              <Trash2 className="h-3 w-3 text-destructive" />
-            </button>
+              <Trash2 className="h-3 w-3" />
+            </Button>
           </div>
 
           {hasChildren && (
