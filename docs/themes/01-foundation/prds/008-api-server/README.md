@@ -167,4 +167,4 @@ US-02 and US-03 can parallelise after US-01. US-04 depends on US-02. US-05 can p
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

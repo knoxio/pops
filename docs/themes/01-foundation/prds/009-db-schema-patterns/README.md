@@ -164,4 +164,4 @@ US-02, US-03, US-04 can parallelise after US-01. US-05 depends on tables existin
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17
