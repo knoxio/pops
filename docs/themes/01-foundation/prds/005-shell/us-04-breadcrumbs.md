@@ -30,7 +30,9 @@ Standard page header pattern:
   <Link to={parentPath}>
     <ArrowLeft className="h-5 w-5" />
   </Link>
-  <Breadcrumb items={[{ label: 'Library', href: '/media' }, { label: movie.title }]} />
+  <Breadcrumb
+    items={[{ label: "Library", href: "/media" }, { label: movie.title }]}
+  />
 </div>
 ```
 
