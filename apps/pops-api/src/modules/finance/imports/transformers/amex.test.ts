@@ -39,9 +39,7 @@ describe('transformAmex', () => {
     expect(result.account).toBe('Amex');
     expect(result.location).toBe('North Sydney'); // Title-cased first line
     expect(result.rawRow).toBe(expectedRaw);
-    expect(result.checksum).toBe(
-      createHash('sha256').update(expectedRaw).digest('hex')
-    );
+    expect(result.checksum).toBe(createHash('sha256').update(expectedRaw).digest('hex'));
   });
 
   it('generates consistent checksum for same CSV row', () => {

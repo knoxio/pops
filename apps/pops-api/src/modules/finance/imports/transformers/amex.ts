@@ -1,10 +1,11 @@
-import type { ParsedTransaction } from '../types.js';
 import {
   extractLocation,
   generateChecksum,
   normaliseAmount,
   normaliseDate,
 } from '../lib/parse-utils.js';
+
+import type { ParsedTransaction } from '../types.js';
 
 /**
  * Clean merchant name from Amex description.

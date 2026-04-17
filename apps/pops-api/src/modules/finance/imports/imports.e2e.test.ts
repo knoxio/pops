@@ -450,7 +450,11 @@ describe('E2E: CSV Transformer Accuracy', () => {
     expect(result.checksum).toHaveLength(64); // SHA-256
     // rawRow uses key-sorted JSON (generateChecksum sorts keys for stable checksums)
     const expectedRaw = JSON.stringify(
-      Object.fromEntries(Object.keys(row).toSorted().map((k) => [k, row[k as keyof typeof row]]))
+      Object.fromEntries(
+        Object.keys(row)
+          .toSorted()
+          .map((k) => [k, row[k as keyof typeof row]])
+      )
     );
     expect(result.rawRow).toBe(expectedRaw);
   });
