@@ -11,9 +11,9 @@ Rejection is the "start over" escape hatch. Day-to-day refinement (narrowing a p
 
 ## Acceptance Criteria
 
-- [ ] The user can reject a bundled ChangeSet proposal from the proposal dialog.
-- [ ] Rejection requires a short free-text feedback message.
-- [ ] Rejection applies no rule changes.
-- [ ] Rejection closes the proposal dialog; the triggering transaction(s) remain in whatever local state they were in before the proposal was generated.
-- [ ] The rejection, including the feedback and the rejected ChangeSet, is persisted for audit and future training.
-- [ ] The rejection UX must make clear that rejection is the escape hatch — for day-to-day refinement the user should edit the proposal in place.
+- [x] The user can reject a bundled ChangeSet proposal from the proposal dialog.
+- [x] Rejection requires a short free-text feedback message.
+- [x] Rejection applies no rule changes.
+- [x] Rejection closes the proposal dialog; the triggering transaction(s) remain in whatever local state they were in before the proposal was generated.
+- [x] The rejection, including the feedback and the rejected ChangeSet, is persisted for audit and future training.
+- [x] The rejection UX must make clear that rejection is the escape hatch — for day-to-day refinement the user should edit the proposal in place.

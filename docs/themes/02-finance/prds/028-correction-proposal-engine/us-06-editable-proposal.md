@@ -56,22 +56,22 @@ The dialog is a large-surface modal with five regions, all visible at once:
 
 ## Acceptance Criteria
 
-- [ ] The dialog shows the triggering transaction(s) and the user's original correction intent in a dedicated top context panel.
-- [ ] The left panel lists every operation in the current ChangeSet with kind, one-line summary, per-op impact count, and staleness state.
-- [ ] The user can select any operation in the list to load it into the middle detail editor.
-- [ ] The user can add a new operation to the ChangeSet (new rule, or edit/disable/remove of an existing rule selected from a searchable list).
-- [ ] The user can delete any operation from the ChangeSet, including operations that were part of the original proposal.
-- [ ] The middle detail editor lets the user change `descriptionPattern`, `matchType`, target entity (existing or new), and optional location / type / tags for add/edit operations, and provide a rationale for disable/remove operations.
-- [ ] Changing any field in an operation marks that operation's impact preview stale and disables Apply until the preview is regenerated.
-- [ ] The right impact panel shows the effect of the currently selected operation, grouped into will-change / already-match / unaffected.
-- [ ] The right impact panel has a Combined-effect toggle that shows the net effect of the entire ChangeSet.
-- [ ] The user can regenerate previews on demand; regeneration uses the same deterministic matcher as processing.
-- [ ] The AI helper accepts free-text instructions and may add, edit, split, merge, or remove any operation in the ChangeSet.
-- [ ] AI-revised ChangeSets are never applied automatically — the user must explicitly click Apply.
-- [ ] Apply commits the current ChangeSet as a single atomic unit via the US-03 approve-and-apply path.
-- [ ] Cancel closes the dialog and applies no rule changes.
-- [ ] Reject-with-feedback closes the dialog, persists the feedback, and applies no rule changes.
-- [ ] The editor preserves the PRD-028 invariants: no silent learning, bundled decision, deterministic preview, atomic apply.
+- [x] The dialog shows the triggering transaction(s) and the user's original correction intent in a dedicated top context panel.
+- [x] The left panel lists every operation in the current ChangeSet with kind, one-line summary, per-op impact count, and staleness state.
+- [x] The user can select any operation in the list to load it into the middle detail editor.
+- [x] The user can add a new operation to the ChangeSet (new rule, or edit/disable/remove of an existing rule selected from a searchable list).
+- [x] The user can delete any operation from the ChangeSet, including operations that were part of the original proposal.
+- [x] The middle detail editor lets the user change `descriptionPattern`, `matchType`, target entity (existing or new), and optional location / type / tags for add/edit operations, and provide a rationale for disable/remove operations.
+- [x] Changing any field in an operation marks that operation's impact preview stale and disables Apply until the preview is regenerated.
+- [x] The right impact panel shows the effect of the currently selected operation, grouped into will-change / already-match / unaffected.
+- [x] The right impact panel has a Combined-effect toggle that shows the net effect of the entire ChangeSet.
+- [x] The user can regenerate previews on demand; regeneration uses the same deterministic matcher as processing.
+- [x] The AI helper accepts free-text instructions and may add, edit, split, merge, or remove any operation in the ChangeSet.
+- [x] AI-revised ChangeSets are never applied automatically — the user must explicitly click Apply.
+- [x] Apply commits the current ChangeSet as a single atomic unit via the US-03 approve-and-apply path.
+- [x] Cancel closes the dialog and applies no rule changes.
+- [x] Reject-with-feedback closes the dialog, persists the feedback, and applies no rule changes.
+- [x] The editor preserves the PRD-028 invariants: no silent learning, bundled decision, deterministic preview, atomic apply.
 
 ## Verification
 

@@ -142,4 +142,4 @@ Rejection is reserved for the "this whole direction is wrong, start over" case â
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

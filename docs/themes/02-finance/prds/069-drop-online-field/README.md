@@ -58,4 +58,4 @@ Tag-related procedures are untouched; they already handle the use case.
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17
