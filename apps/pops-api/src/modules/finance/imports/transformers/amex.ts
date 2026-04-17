@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import { extractLocation, generateRowChecksum } from '@pops/tools';
 
 import type { ParsedTransaction } from '../types.js';
 
@@ -28,27 +28,6 @@ function normaliseAmount(amountStr: string): number {
 }
 
 /**
- * Extract location from multiline Town/City field
- * Format: "NORTH SYDNEY\nNSW" → "North Sydney"
- */
-function extractLocation(townCity: string): string | undefined {
-  if (!townCity) return undefined;
-
-  // Take first line and clean up
-  const lines = townCity.split('\n');
-  const town = (lines[0] ?? '').trim();
-
-  if (!town) return undefined;
-
-  // Title case the town name
-  return town
-    .toLowerCase()
-    .split(' ')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
-
-/**
  * Clean merchant name from Amex description
  * Removes excessive whitespace
  */
@@ -72,15 +51,18 @@ export function transformAmex(row: Record<string, string>): ParsedTransaction {
   // Store full row as JSON for audit trail and AI context
   const rawRow = JSON.stringify(row);
 
-  // Generate checksum for reliable deduplication
-  const checksum = crypto.createHash('sha256').update(rawRow).digest('hex');
+  // Generate checksum for reliable deduplication (key-sorted for determinism)
+  const checksum = generateRowChecksum(row);
+
+  const locationRaw = row['Town/City'] ?? '';
+  const location = extractLocation(locationRaw) ?? undefined;
 
   return {
     date: normaliseDate(row['Date'] ?? ''),
     description: cleanDescription(row['Description'] ?? ''),
     amount: normaliseAmount(row['Amount'] ?? ''),
     account: 'Amex',
-    location: extractLocation(row['Town/City'] ?? ''),
+    location,
     rawRow,
     checksum,
   };

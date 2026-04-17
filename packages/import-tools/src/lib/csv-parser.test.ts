@@ -1,6 +1,14 @@
+import { createHash } from 'node:crypto';
+
 import { describe, expect, it } from 'vitest';
 
-import { normaliseAmount, normaliseDate } from './csv-parser.js';
+import {
+  extractLocation,
+  generateRowChecksum,
+  isOnlineTransaction,
+  normaliseAmount,
+  normaliseDate,
+} from './csv-parser.js';
 
 describe('normaliseDate', () => {
   it('should parse DD/MM/YYYY format', () => {
@@ -57,5 +65,123 @@ describe('normaliseAmount', () => {
   it('should throw on invalid amount', () => {
     expect(() => normaliseAmount('invalid')).toThrow('Cannot parse amount');
     expect(() => normaliseAmount('abc123')).toThrow('Cannot parse amount');
+  });
+});
+
+describe('extractLocation', () => {
+  it('returns null for empty string', () => {
+    expect(extractLocation('')).toBeNull();
+  });
+
+  it('returns null for whitespace-only string', () => {
+    expect(extractLocation('   ')).toBeNull();
+  });
+
+  it('returns null when first line is empty', () => {
+    expect(extractLocation('\nSYDNEY')).toBeNull();
+  });
+
+  it('title-cases all-caps single word', () => {
+    expect(extractLocation('SYDNEY')).toBe('Sydney');
+  });
+
+  it('title-cases all-caps multi-word', () => {
+    expect(extractLocation('NORTH SYDNEY')).toBe('North Sydney');
+  });
+
+  it('title-cases mixed-case input', () => {
+    expect(extractLocation('nOrTh SyDnEy')).toBe('North Sydney');
+  });
+
+  it('uses only the first line of a multiline string', () => {
+    expect(extractLocation('NORTH SYDNEY\nNSW')).toBe('North Sydney');
+    expect(extractLocation('SYDNEY\nNSW\nAUSTRALIA')).toBe('Sydney');
+  });
+
+  it('preserves numbers in the location', () => {
+    expect(extractLocation('SYDNEY 2000')).toBe('Sydney 2000');
+  });
+});
+
+describe('isOnlineTransaction', () => {
+  it('returns true for AMAZON', () => {
+    expect(isOnlineTransaction('AMAZON AU MARKETPLACE')).toBe(true);
+  });
+
+  it('returns true for PAYPAL', () => {
+    expect(isOnlineTransaction('PAYPAL *MERCHANT')).toBe(true);
+  });
+
+  it('returns true for EBAY', () => {
+    expect(isOnlineTransaction('EBAY PURCHASE')).toBe(true);
+  });
+
+  it('returns true for .COM.AU domain pattern', () => {
+    expect(isOnlineTransaction('CATCH.COM.AU')).toBe(true);
+  });
+
+  it('returns true for .COM domain pattern', () => {
+    expect(isOnlineTransaction('AMZN.COM')).toBe(true);
+  });
+
+  it('returns true for explicit ONLINE keyword', () => {
+    expect(isOnlineTransaction('WOOLWORTHS ONLINE')).toBe(true);
+  });
+
+  it('returns true for NETFLIX', () => {
+    expect(isOnlineTransaction('NETFLIX.COM')).toBe(true);
+  });
+
+  it('returns true for SPOTIFY', () => {
+    expect(isOnlineTransaction('SPOTIFY SUBSCRIPTION')).toBe(true);
+  });
+
+  it('returns true for GOOGLE', () => {
+    expect(isOnlineTransaction('GOOGLE *STORAGE')).toBe(true);
+  });
+
+  it('returns false for a plain in-store merchant', () => {
+    expect(isOnlineTransaction('WOOLWORTHS 1234 SYDNEY')).toBe(false);
+  });
+
+  it('returns false for empty string', () => {
+    expect(isOnlineTransaction('')).toBe(false);
+  });
+
+  it('is case-insensitive', () => {
+    expect(isOnlineTransaction('amazon marketplace')).toBe(true);
+    expect(isOnlineTransaction('paypal purchase')).toBe(true);
+  });
+});
+
+describe('generateRowChecksum', () => {
+  it('returns a 64-character hex string', () => {
+    const result = generateRowChecksum({ Date: '2026-01-15', Amount: '100.00' });
+    expect(result).toHaveLength(64);
+    expect(result).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it('is deterministic for the same input', () => {
+    const row = { Date: '2026-01-15', Amount: '100.00', Description: 'MERCHANT' };
+    expect(generateRowChecksum(row)).toBe(generateRowChecksum(row));
+  });
+
+  it('produces different hashes for different rows', () => {
+    const row1 = { Date: '2026-01-15', Amount: '100.00' };
+    const row2 = { Date: '2026-01-16', Amount: '100.00' };
+    expect(generateRowChecksum(row1)).not.toBe(generateRowChecksum(row2));
+  });
+
+  it('is independent of object key insertion order', () => {
+    const row1 = { Amount: '100.00', Date: '2026-01-15' };
+    const row2 = { Date: '2026-01-15', Amount: '100.00' };
+    expect(generateRowChecksum(row1)).toBe(generateRowChecksum(row2));
+  });
+
+  it('matches a manual SHA-256 of key-sorted JSON', () => {
+    const row = { Description: 'TEST', Amount: '50.00', Date: '2026-03-01' };
+    const sorted = { Amount: '50.00', Date: '2026-03-01', Description: 'TEST' };
+    const expected = createHash('sha256').update(JSON.stringify(sorted)).digest('hex');
+    expect(generateRowChecksum(row)).toBe(expected);
   });
 });

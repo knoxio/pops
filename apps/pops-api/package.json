@@ -51,6 +51,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.90.0",
     "@pops/db-types": "workspace:*",
+    "@pops/tools": "workspace:*",
     "@pops/types": "workspace:*",
     "@trpc/server": "^11.16.0",
     "better-sqlite3": "^12.9.0",

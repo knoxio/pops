@@ -38,6 +38,9 @@ importers:
       '@pops/db-types':
         specifier: workspace:*
         version: link:../../packages/db-types
+      '@pops/tools':
+        specifier: workspace:*
+        version: link:../../packages/import-tools
       '@pops/types':
         specifier: workspace:*
         version: link:../../packages/types

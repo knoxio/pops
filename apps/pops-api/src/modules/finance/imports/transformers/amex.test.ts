@@ -1,4 +1,4 @@
-import crypto from 'crypto';
+import { createHash } from 'node:crypto';
 
 import { describe, expect, it } from 'vitest';
 
@@ -27,8 +27,14 @@ describe('transformAmex', () => {
     expect(result.account).toBe('Amex');
     expect(result.location).toBe('North Sydney'); // Title-cased first line
     expect(result.rawRow).toBe(JSON.stringify(row));
+    // generateRowChecksum sorts keys before hashing for determinism
+    const sortedRow = Object.fromEntries(
+      Object.keys(row)
+        .sort()
+        .map((k) => [k, row[k as keyof typeof row]])
+    );
     expect(result.checksum).toBe(
-      crypto.createHash('sha256').update(JSON.stringify(row)).digest('hex')
+      createHash('sha256').update(JSON.stringify(sortedRow)).digest('hex')
     );
   });
 

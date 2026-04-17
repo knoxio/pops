@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 
 import { parse } from 'csv-parse/sync';
@@ -99,4 +100,89 @@ export function normaliseAmount(raw: string): number {
     throw new TypeError(`Cannot parse amount: "${raw}"`);
   }
   return amount;
+}
+
+/**
+ * Extract a displayable location string from a multiline Town/City field.
+ *
+ * Amex CSV format: "NORTH SYDNEY\nNSW" → "North Sydney"
+ * Takes the first non-empty line and title-cases it.
+ *
+ * @returns Title-cased first line, or `null` if the field is empty/whitespace-only.
+ */
+export function extractLocation(locationStr: string): string | null {
+  if (!locationStr) return null;
+
+  const firstLine = (locationStr.split('\n')[0] ?? '').trim();
+  if (!firstLine) return null;
+
+  return firstLine
+    .toLowerCase()
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+/**
+ * Detect whether a transaction is an online purchase based on common keywords
+ * and domain patterns found in merchant descriptions.
+ *
+ * Matches (case-insensitive):
+ * - Platform names: AMAZON, PAYPAL, EBAY, ETSY, ALIEXPRESS, SHOPIFY, STRIPE
+ * - Streaming/digital: NETFLIX, SPOTIFY, APPLE.COM, GOOGLE, MICROSOFT
+ * - Domain patterns: .COM.AU, .COM, .NET, .IO
+ * - Explicit labels: ONLINE, INTERNET, DIGITAL, WEB, ECOMMERCE
+ */
+export function isOnlineTransaction(description: string): boolean {
+  const upper = description.toUpperCase();
+
+  const keywordPatterns: RegExp[] = [
+    // Marketplace / payment platforms
+    /\bAMAZON\b/,
+    /\bPAYPAL\b/,
+    /\bEBAY\b/,
+    /\bETSY\b/,
+    /\bALIEXPRESS\b/,
+    /\bSHOPIFY\b/,
+    /\bSTRIPE\b/,
+    // Streaming / digital services
+    /\bNETFLIX\b/,
+    /\bSPOTIFY\b/,
+    /\bAPPLE\.COM\b/,
+    /\bAPPLE ITUNES\b/,
+    /\bGOOGLE\b/,
+    /\bMICROSOFT\b/,
+    /\bSTEAM\b/,
+    // Domain-like patterns (e.g. AMZN.COM.AU, XYZ.COM, FOO.NET)
+    /\w+\.COM\.AU\b/,
+    /\w+\.COM\b/,
+    /\w+\.NET\b/,
+    /\w+\.IO\b/,
+    // Explicit labels
+    /\bONLINE\b/,
+    /\bINTERNET\b/,
+    /\bDIGITAL\b/,
+    /\bWEB\b/,
+    /\bECOMMERCE\b/,
+    /\bE-COMMERCE\b/,
+  ];
+
+  return keywordPatterns.some((pattern) => pattern.test(upper));
+}
+
+/**
+ * Generate a deterministic SHA-256 checksum for a raw CSV row.
+ *
+ * Keys are sorted before serialisation to guarantee the same hash regardless
+ * of property insertion order in the parsed object.
+ *
+ * @returns 64-character lowercase hex digest.
+ */
+export function generateRowChecksum(rawRow: Record<string, string>): string {
+  const sorted = Object.fromEntries(
+    Object.keys(rawRow)
+      .toSorted()
+      .map((k) => [k, rawRow[k]])
+  );
+  return createHash('sha256').update(JSON.stringify(sorted)).digest('hex');
 }
