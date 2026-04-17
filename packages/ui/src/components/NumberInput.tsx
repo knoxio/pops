@@ -240,7 +240,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
           document.removeEventListener('mouseup', handleMouseUp);
         };
       }
-      return undefined;
+      return;
     }, [isDragging]);
 
     return (
@@ -263,7 +263,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
           <button
             type="button"
             onClick={decrement}
-            disabled={disabled || (min !== undefined && value <= min)}
+            disabled={disabled ?? (min !== undefined && value <= min)}
             className="flex-shrink-0 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors p-2 min-w-11 min-h-11 inline-flex items-center justify-center"
             tabIndex={-1}
           >
@@ -288,7 +288,7 @@ export const NumberInput = forwardRef<HTMLInputElement, NumberInputProps>(
           <button
             type="button"
             onClick={increment}
-            disabled={disabled || (max !== undefined && value >= max)}
+            disabled={disabled ?? (max !== undefined && value >= max)}
             className="flex-shrink-0 text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors p-2 min-w-11 min-h-11 inline-flex items-center justify-center"
             tabIndex={-1}
           >

@@ -1,8 +1,8 @@
-import { transactions as transactionsTable } from '@pops/db-types';
 import { TRPCError } from '@trpc/server';
-import type { Database } from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import { transactions as transactionsTable } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 import {
@@ -11,6 +11,8 @@ import {
   seedTransaction,
   setupTestContext,
 } from '../../../shared/test-utils.js';
+
+import type { Database } from 'better-sqlite3';
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;

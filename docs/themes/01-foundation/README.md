@@ -19,16 +19,16 @@ Build a multi-app platform from a shared foundation: one monorepo, one shell, on
 
 ## Epics
 
-| #   | Epic                                                       | Summary                                                                                                           | Status  |
-| --- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ------- |
-| 0   | [Project Bootstrap](epics/00-project-bootstrap.md)         | pnpm monorepo, Turbo, mise, TypeScript strict, ESLint, Prettier, Vitest, Playwright                               | Done    |
-| 1   | [UI Component Library](epics/01-ui-component-library.md)   | `@pops/ui` — Shadcn/Radix primitives, composites, design tokens, centralised styling, Storybook                   | Partial |
-| 2   | [Shell & App Switcher](epics/02-shell-app-switcher.md)     | `pops-shell` — lazy-loaded apps, AppRail, responsive sidebar, app theme colour propagation                        | Done    |
-| 3   | [API Server](epics/03-api-server.md)                       | `pops-api` — Express + tRPC, domain-grouped routers, middleware (auth, rate limiting, errors)                     | Done    |
-| 4   | [DB Schema Patterns](epics/04-db-schema-patterns.md)       | SQLite, timestamp migrations, shared entities, cross-domain FKs, seed data, UUIDs                                 | Done    |
-| 5   | [Responsive Foundation](epics/05-responsive-foundation.md) | Tailwind v4 breakpoints, mobile-first, 44x44px touch targets, component adaptations                               | Partial |
-| 6   | [Drizzle ORM](epics/06-drizzle-orm.md)                     | Type-safe queries and schema-as-code, replacing raw SQL                                                           | Done    |
-| 7   | [Search](epics/07-search.md)                               | Platform-wide search from TopBar, context-aware results, structured query syntax, cross-domain via universal URIs | Done    |
+| #   | Epic                                                       | Summary                                                                                                           | Status      |
+| --- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------- |
+| 0   | [Project Bootstrap](epics/00-project-bootstrap.md)         | pnpm monorepo, Turbo, mise, TypeScript strict, ESLint, Prettier, Vitest, Playwright                               | Done        |
+| 1   | [UI Component Library](epics/01-ui-component-library.md)   | `@pops/ui` — Shadcn/Radix primitives, composites, design tokens, centralised styling, Storybook                   | Partial     |
+| 2   | [Shell & App Switcher](epics/02-shell-app-switcher.md)     | `pops-shell` — lazy-loaded apps, AppRail, responsive sidebar, app theme colour propagation                        | Done        |
+| 3   | [API Server](epics/03-api-server.md)                       | `pops-api` — Express + tRPC, domain-grouped routers, middleware (auth, rate limiting, errors)                     | Done        |
+| 4   | [DB Schema Patterns](epics/04-db-schema-patterns.md)       | SQLite, timestamp migrations, shared entities, cross-domain FKs, seed data, UUIDs                                 | Done        |
+| 5   | [Responsive Foundation](epics/05-responsive-foundation.md) | Tailwind v4 breakpoints, mobile-first, 44x44px touch targets, component adaptations                               | Partial     |
+| 6   | [Drizzle ORM](epics/06-drizzle-orm.md)                     | Type-safe queries and schema-as-code, replacing raw SQL                                                           | Done        |
+| 7   | [Search](epics/07-search.md)                               | Platform-wide search from TopBar, context-aware results, structured query syntax, cross-domain via universal URIs | Done        |
 | 8   | [Settings System](epics/08-settings-system.md)             | Unified, self-registering settings page — modular sections per app, replaces scattered settings UIs               | Not started |
 
 Epic 0 is prerequisite to everything. Epics 1-5 can be built incrementally. Epic 6 is independent. Epic 8 depends on Epic 4 (settings table) and Epic 2 (shell routing).

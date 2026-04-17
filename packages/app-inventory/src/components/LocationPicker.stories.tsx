@@ -1,7 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 
 import { LocationPicker, type LocationTreeNode } from './LocationPicker';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 const mockLocations: LocationTreeNode[] = [
   {
@@ -94,7 +95,9 @@ export const Interactive: Story = {
         locations={mockLocations}
         value={value}
         onChange={setValue}
-        onCreateLocation={(name, parentId) => alert(`Create "${name}" under ${parentId ?? 'root'}`)}
+        onCreateLocation={(name, parentId) => {
+          alert(`Create "${name}" under ${parentId ?? 'root'}`);
+        }}
       />
     );
   },
@@ -119,6 +122,8 @@ export const WithAddLocation: Story = {
   args: {
     locations: mockLocations,
     value: null,
-    onCreateLocation: (name, parentId) => alert(`Create "${name}" under ${parentId ?? 'root'}`),
+    onCreateLocation: (name, parentId) => {
+      alert(`Create "${name}" under ${parentId ?? 'root'}`);
+    },
   },
 };

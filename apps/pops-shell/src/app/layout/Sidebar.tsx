@@ -1,3 +1,10 @@
+import { iconMap } from '@/app/nav/icon-map';
+import { isPageActive } from '@/app/nav/path-utils';
+import { registeredApps } from '@/app/nav/registry';
+import { useUIStore } from '@/store/uiStore';
+import { X } from 'lucide-react';
+import { Link, useLocation } from 'react-router';
+
 /**
  * Mobile sidebar navigation
  *
@@ -5,13 +12,6 @@
  * Desktop navigation is handled by AppRail + PageNav.
  */
 import { Button } from '@pops/ui';
-import { X } from 'lucide-react';
-import { Link, useLocation } from 'react-router';
-
-import { iconMap } from '@/app/nav/icon-map';
-import { isPageActive } from '@/app/nav/path-utils';
-import { registeredApps } from '@/app/nav/registry';
-import { useUIStore } from '@/store/uiStore';
 
 import { BuildVersion } from './BuildVersion';
 
@@ -34,7 +34,9 @@ export function Sidebar({ open }: SidebarProps) {
       {/* Backdrop */}
       <div
         className="fixed inset-0 bg-black/50 z-40 md:hidden"
-        onClick={() => setSidebarOpen(false)}
+        onClick={() => {
+          setSidebarOpen(false);
+        }}
         aria-hidden="true"
       />
 
@@ -49,7 +51,9 @@ export function Sidebar({ open }: SidebarProps) {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setSidebarOpen(false)}
+            onClick={() => {
+              setSidebarOpen(false);
+            }}
             className="min-w-[44px] min-h-[44px]"
             aria-label="Close sidebar"
           >

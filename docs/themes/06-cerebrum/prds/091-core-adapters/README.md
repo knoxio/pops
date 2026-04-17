@@ -11,28 +11,28 @@ Build three reference implementations of the Plexus adapter interface (PRD-090):
 
 ### Adapter-Specific Filterable Fields
 
-| Adapter    | Filterable Fields                                          | Description                                                |
-| ---------- | ---------------------------------------------------------- | ---------------------------------------------------------- |
-| Email      | `subject`, `from`, `to`, `cc`, `folder`, `has_attachment`  | Email header fields and folder location                    |
-| Calendar   | `calendar_name`, `category`, `organizer`, `is_recurring`   | Calendar event metadata                                    |
-| GitHub     | `event_type`, `repo`, `author`, `action`, `is_bot`         | GitHub event properties                                    |
+| Adapter  | Filterable Fields                                         | Description                             |
+| -------- | --------------------------------------------------------- | --------------------------------------- |
+| Email    | `subject`, `from`, `to`, `cc`, `folder`, `has_attachment` | Email header fields and folder location |
+| Calendar | `calendar_name`, `category`, `organizer`, `is_recurring`  | Calendar event metadata                 |
+| GitHub   | `event_type`, `repo`, `author`, `action`, `is_bot`        | GitHub event properties                 |
 
 ### Adapter Default Scopes
 
-| Adapter    | Default Scope                    | Logic                                                        |
-| ---------- | -------------------------------- | ------------------------------------------------------------ |
-| Email      | `personal.email` or `work.email` | Based on configured account label in plexus.toml             |
-| Calendar   | `personal.calendar` or `work.calendar` | Based on configured calendar label in plexus.toml     |
-| GitHub     | `work.dev.github`                | All GitHub activity defaults to work dev scope               |
+| Adapter  | Default Scope                          | Logic                                             |
+| -------- | -------------------------------------- | ------------------------------------------------- |
+| Email    | `personal.email` or `work.email`       | Based on configured account label in plexus.toml  |
+| Calendar | `personal.calendar` or `work.calendar` | Based on configured calendar label in plexus.toml |
+| GitHub   | `work.dev.github`                      | All GitHub activity defaults to work dev scope    |
 
 ## API Surface
 
 No new procedures — adapters are managed through the Plexus adapter API (PRD-090). Each adapter implements the `PlexusAdapter` interface and is registered via `cerebrum.plexus.adapters.register`.
 
-| Adapter-Specific Config (plexus.toml) | Fields                                                                                           |
-| ------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| Email                                 | `protocol` (imap/api), `host`, `port`, `tls`, `folders` (array of folders to monitor), `scope_label` (personal/work) |
-| Calendar                              | `protocol` (caldav/api), `url`, `scope_label` (personal/work), `sync_days_ahead` (default 30), `sync_days_behind` (default 7) |
+| Adapter-Specific Config (plexus.toml) | Fields                                                                                                                                       |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Email                                 | `protocol` (imap/api), `host`, `port`, `tls`, `folders` (array of folders to monitor), `scope_label` (personal/work)                         |
+| Calendar                              | `protocol` (caldav/api), `url`, `scope_label` (personal/work), `sync_days_ahead` (default 30), `sync_days_behind` (default 7)                |
 | GitHub                                | `token` (env: reference), `username`, `repos` (array of owner/repo, or `*` for all), `events` (array of event types to track), `scope_label` |
 
 ## Business Rules
@@ -50,26 +50,26 @@ No new procedures — adapters are managed through the Plexus adapter API (PRD-0
 
 ## Edge Cases
 
-| Case                                            | Behaviour                                                                      |
-| ----------------------------------------------- | ------------------------------------------------------------------------------ |
-| Email with no text body (HTML only)             | HTML is stripped to plain text using a sanitiser, then converted to Markdown    |
-| Email with attachments                          | Attachment filenames listed in the engram body — attachment content is not ingested (out of scope) |
-| Calendar event with no description              | Engram body contains attendees, location, and time only — title is the event title |
-| Calendar recurring event                        | Each occurrence within the sync window creates a separate engram with the specific date |
-| GitHub event for a repo not in the config       | Skipped — only configured repos (or all repos if `*`) are tracked              |
-| GitHub rate limit reached                       | Sync pauses with exponential backoff, resumes when rate limit resets — logged   |
-| IMAP connection dropped mid-sync                | Sync fails gracefully, adapter status transitions to `degraded`, retries next cycle |
-| CalDAV server returns 401                       | Adapter transitions to `error`, user notified to check credentials             |
-| Email from a `.secret.` configured sender       | If scope rules map the sender to a secret scope, the engram receives that scope |
-| GitHub PR review with 500+ line diff            | Only the PR metadata (title, description, author, labels) is ingested, not the full diff |
+| Case                                      | Behaviour                                                                                          |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| Email with no text body (HTML only)       | HTML is stripped to plain text using a sanitiser, then converted to Markdown                       |
+| Email with attachments                    | Attachment filenames listed in the engram body — attachment content is not ingested (out of scope) |
+| Calendar event with no description        | Engram body contains attendees, location, and time only — title is the event title                 |
+| Calendar recurring event                  | Each occurrence within the sync window creates a separate engram with the specific date            |
+| GitHub event for a repo not in the config | Skipped — only configured repos (or all repos if `*`) are tracked                                  |
+| GitHub rate limit reached                 | Sync pauses with exponential backoff, resumes when rate limit resets — logged                      |
+| IMAP connection dropped mid-sync          | Sync fails gracefully, adapter status transitions to `degraded`, retries next cycle                |
+| CalDAV server returns 401                 | Adapter transitions to `error`, user notified to check credentials                                 |
+| Email from a `.secret.` configured sender | If scope rules map the sender to a secret scope, the engram receives that scope                    |
+| GitHub PR review with 500+ line diff      | Only the PR metadata (title, description, author, labels) is ingested, not the full diff           |
 
 ## User Stories
 
-| #   | Story                                                          | Summary                                                                         | Status      | Parallelisable   |
-| --- | -------------------------------------------------------------- | ------------------------------------------------------------------------------- | ----------- | ---------------- |
-| 01  | [us-01-email-adapter](us-01-email-adapter.md)                  | IMAP/API email ingestion: connect, filter, extract, create engrams              | Not started | Yes              |
-| 02  | [us-02-calendar-adapter](us-02-calendar-adapter.md)            | CalDAV/API calendar sync: import events, schedule-aware context for Ego         | Not started | Yes              |
-| 03  | [us-03-github-adapter](us-03-github-adapter.md)                | GitHub API: ingest filtered activity, skip noise, create engrams                | Not started | Yes              |
+| #   | Story                                               | Summary                                                                 | Status      | Parallelisable |
+| --- | --------------------------------------------------- | ----------------------------------------------------------------------- | ----------- | -------------- |
+| 01  | [us-01-email-adapter](us-01-email-adapter.md)       | IMAP/API email ingestion: connect, filter, extract, create engrams      | Not started | Yes            |
+| 02  | [us-02-calendar-adapter](us-02-calendar-adapter.md) | CalDAV/API calendar sync: import events, schedule-aware context for Ego | Not started | Yes            |
+| 03  | [us-03-github-adapter](us-03-github-adapter.md)     | GitHub API: ingest filtered activity, skip noise, create engrams        | Not started | Yes            |
 
 All three adapters are independent implementations of the same interface and can be built in parallel. Each depends on PRD-090 (Plugin Architecture) being implemented.
 

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
-import type { EntityEntry } from './entity-lookup.js';
 import { type AliasMap, type EntityLookupMap, matchEntity } from './entity-matcher.js';
+
+import type { EntityEntry } from './entity-lookup.js';
 
 /**
  * Unit tests for entity matching functions.

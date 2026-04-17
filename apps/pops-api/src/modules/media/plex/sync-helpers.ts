@@ -1,3 +1,5 @@
+import { and, eq } from 'drizzle-orm';
+
 /**
  * Shared helpers for Plex sync operations.
  *
@@ -5,11 +7,11 @@
  * duplicated watch-history logging and external ID extraction logic.
  */
 import { episodes, seasons } from '@pops/db-types';
-import { and, eq } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
 import { getTvShowByTvdbId } from '../tv-shows/service.js';
 import { logWatch } from '../watch-history/service.js';
+
 import type { PlexClient } from './client.js';
 import type { PlexEpisode, PlexMediaItem } from './types.js';
 

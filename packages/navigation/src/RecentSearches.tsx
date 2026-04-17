@@ -33,7 +33,9 @@ export function RecentSearches({ queries, onSelect, onClear }: RecentSearchesPro
           <li key={query}>
             <button
               type="button"
-              onClick={() => onSelect(query)}
+              onClick={() => {
+                onSelect(query);
+              }}
               className="flex w-full items-center gap-2 px-3 py-1.5 text-sm hover:bg-accent transition-colors text-left"
               data-testid={`recent-query-${query}`}
             >

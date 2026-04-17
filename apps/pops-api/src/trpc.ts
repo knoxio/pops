@@ -3,9 +3,10 @@
  * All tRPC routers extend from the procedures defined here.
  */
 import { initTRPC, TRPCError } from '@trpc/server';
-import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
 
 import { verifyCloudflareJWT } from './middleware/cloudflare-jwt.js';
+
+import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
 
 /**
  * User context extracted from Cloudflare Access JWT

@@ -6,12 +6,12 @@
 
 - name: Install common packages
   ansible.builtin.apt:
-    name: "{{ common_packages }}"
+    name: '{{ common_packages }}'
     state: present
 
 - name: Set timezone
   community.general.timezone:
-    name: "{{ timezone }}"
+    name: '{{ timezone }}'
 
 - name: Configure SSH
   ansible.builtin.template:
@@ -19,7 +19,7 @@
     dest: /etc/ssh/sshd_config
     owner: root
     group: root
-    mode: "0644"
+    mode: '0644'
     validate: /usr/sbin/sshd -t -f %s
   notify: restart sshd
 
@@ -31,7 +31,7 @@
 - name: Allow SSH through UFW
   community.general.ufw:
     rule: allow
-    port: "{{ ssh_port }}"
+    port: '{{ ssh_port }}'
     proto: tcp
 
 - name: Enable UFW
@@ -50,7 +50,7 @@
     dest: /etc/fail2ban/jail.local
     owner: root
     group: root
-    mode: "0644"
+    mode: '0644'
   notify: restart fail2ban
 
 - name: Enable unattended-upgrades
@@ -62,7 +62,7 @@
     dest: /etc/apt/apt.conf.d/20auto-upgrades
     owner: root
     group: root
-    mode: "0644"
+    mode: '0644'
 
 - name: Start and enable fail2ban
   ansible.builtin.systemd:

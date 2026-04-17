@@ -1,10 +1,11 @@
+import { transactionMatchesSignal } from './normalization';
+
 /**
  * Preview transaction scoping.
  *
  * Extracted from correction-proposal-shared.ts (tb-365).
  */
 import type { LocalOp } from '../correction-proposal/types';
-import { transactionMatchesSignal } from './normalization';
 
 /**
  * Server-side cap on `transactions` in `core.corrections.previewChangeSet`

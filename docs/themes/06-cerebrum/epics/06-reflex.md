@@ -8,9 +8,9 @@ Build the automation system that triggers actions in response to events, thresho
 
 ## PRDs
 
-| #   | PRD                                                                    | Summary                                                                                       | Status      |
-| --- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ----------- |
-| 089 | [Reflex System](../prds/089-reflex-system/README.md)                   | Reflex definitions, trigger types (event/threshold/scheduled), action dispatch, management UI  | Not started |
+| #   | PRD                                                  | Summary                                                                                       | Status      |
+| --- | ---------------------------------------------------- | --------------------------------------------------------------------------------------------- | ----------- |
+| 089 | [Reflex System](../prds/089-reflex-system/README.md) | Reflex definitions, trigger types (event/threshold/scheduled), action dispatch, management UI | Not started |
 
 Single PRD — the reflex system is a unified event-action framework. Splitting by trigger type would create artificial seams in what is naturally a single dispatch loop.
 

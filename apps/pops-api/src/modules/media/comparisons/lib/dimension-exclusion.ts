@@ -1,5 +1,6 @@
-import { comparisons, mediaScores } from '@pops/db-types';
 import { and, eq, or } from 'drizzle-orm';
+
+import { comparisons, mediaScores } from '@pops/db-types';
 
 import { getDb, getDrizzle } from '../../../../db.js';
 import { NotFoundError } from '../../../../shared/errors.js';

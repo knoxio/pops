@@ -15,8 +15,8 @@ export interface TransactionGroup {
  */
 export function cleanDescription(desc: string): string {
   return desc
-    .replace(/\d+/g, '') // Remove numbers
-    .replace(/\s+/g, ' ') // Normalize spaces
+    .replaceAll(/\d+/g, '') // Remove numbers
+    .replaceAll(/\s+/g, ' ') // Normalize spaces
     .trim()
     .toUpperCase();
 }
@@ -51,10 +51,10 @@ export function groupTransactionsByEntity(
   const groups = new Map<string, TransactionGroup>();
 
   for (const transaction of transactions) {
-    const key = transaction.entity?.entityName || 'unknown';
+    const key = transaction.entity?.entityName ?? 'unknown';
     if (!groups.has(key)) {
       groups.set(key, {
-        entityName: transaction.entity?.entityName || 'Unknown',
+        entityName: transaction.entity?.entityName ?? 'Unknown',
         category: undefined, // Category will be fetched from entities list if needed
         transactions: [],
         aiSuggestion: transaction.entity?.matchType === 'ai',
@@ -64,7 +64,7 @@ export function groupTransactionsByEntity(
   }
 
   // Sort: AI suggestions first, then by transaction count descending
-  return Array.from(groups.values()).sort((a, b) => {
+  return Array.from(groups.values()).toSorted((a, b) => {
     if (a.aiSuggestion !== b.aiSuggestion) return a.aiSuggestion ? -1 : 1;
     return b.transactions.length - a.transactions.length;
   });

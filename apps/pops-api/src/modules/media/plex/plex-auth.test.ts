@@ -1,14 +1,16 @@
+import { eq } from 'drizzle-orm';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 /**
  * Plex auth tests — token encryption, PIN handling, username storage.
  */
 import { settings } from '@pops/db-types';
-import { eq } from 'drizzle-orm';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getDrizzle } from '../../../db.js';
-import type { createCaller } from '../../../shared/test-utils.js';
 import { setupTestContext } from '../../../shared/test-utils.js';
 import { SETTINGS_KEYS } from '../../core/settings/keys.js';
+
+import type { createCaller } from '../../../shared/test-utils.js';
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;

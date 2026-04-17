@@ -22,7 +22,7 @@ export function SortablePhotoGrid({
   baseUrl = '/api/inventory/photos',
   isReordering = false,
 }: SortablePhotoGridProps) {
-  const sorted = [...photos].sort((a, b) => a.sortOrder - b.sortOrder);
+  const sorted = [...photos].toSorted((a, b) => a.sortOrder - b.sortOrder);
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const dragRef = useRef<number | null>(null);

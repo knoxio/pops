@@ -50,7 +50,7 @@ export function matchEntity(
   if (result) return result;
 
   // Stage 5: Strip punctuation and retry
-  const stripped = normalized.replace(/[''`]/g, '');
+  const stripped = normalized.replaceAll(/[''`]/g, '');
   const strippedResult = tryMatch(stripped, entityLookup, true);
   if (strippedResult) return strippedResult;
 
@@ -66,7 +66,7 @@ function tryMatch(
 
   // Stage 2: Exact match (case-insensitive)
   for (const [key, entry] of entries) {
-    const matchKey = stripPunctuation ? key.replace(/[''`]/g, '') : key;
+    const matchKey = stripPunctuation ? key.replaceAll(/[''`]/g, '') : key;
     if (normalized === matchKey.toUpperCase()) {
       return { entityName: entry.name, entityId: entry.id, matchType: 'exact' };
     }
@@ -75,7 +75,7 @@ function tryMatch(
   // Stage 3: Prefix match (longest entity name wins)
   let bestPrefix: EntityMatch | null = null;
   for (const [key, entry] of entries) {
-    const matchKey = stripPunctuation ? key.replace(/[''`]/g, '') : key;
+    const matchKey = stripPunctuation ? key.replaceAll(/[''`]/g, '') : key;
     const upper = matchKey.toUpperCase();
     if (normalized.startsWith(upper)) {
       if (!bestPrefix || entry.name.length > bestPrefix.entityName.length) {
@@ -89,7 +89,7 @@ function tryMatch(
   let bestContains: EntityMatch | null = null;
   for (const [key, entry] of entries) {
     if (key.length < 4) continue;
-    const matchKey = stripPunctuation ? key.replace(/[''`]/g, '') : key;
+    const matchKey = stripPunctuation ? key.replaceAll(/[''`]/g, '') : key;
     const upper = matchKey.toUpperCase();
     if (normalized.includes(upper)) {
       if (!bestContains || entry.name.length > bestContains.entityName.length) {

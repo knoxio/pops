@@ -1,5 +1,6 @@
-import type { WatchHistoryRow } from '@pops/db-types';
 import { z } from 'zod';
+
+import type { WatchHistoryRow } from '@pops/db-types';
 
 export type { WatchHistoryRow };
 

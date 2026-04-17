@@ -1,3 +1,8 @@
+import { Database, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { toast } from 'sonner';
+
 /**
  * AI Usage page - view AI categorization costs and usage
  */
@@ -17,13 +22,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@pops/ui';
-import type { ColumnDef } from '@tanstack/react-table';
-import { Database, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
-import { toast } from 'sonner';
 
 import { trpc } from '../lib/trpc';
+
+import type { ColumnDef } from '@tanstack/react-table';
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return '0 B';
@@ -90,7 +92,9 @@ function CacheManagement() {
               min={1}
               max={365}
               value={staleDays}
-              onChange={(e) => setStaleDays(Number(e.target.value) || 30)}
+              onChange={(e) => {
+                setStaleDays(Number(e.target.value) || 30);
+              }}
               className="w-16 h-8 px-2 py-1 text-sm text-center"
             />
             <span className="text-sm text-muted-foreground">days</span>
@@ -98,7 +102,9 @@ function CacheManagement() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => clearStaleMutation.mutate({ maxAgeDays: staleDays })}
+            onClick={() => {
+              clearStaleMutation.mutate({ maxAgeDays: staleDays });
+            }}
             disabled={clearStaleMutation.isPending || (cacheStats?.totalEntries ?? 0) === 0}
           >
             Clear Stale
@@ -126,7 +132,11 @@ function CacheManagement() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => clearAllMutation.mutate()}>
+                <AlertDialogAction
+                  onClick={() => {
+                    clearAllMutation.mutate();
+                  }}
+                >
                   Clear All
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -141,7 +151,7 @@ function CacheManagement() {
 function DailyCostChart({ data }: { data: AiUsageRecord[] }) {
   // Sort ascending for chart display (oldest first)
   const chartData = [...data]
-    .sort((a, b) => a.date.localeCompare(b.date))
+    .toSorted((a, b) => a.date.localeCompare(b.date))
     .map((d) => ({
       date: new Date(d.date).toLocaleDateString('en-AU', { day: '2-digit', month: 'short' }),
       cost: d.cost,
@@ -246,7 +256,7 @@ export function AiUsagePage() {
         <Alert variant="destructive">
           <h3 className="font-semibold">Failed to load AI usage data</h3>
           <p className="text-sm mt-1">
-            {statsError?.message || historyError?.message || 'Unknown error'}
+            {statsError?.message ?? historyError?.message ?? 'Unknown error'}
           </p>
         </Alert>
       </div>
@@ -405,14 +415,18 @@ export function AiUsagePage() {
         <span className="text-sm font-medium">Date Range:</span>
         <DateInput
           value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
+          onChange={(e) => {
+            setStartDate(e.target.value);
+          }}
           size="sm"
           aria-label="Start date"
         />
         <span className="text-sm text-muted-foreground">to</span>
         <DateInput
           value={endDate}
-          onChange={(e) => setEndDate(e.target.value)}
+          onChange={(e) => {
+            setEndDate(e.target.value);
+          }}
           size="sm"
           aria-label="End date"
         />

@@ -13,7 +13,7 @@ Build the contextual intelligence system — the shell tracks what the user is d
 interface AppContext {
   app: string; // "finance", "media", "inventory", "ai"
   page: string; // "library", "transactions", "item-detail"
-  pageType: "top-level" | "drill-down";
+  pageType: 'top-level' | 'drill-down';
   entity?: {
     // Set when viewing a specific item
     uri: string; // "pops:media/movie/42"

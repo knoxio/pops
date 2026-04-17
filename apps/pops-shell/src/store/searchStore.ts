@@ -15,7 +15,13 @@ interface SearchState {
 export const useSearchStore = create<SearchState>()((set) => ({
   query: '',
   isOpen: false,
-  setQuery: (query) => set({ query, isOpen: query.length > 0 }),
-  setOpen: (open) => set({ isOpen: open }),
-  clear: () => set({ query: '', isOpen: false }),
+  setQuery: (query) => {
+    set({ query, isOpen: query.length > 0 });
+  },
+  setOpen: (open) => {
+    set({ isOpen: open });
+  },
+  clear: () => {
+    set({ query: '', isOpen: false });
+  },
 }));

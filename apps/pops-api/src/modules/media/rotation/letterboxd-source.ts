@@ -10,6 +10,7 @@
  * Config: { listUrl: string }
  */
 import { logger } from '../../../lib/logger.js';
+
 import type { CandidateMovie, RotationSourceAdapter } from './source-types.js';
 
 const MAX_PAGES = 20;

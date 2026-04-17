@@ -1,8 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { PhotoItem } from './PhotoGallery';
 import { SortablePhotoGrid } from './SortablePhotoGrid';
+
+import type { PhotoItem } from './PhotoGallery';
 
 const photos: PhotoItem[] = [
   { id: 1, filePath: 'item-1/photo-a.jpg', caption: 'Front view', sortOrder: 0 },

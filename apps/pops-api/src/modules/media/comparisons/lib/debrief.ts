@@ -1,3 +1,5 @@
+import { and, asc, count, desc, eq, or } from 'drizzle-orm';
+
 import {
   comparisonDimensions,
   comparisons,
@@ -8,11 +10,11 @@ import {
   movies,
   watchHistory,
 } from '@pops/db-types';
-import { and, asc, count, desc, eq, or } from 'drizzle-orm';
 
 import { getDb, getDrizzle } from '../../../../db.js';
 import { ConflictError, NotFoundError, ValidationError } from '../../../../shared/errors.js';
 import { getDimension } from '../dimensions.service.js';
+
 import type {
   ComparisonRow,
   DebriefOpponent,
@@ -140,11 +142,9 @@ export function getDebriefOpponent(
 
   if (!movieRow) return null;
 
-  const posterUrl = movieRow.posterOverridePath
-    ? movieRow.posterOverridePath
-    : movieRow.posterPath
-      ? `/media/images/movie/${movieRow.tmdbId}/poster.jpg`
-      : null;
+  const posterUrl =
+    movieRow.posterOverridePath ??
+    (movieRow.posterPath ? `/media/images/movie/${movieRow.tmdbId}/poster.jpg` : null);
 
   return {
     id: movieRow.id,
@@ -227,11 +227,9 @@ export function getPendingDebriefs(): PendingDebrief[] {
 
     const pendingDimensionCount = Math.max(0, activeDimCount - completedCount);
 
-    const posterUrl = movieRow.posterOverridePath
-      ? movieRow.posterOverridePath
-      : movieRow.posterPath
-        ? `/media/images/movie/${movieRow.tmdbId}/poster.jpg`
-        : null;
+    const posterUrl =
+      movieRow.posterOverridePath ??
+      (movieRow.posterPath ? `/media/images/movie/${movieRow.tmdbId}/poster.jpg` : null);
 
     results.push({
       sessionId: session.sessionId,

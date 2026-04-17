@@ -1,10 +1,12 @@
+import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from './flags.js';
+import { scoreDiscoverResults } from './service.js';
+import { TMDB_GENRE_MAP } from './types.js';
+
 /**
  * Genre spotlight service — selects top user genres and fetches
  * high-rated TMDB movies per genre, scored by user preference.
  */
 import type { TmdbClient } from '../tmdb/client.js';
-import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from './flags.js';
-import { scoreDiscoverResults } from './service.js';
 import type {
   DiscoverResult,
   GenreAffinity,
@@ -12,7 +14,6 @@ import type {
   PreferenceProfile,
   ScoredDiscoverResult,
 } from './types.js';
-import { TMDB_GENRE_MAP } from './types.js';
 
 /** Genre name → TMDB genre ID reverse map. */
 const GENRE_NAME_TO_ID: Record<string, number> = {};
@@ -80,7 +81,7 @@ export function selectTopGenres(
   const ranked: string[] =
     affinities.length > 0
       ? affinities.map((a) => a.genre)
-      : [...distribution].sort((a, b) => b.percentage - a.percentage).map((g) => g.genre);
+      : [...distribution].toSorted((a, b) => b.percentage - a.percentage).map((g) => g.genre);
 
   const selected: string[] = [];
 

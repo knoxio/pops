@@ -1,5 +1,6 @@
-import { Button, Select } from '@pops/ui';
 import { Film, RefreshCw, Tv } from 'lucide-react';
+
+import { Button, Select } from '@pops/ui';
 
 import type { SyncResult } from './types';
 
@@ -66,7 +67,9 @@ export function PlexMediaSync({
             <Button
               size="sm"
               disabled={!movieSectionId || movieSync.isRunning || movieSync.isStarting}
-              onClick={() => movieSync.start({ sectionId: movieSectionId })}
+              onClick={() => {
+                movieSync.start({ sectionId: movieSectionId });
+              }}
               className="w-full"
             >
               {movieSync.isRunning ? (
@@ -116,7 +119,9 @@ export function PlexMediaSync({
             <Button
               size="sm"
               disabled={!tvSectionId || tvSync.isRunning || tvSync.isStarting}
-              onClick={() => tvSync.start({ sectionId: tvSectionId })}
+              onClick={() => {
+                tvSync.start({ sectionId: tvSectionId });
+              }}
               className="w-full"
             >
               {tvSync.isRunning ? (

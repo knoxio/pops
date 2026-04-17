@@ -1,5 +1,6 @@
-import type { LocalOp } from '../components/imports/correction-proposal-shared';
 import { newClientId } from '../components/imports/hooks/useLocalOps';
+
+import type { LocalOp } from '../components/imports/correction-proposal-shared';
 import type { CorrectionRule } from '../components/imports/RulePicker';
 
 /** Priority order for browse sidebar (PRD-032 US-05). */
@@ -24,7 +25,7 @@ export function sortRulesForBrowseDisplay(
   rules: CorrectionRule[],
   localOps: LocalOp[]
 ): CorrectionRule[] {
-  return [...rules].sort((a, b) => {
+  return [...rules].toSorted((a, b) => {
     const pa = effectiveRulePriority(a, localOps) - effectiveRulePriority(b, localOps);
     if (pa !== 0) return pa;
     return compareRulesForBrowse(a, b);

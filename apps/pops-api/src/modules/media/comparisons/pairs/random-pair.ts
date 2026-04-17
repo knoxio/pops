@@ -1,8 +1,10 @@
-import { comparisons, mediaWatchlist, movies, watchHistory } from '@pops/db-types';
 import { and, desc, eq } from 'drizzle-orm';
+
+import { comparisons, mediaWatchlist, movies, watchHistory } from '@pops/db-types';
 
 import { getDrizzle } from '../../../../db.js';
 import { getDimension } from '../dimensions.service.js';
+
 import type { RandomPair } from '../types.js';
 
 /**

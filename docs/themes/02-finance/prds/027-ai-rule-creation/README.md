@@ -48,25 +48,25 @@ The existing `corrections.generateRules` endpoint supports batch analysis — se
 {
   transactions: [
     {
-      description: "IKEA TEMPE NSW",
-      entityName: "IKEA",
+      description: 'IKEA TEMPE NSW',
+      entityName: 'IKEA',
       amount: -45.0,
-      account: "Amex",
-      currentTags: ["shopping"],
+      account: 'Amex',
+      currentTags: ['shopping'],
     },
     {
-      description: "IKEA RHODES",
-      entityName: "IKEA",
+      description: 'IKEA RHODES',
+      entityName: 'IKEA',
       amount: -120.0,
-      account: "Amex",
-      currentTags: ["shopping"],
+      account: 'Amex',
+      currentTags: ['shopping'],
     },
   ];
 }
 
 // Output: proposed rules
 {
-  proposals: [{ matchType: "prefix", pattern: "IKEA", entityName: "IKEA", confidence: 0.9 }];
+  proposals: [{ matchType: 'prefix', pattern: 'IKEA', entityName: 'IKEA', confidence: 0.9 }];
 }
 ```
 

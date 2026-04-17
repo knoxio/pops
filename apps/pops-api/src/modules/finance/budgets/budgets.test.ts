@@ -1,11 +1,13 @@
-import { budgets as budgetsTable } from '@pops/db-types';
 import { TRPCError } from '@trpc/server';
-import type { Database } from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
+import { budgets as budgetsTable } from '@pops/db-types';
+
 import { getDrizzle } from '../../../db.js';
 import { createCaller, seedBudget, setupTestContext } from '../../../shared/test-utils.js';
+
+import type { Database } from 'better-sqlite3';
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;
@@ -108,7 +110,7 @@ describe('budgets.list', () => {
 
     const result = await caller.finance.budgets.list({ active: 'true' });
     expect(result.data).toHaveLength(2);
-    expect(result.data.every((b) => b.active === true)).toBe(true);
+    expect(result.data.every((b) => b.active)).toBe(true);
   });
 
   it('filters by active=false', async () => {
@@ -118,7 +120,7 @@ describe('budgets.list', () => {
 
     const result = await caller.finance.budgets.list({ active: 'false' });
     expect(result.data).toHaveLength(2);
-    expect(result.data.every((b) => b.active === false)).toBe(true);
+    expect(result.data.every((b) => !b.active)).toBe(true);
   });
 
   it('combines all filters (search, period, active)', async () => {

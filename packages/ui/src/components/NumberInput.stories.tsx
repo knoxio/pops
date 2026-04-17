@@ -1,11 +1,12 @@
+import { useState } from 'react';
+
+import { NumberInput } from './NumberInput';
+
 /**
  * NumberInput component stories
  * Demonstrates stepper controls, drag functionality, and all variants
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
-
-import { NumberInput } from './NumberInput';
 
 const meta: Meta<typeof NumberInput> = {
   component: NumberInput,
@@ -184,7 +185,13 @@ export const Controlled: Story = {
     const [value, setValue] = useState(25);
     return (
       <div className="space-y-4">
-        <NumberInput {...args} value={value} onChange={(e) => setValue(Number(e.target.value))} />
+        <NumberInput
+          {...args}
+          value={value}
+          onChange={(e) => {
+            setValue(Number(e.target.value));
+          }}
+        />
         <p className="text-sm text-muted-foreground">Current value: {value}</p>
       </div>
     );
@@ -335,7 +342,9 @@ export const FormExample: Story = {
           <NumberInput
             prefix={<DollarIcon />}
             value={price}
-            onChange={(e) => setPrice(Number(e.target.value))}
+            onChange={(e) => {
+              setPrice(Number(e.target.value));
+            }}
             min={0}
             step={0.01}
           />
@@ -345,7 +354,9 @@ export const FormExample: Story = {
           <label className="block text-sm font-medium">Quantity</label>
           <NumberInput
             value={quantity}
-            onChange={(e) => setQuantity(Number(e.target.value))}
+            onChange={(e) => {
+              setQuantity(Number(e.target.value));
+            }}
             min={1}
             max={999}
             step={1}
@@ -357,7 +368,9 @@ export const FormExample: Story = {
           <NumberInput
             suffix={<PercentIcon />}
             value={discount}
-            onChange={(e) => setDiscount(Number(e.target.value))}
+            onChange={(e) => {
+              setDiscount(Number(e.target.value));
+            }}
             min={0}
             max={100}
             step={5}

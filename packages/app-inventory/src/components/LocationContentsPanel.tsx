@@ -1,3 +1,7 @@
+import { Package, Plus } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
+
 /**
  * LocationContentsPanel — shows inventory items at a selected location.
  *
@@ -6,9 +10,6 @@
  * and provides navigation to item detail and item creation.
  */
 import { AssetIdBadge, Button, Label, Skeleton, Switch, TypeBadge } from '@pops/ui';
-import { Package, Plus } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router';
 
 import { trpc } from '../lib/trpc';
 

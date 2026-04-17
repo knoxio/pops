@@ -81,7 +81,9 @@ export function ViewToggleGroup<T extends string>({
           role="radio"
           aria-checked={activeValue === option.value}
           aria-label={option.label}
-          onClick={() => handleChange(option.value)}
+          onClick={() => {
+            handleChange(option.value);
+          }}
           className={cn(
             'flex items-center justify-center rounded-md p-1.5 min-h-8 min-w-8 transition-all',
             activeValue === option.value

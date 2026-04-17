@@ -1,9 +1,11 @@
+import { existsSync } from 'node:fs';
+
 /**
  * Clear all data from database while preserving schema
  * Run with: tsx scripts/db-clear.ts
  */
 import BetterSqlite3 from 'better-sqlite3';
-import { existsSync } from 'node:fs';
+
 import { resetToBareMinimum } from '../src/db/data-reset.js';
 import { assertNotProduction, assertLowRecordCount } from './lib/guard.js';
 

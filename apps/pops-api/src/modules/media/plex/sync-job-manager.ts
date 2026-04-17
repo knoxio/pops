@@ -9,17 +9,19 @@
  */
 import { randomUUID } from 'node:crypto';
 
-import { syncJobResults } from '@pops/db-types';
 import { desc, eq, sql } from 'drizzle-orm';
 
+import { syncJobResults } from '@pops/db-types';
+
 import { getDrizzle } from '../../../db.js';
-import type { PlexClient } from './client.js';
 import { getPlexClient, getPlexToken } from './service.js';
 import { syncDiscoverWatches } from './sync-discover-watches.js';
 import { importMoviesFromPlex } from './sync-movies.js';
 import { importTvShowsFromPlex } from './sync-tv.js';
 import { syncWatchHistoryFromPlex } from './sync-watch-history.js';
 import { syncWatchlistFromPlex } from './sync-watchlist.js';
+
+import type { PlexClient } from './client.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -199,20 +201,26 @@ async function executeSyncByType(
     case 'syncMovies': {
       if (!params.sectionId) throw new Error('sectionId is required for movie sync');
       return importMoviesFromPlex(client, params.sectionId, {
-        onProgress: (p) => onProgress({ processed: p.processed, total: p.total }),
+        onProgress: (p) => {
+          onProgress({ processed: p.processed, total: p.total });
+        },
       });
     }
     case 'syncTvShows': {
       if (!params.sectionId) throw new Error('sectionId is required for TV sync');
       return importTvShowsFromPlex(client, params.sectionId, {
-        onProgress: (p) => onProgress({ processed: p.processed, total: p.total }),
+        onProgress: (p) => {
+          onProgress({ processed: p.processed, total: p.total });
+        },
       });
     }
     case 'syncWatchlist': {
       const token = getPlexToken();
       if (!token) throw new Error('Plex token not available');
       return syncWatchlistFromPlex(token, {
-        onProgress: (p) => onProgress({ processed: p.processed, total: p.total }),
+        onProgress: (p) => {
+          onProgress({ processed: p.processed, total: p.total });
+        },
       });
     }
     case 'syncWatchHistory': {
@@ -220,14 +228,18 @@ async function executeSyncByType(
         client,
         params.movieSectionId,
         params.tvSectionId,
-        (processed, total) => onProgress({ processed, total })
+        (processed, total) => {
+          onProgress({ processed, total });
+        }
       );
     }
     case 'syncDiscoverWatches': {
       const job = activeJobs.get(jobId);
       return syncDiscoverWatches(
         client,
-        (processed, total) => onProgress({ processed, total }),
+        (processed, total) => {
+          onProgress({ processed, total });
+        },
         (partialResult) => {
           if (job) job.result = partialResult;
         }

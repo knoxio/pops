@@ -1,3 +1,7 @@
+import { Download, FileText, Printer } from 'lucide-react';
+import { useCallback, useMemo } from 'react';
+import { useNavigate, useSearchParams } from 'react-router';
+
 /**
  * InsuranceReportPage — print-friendly insurance report for inventory items.
  *
@@ -17,9 +21,6 @@ import {
   Select,
   Skeleton,
 } from '@pops/ui';
-import { Download, FileText, Printer } from 'lucide-react';
-import { useCallback, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
 
 import { LocationPicker } from '../components/LocationPicker';
 import { trpc } from '../lib/trpc';
@@ -107,7 +108,9 @@ function buildCsvContent(groups: ReportGroup[]): string {
     }
   }
 
-  return rows.map((row) => row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(',')).join('\n');
+  return rows
+    .map((row) => row.map((cell) => `"${cell.replaceAll(/"/g, '""')}"`).join(','))
+    .join('\n');
 }
 
 export function InsuranceReportPage(): React.ReactElement {
@@ -222,7 +225,9 @@ export function InsuranceReportPage(): React.ReactElement {
             <Button
               size="sm"
               prefix={<Printer className="h-4 w-4" />}
-              onClick={() => window.print()}
+              onClick={() => {
+                window.print();
+              }}
             >
               Print / PDF
             </Button>
@@ -252,16 +257,18 @@ export function InsuranceReportPage(): React.ReactElement {
           <CheckboxInput
             label="Include sub-locations"
             checked={includeChildren}
-            onCheckedChange={(checked) => updateParam('includeChildren', checked ? null : 'false')}
+            onCheckedChange={(checked) => {
+              updateParam('includeChildren', checked ? null : 'false');
+            }}
           />
         )}
         <Select
           label="Sort by"
           size="sm"
           value={sortBy}
-          onChange={(e) =>
-            updateParam('sortBy', e.target.value === 'value' ? null : e.target.value)
-          }
+          onChange={(e) => {
+            updateParam('sortBy', e.target.value === 'value' ? null : e.target.value);
+          }}
           options={[
             { value: 'value', label: 'Value (high first)' },
             { value: 'name', label: 'Name' },

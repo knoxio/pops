@@ -8,10 +8,10 @@ Build the indexing and retrieval middleware that makes engrams queryable. Thalam
 
 ## PRDs
 
-| #   | PRD                                                                            | Summary                                                                                        | Status      |
-| --- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------- | ----------- |
-| 079 | [Engram Indexing & Sync](../prds/079-engram-indexing/README.md)                | File watcher, frontmatter-to-SQLite sync, embedding trigger, cross-source indexing              | Not started |
-| 080 | [Retrieval Engine](../prds/080-retrieval-engine/README.md)                     | Semantic search, structured queries, hybrid search, scope-filtered retrieval, context assembly  | Not started |
+| #   | PRD                                                             | Summary                                                                                        | Status      |
+| --- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------- |
+| 079 | [Engram Indexing & Sync](../prds/079-engram-indexing/README.md) | File watcher, frontmatter-to-SQLite sync, embedding trigger, cross-source indexing             | Not started |
+| 080 | [Retrieval Engine](../prds/080-retrieval-engine/README.md)      | Semantic search, structured queries, hybrid search, scope-filtered retrieval, context assembly | Not started |
 
 PRD-079 must complete before PRD-080 — the retrieval engine queries indexes that the sync system builds.
 

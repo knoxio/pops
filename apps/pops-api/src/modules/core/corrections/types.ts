@@ -1,7 +1,8 @@
-import type { TransactionCorrectionRow } from '@pops/db-types';
 import { z } from 'zod';
 
 import { parseJsonStringArray } from '../../../shared/json.js';
+
+import type { TransactionCorrectionRow } from '@pops/db-types';
 
 export type CorrectionRow = TransactionCorrectionRow;
 
@@ -96,8 +97,8 @@ export function correctionToRow(c: Correction): CorrectionRow {
 export function normalizeDescription(description: string): string {
   return description
     .toUpperCase()
-    .replace(/\d+/g, '') // Remove numbers
-    .replace(/\s+/g, ' ') // Normalize spaces
+    .replaceAll(/\d+/g, '') // Remove numbers
+    .replaceAll(/\s+/g, ' ') // Normalize spaces
     .trim();
 }
 

@@ -1,7 +1,8 @@
-import { Button, DateInput } from '@pops/ui';
 import { CalendarDays, CircleCheck, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+
+import { Button, DateInput } from '@pops/ui';
 
 import { trpc } from '../lib/trpc';
 
@@ -62,7 +63,9 @@ export function MarkAsWatchedButton({ mediaId, className }: MarkAsWatchedButtonP
         duration: 5000,
         action: {
           label: 'Undo',
-          onClick: () => handleUndo(result.data.id, result.watchlistRemoved),
+          onClick: () => {
+            handleUndo(result.data.id, result.watchlistRemoved);
+          },
         },
       });
       void utils.media.watchHistory.list.invalidate();
@@ -123,7 +126,9 @@ export function MarkAsWatchedButton({ mediaId, className }: MarkAsWatchedButtonP
           variant="ghost"
           size="icon"
           className="h-8 w-8"
-          onClick={() => setShowDatePicker(!showDatePicker)}
+          onClick={() => {
+            setShowDatePicker(!showDatePicker);
+          }}
           aria-label="Pick custom watch date"
         >
           <CalendarDays className="h-4 w-4" />
@@ -135,7 +140,9 @@ export function MarkAsWatchedButton({ mediaId, className }: MarkAsWatchedButtonP
           <DateInput
             size="sm"
             value={customDate}
-            onChange={(e) => setCustomDate(e.target.value)}
+            onChange={(e) => {
+              setCustomDate(e.target.value);
+            }}
             max={new Date().toISOString().split('T')[0]}
             aria-label="Watch date"
           />

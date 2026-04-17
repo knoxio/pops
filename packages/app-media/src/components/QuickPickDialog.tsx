@@ -1,3 +1,7 @@
+import { Play, SkipForward, Sparkles } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { toast } from 'sonner';
+
 /**
  * QuickPickDialog — "What Should I Watch Tonight?" modal.
  *
@@ -14,9 +18,6 @@ import {
   DialogTrigger,
   Skeleton,
 } from '@pops/ui';
-import { Play, SkipForward, Sparkles } from 'lucide-react';
-import { useCallback, useState } from 'react';
-import { toast } from 'sonner';
 
 import { trpc } from '../lib/trpc';
 
@@ -61,7 +62,9 @@ export function QuickPickDialog() {
     [refetch]
   );
 
-  const handleSkip = () => setCurrentIndex((i) => i + 1);
+  const handleSkip = () => {
+    setCurrentIndex((i) => i + 1);
+  };
 
   const handleWatch = () => {
     if (!currentMovie) return;

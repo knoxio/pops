@@ -1,5 +1,3 @@
-import { useSetPageContext } from '@pops/navigation';
-import { Button, Select, Skeleton, TextInput } from '@pops/ui';
 import {
   AlertCircle,
   ChevronLeft,
@@ -11,6 +9,9 @@ import {
 } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
+
+import { useSetPageContext } from '@pops/navigation';
+import { Button, Select, Skeleton, TextInput } from '@pops/ui';
 
 import { DebriefBanner } from '../components/DebriefBanner';
 import { DownloadQueue } from '../components/DownloadQueue';
@@ -39,8 +40,12 @@ const PAGE_SIZE_OPTIONS = [24, 48, 96] as const;
 function useDebouncedValue(value: string, delay: number): string {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(timer);
+    const timer = setTimeout(() => {
+      setDebounced(value);
+    }, delay);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [value, delay]);
   return debounced;
 }
@@ -90,7 +95,9 @@ function PaginationControls({
       <div className="flex items-center gap-2">
         <Select
           value={String(pageSize)}
-          onChange={(e) => onPageSizeChange(Number(e.target.value))}
+          onChange={(e) => {
+            onPageSizeChange(Number(e.target.value));
+          }}
           aria-label="Items per page"
           size="sm"
           options={PAGE_SIZE_OPTIONS.map((size) => ({
@@ -102,7 +109,9 @@ function PaginationControls({
           variant="outline"
           size="sm"
           disabled={page <= 1}
-          onClick={() => onPageChange(page - 1)}
+          onClick={() => {
+            onPageChange(page - 1);
+          }}
           aria-label="Previous page"
         >
           <ChevronLeft className="h-4 w-4" />
@@ -111,7 +120,9 @@ function PaginationControls({
           variant="outline"
           size="sm"
           disabled={page >= totalPages}
-          onClick={() => onPageChange(page + 1)}
+          onClick={() => {
+            onPageChange(page + 1);
+          }}
           aria-label="Next page"
         >
           <ChevronRight className="h-4 w-4" />
@@ -137,7 +148,7 @@ export function LibraryPage() {
   const rawSort = searchParams.get('sort');
   const typeFilter: MediaType = isValidMediaType(rawType) ? rawType : 'all';
   const sortBy: SortOption = isValidSort(rawSort) ? rawSort : 'title';
-  const genreFilter = searchParams.get('genre') || null;
+  const genreFilter = searchParams.get('genre') ?? null;
   const searchQuery = searchParams.get('q') ?? '';
   const page = Math.max(1, Number(searchParams.get('page')) || 1);
   const pageSize = PAGE_SIZE_OPTIONS.find((s) => s === Number(searchParams.get('pageSize'))) ?? 24;
@@ -286,7 +297,9 @@ export function LibraryPage() {
               key={opt.value}
               variant={typeFilter === opt.value ? 'default' : 'ghost'}
               size="sm"
-              onClick={() => setParam('type', opt.value === 'all' ? '' : opt.value)}
+              onClick={() => {
+                setParam('type', opt.value === 'all' ? '' : opt.value);
+              }}
               aria-pressed={typeFilter === opt.value}
               className={`text-xs font-semibold uppercase tracking-wider ${
                 typeFilter === opt.value
@@ -303,7 +316,9 @@ export function LibraryPage() {
         {allGenres.length > 0 && (
           <Select
             value={genreFilter ?? ''}
-            onChange={(e) => setParam('genre', e.target.value)}
+            onChange={(e) => {
+              setParam('genre', e.target.value);
+            }}
             aria-label="Filter by genre"
             size="sm"
             options={[
@@ -316,7 +331,9 @@ export function LibraryPage() {
         {/* Sort dropdown */}
         <Select
           value={sortBy}
-          onChange={(e) => setParam('sort', e.target.value)}
+          onChange={(e) => {
+            setParam('sort', e.target.value);
+          }}
           aria-label="Sort by"
           size="sm"
           options={SORT_OPTIONS.map((opt) => ({
@@ -329,10 +346,14 @@ export function LibraryPage() {
         <TextInput
           placeholder="Search library..."
           value={localSearch}
-          onChange={(e) => setLocalSearch(e.target.value)}
+          onChange={(e) => {
+            setLocalSearch(e.target.value);
+          }}
           prefix={<Search className="h-4 w-4" />}
           clearable
-          onClear={() => setLocalSearch('')}
+          onClear={() => {
+            setLocalSearch('');
+          }}
           className="w-full sm:max-w-xs"
           size="sm"
         />
@@ -369,7 +390,9 @@ export function LibraryPage() {
                 variant="outline"
                 size="sm"
                 className="mt-4"
-                onClick={() => setLocalSearch('')}
+                onClick={() => {
+                  setLocalSearch('');
+                }}
               >
                 Clear search
               </Button>
@@ -399,7 +422,9 @@ export function LibraryPage() {
             totalPages={totalPages}
             pageSize={pageSize}
             totalItems={totalItems}
-            onPageChange={(p) => setParam('page', String(p))}
+            onPageChange={(p) => {
+              setParam('page', String(p));
+            }}
             onPageSizeChange={(s) => {
               setSearchParams(
                 (prev) => {

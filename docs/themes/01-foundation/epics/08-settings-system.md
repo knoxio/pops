@@ -8,9 +8,9 @@ Build a unified, modular, self-registering settings system that replaces the sca
 
 ## PRDs
 
-| #   | PRD                                                                    | Summary                                                                                                     | Status      |
-| --- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ----------- |
-| 093 | [Unified Settings System](../prds/093-unified-settings/README.md)      | Settings registry, manifest schema, self-registering sections, generic field renderer, migration of existing settings | Not started |
+| #   | PRD                                                               | Summary                                                                                                               | Status      |
+| --- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ----------- |
+| 093 | [Unified Settings System](../prds/093-unified-settings/README.md) | Settings registry, manifest schema, self-registering sections, generic field renderer, migration of existing settings | Not started |
 
 ## Dependencies
 

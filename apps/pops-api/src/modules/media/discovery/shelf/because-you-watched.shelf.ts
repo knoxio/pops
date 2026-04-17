@@ -1,3 +1,5 @@
+import { and, eq, sql } from 'drizzle-orm';
+
 /**
  * "Because you watched {Movie}" shelf implementation.
  *
@@ -6,15 +8,15 @@
  * Instance score is derived from genre alignment between the seed movie and the user profile.
  */
 import { mediaScores, movies, watchHistory } from '@pops/db-types';
-import { and, eq, sql } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../../db.js';
 import { getTmdbClient } from '../../tmdb/index.js';
 import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from '../flags.js';
 import { scoreDiscoverResults } from '../service.js';
 import { getLibraryTmdbIds, toDiscoverResults } from '../tmdb-service.js';
-import type { PreferenceProfile } from '../types.js';
 import { registerShelf } from './registry.js';
+
+import type { PreferenceProfile } from '../types.js';
 import type { ShelfDefinition, ShelfInstance } from './types.js';
 
 const MAX_SEEDS = 10;

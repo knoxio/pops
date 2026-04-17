@@ -7,10 +7,11 @@
  */
 import { getDb } from '../../../db.js';
 import * as tvShowService from '../library/tv-show-service.js';
-import type { TheTvdbClient } from '../thetvdb/client.js';
 import { getTvdbClient } from '../thetvdb/index.js';
-import type { PlexClient } from './client.js';
 import { extractExternalIdAsNumber, syncEpisodeWatches } from './sync-helpers.js';
+
+import type { TheTvdbClient } from '../thetvdb/client.js';
+import type { PlexClient } from './client.js';
 import type { PlexMediaItem } from './types.js';
 
 // ---------------------------------------------------------------------------

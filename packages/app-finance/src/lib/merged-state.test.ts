@@ -1,9 +1,11 @@
-import type { Correction } from '@pops/api/modules/core/corrections/types';
-import type { Entity } from '@pops/api/modules/core/entities/types';
 import { describe, expect, it } from 'vitest';
 
-import type { ChangeSet, PendingChangeSet, PendingEntity } from '../store/importStore';
 import { computeMergedEntities, computeMergedRules } from './merged-state';
+
+import type { Correction } from '@pops/api/modules/core/corrections/types';
+import type { Entity } from '@pops/api/modules/core/entities/types';
+
+import type { ChangeSet, PendingChangeSet, PendingEntity } from '../store/importStore';
 
 // ---------------------------------------------------------------------------
 // Helpers

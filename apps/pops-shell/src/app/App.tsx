@@ -1,14 +1,14 @@
-/**
- * Root App component with all providers
- */
-import { Toaster, TooltipProvider } from '@pops/ui';
+import { trpc, trpcClient } from '@/lib/trpc';
+import { useThemeStore } from '@/store/themeStore';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useEffect } from 'react';
 import { RouterProvider } from 'react-router';
 
-import { trpc, trpcClient } from '@/lib/trpc';
-import { useThemeStore } from '@/store/themeStore';
+/**
+ * Root App component with all providers
+ */
+import { Toaster, TooltipProvider } from '@pops/ui';
 
 import { router } from './router';
 

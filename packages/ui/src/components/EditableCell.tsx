@@ -200,7 +200,9 @@ export function EditableCell<T = unknown>({
           <TextInput
             ref={inputRef}
             value={value as string}
-            onChange={(e) => setValue(e.target.value as T)}
+            onChange={(e) => {
+              setValue(e.target.value as T);
+            }}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             className="h-8"
@@ -210,7 +212,9 @@ export function EditableCell<T = unknown>({
           <NumberInput
             ref={inputRef}
             value={value as number}
-            onChange={(val) => setValue(val as T)}
+            onChange={(val) => {
+              setValue(val as T);
+            }}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             className="h-8"
@@ -219,7 +223,9 @@ export function EditableCell<T = unknown>({
         ) : type === 'date' ? (
           <DateTimeInput
             value={value as string}
-            onChange={(val) => setValue(val as T)}
+            onChange={(val) => {
+              setValue(val as T);
+            }}
             onKeyDown={handleKeyDown}
             placeholder={placeholder}
             className="h-8"
@@ -228,7 +234,9 @@ export function EditableCell<T = unknown>({
         ) : type === 'select' ? (
           <Select
             value={value as string}
-            onChange={(e) => setValue(e.target.value as T)}
+            onChange={(e) => {
+              setValue(e.target.value as T);
+            }}
             options={options}
             placeholder={placeholder}
             className="h-8"

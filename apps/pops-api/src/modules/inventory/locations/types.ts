@@ -1,5 +1,6 @@
-import type { LocationRow } from '@pops/db-types';
 import { z } from 'zod';
+
+import type { LocationRow } from '@pops/db-types';
 
 export type { LocationRow };
 

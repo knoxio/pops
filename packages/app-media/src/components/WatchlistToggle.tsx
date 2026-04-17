@@ -1,6 +1,7 @@
-import { Button } from '@pops/ui';
 import { Bookmark, BookmarkCheck } from 'lucide-react';
 import { toast } from 'sonner';
+
+import { Button } from '@pops/ui';
 
 import { trpc } from '../lib/trpc';
 

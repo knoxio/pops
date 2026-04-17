@@ -1,3 +1,5 @@
+import { and, eq, isNotNull } from 'drizzle-orm';
+
 /**
  * Plex watchlist sync — polls the Plex Discover cloud API and syncs
  * watchlist items into the POPS watchlist.
@@ -12,7 +14,6 @@
  *   - Items removed from Plex with source="both" → downgrade to "manual"
  */
 import { mediaWatchlist } from '@pops/db-types';
-import { and, eq, isNotNull } from 'drizzle-orm';
 
 import { getDb, getDrizzle } from '../../../db.js';
 import * as tvShowService from '../library/tv-show-service.js';
@@ -22,8 +23,9 @@ import { getTmdbClient } from '../tmdb/index.js';
 import { getTvShowByTvdbId } from '../tv-shows/service.js';
 import { getPlexClientId } from './service.js';
 import { extractExternalIdAsNumber } from './sync-helpers.js';
-import type { PlexMediaItem } from './types.js';
 import { PlexApiError } from './types.js';
+
+import type { PlexMediaItem } from './types.js';
 
 // ---------------------------------------------------------------------------
 // Types

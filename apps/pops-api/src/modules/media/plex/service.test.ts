@@ -51,12 +51,13 @@ vi.mock('drizzle-orm', () => ({
   and: vi.fn((...args: unknown[]) => ({ type: 'and', args })),
 }));
 
-// Now import the service
-import type { BetterSQLite3Database } from '../../../db.js';
 import { getDrizzle } from '../../../db.js';
 import { getEnv } from '../../../env.js';
 import { PlexClient } from './client.js';
 import { getPlexClient, getSyncStatus, testConnection } from './service.js';
+
+// Now import the service
+import type { BetterSQLite3Database } from '../../../db.js';
 
 const mockGetEnv = vi.mocked(getEnv);
 const mockGetDrizzle = vi.mocked(getDrizzle);

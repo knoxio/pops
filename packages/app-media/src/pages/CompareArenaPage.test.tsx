@@ -1,7 +1,8 @@
-import { TooltipProvider } from '@pops/ui';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { TooltipProvider } from '@pops/ui';
 
 const mockDimensionsQuery = vi.fn();
 const mockPairQuery = vi.fn();

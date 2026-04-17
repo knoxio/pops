@@ -1,11 +1,11 @@
+import { deleteAllApplicationRows, seedBareMinimum } from './data-reset.js';
+
 /**
  * Database seeder — inserts test/development data.
  * Exported as a function so it can be called programmatically
  * (e.g. from the env management system when seeding a new environment).
  */
 import type BetterSqlite3 from 'better-sqlite3';
-
-import { deleteAllApplicationRows, seedBareMinimum } from './data-reset.js';
 
 /**
  * Seed a database with test data.

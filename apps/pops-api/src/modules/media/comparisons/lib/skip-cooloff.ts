@@ -1,5 +1,6 @@
-import { comparisonSkipCooloffs } from '@pops/db-types';
 import { and, eq } from 'drizzle-orm';
+
+import { comparisonSkipCooloffs } from '@pops/db-types';
 
 import { getDrizzle } from '../../../../db.js';
 import { getGlobalComparisonCount } from '../global-count.js';

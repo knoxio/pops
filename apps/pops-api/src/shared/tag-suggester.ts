@@ -1,3 +1,5 @@
+import { eq } from 'drizzle-orm';
+
 /**
  * Suggest tags for a transaction with source attribution.
  *
@@ -9,12 +11,12 @@
  * Returns SuggestedTag[] with source attribution and optional pattern.
  */
 import { entities } from '@pops/db-types';
-import { eq } from 'drizzle-orm';
 
 import { getDrizzle } from '../db.js';
 import { findAllMatchingCorrections } from '../modules/core/corrections/service.js';
-import type { SuggestedTag } from '../modules/finance/imports/types.js';
 import { parseJsonStringArray } from './json.js';
+
+import type { SuggestedTag } from '../modules/finance/imports/types.js';
 
 export interface SuggestTagsOptions {
   description: string;

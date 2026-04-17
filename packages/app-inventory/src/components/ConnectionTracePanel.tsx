@@ -1,3 +1,7 @@
+import { ChevronDown, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router';
+
 /**
  * ConnectionTracePanel — displays connection chain as an expandable tree.
  *
@@ -13,9 +17,6 @@ import {
   Skeleton,
   TypeBadge,
 } from '@pops/ui';
-import { ChevronDown, ChevronRight } from 'lucide-react';
-import { useState } from 'react';
-import { useNavigate } from 'react-router';
 
 import { trpc } from '../lib/trpc';
 
@@ -57,7 +58,12 @@ function TraceNodeRow({ node, depth, currentItemId }: TraceNodeRowProps) {
         aria-expanded={hasChildren ? open : undefined}
       >
         {hasChildren ? (
-          <CollapsibleTrigger asChild onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+          <CollapsibleTrigger
+            asChild
+            onClick={(e: React.MouseEvent) => {
+              e.stopPropagation();
+            }}
+          >
             <button
               type="button"
               className="p-0.5 rounded hover:bg-muted"

@@ -1,6 +1,7 @@
 import { Badge } from '@pops/ui';
 
 import { matchTypeLabel } from '../lib/correction-utils';
+
 import type {
   CorrectionSignal,
   PreviewChangeSetOutput,

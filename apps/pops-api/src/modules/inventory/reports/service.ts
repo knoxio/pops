@@ -1,10 +1,12 @@
+import { and, asc, count, desc, eq, gte, isNotNull, lte, sql } from 'drizzle-orm';
+
 /**
  * Inventory reports service — warranty tracking and insurance report queries.
  */
 import { homeInventory, itemDocuments, itemPhotos, locations } from '@pops/db-types';
-import { and, asc, count, desc, eq, gte, isNotNull, lte, sql } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
+
 import type { InventoryRow } from '../items/types.js';
 import type { DashboardSummary, RecentItem, ValueBreakdownEntry } from './types.js';
 

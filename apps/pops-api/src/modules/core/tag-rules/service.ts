@@ -1,9 +1,12 @@
-import type { TransactionTagRuleRow } from '@pops/db-types';
-import { tagVocabulary, transactionTagRules } from '@pops/db-types';
 import { desc, eq } from 'drizzle-orm';
+
+import { tagVocabulary, transactionTagRules } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 import { NotFoundError } from '../../../shared/errors.js';
+
+import type { TransactionTagRuleRow } from '@pops/db-types';
+
 import type {
   TagRuleChangeSet,
   TagRuleChangeSetOp,

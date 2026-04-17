@@ -16,6 +16,7 @@
  */
 import { getShelfFreshness } from './impressions.service.js';
 import { getRegisteredShelves } from './registry.js';
+
 import type { PreferenceProfile, ShelfCategory, ShelfInstance } from './types.js';
 
 const SESSION_TARGET_MIN = 10;

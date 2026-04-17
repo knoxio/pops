@@ -1,3 +1,6 @@
+import { useMemo } from 'react';
+import { Link, useParams } from 'react-router';
+
 import { useSetPageContext } from '@pops/navigation';
 import {
   Alert,
@@ -13,8 +16,6 @@ import {
   Skeleton,
 } from '@pops/ui';
 import { Button } from '@pops/ui';
-import { useMemo } from 'react';
-import { Link, useParams } from 'react-router';
 
 import { ArrStatusBadge } from '../components/ArrStatusBadge';
 import { ComparisonScores } from '../components/ComparisonScores';
@@ -312,7 +313,9 @@ export function MovieDetailPage() {
           {watchHistoryData?.data && watchHistoryData.data.length > 0 ? (
             <ul className="space-y-2">
               {[...watchHistoryData.data]
-                .sort((a, b) => new Date(a.watchedAt).getTime() - new Date(b.watchedAt).getTime())
+                .toSorted(
+                  (a, b) => new Date(a.watchedAt).getTime() - new Date(b.watchedAt).getTime()
+                )
                 .map((entry) => (
                   <li key={entry.id} className="text-sm text-muted-foreground">
                     {new Date(entry.watchedAt).toLocaleDateString('en-AU', {

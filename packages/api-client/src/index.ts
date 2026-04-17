@@ -1,3 +1,6 @@
+import { httpBatchLink } from '@trpc/client';
+import { createTRPCReact } from '@trpc/react-query';
+
 /**
  * Shared tRPC client for all app packages.
  *
@@ -6,8 +9,6 @@
  * consume the hooks.
  */
 import type { AppRouter } from '@pops/api';
-import { httpBatchLink } from '@trpc/client';
-import { createTRPCReact } from '@trpc/react-query';
 
 /** React Query hooks for tRPC — shared across all app packages. */
 export const trpc = createTRPCReact<AppRouter>();

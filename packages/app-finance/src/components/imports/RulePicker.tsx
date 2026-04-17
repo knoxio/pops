@@ -1,4 +1,6 @@
-import type { AppRouter } from '@pops/api-client';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { useMemo, useState } from 'react';
+
 import {
   Badge,
   Button,
@@ -12,11 +14,12 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@pops/ui';
-import type { inferRouterOutputs } from '@trpc/server';
-import { Check, ChevronsUpDown } from 'lucide-react';
-import { useMemo, useState } from 'react';
 
 import { trpc } from '../../lib/trpc';
+
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 
 type CorrectionListOutput = inferRouterOutputs<AppRouter>['core']['corrections']['list'];
 export type CorrectionRule = CorrectionListOutput['data'][number];
@@ -151,7 +154,7 @@ export function RulePicker(props: RulePickerProps) {
                           </Badge>
                         )}
                       </div>
-                      {(rule.entityName || rule.location || rule.transactionType) && (
+                      {(rule.entityName ?? rule.location ?? rule.transactionType) && (
                         <div className="text-[11px] text-muted-foreground truncate">
                           {[rule.entityName, rule.location, rule.transactionType]
                             .filter(Boolean)

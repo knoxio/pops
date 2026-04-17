@@ -1,5 +1,5 @@
-import path from "path";
-import { fileURLToPath } from "url";
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 
@@ -13,7 +13,7 @@ function groupByPackage(filenames) {
     const rel = path.relative(root, f);
     const parts = rel.split(path.sep);
     const pkgDir =
-      (parts[0] === "apps" || parts[0] === "packages") && parts.length > 1
+      (parts[0] === 'apps' || parts[0] === 'packages') && parts.length > 1
         ? path.join(root, parts[0], parts[1])
         : root;
     (groups[pkgDir] ||= []).push(f);
@@ -27,9 +27,9 @@ function esc(s) {
 }
 
 export default {
-  "*.{ts,tsx}": (filenames) => {
+  '*.{ts,tsx}': (filenames) => {
     const groups = groupByPackage(filenames);
-    const formatFiles = filenames.map(esc).join(" ");
+    const formatFiles = filenames.map(esc).join(' ');
 
     // 1. oxfmt --write  (auto-fix formatting)
     // 2. eslint --fix   (auto-fix lint, per-package CWD so config resolves)
@@ -39,14 +39,14 @@ export default {
       `oxfmt --write ${formatFiles}`,
       ...Object.entries(groups).map(
         ([pkgDir, files]) =>
-          `bash -c 'cd ${esc(pkgDir)} && eslint --fix ${files.map(esc).join(" ")}'`
+          `bash -c 'cd ${esc(pkgDir)} && eslint --fix ${files.map(esc).join(' ')}'`
       ),
       `oxfmt --check ${formatFiles}`,
       ...Object.entries(groups).map(
-        ([pkgDir, files]) => `bash -c 'cd ${esc(pkgDir)} && eslint ${files.map(esc).join(" ")}'`
+        ([pkgDir, files]) => `bash -c 'cd ${esc(pkgDir)} && eslint ${files.map(esc).join(' ')}'`
       ),
     ];
   },
 
-  "*.css": ["oxfmt --write", "oxfmt --check"],
+  '*.css': ['oxfmt --write', 'oxfmt --check'],
 };

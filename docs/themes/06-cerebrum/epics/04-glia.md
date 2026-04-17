@@ -8,10 +8,10 @@ Build the autonomous curation workers that maintain engram quality over time. Gl
 
 ## PRDs
 
-| #   | PRD                                                                        | Summary                                                                                       | Status      |
-| --- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ----------- |
-| 085 | [Curation Workers](../prds/085-curation-workers/README.md)                 | Pruner, consolidator, linker, auditor — the four Glia worker types                             | Not started |
-| 086 | [Trust Graduation](../prds/086-trust-graduation/README.md)                 | Three-phase progression (propose → act+report → silent), approval tracking, demotion triggers  | Not started |
+| #   | PRD                                                        | Summary                                                                                       | Status      |
+| --- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ----------- |
+| 085 | [Curation Workers](../prds/085-curation-workers/README.md) | Pruner, consolidator, linker, auditor — the four Glia worker types                            | Not started |
+| 086 | [Trust Graduation](../prds/086-trust-graduation/README.md) | Three-phase progression (propose → act+report → silent), approval tracking, demotion triggers | Not started |
 
 PRD-085 and PRD-086 develop in parallel — the workers (085) and the trust framework (086) are independent codepaths that integrate at the action dispatch layer. Workers can run in Propose-only mode while the trust system is built.
 

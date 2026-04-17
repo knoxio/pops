@@ -1,3 +1,8 @@
+import { ClipboardCheck, Film, Trash2 } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router';
+import { toast } from 'sonner';
+
 /**
  * HistoryPage — watch history with filter tabs, pagination, and delete.
  *
@@ -20,10 +25,6 @@ import {
   Button,
   Skeleton,
 } from '@pops/ui';
-import { ClipboardCheck, Film, Trash2 } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
-import { toast } from 'sonner';
 
 import { formatEpisodeCode } from '../lib/format';
 import { trpc } from '../lib/trpc';
@@ -178,7 +179,9 @@ function HistoryItem({
                 to={`/media/debrief/${debriefSessionId}`}
                 aria-label="Debrief"
                 className="p-1 h-auto w-auto rounded-sm text-primary hover:bg-primary/10 inline-flex items-center"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
               >
                 <ClipboardCheck className="h-3.5 w-3.5" />
               </Link>
@@ -188,7 +191,9 @@ function HistoryItem({
               size="icon"
               aria-label="Delete watch event"
               disabled={isDeleting}
-              onClick={() => onDelete(entry.id)}
+              onClick={() => {
+                onDelete(entry.id);
+              }}
               className="p-1 h-auto w-auto hover:bg-destructive/10 text-muted-foreground hover:text-destructive"
             >
               <Trash2 className="h-3.5 w-3.5" />
@@ -260,7 +265,9 @@ function HistoryCard({
           <Link
             to={`/media/debrief/${debriefSessionId}`}
             aria-label="Debrief"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
             className="absolute bottom-2 left-2 z-10 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity p-1.5 h-auto w-auto rounded-md bg-primary text-primary-foreground hover:bg-primary/90 inline-flex items-center"
           >
             <ClipboardCheck className="h-3.5 w-3.5" />
@@ -292,7 +299,9 @@ function HistoryCard({
             alt={`${title} poster`}
             loading="lazy"
             className="h-full w-full object-cover group-hover:opacity-80 transition-opacity"
-            onError={() => setImageError(true)}
+            onError={() => {
+              setImageError(true);
+            }}
           />
         )}
       </div>
@@ -328,7 +337,7 @@ export function HistoryPage() {
   const utils = trpc.useUtils();
 
   const queryInput = {
-    ...(filter !== 'all' ? { mediaType: filter as 'movie' | 'episode' } : {}),
+    ...(filter !== 'all' ? { mediaType: filter } : {}),
     limit: PAGE_SIZE,
     offset,
   };
@@ -457,13 +466,21 @@ export function HistoryPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
+                  onClick={() => {
+                    setOffset(Math.max(0, offset - PAGE_SIZE));
+                  }}
                 >
                   Previous
                 </Button>
               )}
               {hasMore && (
-                <Button variant="outline" size="sm" onClick={() => setOffset(offset + PAGE_SIZE)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setOffset(offset + PAGE_SIZE);
+                  }}
+                >
                   Next
                 </Button>
               )}

@@ -55,17 +55,17 @@ code e2e/import-wizard.spec.ts
 The test shows exactly what UI elements are needed:
 
 ```typescript
-test("should edit transaction with Save Once", async ({ page }) => {
+test('should edit transaction with Save Once', async ({ page }) => {
   // Test expects:
   // 1. Edit button on transaction card
-  const editButton = page.getByRole("button", { name: /edit/i });
+  const editButton = page.getByRole('button', { name: /edit/i });
 
   // 2. Edit form with description and amount inputs
   await expect(page.getByLabel(/description/i)).toBeVisible();
   await expect(page.getByLabel(/amount/i)).toBeVisible();
 
   // 3. "Save Once" button (outline style)
-  await page.getByRole("button", { name: /save once/i }).click();
+  await page.getByRole('button', { name: /save once/i }).click();
 });
 ```
 
@@ -254,17 +254,17 @@ page.getByRole('button', { name: /edit/i })
 
 ```typescript
 // In your tests, use different scenarios:
-setupMockAPIs(page, { scenario: "simple" }); // 1 matched, 1 uncertain
-setupMockAPIs(page, { scenario: "realistic" }); // 3 matched, 6 uncertain, 2 failed
-setupMockAPIs(page, { scenario: "bulk" }); // 6 similar transactions
-setupMockAPIs(page, { scenario: "errors" }); // Critical errors
-setupMockAPIs(page, { scenario: "duplicates" }); // 2 new, 3 duplicates
+setupMockAPIs(page, { scenario: 'simple' }); // 1 matched, 1 uncertain
+setupMockAPIs(page, { scenario: 'realistic' }); // 3 matched, 6 uncertain, 2 failed
+setupMockAPIs(page, { scenario: 'bulk' }); // 6 similar transactions
+setupMockAPIs(page, { scenario: 'errors' }); // Critical errors
+setupMockAPIs(page, { scenario: 'duplicates' }); // 2 new, 3 duplicates
 ```
 
 ### CSV Samples Available
 
 ```typescript
-import { simpleCSV, realisticCSV, bulkCSV } from "./fixtures/csv-samples";
+import { simpleCSV, realisticCSV, bulkCSV } from './fixtures/csv-samples';
 
 // Use in tests:
 await uploadCSVFile(page, realisticCSV);

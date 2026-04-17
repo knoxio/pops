@@ -8,10 +8,10 @@ Build the plugin system that connects Cerebrum to external data sources and serv
 
 ## PRDs
 
-| #   | PRD                                                                            | Summary                                                                                       | Status      |
-| --- | ------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- | ----------- |
-| 090 | [Plugin Architecture](../prds/090-plugin-architecture/README.md)               | Adapter interface, lifecycle management, plugin registry, configuration, error isolation        | Not started |
-| 091 | [Core Integration Adapters](../prds/091-core-adapters/README.md)               | Email, calendar, and GitHub adapters as reference implementations                              | Not started |
+| #   | PRD                                                              | Summary                                                                                  | Status      |
+| --- | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------- |
+| 090 | [Plugin Architecture](../prds/090-plugin-architecture/README.md) | Adapter interface, lifecycle management, plugin registry, configuration, error isolation | Not started |
+| 091 | [Core Integration Adapters](../prds/091-core-adapters/README.md) | Email, calendar, and GitHub adapters as reference implementations                        | Not started |
 
 PRD-090 (Architecture) must complete before PRD-091 (Core Adapters) — the adapters implement the interface that the architecture defines.
 

@@ -5,6 +5,7 @@
  */
 import { isContextDomain } from './domain-app-mapping.js';
 import { getAdapters } from './registry.js';
+
 import type { Query, SearchContext, SearchHit } from './types.js';
 
 export interface SearchSection {
@@ -44,7 +45,7 @@ export async function searchAll(query: Query, context: SearchContext): Promise<S
     const { adapter, hits } = result.value;
     if (hits.length === 0) continue;
 
-    const sorted = [...hits].sort((a, b) => b.score - a.score);
+    const sorted = [...hits].toSorted((a, b) => b.score - a.score);
 
     sections.push({
       domain: adapter.domain,
@@ -89,7 +90,7 @@ export async function showMore(
   }
 
   const hits = await adapter.search(query, context);
-  const sorted = [...hits].sort((a, b) => b.score - a.score);
+  const sorted = [...hits].toSorted((a, b) => b.score - a.score);
 
   return {
     hits: sorted.slice(offset, offset + limit),

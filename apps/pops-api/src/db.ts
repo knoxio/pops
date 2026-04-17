@@ -1,8 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { createHash } from 'node:crypto';
 import { readdirSync, readFileSync, unlinkSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 
 import BetterSqlite3 from 'better-sqlite3';
 import { type BetterSQLite3Database, drizzle } from 'drizzle-orm/better-sqlite3';
@@ -10,7 +9,7 @@ import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 
 import { initializeSchema } from './db/schema.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const __dirname = import.meta.dirname;
 const MIGRATIONS_DIR = join(__dirname, 'db', 'migrations');
 const DRIZZLE_MIGRATIONS_DIR = join(__dirname, 'db', 'drizzle-migrations');
 
@@ -50,7 +49,7 @@ function runMigrations(database: BetterSqlite3.Database): void {
   try {
     files = readdirSync(MIGRATIONS_DIR)
       .filter((f) => f.endsWith('.sql'))
-      .sort();
+      .toSorted();
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') return; // No migrations directory
     throw err;
@@ -94,7 +93,7 @@ function getPendingMigrations(database: BetterSqlite3.Database): string[] {
   try {
     files = readdirSync(MIGRATIONS_DIR)
       .filter((f) => f.endsWith('.sql'))
-      .sort();
+      .toSorted();
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') return [];
     throw err;
@@ -129,11 +128,11 @@ function createPreMigrationBackup(
     return null;
   }
 
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const timestamp = new Date().toISOString().replaceAll(/[:.]/g, '-');
   const backupPath = `${dbPath}.pre-migration-${timestamp}.bak`;
 
   console.warn(`[db] Backing up database before applying ${pendingCount} migration(s)...`);
-  database.exec(`VACUUM INTO '${backupPath.replace(/'/g, "''")}'`);
+  database.exec(`VACUUM INTO '${backupPath.replaceAll(/'/g, "''")}'`);
   return backupPath;
 }
 

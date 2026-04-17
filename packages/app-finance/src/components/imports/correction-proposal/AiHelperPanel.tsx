@@ -1,5 +1,6 @@
-import { Button, Input } from '@pops/ui';
 import { Sparkles } from 'lucide-react';
+
+import { Button, Input } from '@pops/ui';
 
 import type { AiMessage } from './types';
 
@@ -34,7 +35,9 @@ export function AiHelperPanel(props: {
       <div className="flex gap-2">
         <Input
           value={props.instruction}
-          onChange={(e) => props.onInstructionChange(e.target.value)}
+          onChange={(e) => {
+            props.onInstructionChange(e.target.value);
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
               e.preventDefault();

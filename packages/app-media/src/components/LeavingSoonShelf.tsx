@@ -1,3 +1,6 @@
+import { X } from 'lucide-react';
+import { toast } from 'sonner';
+
 /**
  * LeavingSoonShelf — horizontal shelf showing movies scheduled for removal.
  * Used on the Library page above the main grid.
@@ -5,8 +8,6 @@
  * PRD-072 US-01
  */
 import { Button, Skeleton } from '@pops/ui';
-import { X } from 'lucide-react';
-import { toast } from 'sonner';
 
 import { trpc } from '../lib/trpc';
 import { HorizontalScrollRow } from './HorizontalScrollRow';

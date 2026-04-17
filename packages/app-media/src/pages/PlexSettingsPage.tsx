@@ -1,3 +1,6 @@
+import { ArrowLeft, RefreshCw, Save, Server } from 'lucide-react';
+import { Link } from 'react-router';
+
 /**
  * PlexSettingsPage — Plex Media Server connection status and sync controls.
  *
@@ -16,8 +19,6 @@ import {
   Label,
   Skeleton,
 } from '@pops/ui';
-import { ArrowLeft, RefreshCw, Save, Server } from 'lucide-react';
-import { Link } from 'react-router';
 
 import { ConnectionBadge } from '../components/ConnectionBadge';
 import { DiscoverSyncResultDisplay } from './plex-settings/components/DiscoverSyncResultDisplay';
@@ -89,7 +90,9 @@ export function PlexSettingsPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => mutations.disconnect.mutate()}
+            onClick={() => {
+              mutations.disconnect.mutate();
+            }}
             disabled={mutations.disconnect.isPending}
           >
             Disconnect
@@ -115,13 +118,17 @@ export function PlexSettingsPage() {
               <Input
                 placeholder="http://192.168.1.100:32400"
                 value={settings.plexUrl}
-                onChange={(e) => settings.setPlexUrl(e.target.value)}
+                onChange={(e) => {
+                  settings.setPlexUrl(e.target.value);
+                }}
                 className="flex-1"
                 disabled={mutations.saveUrl.isPending}
               />
               <Button
                 variant="outline"
-                onClick={() => mutations.saveUrl.mutate({ url: settings.plexUrl })}
+                onClick={() => {
+                  mutations.saveUrl.mutate({ url: settings.plexUrl });
+                }}
                 disabled={
                   mutations.saveUrl.isPending ||
                   !settings.plexUrl ||

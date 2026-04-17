@@ -86,7 +86,7 @@ export function normaliseDate(raw: string): string {
 
 /** Parse an amount string, handling parentheses for negatives and currency symbols. */
 export function normaliseAmount(raw: string): number {
-  let cleaned = raw.trim().replace(/[$,]/g, '');
+  let cleaned = raw.trim().replaceAll(/[$,]/g, '');
 
   // Parentheses mean negative: (100.00) -> -100.00
   const parenMatch = cleaned.match(/^\((.+)\)$/);
@@ -96,7 +96,7 @@ export function normaliseAmount(raw: string): number {
 
   const amount = Number(cleaned);
   if (Number.isNaN(amount)) {
-    throw new Error(`Cannot parse amount: "${raw}"`);
+    throw new TypeError(`Cannot parse amount: "${raw}"`);
   }
   return amount;
 }

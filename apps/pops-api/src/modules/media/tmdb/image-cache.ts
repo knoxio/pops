@@ -259,10 +259,10 @@ export class ImageCacheService {
 
     const hue = (seed * 137) % 360;
     const escapedLabel = label
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+      .replaceAll(/&/g, '&amp;')
+      .replaceAll(/</g, '&lt;')
+      .replaceAll(/>/g, '&gt;')
+      .replaceAll(/"/g, '&quot;');
 
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="780" height="1170" viewBox="0 0 780 1170">
   <rect width="780" height="1170" fill="hsl(${hue}, 40%, 30%)" />

@@ -23,6 +23,7 @@
  * made during these tests.
  */
 import { test, expect, type Page } from '@playwright/test';
+
 import { useRealEndpoint } from './helpers/use-real-api';
 
 // ---------------------------------------------------------------------------

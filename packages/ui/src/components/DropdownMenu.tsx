@@ -94,7 +94,7 @@ export function DropdownMenu({
     <DropdownMenuPrimitive>
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
       <DropdownMenuContent align={align} side={side} className={className}>
-        {children ||
+        {children ??
           (groups
             ? groups.map((group, groupIndex) => (
                 <div key={groupIndex}>

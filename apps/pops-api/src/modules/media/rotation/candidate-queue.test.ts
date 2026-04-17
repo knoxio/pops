@@ -1,7 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument */
-import { rotationCandidates, rotationSources, settings } from '@pops/db-types';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-argument */
+import { rotationCandidates, rotationSources, settings } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 import { createCaller, setupTestContext } from '../../../shared/test-utils.js';
@@ -61,7 +62,9 @@ function insertSetting(key: string, value: string) {
 
 describe('rotation.listCandidates', () => {
   beforeEach(() => ctx.setup());
-  afterEach(() => ctx.teardown());
+  afterEach(() => {
+    ctx.teardown();
+  });
 
   it('returns empty list when no candidates', async () => {
     const caller = createCaller();

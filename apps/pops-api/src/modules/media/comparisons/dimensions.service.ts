@@ -1,8 +1,10 @@
-import { comparisonDimensions } from '@pops/db-types';
 import { asc, eq } from 'drizzle-orm';
+
+import { comparisonDimensions } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
+
 import type {
   ComparisonDimensionRow,
   CreateDimensionInput,

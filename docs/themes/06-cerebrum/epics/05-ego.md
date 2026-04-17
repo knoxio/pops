@@ -8,10 +8,10 @@ Build the conversational agent that serves as the "I" of the system. Ego is a to
 
 ## PRDs
 
-| #   | PRD                                                                    | Summary                                                                                        | Status      |
-| --- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------- |
-| 087 | [Ego Core](../prds/087-ego-core/README.md)                            | Conversation engine, context management, scope negotiation, conversation persistence            | Not started |
-| 088 | [Ego Channels](../prds/088-ego-channels/README.md)                    | Shell chat panel, MCP tools for Claude Code, Moltbot integration, CLI interface                | Not started |
+| #   | PRD                                                | Summary                                                                              | Status      |
+| --- | -------------------------------------------------- | ------------------------------------------------------------------------------------ | ----------- |
+| 087 | [Ego Core](../prds/087-ego-core/README.md)         | Conversation engine, context management, scope negotiation, conversation persistence | Not started |
+| 088 | [Ego Channels](../prds/088-ego-channels/README.md) | Shell chat panel, MCP tools for Claude Code, Moltbot integration, CLI interface      | Not started |
 
 PRD-087 (Core) must complete before PRD-088 (Channels) — the channels are thin adapters over the core conversation engine.
 

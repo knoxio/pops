@@ -36,7 +36,8 @@ export default async function globalSetup(): Promise<void> {
         // In CI the API server must be up — Playwright's webServer config waits for it.
         // If we still can't reach it, fail loudly so the root cause is obvious.
         throw new Error(
-          `[global-setup] API unreachable in CI — integration tests cannot run: ${err.message}`
+          `[global-setup] API unreachable in CI — integration tests cannot run: ${err.message}`,
+          { cause: err }
         );
       }
       // Locally the API might not be started; mocked tests will still run.

@@ -16,9 +16,7 @@ let instance: TokenBucketRateLimiter | null = null;
 
 /** Get or create the singleton TheTVDB rate limiter. */
 export function getTvdbRateLimiter(): TokenBucketRateLimiter {
-  if (!instance) {
-    instance = new TokenBucketRateLimiter(THETVDB_CAPACITY, THETVDB_REFILL_RATE);
-  }
+  instance ??= new TokenBucketRateLimiter(THETVDB_CAPACITY, THETVDB_REFILL_RATE);
   return instance;
 }
 

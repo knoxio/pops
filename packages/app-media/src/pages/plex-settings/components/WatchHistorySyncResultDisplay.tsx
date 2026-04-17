@@ -58,7 +58,9 @@ export function WatchHistorySyncResultDisplay({ result }: WatchHistorySyncResult
         <div>
           <button
             type="button"
-            onClick={() => setShowShows(!showShows)}
+            onClick={() => {
+              setShowShows(!showShows);
+            }}
             className="flex items-center gap-1 text-xs text-amber-400 hover:text-amber-300 transition-colors"
           >
             {showShows ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -73,7 +75,9 @@ export function WatchHistorySyncResultDisplay({ result }: WatchHistorySyncResult
                   <div key={i} className="rounded border border-muted bg-background/50 p-2">
                     <button
                       type="button"
-                      onClick={() => setExpandedShow(isExpanded ? null : i)}
+                      onClick={() => {
+                        setExpandedShow(isExpanded ? null : i);
+                      }}
                       className="flex items-center gap-2 w-full text-left text-xs"
                     >
                       {isExpanded ? (

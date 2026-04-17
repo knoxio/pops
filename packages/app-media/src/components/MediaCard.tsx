@@ -1,12 +1,13 @@
+import { Film } from 'lucide-react';
+import { useState } from 'react';
+import { Link } from 'react-router';
+
 /**
  * MediaCard — poster card for a movie or TV show in the library grid.
  * Displays poster image, title (2-line truncate), year, and optional type badge.
  * Implements a 3-tier image fallback: posterUrl → fallbackPosterUrl → placeholder SVG.
  */
 import { Badge, cn, Skeleton } from '@pops/ui';
-import { Film } from 'lucide-react';
-import { useState } from 'react';
-import { Link } from 'react-router';
 
 export type MediaType = 'movie' | 'tv';
 
@@ -104,7 +105,9 @@ export function MediaCard({
               'group-hover:opacity-80',
               imageLoaded ? 'opacity-100' : 'opacity-0'
             )}
-            onLoad={() => setImageLoaded(true)}
+            onLoad={() => {
+              setImageLoaded(true);
+            }}
             onError={handleImageError}
           />
         )}

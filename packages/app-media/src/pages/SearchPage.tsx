@@ -1,3 +1,8 @@
+import { AlertTriangle, Search } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router';
+import { toast } from 'sonner';
+
 /**
  * SearchPage — search TMDB (movies) and TheTVDB (TV shows) and add to library.
  *
@@ -6,10 +11,6 @@
  * "In Library" badge for items already in the collection.
  */
 import { Button, Skeleton, Tabs, TabsList, TabsTrigger, TextInput } from '@pops/ui';
-import { AlertTriangle, Search } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router';
-import { toast } from 'sonner';
 
 import {
   buildPosterUrl,
@@ -46,8 +47,12 @@ interface TvSearchResult {
 function useDebouncedValue(value: string, delay: number): string {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(timer);
+    const timer = setTimeout(() => {
+      setDebounced(value);
+    }, delay);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [value, delay]);
   return debounced;
 }
@@ -207,15 +212,24 @@ export function SearchPage() {
         type="search"
         placeholder="Search movies and TV shows…"
         value={query}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          setQuery(e.target.value);
+        }}
         prefix={<Search className="h-4 w-4" />}
         clearable
-        onClear={() => setQuery('')}
+        onClear={() => {
+          setQuery('');
+        }}
         autoFocus
       />
 
       {/* Type toggle */}
-      <Tabs value={mode} onValueChange={(v: string) => setMode(v as SearchMode)}>
+      <Tabs
+        value={mode}
+        onValueChange={(v: string) => {
+          setMode(v as SearchMode);
+        }}
+      >
         <TabsList>
           <TabsTrigger value="both">Both</TabsTrigger>
           <TabsTrigger value="movies">Movies</TabsTrigger>
@@ -283,7 +297,9 @@ export function SearchPage() {
                     voteAverage={movie.voteAverage}
                     inLibrary={inLibrary}
                     isAdding={addingIds.has(key)}
-                    onAdd={() => handleAddMovie(movie.tmdbId)}
+                    onAdd={() => {
+                      handleAddMovie(movie.tmdbId);
+                    }}
                     href={localId != null ? `/media/movies/${localId}` : undefined}
                   />
                 );
@@ -345,7 +361,9 @@ export function SearchPage() {
                     genres={show.genres}
                     inLibrary={inLibrary}
                     isAdding={addingIds.has(key)}
-                    onAdd={() => handleAddTvShow(show.tvdbId)}
+                    onAdd={() => {
+                      handleAddTvShow(show.tvdbId);
+                    }}
                     href={localId != null ? `/media/tv/${localId}` : undefined}
                   />
                 );

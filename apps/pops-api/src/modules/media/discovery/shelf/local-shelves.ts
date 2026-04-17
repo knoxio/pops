@@ -1,3 +1,5 @@
+import { and, eq, gt, isNotNull, lt, sql } from 'drizzle-orm';
+
 /**
  * Local library shelf implementations (8 types).
  *
@@ -17,11 +19,11 @@
  *                         (approximation; proper impl needs belongs_to_collection column)
  */
 import { comparisonDimensions, mediaScores, movies, watchHistory } from '@pops/db-types';
-import { and, eq, gt, isNotNull, lt, sql } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../../db.js';
-import type { DiscoverResult, PreferenceProfile } from '../types.js';
 import { registerShelf } from './registry.js';
+
+import type { DiscoverResult, PreferenceProfile } from '../types.js';
 import type { ShelfDefinition, ShelfInstance } from './types.js';
 
 // ---------------------------------------------------------------------------
@@ -351,7 +353,7 @@ export const friendProofShelf: ShelfDefinition = {
             .all();
 
           // Compute 75th percentile threshold from the score distribution
-          const sorted = [...allScored].sort((a, b) => a.avgFriendScore - b.avgFriendScore);
+          const sorted = [...allScored].toSorted((a, b) => a.avgFriendScore - b.avgFriendScore);
           const p75Index = Math.floor(sorted.length * 0.75);
           const threshold = sorted[p75Index]?.avgFriendScore ?? 1500;
 

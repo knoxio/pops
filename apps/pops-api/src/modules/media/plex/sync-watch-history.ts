@@ -8,13 +8,14 @@
  */
 import { getDb } from '../../../db.js';
 import { getMovieByTmdbId } from '../movies/service.js';
-import type { PlexClient } from './client.js';
 import {
   type EpisodeSyncDiagnostics,
   extractExternalIdAsNumber,
   logMovieWatch,
   syncEpisodeWatches,
 } from './sync-helpers.js';
+
+import type { PlexClient } from './client.js';
 import type { PlexMediaItem } from './types.js';
 
 // ---------------------------------------------------------------------------

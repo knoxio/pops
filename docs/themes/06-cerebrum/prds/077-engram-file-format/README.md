@@ -34,18 +34,18 @@ Content body in Markdown...
 
 ### Frontmatter Schema
 
-| Field       | Type     | Required | Description                                                         |
-| ----------- | -------- | -------- | ------------------------------------------------------------------- |
-| `id`        | string   | Yes      | Unique identifier: `eng_{date}_{time}_{slug}`                       |
-| `type`      | string   | Yes      | Classification hint — matched to a template name or `capture`       |
-| `scopes`    | string[] | Yes      | Hierarchical dot-notation scope tags (at least one)                 |
-| `created`   | string   | Yes      | ISO 8601 timestamp with timezone                                    |
-| `modified`  | string   | Yes      | ISO 8601 timestamp, updated on every write                         |
-| `source`    | string   | Yes      | Input channel: `manual`, `agent`, `moltbot`, `cli`, `plexus:{name}` |
-| `tags`      | string[] | No       | Freeform topic tags for structured filtering                        |
-| `links`     | string[] | No       | IDs of related engrams (bidirectional — link A→B implies B→A)       |
-| `status`    | string   | Yes      | Lifecycle: `active`, `archived`, `consolidated`, `stale`            |
-| `template`  | string   | No       | Template used to create this engram                                 |
+| Field      | Type     | Required | Description                                                         |
+| ---------- | -------- | -------- | ------------------------------------------------------------------- |
+| `id`       | string   | Yes      | Unique identifier: `eng_{date}_{time}_{slug}`                       |
+| `type`     | string   | Yes      | Classification hint — matched to a template name or `capture`       |
+| `scopes`   | string[] | Yes      | Hierarchical dot-notation scope tags (at least one)                 |
+| `created`  | string   | Yes      | ISO 8601 timestamp with timezone                                    |
+| `modified` | string   | Yes      | ISO 8601 timestamp, updated on every write                          |
+| `source`   | string   | Yes      | Input channel: `manual`, `agent`, `moltbot`, `cli`, `plexus:{name}` |
+| `tags`     | string[] | No       | Freeform topic tags for structured filtering                        |
+| `links`    | string[] | No       | IDs of related engrams (bidirectional — link A→B implies B→A)       |
+| `status`   | string   | Yes      | Lifecycle: `active`, `archived`, `consolidated`, `stale`            |
+| `template` | string   | No       | Template used to create this engram                                 |
 
 Templates may add additional typed fields to the frontmatter (e.g., `mood` for journal entries, `outcome` for decisions, `project` for meeting notes). These are defined per-template and indexed by Thalamus for structured queries.
 
@@ -119,63 +119,63 @@ _To be filled in after the decision plays out._
 
 ### SQLite Index Table (engram_index)
 
-| Column         | Type    | Constraints           | Description                              |
-| -------------- | ------- | --------------------- | ---------------------------------------- |
-| id             | TEXT    | PK                    | Engram ID (matches frontmatter `id`)     |
-| file_path      | TEXT    | NOT NULL, UNIQUE      | Relative path from engram root           |
-| type           | TEXT    | NOT NULL              | Classification type                      |
-| source         | TEXT    | NOT NULL              | Input channel                            |
-| status         | TEXT    | NOT NULL              | Lifecycle status                         |
-| template       | TEXT    |                       | Template name if used                    |
-| created_at     | TEXT    | NOT NULL              | ISO 8601                                 |
-| modified_at    | TEXT    | NOT NULL              | ISO 8601                                 |
-| title          | TEXT    | NOT NULL              | First H1 heading or first line           |
-| content_hash   | TEXT    | NOT NULL              | SHA-256 of file content                  |
-| word_count     | INTEGER | NOT NULL              | Body word count                          |
-| custom_fields  | TEXT    |                       | JSON of template-specific frontmatter    |
+| Column        | Type    | Constraints      | Description                           |
+| ------------- | ------- | ---------------- | ------------------------------------- |
+| id            | TEXT    | PK               | Engram ID (matches frontmatter `id`)  |
+| file_path     | TEXT    | NOT NULL, UNIQUE | Relative path from engram root        |
+| type          | TEXT    | NOT NULL         | Classification type                   |
+| source        | TEXT    | NOT NULL         | Input channel                         |
+| status        | TEXT    | NOT NULL         | Lifecycle status                      |
+| template      | TEXT    |                  | Template name if used                 |
+| created_at    | TEXT    | NOT NULL         | ISO 8601                              |
+| modified_at   | TEXT    | NOT NULL         | ISO 8601                              |
+| title         | TEXT    | NOT NULL         | First H1 heading or first line        |
+| content_hash  | TEXT    | NOT NULL         | SHA-256 of file content               |
+| word_count    | INTEGER | NOT NULL         | Body word count                       |
+| custom_fields | TEXT    |                  | JSON of template-specific frontmatter |
 
 **Indexes:** `type`, `source`, `status`, `created_at`, `content_hash`
 
 ### engram_scopes (junction table)
 
-| Column     | Type | Constraints                    | Description            |
-| ---------- | ---- | ------------------------------ | ---------------------- |
-| engram_id  | TEXT | FK → engram_index.id, NOT NULL | Engram reference       |
-| scope      | TEXT | NOT NULL                       | Full scope string      |
+| Column    | Type | Constraints                    | Description       |
+| --------- | ---- | ------------------------------ | ----------------- |
+| engram_id | TEXT | FK → engram_index.id, NOT NULL | Engram reference  |
+| scope     | TEXT | NOT NULL                       | Full scope string |
 
 **Indexes:** Composite `(engram_id, scope)` unique, `scope` for prefix queries
 
 ### engram_tags (junction table)
 
-| Column     | Type | Constraints                    | Description      |
-| ---------- | ---- | ------------------------------ | ---------------- |
-| engram_id  | TEXT | FK → engram_index.id, NOT NULL | Engram reference |
-| tag        | TEXT | NOT NULL                       | Tag string       |
+| Column    | Type | Constraints                    | Description      |
+| --------- | ---- | ------------------------------ | ---------------- |
+| engram_id | TEXT | FK → engram_index.id, NOT NULL | Engram reference |
+| tag       | TEXT | NOT NULL                       | Tag string       |
 
 **Indexes:** Composite `(engram_id, tag)` unique, `tag`
 
 ### engram_links (junction table)
 
-| Column       | Type | Constraints                    | Description         |
-| ------------ | ---- | ------------------------------ | ------------------- |
-| source_id    | TEXT | FK → engram_index.id, NOT NULL | Linking engram      |
-| target_id    | TEXT | NOT NULL                       | Linked engram ID    |
+| Column    | Type | Constraints                    | Description      |
+| --------- | ---- | ------------------------------ | ---------------- |
+| source_id | TEXT | FK → engram_index.id, NOT NULL | Linking engram   |
+| target_id | TEXT | NOT NULL                       | Linked engram ID |
 
 **Indexes:** Composite `(source_id, target_id)` unique, `target_id` for reverse lookups
 
 ## API Surface
 
-| Procedure                      | Input                                                              | Output                              | Notes                                      |
-| ------------------------------ | ------------------------------------------------------------------ | ----------------------------------- | ------------------------------------------ |
-| `cerebrum.engrams.create`      | type, title, body, scopes?, tags?, template?, customFields?        | `{ engram: Engram }`                | Creates file + index entry                 |
-| `cerebrum.engrams.get`         | id                                                                 | `{ engram: Engram, body: string }`  | Reads file, returns full content           |
-| `cerebrum.engrams.update`      | id, title?, body?, scopes?, tags?, customFields?, status?          | `{ engram: Engram }`                | Updates file + index. Modified timestamp   |
-| `cerebrum.engrams.delete`      | id                                                                 | `{ success: boolean }`              | Moves to .archive/, updates index status   |
-| `cerebrum.engrams.list`        | type?, scopes?, tags?, status?, search?, limit?, offset?, sort?    | `{ engrams: Engram[], total }`      | Queries index table, not filesystem        |
-| `cerebrum.engrams.link`        | sourceId, targetId                                                 | `{ success: boolean }`              | Bidirectional link (updates both files)     |
-| `cerebrum.engrams.unlink`      | sourceId, targetId                                                 | `{ success: boolean }`              | Remove bidirectional link                  |
-| `cerebrum.templates.list`      | —                                                                  | `{ templates: Template[] }`         | Lists available templates                  |
-| `cerebrum.templates.get`       | name                                                               | `{ template: Template }`            | Returns template definition                |
+| Procedure                 | Input                                                           | Output                             | Notes                                    |
+| ------------------------- | --------------------------------------------------------------- | ---------------------------------- | ---------------------------------------- |
+| `cerebrum.engrams.create` | type, title, body, scopes?, tags?, template?, customFields?     | `{ engram: Engram }`               | Creates file + index entry               |
+| `cerebrum.engrams.get`    | id                                                              | `{ engram: Engram, body: string }` | Reads file, returns full content         |
+| `cerebrum.engrams.update` | id, title?, body?, scopes?, tags?, customFields?, status?       | `{ engram: Engram }`               | Updates file + index. Modified timestamp |
+| `cerebrum.engrams.delete` | id                                                              | `{ success: boolean }`             | Moves to .archive/, updates index status |
+| `cerebrum.engrams.list`   | type?, scopes?, tags?, status?, search?, limit?, offset?, sort? | `{ engrams: Engram[], total }`     | Queries index table, not filesystem      |
+| `cerebrum.engrams.link`   | sourceId, targetId                                              | `{ success: boolean }`             | Bidirectional link (updates both files)  |
+| `cerebrum.engrams.unlink` | sourceId, targetId                                              | `{ success: boolean }`             | Remove bidirectional link                |
+| `cerebrum.templates.list` | —                                                               | `{ templates: Template[] }`        | Lists available templates                |
+| `cerebrum.templates.get`  | name                                                            | `{ template: Template }`           | Returns template definition              |
 
 ## Business Rules
 
@@ -191,26 +191,26 @@ _To be filled in after the decision plays out._
 
 ## Edge Cases
 
-| Case                                       | Behaviour                                                              |
-| ------------------------------------------ | ---------------------------------------------------------------------- |
-| Engram created with unknown type            | Falls back to `capture` type, Cortex classifies later                  |
-| Template referenced but doesn't exist       | Engram created without template, warning logged                        |
-| Duplicate ID (extremely unlikely)           | Append counter suffix: `eng_20260417_0942_morning_2`                   |
-| File exists but not in index                | Detected by Thalamus file watcher, added to index                      |
-| Index entry exists but file missing         | Marked as `status: orphaned`, logged for investigation                 |
-| Engram body is empty                        | Valid — some engrams are metadata-only (e.g., a link-only reference)   |
-| Frontmatter parse error                     | File skipped during indexing, error logged, file preserved             |
+| Case                                  | Behaviour                                                            |
+| ------------------------------------- | -------------------------------------------------------------------- |
+| Engram created with unknown type      | Falls back to `capture` type, Cortex classifies later                |
+| Template referenced but doesn't exist | Engram created without template, warning logged                      |
+| Duplicate ID (extremely unlikely)     | Append counter suffix: `eng_20260417_0942_morning_2`                 |
+| File exists but not in index          | Detected by Thalamus file watcher, added to index                    |
+| Index entry exists but file missing   | Marked as `status: orphaned`, logged for investigation               |
+| Engram body is empty                  | Valid — some engrams are metadata-only (e.g., a link-only reference) |
+| Frontmatter parse error               | File skipped during indexing, error logged, file preserved           |
 
 ## User Stories
 
-| #   | Story                                                            | Summary                                                                     | Status      | Parallelisable   |
-| --- | ---------------------------------------------------------------- | --------------------------------------------------------------------------- | ----------- | ---------------- |
-| 01  | [us-01-file-format](us-01-file-format.md)                        | Define and validate the engram file format — frontmatter schema, ID generation, file naming | Not started | No (first)       |
-| 02  | [us-02-template-system](us-02-template-system.md)                | Template files, registry, template-based engram creation with field validation | Not started | Blocked by us-01 |
-| 03  | [us-03-directory-structure](us-03-directory-structure.md)         | Server-side directory layout, permissions, Ansible provisioning, backup integration | Not started | Yes              |
-| 04  | [us-04-index-schema](us-04-index-schema.md)                      | Drizzle schema for engram_index, engram_scopes, engram_tags, engram_links tables | Not started | Yes              |
-| 05  | [us-05-crud-service](us-05-crud-service.md)                      | Service layer for engram CRUD — file operations + index sync, link management | Not started | Blocked by us-01, us-04 |
-| 06  | [us-06-api-procedures](us-06-api-procedures.md)                  | tRPC procedures for all engram and template operations                       | Not started | Blocked by us-05 |
+| #   | Story                                                     | Summary                                                                                     | Status      | Parallelisable          |
+| --- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ----------- | ----------------------- |
+| 01  | [us-01-file-format](us-01-file-format.md)                 | Define and validate the engram file format — frontmatter schema, ID generation, file naming | Not started | No (first)              |
+| 02  | [us-02-template-system](us-02-template-system.md)         | Template files, registry, template-based engram creation with field validation              | Not started | Blocked by us-01        |
+| 03  | [us-03-directory-structure](us-03-directory-structure.md) | Server-side directory layout, permissions, Ansible provisioning, backup integration         | Not started | Yes                     |
+| 04  | [us-04-index-schema](us-04-index-schema.md)               | Drizzle schema for engram_index, engram_scopes, engram_tags, engram_links tables            | Not started | Yes                     |
+| 05  | [us-05-crud-service](us-05-crud-service.md)               | Service layer for engram CRUD — file operations + index sync, link management               | Not started | Blocked by us-01, us-04 |
+| 06  | [us-06-api-procedures](us-06-api-procedures.md)           | tRPC procedures for all engram and template operations                                      | Not started | Blocked by us-05        |
 
 US-03 and US-04 can parallelise with each other and with US-02. US-05 depends on both the file format (us-01) and the index schema (us-04). US-06 wraps the service layer.
 

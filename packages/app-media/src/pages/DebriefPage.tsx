@@ -1,14 +1,3 @@
-/**
- * Debrief page — post-watch comparison flow for a debrief session.
- *
- * Route: /media/debrief/:movieId
- *
- * Shows movie poster header, dimension progress tracker, and comparison
- * cards with Pick A / Pick B / draw-tier buttons. Uses getDebrief query
- * and recordDebriefComparison mutation. Advances through pending
- * dimensions; shows CompletionSummary when all are done.
- */
-import { Badge, Button, Skeleton, Tooltip, TooltipContent, TooltipTrigger } from '@pops/ui';
 import {
   ArrowLeft,
   CheckCircle,
@@ -21,6 +10,18 @@ import {
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
+
+/**
+ * Debrief page — post-watch comparison flow for a debrief session.
+ *
+ * Route: /media/debrief/:movieId
+ *
+ * Shows movie poster header, dimension progress tracker, and comparison
+ * cards with Pick A / Pick B / draw-tier buttons. Uses getDebrief query
+ * and recordDebriefComparison mutation. Advances through pending
+ * dimensions; shows CompletionSummary when all are done.
+ */
+import { Badge, Button, Skeleton, Tooltip, TooltipContent, TooltipTrigger } from '@pops/ui';
 
 import { DebriefActionBar } from '../components/DebriefControls';
 import { trpc } from '../lib/trpc';
@@ -159,7 +160,7 @@ export function DebriefPage() {
         dimensions: debrief.dimensions.map((d) => ({
           dimensionId: d.dimensionId,
           name: d.name,
-          status: d.status as 'complete' | 'pending',
+          status: d.status,
           comparisonId: d.comparisonId,
         })),
       }
@@ -236,7 +237,9 @@ export function DebriefPage() {
                     title: debrief.movie.title,
                     posterUrl: debrief.movie.posterUrl,
                   }}
-                  onPick={() => handlePick(debrief.movie.mediaId)}
+                  onPick={() => {
+                    handlePick(debrief.movie.mediaId);
+                  }}
                   disabled={recordMutation.isPending}
                   testId="pick-a"
                 />
@@ -268,7 +271,9 @@ export function DebriefPage() {
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => handleDraw(tier)}
+                          onClick={() => {
+                            handleDraw(tier);
+                          }}
                           disabled={recordMutation.isPending}
                           className={`bg-background h-10 w-10 rounded-full shadow-lg hover:scale-110 hover:shadow-xl active:scale-95 ${color}`}
                           aria-label={label}
@@ -289,7 +294,9 @@ export function DebriefPage() {
                     title: currentDimension.opponent.title,
                     posterUrl: currentDimension.opponent.posterUrl ?? null,
                   }}
-                  onPick={() => handlePick(currentDimension.opponent!.id)}
+                  onPick={() => {
+                    handlePick(currentDimension.opponent!.id);
+                  }}
                   disabled={recordMutation.isPending}
                   testId="pick-b"
                 />
@@ -344,7 +351,16 @@ function PosterImage({
     );
   }
 
-  return <img src={src} alt={alt} className={className} onError={() => setImgError(true)} />;
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className={className}
+      onError={() => {
+        setImgError(true);
+      }}
+    />
+  );
 }
 
 function ComparisonCard({

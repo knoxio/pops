@@ -94,7 +94,7 @@ export const CheckboxInput = forwardRef<HTMLButtonElement, CheckboxInputProps>(
     },
     ref
   ) => {
-    const generatedId = id || `checkbox-${Math.random().toString(36).substr(2, 9)}`;
+    const generatedId = id ?? `checkbox-${Math.random().toString(36).substr(2, 9)}`;
 
     return (
       <div className={cn('flex flex-col gap-2', className)}>

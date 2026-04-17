@@ -26,7 +26,7 @@ apps/pops-storybook/
 Storybook config globs:
 
 ```typescript
-stories: ["../../packages/ui/src/**/*.stories.tsx", "../../packages/app-*/src/**/*.stories.tsx"];
+stories: ['../../packages/ui/src/**/*.stories.tsx', '../../packages/app-*/src/**/*.stories.tsx'];
 ```
 
 ### Story Co-location

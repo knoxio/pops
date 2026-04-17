@@ -1,3 +1,7 @@
+import { Tv } from 'lucide-react';
+
+import { Badge, cn } from '@pops/ui';
+
 /**
  * TvShowSearchResult — ResultComponent for tv-shows search hits.
  *
@@ -5,8 +9,6 @@
  * Registered for domain "tv-shows" in the search result component registry.
  */
 import type { ResultComponentProps } from '@pops/navigation';
-import { Badge, cn } from '@pops/ui';
-import { Tv } from 'lucide-react';
 
 interface TvShowHitData {
   name: string;

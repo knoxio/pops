@@ -11,11 +11,11 @@
 
 - name: Create backup directory
   ansible.builtin.file:
-    path: "{{ backup_dir }}"
+    path: '{{ backup_dir }}'
     state: directory
     owner: root
     group: root
-    mode: "0700"
+    mode: '0700'
 
 - name: Create backup script
   ansible.builtin.template:
@@ -23,7 +23,7 @@
     dest: /opt/pops/backup.sh
     owner: root
     group: root
-    mode: "0700"
+    mode: '0700'
 
 - name: Create backup systemd service
   ansible.builtin.copy:
@@ -40,7 +40,7 @@
     dest: /etc/systemd/system/pops-backup.service
     owner: root
     group: root
-    mode: "0644"
+    mode: '0644'
 
 - name: Create backup systemd timer
   ansible.builtin.template:
@@ -48,7 +48,7 @@
     dest: /etc/systemd/system/pops-backup.timer
     owner: root
     group: root
-    mode: "0644"
+    mode: '0644'
 
 - name: Enable and start backup timer
   ansible.builtin.systemd:

@@ -121,7 +121,7 @@ vi.mock('@dnd-kit/sortable', () => ({
 }));
 
 vi.mock('@dnd-kit/utilities', () => ({
-  CSS: { Transform: { toString: () => undefined } },
+  CSS: { Transform: { toString: () => {} } },
 }));
 
 import { LocationTreePage } from './LocationTreePage';

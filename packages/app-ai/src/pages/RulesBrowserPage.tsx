@@ -1,3 +1,6 @@
+import { BookOpen, Trash2 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+
 /**
  * RulesBrowserPage — browse, filter, adjust, and delete AI categorisation rules.
  * PRD-053/US-02 (tb-542).
@@ -23,11 +26,10 @@ import {
   SortableHeader,
   TextInput,
 } from '@pops/ui';
-import type { ColumnDef } from '@tanstack/react-table';
-import { BookOpen, Trash2 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { trpc } from '../lib/trpc';
+
+import type { ColumnDef } from '@tanstack/react-table';
 
 type MatchType = 'exact' | 'contains' | 'regex';
 
@@ -111,7 +113,9 @@ function ConfidenceSlider({
     const next = values[0] ?? value;
     setValue(next);
     if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => commit(next), 400);
+    timerRef.current = setTimeout(() => {
+      commit(next);
+    }, 400);
   };
 
   useEffect(() => {
@@ -358,7 +362,9 @@ export function RulesBrowserPage(): React.ReactElement {
               variant="outline"
               size="sm"
               disabled={offset === 0}
-              onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
+              onClick={() => {
+                setOffset(Math.max(0, offset - PAGE_SIZE));
+              }}
             >
               Previous
             </Button>
@@ -366,7 +372,9 @@ export function RulesBrowserPage(): React.ReactElement {
               variant="outline"
               size="sm"
               disabled={currentPage >= totalPages}
-              onClick={() => setOffset(offset + PAGE_SIZE)}
+              onClick={() => {
+                setOffset(offset + PAGE_SIZE);
+              }}
             >
               Next
             </Button>

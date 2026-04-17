@@ -45,9 +45,9 @@ Tag-related procedures are untouched; they already handle the use case.
 
 ## User Stories
 
-| #   | Story                                                 | Summary                                                                   | Status                                   | Parallelisable            |
-| --- | ----------------------------------------------------- | ------------------------------------------------------------------------- | ---------------------------------------- | ------------------------- |
-| 01  | [us-01-drop-online-field](us-01-drop-online-field.md) | Delete `online` from import schemas, parsers, edit form, badge, and tests | Done | No (single atomic change) |
+| #   | Story                                                 | Summary                                                                   | Status | Parallelisable            |
+| --- | ----------------------------------------------------- | ------------------------------------------------------------------------- | ------ | ------------------------- |
+| 01  | [us-01-drop-online-field](us-01-drop-online-field.md) | Delete `online` from import schemas, parsers, edit form, badge, and tests | Done   | No (single atomic change) |
 
 ## Out of Scope
 

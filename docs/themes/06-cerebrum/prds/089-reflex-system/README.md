@@ -43,31 +43,31 @@ action = { type = "glia", verb = "prune" }
 
 ### reflex_executions (SQLite)
 
-| Column          | Type    | Constraints           | Description                                        |
-| --------------- | ------- | --------------------- | -------------------------------------------------- |
-| id              | TEXT    | PK                    | Execution ID: `rex_{reflex_name}_{timestamp}`      |
-| reflex_name     | TEXT    | NOT NULL              | Name from reflexes.toml                            |
-| trigger_type    | TEXT    | NOT NULL              | `event`, `threshold`, `schedule`                   |
-| trigger_data    | TEXT    |                       | JSON — event payload, threshold values, or cron expression |
-| action_type     | TEXT    | NOT NULL              | `ingest`, `emit`, `glia`                           |
-| action_verb     | TEXT    | NOT NULL              | Specific action within the type                    |
-| status          | TEXT    | NOT NULL              | `triggered`, `executing`, `completed`, `failed`    |
-| result          | TEXT    |                       | JSON — action output or error details              |
-| triggered_at    | TEXT    | NOT NULL              | ISO 8601 — when the trigger fired                  |
-| completed_at    | TEXT    |                       | ISO 8601 — when execution finished                 |
+| Column       | Type | Constraints | Description                                                |
+| ------------ | ---- | ----------- | ---------------------------------------------------------- |
+| id           | TEXT | PK          | Execution ID: `rex_{reflex_name}_{timestamp}`              |
+| reflex_name  | TEXT | NOT NULL    | Name from reflexes.toml                                    |
+| trigger_type | TEXT | NOT NULL    | `event`, `threshold`, `schedule`                           |
+| trigger_data | TEXT |             | JSON — event payload, threshold values, or cron expression |
+| action_type  | TEXT | NOT NULL    | `ingest`, `emit`, `glia`                                   |
+| action_verb  | TEXT | NOT NULL    | Specific action within the type                            |
+| status       | TEXT | NOT NULL    | `triggered`, `executing`, `completed`, `failed`            |
+| result       | TEXT |             | JSON — action output or error details                      |
+| triggered_at | TEXT | NOT NULL    | ISO 8601 — when the trigger fired                          |
+| completed_at | TEXT |             | ISO 8601 — when execution finished                         |
 
 **Indexes:** `reflex_name`, `trigger_type`, `status`, `triggered_at`
 
 ## API Surface
 
-| Procedure                            | Input                                     | Output                                              | Notes                                                  |
-| ------------------------------------ | ----------------------------------------- | --------------------------------------------------- | ------------------------------------------------------ |
-| `cerebrum.reflexes.list`             | —                                         | `{ reflexes: ReflexDefinition[] }`                  | All reflexes from reflexes.toml with runtime status     |
-| `cerebrum.reflexes.get`              | name: string                              | `{ reflex: ReflexDefinition, history: Execution[] }`| Single reflex with recent execution history             |
-| `cerebrum.reflexes.test`             | name: string                              | `{ result: Execution }`                             | Dry-run execution — fires the action without side effects |
-| `cerebrum.reflexes.enable`           | name: string                              | `{ success: boolean }`                              | Enable a disabled reflex                               |
-| `cerebrum.reflexes.disable`          | name: string                              | `{ success: boolean }`                              | Disable a reflex (stops scheduling and event listening) |
-| `cerebrum.reflexes.history`          | name?, limit?, offset?                    | `{ executions: Execution[], total }`                | Execution history, optionally filtered by reflex name  |
+| Procedure                   | Input                  | Output                                               | Notes                                                     |
+| --------------------------- | ---------------------- | ---------------------------------------------------- | --------------------------------------------------------- |
+| `cerebrum.reflexes.list`    | —                      | `{ reflexes: ReflexDefinition[] }`                   | All reflexes from reflexes.toml with runtime status       |
+| `cerebrum.reflexes.get`     | name: string           | `{ reflex: ReflexDefinition, history: Execution[] }` | Single reflex with recent execution history               |
+| `cerebrum.reflexes.test`    | name: string           | `{ result: Execution }`                              | Dry-run execution — fires the action without side effects |
+| `cerebrum.reflexes.enable`  | name: string           | `{ success: boolean }`                               | Enable a disabled reflex                                  |
+| `cerebrum.reflexes.disable` | name: string           | `{ success: boolean }`                               | Disable a reflex (stops scheduling and event listening)   |
+| `cerebrum.reflexes.history` | name?, limit?, offset? | `{ executions: Execution[], total }`                 | Execution history, optionally filtered by reflex name     |
 
 ## Business Rules
 
@@ -83,27 +83,27 @@ action = { type = "glia", verb = "prune" }
 
 ## Edge Cases
 
-| Case                                            | Behaviour                                                                     |
-| ----------------------------------------------- | ----------------------------------------------------------------------------- |
-| reflexes.toml parse error                       | All reflexes disabled, error logged with line number — system continues without automation |
-| Event trigger for a deleted reflex              | Event ignored — stale event subscriptions are cleaned up on TOML reload       |
-| Threshold crossed multiple times between checks | Only one execution per check cycle — threshold triggers are edge-detected, not level-detected |
-| Schedule fires while previous execution is running | Skipped with a warning log — no concurrent executions of the same reflex     |
-| Action dispatch fails (subsystem unavailable)   | Execution logged with `status: failed` and error detail — retried on next trigger |
-| Reflex references a non-existent action verb    | Reflex disabled on load with an error log — validated when TOML is parsed     |
-| Template variable `{{engram_id}}` used in non-event trigger | Variable resolves to empty string — action may fail, logged as error          |
-| reflexes.toml modified while system is running  | File watcher detects changes, reloads definitions, re-registers triggers within 5 seconds |
-| Two reflexes fire on the same event             | Both execute independently — no ordering guarantees between reflexes          |
+| Case                                                        | Behaviour                                                                                     |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| reflexes.toml parse error                                   | All reflexes disabled, error logged with line number — system continues without automation    |
+| Event trigger for a deleted reflex                          | Event ignored — stale event subscriptions are cleaned up on TOML reload                       |
+| Threshold crossed multiple times between checks             | Only one execution per check cycle — threshold triggers are edge-detected, not level-detected |
+| Schedule fires while previous execution is running          | Skipped with a warning log — no concurrent executions of the same reflex                      |
+| Action dispatch fails (subsystem unavailable)               | Execution logged with `status: failed` and error detail — retried on next trigger             |
+| Reflex references a non-existent action verb                | Reflex disabled on load with an error log — validated when TOML is parsed                     |
+| Template variable `{{engram_id}}` used in non-event trigger | Variable resolves to empty string — action may fail, logged as error                          |
+| reflexes.toml modified while system is running              | File watcher detects changes, reloads definitions, re-registers triggers within 5 seconds     |
+| Two reflexes fire on the same event                         | Both execute independently — no ordering guarantees between reflexes                          |
 
 ## User Stories
 
-| #   | Story                                                              | Summary                                                                        | Status      | Parallelisable           |
-| --- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ----------- | ------------------------ |
-| 01  | [us-01-reflex-definitions](us-01-reflex-definitions.md)            | reflexes.toml format parsing, validation, and TOML file watching               | Not started | No (first)               |
-| 02  | [us-02-event-triggers](us-02-event-triggers.md)                    | Event-based triggers on engram lifecycle events via BullMQ event bus            | Not started | Blocked by us-01         |
-| 03  | [us-03-threshold-triggers](us-03-threshold-triggers.md)            | Threshold-based triggers evaluating Thalamus metrics periodically              | Not started | Blocked by us-01         |
-| 04  | [us-04-scheduled-triggers](us-04-scheduled-triggers.md)            | Cron-based triggers via BullMQ repeatable jobs                                 | Not started | Blocked by us-01         |
-| 05  | [us-05-reflex-management](us-05-reflex-management.md)              | Enable/disable, dry-run testing, execution history viewing                     | Not started | Blocked by us-01         |
+| #   | Story                                                   | Summary                                                              | Status      | Parallelisable   |
+| --- | ------------------------------------------------------- | -------------------------------------------------------------------- | ----------- | ---------------- |
+| 01  | [us-01-reflex-definitions](us-01-reflex-definitions.md) | reflexes.toml format parsing, validation, and TOML file watching     | Not started | No (first)       |
+| 02  | [us-02-event-triggers](us-02-event-triggers.md)         | Event-based triggers on engram lifecycle events via BullMQ event bus | Not started | Blocked by us-01 |
+| 03  | [us-03-threshold-triggers](us-03-threshold-triggers.md) | Threshold-based triggers evaluating Thalamus metrics periodically    | Not started | Blocked by us-01 |
+| 04  | [us-04-scheduled-triggers](us-04-scheduled-triggers.md) | Cron-based triggers via BullMQ repeatable jobs                       | Not started | Blocked by us-01 |
+| 05  | [us-05-reflex-management](us-05-reflex-management.md)   | Enable/disable, dry-run testing, execution history viewing           | Not started | Blocked by us-01 |
 
 US-01 defines the reflex format and parsing — all other stories depend on it. US-02, US-03, US-04, and US-05 can be built in parallel after US-01.
 

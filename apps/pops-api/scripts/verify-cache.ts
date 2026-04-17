@@ -19,7 +19,7 @@ async function checkCache() {
     try {
       const s = await stat(path);
       console.log(`✅ [${t.type}] ${t.id} ${t.file}: ${s.size} bytes`);
-    } catch (err) {
+    } catch {
       console.log(`❌ [${t.type}] ${t.id} ${t.file}: NOT FOUND`);
     }
   }

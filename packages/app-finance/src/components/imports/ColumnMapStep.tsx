@@ -1,10 +1,12 @@
-import type { ParsedTransaction } from '@pops/api/modules/finance/imports';
-import { Button, Label, Select as UiSelect } from '@pops/ui';
 import crypto from 'crypto-js';
 import { AlertCircle, CheckCircle } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { Button, Label, Select as UiSelect } from '@pops/ui';
+
 import { useImportStore } from '../../store/importStore';
+
+import type { ParsedTransaction } from '@pops/api/modules/finance/imports';
 
 /**
  * Step 2: Map CSV columns to schema fields and validate parsing
@@ -147,7 +149,9 @@ export function ColumnMapStep() {
               <UiSelect
                 name={field.key}
                 value={localColumnMap[field.key] ?? ''}
-                onChange={(e) => handleColumnChange(field.key, e.target.value)}
+                onChange={(e) => {
+                  handleColumnChange(field.key, e.target.value);
+                }}
                 aria-invalid={isInvalid}
                 placeholder="Select column..."
                 options={headers.map((header) => ({
@@ -310,7 +314,7 @@ function parseDate(dateStr: string | undefined): string | null {
 function parseAmount(amountStr: string | undefined): number | null {
   if (!amountStr) return null;
 
-  const cleaned = amountStr.replace(/[^0-9.-]/g, '');
+  const cleaned = amountStr.replaceAll(/[^0-9.-]/g, '');
   const amount = parseFloat(cleaned);
 
   if (isNaN(amount)) return null;

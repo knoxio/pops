@@ -1,10 +1,3 @@
-/**
- * DebriefResultsSummary — shows per-dimension results and ELO score
- * changes after completing a debrief session.
- *
- * Fetches session data via getDebrief and current scores for the movie.
- */
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Skeleton } from '@pops/ui';
 import {
   ArrowDownRight,
   ArrowLeft,
@@ -16,6 +9,14 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
+
+/**
+ * DebriefResultsSummary — shows per-dimension results and ELO score
+ * changes after completing a debrief session.
+ *
+ * Fetches session data via getDebrief and current scores for the movie.
+ */
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle, Skeleton } from '@pops/ui';
 
 import { trpc } from '../lib/trpc';
 

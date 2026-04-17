@@ -1,3 +1,7 @@
+import { Check, X } from 'lucide-react';
+import { useMemo } from 'react';
+import { useNavigate } from 'react-router';
+
 /**
  * InventoryTable — sortable table for inventory items.
  *
@@ -12,10 +16,8 @@ import {
   SortableHeader,
   TypeBadge,
 } from '@pops/ui';
+
 import type { ColumnDef } from '@tanstack/react-table';
-import { Check, X } from 'lucide-react';
-import { useMemo } from 'react';
-import { useNavigate } from 'react-router';
 
 export interface InventoryTableItem {
   id: string;

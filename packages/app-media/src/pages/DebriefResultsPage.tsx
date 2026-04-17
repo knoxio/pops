@@ -1,9 +1,10 @@
+import { useNavigate, useParams } from 'react-router';
+
 /**
  * DebriefResultsPage — route wrapper for /media/debrief/:movieId/results.
  * Parses movieId from URL params and renders DebriefResultsSummary.
  */
 import { Button } from '@pops/ui';
-import { useNavigate, useParams } from 'react-router';
 
 import { DebriefResultsSummary } from '../components/DebriefResultsSummary';
 

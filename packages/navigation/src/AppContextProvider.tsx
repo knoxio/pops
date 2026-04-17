@@ -2,8 +2,9 @@ import { type ReactNode, useCallback, useLayoutEffect, useMemo, useRef, useState
 import { useLocation } from 'react-router';
 
 import { AppContextCtx } from './context.js';
-import type { AppContext, AppName } from './types.js';
 import { DEFAULT_APP_CONTEXT } from './types.js';
+
+import type { AppContext, AppName } from './types.js';
 
 /** Maps URL base paths to their app identifiers. */
 const APP_BASE_PATHS: Array<{ basePath: string; app: AppName }> = [

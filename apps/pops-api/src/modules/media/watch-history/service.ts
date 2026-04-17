@@ -1,11 +1,3 @@
-/**
- * Watch history service — CRUD operations against SQLite via Drizzle ORM.
- *
- * Auto-remove from watchlist (PRD-011 R6):
- *   - Movie: removed from watchlist when marked as watched.
- *   - Episode: TV show removed from watchlist when all episodes are watched.
- */
-import { episodes, mediaWatchlist, movies, seasons, tvShows, watchHistory } from '@pops/db-types';
 import {
   and,
   count,
@@ -19,11 +11,21 @@ import {
   type SQL,
 } from 'drizzle-orm';
 
+/**
+ * Watch history service — CRUD operations against SQLite via Drizzle ORM.
+ *
+ * Auto-remove from watchlist (PRD-011 R6):
+ *   - Movie: removed from watchlist when marked as watched.
+ *   - Episode: TV show removed from watchlist when all episodes are watched.
+ */
+import { episodes, mediaWatchlist, movies, seasons, tvShows, watchHistory } from '@pops/db-types';
+
 import { getDrizzle } from '../../../db.js';
 import { NotFoundError } from '../../../shared/errors.js';
 import { resetStaleness } from '../comparisons/staleness.js';
 import { createDebriefSession, queueDebriefStatus } from '../debrief/service.js';
 import { resequencePriorities } from '../watchlist/service.js';
+
 import type {
   BatchLogWatchInput,
   BatchProgressEntry,

@@ -1,6 +1,7 @@
-import { TooltipProvider } from '@pops/ui';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+
+import { TooltipProvider } from '@pops/ui';
 
 import { ArenaActionBar } from './ArenaActionBar';
 

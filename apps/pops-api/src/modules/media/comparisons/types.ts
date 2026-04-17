@@ -1,5 +1,6 @@
-import type { ComparisonDimensionRow, ComparisonRow, MediaScoreRow } from '@pops/db-types';
 import { z } from 'zod';
+
+import type { ComparisonDimensionRow, ComparisonRow, MediaScoreRow } from '@pops/db-types';
 
 export type { ComparisonDimensionRow, ComparisonRow, MediaScoreRow };
 

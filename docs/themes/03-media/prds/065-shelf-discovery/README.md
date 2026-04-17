@@ -15,7 +15,7 @@ A dynamic shelf pool system for the discover page. Instead of showing the same 9
 interface ShelfDefinition {
   id: string; // "because-you-watched", "hidden-gems", etc.
   template: boolean; // true = parametrized (generates multiple instances)
-  category: "seed" | "profile" | "tmdb" | "local" | "context" | "external";
+  category: 'seed' | 'profile' | 'tmdb' | 'local' | 'context' | 'external';
   generate(profile: PreferenceProfile): ShelfInstance[]; // one instance per seed, or one for static
 }
 

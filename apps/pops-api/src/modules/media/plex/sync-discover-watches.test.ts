@@ -1,8 +1,9 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 /**
  * Tests for Plex Discover cloud watch sync (GraphQL activity feed approach).
  */
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock dependencies
 vi.mock('../watch-history/service.js', () => ({
@@ -67,10 +68,11 @@ vi.mock('@pops/db-types', () => ({
 import { getDrizzle } from '../../../db.js';
 import { addMovie } from '../library/service.js';
 import { logWatch } from '../watch-history/service.js';
-import type { PlexClient } from './client.js';
 import { getPlexClientId, getPlexToken } from './service.js';
 import { checkAndLogMovieWatch, syncDiscoverWatches } from './sync-discover-watches.js';
 import { extractExternalIdAsNumber } from './sync-helpers.js';
+
+import type { PlexClient } from './client.js';
 import type { PlexMediaItem } from './types.js';
 
 const mockLogWatch = vi.mocked(logWatch);

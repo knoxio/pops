@@ -60,7 +60,7 @@ function makeMockClient(responses: TmdbSearchResponse[]): TmdbClient {
   let callIndex = 0;
   return {
     discoverMovies: vi.fn(async () => {
-      const resp = responses[callIndex] ?? responses[responses.length - 1]!;
+      const resp = responses[callIndex] ?? responses.at(-1)!;
       callIndex++;
       return resp;
     }),

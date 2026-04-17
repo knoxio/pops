@@ -12,16 +12,16 @@ The north star: **Output > Input.** The system must produce more value than the 
 
 Cerebrum is a subsystem umbrella containing multiple named components:
 
-| Component      | Role                                            | Visibility |
-| -------------- | ----------------------------------------------- | ---------- |
-| **Engram**     | Storage — Markdown files with YAML frontmatter  | Public     |
-| **Thalamus**   | Indexing/retrieval middleware                    | Hidden     |
-| **Cortex**     | Interpreters — classification, extraction       | Hidden     |
-| **Glia**       | Background curation workers                     | Hidden     |
-| **Ingest**     | Input pipeline                                  | Public     |
-| **Emit**       | Output production                               | Public     |
-| **Reflex**     | Automation triggers                             | Public     |
-| **Plexus**     | Plugin/integration system                       | Public     |
+| Component    | Role                                           | Visibility |
+| ------------ | ---------------------------------------------- | ---------- |
+| **Engram**   | Storage — Markdown files with YAML frontmatter | Public     |
+| **Thalamus** | Indexing/retrieval middleware                  | Hidden     |
+| **Cortex**   | Interpreters — classification, extraction      | Hidden     |
+| **Glia**     | Background curation workers                    | Hidden     |
+| **Ingest**   | Input pipeline                                 | Public     |
+| **Emit**     | Output production                              | Public     |
+| **Reflex**   | Automation triggers                            | Public     |
+| **Plexus**   | Plugin/integration system                      | Public     |
 
 **Ego** (the chat agent) is a top-level sibling of Cerebrum, not a child. Ego consumes Cerebrum's retrieval and emit capabilities but has its own interface concerns.
 
@@ -37,31 +37,31 @@ Cerebrum is a subsystem umbrella containing multiple named components:
 
 ## Epics
 
-| #   | Epic                                           | Summary                                                                               | Status      |
-| --- | ---------------------------------------------- | ------------------------------------------------------------------------------------- | ----------- |
-| 0   | [Engram Storage](epics/00-engram-storage.md)   | File format, templates, directory structure, scope model, CRUD operations              | Not started |
-| 1   | [Thalamus](epics/01-thalamus.md)               | File watcher, frontmatter indexing, embedding sync, cross-source retrieval             | Not started |
-| 2   | [Ingest](epics/02-ingest.md)                   | Manual/agent/capture input, classification, entity extraction, scope inference         | Not started |
-| 3   | [Emit](epics/03-emit.md)                       | Query engine, document generation, proactive nudges                                   | Not started |
-| 4   | [Glia](epics/04-glia.md)                       | Curation workers (pruner, consolidator, linker, auditor), trust graduation             | Not started |
-| 5   | [Ego](epics/05-ego.md)                         | Chat agent — shell panel, MCP tools, Moltbot, CLI. Supersedes PRD-054                 | Not started |
-| 6   | [Reflex](epics/06-reflex.md)                   | Automation triggers — event, threshold, scheduled. reflexes.toml                       | Not started |
-| 7   | [Plexus](epics/07-plexus.md)                   | Plugin system — adapter interface, core integrations (email, calendar, GitHub)          | Not started |
+| #   | Epic                                         | Summary                                                                        | Status      |
+| --- | -------------------------------------------- | ------------------------------------------------------------------------------ | ----------- |
+| 0   | [Engram Storage](epics/00-engram-storage.md) | File format, templates, directory structure, scope model, CRUD operations      | Not started |
+| 1   | [Thalamus](epics/01-thalamus.md)             | File watcher, frontmatter indexing, embedding sync, cross-source retrieval     | Not started |
+| 2   | [Ingest](epics/02-ingest.md)                 | Manual/agent/capture input, classification, entity extraction, scope inference | Not started |
+| 3   | [Emit](epics/03-emit.md)                     | Query engine, document generation, proactive nudges                            | Not started |
+| 4   | [Glia](epics/04-glia.md)                     | Curation workers (pruner, consolidator, linker, auditor), trust graduation     | Not started |
+| 5   | [Ego](epics/05-ego.md)                       | Chat agent — shell panel, MCP tools, Moltbot, CLI. Supersedes PRD-054          | Not started |
+| 6   | [Reflex](epics/06-reflex.md)                 | Automation triggers — event, threshold, scheduled. reflexes.toml               | Not started |
+| 7   | [Plexus](epics/07-plexus.md)                 | Plugin system — adapter interface, core integrations (email, calendar, GitHub) | Not started |
 
 Epics 0-3 form Phase 1 (MVP): store, index, ingest, retrieve. Epics 4-5 form Phase 2: curation and chat interface. Epics 6-7 form Phase 3: automation and ecosystem. Within each phase, epics are sequential on their dependencies (0 before 1 before 2, etc.) but later phases can begin individual epics as their dependencies are met.
 
 ## Key Decisions
 
-| Decision              | Choice                         | Rationale                                                                   |
-| --------------------- | ------------------------------ | --------------------------------------------------------------------------- |
-| Storage model         | Markdown files + SQLite index  | Human-readable forever, queryable via index, index is regenerable (ADR-019) |
-| Scope model           | Hierarchical dot-notation tags | Nestable, multi-assignable, prefix-queryable, `.secret.` hard-blocks (ADR-020) |
-| Curation autonomy     | Three-phase trust graduation   | Earns trust incrementally, per-action-type, with automatic demotion (ADR-021) |
-| Vector storage        | sqlite-vec                     | Same database, same backup pipeline, sufficient at scale (ADR-018)          |
-| Job processing        | BullMQ + Redis                 | Durable, retryable, dashboard-ready (ADR-016)                              |
-| External API contract | OpenAPI via trpc-openapi       | Non-TS consumers get a contract, tRPC stays primary (ADR-017)              |
-| Engram security       | Server-side, encrypted backups | Never in git, mandatory encrypted backup, localhost-only MCP               |
-| Content typing        | Soft templates with typed hints| Templates suggest structure, types are classification hints not constraints |
+| Decision              | Choice                          | Rationale                                                                      |
+| --------------------- | ------------------------------- | ------------------------------------------------------------------------------ |
+| Storage model         | Markdown files + SQLite index   | Human-readable forever, queryable via index, index is regenerable (ADR-019)    |
+| Scope model           | Hierarchical dot-notation tags  | Nestable, multi-assignable, prefix-queryable, `.secret.` hard-blocks (ADR-020) |
+| Curation autonomy     | Three-phase trust graduation    | Earns trust incrementally, per-action-type, with automatic demotion (ADR-021)  |
+| Vector storage        | sqlite-vec                      | Same database, same backup pipeline, sufficient at scale (ADR-018)             |
+| Job processing        | BullMQ + Redis                  | Durable, retryable, dashboard-ready (ADR-016)                                  |
+| External API contract | OpenAPI via trpc-openapi        | Non-TS consumers get a contract, tRPC stays primary (ADR-017)                  |
+| Engram security       | Server-side, encrypted backups  | Never in git, mandatory encrypted backup, localhost-only MCP                   |
+| Content typing        | Soft templates with typed hints | Templates suggest structure, types are classification hints not constraints    |
 
 ## Risks
 

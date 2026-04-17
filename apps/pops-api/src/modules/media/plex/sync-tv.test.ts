@@ -1,8 +1,9 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 /**
  * Tests for Plex TV show import — batch sync with episode watch matching.
  */
 import type BetterSqlite3 from 'better-sqlite3';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PlexClient } from './client.js';
 import type { PlexEpisode, PlexMediaItem } from './types.js';
@@ -118,7 +119,7 @@ function makePlexClient(
   } as unknown as PlexClient;
 }
 
-function makeMockDb(seasonResult: unknown = undefined, episodeResult: unknown = undefined): void {
+function makeMockDb(seasonResult?: unknown, episodeResult?: unknown): void {
   const mockGet = vi.fn().mockReturnValueOnce(seasonResult).mockReturnValueOnce(episodeResult);
   const mockWhere = vi.fn().mockReturnValue({ get: mockGet });
   const mockFrom = vi.fn().mockReturnValue({ where: mockWhere });
@@ -277,7 +278,7 @@ describe('importTvShowsFromPlex', () => {
     mockGetTvShowByTvdbId.mockReturnValue({
       id: 1,
     } as unknown as import('@pops/db-types').TvShowRow);
-    makeMockDb(undefined, undefined); // No season found
+    makeMockDb(); // No season found
 
     const ep = makePlexEpisode({ viewCount: 1 });
     const show = makePlexShow();

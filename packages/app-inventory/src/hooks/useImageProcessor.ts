@@ -10,10 +10,10 @@ import { useCallback, useState } from 'react';
 const MAX_DIMENSION = 1920;
 const QUALITY = 0.8;
 
-const HEIC_TYPES = ['image/heic', 'image/heif'];
+const HEIC_TYPES = new Set(['image/heic', 'image/heif']);
 
 function isHeic(file: File): boolean {
-  if (HEIC_TYPES.includes(file.type)) return true;
+  if (HEIC_TYPES.has(file.type)) return true;
   const ext = file.name.toLowerCase();
   return ext.endsWith('.heic') || ext.endsWith('.heif');
 }

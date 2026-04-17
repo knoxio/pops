@@ -1,3 +1,11 @@
+import { iconMap } from '@/app/nav/icon-map';
+import { matchesAtBoundary } from '@/app/nav/path-utils';
+import { registeredApps } from '@/app/nav/registry';
+import { useUIStore } from '@/store/uiStore';
+import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router';
+
 /**
  * App rail — narrow vertical strip showing registered app icons.
  *
@@ -6,14 +14,6 @@
  * Collapsible via toggle (state persisted in uiStore).
  */
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from '@pops/ui';
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router';
-
-import { iconMap } from '@/app/nav/icon-map';
-import { matchesAtBoundary } from '@/app/nav/path-utils';
-import { registeredApps } from '@/app/nav/registry';
-import { useUIStore } from '@/store/uiStore';
 
 interface AppRailProps {
   className?: string;
@@ -25,9 +25,13 @@ function useIsTablet(): boolean {
   useEffect(() => {
     const mql = window.matchMedia('(min-width: 768px) and (max-width: 1023px)');
     setIsTablet(mql.matches);
-    const handler = (e: MediaQueryListEvent) => setIsTablet(e.matches);
+    const handler = (e: MediaQueryListEvent) => {
+      setIsTablet(e.matches);
+    };
     mql.addEventListener('change', handler);
-    return () => mql.removeEventListener('change', handler);
+    return () => {
+      mql.removeEventListener('change', handler);
+    };
   }, []);
   return isTablet;
 }

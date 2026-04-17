@@ -65,15 +65,33 @@ export function BrowseRuleDetailPanel(props: {
       <Separator />
 
       <div className="flex gap-2">
-        <Button size="sm" variant="outline" onClick={() => props.onEdit(rule)}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            props.onEdit(rule);
+          }}
+        >
           Edit
         </Button>
         {rule.isActive ? (
-          <Button size="sm" variant="outline" onClick={() => props.onDisable(rule)}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              props.onDisable(rule);
+            }}
+          >
             Disable
           </Button>
         ) : null}
-        <Button size="sm" variant="destructive" onClick={() => props.onRemove(rule)}>
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={() => {
+            props.onRemove(rule);
+          }}
+        >
           Remove
         </Button>
       </div>

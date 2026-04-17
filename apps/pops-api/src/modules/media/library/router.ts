@@ -12,12 +12,13 @@ import { checkAndLogMovieWatch } from '../plex/sync-discover-watches.js';
 import { getTvdbClient } from '../thetvdb/index.js';
 import { refreshTvShow } from '../thetvdb/service.js';
 import { TvdbApiError } from '../thetvdb/types.js';
-import type { TmdbClient } from '../tmdb/index.js';
 import { getImageCache, getTmdbClient, TmdbApiError } from '../tmdb/index.js';
 import { toSeason, toTvShow } from '../tv-shows/types.js';
 import * as libraryService from './service.js';
 import * as tvShowService from './tv-show-service.js';
 import { LibraryListSchema, QuickPickSchema, RefreshMovieSchema } from './types.js';
+
+import type { TmdbClient } from '../tmdb/index.js';
 
 function requireTmdbClient(): TmdbClient {
   return getTmdbClient();

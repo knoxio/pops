@@ -15,23 +15,23 @@ No new tables. This PRD writes to the tables defined in PRD-077 (`engram_index`,
 
 Domain data sources are mapped to the `embeddings` table using `source_type` and `source_id`:
 
-| Domain         | `source_type`   | `source_id`         | Embeddable Content                                      |
-| -------------- | --------------- | ------------------- | ------------------------------------------------------- |
-| Engrams        | `engram`        | Engram ID           | Full Markdown body (chunked)                            |
-| Transactions   | `transaction`   | Transaction ID      | Description + notes + category + merchant               |
-| Movies         | `movie`         | Movie ID            | Title + synopsis + genres + personal notes              |
-| TV Shows       | `tv_show`       | Show ID             | Title + overview + genres + personal notes              |
-| Books          | `book`          | Book ID             | Title + author + description + personal notes           |
-| Inventory      | `inventory`     | Item ID             | Name + description + category + location + notes        |
+| Domain       | `source_type` | `source_id`    | Embeddable Content                               |
+| ------------ | ------------- | -------------- | ------------------------------------------------ |
+| Engrams      | `engram`      | Engram ID      | Full Markdown body (chunked)                     |
+| Transactions | `transaction` | Transaction ID | Description + notes + category + merchant        |
+| Movies       | `movie`       | Movie ID       | Title + synopsis + genres + personal notes       |
+| TV Shows     | `tv_show`     | Show ID        | Title + overview + genres + personal notes       |
+| Books        | `book`        | Book ID        | Title + author + description + personal notes    |
+| Inventory    | `inventory`   | Item ID        | Name + description + category + location + notes |
 
 ## API Surface
 
-| Procedure                            | Input                                     | Output                                          | Notes                                                     |
-| ------------------------------------ | ----------------------------------------- | ------------------------------------------------ | --------------------------------------------------------- |
-| `cerebrum.index.status`             | —                                         | `{ watching, lastSync, pending, errors }`        | Watcher health and queue depth                            |
-| `cerebrum.index.reindex`            | force?: boolean                           | `{ enqueued: number }`                           | Full re-index from files; `force` ignores content_hash    |
-| `cerebrum.index.reindexSources`     | sourceTypes?: string[]                    | `{ enqueued: number }`                           | Re-index domain data sources into the embedding pipeline  |
-| `cerebrum.index.reconcile`          | dryRun?: boolean                          | `{ orphaned, missing, mismatched }`              | Compare index to filesystem, report drift                 |
+| Procedure                       | Input                  | Output                                    | Notes                                                    |
+| ------------------------------- | ---------------------- | ----------------------------------------- | -------------------------------------------------------- |
+| `cerebrum.index.status`         | —                      | `{ watching, lastSync, pending, errors }` | Watcher health and queue depth                           |
+| `cerebrum.index.reindex`        | force?: boolean        | `{ enqueued: number }`                    | Full re-index from files; `force` ignores content_hash   |
+| `cerebrum.index.reindexSources` | sourceTypes?: string[] | `{ enqueued: number }`                    | Re-index domain data sources into the embedding pipeline |
+| `cerebrum.index.reconcile`      | dryRun?: boolean       | `{ orphaned, missing, mismatched }`       | Compare index to filesystem, report drift                |
 
 ## Business Rules
 
@@ -48,28 +48,28 @@ Domain data sources are mapped to the `embeddings` table using `source_type` and
 
 ## Edge Cases
 
-| Case                                          | Behaviour                                                                      |
-| --------------------------------------------- | ------------------------------------------------------------------------------ |
-| File created then immediately deleted          | Debounce collapses to a no-op — no index entry created                         |
-| File renamed (type change)                     | Detected as delete + create — old path orphaned, new path indexed              |
-| Frontmatter is valid but body is empty         | File indexed normally — body is optional, embedding skipped for empty bodies    |
-| Frontmatter missing required fields            | File skipped, structured error logged with missing fields listed               |
-| Index entry exists but file is gone            | Reconciliation marks as `status: orphaned`, logged for investigation           |
-| File exists but is not valid Markdown          | Binary or non-UTF-8 files are skipped with a warning                           |
-| Engram directory does not exist at startup     | Fatal error — Thalamus refuses to start, logs clear message                    |
-| BullMQ queue is unavailable                    | Embedding enqueue fails gracefully — file is still indexed, embedding retried on next change or reconciliation |
-| Domain record deleted after embedding created  | Orphaned embeddings cleaned up by PRD-076's periodic cleanup job               |
-| Thousands of files on first startup            | Reconciliation batches file processing (100 files per tick) to avoid blocking the event loop |
-| File watcher hits OS limit on watched files    | Logs error and falls back to periodic polling (60s interval)                   |
+| Case                                          | Behaviour                                                                                                      |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| File created then immediately deleted         | Debounce collapses to a no-op — no index entry created                                                         |
+| File renamed (type change)                    | Detected as delete + create — old path orphaned, new path indexed                                              |
+| Frontmatter is valid but body is empty        | File indexed normally — body is optional, embedding skipped for empty bodies                                   |
+| Frontmatter missing required fields           | File skipped, structured error logged with missing fields listed                                               |
+| Index entry exists but file is gone           | Reconciliation marks as `status: orphaned`, logged for investigation                                           |
+| File exists but is not valid Markdown         | Binary or non-UTF-8 files are skipped with a warning                                                           |
+| Engram directory does not exist at startup    | Fatal error — Thalamus refuses to start, logs clear message                                                    |
+| BullMQ queue is unavailable                   | Embedding enqueue fails gracefully — file is still indexed, embedding retried on next change or reconciliation |
+| Domain record deleted after embedding created | Orphaned embeddings cleaned up by PRD-076's periodic cleanup job                                               |
+| Thousands of files on first startup           | Reconciliation batches file processing (100 files per tick) to avoid blocking the event loop                   |
+| File watcher hits OS limit on watched files   | Logs error and falls back to periodic polling (60s interval)                                                   |
 
 ## User Stories
 
-| #   | Story                                                              | Summary                                                                              | Status      | Parallelisable   |
-| --- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------ | ----------- | ---------------- |
-| 01  | [us-01-file-watcher](us-01-file-watcher.md)                        | Chokidar file watcher on engram directory with debounced change detection and batch processing | Not started | No (first)       |
-| 02  | [us-02-frontmatter-sync](us-02-frontmatter-sync.md)                | Parse frontmatter from changed files, upsert into index tables, detect orphans       | Not started | Blocked by us-01 |
-| 03  | [us-03-embedding-trigger](us-03-embedding-trigger.md)              | Content hash comparison and BullMQ embedding job enqueue on file change              | Not started | Blocked by us-02 |
-| 04  | [us-04-cross-source-index](us-04-cross-source-index.md)            | Index POPS domain data (transactions, media, inventory) into the embedding pipeline  | Not started | Yes              |
+| #   | Story                                                   | Summary                                                                                        | Status      | Parallelisable   |
+| --- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------- | ---------------- |
+| 01  | [us-01-file-watcher](us-01-file-watcher.md)             | Chokidar file watcher on engram directory with debounced change detection and batch processing | Not started | No (first)       |
+| 02  | [us-02-frontmatter-sync](us-02-frontmatter-sync.md)     | Parse frontmatter from changed files, upsert into index tables, detect orphans                 | Not started | Blocked by us-01 |
+| 03  | [us-03-embedding-trigger](us-03-embedding-trigger.md)   | Content hash comparison and BullMQ embedding job enqueue on file change                        | Not started | Blocked by us-02 |
+| 04  | [us-04-cross-source-index](us-04-cross-source-index.md) | Index POPS domain data (transactions, media, inventory) into the embedding pipeline            | Not started | Yes              |
 
 US-02 depends on us-01 (needs file events to process). US-03 depends on us-02 (needs the index entry to compare content hashes). US-04 is independent — it indexes domain data, not engram files.
 

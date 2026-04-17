@@ -11,39 +11,39 @@ Define the document generation system that produces structured output documents 
 
 ### Generation Request
 
-| Field            | Type     | Required | Description                                                          |
-| ---------------- | -------- | -------- | -------------------------------------------------------------------- |
-| `mode`           | string   | Yes      | Output mode: `report`, `summary`, `timeline`                        |
-| `query`          | string   | No       | Topic or question to generate from — required for `report`           |
-| `dateRange`      | object   | No       | `{ from: ISO8601, to: ISO8601 }` — required for `summary`, optional for others |
-| `scopes`         | string[] | No       | Explicit scope filter — if absent, inferred from query/topic         |
-| `audienceScope`  | string   | No       | Intended audience scope (e.g., `work.*`) — controls what content is included |
-| `includeSecret`  | boolean  | No       | Opt-in for `*.secret.*` content (default: `false`)                   |
-| `types`          | string[] | No       | Filter engrams by type (e.g., `decision`, `meeting`)                 |
-| `tags`           | string[] | No       | Filter engrams by tags                                               |
-| `format`         | string   | No       | Output format: `markdown` (default), `plain`                         |
+| Field           | Type     | Required | Description                                                                    |
+| --------------- | -------- | -------- | ------------------------------------------------------------------------------ |
+| `mode`          | string   | Yes      | Output mode: `report`, `summary`, `timeline`                                   |
+| `query`         | string   | No       | Topic or question to generate from — required for `report`                     |
+| `dateRange`     | object   | No       | `{ from: ISO8601, to: ISO8601 }` — required for `summary`, optional for others |
+| `scopes`        | string[] | No       | Explicit scope filter — if absent, inferred from query/topic                   |
+| `audienceScope` | string   | No       | Intended audience scope (e.g., `work.*`) — controls what content is included   |
+| `includeSecret` | boolean  | No       | Opt-in for `*.secret.*` content (default: `false`)                             |
+| `types`         | string[] | No       | Filter engrams by type (e.g., `decision`, `meeting`)                           |
+| `tags`          | string[] | No       | Filter engrams by tags                                                         |
+| `format`        | string   | No       | Output format: `markdown` (default), `plain`                                   |
 
 ### Generated Document
 
-| Field            | Type              | Description                                                      |
-| ---------------- | ----------------- | ---------------------------------------------------------------- |
-| `title`          | string            | Generated document title                                          |
-| `body`           | string            | Full document content in the requested format                    |
-| `mode`           | string            | Generation mode used                                              |
-| `sources`        | SourceCitation[]  | All engrams and records referenced (same schema as PRD-082)      |
-| `audienceScope`  | string            | The audience scope applied                                        |
-| `dateRange`      | object            | The date range covered (explicit or derived)                     |
-| `metadata`       | object            | Generation metadata: source count, date range, scope coverage    |
+| Field           | Type             | Description                                                   |
+| --------------- | ---------------- | ------------------------------------------------------------- |
+| `title`         | string           | Generated document title                                      |
+| `body`          | string           | Full document content in the requested format                 |
+| `mode`          | string           | Generation mode used                                          |
+| `sources`       | SourceCitation[] | All engrams and records referenced (same schema as PRD-082)   |
+| `audienceScope` | string           | The audience scope applied                                    |
+| `dateRange`     | object           | The date range covered (explicit or derived)                  |
+| `metadata`      | object           | Generation metadata: source count, date range, scope coverage |
 
 ## API Surface
 
-| Procedure                            | Input                                                            | Output                                    | Notes                                                       |
-| ------------------------------------ | ---------------------------------------------------------------- | ----------------------------------------- | ----------------------------------------------------------- |
-| `cerebrum.emit.generate`             | GenerationRequest                                                | `{ document: GeneratedDocument }`         | Full generation pipeline: retrieve, synthesise, format      |
-| `cerebrum.emit.generateReport`       | query: string, scopes?, audienceScope?, includeSecret?, types?, tags? | `{ document: GeneratedDocument }`    | Shorthand for `generate({ mode: "report", ... })`           |
-| `cerebrum.emit.generateSummary`      | dateRange, scopes?, audienceScope?, includeSecret?, types?, tags?    | `{ document: GeneratedDocument }`    | Shorthand for `generate({ mode: "summary", ... })`          |
-| `cerebrum.emit.generateTimeline`     | scopes?, dateRange?, audienceScope?, includeSecret?, types?, tags?   | `{ document: GeneratedDocument }`    | Shorthand for `generate({ mode: "timeline", ... })`         |
-| `cerebrum.emit.preview`              | GenerationRequest                                                | `{ sources: SourceCitation[], outline: string }` | Dry run — returns sources and document outline without generating |
+| Procedure                        | Input                                                                 | Output                                           | Notes                                                             |
+| -------------------------------- | --------------------------------------------------------------------- | ------------------------------------------------ | ----------------------------------------------------------------- |
+| `cerebrum.emit.generate`         | GenerationRequest                                                     | `{ document: GeneratedDocument }`                | Full generation pipeline: retrieve, synthesise, format            |
+| `cerebrum.emit.generateReport`   | query: string, scopes?, audienceScope?, includeSecret?, types?, tags? | `{ document: GeneratedDocument }`                | Shorthand for `generate({ mode: "report", ... })`                 |
+| `cerebrum.emit.generateSummary`  | dateRange, scopes?, audienceScope?, includeSecret?, types?, tags?     | `{ document: GeneratedDocument }`                | Shorthand for `generate({ mode: "summary", ... })`                |
+| `cerebrum.emit.generateTimeline` | scopes?, dateRange?, audienceScope?, includeSecret?, types?, tags?    | `{ document: GeneratedDocument }`                | Shorthand for `generate({ mode: "timeline", ... })`               |
+| `cerebrum.emit.preview`          | GenerationRequest                                                     | `{ sources: SourceCitation[], outline: string }` | Dry run — returns sources and document outline without generating |
 
 ## Business Rules
 
@@ -61,26 +61,26 @@ Define the document generation system that produces structured output documents 
 
 ## Edge Cases
 
-| Case                                              | Behaviour                                                                      |
-| ------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Report query matches zero engrams                 | Returns `{ document: null, notice: "No relevant engrams found for this query" }` |
-| Summary date range has zero engrams               | Returns an empty summary with a note explaining the empty range                |
-| Timeline with only one engram                     | Returns a single-entry timeline — valid but noted as minimal                   |
-| `audienceScope` is `work.*` but retrieved engrams include `personal.*` | Personal-scoped engrams are excluded from the document — only `work.*` content is included |
-| `includeSecret: true` with `audienceScope: work.*` | Secret work content (`work.secret.*`) is included; secret personal content (`personal.secret.*`) is still excluded by the `work.*` audience filter |
-| Date range `from` is after `to`                   | Rejected — invalid date range                                                  |
-| Engram body is empty (metadata-only)              | Included in timeline (date + title) but excluded from report/summary synthesis |
-| LLM generation fails or times out                 | Returns error with retrieved sources so the user can inspect them manually      |
-| Very large result set (100+ engrams for a summary)| Sources are ranked by relevance and capped at 50 — summary covers the most relevant content |
+| Case                                                                   | Behaviour                                                                                                                                          |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Report query matches zero engrams                                      | Returns `{ document: null, notice: "No relevant engrams found for this query" }`                                                                   |
+| Summary date range has zero engrams                                    | Returns an empty summary with a note explaining the empty range                                                                                    |
+| Timeline with only one engram                                          | Returns a single-entry timeline — valid but noted as minimal                                                                                       |
+| `audienceScope` is `work.*` but retrieved engrams include `personal.*` | Personal-scoped engrams are excluded from the document — only `work.*` content is included                                                         |
+| `includeSecret: true` with `audienceScope: work.*`                     | Secret work content (`work.secret.*`) is included; secret personal content (`personal.secret.*`) is still excluded by the `work.*` audience filter |
+| Date range `from` is after `to`                                        | Rejected — invalid date range                                                                                                                      |
+| Engram body is empty (metadata-only)                                   | Included in timeline (date + title) but excluded from report/summary synthesis                                                                     |
+| LLM generation fails or times out                                      | Returns error with retrieved sources so the user can inspect them manually                                                                         |
+| Very large result set (100+ engrams for a summary)                     | Sources are ranked by relevance and capped at 50 — summary covers the most relevant content                                                        |
 
 ## User Stories
 
-| #   | Story                                                                | Summary                                                                        | Status      | Parallelisable           |
-| --- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ----------- | ------------------------ |
-| 01  | [us-01-report-generation](us-01-report-generation.md)                | Generate structured reports from a query or topic with sections and citations  | Not started | No (first)               |
-| 02  | [us-02-summary-generation](us-02-summary-generation.md)              | Generate summaries over time ranges or topics: weekly digest, monthly review   | Not started | Blocked by us-01         |
-| 03  | [us-03-timeline-generation](us-03-timeline-generation.md)            | Generate chronological timelines from dated engrams with optional grouping     | Not started | Blocked by us-01         |
-| 04  | [us-04-scope-filtered-output](us-04-scope-filtered-output.md)        | All generated documents respect audience scope and hard-block secret content   | Not started | Yes                      |
+| #   | Story                                                         | Summary                                                                       | Status      | Parallelisable   |
+| --- | ------------------------------------------------------------- | ----------------------------------------------------------------------------- | ----------- | ---------------- |
+| 01  | [us-01-report-generation](us-01-report-generation.md)         | Generate structured reports from a query or topic with sections and citations | Not started | No (first)       |
+| 02  | [us-02-summary-generation](us-02-summary-generation.md)       | Generate summaries over time ranges or topics: weekly digest, monthly review  | Not started | Blocked by us-01 |
+| 03  | [us-03-timeline-generation](us-03-timeline-generation.md)     | Generate chronological timelines from dated engrams with optional grouping    | Not started | Blocked by us-01 |
+| 04  | [us-04-scope-filtered-output](us-04-scope-filtered-output.md) | All generated documents respect audience scope and hard-block secret content  | Not started | Yes              |
 
 US-01 establishes the core generation pipeline (retrieval, synthesis, formatting) that US-02 and US-03 extend with mode-specific behaviour. US-04 is the scope filtering layer and can parallelise with US-01 since it is a cross-cutting concern applied to all modes.
 

@@ -35,7 +35,7 @@ function runMigrations(database: BetterSqlite3.Database, migrationsDir: string):
   try {
     files = readdirSync(migrationsDir)
       .filter((f) => f.endsWith('.sql'))
-      .sort();
+      .toSorted();
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') return [];
     throw err;
@@ -201,7 +201,9 @@ describe('migration safety', () => {
       db.pragma('journal_mode = WAL');
 
       initializeSchema(db);
-      expect(() => initializeSchema(db)).not.toThrow();
+      expect(() => {
+        initializeSchema(db);
+      }).not.toThrow();
 
       db.close();
     });

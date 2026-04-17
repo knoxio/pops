@@ -13,7 +13,9 @@ function createDebouncer(delay: number) {
   return {
     debounce(value: string, callback: (v: string) => void) {
       if (timer) clearTimeout(timer);
-      timer = setTimeout(() => callback(value), delay);
+      timer = setTimeout(() => {
+        callback(value);
+      }, delay);
     },
     cancel() {
       if (timer) clearTimeout(timer);

@@ -1,3 +1,16 @@
+import {
+  ArrowLeft,
+  Ban,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  RotateCcw,
+  Search,
+} from 'lucide-react';
+import { useState } from 'react';
+import { Link, useSearchParams } from 'react-router';
+import { toast } from 'sonner';
+
 /**
  * CandidateQueuePage — tabbed view of rotation candidate queue.
  *
@@ -15,18 +28,6 @@ import {
   TabsList,
   TabsTrigger,
 } from '@pops/ui';
-import {
-  ArrowLeft,
-  Ban,
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  RotateCcw,
-  Search,
-} from 'lucide-react';
-import { useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
-import { toast } from 'sonner';
 
 import { trpc } from '../lib/trpc';
 
@@ -131,7 +132,9 @@ function CandidateCard({ candidate, actions = 'none' }: CandidateCardProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => downloadMutation.mutate({ candidateId: candidate.id })}
+              onClick={() => {
+                downloadMutation.mutate({ candidateId: candidate.id });
+              }}
               disabled={downloadMutation.isPending}
               title="Download via Radarr"
             >
@@ -155,17 +158,19 @@ function CandidateCard({ candidate, actions = 'none' }: CandidateCardProps) {
                   className="flex h-8 w-full rounded-md border border-input bg-transparent px-2 py-1 text-sm"
                   placeholder="Reason (optional)"
                   value={excludeReason}
-                  onChange={(e) => setExcludeReason(e.target.value)}
+                  onChange={(e) => {
+                    setExcludeReason(e.target.value);
+                  }}
                 />
                 <Button
                   size="sm"
-                  onClick={() =>
+                  onClick={() => {
                     excludeMutation.mutate({
                       tmdbId: candidate.tmdbId,
                       title: candidate.title,
                       reason: excludeReason || undefined,
-                    })
-                  }
+                    });
+                  }}
                   disabled={excludeMutation.isPending}
                 >
                   Confirm
@@ -179,7 +184,9 @@ function CandidateCard({ candidate, actions = 'none' }: CandidateCardProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => unexcludeMutation.mutate({ tmdbId: candidate.tmdbId })}
+            onClick={() => {
+              unexcludeMutation.mutate({ tmdbId: candidate.tmdbId });
+            }}
             disabled={unexcludeMutation.isPending}
             title="Restore to queue"
           >
@@ -255,7 +262,9 @@ function CandidateList({ status, actions }: CandidateListProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                  onClick={() => {
+                    setPage((p) => Math.max(0, p - 1));
+                  }}
                   disabled={page === 0}
                 >
                   <ChevronLeft className="h-3.5 w-3.5" />
@@ -263,7 +272,9 @@ function CandidateList({ status, actions }: CandidateListProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                  onClick={() => {
+                    setPage((p) => Math.min(totalPages - 1, p + 1));
+                  }}
                   disabled={page >= totalPages - 1}
                 >
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -330,7 +341,9 @@ function ExclusionList() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => unexcludeMutation.mutate({ tmdbId: e.tmdbId })}
+              onClick={() => {
+                unexcludeMutation.mutate({ tmdbId: e.tmdbId });
+              }}
               disabled={unexcludeMutation.isPending}
               title="Restore to queue"
             >
@@ -349,7 +362,9 @@ function ExclusionList() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPage((p) => Math.max(0, p - 1))}
+              onClick={() => {
+                setPage((p) => Math.max(0, p - 1));
+              }}
               disabled={page === 0}
             >
               <ChevronLeft className="h-3.5 w-3.5" />
@@ -357,7 +372,9 @@ function ExclusionList() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+              onClick={() => {
+                setPage((p) => Math.min(totalPages - 1, p + 1));
+              }}
               disabled={page >= totalPages - 1}
             >
               <ChevronRight className="h-3.5 w-3.5" />
@@ -393,7 +410,12 @@ export function CandidateQueuePage() {
         </div>
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => setSearchParams({ tab: v }, { replace: true })}>
+      <Tabs
+        value={tab}
+        onValueChange={(v) => {
+          setSearchParams({ tab: v }, { replace: true });
+        }}
+      >
         <TabsList>
           <TabsTrigger value="pending">
             Pending

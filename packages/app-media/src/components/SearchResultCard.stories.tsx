@@ -1,10 +1,11 @@
+import { MemoryRouter } from 'react-router';
+
+import { SearchResultCard } from './SearchResultCard';
+
 /**
  * SearchResultCard stories — search result card variants for movies and TV shows.
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { MemoryRouter } from 'react-router';
-
-import { SearchResultCard } from './SearchResultCard';
 
 const meta: Meta<typeof SearchResultCard> = {
   component: SearchResultCard,

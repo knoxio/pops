@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { _clearRegistry, getRegisteredShelves, registerShelf } from './registry.js';
+
 import type { ShelfDefinition, ShelfInstance } from './types.js';
 
 const makeInstance = (id: string): ShelfInstance => ({
@@ -47,9 +48,9 @@ describe('shelf registry', () => {
 
   it('throws when registering a duplicate id', () => {
     registerShelf(makeDefinition('trending'));
-    expect(() => registerShelf(makeDefinition('trending'))).toThrow(
-      'Shelf already registered: trending'
-    );
+    expect(() => {
+      registerShelf(makeDefinition('trending'));
+    }).toThrow('Shelf already registered: trending');
   });
 
   it('generate() returns shelf instances', () => {

@@ -13,6 +13,7 @@
 import { logger } from '../../../lib/logger.js';
 import { fetchFriendWatchlist } from '../plex/friends.js';
 import { getPlexClientId, getPlexToken } from '../plex/service.js';
+
 import type { CandidateMovie, RotationSourceAdapter } from './source-types.js';
 
 export const plexFriendsSource: RotationSourceAdapter = {

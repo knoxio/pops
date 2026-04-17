@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { findNewTransactions } from './deduplicator.js';
+
 import type { ParsedTransaction } from './types.js';
 
 function makeTxn(overrides: Partial<ParsedTransaction> = {}): ParsedTransaction {

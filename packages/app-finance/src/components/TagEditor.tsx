@@ -1,3 +1,5 @@
+import { useEffect, useRef, useState } from 'react';
+
 /**
  * TagEditor — inline popover for editing transaction tags.
  * Shows current tags as removable chips, with autocomplete from known tags
@@ -6,7 +8,6 @@
  * This component is tRPC-agnostic — callers wire up the API.
  */
 import { Badge, Button, Chip, Popover, PopoverContent, PopoverTrigger } from '@pops/ui';
-import { useEffect, useRef, useState } from 'react';
 
 import { cn } from '../lib/utils';
 

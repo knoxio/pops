@@ -1,5 +1,6 @@
-import { Button, Input, Label } from '@pops/ui';
 import { Clock, RefreshCw } from 'lucide-react';
+
+import { Button, Input, Label } from '@pops/ui';
 
 interface SchedulerData {
   isRunning: boolean;
@@ -53,7 +54,9 @@ export function PlexScheduler({
             min={1}
             max={168}
             value={schedulerHours}
-            onChange={(e) => setSchedulerHours(Math.max(1, parseInt(e.target.value) || 1))}
+            onChange={(e) => {
+              setSchedulerHours(Math.max(1, parseInt(e.target.value) || 1));
+            }}
             className="w-20"
             disabled={isSchedulerRunning}
           />
@@ -64,7 +67,9 @@ export function PlexScheduler({
           <Button
             variant="outline"
             size="sm"
-            onClick={() => stopScheduler.mutate()}
+            onClick={() => {
+              stopScheduler.mutate();
+            }}
             disabled={stopScheduler.isPending}
           >
             {stopScheduler.isPending ? (
@@ -75,13 +80,13 @@ export function PlexScheduler({
         ) : (
           <Button
             size="sm"
-            onClick={() =>
+            onClick={() => {
               startScheduler.mutate({
                 intervalMs: schedulerHours * 60 * 60 * 1000,
                 movieSectionId: movieSectionId || undefined,
                 tvSectionId: tvSectionId || undefined,
-              })
-            }
+              });
+            }}
             disabled={startScheduler.isPending}
           >
             {startScheduler.isPending ? (

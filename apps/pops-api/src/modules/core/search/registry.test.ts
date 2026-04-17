@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { getAdapters, registerSearchAdapter, resetRegistry } from './registry.js';
+
 import type { Query, SearchAdapter, SearchContext, SearchHit } from './types.js';
 
 function makeAdapter(domain: string): SearchAdapter {
@@ -35,14 +36,16 @@ describe('registerSearchAdapter', () => {
 
   it('throws when registering a duplicate domain', () => {
     registerSearchAdapter(makeAdapter('movies'));
-    expect(() => registerSearchAdapter(makeAdapter('movies'))).toThrow(
-      'Search adapter for domain "movies" is already registered'
-    );
+    expect(() => {
+      registerSearchAdapter(makeAdapter('movies'));
+    }).toThrow('Search adapter for domain "movies" is already registered');
   });
 
   it('does not add the duplicate adapter when registration fails', () => {
     registerSearchAdapter(makeAdapter('movies'));
-    expect(() => registerSearchAdapter(makeAdapter('movies'))).toThrow();
+    expect(() => {
+      registerSearchAdapter(makeAdapter('movies'));
+    }).toThrow();
     expect(getAdapters()).toHaveLength(1);
   });
 });

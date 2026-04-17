@@ -1,8 +1,9 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 /**
  * Tests for Plex movie import — batch sync with progress tracking and fallback matching.
  */
 import type BetterSqlite3 from 'better-sqlite3';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { TmdbClient } from '../tmdb/client.js';
 import type { PlexClient } from './client.js';

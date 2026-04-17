@@ -112,7 +112,7 @@ describe('RequestMovieModal', () => {
     setupDefaults();
     renderModal();
 
-    const select = document.getElementById('quality-profile') as HTMLSelectElement;
+    const select = document.querySelector('#quality-profile') as HTMLSelectElement;
     expect(select).toBeTruthy();
 
     const options = select.querySelectorAll('option');
@@ -125,7 +125,7 @@ describe('RequestMovieModal', () => {
     setupDefaults();
     renderModal();
 
-    const select = document.getElementById('root-folder') as HTMLSelectElement;
+    const select = document.querySelector('#root-folder') as HTMLSelectElement;
     expect(select).toBeTruthy();
 
     const options = select.querySelectorAll('option');
@@ -160,7 +160,9 @@ describe('RequestMovieModal', () => {
 
     // Simulate success callback
     const onSuccess = addMovieOpts.onSuccess as () => void;
-    act(() => onSuccess());
+    act(() => {
+      onSuccess();
+    });
 
     expect(screen.getByText('Movie Added')).toBeInTheDocument();
 
@@ -177,7 +179,9 @@ describe('RequestMovieModal', () => {
     fireEvent.click(screen.getByText('Request'));
 
     const onError = addMovieOpts.onError as (err: { message: string }) => void;
-    act(() => onError({ message: 'Movie already exists in Radarr' }));
+    act(() => {
+      onError({ message: 'Movie already exists in Radarr' });
+    });
 
     expect(screen.getByText('Movie already exists in Radarr')).toBeInTheDocument();
   });
@@ -218,10 +222,10 @@ describe('RequestMovieModal', () => {
     setupDefaults();
     renderModal();
 
-    const profileSelect = document.getElementById('quality-profile') as HTMLSelectElement;
+    const profileSelect = document.querySelector('#quality-profile') as HTMLSelectElement;
     expect(profileSelect.value).toBe('1');
 
-    const folderSelect = document.getElementById('root-folder') as HTMLSelectElement;
+    const folderSelect = document.querySelector('#root-folder') as HTMLSelectElement;
     expect(folderSelect.value).toBe('/movies');
   });
 });

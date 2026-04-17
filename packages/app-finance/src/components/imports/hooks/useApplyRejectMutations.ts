@@ -8,6 +8,8 @@ import { toast } from 'sonner';
 
 import { trpc } from '../../../lib/trpc';
 import { useImportStore } from '../../../store/importStore';
+import { localOpsToChangeSet, serverOpToLocalOp } from './useLocalOps';
+
 import type {
   CorrectionSignal,
   LocalOp,
@@ -15,8 +17,6 @@ import type {
   ServerChangeSet,
 } from '../correction-proposal-shared';
 import type { AiMessage } from '../CorrectionProposalDialogPanels';
-import type { CorrectionRule } from '../RulePicker';
-import { localOpsToChangeSet, serverOpToLocalOp } from './useLocalOps';
 
 // ---------------------------------------------------------------------------
 // Hook
@@ -170,9 +170,7 @@ export function useApplyRejectMutations(
       triggeringTransactions: previewTransactions.slice(0, 100),
     })
       .then((res) => {
-        const revised = res.changeSet.ops.map((o) =>
-          serverOpToLocalOp(o, (res.targetRules ?? {}) as Record<string, CorrectionRule>)
-        );
+        const revised = res.changeSet.ops.map((o) => serverOpToLocalOp(o, res.targetRules ?? {}));
         setLocalOps(revised);
         setSelectedClientId(revised[0]?.clientId ?? null);
         setRationale(res.rationale ?? null);

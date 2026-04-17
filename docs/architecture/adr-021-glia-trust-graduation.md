@@ -10,12 +10,12 @@ Cerebrum's Glia workers (pruner, consolidator, linker, auditor) perform curation
 
 ## Options Considered
 
-| Option                    | Pros                                                                    | Cons                                                                             |
-| ------------------------- | ----------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Always autonomous         | Zero friction, Output > Input from day one                              | Destroys trust on first bad consolidation, no recovery path                      |
-| Always review queue       | Safe, user always in control                                            | Creates Input > Output — user must review every proposal, adoption-killing       |
-| Trust graduation (phased) | Earns trust incrementally, reduces friction over time, per-action-type  | More complex to implement, needs approval tracking and graduation thresholds     |
-| User-configured autonomy  | User sets policy per action type ("auto" vs "review")                   | Requires upfront configuration, user doesn't know what to trust yet              |
+| Option                    | Pros                                                                   | Cons                                                                         |
+| ------------------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Always autonomous         | Zero friction, Output > Input from day one                             | Destroys trust on first bad consolidation, no recovery path                  |
+| Always review queue       | Safe, user always in control                                           | Creates Input > Output — user must review every proposal, adoption-killing   |
+| Trust graduation (phased) | Earns trust incrementally, reduces friction over time, per-action-type | More complex to implement, needs approval tracking and graduation thresholds |
+| User-configured autonomy  | User sets policy per action type ("auto" vs "review")                  | Requires upfront configuration, user doesn't know what to trust yet          |
 
 ## Decision
 
@@ -35,11 +35,11 @@ After sustained autonomous operation with no reverts for a configurable period, 
 
 ### Graduation Thresholds (defaults, configurable)
 
-| Transition           | Requirement                                  |
-| -------------------- | -------------------------------------------- |
-| Phase 1 → Phase 2   | 20 approved actions, <10% rejection rate     |
-| Phase 2 → Phase 3   | 60 days of autonomous operation, 0 reverts   |
-| Any → Phase 1       | 2 reverts in any 7-day window (demotion)     |
+| Transition        | Requirement                                |
+| ----------------- | ------------------------------------------ |
+| Phase 1 → Phase 2 | 20 approved actions, <10% rejection rate   |
+| Phase 2 → Phase 3 | 60 days of autonomous operation, 0 reverts |
+| Any → Phase 1     | 2 reverts in any 7-day window (demotion)   |
 
 ### Safety Rails
 

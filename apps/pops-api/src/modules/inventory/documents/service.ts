@@ -1,11 +1,13 @@
+import { and, count, eq } from 'drizzle-orm';
+
 /**
  * Item documents service — link/unlink Paperless-ngx documents to inventory items.
  */
 import { homeInventory, itemDocuments } from '@pops/db-types';
-import { and, count, eq } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
+
 import type { ItemDocumentRow } from './types.js';
 
 export interface DocumentListResult {

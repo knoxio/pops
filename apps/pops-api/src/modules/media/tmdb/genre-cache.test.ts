@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { TmdbClient } from './client.js';
 import { CACHE_TTL_MS, GenreCache, getGenreCache, setGenreCache } from './genre-cache.js';
+
+import type { TmdbClient } from './client.js';
 import type { TmdbGenreListResponse } from './types.js';
 
 const TEST_GENRES = [

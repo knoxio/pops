@@ -1,3 +1,8 @@
+import { ArrowLeft, Film, RefreshCw, Save, Tv } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
+import { toast } from 'sonner';
+
 /**
  * ArrSettingsPage — Radarr/Sonarr connection settings and test UI.
  *
@@ -16,10 +21,6 @@ import {
   Label,
   Skeleton,
 } from '@pops/ui';
-import { ArrowLeft, Film, RefreshCw, Save, Tv } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
-import { toast } from 'sonner';
 
 import { ConnectionBadge } from '../components/ConnectionBadge';
 import { trpc } from '../lib/trpc';
@@ -72,7 +73,9 @@ function ServiceCard({
           <Input
             placeholder="https://192.168.1.100:7878"
             value={url}
-            onChange={(e) => onUrlChange(e.target.value)}
+            onChange={(e) => {
+              onUrlChange(e.target.value);
+            }}
             onBlur={normalizeUrl}
             disabled={saving}
           />
@@ -84,7 +87,9 @@ function ServiceCard({
             type="password"
             placeholder="Enter API key"
             value={apiKey}
-            onChange={(e) => onApiKeyChange(e.target.value)}
+            onChange={(e) => {
+              onApiKeyChange(e.target.value);
+            }}
             disabled={saving}
           />
         </div>
@@ -229,7 +234,9 @@ export function ArrSettingsPage() {
               radarrApiKey,
             });
           }}
-          onTest={() => testRadarr.mutate({ url: ensureProtocol(radarrUrl), apiKey: radarrApiKey })}
+          onTest={() => {
+            testRadarr.mutate({ url: ensureProtocol(radarrUrl), apiKey: radarrApiKey });
+          }}
           saving={saveRadarrMutation.isPending}
           testing={testRadarr.isPending}
           testResult={testRadarr.data?.data ?? null}
@@ -251,7 +258,9 @@ export function ArrSettingsPage() {
               sonarrApiKey,
             });
           }}
-          onTest={() => testSonarr.mutate({ url: ensureProtocol(sonarrUrl), apiKey: sonarrApiKey })}
+          onTest={() => {
+            testSonarr.mutate({ url: ensureProtocol(sonarrUrl), apiKey: sonarrApiKey });
+          }}
           saving={saveSonarrMutation.isPending}
           testing={testSonarr.isPending}
           testResult={testSonarr.data?.data ?? null}

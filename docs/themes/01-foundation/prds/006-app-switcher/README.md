@@ -27,7 +27,7 @@ interface AppNavConfig {
   id: string; // 'finance', 'media', 'inventory'
   label: string; // 'Finance'
   icon: string; // Lucide icon component name
-  color?: "emerald" | "indigo" | "amber" | "rose" | "sky" | "violet";
+  color?: 'emerald' | 'indigo' | 'amber' | 'rose' | 'sky' | 'violet';
   basePath: string; // '/finance'
   items: AppNavItem[];
 }

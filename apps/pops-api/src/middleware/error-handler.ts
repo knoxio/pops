@@ -1,6 +1,6 @@
-import type { NextFunction, Request, Response } from 'express';
-
 import { HttpError } from '../shared/errors.js';
+
+import type { NextFunction, Request, Response } from 'express';
 
 /**
  * Global error handler.

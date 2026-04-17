@@ -10,13 +10,13 @@ POPS needs durable job processing for long-running operations: embedding generat
 
 ## Options Considered
 
-| Option                      | Pros                                                                                     | Cons                                                                                       |
-| --------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| In-memory queues (current)  | Zero dependencies, simple                                                                | Lost on restart, no retry, no dead-letter, no visibility, single-process only              |
-| SQLite-backed job table     | No new dependency, fits "one database" philosophy                                        | Polling-based (no pub/sub), poor fit for high-throughput, write contention with main app    |
-| Redis + BullMQ              | Durable queues, retry/backoff, dead-letter, pub/sub, dashboard-ready, battle-tested      | New dependency (Redis container), new operational surface                                   |
-| RabbitMQ                    | Full AMQP, routing, exchanges                                                            | Heavy for single-user, complex operational model, no cache capability                      |
-| PostgreSQL (replace SQLite) | Queues via SKIP LOCKED, NOTIFY/LISTEN, vector support via pgvector                       | Abandons SQLite simplicity, requires migration of 28 tables, operational overhead for one user |
+| Option                      | Pros                                                                                | Cons                                                                                           |
+| --------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| In-memory queues (current)  | Zero dependencies, simple                                                           | Lost on restart, no retry, no dead-letter, no visibility, single-process only                  |
+| SQLite-backed job table     | No new dependency, fits "one database" philosophy                                   | Polling-based (no pub/sub), poor fit for high-throughput, write contention with main app       |
+| Redis + BullMQ              | Durable queues, retry/backoff, dead-letter, pub/sub, dashboard-ready, battle-tested | New dependency (Redis container), new operational surface                                      |
+| RabbitMQ                    | Full AMQP, routing, exchanges                                                       | Heavy for single-user, complex operational model, no cache capability                          |
+| PostgreSQL (replace SQLite) | Queues via SKIP LOCKED, NOTIFY/LISTEN, vector support via pgvector                  | Abandons SQLite simplicity, requires migration of 28 tables, operational overhead for one user |
 
 ## Decision
 

@@ -11,67 +11,67 @@ Define the proactive nudge system that surfaces system-initiated suggestions wit
 
 ### Nudge
 
-| Field            | Type              | Required | Description                                                      |
-| ---------------- | ----------------- | -------- | ---------------------------------------------------------------- |
-| `id`             | string            | Yes      | Unique identifier: `nudge_{YYYYMMDD}_{HHmm}_{type}_{slug}`      |
-| `type`           | string            | Yes      | Nudge type: `consolidation`, `staleness`, `pattern`, `insight`   |
-| `title`          | string            | Yes      | Short summary (max 100 characters)                               |
-| `body`           | string            | Yes      | Description with context and suggested action                    |
-| `engramIds`      | string[]          | Yes      | IDs of engrams involved in this nudge                            |
-| `priority`       | string            | Yes      | `low`, `medium`, `high` — determines delivery urgency            |
-| `status`         | string            | Yes      | `pending`, `dismissed`, `acted`, `expired`                       |
-| `createdAt`      | string            | Yes      | ISO 8601 timestamp                                               |
-| `expiresAt`      | string            | No       | ISO 8601 timestamp — nudge auto-expires if not acted on          |
-| `action`         | NudgeAction       | No       | Suggested action the user can trigger                            |
+| Field       | Type        | Required | Description                                                    |
+| ----------- | ----------- | -------- | -------------------------------------------------------------- |
+| `id`        | string      | Yes      | Unique identifier: `nudge_{YYYYMMDD}_{HHmm}_{type}_{slug}`     |
+| `type`      | string      | Yes      | Nudge type: `consolidation`, `staleness`, `pattern`, `insight` |
+| `title`     | string      | Yes      | Short summary (max 100 characters)                             |
+| `body`      | string      | Yes      | Description with context and suggested action                  |
+| `engramIds` | string[]    | Yes      | IDs of engrams involved in this nudge                          |
+| `priority`  | string      | Yes      | `low`, `medium`, `high` — determines delivery urgency          |
+| `status`    | string      | Yes      | `pending`, `dismissed`, `acted`, `expired`                     |
+| `createdAt` | string      | Yes      | ISO 8601 timestamp                                             |
+| `expiresAt` | string      | No       | ISO 8601 timestamp — nudge auto-expires if not acted on        |
+| `action`    | NudgeAction | No       | Suggested action the user can trigger                          |
 
 ### NudgeAction
 
-| Field            | Type   | Description                                                      |
-| ---------------- | ------ | ---------------------------------------------------------------- |
-| `type`           | string | Action type: `consolidate`, `archive`, `review`, `link`          |
-| `label`          | string | Human-readable action label (e.g., "Merge these 3 engrams")     |
-| `params`         | object | Parameters for the action (e.g., `{ engramIds: [...] }`)        |
+| Field    | Type   | Description                                                 |
+| -------- | ------ | ----------------------------------------------------------- |
+| `type`   | string | Action type: `consolidate`, `archive`, `review`, `link`     |
+| `label`  | string | Human-readable action label (e.g., "Merge these 3 engrams") |
+| `params` | object | Parameters for the action (e.g., `{ engramIds: [...] }`)    |
 
 ### SQLite Table (nudge_log)
 
-| Column         | Type    | Constraints           | Description                              |
-| -------------- | ------- | --------------------- | ---------------------------------------- |
-| id             | TEXT    | PK                    | Nudge ID                                 |
-| type           | TEXT    | NOT NULL              | Nudge type                               |
-| title          | TEXT    | NOT NULL              | Short summary                            |
-| body           | TEXT    | NOT NULL              | Full description                         |
-| engram_ids     | TEXT    | NOT NULL              | JSON array of engram IDs                 |
-| priority       | TEXT    | NOT NULL              | low, medium, high                        |
-| status         | TEXT    | NOT NULL              | pending, dismissed, acted, expired       |
-| created_at     | TEXT    | NOT NULL              | ISO 8601                                 |
-| expires_at     | TEXT    |                       | ISO 8601                                 |
-| acted_at       | TEXT    |                       | ISO 8601 — when the user acted           |
-| action_type    | TEXT    |                       | consolidate, archive, review, link       |
-| action_params  | TEXT    |                       | JSON action parameters                   |
+| Column        | Type | Constraints | Description                        |
+| ------------- | ---- | ----------- | ---------------------------------- |
+| id            | TEXT | PK          | Nudge ID                           |
+| type          | TEXT | NOT NULL    | Nudge type                         |
+| title         | TEXT | NOT NULL    | Short summary                      |
+| body          | TEXT | NOT NULL    | Full description                   |
+| engram_ids    | TEXT | NOT NULL    | JSON array of engram IDs           |
+| priority      | TEXT | NOT NULL    | low, medium, high                  |
+| status        | TEXT | NOT NULL    | pending, dismissed, acted, expired |
+| created_at    | TEXT | NOT NULL    | ISO 8601                           |
+| expires_at    | TEXT |             | ISO 8601                           |
+| acted_at      | TEXT |             | ISO 8601 — when the user acted     |
+| action_type   | TEXT |             | consolidate, archive, review, link |
+| action_params | TEXT |             | JSON action parameters             |
 
 **Indexes:** `type`, `status`, `priority`, `created_at`
 
 ## API Surface
 
-| Procedure                           | Input                                                            | Output                                    | Notes                                                       |
-| ----------------------------------- | ---------------------------------------------------------------- | ----------------------------------------- | ----------------------------------------------------------- |
-| `cerebrum.nudges.list`              | type?, status?, priority?, limit?, offset?                       | `{ nudges: Nudge[], total: number }`      | List nudges with optional filters                           |
-| `cerebrum.nudges.get`               | id                                                               | `{ nudge: Nudge }`                        | Get a specific nudge with full context                      |
-| `cerebrum.nudges.dismiss`           | id                                                               | `{ success: boolean }`                    | Mark nudge as dismissed — it will not resurface             |
-| `cerebrum.nudges.act`               | id                                                               | `{ result: ActionResult }`                | Execute the nudge's suggested action                        |
-| `cerebrum.nudges.scan`              | type?: string                                                    | `{ created: number }`                     | Trigger an on-demand nudge scan (normally runs on schedule) |
-| `cerebrum.nudges.configure`         | thresholds: NudgeThresholds                                      | `{ success: boolean }`                    | Update detection thresholds                                 |
+| Procedure                   | Input                                      | Output                               | Notes                                                       |
+| --------------------------- | ------------------------------------------ | ------------------------------------ | ----------------------------------------------------------- |
+| `cerebrum.nudges.list`      | type?, status?, priority?, limit?, offset? | `{ nudges: Nudge[], total: number }` | List nudges with optional filters                           |
+| `cerebrum.nudges.get`       | id                                         | `{ nudge: Nudge }`                   | Get a specific nudge with full context                      |
+| `cerebrum.nudges.dismiss`   | id                                         | `{ success: boolean }`               | Mark nudge as dismissed — it will not resurface             |
+| `cerebrum.nudges.act`       | id                                         | `{ result: ActionResult }`           | Execute the nudge's suggested action                        |
+| `cerebrum.nudges.scan`      | type?: string                              | `{ created: number }`                | Trigger an on-demand nudge scan (normally runs on schedule) |
+| `cerebrum.nudges.configure` | thresholds: NudgeThresholds                | `{ success: boolean }`               | Update detection thresholds                                 |
 
 ### NudgeThresholds (configurable)
 
-| Threshold                    | Default | Description                                                      |
-| ---------------------------- | ------- | ---------------------------------------------------------------- |
-| `consolidationSimilarity`    | 0.85    | Minimum Thalamus similarity score to propose consolidation       |
-| `consolidationMinCluster`    | 3       | Minimum cluster size to trigger a consolidation nudge            |
-| `stalenessDays`              | 90      | Days without reference or modification before staleness alert    |
-| `patternMinOccurrences`      | 5       | Minimum occurrences of a topic before it is flagged as a pattern |
-| `maxPendingNudges`           | 20      | Maximum pending nudges — oldest are expired when exceeded        |
-| `nudgeCooldownHours`         | 24      | Minimum hours between nudges of the same type for the same engrams |
+| Threshold                 | Default | Description                                                        |
+| ------------------------- | ------- | ------------------------------------------------------------------ |
+| `consolidationSimilarity` | 0.85    | Minimum Thalamus similarity score to propose consolidation         |
+| `consolidationMinCluster` | 3       | Minimum cluster size to trigger a consolidation nudge              |
+| `stalenessDays`           | 90      | Days without reference or modification before staleness alert      |
+| `patternMinOccurrences`   | 5       | Minimum occurrences of a topic before it is flagged as a pattern   |
+| `maxPendingNudges`        | 20      | Maximum pending nudges — oldest are expired when exceeded          |
+| `nudgeCooldownHours`      | 24      | Minimum hours between nudges of the same type for the same engrams |
 
 ## Business Rules
 
@@ -90,27 +90,27 @@ Define the proactive nudge system that surfaces system-initiated suggestions wit
 
 ## Edge Cases
 
-| Case                                              | Behaviour                                                                      |
-| ------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Similarity cluster spans secret and non-secret engrams | Consolidation nudge is suppressed — cross-scope-level consolidation is not proposed |
-| All engrams are stale (new system, no activity)   | Staleness nudges are suppressed until the system has at least 30 days of activity |
-| Two nudges propose conflicting actions for the same engram | Higher-priority nudge takes precedence; lower-priority is expired               |
-| User dismisses a consolidation nudge, then a new engram joins the cluster | New nudge is generated — the cluster changed, so the previous dismissal does not apply |
-| Scan finds zero nudge-worthy conditions           | No nudges created — this is normal and expected                                |
-| Acting on a consolidation nudge but one source engram was already archived | Action proceeds with remaining engrams — archived engrams are excluded from the merge |
-| `maxPendingNudges` exceeded                       | Oldest pending nudges are expired in FIFO order until count is within the limit |
-| Nudge references an engram that was deleted        | Nudge is auto-expired — its engram references are stale                        |
-| Pattern detection finds contradictions             | Surfaced as an insight nudge: "These engrams express contradictory positions on X — review and reconcile" |
-| Nudge scan runs during active ingestion            | Scan operates on committed engrams only — in-flight ingestions are not considered |
+| Case                                                                       | Behaviour                                                                                                 |
+| -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Similarity cluster spans secret and non-secret engrams                     | Consolidation nudge is suppressed — cross-scope-level consolidation is not proposed                       |
+| All engrams are stale (new system, no activity)                            | Staleness nudges are suppressed until the system has at least 30 days of activity                         |
+| Two nudges propose conflicting actions for the same engram                 | Higher-priority nudge takes precedence; lower-priority is expired                                         |
+| User dismisses a consolidation nudge, then a new engram joins the cluster  | New nudge is generated — the cluster changed, so the previous dismissal does not apply                    |
+| Scan finds zero nudge-worthy conditions                                    | No nudges created — this is normal and expected                                                           |
+| Acting on a consolidation nudge but one source engram was already archived | Action proceeds with remaining engrams — archived engrams are excluded from the merge                     |
+| `maxPendingNudges` exceeded                                                | Oldest pending nudges are expired in FIFO order until count is within the limit                           |
+| Nudge references an engram that was deleted                                | Nudge is auto-expired — its engram references are stale                                                   |
+| Pattern detection finds contradictions                                     | Surfaced as an insight nudge: "These engrams express contradictory positions on X — review and reconcile" |
+| Nudge scan runs during active ingestion                                    | Scan operates on committed engrams only — in-flight ingestions are not considered                         |
 
 ## User Stories
 
-| #   | Story                                                                | Summary                                                                        | Status      | Parallelisable           |
-| --- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ----------- | ------------------------ |
-| 01  | [us-01-consolidation-proposals](us-01-consolidation-proposals.md)    | Detect similar engram clusters via Thalamus, propose consolidation into curated documents | Not started | No (first)               |
-| 02  | [us-02-staleness-alerts](us-02-staleness-alerts.md)                  | Detect engrams not referenced or modified in N days, flag as stale             | Not started | Yes                      |
-| 03  | [us-03-pattern-detection](us-03-pattern-detection.md)                | Detect recurring topics, emerging themes, contradictions — surface as insights | Not started | Yes                      |
-| 04  | [us-04-notification-delivery](us-04-notification-delivery.md)        | Deliver nudges via shell notifications and Moltbot: lightweight, actionable    | Not started | Yes                      |
+| #   | Story                                                             | Summary                                                                                   | Status      | Parallelisable |
+| --- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ----------- | -------------- |
+| 01  | [us-01-consolidation-proposals](us-01-consolidation-proposals.md) | Detect similar engram clusters via Thalamus, propose consolidation into curated documents | Not started | No (first)     |
+| 02  | [us-02-staleness-alerts](us-02-staleness-alerts.md)               | Detect engrams not referenced or modified in N days, flag as stale                        | Not started | Yes            |
+| 03  | [us-03-pattern-detection](us-03-pattern-detection.md)             | Detect recurring topics, emerging themes, contradictions — surface as insights            | Not started | Yes            |
+| 04  | [us-04-notification-delivery](us-04-notification-delivery.md)     | Deliver nudges via shell notifications and Moltbot: lightweight, actionable               | Not started | Yes            |
 
 US-01 establishes the nudge data model, storage, and action framework. US-02 and US-03 are independent detection modes that can parallelise with each other and with US-01 (they produce nudges in the same format). US-04 is the delivery layer and can parallelise with all detection stories.
 

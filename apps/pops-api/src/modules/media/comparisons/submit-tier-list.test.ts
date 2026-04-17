@@ -1,4 +1,3 @@
-import type { Database } from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -9,6 +8,8 @@ import {
 } from '../../../shared/test-utils.js';
 import { recordComparison, submitTierList } from './service.js';
 import { getTierOverrideForMedia } from './tier-overrides.js';
+
+import type { Database } from 'better-sqlite3';
 
 const ctx = setupTestContext();
 let db: Database;

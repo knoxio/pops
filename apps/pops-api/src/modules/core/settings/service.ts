@@ -1,11 +1,13 @@
+import { count, eq, like } from 'drizzle-orm';
+
 /**
  * Settings service — key-value store for application configuration
  */
 import { settings } from '@pops/db-types';
-import { count, eq, like } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
 import { NotFoundError } from '../../../shared/errors.js';
+
 import type { SettingsKey } from './keys.js';
 import type { SetSettingInput, SettingRow } from './types.js';
 

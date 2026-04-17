@@ -16,9 +16,10 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Badge } from '@pops/ui';
 import { GripVertical } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
+
+import { Badge } from '@pops/ui';
 
 import type { LocalOp } from './correction-proposal-shared';
 import type { CorrectionRule } from './RulePicker';
@@ -105,7 +106,9 @@ function BrowseRuleSidebarRowSortable(props: {
           type="button"
           className="mt-0.5 shrink-0 cursor-grab touch-none rounded p-1 text-muted-foreground hover:bg-muted active:cursor-grabbing"
           aria-label={`Drag to reorder rule: ${rule.descriptionPattern}`}
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
           {...listeners}
         >
           <GripVertical className="h-3.5 w-3.5" />
@@ -206,7 +209,9 @@ export function BrowseRulesSidebar(props: BrowseRulesSidebarProps) {
                   rule={rule}
                   selected={selected}
                   hasLocalOp={hasLocalOp}
-                  onSelect={() => onSelectRule(rule.id)}
+                  onSelect={() => {
+                    onSelectRule(rule.id);
+                  }}
                 />
               );
             })}
@@ -242,7 +247,9 @@ export function BrowseRulesSidebar(props: BrowseRulesSidebarProps) {
             rule={rule}
             selected={selected}
             hasLocalOp={hasLocalOp}
-            onSelect={() => onSelectRule(rule.id)}
+            onSelect={() => {
+              onSelectRule(rule.id);
+            }}
           />
         );
       })}

@@ -19,42 +19,42 @@ raw input → normalize → classify type → match template → extract entitie
 
 ### Ingestion Request
 
-| Field         | Type     | Required | Description                                                              |
-| ------------- | -------- | -------- | ------------------------------------------------------------------------ |
-| `body`        | string   | Yes      | Raw content — Markdown, plain text, or structured JSON                   |
-| `title`       | string   | No       | Explicit title — inferred from body H1 or first line if absent           |
-| `type`        | string   | No       | Explicit type — if absent, Cortex classifies from content                |
-| `scopes`      | string[] | No       | Explicit scopes — if absent, inferred via rules + LLM                    |
-| `tags`        | string[] | No       | Explicit tags — augmented by entity extraction                           |
-| `template`    | string   | No       | Explicit template — if absent, matched from classified type              |
-| `source`      | string   | Yes      | Input channel: `manual`, `agent`, `moltbot`, `cli`, `plexus:{name}`     |
-| `customFields`| object   | No       | Template-specific fields (e.g., `mood`, `outcome`, `decision`)           |
+| Field          | Type     | Required | Description                                                         |
+| -------------- | -------- | -------- | ------------------------------------------------------------------- |
+| `body`         | string   | Yes      | Raw content — Markdown, plain text, or structured JSON              |
+| `title`        | string   | No       | Explicit title — inferred from body H1 or first line if absent      |
+| `type`         | string   | No       | Explicit type — if absent, Cortex classifies from content           |
+| `scopes`       | string[] | No       | Explicit scopes — if absent, inferred via rules + LLM               |
+| `tags`         | string[] | No       | Explicit tags — augmented by entity extraction                      |
+| `template`     | string   | No       | Explicit template — if absent, matched from classified type         |
+| `source`       | string   | Yes      | Input channel: `manual`, `agent`, `moltbot`, `cli`, `plexus:{name}` |
+| `customFields` | object   | No       | Template-specific fields (e.g., `mood`, `outcome`, `decision`)      |
 
 ### Normalisation Output
 
-| Field         | Type     | Description                                                  |
-| ------------- | -------- | ------------------------------------------------------------ |
-| `body`        | string   | Cleaned Markdown — trimmed whitespace, normalised line endings, UTF-8 |
-| `title`       | string   | Resolved title                                                |
-| `metadata`    | object   | All explicit fields from the request, preserved for later stages |
+| Field      | Type   | Description                                                           |
+| ---------- | ------ | --------------------------------------------------------------------- |
+| `body`     | string | Cleaned Markdown — trimmed whitespace, normalised line endings, UTF-8 |
+| `title`    | string | Resolved title                                                        |
+| `metadata` | object | All explicit fields from the request, preserved for later stages      |
 
 ## API Surface
 
-| Procedure                        | Input                                                            | Output                                  | Notes                                                       |
-| -------------------------------- | ---------------------------------------------------------------- | --------------------------------------- | ----------------------------------------------------------- |
-| `cerebrum.ingest.submit`         | IngestionRequest                                                 | `{ engram: Engram }`                    | Full pipeline — normalise, classify, extract, scope, write  |
-| `cerebrum.ingest.preview`        | IngestionRequest                                                 | `{ preview: IngestionPreview }`         | Dry run — returns classification, scopes, entities without writing |
-| `cerebrum.ingest.classify`       | body: string, type?: string                                     | `{ type, confidence, template }`        | Classification only — Cortex type inference                 |
-| `cerebrum.ingest.extractEntities`| body: string                                                     | `{ entities: Entity[] }`               | Entity extraction only — people, projects, dates, topics    |
-| `cerebrum.ingest.inferScopes`    | body: string, source: string, tags?: string[], type?: string     | `{ scopes: ScopeInference[] }`          | Scope inference only — rules first, LLM second              |
-| `cerebrum.ingest.quickCapture`   | text: string, source?: string                                   | `{ engram: Engram }`                    | Minimal-friction shortcut — assigns `type: capture`, skips classification |
+| Procedure                         | Input                                                        | Output                           | Notes                                                                     |
+| --------------------------------- | ------------------------------------------------------------ | -------------------------------- | ------------------------------------------------------------------------- |
+| `cerebrum.ingest.submit`          | IngestionRequest                                             | `{ engram: Engram }`             | Full pipeline — normalise, classify, extract, scope, write                |
+| `cerebrum.ingest.preview`         | IngestionRequest                                             | `{ preview: IngestionPreview }`  | Dry run — returns classification, scopes, entities without writing        |
+| `cerebrum.ingest.classify`        | body: string, type?: string                                  | `{ type, confidence, template }` | Classification only — Cortex type inference                               |
+| `cerebrum.ingest.extractEntities` | body: string                                                 | `{ entities: Entity[] }`         | Entity extraction only — people, projects, dates, topics                  |
+| `cerebrum.ingest.inferScopes`     | body: string, source: string, tags?: string[], type?: string | `{ scopes: ScopeInference[] }`   | Scope inference only — rules first, LLM second                            |
+| `cerebrum.ingest.quickCapture`    | text: string, source?: string                                | `{ engram: Engram }`             | Minimal-friction shortcut — assigns `type: capture`, skips classification |
 
 ### MCP Tools
 
-| Tool                             | Parameters                                                       | Description                                                  |
-| -------------------------------- | ---------------------------------------------------------------- | ------------------------------------------------------------ |
-| `cerebrum_ingest`                | body, title?, type?, scopes?, tags?                              | Full ingestion via MCP — used by Claude Code sessions        |
-| `cerebrum_quick_capture`         | text                                                             | Quick capture via MCP — raw text in, engram out              |
+| Tool                     | Parameters                          | Description                                           |
+| ------------------------ | ----------------------------------- | ----------------------------------------------------- |
+| `cerebrum_ingest`        | body, title?, type?, scopes?, tags? | Full ingestion via MCP — used by Claude Code sessions |
+| `cerebrum_quick_capture` | text                                | Quick capture via MCP — raw text in, engram out       |
 
 ## Business Rules
 
@@ -73,32 +73,32 @@ raw input → normalize → classify type → match template → extract entitie
 
 ## Edge Cases
 
-| Case                                          | Behaviour                                                                      |
-| --------------------------------------------- | ------------------------------------------------------------------------------ |
-| Body is empty string                          | Rejected — body is required and must contain at least one non-whitespace character |
-| Body contains only whitespace                 | Rejected — same as empty body after normalisation                              |
-| Body is valid JSON (structured data)          | Normalised to Markdown: JSON rendered as a fenced code block with metadata extracted into frontmatter fields |
-| Title exceeds 200 characters                  | Truncated to 200 characters at the nearest word boundary                       |
-| Explicit type does not match any template     | Engram created with the explicit type but no template scaffolding — warning logged |
-| Classification returns multiple candidate types | Highest-confidence type is selected; if tied, `capture` is used               |
-| Entity extraction returns zero entities       | No tags added from extraction — explicit tags are preserved                    |
-| Scope rules and LLM both produce empty scopes | Fallback scope from `scope-rules.toml` is assigned                            |
-| Duplicate content hash detected               | Submission rejected with `{ duplicate: true, existingId: string }` — no new file written |
-| MCP tool called with invalid parameters       | Returns structured error with field-level validation messages                  |
-| Ingestion during Thalamus downtime            | File is written to disk, index sync deferred until Thalamus recovers          |
-| Body contains frontmatter-like `---` fences   | Content body is preserved as-is — only the engram's own frontmatter is generated by the pipeline |
-| Source is `plexus:{name}` with unknown name   | Accepted — source is a freeform string, plexus adapter validation is Plexus's responsibility |
+| Case                                            | Behaviour                                                                                                    |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Body is empty string                            | Rejected — body is required and must contain at least one non-whitespace character                           |
+| Body contains only whitespace                   | Rejected — same as empty body after normalisation                                                            |
+| Body is valid JSON (structured data)            | Normalised to Markdown: JSON rendered as a fenced code block with metadata extracted into frontmatter fields |
+| Title exceeds 200 characters                    | Truncated to 200 characters at the nearest word boundary                                                     |
+| Explicit type does not match any template       | Engram created with the explicit type but no template scaffolding — warning logged                           |
+| Classification returns multiple candidate types | Highest-confidence type is selected; if tied, `capture` is used                                              |
+| Entity extraction returns zero entities         | No tags added from extraction — explicit tags are preserved                                                  |
+| Scope rules and LLM both produce empty scopes   | Fallback scope from `scope-rules.toml` is assigned                                                           |
+| Duplicate content hash detected                 | Submission rejected with `{ duplicate: true, existingId: string }` — no new file written                     |
+| MCP tool called with invalid parameters         | Returns structured error with field-level validation messages                                                |
+| Ingestion during Thalamus downtime              | File is written to disk, index sync deferred until Thalamus recovers                                         |
+| Body contains frontmatter-like `---` fences     | Content body is preserved as-is — only the engram's own frontmatter is generated by the pipeline             |
+| Source is `plexus:{name}` with unknown name     | Accepted — source is a freeform string, plexus adapter validation is Plexus's responsibility                 |
 
 ## User Stories
 
-| #   | Story                                                                | Summary                                                                        | Status      | Parallelisable           |
-| --- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ----------- | ------------------------ |
-| 01  | [us-01-manual-input](us-01-manual-input.md)                          | Shell UI form for creating engrams: type selector, template fields, body editor, scope picker, tag input | Not started | No (first)               |
-| 02  | [us-02-agent-input](us-02-agent-input.md)                            | MCP tools and API endpoint for writing engrams from Claude Code or external tools | Not started | Yes                      |
-| 03  | [us-03-quick-capture](us-03-quick-capture.md)                        | Minimal-friction capture for Moltbot/CLI: raw text in, classified later        | Not started | Yes                      |
-| 04  | [us-04-classification](us-04-classification.md)                      | LLM-based content classification: infer type, match template, suggest tags     | Not started | Yes                      |
-| 05  | [us-05-entity-extraction](us-05-entity-extraction.md)                | Extract people, projects, dates, topics from body into tags and frontmatter    | Not started | Yes                      |
-| 06  | [us-06-scope-inference](us-06-scope-inference.md)                    | Rule-based + LLM-based scope assignment with user override                     | Not started | Yes                      |
+| #   | Story                                                 | Summary                                                                                                  | Status      | Parallelisable |
+| --- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------- | -------------- |
+| 01  | [us-01-manual-input](us-01-manual-input.md)           | Shell UI form for creating engrams: type selector, template fields, body editor, scope picker, tag input | Not started | No (first)     |
+| 02  | [us-02-agent-input](us-02-agent-input.md)             | MCP tools and API endpoint for writing engrams from Claude Code or external tools                        | Not started | Yes            |
+| 03  | [us-03-quick-capture](us-03-quick-capture.md)         | Minimal-friction capture for Moltbot/CLI: raw text in, classified later                                  | Not started | Yes            |
+| 04  | [us-04-classification](us-04-classification.md)       | LLM-based content classification: infer type, match template, suggest tags                               | Not started | Yes            |
+| 05  | [us-05-entity-extraction](us-05-entity-extraction.md) | Extract people, projects, dates, topics from body into tags and frontmatter                              | Not started | Yes            |
+| 06  | [us-06-scope-inference](us-06-scope-inference.md)     | Rule-based + LLM-based scope assignment with user override                                               | Not started | Yes            |
 
 US-01, US-02, and US-03 define the three input channels and can parallelise. US-04, US-05, and US-06 define the pipeline processing stages and can parallelise with each other and with the input channels. All stories depend on PRD-077 (engram file format) and PRD-078 (scope model) being implemented.
 

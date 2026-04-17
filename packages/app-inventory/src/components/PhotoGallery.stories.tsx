@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-
 import { PhotoGallery, type PhotoItem } from './PhotoGallery';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 const meta: Meta<typeof PhotoGallery> = {
   title: 'Inventory/PhotoGallery',
@@ -51,6 +51,8 @@ export const WithDelete: Story = {
   args: {
     photos: SAMPLE_PHOTOS.slice(0, 3),
     baseUrl: 'https://placehold.co/300x300/1a1a1a/white?text=',
-    onDelete: (id) => console.log('Delete photo:', id),
+    onDelete: (id) => {
+      console.log('Delete photo:', id);
+    },
   },
 };

@@ -1,3 +1,7 @@
+import { Badge } from '../primitives/badge';
+import { Progress } from '../primitives/progress';
+import { Button } from './Button';
+
 /**
  * App Colour Verification — renders key components under each app colour
  * variant to confirm tokens propagate correctly.
@@ -6,10 +10,6 @@
  * or view the "AllColours" story to see every variant side-by-side.
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-
-import { Badge } from '../primitives/badge';
-import { Progress } from '../primitives/progress';
-import { Button } from './Button';
 
 const APP_COLOURS = [
   { className: 'app-emerald', label: 'Finance (Emerald)' },

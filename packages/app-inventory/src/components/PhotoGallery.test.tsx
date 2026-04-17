@@ -1,8 +1,9 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import type { PhotoItem } from './PhotoGallery';
 import { PhotoGallery } from './PhotoGallery';
+
+import type { PhotoItem } from './PhotoGallery';
 
 const threePhotos: PhotoItem[] = [
   { id: 1, filePath: 'item-1/front.jpg', caption: 'Front view', sortOrder: 0 },

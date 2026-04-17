@@ -1,8 +1,8 @@
-import { entities as entitiesTable } from '@pops/db-types';
 import { TRPCError } from '@trpc/server';
-import type { Database } from 'better-sqlite3';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { entities as entitiesTable } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 import {
@@ -11,8 +11,11 @@ import {
   seedTransaction,
   setupTestContext,
 } from '../../../shared/test-utils.js';
-import type { ChangeSet } from '../../core/corrections/types.js';
 import { clearCache } from './lib/ai-categorizer.js';
+
+import type { Database } from 'better-sqlite3';
+
+import type { ChangeSet } from '../../core/corrections/types.js';
 import type {
   ConfirmedTransaction,
   ExecuteImportOutput,

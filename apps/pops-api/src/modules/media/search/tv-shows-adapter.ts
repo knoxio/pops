@@ -1,3 +1,5 @@
+import { like } from 'drizzle-orm';
+
 /**
  * TV Shows search adapter — searches the local tv_shows table by name.
  *
@@ -5,10 +7,10 @@
  * Scoring: exact=1.0, prefix=0.8, contains=0.5
  */
 import { tvShows } from '@pops/db-types';
-import { like } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
 import { registerSearchAdapter } from '../../core/search/index.js';
+
 import type { Query, SearchAdapter, SearchContext, SearchHit } from '../../core/search/types.js';
 
 export interface TvShowHitData {
@@ -38,7 +40,7 @@ function buildPosterUrl(tvdbId: number): string {
 
 function extractYear(firstAirDate: string | null): string | null {
   if (!firstAirDate) return null;
-  return firstAirDate.substring(0, 4) || null;
+  return firstAirDate.slice(0, 4) || null;
 }
 
 export const tvShowsSearchAdapter: SearchAdapter<TvShowHitData> = {
@@ -82,7 +84,7 @@ export const tvShowsSearchAdapter: SearchAdapter<TvShowHitData> = {
           },
         };
       })
-      .sort((a, b) => b.score - a.score);
+      .toSorted((a, b) => b.score - a.score);
   },
 };
 

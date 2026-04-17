@@ -1,3 +1,7 @@
+import { useCallback, useMemo, useRef, useState } from 'react';
+import { Link, useParams } from 'react-router';
+import { toast } from 'sonner';
+
 import { useSetPageContext } from '@pops/navigation';
 import {
   Alert,
@@ -8,9 +12,6 @@ import {
   Skeleton,
   Switch,
 } from '@pops/ui';
-import { useCallback, useMemo, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router';
-import { toast } from 'sonner';
 
 import { EpisodeList } from '../components/EpisodeList';
 import { ProgressBar } from '../components/ProgressBar';

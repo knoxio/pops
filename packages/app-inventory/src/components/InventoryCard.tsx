@@ -1,3 +1,15 @@
+import { MapPin, Package } from 'lucide-react';
+import { useState } from 'react';
+
+import {
+  AssetIdBadge,
+  cn,
+  ConditionBadge,
+  LocationBreadcrumb,
+  Skeleton,
+  TypeBadge,
+} from '@pops/ui';
+
 /**
  * InventoryCard — card for an inventory item in a grid or list view.
  * Shows photo (or placeholder), item name, brand/model,
@@ -8,16 +20,6 @@
  * - "vertical": photo on top with consistent aspect ratio — used in grid views
  */
 import type { Condition, LocationSegment } from '@pops/ui';
-import {
-  AssetIdBadge,
-  cn,
-  ConditionBadge,
-  LocationBreadcrumb,
-  Skeleton,
-  TypeBadge,
-} from '@pops/ui';
-import { MapPin, Package } from 'lucide-react';
-import { useState } from 'react';
 
 export interface InventoryCardProps {
   id: string;
@@ -58,7 +60,7 @@ export function InventoryCard({
   const [imageError, setImageError] = useState(false);
 
   const showPlaceholder = !photoUrl || imageError;
-  const hasBadges = assetId || type || condition;
+  const hasBadges = assetId ?? type ?? condition;
   const hasLocation = locationSegments.length > 0 || locationName;
 
   if (layout === 'vertical') {
@@ -86,8 +88,12 @@ export function InventoryCard({
                 'group-hover:opacity-90',
                 imageLoaded ? 'opacity-100' : 'opacity-0'
               )}
-              onLoad={() => setImageLoaded(true)}
-              onError={() => setImageError(true)}
+              onLoad={() => {
+                setImageLoaded(true);
+              }}
+              onError={() => {
+                setImageError(true);
+              }}
             />
           )}
 
@@ -159,8 +165,12 @@ export function InventoryCard({
               'h-full w-full object-cover transition-opacity duration-200',
               imageLoaded ? 'opacity-100' : 'opacity-0'
             )}
-            onLoad={() => setImageLoaded(true)}
-            onError={() => setImageError(true)}
+            onLoad={() => {
+              setImageLoaded(true);
+            }}
+            onError={() => {
+              setImageError(true);
+            }}
           />
         )}
 
@@ -180,7 +190,7 @@ export function InventoryCard({
         {/* Item name + subtitle */}
         <div>
           <h3 className="text-sm font-semibold leading-tight line-clamp-1">{itemName}</h3>
-          {(brand || model) && (
+          {(brand ?? model) && (
             <p className="text-2xs font-medium uppercase tracking-wider text-muted-foreground mt-0.5 opacity-80 line-clamp-1">
               {brand}
               {brand && model && <span className="mx-1 opacity-50">&bull;</span>}

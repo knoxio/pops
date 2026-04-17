@@ -3,8 +3,9 @@ import { MemoryRouter } from 'react-router';
 import { describe, expect, it } from 'vitest';
 
 import { AppContextProvider } from './AppContextProvider';
-import type { SetPageContextOptions } from './hooks';
 import { useCurrentApp, useCurrentEntity, useSetPageContext } from './hooks';
+
+import type { SetPageContextOptions } from './hooks';
 
 /** Renders children inside a MemoryRouter + AppContextProvider at the given path. */
 function renderAt(path: string, ui: React.ReactNode) {

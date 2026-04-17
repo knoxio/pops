@@ -1,3 +1,8 @@
+import {
+  HIGH_CONFIDENCE_THRESHOLD,
+  normalizeDescription,
+} from '@pops/api/modules/core/corrections/types';
+
 /**
  * Local re-evaluation engine (PRD-030 US-07).
  *
@@ -6,10 +11,6 @@
  * Runs entirely client-side with no server round-trip.
  */
 import type { Correction } from '@pops/api/modules/core/corrections/types';
-import {
-  HIGH_CONFIDENCE_THRESHOLD,
-  normalizeDescription,
-} from '@pops/api/modules/core/corrections/types';
 import type { MatchedRule } from '@pops/api/modules/finance/imports';
 
 import type { ProcessedTransaction } from '../store/importStore';
@@ -53,7 +54,7 @@ function findAllMatchingRules(
 
   const exactMatches = eligible
     .filter((r) => r.matchType === 'exact' && r.descriptionPattern === normalized)
-    .sort((a, b) => b.confidence - a.confidence || b.timesApplied - a.timesApplied);
+    .toSorted((a, b) => b.confidence - a.confidence || b.timesApplied - a.timesApplied);
 
   const containsMatches = eligible
     .filter(
@@ -62,7 +63,7 @@ function findAllMatchingRules(
         r.descriptionPattern.length > 0 &&
         normalized.includes(r.descriptionPattern)
     )
-    .sort((a, b) => b.confidence - a.confidence || b.timesApplied - a.timesApplied);
+    .toSorted((a, b) => b.confidence - a.confidence || b.timesApplied - a.timesApplied);
 
   const regexMatches = eligible
     .filter((r) => r.matchType === 'regex' && r.descriptionPattern.length > 0)
@@ -73,7 +74,7 @@ function findAllMatchingRules(
         return false;
       }
     })
-    .sort((a, b) => b.confidence - a.confidence || b.timesApplied - a.timesApplied);
+    .toSorted((a, b) => b.confidence - a.confidence || b.timesApplied - a.timesApplied);
 
   // Exact matches beat contains which beat regex (type-priority ordering).
   // Within each group collect ALL matches so overrides can be shown.

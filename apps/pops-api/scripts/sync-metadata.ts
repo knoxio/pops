@@ -6,11 +6,12 @@
  * Run with: tsx scripts/sync-metadata.ts
  */
 import 'dotenv/config';
+
 import { getDb } from '../src/db.js';
+import { selectBestArtwork } from '../src/modules/media/library/tv-show-service.js';
+import { getTvdbClient } from '../src/modules/media/thetvdb/index.js';
 import { getTmdbClient, ImageCacheService } from '../src/modules/media/tmdb/index.js';
 import { TokenBucketRateLimiter } from '../src/modules/media/tmdb/rate-limiter.js';
-import { getTvdbClient } from '../src/modules/media/thetvdb/index.js';
-import { selectBestArtwork } from '../src/modules/media/library/tv-show-service.js';
 
 async function main() {
   const db = getDb();
@@ -35,7 +36,11 @@ async function main() {
   console.log(`📂 Cache directory: ${imagesDir}`);
 
   // 1. Sync Movies
-  const movies = db.prepare('SELECT id, tmdb_id, title FROM movies').all() as any[];
+  const movies = db.prepare('SELECT id, tmdb_id, title FROM movies').all() as Array<{
+    id: number;
+    tmdb_id: number;
+    title: string;
+  }>;
   console.log(`\n🎬 Syncing ${movies.length} movies...`);
 
   for (const movie of movies) {
@@ -82,7 +87,11 @@ async function main() {
   }
 
   // 2. Sync TV Shows
-  const shows = db.prepare('SELECT id, tvdb_id, name FROM tv_shows').all() as any[];
+  const shows = db.prepare('SELECT id, tvdb_id, name FROM tv_shows').all() as Array<{
+    id: number;
+    tvdb_id: number;
+    name: string;
+  }>;
   console.log(`\n📺 Syncing ${shows.length} TV shows...`);
 
   for (const show of shows) {

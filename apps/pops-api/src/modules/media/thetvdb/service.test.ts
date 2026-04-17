@@ -1,7 +1,3 @@
-/**
- * TheTVDB service unit tests — refreshTvShow with mocked TheTVDB client.
- */
-import type { Database } from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -10,9 +6,15 @@ import {
   seedTvShow,
   setupTestContext,
 } from '../../../shared/test-utils.js';
+import { refreshTvShow } from './service.js';
+
+/**
+ * TheTVDB service unit tests — refreshTvShow with mocked TheTVDB client.
+ */
+import type { Database } from 'better-sqlite3';
+
 import type { ImageCacheService } from '../tmdb/image-cache.js';
 import type { TheTvdbClient } from './client.js';
-import { refreshTvShow } from './service.js';
 import type { TvdbEpisode, TvdbShowDetail } from './types.js';
 
 const ctx = setupTestContext();

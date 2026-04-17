@@ -1,9 +1,11 @@
-import { budgets } from '@pops/db-types';
 import { like } from 'drizzle-orm';
 
+import { budgets } from '@pops/db-types';
+
 import { getDrizzle } from '../../../db.js';
-import type { Query, SearchAdapter, SearchContext, SearchHit } from '../../core/search/index.js';
 import { registerSearchAdapter } from '../../core/search/index.js';
+
+import type { Query, SearchAdapter, SearchContext, SearchHit } from '../../core/search/index.js';
 
 export interface BudgetHitData {
   category: string;
@@ -66,7 +68,7 @@ export const budgetsSearchAdapter: SearchAdapter<BudgetHitData> = {
       });
     }
 
-    return hits.sort((a, b) => b.score - a.score);
+    return hits.toSorted((a, b) => b.score - a.score);
   },
 };
 

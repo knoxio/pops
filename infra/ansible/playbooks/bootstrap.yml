@@ -23,7 +23,7 @@
 
     - name: Create pops service user
       ansible.builtin.user:
-        name: "{{ pops_user }}"
+        name: '{{ pops_user }}'
         shell: /bin/bash
         groups: sudo
         append: true
@@ -31,22 +31,22 @@
 
     - name: Deploy SSH public key for pops
       ansible.posix.authorized_key:
-        user: "{{ pops_user }}"
+        user: '{{ pops_user }}'
         key: "{{ lookup('file', ansible_ssh_private_key_file + '.pub') }}"
         state: present
 
     - name: Allow pops passwordless sudo
       ansible.builtin.copy:
         content: "{{ pops_user }} ALL=(ALL) NOPASSWD:ALL\n"
-        dest: "/etc/sudoers.d/{{ pops_user }}"
+        dest: '/etc/sudoers.d/{{ pops_user }}'
         owner: root
         group: root
-        mode: "0440"
+        mode: '0440'
         validate: /usr/sbin/visudo -cf %s
 
     - name: Verify SSH key login works
       ansible.builtin.command:
-        cmd: "ssh -i {{ ansible_ssh_private_key_file }} -o StrictHostKeyChecking=no -o BatchMode=yes {{ pops_user }}@{{ ansible_host }} whoami"
+        cmd: 'ssh -i {{ ansible_ssh_private_key_file }} -o StrictHostKeyChecking=no -o BatchMode=yes {{ pops_user }}@{{ ansible_host }} whoami'
       delegate_to: localhost
       become: false
       changed_when: false

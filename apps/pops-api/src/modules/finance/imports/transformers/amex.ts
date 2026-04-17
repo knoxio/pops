@@ -21,7 +21,7 @@ function normaliseDate(dateStr: string): string {
 function normaliseAmount(amountStr: string): number {
   const amount = parseFloat(amountStr);
   if (isNaN(amount)) {
-    throw new Error(`Invalid amount: ${amountStr}`);
+    throw new TypeError(`Invalid amount: ${amountStr}`);
   }
   // Invert: positive charges become negative expenses
   return -amount;
@@ -53,7 +53,7 @@ function extractLocation(townCity: string): string | undefined {
  * Removes excessive whitespace
  */
 function cleanDescription(description: string): string {
-  return description.replace(/\s{2,}/g, ' ').trim();
+  return description.replaceAll(/\s{2,}/g, ' ').trim();
 }
 
 /**

@@ -1,10 +1,11 @@
+import { eq } from 'drizzle-orm';
+
 /**
  * Leaving lifecycle service — cancel leaving status on movies.
  *
  * PRD-070 US-03
  */
 import { movies } from '@pops/db-types';
-import { eq } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
 

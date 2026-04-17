@@ -1,6 +1,7 @@
-import type { ProcessedTransaction } from '../../../store/importStore';
 import { EditableTransactionCard } from '../EditableTransactionCard';
 import { TransactionCard } from '../TransactionCard';
+
+import type { ProcessedTransaction } from '../../../store/importStore';
 
 interface MatchedTabProps {
   transactions: ProcessedTransaction[];

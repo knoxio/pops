@@ -1,14 +1,3 @@
-/**
- * DataTable component - Comprehensive table with sorting, filtering, pagination, and editing
- * Built on TanStack Table and shadcn primitives
- */
-import type {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  Table as TanStackTable,
-  VisibilityState,
-} from '@tanstack/react-table';
 import {
   flexRender,
   getCoreRowModel,
@@ -31,6 +20,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '.
 import { Button } from './Button';
 import { type ColumnFilter, FilterBar } from './DataTableFilters';
 import { TextInput } from './TextInput';
+
+/**
+ * DataTable component - Comprehensive table with sorting, filtering, pagination, and editing
+ * Built on TanStack Table and shadcn primitives
+ */
+import type {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  Table as TanStackTable,
+  VisibilityState,
+} from '@tanstack/react-table';
 
 export interface DataTableProps<TData, TValue = unknown> {
   /**
@@ -226,7 +227,9 @@ export function DataTable<TData, TValue>({
                       <DropdownMenuCheckboxItem
                         key={column.id}
                         checked={column.getIsVisible()}
-                        onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                        onCheckedChange={(value) => {
+                          column.toggleVisibility(!!value);
+                        }}
                       >
                         {column.id}
                       </DropdownMenuCheckboxItem>
@@ -281,7 +284,7 @@ export function DataTable<TData, TValue>({
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  {emptyState || 'No results.'}
+                  {emptyState ?? 'No results.'}
                 </TableCell>
               </TableRow>
             )}
@@ -325,7 +328,9 @@ export function DataTable<TData, TValue>({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => table.previousPage()}
+                  onClick={() => {
+                    table.previousPage();
+                  }}
                   disabled={!table.getCanPreviousPage()}
                 >
                   Previous
@@ -333,7 +338,9 @@ export function DataTable<TData, TValue>({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => table.nextPage()}
+                  onClick={() => {
+                    table.nextPage();
+                  }}
                   disabled={!table.getCanNextPage()}
                 >
                   Next
@@ -364,7 +371,9 @@ export function SortableHeader({
     <Button
       variant="ghost"
       size="sm"
-      onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+      onClick={() => {
+        column.toggleSorting(column.getIsSorted() === 'asc');
+      }}
       className="-ml-3 h-8 text-2xs font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground"
     >
       {children}

@@ -1,3 +1,5 @@
+import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
+
 /**
  * TierListSummary — shows results after submitting a tier list.
  *
@@ -5,7 +7,6 @@
  * green/red delta badges, and action buttons.
  */
 import { Button } from '@pops/ui';
-import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
 
 export interface ScoreChange {
   movieId: number;

@@ -1,3 +1,8 @@
+import { Database, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { Link } from 'react-router';
+import { toast } from 'sonner';
+
 /**
  * CacheManagementPage — View and manage the AI entity cache.
  *
@@ -29,10 +34,6 @@ import {
   Skeleton,
   StatCard,
 } from '@pops/ui';
-import { Database, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import { Link } from 'react-router';
-import { toast } from 'sonner';
 
 import { trpc } from '../lib/trpc';
 
@@ -167,7 +168,9 @@ export function CacheManagementPage() {
                 min={1}
                 max={365}
                 value={staleDays}
-                onChange={(e) => setStaleDays(Number(e.target.value) || 30)}
+                onChange={(e) => {
+                  setStaleDays(Number(e.target.value) || 30);
+                }}
                 className="w-16 h-8 px-2 py-1 text-sm text-center"
                 aria-label="Days threshold for stale entries"
               />
@@ -175,7 +178,9 @@ export function CacheManagementPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => clearStaleMutation.mutate({ maxAgeDays: staleDays })}
+                onClick={() => {
+                  clearStaleMutation.mutate({ maxAgeDays: staleDays });
+                }}
                 disabled={clearStaleMutation.isPending || isEmpty}
               >
                 Clear Stale
@@ -215,7 +220,11 @@ export function CacheManagementPage() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => clearAllMutation.mutate()}>
+                  <AlertDialogAction
+                    onClick={() => {
+                      clearAllMutation.mutate();
+                    }}
+                  >
                     Clear All
                   </AlertDialogAction>
                 </AlertDialogFooter>

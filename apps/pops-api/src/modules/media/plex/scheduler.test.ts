@@ -86,7 +86,6 @@ vi.mock('@pops/db-types', () => ({
   syncLogs: { syncedAt: 'synced_at', id: 'id' },
 }));
 
-import type { PlexClient } from './client.js';
 import {
   _resetScheduler,
   _triggerSync,
@@ -100,6 +99,8 @@ import {
 import { getPlexClient, getPlexSectionIds } from './service.js';
 import { importMoviesFromPlex } from './sync-movies.js';
 import { importTvShowsFromPlex } from './sync-tv.js';
+
+import type { PlexClient } from './client.js';
 
 const mockGetPlexClient = vi.mocked(getPlexClient);
 const mockGetPlexSectionIds = vi.mocked(getPlexSectionIds);

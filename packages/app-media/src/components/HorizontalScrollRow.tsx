@@ -1,10 +1,11 @@
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useRef } from 'react';
+
 /**
  * HorizontalScrollRow — a titled section with horizontally scrollable content.
  * Used on the Discover page for trending, recommendations, and similar sections.
  */
 import { Button, cn, Skeleton } from '@pops/ui';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useRef } from 'react';
 
 export interface HorizontalScrollRowProps {
   /** Section title. */
@@ -53,7 +54,9 @@ export function HorizontalScrollRow({
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            onClick={() => scroll('left')}
+            onClick={() => {
+              scroll('left');
+            }}
             aria-label="Scroll left"
           >
             <ChevronLeft className="h-4 w-4" />
@@ -62,7 +65,9 @@ export function HorizontalScrollRow({
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            onClick={() => scroll('right')}
+            onClick={() => {
+              scroll('right');
+            }}
             aria-label="Scroll right"
           >
             <ChevronRight className="h-4 w-4" />

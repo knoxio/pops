@@ -1,9 +1,9 @@
+import { findActiveApp, isPageActive } from '@/app/nav/path-utils';
 /**
  * Tests for PageNav helper functions
  */
 import { describe, expect, it } from 'vitest';
 
-import { findActiveApp, isPageActive } from '@/app/nav/path-utils';
 import type { AppNavConfig } from '@/app/nav/types';
 
 const mockApps: AppNavConfig[] = [

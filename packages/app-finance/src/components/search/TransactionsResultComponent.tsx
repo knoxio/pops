@@ -1,5 +1,6 @@
-import type { ResultComponentProps } from '@pops/navigation';
 import { registerResultComponent } from '@pops/navigation';
+
+import type { ResultComponentProps } from '@pops/navigation';
 
 interface TransactionData {
   description: string;
@@ -63,7 +64,7 @@ export function TransactionsResultComponent({ data, query, matchField }: ResultC
     <div className="flex items-center justify-between gap-2 min-w-0">
       <div className="flex flex-col min-w-0">
         <span className="text-sm font-medium truncate">
-          {shouldHighlight ? highlightMatch(tx.description, query!) : tx.description}
+          {shouldHighlight ? highlightMatch(tx.description, query) : tx.description}
         </span>
         {tx.entityName && (
           <span className="text-xs text-muted-foreground truncate">{tx.entityName}</span>

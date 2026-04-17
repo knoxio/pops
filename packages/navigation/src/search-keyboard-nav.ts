@@ -84,7 +84,9 @@ export function useSearchKeyboardNav({
     if (!container) return;
 
     container.addEventListener('keydown', handleKeyDown);
-    return () => container.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      container.removeEventListener('keydown', handleKeyDown);
+    };
   }, [containerRef, handleKeyDown]);
 
   return { selectedIndex, setSelectedIndex } as const;

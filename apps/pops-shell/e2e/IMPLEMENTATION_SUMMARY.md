@@ -125,7 +125,7 @@ interface SetupMockAPIsOptions {
   processError?: boolean;
   executeError?: boolean;
   entityCreationError?: boolean;
-  progressStages?: "instant" | "progressive";
+  progressStages?: 'instant' | 'progressive';
 }
 ```
 

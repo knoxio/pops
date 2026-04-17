@@ -1,3 +1,7 @@
+import { Calendar, CheckCircle, Clock, Film } from 'lucide-react';
+import { useMemo } from 'react';
+import { Link } from 'react-router';
+
 /**
  * CalendarPage — upcoming episodes calendar from Sonarr.
  *
@@ -5,9 +9,6 @@
  * with today highlighted, episode cards with poster/title/S##E##/status.
  */
 import { Alert, AlertDescription, AlertTitle, Badge, Skeleton } from '@pops/ui';
-import { Calendar, CheckCircle, Clock, Film } from 'lucide-react';
-import { useMemo } from 'react';
-import { Link } from 'react-router';
 
 import { trpc } from '../lib/trpc';
 
@@ -95,10 +96,10 @@ export function CalendarPage() {
     }
     // Sort groups by date, and episodes within each group by air time ascending
     return Array.from(groups.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
+      .toSorted(([a], [b]) => a.localeCompare(b))
       .map(
         ([key, eps]) =>
-          [key, [...eps].sort((a, b) => a.airDateUtc.localeCompare(b.airDateUtc))] as [
+          [key, [...eps].toSorted((a, b) => a.airDateUtc.localeCompare(b.airDateUtc))] as [
             string,
             typeof eps,
           ]

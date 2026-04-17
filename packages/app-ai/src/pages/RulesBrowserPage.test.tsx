@@ -157,7 +157,11 @@ vi.mock('@pops/ui', async () => {
       open: boolean;
       onOpenChange: (v: boolean) => void;
     }) => {
-      dialogCloseRef = open ? () => onOpenChange(false) : null;
+      dialogCloseRef = open
+        ? () => {
+            onOpenChange(false);
+          }
+        : null;
       return open
         ? React.createElement(
             'div',
@@ -410,7 +414,7 @@ describe('RulesBrowserPage', () => {
     const select = screen.getByRole('combobox', { name: /all match types/i });
     await user.selectOptions(select, 'exact');
     // Verify the query was called with matchType param (server-side filter)
-    const lastCall = mockListQuery.mock.calls[mockListQuery.mock.calls.length - 1];
+    const lastCall = mockListQuery.mock.calls.at(-1);
     expect(lastCall![0]).toMatchObject({ matchType: 'exact' });
   });
 

@@ -1,3 +1,6 @@
+import { ChevronDown, ChevronRight, MapPin, Plus, X } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+
 /**
  * LocationPicker — tree-based location selector with search and inline add.
  * Shows trigger button with breadcrumb path, opens popover with expandable
@@ -5,8 +8,6 @@
  */
 import { cn, Popover, PopoverContent, PopoverTrigger } from '@pops/ui';
 import { Button } from '@pops/ui';
-import { ChevronDown, ChevronRight, MapPin, Plus, X } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
 
 export interface LocationTreeNode {
   id: string;
@@ -94,7 +95,9 @@ function TreeNode({
         style={{
           paddingLeft: `calc(${depth} * var(--tree-picker-step) + var(--tree-indent-base))`,
         }}
-        onClick={() => onSelect(node.id)}
+        onClick={() => {
+          onSelect(node.id);
+        }}
       >
         {hasChildren ? (
           <span
@@ -237,7 +240,9 @@ export function LocationPicker({
             type="text"
             placeholder="Search locations…"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+            }}
             className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
         </div>
@@ -282,7 +287,9 @@ export function LocationPicker({
               size="sm"
               className="w-full justify-start text-muted-foreground hover:text-foreground"
               prefix={<Plus className="h-3.5 w-3.5" />}
-              onClick={() => setShowAddForm(true)}
+              onClick={() => {
+                setShowAddForm(true);
+              }}
             >
               Add location
             </Button>
@@ -294,7 +301,9 @@ export function LocationPicker({
                 type="text"
                 placeholder="Location name…"
                 value={newLocationName}
-                onChange={(e) => setNewLocationName(e.target.value)}
+                onChange={(e) => {
+                  setNewLocationName(e.target.value);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') handleAddLocation();
                   if (e.key === 'Escape') {

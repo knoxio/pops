@@ -11,10 +11,10 @@ Add Redis 7 to the POPS Docker stack as a shared backend for job queuing (BullMQ
 
 Redis is a key-value store — no SQLite schema changes. Connection configuration is environment-based:
 
-| Variable        | Dev default            | Production                           |
-| --------------- | ---------------------- | ------------------------------------ |
-| `REDIS_URL`     | `redis://localhost:6379` | `redis://redis:6379` (Docker network) |
-| `REDIS_PREFIX`  | `pops:`                | `pops:`                              |
+| Variable       | Dev default              | Production                            |
+| -------------- | ------------------------ | ------------------------------------- |
+| `REDIS_URL`    | `redis://localhost:6379` | `redis://redis:6379` (Docker network) |
+| `REDIS_PREFIX` | `pops:`                  | `pops:`                               |
 
 All keys are prefixed with `pops:` to namespace within the Redis instance.
 
@@ -22,9 +22,9 @@ All keys are prefixed with `pops:` to namespace within the Redis instance.
 
 No new tRPC procedures. Redis is internal infrastructure consumed by other modules (BullMQ, cache utilities). The `/health` endpoint is extended to include Redis connectivity status.
 
-| Endpoint   | Change                                      |
-| ---------- | ------------------------------------------- |
-| `/health`  | Response includes `redis: "ok"` or `redis: "down"` |
+| Endpoint  | Change                                             |
+| --------- | -------------------------------------------------- |
+| `/health` | Response includes `redis: "ok"` or `redis: "down"` |
 
 ## Business Rules
 
@@ -36,21 +36,21 @@ No new tRPC procedures. Redis is internal infrastructure consumed by other modul
 
 ## Edge Cases
 
-| Case                                | Behaviour                                                          |
-| ----------------------------------- | ------------------------------------------------------------------ |
-| Redis unavailable on API startup    | API starts in degraded mode, logs warning, retries connection      |
-| Redis goes down mid-operation       | ioredis auto-reconnects, queued operations retry after reconnect   |
-| Redis memory full                   | `maxmemory-policy allkeys-lru` evicts least-recently-used keys     |
-| Dev environment without Docker      | `mise redis:start` runs Redis via Docker on localhost:6379         |
+| Case                             | Behaviour                                                        |
+| -------------------------------- | ---------------------------------------------------------------- |
+| Redis unavailable on API startup | API starts in degraded mode, logs warning, retries connection    |
+| Redis goes down mid-operation    | ioredis auto-reconnects, queued operations retry after reconnect |
+| Redis memory full                | `maxmemory-policy allkeys-lru` evicts least-recently-used keys   |
+| Dev environment without Docker   | `mise redis:start` runs Redis via Docker on localhost:6379       |
 
 ## User Stories
 
-| #   | Story                                                | Summary                                                                  | Status      | Parallelisable   |
-| --- | ---------------------------------------------------- | ------------------------------------------------------------------------ | ----------- | ---------------- |
-| 01  | [us-01-docker-compose](us-01-docker-compose.md)      | Add Redis 7 Alpine container to Docker Compose on pops-backend network   | Not started | No (first)       |
+| #   | Story                                                 | Summary                                                                   | Status      | Parallelisable   |
+| --- | ----------------------------------------------------- | ------------------------------------------------------------------------- | ----------- | ---------------- |
+| 01  | [us-01-docker-compose](us-01-docker-compose.md)       | Add Redis 7 Alpine container to Docker Compose on pops-backend network    | Not started | No (first)       |
 | 02  | [us-02-connection-module](us-02-connection-module.md) | ioredis connection module with health check, graceful shutdown, reconnect | Not started | Blocked by us-01 |
-| 03  | [us-03-ansible-role](us-03-ansible-role.md)           | Ansible provisioning for Redis volume, health check, maxmemory config    | Not started | Yes              |
-| 04  | [us-04-dev-environment](us-04-dev-environment.md)     | mise task for local Redis, .env.example update, dev documentation        | Not started | Yes              |
+| 03  | [us-03-ansible-role](us-03-ansible-role.md)           | Ansible provisioning for Redis volume, health check, maxmemory config     | Not started | Yes              |
+| 04  | [us-04-dev-environment](us-04-dev-environment.md)     | mise task for local Redis, .env.example update, dev documentation         | Not started | Yes              |
 
 US-03 and US-04 can parallelise after US-01. US-02 depends on US-01 (needs a running Redis to connect to).
 

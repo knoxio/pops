@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-
 import { LocationBreadcrumb } from './LocationBreadcrumb';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 const meta: Meta<typeof LocationBreadcrumb> = {
   title: 'Inventory/LocationBreadcrumb',

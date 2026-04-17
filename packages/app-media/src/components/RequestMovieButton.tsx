@@ -1,3 +1,6 @@
+import { Download } from 'lucide-react';
+import { useState } from 'react';
+
 /**
  * RequestMovieButton — requests a movie via Radarr.
  *
@@ -6,8 +9,6 @@
  * Returns null on query error (service unreachable).
  */
 import { Button } from '@pops/ui';
-import { Download } from 'lucide-react';
-import { useState } from 'react';
 
 import { trpc } from '../lib/trpc';
 import { RequestMovieModal } from './RequestMovieModal';
@@ -97,7 +98,9 @@ export function RequestMovieButton({
         {!onRequest && (
           <RequestMovieModal
             open={isModalOpen}
-            onClose={() => setIsModalOpen(false)}
+            onClose={() => {
+              setIsModalOpen(false);
+            }}
             tmdbId={tmdbId}
             title={title}
             year={year}
@@ -116,7 +119,9 @@ export function RequestMovieButton({
       {!onRequest && (
         <RequestMovieModal
           open={isModalOpen}
-          onClose={() => setIsModalOpen(false)}
+          onClose={() => {
+            setIsModalOpen(false);
+          }}
           tmdbId={tmdbId}
           title={title}
           year={year}

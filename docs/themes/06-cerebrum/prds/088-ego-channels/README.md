@@ -9,16 +9,16 @@ Build the thin adapter layers that connect Ego Core (PRD-087) to different inter
 
 ## API Surface
 
-| Procedure / Tool                 | Channel    | Input                                    | Output                             | Notes                                                  |
-| -------------------------------- | ---------- | ---------------------------------------- | ---------------------------------- | ------------------------------------------------------ |
-| `cerebrum.search`                | MCP        | query: string, scopes?: string[]         | `{ results: EngramRef[] }`         | Thalamus search exposed as MCP tool                    |
-| `cerebrum.ingest`                | MCP        | body, title?, type?, scopes?, tags?      | `{ engram: Engram }`               | Ingest pipeline exposed as MCP tool                    |
-| `cerebrum.query`                 | MCP        | question: string, scopes?: string[]      | `{ answer: string, citations[] }`  | Natural language Q&A via Ego                           |
-| `cerebrum.engram.read`           | MCP        | id: string                               | `{ engram: Engram, body: string }` | Read a single engram                                   |
-| `cerebrum.engram.write`          | MCP        | id: string, body: string, fields?        | `{ engram: Engram }`               | Update an existing engram                              |
-| Moltbot `/ask` skill             | Moltbot    | text message                             | Telegram message with Markdown     | Quick query via Telegram                               |
-| Moltbot `/capture` skill         | Moltbot    | text message                             | Confirmation with engram link      | Quick capture via Telegram                             |
-| `pops ego "..."`                 | CLI        | quoted string or piped stdin             | stdout (markdown, json, or plain)  | One-shot question from terminal                        |
+| Procedure / Tool         | Channel | Input                               | Output                             | Notes                               |
+| ------------------------ | ------- | ----------------------------------- | ---------------------------------- | ----------------------------------- |
+| `cerebrum.search`        | MCP     | query: string, scopes?: string[]    | `{ results: EngramRef[] }`         | Thalamus search exposed as MCP tool |
+| `cerebrum.ingest`        | MCP     | body, title?, type?, scopes?, tags? | `{ engram: Engram }`               | Ingest pipeline exposed as MCP tool |
+| `cerebrum.query`         | MCP     | question: string, scopes?: string[] | `{ answer: string, citations[] }`  | Natural language Q&A via Ego        |
+| `cerebrum.engram.read`   | MCP     | id: string                          | `{ engram: Engram, body: string }` | Read a single engram                |
+| `cerebrum.engram.write`  | MCP     | id: string, body: string, fields?   | `{ engram: Engram }`               | Update an existing engram           |
+| Moltbot `/ask` skill     | Moltbot | text message                        | Telegram message with Markdown     | Quick query via Telegram            |
+| Moltbot `/capture` skill | Moltbot | text message                        | Confirmation with engram link      | Quick capture via Telegram          |
+| `pops ego "..."`         | CLI     | quoted string or piped stdin        | stdout (markdown, json, or plain)  | One-shot question from terminal     |
 
 ## Business Rules
 
@@ -33,24 +33,24 @@ Build the thin adapter layers that connect Ego Core (PRD-087) to different inter
 
 ## Edge Cases
 
-| Case                                           | Behaviour                                                                 |
-| ---------------------------------------------- | ------------------------------------------------------------------------- |
-| MCP tool called with invalid parameters        | Returns structured JSON error with field-level validation messages         |
-| MCP `cerebrum.query` returns no relevant engrams| Returns answer based on general knowledge with empty citations array      |
-| Moltbot message exceeds Telegram character limit | Response is split into multiple messages at Markdown-safe boundaries      |
-| Moltbot `/capture` with empty text             | Returns error message: "Nothing to capture — send some text after /capture"|
-| CLI with no arguments and no piped input       | Prints usage help and exits with code 1                                   |
-| CLI response exceeds terminal width            | Markdown output wraps at terminal width; JSON output is not wrapped       |
-| MCP server not running                         | Claude Code receives connection error — MCP tools are unavailable         |
-| Moltbot service unavailable                    | Telegram messages queue on Telegram's side, processed when service recovers|
+| Case                                             | Behaviour                                                                   |
+| ------------------------------------------------ | --------------------------------------------------------------------------- |
+| MCP tool called with invalid parameters          | Returns structured JSON error with field-level validation messages          |
+| MCP `cerebrum.query` returns no relevant engrams | Returns answer based on general knowledge with empty citations array        |
+| Moltbot message exceeds Telegram character limit | Response is split into multiple messages at Markdown-safe boundaries        |
+| Moltbot `/capture` with empty text               | Returns error message: "Nothing to capture — send some text after /capture" |
+| CLI with no arguments and no piped input         | Prints usage help and exits with code 1                                     |
+| CLI response exceeds terminal width              | Markdown output wraps at terminal width; JSON output is not wrapped         |
+| MCP server not running                           | Claude Code receives connection error — MCP tools are unavailable           |
+| Moltbot service unavailable                      | Telegram messages queue on Telegram's side, processed when service recovers |
 
 ## User Stories
 
-| #   | Story                                                        | Summary                                                                       | Status      | Parallelisable           |
-| --- | ------------------------------------------------------------ | ----------------------------------------------------------------------------- | ----------- | ------------------------ |
-| 01  | [us-01-mcp-tools](us-01-mcp-tools.md)                       | MCP tool definitions for Claude Code: search, ingest, query, read, write      | Not started | Yes                      |
-| 02  | [us-02-moltbot-channel](us-02-moltbot-channel.md)           | Moltbot skills for quick capture and query via Telegram                       | Not started | Yes                      |
-| 03  | [us-03-cli-interface](us-03-cli-interface.md)                | CLI command for one-shot questions with format options and piped input support | Not started | Yes                      |
+| #   | Story                                             | Summary                                                                        | Status      | Parallelisable |
+| --- | ------------------------------------------------- | ------------------------------------------------------------------------------ | ----------- | -------------- |
+| 01  | [us-01-mcp-tools](us-01-mcp-tools.md)             | MCP tool definitions for Claude Code: search, ingest, query, read, write       | Not started | Yes            |
+| 02  | [us-02-moltbot-channel](us-02-moltbot-channel.md) | Moltbot skills for quick capture and query via Telegram                        | Not started | Yes            |
+| 03  | [us-03-cli-interface](us-03-cli-interface.md)     | CLI command for one-shot questions with format options and piped input support | Not started | Yes            |
 
 All three channels are independent adapters and can be built in parallel. Each depends on PRD-087 (Ego Core) being implemented.
 

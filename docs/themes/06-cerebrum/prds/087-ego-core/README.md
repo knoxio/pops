@@ -12,56 +12,56 @@ Build the conversational agent core — the "I" of the system. Ego manages multi
 
 ### conversations
 
-| Column         | Type    | Constraints           | Description                                           |
-| -------------- | ------- | --------------------- | ----------------------------------------------------- |
-| id             | TEXT    | PK                    | Conversation ID: `conv_{timestamp}_{short_hash}`      |
-| title          | TEXT    |                       | User-set or auto-generated from first message         |
-| active_scopes  | TEXT    |                       | JSON array of scope strings active for this conversation |
-| app_context    | TEXT    |                       | JSON — which pops app, route, or entity the user was viewing |
-| model          | TEXT    | NOT NULL              | LLM model used for this conversation                  |
-| created_at     | TEXT    | NOT NULL              | ISO 8601                                              |
-| updated_at     | TEXT    | NOT NULL              | ISO 8601                                              |
+| Column        | Type | Constraints | Description                                                  |
+| ------------- | ---- | ----------- | ------------------------------------------------------------ |
+| id            | TEXT | PK          | Conversation ID: `conv_{timestamp}_{short_hash}`             |
+| title         | TEXT |             | User-set or auto-generated from first message                |
+| active_scopes | TEXT |             | JSON array of scope strings active for this conversation     |
+| app_context   | TEXT |             | JSON — which pops app, route, or entity the user was viewing |
+| model         | TEXT | NOT NULL    | LLM model used for this conversation                         |
+| created_at    | TEXT | NOT NULL    | ISO 8601                                                     |
+| updated_at    | TEXT | NOT NULL    | ISO 8601                                                     |
 
 **Indexes:** `created_at`, `updated_at`
 
 ### messages
 
-| Column          | Type    | Constraints                      | Description                                    |
-| --------------- | ------- | -------------------------------- | ---------------------------------------------- |
-| id              | TEXT    | PK                               | Message ID: `msg_{timestamp}_{short_hash}`     |
-| conversation_id | TEXT    | FK → conversations.id, NOT NULL  | Parent conversation                            |
-| role            | TEXT    | NOT NULL                         | `user`, `assistant`, `system`                  |
-| content         | TEXT    | NOT NULL                         | Message content (Markdown)                     |
-| citations       | TEXT    |                                  | JSON array of engram IDs cited in this response|
-| tool_calls      | TEXT    |                                  | JSON array of tool calls made during this turn |
-| tokens_in       | INTEGER |                                  | Input token count for this turn                |
-| tokens_out      | INTEGER |                                  | Output token count for this turn               |
-| created_at      | TEXT    | NOT NULL                         | ISO 8601                                       |
+| Column          | Type    | Constraints                     | Description                                     |
+| --------------- | ------- | ------------------------------- | ----------------------------------------------- |
+| id              | TEXT    | PK                              | Message ID: `msg_{timestamp}_{short_hash}`      |
+| conversation_id | TEXT    | FK → conversations.id, NOT NULL | Parent conversation                             |
+| role            | TEXT    | NOT NULL                        | `user`, `assistant`, `system`                   |
+| content         | TEXT    | NOT NULL                        | Message content (Markdown)                      |
+| citations       | TEXT    |                                 | JSON array of engram IDs cited in this response |
+| tool_calls      | TEXT    |                                 | JSON array of tool calls made during this turn  |
+| tokens_in       | INTEGER |                                 | Input token count for this turn                 |
+| tokens_out      | INTEGER |                                 | Output token count for this turn                |
+| created_at      | TEXT    | NOT NULL                        | ISO 8601                                        |
 
 **Indexes:** `conversation_id` + `created_at` composite
 
 ### conversation_context
 
-| Column          | Type    | Constraints                      | Description                                     |
-| --------------- | ------- | -------------------------------- | ----------------------------------------------- |
-| conversation_id | TEXT    | FK → conversations.id, NOT NULL  | Parent conversation                             |
-| engram_id       | TEXT    | NOT NULL                         | Engram ID loaded into context                   |
-| relevance_score | REAL    |                                  | Thalamus retrieval score                        |
-| loaded_at       | TEXT    | NOT NULL                         | ISO 8601 — when this engram was loaded into context |
+| Column          | Type | Constraints                     | Description                                         |
+| --------------- | ---- | ------------------------------- | --------------------------------------------------- |
+| conversation_id | TEXT | FK → conversations.id, NOT NULL | Parent conversation                                 |
+| engram_id       | TEXT | NOT NULL                        | Engram ID loaded into context                       |
+| relevance_score | REAL |                                 | Thalamus retrieval score                            |
+| loaded_at       | TEXT | NOT NULL                        | ISO 8601 — when this engram was loaded into context |
 
 **Indexes:** `conversation_id`, `engram_id`
 
 ## API Surface
 
-| Procedure                                | Input                                                         | Output                                          | Notes                                                     |
-| ---------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------ | --------------------------------------------------------- |
-| `ego.conversations.create`               | title?, scopes?, appContext?                                  | `{ conversation: Conversation }`                 | Start a new conversation                                  |
-| `ego.conversations.list`                 | limit?, offset?, search?                                      | `{ conversations: Conversation[], total }`       | List conversations, searchable by title                   |
-| `ego.conversations.get`                  | conversationId                                                | `{ conversation, messages: Message[] }`          | Get conversation with full message history                |
-| `ego.conversations.delete`               | conversationId                                                | `{ success: boolean }`                           | Delete conversation and all messages                      |
-| `ego.chat`                               | conversationId, message: string, scopes?                      | `{ response: Message }` (streaming)              | Send a message, receive a streamed response               |
-| `ego.context.getActive`                  | conversationId                                                | `{ scopes, appContext, engrams: EngramRef[] }`   | Current context state for the conversation                |
-| `ego.context.setScopes`                  | conversationId, scopes: string[]                              | `{ scopes: string[] }`                           | Explicitly set active scopes                              |
+| Procedure                  | Input                                    | Output                                         | Notes                                       |
+| -------------------------- | ---------------------------------------- | ---------------------------------------------- | ------------------------------------------- |
+| `ego.conversations.create` | title?, scopes?, appContext?             | `{ conversation: Conversation }`               | Start a new conversation                    |
+| `ego.conversations.list`   | limit?, offset?, search?                 | `{ conversations: Conversation[], total }`     | List conversations, searchable by title     |
+| `ego.conversations.get`    | conversationId                           | `{ conversation, messages: Message[] }`        | Get conversation with full message history  |
+| `ego.conversations.delete` | conversationId                           | `{ success: boolean }`                         | Delete conversation and all messages        |
+| `ego.chat`                 | conversationId, message: string, scopes? | `{ response: Message }` (streaming)            | Send a message, receive a streamed response |
+| `ego.context.getActive`    | conversationId                           | `{ scopes, appContext, engrams: EngramRef[] }` | Current context state for the conversation  |
+| `ego.context.setScopes`    | conversationId, scopes: string[]         | `{ scopes: string[] }`                         | Explicitly set active scopes                |
 
 ## Business Rules
 
@@ -76,26 +76,26 @@ Build the conversational agent core — the "I" of the system. Ego manages multi
 
 ## Edge Cases
 
-| Case                                              | Behaviour                                                                |
-| ------------------------------------------------- | ------------------------------------------------------------------------ |
-| Conversation context exceeds model token limit     | Oldest messages are summarised into a condensed history block, freeing token budget for retrieved engrams |
-| No engrams match the user's query                 | Ego responds based on general knowledge with a note that no matching engrams were found |
-| User asks Ego to write an engram during conversation | Ego calls `cerebrum.ingest.submit` with the content, confirms creation, and adds the new engram to the conversation context |
-| User switches pops apps mid-conversation          | App context is updated on the next message — Ego adjusts retrieval accordingly |
-| Conversation references engrams across scopes     | Only engrams within active scopes are retrievable — Ego explains if a referenced topic falls outside active scopes |
-| User explicitly mentions a scope ("at work")      | Scope negotiation detects the mention and adjusts active scopes for subsequent retrieval |
-| Streaming response interrupted by client disconnect | Partial response is saved to messages table — next message resumes the conversation |
-| Conversation has 100+ messages                    | Only the most recent 20 messages (configurable) are included in context; older messages available via scrollback but not sent to the LLM |
+| Case                                                 | Behaviour                                                                                                                                |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Conversation context exceeds model token limit       | Oldest messages are summarised into a condensed history block, freeing token budget for retrieved engrams                                |
+| No engrams match the user's query                    | Ego responds based on general knowledge with a note that no matching engrams were found                                                  |
+| User asks Ego to write an engram during conversation | Ego calls `cerebrum.ingest.submit` with the content, confirms creation, and adds the new engram to the conversation context              |
+| User switches pops apps mid-conversation             | App context is updated on the next message — Ego adjusts retrieval accordingly                                                           |
+| Conversation references engrams across scopes        | Only engrams within active scopes are retrievable — Ego explains if a referenced topic falls outside active scopes                       |
+| User explicitly mentions a scope ("at work")         | Scope negotiation detects the mention and adjusts active scopes for subsequent retrieval                                                 |
+| Streaming response interrupted by client disconnect  | Partial response is saved to messages table — next message resumes the conversation                                                      |
+| Conversation has 100+ messages                       | Only the most recent 20 messages (configurable) are included in context; older messages available via scrollback but not sent to the LLM |
 
 ## User Stories
 
-| #   | Story                                                                    | Summary                                                                           | Status      | Parallelisable           |
-| --- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------- | ----------- | ------------------------ |
-| 01  | [us-01-conversation-engine](us-01-conversation-engine.md)                | Multi-turn conversation management: history, context window, system prompt        | Not started | No (first)               |
-| 02  | [us-02-shell-chat-panel](us-02-shell-chat-panel.md)                      | React component in pops-shell: streaming responses, message history, conversation list | Not started | Blocked by us-01         |
-| 03  | [us-03-context-awareness](us-03-context-awareness.md)                    | App-aware context: current pops app, recent actions, active engram context        | Not started | Blocked by us-01         |
-| 04  | [us-04-scope-negotiation](us-04-scope-negotiation.md)                    | Infer scopes from conversation: explicit mentions, topic inference, channel defaults | Not started | Blocked by us-01         |
-| 05  | [us-05-conversation-persistence](us-05-conversation-persistence.md)      | SQLite persistence: conversations, messages, context metadata                     | Not started | Yes                      |
+| #   | Story                                                               | Summary                                                                                | Status      | Parallelisable   |
+| --- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ----------- | ---------------- |
+| 01  | [us-01-conversation-engine](us-01-conversation-engine.md)           | Multi-turn conversation management: history, context window, system prompt             | Not started | No (first)       |
+| 02  | [us-02-shell-chat-panel](us-02-shell-chat-panel.md)                 | React component in pops-shell: streaming responses, message history, conversation list | Not started | Blocked by us-01 |
+| 03  | [us-03-context-awareness](us-03-context-awareness.md)               | App-aware context: current pops app, recent actions, active engram context             | Not started | Blocked by us-01 |
+| 04  | [us-04-scope-negotiation](us-04-scope-negotiation.md)               | Infer scopes from conversation: explicit mentions, topic inference, channel defaults   | Not started | Blocked by us-01 |
+| 05  | [us-05-conversation-persistence](us-05-conversation-persistence.md) | SQLite persistence: conversations, messages, context metadata                          | Not started | Yes              |
 
 US-01 (conversation engine) is the foundation. US-02, US-03, and US-04 depend on it. US-05 (persistence) can be built in parallel since it defines the storage schema independently.
 

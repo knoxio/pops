@@ -1,7 +1,7 @@
 ---
-github_runner_version: "2.321.0"
-github_runner_user: "{{ pops_user }}"
-github_runner_dir: "/opt/github-runner"
-github_repo_url: "https://github.com/knoxio/pops"
-github_runner_labels: "self-hosted,linux,x64"
+github_runner_version: '2.321.0'
+github_runner_user: '{{ pops_user }}'
+github_runner_dir: '/opt/github-runner'
+github_repo_url: 'https://github.com/knoxio/pops'
+github_runner_labels: 'self-hosted,linux,x64'
 # github_runner_token should be provided in vault

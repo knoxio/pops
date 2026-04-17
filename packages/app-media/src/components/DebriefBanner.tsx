@@ -1,12 +1,13 @@
+import { ClipboardList, X } from 'lucide-react';
+import { useState } from 'react';
+import { Link } from 'react-router';
+
 /**
  * DebriefBanner — shows a notification when movies are pending debrief.
  *
  * Dismissible (session-scoped via useState). Hidden when no pending debriefs.
  */
 import { Alert, AlertDescription, AlertTitle } from '@pops/ui';
-import { ClipboardList, X } from 'lucide-react';
-import { useState } from 'react';
-import { Link } from 'react-router';
 
 import { trpc } from '../lib/trpc';
 
@@ -39,7 +40,9 @@ export function DebriefBanner() {
         type="button"
         aria-label="Dismiss debrief banner"
         className="absolute right-3 top-3 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-        onClick={() => setDismissed(true)}
+        onClick={() => {
+          setDismissed(true);
+        }}
       >
         <X className="size-4" />
       </button>

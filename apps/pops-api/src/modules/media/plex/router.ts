@@ -1,3 +1,7 @@
+import { TRPCError } from '@trpc/server';
+import { eq, inArray } from 'drizzle-orm';
+import { z } from 'zod';
+
 /**
  * Plex tRPC router — sync operations and connection management.
  *
@@ -6,9 +10,6 @@
  * The frontend polls getSyncJobStatus for progress and results.
  */
 import { settings } from '@pops/db-types';
-import { TRPCError } from '@trpc/server';
-import { eq, inArray } from 'drizzle-orm';
-import { z } from 'zod';
 
 import { getDrizzle } from '../../../db.js';
 import { protectedProcedure, router } from '../../../trpc.js';
@@ -157,7 +158,9 @@ export const plexRouter = router({
         } else {
           console.warn(`[Plex] Validating reachability for ${finalUrl}...`);
           const controller = new AbortController();
-          const id = setTimeout(() => controller.abort(), 5000);
+          const id = setTimeout(() => {
+            controller.abort();
+          }, 5000);
 
           try {
             const res = await fetch(`${finalUrl}/identity`, {

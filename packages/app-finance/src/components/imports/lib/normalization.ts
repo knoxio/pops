@@ -8,7 +8,7 @@
  *  Uppercases, strips digits, collapses whitespace. Duplicated here to avoid
  *  pulling server code into the frontend bundle. */
 export function normalizeForMatch(value: string): string {
-  return value.toUpperCase().replace(/\d+/g, '').replace(/\s+/g, ' ').trim();
+  return value.toUpperCase().replaceAll(/\d+/g, '').replaceAll(/\s+/g, ' ').trim();
 }
 
 /**

@@ -1,8 +1,8 @@
-import { Button, Input } from '@pops/ui';
+import { useSearchStore } from '@/store/searchStore';
 import { ArrowLeft, Search, X } from 'lucide-react';
 import { useCallback, useEffect, useRef } from 'react';
 
-import { useSearchStore } from '@/store/searchStore';
+import { Button, Input } from '@pops/ui';
 
 const DEBOUNCE_MS = 300;
 
@@ -65,7 +65,9 @@ export function MobileSearchOverlay({ open, onClose }: MobileSearchOverlayProps)
     }
 
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, [open, handleClose]);
 
   // Clean up debounce timer

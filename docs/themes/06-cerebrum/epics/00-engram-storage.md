@@ -8,10 +8,10 @@ Define the engram file format, template system, directory structure, and scope m
 
 ## PRDs
 
-| #   | PRD                                                                                  | Summary                                                                                       | Status      |
-| --- | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- | ----------- |
-| 077 | [Engram File Format & Directory](../prds/077-engram-file-format/README.md)           | File format spec, YAML frontmatter schema, template system, directory layout, CRUD service     | Not started |
-| 078 | [Scope Model](../prds/078-scope-model/README.md)                                     | Hierarchical dot-notation scopes, scope rules, filtering, secret scope protection              | Not started |
+| #   | PRD                                                                        | Summary                                                                                    | Status      |
+| --- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ----------- |
+| 077 | [Engram File Format & Directory](../prds/077-engram-file-format/README.md) | File format spec, YAML frontmatter schema, template system, directory layout, CRUD service | Not started |
+| 078 | [Scope Model](../prds/078-scope-model/README.md)                           | Hierarchical dot-notation scopes, scope rules, filtering, secret scope protection          | Not started |
 
 PRD-077 must complete before PRD-078 — scopes are stored in engram frontmatter, so the file format must be defined first.
 

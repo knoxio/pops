@@ -1,4 +1,20 @@
 import {
+  Ban,
+  Bookmark,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  EyeOff,
+  History,
+  ImageOff,
+  Minus,
+  SkipForward,
+} from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { Link } from 'react-router';
+import { toast } from 'sonner';
+
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -15,21 +31,6 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@pops/ui';
-import {
-  Ban,
-  Bookmark,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  EyeOff,
-  History,
-  ImageOff,
-  Minus,
-  SkipForward,
-} from 'lucide-react';
-import { useCallback, useState } from 'react';
-import { Link } from 'react-router';
-import { toast } from 'sonner';
 
 import { DimensionManager } from '../components/DimensionManager';
 import { trpc } from '../lib/trpc';
@@ -447,7 +448,9 @@ export function CompareArenaPage() {
             {/* Movie A */}
             <MovieCard
               movie={pairData.data.movieA}
-              onPick={() => handlePick(pairData.data.movieA.id)}
+              onPick={() => {
+                handlePick(pairData.data.movieA.id);
+              }}
               disabled={isPending}
               scoreDelta={
                 scoreDelta?.winnerId === pairData.data.movieA.id
@@ -459,16 +462,24 @@ export function CompareArenaPage() {
               isWinner={
                 scoreDelta?.isDraw ? undefined : scoreDelta?.winnerId === pairData.data.movieA.id
               }
-              onToggleWatchlist={() => handleToggleWatchlist(pairData.data.movieA.id)}
+              onToggleWatchlist={() => {
+                handleToggleWatchlist(pairData.data.movieA.id);
+              }}
               isOnWatchlist={watchlistedMovies.has(pairData.data.movieA.id)}
               watchlistPending={
                 addToWatchlistMutation.isPending || removeFromWatchlistMutation.isPending
               }
-              onMarkStale={() => handleMarkStale(pairData.data.movieA.id)}
+              onMarkStale={() => {
+                handleMarkStale(pairData.data.movieA.id);
+              }}
               stalePending={markStaleMutation.isPending}
-              onNA={() => handleNA(pairData.data.movieA.id)}
+              onNA={() => {
+                handleNA(pairData.data.movieA.id);
+              }}
               naPending={naIsPending}
-              onBlacklist={() => handleBlacklist(pairData.data.movieA)}
+              onBlacklist={() => {
+                handleBlacklist(pairData.data.movieA);
+              }}
               blacklistPending={blacklistMutation.isPending}
             />
 
@@ -502,7 +513,9 @@ export function CompareArenaPage() {
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => handleDraw(tier)}
+                      onClick={() => {
+                        handleDraw(tier);
+                      }}
                       disabled={isPending}
                       className={`rounded-full h-10 w-10 bg-background ${hoverColor}`}
                       aria-label={label}
@@ -538,7 +551,9 @@ export function CompareArenaPage() {
             {/* Movie B */}
             <MovieCard
               movie={pairData.data.movieB}
-              onPick={() => handlePick(pairData.data.movieB.id)}
+              onPick={() => {
+                handlePick(pairData.data.movieB.id);
+              }}
               disabled={isPending}
               scoreDelta={
                 scoreDelta?.winnerId === pairData.data.movieB.id
@@ -550,16 +565,24 @@ export function CompareArenaPage() {
               isWinner={
                 scoreDelta?.isDraw ? undefined : scoreDelta?.winnerId === pairData.data.movieB.id
               }
-              onToggleWatchlist={() => handleToggleWatchlist(pairData.data.movieB.id)}
+              onToggleWatchlist={() => {
+                handleToggleWatchlist(pairData.data.movieB.id);
+              }}
               isOnWatchlist={watchlistedMovies.has(pairData.data.movieB.id)}
               watchlistPending={
                 addToWatchlistMutation.isPending || removeFromWatchlistMutation.isPending
               }
-              onMarkStale={() => handleMarkStale(pairData.data.movieB.id)}
+              onMarkStale={() => {
+                handleMarkStale(pairData.data.movieB.id);
+              }}
               stalePending={markStaleMutation.isPending}
-              onNA={() => handleNA(pairData.data.movieB.id)}
+              onNA={() => {
+                handleNA(pairData.data.movieB.id);
+              }}
               naPending={naIsPending}
-              onBlacklist={() => handleBlacklist(pairData.data.movieB)}
+              onBlacklist={() => {
+                handleBlacklist(pairData.data.movieB);
+              }}
               blacklistPending={blacklistMutation.isPending}
             />
           </div>
@@ -670,7 +693,9 @@ function MovieCard({
               src={posterSrc}
               alt={`${movie.title} poster`}
               className="w-full aspect-[2/3] object-cover"
-              onError={() => setImgError(true)}
+              onError={() => {
+                setImgError(true);
+              }}
             />
           )}
         </button>

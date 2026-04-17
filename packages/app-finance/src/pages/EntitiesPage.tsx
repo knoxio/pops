@@ -2,7 +2,12 @@
  * Entities page - manage merchants/payees with CRUD
  */
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { ColumnFilter } from '@pops/ui';
+import { Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { z } from 'zod';
+
 import {
   Alert,
   AlertDialog,
@@ -33,14 +38,12 @@ import {
   Textarea,
   TextInput,
 } from '@pops/ui';
-import type { ColumnDef } from '@tanstack/react-table';
-import { Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import { toast } from 'sonner';
-import { z } from 'zod';
 
 import { trpc } from '../lib/trpc';
+
+import type { ColumnDef } from '@tanstack/react-table';
+
+import type { ColumnFilter } from '@pops/ui';
 
 interface Entity {
   id: string;
@@ -141,12 +144,12 @@ export function EntitiesPage() {
     setEditingEntity(entity);
     form.reset({
       name: entity.name,
-      type: entity.type || 'company',
-      abn: entity.abn || '',
+      type: entity.type ?? 'company',
+      abn: entity.abn ?? '',
       aliases: entity.aliases,
-      defaultTransactionType: entity.defaultTransactionType || '',
+      defaultTransactionType: entity.defaultTransactionType ?? '',
       defaultTags: entity.defaultTags,
-      notes: entity.notes || '',
+      notes: entity.notes ?? '',
     });
     setIsDialogOpen(true);
   };
@@ -207,7 +210,7 @@ export function EntitiesPage() {
       header: 'ABN',
       cell: ({ row }) => (
         <span className="text-sm font-mono">
-          {row.original.abn || <span className="text-muted-foreground">—</span>}
+          {row.original.abn ?? <span className="text-muted-foreground">—</span>}
         </span>
       ),
     },
@@ -292,13 +295,19 @@ export function EntitiesPage() {
             }
             align="end"
           >
-            <DropdownMenuItem onClick={() => handleEdit(row.original)}>
+            <DropdownMenuItem
+              onClick={() => {
+                handleEdit(row.original);
+              }}
+            >
               <Pencil className="mr-2 h-4 w-4" /> Edit
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
-              onClick={() => setDeletingId(row.original.id)}
+              onClick={() => {
+                setDeletingId(row.original.id);
+              }}
             >
               <Trash2 className="mr-2 h-4 w-4" /> Delete
             </DropdownMenuItem>
@@ -366,7 +375,9 @@ export function EntitiesPage() {
             <Button
               variant={showOrphanedOnly ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setShowOrphanedOnly((prev) => !prev)}
+              onClick={() => {
+                setShowOrphanedOnly((prev) => !prev);
+              }}
             >
               {showOrphanedOnly ? 'Showing orphaned only' : 'Show orphaned only'}
             </Button>
@@ -456,7 +467,9 @@ export function EntitiesPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setIsDialogOpen(false)}
+                onClick={() => {
+                  setIsDialogOpen(false);
+                }}
                 disabled={isSubmitting}
               >
                 Cancel
@@ -471,7 +484,12 @@ export function EntitiesPage() {
       </Dialog>
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deletingId} onOpenChange={() => setDeletingId(null)}>
+      <AlertDialog
+        open={!!deletingId}
+        onOpenChange={() => {
+          setDeletingId(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>

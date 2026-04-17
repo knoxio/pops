@@ -1,5 +1,6 @@
-import { Progress } from '@pops/ui';
 import { lazy, Suspense } from 'react';
+
+import { Progress } from '@pops/ui';
 
 import { useImportStore } from '../../store/importStore';
 import { ColumnMapStep } from './ColumnMapStep';

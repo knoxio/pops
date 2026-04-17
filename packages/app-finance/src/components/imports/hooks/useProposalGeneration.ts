@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 
 import { trpc } from '../../../lib/trpc';
+
 import type { ProcessedTransaction } from '../../../store/importStore';
 
 export interface ProposalSignal {
@@ -38,7 +39,7 @@ export function useProposalGeneration() {
   const analyzeCorrectionMutation = trpc.core.corrections.analyzeCorrection.useMutation();
 
   const computeFallbackPattern = useCallback((description: string) => {
-    return description.toUpperCase().replace(/\d+/g, '').replace(/\s+/g, ' ').trim();
+    return description.toUpperCase().replaceAll(/\d+/g, '').replaceAll(/\s+/g, ' ').trim();
   }, []);
 
   const generateProposal = useCallback(

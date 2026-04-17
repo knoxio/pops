@@ -1,3 +1,5 @@
+import { and, count, desc, eq, notInArray, sql } from 'drizzle-orm';
+
 /**
  * Discovery service — computes preference profile from watch history,
  * comparison scores, and genre data.
@@ -11,9 +13,10 @@ import {
   movies,
   watchHistory,
 } from '@pops/db-types';
-import { and, count, desc, eq, notInArray, sql } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
+import { TMDB_GENRE_MAP } from './types.js';
+
 import type {
   DimensionWeight,
   DiscoverResult,
@@ -24,7 +27,6 @@ import type {
   RewatchSuggestion,
   ScoredDiscoverResult,
 } from './types.js';
-import { TMDB_GENRE_MAP } from './types.js';
 
 /**
  * Compute genre affinity scores by averaging Elo scores for movies
@@ -319,7 +321,7 @@ export function scoreDiscoverResults(
 
       return { ...result, matchPercentage, matchReason };
     })
-    .sort((a, b) => b.matchPercentage - a.matchPercentage);
+    .toSorted((a, b) => b.matchPercentage - a.matchPercentage);
 }
 
 /** Dismiss a movie by tmdbId (idempotent — ON CONFLICT DO NOTHING). */
@@ -393,7 +395,7 @@ export function getRewatchSuggestions(): RewatchSuggestion[] {
   }));
 
   // Filter to above-median score
-  const scores = scored.map((r) => r.score).sort((a, b) => a - b);
+  const scores = scored.map((r) => r.score).toSorted((a, b) => a - b);
   const median = scores[Math.floor(scores.length / 2)] ?? 0;
   const filtered = scored.filter((r) => r.score >= median);
 

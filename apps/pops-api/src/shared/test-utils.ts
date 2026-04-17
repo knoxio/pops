@@ -1,14 +1,16 @@
+import BetterSqlite3 from 'better-sqlite3';
+
+import { closeDb, setDb } from '../db.js';
+import { appRouter } from '../router.js';
+import { TAG_VOCABULARY_V1 } from './tag-vocabulary.js';
+
 /**
  * Shared test utilities for pops-api.
  * Provides in-memory SQLite setup, tRPC caller factory, and seed helpers.
  */
 import type { Database } from 'better-sqlite3';
-import BetterSqlite3 from 'better-sqlite3';
 
-import { closeDb, setDb } from '../db.js';
-import { appRouter } from '../router.js';
 import type { Context } from '../trpc.js';
-import { TAG_VOCABULARY_V1 } from './tag-vocabulary.js';
 
 /**
  * Create a tRPC caller with authentication.

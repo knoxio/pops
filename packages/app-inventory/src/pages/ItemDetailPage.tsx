@@ -1,3 +1,24 @@
+import {
+  Camera,
+  ChevronRight,
+  ExternalLink,
+  FileText,
+  GitBranch,
+  Link2,
+  MapPin,
+  Network,
+  Pencil,
+  Store,
+  Trash2,
+  Unlink,
+  X,
+} from 'lucide-react';
+import { useMemo, useState } from 'react';
+import Markdown from 'react-markdown';
+import { Link, useNavigate, useParams } from 'react-router';
+import rehypeSanitize from 'rehype-sanitize';
+import { toast } from 'sonner';
+
 /**
  * Item detail page — shows item info and connected items.
  * Route: /inventory/items/:id
@@ -25,26 +46,6 @@ import {
   TypeBadge,
   WarrantyBadge,
 } from '@pops/ui';
-import {
-  Camera,
-  ChevronRight,
-  ExternalLink,
-  FileText,
-  GitBranch,
-  Link2,
-  MapPin,
-  Network,
-  Pencil,
-  Store,
-  Trash2,
-  Unlink,
-  X,
-} from 'lucide-react';
-import { useMemo, useState } from 'react';
-import Markdown from 'react-markdown';
-import { Link, useNavigate, useParams } from 'react-router';
-import rehypeSanitize from 'rehype-sanitize';
-import { toast } from 'sonner';
 
 import { PhotoGallery } from '../components/PhotoGallery';
 import { SortablePhotoGrid } from '../components/SortablePhotoGrid';
@@ -158,7 +159,7 @@ export function ItemDetailPage() {
             <span className="text-2xl md:text-3xl font-extrabold tracking-tight">
               {item.itemName}
             </span>
-            {(item.brand || item.model) && (
+            {(item.brand ?? item.model) && (
               <p className="text-muted-foreground font-medium uppercase text-xs tracking-widest opacity-80 mt-1">
                 {[item.brand, item.model].filter(Boolean).join(' • ')}
               </p>
@@ -204,7 +205,9 @@ export function ItemDetailPage() {
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
                     variant="destructive"
-                    onClick={() => deleteMutation.mutate({ id: id! })}
+                    onClick={() => {
+                      deleteMutation.mutate({ id: id! });
+                    }}
                   >
                     Delete
                   </AlertDialogAction>
@@ -324,7 +327,9 @@ export function ItemDetailPage() {
               <ConnectionRow
                 key={conn.id}
                 connectedItemId={conn.itemAId === id ? conn.itemBId : conn.itemAId}
-                onDisconnect={() => disconnectMutation.mutate({ id: conn.id })}
+                onDisconnect={() => {
+                  disconnectMutation.mutate({ id: conn.id });
+                }}
                 isDisconnecting={disconnectMutation.isPending}
               />
             ))}
@@ -342,7 +347,13 @@ export function ItemDetailPage() {
               <GitBranch className="h-5 w-5" />
               Connection Chain
             </h2>
-            <Button variant="outline" size="sm" onClick={() => setShowGraph((v) => !v)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setShowGraph((v) => !v);
+              }}
+            >
               <Network className="h-4 w-4 mr-1.5" />
               {showGraph ? 'Hide Graph' : 'View Graph'}
             </Button>
@@ -500,7 +511,7 @@ function DocumentsList({
   }
 
   const typeOrder = ['receipt', 'warranty', 'manual', 'invoice', 'other'];
-  const sortedTypes = [...grouped.keys()].sort(
+  const sortedTypes = [...grouped.keys()].toSorted(
     (a, b) => (typeOrder.indexOf(a) ?? 99) - (typeOrder.indexOf(b) ?? 99)
   );
 
@@ -510,7 +521,7 @@ function DocumentsList({
         <h2 className="text-lg font-semibold flex items-center gap-2">
           <FileText className="h-5 w-5" />
           Documents
-          {docs.length ? (
+          {docs.length > 0 ? (
             <span className="text-sm font-normal text-muted-foreground">({docs.length})</span>
           ) : null}
         </h2>
@@ -526,7 +537,7 @@ function DocumentsList({
           <Skeleton className="h-12 w-full" />
           <Skeleton className="h-12 w-full" />
         </div>
-      ) : docs.length ? (
+      ) : docs.length > 0 ? (
         <div className="space-y-4">
           {sortedTypes.map((type) => (
             <div key={type}>
@@ -567,7 +578,9 @@ function DocumentsList({
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-destructive hover:text-destructive shrink-0"
-                        onClick={() => unlinkMutation.mutate({ id: doc.id })}
+                        onClick={() => {
+                          unlinkMutation.mutate({ id: doc.id });
+                        }}
                         disabled={unlinkMutation.isPending}
                         title="Unlink document"
                         aria-label="Unlink document"
@@ -610,8 +623,12 @@ function DocumentThumbnail({ documentId }: { documentId: number }) {
         src={src}
         alt="Document thumbnail"
         className="h-12 w-10 rounded object-cover"
-        onLoad={() => setStatus('loaded')}
-        onError={() => setStatus('error')}
+        onLoad={() => {
+          setStatus('loaded');
+        }}
+        onError={() => {
+          setStatus('error');
+        }}
       />
     </div>
   );

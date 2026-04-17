@@ -1,4 +1,3 @@
-import type { Database } from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -12,6 +11,8 @@ import {
 } from '../../../shared/test-utils.js';
 import * as watchlistService from '../watchlist/service.js';
 import * as service from './service.js';
+
+import type { Database } from 'better-sqlite3';
 
 const ctx = setupTestContext();
 let db: Database;
@@ -363,7 +364,9 @@ describe('deleteWatchHistoryEntry', () => {
   });
 
   it('throws NotFoundError for missing entry', () => {
-    expect(() => service.deleteWatchHistoryEntry(999)).toThrow('WatchHistoryEntry');
+    expect(() => {
+      service.deleteWatchHistoryEntry(999);
+    }).toThrow('WatchHistoryEntry');
   });
 });
 

@@ -1,10 +1,12 @@
+import { and, desc, gte, lte, sql } from 'drizzle-orm';
+
 /**
  * AI usage analytics service — Drizzle ORM
  */
 import { aiUsage } from '@pops/db-types';
-import { and, desc, gte, lte, sql } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
+
 import type { AiUsageHistoryOutput, AiUsageHistoryRecord, AiUsageStatsOutput } from './types.js';
 
 /**

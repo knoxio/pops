@@ -269,7 +269,9 @@ describe('closeEnvDb', () => {
 
   it('is a no-op when no connection is cached', () => {
     // Should not throw
-    expect(() => closeEnvDb('never-opened')).not.toThrow();
+    expect(() => {
+      closeEnvDb('never-opened');
+    }).not.toThrow();
   });
 
   it('evicts the cache so the next getOrOpenEnvDb opens a fresh connection', () => {

@@ -1,9 +1,10 @@
+import { toast } from 'sonner';
+
 /**
  * ExcludedDimensions — shows which comparison dimensions a movie is excluded from
  * and provides an "Include" button to restore it.
  */
 import { Button } from '@pops/ui';
-import { toast } from 'sonner';
 
 import { trpc } from '../lib/trpc';
 
@@ -63,13 +64,13 @@ export function ExcludedDimensions({ mediaType, mediaId }: ExcludedDimensionsPro
               variant="outline"
               size="sm"
               disabled={includeMutation.isPending}
-              onClick={() =>
+              onClick={() => {
                 includeMutation.mutate({
                   mediaType,
                   mediaId,
                   dimensionId: s.dimensionId,
-                })
-              }
+                });
+              }}
             >
               Include
             </Button>

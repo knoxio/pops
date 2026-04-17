@@ -1,3 +1,8 @@
+import { trpc } from '@/lib/trpc';
+import { useSearchStore } from '@/store/searchStore';
+import { ArrowRightLeft, Box, Building2, Film, PiggyBank, Search, Tv, X } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
 import {
   type SearchResultHit,
   type SearchResultSection,
@@ -7,12 +12,8 @@ import {
   useSearchResultNavigation,
 } from '@pops/navigation';
 import { Button, Input } from '@pops/ui';
-import { ArrowRightLeft, Box, Building2, Film, PiggyBank, Search, Tv, X } from 'lucide-react';
-import type { ReactNode } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { trpc } from '@/lib/trpc';
-import { useSearchStore } from '@/store/searchStore';
+import type { ReactNode } from 'react';
 
 const DEBOUNCE_MS = 300;
 
@@ -86,7 +87,7 @@ export function SearchInput() {
   const orderedUris = useMemo(() => {
     const sorted = [...sections]
       .filter((s) => s.hits.length > 0)
-      .sort((a, b) => {
+      .toSorted((a, b) => {
         if (a.isContext && !b.isContext) return -1;
         if (!a.isContext && b.isContext) return 1;
         const aMax = Math.max(...a.hits.map((h) => h.score));
@@ -133,7 +134,9 @@ export function SearchInput() {
   const { selectedIndex } = useSearchKeyboardNav({
     containerRef,
     resultCount: orderedUris.length,
-    onSelect: (index) => handleResultClick(orderedUris[index] ?? ''),
+    onSelect: (index) => {
+      handleResultClick(orderedUris[index] ?? '');
+    },
     onClose: handleClose,
   });
 
@@ -165,7 +168,9 @@ export function SearchInput() {
       }
     }
     document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
   }, []);
 
   // Clean up debounce timer on unmount

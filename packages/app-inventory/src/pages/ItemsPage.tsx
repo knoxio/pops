@@ -1,21 +1,3 @@
-/**
- * ItemsPage — inventory item list with search, filters, table/grid toggle,
- * and summary statistics. PRD-019/US-2.
- */
-import { useSetPageContext } from '@pops/navigation';
-import type { Condition } from '@pops/ui';
-import {
-  Button,
-  Card,
-  CardContent,
-  PageHeader,
-  Select,
-  type SelectOption,
-  Skeleton,
-  TextInput,
-  TypeBadge,
-  ViewToggleGroup,
-} from '@pops/ui';
 import {
   Clock,
   DollarSign,
@@ -29,11 +11,31 @@ import {
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
+/**
+ * ItemsPage — inventory item list with search, filters, table/grid toggle,
+ * and summary statistics. PRD-019/US-2.
+ */
+import { useSetPageContext } from '@pops/navigation';
+import {
+  Button,
+  Card,
+  CardContent,
+  PageHeader,
+  Select,
+  type SelectOption,
+  Skeleton,
+  TextInput,
+  TypeBadge,
+  ViewToggleGroup,
+} from '@pops/ui';
+
 import { InventoryCard } from '../components/InventoryCard';
 import { InventoryTable } from '../components/InventoryTable';
 import { ValueByTypeCard } from '../components/ValueBreakdown';
 import { trpc } from '../lib/trpc';
 import { formatCurrency } from '../lib/utils';
+
+import type { Condition } from '@pops/ui';
 type ViewMode = 'table' | 'grid';
 
 const VIEW_STORAGE_KEY = 'inventory-view-mode';
@@ -344,7 +346,9 @@ export function ItemsPage() {
   const totalReplacementValue = data?.totals?.totalReplacementValue ?? 0;
   const totalResaleValue = data?.totals?.totalResaleValue ?? 0;
 
-  const handleViewChange = (mode: ViewMode) => setViewMode(mode);
+  const handleViewChange = (mode: ViewMode) => {
+    setViewMode(mode);
+  };
 
   const hasActiveFilters = !!(typeFilter || conditionFilter || inUseFilter || locationFilter);
 
@@ -360,36 +364,48 @@ export function ItemsPage() {
           placeholder="Search items or asset IDs..."
           prefix={<Search className="h-4 w-4" />}
           value={search}
-          onChange={(e) => setParam('q', e.target.value)}
+          onChange={(e) => {
+            setParam('q', e.target.value);
+          }}
           onKeyDown={handleSearchKeyDown}
           clearable
-          onClear={() => setParam('q', '')}
+          onClear={() => {
+            setParam('q', '');
+          }}
           className="w-full sm:max-w-xs"
         />
         <Select
           value={typeFilter}
-          onChange={(e) => setParam('type', e.target.value)}
+          onChange={(e) => {
+            setParam('type', e.target.value);
+          }}
           options={typeOptions}
           placeholder="All Types"
           className="w-36"
         />
         <Select
           value={conditionFilter}
-          onChange={(e) => setParam('condition', e.target.value)}
+          onChange={(e) => {
+            setParam('condition', e.target.value);
+          }}
           options={CONDITION_OPTIONS}
           placeholder="All Conditions"
           className="w-40"
         />
         <Select
           value={inUseFilter}
-          onChange={(e) => setParam('inUse', e.target.value)}
+          onChange={(e) => {
+            setParam('inUse', e.target.value);
+          }}
           options={IN_USE_OPTIONS}
           placeholder="All"
           className="w-28"
         />
         <Select
           value={locationFilter}
-          onChange={(e) => setParam('locationId', e.target.value)}
+          onChange={(e) => {
+            setParam('locationId', e.target.value);
+          }}
           options={locationOptions}
           placeholder="All Locations"
           className="w-40"

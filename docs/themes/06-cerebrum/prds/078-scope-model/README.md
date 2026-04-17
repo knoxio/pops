@@ -23,14 +23,14 @@ storage.recipes
 
 **Format rules:**
 
-| Property             | Constraint                                                                 |
-| -------------------- | -------------------------------------------------------------------------- |
-| Character set        | Lowercase alphanumeric and hyphens only (`[a-z0-9-]`), separated by `.`   |
-| Minimum depth        | At least two segments (`personal.journal`, not `personal`)                 |
-| Maximum depth        | 6 segments                                                                 |
-| Segment length       | 1-32 characters per segment                                               |
-| Reserved segments    | `.secret.` — marks content requiring explicit opt-in for output inclusion  |
-| Reserved top-levels  | `personal`, `work`, `storage` are conventional but not enforced            |
+| Property            | Constraint                                                                |
+| ------------------- | ------------------------------------------------------------------------- |
+| Character set       | Lowercase alphanumeric and hyphens only (`[a-z0-9-]`), separated by `.`   |
+| Minimum depth       | At least two segments (`personal.journal`, not `personal`)                |
+| Maximum depth       | 6 segments                                                                |
+| Segment length      | 1-32 characters per segment                                               |
+| Reserved segments   | `.secret.` — marks content requiring explicit opt-in for output inclusion |
+| Reserved top-levels | `personal`, `work`, `storage` are conventional but not enforced           |
 
 ### Scope Rules Configuration (`scope-rules.toml`)
 
@@ -63,33 +63,33 @@ priority = 5
 
 **Rule fields:**
 
-| Field      | Type     | Description                                                              |
-| ---------- | -------- | ------------------------------------------------------------------------ |
-| `match`    | object   | Conditions — any combination of `source`, `type`, `tags` (all must match)|
-| `assign`   | string[] | Scopes to add when the rule matches                                      |
-| `priority` | number   | Higher priority rules override lower ones when conflicts arise           |
+| Field      | Type     | Description                                                               |
+| ---------- | -------- | ------------------------------------------------------------------------- |
+| `match`    | object   | Conditions — any combination of `source`, `type`, `tags` (all must match) |
+| `assign`   | string[] | Scopes to add when the rule matches                                       |
+| `priority` | number   | Higher priority rules override lower ones when conflicts arise            |
 
 ### Database (engram_scopes table)
 
 Defined in PRD-077. Junction table linking engrams to their scopes:
 
-| Column     | Type | Constraints                    | Description       |
-| ---------- | ---- | ------------------------------ | ----------------- |
-| engram_id  | TEXT | FK → engram_index.id, NOT NULL | Engram reference  |
-| scope      | TEXT | NOT NULL                       | Full scope string |
+| Column    | Type | Constraints                    | Description       |
+| --------- | ---- | ------------------------------ | ----------------- |
+| engram_id | TEXT | FK → engram_index.id, NOT NULL | Engram reference  |
+| scope     | TEXT | NOT NULL                       | Full scope string |
 
 **Indexes:** Composite `(engram_id, scope)` unique, `scope` for prefix queries (`WHERE scope LIKE 'work.%'`).
 
 ## API Surface
 
-| Procedure                             | Input                                           | Output                                  | Notes                                                       |
-| ------------------------------------- | ----------------------------------------------- | --------------------------------------- | ----------------------------------------------------------- |
-| `cerebrum.scopes.assign`              | engramId, scopes: string[]                      | `{ engram: Engram }`                    | Adds scopes to engram (validates format, updates file + index) |
-| `cerebrum.scopes.remove`              | engramId, scopes: string[]                      | `{ engram: Engram }`                    | Removes scopes (must retain at least one scope)              |
-| `cerebrum.scopes.reclassify`          | fromScope, toScope, dryRun?                     | `{ affected: number, engrams?: string[] }` | Bulk rename — replaces scope prefix across all matching engrams |
-| `cerebrum.scopes.list`                | prefix?                                         | `{ scopes: ScopeInfo[] }`              | All known scopes with engram counts, optionally filtered by prefix |
-| `cerebrum.scopes.validate`            | scope: string                                   | `{ valid: boolean, errors?: string[] }` | Validates a scope string against format rules                |
-| `cerebrum.scopes.filter`              | scopes: string[], includeSecret?: boolean       | `{ engrams: Engram[] }`                | Returns engrams matching scope prefixes, excludes `*.secret.*` unless opted in |
+| Procedure                    | Input                                     | Output                                     | Notes                                                                          |
+| ---------------------------- | ----------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------ |
+| `cerebrum.scopes.assign`     | engramId, scopes: string[]                | `{ engram: Engram }`                       | Adds scopes to engram (validates format, updates file + index)                 |
+| `cerebrum.scopes.remove`     | engramId, scopes: string[]                | `{ engram: Engram }`                       | Removes scopes (must retain at least one scope)                                |
+| `cerebrum.scopes.reclassify` | fromScope, toScope, dryRun?               | `{ affected: number, engrams?: string[] }` | Bulk rename — replaces scope prefix across all matching engrams                |
+| `cerebrum.scopes.list`       | prefix?                                   | `{ scopes: ScopeInfo[] }`                  | All known scopes with engram counts, optionally filtered by prefix             |
+| `cerebrum.scopes.validate`   | scope: string                             | `{ valid: boolean, errors?: string[] }`    | Validates a scope string against format rules                                  |
+| `cerebrum.scopes.filter`     | scopes: string[], includeSecret?: boolean | `{ engrams: Engram[] }`                    | Returns engrams matching scope prefixes, excludes `*.secret.*` unless opted in |
 
 ## Business Rules
 
@@ -106,28 +106,28 @@ Defined in PRD-077. Junction table linking engrams to their scopes:
 
 ## Edge Cases
 
-| Case                                              | Behaviour                                                                      |
-| ------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Engram created with no scopes and no matching rule | Assigned `defaults.fallback_scope` from `scope-rules.toml`                     |
-| Scope string with trailing dot (`work.projects.`) | Validation rejects — trailing dots are invalid                                  |
-| Scope string with consecutive dots (`work..projects`) | Validation rejects — empty segments are invalid                              |
-| Scope with uppercase letters                       | Normalised to lowercase, not rejected                                          |
-| Removing the last scope from an engram             | Rejected with error — engrams must always have at least one scope              |
-| Reclassify `fromScope` matches zero engrams        | Returns `{ affected: 0 }` — no error                                          |
-| Reclassify target scope fails validation           | Rejected before any engrams are modified                                       |
-| `scope-rules.toml` is missing or unparseable       | System falls back to `personal.captures` as default scope, warning logged      |
+| Case                                                               | Behaviour                                                                      |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| Engram created with no scopes and no matching rule                 | Assigned `defaults.fallback_scope` from `scope-rules.toml`                     |
+| Scope string with trailing dot (`work.projects.`)                  | Validation rejects — trailing dots are invalid                                 |
+| Scope string with consecutive dots (`work..projects`)              | Validation rejects — empty segments are invalid                                |
+| Scope with uppercase letters                                       | Normalised to lowercase, not rejected                                          |
+| Removing the last scope from an engram                             | Rejected with error — engrams must always have at least one scope              |
+| Reclassify `fromScope` matches zero engrams                        | Returns `{ affected: 0 }` — no error                                           |
+| Reclassify target scope fails validation                           | Rejected before any engrams are modified                                       |
+| `scope-rules.toml` is missing or unparseable                       | System falls back to `personal.captures` as default scope, warning logged      |
 | Engram belongs to both `work.projects` and `work.secret.jobsearch` | Engram is treated as secret — presence of any secret scope triggers protection |
-| Scope depth exceeds 6 segments                     | Validation rejects — too deep                                                  |
-| Prefix query `work` (no wildcard)                  | Matches `work.*` — single-segment prefix treated as top-level filter           |
+| Scope depth exceeds 6 segments                                     | Validation rejects — too deep                                                  |
+| Prefix query `work` (no wildcard)                                  | Matches `work.*` — single-segment prefix treated as top-level filter           |
 
 ## User Stories
 
-| #   | Story                                                              | Summary                                                                        | Status      | Parallelisable   |
-| --- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------ | ----------- | ---------------- |
-| 01  | [us-01-scope-schema](us-01-scope-schema.md)                        | Scope format validation, hierarchy parsing, prefix matching utilities           | Not started | No (first)       |
-| 02  | [us-02-scope-rules](us-02-scope-rules.md)                          | Rule engine reading scope-rules.toml — pattern matching, auto-assignment, defaults | Not started | Blocked by us-01 |
-| 03  | [us-03-scope-filtering](us-03-scope-filtering.md)                  | Query-time scope filtering with prefix matching and secret scope hard-blocking  | Not started | Blocked by us-01 |
-| 04  | [us-04-scope-management-api](us-04-scope-management-api.md)        | tRPC procedures for scope CRUD, reclassify, listing, and validation            | Not started | Blocked by us-01, us-02, us-03 |
+| #   | Story                                                       | Summary                                                                            | Status      | Parallelisable                 |
+| --- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------- | ----------- | ------------------------------ |
+| 01  | [us-01-scope-schema](us-01-scope-schema.md)                 | Scope format validation, hierarchy parsing, prefix matching utilities              | Not started | No (first)                     |
+| 02  | [us-02-scope-rules](us-02-scope-rules.md)                   | Rule engine reading scope-rules.toml — pattern matching, auto-assignment, defaults | Not started | Blocked by us-01               |
+| 03  | [us-03-scope-filtering](us-03-scope-filtering.md)           | Query-time scope filtering with prefix matching and secret scope hard-blocking     | Not started | Blocked by us-01               |
+| 04  | [us-04-scope-management-api](us-04-scope-management-api.md) | tRPC procedures for scope CRUD, reclassify, listing, and validation                | Not started | Blocked by us-01, us-02, us-03 |
 
 US-02 and US-03 can parallelise with each other after US-01 is complete. US-04 depends on all three prior stories.
 

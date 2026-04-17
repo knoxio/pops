@@ -77,13 +77,13 @@ packages/ui/
 
 ```typescript
 // Composite components
-import { DataTable, TextInput, Button, ViewToggleGroup } from "@pops/ui";
+import { DataTable, TextInput, Button, ViewToggleGroup } from '@pops/ui';
 
 // Primitives (if needed directly)
-import { Card, CardHeader, CardContent } from "@pops/ui";
+import { Card, CardHeader, CardContent } from '@pops/ui';
 
 // Utility
-import { cn } from "@pops/ui";
+import { cn } from '@pops/ui';
 ```
 
 ## Action Icon Standards
@@ -162,14 +162,14 @@ interface ViewToggleGroupProps {
 
 ## User Stories
 
-| #   | Story                                                   | Summary                                                                                                                                | Status  | Parallelisable                 |
-| --- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | ------- | ------------------------------ |
-| 01  | [us-01-package-scaffold](us-01-package-scaffold.md)     | Create @pops/ui workspace package with config, tsconfig, barrel export                                                                 | Done    | No (first)                     |
-| 02  | [us-02-primitives](us-02-primitives.md)                 | Build all 28 Shadcn/Radix primitive components with co-located stories                                                                 | Done    | Blocked by us-01               |
-| 03  | [us-03-form-inputs](us-03-form-inputs.md)               | Build composite form inputs: TextInput, NumberInput, DateTimeInput, CheckboxInput, RadioInput, ChipInput, Autocomplete, ComboboxSelect | Done    | Blocked by us-01               |
+| #   | Story                                                   | Summary                                                                                                                                | Status                                                                                                               | Parallelisable                 |
+| --- | ------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| 01  | [us-01-package-scaffold](us-01-package-scaffold.md)     | Create @pops/ui workspace package with config, tsconfig, barrel export                                                                 | Done                                                                                                                 | No (first)                     |
+| 02  | [us-02-primitives](us-02-primitives.md)                 | Build all 28 Shadcn/Radix primitive components with co-located stories                                                                 | Done                                                                                                                 | Blocked by us-01               |
+| 03  | [us-03-form-inputs](us-03-form-inputs.md)               | Build composite form inputs: TextInput, NumberInput, DateTimeInput, CheckboxInput, RadioInput, ChipInput, Autocomplete, ComboboxSelect | Done                                                                                                                 | Blocked by us-01               |
 | 04  | [us-04-data-display](us-04-data-display.md)             | Build data display composites: DataTable, DataTableFilters, InfiniteScrollTable, EditableCell, ViewToggleGroup                         | Partial — most components done; StatCard missing trend prop, stories, and uses arbitrary OKLCH values (#1794, #1795) | Blocked by us-01               |
-| 05  | [us-05-utility-components](us-05-utility-components.md) | Build utility composites: Button wrapper, Chip, DropdownMenu wrapper, Select wrapper, ErrorBoundary, StatCard                          | Done    | Blocked by us-01               |
-| 06  | [us-06-icon-standards](us-06-icon-standards.md)         | Enforce action icon standards across all existing components and app packages                                                          | Partial — core icons done; text-only labels, destructive patterns, compact/prominent sweep incomplete (#1798) | Blocked by us-02 through us-05 |
+| 05  | [us-05-utility-components](us-05-utility-components.md) | Build utility composites: Button wrapper, Chip, DropdownMenu wrapper, Select wrapper, ErrorBoundary, StatCard                          | Done                                                                                                                 | Blocked by us-01               |
+| 06  | [us-06-icon-standards](us-06-icon-standards.md)         | Enforce action icon standards across all existing components and app packages                                                          | Partial — core icons done; text-only labels, destructive patterns, compact/prominent sweep incomplete (#1798)        | Blocked by us-02 through us-05 |
 
 US-02 through US-05 can all be built in parallel after US-01. US-06 is a sweep after components exist.
 

@@ -1,12 +1,12 @@
 packages:
-  - "apps/*"
-  - "packages/app-finance"
-  - "packages/app-media"
-  - "packages/app-inventory"
-  - "packages/app-ai"
-  - "packages/api-client"
-  - "packages/db-types"
-  - "packages/types"
-  - "packages/navigation"
-  - "packages/ui"
-  - "packages/import-tools"
+  - 'apps/*'
+  - 'packages/app-finance'
+  - 'packages/app-media'
+  - 'packages/app-inventory'
+  - 'packages/app-ai'
+  - 'packages/api-client'
+  - 'packages/db-types'
+  - 'packages/types'
+  - 'packages/navigation'
+  - 'packages/ui'
+  - 'packages/import-tools'

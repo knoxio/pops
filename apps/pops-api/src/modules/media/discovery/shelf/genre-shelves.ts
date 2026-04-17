@@ -1,3 +1,5 @@
+import { and, desc, eq } from 'drizzle-orm';
+
 /**
  * Genre and dimension shelf implementations (US-06).
  *
@@ -9,16 +11,16 @@
  *  4. dimension-inspired — High-scoring movie+dimension pair, queries TMDB recommendations
  */
 import { comparisonDimensions, mediaScores, movies } from '@pops/db-types';
-import { and, desc, eq } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../../db.js';
 import { getTmdbClient } from '../../tmdb/index.js';
 import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from '../flags.js';
 import { scoreDiscoverResults } from '../service.js';
 import { getLibraryTmdbIds, toDiscoverResults } from '../tmdb-service.js';
-import type { PreferenceProfile } from '../types.js';
 import { TMDB_GENRE_MAP } from '../types.js';
 import { registerShelf } from './registry.js';
+
+import type { PreferenceProfile } from '../types.js';
 import type { ShelfDefinition, ShelfInstance } from './types.js';
 
 const MAX_BEST_IN_GENRE = 5;
@@ -63,7 +65,7 @@ export const bestInGenreShelf: ShelfDefinition = {
   generate(profile: PreferenceProfile): ShelfInstance[] {
     const topGenres = profile.genreAffinities
       .slice()
-      .sort((a, b) => b.avgScore - a.avgScore)
+      .toSorted((a, b) => b.avgScore - a.avgScore)
       .slice(0, MAX_BEST_IN_GENRE)
       .filter((a) => GENRE_NAME_TO_ID.has(a.genre));
 
@@ -78,7 +80,7 @@ export const bestInGenreShelf: ShelfDefinition = {
       const score = normalizeScore(affinity.avgScore, minScore, maxScore) * 0.8 + 0.1;
 
       return {
-        shelfId: `best-in-genre:${affinity.genre.toLowerCase().replace(/\s+/g, '-')}`,
+        shelfId: `best-in-genre:${affinity.genre.toLowerCase().replaceAll(/\s+/g, '-')}`,
         title: `Best in ${affinity.genre}`,
         subtitle: `Top-rated ${affinity.genre} films`,
         emoji: '🎯',
@@ -128,7 +130,7 @@ export const genreCrossoverShelf: ShelfDefinition = {
   generate(profile: PreferenceProfile): ShelfInstance[] {
     const topGenres = profile.genreAffinities
       .slice()
-      .sort((a, b) => b.avgScore - a.avgScore)
+      .toSorted((a, b) => b.avgScore - a.avgScore)
       .slice(0, 6)
       .filter((a) => GENRE_NAME_TO_ID.has(a.genre));
 
@@ -152,7 +154,7 @@ export const genreCrossoverShelf: ShelfDefinition = {
       const score = ((g1.avgScore + g2.avgScore) / 2 / 10) * 0.7 + 0.1;
 
       return {
-        shelfId: `genre-crossover:${g1.genre.toLowerCase().replace(/\s+/g, '-')}-${g2.genre.toLowerCase().replace(/\s+/g, '-')}`,
+        shelfId: `genre-crossover:${g1.genre.toLowerCase().replaceAll(/\s+/g, '-')}-${g2.genre.toLowerCase().replaceAll(/\s+/g, '-')}`,
         title: `${g1.genre} × ${g2.genre}`,
         subtitle: `Films that blend ${g1.genre} and ${g2.genre}`,
         emoji: '🔀',
@@ -200,7 +202,7 @@ interface DimensionSeed {
 function getActiveDimensions(profile: PreferenceProfile): DimensionSeed[] {
   return profile.dimensionWeights
     .filter((d) => d.comparisonCount >= 5)
-    .sort((a, b) => b.comparisonCount - a.comparisonCount)
+    .toSorted((a, b) => b.comparisonCount - a.comparisonCount)
     .slice(0, MAX_TOP_DIMENSION)
     .map((d) => ({ dimensionId: d.dimensionId, name: d.name, avgScore: d.avgScore }));
 }

@@ -1,11 +1,12 @@
+import { useState } from 'react';
+
+import { Chip } from './Chip';
+
 /**
  * Chip component stories
  * Demonstrates all variants, sizes, removable options, and use cases
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
-
-import { Chip } from './Chip';
 
 const meta: Meta<typeof Chip> = {
   component: Chip,
@@ -121,7 +122,9 @@ export const Removable: Story = {
   args: {
     children: 'Removable',
     removable: true,
-    onRemove: () => alert('Chip removed!'),
+    onRemove: () => {
+      alert('Chip removed!');
+    },
   },
 };
 
@@ -130,7 +133,9 @@ export const RemovablePrimary: Story = {
     children: 'Primary',
     variant: 'primary',
     removable: true,
-    onRemove: () => alert('Chip removed!'),
+    onRemove: () => {
+      alert('Chip removed!');
+    },
   },
 };
 
@@ -139,7 +144,9 @@ export const RemovableSuccess: Story = {
     children: 'Success',
     variant: 'success',
     removable: true,
-    onRemove: () => alert('Chip removed!'),
+    onRemove: () => {
+      alert('Chip removed!');
+    },
   },
 };
 
@@ -225,7 +232,9 @@ export const WithIconRemovable: Story = {
     prefix: <UserIcon />,
     variant: 'primary',
     removable: true,
-    onRemove: () => alert('Chip removed!'),
+    onRemove: () => {
+      alert('Chip removed!');
+    },
   },
 };
 
@@ -275,7 +284,9 @@ export const AllRemovableVariants: Story = {
             key={chip.id}
             variant={chip.variant}
             removable
-            onRemove={() => setChips((prev) => prev.filter((c) => c.id !== chip.id))}
+            onRemove={() => {
+              setChips((prev) => prev.filter((c) => c.id !== chip.id));
+            }}
           >
             {chip.label}
           </Chip>
@@ -332,7 +343,9 @@ export const FilterChips: Story = {
               key={filter}
               variant="primary"
               removable
-              onRemove={() => setActiveFilters((prev) => prev.filter((f) => f !== filter))}
+              onRemove={() => {
+                setActiveFilters((prev) => prev.filter((f) => f !== filter));
+              }}
             >
               {filter}
             </Chip>

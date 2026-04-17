@@ -1,5 +1,6 @@
-import { entities, transactionCorrections, transactions } from '@pops/db-types';
 import { asc, eq, notInArray } from 'drizzle-orm';
+
+import { entities, transactionCorrections, transactions } from '@pops/db-types';
 
 import { getDrizzle } from '../../../../db.js';
 import { logger } from '../../../../lib/logger.js';
@@ -7,6 +8,7 @@ import { ValidationError } from '../../../../shared/errors.js';
 import { findMatchingCorrectionFromRules } from '../../../core/corrections/service.js';
 import { applyChangeSet } from '../../../core/corrections/service.js';
 import { applyTagRuleChangeSet, upsertVocabularyTag } from '../../../core/tag-rules/service.js';
+
 import type { TagRuleChangeSet } from '../../../core/tag-rules/types.js';
 import type { TransactionRow } from '../../transactions/types.js';
 import type { CommitPayload, CommitResult, FailedTransactionDetail } from '../types.js';
@@ -283,7 +285,7 @@ export function commitImport(payload: CommitPayload): CommitResult {
         const errorMessage = error instanceof Error ? error.message : String(error);
         logger.error(
           {
-            description: txn.description.substring(0, 50),
+            description: txn.description.slice(0, 50),
             error: errorMessage,
           },
           '[CommitImport] Transaction write failed'

@@ -37,7 +37,7 @@ export function useMediaLibrary({
     type: typeFilter,
     sort: sortBy,
     search: search || undefined,
-    genre: genreFilter || undefined,
+    genre: genreFilter ?? undefined,
     page,
     pageSize,
   });

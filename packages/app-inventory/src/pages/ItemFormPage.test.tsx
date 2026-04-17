@@ -117,7 +117,7 @@ vi.mock('../lib/trpc', () => ({
           useMutation: (opts?: Record<string, unknown>) => ({
             mutate: vi.fn(),
             isPending: false,
-            ...(opts || {}),
+            ...opts,
           }),
         },
       },
@@ -132,7 +132,7 @@ vi.mock('../lib/trpc', () => ({
           useMutation: (opts?: Record<string, unknown>) => ({
             mutateAsync: mockAttachMutate,
             isPending: false,
-            ...(opts || {}),
+            ...opts,
           }),
         },
         remove: {

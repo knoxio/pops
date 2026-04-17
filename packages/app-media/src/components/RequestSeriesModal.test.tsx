@@ -33,8 +33,9 @@ vi.mock('../lib/trpc', () => ({
   },
 }));
 
-import type { SeasonInfo } from './RequestSeriesModal';
 import { RequestSeriesModal } from './RequestSeriesModal';
+
+import type { SeasonInfo } from './RequestSeriesModal';
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
@@ -134,7 +135,7 @@ describe('RequestSeriesModal', () => {
     setupDefaults();
     renderModal();
 
-    const select = document.getElementById('quality-profile') as HTMLSelectElement;
+    const select = document.querySelector('#quality-profile') as HTMLSelectElement;
     expect(select).toBeTruthy();
     const options = select.querySelectorAll('option');
     expect(options).toHaveLength(2);
@@ -146,7 +147,7 @@ describe('RequestSeriesModal', () => {
     setupDefaults();
     renderModal();
 
-    const select = document.getElementById('root-folder') as HTMLSelectElement;
+    const select = document.querySelector('#root-folder') as HTMLSelectElement;
     expect(select).toBeTruthy();
     const options = select.querySelectorAll('option');
     expect(options).toHaveLength(2);
@@ -158,7 +159,7 @@ describe('RequestSeriesModal', () => {
     setupDefaults();
     renderModal();
 
-    const select = document.getElementById('language-profile') as HTMLSelectElement;
+    const select = document.querySelector('#language-profile') as HTMLSelectElement;
     expect(select).toBeTruthy();
     const options = select.querySelectorAll('option');
     expect(options).toHaveLength(2);
@@ -170,9 +171,9 @@ describe('RequestSeriesModal', () => {
     setupDefaults();
     renderModal();
 
-    expect((document.getElementById('quality-profile') as HTMLSelectElement).value).toBe('1');
-    expect((document.getElementById('root-folder') as HTMLSelectElement).value).toBe('/tv');
-    expect((document.getElementById('language-profile') as HTMLSelectElement).value).toBe('1');
+    expect((document.querySelector('#quality-profile') as HTMLSelectElement).value).toBe('1');
+    expect((document.querySelector('#root-folder') as HTMLSelectElement).value).toBe('/tv');
+    expect((document.querySelector('#language-profile') as HTMLSelectElement).value).toBe('1');
   });
 
   it('applies smart season defaults — future checked, past unchecked', () => {
@@ -271,7 +272,9 @@ describe('RequestSeriesModal', () => {
     fireEvent.click(screen.getByText('Request'));
 
     const onSuccess = addSeriesOpts.onSuccess as () => void;
-    act(() => onSuccess());
+    act(() => {
+      onSuccess();
+    });
 
     expect(screen.getByText('Series Added')).toBeInTheDocument();
 
@@ -288,7 +291,9 @@ describe('RequestSeriesModal', () => {
     fireEvent.click(screen.getByText('Request'));
 
     const onError = addSeriesOpts.onError as (err: { message: string }) => void;
-    act(() => onError({ message: 'Series already exists in Sonarr' }));
+    act(() => {
+      onError({ message: 'Series already exists in Sonarr' });
+    });
 
     expect(screen.getByText('Series already exists in Sonarr')).toBeInTheDocument();
   });

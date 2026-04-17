@@ -8,9 +8,9 @@ Build a comprehensive observability layer for all AI inference across POPS — c
 
 ## PRDs
 
-| #   | PRD                                                                  | Summary                                                                                                            | Status      |
-| --- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | ----------- |
-| 092 | [AI Observability Platform](../prds/092-ai-observability/README.md)  | Multi-provider inference tracking, budget enforcement, latency/quality metrics, monitoring dashboard, alerting      | Not started |
+| #   | PRD                                                                 | Summary                                                                                                        | Status      |
+| --- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- | ----------- |
+| 092 | [AI Observability Platform](../prds/092-ai-observability/README.md) | Multi-provider inference tracking, budget enforcement, latency/quality metrics, monitoring dashboard, alerting | Not started |
 
 ## Dependencies
 

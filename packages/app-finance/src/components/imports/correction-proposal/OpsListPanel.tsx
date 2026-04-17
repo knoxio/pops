@@ -1,9 +1,11 @@
-import { Badge, Button } from '@pops/ui';
 import { Plus, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 
+import { Badge, Button } from '@pops/ui';
+
 import { opKindBadgeVariant, opKindLabel, opSummary } from '../lib/correction-utils';
 import { type CorrectionRule, RulePicker } from '../RulePicker';
+
 import type { LocalOp } from './types';
 
 export function OpsListPanel(props: {
@@ -37,7 +39,9 @@ export function OpsListPanel(props: {
                   className={`px-3 py-2 cursor-pointer hover:bg-muted/50 ${
                     selected ? 'bg-muted' : ''
                   }`}
-                  onClick={() => props.onSelect(op.clientId)}
+                  onClick={() => {
+                    props.onSelect(op.clientId);
+                  }}
                 >
                   <div className="flex items-start gap-2">
                     <div className="flex-1 min-w-0 space-y-1">
@@ -84,7 +88,9 @@ export function OpsListPanel(props: {
             size="sm"
             variant="outline"
             className="w-full justify-start"
-            onClick={() => setAddMode('menu')}
+            onClick={() => {
+              setAddMode('menu');
+            }}
             disabled={props.disabled}
           >
             <Plus className="mr-1 h-3.5 w-3.5" /> Add operation
@@ -107,7 +113,9 @@ export function OpsListPanel(props: {
               size="sm"
               variant="ghost"
               className="w-full justify-start"
-              onClick={() => setAddMode('edit')}
+              onClick={() => {
+                setAddMode('edit');
+              }}
             >
               Edit existing rule…
             </Button>
@@ -115,7 +123,9 @@ export function OpsListPanel(props: {
               size="sm"
               variant="ghost"
               className="w-full justify-start"
-              onClick={() => setAddMode('disable')}
+              onClick={() => {
+                setAddMode('disable');
+              }}
             >
               Disable existing rule…
             </Button>
@@ -123,7 +133,9 @@ export function OpsListPanel(props: {
               size="sm"
               variant="ghost"
               className="w-full justify-start"
-              onClick={() => setAddMode('remove')}
+              onClick={() => {
+                setAddMode('remove');
+              }}
             >
               Remove existing rule…
             </Button>
@@ -131,7 +143,9 @@ export function OpsListPanel(props: {
               size="sm"
               variant="ghost"
               className="w-full justify-start text-muted-foreground"
-              onClick={() => setAddMode(null)}
+              onClick={() => {
+                setAddMode(null);
+              }}
             >
               <X className="mr-1 h-3.5 w-3.5" /> Cancel
             </Button>
@@ -152,7 +166,9 @@ export function OpsListPanel(props: {
               size="sm"
               variant="ghost"
               className="w-full justify-start text-muted-foreground"
-              onClick={() => setAddMode(null)}
+              onClick={() => {
+                setAddMode(null);
+              }}
             >
               <X className="mr-1 h-3.5 w-3.5" /> Cancel
             </Button>

@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-
 import { PhotoUpload, type UploadedFile } from './PhotoUpload';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 const meta: Meta<typeof PhotoUpload> = {
   title: 'Inventory/PhotoUpload',
@@ -21,14 +21,20 @@ type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
   args: {
-    onFilesSelected: (files) => console.log('Files selected:', files),
+    onFilesSelected: (files) => {
+      console.log('Files selected:', files);
+    },
   },
 };
 
 export const WithQueuedFiles: Story = {
   args: {
-    onFilesSelected: (files) => console.log('Files selected:', files),
-    onRemove: (id) => console.log('Remove:', id),
+    onFilesSelected: (files) => {
+      console.log('Files selected:', files);
+    },
+    onRemove: (id) => {
+      console.log('Remove:', id);
+    },
     files: [
       {
         localId: '1',
@@ -61,14 +67,18 @@ export const WithQueuedFiles: Story = {
 
 export const Disabled: Story = {
   args: {
-    onFilesSelected: (files) => console.log('Files selected:', files),
+    onFilesSelected: (files) => {
+      console.log('Files selected:', files);
+    },
     disabled: true,
   },
 };
 
 export const CustomMaxSize: Story = {
   args: {
-    onFilesSelected: (files) => console.log('Files selected:', files),
+    onFilesSelected: (files) => {
+      console.log('Files selected:', files);
+    },
     maxSizeMb: 5,
   },
 };

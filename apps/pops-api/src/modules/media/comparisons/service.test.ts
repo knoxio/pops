@@ -1,4 +1,3 @@
-import type { Database } from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -13,6 +12,8 @@ import {
   includeInDimension,
   recordComparison,
 } from './service.js';
+
+import type { Database } from 'better-sqlite3';
 
 const ctx = setupTestContext();
 let db: Database;

@@ -1,7 +1,8 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
 import { LayoutGrid, LayoutList, Map, Table } from 'lucide-react';
 
 import { ViewToggleGroup } from './ViewToggleGroup';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 const meta: Meta<typeof ViewToggleGroup> = {
   title: 'Layout/ViewToggleGroup',

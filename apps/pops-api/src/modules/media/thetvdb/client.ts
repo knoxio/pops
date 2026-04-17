@@ -1,10 +1,3 @@
-/**
- * TheTVDB v4 HTTP client — typed wrapper around the TheTVDB REST API.
- *
- * Handles request construction, response parsing, error mapping,
- * and automatic 401 re-authentication retry.
- */
-import type { TheTvdbAuth } from './auth.js';
 import { fetchWithRetry } from './rate-limiter.js';
 import {
   type RawTvdbArtwork,
@@ -19,6 +12,14 @@ import {
   type TvdbSeasonSummary,
   type TvdbShowDetail,
 } from './types.js';
+
+/**
+ * TheTVDB v4 HTTP client — typed wrapper around the TheTVDB REST API.
+ *
+ * Handles request construction, response parsing, error mapping,
+ * and automatic 401 re-authentication retry.
+ */
+import type { TheTvdbAuth } from './auth.js';
 
 const BASE_URL = 'https://api4.thetvdb.com/v4';
 

@@ -1,3 +1,6 @@
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { useState } from 'react';
+
 import {
   Badge,
   Button,
@@ -11,8 +14,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@pops/ui';
-import { Check, ChevronsUpDown } from 'lucide-react';
-import { useState } from 'react';
 
 export interface EntityOption {
   id: string;

@@ -6,7 +6,7 @@ import type { ConfirmedTransaction } from '@pops/api/modules/finance/imports';
  */
 export function descriptionPatternFromGroup(descriptions: string[]): string {
   const normalized = descriptions
-    .map((d) => d.toUpperCase().replace(/\s+/g, ' ').trim())
+    .map((d) => d.toUpperCase().replaceAll(/\s+/g, ' ').trim())
     .filter(Boolean);
   if (normalized.length === 0) return '';
 
@@ -25,8 +25,8 @@ export function descriptionPatternFromGroup(descriptions: string[]): string {
   }
 
   const first = normalized[0] ?? '';
-  const token = first.split(/\s+/).find((w) => w.replace(/[^A-Z0-9]/g, '').length >= 3);
-  return token?.replace(/[^A-Z0-9]/g, '') ?? first.slice(0, 12).trim();
+  const token = first.split(/\s+/).find((w) => w.replaceAll(/[^A-Z0-9]/g, '').length >= 3);
+  return token?.replaceAll(/[^A-Z0-9]/g, '') ?? first.slice(0, 12).trim();
 }
 
 /** Tags the user added since Tag Review opened (per-checksum diff). */
@@ -44,5 +44,5 @@ export function computeLearnableTags(
       if (!init.has(tag)) added.add(tag);
     }
   }
-  return [...added].sort((a, b) => a.localeCompare(b));
+  return [...added].toSorted((a, b) => a.localeCompare(b));
 }

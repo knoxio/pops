@@ -4,8 +4,9 @@
  */
 import { createCipheriv, createDecipheriv, randomBytes, randomUUID, scryptSync } from 'node:crypto';
 
-import { settings } from '@pops/db-types';
 import { eq } from 'drizzle-orm';
+
+import { settings } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 import { getEnv } from '../../../env.js';
@@ -110,7 +111,7 @@ export function getPlexUrl(): string | null {
   const db = getDrizzle();
   const record = db.select().from(settings).where(eq(settings.key, SETTINGS_KEYS.PLEX_URL)).get();
   if (record?.value) return record.value;
-  return getEnv('PLEX_URL') || null;
+  return getEnv('PLEX_URL') ?? null;
 }
 
 export function getPlexClient(): PlexClient | null {

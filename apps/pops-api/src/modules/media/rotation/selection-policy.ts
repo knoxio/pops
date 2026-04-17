@@ -1,3 +1,5 @@
+import { eq } from 'drizzle-orm';
+
 /**
  * Selection policy — weighted random sampling from the candidate queue.
  *
@@ -8,7 +10,6 @@
  * PRD-071 US-05
  */
 import { movies, rotationCandidates, rotationExclusions, rotationSources } from '@pops/db-types';
-import { eq } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
 

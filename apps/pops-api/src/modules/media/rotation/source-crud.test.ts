@@ -1,6 +1,7 @@
-import { rotationCandidates, rotationSources } from '@pops/db-types';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
+import { rotationCandidates, rotationSources } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 import { createCaller, setupTestContext } from '../../../shared/test-utils.js';
@@ -41,7 +42,9 @@ function insertCandidate(
 
 describe('rotation.listSources', () => {
   beforeEach(() => ctx.setup());
-  afterEach(() => ctx.teardown());
+  afterEach(() => {
+    ctx.teardown();
+  });
 
   it('returns empty list when no sources', async () => {
     const caller = createCaller();
@@ -85,7 +88,9 @@ describe('rotation.listSources', () => {
 
 describe('rotation.createSource', () => {
   beforeEach(() => ctx.setup());
-  afterEach(() => ctx.teardown());
+  afterEach(() => {
+    ctx.teardown();
+  });
 
   it('creates a source with defaults', async () => {
     const caller = createCaller();
@@ -126,7 +131,9 @@ describe('rotation.createSource', () => {
 
 describe('rotation.updateSource', () => {
   beforeEach(() => ctx.setup());
-  afterEach(() => ctx.teardown());
+  afterEach(() => {
+    ctx.teardown();
+  });
 
   it('updates name and priority', async () => {
     const src = insertSource({ name: 'Old Name', priority: 3 });
@@ -180,7 +187,9 @@ describe('rotation.updateSource', () => {
 
 describe('rotation.deleteSource', () => {
   beforeEach(() => ctx.setup());
-  afterEach(() => ctx.teardown());
+  afterEach(() => {
+    ctx.teardown();
+  });
 
   it('deletes source and its candidates', async () => {
     const src = insertSource({ type: 'plex_watchlist', name: 'Deletable' });

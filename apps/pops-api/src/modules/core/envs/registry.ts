@@ -7,10 +7,10 @@
 import { mkdirSync, readdirSync, unlinkSync } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 
-import type BetterSqlite3 from 'better-sqlite3';
-
 import { getDb, openEnvDatabase } from '../../../db.js';
 import { seedDatabase } from '../../../db/seeder.js';
+
+import type BetterSqlite3 from 'better-sqlite3';
 
 export interface EnvRecord {
   name: string;
@@ -48,7 +48,7 @@ export function validateEnvName(name: string): string | null {
   if (name === 'prod') return `"prod" is reserved`;
   if (!/^[a-zA-Z0-9][a-zA-Z0-9-]*[a-zA-Z0-9]$|^[a-zA-Z0-9]$/.test(name))
     return 'Name must start and end with alphanumeric characters, hyphens allowed in between';
-  if (name.length < 1 || name.length > 64) return 'Name must be 1–64 characters';
+  if (name.length === 0 || name.length > 64) return 'Name must be 1–64 characters';
   return null;
 }
 

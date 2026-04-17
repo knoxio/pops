@@ -1,11 +1,3 @@
-/**
- * ConnectionGraph — force-directed graph visualization of connected items.
- *
- * Uses d3-force for layout physics and renders to HTML5 Canvas for performance.
- * Nodes are colored by item type. Click navigates to item detail. Zoom/pan supported.
- */
-import { Skeleton } from '@pops/ui';
-import { GRAPH_COLORS } from '@pops/ui/theme/graph-colors';
 import {
   forceCenter,
   forceCollide,
@@ -17,6 +9,15 @@ import {
 } from 'd3-force';
 import { useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
+
+/**
+ * ConnectionGraph — force-directed graph visualization of connected items.
+ *
+ * Uses d3-force for layout physics and renders to HTML5 Canvas for performance.
+ * Nodes are colored by item type. Click navigates to item detail. Zoom/pan supported.
+ */
+import { Skeleton } from '@pops/ui';
+import { GRAPH_COLORS } from '@pops/ui/theme/graph-colors';
 
 import { trpc } from '../lib/trpc';
 

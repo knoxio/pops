@@ -23,8 +23,9 @@ vi.mock('../search/registry.js', () => ({
 }));
 
 import { registerSearchAdapter } from '../search/registry.js';
-import type { SearchHit } from '../search/types.js';
 import { entitiesSearchAdapter, type EntityHitData } from './search-adapter.js';
+
+import type { SearchHit } from '../search/types.js';
 
 const ctx: SearchContext = { app: 'finance', page: 'entities' };
 

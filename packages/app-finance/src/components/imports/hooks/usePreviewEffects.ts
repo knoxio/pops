@@ -6,16 +6,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { trpc } from '../../../lib/trpc';
-import type {
-  LocalOp,
-  PreviewChangeSetOutput,
-  ServerChangeSet,
-} from '../correction-proposal-shared';
 import {
   PREVIEW_CHANGESET_MAX_TRANSACTIONS,
   scopePreviewTransactions,
 } from '../correction-proposal-shared';
 import { localOpsToChangeSet } from './useLocalOps';
+
+import type {
+  LocalOp,
+  PreviewChangeSetOutput,
+  ServerChangeSet,
+} from '../correction-proposal-shared';
 
 // ---------------------------------------------------------------------------
 // Helpers

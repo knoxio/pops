@@ -1,5 +1,7 @@
 import { NotFoundError } from '../../../shared/errors.js';
 import { parseJsonStringArray } from '../../../shared/json.js';
+import { classifyCorrectionMatch, normalizeDescription, toCorrection } from './types.js';
+
 import type {
   ChangeSet,
   ChangeSetImpactCounts,
@@ -13,7 +15,6 @@ import type {
   CorrectionMatchSummary,
   CorrectionRow,
 } from './types.js';
-import { classifyCorrectionMatch, normalizeDescription, toCorrection } from './types.js';
 
 /**
  * Pure in-memory matcher used for previews and determinism tests.
@@ -30,7 +31,7 @@ export function findAllMatchingCorrectionFromRules(
   const normalized = normalizeDescription(description);
   const eligible = rules
     .filter((r) => r.isActive && r.confidence >= minConfidence)
-    .sort((a, b) => a.priority - b.priority || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    .toSorted((a, b) => a.priority - b.priority || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
   return eligible.filter((rule) => ruleMatchesDescription(rule, normalized));
 }
@@ -95,7 +96,7 @@ export function applyChangeSetToRules(
   let tempCounter = 0;
   // Deterministic ordering: add → edit → disable → remove (match DB apply semantics)
   const order: Record<ChangeSetOp['op'], number> = { add: 1, edit: 2, disable: 3, remove: 4 };
-  const ops = [...changeSet.ops].sort((a, b) => order[a.op] - order[b.op]);
+  const ops = [...changeSet.ops].toSorted((a, b) => order[a.op] - order[b.op]);
 
   for (const op of ops) {
     if (op.op === 'add') {

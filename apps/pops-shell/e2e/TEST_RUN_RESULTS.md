@@ -61,10 +61,10 @@ All 34 failures are due to UI elements that haven't been implemented yet. This i
 
 ```typescript
 // Before (line 290):
-await expect(page.getByText("Review")).toBeVisible({ timeout: 10000 });
+await expect(page.getByText('Review')).toBeVisible({ timeout: 10000 });
 
 // After:
-await expect(page.getByRole("heading", { name: "Review" })).toBeVisible({ timeout: 10000 });
+await expect(page.getByRole('heading', { name: 'Review' })).toBeVisible({ timeout: 10000 });
 ```
 
 This makes the selector more specific and resilient to responsive design changes.
@@ -171,23 +171,23 @@ Use tests to drive implementation:
 **Test expectation** (from line 458-482):
 
 ```typescript
-test("should edit transaction with Save Once", async ({ page }) => {
+test('should edit transaction with Save Once', async ({ page }) => {
   // 1. Click Edit button
-  const editButton = page.getByRole("button", { name: /edit/i }).first();
+  const editButton = page.getByRole('button', { name: /edit/i }).first();
   await editButton.click();
 
   // 2. Should show edit form
   await expect(page.getByLabel(/description/i)).toBeVisible();
 
   // 3. Modify fields
-  await page.getByLabel(/description/i).fill("EDITED DESCRIPTION");
-  await page.getByLabel(/amount/i).fill("150.00");
+  await page.getByLabel(/description/i).fill('EDITED DESCRIPTION');
+  await page.getByLabel(/amount/i).fill('150.00');
 
   // 4. Click "Save Once" button
-  await page.getByRole("button", { name: /save once/i }).click();
+  await page.getByRole('button', { name: /save once/i }).click();
 
   // 5. Verify updates
-  await expect(page.getByText("EDITED DESCRIPTION")).toBeVisible();
+  await expect(page.getByText('EDITED DESCRIPTION')).toBeVisible();
 });
 ```
 

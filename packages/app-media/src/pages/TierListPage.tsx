@@ -1,3 +1,8 @@
+import { LayoutGrid, RefreshCw } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router';
+import { toast } from 'sonner';
+
 /**
  * TierListPage — dimension selector + TierListBoard for drag-and-drop tier placement.
  *
@@ -20,10 +25,6 @@ import {
   cn,
   Skeleton,
 } from '@pops/ui';
-import { LayoutGrid, RefreshCw } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router';
-import { toast } from 'sonner';
 
 import { type Tier, TierListBoard, type TierMovie } from '../components/TierListBoard';
 import { TierListSummary } from '../components/TierListSummary';
@@ -232,7 +233,9 @@ export function TierListPage() {
                 key={dim.id}
                 role="tab"
                 aria-selected={effectiveDimension === dim.id}
-                onClick={() => handleDimensionChange(dim.id)}
+                onClick={() => {
+                  handleDimensionChange(dim.id);
+                }}
                 className={cn(
                   'rounded-full border px-4 py-1.5 text-sm font-medium transition-colors',
                   effectiveDimension === dim.id

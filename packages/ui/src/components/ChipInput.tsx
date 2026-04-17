@@ -168,7 +168,9 @@ export const ChipInput = forwardRef<HTMLInputElement, ChipInputProps>(
       if (key === ',' && inputValue.includes(',')) {
         e.preventDefault();
         const parts = inputValue.split(',');
-        parts.forEach((part) => addChip(part));
+        parts.forEach((part) => {
+          addChip(part);
+        });
         return;
       }
 
@@ -207,7 +209,9 @@ export const ChipInput = forwardRef<HTMLInputElement, ChipInputProps>(
           .split(/[,\n]/)
           .map((s) => s.trim())
           .filter(Boolean);
-        parts.forEach((part) => addChip(part));
+        parts.forEach((part) => {
+          addChip(part);
+        });
       }
     };
 
@@ -230,7 +234,9 @@ export const ChipInput = forwardRef<HTMLInputElement, ChipInputProps>(
             variant={chipVariant}
             size="sm"
             removable
-            onRemove={() => removeChip(index)}
+            onRemove={() => {
+              removeChip(index);
+            }}
           >
             {value}
           </Chip>

@@ -40,7 +40,9 @@ function RuleDataEditor(props: {
         <Label>Description pattern</Label>
         <Input
           value={data.descriptionPattern}
-          onChange={(e) => onChange({ ...data, descriptionPattern: e.target.value })}
+          onChange={(e) => {
+            onChange({ ...data, descriptionPattern: e.target.value });
+          }}
           disabled={disabled}
         />
       </div>
@@ -48,12 +50,12 @@ function RuleDataEditor(props: {
         <Label>Match type</Label>
         <Select
           value={data.matchType}
-          onChange={(e) =>
+          onChange={(e) => {
             onChange({
               ...data,
               matchType: e.target.value as 'exact' | 'contains' | 'regex',
-            })
-          }
+            });
+          }}
           options={[
             { value: 'exact', label: 'Exact' },
             { value: 'contains', label: 'Contains' },
@@ -66,7 +68,9 @@ function RuleDataEditor(props: {
         <Label>Entity name</Label>
         <Input
           value={data.entityName ?? ''}
-          onChange={(e) => onChange({ ...data, entityName: e.target.value || undefined })}
+          onChange={(e) => {
+            onChange({ ...data, entityName: e.target.value || undefined });
+          }}
           placeholder="e.g. Woolworths"
           disabled={disabled}
         />
@@ -75,15 +79,15 @@ function RuleDataEditor(props: {
         <Label>Transaction type</Label>
         <Select
           value={data.transactionType ?? ''}
-          onChange={(e) =>
+          onChange={(e) => {
             onChange({
               ...data,
               transactionType:
                 e.target.value === ''
                   ? undefined
                   : (e.target.value as 'purchase' | 'transfer' | 'income'),
-            })
-          }
+            });
+          }}
           options={[
             { value: '', label: '— none —' },
             { value: 'purchase', label: 'Purchase' },
@@ -97,7 +101,9 @@ function RuleDataEditor(props: {
         <Label>Location</Label>
         <Input
           value={data.location ?? ''}
-          onChange={(e) => onChange({ ...data, location: e.target.value || undefined })}
+          onChange={(e) => {
+            onChange({ ...data, location: e.target.value || undefined });
+          }}
           disabled={disabled}
         />
       </div>
@@ -117,7 +123,9 @@ function EditDataEditor(props: {
         <Label>Entity name</Label>
         <Input
           value={data.entityName ?? ''}
-          onChange={(e) => onChange({ ...data, entityName: e.target.value || undefined })}
+          onChange={(e) => {
+            onChange({ ...data, entityName: e.target.value || undefined });
+          }}
           disabled={disabled}
         />
       </div>
@@ -125,15 +133,15 @@ function EditDataEditor(props: {
         <Label>Transaction type</Label>
         <Select
           value={data.transactionType ?? ''}
-          onChange={(e) =>
+          onChange={(e) => {
             onChange({
               ...data,
               transactionType:
                 e.target.value === ''
                   ? undefined
                   : (e.target.value as 'purchase' | 'transfer' | 'income'),
-            })
-          }
+            });
+          }}
           options={[
             { value: '', label: '— none —' },
             { value: 'purchase', label: 'Purchase' },
@@ -147,7 +155,9 @@ function EditDataEditor(props: {
         <Label>Location</Label>
         <Input
           value={data.location ?? ''}
-          onChange={(e) => onChange({ ...data, location: e.target.value || undefined })}
+          onChange={(e) => {
+            onChange({ ...data, location: e.target.value || undefined });
+          }}
           disabled={disabled}
         />
       </div>
@@ -175,12 +185,12 @@ export function DetailPanel(props: {
         <div className="text-xs uppercase tracking-wide text-muted-foreground">Add new rule</div>
         <RuleDataEditor
           data={op.data}
-          onChange={(next) =>
+          onChange={(next) => {
             onChange((current) => {
               if (current.kind !== 'add') return current;
               return { ...current, data: next };
-            })
-          }
+            });
+          }}
           disabled={disabled}
           mode="add"
         />
@@ -196,12 +206,12 @@ export function DetailPanel(props: {
         <Separator />
         <EditDataEditor
           data={op.data}
-          onChange={(next) =>
+          onChange={(next) => {
             onChange((current) => {
               if (current.kind !== 'edit') return current;
               return { ...current, data: next };
-            })
-          }
+            });
+          }}
           disabled={disabled}
         />
       </div>
@@ -219,12 +229,12 @@ export function DetailPanel(props: {
         <Label>Rationale (optional)</Label>
         <Textarea
           value={op.rationale}
-          onChange={(e) =>
+          onChange={(e) => {
             onChange((current) => {
               if (current.kind !== 'disable' && current.kind !== 'remove') return current;
               return { ...current, rationale: e.target.value };
-            })
-          }
+            });
+          }}
           placeholder="Why is this rule being removed?"
           rows={3}
           disabled={disabled}

@@ -1,6 +1,7 @@
 import { applyChangeSetToRules } from '@pops/api/modules/core/corrections/pure-service';
-import type { Correction, CorrectionRow } from '@pops/api/modules/core/corrections/types';
 import { correctionToRow, toCorrection } from '@pops/api/modules/core/corrections/types';
+
+import type { Correction, CorrectionRow } from '@pops/api/modules/core/corrections/types';
 import type { Entity } from '@pops/api/modules/core/entities/types';
 
 import type { PendingChangeSet, PendingEntity } from '../store/importStore';

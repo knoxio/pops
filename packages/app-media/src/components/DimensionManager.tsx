@@ -1,3 +1,7 @@
+import { Check, ChevronDown, ChevronUp, Pencil, Plus, Settings, X } from 'lucide-react';
+import { useCallback, useState } from 'react';
+import { toast } from 'sonner';
+
 /**
  * DimensionManager — CRUD panel for comparison dimensions.
  *
@@ -18,9 +22,6 @@ import {
   Switch,
   Textarea,
 } from '@pops/ui';
-import { Check, ChevronDown, ChevronUp, Pencil, Plus, Settings, X } from 'lucide-react';
-import { useCallback, useState } from 'react';
-import { toast } from 'sonner';
 
 import { trpc } from '../lib/trpc';
 
@@ -157,7 +158,7 @@ export function DimensionManager() {
 
   const handleReorder = useCallback(
     (dim: Dimension, direction: 'up' | 'down') => {
-      const sorted = [...dimensions].sort((a, b) => a.sortOrder - b.sortOrder);
+      const sorted = [...dimensions].toSorted((a, b) => a.sortOrder - b.sortOrder);
       const idx = sorted.findIndex((d) => d.id === dim.id);
       const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
       if (swapIdx < 0 || swapIdx >= sorted.length) return;
@@ -180,7 +181,7 @@ export function DimensionManager() {
     [dimensions, updateMutation]
   );
 
-  const sorted = [...dimensions].sort((a, b) => a.sortOrder - b.sortOrder);
+  const sorted = [...dimensions].toSorted((a, b) => a.sortOrder - b.sortOrder);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -199,7 +200,9 @@ export function DimensionManager() {
           <Input
             placeholder="Dimension name"
             value={addName}
-            onChange={(e) => setAddName(e.target.value)}
+            onChange={(e) => {
+              setAddName(e.target.value);
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleAdd();
             }}
@@ -207,7 +210,9 @@ export function DimensionManager() {
           <Textarea
             placeholder="Description (optional)"
             value={addDescription}
-            onChange={(e) => setAddDescription(e.target.value)}
+            onChange={(e) => {
+              setAddDescription(e.target.value);
+            }}
             rows={2}
             className="resize-none"
           />
@@ -242,7 +247,9 @@ export function DimensionManager() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleReorder(dim, 'up')}
+                    onClick={() => {
+                      handleReorder(dim, 'up');
+                    }}
                     disabled={idx === 0 || updateMutation.isPending}
                     className="p-0.5 h-auto w-auto text-muted-foreground hover:text-foreground"
                     aria-label={`Move ${dim.name} up`}
@@ -252,7 +259,9 @@ export function DimensionManager() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleReorder(dim, 'down')}
+                    onClick={() => {
+                      handleReorder(dim, 'down');
+                    }}
                     disabled={idx === sorted.length - 1 || updateMutation.isPending}
                     className="p-0.5 h-auto w-auto text-muted-foreground hover:text-foreground"
                     aria-label={`Move ${dim.name} down`}
@@ -267,7 +276,9 @@ export function DimensionManager() {
                     <div className="space-y-1">
                       <Input
                         value={editing.name}
-                        onChange={(e) => setEditing({ ...editing, name: e.target.value })}
+                        onChange={(e) => {
+                          setEditing({ ...editing, name: e.target.value });
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') handleSaveEdit();
                           if (e.key === 'Escape') setEditing(null);
@@ -277,7 +288,9 @@ export function DimensionManager() {
                       />
                       <Textarea
                         value={editing.description}
-                        onChange={(e) => setEditing({ ...editing, description: e.target.value })}
+                        onChange={(e) => {
+                          setEditing({ ...editing, description: e.target.value });
+                        }}
                         rows={1}
                         className="resize-none text-sm"
                         placeholder="Description"
@@ -296,7 +309,9 @@ export function DimensionManager() {
                           size="sm"
                           variant="ghost"
                           className="h-6 px-2"
-                          onClick={() => setEditing(null)}
+                          onClick={() => {
+                            setEditing(null);
+                          }}
                         >
                           <X className="h-3 w-3" />
                         </Button>
@@ -345,7 +360,9 @@ export function DimensionManager() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => handleStartEdit(dim)}
+                    onClick={() => {
+                      handleStartEdit(dim);
+                    }}
                     className="p-1 h-auto w-auto text-muted-foreground hover:text-foreground"
                     aria-label={`Edit ${dim.name}`}
                   >
@@ -356,7 +373,9 @@ export function DimensionManager() {
                 {/* Active toggle */}
                 <Switch
                   checked={dim.active}
-                  onCheckedChange={() => handleToggleActive(dim)}
+                  onCheckedChange={() => {
+                    handleToggleActive(dim);
+                  }}
                   disabled={updateMutation.isPending}
                   aria-label={`${dim.active ? 'Deactivate' : 'Activate'} ${dim.name}`}
                 />

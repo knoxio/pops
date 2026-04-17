@@ -4,11 +4,13 @@
 import { existsSync, unlinkSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { homeInventory, itemPhotos } from '@pops/db-types';
 import { asc, count, eq } from 'drizzle-orm';
+
+import { homeInventory, itemPhotos } from '@pops/db-types';
 
 import { getDb, getDrizzle } from '../../../db.js';
 import { NotFoundError, ValidationError } from '../../../shared/errors.js';
+
 import type { AttachPhotoInput, ItemPhotoRow, UpdatePhotoInput } from './types.js';
 
 /** Reject path traversal attempts in file paths. */

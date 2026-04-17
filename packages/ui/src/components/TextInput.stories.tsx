@@ -1,11 +1,12 @@
+import { useState } from 'react';
+
+import { TextInput } from './TextInput';
+
 /**
  * TextInput component stories
  * Demonstrates all variants, sizes, shapes, and features
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
-
-import { TextInput } from './TextInput';
 
 const meta: Meta<typeof TextInput> = {
   component: TextInput,
@@ -113,8 +114,12 @@ export const ClearableControlled: Story = {
       <TextInput
         {...args}
         value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onClear={() => setValue('')}
+        onChange={(e) => {
+          setValue(e.target.value);
+        }}
+        onClear={() => {
+          setValue('');
+        }}
         clearable
         placeholder="Type something..."
       />
@@ -303,8 +308,12 @@ export const FilterBar: Story = {
           prefix={<SearchIcon />}
           clearable
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onClear={() => setSearch('')}
+          onChange={(e) => {
+            setSearch(e.target.value);
+          }}
+          onClear={() => {
+            setSearch('');
+          }}
           className="flex-1"
         />
         <TextInput type="date" placeholder="Start date" />

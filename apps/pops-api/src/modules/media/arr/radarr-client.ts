@@ -2,6 +2,7 @@
  * Radarr API client — extends base *arr client with movie-specific endpoints.
  */
 import { ArrBaseClient } from './base-client.js';
+
 import type {
   ArrStatusResult,
   RadarrAddMovieInput,

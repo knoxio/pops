@@ -1,3 +1,5 @@
+import { like } from 'drizzle-orm';
+
 /**
  * Movies search adapter — searches the local movies table by title.
  *
@@ -5,10 +7,10 @@
  * Scoring: exact=1.0, prefix=0.8, contains=0.5
  */
 import { movies } from '@pops/db-types';
-import { like } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
 import { registerSearchAdapter } from '../../core/search/index.js';
+
 import type { Query, SearchAdapter, SearchContext, SearchHit } from '../../core/search/types.js';
 
 export interface MovieHitData {
@@ -39,7 +41,7 @@ function buildPosterUrl(posterPath: string | null): string | null {
 
 function extractYear(releaseDate: string | null): string | null {
   if (!releaseDate) return null;
-  return releaseDate.substring(0, 4) || null;
+  return releaseDate.slice(0, 4) || null;
 }
 
 function parseGenres(genres: string | null): string[] {
@@ -93,7 +95,7 @@ export const moviesSearchAdapter: SearchAdapter<MovieHitData> = {
           },
         };
       })
-      .sort((a, b) => b.score - a.score);
+      .toSorted((a, b) => b.score - a.score);
   },
 };
 

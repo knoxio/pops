@@ -1,16 +1,18 @@
+import { eq } from 'drizzle-orm';
+
 /**
  * Plex watchlist push — resolves Plex Discover ratingKeys for manually added
  * watchlist items so they can be pushed to the Plex cloud watchlist.
  */
 import { mediaWatchlist } from '@pops/db-types';
-import { eq } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
 import { getMovie } from '../movies/service.js';
-import type { PlexClient as PlexClientType } from '../plex/client.js';
 import { getPlexClient } from '../plex/service.js';
 import { findDiscoverMatch } from '../plex/sync-helpers.js';
 import { getTvShow } from '../tv-shows/service.js';
+
+import type { PlexClient as PlexClientType } from '../plex/client.js';
 
 /**
  * Look up a Plex Discover ratingKey for a local media item by searching the
@@ -27,9 +29,8 @@ export async function lookupPlexRatingKey(
 
   if (mediaType === 'movie') {
     return lookupMovieRatingKey(client, mediaId);
-  } else {
-    return lookupTvShowRatingKey(client, mediaId);
   }
+  return lookupTvShowRatingKey(client, mediaId);
 }
 
 async function lookupMovieRatingKey(

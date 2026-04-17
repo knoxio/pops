@@ -18,7 +18,9 @@ export function RejectPanel(props: {
       </div>
       <Textarea
         value={props.feedback}
-        onChange={(e) => props.onFeedbackChange(e.target.value)}
+        onChange={(e) => {
+          props.onFeedbackChange(e.target.value);
+        }}
         placeholder="Why is this proposal wrong?"
         rows={2}
         disabled={props.busy}

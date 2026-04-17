@@ -1,3 +1,5 @@
+import crypto from 'crypto';
+
 /**
  * tRPC router for import operations.
  *
@@ -9,7 +11,6 @@
  * - commitImport: Atomically create entities, apply changeSets + tag rule changeSets, and write transactions
  */
 import { TRPCError } from '@trpc/server';
-import crypto from 'crypto';
 import { z } from 'zod';
 
 import { NotFoundError, ValidationError } from '../../../shared/errors.js';

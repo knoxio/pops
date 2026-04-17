@@ -24,12 +24,13 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Alert, AlertDescription, AlertTitle, Badge, Skeleton, Textarea } from '@pops/ui';
-import { Button } from '@pops/ui';
 import { ArrowDown, ArrowUp, Film, GripVertical, Trash2 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
+
+import { Alert, AlertDescription, AlertTitle, Badge, Skeleton, Textarea } from '@pops/ui';
+import { Button } from '@pops/ui';
 
 import { trpc } from '../lib/trpc';
 
@@ -242,7 +243,9 @@ function WatchlistItem({
             size="sm"
             variant="ghost"
             className="h-7 w-7 p-0 text-muted-foreground hover:text-destructive shrink-0"
-            onClick={() => onRemove(entry.id)}
+            onClick={() => {
+              onRemove(entry.id);
+            }}
             disabled={isRemoving}
             aria-label={`Remove ${title} from watchlist`}
           >
@@ -255,7 +258,9 @@ function WatchlistItem({
             <Textarea
               ref={textareaRef}
               value={draft}
-              onChange={(e) => setDraft(e.target.value)}
+              onChange={(e) => {
+                setDraft(e.target.value);
+              }}
               onKeyDown={handleKeyDown}
               placeholder="Add a note..."
               rows={2}
@@ -293,7 +298,9 @@ function WatchlistItem({
         ) : entry.notes ? (
           <Button
             variant="ghost"
-            onClick={() => setEditing(true)}
+            onClick={() => {
+              setEditing(true);
+            }}
             aria-label={`Edit notes for ${title}`}
             className="mt-1.5 text-xs text-muted-foreground line-clamp-2 text-left hover:text-foreground h-auto p-0 justify-start"
           >
@@ -302,7 +309,9 @@ function WatchlistItem({
         ) : (
           <Button
             variant="ghost"
-            onClick={() => setEditing(true)}
+            onClick={() => {
+              setEditing(true);
+            }}
             aria-label={`Add notes for ${title}`}
             className="mt-1.5 text-xs text-muted-foreground/60 hover:text-muted-foreground h-auto p-0"
           >
@@ -371,7 +380,9 @@ function WatchlistCard({
             size="icon"
             aria-label={`Drag to reorder ${title}`}
             className="absolute top-2 left-1/2 -translate-x-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white rounded-md p-1 h-auto w-auto cursor-grab active:cursor-grabbing hover:bg-black/80"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
             {...dragListeners}
             {...dragAttributes}
           >
@@ -412,7 +423,9 @@ function WatchlistCard({
             alt={`${title} poster`}
             loading="lazy"
             className="h-full w-full object-cover group-hover:opacity-80 transition-opacity"
-            onError={() => setImageError(true)}
+            onError={() => {
+              setImageError(true);
+            }}
           />
         )}
       </div>
@@ -633,7 +646,7 @@ export function WatchlistPage() {
         return;
       }
 
-      const reordered = arrayMove(currentOrder, oldIndex, newIndex) as WatchlistEntry[];
+      const reordered = arrayMove(currentOrder, oldIndex, newIndex);
       setOptimisticOrder(reordered);
 
       const items = reordered.map((entry: WatchlistEntry, i: number) => ({
@@ -664,7 +677,7 @@ export function WatchlistPage() {
           year: null,
         };
       }
-      return undefined;
+      return;
     },
     [movieMap, tvMap]
   );
@@ -691,7 +704,9 @@ export function WatchlistPage() {
             size="sm"
             role="tab"
             aria-selected={filter === opt.value}
-            onClick={() => setFilter(opt.value)}
+            onClick={() => {
+              setFilter(opt.value);
+            }}
             shape="pill"
           >
             {opt.label}
@@ -736,8 +751,12 @@ export function WatchlistPage() {
                   priority={index + 1}
                   isFirst={index === 0}
                   isLast={index === sortedEntries.length - 1}
-                  onMoveUp={() => handleMove(index, 'up')}
-                  onMoveDown={() => handleMove(index, 'down')}
+                  onMoveUp={() => {
+                    handleMove(index, 'up');
+                  }}
+                  onMoveDown={() => {
+                    handleMove(index, 'down');
+                  }}
                   onRemove={(id) => {
                     setRemovingId(id);
                     removeMutation.mutate({ id });

@@ -1,3 +1,6 @@
+import { ChevronLeft, ChevronRight, Package, Trash2, X } from 'lucide-react';
+import { useCallback, useEffect, useState } from 'react';
+
 /**
  * PhotoGallery — Primary display + thumbnail strip with lightbox overlay.
  *
@@ -5,8 +8,6 @@
  * and a lightbox overlay on primary click. Click a thumbnail to swap it into primary.
  */
 import { Button } from '@pops/ui';
-import { ChevronLeft, ChevronRight, Package, Trash2, X } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
 
 export interface PhotoItem {
   id: number;
@@ -30,7 +31,7 @@ export function PhotoGallery({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
-  const sorted = [...photos].sort((a, b) => a.sortOrder - b.sortOrder);
+  const sorted = [...photos].toSorted((a, b) => a.sortOrder - b.sortOrder);
 
   // Reset selected index if photos change and index is out of bounds
   useEffect(() => {
@@ -66,7 +67,9 @@ export function PhotoGallery({
     }
 
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [lightboxIndex, closeLightbox, goNext, goPrev]);
 
   if (photos.length === 0) {
@@ -91,7 +94,9 @@ export function PhotoGallery({
       {/* Primary photo display */}
       <button
         type="button"
-        onClick={() => openLightbox(selectedIndex)}
+        onClick={() => {
+          openLightbox(selectedIndex);
+        }}
         className="w-full rounded-lg overflow-hidden border bg-muted cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         data-testid="primary-photo"
         aria-label="View photo in lightbox"
@@ -113,7 +118,9 @@ export function PhotoGallery({
             <div key={photo.id} className="group relative shrink-0">
               <button
                 type="button"
-                onClick={() => setSelectedIndex(index)}
+                onClick={() => {
+                  setSelectedIndex(index);
+                }}
                 className={`w-16 h-16 rounded-md overflow-hidden border-2 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                   index === selectedIndex
                     ? 'border-app-accent ring-2 ring-app-accent'
@@ -187,7 +194,9 @@ export function PhotoGallery({
           {/* Main image */}
           <div
             className="max-w-[90vw] max-h-[85vh] flex flex-col items-center gap-3"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
           >
             <img
               src={photoSrc(currentPhoto.filePath)}

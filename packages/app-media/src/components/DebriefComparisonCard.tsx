@@ -1,11 +1,12 @@
+import { ImageOff } from 'lucide-react';
+import { useState } from 'react';
+
 /**
  * DebriefComparisonCard — two movie posters side by side for debrief comparison.
  * User taps one to select the winner. Calls recordDebriefComparison mutation,
  * then fires onResult with the outcome.
  */
 import { Skeleton } from '@pops/ui';
-import { ImageOff } from 'lucide-react';
-import { useState } from 'react';
 
 import { trpc } from '../lib/trpc';
 
@@ -62,14 +63,18 @@ export function DebriefComparisonCard({
     <div className="grid grid-cols-2 gap-4" data-testid="debrief-comparison-card">
       <PosterCard
         movie={movieA}
-        onPick={() => handlePick(movieA.id)}
+        onPick={() => {
+          handlePick(movieA.id);
+        }}
         disabled={disabled}
         isWinner={winnerId === movieA.id}
         isLoser={winnerId !== null && winnerId !== movieA.id}
       />
       <PosterCard
         movie={movieB}
-        onPick={() => handlePick(movieB.id)}
+        onPick={() => {
+          handlePick(movieB.id);
+        }}
         disabled={disabled}
         isWinner={winnerId === movieB.id}
         isLoser={winnerId !== null && winnerId !== movieB.id}
@@ -123,7 +128,9 @@ function PosterCard({
           src={posterSrc}
           alt={`${movie.title} poster`}
           className="w-full aspect-[2/3] rounded-md object-cover mb-2"
-          onError={() => setImgError(true)}
+          onError={() => {
+            setImgError(true);
+          }}
         />
       )}
       <h3 className="font-semibold text-sm leading-tight line-clamp-2">{movie.title}</h3>

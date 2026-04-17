@@ -13,7 +13,6 @@
  */
 import { type Router as ExpressRouter, Router } from 'express';
 
-import type { EnvRecord } from './registry.js';
 import {
   createEnv,
   deleteEnv,
@@ -23,6 +22,8 @@ import {
   updateEnvTtl,
   validateEnvName,
 } from './registry.js';
+
+import type { EnvRecord } from './registry.js';
 
 interface EnvRequestBody {
   seed?: unknown;

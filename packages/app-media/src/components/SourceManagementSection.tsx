@@ -1,12 +1,13 @@
+import { Clock, Database, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
 /**
  * SourceManagementSection — CRUD UI for rotation source management.
  *
  * PRD-072 US-03
  */
 import { Button, Label, NumberInput, Select, Switch } from '@pops/ui';
-import { Clock, Database, Plus, RefreshCw, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import { toast } from 'sonner';
 
 import { trpc } from '../lib/trpc';
 
@@ -103,7 +104,9 @@ function SourceCard({ source, onEdit }: SourceCardProps) {
       <div className="flex items-center gap-2 shrink-0">
         <Switch
           checked={source.enabled === 1}
-          onCheckedChange={(checked) => toggleMutation.mutate({ id: source.id, enabled: checked })}
+          onCheckedChange={(checked) => {
+            toggleMutation.mutate({ id: source.id, enabled: checked });
+          }}
           disabled={toggleMutation.isPending}
           aria-label={`Toggle ${source.name}`}
         />
@@ -112,7 +115,9 @@ function SourceCard({ source, onEdit }: SourceCardProps) {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => syncMutation.mutate({ sourceId: source.id })}
+            onClick={() => {
+              syncMutation.mutate({ sourceId: source.id });
+            }}
             disabled={syncMutation.isPending || source.enabled !== 1}
           >
             <RefreshCw className={`h-3.5 w-3.5 ${syncMutation.isPending ? 'animate-spin' : ''}`} />
@@ -251,7 +256,9 @@ function SourceForm({ mode, initialValues, sourceTypes, onClose }: SourceFormPro
         <input
           className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setName(e.target.value);
+          }}
           placeholder="Source name"
         />
       </div>
@@ -261,7 +268,9 @@ function SourceForm({ mode, initialValues, sourceTypes, onClose }: SourceFormPro
           <Label className="text-muted-foreground">Priority (1-10)</Label>
           <NumberInput
             value={priority}
-            onChange={(e) => setPriority(Math.min(10, Math.max(1, Number(e.target.value) || 1)))}
+            onChange={(e) => {
+              setPriority(Math.min(10, Math.max(1, Number(e.target.value) || 1)));
+            }}
             min={1}
             max={10}
           />
@@ -270,7 +279,9 @@ function SourceForm({ mode, initialValues, sourceTypes, onClose }: SourceFormPro
           <Label className="text-muted-foreground">Sync interval (hours)</Label>
           <NumberInput
             value={syncIntervalHours}
-            onChange={(e) => setSyncIntervalHours(Math.max(1, Number(e.target.value) || 1))}
+            onChange={(e) => {
+              setSyncIntervalHours(Math.max(1, Number(e.target.value) || 1));
+            }}
             min={1}
           />
         </div>
@@ -320,7 +331,9 @@ function SourceForm({ mode, initialValues, sourceTypes, onClose }: SourceFormPro
           <input
             className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             value={(configValues.listUrl as string) ?? ''}
-            onChange={(e) => setConfigValues({ ...configValues, listUrl: e.target.value })}
+            onChange={(e) => {
+              setConfigValues({ ...configValues, listUrl: e.target.value });
+            }}
             placeholder="https://letterboxd.com/user/list/name/"
           />
         </div>
@@ -331,12 +344,12 @@ function SourceForm({ mode, initialValues, sourceTypes, onClose }: SourceFormPro
           <Label className="text-muted-foreground">Pages to fetch (1-25)</Label>
           <NumberInput
             value={(configValues.pages as number) ?? 5}
-            onChange={(e) =>
+            onChange={(e) => {
               setConfigValues({
                 ...configValues,
                 pages: Math.min(25, Math.max(1, Number(e.target.value) || 5)),
-              })
-            }
+              });
+            }}
             min={1}
             max={25}
           />
@@ -438,7 +451,13 @@ export function SourceManagementSection() {
           <p className="text-sm text-muted-foreground">No sources configured</p>
         ) : (
           sourcesQuery.data.map((source) => (
-            <SourceCard key={source.id} source={source} onEdit={() => handleEdit(source)} />
+            <SourceCard
+              key={source.id}
+              source={source}
+              onEdit={() => {
+                handleEdit(source);
+              }}
+            />
           ))
         )}
       </div>

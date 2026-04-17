@@ -33,7 +33,7 @@ function getPendingMigrations(database: BetterSqlite3.Database, migrationsDir: s
   try {
     files = readdirSync(migrationsDir)
       .filter((f) => f.endsWith('.sql'))
-      .sort();
+      .toSorted();
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'ENOENT') return [];
     throw err;
@@ -62,10 +62,10 @@ function createPreMigrationBackup(
     return null;
   }
 
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const timestamp = new Date().toISOString().replaceAll(/[:.]/g, '-');
   const backupPath = `${dbPath}.pre-migration-${timestamp}.bak`;
 
-  database.exec(`VACUUM INTO '${backupPath.replace(/'/g, "''")}'`);
+  database.exec(`VACUUM INTO '${backupPath.replaceAll(/'/g, "''")}'`);
   return backupPath;
 }
 
@@ -187,7 +187,9 @@ describe('pre-migration backup', () => {
     expect(backupPath).toBeTruthy();
 
     // Migration should fail
-    expect(() => runMigrations(db, migrationsDir, pending)).toThrow();
+    expect(() => {
+      runMigrations(db, migrationsDir, pending);
+    }).toThrow();
 
     // Backup should still exist
     const files = readdirSync(tmpDir).filter((f) => f.endsWith('.bak'));

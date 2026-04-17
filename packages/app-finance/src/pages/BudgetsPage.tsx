@@ -2,8 +2,13 @@
  * Budgets page - manage budgets with CRUD
  */
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { Controller, useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { z } from 'zod';
+
 import { useSetPageContext } from '@pops/navigation';
-import type { ColumnFilter } from '@pops/ui';
 import {
   Alert,
   AlertDialog,
@@ -34,14 +39,12 @@ import {
   Textarea,
   TextInput,
 } from '@pops/ui';
-import type { ColumnDef } from '@tanstack/react-table';
-import { Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
-import { toast } from 'sonner';
-import { z } from 'zod';
 
 import { trpc } from '../lib/trpc';
+
+import type { ColumnDef } from '@tanstack/react-table';
+
+import type { ColumnFilter } from '@pops/ui';
 
 interface Budget {
   id: string;
@@ -132,10 +135,10 @@ export function BudgetsPage() {
     setEditingBudget(budget);
     form.reset({
       category: budget.category,
-      period: budget.period || '',
+      period: budget.period ?? '',
       amount: budget.amount !== null ? String(budget.amount) : '',
       active: budget.active,
-      notes: budget.notes || '',
+      notes: budget.notes ?? '',
     });
     setIsDialogOpen(true);
   };
@@ -239,13 +242,19 @@ export function BudgetsPage() {
             }
             align="end"
           >
-            <DropdownMenuItem onClick={() => handleEdit(row.original)}>
+            <DropdownMenuItem
+              onClick={() => {
+                handleEdit(row.original);
+              }}
+            >
               <Pencil className="mr-2 h-4 w-4" /> Edit
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
-              onClick={() => setDeletingId(row.original.id)}
+              onClick={() => {
+                setDeletingId(row.original.id);
+              }}
             >
               <Trash2 className="mr-2 h-4 w-4" /> Delete
             </DropdownMenuItem>
@@ -377,7 +386,9 @@ export function BudgetsPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setIsDialogOpen(false)}
+                onClick={() => {
+                  setIsDialogOpen(false);
+                }}
                 disabled={isSubmitting}
               >
                 Cancel
@@ -392,7 +403,12 @@ export function BudgetsPage() {
       </Dialog>
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deletingId} onOpenChange={() => setDeletingId(null)}>
+      <AlertDialog
+        open={!!deletingId}
+        onOpenChange={() => {
+          setDeletingId(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>

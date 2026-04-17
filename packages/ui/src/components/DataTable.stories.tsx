@@ -1,11 +1,12 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { ColumnDef } from '@tanstack/react-table';
 import { useState } from 'react';
 
 import { Checkbox } from '../primitives/checkbox';
 import { Button } from './Button';
 import { DataTable, SortableHeader } from './DataTable';
 import { EditableCell } from './EditableCell';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { ColumnDef } from '@tanstack/react-table';
 
 const meta: Meta<typeof DataTable> = {
   title: 'Data Display/Table',

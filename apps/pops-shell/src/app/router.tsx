@@ -1,3 +1,6 @@
+import { Suspense } from 'react';
+import { createBrowserRouter, Link, Navigate } from 'react-router';
+
 /**
  * Shell router configuration
  *
@@ -8,8 +11,6 @@ import { routes as aiRoutes } from '@pops/app-ai';
 import { routes as financeRoutes } from '@pops/app-finance';
 import { routes as inventoryRoutes } from '@pops/app-inventory';
 import { routes as mediaRoutes } from '@pops/app-media';
-import { Suspense } from 'react';
-import { createBrowserRouter, Link, Navigate } from 'react-router';
 
 import { RootLayout } from './layout/RootLayout';
 import { NotFoundPage } from './pages/NotFoundPage';

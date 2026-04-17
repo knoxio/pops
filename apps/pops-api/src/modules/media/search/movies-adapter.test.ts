@@ -1,5 +1,6 @@
-import type { Database } from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { Database } from 'better-sqlite3';
 
 // Prevent side-effect registration from throwing on import
 vi.mock('../../core/search/registry.js', () => ({
@@ -10,8 +11,9 @@ vi.mock('../../core/search/registry.js', () => ({
 
 import { seedMovie, setupTestContext } from '../../../shared/test-utils.js';
 import { registerSearchAdapter } from '../../core/search/registry.js';
-import type { SearchContext } from '../../core/search/types.js';
 import { moviesSearchAdapter } from './movies-adapter.js';
+
+import type { SearchContext } from '../../core/search/types.js';
 
 const ctx = setupTestContext();
 let db: Database;

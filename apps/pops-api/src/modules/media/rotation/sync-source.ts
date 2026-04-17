@@ -1,3 +1,5 @@
+import { eq, sql } from 'drizzle-orm';
+
 /**
  * Rotation source sync — fetches candidates from an adapter and
  * upserts them into the rotation_candidates table.
@@ -6,7 +8,6 @@
  * PRD-071 US-07: syncAllSources() — batch sync with interval gating.
  */
 import { rotationCandidates, rotationExclusions, rotationSources } from '@pops/db-types';
-import { eq, sql } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
 import { getRegisteredTypes, getSourceAdapter } from './source-registry.js';

@@ -1,8 +1,3 @@
-/**
- * DiscoverCard — poster card for a TMDB discovery result.
- * Displays poster, title, year, TMDB rating, and action buttons.
- */
-import { Badge, Button, cn, Skeleton } from '@pops/ui';
 import {
   Bookmark,
   BookmarkCheck,
@@ -15,6 +10,12 @@ import {
   X,
 } from 'lucide-react';
 import { useState } from 'react';
+
+/**
+ * DiscoverCard — poster card for a TMDB discovery result.
+ * Displays poster, title, year, TMDB rating, and action buttons.
+ */
+import { Badge, Button, cn, Skeleton } from '@pops/ui';
 
 import { MovieActionButtons } from './MovieActionButtons';
 
@@ -117,8 +118,12 @@ export function DiscoverCard({
               'group-hover:opacity-80',
               imageLoaded ? 'opacity-100' : 'opacity-0'
             )}
-            onLoad={() => setImageLoaded(true)}
-            onError={() => setImageError(true)}
+            onLoad={() => {
+              setImageLoaded(true);
+            }}
+            onError={() => {
+              setImageError(true);
+            }}
           />
         )}
 
@@ -158,7 +163,7 @@ export function DiscoverCard({
             onClick={() =>
               onWatchlist ? onRemoveFromWatchlist?.(tmdbId) : onAddToWatchlist?.(tmdbId)
             }
-            disabled={isAddingToWatchlist || isRemovingFromWatchlist}
+            disabled={isAddingToWatchlist ?? isRemovingFromWatchlist}
             title={onWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
             aria-label={onWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
           >

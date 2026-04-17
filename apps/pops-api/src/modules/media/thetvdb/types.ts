@@ -272,7 +272,7 @@ function pickBestArtwork(artworks: TvdbArtwork[], type: number): string | null {
   const candidates = artworks.filter((a) => a.type === type);
   if (candidates.length === 0) return null;
 
-  const sorted = [...candidates].sort((a, b) => {
+  const sorted = [...candidates].toSorted((a, b) => {
     const aEng = a.language === 'eng' ? 1 : 0;
     const bEng = b.language === 'eng' ? 1 : 0;
     if (aEng !== bEng) return bEng - aEng;

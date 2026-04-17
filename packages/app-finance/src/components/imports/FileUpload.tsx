@@ -1,6 +1,7 @@
-import { Button, Label } from '@pops/ui';
 import { FileText, Upload, X } from 'lucide-react';
 import { useCallback, useState } from 'react';
+
+import { Button, Label } from '@pops/ui';
 
 interface FileUploadProps {
   onFileSelect: (file: File | null) => void;

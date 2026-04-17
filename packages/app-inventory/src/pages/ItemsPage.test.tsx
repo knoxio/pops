@@ -223,7 +223,7 @@ describe('ItemsPage', () => {
 
       // Location select should have: All Locations, Home, └ Office
       const selects = screen.getAllByRole('combobox');
-      const locationSelect = selects[selects.length - 1]!; // last select
+      const locationSelect = selects.at(-1)!; // last select
       const options = locationSelect.querySelectorAll('option');
       expect(options.length).toBeGreaterThanOrEqual(3);
     });

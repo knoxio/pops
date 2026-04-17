@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+
 import { describe, expect, it } from 'vitest';
 
 import { transformAmex } from './amex.js';

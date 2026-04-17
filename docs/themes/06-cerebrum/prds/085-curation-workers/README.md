@@ -13,49 +13,49 @@ Build the four Glia curation worker types that maintain engram quality over time
 
 Every worker produces actions in a uniform structure consumed by the trust graduation system (PRD-086):
 
-| Field            | Type     | Description                                                         |
-| ---------------- | -------- | ------------------------------------------------------------------- |
-| `id`             | string   | Unique action ID: `glia_{action_type}_{timestamp}_{short_hash}`     |
-| `action_type`    | string   | `prune`, `consolidate`, `link`, `audit`                             |
-| `affected_ids`   | string[] | Engram IDs affected by this action                                  |
-| `rationale`      | string   | Human-readable explanation of why this action is proposed            |
-| `payload`        | object   | Action-type-specific data (merge plan, link pairs, quality scores)  |
-| `phase`          | string   | Trust phase at time of creation: `propose`, `act_report`, `silent`  |
-| `created_at`     | string   | ISO 8601 timestamp                                                  |
+| Field          | Type     | Description                                                        |
+| -------------- | -------- | ------------------------------------------------------------------ |
+| `id`           | string   | Unique action ID: `glia_{action_type}_{timestamp}_{short_hash}`    |
+| `action_type`  | string   | `prune`, `consolidate`, `link`, `audit`                            |
+| `affected_ids` | string[] | Engram IDs affected by this action                                 |
+| `rationale`    | string   | Human-readable explanation of why this action is proposed          |
+| `payload`      | object   | Action-type-specific data (merge plan, link pairs, quality scores) |
+| `phase`        | string   | Trust phase at time of creation: `propose`, `act_report`, `silent` |
+| `created_at`   | string   | ISO 8601 timestamp                                                 |
 
 ### Staleness Score (Pruner)
 
-| Factor              | Weight | Measurement                                          |
-| ------------------- | ------ | ---------------------------------------------------- |
-| Days since modified  | 0.3    | Linear decay, capped at 365 days                     |
-| Days since referenced| 0.3    | Last time another engram linked to it or Thalamus returned it in a query |
-| Inbound link count   | 0.2    | Inverse — more links = lower staleness               |
-| Query hit count      | 0.2    | Inverse — more retrieval hits = lower staleness      |
+| Factor                | Weight | Measurement                                                              |
+| --------------------- | ------ | ------------------------------------------------------------------------ |
+| Days since modified   | 0.3    | Linear decay, capped at 365 days                                         |
+| Days since referenced | 0.3    | Last time another engram linked to it or Thalamus returned it in a query |
+| Inbound link count    | 0.2    | Inverse — more links = lower staleness                                   |
+| Query hit count       | 0.2    | Inverse — more retrieval hits = lower staleness                          |
 
 Score range: 0.0 (fresh) to 1.0 (stale). Configurable threshold in `glia.toml` (default: 0.7).
 
 ### Quality Score (Auditor)
 
-| Factor           | Weight | Measurement                                               |
-| ---------------- | ------ | --------------------------------------------------------- |
-| Completeness     | 0.3    | Has title, body > 50 words, at least one scope, tags > 0  |
-| Specificity      | 0.3    | Named entities, concrete details vs vague language         |
-| Template fit     | 0.2    | Percentage of template-suggested sections present          |
-| Link density     | 0.2    | Cross-references to other engrams                          |
+| Factor       | Weight | Measurement                                              |
+| ------------ | ------ | -------------------------------------------------------- |
+| Completeness | 0.3    | Has title, body > 50 words, at least one scope, tags > 0 |
+| Specificity  | 0.3    | Named entities, concrete details vs vague language       |
+| Template fit | 0.2    | Percentage of template-suggested sections present        |
+| Link density | 0.2    | Cross-references to other engrams                        |
 
 Score range: 0.0 (poor) to 1.0 (high quality). Threshold for flagging in `glia.toml` (default: 0.3).
 
 ## API Surface
 
-| Procedure                              | Input                                           | Output                                   | Notes                                             |
-| -------------------------------------- | ----------------------------------------------- | ---------------------------------------- | ------------------------------------------------- |
-| `cerebrum.glia.runPruner`              | dryRun?: boolean                                | `{ actions: GliaAction[] }`              | Run pruner scan, return proposals or execute       |
-| `cerebrum.glia.runConsolidator`        | dryRun?: boolean                                | `{ actions: GliaAction[] }`              | Run consolidation scan, return proposals or execute|
-| `cerebrum.glia.runLinker`              | dryRun?: boolean                                | `{ actions: GliaAction[] }`              | Run link scan, return proposals or execute         |
-| `cerebrum.glia.runAuditor`             | dryRun?: boolean                                | `{ actions: GliaAction[] }`              | Run audit scan, return proposals or execute        |
-| `cerebrum.glia.getStalenessScore`      | engramId: string                                | `{ score: number, factors: object }`     | Single engram staleness score breakdown            |
-| `cerebrum.glia.getQualityScore`        | engramId: string                                | `{ score: number, factors: object }`     | Single engram quality score breakdown              |
-| `cerebrum.glia.getOrphans`             | limit?: number                                  | `{ engrams: Engram[] }`                  | List engrams with no inbound links and no recent queries |
+| Procedure                         | Input            | Output                               | Notes                                                    |
+| --------------------------------- | ---------------- | ------------------------------------ | -------------------------------------------------------- |
+| `cerebrum.glia.runPruner`         | dryRun?: boolean | `{ actions: GliaAction[] }`          | Run pruner scan, return proposals or execute             |
+| `cerebrum.glia.runConsolidator`   | dryRun?: boolean | `{ actions: GliaAction[] }`          | Run consolidation scan, return proposals or execute      |
+| `cerebrum.glia.runLinker`         | dryRun?: boolean | `{ actions: GliaAction[] }`          | Run link scan, return proposals or execute               |
+| `cerebrum.glia.runAuditor`        | dryRun?: boolean | `{ actions: GliaAction[] }`          | Run audit scan, return proposals or execute              |
+| `cerebrum.glia.getStalenessScore` | engramId: string | `{ score: number, factors: object }` | Single engram staleness score breakdown                  |
+| `cerebrum.glia.getQualityScore`   | engramId: string | `{ score: number, factors: object }` | Single engram quality score breakdown                    |
+| `cerebrum.glia.getOrphans`        | limit?: number   | `{ engrams: Engram[] }`              | List engrams with no inbound links and no recent queries |
 
 ## Business Rules
 
@@ -72,27 +72,27 @@ Score range: 0.0 (poor) to 1.0 (high quality). Threshold for flagging in `glia.t
 
 ## Edge Cases
 
-| Case                                            | Behaviour                                                                    |
-| ----------------------------------------------- | ---------------------------------------------------------------------------- |
-| Consolidation merges engrams with different tags | Merged engram receives the union of all tags from source engrams             |
-| Consolidation merges engrams with different links| Merged engram receives the union of all links, re-pointed to the new engram  |
-| Pruner flags an engram that was recently queried | Query hits within the last 7 days reset the staleness score for that factor  |
-| Linker proposes a link that already exists       | Duplicate link proposals are silently dropped                                |
-| Auditor finds contradictions across scopes       | Contradictions only flagged within the same top-level scope                  |
-| Consolidator cluster spans 20+ engrams           | Cluster is split into sub-clusters of max 10 for manageable merge plans     |
-| Engram modified between scan and execution       | Worker re-checks `modified_at` before execution — aborts if changed         |
-| LLM call fails during auditor contradiction check| Action logged with `status: error`, retried on next run                     |
-| All engrams in a consolidation cluster are stale | Consolidation proceeds — staleness of originals does not block merging      |
-| Quality score for engram with no template        | Template fit factor scores 0.5 (neutral) — no penalty, no bonus             |
+| Case                                              | Behaviour                                                                   |
+| ------------------------------------------------- | --------------------------------------------------------------------------- |
+| Consolidation merges engrams with different tags  | Merged engram receives the union of all tags from source engrams            |
+| Consolidation merges engrams with different links | Merged engram receives the union of all links, re-pointed to the new engram |
+| Pruner flags an engram that was recently queried  | Query hits within the last 7 days reset the staleness score for that factor |
+| Linker proposes a link that already exists        | Duplicate link proposals are silently dropped                               |
+| Auditor finds contradictions across scopes        | Contradictions only flagged within the same top-level scope                 |
+| Consolidator cluster spans 20+ engrams            | Cluster is split into sub-clusters of max 10 for manageable merge plans     |
+| Engram modified between scan and execution        | Worker re-checks `modified_at` before execution — aborts if changed         |
+| LLM call fails during auditor contradiction check | Action logged with `status: error`, retried on next run                     |
+| All engrams in a consolidation cluster are stale  | Consolidation proceeds — staleness of originals does not block merging      |
+| Quality score for engram with no template         | Template fit factor scores 0.5 (neutral) — no penalty, no bonus             |
 
 ## User Stories
 
-| #   | Story                                              | Summary                                                                         | Status      | Parallelisable   |
-| --- | -------------------------------------------------- | ------------------------------------------------------------------------------- | ----------- | ---------------- |
-| 01  | [us-01-pruner](us-01-pruner.md)                    | Staleness scoring, orphan detection, archive proposals                          | Not started | Yes              |
-| 02  | [us-02-consolidator](us-02-consolidator.md)        | Cluster detection via Thalamus, merge plan generation, archive originals        | Not started | Yes              |
-| 03  | [us-03-linker](us-03-linker.md)                    | Cross-reference discovery, shared entity detection, bidirectional link proposals| Not started | Yes              |
-| 04  | [us-04-auditor](us-04-auditor.md)                  | Contradiction detection, quality scoring, coverage gap flagging                 | Not started | Yes              |
+| #   | Story                                       | Summary                                                                          | Status      | Parallelisable |
+| --- | ------------------------------------------- | -------------------------------------------------------------------------------- | ----------- | -------------- |
+| 01  | [us-01-pruner](us-01-pruner.md)             | Staleness scoring, orphan detection, archive proposals                           | Not started | Yes            |
+| 02  | [us-02-consolidator](us-02-consolidator.md) | Cluster detection via Thalamus, merge plan generation, archive originals         | Not started | Yes            |
+| 03  | [us-03-linker](us-03-linker.md)             | Cross-reference discovery, shared entity detection, bidirectional link proposals | Not started | Yes            |
+| 04  | [us-04-auditor](us-04-auditor.md)           | Contradiction detection, quality scoring, coverage gap flagging                  | Not started | Yes            |
 
 All four workers are independent and can be built in parallel. Each worker depends on PRD-077 (engram storage), PRD-079 (Thalamus indexing), and the `glia_actions` table from PRD-086 for dispatching actions through the trust system.
 

@@ -1,8 +1,9 @@
-import type { Database } from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { seedDimension, seedMovie, setupTestContext } from '../../../shared/test-utils.js';
 import { deriveTierList } from './tier-list.js';
+
+import type { Database } from 'better-sqlite3';
 
 const ctx = setupTestContext();
 let db: Database;
@@ -113,7 +114,7 @@ describe('deriveTierList', () => {
     const result = deriveTierList(dimId);
     const allMovies = result.flatMap((g) => g.movies);
     expect(allMovies[0]!.title).toBe('Top');
-    expect(allMovies[allMovies.length - 1]!.title).toBe('Bottom');
+    expect(allMovies.at(-1)!.title).toBe('Bottom');
   });
 
   it('only includes empty tiers that have movies', () => {

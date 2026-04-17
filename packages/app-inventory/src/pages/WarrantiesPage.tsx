@@ -1,3 +1,7 @@
+import { AlertCircle, ChevronDown, ChevronRight, ShieldCheck } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Link, useNavigate } from 'react-router';
+
 /**
  * WarrantiesPage — warranty tracking dashboard for inventory items.
  *
@@ -5,9 +9,6 @@
  * >90d active (green), expired (grey). PRD-050/US-01.
  */
 import { AssetIdBadge, Badge, Button, PageHeader, Skeleton } from '@pops/ui';
-import { AlertCircle, ChevronDown, ChevronRight, ShieldCheck } from 'lucide-react';
-import { useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router';
 
 import { trpc } from '../lib/trpc';
 
@@ -113,7 +114,9 @@ function WarrantyRow({
           target="_blank"
           rel="noopener noreferrer"
           className="text-xs text-primary whitespace-nowrap hover:underline"
-          onClick={(e) => e.stopPropagation()}
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
         >
           View Warranty
         </a>
@@ -226,7 +229,9 @@ function ExpiringSection({ tier, items, paperlessBaseUrl, onItemClick }: Expirin
             daysRemaining={item.daysRemaining}
             showUrgency
             paperlessBaseUrl={paperlessBaseUrl}
-            onClick={() => onItemClick(item.id)}
+            onClick={() => {
+              onItemClick(item.id);
+            }}
           />
         ))}
       </div>
@@ -254,7 +259,9 @@ function CollapsibleSection({
       <Button
         variant="ghost"
         className="flex w-full items-center gap-2 px-4 py-3 h-auto text-left font-medium"
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          setOpen(!open);
+        }}
       >
         {open ? (
           <ChevronDown className="h-4 w-4 text-muted-foreground" />

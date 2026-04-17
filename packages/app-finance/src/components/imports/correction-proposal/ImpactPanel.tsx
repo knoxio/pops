@@ -1,7 +1,9 @@
-import { Badge, Button } from '@pops/ui';
 import { RefreshCcw } from 'lucide-react';
 
+import { Badge, Button } from '@pops/ui';
+
 import { PREVIEW_CHANGESET_MAX_TRANSACTIONS } from '../lib/preview-scoping';
+
 import type { PreviewChangeSetOutput, PreviewView } from './types';
 
 function ImpactContent(props: { result: PreviewChangeSetOutput }) {
@@ -119,7 +121,9 @@ export function ImpactPanel(props: {
         <Button
           size="sm"
           variant={props.view === 'selected' ? 'default' : 'outline'}
-          onClick={() => props.onViewChange('selected')}
+          onClick={() => {
+            props.onViewChange('selected');
+          }}
           className="flex-1"
         >
           Selected
@@ -127,7 +131,9 @@ export function ImpactPanel(props: {
         <Button
           size="sm"
           variant={props.view === 'combined' ? 'default' : 'outline'}
-          onClick={() => props.onViewChange('combined')}
+          onClick={() => {
+            props.onViewChange('combined');
+          }}
           className="flex-1"
         >
           Combined

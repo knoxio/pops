@@ -150,10 +150,7 @@ function setupTransactionMock(): void {
   } as unknown as ReturnType<typeof getDb>);
 }
 
-function setupDrizzleMock(
-  seasonResult: unknown = undefined,
-  episodeResult: unknown = undefined
-): void {
+function setupDrizzleMock(seasonResult?: unknown, episodeResult?: unknown): void {
   let callCount = 0;
   const results = [seasonResult, episodeResult];
   const mockSelect = vi.fn().mockImplementation(() => ({

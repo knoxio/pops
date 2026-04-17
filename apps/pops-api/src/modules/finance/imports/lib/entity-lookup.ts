@@ -1,3 +1,5 @@
+import { isNotNull } from 'drizzle-orm';
+
 /**
  * Entity lookup and alias map loader.
  *
@@ -9,7 +11,6 @@
  * all matching stages (correction, prefix, contains, etc.).
  */
 import { entities } from '@pops/db-types';
-import { isNotNull } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../../db.js';
 

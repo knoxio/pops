@@ -43,7 +43,7 @@ interface SearchHit<T = unknown> {
   uri: string; // "pops:media/movie/42"
   score: number; // 0.0–1.0: exact=1.0, prefix=0.8, contains=0.5
   matchField: string; // which field matched: "title", "description", "assetId"
-  matchType: "exact" | "prefix" | "contains";
+  matchType: 'exact' | 'prefix' | 'contains';
   data: T; // domain-specific, opaque to engine
 }
 ```

@@ -1,3 +1,17 @@
+import {
+  AlertTriangle,
+  ArrowLeft,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  RotateCw,
+  ScrollText,
+  TrendingUp,
+  XCircle,
+} from 'lucide-react';
+import { useState } from 'react';
+import { Link } from 'react-router';
+
 /**
  * RotationLogPage — paginated history of rotation cycle events.
  *
@@ -18,19 +32,6 @@ import {
   CollapsibleTrigger,
   Skeleton,
 } from '@pops/ui';
-import {
-  AlertTriangle,
-  ArrowLeft,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  RotateCw,
-  ScrollText,
-  TrendingUp,
-  XCircle,
-} from 'lucide-react';
-import { useState } from 'react';
-import { Link } from 'react-router';
 
 import { trpc } from '../lib/trpc';
 
@@ -172,7 +173,9 @@ export function RotationLogPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            onClick={() => {
+              setPage((p) => Math.max(0, p - 1));
+            }}
             disabled={page === 0}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -183,7 +186,9 @@ export function RotationLogPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            onClick={() => {
+              setPage((p) => Math.min(totalPages - 1, p + 1));
+            }}
             disabled={page >= totalPages - 1}
           >
             <ChevronRight className="h-4 w-4" />

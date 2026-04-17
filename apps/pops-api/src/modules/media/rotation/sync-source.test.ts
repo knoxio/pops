@@ -1,12 +1,14 @@
-import { rotationCandidates, rotationSources } from '@pops/db-types';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { rotationCandidates, rotationSources } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 import { setupTestContext } from '../../../shared/test-utils.js';
 import { registerSourceAdapter } from './source-registry.js';
-import type { CandidateMovie, RotationSourceAdapter } from './source-types.js';
 import { syncSource } from './sync-source.js';
+
+import type { CandidateMovie, RotationSourceAdapter } from './source-types.js';
 
 // ---------------------------------------------------------------------------
 // Test adapter

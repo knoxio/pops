@@ -1,13 +1,12 @@
-import { transactions as transactionsTable } from '@pops/db-types';
-import type { Database } from 'better-sqlite3';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
 import { count, eq, isNull } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
-import { readFileSync } from 'fs';
 import Papa from 'papaparse';
-import { join } from 'path';
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { transactions as transactionsTable } from '@pops/db-types';
 
 import {
   createCaller,
@@ -17,6 +16,9 @@ import {
 } from '../../../shared/test-utils.js';
 import { clearCache } from './lib/ai-categorizer.js';
 import { transformAmex } from './transformers/amex.js';
+
+import type { Database } from 'better-sqlite3';
+
 import type { ConfirmedTransaction, ExecuteImportOutput, ProcessImportOutput } from './types.js';
 
 /**
@@ -32,8 +34,8 @@ import type { ConfirmedTransaction, ExecuteImportOutput, ProcessImportOutput } f
  * NO external API calls - fully reproducible.
  */
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+const __filename = import.meta.filename;
+const __dirname = import.meta.dirname;
 
 // Mock AI categorizer with smart lookup-based responses
 vi.mock('./lib/ai-categorizer.js', async (importOriginal) => {
@@ -170,19 +172,17 @@ describe('E2E: Complete Import Flow', () => {
     expect(netflixMatch?.entity.matchType).toBe('contains');
 
     // Step 5: Manually resolve uncertain transactions
-    const confirmed: ConfirmedTransaction[] = [
-      ...processed.matched.map((t) => ({
-        date: t.date,
-        description: t.description,
-        amount: t.amount,
-        account: t.account,
-        location: t.location,
-        rawRow: t.rawRow,
-        checksum: t.checksum,
-        entityId: t.entity.entityId ?? '',
-        entityName: t.entity.entityName ?? '',
-      })),
-    ];
+    const confirmed: ConfirmedTransaction[] = processed.matched.map((t) => ({
+      date: t.date,
+      description: t.description,
+      amount: t.amount,
+      account: t.account,
+      location: t.location,
+      rawRow: t.rawRow,
+      checksum: t.checksum,
+      entityId: t.entity.entityId ?? '',
+      entityName: t.entity.entityName ?? '',
+    }));
 
     expect(confirmed.length).toBeGreaterThan(0);
 

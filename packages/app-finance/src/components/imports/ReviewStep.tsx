@@ -1,12 +1,11 @@
-import type { ConfirmedTransaction } from '@pops/api/modules/finance/imports';
-import { Button } from '@pops/ui';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@pops/ui';
 import { AlertCircle, AlertTriangle, CheckCircle, Settings2, XCircle } from 'lucide-react';
 import { useCallback } from 'react';
 import { toast } from 'sonner';
 
+import { Button } from '@pops/ui';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@pops/ui';
+
 import { trpc } from '../../lib/trpc';
-import type { ProcessedTransaction } from '../../store/importStore';
 import { useImportStore } from '../../store/importStore';
 import { CorrectionProposalDialog } from './CorrectionProposalDialog';
 import { EntityCreateDialog } from './EntityCreateDialog';
@@ -18,6 +17,10 @@ import { FailedTab } from './review/FailedTab';
 import { MatchedTab } from './review/MatchedTab';
 import { SkippedTab } from './review/SkippedTab';
 import { UncertainTab } from './review/UncertainTab';
+
+import type { ConfirmedTransaction } from '@pops/api/modules/finance/imports';
+
+import type { ProcessedTransaction } from '../../store/importStore';
 
 /**
  * Step 4: Review transactions and resolve uncertain/failed matches
@@ -278,7 +281,9 @@ export function ReviewStep() {
         <Button
           variant="outline"
           size="sm"
-          onClick={() => setBrowseOpen(true)}
+          onClick={() => {
+            setBrowseOpen(true);
+          }}
           disabled={browseOpen}
         >
           <Settings2 className="mr-1.5 h-4 w-4" />
@@ -401,7 +406,13 @@ export function ReviewStep() {
       </Tabs>
 
       <div className="flex justify-between gap-3 items-center">
-        <Button variant="outline" onClick={() => goToStep(2)} title="Back to column mapping">
+        <Button
+          variant="outline"
+          onClick={() => {
+            goToStep(2);
+          }}
+          title="Back to column mapping"
+        >
           Back
         </Button>
         <div className="flex flex-col items-end gap-1">

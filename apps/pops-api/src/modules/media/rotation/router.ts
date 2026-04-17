@@ -1,3 +1,7 @@
+import { TRPCError } from '@trpc/server';
+import { and, asc, count, desc, eq, isNull, like, sql, sum } from 'drizzle-orm';
+import { z } from 'zod';
+
 /**
  * Rotation tRPC router — endpoints for the library rotation system.
  *
@@ -11,9 +15,6 @@ import {
   rotationSources,
   settings,
 } from '@pops/db-types';
-import { TRPCError } from '@trpc/server';
-import { and, asc, count, desc, eq, isNull, like, sql, sum } from 'drizzle-orm';
-import { z } from 'zod';
 
 import { getDrizzle } from '../../../db.js';
 import { protectedProcedure, router } from '../../../trpc.js';
@@ -433,13 +434,11 @@ export const rotationRouter = router({
           .where(eq(rotationSources.type, 'manual'))
           .get();
 
-        if (!manualSource) {
-          manualSource = tx
-            .insert(rotationSources)
-            .values({ type: 'manual', name: 'Manual Queue', priority: 5, enabled: 1 })
-            .returning()
-            .get();
-        }
+        manualSource ??= tx
+          .insert(rotationSources)
+          .values({ type: 'manual', name: 'Manual Queue', priority: 5, enabled: 1 })
+          .returning()
+          .get();
 
         // Insert candidate (ignore if already exists)
         tx.insert(rotationCandidates)

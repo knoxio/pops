@@ -1,3 +1,5 @@
+import { desc, eq } from 'drizzle-orm';
+
 /**
  * Plex sync scheduler — periodic polling for new watch activity.
  *
@@ -6,16 +8,16 @@
  * Persists scheduler config and sync logs to the settings table.
  */
 import { settings, syncLogs } from '@pops/db-types';
-import { desc, eq } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
 import { SETTINGS_KEYS } from '../../core/settings/keys.js';
-import type { PlexClient } from './client.js';
 import { getPlexClient, getPlexSectionIds, getPlexToken } from './service.js';
 import { isJobRunning } from './sync-job-manager.js';
 import { importMoviesFromPlex } from './sync-movies.js';
 import { importTvShowsFromPlex } from './sync-tv.js';
 import { syncWatchlistFromPlex } from './sync-watchlist.js';
+
+import type { PlexClient } from './client.js';
 
 // ---------------------------------------------------------------------------
 // Types

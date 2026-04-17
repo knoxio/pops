@@ -1,11 +1,13 @@
+import { and, asc, count, desc, eq, type SQL } from 'drizzle-orm';
+
 /**
  * Watchlist service — CRUD operations against SQLite via Drizzle ORM.
  */
 import { mediaWatchlist } from '@pops/db-types';
-import { and, asc, count, desc, eq, type SQL } from 'drizzle-orm';
 
 import { getDb, getDrizzle } from '../../../db.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
+
 import type {
   AddToWatchlistInput,
   EnrichedWatchlistRow,

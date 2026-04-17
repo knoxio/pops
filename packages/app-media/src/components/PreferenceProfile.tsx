@@ -1,11 +1,12 @@
+import { BarChart3, Heart, Swords, Weight } from 'lucide-react';
+import { Link } from 'react-router';
+import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+
 /**
  * PreferenceProfile — visualisation of genre distribution, genre affinity,
  * and dimension weights on the Discover page.
  */
 import { Skeleton } from '@pops/ui';
-import { BarChart3, Heart, Swords, Weight } from 'lucide-react';
-import { Link } from 'react-router';
-import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 interface GenreDistribution {
   genre: string;
@@ -130,7 +131,7 @@ export function PreferenceProfile({ data, isLoading }: PreferenceProfileProps) {
         {hasComparisons ? (
           <div className="space-y-2" data-testid="genre-affinity-list">
             {[...data.genreAffinities]
-              .sort((a, b) => b.avgScore - a.avgScore)
+              .toSorted((a, b) => b.avgScore - a.avgScore)
               .slice(0, 10)
               .map((item, i, sorted) => {
                 const maxScore = sorted[0]?.avgScore ?? 1;

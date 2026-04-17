@@ -1,8 +1,9 @@
-import type { Database } from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { seedWatchlistEntry, setupTestContext } from '../../../shared/test-utils.js';
 import * as service from './service.js';
+
+import type { Database } from 'better-sqlite3';
 
 const ctx = setupTestContext();
 let db: Database;
@@ -153,19 +154,21 @@ describe('reorderWatchlist', () => {
   });
 
   it('throws NotFoundError for missing IDs', () => {
-    expect(() => service.reorderWatchlist([{ id: 999, priority: 0 }])).toThrow('WatchlistEntry');
+    expect(() => {
+      service.reorderWatchlist([{ id: 999, priority: 0 }]);
+    }).toThrow('WatchlistEntry');
   });
 
   it('throws ConflictError for duplicate priorities', () => {
     const id1 = seedWatchlistEntry(db, { media_type: 'movie', media_id: 1, priority: 0 });
     const id2 = seedWatchlistEntry(db, { media_type: 'movie', media_id: 2, priority: 1 });
 
-    expect(() =>
+    expect(() => {
       service.reorderWatchlist([
         { id: id1, priority: 0 },
         { id: id2, priority: 0 },
-      ])
-    ).toThrow('Duplicate priorities');
+      ]);
+    }).toThrow('Duplicate priorities');
   });
 
   it('persists reorder across reads', () => {
@@ -193,6 +196,8 @@ describe('removeFromWatchlist', () => {
   });
 
   it('throws NotFoundError for missing entry', () => {
-    expect(() => service.removeFromWatchlist(999)).toThrow('WatchlistEntry');
+    expect(() => {
+      service.removeFromWatchlist(999);
+    }).toThrow('WatchlistEntry');
   });
 });

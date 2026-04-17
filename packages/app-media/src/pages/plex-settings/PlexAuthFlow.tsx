@@ -1,6 +1,7 @@
-import { Button } from '@pops/ui';
 import { AlertTriangle, Copy, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+
+import { Button } from '@pops/ui';
 
 interface PlexAuthFlowProps {
   status: { hasToken?: boolean; configured?: boolean } | undefined;
@@ -80,7 +81,12 @@ export function PlexAuthFlow({
                 </Button>
               </div>
             ) : (
-              <Button onClick={() => getPin.mutate()} disabled={getPin.isPending}>
+              <Button
+                onClick={() => {
+                  getPin.mutate();
+                }}
+                disabled={getPin.isPending}
+              >
                 {getPin.isPending ? 'Requesting...' : 'Connect to Plex'}
               </Button>
             )}

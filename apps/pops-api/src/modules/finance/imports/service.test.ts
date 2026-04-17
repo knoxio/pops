@@ -1,12 +1,12 @@
+import { count, eq } from 'drizzle-orm';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
 import {
   entities as entitiesTable,
   transactionCorrections,
   transactions as transactionsTable,
 } from '@pops/db-types';
-import type { Database } from 'better-sqlite3';
-import { count, eq } from 'drizzle-orm';
-import { drizzle } from 'drizzle-orm/better-sqlite3';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { closeDb, setDb } from '../../../db.js';
 import { createTestDb, seedEntity, seedTransaction } from '../../../shared/test-utils.js';
@@ -20,6 +20,9 @@ import {
   processImportWithProgress,
   reevaluateImportSessionResult,
 } from './service.js';
+
+import type { Database } from 'better-sqlite3';
+
 import type { ConfirmedTransaction, ParsedTransaction } from './types.js';
 
 /**

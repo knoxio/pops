@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-
 import { ConnectionsList } from './ConnectionsList';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 const meta: Meta<typeof ConnectionsList> = {
   title: 'Inventory/ConnectionsList',
@@ -26,15 +26,21 @@ export const WithConnections: Story = {
       { id: '2', itemName: 'Monitor Stand', assetId: 'INV-015', type: 'Furniture' },
       { id: '3', itemName: 'Keyboard', type: 'Electronics' },
     ],
-    onItemClick: (id) => alert(`Navigate to item ${id}`),
-    onConnect: () => alert('Open connect dialog'),
+    onItemClick: (id) => {
+      alert(`Navigate to item ${id}`);
+    },
+    onConnect: () => {
+      alert('Open connect dialog');
+    },
   },
 };
 
 export const Empty: Story = {
   args: {
     connections: [],
-    onConnect: () => alert('Open connect dialog'),
+    onConnect: () => {
+      alert('Open connect dialog');
+    },
   },
 };
 
@@ -57,7 +63,11 @@ export const ManyConnections: Story = {
       { id: '5', itemName: 'Desk Mat', type: 'Accessory' },
       { id: '6', itemName: 'Webcam', assetId: 'INV-041', type: 'Electronics' },
     ],
-    onItemClick: (id) => alert(`Navigate to item ${id}`),
-    onConnect: () => alert('Open connect dialog'),
+    onItemClick: (id) => {
+      alert(`Navigate to item ${id}`);
+    },
+    onConnect: () => {
+      alert('Open connect dialog');
+    },
   },
 };

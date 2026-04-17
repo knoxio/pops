@@ -1,13 +1,15 @@
-import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
+import { ChevronRight, Pencil, Sparkles, Zap } from 'lucide-react';
+import { useState } from 'react';
+
 import { Badge } from '@pops/ui';
 import { Button } from '@pops/ui';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@pops/ui';
 import { Popover, PopoverContent, PopoverTrigger } from '@pops/ui';
-import { ChevronRight, Pencil, Sparkles, Zap } from 'lucide-react';
-import { useState } from 'react';
 
 import { EntitySelect } from './EntitySelect';
 import { LocationField } from './LocationField';
+
+import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
 
 interface TransactionCardProps {
   transaction: ProcessedTransaction;
@@ -183,7 +185,9 @@ export function TransactionCard({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => onEdit(transaction)}
+            onClick={() => {
+              onEdit(transaction);
+            }}
             className="ml-2"
             aria-label={`Edit ${transaction.description}`}
           >
@@ -223,7 +227,9 @@ export function TransactionCard({
                   <Button
                     variant="default"
                     size="sm"
-                    onClick={() => onAcceptAiSuggestion(transaction)}
+                    onClick={() => {
+                      onAcceptAiSuggestion(transaction);
+                    }}
                     className="bg-purple-600 hover:bg-purple-700 flex-1"
                   >
                     {aiSuggestedEntityExists ? '✓' : '+'} Accept "{transaction.entity.entityName}"
@@ -233,7 +239,9 @@ export function TransactionCard({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onCreateEntity(transaction)}
+                    onClick={() => {
+                      onCreateEntity(transaction);
+                    }}
                     className="flex-1"
                   >
                     Create new
@@ -247,7 +255,9 @@ export function TransactionCard({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onCreateEntity(transaction)}
+              onClick={() => {
+                onCreateEntity(transaction);
+              }}
               className="w-full mb-2"
             >
               + Create new entity
@@ -256,7 +266,7 @@ export function TransactionCard({
 
           <EntitySelect
             entities={entities ?? []}
-            value={transaction.entity?.entityId || ''}
+            value={transaction.entity?.entityId ?? ''}
             onChange={(entityId, entityName) => {
               if (onEntitySelect) {
                 onEntitySelect(transaction, entityId, entityName);

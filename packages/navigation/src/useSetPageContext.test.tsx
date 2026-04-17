@@ -4,9 +4,10 @@ import { MemoryRouter } from 'react-router';
 import { describe, expect, it } from 'vitest';
 
 import { AppContextProvider } from './AppContextProvider';
-import type { SetPageContextOptions } from './hooks';
 import { useAppContext } from './hooks';
 import { useSetPageContext } from './hooks';
+
+import type { SetPageContextOptions } from './hooks';
 
 /** Renders children inside a MemoryRouter + AppContextProvider at the given path. */
 function renderAt(path: string, ui: React.ReactNode) {
@@ -91,7 +92,13 @@ describe('useSetPageContext', () => {
       return (
         <div>
           {showPage ? <TestPage page="library" /> : <ContextReader />}
-          <button onClick={() => setShowPage(false)}>unmount</button>
+          <button
+            onClick={() => {
+              setShowPage(false);
+            }}
+          >
+            unmount
+          </button>
         </div>
       );
     }
@@ -133,7 +140,13 @@ describe('useSetPageContext', () => {
           ) : (
             <ContextReader />
           )}
-          <button onClick={() => setShowPage(false)}>unmount</button>
+          <button
+            onClick={() => {
+              setShowPage(false);
+            }}
+          >
+            unmount
+          </button>
         </div>
       );
     }

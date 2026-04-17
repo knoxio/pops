@@ -1,17 +1,18 @@
 import { describe, expect, it } from 'vitest';
 
-import type { LocalOp, ServerChangeSetOp } from '../correction-proposal-shared';
-import type { CorrectionRule } from '../RulePicker';
-import type {
-  UseApplyRejectMutationsOptions,
-  UseApplyRejectMutationsReturn,
-} from './useApplyRejectMutations';
 import {
   localOpsToChangeSet,
   localOpToServerOp,
   newClientId,
   serverOpToLocalOp,
 } from './useLocalOps';
+
+import type { LocalOp, ServerChangeSetOp } from '../correction-proposal-shared';
+import type { CorrectionRule } from '../RulePicker';
+import type {
+  UseApplyRejectMutationsOptions,
+  UseApplyRejectMutationsReturn,
+} from './useApplyRejectMutations';
 import type { UsePreviewEffectsOptions } from './usePreviewEffects';
 
 // ---------------------------------------------------------------------------

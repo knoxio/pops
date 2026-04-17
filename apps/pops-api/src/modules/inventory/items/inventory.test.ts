@@ -1,8 +1,9 @@
 import { TRPCError } from '@trpc/server';
-import type { Database } from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createCaller, seedInventoryItem, setupTestContext } from '../../../shared/test-utils.js';
+
+import type { Database } from 'better-sqlite3';
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;

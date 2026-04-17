@@ -19,9 +19,10 @@ import {
 import { useDroppable } from '@dnd-kit/core';
 import { horizontalListSortingStrategy, SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Button } from '@pops/ui';
 import { Ban, Clock, EyeOff, GripVertical, ImageOff } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
+
+import { Button } from '@pops/ui';
 
 const TIERS = ['S', 'A', 'B', 'C', 'D'] as const;
 export type Tier = (typeof TIERS)[number];
@@ -265,7 +266,7 @@ export function TierListBoard({
         <UnrankedPool movies={unrankedMovies} />
 
         {/* Dismiss zones */}
-        {(onNotWatched || onMarkStale || onNA) && (
+        {(onNotWatched ?? onMarkStale ?? onNA) && (
           <div className="flex gap-2 mt-4">
             {onNotWatched && <DismissDropZone zone="not-watched" />}
             {onMarkStale && <DismissDropZone zone="stale" />}

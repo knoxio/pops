@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
-import type BetterSqlite3 from 'better-sqlite3';
 
 import { assertNotProduction, assertLowRecordCount } from './guard.js';
+
+import type BetterSqlite3 from 'better-sqlite3';
 
 describe('assertNotProduction', () => {
   const originalEnv = process.env['NODE_ENV'];

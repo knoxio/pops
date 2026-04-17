@@ -7,6 +7,7 @@
 import { getPlexClientId, getPlexToken } from '../plex/service.js';
 import { extractExternalIdAsNumber } from '../plex/sync-helpers.js';
 import { fetchPlexWatchlist } from '../plex/sync-watchlist.js';
+
 import type { CandidateMovie, RotationSourceAdapter } from './source-types.js';
 
 export const plexWatchlistSource: RotationSourceAdapter = {

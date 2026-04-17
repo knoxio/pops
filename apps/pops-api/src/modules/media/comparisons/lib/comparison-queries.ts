@@ -1,7 +1,9 @@
-import { comparisons, movies } from '@pops/db-types';
 import { and, count, desc, eq, inArray, like, or, type SQL } from 'drizzle-orm';
 
+import { comparisons, movies } from '@pops/db-types';
+
 import { getDrizzle } from '../../../../db.js';
+
 import type { ComparisonRow } from '../types.js';
 
 export interface ComparisonListResult {

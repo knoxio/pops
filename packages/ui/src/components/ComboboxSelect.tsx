@@ -191,7 +191,15 @@ export function ComboboxSelect({
       {multiple && selectedValues.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {selectedValues.map((val) => (
-            <Chip key={val} variant="default" size="sm" removable onRemove={() => removeValue(val)}>
+            <Chip
+              key={val}
+              variant="default"
+              size="sm"
+              removable
+              onRemove={() => {
+                removeValue(val);
+              }}
+            >
               {getOptionLabel(val)}
             </Chip>
           ))}

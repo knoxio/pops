@@ -1,3 +1,7 @@
+import { FileText, Link2, Search } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
 /**
  * LinkDocumentDialog — search Paperless-ngx and link a document to an inventory item.
  * Opens a dialog with search input, results with thumbnails, document type selector,
@@ -15,9 +19,6 @@ import {
   Skeleton,
   TextInput,
 } from '@pops/ui';
-import { FileText, Link2, Search } from 'lucide-react';
-import { useState } from 'react';
-import { toast } from 'sonner';
 
 import { trpc } from '../lib/trpc';
 
@@ -108,7 +109,9 @@ export function LinkDocumentDialog({ itemId, onLinked }: LinkDocumentDialogProps
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <TextInput
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+              }}
               placeholder="Search documents..."
               className="pl-9"
               autoFocus
@@ -116,7 +119,9 @@ export function LinkDocumentDialog({ itemId, onLinked }: LinkDocumentDialogProps
           </div>
           <Select
             value={docType}
-            onChange={(e) => setDocType(e.target.value as typeof docType)}
+            onChange={(e) => {
+              setDocType(e.target.value as typeof docType);
+            }}
             size="sm"
             options={DOCUMENT_TYPES.map((t) => ({
               value: t,
@@ -165,7 +170,9 @@ export function LinkDocumentDialog({ itemId, onLinked }: LinkDocumentDialogProps
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => handleLink(doc.id, doc.title)}
+                  onClick={() => {
+                    handleLink(doc.id, doc.title);
+                  }}
                   disabled={linkMutation.isPending}
                 >
                   {linkingId === doc.id ? (

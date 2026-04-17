@@ -1,4 +1,3 @@
-import type { Database } from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -9,6 +8,8 @@ import {
   setupTestContext,
 } from '../../../shared/test-utils.js';
 import { getSmartPair } from './service.js';
+
+import type { Database } from 'better-sqlite3';
 
 const ctx = setupTestContext();
 let db: Database;
@@ -146,8 +147,8 @@ describe('getSmartPair', () => {
     for (let i = 0; i < 30; i++) {
       const result = getSmartPair(dimId);
       expect(result).not.toBeNull();
-      const ids = [result!.movieA.id, result!.movieB.id].sort();
-      expect(ids).not.toEqual([m1, m2].sort());
+      const ids = [result!.movieA.id, result!.movieB.id].toSorted();
+      expect(ids).not.toEqual([m1, m2].toSorted());
     }
   });
 
@@ -171,12 +172,12 @@ describe('getSmartPair', () => {
     for (let i = 0; i < runs; i++) {
       const result = getSmartPair(dimId);
       expect(result).not.toBeNull();
-      const key = [result!.movieA.id, result!.movieB.id].sort().join('-');
+      const key = [result!.movieA.id, result!.movieB.id].toSorted().join('-');
       pairCounts.set(key, (pairCounts.get(key) ?? 0) + 1);
     }
 
     // The close pair (m1-m2) should be selected more often than distant pairs
-    const closePair = [m1, m2].sort().join('-');
+    const closePair = [m1, m2].toSorted().join('-');
     const closeCount = pairCounts.get(closePair) ?? 0;
     expect(closeCount).toBeGreaterThan(runs * 0.3); // Should be dominant
   });
@@ -286,7 +287,7 @@ describe('getSmartPair', () => {
     for (let i = 0; i < 50; i++) {
       const result = getSmartPair(dimId);
       expect(result).not.toBeNull();
-      const key = [result!.movieA.id, result!.movieB.id].sort().join('-');
+      const key = [result!.movieA.id, result!.movieB.id].toSorted().join('-');
       uniquePairs.add(key);
     }
 

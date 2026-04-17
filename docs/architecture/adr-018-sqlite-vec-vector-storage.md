@@ -12,13 +12,13 @@ POPS follows a "one database" philosophy (ADR-001). Adding a dedicated vector da
 
 ## Options Considered
 
-| Option                    | Pros                                                                                  | Cons                                                                                        |
-| ------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
-| sqlite-vec (SQLite ext)   | Same database, zero new infra, ACID with rest of data, sub-ms for <100k vectors      | Brute-force k-NN (no ANN index), slower at millions of vectors, C extension to load         |
-| pgvector (PostgreSQL)     | ANN indexes (IVFFlat, HNSW), mature, scalable                                        | Requires PostgreSQL migration (28 tables), operational overhead, overkill for single-user    |
-| Pinecone / Weaviate       | Purpose-built, fast at scale, managed                                                 | External dependency, network latency, vendor lock-in, subscription cost, backup complexity   |
-| ChromaDB                  | Simple API, Python-native, local mode                                                 | Separate process, own storage, not queryable alongside SQLite data                          |
-| Store in Redis             | Already adding Redis (ADR-016), supports vector search via RediSearch                 | Ephemeral by design (ADR-016), vectors would need regeneration on restart, not ACID         |
+| Option                  | Pros                                                                            | Cons                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| sqlite-vec (SQLite ext) | Same database, zero new infra, ACID with rest of data, sub-ms for <100k vectors | Brute-force k-NN (no ANN index), slower at millions of vectors, C extension to load        |
+| pgvector (PostgreSQL)   | ANN indexes (IVFFlat, HNSW), mature, scalable                                   | Requires PostgreSQL migration (28 tables), operational overhead, overkill for single-user  |
+| Pinecone / Weaviate     | Purpose-built, fast at scale, managed                                           | External dependency, network latency, vendor lock-in, subscription cost, backup complexity |
+| ChromaDB                | Simple API, Python-native, local mode                                           | Separate process, own storage, not queryable alongside SQLite data                         |
+| Store in Redis          | Already adding Redis (ADR-016), supports vector search via RediSearch           | Ephemeral by design (ADR-016), vectors would need regeneration on restart, not ACID        |
 
 ## Decision
 

@@ -1,6 +1,5 @@
 #!/usr/bin/env tsx
 
-import { createId } from '@paralleldrive/cuid2';
 import { PasswordService } from '../auth/password.js';
 import { db, users } from '../db/index.js';
 

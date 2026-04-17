@@ -1,3 +1,5 @@
+import { Film, Star } from 'lucide-react';
+
 /**
  * MovieSearchResult — ResultComponent for movies search hits.
  *
@@ -5,7 +7,6 @@
  * Registered for domain "movies" in the search result component registry.
  */
 import type { ResultComponentProps } from '@pops/navigation';
-import { Film, Star } from 'lucide-react';
 
 interface MovieHitData {
   title: string;

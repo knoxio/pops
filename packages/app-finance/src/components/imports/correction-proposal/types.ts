@@ -1,10 +1,11 @@
+import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
+
 /**
  * Shared types for the CorrectionProposalDialog system.
  *
  * Extracted from correction-proposal-shared.ts and CorrectionProposalDialogPanels.tsx (tb-365).
  */
 import type { AppRouter } from '@pops/api-client';
-import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 
 import type { CorrectionRule } from '../RulePicker';
 

@@ -1,10 +1,12 @@
-import type { ImportWarning, ProcessImportOutput } from '@pops/api/modules/finance/imports';
-import { Button } from '@pops/ui';
 import { AlertTriangle, CheckCircle, Loader2, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
+import { Button } from '@pops/ui';
+
 import { trpc } from '../../lib/trpc';
 import { useImportStore } from '../../store/importStore';
+
+import type { ImportWarning, ProcessImportOutput } from '@pops/api/modules/finance/imports';
 
 /**
  * Step 3: Process transactions (deduplicate and match entities)
@@ -283,7 +285,7 @@ export function ProcessingStep() {
       {(processImportMutation.isError || progressQuery.data?.status === 'failed') && (
         <div className="p-4 max-w-md text-sm text-destructive bg-destructive/10 dark:text-destructive/40 rounded-lg">
           <p className="font-medium mb-1">Processing Failed</p>
-          <p>{processImportMutation.error?.message || 'An unexpected error occurred'}</p>
+          <p>{processImportMutation.error?.message ?? 'An unexpected error occurred'}</p>
           {progressQuery.data?.errors && progressQuery.data.errors.length > 0 && (
             <div className="mt-2 space-y-1">
               {progressQuery.data.errors.map((error, idx) => (

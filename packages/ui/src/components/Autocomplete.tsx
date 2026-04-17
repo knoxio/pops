@@ -123,7 +123,9 @@ export function Autocomplete({
           className="w-[var(--radix-popover-trigger-width)] p-0"
           side="bottom"
           align="start"
-          onOpenAutoFocus={(e: Event) => e.preventDefault()}
+          onOpenAutoFocus={(e: Event) => {
+            e.preventDefault();
+          }}
         >
           <CommandList>
             <CommandEmpty>{emptyMessage}</CommandEmpty>

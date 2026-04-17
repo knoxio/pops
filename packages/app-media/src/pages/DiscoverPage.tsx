@@ -1,3 +1,7 @@
+import { Compass, Loader2, RefreshCw, Swords } from 'lucide-react';
+import { useMemo } from 'react';
+import { Link } from 'react-router';
+
 /**
  * DiscoverPage — dynamic shelf-based movie discovery.
  *
@@ -6,9 +10,6 @@
  * (add to library, watchlist, watched, dismiss) are handled by useDiscoverCardActions.
  */
 import { Button, Skeleton } from '@pops/ui';
-import { Compass, Loader2, RefreshCw, Swords } from 'lucide-react';
-import { useMemo } from 'react';
-import { Link } from 'react-router';
 
 import { PreferenceProfile } from '../components/PreferenceProfile';
 import { ShelfSection } from '../components/ShelfSection';

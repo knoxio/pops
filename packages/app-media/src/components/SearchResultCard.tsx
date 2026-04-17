@@ -1,12 +1,13 @@
+import { Check, Film, Loader2, Plus, Tv } from 'lucide-react';
+import { useState } from 'react';
+import { Link } from 'react-router';
+
 /**
  * SearchResultCard — displays a search result from TMDB or TheTVDB.
  * Shows poster from external CDN, title, year, overview, genres, rating,
  * and an "Add to Library" / "In Library" action.
  */
 import { Badge, Button, cn, Skeleton } from '@pops/ui';
-import { Check, Film, Loader2, Plus, Tv } from 'lucide-react';
-import { useState } from 'react';
-import { Link } from 'react-router';
 
 import { MovieActionButtons } from './MovieActionButtons';
 
@@ -82,8 +83,12 @@ export function SearchResultCard({
             alt={`${title} poster`}
             loading="lazy"
             className={cn('h-full w-full object-cover', imageLoaded ? 'opacity-100' : 'opacity-0')}
-            onLoad={() => setImageLoaded(true)}
-            onError={() => setImageError(true)}
+            onLoad={() => {
+              setImageLoaded(true);
+            }}
+            onError={() => {
+              setImageError(true);
+            }}
           />
         )}
         {!showPlaceholder && !imageLoaded && (
@@ -143,7 +148,7 @@ export function SearchResultCard({
               size="sm"
               variant="outline"
               className="h-7 gap-1 text-xs"
-              disabled={addDisabled || isAdding}
+              disabled={addDisabled ?? isAdding}
               title={addDisabledReason}
               onClick={onAdd}
             >

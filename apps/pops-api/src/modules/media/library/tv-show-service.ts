@@ -1,16 +1,19 @@
+import { eq } from 'drizzle-orm';
+
+import { episodes, seasons, tvShows } from '@pops/db-types';
+
+import { getDrizzle } from '../../../db.js';
+import { getTvShowByTvdbId } from '../tv-shows/service.js';
+
 /**
  * Add TV show to library — fetches TheTVDB metadata and inserts
  * show + seasons + episodes in a single transaction.
  */
 import type { SeasonRow, TvShowRow } from '@pops/db-types';
-import { episodes, seasons, tvShows } from '@pops/db-types';
-import { eq } from 'drizzle-orm';
 
-import { getDrizzle } from '../../../db.js';
 import type { TheTvdbClient } from '../thetvdb/client.js';
 import type { TvdbArtwork, TvdbEpisode } from '../thetvdb/types.js';
 import type { ImageCacheService } from '../tmdb/image-cache.js';
-import { getTvShowByTvdbId } from '../tv-shows/service.js';
 
 export interface AddTvShowResult {
   show: TvShowRow;
@@ -158,13 +161,11 @@ export async function addTvShow(
       .filter((s) => s.imageUrl != null)
       .map((s) => ({ seasonNumber: s.seasonNumber, posterUrl: s.imageUrl }));
 
-    imageCache
-      .downloadTvShowImages(tvdbId, posterUrl, backdropUrl, seasonPosters)
-      .catch((err) =>
-        console.warn(
-          `[addTvShow] Image download failed for tvdbId ${tvdbId}: ${err instanceof Error ? err.message : String(err)}`
-        )
+    imageCache.downloadTvShowImages(tvdbId, posterUrl, backdropUrl, seasonPosters).catch((err) => {
+      console.warn(
+        `[addTvShow] Image download failed for tvdbId ${tvdbId}: ${err instanceof Error ? err.message : String(err)}`
       );
+    });
   }
 
   return result;
@@ -185,7 +186,7 @@ function pickBest(artworks: TvdbArtwork[], type: number): string | null {
   if (candidates.length === 0) return null;
 
   // Prefer English, then highest score
-  const sorted = [...candidates].sort((a, b) => {
+  const sorted = [...candidates].toSorted((a, b) => {
     const aEng = a.language === 'eng' ? 1 : 0;
     const bEng = b.language === 'eng' ? 1 : 0;
     if (aEng !== bEng) return bEng - aEng;

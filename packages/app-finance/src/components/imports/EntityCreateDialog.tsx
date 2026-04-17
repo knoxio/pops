@@ -1,3 +1,5 @@
+import { useCallback, useEffect, useState } from 'react';
+
 import {
   Dialog,
   DialogContent,
@@ -9,7 +11,6 @@ import {
 import { Input } from '@pops/ui';
 import { Label } from '@pops/ui';
 import { Button } from '@pops/ui';
-import { useCallback, useEffect, useState } from 'react';
 
 import { useImportStore } from '../../store/importStore';
 
@@ -102,7 +103,9 @@ export function EntityCreateDialog({
                   setTouched(true);
                   setError(null);
                 }}
-                onBlur={() => setTouched(true)}
+                onBlur={() => {
+                  setTouched(true);
+                }}
                 placeholder="e.g., Woolworths"
                 autoFocus
               />
@@ -119,7 +122,13 @@ export function EntityCreateDialog({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                handleOpenChange(false);
+              }}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={!name.trim()}>

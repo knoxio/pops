@@ -1,5 +1,6 @@
-import { Button, DropdownMenu, Tooltip, TooltipContent, TooltipTrigger } from '@pops/ui';
 import { Ban, Clock, EyeOff, MoreHorizontal } from 'lucide-react';
+
+import { Button, DropdownMenu, Tooltip, TooltipContent, TooltipTrigger } from '@pops/ui';
 
 export interface ArenaMovie {
   id: number;
@@ -52,7 +53,9 @@ export function ArenaActionBar({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onStale(movieA.id)}
+              onClick={() => {
+                onStale(movieA.id);
+              }}
               disabled={stalePending}
               aria-label={`Mark ${movieA.title} as stale`}
               data-testid="stale-a-button"
@@ -72,7 +75,9 @@ export function ArenaActionBar({
             <Button
               variant="outline"
               size="sm"
-              onClick={() => onStale(movieB.id)}
+              onClick={() => {
+                onStale(movieB.id);
+              }}
               disabled={stalePending}
               aria-label={`Mark ${movieB.title} as stale`}
               data-testid="stale-b-button"
@@ -120,7 +125,9 @@ export function ArenaActionBar({
                     variant: 'destructive' as const,
                     icon: <EyeOff className="h-4 w-4" />,
                     disabled: blacklistPending,
-                    onSelect: () => onBlacklist(movieA),
+                    onSelect: () => {
+                      onBlacklist(movieA);
+                    },
                   },
                   {
                     label: `Not Watched: ${movieB.title}`,
@@ -128,7 +135,9 @@ export function ArenaActionBar({
                     variant: 'destructive' as const,
                     icon: <EyeOff className="h-4 w-4" />,
                     disabled: blacklistPending,
-                    onSelect: () => onBlacklist(movieB),
+                    onSelect: () => {
+                      onBlacklist(movieB);
+                    },
                   },
                 ],
               },
@@ -154,7 +163,9 @@ export function ArenaActionBar({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onBlacklist(movieA)}
+          onClick={() => {
+            onBlacklist(movieA);
+          }}
           disabled={blacklistPending}
           className="text-destructive border-destructive/50 hover:bg-destructive/10"
           data-testid="not-watched-a-button"
@@ -166,7 +177,9 @@ export function ArenaActionBar({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onBlacklist(movieB)}
+          onClick={() => {
+            onBlacklist(movieB);
+          }}
           disabled={blacklistPending}
           className="text-destructive border-destructive/50 hover:bg-destructive/10"
           data-testid="not-watched-b-button"

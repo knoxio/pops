@@ -1,12 +1,14 @@
-import { rotationCandidates, rotationSources } from '@pops/db-types';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { rotationCandidates, rotationSources } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 import { setupTestContext } from '../../../shared/test-utils.js';
 import { registerSourceAdapter } from './source-registry.js';
-import type { RotationSourceAdapter } from './source-types.js';
 import { syncAllSources } from './sync-source.js';
+
+import type { RotationSourceAdapter } from './source-types.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -53,7 +55,9 @@ describe('syncAllSources', () => {
     registerSourceAdapter(createMockAdapter('mock_b', [{ tmdbId: 200, title: 'Movie C' }]));
   });
 
-  afterEach(() => ctx.teardown());
+  afterEach(() => {
+    ctx.teardown();
+  });
 
   it('syncs all enabled sources with no lastSyncedAt', async () => {
     insertSource({ type: 'mock_a', name: 'Source A' });

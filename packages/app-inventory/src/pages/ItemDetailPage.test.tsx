@@ -267,7 +267,7 @@ describe('ItemDetailPage', () => {
       fireEvent.click(screen.getByRole('button', { name: /delete/i }));
 
       const confirmButtons = screen.getAllByRole('button', { name: /delete/i });
-      const confirmButton = confirmButtons[confirmButtons.length - 1]!;
+      const confirmButton = confirmButtons.at(-1)!;
       fireEvent.click(confirmButton);
 
       expect(mockDeleteMutate).toHaveBeenCalledWith({ id: 'item-1' });

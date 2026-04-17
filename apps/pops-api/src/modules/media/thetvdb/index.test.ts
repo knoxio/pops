@@ -25,12 +25,16 @@ afterEach(() => {
 describe('validateTvdbConfig', () => {
   it('throws when THETVDB_API_KEY is not set', () => {
     vi.stubEnv('THETVDB_API_KEY', '');
-    expect(() => validateTvdbConfig()).toThrow('THETVDB_API_KEY');
+    expect(() => {
+      validateTvdbConfig();
+    }).toThrow('THETVDB_API_KEY');
   });
 
   it('does not throw when THETVDB_API_KEY is set', () => {
     vi.stubEnv('THETVDB_API_KEY', 'test-key');
-    expect(() => validateTvdbConfig()).not.toThrow();
+    expect(() => {
+      validateTvdbConfig();
+    }).not.toThrow();
   });
 });
 

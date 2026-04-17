@@ -2,7 +2,12 @@
  * Wishlist page - savings goals
  */
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { ColumnFilter } from '@pops/ui';
+import { ExternalLink, Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { z } from 'zod';
+
 import {
   Alert,
   AlertDialog,
@@ -30,14 +35,12 @@ import {
   SortableHeader,
   TextInput,
 } from '@pops/ui';
-import type { ColumnDef } from '@tanstack/react-table';
-import { ExternalLink, Loader2, MoreHorizontal, Pencil, Plus, Trash2 } from 'lucide-react';
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
-import { z } from 'zod';
 
 import { trpc } from '../lib/trpc';
+
+import type { ColumnDef } from '@tanstack/react-table';
+
+import type { ColumnFilter } from '@pops/ui';
 
 // Schema matching the API
 const WishlistItemSchema = z.object({
@@ -132,9 +135,9 @@ export function WishlistPage() {
       item: item.item,
       targetAmount: item.targetAmount,
       saved: item.saved,
-      priority: (item.priority as WishlistFormValues['priority']) || 'Soon',
-      url: item.url || '',
-      notes: item.notes || '',
+      priority: (item.priority as WishlistFormValues['priority']) ?? 'Soon',
+      url: item.url ?? '',
+      notes: item.notes ?? '',
     });
     setIsDialogOpen(true);
   };
@@ -255,13 +258,19 @@ export function WishlistPage() {
             }
             align="end"
           >
-            <DropdownMenuItem onClick={() => handleEdit(row.original)}>
+            <DropdownMenuItem
+              onClick={() => {
+                handleEdit(row.original);
+              }}
+            >
               <Pencil className="mr-2 h-4 w-4" /> Edit
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
-              onClick={() => setDeletingId(row.original.id)}
+              onClick={() => {
+                setDeletingId(row.original.id);
+              }}
             >
               <Trash2 className="mr-2 h-4 w-4" /> Delete
             </DropdownMenuItem>
@@ -403,7 +412,9 @@ export function WishlistPage() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setIsDialogOpen(false)}
+                onClick={() => {
+                  setIsDialogOpen(false);
+                }}
                 disabled={isSubmitting}
               >
                 Cancel
@@ -418,7 +429,12 @@ export function WishlistPage() {
       </Dialog>
 
       {/* Delete Confirmation */}
-      <AlertDialog open={!!deletingId} onOpenChange={() => setDeletingId(null)}>
+      <AlertDialog
+        open={!!deletingId}
+        onOpenChange={() => {
+          setDeletingId(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>

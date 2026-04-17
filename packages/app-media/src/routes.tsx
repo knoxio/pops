@@ -5,6 +5,7 @@
  * these via @pops/app-media and mounts them under /media/*.
  */
 import { lazy } from 'react';
+
 import type { RouteObject } from 'react-router';
 
 const LibraryPage = lazy(() =>

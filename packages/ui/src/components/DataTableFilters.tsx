@@ -1,8 +1,3 @@
-/**
- * DataTableFilters - Filter components for DataTable
- * Supports text, select, multi-select, date range, and number range filters
- */
-import type { Column, Row, Table } from '@tanstack/react-table';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { useState } from 'react';
 
@@ -19,6 +14,12 @@ import { NumberInput } from './NumberInput';
 import { Select, type SelectOption } from './Select';
 import { TextInput } from './TextInput';
 
+/**
+ * DataTableFilters - Filter components for DataTable
+ * Supports text, select, multi-select, date range, and number range filters
+ */
+import type { Column, Row, Table } from '@tanstack/react-table';
+
 export interface ColumnFilter {
   id: string;
   type: 'text' | 'select' | 'multiselect' | 'daterange' | 'numberrange';
@@ -28,25 +29,29 @@ export interface ColumnFilter {
 }
 
 interface TextFilterProps {
-  column: Column<unknown, unknown>;
+  column: Column<unknown>;
   placeholder?: string;
 }
 
 export function TextFilter({ column, placeholder }: TextFilterProps) {
   return (
     <TextInput
-      placeholder={placeholder || 'Filter...'}
+      placeholder={placeholder ?? 'Filter...'}
       value={(column.getFilterValue() as string) ?? ''}
-      onChange={(e) => column.setFilterValue(e.target.value)}
+      onChange={(e) => {
+        column.setFilterValue(e.target.value);
+      }}
       clearable
-      onClear={() => column.setFilterValue('')}
+      onClear={() => {
+        column.setFilterValue('');
+      }}
       className="w-full sm:max-w-sm"
     />
   );
 }
 
 interface SelectFilterProps {
-  column: Column<unknown, unknown>;
+  column: Column<unknown>;
   options: SelectOption[];
   placeholder?: string;
 }
@@ -55,16 +60,18 @@ export function SelectFilter({ column, options, placeholder }: SelectFilterProps
   return (
     <Select
       value={(column.getFilterValue() as string) ?? ''}
-      onChange={(e) => column.setFilterValue(e.target.value || undefined)}
+      onChange={(e) => {
+        column.setFilterValue(e.target.value || undefined);
+      }}
       options={options}
-      placeholder={placeholder || 'Select...'}
+      placeholder={placeholder ?? 'Select...'}
       className="w-full sm:w-45"
     />
   );
 }
 
 interface MultiSelectFilterProps {
-  column: Column<unknown, unknown>;
+  column: Column<unknown>;
   options: SelectOption[];
   placeholder?: string;
 }
@@ -76,18 +83,18 @@ export function MultiSelectFilter({ column, options, placeholder }: MultiSelectF
     <ComboboxSelect
       options={options.map((opt) => ({ label: opt.label, value: opt.value }))}
       value={filterValue}
-      onChange={(value) =>
-        column.setFilterValue(Array.isArray(value) && value.length > 0 ? value : undefined)
-      }
+      onChange={(value) => {
+        column.setFilterValue(Array.isArray(value) && value.length > 0 ? value : undefined);
+      }}
       multiple
-      placeholder={placeholder || 'Select...'}
+      placeholder={placeholder ?? 'Select...'}
       className="w-full sm:min-w-50"
     />
   );
 }
 
 interface DateRangeFilterProps {
-  column: Column<unknown, unknown>;
+  column: Column<unknown>;
 }
 
 export function DateRangeFilter({ column }: DateRangeFilterProps) {
@@ -98,7 +105,9 @@ export function DateRangeFilter({ column }: DateRangeFilterProps) {
       <TextInput
         type="date"
         value={filterValue[0]}
-        onChange={(e) => column.setFilterValue([e.target.value, filterValue[1]])}
+        onChange={(e) => {
+          column.setFilterValue([e.target.value, filterValue[1]]);
+        }}
         placeholder="From"
         className="w-full sm:w-38"
       />
@@ -106,7 +115,9 @@ export function DateRangeFilter({ column }: DateRangeFilterProps) {
       <TextInput
         type="date"
         value={filterValue[1]}
-        onChange={(e) => column.setFilterValue([filterValue[0], e.target.value])}
+        onChange={(e) => {
+          column.setFilterValue([filterValue[0], e.target.value]);
+        }}
         placeholder="To"
         className="w-full sm:w-38"
       />
@@ -115,7 +126,7 @@ export function DateRangeFilter({ column }: DateRangeFilterProps) {
 }
 
 interface NumberRangeFilterProps {
-  column: Column<unknown, unknown>;
+  column: Column<unknown>;
   minPlaceholder?: string;
   maxPlaceholder?: string;
 }
@@ -131,14 +142,18 @@ export function NumberRangeFilter({
     <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
       <NumberInput
         value={filterValue[0]}
-        onChange={(value) => column.setFilterValue([value, filterValue[1]])}
+        onChange={(value) => {
+          column.setFilterValue([value, filterValue[1]]);
+        }}
         placeholder={minPlaceholder}
         className="w-full sm:w-25"
       />
       <span className="hidden text-muted-foreground sm:block">to</span>
       <NumberInput
         value={filterValue[1]}
-        onChange={(value) => column.setFilterValue([filterValue[0], value])}
+        onChange={(value) => {
+          column.setFilterValue([filterValue[0], value]);
+        }}
         placeholder={maxPlaceholder}
         className="w-full sm:w-25"
       />
@@ -195,7 +210,7 @@ export function FilterBar({ filters, table, onClearAll }: FilterBarProps) {
   const activeFiltersCount = table.getState().columnFilters.filter((f) => {
     const value = f.value;
     if (Array.isArray(value)) {
-      return value.length > 0 && value.some((v) => v !== '' && v !== undefined);
+      return value.some((v) => v !== '' && v !== undefined);
     }
     return value !== '' && value !== undefined;
   }).length;
@@ -212,7 +227,9 @@ export function FilterBar({ filters, table, onClearAll }: FilterBarProps) {
         <Button
           variant="outline"
           size="default"
-          onClick={() => setMobileOpen(true)}
+          onClick={() => {
+            setMobileOpen(true);
+          }}
           className="md:hidden"
         >
           <SlidersHorizontal className="h-4 w-4 mr-2" />
@@ -252,7 +269,12 @@ export function FilterBar({ filters, table, onClearAll }: FilterBarProps) {
                 Clear all
               </Button>
             )}
-            <Button size="sm" onClick={() => setMobileOpen(false)}>
+            <Button
+              size="sm"
+              onClick={() => {
+                setMobileOpen(false);
+              }}
+            >
               Apply
             </Button>
           </DialogFooter>

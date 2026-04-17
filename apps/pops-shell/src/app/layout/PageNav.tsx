@@ -1,3 +1,6 @@
+import { iconMap } from '@/app/nav/icon-map';
+import { findActiveApp, isPageActive } from '@/app/nav/path-utils';
+import { registeredApps } from '@/app/nav/registry';
 /**
  * Page navigation panel
  *
@@ -8,10 +11,6 @@
  * Colour is inherited from --app-accent CSS variable set on the shell root.
  */
 import { Link, useLocation } from 'react-router';
-
-import { iconMap } from '@/app/nav/icon-map';
-import { findActiveApp, isPageActive } from '@/app/nav/path-utils';
-import { registeredApps } from '@/app/nav/registry';
 
 export function PageNav() {
   const location = useLocation();

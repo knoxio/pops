@@ -1,11 +1,12 @@
+import { useState } from 'react';
+
+import { TagEditor } from './TagEditor';
+
 /**
  * TagEditor component stories
  * Demonstrates inline tag editing for transactions
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
-
-import { TagEditor } from './TagEditor';
 
 const meta: Meta<typeof TagEditor> = {
   component: TagEditor,
@@ -30,7 +31,9 @@ type Story = StoryObj<typeof TagEditor>;
 export const Empty: Story = {
   args: {
     currentTags: [],
-    onSave: (tags) => console.log('Saved:', tags),
+    onSave: (tags) => {
+      console.log('Saved:', tags);
+    },
   },
 };
 
@@ -38,7 +41,9 @@ export const Empty: Story = {
 export const WithTags: Story = {
   args: {
     currentTags: ['Groceries', 'Online'],
-    onSave: (tags) => console.log('Saved:', tags),
+    onSave: (tags) => {
+      console.log('Saved:', tags);
+    },
   },
 };
 
@@ -46,7 +51,9 @@ export const WithTags: Story = {
 export const ManyTags: Story = {
   args: {
     currentTags: ['Groceries', 'Online', 'Tax Deductible', 'Shopping', 'Health'],
-    onSave: (tags) => console.log('Saved:', tags),
+    onSave: (tags) => {
+      console.log('Saved:', tags);
+    },
   },
 };
 
@@ -55,7 +62,7 @@ export const Disabled: Story = {
   args: {
     currentTags: ['Groceries', 'Online'],
     disabled: true,
-    onSave: () => undefined,
+    onSave: () => {},
   },
 };
 
@@ -63,9 +70,15 @@ export const Disabled: Story = {
 export const WithSuggest: Story = {
   args: {
     currentTags: ['Groceries'],
-    onSave: (tags) => console.log('Saved:', tags),
+    onSave: (tags) => {
+      console.log('Saved:', tags);
+    },
     onSuggest: () =>
-      new Promise((resolve) => setTimeout(() => resolve(['Online', 'Tax Deductible']), 600)),
+      new Promise((resolve) =>
+        setTimeout(() => {
+          resolve(['Online', 'Tax Deductible']);
+        }, 600)
+      ),
   },
 };
 
@@ -101,7 +114,12 @@ export const WithSaveLatency: Story = {
         console.log('Saving:', tags);
         setTimeout(resolve, 1200);
       }),
-    onSuggest: () => new Promise((resolve) => setTimeout(() => resolve(['Subscriptions']), 800)),
+    onSuggest: () =>
+      new Promise((resolve) =>
+        setTimeout(() => {
+          resolve(['Subscriptions']);
+        }, 800)
+      ),
   },
 };
 
@@ -109,7 +127,9 @@ export const WithSaveLatency: Story = {
 export const WithAvailableTags: Story = {
   args: {
     currentTags: [],
-    onSave: (tags) => console.log('Saved:', tags),
+    onSave: (tags) => {
+      console.log('Saved:', tags);
+    },
     availableTags: [
       'Groceries',
       'Dining',

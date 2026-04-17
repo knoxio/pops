@@ -3,8 +3,9 @@
  * Manages learned patterns from user edits — Drizzle ORM
  */
 import Anthropic from '@anthropic-ai/sdk';
-import { aiUsage, settings, transactionCorrections, transactions } from '@pops/db-types';
 import { and, asc, count, desc, eq, gte, sql } from 'drizzle-orm';
+
+import { aiUsage, settings, transactionCorrections, transactions } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 import { isNamedEnvContext } from '../../../db.js';
@@ -23,6 +24,14 @@ import {
   outcomeFromMatch,
   ruleMatchesDescription,
 } from './pure-service.js';
+import {
+  ChangeSetImpactSummarySchema,
+  ChangeSetSchema,
+  classifyCorrectionMatch,
+  normalizeDescription,
+} from './types.js';
+import { AdaptedSignalSchema } from './types.js';
+
 import type {
   ChangeSet,
   ChangeSetImpactItem,
@@ -37,13 +46,6 @@ import type {
   CreateCorrectionInput,
   UpdateCorrectionInput,
 } from './types.js';
-import {
-  ChangeSetImpactSummarySchema,
-  ChangeSetSchema,
-  classifyCorrectionMatch,
-  normalizeDescription,
-} from './types.js';
-import { AdaptedSignalSchema } from './types.js';
 
 export * from './pure-service.js';
 
@@ -182,8 +184,8 @@ export async function interpretRejectionFeedback(
 
     const cleanedText = text
       .trim()
-      .replace(/^```(?:json)?\s*\n?/gm, '')
-      .replace(/\n?```\s*$/gm, '');
+      .replaceAll(/^```(?:json)?\s*\n?/gm, '')
+      .replaceAll(/\n?```\s*$/gm, '');
 
     const parsed = JSON.parse(cleanedText) as unknown;
     if (!parsed || typeof parsed !== 'object') return originalSignal;
@@ -346,8 +348,8 @@ Return ONLY a single JSON object, no markdown, no explanation:
 
   const cleanedText = text
     .trim()
-    .replace(/^```(?:json)?\s*\n?/gm, '')
-    .replace(/\n?```\s*$/gm, '');
+    .replaceAll(/^```(?:json)?\s*\n?/gm, '')
+    .replaceAll(/\n?```\s*$/gm, '');
 
   let parsed: unknown;
   try {
@@ -557,11 +559,11 @@ export async function proposeChangeSetFromCorrectionSignal(args: {
     // Apply rule tag semantics as "merge" (consistent with import bulk apply semantics).
     const before: CorrectionClassificationOutcome = {
       ...beforeBase,
-      tags: mergeTags(parseJsonStringArray(t.tags), beforeBase.tags).sort(),
+      tags: mergeTags(parseJsonStringArray(t.tags), beforeBase.tags).toSorted(),
     };
     const after: CorrectionClassificationOutcome = {
       ...afterBase,
-      tags: mergeTags(parseJsonStringArray(t.tags), afterBase.tags).sort(),
+      tags: mergeTags(parseJsonStringArray(t.tags), afterBase.tags).toSorted(),
     };
 
     // If the rule sets a transactionType, that classification outcome should surface even if it's the only change.
@@ -602,7 +604,7 @@ export function applyChangeSet(changeSet: ChangeSet): CorrectionRow[] {
   return db.transaction((tx) => {
     // Deterministic ordering: add → edit → disable → remove
     const order: Record<ChangeSetOp['op'], number> = { add: 1, edit: 2, disable: 3, remove: 4 };
-    const ops = [...changeSet.ops].sort((a, b) => order[a.op] - order[b.op]);
+    const ops = [...changeSet.ops].toSorted((a, b) => order[a.op] - order[b.op]);
 
     for (const op of ops) {
       if (op.op === 'add') {

@@ -1,11 +1,12 @@
+import { useState } from 'react';
+
+import { DateInput, DateTimeInput, TimeInput } from './DateTimeInput';
+
 /**
  * DateTime input component stories
  * Demonstrates DateInput, TimeInput, and DateTimeInput
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
-
-import { DateInput, DateTimeInput, TimeInput } from './DateTimeInput';
 
 // DateInput stories
 const dateInputMeta: Meta<typeof DateInput> = {
@@ -128,7 +129,9 @@ export const DateControlled: DateInputStory = {
         <DateInput
           {...args}
           value={date}
-          onChange={(e) => setDate(e.target.value)}
+          onChange={(e) => {
+            setDate(e.target.value);
+          }}
           prefix={<CalendarIcon />}
         />
         <p className="text-sm text-muted-foreground">Selected: {date}</p>
@@ -171,7 +174,13 @@ export const TimeControlled: StoryObj<typeof TimeInput> = {
     const [time, setTime] = useState('14:30');
     return (
       <div className="space-y-4">
-        <TimeInput value={time} onChange={(e) => setTime(e.target.value)} prefix={<ClockIcon />} />
+        <TimeInput
+          value={time}
+          onChange={(e) => {
+            setTime(e.target.value);
+          }}
+          prefix={<ClockIcon />}
+        />
         <p className="text-sm text-muted-foreground">Selected: {time}</p>
       </div>
     );
@@ -214,7 +223,9 @@ export const DateTimeControlled: StoryObj<typeof DateTimeInput> = {
       <div className="space-y-4">
         <DateTimeInput
           value={dateTime}
-          onChange={(e) => setDateTime(e.target.value)}
+          onChange={(e) => {
+            setDateTime(e.target.value);
+          }}
           prefix={<CalendarIcon />}
         />
         <p className="text-sm text-muted-foreground">Selected: {dateTime}</p>
@@ -238,7 +249,9 @@ export const FormExample: StoryObj = {
           <label className="block text-sm font-medium">Start Date</label>
           <DateInput
             value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
+            onChange={(e) => {
+              setStartDate(e.target.value);
+            }}
             prefix={<CalendarIcon />}
           />
         </div>
@@ -247,7 +260,9 @@ export const FormExample: StoryObj = {
           <label className="block text-sm font-medium">End Date</label>
           <DateInput
             value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
+            onChange={(e) => {
+              setEndDate(e.target.value);
+            }}
             min={startDate}
             prefix={<CalendarIcon />}
           />
@@ -257,7 +272,9 @@ export const FormExample: StoryObj = {
           <label className="block text-sm font-medium">Time</label>
           <TimeInput
             value={time}
-            onChange={(e) => setTime(e.target.value)}
+            onChange={(e) => {
+              setTime(e.target.value);
+            }}
             prefix={<ClockIcon />}
           />
         </div>
@@ -279,7 +296,9 @@ export const DateRangeFilter: StoryObj = {
             <label className="block text-sm font-medium">From</label>
             <DateInput
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+              }}
               prefix={<CalendarIcon />}
             />
           </div>
@@ -287,7 +306,9 @@ export const DateRangeFilter: StoryObj = {
             <label className="block text-sm font-medium">To</label>
             <DateInput
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+              }}
               min={startDate}
               prefix={<CalendarIcon />}
             />
@@ -310,7 +331,9 @@ export const AppointmentScheduler: StoryObj = {
           <label className="block text-sm font-medium">Select Date & Time</label>
           <DateTimeInput
             value={dateTime}
-            onChange={(e) => setDateTime(e.target.value)}
+            onChange={(e) => {
+              setDateTime(e.target.value);
+            }}
             prefix={<CalendarIcon />}
           />
         </div>
@@ -344,7 +367,9 @@ export const TransactionFilter: StoryObj = {
             <label className="block text-sm font-medium">Start Date</label>
             <DateInput
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+              }}
               prefix={<CalendarIcon />}
               variant="ghost"
             />
@@ -354,7 +379,9 @@ export const TransactionFilter: StoryObj = {
             <label className="block text-sm font-medium">End Date</label>
             <DateInput
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+              }}
               min={startDate}
               prefix={<CalendarIcon />}
               variant="ghost"
@@ -365,7 +392,9 @@ export const TransactionFilter: StoryObj = {
             <label className="block text-sm font-medium">Start Time</label>
             <TimeInput
               value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
+              onChange={(e) => {
+                setStartTime(e.target.value);
+              }}
               prefix={<ClockIcon />}
               variant="ghost"
             />
@@ -375,7 +404,9 @@ export const TransactionFilter: StoryObj = {
             <label className="block text-sm font-medium">End Time</label>
             <TimeInput
               value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
+              onChange={(e) => {
+                setEndTime(e.target.value);
+              }}
               prefix={<ClockIcon />}
               variant="ghost"
             />

@@ -44,12 +44,12 @@ Live status of every theme and epic. Updated as work completes.
 
 #### Cortex Infrastructure
 
-| Epic                           | Status      | Notes                                                              |
-| ------------------------------ | ----------- | ------------------------------------------------------------------ |
-| Redis container & connection   | Not started | Redis 7 Alpine, ioredis, Ansible provisioning                      |
-| Job queue (BullMQ)             | Not started | Typed queues, worker process, migrate Plex sync from in-memory     |
-| OpenAPI secondary contract     | Not started | trpc-openapi, spec at /api/docs, CI validation                     |
-| Vector storage (sqlite-vec)    | Not started | Embedding schema, similarity search, background embedding pipeline |
+| Epic                         | Status      | Notes                                                              |
+| ---------------------------- | ----------- | ------------------------------------------------------------------ |
+| Redis container & connection | Not started | Redis 7 Alpine, ioredis, Ansible provisioning                      |
+| Job queue (BullMQ)           | Not started | Typed queues, worker process, migrate Plex sync from in-memory     |
+| OpenAPI secondary contract   | Not started | trpc-openapi, spec at /api/docs, CI validation                     |
+| Vector storage (sqlite-vec)  | Not started | Embedding schema, similarity search, background embedding pipeline |
 
 ### Phase 1 — Foundation
 
@@ -126,38 +126,38 @@ Live status of every theme and epic. Updated as work completes.
 
 ### Cerebrum — Phase 1 (MVP)
 
-| Epic                          | Status      | Notes                                                              |
-| ----------------------------- | ----------- | ------------------------------------------------------------------ |
-| Engram Storage (format, CRUD) | Not started | File format, templates, directory, scope model, API                |
+| Epic                          | Status      | Notes                                                               |
+| ----------------------------- | ----------- | ------------------------------------------------------------------- |
+| Engram Storage (format, CRUD) | Not started | File format, templates, directory, scope model, API                 |
 | Thalamus (indexing/retrieval) | Not started | File watcher, frontmatter sync, embedding trigger, retrieval engine |
-| Ingest (input pipeline)       | Not started | Manual, agent, capture channels + classification + scope inference |
-| Emit (output production)      | Not started | Query engine, document generation, proactive nudges                |
+| Ingest (input pipeline)       | Not started | Manual, agent, capture channels + classification + scope inference  |
+| Emit (output production)      | Not started | Query engine, document generation, proactive nudges                 |
 
 ### Cerebrum — Phase 2 (Curation & Interface)
 
-| Epic                           | Status      | Notes                                                            |
-| ------------------------------ | ----------- | ---------------------------------------------------------------- |
-| Glia (curation workers)        | Not started | Pruner, consolidator, linker, auditor + trust graduation         |
-| Ego (chat agent)               | Not started | Conversation engine, shell panel, MCP, Moltbot. Supersedes PRD-054 |
+| Epic                    | Status      | Notes                                                              |
+| ----------------------- | ----------- | ------------------------------------------------------------------ |
+| Glia (curation workers) | Not started | Pruner, consolidator, linker, auditor + trust graduation           |
+| Ego (chat agent)        | Not started | Conversation engine, shell panel, MCP, Moltbot. Supersedes PRD-054 |
 
 ### Cerebrum — Phase 3 (Automation & Ecosystem)
 
-| Epic                            | Status      | Notes                                                          |
-| ------------------------------- | ----------- | -------------------------------------------------------------- |
-| Reflex (automation)             | Not started | reflexes.toml, event/threshold/scheduled triggers              |
-| Plexus (plugin system)          | Not started | Adapter interface, core integrations (email, calendar, GitHub) |
+| Epic                   | Status      | Notes                                                          |
+| ---------------------- | ----------- | -------------------------------------------------------------- |
+| Reflex (automation)    | Not started | reflexes.toml, event/threshold/scheduled triggers              |
+| Plexus (plugin system) | Not started | Adapter interface, core integrations (email, calendar, GitHub) |
 
 ### Phase 1 — Foundation (continued)
 
-| Epic                           | Status      | Notes                                                                        |
-| ------------------------------ | ----------- | ---------------------------------------------------------------------------- |
-| Unified Settings System        | Not started | Self-registering settings page, replaces scattered Plex/Arr/Rotation/AI UIs  |
+| Epic                    | Status      | Notes                                                                       |
+| ----------------------- | ----------- | --------------------------------------------------------------------------- |
+| Unified Settings System | Not started | Self-registering settings page, replaces scattered Plex/Arr/Rotation/AI UIs |
 
 ### Phase 3 — AI Layer
 
-| Epic                              | Status      | Notes                                                                             |
-| --------------------------------- | ----------- | --------------------------------------------------------------------------------- |
-| AI overlay (contextual assistant) | Superseded  | Absorbed by Cerebrum Epic 05 (Ego)                                                |
+| Epic                              | Status      | Notes                                                                              |
+| --------------------------------- | ----------- | ---------------------------------------------------------------------------------- |
+| AI overlay (contextual assistant) | Superseded  | Absorbed by Cerebrum Epic 05 (Ego)                                                 |
 | AI inference & monitoring         | Not started | Proactive insights, anomaly detection                                              |
 | AI observability                  | Not started | Multi-provider tracking, budget enforcement, latency/quality metrics, local models |
 

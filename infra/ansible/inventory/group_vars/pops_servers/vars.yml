@@ -15,7 +15,7 @@ metabase_data_dir: /opt/pops/data/metabase
 secrets_dir: /opt/pops/secrets
 
 # Schedules
-backup_schedule: "*-*-* 03:00:00" # systemd OnCalendar: 3am daily
+backup_schedule: '*-*-* 03:00:00' # systemd OnCalendar: 3am daily
 
 # SSH
 ssh_port: 2222
@@ -27,8 +27,8 @@ cf_subdomain_metabase: pops-metabase
 cf_subdomain_paperless: pops-paperless
 
 # Docker image versions (pin for security)
-metabase_version: "v0.52.5"
-paperless_version: "2.14"
-cloudflared_version: "2025.2.0"
-redis_version: "7-alpine"
-node_version: "22-alpine"
+metabase_version: 'v0.52.5'
+paperless_version: '2.14'
+cloudflared_version: '2025.2.0'
+redis_version: '7-alpine'
+node_version: '22-alpine'

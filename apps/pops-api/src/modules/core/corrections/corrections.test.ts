@@ -531,9 +531,9 @@ describe('corrections', () => {
           },
         });
 
-        expect(
-          result.data.some((r) => r.descriptionPattern === 'NETFLIX' && r.isActive === false)
-        ).toBe(true);
+        expect(result.data.some((r) => r.descriptionPattern === 'NETFLIX' && !r.isActive)).toBe(
+          true
+        );
         expect(result.data.some((r) => r.descriptionPattern === 'SPOTIFY')).toBe(true);
 
         expect(infoSpy).toHaveBeenCalledWith(
@@ -1479,7 +1479,7 @@ describe('corrections', () => {
         },
         rules
       );
-      expect(Object.keys(out).sort()).toEqual(['r1', 'r3']);
+      expect(Object.keys(out).toSorted()).toEqual(['r1', 'r3']);
       expect(out['r1']?.descriptionPattern).toBe('WOOLWORTHS');
       expect(out['r3']?.descriptionPattern).toBe('ALDI');
       // `r2` is present in `rules` but not referenced → must not be hydrated.

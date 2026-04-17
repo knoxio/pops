@@ -35,8 +35,9 @@ vi.mock('../../../../lib/logger.js', () => ({
   },
 }));
 
-import type { CorrectionAnalysis } from './rule-generator.js';
 import { analyzeCorrection, patternMatchesDescription } from './rule-generator.js';
+
+import type { CorrectionAnalysis } from './rule-generator.js';
 
 const mockCreate = sharedMockCreate;
 

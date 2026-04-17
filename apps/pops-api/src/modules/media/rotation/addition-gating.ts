@@ -1,3 +1,5 @@
+import { eq } from 'drizzle-orm';
+
 /**
  * Addition gating service — gates movie additions on available disk space.
  *
@@ -7,7 +9,6 @@
  * PRD-070 US-05
  */
 import { rotationCandidates, settings } from '@pops/db-types';
-import { eq } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
 import { getRadarrClient } from '../arr/service.js';

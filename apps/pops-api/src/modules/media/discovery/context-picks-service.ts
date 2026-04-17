@@ -5,9 +5,10 @@
 import { movies } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
-import type { TmdbClient } from '../tmdb/client.js';
 import { type ContextCollection, getActiveCollections } from './context-collections.js';
 import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from './flags.js';
+
+import type { TmdbClient } from '../tmdb/client.js';
 import type { DiscoverResult } from './types.js';
 
 /** A context collection result set for the API response. */

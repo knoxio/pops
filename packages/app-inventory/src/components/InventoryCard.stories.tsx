@@ -1,6 +1,6 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-
 import { InventoryCard } from './InventoryCard';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 const meta: Meta<typeof InventoryCard> = {
   title: 'Inventory/InventoryCard',
@@ -74,8 +74,12 @@ export const ClickableCard: Story = {
     type: 'Furniture',
     condition: 'Good',
     locationSegments: [{ id: '1', name: 'Office' }],
-    onClick: (id) => alert(`Navigate to item ${id}`),
-    onLocationNavigate: (seg) => alert(`Navigate to ${seg.name}`),
+    onClick: (id) => {
+      alert(`Navigate to item ${id}`);
+    },
+    onLocationNavigate: (seg) => {
+      alert(`Navigate to ${seg.name}`);
+    },
   },
 };
 

@@ -1,4 +1,3 @@
-import { Button } from '@pops/ui';
 import {
   AlertCircle,
   Ban,
@@ -11,6 +10,8 @@ import {
   Trash2,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
+
+import { Button } from '@pops/ui';
 
 import { buildCommitPayload } from '../../lib/commit-payload';
 import { trpc } from '../../lib/trpc';
@@ -45,7 +46,9 @@ function Section(props: {
       <button
         type="button"
         className="flex w-full items-center justify-between px-4 py-3 text-left font-medium hover:bg-muted/50"
-        onClick={() => setOpen(!open)}
+        onClick={() => {
+          setOpen(!open);
+        }}
       >
         <span>
           {props.title} <span className="text-muted-foreground font-normal">({props.count})</span>

@@ -1,10 +1,11 @@
+import { Link2, Plus } from 'lucide-react';
+
 /**
  * ConnectionsList — displays linked inventory items for a given item.
  * Shows connection count header, list of connected items with badges,
  * and a "Connect to…" button placeholder.
  */
 import { AssetIdBadge, Button, cn, TypeBadge } from '@pops/ui';
-import { Link2, Plus } from 'lucide-react';
 
 export interface ConnectedItem {
   id: string;

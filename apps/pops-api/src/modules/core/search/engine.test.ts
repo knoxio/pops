@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { searchAll, showMore } from './engine.js';
 import { registerSearchAdapter, resetRegistry } from './registry.js';
+
 import type { Query, SearchAdapter, SearchContext, SearchHit } from './types.js';
 
 const defaultContext: SearchContext = { app: 'media', page: 'search' };

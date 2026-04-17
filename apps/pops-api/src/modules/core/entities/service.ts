@@ -1,13 +1,16 @@
+import crypto from 'crypto';
+
+import { and, count, eq, like, ne, sql } from 'drizzle-orm';
+
 /**
  * Entity service — CRUD operations using Drizzle ORM.
  * SQLite is the source of truth. All operations are local.
  */
 import { entities, transactions } from '@pops/db-types';
-import crypto from 'crypto';
-import { and, count, eq, like, ne, sql } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
+
 import type { CreateEntityInput, EntityRow, UpdateEntityInput } from './types.js';
 
 /** Entity row enriched with transaction count. */
@@ -180,7 +183,7 @@ export function updateEntity(id: string, input: UpdateEntityInput): EntityRow {
     hasUpdates = true;
   }
   if (input.aliases !== undefined) {
-    updates.aliases = input.aliases.length ? input.aliases.join(', ') : null;
+    updates.aliases = input.aliases.length > 0 ? input.aliases.join(', ') : null;
     hasUpdates = true;
   }
   if (input.defaultTransactionType !== undefined) {
@@ -188,7 +191,7 @@ export function updateEntity(id: string, input: UpdateEntityInput): EntityRow {
     hasUpdates = true;
   }
   if (input.defaultTags !== undefined) {
-    updates.defaultTags = input.defaultTags.length ? JSON.stringify(input.defaultTags) : null;
+    updates.defaultTags = input.defaultTags.length > 0 ? JSON.stringify(input.defaultTags) : null;
     hasUpdates = true;
   }
   if (input.notes !== undefined) {

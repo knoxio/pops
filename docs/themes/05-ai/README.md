@@ -15,24 +15,24 @@ Build three layers of AI capability: categorisation (automated data entry and ma
 
 ## Epics
 
-| #   | Epic                                               | Summary                                                                                 | Status      |
-| --- | -------------------------------------------------- | --------------------------------------------------------------------------------------- | ----------- |
-| 0   | [AI Operations App](epics/00-ai-operations-app.md) | `@pops/app-ai` — usage tracking, cost visualisation, model config, categorisation rules | Partial     |
-| 1   | [AI Overlay](epics/01-ai-overlay.md)               | Superseded by Cerebrum Epic 05 (Ego)                                                    | Superseded  |
-| 2   | [AI Inference](epics/02-ai-inference.md)           | Proactive monitoring, anomaly detection, Moltbot alerts, scheduled analysis             | Not started |
+| #   | Epic                                               | Summary                                                                                   | Status      |
+| --- | -------------------------------------------------- | ----------------------------------------------------------------------------------------- | ----------- |
+| 0   | [AI Operations App](epics/00-ai-operations-app.md) | `@pops/app-ai` — usage tracking, cost visualisation, model config, categorisation rules   | Partial     |
+| 1   | [AI Overlay](epics/01-ai-overlay.md)               | Superseded by Cerebrum Epic 05 (Ego)                                                      | Superseded  |
+| 2   | [AI Inference](epics/02-ai-inference.md)           | Proactive monitoring, anomaly detection, Moltbot alerts, scheduled analysis               | Not started |
 | 3   | [AI Observability](epics/03-ai-observability.md)   | Multi-provider inference tracking, budget enforcement, latency/quality metrics, dashboard | Not started |
 
 Epic 0 is Phase 2. Epics 2-3 are Phase 3 — they need multiple domains with real data to be useful. Epic 1 is superseded by Cerebrum Ego (PRD-087).
 
 ## Key Decisions
 
-| Decision         | Choice                           | Rationale                                                                      |
-| ---------------- | -------------------------------- | ------------------------------------------------------------------------------ |
-| AI providers     | Multi-provider (Claude + local)  | Claude for cloud inference, Ollama/llama.cpp for local — provider abstraction enables cost/quality trade-offs |
-| Caching          | Disk cache per domain            | Avoid repeat API calls for same inputs                                         |
-| Operations scope | Platform-level, not per-app      | AI usage is a cross-cutting concern                                            |
-| Observability    | Unified inference log            | Every AI call (cloud, local, cached) tracked in one table with provider/model/domain metadata |
-| Budget scope     | Global + per-provider + per-operation | Granular budget control as Cerebrum workloads scale AI usage               |
+| Decision         | Choice                                | Rationale                                                                                                     |
+| ---------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| AI providers     | Multi-provider (Claude + local)       | Claude for cloud inference, Ollama/llama.cpp for local — provider abstraction enables cost/quality trade-offs |
+| Caching          | Disk cache per domain                 | Avoid repeat API calls for same inputs                                                                        |
+| Operations scope | Platform-level, not per-app           | AI usage is a cross-cutting concern                                                                           |
+| Observability    | Unified inference log                 | Every AI call (cloud, local, cached) tracked in one table with provider/model/domain metadata                 |
+| Budget scope     | Global + per-provider + per-operation | Granular budget control as Cerebrum workloads scale AI usage                                                  |
 
 ## Risks
 

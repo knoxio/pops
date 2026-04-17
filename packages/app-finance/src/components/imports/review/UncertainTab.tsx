@@ -1,12 +1,14 @@
-import { Button } from '@pops/ui';
 import { Layers, List } from 'lucide-react';
+
+import { Button } from '@pops/ui';
+
+import { EditableTransactionCard } from '../EditableTransactionCard';
+import { TransactionCard } from '../TransactionCard';
+import { TransactionGroup } from '../TransactionGroup';
 
 import type { groupTransactionsByEntity } from '../../../lib/transaction-utils';
 import type { ProcessedTransaction } from '../../../store/importStore';
-import { EditableTransactionCard } from '../EditableTransactionCard';
 import type { ViewMode } from '../hooks/useTransactionReview';
-import { TransactionCard } from '../TransactionCard';
-import { TransactionGroup } from '../TransactionGroup';
 
 interface UncertainTabProps {
   transactions: ProcessedTransaction[];
@@ -57,7 +59,9 @@ export function UncertainTab({
         <Button
           variant={viewMode === 'list' ? 'default' : 'outline'}
           size="sm"
-          onClick={() => onViewModeChange('list')}
+          onClick={() => {
+            onViewModeChange('list');
+          }}
           aria-pressed={viewMode === 'list'}
         >
           <List className="w-4 h-4 mr-1" aria-hidden="true" />
@@ -66,7 +70,9 @@ export function UncertainTab({
         <Button
           variant={viewMode === 'grouped' ? 'default' : 'outline'}
           size="sm"
-          onClick={() => onViewModeChange('grouped')}
+          onClick={() => {
+            onViewModeChange('grouped');
+          }}
           aria-pressed={viewMode === 'grouped'}
         >
           <Layers className="w-4 h-4 mr-1" aria-hidden="true" />

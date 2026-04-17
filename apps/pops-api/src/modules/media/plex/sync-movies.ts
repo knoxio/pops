@@ -8,10 +8,11 @@
 import { getDb } from '../../../db.js';
 import { createMovie, getMovieByTmdbId } from '../movies/service.js';
 import { toMovie } from '../movies/types.js';
-import type { TmdbClient } from '../tmdb/client.js';
 import { getTmdbClient } from '../tmdb/index.js';
-import type { PlexClient } from './client.js';
 import { logMovieWatch } from './sync-helpers.js';
+
+import type { TmdbClient } from '../tmdb/client.js';
+import type { PlexClient } from './client.js';
 import type { PlexMediaItem } from './types.js';
 
 // ---------------------------------------------------------------------------

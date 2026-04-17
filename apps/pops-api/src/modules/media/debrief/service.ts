@@ -1,3 +1,5 @@
+import { and, asc, eq, inArray } from 'drizzle-orm';
+
 /**
  * Debrief service — auto-queue and manage post-watch debrief sessions.
  */
@@ -9,7 +11,6 @@ import {
   movies,
   watchHistory,
 } from '@pops/db-types';
-import { and, asc, eq, inArray } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
 import { NotFoundError } from '../../../shared/errors.js';
@@ -131,11 +132,9 @@ export function getDebrief(sessionId: number): DebriefResponse {
     throw new NotFoundError('Movie', String(watchEntry.mediaId));
   }
 
-  const posterUrl = movieRow.posterOverridePath
-    ? movieRow.posterOverridePath
-    : movieRow.posterPath
-      ? `/media/images/movie/${movieRow.tmdbId}/poster.jpg`
-      : null;
+  const posterUrl =
+    movieRow.posterOverridePath ??
+    (movieRow.posterPath ? `/media/images/movie/${movieRow.tmdbId}/poster.jpg` : null);
 
   // Get active dimensions
   const dims = db

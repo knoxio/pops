@@ -195,7 +195,7 @@ describe('CacheManagement', () => {
     await user.click(screen.getByRole('button', { name: /Clear All/i }));
     // The AlertDialogAction is the confirm button inside the dialog
     const dialogActions = screen.getAllByRole('button', { name: /Clear All/i });
-    await user.click(dialogActions[dialogActions.length - 1]!);
+    await user.click(dialogActions.at(-1)!);
     expect(mockClearAllMutate).toHaveBeenCalled();
   });
 

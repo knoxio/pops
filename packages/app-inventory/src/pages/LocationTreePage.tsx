@@ -24,21 +24,6 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
-  Badge,
-  Button,
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  PageHeader,
-  Skeleton,
-} from '@pops/ui';
-import {
   ArrowDown,
   ArrowUp,
   ChevronDown,
@@ -56,6 +41,22 @@ import {
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
+
+import {
+  Badge,
+  Button,
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  PageHeader,
+  Skeleton,
+} from '@pops/ui';
 
 import { LocationContentsPanel } from '../components/LocationContentsPanel';
 import { trpc } from '../lib/trpc';
@@ -173,7 +174,9 @@ function InlineInput({
       ref={inputRef}
       type="text"
       value={value}
-      onChange={(e) => setValue(e.target.value)}
+      onChange={(e) => {
+        setValue(e.target.value);
+      }}
       onKeyDown={handleKeyDown}
       onBlur={onCancel}
       placeholder={placeholder}
@@ -207,7 +210,9 @@ function MoveTargetPicker({
               <button
                 type="button"
                 disabled={disabled}
-                onClick={() => onSelect(node.id)}
+                onClick={() => {
+                  onSelect(node.id);
+                }}
                 className={`w-full text-left flex items-center gap-1.5 py-1.5 px-2 rounded-md transition-colors ${
                   disabled ? 'opacity-40 cursor-not-allowed' : 'hover:bg-muted/50 cursor-pointer'
                 }`}
@@ -351,7 +356,9 @@ function LocationNode({
           style={{
             paddingLeft: `calc(${depth} * var(--tree-indent-step) + var(--tree-indent-base))`,
           }}
-          onClick={() => onSelect(node.id)}
+          onClick={() => {
+            onSelect(node.id);
+          }}
           onDoubleClick={(e) => {
             e.stopPropagation();
             setRenaming(true);
@@ -368,7 +375,9 @@ function LocationNode({
             type="button"
             className="p-0.5 rounded hover:bg-muted cursor-grab active:cursor-grabbing hidden [@media(pointer:fine)]:flex opacity-0 group-hover:opacity-100 transition-opacity touch-none"
             aria-label={`Drag ${node.name}`}
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
           >
             <GripVertical className="h-3.5 w-3.5 text-muted-foreground" />
           </button>
@@ -409,7 +418,9 @@ function LocationNode({
                 setRenaming(false);
                 if (name !== node.name) onRename(node.id, name);
               }}
-              onCancel={() => setRenaming(false)}
+              onCancel={() => {
+                setRenaming(false);
+              }}
             />
           ) : (
             <span className="text-sm font-medium truncate">{node.name}</span>
@@ -470,7 +481,9 @@ function LocationNode({
             </button>
             <Link
               to={`/inventory/report?locationId=${node.id}`}
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
               className="p-0.5 rounded hover:bg-muted"
               title={`Insurance report for ${node.name}`}
             >
@@ -700,7 +713,11 @@ export function LocationTreePage() {
       if (!movingId) return;
       updateMutation.mutate(
         { id: movingId, data: { parentId: newParentId } },
-        { onSuccess: () => setMovingId(null) }
+        {
+          onSuccess: () => {
+            setMovingId(null);
+          },
+        }
       );
     },
     [movingId, updateMutation]
@@ -915,7 +932,9 @@ export function LocationTreePage() {
           <div className="max-h-64 overflow-y-auto border rounded-lg py-2">
             <button
               type="button"
-              onClick={() => handleMoveTo(null)}
+              onClick={() => {
+                handleMoveTo(null);
+              }}
               className="w-full text-left flex items-center gap-1.5 py-1.5 px-2 rounded-md hover:bg-muted/50"
               style={{ paddingLeft: 'var(--tree-indent-base)' }}
             >
@@ -962,7 +981,12 @@ export function LocationTreePage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirm(null)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteConfirm(null);
+              }}
+            >
               Cancel
             </Button>
             <Button

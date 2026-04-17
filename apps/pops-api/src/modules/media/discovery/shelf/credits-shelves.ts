@@ -1,3 +1,5 @@
+import { eq, sql } from 'drizzle-orm';
+
 /**
  * "More from {Director}" and "More from {Actor}" shelf implementations.
  *
@@ -7,16 +9,16 @@
  * Actor shelf queries /discover/movie?with_cast={personId}.
  */
 import { mediaScores, movies } from '@pops/db-types';
-import { eq, sql } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../../db.js';
 import { getTmdbClient } from '../../tmdb/index.js';
-import type { TmdbMovieCredits } from '../../tmdb/types.js';
 import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from '../flags.js';
 import { scoreDiscoverResults } from '../service.js';
 import { getLibraryTmdbIds, toDiscoverResults } from '../tmdb-service.js';
-import type { PreferenceProfile } from '../types.js';
 import { registerShelf } from './registry.js';
+
+import type { TmdbMovieCredits } from '../../tmdb/types.js';
+import type { PreferenceProfile } from '../types.js';
 import type { ShelfDefinition, ShelfInstance } from './types.js';
 
 const MAX_SEEDS = 10;
@@ -66,13 +68,13 @@ function selectSeedMovies(): SeedMovie[] {
     }));
   }
 
-  const sorted = [...withScores].sort((a, b) => (a.avgEloScore ?? 0) - (b.avgEloScore ?? 0));
+  const sorted = [...withScores].toSorted((a, b) => (a.avgEloScore ?? 0) - (b.avgEloScore ?? 0));
   const median = sorted[Math.floor(sorted.length / 2)]?.avgEloScore ?? 0;
 
   // Filter above-median, sort descending by ELO, cap at MAX_SEEDS
   return withScores
     .filter((r) => (r.avgEloScore ?? 0) >= median)
-    .sort((a, b) => (b.avgEloScore ?? 0) - (a.avgEloScore ?? 0))
+    .toSorted((a, b) => (b.avgEloScore ?? 0) - (a.avgEloScore ?? 0))
     .slice(0, MAX_SEEDS)
     .map((r) => ({ id: r.id, tmdbId: r.tmdbId, title: r.title, avgEloScore: r.avgEloScore }));
 }
@@ -103,7 +105,7 @@ function extractDirector(credits: TmdbMovieCredits): { id: number; name: string 
 function extractLeadCast(credits: TmdbMovieCredits): { id: number; name: string }[] {
   return credits.cast
     .filter((c) => c.order < LEAD_CAST_COUNT)
-    .sort((a, b) => a.order - b.order)
+    .toSorted((a, b) => a.order - b.order)
     .map((c) => ({ id: c.id, name: c.name }));
 }
 

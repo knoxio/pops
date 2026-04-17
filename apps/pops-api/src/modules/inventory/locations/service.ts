@@ -1,12 +1,15 @@
+import { asc, count, eq, inArray } from 'drizzle-orm';
+
 /**
  * Location service — CRUD operations for the location tree.
  * SQLite is the source of truth. All operations are local.
  */
 import { homeInventory, locations } from '@pops/db-types';
-import { asc, count, eq, inArray } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
+import { toLocation } from './types.js';
+
 import type {
   CreateLocationInput,
   DeleteLocationStats,
@@ -14,7 +17,6 @@ import type {
   LocationTreeNode,
   UpdateLocationInput,
 } from './types.js';
-import { toLocation } from './types.js';
 
 /** Count + rows for a paginated list. */
 export interface LocationListResult {
@@ -302,7 +304,7 @@ export function getLocationPath(id: string): LocationRow[] {
     }
   }
 
-  return path.reverse();
+  return path.toReversed();
 }
 
 /** Items at a location, optionally including descendant locations. */

@@ -1,3 +1,8 @@
+import { ArrowLeft } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
+import { toast } from 'sonner';
+
 /**
  * ModelConfigPage — AI model configuration and budget settings.
  *
@@ -20,10 +25,6 @@ import {
   Skeleton,
   StatCard,
 } from '@pops/ui';
-import { ArrowLeft } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
-import { toast } from 'sonner';
 
 import { trpc } from '../lib/trpc';
 
@@ -209,7 +210,9 @@ export function ModelConfigPage() {
           label="AI Model"
           options={SUPPORTED_MODELS}
           value={model}
-          onChange={(e) => setModel(e.target.value)}
+          onChange={(e) => {
+            setModel(e.target.value);
+          }}
         />
 
         <div className="space-y-1.5">
@@ -218,7 +221,9 @@ export function ModelConfigPage() {
             type="number"
             placeholder="e.g. 1000000"
             value={budget}
-            onChange={(e) => setBudget(e.target.value)}
+            onChange={(e) => {
+              setBudget(e.target.value);
+            }}
             min={0}
           />
         </div>
@@ -227,7 +232,9 @@ export function ModelConfigPage() {
           label="When Budget Exceeded"
           options={FALLBACK_OPTIONS}
           value={fallback}
-          onChange={(e) => setFallback(e.target.value)}
+          onChange={(e) => {
+            setFallback(e.target.value);
+          }}
         />
 
         <div className="pt-2">

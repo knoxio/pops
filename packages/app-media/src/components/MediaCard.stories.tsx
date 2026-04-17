@@ -1,11 +1,12 @@
+import { MemoryRouter } from 'react-router';
+
+import { MediaCard } from './MediaCard';
+
 /**
  * MediaCard component stories
  * Demonstrates movie, TV show, long title, no poster, and fallback variants
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { MemoryRouter } from 'react-router';
-
-import { MediaCard } from './MediaCard';
 
 const meta: Meta<typeof MediaCard> = {
   component: MediaCard,

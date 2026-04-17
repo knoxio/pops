@@ -1,10 +1,12 @@
+import { existsSync, mkdirSync, unlinkSync } from 'node:fs';
+import { dirname } from 'node:path';
+
 /**
  * Initialize empty database for local development
  * Run with: tsx scripts/init-db.ts
  */
 import BetterSqlite3 from 'better-sqlite3';
-import { existsSync, mkdirSync, unlinkSync } from 'node:fs';
-import { dirname } from 'node:path';
+
 import { initializeSchema } from '../src/db/schema.js';
 import { assertNotProduction, assertLowRecordCount } from './lib/guard.js';
 

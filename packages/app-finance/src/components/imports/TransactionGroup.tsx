@@ -1,13 +1,16 @@
-import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
-import { Button, Label, Select as UiSelect } from '@pops/ui';
-import { Badge } from '@pops/ui';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@pops/ui';
 import { ChevronRight, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 
-import type { TransactionGroup as TransactionGroupType } from '../../lib/transaction-utils';
+import { Button, Label, Select as UiSelect } from '@pops/ui';
+import { Badge } from '@pops/ui';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@pops/ui';
+
 import { EditableTransactionCard } from './EditableTransactionCard';
 import { TransactionCard } from './TransactionCard';
+
+import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
+
+import type { TransactionGroup as TransactionGroupType } from '../../lib/transaction-utils';
 
 interface TransactionGroupProps {
   group: TransactionGroupType;
@@ -116,7 +119,9 @@ export function TransactionGroup({
                   <Button
                     variant="default"
                     size="sm"
-                    onClick={() => onAcceptAll(group.transactions)}
+                    onClick={() => {
+                      onAcceptAll(group.transactions);
+                    }}
                     className="bg-purple-600 hover:bg-purple-700"
                   >
                     {entityExists ? '✓' : '+'} Accept All as "{group.entityName}"
@@ -124,7 +129,9 @@ export function TransactionGroup({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => onCreateAndAssignAll(group.transactions, group.entityName)}
+                    onClick={() => {
+                      onCreateAndAssignAll(group.transactions, group.entityName);
+                    }}
                   >
                     Create new for all
                   </Button>
@@ -134,7 +141,9 @@ export function TransactionGroup({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => onCreateAndAssignAll(group.transactions, group.entityName)}
+                  onClick={() => {
+                    onCreateAndAssignAll(group.transactions, group.entityName);
+                  }}
                 >
                   + Create new for all
                 </Button>
@@ -142,7 +151,9 @@ export function TransactionGroup({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => setShowEntitySelector(!showEntitySelector)}
+                onClick={() => {
+                  setShowEntitySelector(!showEntitySelector);
+                }}
               >
                 Choose existing...
               </Button>

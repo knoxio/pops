@@ -1,9 +1,11 @@
-import { comparisonDimensions, comparisons, mediaScores } from '@pops/db-types';
 import { and, asc, eq } from 'drizzle-orm';
 
+import { comparisonDimensions, comparisons, mediaScores } from '@pops/db-types';
+
 import { getDrizzle } from '../../../../db.js';
-import type { MediaScoreRow, RecordComparisonInput } from '../types.js';
 import { drawTierOutcome, ELO_K, expectedScore } from './elo-calculator.js';
+
+import type { MediaScoreRow, RecordComparisonInput } from '../types.js';
 
 export function getOrCreateScore(
   mediaType: string,

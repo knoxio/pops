@@ -1,5 +1,4 @@
 import { TRPCError } from '@trpc/server';
-import type { Database } from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -18,6 +17,8 @@ import {
   getTierListMovies,
   includeInDimension,
 } from './service.js';
+
+import type { Database } from 'better-sqlite3';
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;
@@ -1871,7 +1872,9 @@ describe('dimension exclusion', () => {
 
   it('includeInDimension throws NOT_FOUND when no score row exists', () => {
     const dimId = seedDimension(db, { name: 'Dim' });
-    expect(() => includeInDimension('movie', 999, dimId)).toThrow();
+    expect(() => {
+      includeInDimension('movie', 999, dimId);
+    }).toThrow();
   });
 });
 

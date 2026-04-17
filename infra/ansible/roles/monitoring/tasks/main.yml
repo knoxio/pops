@@ -8,7 +8,7 @@
     dest: /opt/pops/healthcheck.sh
     owner: root
     group: root
-    mode: "0700"
+    mode: '0700'
   when: monitoring_enabled
 
 - name: Create health check systemd service
@@ -25,7 +25,7 @@
     dest: /etc/systemd/system/pops-healthcheck.service
     owner: root
     group: root
-    mode: "0644"
+    mode: '0644'
   when: monitoring_enabled
 
 - name: Create health check timer (every 5 minutes)
@@ -43,7 +43,7 @@
     dest: /etc/systemd/system/pops-healthcheck.timer
     owner: root
     group: root
-    mode: "0644"
+    mode: '0644'
   when: monitoring_enabled
 
 - name: Enable health check timer

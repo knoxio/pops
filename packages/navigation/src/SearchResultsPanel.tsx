@@ -1,7 +1,8 @@
-import type { ReactNode } from 'react';
 import { useCallback, useEffect, useRef } from 'react';
 
 import { getResultComponent } from './result-component-registry';
+
+import type { ReactNode } from 'react';
 
 /** A single search hit within a section. */
 export interface SearchResultHit {
@@ -60,7 +61,7 @@ function SectionHeader({
   return (
     <div
       className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide ${colorClass}`}
-      data-testid={`section-header-${label.toLowerCase().replace(/\s+/g, '-')}`}
+      data-testid={`section-header-${label.toLowerCase().replaceAll(/\s+/g, '-')}`}
     >
       {icon}
       <span>{label}</span>
@@ -111,7 +112,7 @@ export function SearchResultsPanel({
   // Sort: context section first, then by highest score descending
   const sortedSections = [...sections]
     .filter((s) => s.hits.length > 0)
-    .sort((a, b) => {
+    .toSorted((a, b) => {
       if (a.isContext && !b.isContext) return -1;
       if (!a.isContext && b.isContext) return 1;
       const aMax = Math.max(...a.hits.map((h) => h.score));

@@ -20,6 +20,7 @@ import { matchEntity } from './lib/entity-matcher.js';
 import { buildSuggestedTags, loadKnownTags } from './lib/tag-management.js';
 import { insertTransaction } from './lib/transaction-persistence.js';
 import { updateProgress } from './progress-store.js';
+
 import type {
   AiUsageStats,
   ConfirmedTransaction,
@@ -119,7 +120,7 @@ async function processImportCore(args: {
       status: 'processing' | 'success' | 'failed';
       error?: string;
     } = {
-      description: transaction.description.substring(0, 50),
+      description: transaction.description.slice(0, 50),
       status: 'processing',
     };
 
@@ -156,7 +157,7 @@ async function processImportCore(args: {
           {
             index: i + 1,
             total: newTransactions.length,
-            description: transaction.description.substring(0, 50),
+            description: transaction.description.slice(0, 50),
             entityName: match.entityName,
             matchType: match.matchType,
           },
@@ -280,7 +281,7 @@ async function processImportCore(args: {
       if (onProgress) {
         const formattedError = formatImportError(error, { transaction: transaction.description });
         errors.push({
-          description: transaction.description.substring(0, 50),
+          description: transaction.description.slice(0, 50),
           error:
             formattedError.message +
             (formattedError.suggestion ? ` - ${formattedError.suggestion}` : ''),
@@ -350,7 +351,7 @@ export async function processImport(
   transactions: ParsedTransaction[],
   account: string
 ): Promise<ProcessImportOutput> {
-  const importBatchId = `import-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+  const importBatchId = `import-${Date.now()}-${Math.random().toString(36).slice(7)}`;
   const { output } = await processImportCore({ transactions, account, importBatchId });
   return output;
 }
@@ -385,7 +386,7 @@ function executeImportCore(args: {
       status: 'processing' | 'success' | 'failed';
       error?: string;
     } = {
-      description: transaction.description.substring(0, 50),
+      description: transaction.description.slice(0, 50),
       status: 'processing',
     };
 
@@ -421,7 +422,7 @@ function executeImportCore(args: {
         {
           index: i + 1,
           total: transactions.length,
-          description: transaction.description.substring(0, 50),
+          description: transaction.description.slice(0, 50),
           id: row.id,
         },
         '[Import] Transaction written'
@@ -435,7 +436,7 @@ function executeImportCore(args: {
         {
           index: i + 1,
           total: transactions.length,
-          description: transaction.description.substring(0, 50),
+          description: transaction.description.slice(0, 50),
           error: error instanceof Error ? error.message : String(error),
         },
         '[Import] Transaction write failed'
@@ -449,7 +450,7 @@ function executeImportCore(args: {
       if (onProgress) {
         const formattedError = formatImportError(error, { transaction: transaction.description });
         errors.push({
-          description: transaction.description.substring(0, 50),
+          description: transaction.description.slice(0, 50),
           error:
             formattedError.message +
             (formattedError.suggestion ? ` - ${formattedError.suggestion}` : ''),
@@ -508,7 +509,7 @@ export async function processImportWithProgress(
   account: string
 ): Promise<void> {
   try {
-    const importBatchId = `import-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+    const importBatchId = `import-${Date.now()}-${Math.random().toString(36).slice(7)}`;
 
     logger.info(
       { importBatchId, sessionId, account, totalCount: transactions.length },
@@ -523,7 +524,9 @@ export async function processImportWithProgress(
       transactions,
       account,
       importBatchId,
-      onProgress: (update) => updateProgress(sessionId, update),
+      onProgress: (update) => {
+        updateProgress(sessionId, update);
+      },
     });
 
     logger.info(
@@ -595,7 +598,9 @@ export function executeImportWithProgress(
       processedCount,
     } = executeImportCore({
       transactions,
-      onProgress: (update) => updateProgress(sessionId, update),
+      onProgress: (update) => {
+        updateProgress(sessionId, update);
+      },
     });
 
     logger.info(

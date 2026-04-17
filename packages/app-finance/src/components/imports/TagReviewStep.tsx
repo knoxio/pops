@@ -1,14 +1,16 @@
-import type { ConfirmedTransaction, SuggestedTag } from '@pops/api/modules/finance/imports';
-import { Button } from '@pops/ui';
-import { Badge } from '@pops/ui';
 import { ChevronDown, ChevronRight, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+
+import { Button } from '@pops/ui';
+import { Badge } from '@pops/ui';
 
 import { trpc } from '../../lib/trpc';
 import { cn } from '../../lib/utils';
 import { useImportStore } from '../../store/importStore';
 import { TagEditor, type TagMetaEntry } from '../TagEditor';
+
+import type { ConfirmedTransaction, SuggestedTag } from '@pops/api/modules/finance/imports';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -37,13 +39,13 @@ function groupByEntity(transactions: ConfirmedTransaction[]): ConfirmedGroup[] {
     }
   }
   return [...map.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
+    .toSorted(([a], [b]) => a.localeCompare(b))
     .map(([entityName, txns]) => ({ entityName, transactions: txns }));
 }
 
 /** Union of all distinct tags across an array of tag lists */
 function unionTags(tagLists: string[][]): string[] {
-  return [...new Set(tagLists.flat())].sort();
+  return [...new Set(tagLists.flat())].toSorted();
 }
 
 /** Build a tagMeta Map from a SuggestedTag array for the TagEditor */
@@ -88,9 +90,7 @@ export function TagReviewStep() {
     setLocalTags((prev) => {
       const next = { ...prev };
       for (const t of confirmedTransactions) {
-        if (next[t.checksum] === undefined) {
-          next[t.checksum] = t.tags ?? [];
-        }
+        next[t.checksum] ??= t.tags ?? [];
       }
       const keys = new Set(confirmedTransactions.map((t) => t.checksum));
       for (const k of Object.keys(next)) {
@@ -114,7 +114,7 @@ export function TagReviewStep() {
   // This ensures newly typed tags appear as autocomplete suggestions across all rows.
   const availableTags = useMemo(() => {
     const local = Object.values(localTags).flat();
-    return [...new Set([...(serverTags ?? []), ...local])].sort();
+    return [...new Set([...(serverTags ?? []), ...local])].toSorted();
   }, [serverTags, localTags]);
 
   const updateTag = useCallback((checksum: string, tags: string[]) => {
@@ -290,7 +290,9 @@ function EntityGroup({
         <Button
           variant="ghost"
           className="flex items-center gap-2 flex-1 text-left h-auto p-0 hover:bg-transparent"
-          onClick={() => setExpanded((prev) => !prev)}
+          onClick={() => {
+            setExpanded((prev) => !prev);
+          }}
           aria-expanded={expanded}
         >
           {expanded ? (
@@ -354,7 +356,9 @@ function EntityGroup({
                 tags={localTags[t.checksum] ?? []}
                 originalSuggestedTags={originalSuggestedTags[t.checksum] ?? []}
                 availableTags={availableTags}
-                onSave={(tags) => onUpdateTag(t.checksum, tags)}
+                onSave={(tags) => {
+                  onUpdateTag(t.checksum, tags);
+                }}
               />
             ))}
           </div>
@@ -418,7 +422,9 @@ function GroupTagBar({
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
   }, [showPicker]);
 
   const handleAddFromInput = () => {
@@ -443,7 +449,9 @@ function GroupTagBar({
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => onRemoveTag(tag)}
+            onClick={() => {
+              onRemoveTag(tag);
+            }}
             className="text-muted-foreground hover:text-foreground ml-0.5 h-4 w-4 p-0"
             aria-label={`Remove ${tag}`}
           >
@@ -460,7 +468,9 @@ function GroupTagBar({
             setInputValue(e.target.value);
             setShowPicker(true);
           }}
-          onFocus={() => setShowPicker(true)}
+          onFocus={() => {
+            setShowPicker(true);
+          }}
           onKeyDown={(e) => {
             if (e.key === 'Tab' && filtered.length > 0) {
               e.preventDefault();

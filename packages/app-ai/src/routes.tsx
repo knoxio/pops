@@ -5,6 +5,7 @@
  * these via @pops/app-ai and mounts them under /ai/*.
  */
 import { lazy } from 'react';
+
 import type { RouteObject } from 'react-router';
 
 const AiUsagePage = lazy(() =>

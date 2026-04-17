@@ -68,7 +68,7 @@ packages/ui/src/theme/
 Theme CSS is imported once in the shell's entry point:
 
 ```typescript
-import "@pops/ui/theme";
+import '@pops/ui/theme';
 ```
 
 Apps do NOT define their own theme tokens — they consume from `@pops/ui`.

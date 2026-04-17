@@ -107,7 +107,7 @@ export const RadioInput = forwardRef<HTMLDivElement, RadioInputProps>(
   ) => {
     return (
       <div className={cn('flex flex-col gap-3', className)} ref={ref}>
-        {(label || description) && (
+        {(label ?? description) && (
           <div className="flex flex-col gap-1">
             {label && (
               <label className="text-sm font-medium">
@@ -136,7 +136,7 @@ export const RadioInput = forwardRef<HTMLDivElement, RadioInputProps>(
               <RadioGroupItem
                 value={option.value}
                 id={`radio-${option.value}`}
-                disabled={option.disabled || disabled}
+                disabled={option.disabled ?? disabled}
                 className="mt-0.5"
               />
               <div className="flex flex-col gap-0.5">
@@ -144,7 +144,7 @@ export const RadioInput = forwardRef<HTMLDivElement, RadioInputProps>(
                   htmlFor={`radio-${option.value}`}
                   className={cn(
                     'text-sm font-medium leading-none cursor-pointer select-none',
-                    (option.disabled || disabled) && 'opacity-50 cursor-not-allowed'
+                    (option.disabled ?? disabled) && 'opacity-50 cursor-not-allowed'
                   )}
                 >
                   {option.label}

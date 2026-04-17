@@ -1,6 +1,7 @@
-import { getResultComponent, registerResultComponent } from '@pops/navigation';
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+
+import { getResultComponent, registerResultComponent } from '@pops/navigation';
 
 import { EntitiesResultComponent } from './EntitiesResultComponent';
 

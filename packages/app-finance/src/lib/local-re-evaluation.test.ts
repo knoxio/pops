@@ -1,8 +1,10 @@
-import type { Correction } from '@pops/api/modules/core/corrections/types';
 import { describe, expect, it } from 'vitest';
 
-import type { ProcessedTransaction } from '../store/importStore';
 import { reevaluateTransactions } from './local-re-evaluation';
+
+import type { Correction } from '@pops/api/modules/core/corrections/types';
+
+import type { ProcessedTransaction } from '../store/importStore';
 
 function makeRule(overrides: Partial<Correction> = {}): Correction {
   return {
@@ -56,8 +58,8 @@ describe('reevaluateTransactions', () => {
     expect(result.matched).toHaveLength(1);
     expect(result.uncertain).toHaveLength(0);
     expect(result.affectedCount).toBe(1);
-    expect(result.matched[0]!.status).toBe('matched');
-    expect(result.matched[0]!.entity.entityName).toBe('Woolworths');
+    expect(result.matched[0].status).toBe('matched');
+    expect(result.matched[0].entity.entityName).toBe('Woolworths');
   });
 
   it('promotes failed transaction to matched when rule matches', () => {
@@ -130,7 +132,7 @@ describe('reevaluateTransactions', () => {
 
     const result = reevaluateTransactions(uncertain, [], rules);
 
-    expect(result.matched[0]!.ruleProvenance).toEqual({
+    expect(result.matched[0].ruleProvenance).toEqual({
       source: 'correction',
       ruleId: 'rule-42',
       pattern: 'WOOLWORTHS',
@@ -210,7 +212,7 @@ describe('reevaluateTransactions', () => {
     const result = reevaluateTransactions(uncertain, [], rules);
 
     expect(result.matched).toHaveLength(1);
-    expect(result.matched[0]!.entity.entityName).toBe('Exact Match');
+    expect(result.matched[0].entity.entityName).toBe('Exact Match');
   });
 
   it('breaks ties by confidence desc then timesApplied desc', () => {
@@ -236,7 +238,7 @@ describe('reevaluateTransactions', () => {
 
     const result = reevaluateTransactions(uncertain, [], rules);
 
-    expect(result.matched[0]!.entity.entityName).toBe('High Confidence');
+    expect(result.matched[0].entity.entityName).toBe('High Confidence');
   });
 
   it('normalizes descriptions (strips digits, uppercases, collapses whitespace)', () => {
@@ -255,8 +257,8 @@ describe('reevaluateTransactions', () => {
 
     const result = reevaluateTransactions(uncertain, [], rules);
 
-    expect(result.matched[0]!.matchedRules).toHaveLength(1);
-    expect(result.matched[0]!.matchedRules?.[0]?.ruleId).toBe('rule-solo');
+    expect(result.matched[0].matchedRules).toHaveLength(1);
+    expect(result.matched[0].matchedRules?.[0]?.ruleId).toBe('rule-solo');
   });
 
   it('populates matchedRules with winner first and overridden second when two rules match', () => {
@@ -280,10 +282,10 @@ describe('reevaluateTransactions', () => {
 
     const result = reevaluateTransactions(uncertain, [], rules);
 
-    expect(result.matched[0]!.entity.entityName).toBe('Winner Entity');
-    expect(result.matched[0]!.matchedRules).toHaveLength(2);
-    expect(result.matched[0]!.matchedRules?.[0]?.ruleId).toBe('r-winner');
-    expect(result.matched[0]!.matchedRules?.[1]?.ruleId).toBe('r-overridden');
+    expect(result.matched[0].entity.entityName).toBe('Winner Entity');
+    expect(result.matched[0].matchedRules).toHaveLength(2);
+    expect(result.matched[0].matchedRules?.[0]?.ruleId).toBe('r-winner');
+    expect(result.matched[0].matchedRules?.[1]?.ruleId).toBe('r-overridden');
   });
 
   it('promotes second rule to winner when first is disabled (re-evaluation with merged rules)', () => {
@@ -310,8 +312,8 @@ describe('reevaluateTransactions', () => {
 
     const result = reevaluateTransactions(uncertain, [], rules);
 
-    expect(result.matched[0]!.entity.entityName).toBe('Active Rule Entity');
-    expect(result.matched[0]!.matchedRules).toHaveLength(1);
-    expect(result.matched[0]!.matchedRules?.[0]?.ruleId).toBe('r-active');
+    expect(result.matched[0].entity.entityName).toBe('Active Rule Entity');
+    expect(result.matched[0].matchedRules).toHaveLength(1);
+    expect(result.matched[0].matchedRules?.[0]?.ruleId).toBe('r-active');
   });
 });

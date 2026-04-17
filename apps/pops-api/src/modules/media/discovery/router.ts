@@ -10,9 +10,10 @@ import './shelf/because-you-watched.shelf.js';
 import './shelf/genre-shelves.js';
 import './shelf/context-shelves.js';
 
-import { movies } from '@pops/db-types';
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
+
+import { movies } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 import { protectedProcedure, router } from '../../../trpc.js';

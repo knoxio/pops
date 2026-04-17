@@ -1,4 +1,3 @@
-import type { Database } from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -9,6 +8,8 @@ import {
 } from '../../../shared/test-utils.js';
 import * as watchHistoryService from '../watch-history/service.js';
 import { createDebriefSession, getDebrief, queueDebriefStatus } from './service.js';
+
+import type { Database } from 'better-sqlite3';
 
 const ctx = setupTestContext();
 let db: Database;

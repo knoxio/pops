@@ -1,11 +1,12 @@
+import { useState } from 'react';
+
+import { ChipInput } from './ChipInput';
+
 /**
  * ChipInput component stories
  * Demonstrates multi-value input with chips like Gmail's email field
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useState } from 'react';
-
-import { ChipInput } from './ChipInput';
 
 const meta: Meta<typeof ChipInput> = {
   component: ChipInput,
@@ -112,7 +113,9 @@ export const WithValidation: Story = {
       const isValid = emailRegex.test(value);
       if (!isValid) {
         setError(`"${value}" is not a valid email`);
-        setTimeout(() => setError(''), 3000);
+        setTimeout(() => {
+          setError('');
+        }, 3000);
       }
       return isValid;
     };
@@ -141,7 +144,12 @@ export const Controlled: Story = {
         <ChipInput {...args} value={values} onChange={setValues} placeholder="Add tags..." />
         <div className="text-sm text-muted-foreground">
           <p>Current values: {values.join(', ')}</p>
-          <button onClick={() => setValues([])} className="mt-2 text-xs underline">
+          <button
+            onClick={() => {
+              setValues([]);
+            }}
+            className="mt-2 text-xs underline"
+          >
             Clear all
           </button>
         </div>
@@ -260,7 +268,9 @@ export const CategorySelector: Story = {
               .map((category) => (
                 <button
                   key={category}
-                  onClick={() => setCategories([...categories, category])}
+                  onClick={() => {
+                    setCategories([...categories, category]);
+                  }}
                   className="px-3 py-1 text-sm border border-border rounded-md hover:bg-accent transition-colors"
                 >
                   + {category}

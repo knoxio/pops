@@ -1,5 +1,6 @@
-import type { MovieRow } from '@pops/db-types';
 import { z } from 'zod';
+
+import type { MovieRow } from '@pops/db-types';
 
 export type { MovieRow };
 

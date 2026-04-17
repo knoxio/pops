@@ -11,46 +11,46 @@ Define the Plexus adapter interface, plugin lifecycle system, plugin registry, a
 
 ### plexus_adapters (SQLite)
 
-| Column          | Type    | Constraints           | Description                                             |
-| --------------- | ------- | --------------------- | ------------------------------------------------------- |
-| id              | TEXT    | PK                    | Adapter ID: `plx_{name}`                                |
-| name            | TEXT    | NOT NULL, UNIQUE      | Human-readable adapter name (e.g., `email`, `github`)   |
-| status          | TEXT    | NOT NULL              | `registered`, `initializing`, `healthy`, `degraded`, `error`, `shutdown` |
-| config          | TEXT    |                       | JSON — adapter-specific configuration (credentials excluded) |
-| last_health     | TEXT    |                       | ISO 8601 — last successful health check                 |
-| last_error      | TEXT    |                       | Most recent error message                               |
-| ingested_count  | INTEGER | NOT NULL DEFAULT 0    | Total engrams ingested via this adapter                  |
-| emitted_count   | INTEGER | NOT NULL DEFAULT 0    | Total outputs emitted via this adapter                   |
-| created_at      | TEXT    | NOT NULL              | ISO 8601                                                |
-| updated_at      | TEXT    | NOT NULL              | ISO 8601                                                |
+| Column         | Type    | Constraints        | Description                                                              |
+| -------------- | ------- | ------------------ | ------------------------------------------------------------------------ |
+| id             | TEXT    | PK                 | Adapter ID: `plx_{name}`                                                 |
+| name           | TEXT    | NOT NULL, UNIQUE   | Human-readable adapter name (e.g., `email`, `github`)                    |
+| status         | TEXT    | NOT NULL           | `registered`, `initializing`, `healthy`, `degraded`, `error`, `shutdown` |
+| config         | TEXT    |                    | JSON — adapter-specific configuration (credentials excluded)             |
+| last_health    | TEXT    |                    | ISO 8601 — last successful health check                                  |
+| last_error     | TEXT    |                    | Most recent error message                                                |
+| ingested_count | INTEGER | NOT NULL DEFAULT 0 | Total engrams ingested via this adapter                                  |
+| emitted_count  | INTEGER | NOT NULL DEFAULT 0 | Total outputs emitted via this adapter                                   |
+| created_at     | TEXT    | NOT NULL           | ISO 8601                                                                 |
+| updated_at     | TEXT    | NOT NULL           | ISO 8601                                                                 |
 
 **Indexes:** `name`, `status`
 
 ### plexus_filters (SQLite)
 
-| Column          | Type    | Constraints                        | Description                                    |
-| --------------- | ------- | ---------------------------------- | ---------------------------------------------- |
-| id              | TEXT    | PK                                 | Filter ID: `pxf_{adapter}_{index}`             |
-| adapter_id      | TEXT    | FK → plexus_adapters.id, NOT NULL  | Parent adapter                                 |
-| filter_type     | TEXT    | NOT NULL                           | `include` or `exclude`                         |
-| field           | TEXT    | NOT NULL                           | Field to match (adapter-specific)              |
-| pattern         | TEXT    | NOT NULL                           | Regex pattern (anchored — full match unless `.*` is used) |
-| enabled         | BOOLEAN | NOT NULL DEFAULT TRUE              | Whether this filter is active                  |
+| Column      | Type    | Constraints                       | Description                                               |
+| ----------- | ------- | --------------------------------- | --------------------------------------------------------- |
+| id          | TEXT    | PK                                | Filter ID: `pxf_{adapter}_{index}`                        |
+| adapter_id  | TEXT    | FK → plexus_adapters.id, NOT NULL | Parent adapter                                            |
+| filter_type | TEXT    | NOT NULL                          | `include` or `exclude`                                    |
+| field       | TEXT    | NOT NULL                          | Field to match (adapter-specific)                         |
+| pattern     | TEXT    | NOT NULL                          | Regex pattern (anchored — full match unless `.*` is used) |
+| enabled     | BOOLEAN | NOT NULL DEFAULT TRUE             | Whether this filter is active                             |
 
 **Indexes:** `adapter_id`
 
 ## API Surface
 
-| Procedure                              | Input                                         | Output                                           | Notes                                                  |
-| -------------------------------------- | --------------------------------------------- | ------------------------------------------------ | ------------------------------------------------------ |
-| `cerebrum.plexus.adapters.list`        | —                                             | `{ adapters: PlexusAdapter[] }`                  | All registered adapters with status                    |
-| `cerebrum.plexus.adapters.get`         | adapterId: string                             | `{ adapter: PlexusAdapter }`                     | Single adapter with config and stats                   |
-| `cerebrum.plexus.adapters.register`    | name, config                                  | `{ adapter: PlexusAdapter }`                     | Register and initialise a new adapter                  |
-| `cerebrum.plexus.adapters.unregister`  | adapterId: string                             | `{ success: boolean }`                           | Shutdown and remove adapter                            |
-| `cerebrum.plexus.adapters.healthCheck` | adapterId: string                             | `{ status, lastCheck, error? }`                  | Run health check on specific adapter                   |
-| `cerebrum.plexus.adapters.sync`        | adapterId: string                             | `{ ingested: number, filtered: number }`         | Trigger manual sync for adapter                        |
-| `cerebrum.plexus.filters.list`         | adapterId: string                             | `{ filters: PlexusFilter[] }`                    | List filters for an adapter                            |
-| `cerebrum.plexus.filters.set`          | adapterId, filters: FilterDefinition[]        | `{ filters: PlexusFilter[] }`                    | Replace all filters for an adapter                     |
+| Procedure                              | Input                                  | Output                                   | Notes                                 |
+| -------------------------------------- | -------------------------------------- | ---------------------------------------- | ------------------------------------- |
+| `cerebrum.plexus.adapters.list`        | —                                      | `{ adapters: PlexusAdapter[] }`          | All registered adapters with status   |
+| `cerebrum.plexus.adapters.get`         | adapterId: string                      | `{ adapter: PlexusAdapter }`             | Single adapter with config and stats  |
+| `cerebrum.plexus.adapters.register`    | name, config                           | `{ adapter: PlexusAdapter }`             | Register and initialise a new adapter |
+| `cerebrum.plexus.adapters.unregister`  | adapterId: string                      | `{ success: boolean }`                   | Shutdown and remove adapter           |
+| `cerebrum.plexus.adapters.healthCheck` | adapterId: string                      | `{ status, lastCheck, error? }`          | Run health check on specific adapter  |
+| `cerebrum.plexus.adapters.sync`        | adapterId: string                      | `{ ingested: number, filtered: number }` | Trigger manual sync for adapter       |
+| `cerebrum.plexus.filters.list`         | adapterId: string                      | `{ filters: PlexusFilter[] }`            | List filters for an adapter           |
+| `cerebrum.plexus.filters.set`          | adapterId, filters: FilterDefinition[] | `{ filters: PlexusFilter[] }`            | Replace all filters for an adapter    |
 
 ## Business Rules
 
@@ -66,26 +66,26 @@ Define the Plexus adapter interface, plugin lifecycle system, plugin registry, a
 
 ## Edge Cases
 
-| Case                                            | Behaviour                                                                     |
-| ----------------------------------------------- | ----------------------------------------------------------------------------- |
-| Adapter initialization fails                    | Status set to `error`, error logged, adapter not available for sync           |
-| Health check times out (>10s)                    | Treated as a failure — status transitions toward `degraded`/`error`           |
-| Ingestion returns duplicate content              | Handled by the ingestion pipeline's content-hash deduplication (PRD-081)      |
-| Adapter config references missing env variable  | Initialization fails with a clear error: "Environment variable X not found"   |
-| plexus.toml parse error                         | No adapters loaded, error logged — system continues without adapters          |
-| Adapter produces content with no scopes         | Ingestion pipeline's scope inference assigns scopes based on adapter defaults |
-| Emit called on adapter that only supports ingest | Returns an error: "Adapter {name} does not support emit operations"           |
-| Two adapters produce content about the same event| Both engrams are created — deduplication is content-based, not event-based    |
-| Adapter removed while sync is in progress       | Sync completes (job already running), adapter removed after completion        |
+| Case                                              | Behaviour                                                                     |
+| ------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Adapter initialization fails                      | Status set to `error`, error logged, adapter not available for sync           |
+| Health check times out (>10s)                     | Treated as a failure — status transitions toward `degraded`/`error`           |
+| Ingestion returns duplicate content               | Handled by the ingestion pipeline's content-hash deduplication (PRD-081)      |
+| Adapter config references missing env variable    | Initialization fails with a clear error: "Environment variable X not found"   |
+| plexus.toml parse error                           | No adapters loaded, error logged — system continues without adapters          |
+| Adapter produces content with no scopes           | Ingestion pipeline's scope inference assigns scopes based on adapter defaults |
+| Emit called on adapter that only supports ingest  | Returns an error: "Adapter {name} does not support emit operations"           |
+| Two adapters produce content about the same event | Both engrams are created — deduplication is content-based, not event-based    |
+| Adapter removed while sync is in progress         | Sync completes (job already running), adapter removed after completion        |
 
 ## User Stories
 
-| #   | Story                                                                  | Summary                                                                           | Status      | Parallelisable           |
-| --- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ----------- | ------------------------ |
-| 01  | [us-01-adapter-interface](us-01-adapter-interface.md)                  | TypeScript interface definition for PlexusAdapter with EngineData return type     | Not started | No (first)               |
-| 02  | [us-02-plugin-lifecycle](us-02-plugin-lifecycle.md)                    | Register, initialize, health check, shutdown lifecycle with error isolation       | Not started | Blocked by us-01         |
-| 03  | [us-03-plugin-registry](us-03-plugin-registry.md)                     | plexus.toml configuration, adapter discovery, credential management              | Not started | Blocked by us-01         |
-| 04  | [us-04-ingestion-filters](us-04-ingestion-filters.md)                 | Per-adapter include/exclude rules for filtering ingested content                  | Not started | Yes                      |
+| #   | Story                                                 | Summary                                                                       | Status      | Parallelisable   |
+| --- | ----------------------------------------------------- | ----------------------------------------------------------------------------- | ----------- | ---------------- |
+| 01  | [us-01-adapter-interface](us-01-adapter-interface.md) | TypeScript interface definition for PlexusAdapter with EngineData return type | Not started | No (first)       |
+| 02  | [us-02-plugin-lifecycle](us-02-plugin-lifecycle.md)   | Register, initialize, health check, shutdown lifecycle with error isolation   | Not started | Blocked by us-01 |
+| 03  | [us-03-plugin-registry](us-03-plugin-registry.md)     | plexus.toml configuration, adapter discovery, credential management           | Not started | Blocked by us-01 |
+| 04  | [us-04-ingestion-filters](us-04-ingestion-filters.md) | Per-adapter include/exclude rules for filtering ingested content              | Not started | Yes              |
 
 US-01 defines the interface that US-02 and US-03 depend on. US-04 (ingestion filters) is independent of the lifecycle and registry and can be built in parallel.
 

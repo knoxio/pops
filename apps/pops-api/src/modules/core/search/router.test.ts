@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createCaller } from '../../../shared/test-utils.js';
 import { registerSearchAdapter, resetRegistry } from './registry.js';
+
 import type { SearchAdapter, SearchHit } from './types.js';
 
 function makeHit(overrides: Partial<SearchHit> = {}): SearchHit {

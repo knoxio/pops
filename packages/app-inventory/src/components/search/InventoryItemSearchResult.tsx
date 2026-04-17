@@ -1,3 +1,5 @@
+import { Package } from 'lucide-react';
+
 /**
  * InventoryItemSearchResult — ResultComponent for inventory-items search hits.
  *
@@ -5,7 +7,6 @@
  * Registered for domain "inventory-items" in the search result component registry.
  */
 import type { ResultComponentProps } from '@pops/navigation';
-import { Package } from 'lucide-react';
 
 interface InventoryItemHitData {
   itemName: string;

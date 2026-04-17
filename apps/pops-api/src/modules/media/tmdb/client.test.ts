@@ -5,8 +5,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TmdbClient } from './client.js';
 import { TokenBucketRateLimiter } from './rate-limiter.js';
-import type { RawTmdbImageResponse, RawTmdbMovieDetail, RawTmdbSearchResponse } from './types.js';
 import { TmdbApiError } from './types.js';
+
+import type { RawTmdbImageResponse, RawTmdbMovieDetail, RawTmdbSearchResponse } from './types.js';
 
 /** Helper to create a mocked Response. */
 function mockResponse(body: unknown, status = 200, statusText = 'OK'): Response {

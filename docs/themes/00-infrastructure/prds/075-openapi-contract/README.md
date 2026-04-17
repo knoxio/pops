@@ -11,22 +11,22 @@ Add OpenAPI 3.1 as a secondary API contract alongside tRPC. Use trpc-openapi to 
 
 ### New Endpoints
 
-| Endpoint             | Method | Purpose                                  |
-| -------------------- | ------ | ---------------------------------------- |
-| `/api/openapi.json`  | GET    | Raw OpenAPI 3.1 spec (JSON)              |
-| `/api/docs`          | GET    | Swagger UI for exploring the spec        |
+| Endpoint            | Method | Purpose                           |
+| ------------------- | ------ | --------------------------------- |
+| `/api/openapi.json` | GET    | Raw OpenAPI 3.1 spec (JSON)       |
+| `/api/docs`         | GET    | Swagger UI for exploring the spec |
 
 ### Annotation Convention
 
 Not every tRPC procedure gets an OpenAPI annotation. The rule:
 
-| Procedure Type          | Annotate? | Reason                                                    |
-| ----------------------- | --------- | --------------------------------------------------------- |
-| Domain CRUD (list, get, create, update, delete) | Yes | Core data access needed by external consumers |
-| Search and query        | Yes       | Discovery and retrieval across domains                    |
-| Import/batch operations | No        | Complex multi-step, UI-specific                           |
-| UI helpers (suggestions, form validation) | No | Frontend-specific, not useful externally          |
-| Job management          | Yes       | Cortex worker and monitoring tools need access            |
+| Procedure Type                                  | Annotate? | Reason                                         |
+| ----------------------------------------------- | --------- | ---------------------------------------------- |
+| Domain CRUD (list, get, create, update, delete) | Yes       | Core data access needed by external consumers  |
+| Search and query                                | Yes       | Discovery and retrieval across domains         |
+| Import/batch operations                         | No        | Complex multi-step, UI-specific                |
+| UI helpers (suggestions, form validation)       | No        | Frontend-specific, not useful externally       |
+| Job management                                  | Yes       | Cortex worker and monitoring tools need access |
 
 ### Path Convention
 
@@ -61,12 +61,12 @@ core.jobs.list          → GET    /api/v1/jobs
 
 ## User Stories
 
-| #   | Story                                                        | Summary                                                                  | Status      | Parallelisable   |
-| --- | ------------------------------------------------------------ | ------------------------------------------------------------------------ | ----------- | ---------------- |
-| 01  | [us-01-trpc-openapi-setup](us-01-trpc-openapi-setup.md)     | Install trpc-openapi, configure Express middleware, serve spec and UI     | Not started | No (first)       |
-| 02  | [us-02-annotate-core](us-02-annotate-core.md)                | Annotate core domain CRUD procedures (entities, jobs, search, settings)  | Not started | Blocked by us-01 |
-| 03  | [us-03-annotate-domains](us-03-annotate-domains.md)          | Annotate finance, media, inventory domain CRUD procedures                | Not started | Blocked by us-01 |
-| 04  | [us-04-ci-validation](us-04-ci-validation.md)                | CI step validates OpenAPI annotations are complete and spec is valid      | Not started | Blocked by us-01 |
+| #   | Story                                                   | Summary                                                                 | Status      | Parallelisable   |
+| --- | ------------------------------------------------------- | ----------------------------------------------------------------------- | ----------- | ---------------- |
+| 01  | [us-01-trpc-openapi-setup](us-01-trpc-openapi-setup.md) | Install trpc-openapi, configure Express middleware, serve spec and UI   | Not started | No (first)       |
+| 02  | [us-02-annotate-core](us-02-annotate-core.md)           | Annotate core domain CRUD procedures (entities, jobs, search, settings) | Not started | Blocked by us-01 |
+| 03  | [us-03-annotate-domains](us-03-annotate-domains.md)     | Annotate finance, media, inventory domain CRUD procedures               | Not started | Blocked by us-01 |
+| 04  | [us-04-ci-validation](us-04-ci-validation.md)           | CI step validates OpenAPI annotations are complete and spec is valid    | Not started | Blocked by us-01 |
 
 US-02 and US-03 can parallelise after US-01. US-04 can start after US-01 (validates whatever annotations exist).
 

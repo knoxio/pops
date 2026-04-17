@@ -184,7 +184,7 @@ describe('WatchlistPage', () => {
     // First item's up button should be disabled
     expect(upButtons[0]).toBeDisabled();
     // Last item's down button should be disabled
-    expect(downButtons[downButtons.length - 1]).toBeDisabled();
+    expect(downButtons.at(-1)).toBeDisabled();
   });
 
   it('renders empty state when watchlist is empty', () => {
@@ -252,7 +252,7 @@ describe('WatchlistPage', () => {
       await user.click(screen.getByRole('tab', { name: 'Movies' }));
 
       const calls = mockWatchlistQuery.mock.calls;
-      const lastCall = calls[calls.length - 1]!;
+      const lastCall = calls.at(-1)!;
       expect(lastCall[0]).toEqual(expect.objectContaining({ mediaType: 'movie' }));
     });
 
@@ -264,7 +264,7 @@ describe('WatchlistPage', () => {
       await user.click(screen.getByRole('tab', { name: 'TV Shows' }));
 
       const calls = mockWatchlistQuery.mock.calls;
-      const lastCall = calls[calls.length - 1]!;
+      const lastCall = calls.at(-1)!;
       expect(lastCall[0]).toEqual(expect.objectContaining({ mediaType: 'tv_show' }));
     });
 
@@ -277,7 +277,7 @@ describe('WatchlistPage', () => {
       await user.click(screen.getByRole('tab', { name: 'All' }));
 
       const calls = mockWatchlistQuery.mock.calls;
-      const lastCall = calls[calls.length - 1]!;
+      const lastCall = calls.at(-1)!;
       expect(lastCall[0]).not.toHaveProperty('mediaType');
     });
 

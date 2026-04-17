@@ -1,9 +1,10 @@
+import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
+
 /**
  * Transaction tRPC router — CRUD procedures for transactions.
  */
 import { transactions as transactionsTable } from '@pops/db-types';
-import { TRPCError } from '@trpc/server';
-import { z } from 'zod';
 
 import { getDb, getDrizzle } from '../../../db.js';
 import { NotFoundError } from '../../../shared/errors.js';
@@ -195,6 +196,6 @@ export const transactionsRouter = router({
       }
     }
 
-    return [...tagSet].sort();
+    return [...tagSet].toSorted();
   }),
 });

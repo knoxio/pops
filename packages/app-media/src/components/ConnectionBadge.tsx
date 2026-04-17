@@ -1,5 +1,6 @@
-import { Badge } from '@pops/ui';
 import { CheckCircle2, XCircle } from 'lucide-react';
+
+import { Badge } from '@pops/ui';
 
 export function ConnectionBadge({ connected }: { connected: boolean }) {
   return connected ? (

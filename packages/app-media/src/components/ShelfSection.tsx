@@ -1,3 +1,7 @@
+import { Loader2 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
+
 /**
  * ShelfSection — lazy-loaded horizontal shelf for a single assembleSession shelf.
  *
@@ -6,15 +10,13 @@
  * "Show more" pagination via the getShelfPage tRPC endpoint.
  */
 import { Button, Skeleton } from '@pops/ui';
-import { Loader2 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { toast } from 'sonner';
 
-import type { DiscoverActionResult } from '../hooks/useDiscoverCardActions';
 import { trpc } from '../lib/trpc';
 import { DiscoverCard } from './DiscoverCard';
 import { HorizontalScrollRow } from './HorizontalScrollRow';
 import { LeavingBadge } from './LeavingBadge';
+
+import type { DiscoverActionResult } from '../hooks/useDiscoverCardActions';
 
 interface ShelfItem {
   tmdbId: number;
@@ -144,7 +146,9 @@ export function ShelfSection({
     );
 
     observer.observe(sentinel);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+    };
   }, []);
 
   const handleShowMore = useCallback(async () => {

@@ -1,3 +1,17 @@
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Clock,
+  HardDrive,
+  Play,
+  RefreshCw,
+  Save,
+  ScrollText,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router';
+import { toast } from 'sonner';
+
 /**
  * RotationSettingsPage — configure library rotation behaviour.
  *
@@ -17,19 +31,6 @@ import {
   Skeleton,
   Switch,
 } from '@pops/ui';
-import {
-  AlertTriangle,
-  ArrowLeft,
-  Clock,
-  HardDrive,
-  Play,
-  RefreshCw,
-  Save,
-  ScrollText,
-} from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
-import { toast } from 'sonner';
 
 import { SourceManagementSection } from '../components/SourceManagementSection';
 import { trpc } from '../lib/trpc';
@@ -70,7 +71,7 @@ export function RotationSettingsPage() {
     if (settingsQuery.data) {
       const s = settingsQuery.data;
       setEnabled(s.enabled === 'true');
-      const cron = s.cronExpression || '0 3 * * *';
+      const cron = s.cronExpression ?? '0 3 * * *';
       const isPreset = SCHEDULE_PRESETS.some((p) => p.value === cron && p.value !== 'custom');
       setSchedulePreset(isPreset ? cron : 'custom');
       setCustomCron(isPreset ? '' : cron);
@@ -230,7 +231,9 @@ export function RotationSettingsPage() {
               <input
                 className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm font-mono shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                 value={customCron}
-                onChange={(e) => setCustomCron(e.target.value)}
+                onChange={(e) => {
+                  setCustomCron(e.target.value);
+                }}
                 placeholder="0 3 * * *"
               />
               <p className="text-xs text-muted-foreground">Standard 5-field cron syntax</p>
@@ -259,7 +262,9 @@ export function RotationSettingsPage() {
             <Label className="text-muted-foreground">Leaving window (days)</Label>
             <NumberInput
               value={leavingDays}
-              onChange={(e) => setLeavingDays(Number(e.target.value) || 1)}
+              onChange={(e) => {
+                setLeavingDays(Number(e.target.value) || 1);
+              }}
               min={1}
               aria-label="Leaving window days"
             />
@@ -272,7 +277,9 @@ export function RotationSettingsPage() {
             <Label className="text-muted-foreground">Daily additions</Label>
             <NumberInput
               value={dailyAdditions}
-              onChange={(e) => setDailyAdditions(Number(e.target.value) || 1)}
+              onChange={(e) => {
+                setDailyAdditions(Number(e.target.value) || 1);
+              }}
               min={1}
               aria-label="Daily additions"
             />
@@ -283,7 +290,9 @@ export function RotationSettingsPage() {
             <Label className="text-muted-foreground">Target free space (GB)</Label>
             <NumberInput
               value={targetFreeGb}
-              onChange={(e) => setTargetFreeGb(Number(e.target.value) || 0)}
+              onChange={(e) => {
+                setTargetFreeGb(Number(e.target.value) || 0);
+              }}
               min={0}
               aria-label="Target free space GB"
             />
@@ -296,7 +305,9 @@ export function RotationSettingsPage() {
             <Label className="text-muted-foreground">Average movie size (GB)</Label>
             <NumberInput
               value={avgMovieGb}
-              onChange={(e) => setAvgMovieGb(Number(e.target.value) || 1)}
+              onChange={(e) => {
+                setAvgMovieGb(Number(e.target.value) || 1);
+              }}
               min={1}
               aria-label="Average movie size GB"
             />
@@ -307,7 +318,9 @@ export function RotationSettingsPage() {
             <Label className="text-muted-foreground">Protected days</Label>
             <NumberInput
               value={protectedDays}
-              onChange={(e) => setProtectedDays(Number(e.target.value) || 0)}
+              onChange={(e) => {
+                setProtectedDays(Number(e.target.value) || 0);
+              }}
               min={0}
               aria-label="Protected days"
             />
@@ -438,7 +451,9 @@ export function RotationSettingsPage() {
             <p className="text-sm text-muted-foreground">Trigger an immediate rotation cycle</p>
           </div>
           <Button
-            onClick={() => runNowMutation.mutate()}
+            onClick={() => {
+              runNowMutation.mutate();
+            }}
             disabled={!enabled || !radarrAvailable || runNowMutation.isPending || isCycleRunning}
           >
             {runNowMutation.isPending || isCycleRunning ? (

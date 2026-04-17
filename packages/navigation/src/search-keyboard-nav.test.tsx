@@ -8,11 +8,11 @@ function createContainer(resultCount: number): HTMLDivElement {
   const container = document.createElement('div');
   for (let i = 0; i < resultCount; i++) {
     const item = document.createElement('div');
-    item.setAttribute('data-result-index', String(i));
+    item.dataset.resultIndex = String(i);
     item.scrollIntoView = vi.fn();
-    container.appendChild(item);
+    container.append(item);
   }
-  document.body.appendChild(container);
+  document.body.append(container);
   return container;
 }
 

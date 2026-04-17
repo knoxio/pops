@@ -70,9 +70,7 @@ let instance: GenreCache | null = null;
 
 /** Get or create the singleton GenreCache. Requires a TmdbClient. */
 export function getGenreCache(client: TmdbClient): GenreCache {
-  if (!instance) {
-    instance = new GenreCache(client);
-  }
+  instance ??= new GenreCache(client);
   return instance;
 }
 

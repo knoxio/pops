@@ -589,21 +589,27 @@ describe('TvShowDetailPage — batch mark all watched', () => {
     setupQueries();
     renderPage();
     fireEvent.click(screen.getByRole('button', { name: 'Mark All Watched' }));
-    await waitFor(() => expect(mockGetData).toHaveBeenCalled());
+    await waitFor(() => {
+      expect(mockGetData).toHaveBeenCalled();
+    });
   });
 
   it('sets progress data optimistically on batch mark', async () => {
     setupQueries();
     renderPage();
     fireEvent.click(screen.getByRole('button', { name: 'Mark All Watched' }));
-    await waitFor(() => expect(mockSetData).toHaveBeenCalled());
+    await waitFor(() => {
+      expect(mockSetData).toHaveBeenCalled();
+    });
   });
 
   it('invalidates watch history after batch mark settles', async () => {
     setupQueries();
     renderPage();
     fireEvent.click(screen.getByRole('button', { name: 'Mark All Watched' }));
-    await waitFor(() => expect(mockInvalidate).toHaveBeenCalled());
+    await waitFor(() => {
+      expect(mockInvalidate).toHaveBeenCalled();
+    });
   });
 
   it('reverts progress data on error', async () => {
@@ -622,7 +628,9 @@ describe('TvShowDetailPage — batch mark all watched', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Mark All Watched' }));
     // setData called twice: once for optimistic, once for rollback
-    await waitFor(() => expect(mockSetData).toHaveBeenCalledTimes(2));
+    await waitFor(() => {
+      expect(mockSetData).toHaveBeenCalledTimes(2);
+    });
   });
 });
 

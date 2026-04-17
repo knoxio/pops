@@ -1,3 +1,9 @@
+import { findActiveApp } from '@/app/nav/path-utils';
+import { registeredApps } from '@/app/nav/registry';
+import { useUIStore } from '@/store/uiStore';
+import { useEffect } from 'react';
+import { Outlet, useLocation } from 'react-router';
+
 /**
  * Root layout — top bar + two-level navigation + content area
  *
@@ -7,12 +13,6 @@
  */
 import { AppContextProvider } from '@pops/navigation';
 import { cn, ErrorBoundary } from '@pops/ui';
-import { useEffect } from 'react';
-import { Outlet, useLocation } from 'react-router';
-
-import { findActiveApp } from '@/app/nav/path-utils';
-import { registeredApps } from '@/app/nav/registry';
-import { useUIStore } from '@/store/uiStore';
 
 import { AppRail } from './AppRail';
 import { PageNav } from './PageNav';
@@ -58,7 +58,9 @@ export function RootLayout() {
               <div className="hidden md:block lg:hidden">
                 <div
                   className="fixed inset-0 bg-black/50 z-40"
-                  onClick={() => setPageNavOpen(false)}
+                  onClick={() => {
+                    setPageNavOpen(false);
+                  }}
                   aria-hidden="true"
                 />
                 <aside className="fixed left-16 top-16 bottom-0 z-50 shadow-lg">

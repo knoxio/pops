@@ -1,22 +1,3 @@
-/**
- * Item create/edit form page.
- * Supports /inventory/items/new (create) and /inventory/items/:id/edit (edit).
- */
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-  Badge,
-  Button,
-  CheckboxInput,
-  DateInput,
-  Label,
-  PageHeader,
-  Select,
-  Skeleton,
-  Textarea,
-  TextInput,
-} from '@pops/ui';
 import {
   Eye,
   ImageIcon,
@@ -36,11 +17,32 @@ import { Link, useNavigate, useParams } from 'react-router';
 import rehypeSanitize from 'rehype-sanitize';
 import { toast } from 'sonner';
 
+/**
+ * Item create/edit form page.
+ * Supports /inventory/items/new (create) and /inventory/items/:id/edit (edit).
+ */
+import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
+  Badge,
+  Button,
+  CheckboxInput,
+  DateInput,
+  Label,
+  PageHeader,
+  Select,
+  Skeleton,
+  Textarea,
+  TextInput,
+} from '@pops/ui';
+
 import { LocationPicker } from '../components/LocationPicker';
-import type { PhotoItem } from '../components/PhotoGallery';
 import { PhotoUpload, type UploadedFile } from '../components/PhotoUpload';
 import { useImageProcessor } from '../hooks/useImageProcessor';
 import { trpc } from '../lib/trpc';
+
+import type { PhotoItem } from '../components/PhotoGallery';
 
 interface PendingConnection {
   id: string;
@@ -393,7 +395,9 @@ export function ItemFormPage() {
       e.preventDefault();
     };
     window.addEventListener('beforeunload', handler);
-    return () => window.removeEventListener('beforeunload', handler);
+    return () => {
+      window.removeEventListener('beforeunload', handler);
+    };
   }, [isDirty]);
 
   const createMutation = trpc.inventory.items.create.useMutation({
@@ -470,7 +474,7 @@ export function ItemFormPage() {
     };
 
     if (isEditMode) {
-      updateMutation.mutate({ id: id!, data: payload });
+      updateMutation.mutate({ id: id, data: payload });
     } else {
       createMutation.mutate(payload);
     }
@@ -622,10 +626,12 @@ export function ItemFormPage() {
             <LocationPicker
               locations={locationTree}
               value={watch('locationId') || null}
-              onChange={(id) => setValue('locationId', id ?? '', { shouldDirty: true })}
-              onCreateLocation={(name, parentId) =>
-                createLocationMutation.mutate({ name, parentId })
-              }
+              onChange={(id) => {
+                setValue('locationId', id ?? '', { shouldDirty: true });
+              }}
+              onCreateLocation={(name, parentId) => {
+                createLocationMutation.mutate({ name, parentId });
+              }}
               placeholder="Select location…"
             />
           </FormField>
@@ -695,7 +701,7 @@ export function ItemFormPage() {
           {isEditMode && existingPhotos.length > 0 && (
             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
               {existingPhotos
-                .sort((a, b) => a.sortOrder - b.sortOrder)
+                .toSorted((a, b) => a.sortOrder - b.sortOrder)
                 .map((photo) => (
                   <div key={photo.id} className="group relative">
                     <div className="w-full aspect-square rounded-md overflow-hidden border border-border bg-muted">
@@ -709,7 +715,9 @@ export function ItemFormPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => handleDeletePhoto(photo.id)}
+                      onClick={() => {
+                        handleDeletePhoto(photo.id);
+                      }}
                       className="absolute top-1 right-1 h-6 w-6 rounded-full bg-background/80 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
                       aria-label={`Delete photo ${photo.caption ?? photo.id}`}
                     >
@@ -728,7 +736,9 @@ export function ItemFormPage() {
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => setDeleteConfirmId(null)}
+                onClick={() => {
+                  setDeleteConfirmId(null);
+                }}
               >
                 Cancel
               </Button>
@@ -765,7 +775,9 @@ export function ItemFormPage() {
               type="button"
               variant="ghost"
               size="sm"
-              onClick={() => setNotesPreview((v) => !v)}
+              onClick={() => {
+                setNotesPreview((v) => !v);
+              }}
               className="text-xs text-muted-foreground"
             >
               {notesPreview ? (
@@ -818,9 +830,9 @@ export function ItemFormPage() {
                       variant="ghost"
                       size="icon"
                       className="h-4 w-4 rounded-full hover:bg-app-accent/20"
-                      onClick={() =>
-                        setPendingConnections((prev) => prev.filter((c) => c.id !== conn.id))
-                      }
+                      onClick={() => {
+                        setPendingConnections((prev) => prev.filter((c) => c.id !== conn.id));
+                      }}
                     >
                       <X className="h-3 w-3" />
                     </Button>
@@ -833,7 +845,9 @@ export function ItemFormPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <TextInput
                 value={connectionSearch}
-                onChange={(e) => setConnectionSearch(e.target.value)}
+                onChange={(e) => {
+                  setConnectionSearch(e.target.value);
+                }}
                 placeholder="Search items to connect..."
                 className="pl-9"
               />

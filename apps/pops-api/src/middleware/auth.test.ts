@@ -1,5 +1,6 @@
-import type { Request, Response } from 'express';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { Request, Response } from 'express';
 
 // Mock cloudflare-jwt before importing auth middleware
 vi.mock('./cloudflare-jwt.js', () => ({
@@ -134,7 +135,9 @@ describe('authMiddleware', () => {
       authMiddleware(req, res, next);
 
       // Wait for async verify to resolve
-      await vi.waitFor(() => expect(next).toHaveBeenCalledOnce());
+      await vi.waitFor(() => {
+        expect(next).toHaveBeenCalledOnce();
+      });
 
       expect(res.locals['user']).toEqual({ email: 'user@example.com' });
     });
@@ -150,7 +153,9 @@ describe('authMiddleware', () => {
 
       authMiddleware(req, res, next);
 
-      await vi.waitFor(() => expect(res.status).toHaveBeenCalledWith(401));
+      await vi.waitFor(() => {
+        expect(res.status).toHaveBeenCalledWith(401);
+      });
 
       expect(next).not.toHaveBeenCalled();
       expect(res.json).toHaveBeenCalledWith({ error: 'Invalid Cloudflare Access JWT' });

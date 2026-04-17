@@ -13,12 +13,11 @@
  * when it later runs against a database initialized by this function.
  */
 import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-import type BetterSqlite3 from 'better-sqlite3';
+import { join } from 'node:path';
 
 import { TAG_VOCABULARY_V1 } from '../shared/tag-vocabulary.js';
+
+import type BetterSqlite3 from 'better-sqlite3';
 
 /** All migration filenames that this schema already incorporates. */
 const INCLUDED_MIGRATIONS = [
@@ -631,10 +630,7 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
 
   // Also mark all Drizzle migrations as applied (schema already incorporates them)
   try {
-    const drizzleMigrationsDir = join(
-      dirname(fileURLToPath(import.meta.url)),
-      'drizzle-migrations'
-    );
+    const drizzleMigrationsDir = join(import.meta.dirname, 'drizzle-migrations');
     const journalPath = join(drizzleMigrationsDir, 'meta', '_journal.json');
     const journal = JSON.parse(readFileSync(journalPath, 'utf8')) as {
       entries: { idx: number; tag: string }[];

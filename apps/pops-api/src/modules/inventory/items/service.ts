@@ -1,14 +1,17 @@
+import crypto from 'crypto';
+
+import { and, count, eq, inArray, isNotNull, like, sql, sum } from 'drizzle-orm';
+
 /**
  * Inventory service — CRUD operations using Drizzle ORM.
  * SQLite is the source of truth. All operations are local.
  */
 import { homeInventory } from '@pops/db-types';
-import crypto from 'crypto';
-import { and, count, eq, inArray, isNotNull, like, sql, sum } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
 import { NotFoundError } from '../../../shared/errors.js';
 import { getDescendantLocationIds } from '../locations/service.js';
+
 import type { CreateInventoryItemInput, InventoryRow, UpdateInventoryItemInput } from './types.js';
 
 /** Count + rows + value aggregates for a paginated list. */

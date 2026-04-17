@@ -1,18 +1,20 @@
-/**
- * Arena flow integration tests — exercises the full comparison lifecycle
- * via tRPC caller: pair selection → record → skip → stale → exclude →
- * blacklist → rankings verification.
- */
-import type { Database } from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { createCaller } from '../../../shared/test-utils.js';
 import {
   seedDimension,
   seedMovie,
   seedWatchHistoryEntry,
   setupTestContext,
 } from '../../../shared/test-utils.js';
+
+/**
+ * Arena flow integration tests — exercises the full comparison lifecycle
+ * via tRPC caller: pair selection → record → skip → stale → exclude →
+ * blacklist → rankings verification.
+ */
+import type { Database } from 'better-sqlite3';
+
+import type { createCaller } from '../../../shared/test-utils.js';
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;

@@ -1,10 +1,3 @@
-/**
- * TMDB v3 HTTP client — typed wrapper around the TMDB REST API.
- *
- * Handles authentication (Bearer token), request construction,
- * response parsing, and error mapping. Contains no business logic.
- */
-import type { TokenBucketRateLimiter } from './rate-limiter.js';
 import {
   type RawTmdbImageResponse,
   type RawTmdbMovieDetail,
@@ -19,6 +12,14 @@ import {
   type TmdbMovieDetail,
   type TmdbSearchResponse,
 } from './types.js';
+
+/**
+ * TMDB v3 HTTP client — typed wrapper around the TMDB REST API.
+ *
+ * Handles authentication (Bearer token), request construction,
+ * response parsing, and error mapping. Contains no business logic.
+ */
+import type { TokenBucketRateLimiter } from './rate-limiter.js';
 
 const BASE_URL = 'https://api.themoviedb.org';
 

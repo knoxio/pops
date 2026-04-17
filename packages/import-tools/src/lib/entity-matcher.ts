@@ -36,7 +36,7 @@ export function matchEntity(
   if (result) return result;
 
   // Stage 5: Strip punctuation and retry
-  const stripped = normalized.replace(/[''`]/g, '');
+  const stripped = normalized.replaceAll(/[''`]/g, '');
   const strippedResult = tryMatch(stripped, entityLookup);
   if (strippedResult) return strippedResult;
 

@@ -1,10 +1,11 @@
+import { and, eq, or } from 'drizzle-orm';
+
 /**
  * Comparisons service — dimensions, 1v1 comparisons, and Elo scores.
  *
  * Core orchestrators live here; extracted modules in lib/ handle specific domains.
  */
 import { comparisons } from '@pops/db-types';
-import { and, eq, or } from 'drizzle-orm';
 
 import { getDb, getDrizzle } from '../../../db.js';
 import { NotFoundError, ValidationError } from '../../../shared/errors.js';
@@ -12,6 +13,7 @@ import { getDimension } from './dimensions.service.js';
 import { findExistingComparison } from './lib/comparison-queries.js';
 import { recordDebriefComparison as recordDebriefComparisonImpl } from './lib/debrief.js';
 import { recalcDimensionElo, updateEloScores } from './lib/score-management.js';
+
 import type {
   BlacklistMovieResult,
   ComparisonRow,
@@ -135,10 +137,9 @@ export function recordComparison(input: RecordComparisonInput): ComparisonRow {
           .get();
         if (!inserted) throw new Error('Failed to retrieve recorded comparison');
         return inserted;
-      } else {
-        // Skip: existing has higher authority
-        return existing;
       }
+      // Skip: existing has higher authority
+      return existing;
     }
 
     // No existing — compute Elo deltas incrementally and store on the comparison

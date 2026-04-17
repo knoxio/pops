@@ -1,11 +1,13 @@
-import type { Dispatch, SetStateAction } from 'react';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
 import { computeMergedEntities } from '../../../lib/merged-state';
 import { trpc } from '../../../lib/trpc';
-import type { ProcessedTransaction } from '../../../store/importStore';
 import { useImportStore } from '../../../store/importStore';
+
+import type { Dispatch, SetStateAction } from 'react';
+
+import type { ProcessedTransaction } from '../../../store/importStore';
 
 interface UseBulkAssignmentArgs {
   setLocalTransactions: Dispatch<

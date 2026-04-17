@@ -1,12 +1,13 @@
+import { ChevronLeft, ChevronRight, History, Trash2, Undo2 } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router';
+import { toast } from 'sonner';
+
 /**
  * ComparisonHistoryPage — paginated list of all comparisons with delete capability.
  * Allows users to review past comparisons and undo mistakes.
  */
 import { Button, Card, CardContent, Input, Select, Skeleton } from '@pops/ui';
-import { ChevronLeft, ChevronRight, History, Trash2, Undo2 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router';
-import { toast } from 'sonner';
 
 import { trpc } from '../lib/trpc';
 
@@ -16,8 +17,12 @@ const UNDO_DELAY_MS = 5000;
 function useDebouncedValue(value: string, delay: number): string {
   const [debounced, setDebounced] = useState(value);
   useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(timer);
+    const timer = setTimeout(() => {
+      setDebounced(value);
+    }, delay);
+    return () => {
+      clearTimeout(timer);
+    };
   }, [value, delay]);
   return debounced;
 }
@@ -97,7 +102,14 @@ export function ComparisonHistoryPage() {
     setPendingDeletes((prev) => new Set(prev).add(id));
 
     const toastId = toast.custom(
-      (tId) => <UndoToast toastId={tId} onUndo={() => handleUndo(id, tId)} />,
+      (tId) => (
+        <UndoToast
+          toastId={tId}
+          onUndo={() => {
+            handleUndo(id, tId);
+          }}
+        />
+      ),
       { duration: UNDO_DELAY_MS + 500 }
     );
 
@@ -199,7 +211,9 @@ export function ComparisonHistoryPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            onClick={() => {
+              setPage((p) => Math.max(0, p - 1));
+            }}
             disabled={page === 0}
           >
             <ChevronLeft className="h-4 w-4" />
@@ -210,7 +224,9 @@ export function ComparisonHistoryPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            onClick={() => {
+              setPage((p) => Math.min(totalPages - 1, p + 1));
+            }}
             disabled={page >= totalPages - 1}
           >
             <ChevronRight className="h-4 w-4" />
@@ -309,7 +325,9 @@ function ComparisonRow({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onDelete(comparison.id)}
+          onClick={() => {
+            onDelete(comparison.id);
+          }}
           className="opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive"
         >
           <Trash2 className="h-4 w-4" />

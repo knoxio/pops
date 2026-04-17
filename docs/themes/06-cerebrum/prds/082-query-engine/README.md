@@ -11,41 +11,41 @@ Define the natural language Q&A engine that accepts a question, infers the appro
 
 ### Query Request
 
-| Field            | Type     | Required | Description                                                          |
-| ---------------- | -------- | -------- | -------------------------------------------------------------------- |
-| `question`       | string   | Yes      | Natural language question                                            |
-| `scopes`         | string[] | No       | Explicit scope filter — if absent, inferred from question context    |
-| `includeSecret`  | boolean  | No       | Opt-in for `*.secret.*` content (default: `false`)                   |
-| `maxSources`     | number   | No       | Maximum number of source engrams to retrieve (default: 10)           |
-| `domains`        | string[] | No       | Data domains to query: `engrams`, `transactions`, `media`, `inventory` (default: all) |
+| Field           | Type     | Required | Description                                                                           |
+| --------------- | -------- | -------- | ------------------------------------------------------------------------------------- |
+| `question`      | string   | Yes      | Natural language question                                                             |
+| `scopes`        | string[] | No       | Explicit scope filter — if absent, inferred from question context                     |
+| `includeSecret` | boolean  | No       | Opt-in for `*.secret.*` content (default: `false`)                                    |
+| `maxSources`    | number   | No       | Maximum number of source engrams to retrieve (default: 10)                            |
+| `domains`       | string[] | No       | Data domains to query: `engrams`, `transactions`, `media`, `inventory` (default: all) |
 
 ### Query Response
 
-| Field            | Type              | Description                                                      |
-| ---------------- | ----------------- | ---------------------------------------------------------------- |
-| `answer`         | string            | LLM-generated answer grounded in retrieved context               |
-| `sources`        | SourceCitation[]  | Engrams and data records cited in the answer                     |
-| `scopes`         | string[]          | Scopes used for retrieval (explicit or inferred)                 |
-| `confidence`     | string            | `high`, `medium`, `low` — based on source relevance and coverage |
+| Field        | Type             | Description                                                      |
+| ------------ | ---------------- | ---------------------------------------------------------------- |
+| `answer`     | string           | LLM-generated answer grounded in retrieved context               |
+| `sources`    | SourceCitation[] | Engrams and data records cited in the answer                     |
+| `scopes`     | string[]         | Scopes used for retrieval (explicit or inferred)                 |
+| `confidence` | string           | `high`, `medium`, `low` — based on source relevance and coverage |
 
 ### SourceCitation
 
-| Field        | Type   | Description                                                      |
-| ------------ | ------ | ---------------------------------------------------------------- |
-| `id`         | string | Engram ID or POPS record identifier                              |
-| `type`       | string | `engram` or POPS domain (`transaction`, `media`, `inventory`)    |
-| `title`      | string | Engram title or record description                               |
-| `excerpt`    | string | Relevant passage from the source (max 200 characters)            |
-| `relevance`  | number | 0-1 similarity score from Thalamus retrieval                     |
-| `scope`      | string | Primary scope of the cited source                                |
+| Field       | Type   | Description                                                   |
+| ----------- | ------ | ------------------------------------------------------------- |
+| `id`        | string | Engram ID or POPS record identifier                           |
+| `type`      | string | `engram` or POPS domain (`transaction`, `media`, `inventory`) |
+| `title`     | string | Engram title or record description                            |
+| `excerpt`   | string | Relevant passage from the source (max 200 characters)         |
+| `relevance` | number | 0-1 similarity score from Thalamus retrieval                  |
+| `scope`     | string | Primary scope of the cited source                             |
 
 ## API Surface
 
-| Procedure                        | Input                                                            | Output                                 | Notes                                                       |
-| -------------------------------- | ---------------------------------------------------------------- | -------------------------------------- | ----------------------------------------------------------- |
-| `cerebrum.query.ask`             | QueryRequest                                                     | `{ result: QueryResponse }`            | Full pipeline: scope inference → retrieval → answer generation |
-| `cerebrum.query.retrieve`        | question: string, scopes?: string[], includeSecret?: boolean, maxSources?: number | `{ sources: SourceCitation[] }`  | Retrieval only — returns relevant sources without generating an answer |
-| `cerebrum.query.explain`         | question: string                                                 | `{ scopeInference, retrievalPlan }`    | Debug endpoint — shows how scopes would be inferred and which sources would be retrieved |
+| Procedure                 | Input                                                                             | Output                              | Notes                                                                                    |
+| ------------------------- | --------------------------------------------------------------------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------- |
+| `cerebrum.query.ask`      | QueryRequest                                                                      | `{ result: QueryResponse }`         | Full pipeline: scope inference → retrieval → answer generation                           |
+| `cerebrum.query.retrieve` | question: string, scopes?: string[], includeSecret?: boolean, maxSources?: number | `{ sources: SourceCitation[] }`     | Retrieval only — returns relevant sources without generating an answer                   |
+| `cerebrum.query.explain`  | question: string                                                                  | `{ scopeInference, retrievalPlan }` | Debug endpoint — shows how scopes would be inferred and which sources would be retrieved |
 
 ## Business Rules
 
@@ -62,26 +62,26 @@ Define the natural language Q&A engine that accepts a question, infers the appro
 
 ## Edge Cases
 
-| Case                                              | Behaviour                                                                      |
-| ------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Question is empty or whitespace                   | Rejected — question is required                                                |
-| No relevant sources found above relevance threshold | Returns `{ answer: "I don't have information about that.", sources: [], confidence: "low" }` |
-| Question explicitly references a secret scope     | Rejected unless `includeSecret: true` — returns a message explaining the scope restriction |
+| Case                                                     | Behaviour                                                                                        |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| Question is empty or whitespace                          | Rejected — question is required                                                                  |
+| No relevant sources found above relevance threshold      | Returns `{ answer: "I don't have information about that.", sources: [], confidence: "low" }`     |
+| Question explicitly references a secret scope            | Rejected unless `includeSecret: true` — returns a message explaining the scope restriction       |
 | Question spans multiple domains (engrams + transactions) | Thalamus cross-source index returns results from both domains, context assembly interleaves them |
-| Question is ambiguous — could be personal or work  | Retrieves from all non-secret scopes, notes the ambiguity in the response      |
-| Retrieved context exceeds LLM context window       | Lowest-relevance sources are dropped until context fits within the window limit |
-| Thalamus is unavailable                            | Returns error with `{ available: false }` — does not attempt to answer without retrieval |
-| Question contains a date reference ("last Tuesday") | Date is resolved to an absolute date for structured query filtering             |
-| Question references an engram by ID                | Direct ID lookup bypasses semantic search — retrieves the specific engram       |
+| Question is ambiguous — could be personal or work        | Retrieves from all non-secret scopes, notes the ambiguity in the response                        |
+| Retrieved context exceeds LLM context window             | Lowest-relevance sources are dropped until context fits within the window limit                  |
+| Thalamus is unavailable                                  | Returns error with `{ available: false }` — does not attempt to answer without retrieval         |
+| Question contains a date reference ("last Tuesday")      | Date is resolved to an absolute date for structured query filtering                              |
+| Question references an engram by ID                      | Direct ID lookup bypasses semantic search — retrieves the specific engram                        |
 
 ## User Stories
 
-| #   | Story                                                                | Summary                                                                        | Status      | Parallelisable           |
-| --- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ----------- | ------------------------ |
-| 01  | [us-01-natural-language-qa](us-01-natural-language-qa.md)            | Accept a question, retrieve context, generate grounded answer, cite sources    | Not started | No (first)               |
-| 02  | [us-02-scope-aware-retrieval](us-02-scope-aware-retrieval.md)        | Infer scopes from question context, filter retrieval by inferred scopes        | Not started | Yes                      |
-| 03  | [us-03-source-attribution](us-03-source-attribution.md)              | Cite specific engrams in every answer with ID, title, excerpt, relevance       | Not started | Blocked by us-01         |
-| 04  | [us-04-multi-domain](us-04-multi-domain.md)                          | Queries span engrams and POPS SQLite data via Thalamus cross-source index      | Not started | Blocked by us-01         |
+| #   | Story                                                         | Summary                                                                     | Status      | Parallelisable   |
+| --- | ------------------------------------------------------------- | --------------------------------------------------------------------------- | ----------- | ---------------- |
+| 01  | [us-01-natural-language-qa](us-01-natural-language-qa.md)     | Accept a question, retrieve context, generate grounded answer, cite sources | Not started | No (first)       |
+| 02  | [us-02-scope-aware-retrieval](us-02-scope-aware-retrieval.md) | Infer scopes from question context, filter retrieval by inferred scopes     | Not started | Yes              |
+| 03  | [us-03-source-attribution](us-03-source-attribution.md)       | Cite specific engrams in every answer with ID, title, excerpt, relevance    | Not started | Blocked by us-01 |
+| 04  | [us-04-multi-domain](us-04-multi-domain.md)                   | Queries span engrams and POPS SQLite data via Thalamus cross-source index   | Not started | Blocked by us-01 |
 
 US-02 can parallelise with US-01 (scope inference is a separable module). US-03 and US-04 depend on the core Q&A pipeline from US-01.
 

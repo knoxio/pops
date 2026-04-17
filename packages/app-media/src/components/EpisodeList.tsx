@@ -1,6 +1,7 @@
-import { Switch } from '@pops/ui';
 import { Check, ChevronDown, ChevronRight, HardDrive } from 'lucide-react';
 import { useState } from 'react';
+
+import { Switch } from '@pops/ui';
 
 import { formatRuntime } from '../lib/utils';
 
@@ -70,7 +71,9 @@ function EpisodeRow({
         {onToggleWatched && (
           <button
             type="button"
-            onClick={() => onToggleWatched(ep.id, !isWatched)}
+            onClick={() => {
+              onToggleWatched(ep.id, !isWatched);
+            }}
             disabled={isToggling || upcoming}
             aria-label={
               upcoming
@@ -195,7 +198,9 @@ export function EpisodeList({
           key={ep.id}
           ep={ep}
           isExpanded={expandedIds.has(ep.id)}
-          onToggle={() => toggleExpanded(ep.id)}
+          onToggle={() => {
+            toggleExpanded(ep.id);
+          }}
           isWatched={watched.has(ep.id)}
           isToggling={toggling.has(ep.id)}
           onToggleWatched={onToggleWatched}

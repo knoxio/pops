@@ -5,6 +5,7 @@
  * these via @pops/app-inventory and mounts them under /inventory/*.
  */
 import { lazy } from 'react';
+
 import type { RouteObject } from 'react-router';
 
 const ItemsPage = lazy(() => import('./pages/ItemsPage').then((m) => ({ default: m.ItemsPage })));

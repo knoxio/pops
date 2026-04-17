@@ -1,3 +1,6 @@
+import { withEnvDb } from '../db.js';
+import { getEnvRecord, getOrOpenEnvDb } from '../modules/core/envs/registry.js';
+
 /**
  * Env context middleware — routes tRPC requests to the correct SQLite database.
  *
@@ -9,9 +12,6 @@
  * Missing `?env` or `?env=prod` falls through to the prod DB (default behaviour).
  */
 import type { NextFunction, Request, Response } from 'express';
-
-import { withEnvDb } from '../db.js';
-import { getEnvRecord, getOrOpenEnvDb } from '../modules/core/envs/registry.js';
 
 export function envContextMiddleware(req: Request, res: Response, next: NextFunction): void {
   const envName = req.query['env'] as string | undefined;
@@ -43,5 +43,7 @@ export function envContextMiddleware(req: Request, res: Response, next: NextFunc
   //    getDb() and isNamedEnvContext() work correctly inside them.
   //  - Long-lived background jobs (TTL watcher) run outside any request context
   //    and always use the prod DB, which is the correct behaviour.
-  withEnvDb(db, () => next());
+  withEnvDb(db, () => {
+    next();
+  });
 }

@@ -1,10 +1,12 @@
 import { TRPCError } from '@trpc/server';
-import type { Database } from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createCaller, seedMovie, setupTestContext } from '../../../shared/test-utils.js';
-import type { TmdbMovieDetail } from '../tmdb/types.js';
 import { TmdbApiError } from '../tmdb/types.js';
+
+import type { Database } from 'better-sqlite3';
+
+import type { TmdbMovieDetail } from '../tmdb/types.js';
 
 // Mock the TMDB client module
 vi.mock('../tmdb/client.js', () => ({

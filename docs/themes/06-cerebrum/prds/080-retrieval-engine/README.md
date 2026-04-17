@@ -9,12 +9,12 @@ Build the unified query layer that combines semantic search (vector k-NN via sql
 
 ## API Surface
 
-| Procedure                              | Input                                                                                             | Output                                               | Notes                                                              |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------ |
-| `cerebrum.retrieval.search`            | query: string, mode?: 'semantic' \| 'structured' \| 'hybrid', filters?, limit?, threshold?       | `{ results: RetrievalResult[], meta }`               | Unified entry point — mode defaults to `hybrid`                    |
-| `cerebrum.retrieval.context`           | query: string, filters?, tokenBudget?, includeMetadata?, maxResults?                              | `{ context: string, sources: SourceAttribution[] }`  | Assembles a context window for LLM consumption                     |
-| `cerebrum.retrieval.similar`           | engramId: string, limit?, filters?                                                                | `{ results: RetrievalResult[] }`                     | Find engrams similar to a given engram by its existing embedding    |
-| `cerebrum.retrieval.stats`             | —                                                                                                 | `{ indexed, embedded, sourceTypes, lastUpdated }`    | Retrieval layer health and coverage                                |
+| Procedure                    | Input                                                                                      | Output                                              | Notes                                                            |
+| ---------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------- | ---------------------------------------------------------------- |
+| `cerebrum.retrieval.search`  | query: string, mode?: 'semantic' \| 'structured' \| 'hybrid', filters?, limit?, threshold? | `{ results: RetrievalResult[], meta }`              | Unified entry point — mode defaults to `hybrid`                  |
+| `cerebrum.retrieval.context` | query: string, filters?, tokenBudget?, includeMetadata?, maxResults?                       | `{ context: string, sources: SourceAttribution[] }` | Assembles a context window for LLM consumption                   |
+| `cerebrum.retrieval.similar` | engramId: string, limit?, filters?                                                         | `{ results: RetrievalResult[] }`                    | Find engrams similar to a given engram by its existing embedding |
+| `cerebrum.retrieval.stats`   | —                                                                                          | `{ indexed, embedded, sourceTypes, lastUpdated }`   | Retrieval layer health and coverage                              |
 
 ### Types
 
@@ -35,34 +35,34 @@ Build the unified query layer that combines semantic search (vector k-NN via sql
 - Distance threshold for semantic search defaults to a configured value (e.g., 0.8 cosine distance); results beyond the threshold are excluded before ranking
 - The `similar` endpoint uses an existing engram's embedding vector as the query vector instead of embedding new text — it skips the embedding API call
 - Context assembly respects a `tokenBudget` (default 4096 tokens) — results are added in relevance order until the budget is exhausted
-- Token counting uses a fast approximation (word count * 1.3) rather than a full tokeniser — precision is not critical for budget enforcement
+- Token counting uses a fast approximation (word count \* 1.3) rather than a full tokeniser — precision is not critical for budget enforcement
 - Context output is a formatted string with clear section delimiters and source attribution markers that the LLM can reference in its response
 - Empty queries return an error for semantic and hybrid modes; structured mode with only filters and no query text is valid
 
 ## Edge Cases
 
-| Case                                                       | Behaviour                                                                         |
-| ---------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| Query text is empty in semantic/hybrid mode                | Returns error — semantic search requires a query to embed                         |
-| Query text is empty in structured mode with filters        | Valid — returns all results matching the filters, ordered by `modified_at` desc    |
-| No results match                                           | Returns `{ results: [], meta: { total: 0 } }` — not an error                     |
-| All results exceed the distance threshold                  | Returns empty results for semantic component; structured results may still appear in hybrid mode |
-| Token budget is smaller than a single result               | Returns one result truncated to fit the budget, with a `truncated: true` flag     |
-| Scope filter matches zero engrams                          | Returns empty results — no error                                                  |
-| Custom field filter on non-JSON-indexed field              | Falls back to `json_extract()` on `custom_fields` column — slower but functional  |
-| Engram has embedding but index entry is orphaned           | Excluded from results — orphaned entries are filtered out                          |
-| Domain data result has no scopes (not an engram)           | Scope filter does not apply to non-engram source types — they are always included unless explicitly filtered by `sourceTypes` |
-| Query matches same content via both semantic and structured | Deduplicated in hybrid merge — single result with `matchType: 'both'` and the higher score |
-| Embedding model changed since content was indexed          | Results may have degraded relevance — `cerebrum.index.reindex` with `force: true` required |
+| Case                                                        | Behaviour                                                                                                                     |
+| ----------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Query text is empty in semantic/hybrid mode                 | Returns error — semantic search requires a query to embed                                                                     |
+| Query text is empty in structured mode with filters         | Valid — returns all results matching the filters, ordered by `modified_at` desc                                               |
+| No results match                                            | Returns `{ results: [], meta: { total: 0 } }` — not an error                                                                  |
+| All results exceed the distance threshold                   | Returns empty results for semantic component; structured results may still appear in hybrid mode                              |
+| Token budget is smaller than a single result                | Returns one result truncated to fit the budget, with a `truncated: true` flag                                                 |
+| Scope filter matches zero engrams                           | Returns empty results — no error                                                                                              |
+| Custom field filter on non-JSON-indexed field               | Falls back to `json_extract()` on `custom_fields` column — slower but functional                                              |
+| Engram has embedding but index entry is orphaned            | Excluded from results — orphaned entries are filtered out                                                                     |
+| Domain data result has no scopes (not an engram)            | Scope filter does not apply to non-engram source types — they are always included unless explicitly filtered by `sourceTypes` |
+| Query matches same content via both semantic and structured | Deduplicated in hybrid merge — single result with `matchType: 'both'` and the higher score                                    |
+| Embedding model changed since content was indexed           | Results may have degraded relevance — `cerebrum.index.reindex` with `force: true` required                                    |
 
 ## User Stories
 
-| #   | Story                                                            | Summary                                                                              | Status      | Parallelisable   |
-| --- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ----------- | ---------------- |
-| 01  | [us-01-semantic-search](us-01-semantic-search.md)                | Natural language query embedding and k-NN search with ranked results                 | Not started | No (first)       |
-| 02  | [us-02-structured-queries](us-02-structured-queries.md)          | Filter engrams by type, scope, date range, tags, and custom fields via SQLite        | Not started | Yes              |
-| 03  | [us-03-hybrid-search](us-03-hybrid-search.md)                    | Combine semantic and structured search with reciprocal rank fusion                   | Not started | Blocked by us-01, us-02 |
-| 04  | [us-04-context-assembly](us-04-context-assembly.md)              | Assemble context windows for LLM consumption with token budgeting and source attribution | Not started | Blocked by us-03 |
+| #   | Story                                                   | Summary                                                                                  | Status      | Parallelisable          |
+| --- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------- | ----------------------- |
+| 01  | [us-01-semantic-search](us-01-semantic-search.md)       | Natural language query embedding and k-NN search with ranked results                     | Not started | No (first)              |
+| 02  | [us-02-structured-queries](us-02-structured-queries.md) | Filter engrams by type, scope, date range, tags, and custom fields via SQLite            | Not started | Yes                     |
+| 03  | [us-03-hybrid-search](us-03-hybrid-search.md)           | Combine semantic and structured search with reciprocal rank fusion                       | Not started | Blocked by us-01, us-02 |
+| 04  | [us-04-context-assembly](us-04-context-assembly.md)     | Assemble context windows for LLM consumption with token budgeting and source attribution | Not started | Blocked by us-03        |
 
 US-01 and US-02 can parallelise. US-03 merges their outputs and requires both. US-04 builds on the unified search results from US-03.
 

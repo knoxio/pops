@@ -47,7 +47,9 @@ vi.mock('../components/LocationPicker', () => ({
     <button
       data-testid="location-picker"
       data-value={value ?? ''}
-      onClick={() => onChange('loc-1')}
+      onClick={() => {
+        onChange('loc-1');
+      }}
     >
       {value ? `Selected: ${value}` : placeholder}
     </button>

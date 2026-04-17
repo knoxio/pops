@@ -10,6 +10,7 @@ import {
   serverOpToLocalOp,
   transactionMatchesSignal,
 } from './CorrectionProposalDialog';
+
 import type { CorrectionRule } from './RulePicker';
 
 // ---------------------------------------------------------------------------
@@ -514,7 +515,7 @@ describe('CorrectionProposalDialog', () => {
 
     const deleteButtons = screen.getAllByLabelText('Delete operation');
     expect(deleteButtons).toHaveLength(2);
-    fireEvent.click(deleteButtons[0]!);
+    fireEvent.click(deleteButtons[0]);
 
     await waitFor(() => {
       expect(screen.getByText(/Operations \(1\)/)).toBeInTheDocument();

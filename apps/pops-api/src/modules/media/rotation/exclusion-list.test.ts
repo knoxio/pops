@@ -1,12 +1,14 @@
-import { rotationCandidates, rotationExclusions, rotationSources } from '@pops/db-types';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { rotationCandidates, rotationExclusions, rotationSources } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 import { createCaller, setupTestContext } from '../../../shared/test-utils.js';
 import { registerSourceAdapter } from './source-registry.js';
-import type { RotationSourceAdapter } from './source-types.js';
 import { syncSource } from './sync-source.js';
+
+import type { RotationSourceAdapter } from './source-types.js';
 
 const ctx = setupTestContext();
 
@@ -44,7 +46,9 @@ function insertCandidate(
 
 describe('rotation.listExclusions', () => {
   beforeEach(() => ctx.setup());
-  afterEach(() => ctx.teardown());
+  afterEach(() => {
+    ctx.teardown();
+  });
 
   it('returns empty list when no exclusions', async () => {
     const caller = createCaller();
@@ -84,7 +88,9 @@ describe('rotation.listExclusions', () => {
 
 describe('rotation.excludeCandidate', () => {
   beforeEach(() => ctx.setup());
-  afterEach(() => ctx.teardown());
+  afterEach(() => {
+    ctx.teardown();
+  });
 
   it('adds movie to exclusion list', async () => {
     const caller = createCaller();
@@ -149,7 +155,9 @@ describe('rotation.excludeCandidate', () => {
 
 describe('rotation.removeExclusion', () => {
   beforeEach(() => ctx.setup());
-  afterEach(() => ctx.teardown());
+  afterEach(() => {
+    ctx.teardown();
+  });
 
   it('removes exclusion and resets candidate to pending', async () => {
     const source = insertSource();
@@ -218,7 +226,9 @@ describe('syncSource exclusion filtering', () => {
     registerSourceAdapter(adapter);
   });
 
-  afterEach(() => ctx.teardown());
+  afterEach(() => {
+    ctx.teardown();
+  });
 
   it('inserts excluded candidates with status excluded', async () => {
     const db = getDrizzle();

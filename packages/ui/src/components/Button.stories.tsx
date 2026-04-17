@@ -1,10 +1,10 @@
+import { Button } from './Button';
+
 /**
  * Button component stories
  * Demonstrates all variants, sizes, shapes, states, and icon support
  */
 import type { Meta, StoryObj } from '@storybook/react-vite';
-
-import { Button } from './Button';
 
 const meta: Meta<typeof Button> = {
   component: Button,

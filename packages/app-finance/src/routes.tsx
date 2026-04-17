@@ -5,6 +5,7 @@
  * these via @pops/app-finance and mounts them under /finance/*.
  */
 import { lazy } from 'react';
+
 import type { RouteObject } from 'react-router';
 
 const DashboardPage = lazy(() =>

@@ -1,3 +1,5 @@
+import { sql } from 'drizzle-orm';
+
 /**
  * TMDB-powered discovery shelves — 5 static (template=false) shelves
  * that each query TMDB /discover/movie with different filters:
@@ -9,16 +11,16 @@
  *  5. decade-picks      — Year range of the decade with most watches in watch_history
  */
 import { movies, watchHistory } from '@pops/db-types';
-import { sql } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../../db.js';
 import { getTmdbClient } from '../../tmdb/index.js';
 import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from '../flags.js';
 import { scoreDiscoverResults } from '../service.js';
 import { getLibraryTmdbIds, toDiscoverResults } from '../tmdb-service.js';
-import type { PreferenceProfile } from '../types.js';
 import { TMDB_GENRE_MAP } from '../types.js';
 import { registerShelf } from './registry.js';
+
+import type { PreferenceProfile } from '../types.js';
 import type { ShelfDefinition, ShelfInstance } from './types.js';
 
 // TMDB keyword IDs for award-winners shelf
@@ -35,7 +37,7 @@ function topGenreIds(profile: PreferenceProfile, limit = 3): number[] {
   );
   return profile.genreAffinities
     .slice()
-    .sort((a, b) => b.avgScore - a.avgScore)
+    .toSorted((a, b) => b.avgScore - a.avgScore)
     .slice(0, limit)
     .map((a) => reverseMap.get(a.genre))
     .filter((id): id is number => id !== undefined);

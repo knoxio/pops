@@ -1,8 +1,10 @@
-import { tagVocabulary, transactions } from '@pops/db-types';
 import { and, eq, isNotNull, ne } from 'drizzle-orm';
+
+import { tagVocabulary, transactions } from '@pops/db-types';
 
 import { getDrizzle } from '../../../../db.js';
 import { suggestTags } from '../../../../shared/tag-suggester.js';
+
 import type { SuggestedTag } from '../types.js';
 
 /** Parse a JSON-encoded tags string from the corrections table into a string array. */

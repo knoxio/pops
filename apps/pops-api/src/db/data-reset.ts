@@ -1,3 +1,5 @@
+import { TAG_VOCABULARY_V1 } from '../shared/tag-vocabulary.js';
+
 /**
  * Full application data wipe + bare-minimum system seed.
  *
@@ -5,8 +7,6 @@
  * Preserves migration bookkeeping: `schema_migrations`, `__drizzle_migrations`.
  */
 import type BetterSqlite3 from 'better-sqlite3';
-
-import { TAG_VOCABULARY_V1 } from '../shared/tag-vocabulary.js';
 
 /**
  * Application tables whose rows are deleted on reset.

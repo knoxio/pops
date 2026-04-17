@@ -1,3 +1,6 @@
+import { CheckCircle2, RefreshCw } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+
 /**
  * RequestSeriesModal — Modal for adding a TV series to Sonarr.
  *
@@ -14,8 +17,6 @@ import {
   Select,
 } from '@pops/ui';
 import { Button } from '@pops/ui';
-import { CheckCircle2, RefreshCw } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
 
 import { trpc } from '../lib/trpc';
 
@@ -201,7 +202,9 @@ export function RequestSeriesModal({
                 label="Quality Profile"
                 id="quality-profile"
                 value={String(qualityProfileId ?? '')}
-                onChange={(e) => setQualityProfileId(Number(e.target.value))}
+                onChange={(e) => {
+                  setQualityProfileId(Number(e.target.value));
+                }}
                 disabled={addSeries.isPending || success}
                 options={profileList.map((p) => ({
                   value: String(p.id),
@@ -214,7 +217,9 @@ export function RequestSeriesModal({
                 label="Root Folder"
                 id="root-folder"
                 value={rootFolderPath}
-                onChange={(e) => setRootFolderPath(e.target.value)}
+                onChange={(e) => {
+                  setRootFolderPath(e.target.value);
+                }}
                 disabled={addSeries.isPending || success}
                 options={folderList.map((f) => ({
                   value: f.path,
@@ -227,7 +232,9 @@ export function RequestSeriesModal({
                 label="Language Profile"
                 id="language-profile"
                 value={String(languageProfileId ?? '')}
-                onChange={(e) => setLanguageProfileId(Number(e.target.value))}
+                onChange={(e) => {
+                  setLanguageProfileId(Number(e.target.value));
+                }}
                 disabled={addSeries.isPending || success}
                 options={languageList.map((l) => ({
                   value: String(l.id),
@@ -280,12 +287,12 @@ export function RequestSeriesModal({
                         <input
                           type="checkbox"
                           checked={seasonMonitored[s.seasonNumber] ?? false}
-                          onChange={(e) =>
+                          onChange={(e) => {
                             setSeasonMonitored((prev) => ({
                               ...prev,
                               [s.seasonNumber]: e.target.checked,
-                            }))
-                          }
+                            }));
+                          }}
                           disabled={addSeries.isPending || success}
                         />
                         {s.seasonNumber === 0 ? 'Specials' : `Season ${s.seasonNumber}`}

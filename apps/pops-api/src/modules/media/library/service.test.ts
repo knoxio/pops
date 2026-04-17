@@ -2,7 +2,6 @@
  * Media library service tests — refreshMovie with mocked TMDB client.
  */
 import { TRPCError } from '@trpc/server';
-import type { Database } from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -11,8 +10,11 @@ import {
   seedTvShow,
   setupTestContext,
 } from '../../../shared/test-utils.js';
-import type { TmdbMovieDetail } from '../tmdb/types.js';
 import { listLibrary, listLibraryGenres } from './service.js';
+
+import type { Database } from 'better-sqlite3';
+
+import type { TmdbMovieDetail } from '../tmdb/types.js';
 
 // Mock ImageCacheService so getImageCache() returns a stub
 vi.mock('../tmdb/image-cache.js', () => ({
@@ -362,7 +364,7 @@ describe('listLibrary', () => {
       pageSize: 24,
     });
     expect(result.items).toHaveLength(2);
-    const titles = result.items.map((i) => i.title).sort();
+    const titles = result.items.map((i) => i.title).toSorted();
     expect(titles).toEqual(['Breaking Bad', 'Severance']);
   });
 

@@ -10,13 +10,13 @@ tRPC provides end-to-end type safety between the React frontend and Express back
 
 ## Options Considered
 
-| Option                  | Pros                                                                        | Cons                                                                                            |
-| ----------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Keep tRPC only          | No additional work, no drift risk                                           | Non-TS consumers have no contract, must reverse-engineer HTTP calls                             |
-| Replace tRPC with REST  | Universal compatibility                                                     | Lose end-to-end type safety, massive rewrite, regression risk                                   |
-| Replace tRPC with gRPC  | Language-neutral, performant, strong contracts via protobuf                  | Massive rewrite, browser support requires grpc-web proxy, poor fit for React Query              |
-| trpc-openapi bolt-on    | Annotate existing routers, generate OpenAPI 3.1 spec from live code         | Additional metadata on each procedure, spec may lag if annotations are forgotten                |
-| Parallel OpenAPI spec   | Hand-written spec independent of tRPC                                       | Will drift from implementation, two sources of truth                                            |
+| Option                 | Pros                                                                | Cons                                                                               |
+| ---------------------- | ------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Keep tRPC only         | No additional work, no drift risk                                   | Non-TS consumers have no contract, must reverse-engineer HTTP calls                |
+| Replace tRPC with REST | Universal compatibility                                             | Lose end-to-end type safety, massive rewrite, regression risk                      |
+| Replace tRPC with gRPC | Language-neutral, performant, strong contracts via protobuf         | Massive rewrite, browser support requires grpc-web proxy, poor fit for React Query |
+| trpc-openapi bolt-on   | Annotate existing routers, generate OpenAPI 3.1 spec from live code | Additional metadata on each procedure, spec may lag if annotations are forgotten   |
+| Parallel OpenAPI spec  | Hand-written spec independent of tRPC                               | Will drift from implementation, two sources of truth                               |
 
 ## Decision
 

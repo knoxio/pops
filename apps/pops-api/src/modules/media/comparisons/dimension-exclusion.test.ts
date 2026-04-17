@@ -1,14 +1,16 @@
 import { TRPCError } from '@trpc/server';
-import type { Database } from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import type { createCaller } from '../../../shared/test-utils.js';
 import {
   seedDimension,
   seedMovie,
   seedWatchHistoryEntry,
   setupTestContext,
 } from '../../../shared/test-utils.js';
+
+import type { Database } from 'better-sqlite3';
+
+import type { createCaller } from '../../../shared/test-utils.js';
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;

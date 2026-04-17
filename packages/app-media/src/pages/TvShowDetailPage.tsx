@@ -1,3 +1,7 @@
+import { useMemo, useRef, useState } from 'react';
+import { Link, useParams } from 'react-router';
+import { toast } from 'sonner';
+
 import { useSetPageContext } from '@pops/navigation';
 import {
   Alert,
@@ -14,9 +18,6 @@ import {
   Skeleton,
   Switch,
 } from '@pops/ui';
-import { useMemo, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router';
-import { toast } from 'sonner';
 
 import { ArrStatusBadge } from '../components/ArrStatusBadge';
 import { ProgressBar } from '../components/ProgressBar';
@@ -157,7 +158,7 @@ export function TvShowDetailPage() {
   // Sort seasons ascending by number, specials (season 0) last
   const seasons = useMemo(
     () =>
-      [...rawSeasons].sort((a: { seasonNumber: number }, b: { seasonNumber: number }) => {
+      [...rawSeasons].toSorted((a: { seasonNumber: number }, b: { seasonNumber: number }) => {
         if (a.seasonNumber === 0) return 1;
         if (b.seasonNumber === 0) return -1;
         return a.seasonNumber - b.seasonNumber;

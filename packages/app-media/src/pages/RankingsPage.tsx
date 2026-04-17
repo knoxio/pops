@@ -1,3 +1,7 @@
+import { Trophy } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router';
+
 /**
  * RankingsPage — leaderboard of media items ranked by Elo score.
  *
@@ -14,9 +18,6 @@ import {
   Tabs,
   TabsContent,
 } from '@pops/ui';
-import { Trophy } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router';
 
 import { trpc } from '../lib/trpc';
 
@@ -203,7 +204,9 @@ function RankingsList({ dimensionId }: { dimensionId?: number }) {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={() => setOffset(Math.max(0, offset - PAGE_SIZE))}
+              onClick={() => {
+                setOffset(Math.max(0, offset - PAGE_SIZE));
+              }}
               disabled={offset === 0}
               className="text-sm text-primary hover:underline disabled:text-muted-foreground disabled:no-underline"
             >
@@ -211,7 +214,9 @@ function RankingsList({ dimensionId }: { dimensionId?: number }) {
             </button>
             <button
               type="button"
-              onClick={() => setOffset(offset + PAGE_SIZE)}
+              onClick={() => {
+                setOffset(offset + PAGE_SIZE);
+              }}
               disabled={!pagination.hasMore}
               className="text-sm text-primary hover:underline disabled:text-muted-foreground disabled:no-underline"
             >
@@ -279,7 +284,9 @@ export function RankingsPage() {
                 key={chip.value}
                 role="tab"
                 aria-selected={dimensionParam === chip.value}
-                onClick={() => handleTabChange(chip.value)}
+                onClick={() => {
+                  handleTabChange(chip.value);
+                }}
                 className={cn(
                   'rounded-full border px-4 py-1.5 text-sm font-medium transition-colors',
                   dimensionParam === chip.value

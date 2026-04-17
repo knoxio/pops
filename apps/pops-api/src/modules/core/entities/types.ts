@@ -1,6 +1,8 @@
-import type { EntityRow } from '@pops/db-types';
-import { ENTITY_TYPES } from '@pops/db-types';
 import { z } from 'zod';
+
+import { ENTITY_TYPES } from '@pops/db-types';
+
+import type { EntityRow } from '@pops/db-types';
 
 export type { EntityRow };
 export { ENTITY_TYPES };

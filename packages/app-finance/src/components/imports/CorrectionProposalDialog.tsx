@@ -1,3 +1,7 @@
+import { Plus, Search } from 'lucide-react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { toast } from 'sonner';
+
 import {
   Button,
   Dialog,
@@ -8,9 +12,6 @@ import {
   DialogTitle,
   Input,
 } from '@pops/ui';
-import { Plus, Search } from 'lucide-react';
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
 
 import {
   applyBrowsePriorityReorder,
@@ -38,6 +39,7 @@ import {
 import { useApplyRejectMutations } from './hooks/useApplyRejectMutations';
 import { localOpsToChangeSet, newClientId, useLocalOps } from './hooks/useLocalOps';
 import { usePreviewEffects } from './hooks/usePreviewEffects';
+
 import type { CorrectionRule } from './RulePicker';
 
 const BrowseRulesSidebar = lazy(() =>
@@ -191,7 +193,9 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
     previewMutationPending,
     hasDirty,
     onApproved: props.onApproved,
-    onClose: () => handleCloseRef.current(),
+    onClose: () => {
+      handleCloseRef.current();
+    },
     setLocalOps,
     setSelectedClientId,
     setRationale,
@@ -311,7 +315,9 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
     ]
   );
 
-  handleCloseRef.current = () => handleOpenChange(false);
+  handleCloseRef.current = () => {
+    handleOpenChange(false);
+  };
 
   const handleBrowseSelectRule = useCallback(
     (ruleId: string) => {
@@ -440,7 +446,9 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
                     <Search className="absolute left-2 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
                     <Input
                       value={browseSearch}
-                      onChange={(e) => setBrowseSearch(e.target.value)}
+                      onChange={(e) => {
+                        setBrowseSearch(e.target.value);
+                      }}
                       placeholder="Search rules…"
                       className="pl-7 h-8 text-xs"
                     />
@@ -557,7 +565,12 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
                 </span>
               )}
             </div>
-            <Button variant="outline" onClick={() => handleOpenChange(false)}>
+            <Button
+              variant="outline"
+              onClick={() => {
+                handleOpenChange(false);
+              }}
+            >
               Cancel
             </Button>
             <Button onClick={handleBrowseSave} disabled={localOps.length === 0}>
@@ -680,13 +693,21 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
               <span>ChangeSet is empty.</span>
             ) : null}
           </div>
-          <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isBusy}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              handleOpenChange(false);
+            }}
+            disabled={isBusy}
+          >
             Cancel
           </Button>
           {!rejectMode && (
             <Button
               variant="outline"
-              onClick={() => setRejectMode(true)}
+              onClick={() => {
+                setRejectMode(true);
+              }}
               disabled={isBusy || localOps.length === 0}
             >
               Reject with feedback

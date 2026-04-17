@@ -1,4 +1,6 @@
-import type { AppRouter } from '@pops/api-client';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+
 import {
   Button,
   Checkbox,
@@ -12,11 +14,12 @@ import {
   Label,
   Textarea,
 } from '@pops/ui';
-import type { inferRouterOutputs } from '@trpc/server';
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
 
 import { trpc } from '../../lib/trpc';
+
+import type { inferRouterOutputs } from '@trpc/server';
+
+import type { AppRouter } from '@pops/api-client';
 
 type ProposeOutput = inferRouterOutputs<AppRouter>['core']['tagRules']['proposeTagRuleChangeSet'];
 
@@ -114,7 +117,7 @@ export function TagRuleProposalDialog(props: TagRuleProposalDialogProps) {
         if (s.isNew) names.add(s.tag);
       }
     }
-    return [...names].sort((a, b) => a.localeCompare(b));
+    return [...names].toSorted((a, b) => a.localeCompare(b));
   }, [proposal]);
 
   useEffect(() => {
@@ -157,7 +160,7 @@ export function TagRuleProposalDialog(props: TagRuleProposalDialogProps) {
   const handleReject = useCallback(() => {
     if (!proposal) return;
     const fb = rejectFeedback.trim();
-    if (fb.length < 1) {
+    if (fb.length === 0) {
       toast.error('Please add a short note explaining why you are rejecting this proposal.');
       return;
     }
@@ -184,7 +187,9 @@ export function TagRuleProposalDialog(props: TagRuleProposalDialogProps) {
               <Input
                 id="tr-pattern"
                 value={pattern}
-                onChange={(e) => setPattern(e.target.value)}
+                onChange={(e) => {
+                  setPattern(e.target.value);
+                }}
                 placeholder="e.g. WOOLWORTHS"
               />
             </div>
@@ -194,7 +199,9 @@ export function TagRuleProposalDialog(props: TagRuleProposalDialogProps) {
                 id="tr-match"
                 className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm"
                 value={matchType}
-                onChange={(e) => setMatchType(e.target.value as 'exact' | 'contains' | 'regex')}
+                onChange={(e) => {
+                  setMatchType(e.target.value as 'exact' | 'contains' | 'regex');
+                }}
               >
                 <option value="contains">Contains</option>
                 <option value="exact">Exact</option>
@@ -206,7 +213,9 @@ export function TagRuleProposalDialog(props: TagRuleProposalDialogProps) {
               <Input
                 id="tr-tags"
                 value={tagsText}
-                onChange={(e) => setTagsText(e.target.value)}
+                onChange={(e) => {
+                  setTagsText(e.target.value);
+                }}
                 placeholder="Groceries, Transport"
               />
             </div>
@@ -276,7 +285,9 @@ export function TagRuleProposalDialog(props: TagRuleProposalDialogProps) {
                 <Textarea
                   id="tr-reject"
                   value={rejectFeedback}
-                  onChange={(e) => setRejectFeedback(e.target.value)}
+                  onChange={(e) => {
+                    setRejectFeedback(e.target.value);
+                  }}
                   rows={3}
                   placeholder="What should change about this rule?"
                 />
@@ -289,7 +300,9 @@ export function TagRuleProposalDialog(props: TagRuleProposalDialogProps) {
           <Button
             type="button"
             variant="outline"
-            onClick={() => props.onOpenChange(false)}
+            onClick={() => {
+              props.onOpenChange(false);
+            }}
             disabled={busy}
           >
             Cancel
@@ -298,7 +311,9 @@ export function TagRuleProposalDialog(props: TagRuleProposalDialogProps) {
             <Button
               type="button"
               variant="secondary"
-              onClick={() => setRejectOpen(true)}
+              onClick={() => {
+                setRejectOpen(true);
+              }}
               disabled={busy || !proposal}
             >
               Reject…

@@ -99,7 +99,9 @@ export function usePlexMutations({
     const interval = setInterval(() => {
       checkPin.mutate({ id: pinId });
     }, 3000);
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, [pinId]);
 
   return {

@@ -1,3 +1,7 @@
+import { Link2, Search } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
+
 /**
  * ConnectDialog — search and connect inventory items.
  * Opens a dialog with a search input that queries inventory.items.list,
@@ -14,9 +18,6 @@ import {
   Skeleton,
   TextInput,
 } from '@pops/ui';
-import { Link2, Search } from 'lucide-react';
-import { useState } from 'react';
-import { toast } from 'sonner';
 
 import { trpc } from '../lib/trpc';
 
@@ -81,7 +82,9 @@ export function ConnectDialog({ currentItemId, onConnected }: ConnectDialogProps
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <TextInput
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+            }}
             placeholder="Search items..."
             className="pl-9"
             autoFocus
@@ -107,7 +110,9 @@ export function ConnectDialog({ currentItemId, onConnected }: ConnectDialogProps
                 key={item.id}
                 variant="ghost"
                 className="w-full flex items-center justify-between p-2.5 h-auto text-left"
-                onClick={() => handleConnect(item.id)}
+                onClick={() => {
+                  handleConnect(item.id);
+                }}
                 disabled={connectMutation.isPending}
               >
                 <div>

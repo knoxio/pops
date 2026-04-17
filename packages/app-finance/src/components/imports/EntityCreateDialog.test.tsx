@@ -91,7 +91,7 @@ function renderDialog(overrides: Partial<typeof DEFAULT_PROPS> = {}) {
 beforeEach(() => {
   vi.clearAllMocks();
   mockAddPendingEntity.mockImplementation((input: { name: string; type: string }) => ({
-    tempId: `temp:entity:${input.name.toLowerCase().replace(/\s+/g, '-')}`,
+    tempId: `temp:entity:${input.name.toLowerCase().replaceAll(/\s+/g, '-')}`,
     name: input.name,
     type: input.type,
   }));

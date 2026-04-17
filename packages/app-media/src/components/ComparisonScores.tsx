@@ -1,9 +1,3 @@
-/**
- * ComparisonScores — radar chart showing Elo scores across comparison dimensions.
- * Queries scores and dimensions, merges them, and renders a recharts RadarChart.
- * Hidden when zero comparisons; shows "Not enough data" when 1–2 comparisons.
- */
-import { Skeleton } from '@pops/ui';
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -12,6 +6,13 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from 'recharts';
+
+/**
+ * ComparisonScores — radar chart showing Elo scores across comparison dimensions.
+ * Queries scores and dimensions, merges them, and renders a recharts RadarChart.
+ * Hidden when zero comparisons; shows "Not enough data" when 1–2 comparisons.
+ */
+import { Skeleton } from '@pops/ui';
 
 import { trpc } from '../lib/trpc';
 
@@ -87,7 +88,7 @@ export function ComparisonScores({ mediaType, mediaId }: ComparisonScoresProps) 
       comparisons: s.comparisonCount,
       sortOrder: dimensionOrder.get(s.dimensionId) ?? 0,
     }))
-    .sort((a: { sortOrder: number }, b: { sortOrder: number }) => a.sortOrder - b.sortOrder);
+    .toSorted((a: { sortOrder: number }, b: { sortOrder: number }) => a.sortOrder - b.sortOrder);
 
   return (
     <section>

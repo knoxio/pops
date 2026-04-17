@@ -1,6 +1,6 @@
-import type { NextFunction, Request, Response } from 'express';
-
 import { verifyCloudflareJWT } from './cloudflare-jwt.js';
+
+import type { NextFunction, Request, Response } from 'express';
 
 /**
  * Express middleware that validates Cloudflare Access JWT tokens.

@@ -13,23 +13,23 @@ No new SQLite tables. Job state lives in Redis (managed by BullMQ). The existing
 
 ### Queue Definitions
 
-| Queue              | Purpose                                      | Concurrency | Retry | Priority |
-| ------------------ | -------------------------------------------- | ----------- | ----- | -------- |
-| `pops:sync`        | Media sync jobs (Plex, Radarr, Sonarr)       | 1           | 3     | Normal   |
-| `pops:embeddings`  | Vector embedding generation                  | 2           | 3     | Low      |
-| `pops:curation`    | Content consolidation, deduplication         | 1           | 2     | Low      |
-| `pops:default`     | General-purpose jobs                         | 3           | 3     | Normal   |
+| Queue             | Purpose                                | Concurrency | Retry | Priority |
+| ----------------- | -------------------------------------- | ----------- | ----- | -------- |
+| `pops:sync`       | Media sync jobs (Plex, Radarr, Sonarr) | 1           | 3     | Normal   |
+| `pops:embeddings` | Vector embedding generation            | 2           | 3     | Low      |
+| `pops:curation`   | Content consolidation, deduplication   | 1           | 2     | Low      |
+| `pops:default`    | General-purpose jobs                   | 3           | 3     | Normal   |
 
 ## API Surface
 
-| Procedure                  | Input                              | Output                                      | Notes                            |
-| -------------------------- | ---------------------------------- | ------------------------------------------- | -------------------------------- |
-| `core.jobs.list`           | queue?, status?, limit?, offset?   | `{ jobs: Job[], total: number }`            | Lists jobs across queues         |
-| `core.jobs.get`            | jobId, queue                       | `{ job: Job }`                              | Full job details with logs       |
-| `core.jobs.retry`          | jobId, queue                       | `{ success: boolean }`                      | Re-enqueue a failed job          |
-| `core.jobs.cancel`         | jobId, queue                       | `{ success: boolean }`                      | Cancel a waiting or active job   |
-| `core.jobs.drain`          | queue                              | `{ drained: number }`                       | Remove all waiting jobs          |
-| `core.jobs.queueStats`     | —                                  | `{ queues: QueueStats[] }`                  | Counts by status per queue       |
+| Procedure              | Input                            | Output                           | Notes                          |
+| ---------------------- | -------------------------------- | -------------------------------- | ------------------------------ |
+| `core.jobs.list`       | queue?, status?, limit?, offset? | `{ jobs: Job[], total: number }` | Lists jobs across queues       |
+| `core.jobs.get`        | jobId, queue                     | `{ job: Job }`                   | Full job details with logs     |
+| `core.jobs.retry`      | jobId, queue                     | `{ success: boolean }`           | Re-enqueue a failed job        |
+| `core.jobs.cancel`     | jobId, queue                     | `{ success: boolean }`           | Cancel a waiting or active job |
+| `core.jobs.drain`      | queue                            | `{ drained: number }`            | Remove all waiting jobs        |
+| `core.jobs.queueStats` | —                                | `{ queues: QueueStats[] }`       | Counts by status per queue     |
 
 ## Business Rules
 
@@ -43,24 +43,24 @@ No new SQLite tables. Job state lives in Redis (managed by BullMQ). The existing
 
 ## Edge Cases
 
-| Case                                     | Behaviour                                                                |
-| ---------------------------------------- | ------------------------------------------------------------------------ |
-| Worker crashes mid-job                   | BullMQ marks job as stalled after `stalledInterval`, retries it          |
-| Redis unavailable when enqueueing        | Enqueue throws; caller handles (API returns 503 or logs warning)         |
-| Duplicate repeatable job registration    | BullMQ deduplicates by repeat key — no duplicate jobs                    |
-| Job exceeds timeout                      | BullMQ marks as failed after `jobTimeout`, moves to retry/dead-letter    |
-| Worker starts before Redis is ready      | BullMQ Worker auto-retries Redis connection (ioredis reconnect)          |
-| Multiple worker instances                | Safe — BullMQ distributes jobs, each job processed exactly once          |
+| Case                                  | Behaviour                                                             |
+| ------------------------------------- | --------------------------------------------------------------------- |
+| Worker crashes mid-job                | BullMQ marks job as stalled after `stalledInterval`, retries it       |
+| Redis unavailable when enqueueing     | Enqueue throws; caller handles (API returns 503 or logs warning)      |
+| Duplicate repeatable job registration | BullMQ deduplicates by repeat key — no duplicate jobs                 |
+| Job exceeds timeout                   | BullMQ marks as failed after `jobTimeout`, moves to retry/dead-letter |
+| Worker starts before Redis is ready   | BullMQ Worker auto-retries Redis connection (ioredis reconnect)       |
+| Multiple worker instances             | Safe — BullMQ distributes jobs, each job processed exactly once       |
 
 ## User Stories
 
-| #   | Story                                                    | Summary                                                                           | Status      | Parallelisable   |
-| --- | -------------------------------------------------------- | --------------------------------------------------------------------------------- | ----------- | ---------------- |
-| 01  | [us-01-queue-definitions](us-01-queue-definitions.md)    | Define typed queue interfaces, job data schemas, shared constants                  | Not started | No (first)       |
-| 02  | [us-02-worker-entry](us-02-worker-entry.md)              | Separate worker process with job handlers, graceful shutdown, Docker integration   | Not started | Blocked by us-01 |
-| 03  | [us-03-job-management-api](us-03-job-management-api.md)  | tRPC procedures for listing, retrying, cancelling, draining jobs                   | Not started | Blocked by us-01 |
-| 04  | [us-04-failure-handling](us-04-failure-handling.md)       | Dead-letter queue, retry policies, stalled job detection, error logging            | Not started | Blocked by us-02 |
-| 05  | [us-05-migrate-sync-jobs](us-05-migrate-sync-jobs.md)    | Migrate Plex sync scheduler from in-memory to BullMQ repeatable jobs              | Not started | Blocked by us-02 |
+| #   | Story                                                   | Summary                                                                          | Status      | Parallelisable   |
+| --- | ------------------------------------------------------- | -------------------------------------------------------------------------------- | ----------- | ---------------- |
+| 01  | [us-01-queue-definitions](us-01-queue-definitions.md)   | Define typed queue interfaces, job data schemas, shared constants                | Not started | No (first)       |
+| 02  | [us-02-worker-entry](us-02-worker-entry.md)             | Separate worker process with job handlers, graceful shutdown, Docker integration | Not started | Blocked by us-01 |
+| 03  | [us-03-job-management-api](us-03-job-management-api.md) | tRPC procedures for listing, retrying, cancelling, draining jobs                 | Not started | Blocked by us-01 |
+| 04  | [us-04-failure-handling](us-04-failure-handling.md)     | Dead-letter queue, retry policies, stalled job detection, error logging          | Not started | Blocked by us-02 |
+| 05  | [us-05-migrate-sync-jobs](us-05-migrate-sync-jobs.md)   | Migrate Plex sync scheduler from in-memory to BullMQ repeatable jobs             | Not started | Blocked by us-02 |
 
 US-03 can run in parallel with US-02 (API reads from queues, worker writes — independent entry points). US-04 and US-05 require the worker to be functional.
 

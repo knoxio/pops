@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import type { LocalOp } from '../components/imports/correction-proposal-shared';
-import type { CorrectionRule } from '../components/imports/RulePicker';
 import {
   applyBrowsePriorityReorder,
   compareRulesForBrowse,
   effectiveRulePriority,
   sortRulesForBrowseDisplay,
 } from './correction-browse-reorder';
+
+import type { LocalOp } from '../components/imports/correction-proposal-shared';
+import type { CorrectionRule } from '../components/imports/RulePicker';
 
 function rule(
   partial: Partial<CorrectionRule> & Pick<CorrectionRule, 'id' | 'descriptionPattern'>

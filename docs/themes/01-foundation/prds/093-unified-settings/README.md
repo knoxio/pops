@@ -15,42 +15,44 @@ Each app package exports a `SettingsManifest` from its package entry point:
 
 ```typescript
 type SettingsManifest = {
-  id: string                    // Unique manifest ID: 'media.plex', 'ai.config', etc.
-  title: string                 // Section heading: 'Plex', 'AI Model Configuration'
-  icon?: string                 // Lucide icon name for the section nav
-  order: number                 // Sort order in the settings page (lower = higher)
-  groups: SettingsGroup[]       // Logical field groupings within the section
-}
+  id: string; // Unique manifest ID: 'media.plex', 'ai.config', etc.
+  title: string; // Section heading: 'Plex', 'AI Model Configuration'
+  icon?: string; // Lucide icon name for the section nav
+  order: number; // Sort order in the settings page (lower = higher)
+  groups: SettingsGroup[]; // Logical field groupings within the section
+};
 
 type SettingsGroup = {
-  id: string                    // Group ID: 'connection', 'sync', 'budget'
-  title: string                 // Group heading: 'Connection', 'Sync Schedule'
-  description?: string          // Subtitle/help text below the heading
-  fields: SettingsField[]       // Fields in this group
-}
+  id: string; // Group ID: 'connection', 'sync', 'budget'
+  title: string; // Group heading: 'Connection', 'Sync Schedule'
+  description?: string; // Subtitle/help text below the heading
+  fields: SettingsField[]; // Fields in this group
+};
 
 type SettingsField = {
-  key: string                   // Settings table key: 'plex_url', 'ai.model'
-  label: string                 // Field label: 'Plex URL', 'Model'
-  description?: string          // Help text below the field
-  type: 'text' | 'number' | 'toggle' | 'select' | 'password' | 'url' | 'duration' | 'json'
-  default?: string              // Default value (all settings stored as strings)
-  options?: { value: string; label: string }[]  // For 'select' type
-  validation?: {                // Zod-compatible validation rules
-    required?: boolean
-    min?: number                // For number type
-    max?: number
-    pattern?: string            // Regex for text/url types
-    message?: string            // Custom validation error message
-  }
-  envFallback?: string          // Environment variable name that provides a fallback value when no database value is set
-  sensitive?: boolean           // True for passwords/tokens — masks display, requires confirmation to reveal
-  requiresRestart?: boolean     // True if changing this setting requires a server restart
-  testAction?: {                // Optional connectivity test button
-    procedure: string           // tRPC procedure to call: 'media.plex.testConnection'
-    label: string               // Button text: 'Test Connection'
-  }
-}
+  key: string; // Settings table key: 'plex_url', 'ai.model'
+  label: string; // Field label: 'Plex URL', 'Model'
+  description?: string; // Help text below the field
+  type: 'text' | 'number' | 'toggle' | 'select' | 'password' | 'url' | 'duration' | 'json';
+  default?: string; // Default value (all settings stored as strings)
+  options?: { value: string; label: string }[]; // For 'select' type
+  validation?: {
+    // Zod-compatible validation rules
+    required?: boolean;
+    min?: number; // For number type
+    max?: number;
+    pattern?: string; // Regex for text/url types
+    message?: string; // Custom validation error message
+  };
+  envFallback?: string; // Environment variable name that provides a fallback value when no database value is set
+  sensitive?: boolean; // True for passwords/tokens — masks display, requires confirmation to reveal
+  requiresRestart?: boolean; // True if changing this setting requires a server restart
+  testAction?: {
+    // Optional connectivity test button
+    procedure: string; // tRPC procedure to call: 'media.plex.testConnection'
+    label: string; // Button text: 'Test Connection'
+  };
+};
 ```
 
 ### Existing Settings Table (no schema changes)
@@ -59,15 +61,15 @@ The existing `settings` table (`key: TEXT PK`, `value: TEXT NOT NULL`) is unchan
 
 ## API Surface
 
-| Procedure                         | Input                          | Output                                     | Notes                                              |
-| --------------------------------- | ------------------------------ | ------------------------------------------ | -------------------------------------------------- |
-| `core.settings.list`              | search?, limit, offset         | `{ settings: Setting[], total }`           | Existing — no changes                              |
-| `core.settings.get`               | key                            | `{ value: string } \| null`               | Existing — no changes                              |
-| `core.settings.set`               | key, value                     | `{ key, value }`                           | Existing — no changes                              |
-| `core.settings.delete`            | key                            | `{ success: boolean }`                     | Existing — no changes                              |
-| `core.settings.getBulk`           | keys: string[]                 | `{ settings: Record<string, string> }`     | New — fetch multiple settings in one call          |
-| `core.settings.setBulk`           | entries: { key, value }[]      | `{ settings: Record<string, string> }`     | New — save multiple settings atomically            |
-| `core.settings.getManifests`      | —                              | `{ manifests: SettingsManifest[] }`        | New — returns all registered manifests (ordered)   |
+| Procedure                    | Input                     | Output                                 | Notes                                            |
+| ---------------------------- | ------------------------- | -------------------------------------- | ------------------------------------------------ |
+| `core.settings.list`         | search?, limit, offset    | `{ settings: Setting[], total }`       | Existing — no changes                            |
+| `core.settings.get`          | key                       | `{ value: string } \| null`            | Existing — no changes                            |
+| `core.settings.set`          | key, value                | `{ key, value }`                       | Existing — no changes                            |
+| `core.settings.delete`       | key                       | `{ success: boolean }`                 | Existing — no changes                            |
+| `core.settings.getBulk`      | keys: string[]            | `{ settings: Record<string, string> }` | New — fetch multiple settings in one call        |
+| `core.settings.setBulk`      | entries: { key, value }[] | `{ settings: Record<string, string> }` | New — save multiple settings atomically          |
+| `core.settings.getManifests` | —                         | `{ manifests: SettingsManifest[] }`    | New — returns all registered manifests (ordered) |
 
 ### Manifest Registration (Server-Side)
 
@@ -75,9 +77,9 @@ No new tRPC procedures for registration. Manifests are registered programmatical
 
 ```typescript
 // In each app's API module initialization
-settingsRegistry.register(plexManifest)
-settingsRegistry.register(arrManifest)
-settingsRegistry.register(aiConfigManifest)
+settingsRegistry.register(plexManifest);
+settingsRegistry.register(arrManifest);
+settingsRegistry.register(aiConfigManifest);
 ```
 
 The `core.settings.getManifests` procedure reads from the in-memory registry.
@@ -99,27 +101,27 @@ The `core.settings.getManifests` procedure reads from the in-memory registry.
 
 ## Edge Cases
 
-| Case                                                  | Behaviour                                                                      |
-| ----------------------------------------------------- | ------------------------------------------------------------------------------ |
-| Manifest registers a key that already has a DB value   | Existing value is preserved — the manifest's `default` is only used when no DB value exists |
+| Case                                                   | Behaviour                                                                                                  |
+| ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
+| Manifest registers a key that already has a DB value   | Existing value is preserved — the manifest's `default` is only used when no DB value exists                |
 | Two manifests register the same `key`                  | Registration fails with a descriptive error at startup — duplicate keys are a bug, not a runtime condition |
-| Setting deleted from DB but manifest still declares it | Field renders as empty (or shows `default` if defined) — not an error          |
-| Manifest declares `envFallback` and DB value exists    | DB value takes precedence — env fallback is only shown when DB value is absent |
-| Setting changed while another tab has the page open    | No real-time sync — stale read is acceptable for a single-user system. Navigating away and back refreshes |
-| Field validation fails                                 | Error shown inline below the field. The change is not saved. Other fields are unaffected |
-| Test action fails                                      | Inline error message below the test button — field value is not reverted       |
-| App package not loaded (e.g., disabled)                | Its manifest is not registered — section does not appear on the settings page  |
-| User navigates to `/settings#media.plex`              | Page scrolls to the Plex section                                               |
+| Setting deleted from DB but manifest still declares it | Field renders as empty (or shows `default` if defined) — not an error                                      |
+| Manifest declares `envFallback` and DB value exists    | DB value takes precedence — env fallback is only shown when DB value is absent                             |
+| Setting changed while another tab has the page open    | No real-time sync — stale read is acceptable for a single-user system. Navigating away and back refreshes  |
+| Field validation fails                                 | Error shown inline below the field. The change is not saved. Other fields are unaffected                   |
+| Test action fails                                      | Inline error message below the test button — field value is not reverted                                   |
+| App package not loaded (e.g., disabled)                | Its manifest is not registered — section does not appear on the settings page                              |
+| User navigates to `/settings#media.plex`               | Page scrolls to the Plex section                                                                           |
 
 ## User Stories
 
-| #   | Story                                                                        | Summary                                                                                    | Status      | Parallelisable           |
-| --- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ----------- | ------------------------ |
-| 01  | [us-01-settings-registry](us-01-settings-registry.md)                        | Manifest schema, in-memory registry, `getManifests` procedure, `getBulk`/`setBulk` procedures | Not started | No (first)               |
-| 02  | [us-02-settings-page-shell](us-02-settings-page-shell.md)                    | `/settings` route, section navigation sidebar, section scroll anchors, app nav entry        | Not started | Yes                      |
-| 03  | [us-03-section-renderer](us-03-section-renderer.md)                          | Generic section/group/field renderer, typed field widgets, validation, auto-save, test actions | Not started | Blocked by us-01         |
-| 04  | [us-04-migrate-media-settings](us-04-migrate-media-settings.md)              | Plex, Arr, and Rotation manifests, redirect old routes, preserve test connection actions   | Not started | Blocked by us-01         |
-| 05  | [us-05-migrate-ai-settings](us-05-migrate-ai-settings.md)                    | AI model config manifest, redirect `/ai/config`, model selector and budget fields          | Not started | Blocked by us-01         |
+| #   | Story                                                           | Summary                                                                                        | Status      | Parallelisable   |
+| --- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------- | ---------------- |
+| 01  | [us-01-settings-registry](us-01-settings-registry.md)           | Manifest schema, in-memory registry, `getManifests` procedure, `getBulk`/`setBulk` procedures  | Not started | No (first)       |
+| 02  | [us-02-settings-page-shell](us-02-settings-page-shell.md)       | `/settings` route, section navigation sidebar, section scroll anchors, app nav entry           | Not started | Yes              |
+| 03  | [us-03-section-renderer](us-03-section-renderer.md)             | Generic section/group/field renderer, typed field widgets, validation, auto-save, test actions | Not started | Blocked by us-01 |
+| 04  | [us-04-migrate-media-settings](us-04-migrate-media-settings.md) | Plex, Arr, and Rotation manifests, redirect old routes, preserve test connection actions       | Not started | Blocked by us-01 |
+| 05  | [us-05-migrate-ai-settings](us-05-migrate-ai-settings.md)       | AI model config manifest, redirect `/ai/config`, model selector and budget fields              | Not started | Blocked by us-01 |
 
 US-02 and US-01 can parallelise (page shell has no runtime dependency on the registry — it can render a loading state). US-03 depends on the manifest schema from US-01. US-04 and US-05 can parallelise once US-01 and US-03 are done.
 

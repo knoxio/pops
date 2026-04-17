@@ -4,8 +4,9 @@
  * Uses the same withRateLimitRetry / ai_usage tracking pattern as ai-categorizer.ts.
  */
 import Anthropic from '@anthropic-ai/sdk';
-import { aiUsage, transactions as transactionsTable } from '@pops/db-types';
 import { and, isNotNull, ne } from 'drizzle-orm';
+
+import { aiUsage, transactions as transactionsTable } from '@pops/db-types';
 
 import { getDrizzle } from '../../../../db.js';
 import { getEnv } from '../../../../env.js';
@@ -45,7 +46,7 @@ function loadAvailableTagsFromDb(): string[] {
         tagSet.add(tag);
       }
     }
-    return [...tagSet].sort();
+    return [...tagSet].toSorted();
   } catch {
     return [];
   }
@@ -174,8 +175,8 @@ Return ONLY the JSON array, no markdown, no explanation.`;
 
   const cleanedText = text
     .trim()
-    .replace(/^```(?:json)?\s*\n?/gm, '')
-    .replace(/\n?```\s*$/gm, '');
+    .replaceAll(/^```(?:json)?\s*\n?/gm, '')
+    .replaceAll(/\n?```\s*$/gm, '');
 
   let proposals: ProposedRule[];
   try {
@@ -308,8 +309,8 @@ Return ONLY the JSON object, no markdown, no explanation.`;
 
   const cleanedText = text
     .trim()
-    .replace(/^```(?:json)?\s*\n?/gm, '')
-    .replace(/\n?```\s*$/gm, '');
+    .replaceAll(/^```(?:json)?\s*\n?/gm, '')
+    .replaceAll(/\n?```\s*$/gm, '');
 
   let result: CorrectionAnalysis | null;
   try {

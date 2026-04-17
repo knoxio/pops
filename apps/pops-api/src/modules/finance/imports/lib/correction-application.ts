@@ -7,17 +7,18 @@ import {
   findAllMatchingCorrectionFromDB,
   listCorrections,
 } from '../../../core/corrections/service.js';
-import type { ChangeSet, CorrectionRow } from '../../../core/corrections/types.js';
 import { classifyCorrectionMatch } from '../../../core/corrections/types.js';
+import { loadEntityMaps } from './entity-lookup.js';
+import { matchEntity } from './entity-matcher.js';
+import { buildSuggestedTags, loadKnownTags, parseCorrectionTags } from './tag-management.js';
+
+import type { ChangeSet, CorrectionRow } from '../../../core/corrections/types.js';
 import type {
   MatchedRule,
   ParsedTransaction,
   ProcessedTransaction,
   ProcessImportOutput,
 } from '../types.js';
-import { loadEntityMaps } from './entity-lookup.js';
-import { matchEntity } from './entity-matcher.js';
-import { buildSuggestedTags, loadKnownTags, parseCorrectionTags } from './tag-management.js';
 
 export function applyLearnedCorrection(args: {
   transaction: ParsedTransaction;
@@ -60,7 +61,7 @@ export function applyLearnedCorrection(args: {
         {
           index,
           total,
-          description: transaction.description.substring(0, 50),
+          description: transaction.description.slice(0, 50),
           transactionType: correction.transactionType,
           confidence: correction.confidence,
         },
@@ -102,7 +103,7 @@ export function applyLearnedCorrection(args: {
       {
         index,
         total,
-        description: transaction.description.substring(0, 50),
+        description: transaction.description.slice(0, 50),
         confidence: correction.confidence,
         status,
       },
@@ -115,7 +116,7 @@ export function applyLearnedCorrection(args: {
     {
       index,
       total,
-      description: transaction.description.substring(0, 50),
+      description: transaction.description.slice(0, 50),
       entityName: correction.entityName,
       confidence: correction.confidence,
       status,

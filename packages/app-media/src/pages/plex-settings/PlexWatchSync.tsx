@@ -1,5 +1,6 @@
-import { Button } from '@pops/ui';
 import { Bookmark, Eye, History, RefreshCw } from 'lucide-react';
+
+import { Button } from '@pops/ui';
 
 import type { DiscoverWatchSyncResult, WatchHistorySyncResult, WatchlistSyncResult } from './types';
 
@@ -50,7 +51,9 @@ export function PlexWatchSync({
         <Button
           size="sm"
           disabled={watchlistSync.isRunning || watchlistSync.isStarting}
-          onClick={() => watchlistSync.start()}
+          onClick={() => {
+            watchlistSync.start();
+          }}
         >
           {watchlistSync.isRunning ? (
             <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
@@ -83,12 +86,12 @@ export function PlexWatchSync({
             watchHistorySync.isStarting ||
             (!movieSectionId && !tvSectionId)
           }
-          onClick={() =>
+          onClick={() => {
             watchHistorySync.start({
               movieSectionId: movieSectionId || undefined,
               tvSectionId: tvSectionId || undefined,
-            })
-          }
+            });
+          }}
         >
           {watchHistorySync.isRunning ? (
             <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />
@@ -124,7 +127,9 @@ export function PlexWatchSync({
         <Button
           size="sm"
           disabled={discoverSync.isRunning || discoverSync.isStarting}
-          onClick={() => discoverSync.start()}
+          onClick={() => {
+            discoverSync.start();
+          }}
         >
           {discoverSync.isRunning ? (
             <RefreshCw className="h-3.5 w-3.5 mr-1.5 animate-spin" />

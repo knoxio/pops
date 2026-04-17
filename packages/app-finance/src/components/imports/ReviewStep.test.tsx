@@ -212,7 +212,9 @@ vi.mock('./TransactionCard', async () => {
             'button',
             {
               'aria-label': `Edit ${transaction.description}`,
-              onClick: () => onEdit(transaction),
+              onClick: () => {
+                onEdit(transaction);
+              },
             },
             'Edit'
           ),
@@ -221,7 +223,9 @@ vi.mock('./TransactionCard', async () => {
             'button',
             {
               'data-testid': `accept-${transaction.description}`,
-              onClick: () => onAcceptAiSuggestion(transaction),
+              onClick: () => {
+                onAcceptAiSuggestion(transaction);
+              },
             },
             'Accept AI'
           )
@@ -251,7 +255,9 @@ vi.mock('./TransactionGroup', async () => {
           'button',
           {
             'data-testid': `accept-all-${group.entityName}`,
-            onClick: () => onAcceptAll(group.transactions),
+            onClick: () => {
+              onAcceptAll(group.transactions);
+            },
           },
           'Accept All'
         ),
@@ -260,7 +266,9 @@ vi.mock('./TransactionGroup', async () => {
             'button',
             {
               'data-testid': `bulk-assign-${group.entityName}`,
-              onClick: () => onBulkEntitySelect(group.transactions, 'ent-1', 'Woolworths'),
+              onClick: () => {
+                onBulkEntitySelect(group.transactions, 'ent-1', 'Woolworths');
+              },
             },
             'Assign Bulk'
           ),
@@ -270,7 +278,9 @@ vi.mock('./TransactionGroup', async () => {
             {
               key: t.description,
               'data-testid': `accept-${t.description}`,
-              onClick: () => onAcceptAiSuggestion(t),
+              onClick: () => {
+                onAcceptAiSuggestion(t);
+              },
             },
             `Accept ${t.description}`
           )
@@ -293,8 +303,9 @@ vi.mock('./EditableTransactionCard', async () => {
         'button',
         {
           'data-testid': `save-edit-${transaction.description}`,
-          onClick: () =>
-            onSave(transaction, { description: `${transaction.description} FIXED` }, false),
+          onClick: () => {
+            onSave(transaction, { description: `${transaction.description} FIXED` }, false);
+          },
         },
         'Save Once'
       ),
@@ -461,7 +472,7 @@ describe('ReviewStep — Save & Learn proposal flow', () => {
     fireEvent.click(acceptBtn);
 
     const appliedToCalls = mockToastSuccess.mock.calls.filter(
-      (call: unknown[]) => typeof call[0] === 'string' && (call[0] as string).includes('Applied to')
+      (call: unknown[]) => typeof call[0] === 'string' && call[0].includes('Applied to')
     );
     expect(appliedToCalls).toHaveLength(0);
   });
@@ -482,8 +493,7 @@ describe('ReviewStep — Save & Learn proposal flow', () => {
     fireEvent.click(screen.getByTestId('accept-WOOLWORTHS 1234 SYDNEY'));
 
     const ruleCreatedCalls = mockToastSuccess.mock.calls.filter(
-      (call: unknown[]) =>
-        typeof call[0] === 'string' && (call[0] as string).includes('Rule created')
+      (call: unknown[]) => typeof call[0] === 'string' && call[0].includes('Rule created')
     );
     expect(ruleCreatedCalls).toHaveLength(0);
   });
@@ -522,7 +532,7 @@ describe('ReviewStep — Save & Learn proposal flow', () => {
     fireEvent.click(screen.getByTestId('accept-WOOLWORTHS 1234 SYDNEY'));
 
     const appliedToCalls = mockToastSuccess.mock.calls.filter(
-      (call: unknown[]) => typeof call[0] === 'string' && (call[0] as string).includes('Applied to')
+      (call: unknown[]) => typeof call[0] === 'string' && call[0].includes('Applied to')
     );
     expect(appliedToCalls).toHaveLength(0);
   });

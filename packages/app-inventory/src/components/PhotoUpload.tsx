@@ -1,3 +1,6 @@
+import { Camera, ImageIcon, Upload, X } from 'lucide-react';
+import { useCallback, useRef, useState } from 'react';
+
 /**
  * PhotoUpload — Drag-and-drop zone with click-to-browse for item photos.
  *
@@ -5,8 +8,6 @@
  * and allows deleting individual queued/uploaded photos.
  */
 import { Button, Progress } from '@pops/ui';
-import { Camera, ImageIcon, Upload, X } from 'lucide-react';
-import { useCallback, useRef, useState } from 'react';
 
 import { cn } from '../lib/utils';
 
@@ -188,7 +189,6 @@ export function PhotoUpload({
         multiple
         onChange={handleInputChange}
         className="hidden"
-        aria-hidden="true"
       />
 
       {/* Camera capture (mobile) */}
@@ -199,7 +199,6 @@ export function PhotoUpload({
         capture="environment"
         onChange={handleCameraChange}
         className="hidden"
-        aria-hidden="true"
       />
       <Button
         variant="outline"
@@ -272,7 +271,9 @@ export function PhotoUpload({
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7 shrink-0"
-                  onClick={() => onRemove(f.localId)}
+                  onClick={() => {
+                    onRemove(f.localId);
+                  }}
                   aria-label={`Remove ${f.file.name}`}
                 >
                   <X className="h-4 w-4" />

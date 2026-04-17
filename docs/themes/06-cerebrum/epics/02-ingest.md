@@ -8,9 +8,9 @@ Build the ingestion pipeline that accepts content from multiple channels (manual
 
 ## PRDs
 
-| #   | PRD                                                                        | Summary                                                                                               | Status      |
-| --- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ----------- |
-| 081 | [Ingestion Pipeline](../prds/081-ingestion-pipeline/README.md)             | Input channels, content classification, entity extraction, scope inference, deduplication, template matching | Not started |
+| #   | PRD                                                            | Summary                                                                                                      | Status      |
+| --- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------- |
+| 081 | [Ingestion Pipeline](../prds/081-ingestion-pipeline/README.md) | Input channels, content classification, entity extraction, scope inference, deduplication, template matching | Not started |
 
 Single PRD — the ingestion pipeline is one cohesive flow from raw input to stored engram. Splitting it would create artificial boundaries in a naturally sequential process.
 

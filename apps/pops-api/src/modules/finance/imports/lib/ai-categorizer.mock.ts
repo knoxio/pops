@@ -1,10 +1,11 @@
+import { AiCategorizationError } from './ai-categorizer-error.js';
+
 /**
  * Mock AI categorizer for testing.
  * Uses a lookup table for deterministic, predictable results.
  * Allows testing various AI response scenarios (good, bad, edge cases).
  */
 import type { AiCacheEntry, AiUsageStats } from './ai-categorizer.js';
-import { AiCategorizationError } from './ai-categorizer-error.js';
 
 /**
  * Lookup table for known descriptions.

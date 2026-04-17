@@ -1,16 +1,16 @@
 ---
 - name: Create cloudflared config directory
   ansible.builtin.file:
-    path: "{{ cloudflared_config_dir }}"
+    path: '{{ cloudflared_config_dir }}'
     state: directory
     owner: root
     group: root
-    mode: "0755"
+    mode: '0755'
 
 - name: Template cloudflared config
   ansible.builtin.template:
     src: cloudflared-config.yml.j2
-    dest: "{{ cloudflared_config_dir }}/config.yml"
+    dest: '{{ cloudflared_config_dir }}/config.yml'
     owner: root
     group: root
-    mode: "0644"
+    mode: '0644'

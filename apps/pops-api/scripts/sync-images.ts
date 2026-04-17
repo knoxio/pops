@@ -6,10 +6,10 @@
  * Run with: tsx scripts/sync-images.ts
  */
 import 'dotenv/config';
+
 import { getDb } from '../src/db.js';
 import { ImageCacheService } from '../src/modules/media/tmdb/index.js';
 import { TokenBucketRateLimiter } from '../src/modules/media/tmdb/rate-limiter.js';
-import { join } from 'node:path';
 
 async function main() {
   const db = getDb();
@@ -23,7 +23,12 @@ async function main() {
   // 1. Sync Movies
   const movies = db
     .prepare('SELECT tmdb_id, title, poster_path, backdrop_path FROM movies')
-    .all() as any[];
+    .all() as Array<{
+    tmdb_id: number;
+    title: string;
+    poster_path: string | null;
+    backdrop_path: string | null;
+  }>;
   console.log(`\n🎬 Syncing ${movies.length} movies...`);
 
   for (const movie of movies) {
@@ -45,7 +50,12 @@ async function main() {
   // 2. Sync TV Shows
   const shows = db
     .prepare('SELECT tvdb_id, name, poster_path, backdrop_path FROM tv_shows')
-    .all() as any[];
+    .all() as Array<{
+    tvdb_id: number;
+    name: string;
+    poster_path: string | null;
+    backdrop_path: string | null;
+  }>;
   console.log(`\n📺 Syncing ${shows.length} TV shows...`);
 
   for (const show of shows) {

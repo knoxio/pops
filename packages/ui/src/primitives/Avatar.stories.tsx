@@ -1,4 +1,3 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
 import { CheckIcon, UserIcon } from 'lucide-react';
 
 import {
@@ -9,6 +8,8 @@ import {
   AvatarGroupCount,
   AvatarImage,
 } from './avatar';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 const meta: Meta<typeof Avatar> = {
   title: 'Data Display/Avatar',

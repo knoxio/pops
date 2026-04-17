@@ -1,3 +1,5 @@
+import { and, asc, eq, inArray, ne, sql } from 'drizzle-orm';
+
 /**
  * Removal selection service — selects movies for removal based on disk space
  * deficit and processes expired leaving movies.
@@ -5,7 +7,6 @@
  * PRD-070 US-02
  */
 import { mediaWatchlist, movies } from '@pops/db-types';
-import { and, asc, eq, inArray, ne, sql } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
 import { getRadarrClient } from '../arr/service.js';

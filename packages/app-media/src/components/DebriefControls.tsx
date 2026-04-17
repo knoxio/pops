@@ -1,10 +1,3 @@
-/**
- * Debrief session controls: skip dimension, bail out (done for now),
- * and completion summary.
- *
- * Designed as composable components for integration into the DebriefPage.
- */
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@pops/ui';
 import {
   ArrowRight,
   CheckCircle,
@@ -16,6 +9,14 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
+
+/**
+ * Debrief session controls: skip dimension, bail out (done for now),
+ * and completion summary.
+ *
+ * Designed as composable components for integration into the DebriefPage.
+ */
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@pops/ui';
 
 import { trpc } from '../lib/trpc';
 
@@ -68,7 +69,9 @@ export function SkipDimensionButton({
       variant="outline"
       size="sm"
       disabled={dismissMutation.isPending}
-      onClick={() => dismissMutation.mutate({ sessionId, dimensionId })}
+      onClick={() => {
+        dismissMutation.mutate({ sessionId, dimensionId });
+      }}
       data-testid="skip-dimension-btn"
     >
       <SkipForward className="mr-1 h-4 w-4" />

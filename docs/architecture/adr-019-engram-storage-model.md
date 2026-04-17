@@ -12,12 +12,12 @@ The system must also support fast retrieval — semantic search, structured quer
 
 ## Options Considered
 
-| Option                          | Pros                                                                                    | Cons                                                                                            |
-| ------------------------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| SQLite only (pops convention)   | Single storage, single backup, fast queries, existing patterns                          | Not human-readable without tooling, poor for prose, no git-diffable history, not portable        |
-| Markdown files only             | Human-readable forever, portable, git-diffable, no dependencies                         | No structured queries, no vector search, no relational joins, file listing doesn't scale         |
-| Markdown + SQLite index (hybrid)| Human-readable source of truth, fast queries via index, vectors alongside metadata      | Two storage systems to sync, index can drift, more complex than either alone                     |
-| Notion-style blocks in SQLite   | Flexible structure, queryable, rich content types                                       | Proprietary format, not human-readable, lock-in, can't browse at 89 without a running app       |
+| Option                           | Pros                                                                               | Cons                                                                                      |
+| -------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| SQLite only (pops convention)    | Single storage, single backup, fast queries, existing patterns                     | Not human-readable without tooling, poor for prose, no git-diffable history, not portable |
+| Markdown files only              | Human-readable forever, portable, git-diffable, no dependencies                    | No structured queries, no vector search, no relational joins, file listing doesn't scale  |
+| Markdown + SQLite index (hybrid) | Human-readable source of truth, fast queries via index, vectors alongside metadata | Two storage systems to sync, index can drift, more complex than either alone              |
+| Notion-style blocks in SQLite    | Flexible structure, queryable, rich content types                                  | Proprietary format, not human-readable, lock-in, can't browse at 89 without a running app |
 
 ## Decision
 

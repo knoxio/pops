@@ -49,8 +49,8 @@ const preview: Preview = {
   },
   decorators: [
     (Story, context) => {
-      const theme = context.globals.theme || 'light';
-      const appColour = context.globals.appColour || 'app-emerald';
+      const theme = context.globals.theme ?? 'light';
+      const appColour = context.globals.appColour ?? 'app-emerald';
       const classes = [appColour];
       if (theme === 'dark') classes.push('dark');
 

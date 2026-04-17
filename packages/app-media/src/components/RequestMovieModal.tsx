@@ -1,3 +1,6 @@
+import { CheckCircle2, RefreshCw } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
 /**
  * RequestMovieModal — Modal for adding a movie to Radarr.
  *
@@ -13,8 +16,6 @@ import {
   Select,
 } from '@pops/ui';
 import { Button } from '@pops/ui';
-import { CheckCircle2, RefreshCw } from 'lucide-react';
-import { useEffect, useState } from 'react';
 
 import { trpc } from '../lib/trpc';
 
@@ -132,7 +133,9 @@ export function RequestMovieModal({ open, onClose, tmdbId, title, year }: Reques
                 label="Quality Profile"
                 id="quality-profile"
                 value={String(qualityProfileId ?? '')}
-                onChange={(e) => setQualityProfileId(Number(e.target.value))}
+                onChange={(e) => {
+                  setQualityProfileId(Number(e.target.value));
+                }}
                 disabled={addMovie.isPending || success}
                 options={profileList.map((p) => ({
                   value: String(p.id),
@@ -145,7 +148,9 @@ export function RequestMovieModal({ open, onClose, tmdbId, title, year }: Reques
                 label="Root Folder"
                 id="root-folder"
                 value={rootFolderPath}
-                onChange={(e) => setRootFolderPath(e.target.value)}
+                onChange={(e) => {
+                  setRootFolderPath(e.target.value);
+                }}
                 disabled={addMovie.isPending || success}
                 options={folderList.map((f) => ({
                   value: f.path,

@@ -1,11 +1,11 @@
+import { ValidationError } from './errors.js';
+
 /**
  * Zod validation middleware factory.
  * Validates request body or query against a Zod schema.
  */
 import type { NextFunction, Request, Response } from 'express';
 import type { ZodIssue, ZodType } from 'zod';
-
-import { ValidationError } from './errors.js';
 
 type RequestField = 'body' | 'query' | 'params';
 

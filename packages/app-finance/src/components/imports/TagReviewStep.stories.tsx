@@ -1,14 +1,16 @@
+import { useEffect } from 'react';
+
+import { useImportStore } from '../../store/importStore';
+import { TagReviewStep } from './TagReviewStep';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
 /**
  * TagReviewStep stories — step 5 of the import wizard.
  * Uses Storybook decorators to pre-populate the import store with confirmed
  * transaction fixtures so the component renders without a real backend.
  */
 import type { ConfirmedTransaction } from '@pops/api/modules/finance/imports';
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import { useEffect } from 'react';
-
-import { useImportStore } from '../../store/importStore';
-import { TagReviewStep } from './TagReviewStep';
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -108,7 +110,9 @@ function StoreSeeder({
   useEffect(() => {
     useImportStore.setState({ currentStep: 5 });
     setConfirmedTransactions(transactions);
-    return () => reset();
+    return () => {
+      reset();
+    };
   }, []);
 
   return <>{children}</>;

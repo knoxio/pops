@@ -1,8 +1,9 @@
-import type { Database } from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { seedMovie, setupTestContext } from '../../../shared/test-utils.js';
 import * as service from './service.js';
+
+import type { Database } from 'better-sqlite3';
 
 const ctx = setupTestContext();
 let db: Database;
@@ -135,6 +136,8 @@ describe('deleteMovie', () => {
   });
 
   it('throws NotFoundError for missing movie', () => {
-    expect(() => service.deleteMovie(999)).toThrow('Movie');
+    expect(() => {
+      service.deleteMovie(999);
+    }).toThrow('Movie');
   });
 });

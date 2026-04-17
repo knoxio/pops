@@ -2,7 +2,6 @@
  * Item connections router tests.
  */
 import { TRPCError } from '@trpc/server';
-import type { Database } from 'better-sqlite3';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import {
@@ -11,6 +10,9 @@ import {
   seedItemConnection,
   setupTestContext,
 } from '../../../shared/test-utils.js';
+
+import type { Database } from 'better-sqlite3';
+
 import type { TraceNode } from './types.js';
 
 const ctx = setupTestContext();
@@ -29,7 +31,7 @@ afterEach(() => {
 function seedTwoItems(nameA = 'Item A', nameB = 'Item B') {
   const idA = seedInventoryItem(db, { item_name: nameA });
   const idB = seedInventoryItem(db, { item_name: nameB });
-  return [idA, idB].sort() as [string, string];
+  return [idA, idB].toSorted() as [string, string];
 }
 
 describe('inventory.connections.connect', () => {
@@ -209,8 +211,8 @@ describe('inventory.connections.listForItem', () => {
     const idC = seedInventoryItem(db, { item_name: 'Device 2' });
 
     // Manually sort pairs for A<B
-    const pairAB = [idA, idB].sort() as [string, string];
-    const pairAC = [idA, idC].sort() as [string, string];
+    const pairAB = [idA, idB].toSorted() as [string, string];
+    const pairAC = [idA, idC].toSorted() as [string, string];
 
     seedItemConnection(db, pairAB[0], pairAB[1]);
     seedItemConnection(db, pairAC[0], pairAC[1]);
@@ -230,7 +232,7 @@ describe('inventory.connections.listForItem', () => {
     }
 
     for (const idB of items) {
-      const pair = [idA, idB].sort() as [string, string];
+      const pair = [idA, idB].toSorted() as [string, string];
       seedItemConnection(db, pair[0], pair[1]);
     }
 
@@ -261,8 +263,8 @@ describe('inventory.connections.graph', () => {
     const idB = seedInventoryItem(db, { item_name: 'Device 1' });
     const idC = seedInventoryItem(db, { item_name: 'Device 2' });
 
-    const pairAB = [idA, idB].sort() as [string, string];
-    const pairAC = [idA, idC].sort() as [string, string];
+    const pairAB = [idA, idB].toSorted() as [string, string];
+    const pairAC = [idA, idC].toSorted() as [string, string];
     seedItemConnection(db, pairAB[0], pairAB[1]);
     seedItemConnection(db, pairAC[0], pairAC[1]);
 
@@ -271,8 +273,8 @@ describe('inventory.connections.graph', () => {
     expect(result.data.nodes).toHaveLength(3);
     expect(result.data.edges).toHaveLength(2);
 
-    const nodeIds = result.data.nodes.map((n: { id: string }) => n.id).sort();
-    expect(nodeIds).toEqual([idA, idB, idC].sort());
+    const nodeIds = result.data.nodes.map((n: { id: string }) => n.id).toSorted();
+    expect(nodeIds).toEqual([idA, idB, idC].toSorted());
   });
 
   it('returns single node with no edges when item has no connections', async () => {
@@ -304,9 +306,9 @@ describe('inventory.connections.graph', () => {
     const idC = seedInventoryItem(db, { item_name: 'C' });
     const idD = seedInventoryItem(db, { item_name: 'D' });
 
-    const pairAB = [idA, idB].sort() as [string, string];
-    const pairBC = [idB, idC].sort() as [string, string];
-    const pairCD = [idC, idD].sort() as [string, string];
+    const pairAB = [idA, idB].toSorted() as [string, string];
+    const pairBC = [idB, idC].toSorted() as [string, string];
+    const pairCD = [idC, idD].toSorted() as [string, string];
     seedItemConnection(db, pairAB[0], pairAB[1]);
     seedItemConnection(db, pairBC[0], pairBC[1]);
     seedItemConnection(db, pairCD[0], pairCD[1]);
@@ -315,8 +317,8 @@ describe('inventory.connections.graph', () => {
     const result = await caller.inventory.connections.graph({ itemId: idA, maxDepth: 1 });
 
     expect(result.data.nodes).toHaveLength(2);
-    const nodeIds = result.data.nodes.map((n: { id: string }) => n.id).sort();
-    expect(nodeIds).toEqual([idA, idB].sort());
+    const nodeIds = result.data.nodes.map((n: { id: string }) => n.id).toSorted();
+    expect(nodeIds).toEqual([idA, idB].toSorted());
   });
 
   it('includes cross-links between visited nodes', async () => {
@@ -325,9 +327,9 @@ describe('inventory.connections.graph', () => {
     const idB = seedInventoryItem(db, { item_name: 'B' });
     const idC = seedInventoryItem(db, { item_name: 'C' });
 
-    const pairAB = [idA, idB].sort() as [string, string];
-    const pairAC = [idA, idC].sort() as [string, string];
-    const pairBC = [idB, idC].sort() as [string, string];
+    const pairAB = [idA, idB].toSorted() as [string, string];
+    const pairAC = [idA, idC].toSorted() as [string, string];
+    const pairBC = [idB, idC].toSorted() as [string, string];
     seedItemConnection(db, pairAB[0], pairAB[1]);
     seedItemConnection(db, pairAC[0], pairAC[1]);
     seedItemConnection(db, pairBC[0], pairBC[1]);
@@ -373,8 +375,8 @@ describe('inventory.connections.trace', () => {
     const idB = seedInventoryItem(db, { item_name: 'Device 1' });
     const idC = seedInventoryItem(db, { item_name: 'Device 2' });
 
-    const pairAB = [idA, idB].sort() as [string, string];
-    const pairAC = [idA, idC].sort() as [string, string];
+    const pairAB = [idA, idB].toSorted() as [string, string];
+    const pairAC = [idA, idC].toSorted() as [string, string];
     seedItemConnection(db, pairAB[0], pairAB[1]);
     seedItemConnection(db, pairAC[0], pairAC[1]);
 
@@ -382,8 +384,8 @@ describe('inventory.connections.trace', () => {
 
     expect(result.data.id).toBe(idA);
     expect(result.data.children).toHaveLength(2);
-    const childIds = result.data.children.map((c: { id: string }) => c.id).sort();
-    expect(childIds).toEqual([idB, idC].sort());
+    const childIds = result.data.children.map((c: { id: string }) => c.id).toSorted();
+    expect(childIds).toEqual([idB, idC].toSorted());
   });
 
   it('traverses multi-level chain recursively', async () => {
@@ -393,9 +395,9 @@ describe('inventory.connections.trace', () => {
     const idC = seedInventoryItem(db, { item_name: 'C' });
     const idD = seedInventoryItem(db, { item_name: 'D' });
 
-    const pairAB = [idA, idB].sort() as [string, string];
-    const pairBC = [idB, idC].sort() as [string, string];
-    const pairCD = [idC, idD].sort() as [string, string];
+    const pairAB = [idA, idB].toSorted() as [string, string];
+    const pairBC = [idB, idC].toSorted() as [string, string];
+    const pairCD = [idC, idD].toSorted() as [string, string];
     seedItemConnection(db, pairAB[0], pairAB[1]);
     seedItemConnection(db, pairBC[0], pairBC[1]);
     seedItemConnection(db, pairCD[0], pairCD[1]);
@@ -426,9 +428,9 @@ describe('inventory.connections.trace', () => {
     const idC = seedInventoryItem(db, { item_name: 'C' });
     const idD = seedInventoryItem(db, { item_name: 'D' });
 
-    const pairAB = [idA, idB].sort() as [string, string];
-    const pairBC = [idB, idC].sort() as [string, string];
-    const pairCD = [idC, idD].sort() as [string, string];
+    const pairAB = [idA, idB].toSorted() as [string, string];
+    const pairBC = [idB, idC].toSorted() as [string, string];
+    const pairCD = [idC, idD].toSorted() as [string, string];
     seedItemConnection(db, pairAB[0], pairAB[1]);
     seedItemConnection(db, pairBC[0], pairBC[1]);
     seedItemConnection(db, pairCD[0], pairCD[1]);
@@ -449,9 +451,9 @@ describe('inventory.connections.trace', () => {
     const idB = seedInventoryItem(db, { item_name: 'B' });
     const idC = seedInventoryItem(db, { item_name: 'C' });
 
-    const pairAB = [idA, idB].sort() as [string, string];
-    const pairAC = [idA, idC].sort() as [string, string];
-    const pairBC = [idB, idC].sort() as [string, string];
+    const pairAB = [idA, idB].toSorted() as [string, string];
+    const pairAC = [idA, idC].toSorted() as [string, string];
+    const pairBC = [idB, idC].toSorted() as [string, string];
     seedItemConnection(db, pairAB[0], pairAB[1]);
     seedItemConnection(db, pairAC[0], pairAC[1]);
     seedItemConnection(db, pairBC[0], pairBC[1]);

@@ -1,11 +1,11 @@
-import type { StorybookConfig } from '@storybook/react-vite';
-import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
-import { fileURLToPath } from 'url';
+
+import tailwindcss from '@tailwindcss/vite';
 import { mergeConfig } from 'vite';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import type { StorybookConfig } from '@storybook/react-vite';
+
+const __dirname = import.meta.dirname;
 
 const config: StorybookConfig = {
   stories: [

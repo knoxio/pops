@@ -11,49 +11,49 @@ Implement the three-phase trust graduation system from [ADR-021](../../../archit
 
 ### glia_actions
 
-| Column          | Type    | Constraints           | Description                                                    |
-| --------------- | ------- | --------------------- | -------------------------------------------------------------- |
-| id              | TEXT    | PK                    | Action ID: `glia_{type}_{timestamp}_{hash}`                    |
-| action_type     | TEXT    | NOT NULL              | `prune`, `consolidate`, `link`, `audit`                        |
-| affected_ids    | TEXT    | NOT NULL              | JSON array of engram IDs affected                              |
-| rationale       | TEXT    | NOT NULL              | Human-readable explanation                                     |
-| payload         | TEXT    |                       | JSON — action-type-specific data (merge plan, link pairs, etc) |
-| phase           | TEXT    | NOT NULL              | Trust phase at creation: `propose`, `act_report`, `silent`     |
-| status          | TEXT    | NOT NULL              | `pending`, `approved`, `rejected`, `executed`, `reverted`      |
-| user_decision   | TEXT    |                       | `approve`, `reject`, `modify` — null for autonomous actions    |
-| user_note       | TEXT    |                       | Optional user comment on approval/rejection                    |
-| executed_at     | TEXT    |                       | ISO 8601 — when the action was executed (null if pending)      |
-| decided_at      | TEXT    |                       | ISO 8601 — when user approved/rejected (null for autonomous)   |
-| reverted_at     | TEXT    |                       | ISO 8601 — when the action was reverted (null if not reverted) |
-| created_at      | TEXT    | NOT NULL              | ISO 8601 — when the action was created                         |
+| Column        | Type | Constraints | Description                                                    |
+| ------------- | ---- | ----------- | -------------------------------------------------------------- |
+| id            | TEXT | PK          | Action ID: `glia_{type}_{timestamp}_{hash}`                    |
+| action_type   | TEXT | NOT NULL    | `prune`, `consolidate`, `link`, `audit`                        |
+| affected_ids  | TEXT | NOT NULL    | JSON array of engram IDs affected                              |
+| rationale     | TEXT | NOT NULL    | Human-readable explanation                                     |
+| payload       | TEXT |             | JSON — action-type-specific data (merge plan, link pairs, etc) |
+| phase         | TEXT | NOT NULL    | Trust phase at creation: `propose`, `act_report`, `silent`     |
+| status        | TEXT | NOT NULL    | `pending`, `approved`, `rejected`, `executed`, `reverted`      |
+| user_decision | TEXT |             | `approve`, `reject`, `modify` — null for autonomous actions    |
+| user_note     | TEXT |             | Optional user comment on approval/rejection                    |
+| executed_at   | TEXT |             | ISO 8601 — when the action was executed (null if pending)      |
+| decided_at    | TEXT |             | ISO 8601 — when user approved/rejected (null for autonomous)   |
+| reverted_at   | TEXT |             | ISO 8601 — when the action was reverted (null if not reverted) |
+| created_at    | TEXT | NOT NULL    | ISO 8601 — when the action was created                         |
 
 **Indexes:** `action_type`, `status`, `phase`, `created_at`
 
 ### glia_trust_state
 
-| Column              | Type    | Constraints           | Description                                              |
-| ------------------- | ------- | --------------------- | -------------------------------------------------------- |
-| action_type         | TEXT    | PK                    | `prune`, `consolidate`, `link`, `audit`                  |
-| current_phase       | TEXT    | NOT NULL              | `propose`, `act_report`, `silent`                        |
-| approved_count      | INTEGER | NOT NULL DEFAULT 0    | Total approved actions for this type                     |
-| rejected_count      | INTEGER | NOT NULL DEFAULT 0    | Total rejected actions for this type                     |
-| reverted_count      | INTEGER | NOT NULL DEFAULT 0    | Total reverted actions for this type                     |
-| autonomous_since    | TEXT    |                       | ISO 8601 — when this type graduated to act_report        |
-| last_revert_at      | TEXT    |                       | ISO 8601 — timestamp of most recent revert               |
-| graduated_at        | TEXT    |                       | ISO 8601 — when last phase transition occurred           |
-| updated_at          | TEXT    | NOT NULL              | ISO 8601 — last update                                   |
+| Column           | Type    | Constraints        | Description                                       |
+| ---------------- | ------- | ------------------ | ------------------------------------------------- |
+| action_type      | TEXT    | PK                 | `prune`, `consolidate`, `link`, `audit`           |
+| current_phase    | TEXT    | NOT NULL           | `propose`, `act_report`, `silent`                 |
+| approved_count   | INTEGER | NOT NULL DEFAULT 0 | Total approved actions for this type              |
+| rejected_count   | INTEGER | NOT NULL DEFAULT 0 | Total rejected actions for this type              |
+| reverted_count   | INTEGER | NOT NULL DEFAULT 0 | Total reverted actions for this type              |
+| autonomous_since | TEXT    |                    | ISO 8601 — when this type graduated to act_report |
+| last_revert_at   | TEXT    |                    | ISO 8601 — timestamp of most recent revert        |
+| graduated_at     | TEXT    |                    | ISO 8601 — when last phase transition occurred    |
+| updated_at       | TEXT    | NOT NULL           | ISO 8601 — last update                            |
 
 ## API Surface
 
-| Procedure                                | Input                                               | Output                                           | Notes                                                     |
-| ---------------------------------------- | --------------------------------------------------- | ------------------------------------------------ | --------------------------------------------------------- |
-| `cerebrum.glia.proposals.list`           | actionType?, status?, limit?, offset?               | `{ actions: GliaAction[], total }`               | List proposals for the review queue                       |
-| `cerebrum.glia.proposals.get`            | actionId                                            | `{ action: GliaAction }`                         | Single proposal with full payload                         |
-| `cerebrum.glia.proposals.decide`         | actionId, decision: approve/reject/modify, note?    | `{ action: GliaAction }`                         | Record user decision, execute if approved                 |
-| `cerebrum.glia.proposals.revert`         | actionId                                            | `{ success: boolean }`                           | Undo an executed action (restore from archive)            |
-| `cerebrum.glia.trust.status`             | —                                                   | `{ states: GliaTrustState[] }`                   | Current trust phase and stats for all action types        |
-| `cerebrum.glia.trust.getHistory`         | actionType, limit?, offset?                         | `{ actions: GliaAction[], stats }`               | Action history for a given type with approval/rejection counts |
-| `cerebrum.glia.digest`                   | period?: 'daily' / 'weekly', actionType?            | `{ summary: DigestReport }`                      | Digest of autonomous actions for review                   |
+| Procedure                        | Input                                            | Output                             | Notes                                                          |
+| -------------------------------- | ------------------------------------------------ | ---------------------------------- | -------------------------------------------------------------- |
+| `cerebrum.glia.proposals.list`   | actionType?, status?, limit?, offset?            | `{ actions: GliaAction[], total }` | List proposals for the review queue                            |
+| `cerebrum.glia.proposals.get`    | actionId                                         | `{ action: GliaAction }`           | Single proposal with full payload                              |
+| `cerebrum.glia.proposals.decide` | actionId, decision: approve/reject/modify, note? | `{ action: GliaAction }`           | Record user decision, execute if approved                      |
+| `cerebrum.glia.proposals.revert` | actionId                                         | `{ success: boolean }`             | Undo an executed action (restore from archive)                 |
+| `cerebrum.glia.trust.status`     | —                                                | `{ states: GliaTrustState[] }`     | Current trust phase and stats for all action types             |
+| `cerebrum.glia.trust.getHistory` | actionType, limit?, offset?                      | `{ actions: GliaAction[], stats }` | Action history for a given type with approval/rejection counts |
+| `cerebrum.glia.digest`           | period?: 'daily' / 'weekly', actionType?         | `{ summary: DigestReport }`        | Digest of autonomous actions for review                        |
 
 ## Business Rules
 
@@ -72,25 +72,25 @@ Implement the three-phase trust graduation system from [ADR-021](../../../archit
 
 ## Edge Cases
 
-| Case                                              | Behaviour                                                                |
-| ------------------------------------------------- | ------------------------------------------------------------------------ |
-| User approves a proposal for an already-archived engram | Execution skipped, action marked `status: rejected` with auto-note      |
-| Revert requested for an action older than 90 days | Allowed — `.archive/` is never cleaned up, originals are always available |
-| Two proposals affect the same engram              | Second proposal blocked until first is decided — prevents conflicts       |
-| User modifies graduation thresholds mid-phase     | New thresholds take effect on next graduation check — no retroactive transition |
-| All proposals rejected for an action type         | System stays in `propose` phase — rejection rate is 100%, never graduates |
+| Case                                                           | Behaviour                                                                       |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| User approves a proposal for an already-archived engram        | Execution skipped, action marked `status: rejected` with auto-note              |
+| Revert requested for an action older than 90 days              | Allowed — `.archive/` is never cleaned up, originals are always available       |
+| Two proposals affect the same engram                           | Second proposal blocked until first is decided — prevents conflicts             |
+| User modifies graduation thresholds mid-phase                  | New thresholds take effect on next graduation check — no retroactive transition |
+| All proposals rejected for an action type                      | System stays in `propose` phase — rejection rate is 100%, never graduates       |
 | Revert triggers demotion, then user approves pending proposals | Approved proposals still count toward the new approval count in `propose` phase |
-| Digest generated with zero autonomous actions     | Empty digest is suppressed — no notification sent                        |
-| Action payload is too large for SQLite TEXT column | Payload serialised as compressed JSON — unlikely given engram sizes      |
+| Digest generated with zero autonomous actions                  | Empty digest is suppressed — no notification sent                               |
+| Action payload is too large for SQLite TEXT column             | Payload serialised as compressed JSON — unlikely given engram sizes             |
 
 ## User Stories
 
-| #   | Story                                                                  | Summary                                                                              | Status      | Parallelisable           |
-| --- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ----------- | ------------------------ |
-| 01  | [us-01-proposal-queue](us-01-proposal-queue.md)                        | Review queue UI and Moltbot notifications for approve/reject/modify                  | Not started | Yes                      |
-| 02  | [us-02-approval-tracking](us-02-approval-tracking.md)                  | glia_actions SQLite table and CRUD operations for tracking every action               | Not started | Yes                      |
-| 03  | [us-03-graduation-logic](us-03-graduation-logic.md)                    | Per-action-type state machine with threshold-based graduation and automatic demotion | Not started | Blocked by us-02         |
-| 04  | [us-04-audit-trail](us-04-audit-trail.md)                              | Immutable action log, revert operations, digest reports                              | Not started | Blocked by us-02         |
+| #   | Story                                                 | Summary                                                                              | Status      | Parallelisable   |
+| --- | ----------------------------------------------------- | ------------------------------------------------------------------------------------ | ----------- | ---------------- |
+| 01  | [us-01-proposal-queue](us-01-proposal-queue.md)       | Review queue UI and Moltbot notifications for approve/reject/modify                  | Not started | Yes              |
+| 02  | [us-02-approval-tracking](us-02-approval-tracking.md) | glia_actions SQLite table and CRUD operations for tracking every action              | Not started | Yes              |
+| 03  | [us-03-graduation-logic](us-03-graduation-logic.md)   | Per-action-type state machine with threshold-based graduation and automatic demotion | Not started | Blocked by us-02 |
+| 04  | [us-04-audit-trail](us-04-audit-trail.md)             | Immutable action log, revert operations, digest reports                              | Not started | Blocked by us-02 |
 
 US-01 and US-02 can be built in parallel. US-03 and US-04 both depend on the `glia_actions` table from US-02.
 

@@ -1,10 +1,11 @@
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+
 /**
  * Tests for listRotationLog and getRotationLogStats endpoints.
  *
  * PRD-072 US-06
  */
 import { rotationLog } from '@pops/db-types';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { getDrizzle } from '../../../db.js';
 import { createCaller, setupTestContext } from '../../../shared/test-utils.js';
@@ -35,7 +36,9 @@ function insertLog(overrides: Partial<typeof rotationLog.$inferInsert> = {}) {
 
 describe('rotation.listRotationLog', () => {
   beforeEach(() => ctx.setup());
-  afterEach(() => ctx.teardown());
+  afterEach(() => {
+    ctx.teardown();
+  });
 
   it('returns empty list when no logs exist', async () => {
     const caller = createCaller();
@@ -95,7 +98,9 @@ describe('rotation.listRotationLog', () => {
 
 describe('rotation.getRotationLogStats', () => {
   beforeEach(() => ctx.setup());
-  afterEach(() => ctx.teardown());
+  afterEach(() => {
+    ctx.teardown();
+  });
 
   it('returns zeros when no logs exist', async () => {
     const caller = createCaller();

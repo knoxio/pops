@@ -1,6 +1,7 @@
-import { Button, Skeleton } from '@pops/ui';
 import { RefreshCw, Sparkles } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router';
+
+import { Button, Skeleton } from '@pops/ui';
 
 import { MediaCard } from '../components/MediaCard';
 import { trpc } from '../lib/trpc';
@@ -77,7 +78,9 @@ export function QuickPickPage() {
             {COUNT_OPTIONS.map((n) => (
               <button
                 key={n}
-                onClick={() => setCount(n)}
+                onClick={() => {
+                  setCount(n);
+                }}
                 className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
                   n === count
                     ? 'bg-primary text-primary-foreground'

@@ -1,9 +1,11 @@
+import { existsSync } from 'node:fs';
+
 /**
  * Seed database with comprehensive test data.
  * Run with: tsx scripts/db-seed.ts
  */
 import BetterSqlite3 from 'better-sqlite3';
-import { existsSync } from 'node:fs';
+
 import { seedDatabase } from '../src/db/seeder.js';
 import { assertNotProduction, assertLowRecordCount } from './lib/guard.js';
 

@@ -7,7 +7,8 @@
  *
  * Run with:  pnpm test:e2e -- visual-audit.spec.ts
  */
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
+
 import { useRealApi } from './helpers/use-real-api';
 
 const ROUTES = [

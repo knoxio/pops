@@ -1,4 +1,3 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
 import { MoreVerticalIcon, TrendingDownIcon, TrendingUpIcon } from 'lucide-react';
 
 import { Button } from '../components/Button';
@@ -13,6 +12,8 @@ import {
   CardTitle,
 } from './card';
 import { Progress } from './progress';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
 
 const meta: Meta<typeof Card> = {
   title: 'Layout/Card',

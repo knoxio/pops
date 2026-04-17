@@ -1,9 +1,10 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import type React from 'react';
 import { MemoryRouter } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ComparisonHistoryPage } from './ComparisonHistoryPage';
+
+import type React from 'react';
 
 // Mock sonner
 const mockToast = vi.fn().mockReturnValue('toast-id-1');

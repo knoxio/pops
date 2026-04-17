@@ -1,3 +1,8 @@
+import { useThemeStore } from '@/store/themeStore';
+import { useUIStore } from '@/store/uiStore';
+import { Menu, Moon, Search, Sun } from 'lucide-react';
+import { useState } from 'react';
+
 /**
  * Top bar - user info, theme toggle, menu button, search
  *
@@ -7,11 +12,6 @@
  * All interactive elements meet 44x44px minimum touch targets.
  */
 import { Button } from '@pops/ui';
-import { Menu, Moon, Search, Sun } from 'lucide-react';
-import { useState } from 'react';
-
-import { useThemeStore } from '@/store/themeStore';
-import { useUIStore } from '@/store/uiStore';
 
 import { BuildVersion } from './BuildVersion';
 import { MobileSearchOverlay } from './MobileSearchOverlay';
@@ -50,7 +50,9 @@ export function TopBar() {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => setMobileSearchOpen(true)}
+            onClick={() => {
+              setMobileSearchOpen(true);
+            }}
             className="min-w-[44px] min-h-[44px] md:hidden"
             aria-label="Open search"
             data-testid="mobile-search-btn"
@@ -76,7 +78,12 @@ export function TopBar() {
         </div>
       </header>
 
-      <MobileSearchOverlay open={mobileSearchOpen} onClose={() => setMobileSearchOpen(false)} />
+      <MobileSearchOverlay
+        open={mobileSearchOpen}
+        onClose={() => {
+          setMobileSearchOpen(false);
+        }}
+      />
     </>
   );
 }

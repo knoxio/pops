@@ -1,3 +1,7 @@
+import { create } from 'zustand';
+
+import { findSimilarTransactions } from '../lib/transaction-utils';
+
 import type { ChangeSet } from '@pops/api/modules/core/corrections/types';
 import type { TagRuleChangeSet } from '@pops/api/modules/core/tag-rules/types';
 import type {
@@ -7,9 +11,6 @@ import type {
   ProcessedTransaction as BaseProcessedTransaction,
 } from '@pops/api/modules/finance/imports';
 import type { CommitResult } from '@pops/api/modules/finance/imports';
-import { create } from 'zustand';
-
-import { findSimilarTransactions } from '../lib/transaction-utils';
 
 export type BankType = 'Amex';
 export type { ChangeSet };
@@ -262,7 +263,7 @@ function isSameFile(a: File | null, b: File | null): boolean {
 export const useImportStore = create<ImportStore>((set) => ({
   ...initialState,
 
-  setFile: (file) =>
+  setFile: (file) => {
     set((state) => {
       // Selecting a different file means the previous parse/process/review
       // results belong to a stale input. Wipe them so Step 3 doesn't reuse
@@ -271,12 +272,21 @@ export const useImportStore = create<ImportStore>((set) => ({
         return { ...downstreamReset, file };
       }
       return { file };
-    }),
-  setBankType: (bankType) => set({ bankType }),
-  setHeaders: (headers) => set({ headers }),
-  setRows: (rows) => set({ rows }),
-  setColumnMap: (columnMap) => set({ columnMap }),
-  setParsedTransactions: (parsedTransactions) =>
+    });
+  },
+  setBankType: (bankType) => {
+    set({ bankType });
+  },
+  setHeaders: (headers) => {
+    set({ headers });
+  },
+  setRows: (rows) => {
+    set({ rows });
+  },
+  setColumnMap: (columnMap) => {
+    set({ columnMap });
+  },
+  setParsedTransactions: (parsedTransactions) => {
     set((state) => {
       const nextFingerprint = fingerprintParsedTransactions(parsedTransactions);
       // If the parsed input is byte-for-byte identical to what's already in
@@ -295,9 +305,12 @@ export const useImportStore = create<ImportStore>((set) => ({
         parsedTransactions,
         parsedTransactionsFingerprint: nextFingerprint,
       };
-    }),
-  setProcessSessionId: (processSessionId) => set({ processSessionId }),
-  setProcessedTransactions: (processedTransactions) =>
+    });
+  },
+  setProcessSessionId: (processSessionId) => {
+    set({ processSessionId });
+  },
+  setProcessedTransactions: (processedTransactions) => {
     set((state) => ({
       processedTransactions,
       // Pin the processed results to the fingerprint of the parsed input
@@ -305,14 +318,27 @@ export const useImportStore = create<ImportStore>((set) => ({
       // live `parsedTransactionsFingerprint` to decide whether a Back→
       // Continue cycle can skip re-processing.
       processedForFingerprint: state.parsedTransactionsFingerprint,
-    })),
-  setConfirmedTransactions: (confirmedTransactions) => set({ confirmedTransactions }),
-  setCommitResult: (commitResult) => set({ commitResult }),
+    }));
+  },
+  setConfirmedTransactions: (confirmedTransactions) => {
+    set({ confirmedTransactions });
+  },
+  setCommitResult: (commitResult) => {
+    set({ commitResult });
+  },
 
-  nextStep: () => set((state) => ({ currentStep: Math.min(state.currentStep + 1, 7) })),
-  prevStep: () => set((state) => ({ currentStep: Math.max(state.currentStep - 1, 1) })),
-  goToStep: (step) => set({ currentStep: step }),
-  reset: () => set(initialState),
+  nextStep: () => {
+    set((state) => ({ currentStep: Math.min(state.currentStep + 1, 7) }));
+  },
+  prevStep: () => {
+    set((state) => ({ currentStep: Math.max(state.currentStep - 1, 1) }));
+  },
+  goToStep: (step) => {
+    set({ currentStep: step });
+  },
+  reset: () => {
+    set(initialState);
+  },
 
   // Pending entity management (PRD-030 US-01)
   addPendingEntity: (
@@ -342,10 +368,11 @@ export const useImportStore = create<ImportStore>((set) => ({
     return entity;
   },
   listPendingEntities: (): PendingEntity[] => useImportStore.getState().pendingEntities,
-  removePendingEntity: (tempId: string) =>
+  removePendingEntity: (tempId: string) => {
     set((state) => ({
       pendingEntities: state.pendingEntities.filter((e: PendingEntity) => e.tempId !== tempId),
-    })),
+    }));
+  },
 
   // Pending changeset management (PRD-030 US-02)
   addPendingChangeSet: (input: AddPendingChangeSetInput): PendingChangeSet => {
@@ -360,12 +387,13 @@ export const useImportStore = create<ImportStore>((set) => ({
     return entry;
   },
   listPendingChangeSets: (): PendingChangeSet[] => useImportStore.getState().pendingChangeSets,
-  removePendingChangeSet: (tempId: string) =>
+  removePendingChangeSet: (tempId: string) => {
     set((state) => ({
       pendingChangeSets: state.pendingChangeSets.filter(
         (c: PendingChangeSet) => c.tempId !== tempId
       ),
-    })),
+    }));
+  },
 
   addPendingTagRuleChangeSet: (input: AddPendingTagRuleChangeSetInput): PendingTagRuleChangeSet => {
     const entry: PendingTagRuleChangeSet = {
@@ -380,14 +408,15 @@ export const useImportStore = create<ImportStore>((set) => ({
   },
   listPendingTagRuleChangeSets: (): PendingTagRuleChangeSet[] =>
     useImportStore.getState().pendingTagRuleChangeSets,
-  removePendingTagRuleChangeSet: (tempId: string) =>
+  removePendingTagRuleChangeSet: (tempId: string) => {
     set((state) => ({
       pendingTagRuleChangeSets: state.pendingTagRuleChangeSets.filter(
         (c: PendingTagRuleChangeSet) => c.tempId !== tempId
       ),
-    })),
+    }));
+  },
 
-  updateTransaction: (transaction, updates) =>
+  updateTransaction: (transaction, updates) => {
     set((state) => {
       const updateInArray = (arr: ProcessedTransaction[]) =>
         arr.map((t) => (t === transaction ? { ...t, ...updates } : t));
@@ -401,7 +430,8 @@ export const useImportStore = create<ImportStore>((set) => ({
           skipped: updateInArray(state.processedTransactions.skipped),
         },
       };
-    }),
+    });
+  },
 
   findSimilar: (transaction: ProcessedTransaction): ProcessedTransaction[] => {
     const state = useImportStore.getState();
@@ -412,10 +442,11 @@ export const useImportStore = create<ImportStore>((set) => ({
     return findSimilarTransactions(transaction, allTransactions);
   },
 
-  updateTransactionTags: (checksum, tags) =>
+  updateTransactionTags: (checksum, tags) => {
     set((state) => ({
       confirmedTransactions: state.confirmedTransactions.map((t) =>
         t.checksum === checksum ? { ...t, tags } : t
       ),
-    })),
+    }));
+  },
 }));

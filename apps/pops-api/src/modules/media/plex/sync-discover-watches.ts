@@ -1,3 +1,5 @@
+import { and, eq } from 'drizzle-orm';
+
 /**
  * Plex Discover cloud activity sync — fetches the user's complete watch history
  * from the Plex community GraphQL API and syncs it into POPS.
@@ -18,7 +20,6 @@
  * are matched by season + episode number within the show.
  */
 import { episodes, movies, seasons, tvShows } from '@pops/db-types';
-import { and, eq } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
 import { addMovie } from '../library/service.js';
@@ -27,10 +28,11 @@ import { getTvdbClient } from '../thetvdb/index.js';
 import { getTmdbClient } from '../tmdb/index.js';
 import { getImageCache } from '../tmdb/index.js';
 import { logWatch } from '../watch-history/service.js';
-import type { PlexClient } from './client.js';
 import { getPlexClientId, getPlexToken } from './service.js';
 import { extractExternalIdAsNumber } from './sync-helpers.js';
 import { PlexApiError } from './types.js';
+
+import type { PlexClient } from './client.js';
 
 // ---------------------------------------------------------------------------
 // Types

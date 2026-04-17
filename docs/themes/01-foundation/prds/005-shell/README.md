@@ -38,19 +38,19 @@ Each app package exports routes and a nav config. The shell imports and mounts t
 
 ```typescript
 // App package exports (e.g., @pops/app-finance/src/index.ts)
-export { routes } from "./routes";
-export { navConfig } from "./routes";
+export { routes } from './routes';
+export { navConfig } from './routes';
 
 // navConfig shape
 export const navConfig: AppNavConfig = {
-  id: "finance",
-  label: "Finance",
-  icon: "DollarSign", // Lucide icon name
-  color: "emerald", // App accent colour
-  basePath: "/finance",
+  id: 'finance',
+  label: 'Finance',
+  icon: 'DollarSign', // Lucide icon name
+  color: 'emerald', // App accent colour
+  basePath: '/finance',
   items: [
-    { path: "", label: "Dashboard", icon: "LayoutDashboard" },
-    { path: "/transactions", label: "Transactions", icon: "CreditCard" },
+    { path: '', label: 'Dashboard', icon: 'LayoutDashboard' },
+    { path: '/transactions', label: 'Transactions', icon: 'CreditCard' },
     // ...
   ],
 };
@@ -60,8 +60,8 @@ The shell lazily loads each app:
 
 ```typescript
 // apps/pops-shell/src/app/router.tsx
-const financeRoutes = lazy(() => import("@pops/app-finance"));
-const mediaRoutes = lazy(() => import("@pops/app-media"));
+const financeRoutes = lazy(() => import('@pops/app-finance'));
+const mediaRoutes = lazy(() => import('@pops/app-media'));
 ```
 
 Adding a new app means: create a workspace package, export routes + navConfig, register in the shell router. No shell code changes beyond the registration.

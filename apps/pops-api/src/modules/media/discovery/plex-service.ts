@@ -6,8 +6,9 @@ import { movies } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 import { getPlexClient } from '../plex/service.js';
-import type { PlexMediaItem } from '../plex/types.js';
 import { getWatchedTmdbIds, getWatchlistTmdbIds } from './flags.js';
+
+import type { PlexMediaItem } from '../plex/types.js';
 import type { DiscoverResult } from './types.js';
 
 /** Get all TMDB IDs currently in the library for quick lookup. */

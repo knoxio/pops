@@ -1,9 +1,10 @@
+import { eq } from 'drizzle-orm';
+
 /**
  * Shared helpers for building Sets of TMDB IDs used by discovery services
  * to filter and annotate DiscoverResult objects.
  */
 import { mediaWatchlist, movies, watchHistory } from '@pops/db-types';
-import { eq } from 'drizzle-orm';
 
 import { getDrizzle } from '../../../db.js';
 

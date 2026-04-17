@@ -1,5 +1,6 @@
-import type { EpisodeRow, SeasonRow, TvShowRow } from '@pops/db-types';
 import { z } from 'zod';
+
+import type { EpisodeRow, SeasonRow, TvShowRow } from '@pops/db-types';
 
 export type { EpisodeRow, SeasonRow, TvShowRow };
 

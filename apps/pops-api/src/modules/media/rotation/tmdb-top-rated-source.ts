@@ -7,6 +7,7 @@
  */
 import { logger } from '../../../lib/logger.js';
 import { getTmdbClient } from '../tmdb/index.js';
+
 import type { CandidateMovie, RotationSourceAdapter } from './source-types.js';
 
 const DEFAULT_PAGES = 5;
