@@ -8,7 +8,7 @@ on:
 jobs:
   changes:
     name: Detect changes
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
     outputs:
       relevant: ${{ steps.filter.outputs.e2e }}
@@ -26,7 +26,7 @@ jobs:
 
   e2e-tests:
     name: Playwright E2E Tests
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     needs: [changes]
     if: always()
     timeout-minutes: 30

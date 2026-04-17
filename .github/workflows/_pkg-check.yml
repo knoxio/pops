@@ -27,7 +27,7 @@ on:
 jobs:
   lint:
     name: Lint
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     steps:
       - name: "Skip — no relevant changes"
         if: inputs.skip == 'true'
@@ -48,7 +48,7 @@ jobs:
 
   typecheck:
     name: Typecheck
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     steps:
       - name: "Skip — no relevant changes"
         if: inputs.skip == 'true'
@@ -75,7 +75,7 @@ jobs:
   test:
     name: Test
     if: ${{ inputs.has-test }}
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     steps:
       - name: "Skip — no relevant changes"
         if: inputs.skip == 'true'
@@ -102,7 +102,7 @@ jobs:
   format:
     name: Format
     if: ${{ inputs.has-format }}
-    runs-on: blacksmith-4vcpu-ubuntu-2404
+    runs-on: ubuntu-latest
     steps:
       - name: "Skip — no relevant changes"
         if: inputs.skip == 'true'
