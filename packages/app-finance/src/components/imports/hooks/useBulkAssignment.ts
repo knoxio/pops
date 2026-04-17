@@ -160,7 +160,7 @@ export function useBulkAssignment({
           `Accepted ${transactions.length} transaction${transactions.length !== 1 ? 's' : ''}`
         );
 
-        // Open the rule proposal dialog using the first transaction and re-evaluate
+        // Open the rule proposal dialog for the first transaction (re-evaluation happens after approval)
         if (firstTx) {
           openRuleProposalDialog(firstTx, resolvedEntityId, entityName);
         }
