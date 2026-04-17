@@ -1,12 +1,4 @@
-import {
-  ArrowLeft,
-  Ban,
-  ChevronLeft,
-  ChevronRight,
-  Download,
-  RotateCcw,
-  Search,
-} from 'lucide-react';
+import { Ban, ChevronLeft, ChevronRight, Download, RotateCcw, Search } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
@@ -19,6 +11,7 @@ import { toast } from 'sonner';
 import {
   Badge,
   Button,
+  PageHeader,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -398,17 +391,17 @@ export function CandidateQueuePage() {
 
   return (
     <div className="space-y-6 p-6">
-      <div className="flex items-center gap-3">
-        <Link to="/media/rotation">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-        </Link>
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Candidate Queue</h1>
-          <p className="text-sm text-muted-foreground">Browse and manage rotation candidates</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Candidate Queue"
+        description="Browse and manage rotation candidates"
+        backHref="/media/rotation"
+        breadcrumbs={[
+          { label: 'Media', href: '/media' },
+          { label: 'Rotation', href: '/media/rotation' },
+          { label: 'Candidate Queue' },
+        ]}
+        renderLink={Link}
+      />
 
       <Tabs
         value={tab}

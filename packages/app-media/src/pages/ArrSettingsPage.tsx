@@ -1,4 +1,4 @@
-import { ArrowLeft, Film, RefreshCw, Save, Tv } from 'lucide-react';
+import { Film, RefreshCw, Save, Tv } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
@@ -9,18 +9,7 @@ import { toast } from 'sonner';
  * Allows users to configure Radarr and Sonarr URLs and API keys
  * via the settings table (replacing env-var-only configuration).
  */
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-  Button,
-  Input,
-  Label,
-  Skeleton,
-} from '@pops/ui';
+import { Button, Input, Label, PageHeader, Skeleton } from '@pops/ui';
 
 import { ConnectionBadge } from '../components/ConnectionBadge';
 import { trpc } from '../lib/trpc';
@@ -185,32 +174,12 @@ export function ArrSettingsPage() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto p-6">
-      {/* Breadcrumb */}
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/media">Media</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Arr Settings</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link
-          to="/media"
-          className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
-          aria-label="Back to Media"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
-        <h1 className="text-2xl font-bold tracking-tight">Radarr & Sonarr Settings</h1>
-      </div>
+      <PageHeader
+        title="Radarr & Sonarr Settings"
+        backHref="/media"
+        breadcrumbs={[{ label: 'Media', href: '/media' }, { label: 'Arr Settings' }]}
+        renderLink={Link}
+      />
 
       <p className="text-sm text-muted-foreground">
         Configure your Radarr and Sonarr connections to see download status badges on movie and TV

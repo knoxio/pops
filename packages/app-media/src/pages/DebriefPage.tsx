@@ -1,12 +1,4 @@
-import {
-  ArrowLeft,
-  CheckCircle,
-  ChevronDown,
-  ChevronUp,
-  Circle,
-  ImageOff,
-  Minus,
-} from 'lucide-react';
+import { CheckCircle, ChevronDown, ChevronUp, Circle, ImageOff, Minus } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
@@ -21,7 +13,15 @@ import { toast } from 'sonner';
  * and recordDebriefComparison mutation. Advances through pending
  * dimensions; shows CompletionSummary when all are done.
  */
-import { Badge, Button, Skeleton, Tooltip, TooltipContent, TooltipTrigger } from '@pops/ui';
+import {
+  Badge,
+  Button,
+  PageHeader,
+  Skeleton,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@pops/ui';
 
 import { DebriefActionBar } from '../components/DebriefControls';
 import { trpc } from '../lib/trpc';
@@ -168,14 +168,16 @@ export function DebriefPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">
-      {/* Back link */}
-      <Link
-        to="/media/history"
-        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to history
-      </Link>
+      <PageHeader
+        title={debrief.movie.title}
+        backHref="/media/history"
+        breadcrumbs={[
+          { label: 'Media', href: '/media' },
+          { label: 'History', href: '/media/history' },
+          { label: debrief.movie.title },
+        ]}
+        renderLink={Link}
+      />
 
       {/* ── Poster header ── */}
       <div className="flex items-center gap-4" data-testid="debrief-header">
@@ -185,7 +187,6 @@ export function DebriefPage() {
           className="h-36 w-24 shrink-0 rounded-md object-cover"
         />
         <div>
-          <h1 className="text-2xl font-bold">{debrief.movie.title}</h1>
           <p className="text-muted-foreground text-sm">
             Debrief —{' '}
             {allComplete

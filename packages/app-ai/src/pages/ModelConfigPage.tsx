@@ -1,4 +1,3 @@
-import { ArrowLeft } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
@@ -10,21 +9,7 @@ import { toast } from 'sonner';
  * and fallback behaviour when budget is exceeded. PRD-053/US-01.
  */
 import { SETTINGS_KEYS } from '@pops/types';
-import {
-  Alert,
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-  Button,
-  Input,
-  Label,
-  Select,
-  Skeleton,
-  StatCard,
-} from '@pops/ui';
+import { Alert, Button, Input, Label, PageHeader, Select, Skeleton, StatCard } from '@pops/ui';
 
 import { trpc } from '../lib/trpc';
 
@@ -115,34 +100,13 @@ export function ModelConfigPage() {
   const budgetUsedPct = budgetNum > 0 ? Math.min((currentMonthTokens / budgetNum) * 100, 100) : 0;
 
   const navigation = (
-    <>
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/ai">AI</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Model Config</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
-      <div className="flex items-center gap-3">
-        <Link
-          to="/ai"
-          className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
-          aria-label="Back to AI"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
-        <h1 className="text-2xl font-bold tracking-tight">Model Configuration</h1>
-      </div>
-
-      <p className="text-sm text-muted-foreground">Configure AI model and spending limits</p>
-    </>
+    <PageHeader
+      title="Model Configuration"
+      description="Configure AI model and spending limits"
+      backHref="/ai"
+      breadcrumbs={[{ label: 'AI', href: '/ai' }, { label: 'Model Configuration' }]}
+      renderLink={Link}
+    />
   );
 
   if (isLoading) {

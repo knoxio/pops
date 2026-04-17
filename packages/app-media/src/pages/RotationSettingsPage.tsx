@@ -1,13 +1,4 @@
-import {
-  AlertTriangle,
-  ArrowLeft,
-  Clock,
-  HardDrive,
-  Play,
-  RefreshCw,
-  Save,
-  ScrollText,
-} from 'lucide-react';
+import { AlertTriangle, Clock, HardDrive, Play, RefreshCw, Save, ScrollText } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
@@ -17,20 +8,7 @@ import { toast } from 'sonner';
  *
  * PRD-072 US-02
  */
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-  Button,
-  Label,
-  NumberInput,
-  Select,
-  Skeleton,
-  Switch,
-} from '@pops/ui';
+import { Button, Label, NumberInput, PageHeader, Select, Skeleton, Switch } from '@pops/ui';
 
 import { SourceManagementSection } from '../components/SourceManagementSection';
 import { trpc } from '../lib/trpc';
@@ -158,32 +136,12 @@ export function RotationSettingsPage() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto p-6">
-      {/* Breadcrumb */}
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/media">Media</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Rotation Settings</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link
-          to="/media"
-          className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
-          aria-label="Back to Media"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
-        <h1 className="text-2xl font-bold tracking-tight">Rotation Settings</h1>
-      </div>
+      <PageHeader
+        title="Rotation Settings"
+        backHref="/media"
+        breadcrumbs={[{ label: 'Media', href: '/media' }, { label: 'Rotation' }]}
+        renderLink={Link}
+      />
 
       <p className="text-sm text-muted-foreground">
         Configure how the library rotation system manages disk space by automatically cycling movies
