@@ -1,7 +1,7 @@
 # US-04: Recovery procedure
 
 > PRD: [017 — Backups](README.md)
-> Status: Done
+> Status: Partial
 
 ## Description
 

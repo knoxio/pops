@@ -1,7 +1,7 @@
 # PRD-016: CI/CD Pipelines
 
 > Epic: [04 — CI/CD Pipelines](../../epics/04-cicd-pipelines.md)
-> Status: Done
+> Status: Partial
 
 ## Overview
 
@@ -9,37 +9,37 @@ Set up GitHub Actions workflows for quality gates and deployment. Every PR runs 
 
 ## Workflows
 
-| Workflow          | Trigger                          | Steps                                          |
-| ----------------- | -------------------------------- | ---------------------------------------------- |
-| `pops-api-ci.yml` | PR / push (API changes)          | Lint, test, build                              |
-| `shell-ci.yml`    | PR / push (shell changes)        | Lint, build                                    |
-| `test.yml`        | PR / push                        | Full test suite                                |
-| `e2e.yml`         | PR / push                        | Playwright e2e tests                           |
-| `ansible-ci.yml`  | PR / push (ansible changes)      | Syntax validation                              |
-| `tools-ci.yml`    | PR / push (import tools changes) | Lint, test                                     |
-| `deploy.yml`      | Manual (workflow_dispatch)       | Typecheck, lint, test, build, deploy to server |
+| Workflow            | Trigger                          | Steps                                          |
+| ------------------- | -------------------------------- | ---------------------------------------------- |
+| `api-quality.yml`   | PR / push (API changes)          | Typecheck, test, build                         |
+| `fe-quality.yml`    | PR / push (shell changes)        | Typecheck, test, build                         |
+| `quality.yml`       | PR / push                        | Lint, format check                             |
+| `fe-test-e2e.yml`   | PR / push                        | Playwright e2e tests                           |
+| `infra-quality.yml` | PR / push (ansible changes)      | YAML lint, ansible-lint, syntax check          |
+| `tools-quality.yml` | PR / push (import tools changes) | Lint, test                                     |
+| `root-deploy.yml`   | Push to main + workflow_dispatch | Typecheck, lint, test, build, deploy to server |
 
 ## Business Rules
 
-- Deployment is manual-trigger only (`workflow_dispatch`) — never on PR merge or push
-- Self-hosted runner runs on the production server — manual trigger prevents fork-based attacks
+- Deployment runs on push to main and via manual `workflow_dispatch` — see issue #1818 for tracking the gap between this and the originally-specified manual-only trigger
+- Self-hosted runner runs on the production server — used only for the deploy step
 - All quality gates (typecheck, lint, test, build) must pass before deploy step runs
 - Path filters on CI workflows — only trigger when relevant files change
 - PR-based workflows run on GitHub-hosted runners (safe), deployment runs on self-hosted runner
 
 ## User Stories
 
-| #   | Story                                             | Summary                                                         | Status | Parallelisable   |
-| --- | ------------------------------------------------- | --------------------------------------------------------------- | ------ | ---------------- |
-| 01  | [us-01-pr-workflows](us-01-pr-workflows.md)       | CI workflows for PRs: API, shell, test, e2e, ansible, tools     | Done   | No (first)       |
-| 02  | [us-02-deploy-workflow](us-02-deploy-workflow.md) | Manual deploy workflow with quality gates and server deployment | Done   | Blocked by us-01 |
+| #   | Story                                             | Summary                                                         | Status  | Parallelisable   |
+| --- | ------------------------------------------------- | --------------------------------------------------------------- | ------- | ---------------- |
+| 01  | [us-01-pr-workflows](us-01-pr-workflows.md)       | CI workflows for PRs: API, shell, test, e2e, ansible, tools     | Done    | No (first)       |
+| 02  | [us-02-deploy-workflow](us-02-deploy-workflow.md) | Manual deploy workflow with quality gates and server deployment | Partial | Blocked by us-01 |
 
 ## Verification
 
-- PR with API changes triggers `pops-api-ci.yml`
-- PR with shell changes triggers `shell-ci.yml`
+- PR with API changes triggers `api-quality.yml`
+- PR with shell changes triggers `fe-quality.yml`
 - Failing tests block PR merge
-- `deploy.yml` only available via manual trigger — not on PR events
+- `root-deploy.yml` triggers on push to main and via `workflow_dispatch` (see issue #1818 for the gap vs. manual-only spec)
 - Deploy runs quality gates before deployment step
 - Deploy reaches the server and restarts services
 
@@ -51,4 +51,4 @@ Set up GitHub Actions workflows for quality gates and deployment. Every PR runs 
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

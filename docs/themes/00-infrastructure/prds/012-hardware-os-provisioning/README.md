@@ -65,4 +65,4 @@ All Ansible commands run from the `infra/ansible/` directory due to relative `ro
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

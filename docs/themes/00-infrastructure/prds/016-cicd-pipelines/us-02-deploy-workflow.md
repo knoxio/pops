@@ -1,7 +1,7 @@
 # US-02: Manual deploy workflow
 
 > PRD: [016 — CI/CD Pipelines](README.md)
-> Status: Done
+> Status: Partial
 
 ## Description
 
@@ -9,7 +9,7 @@ As an operator, I want a manual deploy workflow that runs quality gates then dep
 
 ## Acceptance Criteria
 
-- [x] `deploy.yml` triggered only via `workflow_dispatch` (manual)
+- [ ] `root-deploy.yml` triggered only via `workflow_dispatch` (manual) — currently also triggers on push to main (see issue #1818)
 - [x] Runs typecheck, lint, test, build as quality gates before deploy
 - [x] If any gate fails, deployment is skipped
 - [x] Deployment step SSHes to server and runs Ansible deploy playbook

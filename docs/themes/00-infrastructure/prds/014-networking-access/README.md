@@ -59,4 +59,4 @@ The `cloudflared` container maintains an outbound connection to Cloudflare. No i
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17
