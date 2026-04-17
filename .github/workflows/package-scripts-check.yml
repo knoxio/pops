@@ -3,17 +3,7 @@ name: Package Scripts Check
 on:
   push:
     branches: [main]
-    paths:
-      - "**/package.json"
-      - "pnpm-workspace.yaml"
-      - "scripts/check-package-scripts.mjs"
-      - ".github/workflows/package-scripts-check.yml"
   pull_request:
-    paths:
-      - "**/package.json"
-      - "pnpm-workspace.yaml"
-      - "scripts/check-package-scripts.mjs"
-      - ".github/workflows/package-scripts-check.yml"
 
 jobs:
   check:
