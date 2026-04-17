@@ -1,7 +1,7 @@
 # US-04: ING CSV parser
 
 > PRD: [022 — Deduplication & Parsers](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,13 +9,13 @@ As a user, I want to import ING CSV exports so that my savings transactions are 
 
 ## Acceptance Criteria
 
-- [ ] Parses ING CSV format with Credit/Debit columns
-- [ ] Date: DD/MM/YYYY → YYYY-MM-DD
-- [ ] Amount: parse Credit/Debit, negate debits
-- [ ] Description: clean whitespace
-- [ ] Account: "ING Savings"
-- [ ] Output: valid ParsedTransaction[] with checksums
-- [ ] Test with sample ING CSV data
+- [x] Parses ING CSV format with Credit/Debit columns
+- [x] Date: DD/MM/YYYY → YYYY-MM-DD
+- [x] Amount: parse Credit/Debit, negate debits
+- [x] Description: clean whitespace
+- [x] Account: "ING Savings"
+- [x] Output: valid ParsedTransaction[] with checksums
+- [x] Test with sample ING CSV data
 
 ## Notes
 
