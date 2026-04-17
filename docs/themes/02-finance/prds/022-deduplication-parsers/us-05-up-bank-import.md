@@ -1,7 +1,7 @@
 # US-05: Up Bank API batch import
 
 > PRD: [022 — Deduplication & Parsers](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,13 +9,13 @@ As a user, I want to batch import transactions from Up Bank via API so that my U
 
 ## Acceptance Criteria
 
-- [ ] Fetches transactions from Up Bank REST API by date range (`SINCE_DATE`)
-- [ ] Maps Up API response to ParsedTransaction format
-- [ ] Account from API response (Up Everyday, Up Savers)
-- [ ] Checksum generated from transaction data for deduplication
-- [ ] Up Bank API token read from secrets
-- [ ] Output: valid ParsedTransaction[] compatible with the same pipeline as CSV imports
-- [ ] Test with mock Up API responses
+- [x] Fetches transactions from Up Bank REST API by date range (`SINCE_DATE`)
+- [x] Maps Up API response to ParsedTransaction format
+- [x] Account from API response (Up Everyday, Up Savers)
+- [x] Checksum generated from transaction data for deduplication
+- [x] Up Bank API token read from secrets
+- [x] Output: valid ParsedTransaction[] compatible with the same pipeline as CSV imports
+- [x] Test with mock Up API responses
 
 ## Notes
 

@@ -1,11 +1,15 @@
 /**
  * Up Bank API batch import script.
- * Fetches transactions from Up Bank API and imports to SQLite.
+ * Fetches transactions from Up Bank API and normalises to ParsedTransaction format.
  *
  * Usage: pnpm import:up [--since 2026-01-01] [--execute]
  */
 
+import { fetchUpAccounts, fetchUpTransactions, getUpApiToken } from './lib/up-client.js';
+import { transformUpTransaction } from './lib/up-transformer.js';
+
 import type { RunMode } from './lib/types.js';
+import type { ParsedTransaction } from './lib/types.js';
 
 function parseArgs(): { since?: string; mode: RunMode } {
   const args = process.argv.slice(2);
@@ -16,18 +20,65 @@ function parseArgs(): { since?: string; mode: RunMode } {
   return { since, mode };
 }
 
+/**
+ * Log a preview table of parsed transactions (first N rows).
+ */
+function logPreview(transactions: ParsedTransaction[], limit = 5): void {
+  const preview = transactions.slice(0, limit);
+  console.log('\n--- Preview (first %d of %d) ---', preview.length, transactions.length);
+  for (const tx of preview) {
+    console.log(
+      '  %s | %s | %s | %s',
+      tx.date,
+      String(tx.amount).padStart(10),
+      tx.account.padEnd(20),
+      tx.description
+    );
+  }
+  console.log('---\n');
+}
+
 async function main(): Promise<void> {
   const { since, mode } = parseArgs();
   console.log(`[import-up] Since: ${since ?? 'all'}, Mode: ${mode}`);
 
-  // TODO: Migrate from ~/Downloads/transactions/extract_personal_accounts.js
-  // 1. Fetch transactions from Up Bank API (with optional --since filter)
-  // 2. Normalise to ParsedTransaction format
-  // 3. Match entities via entity-matcher
-  // 4. Deduplicate against existing SQLite records
-  // 5. Write new transactions to SQLite (if --execute)
+  // 1. Resolve API token
+  const token = getUpApiToken();
 
-  console.log('[import-up] Not yet implemented — migrate from extract_personal_accounts.js');
+  // 2. Fetch accounts → build id→name map
+  console.log('[import-up] Fetching accounts...');
+  const accountMap = await fetchUpAccounts(token);
+  console.log(
+    `[import-up] Found ${accountMap.size} account(s):`,
+    [...accountMap.values()].join(', ')
+  );
+
+  // 3. Fetch transactions (with optional since filter)
+  console.log('[import-up] Fetching transactions...');
+  const rawTransactions = await fetchUpTransactions(token, since);
+  console.log(`[import-up] Fetched ${rawTransactions.length} transaction(s) from API`);
+
+  // 4. Map each transaction to ParsedTransaction
+  const parsed: ParsedTransaction[] = rawTransactions.map((tx) => {
+    const accountName = accountMap.get(tx.accountId) ?? 'Up (Unknown Account)';
+    return transformUpTransaction(tx, accountName);
+  });
+
+  // 5. Output
+  if (mode === 'dry-run') {
+    console.log(`[import-up] Dry-run complete — ${parsed.length} transaction(s) parsed`);
+    if (parsed.length > 0) {
+      logPreview(parsed);
+    }
+  } else {
+    // --execute: database write is future work; show what would be imported
+    console.log(
+      `[import-up] Execute mode — execution not yet wired to database. ${parsed.length} transaction(s) ready.`
+    );
+    if (parsed.length > 0) {
+      logPreview(parsed);
+    }
+  }
 }
 
 main().catch((err: unknown) => {

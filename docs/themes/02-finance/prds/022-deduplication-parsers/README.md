@@ -113,7 +113,7 @@ Fetched via Up Bank REST API, not CSV upload. Batch import by date range.
 | 02  | [us-02-amex-parser](us-02-amex-parser.md)       | Amex CSV parser: date, amount inversion, location extraction                | Done        | Yes                             |
 | 03  | [us-03-anz-parser](us-03-anz-parser.md)         | ANZ CSV parser                                                              | Done        | Yes                             |
 | 04  | [us-04-ing-parser](us-04-ing-parser.md)         | ING CSV parser                                                              | Done        | Yes                             |
-| 05  | [us-05-up-bank-import](us-05-up-bank-import.md) | Up Bank API batch import by date range                                      | Not started | Yes                             |
+| 05  | [us-05-up-bank-import](us-05-up-bank-import.md) | Up Bank API batch import by date range                                      | Done        | Yes                             |
 | 06  | [us-06-common-utils](us-06-common-utils.md)     | Shared utilities: normaliseDate, normaliseAmount, extractLocation, checksum | Done        | No (first, parallel with us-01) |
 | 07  | [us-07-anz-pdf-parser](us-07-anz-pdf-parser.md) | ANZ PDF credit card statement parser                                        | Not started | Yes                             |
 
