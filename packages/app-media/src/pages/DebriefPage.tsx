@@ -248,7 +248,7 @@ export function DebriefPage() {
                       tier: 'high' as const,
                       icon: ChevronUp,
                       label: 'Equally great',
-                      color: 'hover:border-green-500 hover:text-green-500',
+                      color: 'hover:border-success hover:text-success',
                     },
                     {
                       tier: 'mid' as const,
@@ -260,7 +260,7 @@ export function DebriefPage() {
                       tier: 'low' as const,
                       icon: ChevronDown,
                       label: 'Equally poor',
-                      color: 'hover:border-red-500 hover:text-red-500',
+                      color: 'hover:border-destructive hover:text-destructive',
                     },
                   ].map(({ tier, icon: Icon, label, color }) => (
                     <Tooltip key={tier}>

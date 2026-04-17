@@ -113,7 +113,7 @@ function CandidateCard({ candidate, actions = 'none' }: CandidateCardProps) {
         </div>
         <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
           {candidate.rating != null && (
-            <span className="text-yellow-500">{candidate.rating.toFixed(1)}</span>
+            <span className="text-warning">{candidate.rating.toFixed(1)}</span>
           )}
           {candidate.sourceName && <span>{candidate.sourceName}</span>}
           {candidate.sourcePriority != null && (

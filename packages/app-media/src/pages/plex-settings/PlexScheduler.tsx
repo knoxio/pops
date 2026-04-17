@@ -111,7 +111,7 @@ export function PlexScheduler({
           <p>Last sync: {new Date(scheduler.lastSyncAt).toLocaleString()}</p>
         )}
         {scheduler?.lastSyncError && (
-          <p className="text-red-400">Last error: {scheduler.lastSyncError}</p>
+          <p className="text-destructive">Last error: {scheduler.lastSyncError}</p>
         )}
         {(scheduler?.moviesSynced ?? 0) > 0 && (
           <p>Total movies synced: {scheduler?.moviesSynced}</p>

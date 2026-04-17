@@ -8,7 +8,7 @@ export function ConnectionBadge({ connected }: { connected: boolean }) {
       Connected
     </Badge>
   ) : (
-    <Badge className="bg-red-500/10 text-red-400 border-red-500/20">
+    <Badge className="bg-destructive/10 text-destructive border-destructive/20">
       <XCircle className="h-3 w-3 mr-1" />
       Disconnected
     </Badge>

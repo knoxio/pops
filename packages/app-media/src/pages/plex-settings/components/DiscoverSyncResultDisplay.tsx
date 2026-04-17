@@ -28,7 +28,7 @@ export function DiscoverSyncResultDisplay({ result, isRunning }: DiscoverSyncRes
         <span className="font-medium">
           {isRunning ? 'Cloud Sync Progress:' : 'Cloud Sync Results:'}
         </span>
-        {totalAdded > 0 && <span className="text-blue-400">{totalAdded} added to library</span>}
+        {totalAdded > 0 && <span className="text-info">{totalAdded} added to library</span>}
         {totalLogged > 0 && <span className="text-emerald-400">{totalLogged} watches logged</span>}
         {totalAlreadyLogged > 0 && (
           <span className="text-muted-foreground">{totalAlreadyLogged} already tracked</span>
@@ -36,7 +36,7 @@ export function DiscoverSyncResultDisplay({ result, isRunning }: DiscoverSyncRes
         {totalNotFound > 0 && (
           <span className="text-muted-foreground">{totalNotFound} not found</span>
         )}
-        {totalErrors > 0 && <span className="text-red-400">{totalErrors} errors</span>}
+        {totalErrors > 0 && <span className="text-destructive">{totalErrors} errors</span>}
       </div>
       {!isRunning && (
         <p className="text-xs text-muted-foreground">
@@ -49,13 +49,13 @@ export function DiscoverSyncResultDisplay({ result, isRunning }: DiscoverSyncRes
             variant="ghost"
             size="sm"
             onClick={() => setShowErrors(!showErrors)}
-            className="flex items-center gap-1 text-xs h-auto p-0 text-red-400 hover:text-red-300"
+            className="flex items-center gap-1 text-xs h-auto p-0 text-destructive hover:text-destructive/80"
           >
             {showErrors ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
             {showErrors ? 'Hide' : 'Show'} error details
           </Button>
           {showErrors && (
-            <div className="mt-2 space-y-1 text-xs text-red-400/80">
+            <div className="mt-2 space-y-1 text-xs text-destructive/80">
               {allErrors.map((err, i) => (
                 <p key={i}>{err}</p>
               ))}

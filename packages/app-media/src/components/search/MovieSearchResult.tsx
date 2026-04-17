@@ -31,9 +31,7 @@ export function highlightMatch(text: string, query: string, matchType: string): 
   return (
     <>
       {text.slice(0, start)}
-      <mark className="bg-yellow-200/60 dark:bg-yellow-500/30 rounded-sm px-0.5">
-        {text.slice(start, end)}
-      </mark>
+      <mark className="bg-warning/40 rounded-sm px-0.5">{text.slice(start, end)}</mark>
       {text.slice(end)}
     </>
   );
@@ -44,7 +42,7 @@ function Rating({ value }: { value: number | null }) {
 
   return (
     <span className="flex items-center gap-0.5" data-testid="rating">
-      <Star className="h-3 w-3 fill-yellow-500 text-yellow-500" />
+      <Star className="h-3 w-3 fill-warning text-warning" />
       <span>{value.toFixed(1)}</span>
     </span>
   );

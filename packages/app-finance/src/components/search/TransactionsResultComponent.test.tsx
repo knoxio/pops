@@ -25,14 +25,14 @@ describe('TransactionsResultComponent', () => {
     render(<TransactionsResultComponent data={makeData({ type: 'expense', amount: 99.0 })} />);
     const amount = screen.getByText('-$99.00');
     expect(amount).toBeInTheDocument();
-    expect(amount.className).toContain('text-red-600');
+    expect(amount.className).toContain('text-destructive');
   });
 
   it('renders income amount in green with plus sign', () => {
     render(<TransactionsResultComponent data={makeData({ type: 'income', amount: 3500 })} />);
     const amount = screen.getByText('+$3500.00');
     expect(amount).toBeInTheDocument();
-    expect(amount.className).toContain('text-green-600');
+    expect(amount.className).toContain('text-success');
   });
 
   it('renders transfer amount in muted color with no sign', () => {

@@ -207,7 +207,7 @@ export function CalendarPage() {
                           {ep.hasFile ? (
                             <Badge
                               variant="secondary"
-                              className="gap-0.5 text-2xs bg-success text-white"
+                              className="gap-0.5 text-2xs bg-success text-success-foreground"
                             >
                               <CheckCircle className="h-2.5 w-2.5" />
                               Downloaded

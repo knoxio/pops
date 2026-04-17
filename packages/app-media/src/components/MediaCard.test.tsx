@@ -108,7 +108,7 @@ describe('MediaCard', () => {
   it('uses green color for 100% progress', () => {
     const { container } = renderCard({ type: 'tv', progress: 100 });
     const bar = container.querySelector('[style*="width: 100%"]');
-    expect(bar?.className).toContain('bg-green-500');
+    expect(bar?.className).toContain('bg-success');
   });
 
   it('truncates year from full date string', () => {

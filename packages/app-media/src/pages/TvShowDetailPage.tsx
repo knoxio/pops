@@ -326,7 +326,7 @@ export function TvShowDetailPage() {
                     Mark All Watched
                   </Button>
                 ) : (
-                  <span className="inline-flex items-center gap-1.5 text-sm text-green-500 font-medium">
+                  <span className="inline-flex items-center gap-1.5 text-sm text-success font-medium">
                     <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor">
                       <path
                         fillRule="evenodd"

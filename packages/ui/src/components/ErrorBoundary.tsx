@@ -34,7 +34,7 @@ export class ErrorBoundary extends Component<Props, State> {
         this.props.fallback(this.state.error, this.reset)
       ) : (
         <div className="p-6">
-          <h1 className="text-2xl font-bold text-red-600">Something went wrong</h1>
+          <h1 className="text-2xl font-bold text-destructive">Something went wrong</h1>
           <p className="mt-2 text-muted-foreground">{this.state.error.message}</p>
           <button
             onClick={this.reset}

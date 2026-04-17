@@ -288,7 +288,7 @@ function SourceForm({ mode, initialValues, sourceTypes, onClose }: SourceFormPro
           {plexFriendsQuery.isLoading ? (
             <p className="text-xs text-muted-foreground">Loading friends...</p>
           ) : plexFriendsQuery.data?.error ? (
-            <p className="text-xs text-red-400">{plexFriendsQuery.data.error}</p>
+            <p className="text-xs text-destructive">{plexFriendsQuery.data.error}</p>
           ) : (
             <Select
               value={(configValues.friendUuid as string) ?? ''}

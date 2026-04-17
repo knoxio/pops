@@ -27,19 +27,19 @@ const TIERS = ['S', 'A', 'B', 'C', 'D'] as const;
 export type Tier = (typeof TIERS)[number];
 
 const TIER_COLORS: Record<Tier, string> = {
-  S: 'bg-red-500/20 border-red-500/40 text-red-500',
+  S: 'bg-destructive/20 border-destructive/40 text-destructive',
   A: 'bg-orange-500/20 border-orange-500/40 text-orange-500',
-  B: 'bg-yellow-500/20 border-yellow-500/40 text-yellow-500',
-  C: 'bg-green-500/20 border-green-500/40 text-green-500',
-  D: 'bg-blue-500/20 border-blue-500/40 text-blue-500',
+  B: 'bg-warning/20 border-warning/40 text-warning',
+  C: 'bg-success/20 border-success/40 text-success',
+  D: 'bg-info/20 border-info/40 text-info',
 };
 
 const TIER_LABEL_COLORS: Record<Tier, string> = {
-  S: 'bg-red-500 text-white',
+  S: 'bg-destructive text-destructive-foreground',
   A: 'bg-orange-500 text-white',
-  B: 'bg-yellow-500 text-black',
-  C: 'bg-green-500 text-white',
-  D: 'bg-blue-500 text-white',
+  B: 'bg-warning text-warning-foreground',
+  C: 'bg-success text-success-foreground',
+  D: 'bg-info text-info-foreground',
 };
 
 export interface TierMovie {
@@ -63,12 +63,12 @@ const DISMISS_ZONE_CONFIG: Record<
   'not-watched': {
     label: 'Not Watched',
     icon: EyeOff,
-    color: 'border-red-500/40 text-red-400 bg-red-500/10',
+    color: 'border-destructive/40 text-destructive bg-destructive/10',
   },
   stale: {
     label: 'Stale',
     icon: Clock,
-    color: 'border-yellow-500/40 text-yellow-400 bg-yellow-500/10',
+    color: 'border-warning/40 text-warning bg-warning/10',
   },
   'n-a': {
     label: 'N/A',

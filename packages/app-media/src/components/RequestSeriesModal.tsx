@@ -174,7 +174,7 @@ export function RequestSeriesModal({
             </div>
           ) : profileList.length === 0 || folderList.length === 0 || languageList.length === 0 ? (
             <div className="text-center py-4 space-y-2">
-              <p className="text-sm text-red-400">
+              <p className="text-sm text-destructive">
                 {profileList.length === 0
                   ? 'No quality profiles found'
                   : folderList.length === 0
@@ -303,7 +303,7 @@ export function RequestSeriesModal({
           )}
 
           {/* Error */}
-          {error && <p className="text-sm text-red-400">{error}</p>}
+          {error && <p className="text-sm text-destructive">{error}</p>}
 
           {/* Actions */}
           <div className="flex justify-end gap-2 pt-2">

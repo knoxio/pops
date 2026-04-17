@@ -125,10 +125,7 @@ export function MediaCard({
         {progress != null && progress > 0 && (
           <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted/50">
             <div
-              className={cn(
-                'h-full transition-all',
-                progress >= 100 ? 'bg-green-500' : 'bg-primary'
-              )}
+              className={cn('h-full transition-all', progress >= 100 ? 'bg-success' : 'bg-primary')}
               style={{ width: `${Math.min(progress, 100)}%` }}
             />
           </div>

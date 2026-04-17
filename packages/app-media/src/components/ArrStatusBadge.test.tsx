@@ -80,7 +80,7 @@ describe('ArrStatusBadge', () => {
     render(<ArrStatusBadge kind="movie" externalId={123} />);
     const badge = screen.getByText('Available');
     expect(badge).toBeInTheDocument();
-    expect(badge.className).toContain('bg-green-600');
+    expect(badge.className).toContain('bg-success');
   });
 
   it('renders Downloading badge with yellow styling', () => {
@@ -92,7 +92,7 @@ describe('ArrStatusBadge', () => {
     render(<ArrStatusBadge kind="movie" externalId={123} />);
     const badge = screen.getByText('Downloading');
     expect(badge).toBeInTheDocument();
-    expect(badge.className).toContain('bg-yellow-600');
+    expect(badge.className).toContain('bg-warning');
   });
 
   it('renders Monitored badge with yellow styling', () => {
@@ -104,7 +104,7 @@ describe('ArrStatusBadge', () => {
     render(<ArrStatusBadge kind="movie" externalId={123} />);
     const badge = screen.getByText('Monitored');
     expect(badge).toBeInTheDocument();
-    expect(badge.className).toContain('bg-yellow-600');
+    expect(badge.className).toContain('bg-warning');
   });
 
   it('renders Not Monitored badge with grey styling', () => {
@@ -128,6 +128,6 @@ describe('ArrStatusBadge', () => {
     render(<ArrStatusBadge kind="show" externalId={456} />);
     const badge = screen.getByText('Monitored');
     expect(badge).toBeInTheDocument();
-    expect(badge.className).toContain('bg-yellow-600');
+    expect(badge.className).toContain('bg-warning');
   });
 });

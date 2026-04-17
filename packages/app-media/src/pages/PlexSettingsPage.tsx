@@ -136,7 +136,7 @@ export function PlexSettingsPage() {
               </Button>
             </div>
             {mutations.saveUrl.error && (
-              <p className="text-xs text-red-400 mt-1">{mutations.saveUrl.error.message}</p>
+              <p className="text-xs text-destructive mt-1">{mutations.saveUrl.error.message}</p>
             )}
             {!settings.status?.hasUrl && (
               <p className="text-xs text-amber-400">

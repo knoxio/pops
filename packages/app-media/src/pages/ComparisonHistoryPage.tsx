@@ -228,9 +228,9 @@ function EloDelta({ delta }: { delta: number | null }) {
     <span
       className={`text-2xs font-mono tabular-nums px-1 py-0.5 rounded ${
         isPositive
-          ? 'text-green-500 bg-green-500/10'
+          ? 'text-success bg-success/10'
           : delta < 0
-            ? 'text-red-500 bg-red-500/10'
+            ? 'text-destructive bg-destructive/10'
             : 'text-muted-foreground'
       }`}
     >

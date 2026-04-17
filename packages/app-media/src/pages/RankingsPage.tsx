@@ -70,7 +70,7 @@ function RankingRow({
         {rank <= 3 ? (
           <span
             className={
-              rank === 1 ? 'text-yellow-500' : rank === 2 ? 'text-zinc-400' : 'text-amber-700'
+              rank === 1 ? 'text-warning' : rank === 2 ? 'text-zinc-400' : 'text-amber-700'
             }
           >
             #{rank}
@@ -115,10 +115,10 @@ function RankingRow({
             className={cn(
               'text-xs tabular-nums',
               confidence >= 0.7
-                ? 'text-green-600 dark:text-green-400'
+                ? 'text-success'
                 : confidence >= 0.4
-                  ? 'text-yellow-600 dark:text-yellow-400'
-                  : 'text-red-500 dark:text-red-400'
+                  ? 'text-warning'
+                  : 'text-destructive'
             )}
           >
             {Math.round(confidence * 100)}% conf
@@ -259,7 +259,7 @@ export function RankingsPage() {
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       <div className="flex items-center gap-3">
-        <Trophy className="h-6 w-6 text-yellow-500" />
+        <Trophy className="h-6 w-6 text-warning" />
         <h1 className="text-2xl font-bold">Rankings</h1>
       </div>
 

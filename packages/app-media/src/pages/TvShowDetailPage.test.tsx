@@ -268,7 +268,7 @@ describe('TvShowDetailPage — season list', () => {
       const { container } = renderPage();
       const bar = container.querySelector("[style*='width: 100%']");
       expect(bar).toBeInTheDocument();
-      expect(bar?.className).toContain('bg-green-500');
+      expect(bar?.className).toContain('bg-success');
     });
 
     it('renders accent bar for in-progress season (50%)', () => {
@@ -484,7 +484,7 @@ describe('TvShowDetailPage — overall progress bar', () => {
     const { container } = renderPage();
     // Overall progress bar in hero — find bar with 100% width
     const bars = container.querySelectorAll("[style*='width: 100%']");
-    const greenBar = Array.from(bars).find((b) => b.className.includes('bg-green-500'));
+    const greenBar = Array.from(bars).find((b) => b.className.includes('bg-success'));
     expect(greenBar).toBeTruthy();
   });
 

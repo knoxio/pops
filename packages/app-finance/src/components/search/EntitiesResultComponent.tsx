@@ -12,7 +12,7 @@ interface EntityHitData {
 }
 
 const entityTypeStyles: Record<string, string> = {
-  company: 'bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400',
+  company: 'bg-info/10 text-info border-info/20',
   person: 'bg-violet-500/10 text-violet-700 border-violet-500/20 dark:text-violet-400',
   place: 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
   brand: 'bg-rose-500/10 text-rose-700 border-rose-500/20 dark:text-rose-400',
@@ -32,7 +32,7 @@ function highlightMatch(text: string, query?: string): React.ReactNode {
   return (
     <>
       {before}
-      <mark className="bg-yellow-200 dark:bg-yellow-800 rounded-sm px-0.5">{match}</mark>
+      <mark className="bg-warning/40 rounded-sm px-0.5">{match}</mark>
       {after}
     </>
   );

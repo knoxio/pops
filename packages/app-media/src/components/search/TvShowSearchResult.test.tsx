@@ -70,13 +70,13 @@ describe('TvShowSearchResult', () => {
       render(<TvShowSearchResult data={data as unknown as Record<string, unknown>} />);
       const badge = screen.getByTestId('status-badge');
       expect(badge).toHaveTextContent('Continuing');
-      expect(badge.className).toContain('bg-blue-600');
+      expect(badge.className).toContain('bg-info');
     });
 
     it('renders Ended badge without blue style', () => {
       render(<TvShowSearchResult data={baseTvShow as unknown as Record<string, unknown>} />);
       const badge = screen.getByTestId('status-badge');
-      expect(badge.className).not.toContain('bg-blue-600');
+      expect(badge.className).not.toContain('bg-info');
     });
 
     it('hides status badge when null', () => {

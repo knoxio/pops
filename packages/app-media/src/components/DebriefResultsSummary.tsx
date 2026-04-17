@@ -78,7 +78,7 @@ export function DebriefResultsSummary({ mediaType, mediaId }: DebriefResultsSumm
       <Card>
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
-            <Trophy className="h-5 w-5 text-yellow-500" />
+            <Trophy className="h-5 w-5 text-warning" />
             <CardTitle className="text-lg">Debrief Results</CardTitle>
           </div>
           <p className="text-muted-foreground text-sm">
@@ -142,9 +142,9 @@ export function DebriefResultsSummary({ mediaType, mediaId }: DebriefResultsSumm
                         <span
                           className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs font-medium ${
                             isPositive
-                              ? 'bg-green-500/20 text-green-700 dark:text-green-400'
+                              ? 'bg-success/20 text-success'
                               : isNegative
-                                ? 'bg-red-500/20 text-red-700 dark:text-red-400'
+                                ? 'bg-destructive/20 text-destructive'
                                 : 'bg-muted text-muted-foreground'
                           }`}
                           data-testid={`score-delta-${s.dimensionId}`}

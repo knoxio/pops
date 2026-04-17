@@ -33,14 +33,14 @@ export function PlexSyncHistory({ syncLogs }: PlexSyncHistoryProps) {
               {new Date(log.syncedAt).toLocaleString()}
             </span>
             <span className="text-emerald-400">{log.moviesSynced} movies</span>
-            <span className="text-blue-400">{log.tvShowsSynced} TV</span>
+            <span className="text-info">{log.tvShowsSynced} TV</span>
             {log.durationMs != null && (
               <span className="text-muted-foreground text-xs">
                 {(log.durationMs / 1000).toFixed(1)}s
               </span>
             )}
             {log.errors && log.errors.length > 0 && (
-              <span className="text-red-400 text-xs">
+              <span className="text-destructive text-xs">
                 {log.errors.length} error{log.errors.length > 1 ? 's' : ''}
               </span>
             )}

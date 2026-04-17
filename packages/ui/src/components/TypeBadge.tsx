@@ -8,7 +8,7 @@ export interface TypeBadgeProps extends Omit<ComponentProps<typeof Badge>, 'vari
 }
 
 const typeStyles: Record<string, string> = {
-  Electronics: 'bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400',
+  Electronics: 'bg-info/10 text-info border-info/20',
   Furniture: 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
   Appliance: 'bg-sky-500/10 text-sky-700 border-sky-500/20 dark:text-sky-400',
   Clothing: 'bg-rose-500/10 text-rose-700 border-rose-500/20 dark:text-rose-400',

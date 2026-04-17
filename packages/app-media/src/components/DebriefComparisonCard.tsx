@@ -108,9 +108,9 @@ function PosterCard({
       aria-label={`Pick ${movie.title}`}
       className={`flex flex-col items-center text-center rounded-lg border p-3 transition-all ${
         isWinner
-          ? 'border-green-500 shadow-lg scale-[1.02]'
+          ? 'border-success shadow-lg scale-[1.02]'
           : isLoser
-            ? 'border-red-500/50 opacity-60'
+            ? 'border-destructive/50 opacity-60'
             : 'border-border hover:border-primary hover:shadow-md hover:scale-[1.01]'
       } ${disabled && !isWinner && !isLoser ? 'cursor-default' : !disabled ? 'cursor-pointer active:scale-[0.98]' : ''}`}
     >

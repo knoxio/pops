@@ -25,9 +25,9 @@ function formatDate(dateStr: string): string {
 function amountColorClass(type: 'income' | 'expense' | 'transfer'): string {
   switch (type) {
     case 'income':
-      return 'text-green-600';
+      return 'text-success';
     case 'expense':
-      return 'text-red-600';
+      return 'text-destructive';
     case 'transfer':
       return 'text-muted-foreground';
   }
@@ -49,7 +49,7 @@ function highlightMatch(text: string, query: string): React.ReactNode {
   return (
     <>
       {before}
-      <mark className="bg-yellow-200 dark:bg-yellow-800 rounded-sm px-0.5">{match}</mark>
+      <mark className="bg-warning/40 rounded-sm px-0.5">{match}</mark>
       {after}
     </>
   );

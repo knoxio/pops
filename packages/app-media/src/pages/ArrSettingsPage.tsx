@@ -114,7 +114,7 @@ function ServiceCard({
       )}
       {testResult && !testResult.connected && (
         <div className="space-y-1">
-          <p className="text-xs text-red-400">{testResult.error ?? 'Connection failed'}</p>
+          <p className="text-xs text-destructive">{testResult.error ?? 'Connection failed'}</p>
           {url.startsWith('http://') && (
             <p className="text-xs text-muted-foreground">Try using https:// instead</p>
           )}

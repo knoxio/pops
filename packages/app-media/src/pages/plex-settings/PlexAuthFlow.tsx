@@ -43,7 +43,7 @@ export function PlexAuthFlow({
                       href="https://plex.tv/link"
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-blue-400 hover:text-blue-300 underline"
+                      className="text-info hover:text-info/80 underline"
                     >
                       plex.tv/link
                     </a>
@@ -84,7 +84,9 @@ export function PlexAuthFlow({
                 {getPin.isPending ? 'Requesting...' : 'Connect to Plex'}
               </Button>
             )}
-            {getPin.error && <p className="text-xs text-red-400 mt-2">{getPin.error.message}</p>}
+            {getPin.error && (
+              <p className="text-xs text-destructive mt-2">{getPin.error.message}</p>
+            )}
           </div>
         </div>
       ) : !status?.configured ? (
@@ -99,7 +101,7 @@ export function PlexAuthFlow({
 
       {/* Connection error */}
       {connectionError && (
-        <div className="flex items-start gap-2 rounded-lg border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-400">
+        <div className="flex items-start gap-2 rounded-lg border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
           <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
           <div className="space-y-1">
             <p className="font-semibold">Connection Failed</p>
