@@ -1,4 +1,4 @@
-import { Check, Film, Loader2, Plus, Tv } from 'lucide-react';
+import { Bookmark, Check, Eye, Film, Loader2, Plus, Tv } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router';
 
@@ -9,11 +9,20 @@ import { Link } from 'react-router';
  * When the item is already in the library (`inLibrary === true`) and has a
  * 'leaving' rotation status, a LeavingBadge is rendered to indicate the
  * removal countdown (PRD-072 US-01).
+ *
+ * For in-library items (mediaId provided): shows WatchlistToggle and (movies)
+ * a Mark as Watched button inline.
+ * For not-in-library items: shows compound "Add to Watchlist + Library" and
+ * (movies) "Mark as Watched + Library" buttons alongside "Add to Library".
+ *
+ * When href is set the card becomes a clickable link. Buttons inside stop
+ * click propagation so navigation only fires on background card clicks.
  */
 import { Badge, Button, cn, Skeleton } from '@pops/ui';
 
 import { LeavingBadge } from './LeavingBadge';
 import { MovieActionButtons } from './MovieActionButtons';
+import { WatchlistToggle } from './WatchlistToggle';
 
 import type { RotationMeta } from '../lib/types';
 
@@ -32,10 +41,29 @@ export interface SearchResultCardProps extends RotationMeta {
   voteAverage?: number | null;
   genres?: string[];
   inLibrary?: boolean;
+  /** Local library DB ID — enables watchlist/watched actions for in-library items. */
+  mediaId?: number;
   addDisabled?: boolean;
   addDisabledReason?: string;
   isAdding?: boolean;
   onAdd?: () => void;
+  /**
+   * Compound action: add to library then add to watchlist.
+   * Only shown for not-in-library items.
+   */
+  onAddToWatchlistAndLibrary?: () => void;
+  isAddingToWatchlistAndLibrary?: boolean;
+  /**
+   * Compound action: add to library then mark as watched.
+   * Only shown for not-in-library movie items.
+   */
+  onMarkWatchedAndLibrary?: () => void;
+  isMarkingWatchedAndLibrary?: boolean;
+  /**
+   * Simple mark-as-watched for in-library movies.
+   */
+  onMarkWatched?: () => void;
+  isMarkingWatched?: boolean;
   /** When set, the card becomes a clickable link to the detail page. */
   href?: string;
   className?: string;
@@ -68,10 +96,17 @@ export function SearchResultCard({
   inLibrary,
   rotationStatus,
   rotationExpiresAt,
+  mediaId,
   addDisabled,
   addDisabledReason,
   isAdding,
   onAdd,
+  onAddToWatchlistAndLibrary,
+  isAddingToWatchlistAndLibrary,
+  onMarkWatchedAndLibrary,
+  isMarkingWatchedAndLibrary,
+  onMarkWatched,
+  isMarkingWatched,
   href,
   className,
 }: SearchResultCardProps) {
@@ -144,29 +179,97 @@ export function SearchResultCard({
           </div>
         )}
 
-        {/* Action buttons */}
-        <div className="mt-auto flex items-center gap-2 pt-1">
+        {/* Action buttons — stop propagation so card link doesn't navigate on button click */}
+        <div
+          className="mt-auto flex flex-wrap items-center gap-2 pt-1"
+          onClick={
+            href
+              ? (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+              : undefined
+          }
+        >
           {inLibrary ? (
-            <Badge variant="secondary" className="gap-1">
-              <Check className="h-3 w-3" />
-              In Library
-            </Badge>
-          ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 gap-1 text-xs"
-              disabled={addDisabled || isAdding}
-              title={addDisabledReason}
-              onClick={onAdd}
-            >
-              {isAdding ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                <Plus className="h-3 w-3" />
+            <>
+              <Badge variant="secondary" className="gap-1">
+                <Check className="h-3 w-3" />
+                In Library
+              </Badge>
+              {mediaId != null && (
+                <WatchlistToggle mediaType={type} mediaId={mediaId} className="h-7 text-xs" />
               )}
-              {isAdding ? 'Adding…' : 'Add to Library'}
-            </Button>
+              {type === 'movie' && mediaId != null && onMarkWatched != null && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 gap-1 text-xs"
+                  onClick={onMarkWatched}
+                  disabled={isMarkingWatched}
+                  aria-label="Mark as watched"
+                >
+                  {isMarkingWatched ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Eye className="h-3 w-3" />
+                  )}
+                  {isMarkingWatched ? 'Logging\u2026' : 'Mark Watched'}
+                </Button>
+              )}
+            </>
+          ) : (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 gap-1 text-xs"
+                disabled={addDisabled || isAdding}
+                title={addDisabledReason}
+                onClick={onAdd}
+              >
+                {isAdding ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Plus className="h-3 w-3" />
+                )}
+                {isAdding ? 'Adding\u2026' : 'Add to Library'}
+              </Button>
+              {onAddToWatchlistAndLibrary != null && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 gap-1 text-xs"
+                  onClick={onAddToWatchlistAndLibrary}
+                  disabled={isAdding || isAddingToWatchlistAndLibrary}
+                  aria-label="Add to watchlist and library"
+                >
+                  {isAddingToWatchlistAndLibrary ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Bookmark className="h-3 w-3" />
+                  )}
+                  {isAddingToWatchlistAndLibrary ? 'Adding\u2026' : 'Watchlist + Library'}
+                </Button>
+              )}
+              {type === 'movie' && onMarkWatchedAndLibrary != null && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-7 gap-1 text-xs"
+                  onClick={onMarkWatchedAndLibrary}
+                  disabled={isAdding || isMarkingWatchedAndLibrary}
+                  aria-label="Mark as watched and add to library"
+                >
+                  {isMarkingWatchedAndLibrary ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <Eye className="h-3 w-3" />
+                  )}
+                  {isMarkingWatchedAndLibrary ? 'Logging\u2026' : 'Watched + Library'}
+                </Button>
+              )}
+            </>
           )}
           {inLibrary && rotationStatus === 'leaving' && rotationExpiresAt && (
             <LeavingBadge rotationExpiresAt={rotationExpiresAt} />

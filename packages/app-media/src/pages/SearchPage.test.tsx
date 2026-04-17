@@ -12,6 +12,8 @@ const {
   mockLibraryTv,
   mockAddMovieMutation,
   mockAddTvMutation,
+  mockWatchlistAddMutation,
+  mockWatchHistoryLogMutation,
   mockMovieRefetch,
   mockTvRefetch,
 } = vi.hoisted(() => ({
@@ -21,6 +23,8 @@ const {
   mockLibraryTv: vi.fn(),
   mockAddMovieMutation: vi.fn(),
   mockAddTvMutation: vi.fn(),
+  mockWatchlistAddMutation: vi.fn(),
+  mockWatchHistoryLogMutation: vi.fn(),
   mockMovieRefetch: vi.fn(),
   mockTvRefetch: vi.fn(),
 }));
@@ -39,8 +43,14 @@ vi.mock('../lib/trpc', () => ({
         list: { useQuery: (...args: unknown[]) => mockLibraryTv(...args) },
       },
       library: {
-        addMovie: { useMutation: () => ({ mutate: mockAddMovieMutation }) },
-        addTvShow: { useMutation: () => ({ mutate: mockAddTvMutation }) },
+        addMovie: { useMutation: () => ({ mutate: mockAddMovieMutation, isPending: false }) },
+        addTvShow: { useMutation: () => ({ mutate: mockAddTvMutation, isPending: false }) },
+      },
+      watchlist: {
+        add: { useMutation: () => ({ mutate: mockWatchlistAddMutation, isPending: false }) },
+      },
+      watchHistory: {
+        log: { useMutation: () => ({ mutate: mockWatchHistoryLogMutation, isPending: false }) },
       },
     },
   },
@@ -55,7 +65,10 @@ vi.mock('../components/SearchResultCard', () => ({
     if (props.type === 'movie') lastMovieCardProps.push(props);
     else lastTvCardProps.push(props);
     return (
-      <div data-testid={`card-${props.type as string}-${props.title as string}`}>
+      <div
+        data-testid={`card-${props.type as string}-${props.title as string}`}
+        data-href={props.href as string | undefined}
+      >
         <span>{props.title as string}</span>
         {Boolean(props.inLibrary) && <span data-testid="in-library-badge">In Library</span>}
         {!props.posterUrl && <span data-testid="no-poster" />}
@@ -407,5 +420,180 @@ describe('SearchPage — overview passed to cards', () => {
 
     const severanceCard = lastTvCardProps.find((p) => p.title === 'Severance');
     expect(severanceCard?.overview).toBeNull();
+  });
+});
+
+describe('SearchPage — clickable links for in-library items (#1913)', () => {
+  it('passes href to in-library movie card pointing to detail page', () => {
+    renderPage();
+
+    // Inception (tmdbId=101) maps to localId=1 from LIBRARY_MOVIES
+    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    expect(inceptionCard?.href).toBe('/media/movies/1');
+  });
+
+  it('does not pass href to not-in-library movie card', () => {
+    renderPage();
+
+    const interstellarCard = lastMovieCardProps.find((p) => p.title === 'Interstellar');
+    expect(interstellarCard?.href).toBeUndefined();
+  });
+
+  it('passes href to in-library TV card pointing to detail page', () => {
+    renderPage();
+
+    // Breaking Bad (tvdbId=201) maps to localId=2 from LIBRARY_TV
+    const bbCard = lastTvCardProps.find((p) => p.title === 'Breaking Bad');
+    expect(bbCard?.href).toBe('/media/tv/2');
+  });
+
+  it('does not pass href to not-in-library TV card', () => {
+    renderPage();
+
+    const severanceCard = lastTvCardProps.find((p) => p.title === 'Severance');
+    expect(severanceCard?.href).toBeUndefined();
+  });
+
+  it('passes mediaId to in-library movie card', () => {
+    renderPage();
+
+    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    expect(inceptionCard?.mediaId).toBe(1);
+  });
+
+  it('passes mediaId to in-library TV card', () => {
+    renderPage();
+
+    const bbCard = lastTvCardProps.find((p) => p.title === 'Breaking Bad');
+    expect(bbCard?.mediaId).toBe(2);
+  });
+
+  it('does not pass mediaId to not-in-library movie card', () => {
+    setupEmptyLibrary();
+    renderPage();
+
+    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    expect(inceptionCard?.mediaId).toBeUndefined();
+  });
+});
+
+describe('SearchPage — compound actions (#1912)', () => {
+  it('passes onAddToWatchlistAndLibrary to not-in-library movie cards', () => {
+    setupEmptyLibrary();
+    renderPage();
+
+    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    expect(typeof inceptionCard?.onAddToWatchlistAndLibrary).toBe('function');
+  });
+
+  it('does not pass onAddToWatchlistAndLibrary to in-library movie cards', () => {
+    renderPage();
+
+    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    expect(inceptionCard?.onAddToWatchlistAndLibrary).toBeUndefined();
+  });
+
+  it('passes onMarkWatchedAndLibrary to not-in-library movie cards', () => {
+    setupEmptyLibrary();
+    renderPage();
+
+    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    expect(typeof inceptionCard?.onMarkWatchedAndLibrary).toBe('function');
+  });
+
+  it('does not pass onMarkWatchedAndLibrary to in-library movie cards', () => {
+    renderPage();
+
+    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    expect(inceptionCard?.onMarkWatchedAndLibrary).toBeUndefined();
+  });
+
+  it('passes onMarkWatched to in-library movie cards', () => {
+    renderPage();
+
+    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    expect(typeof inceptionCard?.onMarkWatched).toBe('function');
+  });
+
+  it('does not pass onMarkWatched to not-in-library movie cards (no localId)', () => {
+    setupEmptyLibrary();
+    renderPage();
+
+    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    expect(inceptionCard?.onMarkWatched).toBeUndefined();
+  });
+
+  it('calling onAddToWatchlistAndLibrary triggers addMovie then watchlist.add', () => {
+    setupEmptyLibrary();
+    renderPage();
+
+    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    const handler = inceptionCard?.onAddToWatchlistAndLibrary as (() => void) | undefined;
+    expect(handler).toBeDefined();
+
+    handler?.();
+
+    expect(mockAddMovieMutation).toHaveBeenCalledWith(
+      { tmdbId: 101 },
+      expect.objectContaining({ onSuccess: expect.any(Function) })
+    );
+
+    // Simulate addMovie success with local id
+    const onSuccess = mockAddMovieMutation.mock.calls[0]?.[1]?.onSuccess;
+    onSuccess?.({ data: { id: 99 }, created: true, message: 'Movie added to library' });
+
+    expect(mockWatchlistAddMutation).toHaveBeenCalledWith(
+      { mediaType: 'movie', mediaId: 99 },
+      expect.objectContaining({ onSuccess: expect.any(Function) })
+    );
+  });
+
+  it('calling onMarkWatchedAndLibrary triggers addMovie then watchHistory.log', () => {
+    setupEmptyLibrary();
+    renderPage();
+
+    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    const handler = inceptionCard?.onMarkWatchedAndLibrary as (() => void) | undefined;
+    expect(handler).toBeDefined();
+
+    handler?.();
+
+    expect(mockAddMovieMutation).toHaveBeenCalledWith(
+      { tmdbId: 101 },
+      expect.objectContaining({ onSuccess: expect.any(Function) })
+    );
+
+    const onSuccess = mockAddMovieMutation.mock.calls[0]?.[1]?.onSuccess;
+    onSuccess?.({ data: { id: 99 }, created: true, message: 'Movie added to library' });
+
+    expect(mockWatchHistoryLogMutation).toHaveBeenCalledWith(
+      { mediaType: 'movie', mediaId: 99 },
+      expect.objectContaining({ onSuccess: expect.any(Function) })
+    );
+  });
+
+  it('calling onMarkWatched for in-library movie triggers watchHistory.log directly', () => {
+    renderPage();
+
+    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    const handler = inceptionCard?.onMarkWatched as (() => void) | undefined;
+    expect(handler).toBeDefined();
+
+    handler?.();
+
+    expect(mockWatchHistoryLogMutation).toHaveBeenCalledWith(
+      { mediaType: 'movie', mediaId: 1 },
+      expect.objectContaining({ onSuccess: expect.any(Function) })
+    );
+    // addMovie should NOT be called for an in-library item
+    expect(mockAddMovieMutation).not.toHaveBeenCalled();
+  });
+
+  it('does not pass onAddToWatchlistAndLibrary to TV cards', () => {
+    renderPage();
+
+    // TV compound watchlist action not supported (no episode-level tracking)
+    const bbCard = lastTvCardProps.find((p) => p.title === 'Breaking Bad');
+    expect(bbCard?.onAddToWatchlistAndLibrary).toBeUndefined();
   });
 });

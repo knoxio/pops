@@ -30,6 +30,7 @@ Build a search page that queries TMDB for movies and TheTVDB for TV shows. Displ
 | ----------------------- | ---------------------------------------------------------------------------------- |
 | Layout                  | Tab or section layout: "Movies (TMDB)" / "TV Shows (TheTVDB)"                      |
 | Result card             | Poster thumbnail, title, year, overview snippet (2-3 lines, truncated)             |
+| Clickable card          | In-library cards are `<Link>` elements navigating to the detail page               |
 | "Add to Library" button | Per-result action — triggers the add flow                                          |
 | "In Library" badge      | Shown if tmdbId (movies) or tvdbId (TV shows) already exists in the local database |
 | Loading state           | Per-section spinner/skeleton (one API may respond before the other)                |
@@ -45,6 +46,23 @@ Build a search page that queries TMDB for movies and TheTVDB for TV shows. Displ
 | Already exists | Button pre-renders as "In Library" badge (idempotent — no error if added again)      |
 | Failure        | Button reverts to "Add", error toast with message                                    |
 
+### Watchlist and Watch Actions on Search Results
+
+#### Not-in-library movie cards
+
+| Button              | Action                                                              |
+| ------------------- | ------------------------------------------------------------------- |
+| Add to Library      | `addMovie` — adds to library only                                   |
+| Watchlist + Library | `addMovie` → on success → `watchlist.add` with returned local id    |
+| Watched + Library   | `addMovie` → on success → `watchHistory.log` with returned local id |
+
+#### In-library items
+
+| Element         | Detail                                                              |
+| --------------- | ------------------------------------------------------------------- |
+| WatchlistToggle | Shown for all in-library items (movies and TV) when `mediaId` known |
+| Mark Watched    | Shown for in-library movies only; calls `watchHistory.log` directly |
+
 ## API Dependencies
 
 | Procedure                 | Usage                                                              |
@@ -54,6 +72,10 @@ Build a search page that queries TMDB for movies and TheTVDB for TV shows. Displ
 | `media.library.addMovie`  | Add a movie to the library by TMDB ID (fetches full metadata)      |
 | `media.library.addTvShow` | Add a TV show to the library by TheTVDB ID (fetches full metadata) |
 | `media.library.list`      | Check which tmdbIds/tvdbIds are already in the library             |
+| `media.watchlist.add`     | Add an item to the watchlist (compound action after addMovie)      |
+| `media.watchlist.remove`  | Remove an item from the watchlist (via WatchlistToggle)            |
+| `media.watchlist.status`  | Check watchlist status for in-library items (via WatchlistToggle)  |
+| `media.watchHistory.log`  | Log a watch event (compound or direct for in-library movies)       |
 
 ## Business Rules
 
@@ -62,7 +84,11 @@ Build a search page that queries TMDB for movies and TheTVDB for TV shows. Displ
 - "In Library" detection checks the local database, not the external API
 - Adding an item that already exists is idempotent — no duplicate rows, no error
 - The add flow fetches full metadata from the external API and stores it locally; the search result itself is a preview only
-- Search query is persisted in the URL (`?q=`) so the page can be bookmarked or shared
+- Search query is persisted in the URL (`?q=`) so the back button restores the query
+- In-library cards are wrapped in a `<Link>` navigating to the detail page; action buttons inside stop click propagation so they don't trigger navigation
+- Compound add-to-watchlist and mark-watched actions chain `addMovie` first, then use the local id returned by the response for the secondary call
+- The local id returned by compound `addMovie` calls is cached in session state (`sessionMovieLocalIds`) so subsequent in-session interactions have the id without waiting for a library query refetch
+- TV shows do not have compound watchlist/watched actions on the search page (episode-level tracking requires the detail page)
 
 ## Edge Cases
 
@@ -78,13 +104,15 @@ Build a search page that queries TMDB for movies and TheTVDB for TV shows. Displ
 
 ## User Stories
 
-| #   | Story                                                     | Summary                                                                              | Status | Parallelisable   |
-| --- | --------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------ | ---------------- |
-| 01  | [us-01-search-input](us-01-search-input.md)               | Debounced search input querying TMDB and TheTVDB in parallel                         | Done   | No (first)       |
-| 02  | [us-02-search-results](us-02-search-results.md)           | Result cards with poster/title/year/overview, "In Library" badge, tab/section layout | Done   | Blocked by us-01 |
-| 03  | [us-03-add-to-library-flow](us-03-add-to-library-flow.md) | Add button with spinner, addMovie/addTvShow call, success toast, badge update        | Done   | Blocked by us-02 |
+| #   | Story                                                                 | Summary                                                                              | Status | Parallelisable   |
+| --- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ------ | ---------------- |
+| 01  | [us-01-search-input](us-01-search-input.md)                           | Debounced search input querying TMDB and TheTVDB in parallel                         | Done   | No (first)       |
+| 02  | [us-02-search-results](us-02-search-results.md)                       | Result cards with poster/title/year/overview, "In Library" badge, tab/section layout | Done   | Blocked by us-01 |
+| 03  | [us-03-add-to-library-flow](us-03-add-to-library-flow.md)             | Add button with spinner, addMovie/addTvShow call, success toast, badge update        | Done   | Blocked by us-02 |
+| 04  | [us-04-clickable-tiles](us-04-clickable-tiles.md)                     | In-library cards link to detail page; URL `?q=` preserves query across navigation    | Done   | Blocked by us-02 |
+| 05  | [us-05-watchlist-watched-actions](us-05-watchlist-watched-actions.md) | Compound watchlist/watched actions on search results                                 | Done   | Blocked by us-03 |
 
-US-02 depends on US-01 (needs search state). US-03 depends on US-02 (needs result cards to attach the button to).
+US-02 depends on US-01 (needs search state). US-03 depends on US-02 (needs result cards to attach the button to). US-04 and US-05 depend on US-03.
 
 ## Verification
 
@@ -95,6 +123,13 @@ US-02 depends on US-01 (needs search state). US-03 depends on US-02 (needs resul
 - Adding an item that already exists does not create a duplicate
 - Per-section loading and error states work independently
 - Empty states are accurate per section
+- In-library cards are clickable links navigating to the correct detail page
+- Browser back button restores the search query via `?q=` param
+- Clicking action buttons on a linked card does not trigger navigation
+- "Watchlist + Library" calls addMovie then watchlist.add with the returned local id
+- "Watched + Library" calls addMovie then watchHistory.log with the returned local id
+- In-library movie cards show WatchlistToggle and Mark Watched button
+- In-library TV cards show WatchlistToggle (no Mark Watched — episode-level)
 
 ## Out of Scope
 
@@ -105,4 +140,4 @@ US-02 depends on US-01 (needs search state). US-03 depends on US-02 (needs resul
 
 ## Drift Check
 
-last checked: 2026-04-17
+last checked: 2026-04-18

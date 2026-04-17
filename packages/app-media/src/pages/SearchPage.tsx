@@ -9,6 +9,13 @@ import { toast } from 'sonner';
  * Features: 300ms debounced search, type toggle (Movies/TV/Both),
  * responsive result grid, "Add to Library" with loading state,
  * "In Library" badge for items already in the collection.
+ *
+ * In-library items get a clickable card link to the detail page, a
+ * WatchlistToggle, and (movies) a Mark as Watched button.
+ *
+ * Not-in-library items get compound "Watchlist + Library" and (movies)
+ * "Watched + Library" buttons that add the item then trigger the secondary
+ * action in a single click.
  */
 import { Button, Skeleton, Tabs, TabsList, TabsTrigger, TextInput } from '@pops/ui';
 
@@ -83,6 +90,16 @@ export function SearchPage() {
   const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
   // Track items successfully added this session
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
+  // Track compound "add to watchlist" pending state (by tmdbId)
+  const [addingToWatchlistIds, setAddingToWatchlistIds] = useState<Set<number>>(new Set());
+  // Track compound "mark watched" pending state (by tmdbId or mediaId)
+  const [markingWatchedIds, setMarkingWatchedIds] = useState<Set<number>>(new Set());
+  /**
+   * Cache tmdbId → local DB id for movies added this session via compound
+   * actions. The library query cache won't reflect newly added items until
+   * it's refetched, so we store the mapping from the addMovie response.
+   */
+  const [sessionMovieLocalIds, setSessionMovieLocalIds] = useState<Map<number, number>>(new Map());
 
   const shouldSearchMovies = debouncedQuery.length > 0 && (mode === 'movies' || mode === 'both');
   const shouldSearchTv = debouncedQuery.length > 0 && (mode === 'tv' || mode === 'both');
@@ -130,6 +147,8 @@ export function SearchPage() {
   // Mutations
   const addMovieMutation = trpc.media.library.addMovie.useMutation();
   const addTvShowMutation = trpc.media.library.addTvShow.useMutation();
+  const watchlistAddMutation = trpc.media.watchlist.add.useMutation();
+  const watchHistoryLogMutation = trpc.media.watchHistory.log.useMutation();
 
   const makeKey = (type: SearchResultType, id: number) => `${type}:${id}`;
 
@@ -140,8 +159,9 @@ export function SearchPage() {
       addMovieMutation.mutate(
         { tmdbId },
         {
-          onSuccess: () => {
+          onSuccess: (result) => {
             setAddedIds((prev) => new Set(prev).add(key));
+            setSessionMovieLocalIds((prev) => new Map(prev).set(tmdbId, result.data.id));
             toast.success('Movie added to library');
           },
           onError: (err: { message: string }) => {
@@ -185,6 +205,146 @@ export function SearchPage() {
       );
     },
     [addTvShowMutation]
+  );
+
+  /**
+   * Compound action: add movie to library, then add to watchlist.
+   * The local DB id returned by addMovie is used for the watchlist call and
+   * also stored in sessionMovieLocalIds so subsequent actions have the id.
+   */
+  const handleAddToWatchlistAndLibrary = useCallback(
+    (tmdbId: number) => {
+      const key = makeKey('movie', tmdbId);
+      setAddingToWatchlistIds((prev) => new Set(prev).add(tmdbId));
+      setAddingIds((prev) => new Set(prev).add(key));
+      addMovieMutation.mutate(
+        { tmdbId },
+        {
+          onSuccess: (result) => {
+            const movieId = result.data.id;
+            setAddedIds((prev) => new Set(prev).add(key));
+            setSessionMovieLocalIds((prev) => new Map(prev).set(tmdbId, movieId));
+            watchlistAddMutation.mutate(
+              { mediaType: 'movie', mediaId: movieId },
+              {
+                onSuccess: () => {
+                  toast.success('Added to watchlist and library');
+                },
+                onError: (err: { message: string }) => {
+                  toast.error(`Movie added to library but watchlist failed: ${err.message}`);
+                },
+                onSettled: () => {
+                  setAddingToWatchlistIds((prev) => {
+                    const next = new Set(prev);
+                    next.delete(tmdbId);
+                    return next;
+                  });
+                },
+              }
+            );
+          },
+          onError: (err: { message: string }) => {
+            toast.error(`Failed to add movie: ${err.message}`);
+            setAddingToWatchlistIds((prev) => {
+              const next = new Set(prev);
+              next.delete(tmdbId);
+              return next;
+            });
+          },
+          onSettled: () => {
+            setAddingIds((prev) => {
+              const next = new Set(prev);
+              next.delete(key);
+              return next;
+            });
+          },
+        }
+      );
+    },
+    [addMovieMutation, watchlistAddMutation]
+  );
+
+  /**
+   * Compound action: add movie to library, then log as watched.
+   */
+  const handleMarkWatchedAndLibrary = useCallback(
+    (tmdbId: number) => {
+      const key = makeKey('movie', tmdbId);
+      setMarkingWatchedIds((prev) => new Set(prev).add(tmdbId));
+      setAddingIds((prev) => new Set(prev).add(key));
+      addMovieMutation.mutate(
+        { tmdbId },
+        {
+          onSuccess: (result) => {
+            const movieId = result.data.id;
+            setAddedIds((prev) => new Set(prev).add(key));
+            setSessionMovieLocalIds((prev) => new Map(prev).set(tmdbId, movieId));
+            watchHistoryLogMutation.mutate(
+              { mediaType: 'movie', mediaId: movieId },
+              {
+                onSuccess: () => {
+                  toast.success('Marked as watched and added to library');
+                },
+                onError: (err: { message: string }) => {
+                  toast.error(`Movie added to library but watch log failed: ${err.message}`);
+                },
+                onSettled: () => {
+                  setMarkingWatchedIds((prev) => {
+                    const next = new Set(prev);
+                    next.delete(tmdbId);
+                    return next;
+                  });
+                },
+              }
+            );
+          },
+          onError: (err: { message: string }) => {
+            toast.error(`Failed to add movie: ${err.message}`);
+            setMarkingWatchedIds((prev) => {
+              const next = new Set(prev);
+              next.delete(tmdbId);
+              return next;
+            });
+          },
+          onSettled: () => {
+            setAddingIds((prev) => {
+              const next = new Set(prev);
+              next.delete(key);
+              return next;
+            });
+          },
+        }
+      );
+    },
+    [addMovieMutation, watchHistoryLogMutation]
+  );
+
+  /**
+   * Simple mark-as-watched for an in-library movie (local DB id known).
+   */
+  const handleMarkWatched = useCallback(
+    (mediaId: number) => {
+      setMarkingWatchedIds((prev) => new Set(prev).add(mediaId));
+      watchHistoryLogMutation.mutate(
+        { mediaType: 'movie', mediaId },
+        {
+          onSuccess: () => {
+            toast.success('Marked as watched');
+          },
+          onError: (err: { message: string }) => {
+            toast.error(`Failed to log watch: ${err.message}`);
+          },
+          onSettled: () => {
+            setMarkingWatchedIds((prev) => {
+              const next = new Set(prev);
+              next.delete(mediaId);
+              return next;
+            });
+          },
+        }
+      );
+    },
+    [watchHistoryLogMutation]
   );
 
   const hasQuery = debouncedQuery.length > 0;
@@ -290,7 +450,8 @@ export function SearchPage() {
               {movieResults.map((movie: MovieSearchResult) => {
                 const key = makeKey('movie', movie.tmdbId);
                 const inLibrary = movieTmdbIds.has(movie.tmdbId) || addedIds.has(key);
-                const localId = movieTmdbToLocalId.get(movie.tmdbId);
+                const localId =
+                  movieTmdbToLocalId.get(movie.tmdbId) ?? sessionMovieLocalIds.get(movie.tmdbId);
                 const rotation = movieTmdbToRotation.get(movie.tmdbId);
                 return (
                   <SearchResultCard
@@ -305,10 +466,35 @@ export function SearchPage() {
                     inLibrary={inLibrary}
                     rotationStatus={rotation?.rotationStatus}
                     rotationExpiresAt={rotation?.rotationExpiresAt}
+                    mediaId={localId}
                     isAdding={addingIds.has(key)}
                     onAdd={() => {
                       handleAddMovie(movie.tmdbId);
                     }}
+                    onAddToWatchlistAndLibrary={
+                      inLibrary
+                        ? undefined
+                        : () => {
+                            handleAddToWatchlistAndLibrary(movie.tmdbId);
+                          }
+                    }
+                    isAddingToWatchlistAndLibrary={addingToWatchlistIds.has(movie.tmdbId)}
+                    onMarkWatchedAndLibrary={
+                      inLibrary
+                        ? undefined
+                        : () => {
+                            handleMarkWatchedAndLibrary(movie.tmdbId);
+                          }
+                    }
+                    isMarkingWatchedAndLibrary={markingWatchedIds.has(movie.tmdbId)}
+                    onMarkWatched={
+                      localId != null
+                        ? () => {
+                            handleMarkWatched(localId);
+                          }
+                        : undefined
+                    }
+                    isMarkingWatched={localId != null && markingWatchedIds.has(localId)}
                     href={localId != null ? `/media/movies/${localId}` : undefined}
                   />
                 );
@@ -369,10 +555,12 @@ export function SearchPage() {
                     posterUrl={buildPosterUrl(show.posterPath, 'tv')}
                     genres={show.genres}
                     inLibrary={inLibrary}
+                    mediaId={localId}
                     isAdding={addingIds.has(key)}
                     onAdd={() => {
                       handleAddTvShow(show.tvdbId);
                     }}
+                    onAddToWatchlistAndLibrary={undefined}
                     href={localId != null ? `/media/tv/${localId}` : undefined}
                   />
                 );
