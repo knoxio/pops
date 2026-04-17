@@ -1,6 +1,5 @@
 import {
   AlertTriangle,
-  ArrowLeft,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -18,18 +17,13 @@ import { Link } from 'react-router';
  * PRD-072 US-06
  */
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
   Button,
   Card,
   CardContent,
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
+  PageHeader,
   Skeleton,
 } from '@pops/ui';
 
@@ -73,39 +67,17 @@ export function RotationLogPage() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto p-6">
-      {/* Breadcrumb */}
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/media">Media</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/media/rotation">Rotation</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Log</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link
-          to="/media/rotation"
-          className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
-          aria-label="Back to Rotation Settings"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
-        <ScrollText className="h-6 w-6 text-muted-foreground" />
-        <h1 className="text-2xl font-bold tracking-tight">Rotation Log</h1>
-      </div>
+      <PageHeader
+        title="Rotation Log"
+        icon={<ScrollText className="h-6 w-6 text-muted-foreground" />}
+        backHref="/media/rotation"
+        breadcrumbs={[
+          { label: 'Media', href: '/media' },
+          { label: 'Rotation', href: '/media/rotation' },
+          { label: 'Log' },
+        ]}
+        renderLink={Link}
+      />
 
       {/* Summary stats */}
       {statsLoading ? (

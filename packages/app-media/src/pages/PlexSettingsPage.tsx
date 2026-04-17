@@ -1,4 +1,4 @@
-import { ArrowLeft, RefreshCw, Save, Server } from 'lucide-react';
+import { RefreshCw, Save, Server } from 'lucide-react';
 import { Link } from 'react-router';
 
 /**
@@ -7,18 +7,7 @@ import { Link } from 'react-router';
  * Shows connection health, available libraries, and sync buttons
  * for importing movies and TV shows from Plex into the local library.
  */
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-  Button,
-  Input,
-  Label,
-  Skeleton,
-} from '@pops/ui';
+import { Button, Input, Label, PageHeader, Skeleton } from '@pops/ui';
 
 import { ConnectionBadge } from '../components/ConnectionBadge';
 import { DiscoverSyncResultDisplay } from './plex-settings/components/DiscoverSyncResultDisplay';
@@ -58,47 +47,29 @@ export function PlexSettingsPage() {
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto p-6">
-      {/* Breadcrumb */}
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link to="/media">Media</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Plex Settings</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
-      {/* Header */}
-      <div className="flex items-center gap-3">
-        <Link
-          to="/media"
-          className="inline-flex items-center justify-center h-8 w-8 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
-          aria-label="Back to Media"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Link>
-        <h1 className="text-2xl font-bold tracking-tight">Plex Settings</h1>
-        {settings.status?.configured && <ConnectionBadge connected={settings.connected} />}
-
-        <div className="flex-1" />
-        {settings.status?.hasToken && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              mutations.disconnect.mutate();
-            }}
-            disabled={mutations.disconnect.isPending}
-          >
-            Disconnect
-          </Button>
-        )}
-      </div>
+      <PageHeader
+        title="Plex Settings"
+        backHref="/media"
+        breadcrumbs={[{ label: 'Media', href: '/media' }, { label: 'Plex Settings' }]}
+        renderLink={Link}
+        actions={
+          <>
+            {settings.status?.configured && <ConnectionBadge connected={settings.connected} />}
+            {settings.status?.hasToken && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  mutations.disconnect.mutate();
+                }}
+                disabled={mutations.disconnect.isPending}
+              >
+                Disconnect
+              </Button>
+            )}
+          </>
+        }
+      />
 
       <p className="text-sm text-muted-foreground">
         Connect your Plex Media Server to sync your movie and TV libraries, track watch history, and
