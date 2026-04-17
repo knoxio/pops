@@ -16,8 +16,9 @@ const meta: Meta<typeof EditableCell> = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-// Wrapper to hold stateful value for interactive stories
-function EditableCellWrapper(props: React.ComponentProps<typeof EditableCell>) {
+type WrapperProps = Omit<React.ComponentProps<typeof EditableCell>, 'onSave'>;
+
+function EditableCellWrapper(props: WrapperProps) {
   const [value, setValue] = useState(props.value);
   return (
     <div className="w-64">
@@ -25,7 +26,7 @@ function EditableCellWrapper(props: React.ComponentProps<typeof EditableCell>) {
         {...props}
         value={value}
         onSave={(v) => {
-          setValue(v as never);
+          setValue(v);
           return Promise.resolve();
         }}
       />
@@ -42,22 +43,15 @@ export const DisplayMode: Story = {
 };
 
 export const TextEdit: Story = {
-  render: () => <EditableCellWrapper value="Editable text" type="text" onSave={() => {}} />,
+  render: () => <EditableCellWrapper value="Editable text" type="text" />,
 };
 
 export const NumberEdit: Story = {
-  render: () => <EditableCellWrapper value={42} type="number" onSave={() => {}} />,
+  render: () => <EditableCellWrapper value={42} type="number" />,
 };
 
 export const DateEdit: Story = {
-  render: () => (
-    <EditableCellWrapper
-      value="2024-06-15"
-      type="date"
-      onSave={() => {}}
-      placeholder="YYYY-MM-DD"
-    />
-  ),
+  render: () => <EditableCellWrapper value="2024-06-15" type="date" placeholder="YYYY-MM-DD" />,
 };
 
 export const SelectEdit: Story = {
@@ -70,7 +64,6 @@ export const SelectEdit: Story = {
         { label: 'Inactive', value: 'inactive' },
         { label: 'Pending', value: 'pending' },
       ]}
-      onSave={() => {}}
     />
   ),
 };
