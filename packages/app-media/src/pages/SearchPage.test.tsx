@@ -122,7 +122,14 @@ const TV_RESULTS = [
   },
 ];
 
-const LIBRARY_MOVIES = [{ id: 1, tmdbId: 101 }]; // Inception is in library
+const LIBRARY_MOVIES = [
+  {
+    id: 1,
+    tmdbId: 101,
+    rotationStatus: 'leaving' as const,
+    rotationExpiresAt: '2026-05-01T00:00:00Z',
+  },
+]; // Inception is in library with leaving rotation
 const LIBRARY_TV = [{ id: 2, tvdbId: 201 }]; // Breaking Bad is in library
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -358,6 +365,32 @@ describe('SearchPage — poster fallback (via card props)', () => {
 
     const bbCard = lastTvCardProps.find((p) => p.title === 'Breaking Bad');
     expect(bbCard?.posterUrl).toBe('https://cdn.tvdb.com/bb.jpg');
+  });
+});
+
+describe('SearchPage — rotation fields passed to in-library movie cards', () => {
+  it('passes rotationStatus and rotationExpiresAt for in-library movies', () => {
+    renderPage();
+
+    const inceptionCard = lastMovieCardProps.find((p) => p.title === 'Inception');
+    expect(inceptionCard?.rotationStatus).toBe('leaving');
+    expect(inceptionCard?.rotationExpiresAt).toBe('2026-05-01T00:00:00Z');
+  });
+
+  it('passes undefined rotationStatus and rotationExpiresAt for movies not in library', () => {
+    renderPage();
+
+    const interstellarCard = lastMovieCardProps.find((p) => p.title === 'Interstellar');
+    expect(interstellarCard?.rotationStatus).toBeUndefined();
+    expect(interstellarCard?.rotationExpiresAt).toBeUndefined();
+  });
+
+  it('passes no rotation fields when library is empty', () => {
+    setupEmptyLibrary();
+    renderPage();
+
+    expect(lastMovieCardProps.every((p) => p.rotationStatus === undefined)).toBe(true);
+    expect(lastMovieCardProps.every((p) => p.rotationExpiresAt === undefined)).toBe(true);
   });
 });
 

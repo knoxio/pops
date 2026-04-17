@@ -21,6 +21,7 @@ import { ArrStatusBadge } from '../components/ArrStatusBadge';
 import { ComparisonScores } from '../components/ComparisonScores';
 import { ExcludedDimensions } from '../components/ExcludedDimensions';
 import { FreshnessBadge } from '../components/FreshnessBadge';
+import { LeavingBadge } from '../components/LeavingBadge';
 import { MarkAsWatchedButton } from '../components/MarkAsWatchedButton';
 import { MovieActionButtons } from '../components/MovieActionButtons';
 import { WatchlistToggle } from '../components/WatchlistToggle';
@@ -248,6 +249,9 @@ export function MovieDetailPage() {
                 posterPath={movie.posterPath ?? undefined}
               />
               <FreshnessBadge daysSinceWatch={daysSinceWatch} staleness={staleness} />
+              {movie.rotationStatus === 'leaving' && movie.rotationExpiresAt && (
+                <LeavingBadge rotationExpiresAt={movie.rotationExpiresAt} />
+              )}
               {pendingDebrief && (
                 <Link to={`/media/debrief/${movie.id}`}>
                   <Button variant="outline" size="sm">

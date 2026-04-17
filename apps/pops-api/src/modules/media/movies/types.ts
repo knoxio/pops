@@ -31,6 +31,8 @@ export interface Movie {
   genres: string[];
   createdAt: string;
   updatedAt: string;
+  rotationStatus: 'leaving' | 'protected' | null;
+  rotationExpiresAt: string | null;
 }
 
 /** Map a SQLite row to the API response shape. */
@@ -97,6 +99,8 @@ export function toMovie(row: MovieRow): Movie {
       : [],
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
+    rotationStatus: row.rotationStatus ?? null,
+    rotationExpiresAt: row.rotationExpiresAt ?? null,
   };
 }
 

@@ -32,7 +32,10 @@ import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle, Badge, Skeleton, Textarea } from '@pops/ui';
 import { Button } from '@pops/ui';
 
+import { LeavingBadge } from '../components/LeavingBadge';
 import { trpc } from '../lib/trpc';
+
+import type { RotationMeta } from '../lib/types';
 
 type WatchlistFilter = 'all' | 'movie' | 'tv_show';
 
@@ -58,7 +61,7 @@ interface WatchlistEntry {
   posterUrl?: string | null;
 }
 
-interface MediaMeta {
+interface MediaMeta extends RotationMeta {
   title: string;
   year: number | null;
   posterUrl: string | null;
@@ -94,7 +97,7 @@ function WatchlistSkeleton() {
   );
 }
 
-interface WatchlistItemProps {
+interface WatchlistItemProps extends RotationMeta {
   entry: WatchlistEntry;
   title: string;
   year: number | null;
@@ -130,6 +133,8 @@ function WatchlistItem({
   onUpdateNotes,
   isUpdating,
   updateError,
+  rotationStatus,
+  rotationExpiresAt,
 }: WatchlistItemProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(entry.notes ?? '');
@@ -236,6 +241,9 @@ function WatchlistItem({
                 {entry.mediaType === 'movie' ? 'Movie' : 'TV'}
               </Badge>
               {year && <span className="text-xs text-muted-foreground">{year}</span>}
+              {rotationStatus === 'leaving' && rotationExpiresAt && (
+                <LeavingBadge rotationExpiresAt={rotationExpiresAt} />
+              )}
             </div>
           </div>
 
@@ -323,7 +331,7 @@ function WatchlistItem({
   );
 }
 
-interface WatchlistCardProps {
+interface WatchlistCardProps extends RotationMeta {
   entry: WatchlistEntry;
   title: string;
   year: number | null;
@@ -345,6 +353,8 @@ function WatchlistCard({
   isRemoving,
   dragAttributes,
   dragListeners,
+  rotationStatus,
+  rotationExpiresAt,
 }: WatchlistCardProps) {
   const navigate = useNavigate();
   const [imageError, setImageError] = useState(false);
@@ -436,6 +446,9 @@ function WatchlistCard({
           <h3 className="text-sm font-medium leading-tight line-clamp-2">{title}</h3>
         </Link>
         {year && <p className="text-xs text-muted-foreground">{year}</p>}
+        {rotationStatus === 'leaving' && rotationExpiresAt && (
+          <LeavingBadge rotationExpiresAt={rotationExpiresAt} />
+        )}
         {entry.notes && <p className="text-xs text-muted-foreground line-clamp-1">{entry.notes}</p>}
       </div>
     </div>
@@ -542,21 +555,16 @@ export function WatchlistPage() {
   const movieMap = useMemo(
     () =>
       new Map<number, MediaMeta>(
-        (moviesData?.data ?? []).map(
-          (m: {
-            id: number;
-            title: string;
-            releaseDate: string | null;
-            posterUrl: string | null;
-          }) => [
-            m.id,
-            {
-              title: m.title,
-              year: m.releaseDate ? new Date(m.releaseDate).getFullYear() : null,
-              posterUrl: m.posterUrl,
-            },
-          ]
-        )
+        (moviesData?.data ?? []).map((m) => [
+          m.id,
+          {
+            title: m.title,
+            year: m.releaseDate ? new Date(m.releaseDate).getFullYear() : null,
+            posterUrl: m.posterUrl,
+            rotationStatus: m.rotationStatus,
+            rotationExpiresAt: m.rotationExpiresAt,
+          },
+        ])
       ),
     [moviesData?.data]
   );
@@ -771,6 +779,10 @@ export function WatchlistPage() {
                   }}
                   isUpdating={updateMutation.isPending && updateMutation.variables?.id === entry.id}
                   updateError={updateErrorId === entry.id ? updateErrorMsg : null}
+                  rotationStatus={entry.mediaType === 'movie' ? meta?.rotationStatus : undefined}
+                  rotationExpiresAt={
+                    entry.mediaType === 'movie' ? meta?.rotationExpiresAt : undefined
+                  }
                 />
               );
             })}
@@ -805,6 +817,12 @@ export function WatchlistPage() {
                         removeMutation.mutate({ id });
                       }}
                       isRemoving={removingId === entry.id}
+                      rotationStatus={
+                        entry.mediaType === 'movie' ? meta?.rotationStatus : undefined
+                      }
+                      rotationExpiresAt={
+                        entry.mediaType === 'movie' ? meta?.rotationExpiresAt : undefined
+                      }
                     />
                   ) : (
                     <WatchlistCard
@@ -819,6 +837,12 @@ export function WatchlistPage() {
                         removeMutation.mutate({ id });
                       }}
                       isRemoving={removingId === entry.id}
+                      rotationStatus={
+                        entry.mediaType === 'movie' ? meta?.rotationStatus : undefined
+                      }
+                      rotationExpiresAt={
+                        entry.mediaType === 'movie' ? meta?.rotationExpiresAt : undefined
+                      }
                     />
                   );
                 })}
@@ -842,6 +866,12 @@ export function WatchlistPage() {
                           priority={idx + 1}
                           onRemove={() => {}}
                           isRemoving={false}
+                          rotationStatus={
+                            entry.mediaType === 'movie' ? meta?.rotationStatus : undefined
+                          }
+                          rotationExpiresAt={
+                            entry.mediaType === 'movie' ? meta?.rotationExpiresAt : undefined
+                          }
                         />
                       </div>
                     );

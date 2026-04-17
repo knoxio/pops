@@ -120,6 +120,12 @@ export function SearchPage() {
   const tvTvdbToLocalId = new Map(
     (libraryTvShows.data?.data ?? []).map((s: { id: number; tvdbId: number }) => [s.tvdbId, s.id])
   );
+  const movieTmdbToRotation = new Map(
+    (libraryMovies.data?.data ?? []).map((m) => [
+      m.tmdbId,
+      { rotationStatus: m.rotationStatus, rotationExpiresAt: m.rotationExpiresAt },
+    ])
+  );
 
   // Mutations
   const addMovieMutation = trpc.media.library.addMovie.useMutation();
@@ -285,6 +291,7 @@ export function SearchPage() {
                 const key = makeKey('movie', movie.tmdbId);
                 const inLibrary = movieTmdbIds.has(movie.tmdbId) || addedIds.has(key);
                 const localId = movieTmdbToLocalId.get(movie.tmdbId);
+                const rotation = movieTmdbToRotation.get(movie.tmdbId);
                 return (
                   <SearchResultCard
                     key={movie.tmdbId}
@@ -296,6 +303,8 @@ export function SearchPage() {
                     posterUrl={buildPosterUrl(movie.posterPath, 'movie')}
                     voteAverage={movie.voteAverage}
                     inLibrary={inLibrary}
+                    rotationStatus={rotation?.rotationStatus}
+                    rotationExpiresAt={rotation?.rotationExpiresAt}
                     isAdding={addingIds.has(key)}
                     onAdd={() => {
                       handleAddMovie(movie.tmdbId);

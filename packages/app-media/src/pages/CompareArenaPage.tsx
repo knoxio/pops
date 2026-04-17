@@ -159,7 +159,7 @@ export function CompareArenaPage() {
   );
 
   const addToWatchlistMutation = trpc.media.watchlist.add.useMutation({
-    onSuccess: (_data: unknown, variables: { mediaType: string; mediaId: number }) => {
+    onSuccess: (_data, variables) => {
       utils.media.watchlist.list.invalidate();
       const movie =
         variables.mediaId === movieAId ? pairData?.data?.movieA : pairData?.data?.movieB;
