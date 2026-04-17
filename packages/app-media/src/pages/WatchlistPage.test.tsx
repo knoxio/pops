@@ -55,6 +55,12 @@ vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
 
+vi.mock('../components/LeavingBadge', () => ({
+  LeavingBadge: ({ rotationExpiresAt }: { rotationExpiresAt: string }) => (
+    <span data-testid="leaving-badge">{rotationExpiresAt}</span>
+  ),
+}));
+
 import { WatchlistPage } from './WatchlistPage';
 
 function renderPage() {
@@ -311,6 +317,70 @@ describe('WatchlistPage', () => {
       await user.click(screen.getByRole('tab', { name: 'TV Shows' }));
 
       expect(screen.getByText('No TV shows on your watchlist.')).toBeInTheDocument();
+    });
+  });
+
+  describe('leaving badge', () => {
+    it('shows LeavingBadge for a movie with rotationStatus leaving', () => {
+      mockWatchlistQuery.mockReturnValue({
+        data: { data: [entry1] },
+        isLoading: false,
+        error: null,
+      });
+      mockMoviesQuery.mockReturnValue({
+        data: {
+          data: [
+            {
+              id: 10,
+              title: 'The Matrix',
+              releaseDate: '1999-03-31',
+              posterUrl: null,
+              rotationStatus: 'leaving' as const,
+              rotationExpiresAt: '2026-05-01T00:00:00Z',
+            },
+          ],
+        },
+        isLoading: false,
+      });
+      mockTvShowsQuery.mockReturnValue({
+        data: { data: [] },
+        isLoading: false,
+      });
+
+      renderPage();
+
+      expect(screen.getAllByTestId('leaving-badge').length).toBeGreaterThan(0);
+    });
+
+    it('does not show LeavingBadge when rotationStatus is not leaving', () => {
+      mockWatchlistQuery.mockReturnValue({
+        data: { data: [entry1] },
+        isLoading: false,
+        error: null,
+      });
+      mockMoviesQuery.mockReturnValue({
+        data: {
+          data: [
+            {
+              id: 10,
+              title: 'The Matrix',
+              releaseDate: '1999-03-31',
+              posterUrl: null,
+              rotationStatus: null,
+              rotationExpiresAt: null,
+            },
+          ],
+        },
+        isLoading: false,
+      });
+      mockTvShowsQuery.mockReturnValue({
+        data: { data: [] },
+        isLoading: false,
+      });
+
+      renderPage();
+
+      expect(screen.queryByTestId('leaving-badge')).not.toBeInTheDocument();
     });
   });
 });

@@ -35,6 +35,8 @@ import { Button } from '@pops/ui';
 import { LeavingBadge } from '../components/LeavingBadge';
 import { trpc } from '../lib/trpc';
 
+import type { RotationMeta } from '../lib/types';
+
 type WatchlistFilter = 'all' | 'movie' | 'tv_show';
 
 const FILTER_OPTIONS: { value: WatchlistFilter; label: string }[] = [
@@ -59,12 +61,10 @@ interface WatchlistEntry {
   posterUrl?: string | null;
 }
 
-interface MediaMeta {
+interface MediaMeta extends RotationMeta {
   title: string;
   year: number | null;
   posterUrl: string | null;
-  rotationStatus?: 'leaving' | 'protected' | null;
-  rotationExpiresAt?: string | null;
 }
 
 function WatchlistSkeleton() {
@@ -97,7 +97,7 @@ function WatchlistSkeleton() {
   );
 }
 
-interface WatchlistItemProps {
+interface WatchlistItemProps extends RotationMeta {
   entry: WatchlistEntry;
   title: string;
   year: number | null;
@@ -114,8 +114,6 @@ interface WatchlistItemProps {
   onUpdateNotes: (id: number, notes: string | null) => void;
   isUpdating: boolean;
   updateError: string | null;
-  rotationStatus?: 'leaving' | 'protected' | null;
-  rotationExpiresAt?: string | null;
 }
 
 function WatchlistItem({
@@ -333,7 +331,7 @@ function WatchlistItem({
   );
 }
 
-interface WatchlistCardProps {
+interface WatchlistCardProps extends RotationMeta {
   entry: WatchlistEntry;
   title: string;
   year: number | null;
@@ -343,8 +341,6 @@ interface WatchlistCardProps {
   isRemoving: boolean;
   dragAttributes?: DraggableAttributes;
   dragListeners?: Record<string, unknown>;
-  rotationStatus?: 'leaving' | 'protected' | null;
-  rotationExpiresAt?: string | null;
 }
 
 function WatchlistCard({

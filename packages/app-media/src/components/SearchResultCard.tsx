@@ -6,19 +6,22 @@ import { Link } from 'react-router';
  * SearchResultCard — displays a search result from TMDB or TheTVDB.
  * Shows poster from external CDN, title, year, overview, genres, rating,
  * and an "Add to Library" / "In Library" action.
- * When the item is already in the library and has a 'leaving' rotation status,
- * a LeavingBadge is rendered to indicate the removal countdown (PRD-072 US-01).
+ * When the item is already in the library (`inLibrary === true`) and has a
+ * 'leaving' rotation status, a LeavingBadge is rendered to indicate the
+ * removal countdown (PRD-072 US-01).
  */
 import { Badge, Button, cn, Skeleton } from '@pops/ui';
 
 import { LeavingBadge } from './LeavingBadge';
 import { MovieActionButtons } from './MovieActionButtons';
 
+import type { RotationMeta } from '../lib/types';
+
 const TMDB_IMAGE_BASE = 'https://image.tmdb.org/t/p/w342';
 
 export type SearchResultType = 'movie' | 'tv';
 
-export interface SearchResultCardProps {
+export interface SearchResultCardProps extends RotationMeta {
   type: SearchResultType;
   title: string;
   /** TMDB ID — required for movie request button. */
@@ -29,10 +32,6 @@ export interface SearchResultCardProps {
   voteAverage?: number | null;
   genres?: string[];
   inLibrary?: boolean;
-  /** Rotation status — shows LeavingBadge when 'leaving' (PRD-072 US-01). */
-  rotationStatus?: 'leaving' | 'protected' | null;
-  /** ISO date string for when the item leaves rotation. Required when rotationStatus is 'leaving'. */
-  rotationExpiresAt?: string | null;
   addDisabled?: boolean;
   addDisabledReason?: string;
   isAdding?: boolean;
@@ -169,7 +168,7 @@ export function SearchResultCard({
               {isAdding ? 'Adding…' : 'Add to Library'}
             </Button>
           )}
-          {rotationStatus === 'leaving' && rotationExpiresAt && (
+          {inLibrary && rotationStatus === 'leaving' && rotationExpiresAt && (
             <LeavingBadge rotationExpiresAt={rotationExpiresAt} />
           )}
           {type === 'movie' && tmdbId != null && (

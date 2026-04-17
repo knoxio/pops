@@ -49,6 +49,11 @@ vi.mock('../components/FreshnessBadge', () => ({
 vi.mock('../components/ExcludedDimensions', () => ({
   ExcludedDimensions: () => null,
 }));
+vi.mock('../components/LeavingBadge', () => ({
+  LeavingBadge: ({ rotationExpiresAt }: { rotationExpiresAt: string }) => (
+    <span data-testid="leaving-badge">{rotationExpiresAt}</span>
+  ),
+}));
 
 import { MovieDetailPage } from './MovieDetailPage';
 
@@ -347,6 +352,53 @@ describe('MovieDetailPage', () => {
       expect(
         container.querySelectorAll("[class*='animate-pulse'], [data-slot='skeleton']").length
       ).toBeGreaterThan(0);
+    });
+  });
+
+  describe('leaving badge in hero row', () => {
+    it('renders LeavingBadge when rotationStatus is leaving and rotationExpiresAt is set', () => {
+      mockMovieQuery.mockReturnValue({
+        data: {
+          data: {
+            ...baseMovie,
+            rotationStatus: 'leaving',
+            rotationExpiresAt: '2026-05-01T00:00:00Z',
+          },
+        },
+        isLoading: false,
+        error: null,
+      });
+      renderAtRoute('/media/movies/1');
+      expect(screen.getByTestId('leaving-badge')).toBeInTheDocument();
+    });
+
+    it('does not render LeavingBadge when rotationStatus is not leaving', () => {
+      mockMovieQuery.mockReturnValue({
+        data: {
+          data: { ...baseMovie, rotationStatus: 'protected', rotationExpiresAt: null },
+        },
+        isLoading: false,
+        error: null,
+      });
+      renderAtRoute('/media/movies/1');
+      expect(screen.queryByTestId('leaving-badge')).not.toBeInTheDocument();
+    });
+
+    it('does not render LeavingBadge when rotationStatus is leaving but rotationExpiresAt is null', () => {
+      mockMovieQuery.mockReturnValue({
+        data: {
+          data: { ...baseMovie, rotationStatus: 'leaving', rotationExpiresAt: null },
+        },
+        isLoading: false,
+        error: null,
+      });
+      renderAtRoute('/media/movies/1');
+      expect(screen.queryByTestId('leaving-badge')).not.toBeInTheDocument();
+    });
+
+    it('does not render LeavingBadge when rotationStatus is absent', () => {
+      renderAtRoute('/media/movies/1');
+      expect(screen.queryByTestId('leaving-badge')).not.toBeInTheDocument();
     });
   });
 
