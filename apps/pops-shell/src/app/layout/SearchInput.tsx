@@ -6,8 +6,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   type SearchResultHit,
   type SearchResultSection,
+  RecentSearches,
   SearchResultsPanel,
   useCurrentApp,
+  useRecentSearches,
   useSearchKeyboardNav,
   useSearchResultNavigation,
 } from '@pops/navigation';
@@ -45,8 +47,11 @@ export function SearchInput() {
   const setOpen = useSearchStore((s) => s.setOpen);
   const clear = useSearchStore((s) => s.clear);
 
+  const [isFocused, setIsFocused] = useState(false);
+
   const currentApp = useCurrentApp();
   const { navigateTo } = useSearchResultNavigation();
+  const { queries, addQuery, clearAll } = useRecentSearches();
   const utils = trpc.useUtils();
 
   /** Extra hits appended by "Show more" per domain. */
@@ -121,10 +126,11 @@ export function SearchInput() {
 
   const handleResultClick = useCallback(
     (uri: string) => {
+      if (query) addQuery(query);
       navigateTo(uri);
       clear();
     },
-    [navigateTo, clear]
+    [query, addQuery, navigateTo, clear]
   );
 
   const handleClose = useCallback(() => {
@@ -180,7 +186,7 @@ export function SearchInput() {
     };
   }, []);
 
-  const showPanel = isOpen && query.length > 0;
+  const showPanel = isOpen && (query.length > 0 || (isFocused && queries.length > 0));
 
   return (
     <div ref={containerRef} className="hidden md:flex relative items-center max-w-sm w-full mx-4">
@@ -191,6 +197,15 @@ export function SearchInput() {
         placeholder="Search POPS..."
         defaultValue={query}
         onChange={handleChange}
+        onFocus={() => {
+          setIsFocused(true);
+          setOpen(true);
+        }}
+        onBlur={(e) => {
+          if (!containerRef.current?.contains(e.relatedTarget as Node)) {
+            setIsFocused(false);
+          }
+        }}
         className="pl-9 pr-9 h-9 bg-muted/50 border-transparent focus:border-border focus:bg-background transition-colors"
         aria-label="Search POPS"
       />
@@ -209,16 +224,28 @@ export function SearchInput() {
           ⌘K
         </kbd>
       )}
-      {showPanel && (
-        <SearchResultsPanel
-          sections={sections}
-          query={query}
-          onClose={handleClose}
-          onResultClick={handleResultClick}
-          onShowMore={handleShowMore}
-          selectedIndex={selectedIndex}
-        />
-      )}
+      {showPanel &&
+        (query.length > 0 ? (
+          <SearchResultsPanel
+            sections={sections}
+            query={query}
+            onClose={handleClose}
+            onResultClick={handleResultClick}
+            onShowMore={handleShowMore}
+            selectedIndex={selectedIndex}
+          />
+        ) : (
+          <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-lg border bg-popover shadow-lg">
+            <RecentSearches
+              queries={queries}
+              onSelect={(q) => {
+                if (inputRef.current) inputRef.current.value = q;
+                setQuery(q);
+              }}
+              onClear={clearAll}
+            />
+          </div>
+        ))}
     </div>
   );
 }
