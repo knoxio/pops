@@ -95,4 +95,4 @@ US-02, US-03, and US-05 can all parallelise. US-04 depends on US-01 (needs the u
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

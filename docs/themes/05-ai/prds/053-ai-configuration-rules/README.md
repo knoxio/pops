@@ -53,4 +53,4 @@ All USs can parallelise — independent pages.
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

@@ -54,4 +54,4 @@ Uses the existing `ai_usage` table (created in PRD-009):
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

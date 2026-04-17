@@ -161,3 +161,7 @@ US-01 and US-02 can parallelise. US-03 merges them. US-04, US-05, US-08 can para
 - A/B testing between models (future optimisation)
 - Real-time streaming metrics (dashboard refreshes on navigation or manual refresh)
 - Multi-tenant cost allocation (single-user system)
+
+## Drift Check
+
+last checked: 2026-04-17

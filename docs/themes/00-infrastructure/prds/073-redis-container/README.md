@@ -74,4 +74,4 @@ US-03 and US-04 can parallelise after US-01. US-02 depends on US-01 (needs a run
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17
