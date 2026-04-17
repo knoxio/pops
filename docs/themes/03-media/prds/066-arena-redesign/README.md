@@ -1,6 +1,7 @@
 # PRD-066: Arena Redesign
 
 > Epic: [04 — Ratings & Comparisons](../../epics/04-ratings-comparisons.md)
+> Status: Done
 
 ## Overview
 
@@ -147,4 +148,4 @@ All existing — no new endpoints:
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

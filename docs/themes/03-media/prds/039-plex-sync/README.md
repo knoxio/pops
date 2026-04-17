@@ -210,4 +210,4 @@ US-01 is the foundation (auth required for all Plex API calls). US-02 and US-03 
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

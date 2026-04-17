@@ -1,6 +1,7 @@
 # PRD-067: Comparison History Enhancements
 
 > Epic: [04 — Ratings & Comparisons](../../epics/04-ratings-comparisons.md)
+> Status: Done
 
 ## Overview
 
@@ -64,4 +65,4 @@ The Matrix  +12  beat  Inception  -12    CINEMATOGRAPHY  4/6/2026  [🗑]
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

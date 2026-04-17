@@ -145,4 +145,4 @@ US-01 depends on US-02 (arena needs Elo scoring to record comparisons). US-03 th
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17
