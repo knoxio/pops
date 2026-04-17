@@ -128,7 +128,7 @@ export function CompareArenaPage() {
 
       setSessionCount((c) => c + 1);
       setManualDimensionId(null);
-      utils.media.comparisons.getSmartPair.invalidate();
+      void utils.media.comparisons.getSmartPair.invalidate();
 
       setTimeout(() => {
         setScoreDelta(null);
@@ -153,7 +153,7 @@ export function CompareArenaPage() {
 
   const addToWatchlistMutation = trpc.media.watchlist.add.useMutation({
     onSuccess: (_data, variables) => {
-      utils.media.watchlist.list.invalidate();
+      void utils.media.watchlist.list.invalidate();
       const movie =
         variables.mediaId === movieAId ? pairData?.data?.movieA : pairData?.data?.movieB;
       toast.success(`${movie?.title ?? 'Movie'} added to watchlist`);
@@ -162,7 +162,7 @@ export function CompareArenaPage() {
 
   const removeFromWatchlistMutation = trpc.media.watchlist.remove.useMutation({
     onSuccess: (_data, variables) => {
-      utils.media.watchlist.list.invalidate();
+      void utils.media.watchlist.list.invalidate();
       const mediaId = [...watchlistedMovies.entries()].find(
         ([, entryId]) => entryId === variables.id
       )?.[0];
@@ -180,7 +180,7 @@ export function CompareArenaPage() {
       const timesMarked = Math.round(Math.log(staleness) / Math.log(0.5));
       toast.success(`${movie?.title ?? 'Movie'} marked stale (×${timesMarked})`);
       setManualDimensionId(null);
-      utils.media.comparisons.getSmartPair.invalidate();
+      void utils.media.comparisons.getSmartPair.invalidate();
     },
   });
 
@@ -207,7 +207,7 @@ export function CompareArenaPage() {
         {
           onSuccess: () => {
             toast.success(`${movie.title} excluded from this dimension`);
-            utils.media.comparisons.getSmartPair.invalidate();
+            void utils.media.comparisons.getSmartPair.invalidate();
           },
         }
       );
@@ -233,7 +233,7 @@ export function CompareArenaPage() {
         variables.mediaId === movieAId ? pairData?.data?.movieA : pairData?.data?.movieB;
       toast.success(`${movie?.title ?? 'Movie'} marked as not watched`);
       setBlacklistTarget(null);
-      utils.media.comparisons.getSmartPair.invalidate();
+      void utils.media.comparisons.getSmartPair.invalidate();
     },
   });
 
@@ -281,7 +281,7 @@ export function CompareArenaPage() {
     onSuccess: () => {
       toast.success('Pair skipped');
       setManualDimensionId(null);
-      utils.media.comparisons.getSmartPair.invalidate();
+      void utils.media.comparisons.getSmartPair.invalidate();
     },
   });
 
@@ -363,7 +363,7 @@ export function CompareArenaPage() {
             const id = Number(e.target.value);
             setManualDimensionId(id);
             setScoreDelta(null);
-            utils.media.comparisons.getSmartPair.invalidate();
+            void utils.media.comparisons.getSmartPair.invalidate();
           }}
           options={activeDimensions.map((dim: { id: number; name: string }) => ({
             value: String(dim.id),

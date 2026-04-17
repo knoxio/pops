@@ -1,5 +1,5 @@
 import { Ban, Bookmark, Clock, EyeOff, ImageOff } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 /**
  * ComparisonMovieCard — single movie card with zone-based action layout.
@@ -56,6 +56,10 @@ export function ComparisonMovieCard({
 }: ComparisonMovieCardProps) {
   const posterSrc = movie.posterUrl ?? undefined;
   const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [posterSrc]);
 
   return (
     <div className="flex flex-col gap-2" data-testid={`comparison-movie-card-${movie.id}`}>
