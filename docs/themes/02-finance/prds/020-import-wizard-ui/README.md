@@ -189,18 +189,18 @@ interface ImportStore {
 
 ### Review (Step 4)
 
-| #   | Story                                                                           | Summary                                                                                                          | Status    | Parallelisable   |
-| --- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | --------- | ---------------- |
-| 08  | [us-08-review-tabs](us-08-review-tabs.md)                                       | Tabbed view: Matched / Uncertain / Failed / Skipped with counts                                                  | Done      | Blocked by us-07 |
-| 09  | [us-09-transaction-card](us-09-transaction-card.md)                             | TransactionCard component: description, amount, date, entity, match type badge                                   | Done      | Blocked by us-08 |
-| 10  | [us-10-entity-dropdown](us-10-entity-dropdown.md)                               | Entity selection dropdown on uncertain/failed cards                                                              | Done      | Blocked by us-09 |
-| 11  | [us-11-auto-match-similar](us-11-auto-match-similar.md)                         | When entity assigned, find similar transactions and offer "Apply to N similar?" toast                            | Done      | Blocked by us-10 |
-| 12  | [us-12-entity-creation](us-12-entity-creation.md)                               | "Create Entity" dialog for on-the-fly entity creation during review                                              | Done      | Blocked by us-10 |
-| 13  | [us-13-edit-transaction](us-13-edit-transaction.md)                             | Edit dialog: modify description, amount, account, entity, location, type                                         | Done      | Blocked by us-09 |
-| 14  | [us-14-save-and-learn](us-14-save-and-learn.md)                                 | "Save & Learn" uses bundled proposal + approval + reject-with-feedback, then re-evaluates remaining transactions | To Review | Blocked by us-10 |
-| 15  | [us-15-type-override](us-15-type-override.md)                                   | Override type to transfer/income — makes entity optional, bypasses entity validation                             | Done      | Blocked by us-09 |
-| 16  | [us-16-review-gate](us-16-review-gate.md)                                       | Validation gate: all uncertain/failed must be resolved before advancing to Step 5                                | Done      | Blocked by us-10 |
-| 23  | [us-23-edit-rule-matched-transactions](us-23-edit-rule-matched-transactions.md) | Editing a rule-matched transaction triggers a bundled Correction Proposal ChangeSet (add/edit/remove rules)      | Done      | Blocked by us-13 |
+| #   | Story                                                                           | Summary                                                                                                          | Status | Parallelisable   |
+| --- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------ | ---------------- |
+| 08  | [us-08-review-tabs](us-08-review-tabs.md)                                       | Tabbed view: Matched / Uncertain / Failed / Skipped with counts                                                  | Done   | Blocked by us-07 |
+| 09  | [us-09-transaction-card](us-09-transaction-card.md)                             | TransactionCard component: description, amount, date, entity, match type badge                                   | Done   | Blocked by us-08 |
+| 10  | [us-10-entity-dropdown](us-10-entity-dropdown.md)                               | Entity selection dropdown on uncertain/failed cards                                                              | Done   | Blocked by us-09 |
+| 11  | [us-11-auto-match-similar](us-11-auto-match-similar.md)                         | When entity assigned, find similar transactions and offer "Apply to N similar?" toast                            | Done   | Blocked by us-10 |
+| 12  | [us-12-entity-creation](us-12-entity-creation.md)                               | "Create Entity" dialog for on-the-fly entity creation during review                                              | Done   | Blocked by us-10 |
+| 13  | [us-13-edit-transaction](us-13-edit-transaction.md)                             | Edit dialog: modify description, amount, account, entity, location, type                                         | Done   | Blocked by us-09 |
+| 14  | [us-14-save-and-learn](us-14-save-and-learn.md)                                 | "Save & Learn" uses bundled proposal + approval + reject-with-feedback, then re-evaluates remaining transactions | Done   | Blocked by us-10 |
+| 15  | [us-15-type-override](us-15-type-override.md)                                   | Override type to transfer/income — makes entity optional, bypasses entity validation                             | Done   | Blocked by us-09 |
+| 16  | [us-16-review-gate](us-16-review-gate.md)                                       | Validation gate: all uncertain/failed must be resolved before advancing to Step 5                                | Done   | Blocked by us-10 |
+| 23  | [us-23-edit-rule-matched-transactions](us-23-edit-rule-matched-transactions.md) | Editing a rule-matched transaction triggers a bundled Correction Proposal ChangeSet (add/edit/remove rules)      | Done   | Blocked by us-13 |
 
 ### Tag Review (Step 5)
 
@@ -243,4 +243,4 @@ US-03 and US-04 can parallelise. US-11, US-12, US-13, US-14, US-15 can paralleli
 
 ## Drift Check
 
-last checked: 2026-04-17
+last checked: 2026-04-18

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -779,5 +779,172 @@ describe('CorrectionProposalDialog', () => {
 
     const applyBtn = screen.getByRole('button', { name: /Apply ChangeSet/i });
     expect(applyBtn).toBeDisabled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// US-14: Save & Learn acceptance criteria
+// ---------------------------------------------------------------------------
+
+describe('US-14: Save & Learn — acceptance criteria', () => {
+  // AC-2 / AC-3: Opening the dialog shows a bundled ChangeSet proposal that
+  // includes proposed rule patterns, match types, and rationale.
+  it('AC2+AC3: dialog shows the bundled ChangeSet with proposed rule patterns and rationale', async () => {
+    seedTwoAddOps();
+    renderDialog();
+
+    // The ops list panel reflects the bundled ChangeSet.
+    await waitFor(() => {
+      expect(screen.getByText(/Operations \(2\)/)).toBeInTheDocument();
+    });
+
+    // Proposed patterns are visible in the ops list.
+    expect(screen.getByText(/WOOLWORTHS → Woolworths/)).toBeInTheDocument();
+    expect(screen.getByText(/COLES → Coles/)).toBeInTheDocument();
+
+    // The context panel shows the proposed rule's match type in the "Proposed rule"
+    // description sentence. Scope the query to the specific element to avoid
+    // false positives from unrelated UI text (e.g. select option values).
+    const proposedRuleEl = screen.getByTestId('proposed-rule-description');
+    expect(within(proposedRuleEl).getByText(/contains/i)).toBeInTheDocument();
+
+    // Rationale from the proposal is shown in the context panel.
+    expect(screen.getByText('Test proposal')).toBeInTheDocument();
+  });
+
+  // AC-3 (impact preview): After the auto-preview runs, the ImpactPanel shows
+  // the "checked" count badge reflecting how many import transactions were
+  // scoped and evaluated. The preview is triggered automatically on open and
+  // results are computed from the returned diffs.
+  it('AC3: impact panel is present and preview is triggered for the current import transactions', async () => {
+    seedTwoAddOps();
+
+    // Return a diff for each of the two preview transactions so the panel
+    // has something to display beyond the empty-state.
+    mockPreviewMutateAsync.mockResolvedValue({
+      diffs: [
+        {
+          checksum: 'a',
+          description: 'WOOLWORTHS 1234 SYD',
+          changed: true,
+          before: { matched: false, status: 'unmatched' },
+          after: { matched: true, status: 'matched', entityName: 'Woolworths' },
+        },
+        {
+          checksum: 'b',
+          description: 'COLES 9999 NEW',
+          changed: true,
+          before: { matched: false, status: 'unmatched' },
+          after: { matched: true, status: 'matched', entityName: 'Coles' },
+        },
+      ],
+      summary: {
+        total: 2,
+        newMatches: 2,
+        removedMatches: 0,
+        statusChanges: 0,
+        netMatchedDelta: 2,
+      },
+    });
+
+    renderDialog();
+
+    await waitFor(() => {
+      expect(mockPreviewMutateAsync).toHaveBeenCalled();
+    });
+
+    // The combined-preview call must include the full set of import transactions
+    // from the previewTransactions prop (both WOOLWORTHS and COLES). The
+    // selected-op preview call scopes to the subset matching that op's pattern
+    // and may include fewer transactions — but at least one call must cover all.
+    const calls = mockPreviewMutateAsync.mock.calls as Array<
+      [{ changeSet: { ops: unknown[] }; transactions: Array<{ description: string }> }]
+    >;
+    const expectedDescriptions = ['COLES 9999 NEW', 'WOOLWORTHS 1234 SYD'];
+    const combinedPreviewCall = calls.find(([arg]) => {
+      const descriptions = arg.transactions.map((t) => t.description).sort();
+      return JSON.stringify(descriptions) === JSON.stringify(expectedDescriptions);
+    });
+    expect(combinedPreviewCall).toBeDefined();
+
+    // The ImpactPanel renders the "Will change" section when diffs are present.
+    // The default view is "selected" (first op), which scopes to WOOLWORTHS only.
+    await waitFor(() => {
+      expect(screen.getByText(/Will change \(1\)/i)).toBeInTheDocument();
+    });
+  });
+
+  // AC-5: Reject requires a non-empty feedback message. The Confirm button is
+  // disabled until the user types something.
+  it('AC5: reject confirm button is disabled until feedback is provided', async () => {
+    seedTwoAddOps();
+    renderDialog();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Operations \(2\)/)).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Reject with feedback/i }));
+
+    const confirmBtn = screen.getByRole('button', { name: /Confirm reject/i });
+
+    // Disabled before any input.
+    expect(confirmBtn).toBeDisabled();
+
+    // Whitespace-only input must NOT unlock the button (trimmed check).
+    const feedbackBox = screen.getByPlaceholderText(/Why is this proposal wrong/i);
+    fireEvent.change(feedbackBox, { target: { value: '   ' } });
+    expect(confirmBtn).toBeDisabled();
+
+    // Non-empty feedback unlocks the button.
+    fireEvent.change(feedbackBox, { target: { value: 'Pattern is too broad' } });
+    expect(confirmBtn).not.toBeDisabled();
+  });
+
+  // AC-6: After rejecting, the AI helper is available to generate a follow-up
+  // proposal incorporating the user's feedback (reviseChangeSet mutation).
+  it('AC6: AI helper generates a follow-up proposal incorporating user feedback', async () => {
+    seedTwoAddOps();
+    renderDialog();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Operations \(2\)/)).toBeInTheDocument();
+    });
+
+    const input = screen.getByPlaceholderText(/split location into its own rule/i);
+    fireEvent.change(input, { target: { value: 'Pattern is too broad, use exact match' } });
+    fireEvent.click(screen.getByRole('button', { name: /^Send$/i }));
+
+    await waitFor(() => {
+      expect(mockReviseMutateAsync).toHaveBeenCalledTimes(1);
+    });
+
+    const call = mockReviseMutateAsync.mock.calls[0]?.[0] as {
+      instruction: string;
+      currentChangeSet: { ops: unknown[] };
+    };
+    // The feedback is passed verbatim as the instruction.
+    expect(call.instruction).toBe('Pattern is too broad, use exact match');
+
+    // The revised proposal replaces the ops in the dialog.
+    await waitFor(() => {
+      expect(screen.getByText(/Operations \(1\)/)).toBeInTheDocument();
+    });
+  });
+
+  // AC-7: No rule changes happen without explicit approval. Merely opening the
+  // dialog (which triggers proposeChangeSet and previewChangeSet) must NOT call
+  // addPendingChangeSet.
+  it('AC7: opening the dialog does not apply any rule changes without explicit approval', async () => {
+    seedTwoAddOps();
+    renderDialog();
+
+    await waitFor(() => {
+      // The auto-preview runs, meaning the proposal was fetched and rendered.
+      expect(mockPreviewMutateAsync).toHaveBeenCalled();
+    });
+
+    // No rule change has been persisted; only an explicit Approve click triggers this.
+    expect(mockAddPendingChangeSet).not.toHaveBeenCalled();
   });
 });
