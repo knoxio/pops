@@ -159,7 +159,6 @@ export function SearchInput() {
 
   const handleClear = useCallback(() => {
     clear();
-    setIsFocused(true);
     if (inputRef.current) {
       inputRef.current.value = '';
       inputRef.current.focus();
@@ -202,8 +201,10 @@ export function SearchInput() {
           setIsFocused(true);
           setOpen(true);
         }}
-        onBlur={() => {
-          setIsFocused(false);
+        onBlur={(e) => {
+          if (!containerRef.current?.contains(e.relatedTarget as Node)) {
+            setIsFocused(false);
+          }
         }}
         className="pl-9 pr-9 h-9 bg-muted/50 border-transparent focus:border-border focus:bg-background transition-colors"
         aria-label="Search POPS"
