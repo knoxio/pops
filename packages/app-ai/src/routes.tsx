@@ -8,6 +8,8 @@ import { lazy } from 'react';
 
 import type { RouteObject } from 'react-router';
 
+import type { IconName } from '@pops/navigation';
+
 const AiUsagePage = lazy(() =>
   import('./pages/AiUsagePage').then((m) => ({ default: m.AiUsagePage }))
 );
@@ -28,23 +30,17 @@ const CacheManagementPage = lazy(() =>
   import('./pages/CacheManagementPage').then((m) => ({ default: m.CacheManagementPage }))
 );
 
-/** Shared navigation types (mirrored from shell to avoid circular dependency) */
-export interface AppNavItem {
-  path: string;
-  label: string;
-  icon: string;
-}
-
-export interface AppNavConfig {
+/** Local type mirror for compile-time safety (shell owns the canonical types). */
+interface AppNavConfigShape {
   id: string;
   label: string;
-  icon: string;
+  icon: IconName;
   color?: 'emerald' | 'indigo' | 'amber' | 'rose' | 'sky' | 'violet';
   basePath: string;
-  items: AppNavItem[];
+  items: { path: string; label: string; icon: IconName }[];
 }
 
-export const navConfig: AppNavConfig = {
+export const navConfig = {
   id: 'ai',
   label: 'AI',
   icon: 'Bot',
@@ -57,7 +53,7 @@ export const navConfig: AppNavConfig = {
     { path: '/rules', label: 'Rules', icon: 'BookOpen' },
     { path: '/cache', label: 'Cache', icon: 'Database' },
   ],
-};
+} satisfies AppNavConfigShape;
 
 export const routes: RouteObject[] = [
   { index: true, element: <AiUsagePage /> },

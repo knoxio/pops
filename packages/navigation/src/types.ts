@@ -8,6 +8,43 @@
 /** Known app identifiers. */
 export type AppName = 'finance' | 'media' | 'inventory' | 'ai';
 
+/**
+ * Union of all valid Lucide icon names used across the POPS app rail and
+ * page navigation. The shell's iconMap must provide a component for every
+ * member of this union (enforced via `satisfies Record<IconName, LucideIcon>`
+ * in apps/pops-shell/src/app/nav/icon-map.ts).
+ *
+ * Add a name here AND add the corresponding import + entry in icon-map.ts.
+ */
+export type IconName =
+  | 'ArrowLeftRight'
+  | 'BarChart3'
+  | 'Bookmark'
+  | 'BookOpen'
+  | 'Bot'
+  | 'Building2'
+  | 'Clock'
+  | 'Compass'
+  | 'CreditCard'
+  | 'Database'
+  | 'DollarSign'
+  | 'Download'
+  | 'FileText'
+  | 'Film'
+  | 'History'
+  | 'Layers'
+  | 'LayoutDashboard'
+  | 'Library'
+  | 'MapPin'
+  | 'Package'
+  | 'PiggyBank'
+  | 'Search'
+  | 'Settings'
+  | 'ShieldCheck'
+  | 'Shuffle'
+  | 'Star'
+  | 'Trophy';
+
 /** An entity the user is currently viewing (e.g. a specific movie or transaction). */
 export interface AppContextEntity {
   /** Namespaced URI, e.g. "pops:media/movie/42". */

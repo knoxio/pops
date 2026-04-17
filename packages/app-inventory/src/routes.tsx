@@ -8,6 +8,8 @@ import { lazy } from 'react';
 
 import type { RouteObject } from 'react-router';
 
+import type { IconName } from '@pops/navigation';
+
 const ItemsPage = lazy(() => import('./pages/ItemsPage').then((m) => ({ default: m.ItemsPage })));
 const ItemDetailPage = lazy(() =>
   import('./pages/ItemDetailPage').then((m) => ({
@@ -37,10 +39,10 @@ const LocationTreePage = lazy(() =>
 interface AppNavConfigShape {
   id: string;
   label: string;
-  icon: string;
+  icon: IconName;
   color?: 'emerald' | 'indigo' | 'amber' | 'rose' | 'sky' | 'violet';
   basePath: string;
-  items: { path: string; label: string; icon: string }[];
+  items: { path: string; label: string; icon: IconName }[];
 }
 
 export const navConfig = {

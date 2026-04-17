@@ -29,6 +29,6 @@ export type {
   SearchResultsPanelProps,
 } from './SearchResultsPanel';
 export { SearchResultsPanel } from './SearchResultsPanel';
-export type { AppContext, AppContextEntity, AppName } from './types';
+export type { AppContext, AppContextEntity, AppName, IconName } from './types';
 export { DEFAULT_APP_CONTEXT } from './types';
 export { resolveUri } from './uri-resolver';
