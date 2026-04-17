@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
@@ -802,10 +802,11 @@ describe('US-14: Save & Learn — acceptance criteria', () => {
     expect(screen.getByText(/WOOLWORTHS → Woolworths/)).toBeInTheDocument();
     expect(screen.getByText(/COLES → Coles/)).toBeInTheDocument();
 
-    // The context panel shows the proposed rule's match type. Multiple elements
-    // may contain "contains" (select options, label text) — assert at least one exists.
-    const containsElements = screen.getAllByText(/contains/i);
-    expect(containsElements.length).toBeGreaterThan(0);
+    // The context panel shows the proposed rule's match type in the "Proposed rule"
+    // description sentence. Scope the query to the specific element to avoid
+    // false positives from unrelated UI text (e.g. select option values).
+    const proposedRuleEl = screen.getByTestId('proposed-rule-description');
+    expect(within(proposedRuleEl).getByText(/contains/i)).toBeInTheDocument();
 
     // Rationale from the proposal is shown in the context panel.
     expect(screen.getByText('Test proposal')).toBeInTheDocument();
@@ -852,17 +853,19 @@ describe('US-14: Save & Learn — acceptance criteria', () => {
       expect(mockPreviewMutateAsync).toHaveBeenCalled();
     });
 
-    // At least one call must include the import transactions from the
-    // previewTransactions prop. The combined-preview call includes all scoped
-    // session transactions; the selected-op preview call includes the subset
-    // matching that op's pattern.
+    // The combined-preview call must include the full set of import transactions
+    // from the previewTransactions prop (both WOOLWORTHS and COLES). The
+    // selected-op preview call scopes to the subset matching that op's pattern
+    // and may include fewer transactions — but at least one call must cover all.
     const calls = mockPreviewMutateAsync.mock.calls as Array<
       [{ changeSet: { ops: unknown[] }; transactions: Array<{ description: string }> }]
     >;
-    const anyCallIncludesWoolworths = calls.some(([arg]) =>
-      arg.transactions.some((t) => t.description === 'WOOLWORTHS 1234 SYD')
-    );
-    expect(anyCallIncludesWoolworths).toBe(true);
+    const expectedDescriptions = ['COLES 9999 NEW', 'WOOLWORTHS 1234 SYD'];
+    const combinedPreviewCall = calls.find(([arg]) => {
+      const descriptions = arg.transactions.map((t) => t.description).sort();
+      return JSON.stringify(descriptions) === JSON.stringify(expectedDescriptions);
+    });
+    expect(combinedPreviewCall).toBeDefined();
 
     // The ImpactPanel renders the "Will change" section when diffs are present.
     // The default view is "selected" (first op), which scopes to WOOLWORTHS only.

@@ -90,7 +90,7 @@ export function ContextPanel(props: {
       <div className="flex flex-wrap items-start gap-4">
         <div className="flex-1 min-w-0 space-y-1">
           <div className="text-xs uppercase tracking-wide text-muted-foreground">Proposed rule</div>
-          <div className="text-sm">
+          <div className="text-sm" data-testid="proposed-rule-description">
             When description <strong>{matchTypeLabel(signal.matchType)}</strong>{' '}
             <code className="rounded bg-background px-1 py-0.5 text-xs">
               {signal.descriptionPattern}
