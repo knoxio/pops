@@ -20,5 +20,5 @@ Build proactive AI capabilities — anomaly detection, smart automations, and sc
 ## Out of Scope
 
 - Training custom models
-- Local/on-device inference
+- Local model management and provider registry (PRD-092 — AI Observability)
 - Real-time streaming analysis
