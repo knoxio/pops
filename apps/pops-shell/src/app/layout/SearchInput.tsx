@@ -223,8 +223,8 @@ export function SearchInput() {
           ⌘K
         </kbd>
       )}
-      {showPanel && (
-        query.length > 0 ? (
+      {showPanel &&
+        (query.length > 0 ? (
           <SearchResultsPanel
             sections={sections}
             query={query}
@@ -244,8 +244,7 @@ export function SearchInput() {
               onClear={clearAll}
             />
           </div>
-        )
-      )}
+        ))}
     </div>
   );
 }
