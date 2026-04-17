@@ -15,7 +15,7 @@ As a developer, I want data display components (DataTable, filters, view toggle)
 - [x] EditableCell — inline cell editing with save/cancel
 - [x] ViewToggleGroup — table/grid toggle, segmented button style, persists to localStorage
 - [ ] StatCard — metric display card with label, value, optional trend indicator (missing trend prop + arbitrary OKLCH values → #1795)
-- [ ] Each component has co-located `.stories.tsx` (EditableCell → #1794, StatCard → #1795)
+- [ ] Each component has co-located `.stories.tsx` (DataTableFilters ✓, EditableCell → #1794, StatCard → #1795)
 - [x] All exported from barrel `index.ts`
 - [ ] All use design tokens — no arbitrary values or hardcoded colours (StatCard uses arbitrary OKLCH → #1795)
 - [x] DataTable scrolls horizontally on viewports below 768px
