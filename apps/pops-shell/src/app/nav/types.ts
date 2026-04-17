@@ -6,12 +6,16 @@
  * for navigation rendering.
  */
 
+import type { IconName } from '@pops/navigation';
+
+export type { IconName };
+
 export interface AppNavItem {
   /** Relative to basePath. Empty string '' for the index/default page. */
   path: string;
   label: string;
-  /** Lucide icon component name (e.g. 'LayoutDashboard', 'CreditCard'). */
-  icon: string;
+  /** Lucide icon component name — must be a member of IconName. */
+  icon: IconName;
 }
 
 export interface AppNavConfig {
@@ -19,8 +23,8 @@ export interface AppNavConfig {
   id: string;
   /** Display name shown in the app rail tooltip and page nav header. */
   label: string;
-  /** Lucide icon component name for the app rail (e.g. 'DollarSign'). */
-  icon: string;
+  /** Lucide icon component name for the app rail — must be a member of IconName. */
+  icon: IconName;
   /** Optional theme color for this app (e.g. 'emerald', 'indigo'). */
   color?: 'emerald' | 'indigo' | 'amber' | 'rose' | 'sky' | 'violet';
   /** Root path for this app (e.g. '/finance'). */

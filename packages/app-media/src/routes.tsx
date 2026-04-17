@@ -8,6 +8,8 @@ import { lazy } from 'react';
 
 import type { RouteObject } from 'react-router';
 
+import type { IconName } from '@pops/navigation';
+
 const LibraryPage = lazy(() =>
   import('./pages/LibraryPage').then((m) => ({ default: m.LibraryPage }))
 );
@@ -110,23 +112,17 @@ const DebriefResultsPage = lazy(() =>
   }))
 );
 
-/** Shared navigation types (mirrored from shell to avoid circular dependency) */
-export interface AppNavItem {
-  path: string;
-  label: string;
-  icon: string;
-}
-
-export interface AppNavConfig {
+/** Local type mirror for compile-time safety (shell owns the canonical types). */
+interface AppNavConfigShape {
   id: string;
   label: string;
-  icon: string;
+  icon: IconName;
   color?: 'emerald' | 'indigo' | 'amber' | 'rose' | 'sky' | 'violet';
   basePath: string;
-  items: AppNavItem[];
+  items: { path: string; label: string; icon: IconName }[];
 }
 
-export const navConfig: AppNavConfig = {
+export const navConfig = {
   id: 'media',
   label: 'Media',
   icon: 'Film',
@@ -142,7 +138,7 @@ export const navConfig: AppNavConfig = {
     { path: '/compare', label: 'Compare', icon: 'ArrowLeftRight' },
     { path: '/tier-list', label: 'Tier List', icon: 'Layers' },
   ],
-};
+} satisfies AppNavConfigShape;
 
 export const routes: RouteObject[] = [
   { index: true, element: <LibraryPage /> },
