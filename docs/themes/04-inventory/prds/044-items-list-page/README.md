@@ -89,4 +89,4 @@ All three stories can be built in parallel. US-01 and US-02 are independent view
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

@@ -131,4 +131,4 @@ All four stories can be built in parallel. US-01 provides the form shell; US-02,
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

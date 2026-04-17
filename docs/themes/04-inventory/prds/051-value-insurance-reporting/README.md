@@ -96,4 +96,4 @@ US-01 and US-02 can parallelise. US-03 blocked by us-01. US-04 blocked by us-03.
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17
