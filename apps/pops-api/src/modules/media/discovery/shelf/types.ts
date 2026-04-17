@@ -36,6 +36,12 @@ export interface ShelfInstance {
   score: number;
   /** For seed-based shelves — the movie ID that seeded this instance. */
   seedMovieId?: number;
+  /**
+   * Set to true on instances produced by a pinned ShelfDefinition.
+   * Pinned instances bypass the minimum-items threshold in the session router
+   * (they are shown with ≥ 1 item instead of the normal ≥ 3 item minimum).
+   */
+  pinned?: boolean;
 }
 
 export interface ShelfDefinition {

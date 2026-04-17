@@ -219,6 +219,7 @@ export const discoveryRouter = router({
               title: shelf.title,
               subtitle: shelf.subtitle,
               emoji: shelf.emoji,
+              pinned: shelf.pinned,
               items,
               totalCount: items.length,
               hasMore: items.length >= 10,
@@ -230,6 +231,7 @@ export const discoveryRouter = router({
               title: shelf.title,
               subtitle: shelf.subtitle,
               emoji: shelf.emoji,
+              pinned: shelf.pinned,
               items: [],
               totalCount: 0,
               hasMore: false,
@@ -238,8 +240,10 @@ export const discoveryRouter = router({
         })
       );
 
-      // Filter out shelves with fewer than 3 results (per PRD business rules)
-      const nonEmpty = shelfResults.filter((s) => s.items.length >= 3);
+      // Pinned shelves are shown with ≥ 1 item; regular shelves require ≥ 3.
+      const nonEmpty = shelfResults.filter((s) =>
+        s.pinned ? s.items.length >= 1 : s.items.length >= 3
+      );
 
       // Record impressions for shelves that returned results
       recordImpressions(nonEmpty.map((s) => s.shelfId));

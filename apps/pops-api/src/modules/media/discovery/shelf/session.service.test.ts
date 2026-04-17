@@ -315,6 +315,24 @@ describe('assembleSession', () => {
     expect(result).toHaveLength(0);
   });
 
+  it('total session length does not exceed SESSION_TARGET_MAX (15) when pinned instances are present', () => {
+    // 3 pinned shelves + 20 regular tmdb shelves — total must still be ≤ 15
+    const pinnedDefs = Array.from({ length: 3 }, (_, i) => {
+      const def = makeDefinition(`pinned-${i}`, 'local', [makeInstance(`pinned-${i}`, 0.9)]);
+      def.pinned = true;
+      return def;
+    });
+    const tmdbDefs = Array.from({ length: 20 }, (_, i) =>
+      makeDefinition(`tmdb-${i}`, 'tmdb', [makeInstance(`tmdb-${i}`, 0.8)])
+    );
+    mockGetRegisteredShelves.mockReturnValue([...pinnedDefs, ...tmdbDefs]);
+
+    for (let i = 0; i < 5; i++) {
+      const result = assembleSession(profile, new Map());
+      expect(result.length).toBeLessThanOrEqual(15);
+    }
+  });
+
   it('does not include duplicate shelf IDs in result', () => {
     const definitions = Array.from({ length: 15 }, (_, i) =>
       makeDefinition(`shelf-${i}`, 'tmdb', [makeInstance(`shelf-${i}`, 0.8)])
