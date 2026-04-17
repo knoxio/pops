@@ -36,10 +36,10 @@ Set up GitHub Actions workflows for quality gates and deployment. Every PR runs 
 
 ## Verification
 
-- PR with API changes triggers `pops-api-ci.yml`
-- PR with shell changes triggers `shell-ci.yml`
+- PR with API changes triggers `api-quality.yml`
+- PR with shell changes triggers `fe-quality.yml`
 - Failing tests block PR merge
-- `deploy.yml` only available via manual trigger — not on PR events
+- `root-deploy.yml` triggers on push to main and via `workflow_dispatch` (see issue #1818 for the gap vs. manual-only spec)
 - Deploy runs quality gates before deployment step
 - Deploy reaches the server and restarts services
 

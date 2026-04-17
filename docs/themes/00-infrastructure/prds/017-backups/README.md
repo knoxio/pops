@@ -21,7 +21,7 @@ Set up encrypted offsite backups of the SQLite database, Paperless-ngx data, and
 - All backups encrypted before upload (rclone crypt)
 - Backblaze B2 bucket with versioning enabled
 - Backup schedule managed by systemd timers (not cron)
-- Recovery procedure documented and tested
+- Recovery procedure documented; end-to-end test pending (see issue #1819)
 - Backup failures should be detectable (exit codes, logs)
 
 ## User Stories
@@ -37,7 +37,7 @@ Set up encrypted offsite backups of the SQLite database, Paperless-ngx data, and
 
 - Backup runs successfully to B2 (visible in B2 console)
 - Backed up files are encrypted (unreadable without rclone crypt config)
-- Recovery procedure tested: download from B2, decrypt, restore, services start with restored data
+- Recovery procedure tested end-to-end: pending (see issue #1819)
 - Systemd timer triggers daily
 
 ## Out of Scope
