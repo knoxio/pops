@@ -29,6 +29,196 @@ afterEach(() => {
   ctx.teardown();
 });
 
+describe('inventory.photos.upload', () => {
+  it('compresses the image via sharp and writes to INVENTORY_IMAGES_DIR', async () => {
+    // A minimal valid JPEG buffer (1x1 pixel)
+    const { default: sharp } = await import('sharp');
+    const fakeJpegBuffer = await sharp({
+      create: { width: 2000, height: 1500, channels: 3, background: { r: 100, g: 150, b: 200 } },
+    })
+      .jpeg()
+      .toBuffer();
+
+    const tempDir = join(tmpdir(), `pops-upload-test-${Date.now()}`);
+    mkdirSync(tempDir, { recursive: true });
+    const originalEnv = process.env.INVENTORY_IMAGES_DIR;
+    process.env.INVENTORY_IMAGES_DIR = tempDir;
+
+    try {
+      const itemId = seedInventoryItem(db, { item_name: 'Camera' });
+
+      const result = await caller.inventory.photos.upload({
+        itemId,
+        fileBase64: fakeJpegBuffer.toString('base64'),
+      });
+
+      expect(result.message).toBe('Photo uploaded');
+      expect(result.data.itemId).toBe(itemId);
+      expect(result.data.filePath).toMatch(/^items\/.+\/photo_001\.jpg$/);
+
+      // File should exist on disk
+      const fullPath = join(tempDir, result.data.filePath);
+      expect(existsSync(fullPath)).toBe(true);
+
+      // Compressed image should be within 1920px on both sides
+      const metadata = await sharp(fullPath).metadata();
+      expect(metadata.width).toBeLessThanOrEqual(1920);
+      expect(metadata.height).toBeLessThanOrEqual(1920);
+    } finally {
+      process.env.INVENTORY_IMAGES_DIR = originalEnv;
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('uses sequential filenames (photo_001, photo_002, etc.)', async () => {
+    const { default: sharp } = await import('sharp');
+    const fakeJpegBuffer = await sharp({
+      create: { width: 100, height: 100, channels: 3, background: { r: 0, g: 0, b: 0 } },
+    })
+      .jpeg()
+      .toBuffer();
+    const base64 = fakeJpegBuffer.toString('base64');
+
+    const tempDir = join(tmpdir(), `pops-upload-seq-${Date.now()}`);
+    mkdirSync(tempDir, { recursive: true });
+    const originalEnv = process.env.INVENTORY_IMAGES_DIR;
+    process.env.INVENTORY_IMAGES_DIR = tempDir;
+
+    try {
+      const itemId = seedInventoryItem(db, { item_name: 'Camera' });
+
+      const result1 = await caller.inventory.photos.upload({ itemId, fileBase64: base64 });
+      const result2 = await caller.inventory.photos.upload({ itemId, fileBase64: base64 });
+      const result3 = await caller.inventory.photos.upload({ itemId, fileBase64: base64 });
+
+      expect(result1.data.filePath).toMatch(/photo_001\.jpg$/);
+      expect(result2.data.filePath).toMatch(/photo_002\.jpg$/);
+      expect(result3.data.filePath).toMatch(/photo_003\.jpg$/);
+    } finally {
+      process.env.INVENTORY_IMAGES_DIR = originalEnv;
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('creates the item directory if it does not exist', async () => {
+    const { default: sharp } = await import('sharp');
+    const fakeJpegBuffer = await sharp({
+      create: { width: 50, height: 50, channels: 3, background: { r: 0, g: 0, b: 0 } },
+    })
+      .jpeg()
+      .toBuffer();
+
+    const tempDir = join(tmpdir(), `pops-upload-mkdir-${Date.now()}`);
+    mkdirSync(tempDir, { recursive: true });
+    const originalEnv = process.env.INVENTORY_IMAGES_DIR;
+    process.env.INVENTORY_IMAGES_DIR = tempDir;
+
+    try {
+      const itemId = seedInventoryItem(db, { item_name: 'Camera' });
+      const itemDir = join(tempDir, 'items', itemId);
+      expect(existsSync(itemDir)).toBe(false);
+
+      await caller.inventory.photos.upload({
+        itemId,
+        fileBase64: fakeJpegBuffer.toString('base64'),
+      });
+
+      expect(existsSync(itemDir)).toBe(true);
+    } finally {
+      process.env.INVENTORY_IMAGES_DIR = originalEnv;
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('creates a DB record with the correct filePath', async () => {
+    const { default: sharp } = await import('sharp');
+    const fakeJpegBuffer = await sharp({
+      create: { width: 50, height: 50, channels: 3, background: { r: 0, g: 0, b: 0 } },
+    })
+      .jpeg()
+      .toBuffer();
+
+    const tempDir = join(tmpdir(), `pops-upload-db-${Date.now()}`);
+    mkdirSync(tempDir, { recursive: true });
+    const originalEnv = process.env.INVENTORY_IMAGES_DIR;
+    process.env.INVENTORY_IMAGES_DIR = tempDir;
+
+    try {
+      const itemId = seedInventoryItem(db, { item_name: 'Camera' });
+
+      const result = await caller.inventory.photos.upload({
+        itemId,
+        fileBase64: fakeJpegBuffer.toString('base64'),
+        caption: 'Front view',
+      });
+
+      const row = db.prepare('SELECT * FROM item_photos WHERE id = ?').get(result.data.id) as
+        | { file_path: string; caption: string | null; item_id: string }
+        | undefined;
+
+      expect(row).toBeDefined();
+      expect(row!.item_id).toBe(itemId);
+      expect(row!.file_path).toMatch(/^items\/.+\/photo_001\.jpg$/);
+      expect(row!.caption).toBe('Front view');
+    } finally {
+      process.env.INVENTORY_IMAGES_DIR = originalEnv;
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('throws NOT_FOUND when item does not exist', async () => {
+    const tempDir = join(tmpdir(), `pops-upload-notfound-${Date.now()}`);
+    mkdirSync(tempDir, { recursive: true });
+    const originalEnv = process.env.INVENTORY_IMAGES_DIR;
+    process.env.INVENTORY_IMAGES_DIR = tempDir;
+
+    try {
+      const fakeBase64 = Buffer.from('fake-data').toString('base64');
+      await expect(
+        caller.inventory.photos.upload({ itemId: 'nonexistent', fileBase64: fakeBase64 })
+      ).rejects.toThrow(TRPCError);
+
+      try {
+        await caller.inventory.photos.upload({ itemId: 'nonexistent', fileBase64: fakeBase64 });
+      } catch (err) {
+        expect((err as TRPCError).code).toBe('NOT_FOUND');
+      }
+    } finally {
+      process.env.INVENTORY_IMAGES_DIR = originalEnv;
+      rmSync(tempDir, { recursive: true, force: true });
+    }
+  });
+
+  it('throws BAD_REQUEST when INVENTORY_IMAGES_DIR is not set', async () => {
+    const originalEnv = process.env.INVENTORY_IMAGES_DIR;
+    delete process.env.INVENTORY_IMAGES_DIR;
+
+    try {
+      const itemId = seedInventoryItem(db, { item_name: 'Camera' });
+      const fakeBase64 = Buffer.from('fake-data').toString('base64');
+
+      await expect(
+        caller.inventory.photos.upload({ itemId, fileBase64: fakeBase64 })
+      ).rejects.toThrow(TRPCError);
+
+      try {
+        await caller.inventory.photos.upload({ itemId, fileBase64: fakeBase64 });
+      } catch (err) {
+        expect((err as TRPCError).code).toBe('BAD_REQUEST');
+      }
+    } finally {
+      process.env.INVENTORY_IMAGES_DIR = originalEnv;
+    }
+  });
+
+  it('throws UNAUTHORIZED without auth', async () => {
+    const unauthCaller = createCaller(false);
+    await expect(
+      unauthCaller.inventory.photos.upload({ itemId: 'a', fileBase64: 'dGVzdA==' })
+    ).rejects.toThrow(TRPCError);
+  });
+});
+
 describe('inventory.photos.attach', () => {
   it('attaches a photo to an item', async () => {
     const itemId = seedInventoryItem(db, { item_name: 'TV' });

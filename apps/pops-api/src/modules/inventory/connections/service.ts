@@ -71,20 +71,26 @@ export function connectItems(inputA: string, inputB: string): ItemConnectionRow 
 }
 
 /**
- * Disconnect two items by connection ID. Throws NotFoundError if missing.
+ * Disconnect two items by their item IDs. Normalises A<B ordering before lookup.
+ * Throws NotFoundError if no connection exists between the two items.
  */
-export function disconnectItems(id: number): void {
+export function disconnectItems(inputA: string, inputB: string): void {
   const db = getDrizzle();
+
+  // Enforce A<B ordering (same normalisation as connectItems)
+  const [itemAId, itemBId] = inputA < inputB ? [inputA, inputB] : [inputB, inputA];
 
   const [row] = db
     .select({ id: itemConnections.id })
     .from(itemConnections)
-    .where(eq(itemConnections.id, id))
+    .where(and(eq(itemConnections.itemAId, itemAId), eq(itemConnections.itemBId, itemBId)))
     .all();
 
-  if (!row) throw new NotFoundError('Item connection', String(id));
+  if (!row) {
+    throw new NotFoundError('Item connection', `${itemAId}-${itemBId}`);
+  }
 
-  db.delete(itemConnections).where(eq(itemConnections.id, id)).run();
+  db.delete(itemConnections).where(eq(itemConnections.id, row.id)).run();
 }
 
 /**

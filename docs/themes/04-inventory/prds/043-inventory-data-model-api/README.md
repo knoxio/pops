@@ -148,7 +148,7 @@ Photo storage path: `{INVENTORY_IMAGES_DIR}/items/{itemId}/photo_NNN.jpg`
 | 01  | [us-01-items-locations-schema](us-01-items-locations-schema.md)       | Tables for items and locations with indexes, FK constraints, self-referential location tree | Partial | Yes                     |
 | 02  | [us-02-connections-photos-schema](us-02-connections-photos-schema.md) | Tables for item_connections (with A<B dedup) and item_photos with indexes and cascades      | Done    | Yes                     |
 | 03  | [us-03-items-locations-api](us-03-items-locations-api.md)             | CRUD procedures for items and locations                                                     | Done    | Blocked by us-01        |
-| 04  | [us-04-connections-photos-api](us-04-connections-photos-api.md)       | Procedures for connections and photos                                                       | Partial | Blocked by us-01, us-02 |
+| 04  | [us-04-connections-photos-api](us-04-connections-photos-api.md)       | Procedures for connections and photos                                                       | Done    | Blocked by us-01, us-02 |
 
 US-01 and US-02 can run in parallel (independent tables). US-03 needs US-01. US-04 needs both US-01 and US-02.
 

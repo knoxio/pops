@@ -330,7 +330,7 @@ export function ItemDetailPage() {
                 key={conn.id}
                 connectedItemId={conn.itemAId === id ? conn.itemBId : conn.itemAId}
                 onDisconnect={() => {
-                  disconnectMutation.mutate({ id: conn.id });
+                  disconnectMutation.mutate({ itemAId: conn.itemAId, itemBId: conn.itemBId });
                 }}
                 isDisconnecting={disconnectMutation.isPending}
               />

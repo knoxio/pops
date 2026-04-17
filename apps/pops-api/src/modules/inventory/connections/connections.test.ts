@@ -150,26 +150,69 @@ describe('inventory.connections.connect', () => {
 });
 
 describe('inventory.connections.disconnect', () => {
-  it('removes an existing connection', async () => {
+  it('removes an existing connection by itemAId and itemBId', async () => {
     const [idA, idB] = seedTwoItems();
-    const connId = seedItemConnection(db, idA, idB);
+    seedItemConnection(db, idA, idB);
 
-    const result = await caller.inventory.connections.disconnect({ id: connId });
+    const result = await caller.inventory.connections.disconnect({ itemAId: idA, itemBId: idB });
 
     expect(result.message).toBe('Items disconnected');
 
-    const row = db.prepare('SELECT * FROM item_connections WHERE id = ?').get(connId);
+    const row = db
+      .prepare('SELECT * FROM item_connections WHERE item_a_id = ? AND item_b_id = ?')
+      .get(idA, idB);
     expect(row).toBeUndefined();
   });
 
-  it('throws NOT_FOUND for nonexistent connection', async () => {
-    await expect(caller.inventory.connections.disconnect({ id: 999 })).rejects.toThrow(TRPCError);
+  it('normalises A<B ordering when inputs are reversed', async () => {
+    const [idA, idB] = seedTwoItems();
+    seedItemConnection(db, idA, idB);
+
+    // Pass reversed order — should still find and delete the connection
+    const result = await caller.inventory.connections.disconnect({ itemAId: idB, itemBId: idA });
+
+    expect(result.message).toBe('Items disconnected');
+
+    const row = db
+      .prepare('SELECT * FROM item_connections WHERE item_a_id = ? AND item_b_id = ?')
+      .get(idA, idB);
+    expect(row).toBeUndefined();
+  });
+
+  it('throws NOT_FOUND when no connection exists between the two items', async () => {
+    const [idA, idB] = seedTwoItems();
+
+    await expect(
+      caller.inventory.connections.disconnect({ itemAId: idA, itemBId: idB })
+    ).rejects.toThrow(TRPCError);
 
     try {
-      await caller.inventory.connections.disconnect({ id: 999 });
+      await caller.inventory.connections.disconnect({ itemAId: idA, itemBId: idB });
     } catch (err) {
       expect((err as TRPCError).code).toBe('NOT_FOUND');
     }
+  });
+
+  it('does not remove unrelated connections', async () => {
+    const idA = seedInventoryItem(db, { item_name: 'A' });
+    const idB = seedInventoryItem(db, { item_name: 'B' });
+    const idC = seedInventoryItem(db, { item_name: 'C' });
+
+    const pairAB = [idA, idB].toSorted() as [string, string];
+    const pairAC = [idA, idC].toSorted() as [string, string];
+    seedItemConnection(db, pairAB[0], pairAB[1]);
+    seedItemConnection(db, pairAC[0], pairAC[1]);
+
+    await caller.inventory.connections.disconnect({
+      itemAId: pairAB[0],
+      itemBId: pairAB[1],
+    });
+
+    // A-C connection should still exist
+    const surviving = db
+      .prepare('SELECT * FROM item_connections WHERE item_a_id = ? AND item_b_id = ?')
+      .get(pairAC[0], pairAC[1]);
+    expect(surviving).toBeDefined();
   });
 });
 
@@ -512,9 +555,9 @@ describe('inventory.connections auth', () => {
 
   it('throws UNAUTHORIZED without auth on disconnect', async () => {
     const unauthCaller = createCaller(false);
-    await expect(unauthCaller.inventory.connections.disconnect({ id: 1 })).rejects.toThrow(
-      TRPCError
-    );
+    await expect(
+      unauthCaller.inventory.connections.disconnect({ itemAId: 'a', itemBId: 'b' })
+    ).rejects.toThrow(TRPCError);
   });
 
   it('throws UNAUTHORIZED without auth on listForItem', async () => {

@@ -1,17 +1,23 @@
 /**
  * Item photos service — attach/remove/reorder photos using Drizzle ORM.
  */
-import { existsSync, unlinkSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, mkdirSync, readdirSync, unlinkSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 
 import { asc, count, eq } from 'drizzle-orm';
+import sharp from 'sharp';
 
 import { homeInventory, itemPhotos } from '@pops/db-types';
 
 import { getDb, getDrizzle } from '../../../db.js';
 import { NotFoundError, ValidationError } from '../../../shared/errors.js';
 
-import type { AttachPhotoInput, ItemPhotoRow, UpdatePhotoInput } from './types.js';
+import type {
+  AttachPhotoInput,
+  ItemPhotoRow,
+  UpdatePhotoInput,
+  UploadPhotoInput,
+} from './types.js';
 
 /** Reject path traversal attempts in file paths. */
 function assertSafeFilePath(filePath: string): void {
@@ -43,6 +49,73 @@ function getPhoto(id: number): ItemPhotoRow {
   const [row] = db.select().from(itemPhotos).where(eq(itemPhotos.id, id)).all();
   if (!row) throw new NotFoundError('Item photo', String(id));
   return row;
+}
+
+/**
+ * Compress an image buffer: resize to max 1920px on longest side,
+ * convert HEIC/HEIF to JPEG, and strip all EXIF metadata.
+ */
+async function compressImage(inputBuffer: Buffer): Promise<Buffer> {
+  return sharp(inputBuffer)
+    .rotate() // Apply EXIF orientation before stripping metadata
+    .resize(1920, 1920, {
+      fit: 'inside',
+      withoutEnlargement: true,
+    })
+    .jpeg({ quality: 85 })
+    .toBuffer();
+}
+
+/**
+ * Determine the next sequential photo filename within an item's directory.
+ * Returns a path like `items/{itemId}/photo_001.jpg`.
+ */
+function nextPhotoFilename(baseDir: string, itemId: string): string {
+  const itemDir = join(baseDir, 'items', itemId);
+  mkdirSync(itemDir, { recursive: true });
+
+  const existing = existsSync(itemDir)
+    ? readdirSync(itemDir).filter((f) => /^photo_\d+\.jpg$/.test(f))
+    : [];
+
+  const nextNum = existing.length + 1;
+  const seq = String(nextNum).padStart(3, '0');
+  return join('items', itemId, `photo_${seq}.jpg`);
+}
+
+/** Upload, compress, and attach a photo to an inventory item. */
+export async function uploadPhoto(input: UploadPhotoInput): Promise<ItemPhotoRow> {
+  const db = getDrizzle();
+
+  assertItemExists(input.itemId);
+
+  const baseDir = process.env.INVENTORY_IMAGES_DIR;
+  if (!baseDir) {
+    throw new ValidationError('INVENTORY_IMAGES_DIR is not configured');
+  }
+
+  // Compress the image (resize, convert HEIC→JPEG, strip EXIF)
+  const compressed = await compressImage(input.buffer);
+
+  // Determine sequential filename and write to disk
+  const relPath = nextPhotoFilename(baseDir, input.itemId);
+  const fullPath = resolve(baseDir, relPath);
+  const { writeFileSync } = await import('node:fs');
+  writeFileSync(fullPath, compressed);
+
+  // Insert photo record into DB
+  const result = db
+    .insert(itemPhotos)
+    .values({
+      itemId: input.itemId,
+      filePath: relPath,
+      caption: input.caption ?? null,
+      sortOrder: input.sortOrder,
+    })
+    .run();
+
+  const id = Number(result.lastInsertRowid);
+  return getPhoto(id);
 }
 
 /** Attach a photo to an inventory item. */

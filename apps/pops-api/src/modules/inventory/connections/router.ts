@@ -2,7 +2,6 @@
  * Item connections tRPC router — connect/disconnect inventory items.
  */
 import { TRPCError } from '@trpc/server';
-import { z } from 'zod';
 
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 import { paginationMeta } from '../../../shared/pagination.js';
@@ -11,6 +10,7 @@ import * as service from './service.js';
 import {
   ConnectionQuerySchema,
   ConnectItemsSchema,
+  DisconnectItemsSchema,
   GraphQuerySchema,
   toConnection,
   TraceQuerySchema,
@@ -39,20 +39,18 @@ export const connectionsRouter = router({
     }
   }),
 
-  /** Disconnect two items by connection ID. */
-  disconnect: protectedProcedure
-    .input(z.object({ id: z.number().int().positive() }))
-    .mutation(({ input }) => {
-      try {
-        service.disconnectItems(input.id);
-        return { message: 'Items disconnected' };
-      } catch (err) {
-        if (err instanceof NotFoundError) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
-        }
-        throw err;
+  /** Disconnect two items by their item IDs. Normalises A<B ordering automatically. */
+  disconnect: protectedProcedure.input(DisconnectItemsSchema).mutation(({ input }) => {
+    try {
+      service.disconnectItems(input.itemAId, input.itemBId);
+      return { message: 'Items disconnected' };
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
       }
-    }),
+      throw err;
+    }
+  }),
 
   /** List all connections for an item (appears in either A or B column). */
   listForItem: protectedProcedure.input(ConnectionQuerySchema).query(({ input }) => {

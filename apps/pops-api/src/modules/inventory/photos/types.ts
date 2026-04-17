@@ -35,6 +35,27 @@ export const AttachPhotoSchema = z.object({
 });
 export type AttachPhotoInput = z.infer<typeof AttachPhotoSchema>;
 
+/**
+ * Input for uploading and compressing a photo (multipart upload).
+ * The buffer contains the raw file bytes (JPEG, PNG, HEIC, etc.).
+ */
+export interface UploadPhotoInput {
+  itemId: string;
+  buffer: Buffer;
+  caption?: string | null;
+  sortOrder: number;
+}
+
+/** Zod schema for the upload procedure (used by the tRPC router). */
+export const UploadPhotoSchema = z.object({
+  itemId: z.string().min(1, 'Item ID is required'),
+  /** Base64-encoded file bytes. The router decodes this to a Buffer. */
+  fileBase64: z.string().min(1, 'File content is required'),
+  caption: z.string().nullable().optional(),
+  sortOrder: z.number().int().nonnegative().optional().default(0),
+});
+export type UploadPhotoSchemaInput = z.infer<typeof UploadPhotoSchema>;
+
 /** Zod schema for updating a photo. */
 export const UpdatePhotoSchema = z.object({
   caption: z.string().nullable().optional(),

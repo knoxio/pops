@@ -29,6 +29,13 @@ export const ConnectItemsSchema = z.object({
 });
 export type ConnectItemsInput = z.infer<typeof ConnectItemsSchema>;
 
+/** Zod schema for disconnecting two items by their item IDs. */
+export const DisconnectItemsSchema = z.object({
+  itemAId: z.string().min(1, 'Item A ID is required'),
+  itemBId: z.string().min(1, 'Item B ID is required'),
+});
+export type DisconnectItemsInput = z.infer<typeof DisconnectItemsSchema>;
+
 /** Zod schema for listing connections for an item. */
 export const ConnectionQuerySchema = z.object({
   itemId: z.string().min(1, 'Item ID is required'),

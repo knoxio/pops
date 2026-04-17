@@ -14,12 +14,42 @@ import {
   ReorderPhotosSchema,
   toPhoto,
   UpdatePhotoSchema,
+  UploadPhotoSchema,
 } from './types.js';
 
 const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
 
 export const photosRouter = router({
+  /**
+   * Upload a photo for an inventory item.
+   * Accepts base64-encoded file bytes, compresses (1920px max, HEIC→JPEG, strip EXIF),
+   * writes to `{INVENTORY_IMAGES_DIR}/items/{itemId}/photo_NNN.jpg`, and creates a DB record.
+   */
+  upload: protectedProcedure.input(UploadPhotoSchema).mutation(async ({ input }) => {
+    try {
+      const buffer = Buffer.from(input.fileBase64, 'base64');
+      const row = await service.uploadPhoto({
+        itemId: input.itemId,
+        buffer,
+        caption: input.caption,
+        sortOrder: input.sortOrder,
+      });
+      return {
+        data: toPhoto(row),
+        message: 'Photo uploaded',
+      };
+    } catch (err) {
+      if (err instanceof NotFoundError) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+      }
+      if (err instanceof ValidationError) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: err.message });
+      }
+      throw err;
+    }
+  }),
+
   /** Attach a photo to an inventory item. */
   attach: protectedProcedure.input(AttachPhotoSchema).mutation(({ input }) => {
     try {
