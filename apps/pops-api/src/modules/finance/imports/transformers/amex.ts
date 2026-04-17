@@ -34,15 +34,6 @@ function extractLocation(townCity: string): string | undefined {
     .join(' ');
 }
 
-function generateRowChecksum(row: Record<string, string>): string {
-  const sorted = Object.fromEntries(
-    Object.keys(row)
-      .toSorted()
-      .map((k) => [k, row[k]])
-  );
-  return createHash('sha256').update(JSON.stringify(sorted)).digest('hex');
-}
-
 /**
  * Transform Amex CSV row to ParsedTransaction
  *
@@ -56,8 +47,15 @@ function generateRowChecksum(row: Record<string, string>): string {
  * - Postcode: Text
  */
 export function transformAmex(row: Record<string, string>): ParsedTransaction {
-  const rawRow = JSON.stringify(row);
-  const checksum = generateRowChecksum(row);
+  // Use key-sorted JSON for both rawRow and checksum so the checksum is the
+  // SHA-256 of exactly what is stored — no ambiguity between the two fields.
+  const sortedRow = Object.fromEntries(
+    Object.keys(row)
+      .toSorted()
+      .map((k) => [k, row[k]])
+  );
+  const rawRow = JSON.stringify(sortedRow);
+  const checksum = createHash('sha256').update(rawRow).digest('hex');
   const location = extractLocation(row['Town/City'] ?? '');
 
   return {

@@ -26,16 +26,15 @@ describe('transformAmex', () => {
     expect(result.amount).toBe(-125.5); // Inverted
     expect(result.account).toBe('Amex');
     expect(result.location).toBe('North Sydney'); // Title-cased first line
-    expect(result.rawRow).toBe(JSON.stringify(row));
-    // generateRowChecksum sorts keys before hashing for determinism
+    // rawRow and checksum both use key-sorted JSON — checksum = SHA-256(rawRow)
     const sortedRow = Object.fromEntries(
       Object.keys(row)
-        .sort()
+        .toSorted()
         .map((k) => [k, row[k as keyof typeof row]])
     );
-    expect(result.checksum).toBe(
-      createHash('sha256').update(JSON.stringify(sortedRow)).digest('hex')
-    );
+    const expectedRaw = JSON.stringify(sortedRow);
+    expect(result.rawRow).toBe(expectedRaw);
+    expect(result.checksum).toBe(createHash('sha256').update(expectedRaw).digest('hex'));
   });
 
   it('generates consistent checksum for same CSV row', () => {
