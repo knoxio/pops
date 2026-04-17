@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 /**
- * Tests for listRotationLog and getRotationLogStats endpoints.
+ * Tests for listRotationLog, getRotationLogStats, and writeRotationLog behaviour.
  *
  * PRD-072 US-06
  */
@@ -9,6 +9,7 @@ import { rotationLog } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 import { createCaller, setupTestContext } from '../../../shared/test-utils.js';
+import { _writeRotationLogForTest } from './scheduler.js';
 
 const ctx = setupTestContext();
 
@@ -178,5 +179,83 @@ describe('rotation.getRotationLogStats', () => {
     const caller = createCaller();
     const stats = await caller.media.rotation.getRotationLogStats();
     expect(stats.totalRotated).toBe(0);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// writeRotationLog (via _writeRotationLogForTest)
+// ---------------------------------------------------------------------------
+
+describe('writeRotationLog', () => {
+  beforeEach(() => ctx.setup());
+  afterEach(() => {
+    ctx.teardown();
+  });
+
+  const baseResult = {
+    moviesMarkedLeaving: 0,
+    moviesRemoved: 0,
+    moviesAdded: 0,
+    removalsFailed: 0,
+    freeSpaceGb: 100,
+    targetFreeGb: 80,
+    skippedReason: null,
+    marked: [],
+    removed: [],
+    added: [],
+    failed: [],
+  };
+
+  it('writes null details when all per-movie arrays are empty', async () => {
+    _writeRotationLogForTest(baseResult);
+
+    const caller = createCaller();
+    const result = await caller.media.rotation.listRotationLog({});
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0]!.details).toBeNull();
+  });
+
+  it('writes parseable JSON details when at least one array is non-empty', async () => {
+    _writeRotationLogForTest({
+      ...baseResult,
+      moviesAdded: 1,
+      added: [{ tmdbId: 42, title: 'Inception' }],
+    });
+
+    const caller = createCaller();
+    const result = await caller.media.rotation.listRotationLog({});
+    const details = result.items[0]!.details;
+    expect(details).not.toBeNull();
+    const parsed: unknown = JSON.parse(details!);
+    expect(parsed).toMatchObject({
+      marked: [],
+      removed: [],
+      added: [{ tmdbId: 42, title: 'Inception' }],
+      failed: [],
+    });
+  });
+
+  it('includes all four detail keys when multiple arrays are populated', async () => {
+    _writeRotationLogForTest({
+      ...baseResult,
+      moviesMarkedLeaving: 1,
+      moviesRemoved: 1,
+      moviesAdded: 1,
+      removalsFailed: 1,
+      marked: [{ tmdbId: 1, title: 'A' }],
+      removed: [{ tmdbId: 2, title: 'B' }],
+      added: [{ tmdbId: 3, title: 'C' }],
+      failed: [{ tmdbId: 4, title: 'D', reason: 'timeout' }],
+    });
+
+    const caller = createCaller();
+    const result = await caller.media.rotation.listRotationLog({});
+    const parsed: unknown = JSON.parse(result.items[0]!.details!);
+    expect(parsed).toMatchObject({
+      marked: [{ tmdbId: 1, title: 'A' }],
+      removed: [{ tmdbId: 2, title: 'B' }],
+      added: [{ tmdbId: 3, title: 'C' }],
+      failed: [{ tmdbId: 4, title: 'D' }],
+    });
   });
 });

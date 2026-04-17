@@ -374,12 +374,19 @@ export async function runRotationCycle(): Promise<RotationCycleResult> {
 
 function writeRotationLog(result: RotationCycleResult): void {
   const db = getDrizzle();
-  const details = JSON.stringify({
-    marked: result.marked,
-    removed: result.removed,
-    added: result.added,
-    failed: result.failed,
-  });
+  const hasDetails =
+    result.marked.length > 0 ||
+    result.removed.length > 0 ||
+    result.added.length > 0 ||
+    result.failed.length > 0;
+  const details = hasDetails
+    ? JSON.stringify({
+        marked: result.marked,
+        removed: result.removed,
+        added: result.added,
+        failed: result.failed,
+      })
+    : null;
   db.insert(rotationLog)
     .values({
       executedAt: new Date().toISOString(),
@@ -406,4 +413,9 @@ export function _resetRotationScheduler(): void {
   lastCycleError = null;
   isCycleRunning = false;
   cronExpression = DEFAULT_CRON;
+}
+
+/** Expose writeRotationLog for unit testing — for testing only. */
+export function _writeRotationLogForTest(result: RotationCycleResult): void {
+  writeRotationLog(result);
 }
