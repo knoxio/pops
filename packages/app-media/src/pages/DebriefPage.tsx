@@ -1,5 +1,5 @@
 import { CheckCircle, ChevronDown, ChevronUp, Circle, ImageOff, Minus } from 'lucide-react';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
 
@@ -12,8 +12,19 @@ import { toast } from 'sonner';
  * cards with Pick A / Pick B / draw-tier buttons. Uses getDebrief query
  * and recordDebriefComparison mutation. Advances through pending
  * dimensions; shows CompletionSummary when all are done.
+ *
+ * Each comparison card exposes the same action overlay as the Arena:
+ * watchlist toggle, mark stale, N/A exclusion, and blacklist (not watched).
  */
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
   Badge,
   Button,
   PageHeader,
@@ -23,6 +34,7 @@ import {
   TooltipTrigger,
 } from '@pops/ui';
 
+import { ComparisonMovieCard } from '../components/ComparisonMovieCard';
 import { DebriefActionBar } from '../components/DebriefControls';
 import { trpc } from '../lib/trpc';
 
@@ -68,6 +80,137 @@ export function DebriefPage() {
     },
   });
 
+  // ── Watchlist ──
+  const { data: watchlistData } = trpc.media.watchlist.list.useQuery(
+    { mediaType: 'movie' },
+    { enabled: !!debrief }
+  );
+
+  const watchlistedMovies = new Map(
+    (watchlistData?.data ?? [])
+      .filter((e: { mediaType: string }) => e.mediaType === 'movie')
+      .map((e: { mediaId: number; id: number }) => [e.mediaId, e.id])
+  );
+
+  const addToWatchlistMutation = trpc.media.watchlist.add.useMutation({
+    onSuccess: (_data, variables) => {
+      void utils.media.watchlist.list.invalidate();
+      const title =
+        variables.mediaId === debrief?.movie.mediaId
+          ? (debrief?.movie.title ?? 'Movie')
+          : (currentDimension?.opponent?.title ?? 'Movie');
+      toast.success(`${title} added to watchlist`);
+    },
+  });
+
+  const removeFromWatchlistMutation = trpc.media.watchlist.remove.useMutation({
+    onSuccess: (_data, variables) => {
+      void utils.media.watchlist.list.invalidate();
+      const mediaId = [...watchlistedMovies.entries()].find(
+        ([, entryId]) => entryId === variables.id
+      )?.[0];
+      const title =
+        mediaId === debrief?.movie.mediaId
+          ? (debrief?.movie.title ?? 'Movie')
+          : (currentDimension?.opponent?.title ?? 'Movie');
+      toast.success(`${title} removed from watchlist`);
+    },
+  });
+
+  const handleToggleWatchlist = useCallback(
+    (mediaId: number) => {
+      const entryId = watchlistedMovies.get(mediaId);
+      if (entryId !== undefined) {
+        removeFromWatchlistMutation.mutate({ id: entryId });
+      } else {
+        addToWatchlistMutation.mutate({ mediaType: 'movie', mediaId });
+      }
+    },
+    [watchlistedMovies, addToWatchlistMutation, removeFromWatchlistMutation]
+  );
+
+  // ── Mark stale ──
+  const markStaleMutation = trpc.media.comparisons.markStale.useMutation({
+    onSuccess: (data, variables) => {
+      const title =
+        variables.mediaId === debrief?.movie.mediaId
+          ? (debrief?.movie.title ?? 'Movie')
+          : (currentDimension?.opponent?.title ?? 'Movie');
+      const staleness = data.data.staleness;
+      const timesMarked = Math.round(Math.log(staleness) / Math.log(0.5));
+      toast.success(`${title} marked stale (×${timesMarked})`);
+      void utils.media.comparisons.getDebrief.invalidate({ mediaType: 'movie', mediaId: movieId });
+    },
+  });
+
+  const handleMarkStale = useCallback(
+    (mediaId: number) => {
+      if (markStaleMutation.isPending) return;
+      markStaleMutation.mutate({ mediaType: 'movie', mediaId });
+    },
+    [markStaleMutation]
+  );
+
+  // ── N/A exclusion ──
+  const excludeMutation = trpc.media.comparisons.excludeFromDimension.useMutation();
+
+  const handleNA = useCallback(
+    (mediaId: number) => {
+      if (!currentDimension || excludeMutation.isPending) return;
+      const title =
+        mediaId === debrief?.movie.mediaId
+          ? (debrief?.movie.title ?? 'Movie')
+          : (currentDimension.opponent?.title ?? 'Movie');
+      excludeMutation.mutate(
+        { mediaType: 'movie', mediaId, dimensionId: currentDimension.dimensionId },
+        {
+          onSuccess: () => {
+            toast.success(`${title} excluded from this dimension`);
+            void utils.media.comparisons.getDebrief.invalidate({
+              mediaType: 'movie',
+              mediaId: movieId,
+            });
+          },
+        }
+      );
+    },
+    [currentDimension, debrief, excludeMutation, utils, movieId]
+  );
+
+  // ── Blacklist (not watched) ──
+  const [blacklistTarget, setBlacklistTarget] = useState<{
+    id: number;
+    title: string;
+  } | null>(null);
+
+  const { data: blacklistComparisonData } = trpc.media.comparisons.listForMedia.useQuery(
+    { mediaType: 'movie', mediaId: blacklistTarget?.id ?? 0, limit: 1 },
+    { enabled: blacklistTarget !== null }
+  );
+  const comparisonsToPurge = blacklistComparisonData?.pagination?.total ?? null;
+
+  const blacklistMutation = trpc.media.comparisons.blacklistMovie.useMutation({
+    onSuccess: (_data, variables) => {
+      const title =
+        variables.mediaId === debrief?.movie.mediaId
+          ? (debrief?.movie.title ?? 'Movie')
+          : (currentDimension?.opponent?.title ?? 'Movie');
+      toast.success(`${title} marked as not watched`);
+      setBlacklistTarget(null);
+      void utils.media.comparisons.getDebrief.invalidate({ mediaType: 'movie', mediaId: movieId });
+    },
+  });
+
+  const handleBlacklist = useCallback((movie: { id: number; title: string }) => {
+    setBlacklistTarget(movie);
+  }, []);
+
+  const confirmBlacklist = useCallback(() => {
+    if (!blacklistTarget) return;
+    blacklistMutation.mutate({ mediaType: 'movie', mediaId: blacklistTarget.id });
+  }, [blacklistTarget, blacklistMutation]);
+
+  // ── Pick / draw ──
   const handlePick = (winnerId: number) => {
     if (!currentDimension || !debrief || !sessionId || recordMutation.isPending) return;
 
@@ -100,6 +243,10 @@ export function DebriefPage() {
   const handleDoAnother = () => {
     navigate('/media/compare');
   };
+
+  const isPending = recordMutation.isPending;
+  const watchlistPending =
+    addToWatchlistMutation.isPending || removeFromWatchlistMutation.isPending;
 
   // ── Loading / Error states ──
 
@@ -232,7 +379,7 @@ export function DebriefPage() {
 
               <div className="relative grid grid-cols-2 gap-6" data-testid="comparison-cards">
                 {/* Movie A (the debrief movie) */}
-                <ComparisonCard
+                <ComparisonMovieCard
                   movie={{
                     id: debrief.movie.mediaId,
                     title: debrief.movie.title,
@@ -241,8 +388,27 @@ export function DebriefPage() {
                   onPick={() => {
                     handlePick(debrief.movie.mediaId);
                   }}
-                  disabled={recordMutation.isPending}
-                  testId="pick-a"
+                  disabled={isPending}
+                  onToggleWatchlist={() => {
+                    handleToggleWatchlist(debrief.movie.mediaId);
+                  }}
+                  isOnWatchlist={watchlistedMovies.has(debrief.movie.mediaId)}
+                  watchlistPending={watchlistPending}
+                  onMarkStale={() => {
+                    handleMarkStale(debrief.movie.mediaId);
+                  }}
+                  stalePending={markStaleMutation.isPending}
+                  onNA={() => {
+                    handleNA(debrief.movie.mediaId);
+                  }}
+                  naPending={excludeMutation.isPending}
+                  onBlacklist={() => {
+                    handleBlacklist({
+                      id: debrief.movie.mediaId,
+                      title: debrief.movie.title,
+                    });
+                  }}
+                  blacklistPending={blacklistMutation.isPending}
                 />
 
                 {/* Draw tier buttons — centered between cards */}
@@ -275,7 +441,7 @@ export function DebriefPage() {
                           onClick={() => {
                             handleDraw(tier);
                           }}
-                          disabled={recordMutation.isPending}
+                          disabled={isPending}
                           className={`bg-background h-10 w-10 rounded-full shadow-lg hover:scale-110 hover:shadow-xl active:scale-95 ${color}`}
                           aria-label={label}
                           data-testid={`draw-${tier}`}
@@ -289,7 +455,7 @@ export function DebriefPage() {
                 </div>
 
                 {/* Movie B (opponent) */}
-                <ComparisonCard
+                <ComparisonMovieCard
                   movie={{
                     id: currentDimension.opponent.id,
                     title: currentDimension.opponent.title,
@@ -298,8 +464,27 @@ export function DebriefPage() {
                   onPick={() => {
                     handlePick(currentDimension.opponent!.id);
                   }}
-                  disabled={recordMutation.isPending}
-                  testId="pick-b"
+                  disabled={isPending}
+                  onToggleWatchlist={() => {
+                    handleToggleWatchlist(currentDimension.opponent!.id);
+                  }}
+                  isOnWatchlist={watchlistedMovies.has(currentDimension.opponent.id)}
+                  watchlistPending={watchlistPending}
+                  onMarkStale={() => {
+                    handleMarkStale(currentDimension.opponent!.id);
+                  }}
+                  stalePending={markStaleMutation.isPending}
+                  onNA={() => {
+                    handleNA(currentDimension.opponent!.id);
+                  }}
+                  naPending={excludeMutation.isPending}
+                  onBlacklist={() => {
+                    handleBlacklist({
+                      id: currentDimension.opponent!.id,
+                      title: currentDimension.opponent!.title,
+                    });
+                  }}
+                  blacklistPending={blacklistMutation.isPending}
                 />
               </div>
             </>
@@ -327,6 +512,46 @@ export function DebriefPage() {
           onDoAnother={handleDoAnother}
         />
       </div>
+
+      {/* ── Blacklist confirmation dialog ── */}
+      <AlertDialog
+        open={blacklistTarget !== null}
+        onOpenChange={(open) => {
+          if (!open) setBlacklistTarget(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark as not watched?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {comparisonsToPurge !== null ? (
+                <>
+                  <span className="font-medium text-foreground">{comparisonsToPurge}</span>{' '}
+                  comparison{comparisonsToPurge !== 1 ? 's' : ''} involving{' '}
+                  <span className="font-medium text-foreground">{blacklistTarget?.title}</span> will
+                  be deleted and scores recalculated.
+                </>
+              ) : (
+                <>
+                  All comparisons involving{' '}
+                  <span className="font-medium text-foreground">{blacklistTarget?.title}</span> will
+                  be deleted and scores recalculated.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={confirmBlacklist}
+              disabled={blacklistMutation.isPending}
+            >
+              {blacklistMutation.isPending ? 'Removing\u2026' : 'Not watched'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
@@ -361,37 +586,5 @@ function PosterImage({
         setImgError(true);
       }}
     />
-  );
-}
-
-function ComparisonCard({
-  movie,
-  onPick,
-  disabled,
-  testId,
-}: {
-  movie: { id: number; title: string; posterUrl: string | null };
-  onPick: () => void;
-  disabled?: boolean;
-  testId: string;
-}) {
-  return (
-    <button
-      onClick={onPick}
-      disabled={disabled}
-      className={`flex flex-col items-center rounded-lg border p-4 text-center transition-all ${
-        disabled
-          ? 'cursor-default'
-          : 'hover:border-primary hover:shadow-lg hover:scale-[1.02] cursor-pointer active:scale-[0.98]'
-      }`}
-      data-testid={testId}
-    >
-      <PosterImage
-        src={movie.posterUrl}
-        alt={`${movie.title} poster`}
-        className="mb-3 aspect-[2/3] w-full rounded-md object-cover"
-      />
-      <h3 className="text-sm font-semibold">{movie.title}</h3>
-    </button>
   );
 }

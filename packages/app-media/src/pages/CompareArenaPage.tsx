@@ -1,15 +1,4 @@
-import {
-  Ban,
-  Bookmark,
-  ChevronDown,
-  ChevronUp,
-  Clock,
-  EyeOff,
-  History,
-  ImageOff,
-  Minus,
-  SkipForward,
-} from 'lucide-react';
+import { ChevronDown, ChevronUp, History, Minus, SkipForward } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
@@ -32,6 +21,10 @@ import {
   TooltipTrigger,
 } from '@pops/ui';
 
+import {
+  ComparisonMovieCard,
+  ComparisonMovieCardSkeleton,
+} from '../components/ComparisonMovieCard';
 import { DimensionManager } from '../components/DimensionManager';
 import { trpc } from '../lib/trpc';
 
@@ -168,7 +161,7 @@ export function CompareArenaPage() {
   });
 
   const removeFromWatchlistMutation = trpc.media.watchlist.remove.useMutation({
-    onSuccess: (_data: unknown, variables: { id: number }) => {
+    onSuccess: (_data, variables) => {
       utils.media.watchlist.list.invalidate();
       const mediaId = [...watchlistedMovies.entries()].find(
         ([, entryId]) => entryId === variables.id
@@ -180,10 +173,7 @@ export function CompareArenaPage() {
 
   // Mark stale
   const markStaleMutation = trpc.media.comparisons.markStale.useMutation({
-    onSuccess: (
-      data: { data: { staleness: number } },
-      variables: { mediaType: string; mediaId: number }
-    ) => {
+    onSuccess: (data, variables) => {
       const movie =
         variables.mediaId === movieAId ? pairData?.data?.movieA : pairData?.data?.movieB;
       const staleness = data.data.staleness;
@@ -238,7 +228,7 @@ export function CompareArenaPage() {
   const comparisonsToPurge = blacklistComparisonData?.pagination?.total ?? null;
 
   const blacklistMutation = trpc.media.comparisons.blacklistMovie.useMutation({
-    onSuccess: (_data: unknown, variables: { mediaType: string; mediaId: number }) => {
+    onSuccess: (_data, variables) => {
       const movie =
         variables.mediaId === movieAId ? pairData?.data?.movieA : pairData?.data?.movieB;
       toast.success(`${movie?.title ?? 'Movie'} marked as not watched`);
@@ -389,8 +379,8 @@ export function CompareArenaPage() {
       {/* Arena */}
       {pairLoading || pairFetching ? (
         <div className="grid grid-cols-2 gap-8">
-          <MovieCardSkeleton />
-          <MovieCardSkeleton />
+          <ComparisonMovieCardSkeleton />
+          <ComparisonMovieCardSkeleton />
         </div>
       ) : pairError ? (
         <div className="text-center py-12 text-muted-foreground">
@@ -446,7 +436,7 @@ export function CompareArenaPage() {
           </p>
           <div className="relative grid grid-cols-[1fr_auto_1fr] gap-3 items-center">
             {/* Movie A */}
-            <MovieCard
+            <ComparisonMovieCard
               movie={pairData.data.movieA}
               onPick={() => {
                 handlePick(pairData.data.movieA.id);
@@ -549,7 +539,7 @@ export function CompareArenaPage() {
             </div>
 
             {/* Movie B */}
-            <MovieCard
+            <ComparisonMovieCard
               movie={pairData.data.movieB}
               onPick={() => {
                 handlePick(pairData.data.movieB.id);
@@ -632,193 +622,3 @@ export function CompareArenaPage() {
   );
 }
 
-/** Single movie card with zone-based action layout. */
-function MovieCard({
-  movie,
-  onPick,
-  disabled,
-  scoreDelta,
-  isWinner,
-  onToggleWatchlist,
-  isOnWatchlist,
-  watchlistPending,
-  onMarkStale,
-  stalePending,
-  onNA,
-  naPending,
-  onBlacklist,
-  blacklistPending,
-}: {
-  movie: { id: number; title: string; posterPath: string | null; posterUrl: string | null };
-  onPick: () => void;
-  disabled?: boolean;
-  scoreDelta?: number | null;
-  isWinner?: boolean;
-  onToggleWatchlist?: () => void;
-  isOnWatchlist?: boolean;
-  watchlistPending?: boolean;
-  onMarkStale?: () => void;
-  stalePending?: boolean;
-  onNA?: () => void;
-  naPending?: boolean;
-  onBlacklist?: () => void;
-  blacklistPending?: boolean;
-}) {
-  const posterSrc = movie.posterUrl ?? undefined;
-  const [imgError, setImgError] = useState(false);
-
-  return (
-    <div className="flex flex-col gap-2">
-      <div
-        className={`group relative rounded-lg overflow-hidden transition-all ${
-          isWinner
-            ? 'ring-2 ring-success shadow-lg scale-[1.02]'
-            : isWinner === false && scoreDelta != null
-              ? 'ring-2 ring-destructive/50 opacity-75'
-              : ''
-        }`}
-      >
-        {/* Main clickable poster area */}
-        <button
-          onClick={onPick}
-          disabled={disabled}
-          className={`w-full block ${disabled ? 'cursor-default' : 'cursor-pointer active:scale-[0.98]'} transition-transform`}
-        >
-          {imgError ? (
-            <div className="w-full aspect-[2/3] bg-muted flex items-center justify-center">
-              <ImageOff className="h-8 w-8 text-muted-foreground" />
-            </div>
-          ) : (
-            <img
-              src={posterSrc}
-              alt={`${movie.title} poster`}
-              className="w-full aspect-[2/3] object-cover"
-              onError={() => {
-                setImgError(true);
-              }}
-            />
-          )}
-        </button>
-
-        {/* TOP ZONE — non-dismissing actions */}
-        {onToggleWatchlist && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleWatchlist();
-                }}
-                disabled={watchlistPending}
-                className={`absolute top-2 left-2 p-1.5 rounded-full backdrop-blur-sm transition-colors ${
-                  isOnWatchlist
-                    ? 'bg-app-accent/90 text-app-accent-foreground hover:bg-destructive/90 hover:text-white'
-                    : 'bg-black/50 text-white/80 hover:text-white hover:bg-black/70'
-                }`}
-                aria-label={
-                  isOnWatchlist
-                    ? `Remove ${movie.title} from watchlist`
-                    : `Add ${movie.title} to watchlist`
-                }
-              >
-                <Bookmark className={`h-4 w-4 ${isOnWatchlist ? 'fill-current' : ''}`} />
-              </button>
-            </TooltipTrigger>
-            <TooltipContent>
-              {isOnWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
-            </TooltipContent>
-          </Tooltip>
-        )}
-
-        {/* Score delta animation */}
-        {scoreDelta != null && (
-          <div
-            className={`absolute top-2 right-2 px-2 py-1 rounded-full text-xs font-bold tabular-nums animate-bounce ${
-              scoreDelta > 0 ? 'bg-success/90 text-white' : 'bg-destructive/90 text-white'
-            }`}
-          >
-            {scoreDelta > 0 ? '+' : ''}
-            {scoreDelta}
-          </div>
-        )}
-
-        {/* BOTTOM ZONE — dismissing actions (visible on hover/touch) */}
-        <div className="absolute bottom-0 inset-x-0 flex justify-center gap-2 p-2 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
-          {onNA && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onNA();
-                  }}
-                  disabled={naPending}
-                  className="p-2 rounded-full bg-black/40 text-white/80 hover:text-white hover:bg-black/60 backdrop-blur-sm transition-colors"
-                  aria-label={`N/A: ${movie.title}`}
-                  data-testid={`na-button-${movie.id}`}
-                >
-                  <Ban className="h-4 w-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>N/A — exclude from this dimension</TooltipContent>
-            </Tooltip>
-          )}
-          {onMarkStale && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onMarkStale();
-                  }}
-                  disabled={stalePending}
-                  className="p-2 rounded-full bg-black/40 text-white/80 hover:text-white hover:bg-black/60 backdrop-blur-sm transition-colors"
-                  aria-label={`Mark ${movie.title} as stale`}
-                >
-                  <Clock className="h-4 w-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Stale — reduce score weight</TooltipContent>
-            </Tooltip>
-          )}
-          {onBlacklist && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onBlacklist();
-                  }}
-                  disabled={blacklistPending}
-                  className="p-2 rounded-full bg-black/40 text-white/80 hover:text-destructive/80 hover:bg-black/60 backdrop-blur-sm transition-colors"
-                  aria-label={`Not watched ${movie.title}`}
-                >
-                  <EyeOff className="h-4 w-4" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>Not watched</TooltipContent>
-            </Tooltip>
-          )}
-        </div>
-      </div>
-
-      {/* Title — clickable, same as picking winner */}
-      <button
-        onClick={onPick}
-        disabled={disabled}
-        className={`font-semibold text-sm text-center truncate px-1 transition-colors hover:text-primary ${disabled ? 'cursor-default' : 'cursor-pointer'}`}
-      >
-        {movie.title}
-      </button>
-    </div>
-  );
-}
-
-function MovieCardSkeleton() {
-  return (
-    <div className="flex flex-col gap-2">
-      <Skeleton className="w-full aspect-[2/3] rounded-lg" />
-      <Skeleton className="h-4 w-24 mx-auto" />
-    </div>
-  );
-}
