@@ -8,11 +8,11 @@ As a user, I want movies marked as "leaving" to be recoverable by adding them to
 
 ## Acceptance Criteria
 
-- [ ] When a movie is added to the watchlist (via `watchlist.add`), if it has `rotation_status = 'leaving'`, the status is cleared to `null` and `rotation_expires_at` / `rotation_marked_at` are set to `null`
-- [ ] `rotation.cancelLeaving(movieId)` endpoint clears leaving status for a specific movie
-- [ ] Cancelling leaving status returns the movie to the normal eligible pool (no special protection)
-- [ ] The watchlist service integration is a side-effect in the existing watchlist add flow — not a separate endpoint
-- [ ] Movies with `rotation_status = 'protected'` whose `rotation_expires_at` has passed are automatically cleared to `null` (checked during removal selection, not a separate job)
+- [x] When a movie is added to the watchlist (via `watchlist.add`), if it has `rotation_status = 'leaving'`, the status is cleared to `null` and `rotation_expires_at` / `rotation_marked_at` are set to `null`
+- [x] `rotation.cancelLeaving(movieId)` endpoint clears leaving status for a specific movie
+- [x] Cancelling leaving status returns the movie to the normal eligible pool (no special protection)
+- [x] The watchlist service integration is a side-effect in the existing watchlist add flow — not a separate endpoint
+- [x] Movies with `rotation_status = 'protected'` whose `rotation_expires_at` has passed are automatically cleared to `null` (checked during removal selection, not a separate job)
 
 ## Notes
 

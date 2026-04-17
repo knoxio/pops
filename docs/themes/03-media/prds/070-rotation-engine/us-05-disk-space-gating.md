@@ -8,12 +8,12 @@ As a system, I need to gate movie additions on available disk space so that new 
 
 ## Acceptance Criteria
 
-- [ ] After expired movie deletions and new leaving marks, the cycle re-checks free space via Radarr
-- [ ] If free space ≥ `rotation_target_free_gb`: proceed to add up to `rotation_daily_additions` movies from the candidate queue
-- [ ] If free space < `rotation_target_free_gb`: skip additions entirely, log "additions skipped — below target free space"
-- [ ] The addition count (`rotation_daily_additions`, default 2) is configurable via settings
-- [ ] Each addition is estimated at `rotation_avg_movie_gb` for space budgeting — if adding N movies would project free space below target, reduce the count
-- [ ] Actual add/remove counts and free space are recorded in the `rotation_log` entry
+- [x] After expired movie deletions and new leaving marks, the cycle re-checks free space via Radarr
+- [x] If free space ≥ `rotation_target_free_gb`: proceed to add up to `rotation_daily_additions` movies from the candidate queue
+- [x] If free space < `rotation_target_free_gb`: skip additions entirely, log "additions skipped — below target free space"
+- [x] The addition count (`rotation_daily_additions`, default 2) is configurable via settings
+- [x] Each addition is estimated at `rotation_avg_movie_gb` for space budgeting — if adding N movies would project free space below target, reduce the count
+- [x] Actual add/remove counts and free space are recorded in the `rotation_log` entry
 
 ## Notes
 
