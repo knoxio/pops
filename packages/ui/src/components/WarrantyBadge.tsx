@@ -11,7 +11,7 @@ interface WarrantyInfo {
 }
 
 const warrantyStyles: Record<WarrantyState, string> = {
-  expired: 'bg-destructive/50/10 text-destructive border-destructive/20 dark:text-destructive/80',
+  expired: 'bg-destructive/10 text-destructive border-destructive/20 dark:text-destructive/80',
   expiring: 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
   active: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400',
   none: 'bg-zinc-500/10 text-zinc-700 border-zinc-500/20 dark:text-zinc-400',

@@ -12,7 +12,7 @@ interface EntityHitData {
 }
 
 const entityTypeStyles: Record<string, string> = {
-  company: 'bg-info/50/10 text-info border-info/20 dark:text-info/80',
+  company: 'bg-info/10 text-info border-info/20 dark:text-info/80',
   person: 'bg-violet-500/10 text-violet-700 border-violet-500/20 dark:text-violet-400',
   place: 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
   brand: 'bg-rose-500/10 text-rose-700 border-rose-500/20 dark:text-rose-400',

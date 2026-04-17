@@ -173,7 +173,7 @@ export function BudgetsPage() {
             variant="outline"
             className={
               period === 'Monthly'
-                ? 'bg-info/50/10 text-info border-info/20 dark:text-info/80'
+                ? 'bg-info/10 text-info border-info/20 dark:text-info/80'
                 : 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400'
             }
           >

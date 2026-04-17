@@ -32,7 +32,7 @@ export function highlightMatch(text: string, query: string, matchType: string): 
   return (
     <>
       {text.slice(0, start)}
-      <mark className="bg-warning/20 dark:bg-warning/50/30 rounded-sm px-0.5">
+      <mark className="bg-warning/20 dark:bg-warning/30 rounded-sm px-0.5">
         {text.slice(start, end)}
       </mark>
       {text.slice(end)}

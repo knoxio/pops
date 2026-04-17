@@ -25,7 +25,7 @@ function highlightMatch(text: string, query: string, matchType: string): React.R
   return (
     <>
       {text.slice(0, start)}
-      <mark className="rounded-sm bg-warning/20 px-0.5 dark:bg-warning/50/30">
+      <mark className="rounded-sm bg-warning/20 px-0.5 dark:bg-warning/30">
         {text.slice(start, end)}
       </mark>
       {text.slice(end)}
