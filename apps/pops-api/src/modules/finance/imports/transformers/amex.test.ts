@@ -205,7 +205,7 @@ describe('normaliseAmount', () => {
 
   it('handles zero correctly', () => {
     const row = { Date: '13/02/2026', Description: 'TEST', Amount: '0' };
-    expect(transformAmex(row).amount).toBe(-0);
+    expect(transformAmex(row).amount).toBe(0);
   });
 
   it('handles decimal amounts', () => {
