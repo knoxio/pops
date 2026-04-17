@@ -245,7 +245,7 @@ describe('writeRotationLog', () => {
       marked: [{ tmdbId: 1, title: 'A' }],
       removed: [{ tmdbId: 2, title: 'B' }],
       added: [{ tmdbId: 3, title: 'C' }],
-      failed: [{ tmdbId: 4, title: 'D', reason: 'timeout' }],
+      failed: [{ tmdbId: 4, title: 'D', error: 'timeout' }],
     });
 
     const caller = createCaller();
