@@ -57,4 +57,4 @@ Build the wishlist — savings goals with target amounts, progress tracking, and
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

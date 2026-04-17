@@ -1,7 +1,7 @@
 # PRD-020: Import Wizard UI
 
 > Epic: [01 — Import Pipeline](../../epics/01-import-pipeline.md)
-> Status: To Review
+> Status: Partial
 
 ## Overview
 
@@ -243,4 +243,4 @@ US-03 and US-04 can parallelise. US-11, US-12, US-13, US-14, US-15 can paralleli
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

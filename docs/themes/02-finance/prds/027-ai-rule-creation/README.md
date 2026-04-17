@@ -1,7 +1,7 @@
 # PRD-027: AI Rule Creation
 
 > Epic: [06 — AI Rule Creation](../../epics/06-ai-categorisation.md)
-> Status: To Review
+> Status: Partial
 
 ## Overview
 
@@ -96,12 +96,12 @@ Each import makes the system smarter:
 
 ## User Stories
 
-| #   | Story                                                     | Summary                                                                        | Parallelisable   | Status    |
-| --- | --------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------------- | --------- |
-| 01  | [us-01-correction-analysis](us-01-correction-analysis.md) | Send correction signal to AI, receive proposal inputs for ChangeSet generation | No (first)       | To Review |
-| 02  | [us-02-auto-apply-rules](us-02-auto-apply-rules.md)       | Replace auto-apply with ChangeSet proposal + approval + re-evaluation loop     | Blocked by us-01 | Partial   |
-| 03  | [us-03-confirmation-flow](us-03-confirmation-flow.md)     | Proposal UI for approve/reject with required feedback on reject                | Blocked by us-01 | To Review |
-| 04  | [us-04-batch-analysis](us-04-batch-analysis.md)           | Batch context to improve proposals (still requires approval)                   | Blocked by us-01 | To Review |
+| #   | Story                                                     | Summary                                                                        | Parallelisable   | Status  |
+| --- | --------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------------- | ------- |
+| 01  | [us-01-correction-analysis](us-01-correction-analysis.md) | Send correction signal to AI, receive proposal inputs for ChangeSet generation | No (first)       | Done    |
+| 02  | [us-02-auto-apply-rules](us-02-auto-apply-rules.md)       | Replace auto-apply with ChangeSet proposal + approval + re-evaluation loop     | Blocked by us-01 | Partial |
+| 03  | [us-03-confirmation-flow](us-03-confirmation-flow.md)     | Proposal UI for approve/reject; reject discards suggestion without feedback    | Blocked by us-01 | Done    |
+| 04  | [us-04-batch-analysis](us-04-batch-analysis.md)           | Batch context to improve proposals (still requires approval)                   | Blocked by us-01 | Done    |
 
 US-02 and US-03 can parallelise after US-01.
 
@@ -113,8 +113,6 @@ US-02 and US-03 can parallelise after US-01.
 - Cost tracked per AI call where Claude is invoked.
 - Rules persist across imports once committed (next import benefits from rules written in a prior commit).
 
-Documentation alignment: knoxio/pops#1746.
-
 ## Out of Scope
 
 - AI usage tracking UI (AI theme, PRD-052)
@@ -123,4 +121,4 @@ Documentation alignment: knoxio/pops#1746.
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

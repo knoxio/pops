@@ -57,4 +57,4 @@ Build budget tracking — spending categories with monthly or yearly limits. Sho
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

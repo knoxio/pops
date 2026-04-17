@@ -83,4 +83,4 @@ Build the entity registry — the merchant/payee database that transactions and 
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

@@ -124,4 +124,4 @@ US-02 through US-05 can all parallelise (independent parsers). US-06 is shared u
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17
