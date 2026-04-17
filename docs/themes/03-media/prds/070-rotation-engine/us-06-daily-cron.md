@@ -8,13 +8,14 @@ As a system, I need a scheduled job that orchestrates the full rotation cycle da
 
 ## Acceptance Criteria
 
-- [ ] A cron-based scheduler runs `runRotationCycle()` at the configured `rotation_cron_expression`
-- [ ] `runRotationCycle()` executes in order: sync sources → process expired leaving movies (Radarr delete) → measure free space → calculate deficit → mark new leaving movies (oldest first, by size) → measure free space again → add movies from queue (if space permits)
-- [ ] The scheduler auto-resumes on server startup if `rotation_enabled = true` (same pattern as Plex sync scheduler)
-- [ ] `rotation.runNow` tRPC endpoint triggers an immediate cycle outside the cron schedule
-- [ ] Concurrent cycles are prevented — if a cycle is already running, skip the new invocation and log it
-- [ ] The scheduler respects `rotation_enabled` — toggling off stops future runs, toggling on schedules the next
-- [ ] Each cycle creates a `rotation_log` entry with all counts, disk space, and skip reasons
+- [x] A cron-based scheduler runs `runRotationCycle()` at the configured `rotation_cron_expression`
+- [x] `runRotationCycle()` executes in order: sync sources → process expired leaving movies (Radarr delete) → measure free space → calculate deficit → mark new leaving movies (oldest first, by size) → measure free space again → add movies from queue (if space permits)
+- [x] The scheduler auto-resumes on server startup if `rotation_enabled = true` (same pattern as Plex sync scheduler)
+- [x] `rotation.runNow` tRPC endpoint triggers an immediate cycle outside the cron schedule
+- [x] Concurrent cycles are prevented — if a cycle is already running, skip the new invocation and log it
+- [x] The scheduler respects `rotation_enabled` — toggling off stops future runs, toggling on schedules the next
+- [x] Each cycle creates a `rotation_log` entry with all counts, disk space, and skip reasons
+- [ ] `rotation_log` `details` JSON column is never populated — expanded per-movie titles in the log page won't show anything
 - [ ] Graceful shutdown: in-progress cycle completes before the server exits (SIGTERM handling)
 
 ## Notes

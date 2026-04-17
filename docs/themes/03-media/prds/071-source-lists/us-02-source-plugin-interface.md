@@ -8,13 +8,13 @@ As a system, I need a plugin interface for rotation sources and a Plex watchlist
 
 ## Acceptance Criteria
 
-- [ ] `RotationSource` interface defined: `type: string`, `fetchCandidates(config): Promise<CandidateMovie[]>`
-- [ ] `CandidateMovie` type defined: `tmdbId: number`, `title: string`, `year: number | null`, `rating: number | null`, `posterPath: string | null`
-- [ ] Source registry maps source types to their adapter implementations
-- [ ] `plex_watchlist` adapter fetches the user's Plex Discover watchlist (reuse existing `PlexClient.getWatchlist` patterns from sync-watchlist)
-- [ ] Adapter extracts TMDB ID from Plex metadata `Guid` array, resolves title/year/rating from TMDB
-- [ ] `syncSource(sourceId)` fetches candidates via the adapter and upserts into `rotation_candidates` (insert new, skip existing by `tmdb_id`)
-- [ ] `last_synced_at` is updated on the source record after successful sync
+- [x] `RotationSource` interface defined: `type: string`, `fetchCandidates(config): Promise<CandidateMovie[]>`
+- [x] `CandidateMovie` type defined: `tmdbId: number`, `title: string`, `year: number | null`, `rating: number | null`, `posterPath: string | null`
+- [x] Source registry maps source types to their adapter implementations
+- [x] `plex_watchlist` adapter fetches the user's Plex Discover watchlist (reuse existing `PlexClient.getWatchlist` patterns from sync-watchlist)
+- [x] Adapter extracts TMDB ID from Plex metadata `Guid` array, resolves title/year/rating from TMDB
+- [x] `syncSource(sourceId)` fetches candidates via the adapter and upserts into `rotation_candidates` (insert new, skip existing by `tmdb_id`)
+- [x] `last_synced_at` is updated on the source record after successful sync
 
 ## Notes
 

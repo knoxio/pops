@@ -121,14 +121,14 @@ Paginated history of rotation cycles. Each entry shows:
 
 ## User Stories
 
-| #   | Story                                                           | Summary                                                                   | Status      | Parallelisable                          |
-| --- | --------------------------------------------------------------- | ------------------------------------------------------------------------- | ----------- | --------------------------------------- |
-| 01  | [us-01-leaving-soon-shelf](us-01-leaving-soon-shelf.md)         | Leaving Soon shelf on Library + Discover pages, countdown badges on cards | Done        | Blocked by PRD-070 US-03                |
-| 02  | [us-02-rotation-settings](us-02-rotation-settings.md)           | Rotation settings page with all configuration controls                    | Done        | Blocked by PRD-070 US-01                |
-| 03  | [us-03-source-management](us-03-source-management.md)           | Source list CRUD page with type-specific config                           | Done        | Blocked by PRD-071 US-01                |
-| 04  | [us-04-candidate-queue](us-04-candidate-queue.md)               | Candidate queue page with tabs (pending, added, excluded)                 | Done        | Blocked by PRD-071 US-01                |
-| 05  | [us-05-queue-download-buttons](us-05-queue-download-buttons.md) | "Add to Queue" and "Download" buttons on discovery pages                  | Not started | Blocked by PRD-071 US-01, PRD-070 US-01 |
-| 06  | [us-06-rotation-log](us-06-rotation-log.md)                     | Rotation execution history page                                           | Not started | Blocked by PRD-070 US-06                |
+| #   | Story                                                           | Summary                                                                   | Status  | Parallelisable                          |
+| --- | --------------------------------------------------------------- | ------------------------------------------------------------------------- | ------- | --------------------------------------- |
+| 01  | [us-01-leaving-soon-shelf](us-01-leaving-soon-shelf.md)         | Leaving Soon shelf on Library + Discover pages, countdown badges on cards | Partial | Blocked by PRD-070 US-03                |
+| 02  | [us-02-rotation-settings](us-02-rotation-settings.md)           | Rotation settings page with all configuration controls                    | Done    | Blocked by PRD-070 US-01                |
+| 03  | [us-03-source-management](us-03-source-management.md)           | Source list CRUD page with type-specific config                           | Done    | Blocked by PRD-071 US-01                |
+| 04  | [us-04-candidate-queue](us-04-candidate-queue.md)               | Candidate queue page with tabs (pending, added, excluded)                 | Done    | Blocked by PRD-071 US-01                |
+| 05  | [us-05-queue-download-buttons](us-05-queue-download-buttons.md) | "Add to Queue" and "Download" buttons on discovery pages                  | Partial | Blocked by PRD-071 US-01, PRD-070 US-01 |
+| 06  | [us-06-rotation-log](us-06-rotation-log.md)                     | Rotation execution history page                                           | Partial | Blocked by PRD-070 US-06                |
 
 ## Out of Scope
 
@@ -139,4 +139,4 @@ Paginated history of rotation cycles. Each entry shows:
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17
