@@ -26,6 +26,9 @@ cf_subdomain_api: pops-api
 cf_subdomain_metabase: pops-metabase
 cf_subdomain_paperless: pops-paperless
 
+# GitHub runner
+github_runner_name: pops-n95
+
 # Docker image versions (pin for security)
 metabase_version: 'v0.52.5'
 paperless_version: '2.14'

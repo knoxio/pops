@@ -7,7 +7,35 @@
     group: '{{ github_runner_user }}'
     mode: '0755'
 
-- name: Check if runner is already installed
+- name: Validate GitHub PAT is defined
+  ansible.builtin.assert:
+    that:
+      - github_runner_pat is defined
+      - github_runner_pat | length > 0
+    fail_msg: >-
+      github_runner_pat is not set. Add vault_github_runner_pat to the Ansible vault:
+      ansible-vault edit infra/ansible/inventory/group_vars/pops_servers/vault.yml
+
+- name: Store GitHub PAT for runner re-registration
+  ansible.builtin.copy:
+    content: '{{ github_runner_pat }}'
+    dest: '{{ github_runner_dir }}/.github_pat'
+    owner: root
+    group: root
+    mode: '0400'
+  become: true
+  no_log: true
+
+- name: Deploy runner re-registration script
+  ansible.builtin.template:
+    src: re-register.sh.j2
+    dest: '{{ github_runner_dir }}/re-register.sh'
+    owner: root
+    group: root
+    mode: '0755'
+  become: true
+
+- name: Check if runner binary is installed
   ansible.builtin.stat:
     path: '{{ github_runner_dir }}/config.sh'
   register: runner_installed
@@ -41,43 +69,58 @@
     path: '{{ github_runner_dir }}/.runner'
   register: runner_configured
 
-- name: Configure GitHub runner
+- name: Register runner with GitHub
   ansible.builtin.command:
-    cmd: >-
-      ./config.sh
-      --url {{ github_repo_url }}
-      --token {{ github_runner_token }}
-      --name {{ ansible_hostname }}
-      --labels {{ github_runner_labels }}
-      --unattended
-      --replace
+    cmd: './re-register.sh'
     chdir: '{{ github_runner_dir }}'
-  become_user: '{{ github_runner_user }}'
-  when:
-    - not runner_configured.stat.exists
-    - github_runner_token is defined
-    - github_runner_token | length > 0
+  become: true
+  when: not runner_configured.stat.exists
   changed_when: true
+
+- name: Re-check runner configuration state
+  ansible.builtin.stat:
+    path: '{{ github_runner_dir }}/.runner'
+  register: runner_configured_post
 
 - name: Check if runner service is installed
   ansible.builtin.stat:
-    path: "/etc/systemd/system/actions.runner.{{ github_repo_url | split('/') | last }}.{{ ansible_hostname }}.service"
+    path: '/etc/systemd/system/{{ github_runner_service_name }}'
   register: runner_service
 
-- name: Install runner as service
+- name: Install runner as systemd service
   ansible.builtin.command:
     cmd: './svc.sh install {{ github_runner_user }}'
     chdir: '{{ github_runner_dir }}'
   become: true
   when:
-    - runner_configured.stat.exists
+    - runner_configured_post.stat.exists
     - not runner_service.stat.exists
   changed_when: true
 
+- name: Create systemd drop-in directory for runner service
+  ansible.builtin.file:
+    path: '/etc/systemd/system/{{ github_runner_service_name }}.d'
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+  when: runner_configured_post.stat.exists
+
+- name: Deploy systemd drop-in for pre-start re-registration
+  ansible.builtin.template:
+    src: runner-override.conf.j2
+    dest: '/etc/systemd/system/{{ github_runner_service_name }}.d/re-register.conf'
+    owner: root
+    group: root
+    mode: '0644'
+  when: runner_configured_post.stat.exists
+  notify: Restart runner service
+
 - name: Ensure runner service is started and enabled
-  ansible.builtin.command:
-    cmd: './svc.sh start'
-    chdir: '{{ github_runner_dir }}'
+  ansible.builtin.systemd:
+    name: '{{ github_runner_service_name }}'
+    state: started
+    enabled: true
+    daemon_reload: true
   become: true
-  ignore_errors: true # svc.sh start fails if already running
-  changed_when: true
+  when: runner_configured_post.stat.exists

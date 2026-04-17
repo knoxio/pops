@@ -1,0 +1,8 @@
+---
+- name: Restart runner service
+  ansible.builtin.systemd:
+    name: '{{ github_runner_service_name }}'
+    state: restarted
+    daemon_reload: true
+  become: true
+  when: runner_configured_post.stat.exists
