@@ -23,13 +23,21 @@ vi.mock('../../db.js', () => ({
   })),
 }));
 
-// Mock image cache
+// Mock image cache and TMDB client
 const mockDownloadMovieImages = vi.fn(async () => {});
 const mockDownloadTvShowImages = vi.fn(async () => {});
+const mockGetMovie = vi.fn(
+  async (): Promise<{ posterPath: string | null }> => ({
+    posterPath: null,
+  })
+);
 vi.mock('../../modules/media/tmdb/index.js', () => ({
   getImageCache: vi.fn(() => ({
     downloadMovieImages: mockDownloadMovieImages,
     downloadTvShowImages: mockDownloadTvShowImages,
+  })),
+  getTmdbClient: vi.fn(() => ({
+    getMovie: mockGetMovie,
   })),
 }));
 
@@ -92,6 +100,7 @@ beforeEach(() => {
   mockGet.mockReturnValue(undefined);
   mockDownloadMovieImages.mockResolvedValue(undefined);
   mockDownloadTvShowImages.mockResolvedValue(undefined);
+  mockGetMovie.mockResolvedValue({ posterPath: null });
 });
 
 afterEach(() => {
@@ -327,13 +336,69 @@ describe('GET /media/images/:mediaType/:id/:filename', () => {
       expect(res.status).toBe(404);
     });
 
-    it('returns 404 when DB has no poster_path', async () => {
+    it('returns 404 when DB has no poster_path and TMDB returns null', async () => {
       const app = createTestApp();
       mockGet.mockReturnValue({ path: null });
+      mockGetMovie.mockResolvedValue({ posterPath: null });
 
       const res = await request(app).get('/media/images/movie/550/poster.jpg');
 
+      expect(mockGetMovie).toHaveBeenCalledWith(550);
       expect(mockDownloadMovieImages).not.toHaveBeenCalled();
+      expect(res.status).toBe(404);
+    });
+
+    it('fetches poster from TMDB and redirects when DB has no poster_path but TMDB has one', async () => {
+      const app = createTestApp();
+      mockGet.mockReturnValue({ path: null });
+      mockGetMovie.mockResolvedValue({ posterPath: '/tmdb-fetched.jpg' });
+      // Download resolves but no file written — should fall through to CDN redirect
+      mockDownloadMovieImages.mockResolvedValue(undefined);
+
+      const res = await request(app).get('/media/images/movie/550/poster.jpg');
+
+      expect(mockGetMovie).toHaveBeenCalledWith(550);
+      expect(mockDownloadMovieImages).toHaveBeenCalledWith(550, '/tmdb-fetched.jpg', null, null);
+      expect(res.status).toBe(302);
+      expect(res.headers.location).toBe('https://image.tmdb.org/t/p/w780/tmdb-fetched.jpg');
+    });
+
+    it('does not call TMDB when DB record does not exist at all', async () => {
+      const app = createTestApp();
+      mockGet.mockReturnValue(undefined);
+
+      const res = await request(app).get('/media/images/movie/9999/poster.jpg');
+
+      expect(mockGetMovie).not.toHaveBeenCalled();
+      expect(mockDownloadMovieImages).not.toHaveBeenCalled();
+      expect(res.status).toBe(404);
+    });
+
+    it('does not call TMDB for null path on non-poster image types', async () => {
+      const app = createTestApp();
+      mockGet.mockReturnValue({ path: null });
+
+      await request(app).get('/media/images/movie/550/backdrop.jpg');
+
+      expect(mockGetMovie).not.toHaveBeenCalled();
+    });
+
+    it('does not call TMDB for null path on TV shows', async () => {
+      const app = createTestApp();
+      mockGet.mockReturnValue({ path: null });
+
+      await request(app).get('/media/images/tv/81189/poster.jpg');
+
+      expect(mockGetMovie).not.toHaveBeenCalled();
+    });
+
+    it('returns 404 when TMDB lookup throws', async () => {
+      const app = createTestApp();
+      mockGet.mockReturnValue({ path: null });
+      mockGetMovie.mockRejectedValue(new Error('TMDB API unavailable'));
+
+      const res = await request(app).get('/media/images/movie/550/poster.jpg');
+
       expect(res.status).toBe(404);
     });
   });

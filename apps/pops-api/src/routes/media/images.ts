@@ -18,7 +18,7 @@ import { type Router as ExpressRouter, Router } from 'express';
 
 import { getDb } from '../../db.js';
 import { MEDIA_DIR_NAMES } from '../../modules/media/tmdb/image-cache.js';
-import { getImageCache } from '../../modules/media/tmdb/index.js';
+import { getImageCache, getTmdbClient } from '../../modules/media/tmdb/index.js';
 
 const VALID_MEDIA_TYPES = ['movie', 'tv'] as const;
 const VALID_FILENAMES = ['poster.jpg', 'backdrop.jpg', 'logo.png', 'override.jpg'] as const;
@@ -195,12 +195,21 @@ router.get('/media/images/:mediaType/:id/:filename', async (req, res): Promise<v
       .prepare(`SELECT ${pathColumn} AS path FROM ${table} WHERE ${idColumn} = ?`)
       .get(id) as { path: string | null } | undefined;
 
-    if (record?.path) {
+    // For movies with null poster_path, fetch from TMDB API to get the current path
+    let resolvedPath = record?.path ?? null;
+    if (!resolvedPath && mediaType === 'movie' && imageType === 'poster' && record !== undefined) {
+      const tmdbPath = await fetchPosterPathFromTmdb(Number(id));
+      if (tmdbPath) {
+        resolvedPath = tmdbPath;
+      }
+    }
+
+    if (resolvedPath) {
       // Tier 2: Download from CDN → cache → serve
       const downloaded = await downloadAndServe(
         mediaType,
         Number(id),
-        record.path,
+        resolvedPath,
         imageType,
         filePath,
         res
@@ -208,7 +217,7 @@ router.get('/media/images/:mediaType/:id/:filename', async (req, res): Promise<v
       if (downloaded) return;
 
       // Tier 3: Redirect browser to CDN URL directly
-      const cdnUrl = buildCdnFallbackUrl(mediaType, record.path, imageType);
+      const cdnUrl = buildCdnFallbackUrl(mediaType, resolvedPath, imageType);
       if (cdnUrl) {
         res.set('Cache-Control', 'private, max-age=300');
         res.redirect(302, cdnUrl);
@@ -222,6 +231,21 @@ router.get('/media/images/:mediaType/:id/:filename', async (req, res): Promise<v
   // No image source at all
   res.status(404).json({ error: 'Image not found' });
 });
+
+/**
+ * Fetch the poster_path for a movie from the TMDB API when the DB has no stored path.
+ * Returns the TMDB-relative path (e.g. "/abc123.jpg"), or null on failure/no result.
+ */
+async function fetchPosterPathFromTmdb(tmdbId: number): Promise<string | null> {
+  try {
+    const client = getTmdbClient();
+    const detail = await client.getMovie(tmdbId);
+    return detail.posterPath ?? null;
+  } catch (err) {
+    console.warn(`[Images] TMDB lookup for ${tmdbId} failed:`, err);
+    return null;
+  }
+}
 
 /**
  * Download an image from its original source (TMDB or TheTVDB) to the local cache,

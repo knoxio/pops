@@ -164,9 +164,11 @@ function toTierListMovie(row: {
   return {
     id: row.mediaId,
     title: row.title,
+    // Always generate the URL when tmdbId is available — the images endpoint
+    // handles the case where poster_path is null by fetching from TMDB on demand.
     posterUrl: row.moviePosterOverride
       ? row.moviePosterOverride
-      : row.moviePosterPath && row.movieTmdbId
+      : row.movieTmdbId
         ? `/media/images/movie/${row.movieTmdbId}/poster.jpg`
         : null,
     score: Math.round(row.score * 10) / 10,

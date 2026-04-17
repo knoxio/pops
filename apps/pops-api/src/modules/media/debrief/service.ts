@@ -134,9 +134,7 @@ export function getDebrief(sessionId: number): DebriefResponse {
 
   const posterUrl = movieRow.posterOverridePath
     ? movieRow.posterOverridePath
-    : movieRow.posterPath
-      ? `/media/images/movie/${movieRow.tmdbId}/poster.jpg`
-      : null;
+    : `/media/images/movie/${movieRow.tmdbId}/poster.jpg`;
 
   // Get active dimensions
   const dims = db

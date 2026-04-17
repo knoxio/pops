@@ -144,9 +144,7 @@ export function getDebriefOpponent(
 
   const posterUrl = movieRow.posterOverridePath
     ? movieRow.posterOverridePath
-    : movieRow.posterPath
-      ? `/media/images/movie/${movieRow.tmdbId}/poster.jpg`
-      : null;
+    : `/media/images/movie/${movieRow.tmdbId}/poster.jpg`;
 
   return {
     id: movieRow.id,
@@ -231,9 +229,7 @@ export function getPendingDebriefs(): PendingDebrief[] {
 
     const posterUrl = movieRow.posterOverridePath
       ? movieRow.posterOverridePath
-      : movieRow.posterPath
-        ? `/media/images/movie/${movieRow.tmdbId}/poster.jpg`
-        : null;
+      : `/media/images/movie/${movieRow.tmdbId}/poster.jpg`;
 
     results.push({
       sessionId: session.sessionId,

@@ -22,8 +22,9 @@ export function resolvePosterUrl(row: {
 }): string | null {
   if (row.mediaType === 'movie') {
     if (row.moviePosterOverride) return row.moviePosterOverride;
-    if (row.moviePosterPath && row.movieTmdbId)
-      return `/media/images/movie/${row.movieTmdbId}/poster.jpg`;
+    // Always generate the URL when tmdbId is available — the images endpoint
+    // handles the case where poster_path is null by fetching from TMDB on demand.
+    if (row.movieTmdbId) return `/media/images/movie/${row.movieTmdbId}/poster.jpg`;
     return null;
   }
   if (row.tvPosterOverride) return row.tvPosterOverride;
