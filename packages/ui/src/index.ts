@@ -2,6 +2,7 @@
 
 // Utilities
 export { cn } from './lib/utils';
+export { useDebouncedValue } from './lib/useDebounce';
 
 // Primitives — non-conflicting exports
 export * from './primitives/accordion';

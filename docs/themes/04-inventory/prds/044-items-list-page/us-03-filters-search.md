@@ -14,8 +14,8 @@ As a user, I want to filter inventory items by type, location, and condition, se
 - [x] If search term matches an asset ID, asset ID navigation takes precedence over name filtering
 - [x] Type select dropdown populated dynamically from distinct item types in the database
 - [x] Location select dropdown shows location hierarchy (indented or breadcrumb style)
-- [x] Condition select dropdown with options: All (default), New, Good, Fair, Poor, Broken
-- [x] All filter values are persisted as URL query parameters (`?q=`, `?type=`, `?location=`, `?condition=`)
+- [x] Condition select dropdown with options: All (default), Excellent, Good, Fair, Poor
+- [x] All filter values are persisted as URL query parameters (`?q=`, `?type=`, `?locationId=`, `?condition=`)
 - [x] Changing any filter re-fetches the items list and resets pagination to page 1
 - [x] "Clear filters" button appears when any filter is active; clicking it resets all filters
 - [x] Empty state (no items in database): "No items yet — Add your first item" with link to `/inventory/items/new`

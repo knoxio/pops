@@ -1,5 +1,5 @@
 import { ChevronLeft, ChevronRight, History, Trash2, Undo2 } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
 
@@ -7,25 +7,13 @@ import { toast } from 'sonner';
  * ComparisonHistoryPage — paginated list of all comparisons with delete capability.
  * Allows users to review past comparisons and undo mistakes.
  */
-import { Button, Card, CardContent, Input, Select, Skeleton } from '@pops/ui';
+import { Button, Card, CardContent, Input, Select, Skeleton, useDebouncedValue } from '@pops/ui';
 
 import { trpc } from '../lib/trpc';
 
 const PAGE_SIZE = 20;
 const UNDO_DELAY_MS = 5000;
 
-function useDebouncedValue(value: string, delay: number): string {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebounced(value);
-    }, delay);
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [value, delay]);
-  return debounced;
-}
 
 export function ComparisonHistoryPage() {
   const [page, setPage] = useState(0);

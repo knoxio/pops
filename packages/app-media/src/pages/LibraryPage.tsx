@@ -11,7 +11,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router';
 
 import { useSetPageContext } from '@pops/navigation';
-import { Button, Select, Skeleton, TextInput } from '@pops/ui';
+import { Button, Select, Skeleton, TextInput, useDebouncedValue } from '@pops/ui';
 
 import { DebriefBanner } from '../components/DebriefBanner';
 import { DownloadQueue } from '../components/DownloadQueue';
@@ -36,19 +36,6 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
 
 const PAGE_SIZE_OPTIONS = [24, 48, 96] as const;
 
-/** Debounce a string value by `delay` ms. */
-function useDebouncedValue(value: string, delay: number): string {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebounced(value);
-    }, delay);
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [value, delay]);
-  return debounced;
-}
 
 function LibrarySkeleton({ count = 24 }: { count?: number }) {
   return (

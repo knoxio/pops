@@ -1,5 +1,5 @@
 import { LayoutGrid, LayoutList, Package, Plus, Search } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
 /**
@@ -15,6 +15,7 @@ import {
   type SelectOption,
   Skeleton,
   TextInput,
+  useDebouncedValue,
   ViewToggleGroup,
 } from '@pops/ui';
 
@@ -59,15 +60,6 @@ const IN_USE_OPTIONS: SelectOption[] = [
   { value: 'false', label: 'Not In Use' },
 ];
 
-/** Debounce a string value by `delay` ms. Returns the debounced copy. */
-function useDebouncedValue(value: string, delay: number): string {
-  const [debounced, setDebounced] = useState(value);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(value), delay);
-    return () => clearTimeout(timer);
-  }, [value, delay]);
-  return debounced;
-}
 
 function ItemsPageSkeleton() {
   return (

@@ -13,7 +13,7 @@ vi.mock('../lib/trpc', () => ({
   trpc: {
     inventory: {
       items: {
-        list: { useQuery: () => mocks.itemsQuery() },
+        list: { useQuery: (input: unknown) => mocks.itemsQuery(input) },
         distinctTypes: { useQuery: () => mocks.typesQuery() },
         searchByAssetId: { fetch: mocks.searchByAssetId },
       },
@@ -156,20 +156,30 @@ describe('ItemsPage', () => {
 
         const searchInput = screen.getByPlaceholderText('Search items or asset IDs...');
 
-        // Capture items.list calls before typing
-        const callsBefore = mocks.itemsQuery.mock.calls.length;
+        // Clear call history so we start from a clean slate after initial render.
+        mocks.itemsQuery.mockClear();
+
+        const hasSearchTermCall = () =>
+          (mocks.itemsQuery.mock.calls as Array<[{ search?: string }]>).some(
+            ([input]) => input?.search === 'MacBook'
+          );
 
         fireEvent.change(searchInput, { target: { value: 'MacBook' } });
 
-        // Immediately after typing the debounce has not fired yet — the URL
-        // param updates but the query still uses the old debounced value.
-        // Advance timers past the 300ms debounce window.
-        await act(async () => {
-          vi.advanceTimersByTime(350);
-        });
+        // Immediately after typing, debounce has not fired — term must not appear.
+        expect(hasSearchTermCall()).toBe(false);
 
-        // After debounce fires the query re-runs with the new search value.
-        expect(mocks.itemsQuery.mock.calls.length).toBeGreaterThan(callsBefore);
+        // Still before 300ms — term must still be absent.
+        await act(async () => {
+          vi.advanceTimersByTime(299);
+        });
+        expect(hasSearchTermCall()).toBe(false);
+
+        // Exactly at 300ms the debounce fires — term must appear.
+        await act(async () => {
+          vi.advanceTimersByTime(1);
+        });
+        expect(hasSearchTermCall()).toBe(true);
       } finally {
         vi.useRealTimers();
       }
