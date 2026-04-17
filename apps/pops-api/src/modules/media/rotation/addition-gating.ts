@@ -73,8 +73,15 @@ export function getAdditionBudget(
 // Queue processing
 // ---------------------------------------------------------------------------
 
+/** A movie that was successfully added during the rotation cycle. */
+export interface AddedMovieRef {
+  tmdbId: number;
+  title: string;
+}
+
 export interface AdditionResult {
   added: number;
+  addedMovies: AddedMovieRef[];
   skippedReason: string | null;
 }
 
@@ -90,12 +97,20 @@ export interface AdditionResult {
  */
 export async function addMoviesFromQueue(budget: number): Promise<AdditionResult> {
   if (budget <= 0) {
-    return { added: 0, skippedReason: 'additions skipped — below target free space' };
+    return {
+      added: 0,
+      addedMovies: [],
+      skippedReason: 'additions skipped — below target free space',
+    };
   }
 
   const client = getRadarrClient();
   if (!client) {
-    return { added: 0, skippedReason: 'Radarr not configured — cannot add movies' };
+    return {
+      added: 0,
+      addedMovies: [],
+      skippedReason: 'Radarr not configured — cannot add movies',
+    };
   }
 
   const qualityProfileId = getSetting(SETTINGS_KEYS.qualityProfileId);
@@ -104,6 +119,7 @@ export async function addMoviesFromQueue(budget: number): Promise<AdditionResult
   if (!qualityProfileId || !rootFolderPath) {
     return {
       added: 0,
+      addedMovies: [],
       skippedReason: 'rotation_quality_profile_id or rotation_root_folder_path not configured',
     };
   }
@@ -114,10 +130,11 @@ export async function addMoviesFromQueue(budget: number): Promise<AdditionResult
   const selected = aggregateCandidates(budget);
 
   if (selected.length === 0) {
-    return { added: 0, skippedReason: 'no pending candidates in queue' };
+    return { added: 0, addedMovies: [], skippedReason: 'no pending candidates in queue' };
   }
 
   let added = 0;
+  const addedMovies: AddedMovieRef[] = [];
   for (const candidate of selected) {
     try {
       // Check if already in Radarr
@@ -157,6 +174,7 @@ export async function addMoviesFromQueue(budget: number): Promise<AdditionResult
         .where(eq(rotationCandidates.id, candidate.candidateId))
         .run();
       added++;
+      addedMovies.push({ tmdbId: candidate.tmdbId, title: candidate.title });
 
       console.warn(
         `[Rotation] Added: ${candidate.title} (tmdb=${candidate.tmdbId}, weight=${candidate.weight.toFixed(2)})`
@@ -174,5 +192,5 @@ export async function addMoviesFromQueue(budget: number): Promise<AdditionResult
     }
   }
 
-  return { added, skippedReason: null };
+  return { added, addedMovies, skippedReason: null };
 }

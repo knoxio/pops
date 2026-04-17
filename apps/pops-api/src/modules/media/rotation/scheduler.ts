@@ -60,6 +60,17 @@ export interface RotationSchedulerStatus {
   nextRunAt: string | null;
 }
 
+/** Per-movie reference stored in the rotation log details. */
+export interface RotationMovieRef {
+  tmdbId: number;
+  title: string;
+}
+
+/** Per-movie reference for failed removals, which may carry an error message. */
+export interface RotationFailedMovieRef extends RotationMovieRef {
+  error?: string;
+}
+
 export interface RotationCycleResult {
   moviesMarkedLeaving: number;
   moviesRemoved: number;
@@ -68,6 +79,11 @@ export interface RotationCycleResult {
   freeSpaceGb: number;
   targetFreeGb: number;
   skippedReason: string | null;
+  /** Per-movie detail lists written to the rotation_log details column. */
+  marked: RotationMovieRef[];
+  removed: RotationMovieRef[];
+  added: RotationMovieRef[];
+  failed: RotationFailedMovieRef[];
 }
 
 // ---------------------------------------------------------------------------
@@ -206,6 +222,10 @@ export async function runRotationCycle(): Promise<RotationCycleResult> {
       freeSpaceGb: 0,
       targetFreeGb: getTargetFreeGb(),
       skippedReason: 'Concurrent cycle already running',
+      marked: [],
+      removed: [],
+      added: [],
+      failed: [],
     };
     writeRotationLog(result);
     return result;
@@ -223,6 +243,12 @@ export async function runRotationCycle(): Promise<RotationCycleResult> {
     const expiredResults = await processExpiredMovies();
     const moviesRemoved = expiredResults.filter((r) => r.success).length;
     const removalsFailed = expiredResults.filter((r) => !r.success).length;
+    const removedMovies: RotationMovieRef[] = expiredResults
+      .filter((r) => r.success)
+      .map((r) => ({ tmdbId: r.tmdbId, title: r.title }));
+    const failedMovies: RotationFailedMovieRef[] = expiredResults
+      .filter((r) => !r.success)
+      .map((r) => ({ tmdbId: r.tmdbId, title: r.title, error: r.error }));
 
     // Step 2: Measure free space
     let freeSpaceGb: number;
@@ -237,6 +263,10 @@ export async function runRotationCycle(): Promise<RotationCycleResult> {
         freeSpaceGb: 0,
         targetFreeGb,
         skippedReason: 'Radarr unavailable — cannot measure disk space',
+        marked: [],
+        removed: removedMovies,
+        added: [],
+        failed: failedMovies,
       };
       writeRotationLog(result);
       lastCycleAt = new Date().toISOString();
@@ -250,6 +280,7 @@ export async function runRotationCycle(): Promise<RotationCycleResult> {
     const deficit = calculateRemovalDeficit(targetFreeGb, freeSpaceGb, leavingSizeGb);
 
     let moviesMarkedLeaving = 0;
+    let markedMovies: RotationMovieRef[] = [];
     if (deficit > 0) {
       const downloadingIds = await getDownloadingTmdbIds();
       const eligible = getEligibleForRemoval(movieSizes, downloadingIds);
@@ -263,6 +294,7 @@ export async function runRotationCycle(): Promise<RotationCycleResult> {
           expiresAt.toISOString()
         );
         moviesMarkedLeaving = selection.moviesToMark.length;
+        markedMovies = selection.moviesToMark.map((m) => ({ tmdbId: m.tmdbId, title: m.title }));
       }
     }
 
@@ -295,6 +327,10 @@ export async function runRotationCycle(): Promise<RotationCycleResult> {
       freeSpaceGb,
       targetFreeGb,
       skippedReason: null,
+      marked: markedMovies,
+      removed: removedMovies,
+      added: additionResult.addedMovies,
+      failed: failedMovies,
     };
 
     writeRotationLog(result);
@@ -320,6 +356,10 @@ export async function runRotationCycle(): Promise<RotationCycleResult> {
       freeSpaceGb: 0,
       targetFreeGb,
       skippedReason: `Cycle error: ${message}`,
+      marked: [],
+      removed: [],
+      added: [],
+      failed: [],
     };
     writeRotationLog(result);
     return result;
@@ -334,6 +374,12 @@ export async function runRotationCycle(): Promise<RotationCycleResult> {
 
 function writeRotationLog(result: RotationCycleResult): void {
   const db = getDrizzle();
+  const details = JSON.stringify({
+    marked: result.marked,
+    removed: result.removed,
+    added: result.added,
+    failed: result.failed,
+  });
   db.insert(rotationLog)
     .values({
       executedAt: new Date().toISOString(),
@@ -344,7 +390,7 @@ function writeRotationLog(result: RotationCycleResult): void {
       freeSpaceGb: result.freeSpaceGb,
       targetFreeGb: result.targetFreeGb,
       skippedReason: result.skippedReason,
-      details: null,
+      details,
     })
     .run();
 }
