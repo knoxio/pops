@@ -10,7 +10,7 @@ As a developer, I want all inline `style={{}}` hardcoded values and JS/TS colour
 ## Acceptance Criteria
 
 - [x] UI primitive focus borders (`rgb(55, 65, 81)` in TextInput, DateTimeInput, NumberInput, Select, ChipInput) replaced with `border-border` or a CSS variable — no inline `style={{ boxShadow: "..." }}` with hardcoded RGB
-- [x] Inline `style={{ outline: "none", boxShadow: "none" }}` replaced with Tailwind `outline-none shadow-none`
+- [x] Inline `style={{ outline: "none", boxShadow: "none" }}` replaced with Tailwind `outline-0 shadow-none`
 - [x] Hardcoded `paddingLeft` for tree indentation replaced with a CSS custom property (`--tree-indent`) or Tailwind `pl-` class where possible
 - [x] `style={{ paddingLeft: "8px" }}` replaced with `pl-2`
 - [x] ConnectionGraph hex colour constants (`#6366f1`, `#f59e0b`, `#10b981`, etc.) extracted to a `GRAPH_COLORS` design token object exported from `@pops/ui/theme`

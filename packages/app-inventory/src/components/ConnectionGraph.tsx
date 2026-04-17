@@ -42,13 +42,13 @@ interface GraphLink extends SimulationLinkDatum<GraphNode> {
 
 function getStructuralColors() {
   const s = getComputedStyle(document.documentElement);
+  const mutedForeground = s.getPropertyValue('--color-muted-foreground').trim();
   return {
     edge: s.getPropertyValue('--color-border').trim() || GRAPH_COLORS.fallbacks.edge,
     currentBorder: GRAPH_COLORS.node.currentBorder,
     iconText: GRAPH_COLORS.node.iconText,
-    label: s.getPropertyValue('--color-muted-foreground').trim() || GRAPH_COLORS.fallbacks.label,
-    legendText:
-      s.getPropertyValue('--color-muted-foreground').trim() || GRAPH_COLORS.fallbacks.legendText,
+    label: mutedForeground || GRAPH_COLORS.fallbacks.label,
+    legendText: mutedForeground || GRAPH_COLORS.fallbacks.legendText,
   };
 }
 const NODE_RADIUS = 24;

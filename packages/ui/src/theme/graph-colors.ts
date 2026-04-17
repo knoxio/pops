@@ -17,7 +17,7 @@ export const GRAPH_COLORS = {
     sport: '#14b8a6', // teal-500
     vehicle: '#f97316', // orange-500
     other: '#64748b', // slate-500
-  } as Record<string, string>,
+  } as Record<string, string | undefined>,
   node: {
     default: '#94a3b8', // slate-400
     current: '#3b82f6', // blue-500
