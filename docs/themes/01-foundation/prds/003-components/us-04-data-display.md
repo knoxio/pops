@@ -14,12 +14,12 @@ As a developer, I want data display components (DataTable, filters, view toggle)
 - [x] InfiniteScrollTable — DataTable variant with scroll-based pagination
 - [x] EditableCell — inline cell editing with save/cancel
 - [x] ViewToggleGroup — table/grid toggle, segmented button style, persists to localStorage
-- [ ] StatCard — metric display card with label, value, optional trend indicator (missing trend indicator — #1791)
-- [ ] Each component has co-located `.stories.tsx` (EditableCell and StatCard missing stories — #1791)
+- [ ] StatCard — metric display card with label, value, optional trend indicator (missing trend prop + arbitrary OKLCH values → #1795)
+- [ ] Each component has co-located `.stories.tsx` (EditableCell → #1794, StatCard → #1795)
 - [x] All exported from barrel `index.ts`
-- [ ] All use design tokens — no arbitrary values or hardcoded colours (StatCard uses arbitrary oklch values — #1792)
+- [ ] All use design tokens — no arbitrary values or hardcoded colours (StatCard uses arbitrary OKLCH → #1795)
 - [x] DataTable scrolls horizontally on viewports below 768px
-- [ ] ViewToggleGroup rendered directly above the content it controls, not in page header
+- [x] ViewToggleGroup rendered directly above the content it controls, not in page header
 
 ## Notes
 
