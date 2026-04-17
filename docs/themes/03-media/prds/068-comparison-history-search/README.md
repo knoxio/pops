@@ -37,9 +37,9 @@ Add `search?: string` to `ComparisonHistoryQuerySchema`. When provided, filter c
 
 ## User Stories
 
-| #   | Story                                         | Summary                                      | Status      | Parallelisable |
-| --- | --------------------------------------------- | -------------------------------------------- | ----------- | -------------- |
-| 01  | [us-01-search-filter](us-01-search-filter.md) | Backend search param + frontend search input | Done        | Yes            |
+| #   | Story                                         | Summary                                      | Status | Parallelisable |
+| --- | --------------------------------------------- | -------------------------------------------- | ------ | -------------- |
+| 01  | [us-01-search-filter](us-01-search-filter.md) | Backend search param + frontend search input | Done   | Yes            |
 
 ## Drift Check
 
