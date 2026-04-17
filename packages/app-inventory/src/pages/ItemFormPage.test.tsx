@@ -603,7 +603,7 @@ describe('ItemFormPage — Form gaps (#1851)', () => {
     fireEvent.click(previewBtn);
 
     expect(screen.getByTestId('markdown-preview')).toBeInTheDocument();
-    expect(screen.queryByRole('textbox', { name: /notes/i })).not.toBeInTheDocument();
+    expect(document.querySelector('textarea[name="notes"]')).not.toBeInTheDocument();
   });
 
   it('switches back from preview to edit mode', () => {

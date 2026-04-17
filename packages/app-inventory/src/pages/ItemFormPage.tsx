@@ -428,7 +428,7 @@ export function ItemFormPage() {
       }
 
       void utils.inventory.items.list.invalidate();
-      navigate('/inventory');
+      navigate(`/inventory/items/${newItemId}`);
     },
     onError: (err) => {
       toast.error(`Failed to create: ${err.message}`);
