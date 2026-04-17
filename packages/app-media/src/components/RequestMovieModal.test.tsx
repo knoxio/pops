@@ -6,7 +6,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mockProfilesQuery = vi.fn();
 const mockFoldersQuery = vi.fn();
 const mockAddMovieMutate = vi.fn();
+const mockDownloadAndProtectMutate = vi.fn();
 let addMovieOpts: Record<string, unknown> = {};
+let downloadAndProtectOpts: Record<string, unknown> = {};
 
 vi.mock('../lib/trpc', () => ({
   trpc: {
@@ -22,6 +24,12 @@ vi.mock('../lib/trpc', () => ({
           useMutation: (opts: Record<string, unknown>) => {
             addMovieOpts = opts;
             return { mutate: mockAddMovieMutate, isPending: false };
+          },
+        },
+        downloadAndProtect: {
+          useMutation: (opts: Record<string, unknown>) => {
+            downloadAndProtectOpts = opts;
+            return { mutate: mockDownloadAndProtectMutate, isPending: false };
           },
         },
         getMovieStatus: {
@@ -97,6 +105,7 @@ function renderModal(props = {}) {
 beforeEach(() => {
   vi.clearAllMocks();
   addMovieOpts = {};
+  downloadAndProtectOpts = {};
 });
 
 describe('RequestMovieModal', () => {
@@ -227,5 +236,72 @@ describe('RequestMovieModal', () => {
 
     const folderSelect = document.querySelector('#root-folder') as HTMLSelectElement;
     expect(folderSelect.value).toBe('/movies');
+  });
+
+  describe('mode="download"', () => {
+    it('shows "Download Movie" title', () => {
+      setupDefaults();
+      renderModal({ mode: 'download' });
+
+      expect(screen.getByText('Download Movie')).toBeInTheDocument();
+      expect(screen.queryByText('Request Movie')).not.toBeInTheDocument();
+    });
+
+    it('does not show quality profile or root folder dropdowns', () => {
+      setupDefaults();
+      renderModal({ mode: 'download' });
+
+      expect(document.querySelector('#quality-profile')).toBeNull();
+      expect(document.querySelector('#root-folder')).toBeNull();
+    });
+
+    it('calls downloadAndProtect (not addMovie) on confirm', () => {
+      setupDefaults();
+      renderModal({ mode: 'download' });
+
+      fireEvent.click(screen.getByText('Download'));
+
+      expect(mockDownloadAndProtectMutate).toHaveBeenCalledWith({
+        tmdbId: 550,
+        title: 'Fight Club',
+        year: 1999,
+      });
+      expect(mockAddMovieMutate).not.toHaveBeenCalled();
+    });
+
+    it('calls onClose after successful download', () => {
+      vi.useFakeTimers();
+      setupDefaults();
+      const onClose = vi.fn();
+      renderModal({ mode: 'download', onClose });
+
+      fireEvent.click(screen.getByText('Download'));
+
+      const onSuccess = downloadAndProtectOpts.onSuccess as () => void;
+      act(() => {
+        onSuccess();
+      });
+
+      expect(screen.getByText('Movie Added')).toBeInTheDocument();
+
+      act(() => vi.advanceTimersByTime(1500));
+      expect(onClose).toHaveBeenCalled();
+
+      vi.useRealTimers();
+    });
+
+    it('shows inline error on download failure', () => {
+      setupDefaults();
+      renderModal({ mode: 'download' });
+
+      fireEvent.click(screen.getByText('Download'));
+
+      const onError = downloadAndProtectOpts.onError as (err: { message: string }) => void;
+      act(() => {
+        onError({ message: 'Download failed' });
+      });
+
+      expect(screen.getByText('Download failed')).toBeInTheDocument();
+    });
   });
 });
