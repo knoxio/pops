@@ -42,7 +42,7 @@ Each bank has a different CSV format. A parser (transformer) normalizes to `Pars
 
 Account: "Amex" (hardcoded)
 
-### ANZ
+### ANZ CSV
 
 | CSV Column  | Mapping     | Transformation                         |
 | ----------- | ----------- | -------------------------------------- |
@@ -51,6 +51,18 @@ Account: "Amex" (hardcoded)
 | Description | description | Clean whitespace                       |
 
 Account: "ANZ Everyday" or "ANZ Savings" (from CSV or user selection)
+
+### ANZ PDF (credit card statements)
+
+| PDF Column          | Mapping     | Transformation                                                |
+| ------------------- | ----------- | ------------------------------------------------------------- |
+| Date of Transaction | date        | DD/MM/YYYY → YYYY-MM-DD                                       |
+| Transaction Details | description | Clean whitespace                                              |
+| Amount ($A)         | amount      | Parse float; invert sign (purchases negative, CR → positive)  |
+
+Account: "ANZ Frequent Flyer Black" (hardcoded per statement type)
+
+Supplementary rows (foreign currency lines, overseas fee lines) have no Card Used value and must be skipped. Sign convention differs from the CSV format — all amounts are positive in the PDF, with `CR` marking credits.
 
 ### ING
 
@@ -104,8 +116,9 @@ Fetched via Up Bank REST API, not CSV upload. Batch import by date range.
 | 04  | [us-04-ing-parser](us-04-ing-parser.md)         | ING CSV parser                                                                      | Not started | Yes                             |
 | 05  | [us-05-up-bank-import](us-05-up-bank-import.md) | Up Bank API batch import by date range                                              | Not started | Yes                             |
 | 06  | [us-06-common-utils](us-06-common-utils.md)     | Shared utilities: normaliseDate, normaliseAmount, extractLocation, online detection | Partial     | No (first, parallel with us-01) |
+| 07  | [us-07-anz-pdf-parser](us-07-anz-pdf-parser.md) | ANZ PDF credit card statement parser                                                | Not started | Yes                             |
 
-US-02 through US-05 can all parallelise (independent parsers). US-06 is shared utilities used by all parsers.
+US-02 through US-05 and US-07 can all parallelise (independent parsers). US-06 is shared utilities used by all parsers.
 
 ## Verification
 
