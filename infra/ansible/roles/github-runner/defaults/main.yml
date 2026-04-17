@@ -7,4 +7,4 @@ github_runner_labels: 'self-hosted,linux,x64'
 github_runner_name: '{{ ansible_hostname }}'
 github_runner_service_name: >-
   actions.runner.{{ github_repo_url | replace('https://github.com/', '') | replace('/', '-') }}.{{ github_runner_name }}.service
-# github_runner_pat must be defined in vault as vault_github_runner_pat
+github_runner_pat: '{{ vault_github_runner_pat }}'
