@@ -15,7 +15,7 @@ As a user, I want to mark a movie as watched and have the option to undo so that
 - [x] On success: a toast notification appears with "Marked as watched" and an "Undo" action button
 - [x] The undo toast is visible for 5 seconds before auto-dismissing
 - [x] Clicking "Undo" within the toast window calls `media.watchHistory.delete` to remove the watch event
-- [x] If the movie was on the watchlist before marking as watched, the server-side auto-removal takes effect; undo re-adds it to the watchlist (`logWatch` returns `watchlistRemoved: boolean` so the client knows whether to re-add)
+- [x] If the movie was on the watchlist before marking as watched, the server-side auto-removal takes effect; undo re-adds it to the watchlist (`media.watchHistory.log` returns `watchlistRemoved: boolean` so the client knows whether to re-add)
 - [x] After a successful watch log, the watch history section on the page refreshes to include the new entry
 - [x] The button remains usable after logging a watch (a movie can be watched multiple times — each click logs a new event)
 - [x] Tests cover: API call with correct payload, success toast with undo action, undo deletes the watch event, undo re-adds to watchlist when `watchlistRemoved=true`, button re-enabled after logging, watch history refresh after log
