@@ -12,7 +12,7 @@ As a user, I want to search my comparison history by movie title so that I can q
 - [x] Search input renders beside the dimension dropdown on the comparison history page
 - [x] Typing in the search input filters the list to comparisons where either movie's title matches (case-insensitive, substring)
 - [x] Search is debounced (300 ms) to avoid spamming the API on each keystroke
-- [x] Changing the search term resets pagination to page 1
+- [x] Changing the search term resets pagination to the first page
 - [x] The "N comparisons" count reflects the filtered total, not the global total
 - [x] Search and dimension filter compose: both may be active simultaneously
 - [x] Empty search string returns the unfiltered list (no active search)
