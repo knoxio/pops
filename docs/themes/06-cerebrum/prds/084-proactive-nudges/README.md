@@ -137,4 +137,4 @@ US-01 establishes the nudge data model, storage, and action framework. US-02 and
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

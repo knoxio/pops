@@ -159,4 +159,4 @@ All three stories can be built in parallel — they are independent sections of 
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

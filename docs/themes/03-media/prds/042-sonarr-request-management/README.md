@@ -137,4 +137,4 @@ US-01 is the API layer. US-02, US-03, and US-04 can be built in parallel once US
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

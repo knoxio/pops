@@ -105,4 +105,4 @@ US-01 is the foundation. US-02 and US-03 can be built in parallel once US-01 is 
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

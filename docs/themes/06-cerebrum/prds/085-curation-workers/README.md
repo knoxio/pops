@@ -120,4 +120,4 @@ All four workers are independent and can be built in parallel. Each worker depen
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

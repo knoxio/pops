@@ -1,7 +1,7 @@
 # PRD-068: Comparison History — Search & Filter by Movie Title
 
 > Epic: [04 — Ratings & Comparisons](../../epics/04-ratings-comparisons.md)
-> Status: In progress
+> Status: Done
 
 ## Overview
 
@@ -37,10 +37,10 @@ Add `search?: string` to `ComparisonHistoryQuerySchema`. When provided, filter c
 
 ## User Stories
 
-| #   | Story                                         | Summary                                      | Status      | Parallelisable |
-| --- | --------------------------------------------- | -------------------------------------------- | ----------- | -------------- |
-| 01  | [us-01-search-filter](us-01-search-filter.md) | Backend search param + frontend search input | In progress | Yes            |
+| #   | Story                                         | Summary                                      | Status | Parallelisable |
+| --- | --------------------------------------------- | -------------------------------------------- | ------ | -------------- |
+| 01  | [us-01-search-filter](us-01-search-filter.md) | Backend search param + frontend search input | Done   | Yes            |
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

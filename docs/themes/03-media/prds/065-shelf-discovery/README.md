@@ -161,4 +161,4 @@ US-01 and US-03 can parallelise. US-04 through US-09 (all shelf implementations)
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

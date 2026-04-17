@@ -128,4 +128,4 @@ US-01 defines the reflex format and parsing — all other stories depend on it. 
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

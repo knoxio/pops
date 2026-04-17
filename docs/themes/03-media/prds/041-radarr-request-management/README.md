@@ -106,4 +106,4 @@ US-01 is the API layer. US-02 builds the modal component. US-03 integrates the b
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

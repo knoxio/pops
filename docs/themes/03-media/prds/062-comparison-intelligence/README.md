@@ -188,4 +188,4 @@ US-01, US-02, US-04, US-06 can be built in parallel. US-03 shares recalc logic w
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

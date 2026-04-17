@@ -121,4 +121,4 @@ US-01 (conversation engine) is the foundation. US-02, US-03, and US-04 depend on
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17
