@@ -458,6 +458,92 @@ describe('ItemDetailPage', () => {
       expect(mockDisconnectMutate).toHaveBeenCalledWith({ id: 'c1' });
     });
 
+    it('disconnect dialog title includes the connected item name', () => {
+      setupWithConnections();
+      renderAtRoute('/inventory/items/item-1');
+
+      const disconnectButtons = screen.getAllByRole('button', { name: /disconnect/i });
+      fireEvent.click(disconnectButtons[0]!);
+
+      expect(screen.getByText('Disconnect USB-C Hub?')).toBeInTheDocument();
+    });
+
+    it('disconnect dialog does not fire mutation without confirmation', () => {
+      const mockDisconnectMutate = vi.fn();
+      mockDisconnectMutation.mockReturnValue({
+        mutate: mockDisconnectMutate,
+        isPending: false,
+      });
+      setupWithConnections();
+      renderAtRoute('/inventory/items/item-1');
+
+      // Click the trigger only — no confirm
+      const disconnectButtons = screen.getAllByRole('button', { name: /disconnect/i });
+      fireEvent.click(disconnectButtons[0]!);
+
+      expect(mockDisconnectMutate).not.toHaveBeenCalled();
+    });
+
+    it('disconnect dialog cancel closes without firing mutation', () => {
+      const mockDisconnectMutate = vi.fn();
+      mockDisconnectMutation.mockReturnValue({
+        mutate: mockDisconnectMutate,
+        isPending: false,
+      });
+      setupWithConnections();
+      renderAtRoute('/inventory/items/item-1');
+
+      const disconnectButtons = screen.getAllByRole('button', { name: /disconnect/i });
+      fireEvent.click(disconnectButtons[0]!);
+
+      fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
+
+      expect(mockDisconnectMutate).not.toHaveBeenCalled();
+      expect(screen.queryByText('Disconnect USB-C Hub?')).not.toBeInTheDocument();
+    });
+
+    it('renders AssetIdBadge and TypeBadge for connected items with known values', () => {
+      mockItemQuery.mockImplementation(({ id }: { id: string }) => {
+        if (id === 'item-2') {
+          return {
+            data: {
+              data: { ...connectedItemA, assetId: 'HUB-022', type: 'Electronics' },
+            },
+            isLoading: false,
+            error: null,
+          };
+        }
+        if (id === 'item-3') {
+          return {
+            data: {
+              data: { ...connectedItemB, assetId: 'MON-010', type: 'Furniture' },
+            },
+            isLoading: false,
+            error: null,
+          };
+        }
+        return { data: { data: baseItem }, isLoading: false, error: null };
+      });
+
+      mockConnectionsQuery.mockReturnValue({
+        data: {
+          data: [
+            { id: 'c1', itemAId: 'item-1', itemBId: 'item-2' },
+            { id: 'c2', itemAId: 'item-3', itemBId: 'item-1' },
+          ],
+        },
+        isLoading: false,
+      });
+
+      renderAtRoute('/inventory/items/item-1');
+
+      expect(screen.getByText('HUB-022')).toBeInTheDocument();
+      expect(screen.getByText('MON-010')).toBeInTheDocument();
+      // TypeBadge renders type text — Electronics appears in multiple places (item detail + connection row)
+      expect(screen.getAllByText('Electronics').length).toBeGreaterThanOrEqual(2);
+      expect(screen.getByText('Furniture')).toBeInTheDocument();
+    });
+
     it('renders Connected Items heading with icon', () => {
       renderAtRoute('/inventory/items/item-1');
       expect(screen.getByText('Connected Items')).toBeInTheDocument();

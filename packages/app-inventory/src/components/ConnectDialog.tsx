@@ -8,6 +8,7 @@ import { toast } from 'sonner';
  * displays results, and connects the selected item.
  */
 import {
+  AssetIdBadge,
   Button,
   Dialog,
   DialogContent,
@@ -17,6 +18,7 @@ import {
   DialogTrigger,
   Skeleton,
   TextInput,
+  TypeBadge,
 } from '@pops/ui';
 
 import { trpc } from '../lib/trpc';
@@ -115,11 +117,16 @@ export function ConnectDialog({ currentItemId, onConnected }: ConnectDialogProps
                 }}
                 disabled={connectMutation.isPending}
               >
-                <div>
+                <div className="flex-1 min-w-0">
                   <div className="font-medium text-sm">{item.itemName}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {[item.brand, item.model, item.assetId].filter(Boolean).join(' · ') ||
-                      'No details'}
+                  <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                    {(item.brand || item.model) && (
+                      <span className="text-xs text-muted-foreground">
+                        {[item.brand, item.model].filter(Boolean).join(' · ')}
+                      </span>
+                    )}
+                    {item.assetId && <AssetIdBadge assetId={item.assetId} />}
+                    {item.type && <TypeBadge type={item.type} />}
                   </div>
                 </div>
                 <Link2 className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />

@@ -37,6 +37,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
   AlertTitle,
+  AssetIdBadge,
   Badge,
   Button,
   type Condition,
@@ -710,16 +711,20 @@ function ConnectionRow({
 
   return (
     <div className="flex items-center justify-between p-3 rounded-lg border">
-      <Link to={`/inventory/items/${connectedItemId}`} className="flex-1 hover:underline">
+      <Link to={`/inventory/items/${connectedItemId}`} className="flex-1 min-w-0 hover:underline">
         <span className="font-medium">{itemName}</span>
         {item?.brand && <span className="text-muted-foreground text-sm ml-2">{item.brand}</span>}
+        <div className="flex flex-wrap items-center gap-1 mt-0.5">
+          {item?.assetId && <AssetIdBadge assetId={item.assetId} />}
+          {item?.type && <TypeBadge type={item.type} />}
+        </div>
       </Link>
       <AlertDialog>
         <AlertDialogTrigger asChild>
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-destructive hover:text-destructive"
+            className="h-8 w-8 text-destructive hover:text-destructive shrink-0"
             disabled={isDisconnecting}
             title="Disconnect"
             aria-label="Disconnect"
@@ -729,9 +734,9 @@ function ConnectionRow({
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Disconnect item?</AlertDialogTitle>
+            <AlertDialogTitle>Disconnect {itemName}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will remove the connection to {itemName}. You can reconnect later.
+              This will remove the connection between these items.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
