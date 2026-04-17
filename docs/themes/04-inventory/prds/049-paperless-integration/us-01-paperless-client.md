@@ -16,7 +16,7 @@ As a developer, I want a Paperless-ngx API client service so that POPS can searc
 - [x] `getDocument(docId)` calls `GET /api/documents/:id/` — returns full document metadata
 - [x] `healthCheck()` calls `GET /api/documents/?page_size=1` — returns `{ available: true }` on 200, `{ available: false }` on any error
 - [x] All requests include `Authorization: Token XXX` header
-- [x] Request timeout: 5 seconds — slow Paperless responses do not block POPS
+- [x] Request timeout: 5s for metadata/search requests, 10s for thumbnail fetches — slow Paperless responses do not block POPS
 - [x] Connection errors caught and returned as `{ available: false }` — never thrown to callers
 - [x] `item_documents` table created with columns per the data model
 - [x] CRUD procedures created: `inventory.documents.link`, `inventory.documents.unlink`, `inventory.documents.listForItem`
