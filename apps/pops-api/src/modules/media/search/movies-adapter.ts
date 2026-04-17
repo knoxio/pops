@@ -33,9 +33,9 @@ function scoreHit(
   return { score: 0.5, matchType: 'contains' };
 }
 
-function buildPosterUrl(posterPath: string | null): string | null {
+function buildPosterUrl(tmdbId: number, posterPath: string | null): string | null {
   if (!posterPath) return null;
-  return `/media/images/movies${posterPath}`;
+  return `/media/images/movie/${tmdbId}/poster.jpg`;
 }
 
 function extractYear(releaseDate: string | null): string | null {
@@ -77,7 +77,7 @@ export const moviesSearchAdapter: SearchAdapter<MovieHitData> = {
           data: {
             title: row.title,
             year: extractYear(row.releaseDate),
-            posterUrl: buildPosterUrl(row.posterPath),
+            posterUrl: buildPosterUrl(row.tmdbId, row.posterPath),
             voteAverage: row.voteAverage,
             runtime: row.runtime,
           },

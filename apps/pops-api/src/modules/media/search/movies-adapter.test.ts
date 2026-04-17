@@ -121,7 +121,7 @@ describe('moviesSearchAdapter', () => {
       expect(hit.data).toEqual({
         title: 'The Shawshank Redemption',
         year: '1994',
-        posterUrl: '/media/images/movies/9O7gLzmreU0nGkIB6K3BsJbzvNv.jpg',
+        posterUrl: '/media/images/movie/278/poster.jpg',
         voteAverage: 8.7,
         runtime: 142,
       });
@@ -159,14 +159,20 @@ describe('moviesSearchAdapter', () => {
       expect(hits[0]!.data.runtime).toBe(180);
     });
 
-    it('builds poster URL from posterPath', async () => {
+    it('builds poster URL from tmdbId', async () => {
       seedMovie(db, {
         title: 'Pulp Fiction',
         tmdb_id: 680,
         poster_path: '/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg',
       });
       const hits = await moviesSearchAdapter.search({ text: 'Pulp Fiction' }, defaultContext);
-      expect(hits[0]!.data.posterUrl).toBe('/media/images/movies/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg');
+      expect(hits[0]!.data.posterUrl).toBe('/media/images/movie/680/poster.jpg');
+    });
+
+    it('returns null posterUrl when posterPath is null', async () => {
+      seedMovie(db, { title: 'No Poster', tmdb_id: 9000, poster_path: null });
+      const hits = await moviesSearchAdapter.search({ text: 'No Poster' }, defaultContext);
+      expect(hits[0]!.data.posterUrl).toBeNull();
     });
   });
 
