@@ -9,15 +9,15 @@ Set up GitHub Actions workflows for quality gates and deployment. Every PR runs 
 
 ## Workflows
 
-| Workflow              | Trigger                          | Steps                                          |
-| --------------------- | -------------------------------- | ---------------------------------------------- |
-| `api-quality.yml`     | PR / push (API changes)          | Typecheck, test, build                         |
-| `fe-quality.yml`      | PR / push (shell changes)        | Typecheck, test, build                         |
-| `quality.yml`         | PR / push                        | Lint, format check                             |
-| `fe-test-e2e.yml`     | PR / push                        | Playwright e2e tests                           |
-| `infra-quality.yml`   | PR / push (ansible changes)      | YAML lint, ansible-lint, syntax check          |
-| `tools-quality.yml`   | PR / push (import tools changes) | Lint, test                                     |
-| `root-deploy.yml`     | Push to main + workflow_dispatch | Typecheck, lint, test, build, deploy to server |
+| Workflow            | Trigger                          | Steps                                          |
+| ------------------- | -------------------------------- | ---------------------------------------------- |
+| `api-quality.yml`   | PR / push (API changes)          | Typecheck, test, build                         |
+| `fe-quality.yml`    | PR / push (shell changes)        | Typecheck, test, build                         |
+| `quality.yml`       | PR / push                        | Lint, format check                             |
+| `fe-test-e2e.yml`   | PR / push                        | Playwright e2e tests                           |
+| `infra-quality.yml` | PR / push (ansible changes)      | YAML lint, ansible-lint, syntax check          |
+| `tools-quality.yml` | PR / push (import tools changes) | Lint, test                                     |
+| `root-deploy.yml`   | Push to main + workflow_dispatch | Typecheck, lint, test, build, deploy to server |
 
 ## Business Rules
 
@@ -29,9 +29,9 @@ Set up GitHub Actions workflows for quality gates and deployment. Every PR runs 
 
 ## User Stories
 
-| #   | Story                                             | Summary                                                         | Status | Parallelisable   |
-| --- | ------------------------------------------------- | --------------------------------------------------------------- | ------ | ---------------- |
-| 01  | [us-01-pr-workflows](us-01-pr-workflows.md)       | CI workflows for PRs: API, shell, test, e2e, ansible, tools     | Done   | No (first)       |
+| #   | Story                                             | Summary                                                         | Status  | Parallelisable   |
+| --- | ------------------------------------------------- | --------------------------------------------------------------- | ------- | ---------------- |
+| 01  | [us-01-pr-workflows](us-01-pr-workflows.md)       | CI workflows for PRs: API, shell, test, e2e, ansible, tools     | Done    | No (first)       |
 | 02  | [us-02-deploy-workflow](us-02-deploy-workflow.md) | Manual deploy workflow with quality gates and server deployment | Partial | Blocked by us-01 |
 
 ## Verification

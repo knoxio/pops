@@ -26,12 +26,12 @@ Set up encrypted offsite backups of the SQLite database, Paperless-ngx data, and
 
 ## User Stories
 
-| #   | Story                                         | Summary                                                         | Status      | Parallelisable   |
-| --- | --------------------------------------------- | --------------------------------------------------------------- | ----------- | ---------------- |
-| 01  | [us-01-rclone-setup](us-01-rclone-setup.md)   | Install rclone, configure B2 remote with encryption             | Done        | No (first)       |
-| 02  | [us-02-backup-script](us-02-backup-script.md) | Backup script that copies database, paperless, and config to B2 | Done        | Blocked by us-01 |
-| 03  | [us-03-schedule](us-03-schedule.md)           | Systemd timer for daily backups                                 | Done        | Blocked by us-02 |
-| 04  | [us-04-recovery](us-04-recovery.md)           | Document and test recovery procedure                            | Partial     | Blocked by us-02 |
+| #   | Story                                         | Summary                                                         | Status  | Parallelisable   |
+| --- | --------------------------------------------- | --------------------------------------------------------------- | ------- | ---------------- |
+| 01  | [us-01-rclone-setup](us-01-rclone-setup.md)   | Install rclone, configure B2 remote with encryption             | Done    | No (first)       |
+| 02  | [us-02-backup-script](us-02-backup-script.md) | Backup script that copies database, paperless, and config to B2 | Done    | Blocked by us-01 |
+| 03  | [us-03-schedule](us-03-schedule.md)           | Systemd timer for daily backups                                 | Done    | Blocked by us-02 |
+| 04  | [us-04-recovery](us-04-recovery.md)           | Document and test recovery procedure                            | Partial | Blocked by us-02 |
 
 ## Verification
 
