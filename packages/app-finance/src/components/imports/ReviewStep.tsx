@@ -57,7 +57,7 @@ export function ReviewStep() {
     browseOpen,
     setBrowseOpen,
     generateProposal,
-    autoSaveRuleAndReEvaluate,
+    openRuleProposalDialog,
   } = useProposalGeneration();
 
   const handleBulkEntitySelect = useCallback(
@@ -181,7 +181,7 @@ export function ReviewStep() {
   } = useBulkAssignment({
     setLocalTransactions,
     handleEntitySelect,
-    autoSaveRuleAndReEvaluate,
+    openRuleProposalDialog,
     generateProposal,
   });
 

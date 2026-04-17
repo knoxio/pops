@@ -113,10 +113,10 @@ export function useProposalGeneration() {
   );
 
   /**
-   * Generate a Correction Proposal (ChangeSet) from a correction signal.
+   * Open the Rule Proposal dialog for a correction signal.
    * Rule changes only happen after explicit approval in the proposal dialog.
    */
-  const autoSaveRuleAndReEvaluate = useCallback(
+  const openRuleProposalDialog = useCallback(
     (triggeringTransaction: ProcessedTransaction, entityId: string, entityName: string) => {
       void generateProposal({ triggeringTransaction, entityId, entityName });
     },
@@ -131,6 +131,6 @@ export function useProposalGeneration() {
     browseOpen,
     setBrowseOpen,
     generateProposal,
-    autoSaveRuleAndReEvaluate,
+    openRuleProposalDialog,
   };
 }

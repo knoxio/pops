@@ -23,7 +23,7 @@ interface UseBulkAssignmentArgs {
     entityId: string,
     entityName: string
   ) => void;
-  autoSaveRuleAndReEvaluate: (
+  openRuleProposalDialog: (
     triggeringTransaction: ProcessedTransaction,
     entityId: string,
     entityName: string
@@ -44,7 +44,7 @@ interface UseBulkAssignmentArgs {
 export function useBulkAssignment({
   setLocalTransactions,
   handleEntitySelect,
-  autoSaveRuleAndReEvaluate,
+  openRuleProposalDialog,
   generateProposal,
 }: UseBulkAssignmentArgs) {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -97,9 +97,9 @@ export function useBulkAssignment({
       // Always accept the transaction itself
       handleEntitySelect(transaction, entityId, entityName);
 
-      autoSaveRuleAndReEvaluate(transaction, entityId, entityName);
+      openRuleProposalDialog(transaction, entityId, entityName);
     },
-    [handleEntitySelect, entities, handleCreateEntity, autoSaveRuleAndReEvaluate]
+    [handleEntitySelect, entities, handleCreateEntity, openRuleProposalDialog]
   );
 
   /**
@@ -160,9 +160,9 @@ export function useBulkAssignment({
           `Accepted ${transactions.length} transaction${transactions.length !== 1 ? 's' : ''}`
         );
 
-        // Auto-save correction rule using the first transaction and re-evaluate
+        // Open the rule proposal dialog using the first transaction and re-evaluate
         if (firstTx) {
-          autoSaveRuleAndReEvaluate(firstTx, resolvedEntityId, entityName);
+          openRuleProposalDialog(firstTx, resolvedEntityId, entityName);
         }
       } catch (error) {
         toast.error(
@@ -174,7 +174,7 @@ export function useBulkAssignment({
       entities,
       addPendingEntity,
       dbEntitiesData?.data,
-      autoSaveRuleAndReEvaluate,
+      openRuleProposalDialog,
       setLocalTransactions,
     ]
   );
