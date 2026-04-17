@@ -48,25 +48,39 @@ const CI_FIX_REQUIRED_TOKENS = [
   "lint",
 ];
 
-/** Read `pnpm-workspace.yaml` and return the list of glob entries. */
+/**
+ * Strip an unquoted `# comment` tail from a YAML line. Does not attempt to
+ * handle `#` characters that appear inside quoted strings, which is fine for
+ * our usage (workspace globs never contain `#`).
+ */
+function stripYamlComment(line) {
+  const hashIdx = line.indexOf("#");
+  return hashIdx === -1 ? line : line.slice(0, hashIdx);
+}
+
+/**
+ * Read `pnpm-workspace.yaml` and return the list of glob entries under the
+ * top-level `packages:` key. Intentionally avoids a YAML dependency — the file
+ * shape is simple and stable — but handles comments and blank lines robustly.
+ */
 function readWorkspaceGlobs() {
   const raw = readFileSync(join(REPO_ROOT, "pnpm-workspace.yaml"), "utf8");
   const globs = [];
   let inPackages = false;
   for (const rawLine of raw.split("\n")) {
-    const line = rawLine.trimEnd();
+    const line = stripYamlComment(rawLine).trimEnd();
+    if (line.trim() === "") continue;
     if (/^packages:\s*$/.test(line)) {
       inPackages = true;
       continue;
     }
-    if (inPackages) {
-      const match = line.match(/^\s*-\s*(?:"([^"]+)"|'([^']+)'|(\S+))\s*$/);
-      if (match) {
-        globs.push(match[1] ?? match[2] ?? match[3]);
-      } else if (/^\S/.test(line)) {
-        // Top-level key — end of `packages:` block
-        break;
-      }
+    if (!inPackages) continue;
+    const match = line.match(/^\s*-\s*(?:"([^"]+)"|'([^']+)'|(\S+))\s*$/);
+    if (match) {
+      globs.push(match[1] ?? match[2] ?? match[3]);
+    } else if (/^\S/.test(line)) {
+      // Top-level key — end of `packages:` block.
+      break;
     }
   }
   return globs;
@@ -80,7 +94,20 @@ async function expandGlob(glob) {
   const starIdx = glob.indexOf("*");
   const parent = glob.slice(0, starIdx).replace(/\/$/, "");
   const parentAbs = join(REPO_ROOT, parent);
-  const entries = await readdir(parentAbs, { withFileTypes: true });
+  let entries;
+  try {
+    entries = await readdir(parentAbs, { withFileTypes: true });
+  } catch (err) {
+    if (err.code === "ENOENT") {
+      throw new Error(
+        `Workspace glob "${glob}" points at missing directory "${parent}" — ` +
+          `update pnpm-workspace.yaml or create the directory.`,
+      );
+    }
+    throw new Error(
+      `Failed to read workspace glob "${glob}" at "${parent}": ${err.message}`,
+    );
+  }
   return entries
     .filter((entry) => entry.isDirectory())
     .map((entry) => join(parentAbs, entry.name));
