@@ -113,8 +113,9 @@ function CacheManagement() {
           <AlertDialog>
             <AlertDialogTrigger asChild>
               <Button
-                variant="destructive"
+                variant="ghost"
                 size="sm"
+                className="text-destructive hover:text-destructive"
                 disabled={clearAllMutation.isPending || (cacheStats?.totalEntries ?? 0) === 0}
               >
                 <Trash2 className="mr-1 h-3.5 w-3.5" />
@@ -133,6 +134,8 @@ function CacheManagement() {
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
+                  variant="ghost"
+                  className="text-destructive hover:text-destructive"
                   onClick={() => {
                     clearAllMutation.mutate();
                   }}

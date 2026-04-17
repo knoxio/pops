@@ -1,4 +1,4 @@
-import { RefreshCw, Sparkles } from 'lucide-react';
+import { RefreshCw, Search, Sparkles } from 'lucide-react';
 import { useNavigate, useSearchParams } from 'react-router';
 
 import { Button, Skeleton } from '@pops/ui';
@@ -55,7 +55,10 @@ export function QuickPickPage() {
         <p className="text-muted-foreground text-sm max-w-xs">
           Add more movies to your library or mark some as unwatched to get picks.
         </p>
-        <Button onClick={() => navigate('/media/search')}>Search for movies</Button>
+        <Button onClick={() => navigate('/media/search')}>
+          <Search className="h-4 w-4" />
+          Search for movies
+        </Button>
       </div>
     );
   }

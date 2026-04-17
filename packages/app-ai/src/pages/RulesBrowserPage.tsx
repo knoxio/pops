@@ -399,8 +399,9 @@ export function RulesBrowserPage(): React.ReactElement {
               </Button>
             </DialogClose>
             <Button
-              variant="destructive"
+              variant="ghost"
               size="sm"
+              className="text-destructive hover:text-destructive"
               onClick={handleDelete}
               disabled={deleteMutation.isPending}
             >

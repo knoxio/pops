@@ -13,9 +13,9 @@ As a developer, I want all interactive actions across the platform to use the st
 - [x] All "edit" actions use `Pencil` icon (not `Edit2`, not `PenLine`)
 - [x] All "delete/remove" actions use `Trash2` icon (not `Trash`)
 - [x] All "close/dismiss" actions use `X` icon
-- [ ] No text-only action labels exist — every action has an icon (icon-only with `aria-label`, or icon + text) (gaps in ProcessingStep, SummaryStep, WarrantiesPage, QuickPickPage, TierListSummary — #1793)
+- [x] No text-only action labels exist — every action has an icon (icon-only with `aria-label`, or icon + text)
 - [x] All icon-only buttons have `aria-label` for accessibility
-- [ ] All destructive actions use `variant="ghost"` with `text-destructive` styling (9 buttons still use `variant="destructive"` — #1793)
+- [x] All destructive actions use `variant="ghost"` with `text-destructive` styling
 - [ ] Compact actions (table rows, list items) use icon-only buttons
 - [ ] Prominent actions (page CTAs, form buttons) use icon + text
 - [x] `grep` for banned icon names (`Edit2`, `Trash`, `PenLine`) returns zero hits

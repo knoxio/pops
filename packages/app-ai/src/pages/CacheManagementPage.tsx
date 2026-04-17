@@ -200,10 +200,10 @@ export function CacheManagementPage() {
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
-                  variant="destructive"
+                  variant="ghost"
                   size="sm"
+                  className="shrink-0 text-destructive hover:text-destructive"
                   disabled={clearAllMutation.isPending || isEmpty}
-                  className="shrink-0"
                 >
                   <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                   Clear All
@@ -221,6 +221,8 @@ export function CacheManagementPage() {
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
                     onClick={() => {
                       clearAllMutation.mutate();
                     }}

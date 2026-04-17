@@ -1,4 +1,4 @@
-import { AlertCircle, CheckCircle, RefreshCw, XCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, List, Plus, RefreshCw, XCircle } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
 import { Button } from '@pops/ui';
@@ -173,9 +173,13 @@ export function SummaryStep() {
             navigate('/import');
           }}
         >
+          <Plus className="h-4 w-4" />
           New Import
         </Button>
-        <Button onClick={() => navigate('/transactions')}>View Transactions</Button>
+        <Button onClick={() => navigate('/transactions')}>
+          <List className="h-4 w-4" />
+          View Transactions
+        </Button>
       </div>
     </div>
   );

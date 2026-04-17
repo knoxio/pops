@@ -204,7 +204,8 @@ export function ItemDetailPage() {
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
-                    variant="destructive"
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
                     onClick={() => {
                       deleteMutation.mutate({ id: id! });
                     }}

@@ -30,8 +30,9 @@ export function RejectPanel(props: {
           Cancel
         </Button>
         <Button
-          variant="destructive"
+          variant="ghost"
           size="sm"
+          className="text-destructive hover:text-destructive"
           onClick={props.onConfirm}
           disabled={props.busy || !props.feedback.trim()}
         >

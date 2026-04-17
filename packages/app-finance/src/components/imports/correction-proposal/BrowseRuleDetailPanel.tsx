@@ -87,7 +87,8 @@ export function BrowseRuleDetailPanel(props: {
         ) : null}
         <Button
           size="sm"
-          variant="destructive"
+          variant="ghost"
+          className="text-destructive hover:text-destructive"
           onClick={() => {
             props.onRemove(rule);
           }}

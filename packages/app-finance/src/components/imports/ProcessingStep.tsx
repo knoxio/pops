@@ -1,4 +1,4 @@
-import { AlertTriangle, CheckCircle, Loader2, XCircle } from 'lucide-react';
+import { AlertTriangle, ArrowRight, CheckCircle, Loader2, RefreshCw, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { Button } from '@pops/ui';
@@ -132,7 +132,10 @@ export function ProcessingStep() {
             Your transactions are ready for review. Nothing to re-run.
           </p>
         </div>
-        <Button onClick={nextStep}>Continue to Review</Button>
+        <Button onClick={nextStep}>
+          <ArrowRight className="h-4 w-4" />
+          Continue to Review
+        </Button>
       </div>
     );
   }
@@ -295,7 +298,13 @@ export function ProcessingStep() {
               ))}
             </div>
           )}
-          <Button variant="destructive" size="sm" className="mt-3" onClick={handleRetry}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="mt-3 text-destructive hover:text-destructive"
+            onClick={handleRetry}
+          >
+            <RefreshCw className="h-4 w-4" />
             Retry
           </Button>
         </div>

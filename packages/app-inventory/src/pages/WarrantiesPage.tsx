@@ -1,4 +1,4 @@
-import { AlertCircle, ChevronDown, ChevronRight, ShieldCheck } from 'lucide-react';
+import { AlertCircle, ChevronDown, ChevronRight, RefreshCw, ShieldCheck } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 
@@ -336,7 +336,10 @@ export function WarrantiesPage() {
         <div className="text-center py-16">
           <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground/40 mb-4" />
           <p className="text-muted-foreground mb-4">Could not load warranties — try again</p>
-          <Button onClick={() => refetch()}>Retry</Button>
+          <Button onClick={() => refetch()}>
+            <RefreshCw className="h-4 w-4" />
+            Retry
+          </Button>
         </div>
       ) : totalItems === 0 ? (
         <div className="text-center py-16">

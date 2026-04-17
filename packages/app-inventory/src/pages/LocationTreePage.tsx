@@ -990,7 +990,8 @@ export function LocationTreePage() {
               Cancel
             </Button>
             <Button
-              variant="destructive"
+              variant="ghost"
+              className="text-destructive hover:text-destructive"
               onClick={handleDeleteConfirm}
               disabled={deleteMutation.isPending}
             >

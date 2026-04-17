@@ -319,7 +319,13 @@ export function TagRuleProposalDialog(props: TagRuleProposalDialogProps) {
               Reject…
             </Button>
           ) : (
-            <Button type="button" variant="destructive" onClick={handleReject} disabled={busy}>
+            <Button
+              type="button"
+              variant="ghost"
+              className="text-destructive hover:text-destructive"
+              onClick={handleReject}
+              disabled={busy}
+            >
               Confirm reject
             </Button>
           )}
