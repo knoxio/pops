@@ -88,7 +88,7 @@ describe('ModelConfigPage', () => {
   it('renders the page heading and form fields', () => {
     setupDefaults();
     renderPage();
-    expect(screen.getByText('Model Configuration')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Model Configuration' })).toBeInTheDocument();
     expect(screen.getByText('AI Model')).toBeInTheDocument();
     expect(screen.getByText('Monthly Token Budget')).toBeInTheDocument();
     expect(screen.getByText('When Budget Exceeded')).toBeInTheDocument();
@@ -98,7 +98,7 @@ describe('ModelConfigPage', () => {
   it('shows loading skeleton while settings load', () => {
     setupDefaults({ loading: true });
     renderPage();
-    expect(screen.getByText('Model Configuration')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Model Configuration' })).toBeInTheDocument();
     // Form fields should not be rendered during loading
     expect(screen.queryByText('AI Model')).not.toBeInTheDocument();
   });

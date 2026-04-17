@@ -151,9 +151,9 @@ describe('DebriefPage', () => {
     });
     renderWithMovie('42');
 
+    expect(screen.getByRole('heading', { name: 'Inception', level: 1 })).toBeInTheDocument();
     const header = screen.getByTestId('debrief-header');
     expect(header).toBeInTheDocument();
-    expect(header.querySelector('h1')).toHaveTextContent('Inception');
     expect(header.querySelector('img')).toHaveAttribute('alt', 'Inception poster');
   });
 
