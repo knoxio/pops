@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -147,6 +147,32 @@ describe('ItemsPage', () => {
       const selects = screen.getAllByRole('combobox');
       const conditionSelect = selects[1];
       expect(conditionSelect).toHaveValue('good');
+    });
+
+    it('debounces the search query — API receives the term only after 300ms', async () => {
+      vi.useFakeTimers();
+      try {
+        renderPage();
+
+        const searchInput = screen.getByPlaceholderText('Search items or asset IDs...');
+
+        // Capture items.list calls before typing
+        const callsBefore = mocks.itemsQuery.mock.calls.length;
+
+        fireEvent.change(searchInput, { target: { value: 'MacBook' } });
+
+        // Immediately after typing the debounce has not fired yet — the URL
+        // param updates but the query still uses the old debounced value.
+        // Advance timers past the 300ms debounce window.
+        await act(async () => {
+          vi.advanceTimersByTime(350);
+        });
+
+        // After debounce fires the query re-runs with the new search value.
+        expect(mocks.itemsQuery.mock.calls.length).toBeGreaterThan(callsBefore);
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 

@@ -1,5 +1,5 @@
 import { LayoutGrid, LayoutList, Package, Plus, Search } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 
 /**
@@ -59,6 +59,16 @@ const IN_USE_OPTIONS: SelectOption[] = [
   { value: 'false', label: 'Not In Use' },
 ];
 
+/** Debounce a string value by `delay` ms. Returns the debounced copy. */
+function useDebouncedValue(value: string, delay: number): string {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebounced(value), delay);
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+  return debounced;
+}
+
 function ItemsPageSkeleton() {
   return (
     <div className="space-y-4">
@@ -82,6 +92,7 @@ export function ItemsPage() {
   const [viewMode, setViewMode] = useState<ViewMode>(getInitialView);
 
   const search = searchParams.get('q') ?? '';
+  const debouncedSearch = useDebouncedValue(search, 300);
   const typeFilter = searchParams.get('type') ?? '';
   const conditionFilter = searchParams.get('condition') ?? '';
   const inUseFilter = searchParams.get('inUse') ?? '';
@@ -197,14 +208,14 @@ export function ItemsPage() {
 
   const queryInput = useMemo(
     () => ({
-      search: search || undefined,
+      search: debouncedSearch || undefined,
       type: typeFilter || undefined,
       condition: conditionFilter || undefined,
       inUse: (inUseFilter || undefined) as 'true' | 'false' | undefined,
       locationId: locationFilter || undefined,
       limit: 200,
     }),
-    [search, typeFilter, conditionFilter, inUseFilter, locationFilter]
+    [debouncedSearch, typeFilter, conditionFilter, inUseFilter, locationFilter]
   );
 
   const { data, isLoading } = trpc.inventory.items.list.useQuery(queryInput);
