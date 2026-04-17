@@ -11,18 +11,20 @@
   ansible.builtin.copy:
     content: '{{ github_runner_pat }}'
     dest: '{{ github_runner_dir }}/.github_pat'
-    owner: '{{ github_runner_user }}'
-    group: '{{ github_runner_user }}'
-    mode: '0600'
+    owner: root
+    group: root
+    mode: '0400'
+  become: true
   no_log: true
 
 - name: Deploy runner re-registration script
   ansible.builtin.template:
     src: re-register.sh.j2
     dest: '{{ github_runner_dir }}/re-register.sh'
-    owner: '{{ github_runner_user }}'
-    group: '{{ github_runner_user }}'
-    mode: '0700'
+    owner: root
+    group: root
+    mode: '0755'
+  become: true
 
 - name: Check if runner binary is installed
   ansible.builtin.stat:
@@ -62,7 +64,7 @@
   ansible.builtin.command:
     cmd: './re-register.sh'
     chdir: '{{ github_runner_dir }}'
-  become_user: '{{ github_runner_user }}'
+  become: true
   when: not runner_configured.stat.exists
   changed_when: true
 

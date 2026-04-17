@@ -1,15 +1,24 @@
 #!/bin/bash
 # Fetches a fresh GitHub Actions runner registration token and re-registers
 # this runner before the service starts. Called via systemd ExecStartPre.
+# Runs as root so the PAT file can be root-only (0400); config.sh is dropped
+# to RUNNER_USER via runuser so runner files retain the correct ownership.
 set -euo pipefail
 
 RUNNER_DIR="{{ github_runner_dir }}"
+RUNNER_USER="{{ github_runner_user }}"
 REPO_URL="{{ github_repo_url }}"
 RUNNER_NAME="{{ github_runner_name }}"
 RUNNER_LABELS="{{ github_runner_labels }}"
 PAT_FILE="${RUNNER_DIR}/.github_pat"
 
 cd "${RUNNER_DIR}"
+
+if [ ! -f "${PAT_FILE}" ] || [ ! -s "${PAT_FILE}" ]; then
+  echo "re-register: PAT file missing or empty at ${PAT_FILE}" >&2
+  echo "re-register: ensure vault_github_runner_pat is set and the Ansible role has been applied" >&2
+  exit 1
+fi
 
 REPO_PATH="${REPO_URL#https://github.com/}"
 
@@ -26,7 +35,7 @@ fi
 
 rm -f .runner .credentials
 
-./config.sh \
+runuser -u "${RUNNER_USER}" -- ./config.sh \
   --url "${REPO_URL}" \
   --token "${TOKEN}" \
   --name "${RUNNER_NAME}" \
