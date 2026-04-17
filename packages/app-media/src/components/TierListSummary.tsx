@@ -1,4 +1,4 @@
-import { ArrowDownRight, ArrowUpRight, Check, Minus } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, Check, Minus, RefreshCw } from 'lucide-react';
 
 /**
  * TierListSummary — shows results after submitting a tier list.
@@ -84,6 +84,7 @@ export function TierListSummary({
 
       <div className="flex gap-3 justify-center">
         <Button variant="outline" onClick={onDoAnother}>
+          <RefreshCw className="h-4 w-4" />
           Do Another
         </Button>
         <Button onClick={onDone}>

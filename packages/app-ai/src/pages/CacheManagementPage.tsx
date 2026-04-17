@@ -221,6 +221,8 @@ export function CacheManagementPage() {
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
                   <AlertDialogAction
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
                     onClick={() => {
                       clearAllMutation.mutate();
                     }}
