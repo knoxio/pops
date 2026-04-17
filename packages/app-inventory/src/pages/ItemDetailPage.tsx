@@ -578,7 +578,7 @@ function DocumentsList({
                       )}
                       <Button
                         variant="ghost"
-                        size="icon-sm"
+                        size="icon"
                         className="text-destructive hover:text-destructive shrink-0"
                         onClick={() => {
                           unlinkMutation.mutate({ id: doc.id });
@@ -725,7 +725,7 @@ function ConnectionRow({
         <AlertDialogTrigger asChild>
           <Button
             variant="ghost"
-            size="icon-sm"
+            size="icon"
             className="text-destructive hover:text-destructive shrink-0"
             disabled={isDisconnecting}
             title="Disconnect"
