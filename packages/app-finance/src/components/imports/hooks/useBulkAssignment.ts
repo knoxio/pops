@@ -170,13 +170,7 @@ export function useBulkAssignment({
         );
       }
     },
-    [
-      entities,
-      addPendingEntity,
-      dbEntitiesData?.data,
-      openRuleProposalDialog,
-      setLocalTransactions,
-    ]
+    [entities, addPendingEntity, dbEntitiesData?.data, openRuleProposalDialog, setLocalTransactions]
   );
 
   /**
