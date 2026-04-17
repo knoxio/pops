@@ -129,7 +129,7 @@ Build the full item detail view showing all metadata, photo gallery, connections
 | #   | Story                                                     | Summary                                                                                                       | Status  | Parallelisable |
 | --- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------- | -------------- |
 | 01  | [us-01-item-metadata](us-01-item-metadata.md)             | Header with name/assetId/condition, metadata section, location breadcrumb, notes, purchase link, delete modal | Partial | Yes            |
-| 02  | [us-02-photo-gallery](us-02-photo-gallery.md)             | Photo gallery with primary display, thumbnail strip, lightbox view, placeholder                               | Partial | Yes            |
+| 02  | [us-02-photo-gallery](us-02-photo-gallery.md)             | Photo gallery with primary display, thumbnail strip, lightbox view, placeholder                               | Done    | Yes            |
 | 03  | [us-03-connections-section](us-03-connections-section.md) | Connections list with names/assetIds, "Trace Chain" button, chain visualisation                               | Partial | Yes            |
 | 04  | [us-04-warranty-status](us-04-warranty-status.md)         | Warranty status indicator with colour-coded badges and expiry calculation                                     | Done    | Yes            |
 
@@ -144,4 +144,4 @@ All four stories can be built in parallel — they render independent sections o
 
 ## Drift Check
 
-last checked: 2026-04-17
+last checked: 2026-04-18
