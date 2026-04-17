@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import {
@@ -40,7 +40,11 @@ export interface TagRuleProposalDialogProps {
     description: string;
     entityId?: string | null;
   }>;
-  onApplied?: () => void;
+  /**
+   * Called after the ChangeSet is applied successfully.
+   * Receives the applied ChangeSet so callers can store it (e.g. import store).
+   */
+  onApplied?: (changeSet: ProposeOutput['changeSet']) => void;
 }
 
 export function TagRuleProposalDialog(props: TagRuleProposalDialogProps) {
@@ -131,11 +135,17 @@ export function TagRuleProposalDialog(props: TagRuleProposalDialogProps) {
     setAcceptedNewTags(names);
   }, [proposal]);
 
+  // Capture the changeSet that was submitted for apply so onApplied can receive it.
+  const pendingChangeSetRef = useRef<ProposeOutput['changeSet'] | null>(null);
+
   const applyMutation = trpc.core.tagRules.applyTagRuleChangeSet.useMutation({
     onSuccess: async () => {
       await utils.core.tagRules.listVocabulary.invalidate();
       toast.success('Tag rule saved');
-      props.onApplied?.();
+      if (pendingChangeSetRef.current) {
+        props.onApplied?.(pendingChangeSetRef.current);
+        pendingChangeSetRef.current = null;
+      }
       props.onOpenChange(false);
     },
     onError: (e) => toast.error(e.message),
@@ -151,6 +161,7 @@ export function TagRuleProposalDialog(props: TagRuleProposalDialogProps) {
 
   const handleApply = useCallback(() => {
     if (!proposal) return;
+    pendingChangeSetRef.current = proposal.changeSet;
     applyMutation.mutate({
       changeSet: proposal.changeSet,
       acceptedNewTags: [...acceptedNewTags],

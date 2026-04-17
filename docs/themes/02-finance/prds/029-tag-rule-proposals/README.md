@@ -119,9 +119,9 @@ The UI must support accepting/rejecting suggestions at either scope:
 
 ## Verification
 
-- Tag edits in the current import can produce a proposal that increases the quality of future tag suggestions. _(API ready; `TagRuleProposalDialog` component exists but is not wired into `TagReviewStep` — reverted in #1759 pending re-integration.)_
-- Approving a tag rule proposal immediately improves suggested tags for remaining transactions in the current import without altering entity/type classification. _(Same gap as above.)_
+- Tag edits in the current import can produce a proposal that increases the quality of future tag suggestions. _`TagRuleProposalDialog` is wired into `TagReviewStep` via "Save tag rule…" per entity group (knoxio/pops#1886). Group-scope signal is fully wired; transaction-scope signal is not yet connected._
+- Approving a tag rule proposal immediately improves suggested tags for remaining transactions in the current import without altering entity/type classification. _(Apply is wired and stores the ChangeSet in the import store. Live re-suggestion of remaining transactions after apply is not yet implemented.)_
 
 ## Drift Check
 
-last checked: 2026-04-17
+last checked: 2026-04-18

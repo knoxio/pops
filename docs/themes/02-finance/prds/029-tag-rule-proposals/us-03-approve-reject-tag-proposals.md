@@ -10,12 +10,10 @@ As a user, I want to approve or reject tag rule proposals with feedback, so that
 ## Acceptance Criteria
 
 - [x] `core.tagRules` supports approve/reject with feedback and atomic apply (covered by pops-api tests).
-- [ ] Tag rule proposals are approved/rejected as a bundled ChangeSet **from Tag Review** (knoxio/pops#1741).
-- [ ] Approving applies the ChangeSet atomically and updates suggested tags for remaining transactions in the current import session **in the wizard**.
-- [ ] Rejecting requires a feedback message and applies no changes **in the wizard**.
-- [ ] A follow-up proposal can be generated incorporating rejection feedback **in the wizard**.
-- [ ] Tag rule application never overwrites user-entered tags in the current import **(verified end-to-end in wizard)**.
-- [ ] Accepting/rejecting suggestions must work at both scopes **in the wizard**:
-  - group scope accept/reject affects all transactions in the group (with merge semantics)
-  - transaction scope accept/reject affects only that transaction
-- [ ] Accepting a **New** tag makes it part of the user’s tag vocabulary going forward **through the wizard**.
+- [x] Tag rule proposals are approved/rejected as a bundled ChangeSet **from Tag Review** — `TagRuleProposalDialog` is wired into `TagReviewStep` (knoxio/pops#1886).
+- [x] Approving applies the ChangeSet atomically via `applyTagRuleChangeSet` and stores it in the import store so it is included with the final commit.
+- [x] Rejecting requires a feedback message and applies no changes **in the wizard** — the dialog enforces non-empty feedback before calling `rejectTagRuleChangeSet`.
+- [x] Accepting a **New** tag makes it part of the user’s tag vocabulary going forward — the dialog presents new tags as checkboxes and passes `acceptedNewTags` to `applyTagRuleChangeSet`.
+- [ ] Approving updates suggested tags for remaining transactions in the current import session live (not yet re-fetched after apply).
+- [ ] A follow-up proposal can be generated incorporating rejection feedback **in the wizard** (not yet wired).
+- [ ] Tag rule application at transaction scope (single-transaction accept/reject) is not yet wired — only group scope is supported.

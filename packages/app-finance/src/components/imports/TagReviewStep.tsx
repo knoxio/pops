@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, X } from 'lucide-react';
+import { BookmarkPlus, ChevronDown, ChevronRight, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
@@ -9,7 +9,9 @@ import { trpc } from '../../lib/trpc';
 import { cn } from '../../lib/utils';
 import { useImportStore } from '../../store/importStore';
 import { TagEditor, type TagMetaEntry } from '../TagEditor';
+import { TagRuleProposalDialog, type TagRuleLearnSignal } from './TagRuleProposalDialog';
 
+import type { TagRuleChangeSet } from '@pops/api/modules/core/tag-rules/types';
 import type { ConfirmedTransaction, SuggestedTag } from '@pops/api/modules/finance/imports';
 
 // ---------------------------------------------------------------------------
@@ -20,6 +22,12 @@ import type { ConfirmedTransaction, SuggestedTag } from '@pops/api/modules/finan
 interface ConfirmedGroup {
   entityName: string;
   transactions: ConfirmedTransaction[];
+}
+
+/** State driving the TagRuleProposalDialog — null when dialog is closed. */
+interface TagRuleDialogState {
+  signal: TagRuleLearnSignal;
+  groupEntityName: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -75,9 +83,16 @@ function buildTagMetaMap(suggestedTags: SuggestedTag[]): Map<string, TagMetaEntr
  * - Per-transaction tag editing via TagEditor
  * - Source badges on suggested tags: 🤖 AI, 📋 Rule, 🏪 Entity
  * - Rule pattern shown via tooltip on badge hover
+ * - "Save tag rule…" button per group — opens TagRuleProposalDialog (PRD-029 US-02/US-03)
  */
 export function TagReviewStep() {
-  const { confirmedTransactions, updateTransactionTags, nextStep, prevStep } = useImportStore();
+  const {
+    confirmedTransactions,
+    updateTransactionTags,
+    nextStep,
+    prevStep,
+    addPendingTagRuleChangeSet,
+  } = useImportStore();
 
   // Local tag state keyed by checksum — edits don't touch the store until Continue
   const [localTags, setLocalTags] = useState<Record<string, string[]>>(() =>
@@ -154,6 +169,73 @@ export function TagReviewStep() {
     nextStep();
   }, [localTags, updateTransactionTags, nextStep]);
 
+  // ---------------------------------------------------------------------------
+  // Tag Rule Proposal Dialog state (PRD-029 US-02 / US-03)
+  // ---------------------------------------------------------------------------
+
+  const [tagRuleDialog, setTagRuleDialog] = useState<TagRuleDialogState | null>(null);
+
+  /**
+   * Called when the user clicks "Save tag rule…" on a group header.
+   * Builds a signal from the union of current tags in the group and opens the dialog.
+   */
+  const handleOpenTagRuleDialog = useCallback(
+    (group: ConfirmedGroup) => {
+      const groupTags = unionTags(group.transactions.map((t) => localTags[t.checksum] ?? []));
+      if (groupTags.length === 0) {
+        toast.info('Add at least one tag to this group before saving a rule.');
+        return;
+      }
+      // Use the first transaction's entityId (all transactions in a group share the same entity).
+      const entityId = group.transactions[0]?.entityId ?? null;
+      const signal: TagRuleLearnSignal = {
+        descriptionPattern: group.entityName,
+        matchType: 'contains',
+        entityId: entityId ?? null,
+        tags: groupTags,
+      };
+      setTagRuleDialog({ signal, groupEntityName: group.entityName });
+    },
+    [localTags]
+  );
+
+  /**
+   * Capture the entity name at dialog-open time in a ref so it is stable
+   * inside handleTagRuleApplied even when tagRuleDialog state has been cleared.
+   */
+  const dialogGroupNameRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (tagRuleDialog) {
+      dialogGroupNameRef.current = tagRuleDialog.groupEntityName;
+    }
+  }, [tagRuleDialog]);
+
+  /**
+   * Called by the dialog after `applyTagRuleChangeSet` succeeds.
+   * Stores the applied ChangeSet in the import store so it is bundled
+   * with the commit at Final Review (PRD-029 / PRD-030).
+   */
+  const handleTagRuleApplied = useCallback(
+    (changeSet: TagRuleChangeSet) => {
+      addPendingTagRuleChangeSet({
+        changeSet,
+        source: `tag-review:${dialogGroupNameRef.current ?? 'unknown'}`,
+      });
+    },
+    [addPendingTagRuleChangeSet]
+  );
+
+  /** Preview transactions passed to the dialog for impact computation. */
+  const previewTransactions = useMemo(
+    () =>
+      confirmedTransactions.map((t) => ({
+        checksum: t.checksum,
+        description: t.description,
+        entityId: t.entityId ?? null,
+      })),
+    [confirmedTransactions]
+  );
+
   return (
     <div className="space-y-6">
       <div>
@@ -182,6 +264,7 @@ export function TagReviewStep() {
             availableTags={availableTags ?? []}
             onUpdateTag={updateTag}
             onApplyGroupTags={handleApplyGroupTags}
+            onSaveTagRule={handleOpenTagRuleDialog}
           />
         ))}
 
@@ -207,6 +290,17 @@ export function TagReviewStep() {
             : `Continue to final review (${confirmedTransactions.length} transaction${confirmedTransactions.length !== 1 ? 's' : ''})`}
         </Button>
       </div>
+
+      {/* Tag Rule Proposal Dialog — opened per group (PRD-029 US-02 / US-03) */}
+      <TagRuleProposalDialog
+        open={tagRuleDialog !== null}
+        onOpenChange={(open) => {
+          if (!open) setTagRuleDialog(null);
+        }}
+        signal={tagRuleDialog?.signal ?? null}
+        previewTransactions={previewTransactions}
+        onApplied={handleTagRuleApplied}
+      />
     </div>
   );
 }
@@ -222,12 +316,15 @@ interface EntityGroupProps {
   availableTags: string[];
   onUpdateTag: (checksum: string, tags: string[]) => void;
   onApplyGroupTags: (group: ConfirmedGroup, tags: string[]) => void;
+  /** Opens the TagRuleProposalDialog pre-populated with this group's signal. */
+  onSaveTagRule: (group: ConfirmedGroup) => void;
 }
 
 /**
  * Collapsible group of transactions sharing an entity.
  * Always starts expanded. Includes a bulk-tag row for applying tags to the
  * whole group (merge semantics — never replaces individually-edited tags).
+ * Shows a "Save tag rule…" button that opens the tag rule proposal flow.
  */
 function EntityGroup({
   group,
@@ -236,6 +333,7 @@ function EntityGroup({
   availableTags,
   onUpdateTag,
   onApplyGroupTags,
+  onSaveTagRule,
 }: EntityGroupProps) {
   const [expanded, setExpanded] = useState(true);
 
@@ -333,6 +431,22 @@ function EntityGroup({
               Apply suggestions
             </Button>
           )}
+
+          {/* Save tag rule — opens TagRuleProposalDialog pre-filled with group signal */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onSaveTagRule(group);
+            }}
+            className="text-xs px-2 py-1 h-auto whitespace-nowrap text-muted-foreground hover:text-foreground"
+            title="Save a reusable tag rule for this group"
+            aria-label={`Save tag rule for ${group.entityName}`}
+          >
+            <BookmarkPlus className="w-3.5 h-3.5 mr-1" />
+            Save tag rule…
+          </Button>
         </div>
       </div>
 
