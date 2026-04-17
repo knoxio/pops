@@ -101,4 +101,4 @@ US-01 and US-02 can run in parallel. US-03 composes them into the add-to-library
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

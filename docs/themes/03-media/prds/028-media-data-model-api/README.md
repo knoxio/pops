@@ -278,4 +278,4 @@ US-01 and US-02 can run in parallel (independent tables). US-03 needs US-01. US-
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

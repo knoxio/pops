@@ -94,4 +94,4 @@ US-02 depends on US-01 (needs MediaCard). US-03 can be built in parallel with US
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

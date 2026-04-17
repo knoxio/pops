@@ -132,4 +132,4 @@ US-01 builds the page shell. US-02, US-03, and US-04 are independent components 
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

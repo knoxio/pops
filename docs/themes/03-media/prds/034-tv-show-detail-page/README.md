@@ -149,4 +149,4 @@ US-02 depends on US-01 (needs the page shell). US-03 and US-04 are independent c
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

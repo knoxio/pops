@@ -105,4 +105,4 @@ US-02 depends on US-01 (needs search state). US-03 depends on US-02 (needs resul
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17
