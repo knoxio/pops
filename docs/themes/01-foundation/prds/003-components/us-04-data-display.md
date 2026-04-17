@@ -1,7 +1,7 @@
 # US-04: Build data display composites
 
 > PRD: [003 — Components](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -14,12 +14,12 @@ As a developer, I want data display components (DataTable, filters, view toggle)
 - [x] InfiniteScrollTable — DataTable variant with scroll-based pagination
 - [x] EditableCell — inline cell editing with save/cancel
 - [x] ViewToggleGroup — table/grid toggle, segmented button style, persists to localStorage
-- [ ] StatCard — metric display card with label, value, optional trend indicator (missing trend prop + arbitrary OKLCH values → #1795)
+- [x] StatCard — metric display card with label, value, optional trend indicator
 - [x] DataTableFilters has co-located `.stories.tsx`
 - [x] EditableCell has co-located `.stories.tsx`
-- [ ] StatCard has co-located `.stories.tsx` (→ #1795)
+- [x] StatCard has co-located `.stories.tsx`
 - [x] All exported from barrel `index.ts`
-- [ ] All use design tokens — no arbitrary values or hardcoded colours (StatCard uses arbitrary OKLCH → #1795)
+- [x] All use design tokens — no arbitrary values or hardcoded colours
 - [x] DataTable scrolls horizontally on viewports below 768px
 - [x] ViewToggleGroup rendered directly above the content it controls, not in page header
 

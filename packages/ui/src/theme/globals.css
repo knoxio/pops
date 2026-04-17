@@ -70,6 +70,10 @@
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
 
+  /* StatCard palette tokens — hues not covered by semantic tokens */
+  --color-stat-sky: var(--stat-sky);
+  --color-stat-violet: var(--stat-violet);
+
   /* Sidebar */
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
@@ -191,6 +195,10 @@
   --chart-4: oklch(0.8 0.15 80);
   --chart-5: oklch(0.6 0.15 330);
 
+  /* StatCard palette */
+  --stat-sky: oklch(0.6 0.15 220);
+  --stat-violet: oklch(0.6 0.15 290);
+
   /* Status colours */
   --success: oklch(0.55 0.15 150);
   --success-foreground: oklch(0.98 0.01 150);
@@ -250,6 +258,10 @@
   --warning-foreground: oklch(0.14 0.02 70);
   --info: oklch(0.65 0.15 240);
   --info-foreground: oklch(0.14 0.02 240);
+
+  /* StatCard palette */
+  --stat-sky: oklch(0.7 0.15 220);
+  --stat-violet: oklch(0.7 0.15 290);
 
   /* App accent — defaults to primary in dark mode too */
   --app-accent: var(--primary);
@@ -432,6 +444,12 @@
 @utility text-2xs {
   font-size: var(--font-size-2xs, 0.625rem);
   line-height: var(--font-size-2xs--line-height, 0.75rem);
+}
+
+/* Utility: label letter-spacing (section headers, nav labels, stat labels)
+ * 0.15em — wider than tracking-widest (0.1em) for uppercase micro-labels. */
+@utility tracking-label {
+  letter-spacing: 0.15em;
 }
 
 /* Utility: force tabular figures (financial data, counters, dashboards) */

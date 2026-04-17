@@ -1,44 +1,51 @@
+import { TrendingDown, TrendingUp } from 'lucide-react';
 import * as React from 'react';
 
 import { cn } from '../lib/utils';
 import { Card } from '../primitives/card';
 
+/**
+ * Colour variants for StatCard.
+ * Each variant maps to a set of design-token-backed Tailwind utilities.
+ * emerald → success token, rose → destructive token, indigo → chart-1 token,
+ * amber → warning token, sky → stat-sky token, violet → stat-violet token.
+ */
 const statCardColorMap = {
   emerald: {
-    text: 'text-[oklch(0.6_0.15_150)] dark:text-[oklch(0.7_0.15_150)]',
-    bg: 'bg-[oklch(0.6_0.15_150)]/15',
-    border: 'border-[oklch(0.6_0.15_150)]/25',
-    glow: 'shadow-[0_0_20px_-12px_oklch(0.6_0.15_150/0.4)]',
+    text: 'text-success',
+    bg: 'bg-success/15',
+    border: 'border-success/25',
+    glow: 'shadow-[0_0_20px_-12px_color-mix(in_oklch,var(--success)_40%,transparent)]',
   },
   rose: {
-    text: 'text-[oklch(0.6_0.15_25)] dark:text-[oklch(0.7_0.15_25)]',
-    bg: 'bg-[oklch(0.6_0.15_25)]/15',
-    border: 'border-[oklch(0.6_0.15_25)]/25',
-    glow: 'shadow-[0_0_20px_-12px_oklch(0.6_0.15_25/0.4)]',
+    text: 'text-destructive',
+    bg: 'bg-destructive/15',
+    border: 'border-destructive/25',
+    glow: 'shadow-[0_0_20px_-12px_color-mix(in_oklch,var(--destructive)_40%,transparent)]',
   },
   indigo: {
-    text: 'text-[oklch(0.6_0.15_260)] dark:text-[oklch(0.7_0.15_260)]',
-    bg: 'bg-[oklch(0.6_0.15_260)]/15',
-    border: 'border-[oklch(0.6_0.15_260)]/25',
-    glow: 'shadow-[0_0_20px_-12px_oklch(0.6_0.15_260/0.4)]',
+    text: 'text-chart-1',
+    bg: 'bg-chart-1/15',
+    border: 'border-chart-1/25',
+    glow: 'shadow-[0_0_20px_-12px_color-mix(in_oklch,var(--chart-1)_40%,transparent)]',
   },
   amber: {
-    text: 'text-[oklch(0.6_0.15_70)] dark:text-[oklch(0.7_0.15_70)]',
-    bg: 'bg-[oklch(0.6_0.15_70)]/15',
-    border: 'border-[oklch(0.6_0.15_70)]/25',
-    glow: 'shadow-[0_0_20px_-12px_oklch(0.6_0.15_70/0.4)]',
+    text: 'text-warning',
+    bg: 'bg-warning/15',
+    border: 'border-warning/25',
+    glow: 'shadow-[0_0_20px_-12px_color-mix(in_oklch,var(--warning)_40%,transparent)]',
   },
   sky: {
-    text: 'text-[oklch(0.6_0.15_220)] dark:text-[oklch(0.7_0.15_220)]',
-    bg: 'bg-[oklch(0.6_0.15_220)]/15',
-    border: 'border-[oklch(0.6_0.15_220)]/25',
-    glow: 'shadow-[0_0_20px_-12px_oklch(0.6_0.15_220/0.4)]',
+    text: 'text-stat-sky',
+    bg: 'bg-stat-sky/15',
+    border: 'border-stat-sky/25',
+    glow: 'shadow-[0_0_20px_-12px_color-mix(in_oklch,var(--stat-sky)_40%,transparent)]',
   },
   violet: {
-    text: 'text-[oklch(0.6_0.15_290)] dark:text-[oklch(0.7_0.15_290)]',
-    bg: 'bg-[oklch(0.6_0.15_290)]/15',
-    border: 'border-[oklch(0.6_0.15_290)]/25',
-    glow: 'shadow-[0_0_20px_-12px_oklch(0.6_0.15_290/0.4)]',
+    text: 'text-stat-violet',
+    bg: 'bg-stat-violet/15',
+    border: 'border-stat-violet/25',
+    glow: 'shadow-[0_0_20px_-12px_color-mix(in_oklch,var(--stat-violet)_40%,transparent)]',
   },
   slate: {
     text: 'text-foreground/80',
@@ -50,19 +57,43 @@ const statCardColorMap = {
 
 export type StatCardColor = keyof typeof statCardColorMap;
 
+/** Trend data for the optional trend indicator. */
+export interface StatCardTrend {
+  /** Percentage change, e.g. 12.5 for +12.5%. */
+  value: number;
+  /** Direction of the trend. */
+  direction: 'up' | 'down' | 'neutral';
+}
+
 export interface StatCardProps {
   title: string;
   value: string | number;
   description?: React.ReactNode;
   color?: StatCardColor;
+  /** Optional trend indicator shown below the value. */
+  trend?: StatCardTrend;
   className?: string;
 }
 
+const trendIconClass = {
+  up: 'text-success',
+  down: 'text-destructive',
+  neutral: 'text-muted-foreground',
+} as const;
+
 /**
  * StatCard — a high-impact card for displaying key metrics.
- * Features domain-specific coloring and subtle glow effects.
+ * Features domain-specific coloring, subtle glow effects, and an optional
+ * trend indicator (TrendingUp / TrendingDown Lucide icons).
  */
-export function StatCard({ title, value, description, color = 'slate', className }: StatCardProps) {
+export function StatCard({
+  title,
+  value,
+  description,
+  color = 'slate',
+  trend,
+  className,
+}: StatCardProps) {
   const styles = statCardColorMap[color];
 
   return (
@@ -87,6 +118,24 @@ export function StatCard({ title, value, description, color = 'slate', className
         <p className={cn('text-3xl font-bold tabular-nums tracking-normal', styles.text)}>
           {value}
         </p>
+        {trend && (
+          <div
+            className={cn(
+              'flex items-center gap-1 text-2xs font-semibold',
+              trendIconClass[trend.direction]
+            )}
+          >
+            {trend.direction === 'up' ? (
+              <TrendingUp className="h-3 w-3" aria-hidden="true" />
+            ) : trend.direction === 'down' ? (
+              <TrendingDown className="h-3 w-3" aria-hidden="true" />
+            ) : null}
+            <span>
+              {trend.direction === 'up' ? '+' : trend.direction === 'down' ? '-' : ''}
+              {Math.abs(trend.value)}%
+            </span>
+          </div>
+        )}
       </div>
       {description && (
         <div className="text-2xs text-muted-foreground font-medium uppercase tracking-normal opacity-70 relative z-10">
