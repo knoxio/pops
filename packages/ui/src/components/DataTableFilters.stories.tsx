@@ -1,5 +1,3 @@
-import type { Meta, StoryObj } from '@storybook/react-vite';
-import type { ColumnDef, Table } from '@tanstack/react-table';
 import {
   type ColumnFiltersState,
   getCoreRowModel,
@@ -8,13 +6,17 @@ import {
 } from '@tanstack/react-table';
 import { useState } from 'react';
 
-import type { ColumnFilter } from './DataTableFilters';
 import {
   dateRangeFilter,
   FilterBar,
   multiSelectFilter,
   numberRangeFilter,
 } from './DataTableFilters';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import type { ColumnDef, Table } from '@tanstack/react-table';
+
+import type { ColumnFilter } from './DataTableFilters';
 
 interface SampleRow {
   id: string;
