@@ -10,14 +10,14 @@ import { createHash } from 'crypto';
 /**
  * Normalise a date from DD/MM/YYYY to YYYY-MM-DD.
  *
- * @throws {Error} if the input does not match DD/MM/YYYY with exactly 3 parts.
+ * @throws {Error} if the input does not match DD/MM/YYYY with numeric parts.
  */
 export function normaliseDate(dateStr: string): string {
-  const parts = dateStr.split('/');
-  if (parts.length !== 3) {
+  const trimmed = dateStr.trim();
+  if (!/^\d{1,2}\/\d{1,2}\/\d{4}$/.test(trimmed)) {
     throw new Error(`Invalid date format: ${dateStr}`);
   }
-  const [day, month, year] = parts;
+  const [day, month, year] = trimmed.split('/');
   return `${year}-${(month ?? '').padStart(2, '0')}-${(day ?? '').padStart(2, '0')}`;
 }
 
@@ -31,11 +31,12 @@ export function normaliseDate(dateStr: string): string {
  * @throws {TypeError} if the string cannot be parsed as a number.
  */
 export function normaliseAmount(amountStr: string): number {
-  const amount = parseFloat(amountStr);
-  if (isNaN(amount)) {
+  const trimmed = amountStr.trim();
+  if (!/^-?\d+(\.\d+)?$/.test(trimmed)) {
     throw new TypeError(`Invalid amount: ${amountStr}`);
   }
-  return -amount;
+  const amount = Number(trimmed);
+  return amount === 0 ? 0 : -amount;
 }
 
 /**

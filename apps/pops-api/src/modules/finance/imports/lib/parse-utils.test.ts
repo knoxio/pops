@@ -53,6 +53,14 @@ describe('normaliseDate', () => {
   it('throws for completely malformed string', () => {
     expect(() => normaliseDate('not-a-date')).toThrow('Invalid date format');
   });
+
+  it('trims surrounding whitespace', () => {
+    expect(normaliseDate('  13/02/2026  ')).toBe('2026-02-13');
+  });
+
+  it('throws for non-numeric parts', () => {
+    expect(() => normaliseDate('aa/02/2026')).toThrow('Invalid date format');
+  });
 });
 
 describe('normaliseAmount', () => {
@@ -65,7 +73,7 @@ describe('normaliseAmount', () => {
   });
 
   it('handles zero', () => {
-    expect(normaliseAmount('0')).toBe(-0);
+    expect(normaliseAmount('0')).toBe(0);
   });
 
   it('handles integer string', () => {
@@ -102,6 +110,10 @@ describe('normaliseAmount', () => {
 
   it('throws for undefined coerced to string "undefined"', () => {
     expect(() => normaliseAmount('undefined')).toThrow('Invalid amount');
+  });
+
+  it('throws for partial numeric string', () => {
+    expect(() => normaliseAmount('100abc')).toThrow('Invalid amount');
   });
 });
 
