@@ -13,6 +13,7 @@ interface MovieHitData {
   year: string | null;
   posterUrl: string | null;
   voteAverage: number | null;
+  runtime: number | null;
 }
 
 /**
@@ -49,14 +50,23 @@ function Rating({ value }: { value: number | null }) {
   );
 }
 
+function formatRuntime(minutes: number | null): string | null {
+  if (minutes == null || minutes <= 0) return null;
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m}m`;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+}
+
 export function MovieSearchResult({ data }: ResultComponentProps) {
   const hit = data as unknown as MovieHitData & {
     _query?: string;
     _matchType?: string;
   };
-  const { title, year, posterUrl, voteAverage } = hit;
+  const { title, year, posterUrl, voteAverage, runtime } = hit;
   const query = hit._query ?? '';
   const matchType = hit._matchType ?? 'contains';
+  const runtimeLabel = formatRuntime(runtime ?? null);
 
   return (
     <div className="flex items-center gap-3 py-1" data-testid="movie-search-result">
@@ -85,6 +95,8 @@ export function MovieSearchResult({ data }: ResultComponentProps) {
           {year && <span>{year}</span>}
           {year && voteAverage != null && <span>·</span>}
           <Rating value={voteAverage} />
+          {(year || voteAverage != null) && runtimeLabel && <span>·</span>}
+          {runtimeLabel && <span data-testid="runtime">{runtimeLabel}</span>}
         </div>
       </div>
     </div>

@@ -17,9 +17,8 @@ export interface MovieHitData {
   title: string;
   year: string | null;
   posterUrl: string | null;
-  status: string | null;
   voteAverage: number | null;
-  genres: string[];
+  runtime: number | null;
 }
 
 function scoreHit(
@@ -42,16 +41,6 @@ function buildPosterUrl(posterPath: string | null): string | null {
 function extractYear(releaseDate: string | null): string | null {
   if (!releaseDate) return null;
   return releaseDate.slice(0, 4) || null;
-}
-
-function parseGenres(genres: string | null): string[] {
-  if (!genres) return [];
-  try {
-    const parsed: unknown = JSON.parse(genres);
-    return Array.isArray(parsed) ? (parsed as string[]) : [];
-  } catch {
-    return [];
-  }
 }
 
 export const moviesSearchAdapter: SearchAdapter<MovieHitData> = {
@@ -89,9 +78,8 @@ export const moviesSearchAdapter: SearchAdapter<MovieHitData> = {
             title: row.title,
             year: extractYear(row.releaseDate),
             posterUrl: buildPosterUrl(row.posterPath),
-            status: row.status,
             voteAverage: row.voteAverage,
-            genres: parseGenres(row.genres),
+            runtime: row.runtime,
           },
         };
       })

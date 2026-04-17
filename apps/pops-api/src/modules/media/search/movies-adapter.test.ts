@@ -106,10 +106,9 @@ describe('moviesSearchAdapter', () => {
         title: 'The Shawshank Redemption',
         tmdb_id: 278,
         release_date: '1994-09-23',
-        status: 'Released',
         poster_path: '/9O7gLzmreU0nGkIB6K3BsJbzvNv.jpg',
         vote_average: 8.7,
-        genres: '["Drama", "Crime"]',
+        runtime: 142,
       });
 
       const hits = await moviesSearchAdapter.search(
@@ -123,9 +122,8 @@ describe('moviesSearchAdapter', () => {
         title: 'The Shawshank Redemption',
         year: '1994',
         posterUrl: '/media/images/movies/9O7gLzmreU0nGkIB6K3BsJbzvNv.jpg',
-        status: 'Released',
         voteAverage: 8.7,
-        genres: ['Drama', 'Crime'],
+        runtime: 142,
       });
     });
 
@@ -145,16 +143,20 @@ describe('moviesSearchAdapter', () => {
       seedMovie(db, {
         title: 'Minimal Movie',
         tmdb_id: 8888,
-        status: null,
         poster_path: null,
         vote_average: null,
-        genres: null,
+        runtime: null,
       });
       const hits = await moviesSearchAdapter.search({ text: 'Minimal Movie' }, defaultContext);
-      expect(hits[0]!.data.status).toBeNull();
       expect(hits[0]!.data.posterUrl).toBeNull();
       expect(hits[0]!.data.voteAverage).toBeNull();
-      expect(hits[0]!.data.genres).toEqual([]);
+      expect(hits[0]!.data.runtime).toBeNull();
+    });
+
+    it('returns runtime value when set', async () => {
+      seedMovie(db, { title: 'Long Movie', tmdb_id: 7777, runtime: 180 });
+      const hits = await moviesSearchAdapter.search({ text: 'Long Movie' }, defaultContext);
+      expect(hits[0]!.data.runtime).toBe(180);
     });
 
     it('builds poster URL from posterPath', async () => {
@@ -165,26 +167,6 @@ describe('moviesSearchAdapter', () => {
       });
       const hits = await moviesSearchAdapter.search({ text: 'Pulp Fiction' }, defaultContext);
       expect(hits[0]!.data.posterUrl).toBe('/media/images/movies/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg');
-    });
-
-    it('parses genres from JSON string', async () => {
-      seedMovie(db, {
-        title: 'Action Movie',
-        tmdb_id: 1111,
-        genres: '["Action", "Thriller"]',
-      });
-      const hits = await moviesSearchAdapter.search({ text: 'Action Movie' }, defaultContext);
-      expect(hits[0]!.data.genres).toEqual(['Action', 'Thriller']);
-    });
-
-    it('handles invalid genres JSON gracefully', async () => {
-      seedMovie(db, {
-        title: 'Bad Genres',
-        tmdb_id: 2222,
-        genres: 'not-json',
-      });
-      const hits = await moviesSearchAdapter.search({ text: 'Bad Genres' }, defaultContext);
-      expect(hits[0]!.data.genres).toEqual([]);
     });
   });
 

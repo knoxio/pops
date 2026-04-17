@@ -69,6 +69,24 @@ describe('MovieSearchResult', () => {
     expect(screen.queryByText('·')).not.toBeInTheDocument();
   });
 
+  it('renders runtime when present', () => {
+    const data = { ...baseMovie, runtime: 152 };
+    render(<MovieSearchResult data={data as unknown as Record<string, unknown>} />);
+    expect(screen.getByTestId('runtime')).toHaveTextContent('2h 32m');
+  });
+
+  it('renders runtime as minutes-only when under one hour', () => {
+    const data = { ...baseMovie, runtime: 45 };
+    render(<MovieSearchResult data={data as unknown as Record<string, unknown>} />);
+    expect(screen.getByTestId('runtime')).toHaveTextContent('45m');
+  });
+
+  it('hides runtime when null', () => {
+    const data = { ...baseMovie, runtime: null };
+    render(<MovieSearchResult data={data as unknown as Record<string, unknown>} />);
+    expect(screen.queryByTestId('runtime')).not.toBeInTheDocument();
+  });
+
   describe('registration', () => {
     it('can be registered and retrieved for movies domain', () => {
       registerResultComponent('movies', MovieSearchResult);
