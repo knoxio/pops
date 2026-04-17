@@ -20,6 +20,7 @@ vi.mock('../lib/trpc', () => ({
 
 vi.mock('../components/ValueBreakdown', () => ({
   ValueByTypeCard: () => <div data-testid="value-by-type" />,
+  ValueByLocationCard: () => <div data-testid="value-by-location" />,
 }));
 
 import { ReportDashboardPage } from './ReportDashboardPage';

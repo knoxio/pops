@@ -80,7 +80,7 @@ All widgets powered by a single aggregation API call (no N+1 queries):
 | #   | Story                                                 | Summary                                                                                                         | Status  | Parallelisable            |
 | --- | ----------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- | ------- | ------------------------- |
 | 01  | [us-01-dashboard-widgets](us-01-dashboard-widgets.md) | Dashboard with total replacement/resale values, item count, expiring warranties, recent items (single API call) | Done    | No (first)                |
-| 02  | [us-02-value-breakdowns](us-02-value-breakdowns.md)   | Value breakdowns by location and type, click to navigate to filtered list                                       | Partial | Yes (parallel with us-01) |
+| 02  | [us-02-value-breakdowns](us-02-value-breakdowns.md)   | Value breakdowns by location and type, click to navigate to filtered list                                       | Done    | Yes (parallel with us-01) |
 | 03  | [us-03-insurance-report](us-03-insurance-report.md)   | Report generator with location selector, include sub-locations, per-item details, summary                       | Partial | Blocked by us-01          |
 | 04  | [us-04-print-layout](us-04-print-layout.md)           | @media print CSS, browser print-to-PDF, location sections, print-friendly photo sizing                          | Partial | Blocked by us-03          |
 
