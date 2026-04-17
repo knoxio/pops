@@ -455,7 +455,7 @@ describe('ItemDetailPage', () => {
       const confirmButton = screen.getByRole('button', { name: /^Disconnect$/i });
       fireEvent.click(confirmButton);
 
-      expect(mockDisconnectMutate).toHaveBeenCalledWith({ id: 'c1' });
+      expect(mockDisconnectMutate).toHaveBeenCalledWith({ itemAId: 'item-1', itemBId: 'item-2' });
     });
 
     it('disconnect dialog title includes the connected item name', () => {
