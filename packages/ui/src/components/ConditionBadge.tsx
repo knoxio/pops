@@ -4,10 +4,22 @@ import { Badge } from '../primitives/badge';
 import type { ComponentProps } from 'react';
 
 /**
- * Canonical lowercase condition values used in the data model.
- * "Excellent" is kept as a legacy alias resolved at display time.
+ * Condition values accepted by the badge.
+ * Lowercase values are canonical; Title Case variants are legacy aliases
+ * from older seeded/stored data and are normalised at display time.
  */
-export type Condition = 'new' | 'good' | 'fair' | 'poor' | 'broken' | 'Excellent';
+export type Condition =
+  | 'new'
+  | 'good'
+  | 'fair'
+  | 'poor'
+  | 'broken'
+  | 'New'
+  | 'Good'
+  | 'Fair'
+  | 'Poor'
+  | 'Broken'
+  | 'Excellent';
 
 /** Normalise any condition string to lowercase for consistent lookup. */
 function normalise(condition: string): string {

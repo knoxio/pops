@@ -75,7 +75,7 @@ export function listInventoryItems(opts: ListInventoryItemsOptions): InventoryLi
     conditions.push(eq(homeInventory.type, type));
   }
   if (condition) {
-    conditions.push(eq(homeInventory.condition, condition));
+    conditions.push(sql`lower(${homeInventory.condition}) = lower(${condition})`);
   }
   if (inUse !== undefined) {
     conditions.push(eq(homeInventory.inUse, inUse ? 1 : 0));

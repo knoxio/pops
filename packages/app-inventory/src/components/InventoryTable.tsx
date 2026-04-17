@@ -165,9 +165,11 @@ export interface InventoryTableProps {
   searchable?: boolean;
 }
 
+const EMPTY_LOCATION_MAP: ReadonlyMap<string, LocationSegment[]> = new Map();
+
 export function InventoryTable({
   items,
-  locationPathMap = new Map(),
+  locationPathMap = EMPTY_LOCATION_MAP,
   loading,
   searchable = false,
 }: InventoryTableProps) {
