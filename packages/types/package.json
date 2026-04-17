@@ -15,16 +15,9 @@
     "build": "tsc",
     "dev": "tsc --watch --preserveWatchOutput",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src",
-    "lint:fix": "eslint src --fix",
-    "format:check": "oxfmt -c ../../.oxfmtrc.json --check \"src/**/*.ts\"",
-    "format:fix": "oxfmt -c ../../.oxfmtrc.json --write \"src/**/*.ts\"",
-    "test": "echo \"(no tests in @pops/types)\"",
-    "ci:fix": "pnpm format:fix && pnpm lint:fix && pnpm typecheck && pnpm format:check && pnpm lint"
+    "test": "echo \"(no tests in @pops/types)\""
   },
   "devDependencies": {
-    "eslint": "^10.2.0",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.58.2"
+    "typescript": "^6.0.3"
   }
 }

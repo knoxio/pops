@@ -6,12 +6,7 @@
   "main": "src/index.ts",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src",
-    "lint:fix": "eslint src --fix",
-    "format:check": "oxfmt -c ../../.oxfmtrc.json --check \"src/**/*.ts\"",
-    "format:fix": "oxfmt -c ../../.oxfmtrc.json --write \"src/**/*.ts\"",
-    "test": "echo \"(no tests in @pops/api-client)\"",
-    "ci:fix": "pnpm format:fix && pnpm lint:fix && pnpm typecheck && pnpm format:check && pnpm lint"
+    "test": "echo \"(no tests in @pops/api-client)\""
   },
   "dependencies": {
     "@pops/api": "workspace:*",
@@ -19,9 +14,7 @@
     "@trpc/react-query": "11.16.0"
   },
   "devDependencies": {
-    "eslint": "^10.2.0",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.58.2"
+    "typescript": "^6.0.3"
   },
   "peerDependencies": {
     "react": "^19.0.0"

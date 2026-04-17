@@ -43,7 +43,7 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
         if: inputs.skip != 'true'
-      - run: cd ${{ inputs.package-path }} && pnpm lint
+      - run: pnpm lint
         if: inputs.skip != 'true'
 
   typecheck:
@@ -118,5 +118,5 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
         if: inputs.skip != 'true'
-      - run: cd ${{ inputs.package-path }} && pnpm format:check
+      - run: pnpm format:check
         if: inputs.skip != 'true'

@@ -43,16 +43,10 @@
     "media:sync-images": "tsx scripts/sync-images.ts",
     "media:sync-metadata": "tsx scripts/sync-metadata.ts",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src",
-    "lint:fix": "eslint src --fix",
-    "format:check": "oxfmt -c ../../.oxfmtrc.json --check \"src/**/*.ts\"",
-    "format:fix": "oxfmt -c ../../.oxfmtrc.json --write \"src/**/*.ts\"",
     "test": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:all": "vitest run && vitest run --config vitest.integration.config.ts",
-    "test:watch": "vitest",
-    "ci": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test && pnpm build",
-    "ci:fix": "pnpm format:fix && pnpm lint:fix && pnpm typecheck && pnpm format:check && pnpm lint"
+    "test:watch": "vitest"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.90.0",
@@ -80,16 +74,12 @@
     "@types/node-cron": "^3.0.11",
     "@types/papaparse": "^5.5.2",
     "@types/supertest": "^6.0.3",
-    "@typescript-eslint/eslint-plugin": "^8.58.2",
-    "@typescript-eslint/parser": "^8.58.2",
     "drizzle-kit": "^0.31.10",
-    "eslint": "^10.2.0",
     "msw": "^2.13.4",
     "papaparse": "^5.5.3",
     "supertest": "^7.2.2",
     "tsx": "^4.19.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.58.2",
     "vitest": "^4.1.4"
   }
 }

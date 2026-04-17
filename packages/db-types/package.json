@@ -19,20 +19,13 @@
     "build": "tsc",
     "dev": "tsc --watch --preserveWatchOutput",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src",
-    "lint:fix": "eslint src --fix",
-    "format:check": "oxfmt -c ../../.oxfmtrc.json --check \"src/**/*.ts\"",
-    "format:fix": "oxfmt -c ../../.oxfmtrc.json --write \"src/**/*.ts\"",
-    "test": "echo \"(no tests in @pops/db-types)\"",
-    "ci:fix": "pnpm format:fix && pnpm lint:fix && pnpm typecheck && pnpm format:check && pnpm lint"
+    "test": "echo \"(no tests in @pops/db-types)\""
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
-    "eslint": "^10.2.0",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.58.2"
+    "typescript": "^6.0.3"
   }
 }

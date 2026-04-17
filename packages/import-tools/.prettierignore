@@ -1,6 +1,0 @@
-dist
-node_modules
-*.csv
-*.json
-*.jsonl
-pnpm-lock.yaml

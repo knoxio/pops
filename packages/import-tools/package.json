@@ -5,16 +5,9 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src",
-    "lint:fix": "eslint src --fix",
-    "format": "oxfmt -c ../../.oxfmtrc.json --check src",
-    "format:check": "oxfmt -c ../../.oxfmtrc.json --check src",
-    "format:fix": "oxfmt -c ../../.oxfmtrc.json --write src",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "ci": "pnpm typecheck && pnpm lint && pnpm format:check && pnpm test",
-    "ci:fix": "pnpm format:fix && pnpm lint:fix && pnpm typecheck && pnpm format:check && pnpm lint",
     "import:anz": "tsx src/import-anz.ts",
     "import:amex": "tsx src/import-amex.ts",
     "import:ing": "tsx src/import-ing.ts",
@@ -31,14 +24,8 @@
     "csv-parse": "^6.2.1"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
     "@types/better-sqlite3": "^7.6.12",
     "@types/node": "^25.6.0",
-    "@typescript-eslint/eslint-plugin": "^8.58.2",
-    "@typescript-eslint/parser": "^8.58.2",
-    "eslint": "^10.2.0",
-    "eslint-config-prettier": "^10.1.8",
-    "globals": "^17.5.0",
     "tsx": "^4.19.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.4"

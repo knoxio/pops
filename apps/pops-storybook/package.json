@@ -7,12 +7,7 @@
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint .storybook",
-    "lint:fix": "eslint .storybook --fix",
-    "format:check": "oxfmt -c ../../.oxfmtrc.json --check \".storybook/**/*.{ts,tsx}\"",
-    "format:fix": "oxfmt -c ../../.oxfmtrc.json --write \".storybook/**/*.{ts,tsx}\"",
-    "test": "echo \"(no tests in @pops/storybook)\"",
-    "ci:fix": "pnpm format:fix && pnpm lint:fix && pnpm typecheck && pnpm format:check && pnpm lint"
+    "test": "echo \"(no tests in @pops/storybook)\""
   },
   "dependencies": {
     "@pops/app-finance": "workspace:*",
@@ -29,7 +24,6 @@
     "@tailwindcss/vite": "4.2.2",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "eslint-plugin-storybook": "^10.3.5",
     "storybook": "^10.3.5",
     "typescript": "^6.0.3",
     "vite": "^8.0.8"

@@ -22,19 +22,6 @@
     "typecheck": {
       "dependsOn": ["^build"],
       "outputs": []
-    },
-    "lint": {
-      "dependsOn": ["^build"],
-      "outputs": []
-    },
-    "lint:fix": {
-      "outputs": []
-    },
-    "format:check": {
-      "outputs": []
-    },
-    "format:fix": {
-      "outputs": []
     }
   }
 }

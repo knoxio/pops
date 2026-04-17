@@ -78,11 +78,11 @@ jobs:
 
       - name: Lint
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: cd apps/pops-shell && pnpm lint
+        run: pnpm lint
 
       - name: Format check
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: cd apps/pops-shell && pnpm format:check
+        run: pnpm format:check
 
       - name: Test
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'

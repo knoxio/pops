@@ -8,6 +8,26 @@
   "trailingComma": "es5",
   "arrowParens": "always",
   "endOfLine": "lf",
+  "sortImports": {
+    "order": "asc",
+    "ignoreCase": true,
+    "newlinesBetween": true,
+    "internalPattern": ["@pops/"],
+    "groups": [
+      "side_effect",
+      "side_effect_style",
+      "builtin",
+      "external",
+      ["internal", "subpath"],
+      ["parent", "sibling", "index"],
+      "style",
+      "type-builtin",
+      "type-external",
+      ["type-internal", "type-subpath"],
+      ["type-parent", "type-sibling", "type-index"],
+      "unknown"
+    ]
+  },
   "ignorePatterns": [
     "node_modules",
     "dist",
@@ -15,6 +35,26 @@
     "pnpm-lock.yaml",
     "package-lock.json",
     "*.csv",
-    "*.jsonl"
+    "*.jsonl",
+    "**/*.tsbuildinfo",
+    "**/*.min.js",
+    "**/*.min.css",
+    "**/*.map",
+    "**/__snapshots__/**",
+    "**/*.snap",
+    "**/.turbo/**",
+    "**/.vercel/**",
+    ".github/**",
+    ".vscode/**",
+    "**/dist/**",
+    "**/.next/**",
+    "**/out/**",
+    "**/build/**",
+    "**/coverage/**",
+    "**/playwright-report/**",
+    "**/.vitest-reports/**",
+    "**/test-results/**",
+    "**/.nyc_output/**",
+    "**/storybook-static/**"
   ]
 }
