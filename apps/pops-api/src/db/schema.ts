@@ -103,7 +103,7 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       last_edited_time TEXT NOT NULL
     );
     CREATE UNIQUE INDEX IF NOT EXISTS idx_budgets_category_period
-      ON budgets(category, COALESCE(period, '__NULL__'));
+      ON budgets(category, COALESCE(period, char(0)));
 
     CREATE TABLE IF NOT EXISTS locations (
       id         TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),

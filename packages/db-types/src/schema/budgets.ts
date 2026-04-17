@@ -22,9 +22,11 @@ export const budgets = sqliteTable(
     // SQLite NULL != NULL in standard UNIQUE constraints, so two rows with the same
     // category and NULL period would not conflict. COALESCE with a sentinel value
     // ensures NULL periods are treated as equal for uniqueness purposes.
+    // char(0) (NUL byte) cannot appear in user-supplied text, eliminating
+    // any risk of a real period value colliding with the NULL sentinel.
     uniqueIndex('idx_budgets_category_period').on(
       table.category,
-      sql`COALESCE(${table.period}, '__NULL__')`
+      sql`COALESCE(${table.period}, char(0))`
     ),
   ]
 );
