@@ -170,6 +170,21 @@ export function stopScheduler(): SchedulerStatus {
   return getSchedulerStatus();
 }
 
+/**
+ * Stop the in-memory interval timer without touching persisted settings.
+ * Use this during graceful shutdown so the scheduler auto-resumes on restart.
+ * For user-initiated disable (which should prevent auto-resume), use
+ * `stopScheduler()` instead.
+ */
+export function stopPlexSchedulerTask(): void {
+  if (timer) {
+    clearInterval(timer);
+    timer = null;
+  }
+  nextSyncAt = null;
+  console.warn('[Plex Scheduler] Timer stopped (settings preserved)');
+}
+
 /** Get current scheduler status. */
 export function getSchedulerStatus(): SchedulerStatus {
   return {
