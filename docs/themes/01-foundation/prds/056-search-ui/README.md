@@ -23,14 +23,14 @@ Build the search UI — a TopBar search bar with a results panel that shows cont
 
 ## User Stories
 
-| #   | Story                                                                   | Summary                                                                       | Status | Parallelisable   |
-| --- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------ | ---------------- |
-| 01  | [us-01-search-bar](us-01-search-bar.md)                                 | TopBar search input with keyboard shortcut, focus management, debounce        | Done   | Yes              |
-| 02  | [us-02-results-panel](us-02-results-panel.md)                           | Dropdown panel layout with domain sections, context ordering, close behavior  | Done   | Yes              |
-| 02b | [us-02b-result-component-registry](us-02b-result-component-registry.md) | Frontend ResultComponent registry, domain lookup, generic fallback, show more | Done   | Blocked by us-02 |
-| 03  | [us-03-result-navigation](us-03-result-navigation.md)                   | Click/keyboard-navigate results, resolve URIs to routes                       | Done   | Yes              |
+| #   | Story                                                                   | Summary                                                                       | Status  | Parallelisable   |
+| --- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------- | ---------------- |
+| 01  | [us-01-search-bar](us-01-search-bar.md)                                 | TopBar search input with keyboard shortcut, focus management, debounce        | Done    | Yes              |
+| 02  | [us-02-results-panel](us-02-results-panel.md)                           | Dropdown panel layout with domain sections, context ordering, close behavior  | Done    | Yes              |
+| 02b | [us-02b-result-component-registry](us-02b-result-component-registry.md) | Frontend ResultComponent registry, domain lookup, generic fallback, show more | Done    | Blocked by us-02 |
+| 03  | [us-03-result-navigation](us-03-result-navigation.md)                   | Click/keyboard-navigate results, resolve URIs to routes                       | Done    | Yes              |
 | 04  | [us-04-recent-searches](us-04-recent-searches.md)                       | Recent search history in localStorage, shown when input is empty              | Partial | —                |
-| 05  | [us-05-keyboard-nav](us-05-keyboard-nav.md)                             | Arrow keys navigate results across sections, Enter selects, Escape closes     | Done   | —                |
+| 05  | [us-05-keyboard-nav](us-05-keyboard-nav.md)                             | Arrow keys navigate results across sections, Enter selects, Escape closes     | Done    | —                |
 
 ## Out of Scope
 
