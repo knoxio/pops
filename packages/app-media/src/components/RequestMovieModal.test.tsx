@@ -282,7 +282,7 @@ describe('RequestMovieModal', () => {
         onSuccess();
       });
 
-      expect(screen.getByText('Movie Added')).toBeInTheDocument();
+      expect(screen.getByText('Movie Downloaded')).toBeInTheDocument();
 
       act(() => vi.advanceTimersByTime(1500));
       expect(onClose).toHaveBeenCalled();

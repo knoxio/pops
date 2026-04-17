@@ -645,8 +645,8 @@ export const arrRouter = router({
           qualityProfileId: Number(qualityProfileId),
           rootFolderPath,
         });
-        arrService.clearMovieStatusCache(input.tmdbId);
       }
+      arrService.clearMovieStatusCache(input.tmdbId);
 
       // Create POPS library entry (no-op if it already exists)
       try {
@@ -654,19 +654,25 @@ export const arrRouter = router({
         const imageCache = getImageCache();
         await addMovieToLibrary(input.tmdbId, tmdbClient, imageCache);
       } catch (err) {
-        console.warn(
-          '[arr] downloadAndProtect: failed to create library entry for tmdb=%d:',
-          input.tmdbId,
-          err
-        );
+        throw new TRPCError({
+          code: 'INTERNAL_SERVER_ERROR',
+          message: `Failed to create library entry: ${err instanceof Error ? err.message : String(err)}`,
+        });
       }
 
       // Set rotation_status = 'protected'
-      db.update(movies)
+      const updateResult = db
+        .update(movies)
         .set({ rotationStatus: 'protected' })
         .where(eq(movies.tmdbId, input.tmdbId))
         .run();
+      if (updateResult.changes === 0) {
+        throw new TRPCError({
+          code: 'NOT_FOUND',
+          message: `No library entry found for tmdbId ${input.tmdbId}`,
+        });
+      }
 
-      return { success: true, alreadyInRadarr: check.exists };
+      return { data: { alreadyInRadarr: check.exists } };
     }),
 });

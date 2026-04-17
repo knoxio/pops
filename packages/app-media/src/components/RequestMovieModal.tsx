@@ -216,7 +216,7 @@ export function RequestMovieModal({
               {success ? (
                 <>
                   <CheckCircle2 className="h-4 w-4 mr-1.5" />
-                  Movie Added
+                  {isDownloadMode ? 'Movie Downloaded' : 'Movie Added'}
                 </>
               ) : isPending ? (
                 <>
