@@ -2,7 +2,6 @@
 
 > PRD: [043 — Inventory Data Model & API](README.md)
 > Status: Done
-> lastChecked: 2026-04-18
 
 ## Description
 
