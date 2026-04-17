@@ -233,6 +233,7 @@ function RotationButtons({
               tmdbId={tmdbId}
               title={title}
               year={year}
+              mode="download"
             />
           </>
         )}
@@ -267,6 +268,7 @@ function RotationButtons({
             tmdbId={tmdbId}
             title={title}
             year={year}
+            mode="download"
           />
         </>
       )}

@@ -2,9 +2,15 @@
  * Arr tRPC router — Radarr/Sonarr integration endpoints.
  */
 import { TRPCError } from '@trpc/server';
+import { eq } from 'drizzle-orm';
 import { z } from 'zod';
 
+import { movies, settings } from '@pops/db-types';
+
+import { getDrizzle } from '../../../db.js';
 import { protectedProcedure, router } from '../../../trpc.js';
+import { addMovie as addMovieToLibrary } from '../library/service.js';
+import { getImageCache, getTmdbClient } from '../tmdb/index.js';
 import { RadarrClient } from './radarr-client.js';
 import * as arrService from './service.js';
 import { SonarrClient } from './sonarr-client.js';
@@ -587,5 +593,80 @@ export const arrRouter = router({
         }
         throw err;
       }
+    }),
+
+  /**
+   * Add a movie to Radarr, create a POPS library entry, and set rotation_status = 'protected'.
+   *
+   * Uses the rotation quality profile and root folder from settings so callers do not
+   * need to supply those values. Intended for the Download button on discovery pages.
+   */
+  downloadAndProtect: protectedProcedure
+    .input(
+      z.object({
+        tmdbId: z.number().int().positive(),
+        title: z.string().min(1),
+        year: z.number().int().positive(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const client = arrService.getRadarrClient();
+      if (!client) {
+        throw new TRPCError({ code: 'PRECONDITION_FAILED', message: 'Radarr not configured' });
+      }
+
+      const db = getDrizzle();
+
+      const qualityProfileId = db
+        .select()
+        .from(settings)
+        .where(eq(settings.key, 'rotation_quality_profile_id'))
+        .get()?.value;
+      const rootFolderPath = db
+        .select()
+        .from(settings)
+        .where(eq(settings.key, 'rotation_root_folder_path'))
+        .get()?.value;
+
+      if (!qualityProfileId || !rootFolderPath) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'Radarr quality profile or root folder not configured',
+        });
+      }
+
+      // Check if already in Radarr
+      const check = await client.checkMovie(input.tmdbId);
+      if (!check.exists) {
+        await client.addMovie({
+          tmdbId: input.tmdbId,
+          title: input.title,
+          year: input.year,
+          qualityProfileId: Number(qualityProfileId),
+          rootFolderPath,
+        });
+        arrService.clearMovieStatusCache(input.tmdbId);
+      }
+
+      // Create POPS library entry (no-op if it already exists)
+      try {
+        const tmdbClient = getTmdbClient();
+        const imageCache = getImageCache();
+        await addMovieToLibrary(input.tmdbId, tmdbClient, imageCache);
+      } catch (err) {
+        console.warn(
+          '[arr] downloadAndProtect: failed to create library entry for tmdb=%d:',
+          input.tmdbId,
+          err
+        );
+      }
+
+      // Set rotation_status = 'protected'
+      db.update(movies)
+        .set({ rotationStatus: 'protected' })
+        .where(eq(movies.tmdbId, input.tmdbId))
+        .run();
+
+      return { success: true, alreadyInRadarr: check.exists };
     }),
 });

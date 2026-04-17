@@ -4,8 +4,12 @@ import { useEffect, useState } from 'react';
 /**
  * RequestMovieModal — Modal for adding a movie to Radarr.
  *
- * Presents quality profile and root folder dropdowns,
- * then submits to Radarr's addMovie endpoint.
+ * In `'request'` mode (default): presents quality profile and root folder
+ * dropdowns, then submits to Radarr's addMovie endpoint.
+ *
+ * In `'download'` mode: adds to Radarr using rotation settings, creates a
+ * POPS library entry, and sets rotation_status = 'protected'. No profile or
+ * folder selection is shown because those are read from server settings.
  */
 import {
   Dialog,
@@ -25,6 +29,8 @@ interface RequestMovieModalProps {
   tmdbId: number;
   title: string;
   year: number;
+  /** `'request'` (default) uses addMovie; `'download'` uses downloadAndProtect. */
+  mode?: 'request' | 'download';
 }
 
 function formatBytes(bytes: number): string {
@@ -32,80 +38,118 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
 
-export function RequestMovieModal({ open, onClose, tmdbId, title, year }: RequestMovieModalProps) {
+export function RequestMovieModal({
+  open,
+  onClose,
+  tmdbId,
+  title,
+  year,
+  mode = 'request',
+}: RequestMovieModalProps) {
   const [qualityProfileId, setQualityProfileId] = useState<number | null>(null);
   const [rootFolderPath, setRootFolderPath] = useState<string>('');
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isDownloadMode = mode === 'download';
+
   const profiles = trpc.media.arr.getQualityProfiles.useQuery(undefined, {
-    enabled: open,
+    enabled: open && !isDownloadMode,
     retry: false,
   });
   const folders = trpc.media.arr.getRootFolders.useQuery(undefined, {
-    enabled: open,
+    enabled: open && !isDownloadMode,
     retry: false,
   });
 
-  // Default to first option once loaded
+  // Default to first option once loaded (request mode only)
   useEffect(() => {
-    if (profiles.data?.data?.length && qualityProfileId === null) {
+    if (!isDownloadMode && profiles.data?.data?.length && qualityProfileId === null) {
       setQualityProfileId(profiles.data.data[0]!.id);
     }
-  }, [profiles.data?.data, qualityProfileId]);
+  }, [isDownloadMode, profiles.data?.data, qualityProfileId]);
 
   useEffect(() => {
-    if (folders.data?.data?.length && !rootFolderPath) {
+    if (!isDownloadMode && folders.data?.data?.length && !rootFolderPath) {
       setRootFolderPath(folders.data.data[0]!.path);
     }
-  }, [folders.data?.data, rootFolderPath]);
+  }, [isDownloadMode, folders.data?.data, rootFolderPath]);
 
   const utils = trpc.useUtils();
 
+  const resetState = () => {
+    setSuccess(false);
+    setQualityProfileId(null);
+    setRootFolderPath('');
+  };
+
+  const onMutationSuccess = () => {
+    setSuccess(true);
+    setError(null);
+    void utils.media.arr.getMovieStatus.invalidate({ tmdbId });
+    setTimeout(() => {
+      onClose();
+      resetState();
+    }, 1500);
+  };
+
+  const onMutationError = (err: { message: string }) => {
+    setError(err.message);
+  };
+
   const addMovie = trpc.media.arr.addMovie.useMutation({
-    onSuccess: () => {
-      setSuccess(true);
-      setError(null);
-      utils.media.arr.getMovieStatus.invalidate({ tmdbId });
-      setTimeout(() => {
-        onClose();
-        setSuccess(false);
-        setQualityProfileId(null);
-        setRootFolderPath('');
-      }, 1500);
-    },
-    onError: (err: { message: string }) => {
-      setError(err.message);
-    },
+    onSuccess: onMutationSuccess,
+    onError: onMutationError,
   });
 
+  const downloadAndProtect = trpc.media.arr.downloadAndProtect.useMutation({
+    onSuccess: onMutationSuccess,
+    onError: onMutationError,
+  });
+
+  const isPending = isDownloadMode ? downloadAndProtect.isPending : addMovie.isPending;
+
   const handleClose = () => {
-    if (!addMovie.isPending) {
+    if (!isPending) {
       onClose();
       setError(null);
-      setSuccess(false);
-      setQualityProfileId(null);
-      setRootFolderPath('');
+      resetState();
     }
   };
 
   const profileList = profiles.data?.data ?? [];
   const folderList = folders.data?.data ?? [];
-  const isDataLoading = profiles.isLoading || folders.isLoading;
-  const canSubmit = qualityProfileId !== null && rootFolderPath && !addMovie.isPending && !success;
+  const isDataLoading = !isDownloadMode && (profiles.isLoading || folders.isLoading);
+  const canSubmit = isDownloadMode
+    ? !isPending && !success
+    : qualityProfileId !== null && rootFolderPath !== '' && !isPending && !success;
+
+  const handleSubmit = () => {
+    setError(null);
+    if (isDownloadMode) {
+      downloadAndProtect.mutate({ tmdbId, title, year });
+    } else if (qualityProfileId !== null && rootFolderPath) {
+      addMovie.mutate({ tmdbId, title, year, qualityProfileId, rootFolderPath });
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Request Movie</DialogTitle>
+          <DialogTitle>{isDownloadMode ? 'Download Movie' : 'Request Movie'}</DialogTitle>
           <DialogDescription>
             {title} ({year})
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 pt-2">
-          {isDataLoading ? (
+          {isDownloadMode ? (
+            <p className="text-sm text-muted-foreground">
+              This movie will be added to Radarr using your rotation settings and marked as
+              protected.
+            </p>
+          ) : isDataLoading ? (
             <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
               <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
               Loading options...
@@ -119,8 +163,8 @@ export function RequestMovieModal({ open, onClose, tmdbId, title, year }: Reques
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  profiles.refetch();
-                  folders.refetch();
+                  void profiles.refetch();
+                  void folders.refetch();
                 }}
               >
                 Retry
@@ -136,7 +180,7 @@ export function RequestMovieModal({ open, onClose, tmdbId, title, year }: Reques
                 onChange={(e) => {
                   setQualityProfileId(Number(e.target.value));
                 }}
-                disabled={addMovie.isPending || success}
+                disabled={isPending || success}
                 options={profileList.map((p) => ({
                   value: String(p.id),
                   label: p.name,
@@ -151,7 +195,7 @@ export function RequestMovieModal({ open, onClose, tmdbId, title, year }: Reques
                 onChange={(e) => {
                   setRootFolderPath(e.target.value);
                 }}
-                disabled={addMovie.isPending || success}
+                disabled={isPending || success}
                 options={folderList.map((f) => ({
                   value: f.path,
                   label: `${f.path} (${formatBytes(f.freeSpace)} free)`,
@@ -165,34 +209,22 @@ export function RequestMovieModal({ open, onClose, tmdbId, title, year }: Reques
 
           {/* Actions */}
           <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={handleClose} disabled={addMovie.isPending}>
+            <Button variant="outline" onClick={handleClose} disabled={isPending}>
               Cancel
             </Button>
-            <Button
-              onClick={() => {
-                if (qualityProfileId !== null && rootFolderPath) {
-                  setError(null);
-                  addMovie.mutate({
-                    tmdbId,
-                    title,
-                    year,
-                    qualityProfileId,
-                    rootFolderPath,
-                  });
-                }
-              }}
-              disabled={!canSubmit}
-            >
+            <Button onClick={handleSubmit} disabled={!canSubmit}>
               {success ? (
                 <>
                   <CheckCircle2 className="h-4 w-4 mr-1.5" />
                   Movie Added
                 </>
-              ) : addMovie.isPending ? (
+              ) : isPending ? (
                 <>
                   <RefreshCw className="h-4 w-4 mr-1.5 animate-spin" />
-                  Adding...
+                  {isDownloadMode ? 'Downloading...' : 'Adding...'}
                 </>
+              ) : isDownloadMode ? (
+                'Download'
               ) : (
                 'Request'
               )}
