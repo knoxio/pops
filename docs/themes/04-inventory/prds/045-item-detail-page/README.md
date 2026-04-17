@@ -144,4 +144,4 @@ All four stories can be built in parallel — they render independent sections o
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

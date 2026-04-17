@@ -80,4 +80,4 @@ US-02, US-03, and US-04 can parallelise after US-01.
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17

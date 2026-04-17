@@ -64,7 +64,7 @@ The endpoint returns all items with warranty dates in a single call. Tier assign
 
 | #   | Story                                                         | Summary                                                                                       | Status  | Parallelisable   |
 | --- | ------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------- | ---------------- |
-| 01  | [us-01-warranty-tiers](us-01-warranty-tiers.md)               | Warranty page with urgency tiers, colour coding, collapsible sections, sort by expiry         | Partial | No (first)       |
+| 01  | [us-01-warranty-tiers](us-01-warranty-tiers.md)               | Warranty page with urgency tiers, colour coding, collapsible sections, sort by expiry         | Done    | No (first)       |
 | 02  | [us-02-warranty-items](us-02-warranty-items.md)               | Item rows with name/assetId/brand/model, expiry date, days remaining, detail + document links | Partial | Blocked by us-01 |
 | 03  | [us-03-warranty-empty-states](us-03-warranty-empty-states.md) | Page-level and per-tier empty states, edge case handling                                      | Done    | Blocked by us-01 |
 
@@ -79,4 +79,4 @@ US-02 and US-03 can parallelise after US-01.
 
 ## Drift Check
 
-last checked: never
+last checked: 2026-04-17
