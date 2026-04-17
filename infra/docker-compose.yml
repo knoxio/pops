@@ -26,6 +26,9 @@ services:
       NODE_ENV: production
       SQLITE_PATH: /data/sqlite/pops.db
       PORT: '3000'
+      # Paperless-ngx integration (optional — leave unset to disable)
+      PAPERLESS_BASE_URL: ${PAPERLESS_BASE_URL:-}
+      PAPERLESS_API_TOKEN: ${PAPERLESS_API_TOKEN:-}
     expose:
       - '3000'
     healthcheck:
