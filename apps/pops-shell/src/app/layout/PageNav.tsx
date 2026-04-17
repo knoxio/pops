@@ -24,7 +24,7 @@ export function PageNav() {
       aria-label={`${activeApp.label} pages`}
     >
       <div className="px-4 py-4 border-b border-border">
-        <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-app-accent">
+        <span className="text-2xs font-bold uppercase tracking-label text-app-accent">
           {activeApp.label}
         </span>
       </div>

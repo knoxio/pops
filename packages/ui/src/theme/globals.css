@@ -457,4 +457,10 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Utility: label letter-spacing (section headers, nav labels, stat labels)
+ * 0.15em — wider than tracking-widest (0.1em) for uppercase micro-labels. */
+@utility tracking-label {
+  letter-spacing: 0.15em;
+}
+
 /* App accent — removed @utility block, handled via @theme inline below */

@@ -42,6 +42,7 @@ export function AppRail({ className }: AppRailProps) {
   const railOpen = useUIStore((state) => state.railOpen);
   const toggleRail = useUIStore((state) => state.toggleRail);
   const setPageNavOpen = useUIStore((state) => state.setPageNavOpen);
+  const setSkipNextPageNavClose = useUIStore((state) => state.setSkipNextPageNavClose);
   const isTablet = useIsTablet();
 
   if (!railOpen) {
@@ -82,6 +83,12 @@ export function AppRail({ className }: AppRailProps) {
             <TooltipTrigger asChild>
               <button
                 onClick={() => {
+                  if (isTablet) {
+                    // Set the skip flag before navigate so the location-change
+                    // effect in RootLayout does not collapse the overlay we are
+                    // about to open. The effect will clear the flag on its next run.
+                    setSkipNextPageNavClose(true);
+                  }
                   navigate(app.basePath);
                   if (isTablet) {
                     setPageNavOpen(true);

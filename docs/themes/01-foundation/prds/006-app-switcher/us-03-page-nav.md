@@ -1,7 +1,8 @@
 # US-03: Build page nav panel
 
 > PRD: [006 — App Switcher](README.md)
-> Status: Partial
+> Status: Done
+> Last checked: 2026-04-18
 
 ## Description
 
@@ -14,9 +15,9 @@ As a developer, I want a page nav panel showing the active app's pages so that u
 - [x] Active page visually highlighted (background, font weight)
 - [x] Panel appears alongside the app rail (~200px wide)
 - [x] Smooth transition when switching between apps (page list updates)
-- [ ] On tablet (768-1023px), collapses by default, opens as overlay on app icon click
+- [x] On tablet (768-1023px), collapses by default, opens as overlay on app icon click
 - [x] Panel has `overflow-y-auto` for apps with 10+ items
-- [ ] All styling uses design tokens
+- [x] All styling uses design tokens
 
 ## Notes
 

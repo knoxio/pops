@@ -93,7 +93,7 @@ With only one app registered, the switcher should not feel empty:
 | --- | ------------------------------------------------------- | --------------------------------------------------------------------- | ------- | ----------------------- |
 | 01  | [us-01-nav-types-registry](us-01-nav-types-registry.md) | Define AppNavConfig/AppNavItem types and app registry in the shell    | Partial | No (first)              |
 | 02  | [us-02-app-rail](us-02-app-rail.md)                     | Build vertical app rail with icons, active indicator, collapse toggle | Done    | Blocked by us-01        |
-| 03  | [us-03-page-nav](us-03-page-nav.md)                     | Build page nav panel showing active app's pages                       | Partial | Blocked by us-01        |
+| 03  | [us-03-page-nav](us-03-page-nav.md)                     | Build page nav panel showing active app's pages                       | Done    | Blocked by us-01        |
 | 04  | [us-04-layout-integration](us-04-layout-integration.md) | Integrate app rail + page nav into RootLayout, replace basic sidebar  | Done    | Blocked by us-02, us-03 |
 
 ## Verification
@@ -114,4 +114,4 @@ With only one app registered, the switcher should not feel empty:
 
 ## Drift Check
 
-last checked: 2026-04-17
+last checked: 2026-04-18
