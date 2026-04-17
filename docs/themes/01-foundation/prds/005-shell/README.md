@@ -214,3 +214,7 @@ Every US is only done when:
 - App theme colour propagation (PRD-007)
 - Responsive design audit (PRD-010)
 - Individual app pages (each app theme owns its pages)
+
+## Drift Check
+
+last checked: never

@@ -217,3 +217,7 @@ US-01, US-04, US-10 can start in parallel. US-07, US-08, US-09 (domain verbs) ca
 - Persistent conversation history beyond 24h
 - AI-initiated messages (assistant always responds, never initiates)
 - Image/file upload in chat (future: receipt photos)
+
+## Drift Check
+
+last checked: never

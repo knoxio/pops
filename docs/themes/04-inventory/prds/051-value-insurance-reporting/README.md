@@ -93,3 +93,7 @@ US-01 and US-02 can parallelise. US-03 blocked by us-01. US-04 blocked by us-03.
 - Depreciation calculations
 - Historical value tracking over time
 - Export to CSV or spreadsheet format
+
+## Drift Check
+
+last checked: never

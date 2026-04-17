@@ -103,3 +103,7 @@ US-01 is the API layer. US-02 builds the modal component. US-03 integrates the b
 - Quality profile management (create/edit profiles within POPS)
 - Download queue management (pause/cancel/prioritise)
 - Radarr tag management
+
+## Drift Check
+
+last checked: never

@@ -201,3 +201,7 @@ Fully parallel: us-01, us-03, us-04, us-10, us-11, us-13
 - Collaborative filtering (would need multi-user data)
 - Social features (shared lists, reviews)
 - IMDB trending (no public API without scraping)
+
+## Drift Check
+
+last checked: never

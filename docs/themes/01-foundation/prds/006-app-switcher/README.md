@@ -111,3 +111,7 @@ With only one app registered, the switcher should not feel empty:
 - App theme colour propagation (PRD-007)
 - Search / command palette (PRD-056/057)
 - Favourites, pinning, or notifications
+
+## Drift Check
+
+last checked: never

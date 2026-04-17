@@ -77,3 +77,7 @@ packages/ui/src/components/
 - Writing stories for every component (that's part of PRD-003 per-component USs)
 - Visual regression testing (Chromatic, Percy — future enhancement)
 - Storybook deployment or hosting
+
+## Drift Check
+
+last checked: never

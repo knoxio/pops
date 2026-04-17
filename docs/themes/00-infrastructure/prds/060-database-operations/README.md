@@ -92,3 +92,7 @@ US-02, US-03, and US-05 can all parallelise. US-04 depends on US-01 (needs the u
 - WAL archival or point-in-time recovery
 - Database replication or read replicas
 - Automated rollback of Drizzle migrations (Drizzle doesn't support down migrations — restore from backup instead)
+
+## Drift Check
+
+last checked: never

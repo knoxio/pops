@@ -45,3 +45,7 @@ Set up encrypted offsite backups of the SQLite database, Paperless-ngx data, and
 - Point-in-time recovery
 - Multi-region replication
 - Backup monitoring dashboard
+
+## Drift Check
+
+last checked: never

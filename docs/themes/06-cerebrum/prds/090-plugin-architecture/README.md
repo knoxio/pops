@@ -107,3 +107,7 @@ US-01 defines the interface that US-02 and US-03 depend on. US-04 (ingestion fil
 - Adapter marketplace or distribution (adapters are local TypeScript modules)
 - Real-time streaming from external sources (adapters use poll-based or webhook-based sync)
 - Adapter-specific UI configuration screens (configuration via plexus.toml)
+
+## Drift Check
+
+last checked: never

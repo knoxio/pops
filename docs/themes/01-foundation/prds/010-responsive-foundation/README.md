@@ -126,3 +126,7 @@ US-02, US-03, US-04 can parallelise after US-01.
 - App-specific page redesigns
 - Mobile-specific features (swipe, pull-to-refresh)
 - Performance optimisation for mobile networks
+
+## Drift Check
+
+last checked: never

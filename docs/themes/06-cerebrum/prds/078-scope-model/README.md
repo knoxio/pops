@@ -150,3 +150,7 @@ US-02 and US-03 can parallelise with each other after US-01 is complete. US-04 d
 - Scope-based consolidation boundaries (PRD-085 — Glia Curation)
 - UI for scope management (future — Cerebrum has no dedicated UI in this phase)
 - Scope permissions or multi-user access control — this is output filtering, not auth
+
+## Drift Check
+
+last checked: never

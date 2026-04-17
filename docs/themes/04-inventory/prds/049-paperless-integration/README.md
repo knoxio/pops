@@ -86,3 +86,7 @@ US-02 and US-03 can parallelise after US-01.
 - OCR or text extraction within POPS
 - Full Paperless management UI
 - Automatic document matching based on item name or purchase date
+
+## Drift Check
+
+last checked: never

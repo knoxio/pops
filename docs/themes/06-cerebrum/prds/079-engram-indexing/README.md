@@ -94,3 +94,7 @@ US-02 depends on us-01 (needs file events to process). US-03 depends on us-02 (n
 - Content creation or ingestion (PRD-081, Epic 02)
 - Curation or consolidation of indexed data (PRD-085 — Glia Curation)
 - LLM-based content classification (PRD-081 — Cortex Classification)
+
+## Drift Check
+
+last checked: never

@@ -51,3 +51,7 @@ Uses the existing `ai_usage` table (created in PRD-009):
 
 - AI configuration and rules management (PRD-053)
 - Per-domain cost breakdown (future — needs domain tagging on ai_usage rows)
+
+## Drift Check
+
+last checked: never

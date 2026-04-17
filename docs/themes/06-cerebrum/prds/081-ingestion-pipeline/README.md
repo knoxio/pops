@@ -122,3 +122,7 @@ US-01, US-02, and US-03 define the three input channels and can parallelise. US-
 - Semantic embedding generation (PRD-079 — Thalamus handles embedding sync after the engram is written)
 - Content curation or consolidation (PRD-085 — Glia operates on stored engrams, not during ingestion)
 - Template creation or editing (PRD-077 — templates are managed outside the ingestion pipeline)
+
+## Drift Check
+
+last checked: never

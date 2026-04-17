@@ -207,3 +207,7 @@ US-01 is the foundation (auth required for all Plex API calls). US-02 and US-03 
 - Plex user rating import
 - Bidirectional watchlist sync with Plex Discover (see [PRD-059](../059-plex-watchlist-sync/README.md))
 - Multi-user Plex support (single user only)
+
+## Drift Check
+
+last checked: never

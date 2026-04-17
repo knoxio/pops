@@ -73,3 +73,7 @@ All three channels are independent adapters and can be built in parallel. Each d
 - Voice input/output transcription
 - Third-party chat platform integrations beyond Telegram (future Plexus adapters)
 - Multi-turn conversations via MCP (MCP tools are stateless single-shot calls)
+
+## Drift Check
+
+last checked: never

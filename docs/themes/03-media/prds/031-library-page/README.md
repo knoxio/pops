@@ -91,3 +91,7 @@ US-02 depends on US-01 (needs MediaCard). US-03 can be built in parallel with US
 - Movie/show detail views (PRD-033, PRD-034)
 - Watch status indicators on cards (Epic 03: Tracking & Watchlist)
 - Comparison scores on cards (Epic 04: Ratings & Comparisons)
+
+## Drift Check
+
+last checked: never

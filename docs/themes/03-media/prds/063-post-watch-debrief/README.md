@@ -104,3 +104,7 @@ US-01 and US-02 can parallelise. US-04 and US-05 can parallelise once US-03 is d
 - TV show debriefs (movie-only for now)
 - Auto-starting debrief on watch event (manual trigger, prompted by notification)
 - Debrief analytics or progress tracking beyond the badge/banner
+
+## Drift Check
+
+last checked: never

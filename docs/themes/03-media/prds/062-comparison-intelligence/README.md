@@ -185,3 +185,7 @@ US-01, US-02, US-04, US-06 can be built in parallel. US-03 shares recalc logic w
 - TV show comparisons
 - AI-suggested pairs
 - Score decay over time (soft decay in ELO math — deferred, staleness model handles the user-facing concern)
+
+## Drift Check
+
+last checked: never

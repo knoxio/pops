@@ -141,3 +141,7 @@ All four stories can be built in parallel — they render independent sections o
 - Document linking to Paperless-ngx (Epic 04)
 - Location tree browsing from this page (Epic 02)
 - Connection management (adding/removing connections — Epic 03)
+
+## Drift Check
+
+last checked: never

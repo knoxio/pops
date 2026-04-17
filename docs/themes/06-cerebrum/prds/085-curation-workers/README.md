@@ -117,3 +117,7 @@ All four workers are independent and can be built in parallel. Each worker depen
 - Curation during the ingest pipeline (Glia runs asynchronously)
 - Cross-scope operations (never — regardless of trust level)
 - Scheduling of worker runs (PRD-089 — Reflex System handles cron triggers)
+
+## Drift Check
+
+last checked: never

@@ -88,3 +88,7 @@ US-01 and US-02 can parallelise. US-03 merges their outputs and requires both. U
 - Full-text keyword search (BM25) — may be added later as an additional retrieval mode
 - Caching of search results (future optimisation if needed)
 - Streaming context assembly for long contexts
+
+## Drift Check
+
+last checked: never

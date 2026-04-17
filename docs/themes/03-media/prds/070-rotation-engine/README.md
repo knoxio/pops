@@ -113,3 +113,7 @@ The rotation engine is a daily automated job that manages the movie library life
 - Smart removal selection based on ratings/comparisons (future enhancement)
 - Multi-instance Radarr support
 - Notification system (email/push when movies are leaving)
+
+## Drift Check
+
+last checked: never

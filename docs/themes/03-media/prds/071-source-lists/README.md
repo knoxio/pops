@@ -131,3 +131,7 @@ interface CandidateMovie {
 - Source recommendations based on user taste profile
 - Social features (sharing lists between POPS users)
 - TV show sources
+
+## Drift Check
+
+last checked: never

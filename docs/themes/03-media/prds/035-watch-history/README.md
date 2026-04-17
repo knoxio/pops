@@ -92,3 +92,7 @@ US-02 depends on US-01 (needs the history list to add episode-specific rendering
 - Undo toast for mark-as-watched (lives on the detail page, not the history page)
 - Plex watch history sync (PRD-039)
 - In-progress / "continue watching" tracking
+
+## Drift Check
+
+last checked: never

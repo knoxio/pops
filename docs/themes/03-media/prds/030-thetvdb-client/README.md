@@ -112,3 +112,7 @@ US-01 and US-02 can run in parallel. US-03 composes them into the add-to-library
 - UI for search/browse (Epic 02)
 - Plex metadata matching (Epic 06)
 - Episode still image caching (future enhancement — posters only for v1)
+
+## Drift Check
+
+last checked: never

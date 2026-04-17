@@ -231,3 +231,7 @@ US-03 and US-04 can parallelise with each other and with US-02. US-05 depends on
 - Scope inference or auto-classification (PRD-078, PRD-081)
 - File watching and automatic index sync (PRD-079)
 - Content curation or consolidation (PRD-085)
+
+## Drift Check
+
+last checked: never

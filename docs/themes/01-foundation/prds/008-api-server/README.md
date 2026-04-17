@@ -164,3 +164,7 @@ US-02 and US-03 can parallelise after US-01. US-04 depends on US-02. US-05 can p
 - Domain-specific business logic (each theme owns its modules)
 - Database schema (PRD-009)
 - Deployment configuration (Infrastructure theme)
+
+## Drift Check
+
+last checked: never

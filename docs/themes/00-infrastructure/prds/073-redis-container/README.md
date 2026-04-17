@@ -71,3 +71,7 @@ US-03 and US-04 can parallelise after US-01. US-02 depends on US-01 (needs a run
 - Redis Sentinel, clustering, or replication
 - Redis persistence (RDB/AOF) — ephemeral by design (ADR-016)
 - Redis AUTH password (single-user, backend-network-only, no external exposure)
+
+## Drift Check
+
+last checked: never

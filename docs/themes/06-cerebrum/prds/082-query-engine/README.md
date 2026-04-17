@@ -103,3 +103,7 @@ US-02 can parallelise with US-01 (scope inference is a separable module). US-03 
 - Answer formatting for specific output media (PRD-083 handles document formatting)
 - User feedback on answer quality (future — could feed into retrieval tuning)
 - Streaming answer generation (future — initial implementation is request/response)
+
+## Drift Check
+
+last checked: never

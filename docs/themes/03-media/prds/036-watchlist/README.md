@@ -105,3 +105,7 @@ US-02 depends on US-01 (needs the watchlist grid/list to add reorder interaction
 - Add/remove actions on detail pages (PRD-033, PRD-034 own the detail page actions)
 - Plex sync integration (PRD-039)
 - Watchlist sharing or export
+
+## Drift Check
+
+last checked: never

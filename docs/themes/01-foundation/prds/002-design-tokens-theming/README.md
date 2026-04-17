@@ -135,3 +135,7 @@ Every US is only done when:
 - Component implementation (PRD-003)
 - Storybook configuration (PRD-004)
 - Shell-side colour propagation mechanism (PRD-007)
+
+## Drift Check
+
+last checked: never

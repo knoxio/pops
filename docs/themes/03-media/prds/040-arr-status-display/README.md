@@ -102,3 +102,7 @@ US-01 is the foundation. US-02 and US-03 can be built in parallel once US-01 is 
 - Download queue management (start/stop/prioritise downloads)
 - Radarr/Sonarr webhook receivers for real-time status updates
 - Plex availability checks (Epic 06: Plex Sync)
+
+## Drift Check
+
+last checked: never

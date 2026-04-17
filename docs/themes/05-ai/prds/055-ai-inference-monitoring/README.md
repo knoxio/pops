@@ -30,3 +30,7 @@ Build proactive AI capabilities — anomaly detection, smart automations, and sc
 - Interactive assistant (PRD-054)
 - Training custom models
 - Real-time streaming analysis
+
+## Drift Check
+
+last checked: never

@@ -106,3 +106,7 @@ All 6 backend adapters (us-02 through us-07) can parallelise. All 6 frontend com
 - Contextual intelligence (PRD-058)
 - Full-text search indexing (SQLite FTS5 — future if LIKE queries are too slow)
 - Context enrichment / semantic tagging (v2 idea — see ideas/app-ideas.md)
+
+## Drift Check
+
+last checked: never

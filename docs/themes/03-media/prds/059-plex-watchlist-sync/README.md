@@ -118,3 +118,7 @@ US-02 and US-03 can parallelise after US-01.
 - Real-time sync via Plex webhooks (polling is sufficient)
 - Watchlist priority sync (Plex has no priority concept)
 - Syncing watchlist notes or metadata beyond the item reference
+
+## Drift Check
+
+last checked: never

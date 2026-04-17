@@ -118,3 +118,7 @@ US-01 (conversation engine) is the foundation. US-02, US-03, and US-04 depend on
 - Voice input/output
 - Multi-user conversations or shared contexts
 - Custom system prompt editing by the user (future)
+
+## Drift Check
+
+last checked: never

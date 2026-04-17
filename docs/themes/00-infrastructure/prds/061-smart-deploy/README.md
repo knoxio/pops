@@ -131,3 +131,7 @@ US-01 and US-05 can start in parallel. US-02 and US-03 depend on US-01. US-04 de
 - Multi-environment deployment (staging, production)
 - Container registry (images built locally on the server)
 - Deployment notifications (Slack, email)
+
+## Drift Check
+
+last checked: never

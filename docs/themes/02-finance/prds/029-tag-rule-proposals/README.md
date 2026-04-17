@@ -121,3 +121,7 @@ The UI must support accepting/rejecting suggestions at either scope:
 
 - Tag edits in the current import can produce a proposal that increases the quality of future tag suggestions. _(API ready; import wizard integration pending — knoxio/pops#1741.)_
 - Approving a tag rule proposal immediately improves suggested tags for remaining transactions in the current import without altering entity/type classification. _(Same — #1741.)_
+
+## Drift Check
+
+last checked: never

@@ -86,3 +86,7 @@ All three stories can be built in parallel. US-01 and US-02 are independent view
 - Location tree management (Epic 02)
 - Connection graph visualisation (Epic 03)
 - Warranty alerts in list view (Epic 05)
+
+## Drift Check
+
+last checked: never

@@ -113,3 +113,7 @@ US-01 and US-02 can be built in parallel. US-03 and US-04 both depend on the `gl
 - Scheduling worker runs (PRD-089 — Reflex System)
 - Notification delivery infrastructure (existing shell/Moltbot patterns)
 - User preference for which action types should never graduate (future — manual override of graduation)
+
+## Drift Check
+
+last checked: never

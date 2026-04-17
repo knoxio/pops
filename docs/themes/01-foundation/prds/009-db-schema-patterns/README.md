@@ -161,3 +161,7 @@ US-02, US-03, US-04 can parallelise after US-01. US-05 depends on tables existin
 - ORM choice (PRD-011)
 - Automated rollback tooling
 - Multi-database setup
+
+## Drift Check
+
+last checked: never

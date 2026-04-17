@@ -55,3 +55,7 @@ Tag-related procedures are untouched; they already handle the use case.
 - A "system tag" vs "user tag" distinction at runtime. The vocabulary table's `source: "seed"` field already exists if seed data ever wants to ship default tags; this PRD does not use it.
 - Any change to the persisted `transactions` schema or migrations.
 - Any change to `transaction_tag_rules` table or its CRUD endpoints.
+
+## Drift Check
+
+last checked: never

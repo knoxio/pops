@@ -139,3 +139,7 @@ Rejection is reserved for the "this whole direction is wrong, start over" case �
 - A correction like “WOOLWORTHS 12837192” → “Woolworths” produces a proposal that generalises correctly and matches other Woolworths variants in the same import after approval.
 - A transfer correction (e.g. PayID) can produce a rule that classifies similar rows as transfer without an entity.
 - A wrong rule match can be corrected via edit, resulting in a ChangeSet proposal that fixes the rule system rather than silently overriding the one transaction.
+
+## Drift Check
+
+last checked: never

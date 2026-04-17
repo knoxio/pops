@@ -38,3 +38,7 @@ Build the search UI — a TopBar search bar with a results panel that shows cont
 - Contextual intelligence system (PRD-058)
 - Structured query syntax UI hints (part of PRD-057 v2)
 - Context enrichment / semantic tagging (v2 idea — see ideas/app-ideas.md)
+
+## Drift Check
+
+last checked: never
