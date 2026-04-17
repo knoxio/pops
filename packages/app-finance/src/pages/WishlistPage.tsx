@@ -252,7 +252,7 @@ export function WishlistPage() {
         <div className="text-right">
           <DropdownMenu
             trigger={
-              <Button variant="ghost" size="icon" className="h-8 w-8 p-0" aria-label="Actions">
+              <Button variant="ghost" size="icon" aria-label="Actions">
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             }

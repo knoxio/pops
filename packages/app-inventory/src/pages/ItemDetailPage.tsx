@@ -569,7 +569,7 @@ function DocumentsList({
                           href={`${paperlessBaseUrl}/documents/${doc.paperlessDocumentId}/details`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center h-8 w-8 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent"
+                          className="relative inline-flex items-center justify-center size-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent before:absolute before:content-[''] before:-inset-1"
                           title="View in Paperless"
                           aria-label="View in Paperless"
                         >
@@ -579,7 +579,7 @@ function DocumentsList({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive shrink-0"
+                        className="text-destructive hover:text-destructive shrink-0"
                         onClick={() => {
                           unlinkMutation.mutate({ id: doc.id });
                         }}
@@ -726,7 +726,7 @@ function ConnectionRow({
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 text-destructive hover:text-destructive shrink-0"
+            className="text-destructive hover:text-destructive shrink-0"
             disabled={isDisconnecting}
             title="Disconnect"
             aria-label="Disconnect"
