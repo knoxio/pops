@@ -44,8 +44,8 @@ Live status of every theme and epic. Updated as work completes.
 
 #### Cortex Infrastructure
 
-| Epic                         | Status      | Notes                                                              |
-| ---------------------------- | ----------- | ------------------------------------------------------------------ |
+| Epic                         | Status      | Notes                                                                                           |
+| ---------------------------- | ----------- | ----------------------------------------------------------------------------------------------- |
 | Redis container & connection | Done        | Redis 7 Alpine, ioredis v5, Ansible role, persistence disabled, healthcheck (#1945)             |
 | Job queue (BullMQ)           | Done        | Typed queues, worker process, DLQ, Plex sync migrated, jobs management API (#1946)              |
 | OpenAPI secondary contract   | In progress | trpc-openapi, spec at /api/docs, CI validation                                                  |

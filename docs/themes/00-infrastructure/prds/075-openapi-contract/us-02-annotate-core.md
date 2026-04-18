@@ -1,7 +1,7 @@
 # US-02: Annotate Core Procedures
 
 > PRD: [OpenAPI Secondary Contract](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -10,7 +10,7 @@ As an external service developer, I access core domain data (entities, jobs, sea
 ## Acceptance Criteria
 
 - [x] `core.entities.list`, `core.entities.get`, `core.entities.create`, `core.entities.update` annotated with OpenAPI metadata
-- [ ] `core.jobs.list`, `core.jobs.get`, `core.jobs.retry`, `core.jobs.cancel`, `core.jobs.queueStats` annotated — blocked by PRD-074 (jobs router does not exist yet, see [#1949](https://github.com/knoxio/pops/issues/1949))
+- [x] `core.jobs.list`, `core.jobs.get`, `core.jobs.retry`, `core.jobs.cancel`, `core.jobs.drain`, `core.jobs.queueStats`, `core.jobs.schedulers` annotated
 - [x] `core.search.query` annotated
 - [x] `core.settings.list`, `core.settings.get`, `core.settings.set` annotated
 - [x] Each annotation includes: HTTP method, path (following `/api/v1/` convention), summary, description
