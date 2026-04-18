@@ -41,8 +41,8 @@ export function chunkText(text: string): TextChunk[] {
     const end = Math.min(start + MAX_CHUNK_CHARS, trimmed.length);
     chunks.push({ index, text: trimmed.slice(start, end) });
     index++;
+    if (end === trimmed.length) break;
     start = end - OVERLAP_CHARS;
-    if (start >= trimmed.length) break;
   }
 
   return chunks;

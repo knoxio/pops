@@ -102,13 +102,10 @@ export async function semanticSearch(
 /** Return embedding coverage stats for a source type (or all types). */
 export function getEmbeddingStatus(sourceType?: string): EmbeddingStatus {
   const db = getDrizzle();
-  const filter = sourceType ? eq(embeddings.sourceType, sourceType) : undefined;
-
-  const rows = db
-    .select({ count: sql<number>`count(*)` })
-    .from(embeddings)
-    .where(filter)
-    .all();
+  const baseQuery = db.select({ count: sql<number>`count(*)` }).from(embeddings);
+  const rows = sourceType
+    ? baseQuery.where(eq(embeddings.sourceType, sourceType)).all()
+    : baseQuery.all();
 
   const total = rows[0]?.count ?? 0;
 

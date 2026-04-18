@@ -1,61 +1,29 @@
 /**
- * Optional Redis client for caching and BullMQ queues.
+ * Optional Redis client for the embedding pipeline.
  *
- * Redis is not required — the API starts and operates without it (degraded mode:
- * queues and caching disabled). Configure via REDIS_URL env var.
+ * Wraps the shared Redis connection from src/redis.ts. Redis is not required —
+ * the API starts and operates without it (degraded mode: vector caching disabled).
+ * Configure via REDIS_HOST / REDIS_PORT env vars.
  */
-import * as IORedis from 'ioredis';
+import { getRedisClient } from '../redis.js';
 
-type RedisClient = IORedis.Redis;
+import type { Redis } from 'ioredis';
 
-let _redis: RedisClient | null = null;
-let _redisAvailable = false;
-
-export function getRedis(): RedisClient | null {
-  return _redis;
+export function getRedis(): Redis | null {
+  return getRedisClient();
 }
 
 export function isRedisAvailable(): boolean {
-  return _redisAvailable;
+  const client = getRedisClient();
+  if (!client) return false;
+  return client.status === 'ready';
 }
 
-export function initRedis(): void {
-  const redisUrl = process.env['REDIS_URL'];
-  if (!redisUrl) {
-    console.warn('[redis] REDIS_URL not set — caching and queue features disabled');
-    return;
-  }
+/** No-op — redis.ts self-initialises on module load. */
+export function initRedis(): void {}
 
-  _redis = new IORedis.Redis(redisUrl, {
-    maxRetriesPerRequest: null, // required by BullMQ
-    enableReadyCheck: false,
-    lazyConnect: true,
-  });
-
-  _redis.on('ready', () => {
-    _redisAvailable = true;
-    console.warn('[redis] Connected');
-  });
-
-  _redis.on('error', (err: Error) => {
-    if (_redisAvailable) {
-      console.error('[redis] Connection lost:', err.message);
-    }
-    _redisAvailable = false;
-  });
-
-  _redis.connect().catch(() => {
-    console.warn('[redis] Initial connection failed — operating without Redis');
-  });
-}
-
-export async function closeRedis(): Promise<void> {
-  if (_redis) {
-    await _redis.quit();
-    _redis = null;
-    _redisAvailable = false;
-  }
-}
+/** No-op — redis.ts is closed by shutdownRedis() in index.ts. */
+export async function closeRedis(): Promise<void> {}
 
 const REDIS_PREFIX = process.env['REDIS_PREFIX'] ?? 'pops:';
 

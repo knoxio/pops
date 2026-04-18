@@ -705,7 +705,7 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     const drizzleMigrationsDir = join(import.meta.dirname, 'drizzle-migrations');
     const journalPath = join(drizzleMigrationsDir, 'meta', '_journal.json');
     const journal = JSON.parse(readFileSync(journalPath, 'utf8')) as {
-      entries: { idx: number; tag: string }[];
+      entries: { idx: number; tag: string; when: number }[];
     };
 
     db.exec(`
@@ -720,7 +720,9 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       'INSERT OR IGNORE INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)'
     );
     for (const entry of journal.entries) {
-      insertDrizzle.run(entry.tag, Date.now());
+      // Use the journal's `when` timestamp so Drizzle's timestamp-based check
+      // treats all pre-seeded migrations as already applied (folderMillis <= created_at).
+      insertDrizzle.run(entry.tag, entry.when);
     }
   } catch {
     // Non-fatal — Drizzle migrate at startup will handle it

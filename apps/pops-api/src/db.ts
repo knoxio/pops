@@ -242,6 +242,17 @@ function openDatabase(path: string): BetterSqlite3.Database {
   // Load sqlite-vec before migrations so the embeddings_vec virtual table migration works.
   const vecLoaded = tryLoadVecExtension(db);
 
+  // Ensure embeddings_vec exists whenever vec is available — idempotent due to IF NOT EXISTS.
+  // This handles DBs where vec was unavailable on first boot (migration was skipped/marked applied)
+  // and also the init-db.ts path where initializeSchema runs without vec loaded.
+  if (vecLoaded) {
+    try {
+      db.exec(`CREATE VIRTUAL TABLE IF NOT EXISTS embeddings_vec USING vec0(vector float[1536])`);
+    } catch {
+      // Should not happen since vec is loaded, but don't crash
+    }
+  }
+
   // Fresh database: initialize full schema (creates all tables + marks migrations as applied)
   if (isFreshDatabase(db)) {
     console.warn('[db] Fresh database detected — initializing schema...');

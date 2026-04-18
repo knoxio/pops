@@ -1,6 +1,6 @@
 import { Queue } from 'bullmq';
 
-import { getRedis } from '../shared/redis-client.js';
+import { getRedis, isRedisAvailable } from '../shared/redis-client.js';
 
 import type { EmbedJobData } from './handlers/embeddings.js';
 
@@ -9,7 +9,7 @@ let _embeddingsQueue: Queue<EmbedJobData> | null = null;
 /** Get the embeddings queue, or null if Redis is not available. */
 export function getEmbeddingsQueue(): Queue<EmbedJobData> | null {
   const redis = getRedis();
-  if (!redis) return null;
+  if (!redis || !isRedisAvailable()) return null;
 
   if (!_embeddingsQueue) {
     _embeddingsQueue = new Queue<EmbedJobData>('pops:embeddings', {
