@@ -1,3 +1,23 @@
 ---
 pops_repo_url: 'https://github.com/knoxio/pops.git'
 pops_branch: main
+
+# Cerebrum — engram directory layout on the server. `engram_root` lives in
+# group_vars so other roles (e.g. backups) can reference it.
+engram_type_dirs:
+  - journal
+  - decisions
+  - research
+  - meetings
+  - ideas
+  - notes
+  - captures
+engram_dot_dirs:
+  - .templates
+  - .config
+  - .archive
+  - .index
+engram_config_scaffolds:
+  - scope-rules.toml
+  - glia.toml
+  - reflexes.toml

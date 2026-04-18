@@ -1,0 +1,135 @@
+/**
+ * tRPC router for cerebrum.engrams.
+ *
+ * The router is a thin adapter over the EngramService — no file or database
+ * work lives here. All business logic belongs to the service layer.
+ */
+import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
+
+import { HttpError, NotFoundError, ValidationError } from '../../../shared/errors.js';
+import { protectedProcedure, router } from '../../../trpc.js';
+import { getEngramService } from '../instance.js';
+import { ENGRAM_STATUSES, engramIdSchema, engramSourceSchema } from './schema.js';
+
+const customFieldsSchema = z.record(z.string(), z.unknown());
+
+const sortSchema = z.object({
+  field: z.enum(['created_at', 'modified_at', 'title']),
+  direction: z.enum(['asc', 'desc']),
+});
+
+const createSchema = z.object({
+  type: z.string().min(1),
+  title: z.string().min(1),
+  body: z.string().optional(),
+  scopes: z.array(z.string().min(1)).optional(),
+  tags: z.array(z.string().min(1)).optional(),
+  template: z.string().min(1).optional(),
+  customFields: customFieldsSchema.optional(),
+  source: engramSourceSchema.optional(),
+  links: z.array(engramIdSchema).optional(),
+});
+
+const updateSchema = z.object({
+  id: engramIdSchema,
+  title: z.string().min(1).optional(),
+  body: z.string().optional(),
+  scopes: z.array(z.string().min(1)).optional(),
+  tags: z.array(z.string().min(1)).optional(),
+  customFields: customFieldsSchema.optional(),
+  status: z.enum(ENGRAM_STATUSES).optional(),
+});
+
+const listSchema = z
+  .object({
+    type: z.string().optional(),
+    scopes: z.array(z.string().min(1)).optional(),
+    tags: z.array(z.string().min(1)).optional(),
+    status: z.enum(ENGRAM_STATUSES).optional(),
+    search: z.string().optional(),
+    limit: z.number().int().positive().max(500).optional(),
+    offset: z.number().int().nonnegative().optional(),
+    sort: sortSchema.optional(),
+  })
+  .optional();
+
+const linkSchema = z.object({
+  sourceId: engramIdSchema,
+  targetId: engramIdSchema,
+});
+
+function toTrpcError(err: unknown): never {
+  if (err instanceof NotFoundError) {
+    throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+  }
+  if (err instanceof ValidationError) {
+    throw new TRPCError({ code: 'BAD_REQUEST', message: err.message, cause: err });
+  }
+  if (err instanceof HttpError) {
+    throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: err.message });
+  }
+  throw err;
+}
+
+export const engramsRouter = router({
+  create: protectedProcedure.input(createSchema).mutation(({ input }) => {
+    try {
+      const engram = getEngramService().create(input);
+      return { engram };
+    } catch (err) {
+      toTrpcError(err);
+    }
+  }),
+
+  get: protectedProcedure.input(z.object({ id: engramIdSchema })).query(({ input }) => {
+    try {
+      const { engram, body } = getEngramService().read(input.id);
+      return { engram, body };
+    } catch (err) {
+      toTrpcError(err);
+    }
+  }),
+
+  update: protectedProcedure.input(updateSchema).mutation(({ input }) => {
+    try {
+      const { id, ...changes } = input;
+      const engram = getEngramService().update(id, changes);
+      return { engram };
+    } catch (err) {
+      toTrpcError(err);
+    }
+  }),
+
+  delete: protectedProcedure.input(z.object({ id: engramIdSchema })).mutation(({ input }) => {
+    try {
+      getEngramService().archive(input.id);
+      return { success: true };
+    } catch (err) {
+      toTrpcError(err);
+    }
+  }),
+
+  list: protectedProcedure.input(listSchema).query(({ input }) => {
+    const { engrams, total } = getEngramService().list(input ?? {});
+    return { engrams, total };
+  }),
+
+  link: protectedProcedure.input(linkSchema).mutation(({ input }) => {
+    try {
+      getEngramService().link(input.sourceId, input.targetId);
+      return { success: true };
+    } catch (err) {
+      toTrpcError(err);
+    }
+  }),
+
+  unlink: protectedProcedure.input(linkSchema).mutation(({ input }) => {
+    try {
+      getEngramService().unlink(input.sourceId, input.targetId);
+      return { success: true };
+    } catch (err) {
+      toTrpcError(err);
+    }
+  }),
+});

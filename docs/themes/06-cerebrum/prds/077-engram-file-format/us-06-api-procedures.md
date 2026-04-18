@@ -1,7 +1,7 @@
 # US-06: tRPC API Procedures
 
 > PRD: [PRD-077: Engram File Format & Directory Structure](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,14 +9,14 @@ As a client application, I need tRPC procedures that expose all engram and templ
 
 ## Acceptance Criteria
 
-- [ ] A tRPC router at `src/modules/cerebrum/engrams/router.ts` exposes procedures under the `cerebrum.engrams` namespace: `create`, `get`, `update`, `delete`, `list`, `link`, `unlink`
-- [ ] A tRPC router exposes template procedures under the `cerebrum.templates` namespace: `list`, `get`
-- [ ] `create` accepts `{ type, title, body, scopes?, tags?, template?, customFields? }`, calls `createEngram`, and returns `{ engram: Engram }`
-- [ ] `list` accepts `{ type?, scopes?, tags?, status?, search?, limit?, offset?, sort? }`, queries the index tables (not the filesystem), and returns `{ engrams: Engram[], total: number }` with correct pagination
-- [ ] `delete` calls `archiveEngram` (not a physical delete) and returns `{ success: boolean }`
-- [ ] `link` and `unlink` accept `{ sourceId, targetId }` and delegate to `linkEngrams` / `unlinkEngrams` respectively, returning `{ success: boolean }`
-- [ ] All procedure inputs are validated with Zod schemas that match the PRD's API Surface table — invalid input returns a typed tRPC error, not an unhandled exception
-- [ ] `templates.list` returns all registered templates with their metadata (name, description, required fields, custom fields) and `templates.get` returns a single template by name or throws a `NOT_FOUND` error
+- [x] A tRPC router at `src/modules/cerebrum/engrams/router.ts` exposes procedures under the `cerebrum.engrams` namespace: `create`, `get`, `update`, `delete`, `list`, `link`, `unlink`
+- [x] A tRPC router exposes template procedures under the `cerebrum.templates` namespace: `list`, `get`
+- [x] `create` accepts `{ type, title, body, scopes?, tags?, template?, customFields? }`, calls `createEngram`, and returns `{ engram: Engram }`
+- [x] `list` accepts `{ type?, scopes?, tags?, status?, search?, limit?, offset?, sort? }`, queries the index tables (not the filesystem), and returns `{ engrams: Engram[], total: number }` with correct pagination
+- [x] `delete` calls `archiveEngram` (not a physical delete) and returns `{ success: boolean }`
+- [x] `link` and `unlink` accept `{ sourceId, targetId }` and delegate to `linkEngrams` / `unlinkEngrams` respectively, returning `{ success: boolean }`
+- [x] All procedure inputs are validated with Zod schemas that match the PRD's API Surface table — invalid input returns a typed tRPC error, not an unhandled exception
+- [x] `templates.list` returns all registered templates with their metadata (name, description, required fields, custom fields) and `templates.get` returns a single template by name or throws a `NOT_FOUND` error
 
 ## Notes
 

@@ -18,6 +18,7 @@ import type { debriefResults } from './schema/debrief-results.js';
 import type { debriefSessions } from './schema/debrief-sessions.js';
 import type { debriefStatus } from './schema/debrief-status.js';
 import type { dismissedDiscover } from './schema/dismissed-discover.js';
+import type { engramIndex, engramLinks, engramScopes, engramTags } from './schema/engrams.js';
 import type { entities } from './schema/entities.js';
 import type { environments } from './schema/environments.js';
 import type { episodes } from './schema/episodes.js';
@@ -58,6 +59,10 @@ export {
   debriefSessions,
   debriefStatus,
   dismissedDiscover,
+  engramIndex,
+  engramLinks,
+  engramScopes,
+  engramTags,
   entities,
   environments,
   episodes,
@@ -143,6 +148,14 @@ export type SyncJobResultRow = InferSelectModel<typeof syncJobResults>;
 export type SyncJobResultInsert = InferInsertModel<typeof syncJobResults>;
 export type DismissedDiscoverRow = InferSelectModel<typeof dismissedDiscover>;
 export type DismissedDiscoverInsert = InferInsertModel<typeof dismissedDiscover>;
+export type EngramIndexRow = InferSelectModel<typeof engramIndex>;
+export type EngramIndexInsert = InferInsertModel<typeof engramIndex>;
+export type EngramScopeRow = InferSelectModel<typeof engramScopes>;
+export type EngramScopeInsert = InferInsertModel<typeof engramScopes>;
+export type EngramTagRow = InferSelectModel<typeof engramTags>;
+export type EngramTagInsert = InferInsertModel<typeof engramTags>;
+export type EngramLinkRow = InferSelectModel<typeof engramLinks>;
+export type EngramLinkInsert = InferInsertModel<typeof engramLinks>;
 export type ComparisonSkipCooloffRow = InferSelectModel<typeof comparisonSkipCooloffs>;
 export type ComparisonSkipCooloffInsert = InferInsertModel<typeof comparisonSkipCooloffs>;
 export type ComparisonStalenessRow = InferSelectModel<typeof comparisonStaleness>;

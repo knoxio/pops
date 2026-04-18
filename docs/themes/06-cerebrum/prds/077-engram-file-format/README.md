@@ -1,7 +1,7 @@
 # PRD-077: Engram File Format & Directory Structure
 
 > Epic: [00 — Engram Storage](../../epics/00-engram-storage.md)
-> Status: Not started
+> Status: Done
 
 ## Overview
 
@@ -203,14 +203,14 @@ _To be filled in after the decision plays out._
 
 ## User Stories
 
-| #   | Story                                                     | Summary                                                                                     | Status      | Parallelisable          |
-| --- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ----------- | ----------------------- |
-| 01  | [us-01-file-format](us-01-file-format.md)                 | Define and validate the engram file format — frontmatter schema, ID generation, file naming | Not started | No (first)              |
-| 02  | [us-02-template-system](us-02-template-system.md)         | Template files, registry, template-based engram creation with field validation              | Not started | Blocked by us-01        |
-| 03  | [us-03-directory-structure](us-03-directory-structure.md) | Server-side directory layout, permissions, Ansible provisioning, backup integration         | Not started | Yes                     |
-| 04  | [us-04-index-schema](us-04-index-schema.md)               | Drizzle schema for engram_index, engram_scopes, engram_tags, engram_links tables            | Not started | Yes                     |
-| 05  | [us-05-crud-service](us-05-crud-service.md)               | Service layer for engram CRUD — file operations + index sync, link management               | Not started | Blocked by us-01, us-04 |
-| 06  | [us-06-api-procedures](us-06-api-procedures.md)           | tRPC procedures for all engram and template operations                                      | Not started | Blocked by us-05        |
+| #   | Story                                                     | Summary                                                                                     | Status | Parallelisable          |
+| --- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------ | ----------------------- |
+| 01  | [us-01-file-format](us-01-file-format.md)                 | Define and validate the engram file format — frontmatter schema, ID generation, file naming | Done   | No (first)              |
+| 02  | [us-02-template-system](us-02-template-system.md)         | Template files, registry, template-based engram creation with field validation              | Done   | Blocked by us-01        |
+| 03  | [us-03-directory-structure](us-03-directory-structure.md) | Server-side directory layout, permissions, Ansible provisioning, backup integration         | Done   | Yes                     |
+| 04  | [us-04-index-schema](us-04-index-schema.md)               | Drizzle schema for engram_index, engram_scopes, engram_tags, engram_links tables            | Done   | Yes                     |
+| 05  | [us-05-crud-service](us-05-crud-service.md)               | Service layer for engram CRUD — file operations + index sync, link management               | Done   | Blocked by us-01, us-04 |
+| 06  | [us-06-api-procedures](us-06-api-procedures.md)           | tRPC procedures for all engram and template operations                                      | Done   | Blocked by us-05        |
 
 US-03 and US-04 can parallelise with each other and with US-02. US-05 depends on both the file format (us-01) and the index schema (us-04). US-06 wraps the service layer.
 

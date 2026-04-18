@@ -126,12 +126,12 @@ Live status of every theme and epic. Updated as work completes.
 
 ### Cerebrum — Phase 1 (MVP)
 
-| Epic                          | Status      | Notes                                                               |
-| ----------------------------- | ----------- | ------------------------------------------------------------------- |
-| Engram Storage (format, CRUD) | Not started | File format, templates, directory, scope model, API                 |
-| Thalamus (indexing/retrieval) | Not started | File watcher, frontmatter sync, embedding trigger, retrieval engine |
-| Ingest (input pipeline)       | Not started | Manual, agent, capture channels + classification + scope inference  |
-| Emit (output production)      | Not started | Query engine, document generation, proactive nudges                 |
+| Epic                          | Status      | Notes                                                                                                 |
+| ----------------------------- | ----------- | ----------------------------------------------------------------------------------------------------- |
+| Engram Storage (format, CRUD) | Partial     | PRD-077 done (format, templates, index schema, CRUD, tRPC, provisioning); PRD-078 scope model pending |
+| Thalamus (indexing/retrieval) | Not started | File watcher, frontmatter sync, embedding trigger, retrieval engine                                   |
+| Ingest (input pipeline)       | Not started | Manual, agent, capture channels + classification + scope inference                                    |
+| Emit (output production)      | Not started | Query engine, document generation, proactive nudges                                                   |
 
 ### Cerebrum — Phase 2 (Curation & Interface)
 

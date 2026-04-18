@@ -539,6 +539,47 @@ export function createTestDb(): Database {
     CREATE UNIQUE INDEX IF NOT EXISTS idx_rotation_exclusions_tmdb_id
       ON rotation_exclusions(tmdb_id);
 
+    CREATE TABLE IF NOT EXISTS engram_index (
+      id            TEXT PRIMARY KEY,
+      file_path     TEXT NOT NULL UNIQUE,
+      type          TEXT NOT NULL,
+      source        TEXT NOT NULL,
+      status        TEXT NOT NULL,
+      template      TEXT,
+      created_at    TEXT NOT NULL,
+      modified_at   TEXT NOT NULL,
+      title         TEXT NOT NULL,
+      content_hash  TEXT NOT NULL,
+      word_count    INTEGER NOT NULL,
+      custom_fields TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_engram_index_type ON engram_index(type);
+    CREATE INDEX IF NOT EXISTS idx_engram_index_source ON engram_index(source);
+    CREATE INDEX IF NOT EXISTS idx_engram_index_status ON engram_index(status);
+    CREATE INDEX IF NOT EXISTS idx_engram_index_created_at ON engram_index(created_at);
+    CREATE INDEX IF NOT EXISTS idx_engram_index_content_hash ON engram_index(content_hash);
+
+    CREATE TABLE IF NOT EXISTS engram_scopes (
+      engram_id TEXT NOT NULL REFERENCES engram_index(id) ON DELETE CASCADE,
+      scope     TEXT NOT NULL
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_engram_scopes_pair ON engram_scopes(engram_id, scope);
+    CREATE INDEX IF NOT EXISTS idx_engram_scopes_scope ON engram_scopes(scope);
+
+    CREATE TABLE IF NOT EXISTS engram_tags (
+      engram_id TEXT NOT NULL REFERENCES engram_index(id) ON DELETE CASCADE,
+      tag       TEXT NOT NULL
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_engram_tags_pair ON engram_tags(engram_id, tag);
+    CREATE INDEX IF NOT EXISTS idx_engram_tags_tag ON engram_tags(tag);
+
+    CREATE TABLE IF NOT EXISTS engram_links (
+      source_id TEXT NOT NULL REFERENCES engram_index(id) ON DELETE CASCADE,
+      target_id TEXT NOT NULL
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_engram_links_pair ON engram_links(source_id, target_id);
+    CREATE INDEX IF NOT EXISTS idx_engram_links_target ON engram_links(target_id);
+
     CREATE TABLE IF NOT EXISTS rotation_log (
       id                    INTEGER PRIMARY KEY AUTOINCREMENT,
       executed_at           TEXT    NOT NULL,

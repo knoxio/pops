@@ -2,13 +2,15 @@
  * Main tRPC app router — combines domain routers.
  *
  * Domain structure:
- *   core     — entities, ai-usage, corrections
- *   finance  — transactions, budgets, imports, wishlist
+ *   core      — entities, ai-usage, corrections
+ *   finance   — transactions, budgets, imports, wishlist
  *   inventory — items
- *   media    — comparisons
+ *   media     — comparisons
+ *   cerebrum  — engrams, templates
  *
  * Note: envs is an Express router (not tRPC) — mounted directly in app.ts.
  */
+import { cerebrumRouter } from './modules/cerebrum/index.js';
 import { coreRouter } from './modules/core/index.js';
 import { financeRouter } from './modules/finance/index.js';
 import { inventoryRouter } from './modules/inventory/index.js';
@@ -20,6 +22,7 @@ import { router } from './trpc.js';
  * All tRPC procedures are nested under their domain group.
  */
 export const appRouter = router({
+  cerebrum: cerebrumRouter,
   core: coreRouter,
   finance: financeRouter,
   inventory: inventoryRouter,

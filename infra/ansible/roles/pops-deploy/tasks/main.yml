@@ -12,6 +12,42 @@
     - '{{ paperless_data_dir }}'
     - '{{ metabase_data_dir }}'
 
+- name: Create Cerebrum engram root
+  ansible.builtin.file:
+    path: '{{ engram_root }}'
+    state: directory
+    owner: '{{ pops_user }}'
+    group: '{{ pops_user }}'
+    mode: '0700'
+
+- name: Create Cerebrum engram type subdirectories
+  ansible.builtin.file:
+    path: '{{ engram_root }}/{{ item }}'
+    state: directory
+    owner: '{{ pops_user }}'
+    group: '{{ pops_user }}'
+    mode: '0700'
+  loop: '{{ engram_type_dirs }}'
+
+- name: Create Cerebrum engram reserved directories
+  ansible.builtin.file:
+    path: '{{ engram_root }}/{{ item }}'
+    state: directory
+    owner: '{{ pops_user }}'
+    group: '{{ pops_user }}'
+    mode: '0700'
+  loop: '{{ engram_dot_dirs }}'
+
+- name: Scaffold Cerebrum config files
+  ansible.builtin.copy:
+    content: "# Cerebrum {{ item }} — populate per docs/themes/06-cerebrum\n"
+    dest: '{{ engram_root }}/.config/{{ item }}'
+    owner: '{{ pops_user }}'
+    group: '{{ pops_user }}'
+    mode: '0600'
+    force: false
+  loop: '{{ engram_config_scaffolds }}'
+
 - name: Clone or update POPS repository
   ansible.builtin.git:
     repo: '{{ pops_repo_url }}'

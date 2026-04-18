@@ -13,6 +13,7 @@ sqlite_data_dir: /opt/pops/data/sqlite
 paperless_data_dir: /opt/pops/data/paperless
 metabase_data_dir: /opt/pops/data/metabase
 secrets_dir: /opt/pops/secrets
+engram_root: /opt/pops/engrams
 
 # Schedules
 backup_schedule: '*-*-* 03:00:00' # systemd OnCalendar: 3am daily
