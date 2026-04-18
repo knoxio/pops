@@ -157,12 +157,20 @@ vi.mock('@pops/ui', async () => {
 // eslint-disable-next-line prefer-const
 let mockOnAppliedFn: ((...args: unknown[]) => void) | null = null;
 
+/** Captures the last signal and previewTransactions passed to TagRuleProposalDialog. */
+const mockDialogCapture = {
+  signal: null as unknown,
+  previewTransactions: null as unknown[] | null,
+};
+
 vi.mock('./TagRuleProposalDialog', async () => {
   const React = await import('react');
   return {
     TagRuleProposalDialog: ({
       onApplied,
       open,
+      signal,
+      previewTransactions,
     }: {
       onApplied?: (...args: unknown[]) => void;
       open: boolean;
@@ -173,6 +181,8 @@ vi.mock('./TagRuleProposalDialog', async () => {
       if (onApplied) {
         mockOnAppliedFn = onApplied;
       }
+      mockDialogCapture.signal = signal;
+      mockDialogCapture.previewTransactions = previewTransactions;
       if (!open) return null;
       return React.createElement('div', { 'data-testid': 'dialog' });
     },
@@ -294,6 +304,8 @@ function renderTagReviewStep() {
 beforeEach(() => {
   mockConfirmedTransactions.length = 0;
   mockOnAppliedFn = null;
+  mockDialogCapture.signal = null;
+  mockDialogCapture.previewTransactions = null;
   mockAddPendingTagRuleChangeSet.mockReset();
   mockUpdateTransactionTags.mockReset();
   mockNextStep.mockReset();
@@ -374,6 +386,90 @@ describe('TagReviewStep — Save tag rule wiring (PRD-029 US-02 / US-03)', () =>
       expect(mockToastInfo).toHaveBeenCalledWith(expect.stringContaining('Add at least one tag'));
     });
     expect(screen.queryByTestId('dialog')).not.toBeInTheDocument();
+  });
+
+  it('passes correct signal (description, matchType, entityId, tags) for transaction-scope dialog', async () => {
+    seedTransactions([woolworthsTx1]);
+    renderTagReviewStep();
+
+    const saveBtn = screen.getByLabelText('Save tag rule for WOOLWORTHS METRO');
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('dialog')).toBeInTheDocument();
+    });
+
+    expect(mockDialogCapture.signal).toMatchObject({
+      descriptionPattern: 'WOOLWORTHS METRO',
+      matchType: 'contains',
+      entityId: 'woolworths-id',
+      tags: expect.arrayContaining(['Groceries']),
+    });
+  });
+
+  it('passes full previewTransactions list (not only the clicked row) to dialog', async () => {
+    seedTransactions([woolworthsTx1, netflixTx]);
+    renderTagReviewStep();
+
+    const saveBtn = screen.getByLabelText('Save tag rule for WOOLWORTHS METRO');
+    fireEvent.click(saveBtn);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('dialog')).toBeInTheDocument();
+    });
+
+    expect(mockDialogCapture.previewTransactions).toHaveLength(2);
+    expect(mockDialogCapture.previewTransactions).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ description: 'WOOLWORTHS METRO' }),
+        expect.objectContaining({ description: 'NETFLIX.COM' }),
+      ])
+    );
+  });
+
+  it('approving from transaction-scope dialog propagates tags via handleTagRuleApplied', () => {
+    const CHECKSUM = woolworthsTx1.checksum;
+    seedTransactions([woolworthsTx1]);
+    renderTagReviewStep();
+
+    const saveBtn = screen.getByLabelText('Save tag rule for WOOLWORTHS METRO');
+    fireEvent.click(saveBtn);
+
+    act(() => {
+      mockOnAppliedFn!(
+        {
+          ops: [
+            {
+              op: 'add',
+              data: {
+                descriptionPattern: 'WOOLWORTHS METRO',
+                matchType: 'contains',
+                tags: ['Groceries', 'Food'],
+              },
+            },
+          ],
+        },
+        [
+          {
+            transactionId: CHECKSUM,
+            description: 'WOOLWORTHS METRO',
+            before: { suggestedTags: [] },
+            after: {
+              suggestedTags: [
+                { tag: 'Groceries', source: 'tag_rule' as const },
+                { tag: 'Food', source: 'tag_rule' as const },
+              ],
+            },
+          },
+        ]
+      );
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /Continue to final review/i }));
+    expect(mockUpdateTransactionTags).toHaveBeenCalledWith(
+      CHECKSUM,
+      expect.arrayContaining(['Groceries', 'Food'])
+    );
   });
 
   it('shows empty state when there are no confirmed transactions', () => {
