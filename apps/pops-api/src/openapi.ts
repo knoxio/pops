@@ -15,6 +15,7 @@ export const openApiDocument = generateOpenApiDocument(appRouter, {
   baseUrl: '/api/v1',
   tags: [
     'entities',
+    'jobs',
     'search',
     'settings',
     'transactions',
