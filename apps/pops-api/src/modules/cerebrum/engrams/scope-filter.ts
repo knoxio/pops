@@ -4,8 +4,9 @@
  * `filterByScopes` is the only exported function that touches the database.
  * `inferScopesFromContext` is a pure keyword map with no side effects.
  *
- * Secret scope hard-blocking: any engram with at least one `*.secret.*` scope
- * is excluded unless the caller explicitly sets `includeSecret: true`.
+ * Secret scope hard-blocking: any engram with at least one scope containing a
+ * segment named exactly `secret` (at any position) is excluded unless the
+ * caller explicitly sets `includeSecret: true`.
  */
 import { like, or, sql } from 'drizzle-orm';
 

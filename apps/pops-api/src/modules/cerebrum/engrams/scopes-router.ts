@@ -208,8 +208,8 @@ export const scopesRouter = router({
   reclassify: protectedProcedure
     .input(
       z.object({
-        fromScope: scopeInputSchema,
-        toScope: scopeInputSchema,
+        fromScope: scopePrefixSchema,
+        toScope: scopePrefixSchema,
         dryRun: z.boolean().optional(),
       })
     )
