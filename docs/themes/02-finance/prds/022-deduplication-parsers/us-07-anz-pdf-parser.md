@@ -1,7 +1,7 @@
 # US-07: ANZ PDF statement parser
 
 > PRD: [022 — Deduplication & Parsers](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -27,14 +27,14 @@ ANZ Frequent Flyer Black (and other ANZ credit card) PDF statements. Transaction
 
 ## Acceptance Criteria
 
-- [ ] Extracts text from ANZ PDF using a PDF parsing library (e.g. `pdf-parse`)
-- [ ] Identifies and skips supplementary rows (no card last-4, no amount)
-- [ ] Date: `Date of Transaction` column, DD/MM/YYYY → YYYY-MM-DD
-- [ ] Amount: parse float; amounts with `CR` suffix are positive (credits); all other amounts are negative (expenses)
-- [ ] Description: clean whitespace from Transaction Details field
-- [ ] Account: `"ANZ Frequent Flyer Black"` (hardcoded; extend when other ANZ PDF variants appear)
-- [ ] Output: valid `ParsedTransaction[]` with checksums
-- [ ] Test with sample ANZ PDF statement data
+- [x] Extracts text from ANZ PDF using a PDF parsing library (e.g. `pdf-parse`)
+- [x] Identifies and skips supplementary rows (no card last-4, no amount)
+- [x] Date: `Date of Transaction` column, DD/MM/YYYY → YYYY-MM-DD
+- [x] Amount: parse float; amounts with `CR` suffix are positive (credits); all other amounts are negative (expenses)
+- [x] Description: clean whitespace from Transaction Details field
+- [x] Account: `"ANZ Frequent Flyer Black"` (hardcoded; extend when other ANZ PDF variants appear)
+- [x] Output: valid `ParsedTransaction[]` with checksums
+- [x] Test with sample ANZ PDF statement data
 
 ## Notes
 

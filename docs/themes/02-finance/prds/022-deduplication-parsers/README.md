@@ -1,7 +1,7 @@
 # PRD-022: Deduplication & Parsers
 
 > Epic: [01 — Import Pipeline](../../epics/01-import-pipeline.md)
-> Status: Partial
+> Status: Done
 
 ## Overview
 
@@ -107,15 +107,15 @@ Fetched via Up Bank REST API, not CSV upload. Batch import by date range.
 
 ## User Stories
 
-| #   | Story                                           | Summary                                                                     | Status      | Parallelisable                  |
-| --- | ----------------------------------------------- | --------------------------------------------------------------------------- | ----------- | ------------------------------- |
-| 01  | [us-01-checksum-dedup](us-01-checksum-dedup.md) | Checksum-based deduplication with batch SQLite queries                      | Done        | No (first)                      |
-| 02  | [us-02-amex-parser](us-02-amex-parser.md)       | Amex CSV parser: date, amount inversion, location extraction                | Done        | Yes                             |
-| 03  | [us-03-anz-parser](us-03-anz-parser.md)         | ANZ CSV parser                                                              | Done        | Yes                             |
-| 04  | [us-04-ing-parser](us-04-ing-parser.md)         | ING CSV parser                                                              | Done        | Yes                             |
-| 05  | [us-05-up-bank-import](us-05-up-bank-import.md) | Up Bank API batch import by date range                                      | Done        | Yes                             |
-| 06  | [us-06-common-utils](us-06-common-utils.md)     | Shared utilities: normaliseDate, normaliseAmount, extractLocation, checksum | Done        | No (first, parallel with us-01) |
-| 07  | [us-07-anz-pdf-parser](us-07-anz-pdf-parser.md) | ANZ PDF credit card statement parser                                        | Not started | Yes                             |
+| #   | Story                                           | Summary                                                                     | Status | Parallelisable                  |
+| --- | ----------------------------------------------- | --------------------------------------------------------------------------- | ------ | ------------------------------- |
+| 01  | [us-01-checksum-dedup](us-01-checksum-dedup.md) | Checksum-based deduplication with batch SQLite queries                      | Done   | No (first)                      |
+| 02  | [us-02-amex-parser](us-02-amex-parser.md)       | Amex CSV parser: date, amount inversion, location extraction                | Done   | Yes                             |
+| 03  | [us-03-anz-parser](us-03-anz-parser.md)         | ANZ CSV parser                                                              | Done   | Yes                             |
+| 04  | [us-04-ing-parser](us-04-ing-parser.md)         | ING CSV parser                                                              | Done   | Yes                             |
+| 05  | [us-05-up-bank-import](us-05-up-bank-import.md) | Up Bank API batch import by date range                                      | Done   | Yes                             |
+| 06  | [us-06-common-utils](us-06-common-utils.md)     | Shared utilities: normaliseDate, normaliseAmount, extractLocation, checksum | Done   | No (first, parallel with us-01) |
+| 07  | [us-07-anz-pdf-parser](us-07-anz-pdf-parser.md) | ANZ PDF credit card statement parser                                        | Done   | Yes                             |
 
 US-02 through US-05 and US-07 can all parallelise (independent parsers). US-06 is shared utilities used by all parsers.
 
@@ -136,4 +136,4 @@ US-02 through US-05 and US-07 can all parallelise (independent parsers). US-06 i
 
 ## Drift Check
 
-last checked: 2026-04-18
+last checked: 2026-04-19

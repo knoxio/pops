@@ -19,7 +19,7 @@ Build a finance app that tracks every transaction across multiple bank accounts,
 | #   | Epic                                              | Summary                                                                                                     | Status  |
 | --- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | ------- |
 | 0   | [Transactions](epics/00-transactions.md)          | Transaction ledger — CRUD, filtering, sorting, inline tag editing                                           | Done    |
-| 1   | [Import Pipeline](epics/01-import-pipeline.md)    | Multi-step wizard for bank CSV imports with entity matching, deduplication, review flow                     | Partial |
+| 1   | [Import Pipeline](epics/01-import-pipeline.md)    | Multi-step wizard for bank CSV imports with entity matching, deduplication, review flow                     | Done    |
 | 2   | [Entities](epics/02-entities.md)                  | Merchant/payee registry — names, types, aliases, default tags                                               | Partial |
 | 3   | [Corrections](epics/03-corrections.md)            | Learned classification + tag rules — pattern matching, proposals, priority                                  | Done    |
 | 4   | [Budgets](epics/04-budgets.md)                    | Spending categories with period limits (monthly/yearly)                                                     | Partial |
