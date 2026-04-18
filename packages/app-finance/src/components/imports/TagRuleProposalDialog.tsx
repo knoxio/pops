@@ -42,9 +42,13 @@ export interface TagRuleProposalDialogProps {
   }>;
   /**
    * Called after the ChangeSet is applied successfully.
-   * Receives the applied ChangeSet so callers can store it (e.g. import store).
+   * Receives the applied ChangeSet and the affected preview items so callers
+   * can update live tag suggestions for matching transactions.
    */
-  onApplied?: (changeSet: ProposeOutput['changeSet']) => void;
+  onApplied?: (
+    changeSet: ProposeOutput['changeSet'],
+    affected: ProposeOutput['preview']['affected']
+  ) => void;
 }
 
 export function TagRuleProposalDialog(props: TagRuleProposalDialogProps) {
@@ -161,7 +165,7 @@ export function TagRuleProposalDialog(props: TagRuleProposalDialogProps) {
     });
     await utils.core.tagRules.listVocabulary.invalidate();
     toast.success('Tag rule saved');
-    onApplied?.(changeSet);
+    onApplied?.(changeSet, proposal.preview.affected);
     onOpenChange(false);
   }, [proposal, applyMutation, acceptedNewTags, utils, onApplied, onOpenChange]);
 

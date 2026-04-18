@@ -14,6 +14,6 @@ As a user, I want to approve or reject tag rule proposals with feedback, so that
 - [x] Approving applies the ChangeSet atomically via `applyTagRuleChangeSet` and stores it in the import store so it is included with the final commit.
 - [x] Rejecting requires a feedback message and applies no changes **in the wizard** — the dialog enforces non-empty feedback before calling `rejectTagRuleChangeSet`.
 - [x] Accepting a **New** tag makes it part of the user’s tag vocabulary going forward — the dialog presents new tags as checkboxes and passes `acceptedNewTags` to `applyTagRuleChangeSet`.
-- [ ] Approving updates suggested tags for remaining transactions in the current import session live (not yet re-fetched after apply).
+- [x] Approving updates suggested tags for remaining transactions in the current import session live — `handleTagRuleApplied` applies `preview.affected` items to `localTags` and `suggestedTagMeta` for non-user-edited transactions.
 - [ ] A follow-up proposal can be generated incorporating rejection feedback **in the wizard** (not yet wired).
 - [ ] Tag rule application at transaction scope (single-transaction accept/reject) is not yet wired — only group scope is supported.

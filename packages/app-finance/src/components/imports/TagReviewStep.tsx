@@ -11,7 +11,7 @@ import { useImportStore } from '../../store/importStore';
 import { TagEditor, type TagMetaEntry } from '../TagEditor';
 import { TagRuleProposalDialog, type TagRuleLearnSignal } from './TagRuleProposalDialog';
 
-import type { TagRuleChangeSet } from '@pops/api/modules/core/tag-rules/types';
+import type { TagRuleChangeSet, TagRuleImpactItem } from '@pops/api/modules/core/tag-rules/types';
 import type { ConfirmedTransaction, SuggestedTag } from '@pops/api/modules/finance/imports';
 
 // ---------------------------------------------------------------------------
@@ -99,9 +99,19 @@ export function TagReviewStep() {
     Object.fromEntries(confirmedTransactions.map((t) => [t.checksum, t.tags ?? []]))
   );
 
+  // Tracks checksums edited by the user so live re-suggestion skips them.
+  const editedChecksumsRef = useRef<Set<string>>(new Set());
+
+  // Suggested tag metadata per checksum — drives source badges in TagEditor.
+  // Starts from the confirmed transaction snapshot and updates live when rules are applied.
+  const [suggestedTagMeta, setSuggestedTagMeta] = useState<Record<string, SuggestedTag[]>>(() =>
+    Object.fromEntries(confirmedTransactions.map((t) => [t.checksum, t.suggestedTags ?? []]))
+  );
+
   // If the user returns from Step 6, remount may reuse flow; keep local state aligned
   // when confirmed transaction tag lists change from the store.
   useEffect(() => {
+    editedChecksumsRef.current = new Set();
     setLocalTags((prev) => {
       const next = { ...prev };
       for (const t of confirmedTransactions) {
@@ -113,13 +123,10 @@ export function TagReviewStep() {
       }
       return next;
     });
+    setSuggestedTagMeta(
+      Object.fromEntries(confirmedTransactions.map((t) => [t.checksum, t.suggestedTags ?? []]))
+    );
   }, [confirmedTransactions]);
-
-  // Immutable snapshot of original suggested tags per checksum — for source badges
-  const originalSuggestedTags = useMemo<Record<string, SuggestedTag[]>>(
-    () => Object.fromEntries(confirmedTransactions.map((t) => [t.checksum, t.suggestedTags ?? []])),
-    [confirmedTransactions]
-  );
 
   const groups = useMemo(() => groupByEntity(confirmedTransactions), [confirmedTransactions]);
 
@@ -134,6 +141,7 @@ export function TagReviewStep() {
 
   const updateTag = useCallback((checksum: string, tags: string[]) => {
     setLocalTags((prev) => ({ ...prev, [checksum]: tags }));
+    editedChecksumsRef.current.add(checksum);
   }, []);
 
   /** Accept all pre-suggested tags for every transaction (resets to original suggestions). */
@@ -233,14 +241,39 @@ export function TagReviewStep() {
 
   /**
    * Called by the dialog after `applyTagRuleChangeSet` succeeds.
-   * Stores the applied ChangeSet in the import store so it is bundled
-   * with the commit at Final Review (PRD-029 / PRD-030).
+   * Stores the applied ChangeSet in the import store and performs live
+   * re-suggestion: updates localTags and source badges for transactions
+   * that match the new rule and haven't been manually edited (PRD-029 US-03).
    */
   const handleTagRuleApplied = useCallback(
-    (changeSet: TagRuleChangeSet) => {
+    (changeSet: TagRuleChangeSet, affected: TagRuleImpactItem[]) => {
       addPendingTagRuleChangeSet({
         changeSet,
         source: `tag-review:${dialogGroupNameRef.current ?? 'unknown'}`,
+      });
+
+      if (affected.length === 0) return;
+
+      setLocalTags((prev) => {
+        const next = { ...prev };
+        for (const item of affected) {
+          if (!editedChecksumsRef.current.has(item.transactionId)) {
+            next[item.transactionId] = item.after.suggestedTags.map((s) => s.tag);
+          }
+        }
+        return next;
+      });
+
+      setSuggestedTagMeta((prev) => {
+        const next = { ...prev };
+        for (const item of affected) {
+          next[item.transactionId] = item.after.suggestedTags.map((s) => ({
+            tag: s.tag,
+            source: (s.source === 'tag_rule' ? 'rule' : s.source) as SuggestedTag['source'],
+            pattern: s.pattern,
+          }));
+        }
+        return next;
       });
     },
     [addPendingTagRuleChangeSet]
@@ -281,7 +314,7 @@ export function TagReviewStep() {
             key={group.entityName}
             group={group}
             localTags={localTags}
-            originalSuggestedTags={originalSuggestedTags}
+            suggestedTagMeta={suggestedTagMeta}
             availableTags={availableTags ?? []}
             onUpdateTag={updateTag}
             onApplyGroupTags={handleApplyGroupTags}
@@ -334,7 +367,7 @@ export function TagReviewStep() {
 interface EntityGroupProps {
   group: ConfirmedGroup;
   localTags: Record<string, string[]>;
-  originalSuggestedTags: Record<string, SuggestedTag[]>;
+  suggestedTagMeta: Record<string, SuggestedTag[]>;
   availableTags: string[];
   onUpdateTag: (checksum: string, tags: string[]) => void;
   onApplyGroupTags: (group: ConfirmedGroup, tags: string[]) => void;
@@ -353,7 +386,7 @@ interface EntityGroupProps {
 function EntityGroup({
   group,
   localTags,
-  originalSuggestedTags,
+  suggestedTagMeta,
   availableTags,
   onUpdateTag,
   onApplyGroupTags,
@@ -369,9 +402,9 @@ function EntityGroup({
   // Suggested union from original suggestions (for "apply suggestions to all" button)
   const suggestedUnion = useMemo(() => {
     return unionTags(
-      group.transactions.map((t) => (originalSuggestedTags[t.checksum] ?? []).map((s) => s.tag))
+      group.transactions.map((t) => (suggestedTagMeta[t.checksum] ?? []).map((s) => s.tag))
     );
-  }, [group.transactions, originalSuggestedTags]);
+  }, [group.transactions, suggestedTagMeta]);
 
   // Staged tags for group-level bulk application
   const [groupStagedTags, setGroupStagedTags] = useState<string[]>([]);
@@ -493,7 +526,7 @@ function EntityGroup({
                 key={t.checksum}
                 transaction={t}
                 tags={localTags[t.checksum] ?? []}
-                originalSuggestedTags={originalSuggestedTags[t.checksum] ?? []}
+                suggestedTagMeta={suggestedTagMeta[t.checksum] ?? []}
                 availableTags={availableTags}
                 onSave={(tags) => {
                   onUpdateTag(t.checksum, tags);
@@ -684,7 +717,7 @@ function GroupTagBar({
 interface TransactionTagRowProps {
   transaction: ConfirmedTransaction;
   tags: string[];
-  originalSuggestedTags: SuggestedTag[];
+  suggestedTagMeta: SuggestedTag[];
   availableTags: string[];
   onSave: (tags: string[]) => void;
   onSaveTagRule?: (transaction: ConfirmedTransaction, tags: string[]) => void;
@@ -698,7 +731,7 @@ interface TransactionTagRowProps {
 function TransactionTagRow({
   transaction,
   tags,
-  originalSuggestedTags,
+  suggestedTagMeta,
   availableTags,
   onSave,
   onSaveTagRule,
@@ -707,7 +740,7 @@ function TransactionTagRow({
   const isNegative = amount < 0;
 
   // Build tagMeta map for source badges in TagEditor
-  const tagMeta = useMemo(() => buildTagMetaMap(originalSuggestedTags), [originalSuggestedTags]);
+  const tagMeta = useMemo(() => buildTagMetaMap(suggestedTagMeta), [suggestedTagMeta]);
 
   return (
     <div className="flex items-center gap-3 px-4 py-2 hover:bg-muted/20 transition-colors group/txrow">
