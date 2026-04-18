@@ -102,6 +102,7 @@ export interface ListEngramsOptions {
   type?: string;
   scopes?: string[];
   tags?: string[];
+  ids?: string[];
   status?: EngramStatus;
   search?: string;
   limit?: number;
@@ -410,6 +411,9 @@ export class EngramService {
         )
       );
     }
+    if (opts.ids && opts.ids.length > 0) {
+      conditions.push(inArray(engramIndex.id, opts.ids));
+    }
 
     const where = conditions.length === 0 ? undefined : and(...conditions);
     const sortField = opts.sort?.field ?? 'modified_at';
@@ -421,7 +425,8 @@ export class EngramService {
           ? engramIndex.createdAt
           : engramIndex.modifiedAt;
 
-    const limit = opts.limit ?? 50;
+    // When filtering by explicit IDs, use the ID count as the limit (all match or none).
+    const limit = opts.ids && opts.limit === undefined ? opts.ids.length : (opts.limit ?? 50);
     const offset = opts.offset ?? 0;
 
     const rowsQuery = this.db.select().from(engramIndex).$dynamic();

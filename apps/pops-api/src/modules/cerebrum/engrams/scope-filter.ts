@@ -57,10 +57,8 @@ export function filterByScopes(opts: FilterByScopesOptions): FilterByScopesResul
 
 /** Fetch all engram IDs that have at least one secret scope. */
 function getSecretEngramIds(db: BetterSQLite3Database): Set<string> {
-  // A scope contains 'secret' as a segment — use LIKE patterns for each boundary.
-  // We query for scopes where '.secret.' appears in the middle, OR starts with 'secret.',
-  // OR ends with '.secret'. The last two are technically invalid (secret is never the
-  // first or last segment in a valid scope), but we guard defensively.
+  // Any scope containing a segment exactly named 'secret' is treated as secret,
+  // regardless of position. Three LIKE patterns cover middle, start, and end.
   const rows = db
     .select({ engramId: engramScopes.engramId })
     .from(engramScopes)

@@ -11,7 +11,7 @@ import { join } from 'node:path';
 
 import { parse as parseToml } from 'smol-toml';
 
-import { normaliseScope, scopeStringSchema } from './scope-schema.js';
+import { scopeStringSchema } from './scope-schema.js';
 
 const DEFAULT_FALLBACK_SCOPE = 'personal.captures';
 
@@ -58,7 +58,13 @@ function parseConfig(raw: unknown): ScopeRulesConfig {
       ? ((obj['defaults'] as Record<string, unknown>)['fallback_scope'] as string)
       : DEFAULT_FALLBACK_SCOPE;
 
-  const fallback_scope = normaliseScope(fallbackRaw);
+  const parsedFallback = scopeStringSchema.safeParse(fallbackRaw);
+  if (!parsedFallback.success) {
+    console.warn(
+      `[cerebrum] scope-rules.toml: invalid defaults.fallback_scope '${String(fallbackRaw)}' — using default '${DEFAULT_FALLBACK_SCOPE}'`
+    );
+  }
+  const fallback_scope = parsedFallback.success ? parsedFallback.data : DEFAULT_FALLBACK_SCOPE;
 
   const rawRules = Array.isArray(obj['rules']) ? (obj['rules'] as unknown[]) : [];
   const rules: ScopeRule[] = [];
