@@ -22,6 +22,7 @@ import type { inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from '@pops/api-client';
 
 type ProposeOutput = inferRouterOutputs<AppRouter>['core']['tagRules']['proposeTagRuleChangeSet'];
+type RejectOutput = inferRouterOutputs<AppRouter>['core']['tagRules']['rejectTagRuleChangeSet'];
 
 export interface TagRuleLearnSignal {
   descriptionPattern: string;
@@ -60,6 +61,12 @@ export function TagRuleProposalDialog(props: TagRuleProposalDialogProps) {
   const [rejectOpen, setRejectOpen] = useState(false);
   const [rejectFeedback, setRejectFeedback] = useState('');
   const [acceptedNewTags, setAcceptedNewTags] = useState<Set<string>>(new Set());
+  /**
+   * Holds a follow-up proposal returned by `rejectTagRuleChangeSet` when feedback
+   * is provided. When set, it overrides the query-derived proposal so the user can
+   * review the revised rule without closing and reopening the dialog.
+   */
+  const [followUpProposal, setFollowUpProposal] = useState<ProposeOutput | null>(null);
 
   const proposeInput = useMemo(() => {
     if (!props.signal) return null;
@@ -107,7 +114,8 @@ export function TagRuleProposalDialog(props: TagRuleProposalDialogProps) {
     }
   );
 
-  const proposal: ProposeOutput | undefined = proposeQuery.data;
+  /** The active proposal — follow-up (from rejection) takes precedence over the query result. */
+  const proposal: ProposeOutput | undefined = followUpProposal ?? proposeQuery.data;
 
   useEffect(() => {
     if (!props.open || !props.signal) return;
@@ -117,6 +125,7 @@ export function TagRuleProposalDialog(props: TagRuleProposalDialogProps) {
     setRejectOpen(false);
     setRejectFeedback('');
     setAcceptedNewTags(new Set());
+    setFollowUpProposal(null);
   }, [props.open, props.signal]);
 
   const newTagNames = useMemo(() => {
@@ -145,9 +154,17 @@ export function TagRuleProposalDialog(props: TagRuleProposalDialogProps) {
   });
 
   const rejectMutation = trpc.core.tagRules.rejectTagRuleChangeSet.useMutation({
-    onSuccess: () => {
-      toast.message('Proposal dismissed');
-      onOpenChange(false);
+    onSuccess: (data: RejectOutput) => {
+      if (data.followUpProposal) {
+        // A revised proposal was generated — show it in the dialog instead of closing.
+        setFollowUpProposal(data.followUpProposal);
+        setRejectOpen(false);
+        setRejectFeedback('');
+        toast.message('Proposal revised based on your feedback');
+      } else {
+        toast.message('Proposal dismissed');
+        onOpenChange(false);
+      }
     },
     onError: (e) => toast.error(e.message),
   });
@@ -170,14 +187,39 @@ export function TagRuleProposalDialog(props: TagRuleProposalDialogProps) {
   }, [proposal, applyMutation, acceptedNewTags, utils, onApplied, onOpenChange]);
 
   const handleReject = useCallback(() => {
-    if (!proposal) return;
+    if (!proposal || !props.signal) return;
     const fb = rejectFeedback.trim();
     if (fb.length === 0) {
       toast.error('Please add a short note explaining why you are rejecting this proposal.');
       return;
     }
-    rejectMutation.mutate({ changeSet: proposal.changeSet, feedback: fb });
-  }, [proposal, rejectMutation, rejectFeedback]);
+    rejectMutation.mutate({
+      changeSet: proposal.changeSet,
+      feedback: fb,
+      // Pass the current signal and transactions so the server can generate a follow-up.
+      signal: {
+        descriptionPattern: pattern.trim() || props.signal.descriptionPattern,
+        matchType,
+        entityId: props.signal.entityId,
+        tags: parseTags(tagsText.trim() ? tagsText : props.signal.tags.join(', ')),
+      },
+      transactions: props.previewTransactions.map((t) => ({
+        transactionId: t.checksum,
+        description: t.description,
+        entityId: t.entityId ?? null,
+      })),
+      maxPreviewItems: 200,
+    });
+  }, [
+    proposal,
+    props.signal,
+    props.previewTransactions,
+    rejectMutation,
+    rejectFeedback,
+    pattern,
+    matchType,
+    tagsText,
+  ]);
 
   const busy = applyMutation.isPending || rejectMutation.isPending;
 
@@ -194,6 +236,11 @@ export function TagRuleProposalDialog(props: TagRuleProposalDialogProps) {
 
         {!props.signal ? null : (
           <div className="space-y-4 text-sm">
+            {followUpProposal && (
+              <p className="rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
+                Revised proposal based on your feedback. Review and save or dismiss.
+              </p>
+            )}
             <div className="space-y-2">
               <Label htmlFor="tr-pattern">Description pattern</Label>
               <Input

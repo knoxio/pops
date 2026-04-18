@@ -253,4 +253,119 @@ describe('tagRules', () => {
     const rules = orm.select().from(transactionTagRules).all();
     expect(rules.length).toBe(0);
   });
+
+  it('reject without signal returns no followUpProposal and applies no changes', async () => {
+    const orm = getDrizzle();
+    orm.delete(transactionTagRules).run();
+
+    const res = await caller.core.tagRules.rejectTagRuleChangeSet({
+      changeSet: {
+        ops: [
+          {
+            op: 'add',
+            data: { descriptionPattern: 'NETFLIX', matchType: 'contains', tags: ['Subscriptions'] },
+          },
+        ],
+      },
+      feedback: 'Too broad a pattern',
+    });
+
+    expect(res.message).toBe('Tag rule ChangeSet rejected');
+    expect(res.followUpProposal).toBeNull();
+
+    // No rules must have been written.
+    const rules = orm.select().from(transactionTagRules).all();
+    expect(rules.length).toBe(0);
+  });
+
+  it('reject with signal and feedback returns a followUpProposal incorporating the feedback', async () => {
+    const orm = getDrizzle();
+    orm.delete(transactionTagRules).run();
+    orm.delete(tagVocabulary).run();
+    orm
+      .insert(tagVocabulary)
+      .values({ tag: 'Subscriptions', source: 'seed', isActive: true })
+      .run();
+
+    const res = await caller.core.tagRules.rejectTagRuleChangeSet({
+      changeSet: {
+        ops: [
+          {
+            op: 'add',
+            data: { descriptionPattern: 'NETFLIX', matchType: 'contains', tags: ['Subscriptions'] },
+          },
+        ],
+      },
+      feedback: 'Use exact match instead',
+      signal: {
+        descriptionPattern: 'NETFLIX',
+        matchType: 'exact',
+        tags: ['Subscriptions'],
+      },
+      transactions: [
+        { transactionId: 't1', description: 'NETFLIX' },
+        { transactionId: 't2', description: 'NETFLIX HD' },
+      ],
+      maxPreviewItems: 200,
+    });
+
+    expect(res.message).toBe('Tag rule ChangeSet rejected');
+    expect(res.followUpProposal).toBeDefined();
+
+    const followUp = res.followUpProposal!;
+
+    // Rationale must reference the feedback.
+    expect(followUp.rationale).toContain('Use exact match instead');
+
+    // The ChangeSet reason must reference the feedback.
+    expect(followUp.changeSet.reason).toContain('Use exact match instead');
+
+    // The follow-up proposal uses the revised signal (exact match).
+    const addOp = followUp.changeSet.ops[0];
+    expect(addOp?.op).toBe('add');
+    if (addOp?.op === 'add') {
+      expect(addOp.data.matchType).toBe('exact');
+      expect(addOp.data.descriptionPattern).toBe('NETFLIX');
+    }
+
+    // No rules were applied — rejection must not persist anything.
+    const rules = orm.select().from(transactionTagRules).all();
+    expect(rules.length).toBe(0);
+  });
+
+  it('reject with signal returns correct preview for the follow-up', async () => {
+    const orm = getDrizzle();
+    orm.delete(transactionTagRules).run();
+    orm.delete(tagVocabulary).run();
+    orm.insert(tagVocabulary).values({ tag: 'Groceries', source: 'seed', isActive: true }).run();
+
+    const res = await caller.core.tagRules.rejectTagRuleChangeSet({
+      changeSet: {
+        ops: [
+          {
+            op: 'add',
+            data: { descriptionPattern: 'SHOP', matchType: 'contains', tags: ['Groceries'] },
+          },
+        ],
+      },
+      feedback: 'Too vague — scope to WOOLWORTHS only',
+      signal: {
+        descriptionPattern: 'WOOLWORTHS',
+        matchType: 'contains',
+        tags: ['Groceries'],
+      },
+      transactions: [
+        { transactionId: 't1', description: 'WOOLWORTHS 1234' },
+        { transactionId: 't2', description: 'COLES 9999' },
+      ],
+      maxPreviewItems: 200,
+    });
+
+    expect(res.followUpProposal).toBeDefined();
+    const followUp = res.followUpProposal!;
+
+    // Only WOOLWORTHS 1234 should be in the preview.
+    expect(followUp.preview.counts.affected).toBe(1);
+    expect(followUp.preview.affected[0]?.transactionId).toBe('t1');
+  });
 });

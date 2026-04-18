@@ -257,10 +257,14 @@ export function proposeTagRuleChangeSet(args: {
   };
   transactions: PreviewInputTransaction[];
   maxPreviewItems: number;
+  /** Optional feedback from a previous rejection; incorporated into the rationale. */
+  rejectionFeedback?: string;
 }): TagRuleChangeSetProposal {
   const changeSet: TagRuleChangeSet = {
     source: 'tag-edit-signal',
-    reason: 'Create new tag rule from tag edit signal',
+    reason: args.rejectionFeedback
+      ? `Revised tag rule incorporating rejection feedback: ${args.rejectionFeedback}`
+      : 'Create new tag rule from tag edit signal',
     ops: [
       {
         op: 'add',
@@ -282,9 +286,14 @@ export function proposeTagRuleChangeSet(args: {
     maxPreviewItems: args.maxPreviewItems,
   });
 
+  const baseRationale = `Add new tag rule (${args.signal.matchType}:${args.signal.descriptionPattern}) from tag edit signal`;
+  const rationale = args.rejectionFeedback
+    ? `${baseRationale} — revised after rejection: "${args.rejectionFeedback}"`
+    : baseRationale;
+
   return {
     changeSet,
-    rationale: `Add new tag rule (${args.signal.matchType}:${args.signal.descriptionPattern}) from tag edit signal`,
+    rationale,
     preview,
   };
 }
