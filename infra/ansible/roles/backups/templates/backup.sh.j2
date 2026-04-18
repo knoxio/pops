@@ -13,12 +13,14 @@ sqlite3 "${SQLITE_PATH}" ".backup ${BACKUP_DIR}/pops-backup.db"
 
 # 2. Create tar archive
 # Engrams are namespaced under `engrams/` in the archive so restored
-# Markdown files don't collide with other data directories.
+# Markdown files don't collide with other data directories. Quote the
+# Jinja expansion so spaces or shell metacharacters in engram_root cannot
+# break the command substitution.
 tar cf "${ARCHIVE}" \
   -C "${BACKUP_DIR}" pops-backup.db \
   -C "{{ paperless_data_dir }}" . \
   -C "{{ metabase_data_dir }}" . \
-  -C "$(dirname {{ engram_root }})" "$(basename {{ engram_root }})"
+  -C "$(dirname "{{ engram_root }}")" "$(basename "{{ engram_root }}")"
 
 # 3. Encrypt with age
 age --encrypt \

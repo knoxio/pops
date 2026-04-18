@@ -7,8 +7,19 @@
  */
 import { z } from 'zod';
 
+/** Primitive types a template custom field can declare. `[]` suffix = array. */
+export const TEMPLATE_FIELD_TYPES = [
+  'string',
+  'number',
+  'boolean',
+  'string[]',
+  'number[]',
+  'boolean[]',
+] as const;
+export type TemplateFieldType = (typeof TEMPLATE_FIELD_TYPES)[number];
+
 export const templateCustomFieldSchema = z.object({
-  type: z.string().min(1),
+  type: z.enum(TEMPLATE_FIELD_TYPES),
   description: z.string().min(1),
 });
 export type TemplateCustomField = z.infer<typeof templateCustomFieldSchema>;

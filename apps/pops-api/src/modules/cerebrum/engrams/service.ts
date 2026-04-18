@@ -49,6 +49,33 @@ const CONFIG_DIR = '.config';
 const INDEX_DIR = '.index';
 const WELL_KNOWN_DIRS = new Set([ARCHIVE_DIR, TEMPLATES_DIR, CONFIG_DIR, INDEX_DIR]);
 
+/**
+ * An engram `type` becomes a directory name (`{type}/{id}.md`). Constrain it
+ * to a single filesystem-safe segment so API input can never traverse out of
+ * `ENGRAM_ROOT` or collide with reserved directories.
+ */
+const TYPE_SEGMENT_PATTERN = /^[a-z0-9][a-z0-9_-]{0,63}$/;
+
+function assertSafeType(type: string): void {
+  if (!TYPE_SEGMENT_PATTERN.test(type) || WELL_KNOWN_DIRS.has(type) || type === 'engrams') {
+    throw new ValidationError({
+      message: `invalid engram type '${type}' — must be a short lowercase segment`,
+    });
+  }
+}
+
+/** Return a new array with duplicates removed, preserving first-seen order. */
+function dedupe<T>(values: readonly T[]): T[] {
+  const seen = new Set<T>();
+  const out: T[] = [];
+  for (const v of values) {
+    if (seen.has(v)) continue;
+    seen.add(v);
+    out.push(v);
+  }
+  return out;
+}
+
 export interface CreateEngramInput {
   type: string;
   title: string;
@@ -127,14 +154,17 @@ export class EngramService {
     let customFields: Record<string, unknown> = input.customFields ?? {};
     let templateName: string | undefined = input.template;
     let mergedScopes = scopes;
+    let type = input.type || 'capture';
 
     if (templateName) {
       const template = this.templates.get(templateName);
       if (!template) {
         console.warn(
-          `[cerebrum] Template '${templateName}' not found — creating a 'capture' engram instead.`
+          `[cerebrum] Template '${templateName}' not found — falling back to a 'capture' engram.`
         );
         templateName = undefined;
+        // PRD-077 US-02: unknown template ⇒ capture-type engram, no scaffolding.
+        type = 'capture';
       } else {
         const applied = applyTemplate({
           template,
@@ -153,7 +183,7 @@ export class EngramService {
       throw new ValidationError({ message: 'at least one scope is required' });
     }
 
-    const type = templateName ? input.type : input.type || 'capture';
+    assertSafeType(type);
     const id = generateEngramId({
       title: input.title,
       now: this.now(),
@@ -164,13 +194,13 @@ export class EngramService {
     const frontmatter: EngramFrontmatter = {
       id,
       type,
-      scopes: mergedScopes,
+      scopes: dedupe(mergedScopes),
       created: nowIso,
       modified: nowIso,
       source,
       status: 'active',
-      ...(tags.length > 0 ? { tags } : {}),
-      ...(input.links && input.links.length > 0 ? { links: input.links } : {}),
+      ...(tags.length > 0 ? { tags: dedupe(tags) } : {}),
+      ...(input.links && input.links.length > 0 ? { links: dedupe(input.links) } : {}),
       ...(templateName ? { template: templateName } : {}),
       ...customFields,
     };
@@ -344,22 +374,26 @@ export class EngramService {
     if (opts.status) conditions.push(eq(engramIndex.status, opts.status));
     if (opts.search) conditions.push(like(engramIndex.title, `%${opts.search}%`));
     if (opts.scopes && opts.scopes.length > 0) {
-      const scopeIds = this.db
-        .selectDistinct({ engramId: engramScopes.engramId })
-        .from(engramScopes)
-        .where(inArray(engramScopes.scope, opts.scopes))
-        .all()
-        .map((r) => r.engramId);
-      conditions.push(scopeIds.length > 0 ? inArray(engramIndex.id, scopeIds) : sql`0 = 1`);
+      conditions.push(
+        inArray(
+          engramIndex.id,
+          this.db
+            .select({ engramId: engramScopes.engramId })
+            .from(engramScopes)
+            .where(inArray(engramScopes.scope, opts.scopes))
+        )
+      );
     }
     if (opts.tags && opts.tags.length > 0) {
-      const tagIds = this.db
-        .selectDistinct({ engramId: engramTags.engramId })
-        .from(engramTags)
-        .where(inArray(engramTags.tag, opts.tags))
-        .all()
-        .map((r) => r.engramId);
-      conditions.push(tagIds.length > 0 ? inArray(engramIndex.id, tagIds) : sql`0 = 1`);
+      conditions.push(
+        inArray(
+          engramIndex.id,
+          this.db
+            .select({ engramId: engramTags.engramId })
+            .from(engramTags)
+            .where(inArray(engramTags.tag, opts.tags))
+        )
+      );
     }
 
     const where = conditions.length === 0 ? undefined : and(...conditions);
@@ -386,9 +420,59 @@ export class EngramService {
     const [totalRow] = (where ? totalQuery.where(where) : totalQuery).all();
 
     return {
-      engrams: rows.map((row) => this.loadEngramFromRow(indexRowFromDrizzle(row))),
+      engrams: this.hydrateEngrams(rows.map(indexRowFromDrizzle)),
       total: totalRow?.total ?? 0,
     };
+  }
+
+  /**
+   * Batch-fetch scopes, tags, and links for a page of index rows.
+   * Three queries total regardless of page size — avoids the N+1 of looking
+   * each junction table up per-engram.
+   */
+  private hydrateEngrams(rows: IndexRow[]): Engram[] {
+    if (rows.length === 0) return [];
+    const ids = rows.map((r) => r.id);
+
+    const scopesByEngram = bucket(
+      this.db
+        .select({ engramId: engramScopes.engramId, value: engramScopes.scope })
+        .from(engramScopes)
+        .where(inArray(engramScopes.engramId, ids))
+        .all()
+    );
+    const tagsByEngram = bucket(
+      this.db
+        .select({ engramId: engramTags.engramId, value: engramTags.tag })
+        .from(engramTags)
+        .where(inArray(engramTags.engramId, ids))
+        .all()
+    );
+    const linksByEngram = bucket(
+      this.db
+        .select({ engramId: engramLinks.sourceId, value: engramLinks.targetId })
+        .from(engramLinks)
+        .where(inArray(engramLinks.sourceId, ids))
+        .all()
+    );
+
+    return rows.map((row) => ({
+      id: row.id,
+      type: row.type,
+      scopes: scopesByEngram.get(row.id) ?? [],
+      tags: tagsByEngram.get(row.id) ?? [],
+      links: linksByEngram.get(row.id) ?? [],
+      created: row.created_at,
+      modified: row.modified_at,
+      source: row.source as EngramSource,
+      status: row.status as EngramStatus,
+      template: row.template,
+      title: row.title,
+      filePath: row.file_path,
+      contentHash: row.content_hash,
+      wordCount: row.word_count,
+      customFields: parseCustomFields(row.custom_fields),
+    }));
   }
 
   reindex(): { indexed: number } {
@@ -430,9 +514,11 @@ export class EngramService {
           wordCount,
           customFields: Object.keys(customFields).length > 0 ? JSON.stringify(customFields) : null,
         },
-        scopes: frontmatter.scopes,
-        tags: frontmatter.tags ?? [],
-        links: frontmatter.links ?? [],
+        // Dedupe so a hand-edited file with a repeated scope/tag/link doesn't
+        // blow up the rebuild with a UNIQUE constraint violation.
+        scopes: dedupe(frontmatter.scopes),
+        tags: dedupe(frontmatter.tags ?? []),
+        links: dedupe(frontmatter.links ?? []),
       });
     }
 
@@ -521,19 +607,23 @@ export class EngramService {
         })
         .run();
 
-      if (frontmatter.scopes.length > 0) {
+      // Dedupe defends against hand-edited frontmatter with repeats.
+      const scopes = dedupe(frontmatter.scopes);
+      if (scopes.length > 0) {
         tx.insert(engramScopes)
-          .values(frontmatter.scopes.map((scope) => ({ engramId: id, scope })))
+          .values(scopes.map((scope) => ({ engramId: id, scope })))
           .run();
       }
-      if (frontmatter.tags && frontmatter.tags.length > 0) {
+      const tags = dedupe(frontmatter.tags ?? []);
+      if (tags.length > 0) {
         tx.insert(engramTags)
-          .values(frontmatter.tags.map((tag) => ({ engramId: id, tag })))
+          .values(tags.map((tag) => ({ engramId: id, tag })))
           .run();
       }
-      if (frontmatter.links && frontmatter.links.length > 0) {
+      const links = dedupe(frontmatter.links ?? []);
+      if (links.length > 0) {
         tx.insert(engramLinks)
-          .values(frontmatter.links.map((targetId) => ({ sourceId: id, targetId })))
+          .values(links.map((targetId) => ({ sourceId: id, targetId })))
           .run();
       }
     });
@@ -541,46 +631,9 @@ export class EngramService {
 
   private loadEngram(id: string): Engram {
     const row = this.getIndexRow(id);
-    return this.loadEngramFromRow(row);
-  }
-
-  private loadEngramFromRow(row: IndexRow): Engram {
-    const scopes = this.db
-      .select({ scope: engramScopes.scope })
-      .from(engramScopes)
-      .where(eq(engramScopes.engramId, row.id))
-      .all()
-      .map((r) => r.scope);
-    const tags = this.db
-      .select({ tag: engramTags.tag })
-      .from(engramTags)
-      .where(eq(engramTags.engramId, row.id))
-      .all()
-      .map((r) => r.tag);
-    const links = this.db
-      .select({ targetId: engramLinks.targetId })
-      .from(engramLinks)
-      .where(eq(engramLinks.sourceId, row.id))
-      .all()
-      .map((r) => r.targetId);
-
-    return {
-      id: row.id,
-      type: row.type,
-      scopes,
-      tags,
-      links,
-      created: row.created_at,
-      modified: row.modified_at,
-      source: row.source as EngramSource,
-      status: row.status as EngramStatus,
-      template: row.template,
-      title: row.title,
-      filePath: row.file_path,
-      contentHash: row.content_hash,
-      wordCount: row.word_count,
-      customFields: parseCustomFields(row.custom_fields),
-    };
+    const [engram] = this.hydrateEngrams([row]);
+    if (!engram) throw new NotFoundError('Engram', id);
+    return engram;
   }
 
   private getIndexRow(id: string): IndexRow {
@@ -656,6 +709,17 @@ function indexRowFromDrizzle(row: typeof engramIndex.$inferSelect): IndexRow {
 
 function sha256(input: string): string {
   return createHash('sha256').update(input).digest('hex');
+}
+
+/** Group `{ engramId, value }` rows into a map keyed by engramId. */
+function bucket(rows: { engramId: string; value: string }[]): Map<string, string[]> {
+  const out = new Map<string, string[]>();
+  for (const row of rows) {
+    const existing = out.get(row.engramId);
+    if (existing) existing.push(row.value);
+    else out.set(row.engramId, [row.value]);
+  }
+  return out;
 }
 
 function parseCustomFields(json: string | null): Record<string, unknown> {

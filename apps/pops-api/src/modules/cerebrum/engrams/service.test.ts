@@ -89,7 +89,7 @@ describe('EngramService', () => {
     expect(fileContent).toContain('Node');
   });
 
-  it('falls back to capture-style when the template does not exist', () => {
+  it('falls back to capture-style when the template does not exist (PRD-077 US-02)', () => {
     const engram = service.create({
       type: 'note',
       title: 'Falls back',
@@ -97,7 +97,32 @@ describe('EngramService', () => {
       template: 'nonexistent',
     });
     expect(engram.template).toBeNull();
-    expect(engram.type).toBe('note');
+    expect(engram.type).toBe('capture');
+    expect(engram.filePath.startsWith('capture/')).toBe(true);
+  });
+
+  it('rejects unsafe type values that could escape the engram root', () => {
+    expect(() =>
+      service.create({ type: '../etc', title: 'bad', body: '# x', scopes: ['x'] })
+    ).toThrow(ValidationError);
+    expect(() =>
+      service.create({ type: '.archive', title: 'bad', body: '# x', scopes: ['x'] })
+    ).toThrow(ValidationError);
+  });
+
+  it('dedupes duplicate scopes/tags/links from input', () => {
+    const engram = service.create({
+      type: 'note',
+      title: 'Dedupe',
+      body: '# Dedupe',
+      scopes: ['work', 'work', 'personal'],
+      tags: ['a', 'a', 'b'],
+    });
+    // The hydrator reads junction rows without ordering so compare as sets.
+    expect(new Set(engram.scopes)).toEqual(new Set(['work', 'personal']));
+    expect(engram.scopes).toHaveLength(2);
+    expect(new Set(engram.tags)).toEqual(new Set(['a', 'b']));
+    expect(engram.tags).toHaveLength(2);
   });
 
   it('updates title, body, and scopes and bumps modified', () => {

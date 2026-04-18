@@ -23,7 +23,10 @@ const createSchema = z.object({
   type: z.string().min(1),
   title: z.string().min(1),
   body: z.string().optional(),
-  scopes: z.array(z.string().min(1)).optional(),
+  // `.min(1)` matches the engram frontmatter contract (at least one scope
+  // required). A template may inject `default_scopes`, so we allow `scopes`
+  // itself to be omitted — but never an empty array.
+  scopes: z.array(z.string().min(1)).min(1).optional(),
   tags: z.array(z.string().min(1)).optional(),
   template: z.string().min(1).optional(),
   customFields: customFieldsSchema.optional(),
@@ -35,7 +38,9 @@ const updateSchema = z.object({
   id: engramIdSchema,
   title: z.string().min(1).optional(),
   body: z.string().optional(),
-  scopes: z.array(z.string().min(1)).optional(),
+  // If `scopes` is present it must be non-empty; the frontmatter validator
+  // would otherwise reject the resulting file mid-write.
+  scopes: z.array(z.string().min(1)).min(1).optional(),
   tags: z.array(z.string().min(1)).optional(),
   customFields: customFieldsSchema.optional(),
   status: z.enum(ENGRAM_STATUSES).optional(),
@@ -64,7 +69,19 @@ function toTrpcError(err: unknown): never {
     throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
   }
   if (err instanceof ValidationError) {
-    throw new TRPCError({ code: 'BAD_REQUEST', message: err.message, cause: err });
+    // ValidationError.message is the generic "Validation failed" — the actual
+    // reason is stashed in `details`. Surface it so clients can show
+    // actionable feedback (e.g. "decision, alternatives are required").
+    const details = err.details;
+    const message =
+      typeof details === 'string'
+        ? details
+        : typeof details === 'object' &&
+            details !== null &&
+            typeof (details as { message?: unknown }).message === 'string'
+          ? (details as { message: string }).message
+          : err.message;
+    throw new TRPCError({ code: 'BAD_REQUEST', message, cause: err });
   }
   if (err instanceof HttpError) {
     throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: err.message });

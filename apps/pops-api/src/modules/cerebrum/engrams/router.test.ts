@@ -79,6 +79,18 @@ describe('cerebrum tRPC router', () => {
     await expect(caller.cerebrum.templates.get({ name: 'missing' })).rejects.toThrow(/not found/i);
   });
 
+  it('surfaces the specific reason from a ValidationError (not generic "Validation failed")', async () => {
+    const caller = createCaller();
+    await expect(
+      caller.cerebrum.engrams.create({
+        type: 'decision',
+        title: 'Missing fields',
+        scopes: ['work'],
+        template: 'decision',
+      })
+    ).rejects.toThrow(/decision/i);
+  });
+
   it('delete archives instead of physically deleting', async () => {
     const caller = createCaller();
     const { engram } = await caller.cerebrum.engrams.create({

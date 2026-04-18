@@ -123,7 +123,13 @@ function assertTypeMatches(key: string, spec: TemplateCustomField, value: unknow
       case 'boolean':
         return typeof v === 'boolean';
       default:
-        return true;
+        // Reject unknown types loudly instead of silently accepting. The
+        // template schema's Zod enum prevents this reaching here at load
+        // time, but a registry bypass (e.g. a test injecting a raw Template)
+        // would otherwise disable all validation for the field.
+        throw new ValidationError({
+          message: `Template declares unsupported type '${spec.type}' for field '${key}'`,
+        });
     }
   };
   const ok = isArray ? Array.isArray(value) && value.every(check) : check(value);
