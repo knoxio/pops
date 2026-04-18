@@ -60,6 +60,33 @@ export function toInventoryItem(row: InventoryRow): InventoryItem {
   };
 }
 
+/** Zod schema for the inventory item response shape. */
+export const InventoryItemSchema = z.object({
+  id: z.string(),
+  itemName: z.string(),
+  brand: z.string().nullable(),
+  model: z.string().nullable(),
+  itemId: z.string().nullable(),
+  room: z.string().nullable(),
+  location: z.string().nullable(),
+  type: z.string().nullable(),
+  condition: z.string().nullable(),
+  inUse: z.boolean(),
+  deductible: z.boolean(),
+  purchaseDate: z.string().nullable(),
+  warrantyExpires: z.string().nullable(),
+  replacementValue: z.number().nullable(),
+  resaleValue: z.number().nullable(),
+  purchasePrice: z.number().nullable(),
+  purchaseTransactionId: z.string().nullable(),
+  purchasedFromId: z.string().nullable(),
+  purchasedFromName: z.string().nullable(),
+  assetId: z.string().nullable(),
+  notes: z.string().nullable(),
+  locationId: z.string().nullable(),
+  lastEditedTime: z.string(),
+});
+
 /** Zod schema for creating an inventory item. */
 export const CreateInventoryItemSchema = z.object({
   itemName: z.string().min(1, 'Item name is required'),

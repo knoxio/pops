@@ -5,10 +5,10 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
-import { openApiOutput, protectedProcedure, router } from '../../../trpc.js';
+import { protectedProcedure, router } from '../../../trpc.js';
 import { toInventoryItem } from '../items/types.js';
 import * as service from './service.js';
-import { CreateLocationSchema, type Location, toLocation, UpdateLocationSchema } from './types.js';
+import { CreateLocationSchema, LocationSchema, toLocation, UpdateLocationSchema } from './types.js';
 
 export const locationsRouter = router({
   /** Get the full location tree as nested nodes. */
@@ -26,7 +26,7 @@ export const locationsRouter = router({
         tags: ['locations'],
       },
     })
-    .output(openApiOutput<{ data: Location[]; total: number }>())
+    .output(z.object({ data: z.array(LocationSchema), total: z.number() }))
     .query(() => {
       const { rows, total } = service.listLocations();
       return {

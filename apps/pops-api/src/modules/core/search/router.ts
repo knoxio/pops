@@ -3,8 +3,8 @@
  */
 import { z } from 'zod';
 
-import { openApiOutput, protectedProcedure, router } from '../../../trpc.js';
-import { searchAll, type SearchAllResult, showMore } from './engine.js';
+import { protectedProcedure, router } from '../../../trpc.js';
+import { searchAll, SearchAllResultSchema, showMore } from './engine.js';
 
 const SearchContextSchema = z
   .object({
@@ -31,7 +31,7 @@ export const searchRouter = router({
         context: SearchContextSchema,
       })
     )
-    .output(openApiOutput<SearchAllResult>())
+    .output(SearchAllResultSchema)
     .query(async ({ input }) => {
       const context = {
         app: input.context?.app ?? null,

@@ -3,6 +3,8 @@
  * Promise.allSettled, groups results into sections, and orders context
  * sections (current app) first.
  */
+import { z } from 'zod';
+
 import { isContextDomain } from './domain-app-mapping.js';
 import { getAdapters } from './registry.js';
 
@@ -20,6 +22,27 @@ export interface SearchSection {
 export interface SearchAllResult {
   sections: SearchSection[];
 }
+
+export const SearchHitSchema = z.object({
+  uri: z.string(),
+  score: z.number(),
+  matchField: z.string(),
+  matchType: z.enum(['exact', 'prefix', 'contains']),
+  data: z.unknown(),
+});
+
+export const SearchSectionSchema = z.object({
+  domain: z.string(),
+  icon: z.string(),
+  color: z.string(),
+  isContextSection: z.boolean(),
+  hits: z.array(SearchHitSchema),
+  totalCount: z.number(),
+});
+
+export const SearchAllResultSchema = z.object({
+  sections: z.array(SearchSectionSchema),
+});
 
 const HITS_PER_SECTION = 5;
 

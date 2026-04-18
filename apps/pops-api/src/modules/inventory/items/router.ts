@@ -5,12 +5,12 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { NotFoundError } from '../../../shared/errors.js';
-import { paginationMeta, type PaginationMeta } from '../../../shared/pagination.js';
-import { openApiOutput, protectedProcedure, router } from '../../../trpc.js';
+import { paginationMeta, PaginationMetaSchema } from '../../../shared/pagination.js';
+import { protectedProcedure, router } from '../../../trpc.js';
 import * as service from './service.js';
 import {
   CreateInventoryItemSchema,
-  type InventoryItem,
+  InventoryItemSchema,
   InventoryQuerySchema,
   toInventoryItem,
   UpdateInventoryItemSchema,
@@ -33,11 +33,11 @@ export const inventoryRouter = router({
     })
     .input(InventoryQuerySchema)
     .output(
-      openApiOutput<{
-        data: InventoryItem[];
-        pagination: PaginationMeta;
-        totals: { totalReplacementValue: number; totalResaleValue: number };
-      }>()
+      z.object({
+        data: z.array(InventoryItemSchema),
+        pagination: PaginationMetaSchema,
+        totals: z.object({ totalReplacementValue: z.number(), totalResaleValue: z.number() }),
+      })
     )
     .query(({ input }) => {
       const limit = input.limit ?? DEFAULT_LIMIT;
@@ -99,7 +99,7 @@ export const inventoryRouter = router({
       },
     })
     .input(z.object({ id: z.string() }))
-    .output(openApiOutput<{ data: InventoryItem }>())
+    .output(z.object({ data: InventoryItemSchema }))
     .query(({ input }) => {
       try {
         const row = service.getInventoryItem(input.id);

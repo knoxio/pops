@@ -22,6 +22,14 @@ export function toConnection(row: ItemConnectionRow): ItemConnection {
   };
 }
 
+/** Zod schema for the item connection response shape. */
+export const ItemConnectionSchema = z.object({
+  id: z.number(),
+  itemAId: z.string(),
+  itemBId: z.string(),
+  createdAt: z.string(),
+});
+
 /** Zod schema for connecting two items. */
 export const ConnectItemsSchema = z.object({
   itemAId: z.string().min(1, 'Item A ID is required'),

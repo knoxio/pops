@@ -19,6 +19,12 @@ export function toSetting(row: SettingRow): Setting {
   };
 }
 
+/** Zod schema for the setting response shape. */
+export const SettingSchema = z.object({
+  key: z.string(),
+  value: z.string(),
+});
+
 /** Input for setting a value (upsert) — used internally by the service */
 export interface SetSettingInput {
   key: SettingsKey;

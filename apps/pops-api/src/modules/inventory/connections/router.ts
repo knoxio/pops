@@ -2,17 +2,18 @@
  * Item connections tRPC router — connect/disconnect inventory items.
  */
 import { TRPCError } from '@trpc/server';
+import { z } from 'zod';
 
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
-import { paginationMeta, type PaginationMeta } from '../../../shared/pagination.js';
-import { openApiOutput, protectedProcedure, router } from '../../../trpc.js';
+import { paginationMeta, PaginationMetaSchema } from '../../../shared/pagination.js';
+import { protectedProcedure, router } from '../../../trpc.js';
 import * as service from './service.js';
 import {
   ConnectionQuerySchema,
   ConnectItemsSchema,
   DisconnectItemsSchema,
   GraphQuerySchema,
-  type ItemConnection,
+  ItemConnectionSchema,
   toConnection,
   TraceQuerySchema,
 } from './types.js';
@@ -64,7 +65,7 @@ export const connectionsRouter = router({
       },
     })
     .input(ConnectionQuerySchema)
-    .output(openApiOutput<{ data: ItemConnection[]; pagination: PaginationMeta }>())
+    .output(z.object({ data: z.array(ItemConnectionSchema), pagination: PaginationMetaSchema }))
     .query(({ input }) => {
       const limit = input.limit ?? DEFAULT_LIMIT;
       const offset = input.offset ?? DEFAULT_OFFSET;

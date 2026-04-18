@@ -5,11 +5,11 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { NotFoundError } from '../../../shared/errors.js';
-import { paginationMeta, type PaginationMeta } from '../../../shared/pagination.js';
-import { openApiOutput, protectedProcedure, router } from '../../../trpc.js';
+import { paginationMeta, PaginationMetaSchema } from '../../../shared/pagination.js';
+import { protectedProcedure, router } from '../../../trpc.js';
 import { SETTINGS_KEY_VALUES } from './keys.js';
 import * as service from './service.js';
-import { type Setting, SettingListSchema, toSetting } from './types.js';
+import { SettingListSchema, SettingSchema, toSetting } from './types.js';
 
 const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
@@ -21,7 +21,7 @@ export const settingsRouter = router({
       openapi: { method: 'GET', path: '/settings', summary: 'List settings', tags: ['settings'] },
     })
     .input(SettingListSchema)
-    .output(openApiOutput<{ data: Setting[]; pagination: PaginationMeta }>())
+    .output(z.object({ data: z.array(SettingSchema), pagination: PaginationMetaSchema }))
     .query(({ input }) => {
       const limit = input.limit ?? DEFAULT_LIMIT;
       const offset = input.offset ?? DEFAULT_OFFSET;
@@ -45,7 +45,7 @@ export const settingsRouter = router({
       },
     })
     .input(z.object({ key: z.enum(SETTINGS_KEY_VALUES) }))
-    .output(openApiOutput<{ data: Setting | null }>())
+    .output(z.object({ data: SettingSchema.nullable() }))
     .query(({ input }) => {
       const row = service.getSettingOrNull(input.key);
       return { data: row ? toSetting(row) : null };
@@ -62,7 +62,7 @@ export const settingsRouter = router({
       },
     })
     .input(z.object({ key: z.enum(SETTINGS_KEY_VALUES), value: z.string() }))
-    .output(openApiOutput<{ data: Setting; message: string }>())
+    .output(z.object({ data: SettingSchema, message: z.string() }))
     .mutation(({ input }) => {
       const row = service.setSetting(input);
       return {

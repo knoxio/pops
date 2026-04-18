@@ -5,8 +5,8 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
-import { paginationMeta, type PaginationMeta } from '../../../shared/pagination.js';
-import { openApiOutput, protectedProcedure, router } from '../../../trpc.js';
+import { paginationMeta, PaginationMetaSchema } from '../../../shared/pagination.js';
+import { protectedProcedure, router } from '../../../trpc.js';
 import { getPlexClient } from '../plex/service.js';
 import { clearLeavingOnWatchlistAdd } from '../rotation/leaving-lifecycle.js';
 import { pushToPlexWatchlist } from './plex-push.js';
@@ -15,8 +15,8 @@ import {
   AddToWatchlistSchema,
   toWatchlistEntry,
   UpdateWatchlistSchema,
-  type WatchlistEntry,
   type WatchlistFilters,
+  WatchlistEntrySchema,
   WatchlistQuerySchema,
 } from './types.js';
 
@@ -35,7 +35,7 @@ export const watchlistRouter = router({
       },
     })
     .input(WatchlistQuerySchema)
-    .output(openApiOutput<{ data: WatchlistEntry[]; pagination: PaginationMeta }>())
+    .output(z.object({ data: z.array(WatchlistEntrySchema), pagination: PaginationMetaSchema }))
     .query(({ input }) => {
       const limit = input.limit ?? DEFAULT_LIMIT;
       const offset = input.offset ?? DEFAULT_OFFSET;

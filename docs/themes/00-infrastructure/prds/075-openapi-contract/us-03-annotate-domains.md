@@ -14,7 +14,7 @@ As an external service developer, I access finance, media, and inventory data vi
 - [x] Inventory: `items.list`, `items.get`, `locations.list`, `connections.list` annotated
 - [x] Each annotation includes HTTP method, path, summary, description
 - [x] All annotated procedures callable via curl with correct responses
-- [ ] Spec includes accurate request/response schemas derived from Zod definitions (response schemas currently emit as `{}` because `openApiOutput<T>()` passes `z.any()` at runtime; concrete Zod output schemas required — tracked as follow-up)
+- [x] Spec includes accurate request/response schemas derived from Zod definitions
 
 ## Notes
 

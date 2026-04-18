@@ -61,6 +61,20 @@ export function toEntity(row: EntityRow & { transactionCount?: number }): Entity
   };
 }
 
+/** Zod schema for the entity response shape. */
+export const EntitySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.string(),
+  abn: z.string().nullable(),
+  aliases: z.array(z.string()),
+  defaultTransactionType: z.string().nullable(),
+  defaultTags: z.array(z.string()),
+  notes: z.string().nullable(),
+  lastEditedTime: z.string(),
+  transactionCount: z.number().optional(),
+});
+
 /** Zod schema for creating an entity. */
 export const CreateEntitySchema = z.object({
   name: z.string().min(1, 'Name is required'),

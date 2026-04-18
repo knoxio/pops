@@ -44,6 +44,20 @@ export function toWatchlistEntry(
   };
 }
 
+/** Zod schema for the watchlist entry response shape. */
+export const WatchlistEntrySchema = z.object({
+  id: z.number(),
+  mediaType: z.string(),
+  mediaId: z.number(),
+  priority: z.number().nullable(),
+  notes: z.string().nullable(),
+  source: z.string().nullable(),
+  plexRatingKey: z.string().nullable(),
+  addedAt: z.string(),
+  title: z.string().nullable(),
+  posterUrl: z.string().nullable(),
+});
+
 /** Zod schema for adding to the watchlist. */
 export const AddToWatchlistSchema = z.object({
   mediaType: z.enum(MEDIA_TYPES),

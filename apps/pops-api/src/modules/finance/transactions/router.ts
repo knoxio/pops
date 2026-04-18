@@ -8,16 +8,16 @@ import { transactions as transactionsTable } from '@pops/db-types';
 
 import { getDb, getDrizzle } from '../../../db.js';
 import { NotFoundError } from '../../../shared/errors.js';
-import { paginationMeta, type PaginationMeta } from '../../../shared/pagination.js';
+import { paginationMeta, PaginationMetaSchema } from '../../../shared/pagination.js';
 import { suggestTags } from '../../../shared/tag-suggester.js';
-import { openApiOutput, protectedProcedure, router } from '../../../trpc.js';
+import { protectedProcedure, router } from '../../../trpc.js';
 import * as service from './service.js';
 import {
   CreateTransactionSchema,
   toTransaction,
-  type Transaction,
   type TransactionFilters,
   TransactionQuerySchema,
+  TransactionSchema,
   UpdateTransactionSchema,
 } from './types.js';
 
@@ -40,7 +40,7 @@ export const transactionsRouter = router({
       },
     })
     .input(TransactionQuerySchema)
-    .output(openApiOutput<{ data: Transaction[]; pagination: PaginationMeta }>())
+    .output(z.object({ data: z.array(TransactionSchema), pagination: PaginationMetaSchema }))
     .query(({ input }) => {
       const limit = input.limit ?? DEFAULT_LIMIT;
       const offset = input.offset ?? DEFAULT_OFFSET;
@@ -74,7 +74,7 @@ export const transactionsRouter = router({
       },
     })
     .input(z.object({ id: z.string() }))
-    .output(openApiOutput<{ data: Transaction }>())
+    .output(z.object({ data: TransactionSchema }))
     .query(({ input }) => {
       try {
         const row = service.getTransaction(input.id);

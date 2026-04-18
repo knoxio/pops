@@ -31,6 +31,17 @@ export function toBudget(row: BudgetRow): Budget {
   };
 }
 
+/** Zod schema for the budget response shape. */
+export const BudgetSchema = z.object({
+  id: z.string(),
+  category: z.string(),
+  period: z.string().nullable(),
+  amount: z.number().nullable(),
+  active: z.boolean(),
+  notes: z.string().nullable(),
+  lastEditedTime: z.string(),
+});
+
 /** Zod schema for creating a budget. */
 export const CreateBudgetSchema = z.object({
   category: z.string().min(1, 'Category is required'),

@@ -2,6 +2,7 @@
  * Pagination parsing and response building.
  * Shared across all list endpoints.
  */
+import { z } from 'zod';
 
 const DEFAULT_LIMIT = 50;
 const MAX_LIMIT = 500;
@@ -28,6 +29,14 @@ export function parsePagination(query: Record<string, unknown>): PaginationParam
 
 /** Shape of pagination metadata returned by list endpoints. */
 export type PaginationMeta = { total: number; limit: number; offset: number; hasMore: boolean };
+
+/** Zod schema for the pagination metadata response shape. */
+export const PaginationMetaSchema = z.object({
+  total: z.number(),
+  limit: z.number(),
+  offset: z.number(),
+  hasMore: z.boolean(),
+});
 
 /** Build the pagination metadata for a response. */
 export function paginationMeta(

@@ -5,8 +5,8 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { NotFoundError } from '../../../shared/errors.js';
-import { paginationMeta, type PaginationMeta } from '../../../shared/pagination.js';
-import { openApiOutput, protectedProcedure, router } from '../../../trpc.js';
+import { paginationMeta, PaginationMetaSchema } from '../../../shared/pagination.js';
+import { protectedProcedure, router } from '../../../trpc.js';
 import * as service from './service.js';
 import {
   BatchLogWatchSchema,
@@ -16,7 +16,7 @@ import {
   type RecentWatchHistoryFilters,
   RecentWatchHistoryQuerySchema,
   toWatchHistoryEntry,
-  type WatchHistoryEntry,
+  WatchHistoryEntrySchema,
   type WatchHistoryFilters,
   WatchHistoryQuerySchema,
 } from './types.js';
@@ -36,7 +36,7 @@ export const watchHistoryRouter = router({
       },
     })
     .input(WatchHistoryQuerySchema)
-    .output(openApiOutput<{ data: WatchHistoryEntry[]; pagination: PaginationMeta }>())
+    .output(z.object({ data: z.array(WatchHistoryEntrySchema), pagination: PaginationMetaSchema }))
     .query(({ input }) => {
       const limit = input.limit ?? DEFAULT_LIMIT;
       const offset = input.offset ?? DEFAULT_OFFSET;

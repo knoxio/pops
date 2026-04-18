@@ -54,6 +54,24 @@ export function toTransaction(row: TransactionRow): Transaction {
   };
 }
 
+/** Zod schema for the transaction response shape. */
+export const TransactionSchema = z.object({
+  id: z.string(),
+  description: z.string(),
+  account: z.string(),
+  amount: z.number(),
+  date: z.string(),
+  type: z.string(),
+  tags: z.array(z.string()),
+  entityId: z.string().nullable(),
+  entityName: z.string().nullable(),
+  location: z.string().nullable(),
+  country: z.string().nullable(),
+  relatedTransactionId: z.string().nullable(),
+  notes: z.string().nullable(),
+  lastEditedTime: z.string(),
+});
+
 /** Zod schema for creating a transaction. */
 export const CreateTransactionSchema = z.object({
   description: z.string().min(1, 'Description is required'),

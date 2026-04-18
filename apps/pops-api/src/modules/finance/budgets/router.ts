@@ -5,12 +5,12 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
-import { paginationMeta, type PaginationMeta } from '../../../shared/pagination.js';
-import { openApiOutput, protectedProcedure, router } from '../../../trpc.js';
+import { paginationMeta, PaginationMetaSchema } from '../../../shared/pagination.js';
+import { protectedProcedure, router } from '../../../trpc.js';
 import * as service from './service.js';
 import {
-  type Budget,
   BudgetQuerySchema,
+  BudgetSchema,
   CreateBudgetSchema,
   toBudget,
   UpdateBudgetSchema,
@@ -32,7 +32,7 @@ export const budgetsRouter = router({
       },
     })
     .input(BudgetQuerySchema)
-    .output(openApiOutput<{ data: Budget[]; pagination: PaginationMeta }>())
+    .output(z.object({ data: z.array(BudgetSchema), pagination: PaginationMetaSchema }))
     .query(({ input }) => {
       const limit = input.limit ?? DEFAULT_LIMIT;
       const offset = input.offset ?? DEFAULT_OFFSET;
@@ -65,7 +65,7 @@ export const budgetsRouter = router({
       },
     })
     .input(z.object({ id: z.string() }))
-    .output(openApiOutput<{ data: Budget }>())
+    .output(z.object({ data: BudgetSchema }))
     .query(({ input }) => {
       try {
         const row = service.getBudget(input.id);

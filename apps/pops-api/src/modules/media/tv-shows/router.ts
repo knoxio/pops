@@ -5,8 +5,8 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
-import { paginationMeta, type PaginationMeta } from '../../../shared/pagination.js';
-import { openApiOutput, protectedProcedure, router } from '../../../trpc.js';
+import { paginationMeta, PaginationMetaSchema } from '../../../shared/pagination.js';
+import { protectedProcedure, router } from '../../../trpc.js';
 import * as service from './service.js';
 import {
   CreateEpisodeSchema,
@@ -15,8 +15,8 @@ import {
   toEpisode,
   toSeason,
   toTvShow,
-  type TvShow,
   TvShowQuerySchema,
+  TvShowSchema,
   UpdateTvShowSchema,
 } from './types.js';
 
@@ -36,7 +36,7 @@ export const tvShowsRouter = router({
       },
     })
     .input(TvShowQuerySchema)
-    .output(openApiOutput<{ data: TvShow[]; pagination: PaginationMeta }>())
+    .output(z.object({ data: z.array(TvShowSchema), pagination: PaginationMetaSchema }))
     .query(({ input }) => {
       const limit = input.limit ?? DEFAULT_LIMIT;
       const offset = input.offset ?? DEFAULT_OFFSET;
@@ -59,7 +59,7 @@ export const tvShowsRouter = router({
       },
     })
     .input(z.object({ id: z.number().int().positive() }))
-    .output(openApiOutput<{ data: TvShow }>())
+    .output(z.object({ data: TvShowSchema }))
     .query(({ input }) => {
       try {
         const row = service.getTvShow(input.id);

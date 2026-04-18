@@ -22,6 +22,14 @@ export function toLocation(row: LocationRow): Location {
   };
 }
 
+/** Zod schema for the location response shape. */
+export const LocationSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  parentId: z.string().nullable(),
+  sortOrder: z.number(),
+});
+
 /** A location with its children for tree responses. */
 export interface LocationTreeNode extends Location {
   children: LocationTreeNode[];

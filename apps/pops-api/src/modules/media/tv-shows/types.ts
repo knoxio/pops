@@ -176,6 +176,35 @@ function parseJsonArray(value: string | null): string[] {
 
 // --- Zod schemas ---
 
+/** Zod schema for the TV show response shape. */
+export const TvShowSchema = z.object({
+  id: z.number(),
+  tvdbId: z.number(),
+  name: z.string(),
+  originalName: z.string().nullable(),
+  overview: z.string().nullable(),
+  firstAirDate: z.string().nullable(),
+  lastAirDate: z.string().nullable(),
+  status: z.string().nullable(),
+  originalLanguage: z.string().nullable(),
+  numberOfSeasons: z.number().nullable(),
+  numberOfEpisodes: z.number().nullable(),
+  episodeRunTime: z.number().nullable(),
+  posterPath: z.string().nullable(),
+  posterUrl: z.string().nullable(),
+  backdropPath: z.string().nullable(),
+  backdropUrl: z.string().nullable(),
+  logoPath: z.string().nullable(),
+  logoUrl: z.string().nullable(),
+  posterOverridePath: z.string().nullable(),
+  voteAverage: z.number().nullable(),
+  voteCount: z.number().nullable(),
+  genres: z.array(z.string()),
+  networks: z.array(z.string()),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
 export const CreateTvShowSchema = z.object({
   tvdbId: z.number().int().positive(),
   name: z.string().min(1, 'Name is required'),

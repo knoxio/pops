@@ -5,13 +5,13 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
-import { paginationMeta, type PaginationMeta } from '../../../shared/pagination.js';
-import { openApiOutput, protectedProcedure, router } from '../../../trpc.js';
+import { paginationMeta, PaginationMetaSchema } from '../../../shared/pagination.js';
+import { protectedProcedure, router } from '../../../trpc.js';
 import * as service from './service.js';
 import {
   CreateEntitySchema,
-  type Entity,
   EntityQuerySchema,
+  EntitySchema,
   toEntity,
   UpdateEntitySchema,
 } from './types.js';
@@ -27,7 +27,7 @@ export const entitiesRouter = router({
       openapi: { method: 'GET', path: '/entities', summary: 'List entities', tags: ['entities'] },
     })
     .input(EntityQuerySchema)
-    .output(openApiOutput<{ data: Entity[]; pagination: PaginationMeta }>())
+    .output(z.object({ data: z.array(EntitySchema), pagination: PaginationMetaSchema }))
     .query(({ input }) => {
       const limit = input.limit ?? DEFAULT_LIMIT;
       const offset = input.offset ?? DEFAULT_OFFSET;
@@ -57,7 +57,7 @@ export const entitiesRouter = router({
       },
     })
     .input(z.object({ id: z.string() }))
-    .output(openApiOutput<{ data: Entity }>())
+    .output(z.object({ data: EntitySchema }))
     .query(({ input }) => {
       try {
         const row = service.getEntity(input.id);
@@ -76,7 +76,7 @@ export const entitiesRouter = router({
       openapi: { method: 'POST', path: '/entities', summary: 'Create entity', tags: ['entities'] },
     })
     .input(CreateEntitySchema)
-    .output(openApiOutput<{ data: Entity; message: string }>())
+    .output(z.object({ data: EntitySchema, message: z.string() }))
     .mutation(({ input }) => {
       try {
         const row = service.createEntity(input);
@@ -108,7 +108,7 @@ export const entitiesRouter = router({
         data: UpdateEntitySchema,
       })
     )
-    .output(openApiOutput<{ data: Entity; message: string }>())
+    .output(z.object({ data: EntitySchema, message: z.string() }))
     .mutation(({ input }) => {
       try {
         const row = service.updateEntity(input.id, input.data);

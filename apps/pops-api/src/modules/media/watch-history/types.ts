@@ -26,6 +26,15 @@ export function toWatchHistoryEntry(row: WatchHistoryRow): WatchHistoryEntry {
   };
 }
 
+/** Zod schema for the watch history entry response shape. */
+export const WatchHistoryEntrySchema = z.object({
+  id: z.number(),
+  mediaType: z.string(),
+  mediaId: z.number(),
+  watchedAt: z.string(),
+  completed: z.number(),
+});
+
 /** Zod schema for logging a watch event. */
 export const LogWatchSchema = z.object({
   mediaType: z.enum(WATCH_MEDIA_TYPES),

@@ -104,6 +104,37 @@ export function toMovie(row: MovieRow): Movie {
   };
 }
 
+/** Zod schema for the movie response shape. */
+export const MovieSchema = z.object({
+  id: z.number(),
+  tmdbId: z.number(),
+  imdbId: z.string().nullable(),
+  title: z.string(),
+  originalTitle: z.string().nullable(),
+  overview: z.string().nullable(),
+  tagline: z.string().nullable(),
+  releaseDate: z.string().nullable(),
+  runtime: z.number().nullable(),
+  status: z.string().nullable(),
+  originalLanguage: z.string().nullable(),
+  budget: z.number().nullable(),
+  revenue: z.number().nullable(),
+  posterPath: z.string().nullable(),
+  posterUrl: z.string().nullable(),
+  backdropPath: z.string().nullable(),
+  backdropUrl: z.string().nullable(),
+  logoPath: z.string().nullable(),
+  logoUrl: z.string().nullable(),
+  posterOverridePath: z.string().nullable(),
+  voteAverage: z.number().nullable(),
+  voteCount: z.number().nullable(),
+  genres: z.array(z.string()),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+  rotationStatus: z.enum(['leaving', 'protected']).nullable(),
+  rotationExpiresAt: z.string().nullable(),
+});
+
 /** Zod schema for creating a movie. */
 export const CreateMovieSchema = z.object({
   tmdbId: z.number().int().positive(),
