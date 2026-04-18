@@ -1,7 +1,7 @@
 # US-03: Job Management API
 
 > PRD: [Job Queue Infrastructure](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -18,7 +18,7 @@ As a user, I query and manage background jobs via the API so that I can see what
 - [x] `drain` removes all waiting jobs from a specific queue (requires confirmation param)
 - [x] `queueStats` returns counts per status for each queue
 - [x] All procedures are protected (require authenticated user)
-- [ ] Unit tests verify each procedure against a real Redis instance (in-memory or test container)
+- [x] Unit tests verify each procedure against a real Redis instance (in-memory or test container)
 
 ## Notes
 

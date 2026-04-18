@@ -19,7 +19,7 @@ As a developer building Cortex features, I call a search service with a natural-
 - [x] tRPC procedure `core.embeddings.search` wraps the service function
 - [x] tRPC procedure `core.embeddings.status` returns embedding counts (total, pending re-index, stale)
 - [x] tRPC procedure `core.embeddings.reindex` enqueues embedding jobs for specified sources
-- [ ] Unit tests verify search returns correct results from a seeded embedding set
+- [x] Unit tests verify search returns correct results from a seeded embedding set
 
 ## Notes
 

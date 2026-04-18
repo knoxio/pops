@@ -1,7 +1,7 @@
 # US-04: Failure Handling
 
 > PRD: [Job Queue Infrastructure](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -16,7 +16,7 @@ As a platform operator, I trust that failed jobs are retried with backoff and pe
 - [x] Job failure events are logged at `error` level with job ID, queue, attempt number, and error message
 - [x] `core.jobs.queueStats` includes dead-letter queue counts
 - [x] Dead-letter jobs can be retried via `core.jobs.retry` (moves back to original queue)
-- [ ] Integration test: a deliberately failing job exhausts retries and lands in dead-letter
+- [x] Integration test: a deliberately failing job exhausts retries and lands in dead-letter
 
 ## Notes
 

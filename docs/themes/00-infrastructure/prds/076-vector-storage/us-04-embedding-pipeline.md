@@ -1,7 +1,7 @@
 # US-04: Embedding Pipeline
 
 > PRD: [Vector Storage](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -19,7 +19,7 @@ As a platform operator, I enqueue content for embedding and it gets processed in
 - [x] Embedding results are cached in Redis (content_hash → vector) to avoid redundant API calls for identical content
 - [x] `cleanupOrphanedEmbeddings()` function implemented — wire as BullMQ repeatable job in PRD-074
 - [x] `embedContent(sourceType, sourceId)` utility function enqueues an embedding job — used by other modules when content changes
-- [ ] Integration test: create content, enqueue embedding, verify vector is stored and searchable
+- [x] Integration test: create content, enqueue embedding, verify vector is stored and searchable
 
 ## Notes
 

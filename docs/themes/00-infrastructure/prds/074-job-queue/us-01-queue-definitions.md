@@ -1,7 +1,7 @@
 # US-01: Queue Definitions
 
 > PRD: [Job Queue Infrastructure](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -15,7 +15,7 @@ As a backend developer, I import typed queue definitions from a shared module so
 - [x] `createQueue(name)` factory function returns a typed `Queue<T>` instance connected to the shared Redis client
 - [x] Default job options (retry count, backoff, timeout) defined per queue as constants
 - [x] All queue names are prefixed with `pops:` to namespace in Redis
-- [ ] Unit test verifies queue creation succeeds when Redis is available and throws descriptively when not
+- [x] Unit test verifies queue creation succeeds when Redis is available and throws descriptively when not
 
 ## Notes
 

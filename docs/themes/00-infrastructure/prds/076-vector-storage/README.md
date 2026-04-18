@@ -1,7 +1,7 @@
 # PRD-076: Vector Storage
 
 > Epic: [08 — Cortex Infrastructure](../../epics/08-cortex-infrastructure.md)
-> Status: In progress
+> Status: Done
 
 ## Overview
 
@@ -73,12 +73,12 @@ This is a sqlite-vec virtual table that stores the actual vectors and supports k
 
 ## User Stories
 
-| #   | Story                                                       | Summary                                                                  | Status  | Parallelisable   |
-| --- | ----------------------------------------------------------- | ------------------------------------------------------------------------ | ------- | ---------------- |
-| 01  | [us-01-sqlite-vec-extension](us-01-sqlite-vec-extension.md) | Install and load sqlite-vec in both dev and prod, verify with smoke test | Done    | No (first)       |
-| 02  | [us-02-embedding-schema](us-02-embedding-schema.md)         | Drizzle schema for embeddings table and sqlite-vec virtual table         | Done    | Blocked by us-01 |
-| 03  | [us-03-search-service](us-03-search-service.md)             | Similarity search service with k-NN queries, filtering, thresholds       | Partial | Blocked by us-02 |
-| 04  | [us-04-embedding-pipeline](us-04-embedding-pipeline.md)     | BullMQ job handler for embedding generation, chunking, deduplication     | Partial | Blocked by us-02 |
+| #   | Story                                                       | Summary                                                                  | Status | Parallelisable   |
+| --- | ----------------------------------------------------------- | ------------------------------------------------------------------------ | ------ | ---------------- |
+| 01  | [us-01-sqlite-vec-extension](us-01-sqlite-vec-extension.md) | Install and load sqlite-vec in both dev and prod, verify with smoke test | Done   | No (first)       |
+| 02  | [us-02-embedding-schema](us-02-embedding-schema.md)         | Drizzle schema for embeddings table and sqlite-vec virtual table         | Done   | Blocked by us-01 |
+| 03  | [us-03-search-service](us-03-search-service.md)             | Similarity search service with k-NN queries, filtering, thresholds       | Done   | Blocked by us-02 |
+| 04  | [us-04-embedding-pipeline](us-04-embedding-pipeline.md)     | BullMQ job handler for embedding generation, chunking, deduplication     | Done   | Blocked by us-02 |
 
 US-03 and US-04 can parallelise after US-02.
 

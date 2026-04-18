@@ -1,7 +1,7 @@
 # PRD-074: Job Queue Infrastructure
 
 > Epic: [08 — Cortex Infrastructure](../../epics/08-cortex-infrastructure.md)
-> Status: In progress
+> Status: Done
 
 ## Overview
 
@@ -54,13 +54,13 @@ No new SQLite tables. Job state lives in Redis (managed by BullMQ). The existing
 
 ## User Stories
 
-| #   | Story                                                   | Summary                                                                          | Status  | Parallelisable   |
-| --- | ------------------------------------------------------- | -------------------------------------------------------------------------------- | ------- | ---------------- |
-| 01  | [us-01-queue-definitions](us-01-queue-definitions.md)   | Define typed queue interfaces, job data schemas, shared constants                | Partial | No (first)       |
-| 02  | [us-02-worker-entry](us-02-worker-entry.md)             | Separate worker process with job handlers, graceful shutdown, Docker integration | Done    | Blocked by us-01 |
-| 03  | [us-03-job-management-api](us-03-job-management-api.md) | tRPC procedures for listing, retrying, cancelling, draining jobs                 | Partial | Blocked by us-01 |
-| 04  | [us-04-failure-handling](us-04-failure-handling.md)     | Dead-letter queue, retry policies, stalled job detection, error logging          | Partial | Blocked by us-02 |
-| 05  | [us-05-migrate-sync-jobs](us-05-migrate-sync-jobs.md)   | Migrate Plex sync scheduler from in-memory to BullMQ repeatable jobs             | Done    | Blocked by us-02 |
+| #   | Story                                                   | Summary                                                                          | Status | Parallelisable   |
+| --- | ------------------------------------------------------- | -------------------------------------------------------------------------------- | ------ | ---------------- |
+| 01  | [us-01-queue-definitions](us-01-queue-definitions.md)   | Define typed queue interfaces, job data schemas, shared constants                | Done   | No (first)       |
+| 02  | [us-02-worker-entry](us-02-worker-entry.md)             | Separate worker process with job handlers, graceful shutdown, Docker integration | Done   | Blocked by us-01 |
+| 03  | [us-03-job-management-api](us-03-job-management-api.md) | tRPC procedures for listing, retrying, cancelling, draining jobs                 | Done   | Blocked by us-01 |
+| 04  | [us-04-failure-handling](us-04-failure-handling.md)     | Dead-letter queue, retry policies, stalled job detection, error logging          | Done   | Blocked by us-02 |
+| 05  | [us-05-migrate-sync-jobs](us-05-migrate-sync-jobs.md)   | Migrate Plex sync scheduler from in-memory to BullMQ repeatable jobs             | Done   | Blocked by us-02 |
 
 US-03 can run in parallel with US-02 (API reads from queues, worker writes — independent entry points). US-04 and US-05 require the worker to be functional.
 
