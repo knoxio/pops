@@ -12,7 +12,7 @@ for svc in "${SERVICES[@]}"; do
 done
 
 # Verify Redis is actually responding
-if ! docker exec pops-redis redis-cli -h redis ping 2>/dev/null | grep -q PONG; then
+if ! docker exec pops-redis redis-cli ping 2>/dev/null | grep -q PONG; then
   FAILED+=("pops-redis:ping")
 fi
 

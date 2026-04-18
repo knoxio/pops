@@ -15,7 +15,7 @@ import {
   stopRotationTask,
   waitForCycleEnd,
 } from './modules/media/rotation/scheduler.js';
-import { shutdownRedis } from './redis.js';
+import { getRedisClient, shutdownRedis } from './redis.js';
 
 const port = Number(process.env['PORT'] ?? 3000);
 const app = createApp();
@@ -42,6 +42,11 @@ const resumedRotation = resumeRotationSchedulerIfEnabled();
 if (resumedRotation) {
   console.warn(`[pops-api] Rotation scheduler resumed (cron: ${resumedRotation.cronExpression})`);
 }
+
+// Initiate Redis connection eagerly so /health reports accurately (lazyConnect defers otherwise)
+getRedisClient()
+  ?.connect()
+  .catch(() => {}); // ioredis auto-reconnects; suppress initial connection errors
 
 // Periodically purge expired named environments
 const ttlWatcher = startTtlWatcher();

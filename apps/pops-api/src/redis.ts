@@ -41,6 +41,22 @@ export function getRedisStatus(): 'ready' | 'connecting' | 'disconnected' {
 
 export async function shutdownRedis(): Promise<void> {
   if (!client) return;
-  await client.quit();
+
+  const currentClient = client;
   client = null;
+
+  try {
+    await Promise.race([
+      currentClient.quit(),
+      new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Redis quit timed out')), 5000);
+      }),
+    ]);
+  } catch (err) {
+    console.warn(
+      '[redis] Graceful shutdown failed, forcing disconnect:',
+      err instanceof Error ? err.message : String(err)
+    );
+    currentClient.disconnect();
+  }
 }

@@ -85,9 +85,9 @@ rsync -av /tmp/pops-restore/extracted/metabase/ /opt/pops/data/metabase/
 
 ### Redis
 
-Redis (`pops-redis`) is **ephemeral by design** — it holds job queue state and cache only. No backup is needed or taken.
+Redis (`pops-redis`) is **ephemeral by design** — it holds job queue state and cache only. No backup is needed or taken. RDB snapshots and AOF persistence are explicitly disabled (`--save "" --appendonly no`), so the volume holds no persistent data.
 
-On a fresh deploy or restart, Redis auto-recreates its Docker volume (`pops-redis-data`) and starts empty. Any pending jobs are lost but source-of-truth data in SQLite is unaffected. The API starts in degraded mode if Redis is temporarily unavailable and reconnects automatically once Redis is ready.
+On any restart or fresh deploy, Redis starts with an empty dataset. Source-of-truth data in SQLite is unaffected. The API starts in degraded mode if Redis is temporarily unavailable and reconnects automatically once Redis is ready.
 
 ## Step 6: Restore Secrets (if full rebuild)
 

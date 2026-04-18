@@ -227,11 +227,11 @@ run = "docker compose -f infra/docker-compose.yml --profile tools run --rm tools
 
 [tasks."redis:start"]
 description = "Start local Redis container for development"
-run = "docker run -d --name pops-redis -p 6379:6379 redis:7-alpine redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru"
+run = "docker run -d --name pops-redis -p 6379:6379 redis:7-alpine redis-server --save \"\" --appendonly no --maxmemory 256mb --maxmemory-policy allkeys-lru"
 
 [tasks."redis:stop"]
 description = "Stop and remove local Redis container"
-run = "docker stop pops-redis && docker rm pops-redis"
+run = "docker rm -f pops-redis"
 
 [tasks."redis:cli"]
 description = "Open redis-cli against the local development instance"
