@@ -5,6 +5,8 @@ import { createCaller, seedInventoryItem, setupTestContext } from '../../../shar
 
 import type { Database } from 'better-sqlite3';
 
+import type { InventoryItem } from './types.js';
+
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;
 let db: Database;
@@ -191,8 +193,8 @@ describe('inventory.list', () => {
     expect(page2.pagination.offset).toBe(3);
 
     // Names should not overlap
-    const page1Names = page1.data.map((i) => i.itemName);
-    const page2Names = page2.data.map((i) => i.itemName);
+    const page1Names = page1.data.map((i: InventoryItem) => i.itemName);
+    const page2Names = page2.data.map((i: InventoryItem) => i.itemName);
     expect(page1Names).not.toEqual(page2Names);
   });
 

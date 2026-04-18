@@ -31,6 +31,22 @@
     "./modules/core/entities/types": {
       "types": "./src/modules/core/entities/types.ts",
       "default": "./src/modules/core/entities/types.ts"
+    },
+    "./modules/finance/transactions/types": {
+      "types": "./src/modules/finance/transactions/types.ts",
+      "default": "./src/modules/finance/transactions/types.ts"
+    },
+    "./modules/finance/budgets/types": {
+      "types": "./src/modules/finance/budgets/types.ts",
+      "default": "./src/modules/finance/budgets/types.ts"
+    },
+    "./modules/inventory/items/types": {
+      "types": "./src/modules/inventory/items/types.ts",
+      "default": "./src/modules/inventory/items/types.ts"
+    },
+    "./modules/inventory/connections/types": {
+      "types": "./src/modules/inventory/connections/types.ts",
+      "default": "./src/modules/inventory/connections/types.ts"
     }
   },
   "scripts": {
@@ -46,7 +62,8 @@
     "test": "vitest run",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:all": "vitest run && vitest run --config vitest.integration.config.ts",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "openapi:validate": "tsx scripts/validate-openapi.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.90.0",
@@ -71,6 +88,8 @@
     "sharp": "^0.34.5",
     "smol-toml": "^1.6.1",
     "sqlite-vec": "^0.1.7",
+    "swagger-ui-express": "^5.0.1",
+    "trpc-to-openapi": "^3.2.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {
@@ -82,6 +101,7 @@
     "@types/node-cron": "^3.0.11",
     "@types/papaparse": "^5.5.2",
     "@types/supertest": "^6.0.3",
+    "@types/swagger-ui-express": "^4.1.8",
     "drizzle-kit": "^0.31.10",
     "msw": "^2.13.4",
     "papaparse": "^5.5.3",

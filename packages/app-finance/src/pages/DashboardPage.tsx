@@ -14,6 +14,9 @@ import {
 
 import { trpc } from '../lib/trpc';
 
+import type { Budget } from '@pops/api/modules/finance/budgets/types';
+import type { Transaction } from '@pops/api/modules/finance/transactions/types';
+
 export function DashboardPage() {
   // Fetch recent transactions
   const {
@@ -35,11 +38,11 @@ export function DashboardPage() {
         totalTransactions: transactions.pagination.total,
         recentCount: transactions.data.length,
         totalIncome: transactions.data
-          .filter((t) => t.amount > 0)
-          .reduce((sum, t) => sum + t.amount, 0),
+          .filter((t: Transaction) => t.amount > 0)
+          .reduce((sum: number, t: Transaction) => sum + t.amount, 0),
         totalExpenses: transactions.data
-          .filter((t) => t.amount < 0)
-          .reduce((sum, t) => sum + Math.abs(t.amount), 0),
+          .filter((t: Transaction) => t.amount < 0)
+          .reduce((sum: number, t: Transaction) => sum + Math.abs(t.amount), 0),
       }
     : null;
 
@@ -124,7 +127,7 @@ export function DashboardPage() {
         ) : transactions && transactions.data.length > 0 ? (
           <Card className="overflow-hidden p-0">
             <div className="divide-y divide-border">
-              {transactions.data.map((transaction) => (
+              {transactions.data.map((transaction: Transaction) => (
                 <div
                   key={transaction.id}
                   className="p-4 flex items-center justify-between gap-4 hover:bg-muted/50 transition-colors"
@@ -192,7 +195,7 @@ export function DashboardPage() {
           </div>
         ) : budgets && budgets.data.length > 0 ? (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {budgets.data.slice(0, 3).map((budget) => (
+            {budgets.data.slice(0, 3).map((budget: Budget) => (
               <Card key={budget.id} className="p-5 flex flex-col justify-between h-full">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">

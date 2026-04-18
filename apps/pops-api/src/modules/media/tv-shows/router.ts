@@ -5,8 +5,8 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
-import { paginationMeta } from '../../../shared/pagination.js';
-import { protectedProcedure, router } from '../../../trpc.js';
+import { paginationMeta, type PaginationMeta } from '../../../shared/pagination.js';
+import { openApiOutput, protectedProcedure, router } from '../../../trpc.js';
 import * as service from './service.js';
 import {
   CreateEpisodeSchema,
@@ -15,6 +15,7 @@ import {
   toEpisode,
   toSeason,
   toTvShow,
+  type TvShow,
   TvShowQuerySchema,
   UpdateTvShowSchema,
 } from './types.js';
@@ -25,20 +26,40 @@ const DEFAULT_OFFSET = 0;
 export const tvShowsRouter = router({
   // ── Shows ──
 
-  list: protectedProcedure.input(TvShowQuerySchema).query(({ input }) => {
-    const limit = input.limit ?? DEFAULT_LIMIT;
-    const offset = input.offset ?? DEFAULT_OFFSET;
+  list: protectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/media/tv-shows',
+        summary: 'List TV shows',
+        tags: ['tv-shows'],
+      },
+    })
+    .input(TvShowQuerySchema)
+    .output(openApiOutput<{ data: TvShow[]; pagination: PaginationMeta }>())
+    .query(({ input }) => {
+      const limit = input.limit ?? DEFAULT_LIMIT;
+      const offset = input.offset ?? DEFAULT_OFFSET;
 
-    const { rows, total } = service.listTvShows(input.search, input.status, limit, offset);
+      const { rows, total } = service.listTvShows(input.search, input.status, limit, offset);
 
-    return {
-      data: rows.map(toTvShow),
-      pagination: paginationMeta(total, limit, offset),
-    };
-  }),
+      return {
+        data: rows.map(toTvShow),
+        pagination: paginationMeta(total, limit, offset),
+      };
+    }),
 
   get: protectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/media/tv-shows/{id}',
+        summary: 'Get TV show by ID',
+        tags: ['tv-shows'],
+      },
+    })
     .input(z.object({ id: z.number().int().positive() }))
+    .output(openApiOutput<{ data: TvShow }>())
     .query(({ input }) => {
       try {
         const row = service.getTvShow(input.id);

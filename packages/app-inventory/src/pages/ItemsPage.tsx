@@ -24,6 +24,7 @@ import { InventoryTable } from '../components/InventoryTable';
 import { trpc } from '../lib/trpc';
 import { formatCurrency } from '../lib/utils';
 
+import type { InventoryItem } from '@pops/api/modules/inventory/items/types';
 import type { Condition } from '@pops/ui';
 
 type ViewMode = 'table' | 'grid';
@@ -332,7 +333,7 @@ export function ItemsPage() {
         <InventoryTable items={items} locationPathMap={locationPathMap} />
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {items.map((item) => (
+          {items.map((item: InventoryItem) => (
             <InventoryCard
               key={item.id}
               id={item.id}

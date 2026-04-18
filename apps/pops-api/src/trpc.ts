@@ -3,10 +3,12 @@
  * All tRPC routers extend from the procedures defined here.
  */
 import { initTRPC, TRPCError } from '@trpc/server';
+import { z } from 'zod';
 
 import { verifyCloudflareJWT } from './middleware/cloudflare-jwt.js';
 
 import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
+import type { OpenApiMeta } from 'trpc-to-openapi';
 
 /**
  * User context extracted from Cloudflare Access JWT
@@ -65,10 +67,19 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
 
 export type ContextType = Awaited<ReturnType<typeof createContext>>;
 
-const t = initTRPC.context<Context>().create();
+const t = initTRPC.context<Context>().meta<OpenApiMeta>().create();
 
 /** Base router for composing routers. */
 export const router = t.router;
+
+/**
+ * Use on OpenAPI-annotated procedures instead of z.any().
+ * Returns z.any() at runtime (satisfies trpc-to-openapi's instanceofZodType check)
+ * but carries the TypeScript type T to preserve inference in clients and tests.
+ */
+export function openApiOutput<T>(): z.ZodType<T> {
+  return z.any() as unknown as z.ZodType<T>;
+}
 
 /** Base procedure for all endpoints (no auth required). */
 export const publicProcedure = t.procedure;

@@ -9,6 +9,8 @@ import { createCaller, seedBudget, setupTestContext } from '../../../shared/test
 
 import type { Database } from 'better-sqlite3';
 
+import type { Budget } from './types.js';
+
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;
 let db: Database;
@@ -110,7 +112,7 @@ describe('budgets.list', () => {
 
     const result = await caller.finance.budgets.list({ active: 'true' });
     expect(result.data).toHaveLength(2);
-    expect(result.data.every((b) => b.active)).toBe(true);
+    expect(result.data.every((b: Budget) => b.active)).toBe(true);
   });
 
   it('filters by active=false', async () => {
@@ -120,7 +122,7 @@ describe('budgets.list', () => {
 
     const result = await caller.finance.budgets.list({ active: 'false' });
     expect(result.data).toHaveLength(2);
-    expect(result.data.every((b) => !b.active)).toBe(true);
+    expect(result.data.every((b: Budget) => !b.active)).toBe(true);
   });
 
   it('combines all filters (search, period, active)', async () => {
@@ -156,8 +158,8 @@ describe('budgets.list', () => {
     expect(page2.pagination.offset).toBe(3);
 
     // Categories should not overlap
-    const page1Categories = page1.data.map((b) => b.category);
-    const page2Categories = page2.data.map((b) => b.category);
+    const page1Categories = page1.data.map((b: Budget) => b.category);
+    const page2Categories = page2.data.map((b: Budget) => b.category);
     expect(page1Categories).not.toEqual(page2Categories);
   });
 

@@ -82,6 +82,11 @@ run = "pnpm lint"
 description = "Build all packages"
 run = "pnpm build"
 
+[tasks."openapi:validate"]
+description = "Validate OpenAPI annotations and spec (PRD-075 US-04)"
+dir = "apps/pops-api"
+run = "pnpm openapi:validate"
+
 # ============================================================================
 # Database Management
 # ============================================================================

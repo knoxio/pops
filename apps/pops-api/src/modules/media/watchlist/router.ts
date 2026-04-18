@@ -5,8 +5,8 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
-import { paginationMeta } from '../../../shared/pagination.js';
-import { protectedProcedure, router } from '../../../trpc.js';
+import { paginationMeta, type PaginationMeta } from '../../../shared/pagination.js';
+import { openApiOutput, protectedProcedure, router } from '../../../trpc.js';
 import { getPlexClient } from '../plex/service.js';
 import { clearLeavingOnWatchlistAdd } from '../rotation/leaving-lifecycle.js';
 import { pushToPlexWatchlist } from './plex-push.js';
@@ -15,6 +15,7 @@ import {
   AddToWatchlistSchema,
   toWatchlistEntry,
   UpdateWatchlistSchema,
+  type WatchlistEntry,
   type WatchlistFilters,
   WatchlistQuerySchema,
 } from './types.js';
@@ -24,21 +25,32 @@ const DEFAULT_OFFSET = 0;
 
 export const watchlistRouter = router({
   /** List watchlist entries with optional filters and pagination. */
-  list: protectedProcedure.input(WatchlistQuerySchema).query(({ input }) => {
-    const limit = input.limit ?? DEFAULT_LIMIT;
-    const offset = input.offset ?? DEFAULT_OFFSET;
+  list: protectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/media/watchlist',
+        summary: 'List watchlist',
+        tags: ['watchlist'],
+      },
+    })
+    .input(WatchlistQuerySchema)
+    .output(openApiOutput<{ data: WatchlistEntry[]; pagination: PaginationMeta }>())
+    .query(({ input }) => {
+      const limit = input.limit ?? DEFAULT_LIMIT;
+      const offset = input.offset ?? DEFAULT_OFFSET;
 
-    const filters: WatchlistFilters = {
-      mediaType: input.mediaType,
-    };
+      const filters: WatchlistFilters = {
+        mediaType: input.mediaType,
+      };
 
-    const { rows, total } = service.listWatchlist(filters, limit, offset);
+      const { rows, total } = service.listWatchlist(filters, limit, offset);
 
-    return {
-      data: rows.map(toWatchlistEntry),
-      pagination: paginationMeta(total, limit, offset),
-    };
-  }),
+      return {
+        data: rows.map(toWatchlistEntry),
+        pagination: paginationMeta(total, limit, offset),
+      };
+    }),
 
   /** Check if a specific media item is on the watchlist. */
   status: protectedProcedure

@@ -32,6 +32,8 @@ import { SortablePhotoGrid } from '../components/SortablePhotoGrid';
 import { useImageProcessor } from '../hooks/useImageProcessor';
 import { trpc } from '../lib/trpc';
 
+import type { InventoryItem } from '@pops/api/modules/inventory/items/types';
+
 import type { PhotoItem } from '../components/PhotoGallery';
 
 interface PendingConnection {
@@ -839,13 +841,15 @@ export function ItemFormPage() {
                   (() => {
                     const pendingIds = new Set(pendingConnections.map((c) => c.id));
                     const filtered =
-                      searchResults?.data.filter((item) => !pendingIds.has(item.id)) ?? [];
+                      searchResults?.data.filter(
+                        (item: InventoryItem) => !pendingIds.has(item.id)
+                      ) ?? [];
                     return filtered.length === 0 ? (
                       <p className="text-sm text-muted-foreground py-3 text-center">
                         No items found
                       </p>
                     ) : (
-                      filtered.map((item) => (
+                      filtered.map((item: InventoryItem) => (
                         <Button
                           key={item.id}
                           variant="ghost"

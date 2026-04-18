@@ -26,6 +26,9 @@ export function parsePagination(query: Record<string, unknown>): PaginationParam
   };
 }
 
+/** Shape of pagination metadata returned by list endpoints. */
+export type PaginationMeta = { total: number; limit: number; offset: number; hasMore: boolean };
+
 /** Build the pagination metadata for a response. */
 export function paginationMeta(
   total: number,

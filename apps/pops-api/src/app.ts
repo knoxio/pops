@@ -1,11 +1,14 @@
 import { createExpressMiddleware } from '@trpc/server/adapters/express';
 import express from 'express';
 import helmet from 'helmet';
+import swaggerUi from 'swagger-ui-express';
+import { createOpenApiExpressMiddleware } from 'trpc-to-openapi';
 
 import { authMiddleware } from './middleware/auth.js';
 import { envContextMiddleware } from './middleware/env-context.js';
 import { rateLimiter } from './middleware/rate-limit.js';
 import { envRouter } from './modules/core/envs/router.js';
+import { openApiDocument } from './openapi.js';
 import { appRouter } from './router.js';
 import healthRouter from './routes/health.js';
 import documentThumbnailRouter from './routes/inventory/documents.js';
@@ -59,6 +62,23 @@ export function createApp(): express.Express {
   // Env context middleware — reads ?env=NAME, validates the env, and scopes
   // the DB connection for all downstream handlers (tRPC, webhooks, etc.).
   app.use(envContextMiddleware);
+
+  // OpenAPI spec endpoint
+  app.get('/api/openapi.json', (_req, res) => {
+    res.json(openApiDocument);
+  });
+
+  // Swagger UI — serves the interactive API docs
+  app.use('/api/docs', ...swaggerUi.serve, swaggerUi.setup(openApiDocument, { explorer: true }));
+
+  // OpenAPI REST handler — mounted after auth; tRPC remains primary for the React frontend
+  app.use(
+    '/api/v1',
+    createOpenApiExpressMiddleware({
+      router: appRouter,
+      createContext,
+    })
+  );
 
   // tRPC handler (auth via context/procedures)
   app.use(

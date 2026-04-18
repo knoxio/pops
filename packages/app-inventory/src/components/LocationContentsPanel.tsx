@@ -13,6 +13,8 @@ import { AssetIdBadge, Button, Label, Skeleton, Switch, TypeBadge } from '@pops/
 
 import { trpc } from '../lib/trpc';
 
+import type { InventoryItem } from '@pops/api/modules/inventory/items/types';
+
 interface LocationTreeNode {
   id: string;
   name: string;
@@ -88,7 +90,8 @@ export function LocationContentsPanel({
   }, [directData, includeSubLocations, subLocationItems]);
 
   const totalValue = useMemo(
-    () => allItems.reduce((sum, item) => sum + (item.replacementValue ?? 0), 0),
+    () =>
+      allItems.reduce((sum: number, item: InventoryItem) => sum + (item.replacementValue ?? 0), 0),
     [allItems]
   );
 
@@ -140,7 +143,7 @@ export function LocationContentsPanel({
         </div>
       ) : (
         <ul className="space-y-1">
-          {allItems.map((item) => (
+          {allItems.map((item: InventoryItem) => (
             <li key={item.id}>
               <Button
                 variant="ghost"

@@ -5,11 +5,12 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { NotFoundError } from '../../../shared/errors.js';
-import { paginationMeta } from '../../../shared/pagination.js';
-import { protectedProcedure, router } from '../../../trpc.js';
+import { paginationMeta, type PaginationMeta } from '../../../shared/pagination.js';
+import { openApiOutput, protectedProcedure, router } from '../../../trpc.js';
 import * as service from './service.js';
 import {
   CreateInventoryItemSchema,
+  type InventoryItem,
   InventoryQuerySchema,
   toInventoryItem,
   UpdateInventoryItemSchema,
@@ -21,34 +22,51 @@ const DEFAULT_OFFSET = 0;
 
 export const inventoryRouter = router({
   /** List inventory items with optional filters and pagination. */
-  list: protectedProcedure.input(InventoryQuerySchema).query(({ input }) => {
-    const limit = input.limit ?? DEFAULT_LIMIT;
-    const offset = input.offset ?? DEFAULT_OFFSET;
+  list: protectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/inventory/items',
+        summary: 'List inventory items',
+        tags: ['inventory-items'],
+      },
+    })
+    .input(InventoryQuerySchema)
+    .output(
+      openApiOutput<{
+        data: InventoryItem[];
+        pagination: PaginationMeta;
+        totals: { totalReplacementValue: number; totalResaleValue: number };
+      }>()
+    )
+    .query(({ input }) => {
+      const limit = input.limit ?? DEFAULT_LIMIT;
+      const offset = input.offset ?? DEFAULT_OFFSET;
 
-    const inUse = input.inUse === 'true' ? true : input.inUse === 'false' ? false : undefined;
-    const deductible =
-      input.deductible === 'true' ? true : input.deductible === 'false' ? false : undefined;
+      const inUse = input.inUse === 'true' ? true : input.inUse === 'false' ? false : undefined;
+      const deductible =
+        input.deductible === 'true' ? true : input.deductible === 'false' ? false : undefined;
 
-    const { rows, total, totalReplacementValue, totalResaleValue } = service.listInventoryItems({
-      search: input.search,
-      room: input.room,
-      type: input.type,
-      condition: input.condition,
-      inUse,
-      deductible,
-      limit,
-      offset,
-      locationId: input.locationId,
-      assetId: input.assetId,
-      includeChildren: input.includeChildren,
-    });
+      const { rows, total, totalReplacementValue, totalResaleValue } = service.listInventoryItems({
+        search: input.search,
+        room: input.room,
+        type: input.type,
+        condition: input.condition,
+        inUse,
+        deductible,
+        limit,
+        offset,
+        locationId: input.locationId,
+        assetId: input.assetId,
+        includeChildren: input.includeChildren,
+      });
 
-    return {
-      data: rows.map(toInventoryItem),
-      pagination: paginationMeta(total, limit, offset),
-      totals: { totalReplacementValue, totalResaleValue },
-    };
-  }),
+      return {
+        data: rows.map(toInventoryItem),
+        pagination: paginationMeta(total, limit, offset),
+        totals: { totalReplacementValue, totalResaleValue },
+      };
+    }),
 
   /** Search for an item by exact asset ID (case-insensitive). Returns null if not found. */
   searchByAssetId: protectedProcedure
@@ -71,17 +89,28 @@ export const inventoryRouter = router({
   }),
 
   /** Get a single inventory item by ID. */
-  get: protectedProcedure.input(z.object({ id: z.string() })).query(({ input }) => {
-    try {
-      const row = service.getInventoryItem(input.id);
-      return { data: toInventoryItem(row) };
-    } catch (err) {
-      if (err instanceof NotFoundError) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+  get: protectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/inventory/items/{id}',
+        summary: 'Get inventory item by ID',
+        tags: ['inventory-items'],
+      },
+    })
+    .input(z.object({ id: z.string() }))
+    .output(openApiOutput<{ data: InventoryItem }>())
+    .query(({ input }) => {
+      try {
+        const row = service.getInventoryItem(input.id);
+        return { data: toInventoryItem(row) };
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+        }
+        throw err;
       }
-      throw err;
-    }
-  }),
+    }),
 
   /** Create a new inventory item. */
   create: protectedProcedure.input(CreateInventoryItemSchema).mutation(({ input }) => {

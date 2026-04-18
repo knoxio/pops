@@ -14,6 +14,8 @@ import {
 
 import type { Database } from 'better-sqlite3';
 
+import type { Transaction } from './types.js';
+
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;
 let db: Database;
@@ -238,8 +240,8 @@ describe('transactions.list', () => {
     expect(page2.pagination.offset).toBe(3);
 
     // Descriptions should not overlap
-    const page1Descs = page1.data.map((t) => t.description);
-    const page2Descs = page2.data.map((t) => t.description);
+    const page1Descs = page1.data.map((t: Transaction) => t.description);
+    const page2Descs = page2.data.map((t: Transaction) => t.description);
     expect(page1Descs).not.toEqual(page2Descs);
   });
 

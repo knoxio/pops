@@ -8,13 +8,14 @@ import { transactions as transactionsTable } from '@pops/db-types';
 
 import { getDb, getDrizzle } from '../../../db.js';
 import { NotFoundError } from '../../../shared/errors.js';
-import { paginationMeta } from '../../../shared/pagination.js';
+import { paginationMeta, type PaginationMeta } from '../../../shared/pagination.js';
 import { suggestTags } from '../../../shared/tag-suggester.js';
-import { protectedProcedure, router } from '../../../trpc.js';
+import { openApiOutput, protectedProcedure, router } from '../../../trpc.js';
 import * as service from './service.js';
 import {
   CreateTransactionSchema,
   toTransaction,
+  type Transaction,
   type TransactionFilters,
   TransactionQuerySchema,
   UpdateTransactionSchema,
@@ -29,40 +30,62 @@ const DEFAULT_OFFSET = 0;
 
 export const transactionsRouter = router({
   /** List transactions with optional filters and pagination. */
-  list: protectedProcedure.input(TransactionQuerySchema).query(({ input }) => {
-    const limit = input.limit ?? DEFAULT_LIMIT;
-    const offset = input.offset ?? DEFAULT_OFFSET;
+  list: protectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/finance/transactions',
+        summary: 'List transactions',
+        tags: ['transactions'],
+      },
+    })
+    .input(TransactionQuerySchema)
+    .output(openApiOutput<{ data: Transaction[]; pagination: PaginationMeta }>())
+    .query(({ input }) => {
+      const limit = input.limit ?? DEFAULT_LIMIT;
+      const offset = input.offset ?? DEFAULT_OFFSET;
 
-    const filters: TransactionFilters = {
-      search: input.search,
-      account: input.account,
-      startDate: input.startDate,
-      endDate: input.endDate,
-      tag: input.tag,
-      entityId: input.entityId,
-      type: input.type,
-    };
+      const filters: TransactionFilters = {
+        search: input.search,
+        account: input.account,
+        startDate: input.startDate,
+        endDate: input.endDate,
+        tag: input.tag,
+        entityId: input.entityId,
+        type: input.type,
+      };
 
-    const { rows, total } = service.listTransactions(filters, limit, offset);
+      const { rows, total } = service.listTransactions(filters, limit, offset);
 
-    return {
-      data: rows.map(toTransaction),
-      pagination: paginationMeta(total, limit, offset),
-    };
-  }),
+      return {
+        data: rows.map(toTransaction),
+        pagination: paginationMeta(total, limit, offset),
+      };
+    }),
 
   /** Get a single transaction by ID. */
-  get: protectedProcedure.input(z.object({ id: z.string() })).query(({ input }) => {
-    try {
-      const row = service.getTransaction(input.id);
-      return { data: toTransaction(row) };
-    } catch (err) {
-      if (err instanceof NotFoundError) {
-        throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+  get: protectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/finance/transactions/{id}',
+        summary: 'Get transaction by ID',
+        tags: ['transactions'],
+      },
+    })
+    .input(z.object({ id: z.string() }))
+    .output(openApiOutput<{ data: Transaction }>())
+    .query(({ input }) => {
+      try {
+        const row = service.getTransaction(input.id);
+        return { data: toTransaction(row) };
+      } catch (err) {
+        if (err instanceof NotFoundError) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
+        }
+        throw err;
       }
-      throw err;
-    }
-  }),
+    }),
 
   /** Create a new transaction. */
   create: protectedProcedure.input(CreateTransactionSchema).mutation(({ input }) => {

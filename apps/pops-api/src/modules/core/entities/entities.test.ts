@@ -10,6 +10,8 @@ import {
 
 import type { Database } from 'better-sqlite3';
 
+import type { Entity } from './types.js';
+
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;
 let db: Database;
@@ -116,8 +118,8 @@ describe('entities.list', () => {
     expect(page2.pagination.offset).toBe(3);
 
     // Names should not overlap
-    const page1Names = page1.data.map((e) => e.name);
-    const page2Names = page2.data.map((e) => e.name);
+    const page1Names = page1.data.map((e: Entity) => e.name);
+    const page2Names = page2.data.map((e: Entity) => e.name);
     expect(page1Names).not.toEqual(page2Names);
   });
 
@@ -407,7 +409,7 @@ describe('entities.list transactionCount', () => {
     const result = await caller.core.entities.list({ orphanedOnly: true });
     expect(result.data).toHaveLength(2);
     expect(result.pagination.total).toBe(2);
-    expect(result.data.every((e) => e.transactionCount === 0)).toBe(true);
+    expect(result.data.every((e: Entity) => e.transactionCount === 0)).toBe(true);
   });
 
   it('orphanedOnly filter excludes entities with transactions', async () => {

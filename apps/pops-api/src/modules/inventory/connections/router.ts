@@ -4,14 +4,15 @@
 import { TRPCError } from '@trpc/server';
 
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
-import { paginationMeta } from '../../../shared/pagination.js';
-import { protectedProcedure, router } from '../../../trpc.js';
+import { paginationMeta, type PaginationMeta } from '../../../shared/pagination.js';
+import { openApiOutput, protectedProcedure, router } from '../../../trpc.js';
 import * as service from './service.js';
 import {
   ConnectionQuerySchema,
   ConnectItemsSchema,
   DisconnectItemsSchema,
   GraphQuerySchema,
+  type ItemConnection,
   toConnection,
   TraceQuerySchema,
 } from './types.js';
@@ -53,17 +54,28 @@ export const connectionsRouter = router({
   }),
 
   /** List all connections for an item (appears in either A or B column). */
-  listForItem: protectedProcedure.input(ConnectionQuerySchema).query(({ input }) => {
-    const limit = input.limit ?? DEFAULT_LIMIT;
-    const offset = input.offset ?? DEFAULT_OFFSET;
+  listForItem: protectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/inventory/connections',
+        summary: 'List connections for an item',
+        tags: ['connections'],
+      },
+    })
+    .input(ConnectionQuerySchema)
+    .output(openApiOutput<{ data: ItemConnection[]; pagination: PaginationMeta }>())
+    .query(({ input }) => {
+      const limit = input.limit ?? DEFAULT_LIMIT;
+      const offset = input.offset ?? DEFAULT_OFFSET;
 
-    const { rows, total } = service.listConnectionsForItem(input.itemId, limit, offset);
+      const { rows, total } = service.listConnectionsForItem(input.itemId, limit, offset);
 
-    return {
-      data: rows.map(toConnection),
-      pagination: paginationMeta(total, limit, offset),
-    };
-  }),
+      return {
+        data: rows.map(toConnection),
+        pagination: paginationMeta(total, limit, offset),
+      };
+    }),
 
   /** Trace the connection chain from an item as a tree. */
   trace: protectedProcedure.input(TraceQuerySchema).query(({ input }) => {

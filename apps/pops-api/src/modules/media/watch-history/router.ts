@@ -5,8 +5,8 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { NotFoundError } from '../../../shared/errors.js';
-import { paginationMeta } from '../../../shared/pagination.js';
-import { protectedProcedure, router } from '../../../trpc.js';
+import { paginationMeta, type PaginationMeta } from '../../../shared/pagination.js';
+import { openApiOutput, protectedProcedure, router } from '../../../trpc.js';
 import * as service from './service.js';
 import {
   BatchLogWatchSchema,
@@ -16,6 +16,7 @@ import {
   type RecentWatchHistoryFilters,
   RecentWatchHistoryQuerySchema,
   toWatchHistoryEntry,
+  type WatchHistoryEntry,
   type WatchHistoryFilters,
   WatchHistoryQuerySchema,
 } from './types.js';
@@ -25,22 +26,33 @@ const DEFAULT_OFFSET = 0;
 
 export const watchHistoryRouter = router({
   /** List watch history entries with optional filters and pagination. */
-  list: protectedProcedure.input(WatchHistoryQuerySchema).query(({ input }) => {
-    const limit = input.limit ?? DEFAULT_LIMIT;
-    const offset = input.offset ?? DEFAULT_OFFSET;
+  list: protectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/media/watch-history',
+        summary: 'List watch history',
+        tags: ['watch-history'],
+      },
+    })
+    .input(WatchHistoryQuerySchema)
+    .output(openApiOutput<{ data: WatchHistoryEntry[]; pagination: PaginationMeta }>())
+    .query(({ input }) => {
+      const limit = input.limit ?? DEFAULT_LIMIT;
+      const offset = input.offset ?? DEFAULT_OFFSET;
 
-    const filters: WatchHistoryFilters = {
-      mediaType: input.mediaType,
-      mediaId: input.mediaId,
-    };
+      const filters: WatchHistoryFilters = {
+        mediaType: input.mediaType,
+        mediaId: input.mediaId,
+      };
 
-    const { rows, total } = service.listWatchHistory(filters, limit, offset);
+      const { rows, total } = service.listWatchHistory(filters, limit, offset);
 
-    return {
-      data: rows.map(toWatchHistoryEntry),
-      pagination: paginationMeta(total, limit, offset),
-    };
-  }),
+      return {
+        data: rows.map(toWatchHistoryEntry),
+        pagination: paginationMeta(total, limit, offset),
+      };
+    }),
 
   /** List recent watch history with date range filters and enriched media metadata. */
   listRecent: protectedProcedure.input(RecentWatchHistoryQuerySchema).query(({ input }) => {

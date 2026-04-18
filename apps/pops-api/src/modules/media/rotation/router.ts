@@ -240,7 +240,7 @@ export const rotationRouter = router({
         name: z.string().min(1),
         priority: z.number().int().min(1).max(10).default(5),
         enabled: z.boolean().default(true),
-        config: z.record(z.unknown()).default({}),
+        config: z.record(z.string(), z.unknown()).default({}),
         syncIntervalHours: z.number().int().min(1).default(24),
       })
     )
@@ -268,7 +268,7 @@ export const rotationRouter = router({
         name: z.string().min(1).optional(),
         priority: z.number().int().min(1).max(10).optional(),
         enabled: z.boolean().optional(),
-        config: z.record(z.unknown()).optional(),
+        config: z.record(z.string(), z.unknown()).optional(),
         syncIntervalHours: z.number().int().min(1).optional(),
       })
     )
@@ -332,7 +332,7 @@ export const rotationRouter = router({
           limit: z.number().int().min(1).max(100).default(50),
           offset: z.number().int().min(0).default(0),
         })
-        .default({})
+        .default({ limit: 50, offset: 0 })
     )
     .query(({ input }) => {
       const db = getDrizzle();
@@ -506,7 +506,7 @@ export const rotationRouter = router({
           limit: z.number().int().min(1).max(100).default(20),
           offset: z.number().int().min(0).default(0),
         })
-        .default({})
+        .default({ limit: 20, offset: 0 })
     )
     .query(({ input }) => {
       const db = getDrizzle();
@@ -586,7 +586,7 @@ export const rotationRouter = router({
           limit: z.number().int().min(1).max(100).default(20),
           offset: z.number().int().min(0).default(0),
         })
-        .default({})
+        .default({ status: 'pending', limit: 20, offset: 0 })
     )
     .query(({ input }) => {
       const db = getDrizzle();

@@ -1,7 +1,7 @@
 # US-01: trpc-openapi Setup
 
 > PRD: [OpenAPI Secondary Contract](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,13 +9,13 @@ As a backend developer, I serve an auto-generated OpenAPI spec and Swagger UI fr
 
 ## Acceptance Criteria
 
-- [ ] `trpc-openapi` installed and configured in pops-api
-- [ ] Express middleware serves REST endpoints at `/api/v1/*` for annotated procedures
-- [ ] `GET /api/openapi.json` returns the generated OpenAPI 3.1 spec
-- [ ] `GET /api/docs` serves Swagger UI loaded with the generated spec
-- [ ] OpenAPI middleware is mounted after auth middleware — REST endpoints require the same authentication as tRPC
-- [ ] A smoke-test annotated procedure (e.g., `core.settings.list`) is callable via `curl` at its REST path
-- [ ] Existing tRPC endpoints are unaffected — React frontend works identically
+- [x] `trpc-openapi` installed and configured in pops-api
+- [x] Express middleware serves REST endpoints at `/api/v1/*` for annotated procedures
+- [x] `GET /api/openapi.json` returns the generated OpenAPI 3.1 spec
+- [x] `GET /api/docs` serves Swagger UI loaded with the generated spec
+- [x] OpenAPI middleware is mounted after auth middleware — REST endpoints require the same authentication as tRPC
+- [x] A smoke-test annotated procedure (e.g., `core.settings.list`) is callable via `curl` at its REST path
+- [x] Existing tRPC endpoints are unaffected — React frontend works identically
 
 ## Notes
 

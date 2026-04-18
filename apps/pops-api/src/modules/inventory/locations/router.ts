@@ -5,10 +5,10 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
-import { protectedProcedure, router } from '../../../trpc.js';
+import { openApiOutput, protectedProcedure, router } from '../../../trpc.js';
 import { toInventoryItem } from '../items/types.js';
 import * as service from './service.js';
-import { CreateLocationSchema, toLocation, UpdateLocationSchema } from './types.js';
+import { CreateLocationSchema, type Location, toLocation, UpdateLocationSchema } from './types.js';
 
 export const locationsRouter = router({
   /** Get the full location tree as nested nodes. */
@@ -17,13 +17,23 @@ export const locationsRouter = router({
   }),
 
   /** List all locations (flat). */
-  list: protectedProcedure.query(() => {
-    const { rows, total } = service.listLocations();
-    return {
-      data: rows.map(toLocation),
-      total,
-    };
-  }),
+  list: protectedProcedure
+    .meta({
+      openapi: {
+        method: 'GET',
+        path: '/inventory/locations',
+        summary: 'List locations',
+        tags: ['locations'],
+      },
+    })
+    .output(openApiOutput<{ data: Location[]; total: number }>())
+    .query(() => {
+      const { rows, total } = service.listLocations();
+      return {
+        data: rows.map(toLocation),
+        total,
+      };
+    }),
 
   /** Get a single location by ID. */
   get: protectedProcedure.input(z.object({ id: z.string() })).query(({ input }) => {

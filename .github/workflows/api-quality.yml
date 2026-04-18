@@ -70,6 +70,10 @@ jobs:
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: cd apps/pops-api && pnpm typecheck
 
+      - name: Validate OpenAPI spec
+        if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
+        run: cd apps/pops-api && pnpm openapi:validate
+
       - name: Run unit tests
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: cd apps/pops-api && pnpm test

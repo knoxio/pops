@@ -52,6 +52,8 @@ import { PhotoGallery } from '../components/PhotoGallery';
 import { SortablePhotoGrid } from '../components/SortablePhotoGrid';
 import { trpc } from '../lib/trpc';
 
+import type { ItemConnection } from '@pops/api/modules/inventory/connections/types';
+
 const DOCUMENT_TYPE_LABELS: Record<string, string> = {
   receipt: 'Receipts',
   warranty: 'Warranties',
@@ -321,7 +323,7 @@ export function ItemDetailPage() {
           </div>
         ) : connectionsData?.data.length ? (
           <div className="space-y-2">
-            {connectionsData.data.map((conn) => (
+            {connectionsData.data.map((conn: ItemConnection) => (
               <ConnectionRow
                 key={conn.id}
                 connectedItemId={conn.itemAId === id ? conn.itemBId : conn.itemAId}

@@ -23,6 +23,8 @@ import {
 
 import { trpc } from '../lib/trpc';
 
+import type { InventoryItem } from '@pops/api/modules/inventory/items/types';
+
 interface ConnectDialogProps {
   currentItemId: string;
   onConnected: () => void;
@@ -58,7 +60,7 @@ export function ConnectDialog({ currentItemId, onConnected }: ConnectDialogProps
   };
 
   // Filter out the current item from results
-  const results = data?.data.filter((item) => item.id !== currentItemId) ?? [];
+  const results = data?.data.filter((item: InventoryItem) => item.id !== currentItemId) ?? [];
 
   return (
     <Dialog
@@ -107,7 +109,7 @@ export function ConnectDialog({ currentItemId, onConnected }: ConnectDialogProps
           ) : results.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4 text-center">No items found</p>
           ) : (
-            results.map((item) => (
+            results.map((item: InventoryItem) => (
               <Button
                 key={item.id}
                 variant="ghost"

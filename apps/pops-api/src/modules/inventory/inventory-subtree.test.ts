@@ -11,6 +11,8 @@ import { seedInventoryItem, seedLocation, setupTestContext } from '../../shared/
 import type { Database } from 'better-sqlite3';
 
 import type { createCaller } from '../../shared/test-utils.js';
+import type { InventoryItem } from './items/types.js';
+import type { Location } from './locations/types.js';
 
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;
@@ -65,7 +67,7 @@ describe('items.list — includeChildren subtree filter', () => {
     });
 
     expect(result.pagination.total).toBe(3);
-    const names = result.data.map((i) => i.itemName).toSorted();
+    const names = result.data.map((i: InventoryItem) => i.itemName).toSorted();
     expect(names).toEqual(['Blender', 'Couch', 'Rice']);
   });
 
@@ -149,9 +151,9 @@ describe('items.list — includeChildren subtree filter', () => {
     expect(page2.data).toHaveLength(4);
 
     // No overlap between pages
-    const page1Ids = page1.data.map((i) => i.id);
-    const page2Ids = page2.data.map((i) => i.id);
-    const overlap = page1Ids.filter((id) => page2Ids.includes(id));
+    const page1Ids = page1.data.map((i: InventoryItem) => i.id);
+    const page2Ids = page2.data.map((i: InventoryItem) => i.id);
+    const overlap = page1Ids.filter((id: string) => page2Ids.includes(id));
     expect(overlap).toHaveLength(0);
   });
 });
@@ -427,7 +429,7 @@ describe('cascade deletes', () => {
     await caller.inventory.locations.delete({ id: kitchenId, force: true });
 
     const list = await caller.inventory.locations.list();
-    const names = list.data.map((l) => l.name);
+    const names = list.data.map((l: Location) => l.name);
     expect(names).toContain('Home');
     expect(names).toContain('Garage');
     expect(names).not.toContain('Kitchen');

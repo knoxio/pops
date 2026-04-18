@@ -6,6 +6,8 @@ import { SETTINGS_KEYS } from './keys.js';
 
 import type { Database } from 'better-sqlite3';
 
+import type { Setting } from './types.js';
+
 const ctx = setupTestContext();
 let caller: ReturnType<typeof createCaller>;
 let db: Database;
@@ -41,7 +43,7 @@ describe('settings.list', () => {
 
     const result = await caller.core.settings.list({ search: 'plex' });
     expect(result.data).toHaveLength(2);
-    expect(result.data.map((s) => s.key)).toEqual(['plex_token', 'plex_url']);
+    expect(result.data.map((s: Setting) => s.key)).toEqual(['plex_token', 'plex_url']);
   });
 
   it('paginates results', async () => {
