@@ -99,6 +99,30 @@ export const tagRulesRouter = router({
       z.object({
         changeSet: TagRuleChangeSetSchema,
         feedback: z.string().min(1),
+        /**
+         * When provided, a follow-up proposal is generated that incorporates the
+         * rejection feedback as a hint. The original signal is required so the
+         * service can rebuild the ChangeSet with context from the feedback.
+         */
+        signal: z
+          .object({
+            descriptionPattern: z.string().min(1),
+            matchType: z.enum(['exact', 'contains', 'regex']),
+            entityId: z.string().nullable().optional(),
+            tags: z.array(z.string()).min(1),
+          })
+          .optional(),
+        transactions: z
+          .array(
+            z.object({
+              transactionId: z.string().min(1),
+              description: z.string().min(1),
+              entityId: z.string().nullable().optional(),
+              userTags: z.array(z.string()).optional(),
+            })
+          )
+          .optional(),
+        maxPreviewItems: z.coerce.number().int().positive().max(500).default(200),
       })
     )
     .mutation(({ input }) => {
@@ -107,6 +131,18 @@ export const tagRulesRouter = router({
         '[TagRules] Reject ChangeSet'
       );
       // v1: audit persistence can be added later; ensure feedback required and no changes are applied.
-      return { message: 'Tag rule ChangeSet rejected' };
+
+      // Generate a follow-up proposal incorporating the feedback when the caller
+      // provides the original signal (and optionally transactions for preview).
+      const followUpProposal = input.signal
+        ? service.proposeTagRuleChangeSet({
+            signal: input.signal,
+            transactions: input.transactions ?? [],
+            maxPreviewItems: input.maxPreviewItems,
+            rejectionFeedback: input.feedback,
+          })
+        : null;
+
+      return { message: 'Tag rule ChangeSet rejected', followUpProposal };
     }),
 });
