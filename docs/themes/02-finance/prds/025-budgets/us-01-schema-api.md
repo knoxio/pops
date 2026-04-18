@@ -1,7 +1,7 @@
 # US-01: Budget schema and API
 
 > PRD: [025 — Budgets](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -9,7 +9,7 @@ As a developer, I want the budget table and CRUD API so that spending targets ca
 
 ## Acceptance Criteria
 
-- [ ] `budgets` table with all columns and UNIQUE constraint on (category, period) — table exists with all columns; no DB-level UNIQUE constraint (enforced in application code)
+- [x] `budgets` table with all columns and UNIQUE constraint on (category, period) — implemented as `CREATE UNIQUE INDEX idx_budgets_category_period ON budgets(category, COALESCE(period, char(0)))` to handle null period correctly
 - [x] Null period uniqueness handled correctly (null == null) — service uses `isNull()` check, tested
 - [x] CRUD procedures: list (search, period, active filters), get, create, update, delete
 - [x] Create: active defaults to 0 (false), enforces unique constraint

@@ -1,7 +1,7 @@
 # PRD-025: Budgets
 
 > Epic: [04 — Budgets](../../epics/04-budgets.md)
-> Status: Partial
+> Status: Done
 
 ## Overview
 

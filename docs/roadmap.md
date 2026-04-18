@@ -68,15 +68,15 @@ Live status of every theme and epic. Updated as work completes.
 
 #### Finance
 
-| Area                                          | Status  | Notes                                                                                 |
-| --------------------------------------------- | ------- | ------------------------------------------------------------------------------------- |
-| Transaction ledger (CRUD, filtering, tagging) | Done    | 6 pages, inline editing                                                               |
-| Import pipeline (CSV wizard, entity matching) | Partial | 6 of 7 PRDs done; ANZ PDF parser (PRD-022 US-07) not started                          |
-| Entity registry                               | Done    | Aliases, default tags, AI fallback                                                    |
-| Corrections (learned rules)                   | Done    | Classification, proposals, tag-rule wizard, global rule manager — all 4 PRDs complete |
-| Budgets                                       | Done    | Monthly/yearly, active/inactive                                                       |
-| Wishlist                                      | Done    | Savings goals with progress                                                           |
-| AI categorisation                             | Done    | Claude Haiku, disk-cached, cost-tracked                                               |
+| Area                                          | Status | Notes                                                                                 |
+| --------------------------------------------- | ------ | ------------------------------------------------------------------------------------- |
+| Transaction ledger (CRUD, filtering, tagging) | Done   | 6 pages, inline editing                                                               |
+| Import pipeline (CSV wizard, entity matching) | Done   | 7-step wizard, all 7 PRDs complete including ANZ PDF parser (PRD-022)                 |
+| Entity registry                               | Done   | Aliases, default tags, AI fallback                                                    |
+| Corrections (learned rules)                   | Done   | Classification, proposals, tag-rule wizard, global rule manager — all 4 PRDs complete |
+| Budgets                                       | Done   | Monthly/yearly, active/inactive                                                       |
+| Wishlist                                      | Done   | Savings goals with progress                                                           |
+| AI categorisation                             | Done   | Claude Haiku, disk-cached, cost-tracked                                               |
 
 #### Media
 

@@ -1,7 +1,7 @@
 # US-02: ChangeSet proposal loop replaces silent auto-apply
 
 > PRD: [027 — AI Rule Creation](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -14,7 +14,7 @@ As a user, I want AI-assisted patterns turned into **reviewable ChangeSet propos
 - [x] On approval, the ChangeSet is stored in the local pending store and the session re-evaluates uncertain/failed rows using merged DB + pending rules.
 - [x] Tab counts update after local re-evaluation.
 - [x] Rules become persistent only after **`commitImport`** on Final Review (not mid-session DB writes).
-- [ ] Rename `autoSaveRuleAndReEvaluate` in `useProposalGeneration.ts` to reflect that it opens the proposal dialog (docs cleanup: knoxio/pops#1746).
+- [x] Rename `autoSaveRuleAndReEvaluate` in `useProposalGeneration.ts` to reflect that it opens the proposal dialog (docs cleanup: knoxio/pops#1746).
 
 ## Notes
 

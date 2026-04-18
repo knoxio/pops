@@ -8,9 +8,9 @@ Add AI-powered live rule creation to the import pipeline. When a user corrects a
 
 ## PRDs
 
-| #   | PRD                                                        | Summary                                                                                             | Status    |
-| --- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | --------- |
-| 027 | [AI Rule Creation](../prds/027-ai-rule-creation/README.md) | AI-assisted proposal generation for corrections during import (proposal + preview + approve/reject) | To Review |
+| #   | PRD                                                        | Summary                                                                                             | Status |
+| --- | ---------------------------------------------------------- | --------------------------------------------------------------------------------------------------- | ------ |
+| 027 | [AI Rule Creation](../prds/027-ai-rule-creation/README.md) | AI-assisted proposal generation for corrections during import (proposal + preview + approve/reject) | Done   |
 
 ## Dependencies
 
