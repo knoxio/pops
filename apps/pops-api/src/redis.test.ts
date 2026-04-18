@@ -9,15 +9,15 @@ describe('redis module', () => {
     vi.unstubAllEnvs();
   });
 
-  it('exports null client and returns disconnected when REDIS_URL is not set', async () => {
-    vi.stubEnv('REDIS_URL', '');
+  it('exports null client and returns disconnected when REDIS_HOST is not set', async () => {
+    vi.stubEnv('REDIS_HOST', '');
     const { getRedisClient, getRedisStatus } = await import('./redis.js');
     expect(getRedisClient()).toBeNull();
     expect(getRedisStatus()).toBe('disconnected');
   });
 
-  it('does not throw when REDIS_URL is missing', async () => {
-    vi.stubEnv('REDIS_URL', '');
+  it('does not throw when REDIS_HOST is missing', async () => {
+    vi.stubEnv('REDIS_HOST', '');
     await expect(import('./redis.js')).resolves.toBeDefined();
   });
 });

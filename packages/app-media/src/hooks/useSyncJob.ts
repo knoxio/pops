@@ -10,11 +10,11 @@ import { toast } from 'sonner';
 import { trpc } from '../lib/trpc';
 
 type SyncJobType =
-  | 'syncMovies'
-  | 'syncTvShows'
-  | 'syncWatchlist'
-  | 'syncWatchHistory'
-  | 'syncDiscoverWatches';
+  | 'plexSyncMovies'
+  | 'plexSyncTvShows'
+  | 'plexSyncWatchlist'
+  | 'plexSyncWatchHistory'
+  | 'plexSyncDiscoverWatches';
 
 interface SyncJobProgress {
   processed: number;
@@ -61,11 +61,11 @@ interface UseSyncJobReturn {
 }
 
 const JOB_TYPE_LABELS: Record<SyncJobType, string> = {
-  syncMovies: 'Movie sync',
-  syncTvShows: 'TV sync',
-  syncWatchlist: 'Watchlist sync',
-  syncWatchHistory: 'Watch history sync',
-  syncDiscoverWatches: 'Cloud watch sync',
+  plexSyncMovies: 'Movie sync',
+  plexSyncTvShows: 'TV sync',
+  plexSyncWatchlist: 'Watchlist sync',
+  plexSyncWatchHistory: 'Watch history sync',
+  plexSyncDiscoverWatches: 'Cloud watch sync',
 };
 
 export function useSyncJob(jobType: SyncJobType): UseSyncJobReturn {

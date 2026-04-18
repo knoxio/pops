@@ -47,7 +47,7 @@ Live status of every theme and epic. Updated as work completes.
 | Epic                         | Status      | Notes                                                              |
 | ---------------------------- | ----------- | ------------------------------------------------------------------ |
 | Redis container & connection | Not started | Redis 7 Alpine, ioredis, Ansible provisioning                      |
-| Job queue (BullMQ)           | Not started | Typed queues, worker process, migrate Plex sync from in-memory     |
+| Job queue (BullMQ)           | In progress | Typed queues, worker process, migrate Plex sync from in-memory     |
 | OpenAPI secondary contract   | Not started | trpc-openapi, spec at /api/docs, CI validation                     |
 | Vector storage (sqlite-vec)  | Not started | Embedding schema, similarity search, background embedding pipeline |
 

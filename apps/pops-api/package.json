@@ -54,6 +54,7 @@
     "@pops/types": "workspace:*",
     "@trpc/server": "^11.16.0",
     "better-sqlite3": "^12.9.0",
+    "bullmq": "^5.56.8",
     "cron-parser": "^5.5.0",
     "dotenv": "^17.4.2",
     "drizzle-orm": "^0.45.2",

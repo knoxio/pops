@@ -12,11 +12,11 @@ export function usePlexSettings() {
   const [schedulerHours, setSchedulerHours] = useState<number>(6);
 
   // Background sync jobs
-  const movieSync = useSyncJob('syncMovies');
-  const tvSync = useSyncJob('syncTvShows');
-  const watchlistSync = useSyncJob('syncWatchlist');
-  const watchHistorySync = useSyncJob('syncWatchHistory');
-  const discoverSync = useSyncJob('syncDiscoverWatches');
+  const movieSync = useSyncJob('plexSyncMovies');
+  const tvSync = useSyncJob('plexSyncTvShows');
+  const watchlistSync = useSyncJob('plexSyncWatchlist');
+  const watchHistorySync = useSyncJob('plexSyncWatchHistory');
+  const discoverSync = useSyncJob('plexSyncDiscoverWatches');
 
   // Queries
   const syncStatus = trpc.media.plex.getSyncStatus.useQuery();

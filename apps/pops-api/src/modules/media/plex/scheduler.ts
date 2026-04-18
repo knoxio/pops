@@ -1,23 +1,23 @@
 import { desc, eq } from 'drizzle-orm';
 
 /**
- * Plex sync scheduler — periodic polling for new watch activity.
+ * Plex sync scheduler — BullMQ repeatable job for periodic library polling.
  *
- * Runs movie + TV sync at a configurable interval (default 1 hour).
- * Tracks sync timestamps and handles errors gracefully.
- * Persists scheduler config and sync logs to the settings table.
+ * Public API is unchanged from the in-memory implementation:
+ *   startScheduler / stopScheduler / getSchedulerStatus / resumeSchedulerIfEnabled
+ *
+ * The actual sync logic runs in the worker process (src/jobs/handlers/sync.ts).
+ * This module manages the BullMQ job scheduler registration and provides
+ * status information to the tRPC layer.
+ *
+ * PRD-074 US-05
  */
 import { settings, syncLogs } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
+import { getSyncQueue } from '../../../jobs/queues.js';
 import { SETTINGS_KEYS } from '../../core/settings/keys.js';
-import { getPlexClient, getPlexSectionIds, getPlexToken } from './service.js';
-import { isJobRunning } from './sync-job-manager.js';
-import { importMoviesFromPlex } from './sync-movies.js';
-import { importTvShowsFromPlex } from './sync-tv.js';
-import { syncWatchlistFromPlex } from './sync-watchlist.js';
-
-import type { PlexClient } from './client.js';
+import { getPlexSectionIds } from './service.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -36,9 +36,9 @@ export interface SchedulerStatus {
 export interface SchedulerOptions {
   /** Sync interval in milliseconds. Default: 1 hour. */
   intervalMs?: number;
-  /** Plex library section ID for movies. Default: "1". */
+  /** Plex library section ID for movies. */
   movieSectionId?: string;
-  /** Plex library section ID for TV shows. Default: "2". */
+  /** Plex library section ID for TV shows. */
   tvSectionId?: string;
 }
 
@@ -53,7 +53,9 @@ export interface SyncLogEntry {
 
 const DEFAULT_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 
-// Local aliases for scheduler-specific settings keys
+/** Stable ID used for the BullMQ job scheduler — deduplication key in Redis. */
+const SCHEDULER_ID = 'pops-plex-scheduled-sync';
+
 const SCHEDULER_KEYS = {
   enabled: SETTINGS_KEYS.PLEX_SCHEDULER_ENABLED,
   intervalMs: SETTINGS_KEYS.PLEX_SCHEDULER_INTERVAL_MS,
@@ -62,21 +64,17 @@ const SCHEDULER_KEYS = {
 } as const;
 
 // ---------------------------------------------------------------------------
-// Scheduler state (module singleton)
+// Module singleton state
 // ---------------------------------------------------------------------------
 
-let timer: ReturnType<typeof setInterval> | null = null;
+let isRunning = false;
 let intervalMs = DEFAULT_INTERVAL_MS;
-let lastSyncAt: string | null = null;
-let lastSyncError: string | null = null;
 let nextSyncAt: string | null = null;
-let moviesSynced = 0;
-let tvShowsSynced = 0;
 let movieSectionId: string | null = null;
 let tvSectionId: string | null = null;
 
 // ---------------------------------------------------------------------------
-// Settings persistence helpers
+// Settings helpers
 // ---------------------------------------------------------------------------
 
 function saveSetting(key: string, value: string): void {
@@ -131,77 +129,86 @@ function writeSyncLog(
 // Public API
 // ---------------------------------------------------------------------------
 
-/** Start the periodic sync scheduler. No-op if already running. */
+/** Register a BullMQ repeatable job for periodic Plex sync. No-op if already running. */
 export function startScheduler(options: SchedulerOptions = {}): SchedulerStatus {
-  if (timer) {
-    return getSchedulerStatus();
-  }
+  if (isRunning) return getSchedulerStatus();
 
   intervalMs = options.intervalMs ?? DEFAULT_INTERVAL_MS;
 
-  // Use explicit options, then saved settings, then null (will skip sync)
   const saved = getPlexSectionIds();
   movieSectionId = options.movieSectionId ?? saved.movieSectionId;
   tvSectionId = options.tvSectionId ?? saved.tvSectionId;
 
-  // Schedule next sync
   nextSyncAt = new Date(Date.now() + intervalMs).toISOString();
-  timer = setInterval(() => {
-    void runSync();
-  }, intervalMs);
 
-  // Persist config so scheduler auto-resumes on restart
+  // Register (or update) the repeatable job in BullMQ.
+  // upsertJobScheduler is idempotent — calling it with the same ID replaces any
+  // existing scheduler rather than adding a duplicate.
+  void getSyncQueue()
+    .upsertJobScheduler(
+      SCHEDULER_ID,
+      { every: intervalMs },
+      {
+        name: 'plexScheduledSync',
+        data: {
+          type: 'plexScheduledSync',
+          movieSectionId: movieSectionId ?? undefined,
+          tvSectionId: tvSectionId ?? undefined,
+        },
+      }
+    )
+    .catch((err: unknown) => {
+      console.error('[Plex Scheduler] Failed to register BullMQ scheduler:', err);
+    });
+
+  isRunning = true;
   persistSchedulerConfig();
 
   return getSchedulerStatus();
 }
 
-/** Stop the periodic sync scheduler. No-op if not running. */
+/** Remove the BullMQ repeatable job and stop the scheduler. */
 export function stopScheduler(): SchedulerStatus {
-  if (timer) {
-    clearInterval(timer);
-    timer = null;
+  if (isRunning) {
+    void getSyncQueue()
+      .removeJobScheduler(SCHEDULER_ID)
+      .catch((err: unknown) => {
+        console.error('[Plex Scheduler] Failed to remove BullMQ scheduler:', err);
+      });
   }
-  nextSyncAt = null;
 
-  // Clear persisted config so scheduler doesn't auto-resume
+  isRunning = false;
+  nextSyncAt = null;
   clearSchedulerConfig();
 
   return getSchedulerStatus();
 }
 
 /**
- * Stop the in-memory interval timer without touching persisted settings.
- * Use this during graceful shutdown so the scheduler auto-resumes on restart.
- * For user-initiated disable (which should prevent auto-resume), use
- * `stopScheduler()` instead.
+ * Stop the local running flag without touching persisted settings.
+ * Used during graceful shutdown so the scheduler auto-resumes on restart.
  */
 export function stopPlexSchedulerTask(): void {
-  if (timer) {
-    clearInterval(timer);
-    timer = null;
-  }
+  isRunning = false;
   nextSyncAt = null;
-  console.warn('[Plex Scheduler] Timer stopped (settings preserved)');
+  console.warn('[Plex Scheduler] Scheduler flag cleared (settings preserved for auto-resume)');
 }
 
-/** Get current scheduler status. */
+/** Get current scheduler status. Last-sync info is read from the sync_logs table. */
 export function getSchedulerStatus(): SchedulerStatus {
+  const counts = getLastSyncCounts();
   return {
-    isRunning: timer !== null,
+    isRunning,
     intervalMs,
-    lastSyncAt,
-    lastSyncError,
+    lastSyncAt: getLastSyncAt(),
+    lastSyncError: getLastSyncError(),
     nextSyncAt,
-    moviesSynced,
-    tvShowsSynced,
+    moviesSynced: counts.moviesSynced,
+    tvShowsSynced: counts.tvShowsSynced,
   };
 }
 
-/**
- * Read persisted scheduler state from settings.
- * Returns null if the scheduler was not previously enabled.
- */
+/** Read persisted scheduler state from settings. Returns null when not previously enabled. */
 export function getPersistedSchedulerState(): {
   enabled: boolean;
   intervalMs: number;
@@ -215,10 +222,7 @@ export function getPersistedSchedulerState(): {
   };
 }
 
-/**
- * Auto-resume the scheduler if it was previously running.
- * Call this on server startup.
- */
+/** Auto-resume the scheduler if it was previously running. Call this on server startup. */
 export function resumeSchedulerIfEnabled(): SchedulerStatus | null {
   const persisted = getPersistedSchedulerState();
   if (!persisted?.enabled) return null;
@@ -231,7 +235,6 @@ export function resumeSchedulerIfEnabled(): SchedulerStatus | null {
 export function getSyncLogs(limit = 20): SyncLogEntry[] {
   const db = getDrizzle();
   const rows = db.select().from(syncLogs).orderBy(desc(syncLogs.syncedAt)).limit(limit).all();
-
   return rows.map((row) => ({
     id: row.id,
     syncedAt: row.syncedAt,
@@ -243,99 +246,57 @@ export function getSyncLogs(limit = 20): SyncLogEntry[] {
 }
 
 // ---------------------------------------------------------------------------
-// Internal sync runner
+// Internal helpers
 // ---------------------------------------------------------------------------
 
-async function runSync(): Promise<void> {
-  const client = getPlexClient();
-  if (!client) {
-    lastSyncError = 'Plex not configured (PLEX_URL or plex_token missing)';
-    lastSyncAt = new Date().toISOString();
-    nextSyncAt = timer ? new Date(Date.now() + intervalMs).toISOString() : null;
-    writeSyncLog(lastSyncAt, 0, 0, [lastSyncError], null);
-    return;
-  }
-
-  const startTime = Date.now();
+function getLastSyncAt(): string | null {
   try {
-    const result = await executeSyncCycle(client);
-    lastSyncError = null;
-    lastSyncAt = new Date().toISOString();
-    nextSyncAt = timer ? new Date(Date.now() + intervalMs).toISOString() : null;
-
-    writeSyncLog(
-      lastSyncAt,
-      result.movieCount,
-      result.tvCount,
-      result.errors.length > 0 ? result.errors : null,
-      Date.now() - startTime
-    );
-  } catch (err) {
-    lastSyncError = err instanceof Error ? err.message : String(err);
-    lastSyncAt = new Date().toISOString();
-    nextSyncAt = timer ? new Date(Date.now() + intervalMs).toISOString() : null;
-
-    writeSyncLog(lastSyncAt, 0, 0, [lastSyncError], Date.now() - startTime);
+    const db = getDrizzle();
+    const row = db
+      .select({ syncedAt: syncLogs.syncedAt })
+      .from(syncLogs)
+      .orderBy(desc(syncLogs.syncedAt))
+      .limit(1)
+      .get();
+    return row?.syncedAt ?? null;
+  } catch {
+    return null;
   }
 }
 
-async function executeSyncCycle(
-  client: PlexClient
-): Promise<{ movieCount: number; tvCount: number; watchlistAdded: number; errors: string[] }> {
-  let movieCount = 0;
-  let tvCount = 0;
-  let watchlistAdded = 0;
-  const errors: string[] = [];
-
-  if (movieSectionId) {
-    if (isJobRunning('syncMovies')) {
-      console.warn('[Plex Scheduler] Skipping movie sync — manual job in progress');
-    } else {
-      const movieResult = await importMoviesFromPlex(client, movieSectionId);
-      movieCount = movieResult.synced;
-      moviesSynced += movieResult.synced;
-      for (const err of movieResult.errors) {
-        errors.push(`Movie: ${err.title} — ${err.reason}`);
-      }
-    }
-  } else {
-    console.warn('[Plex Scheduler] Movie section ID not configured — skipping movie sync');
+function getLastSyncCounts(): { moviesSynced: number; tvShowsSynced: number } {
+  try {
+    const db = getDrizzle();
+    const row = db
+      .select({ moviesSynced: syncLogs.moviesSynced, tvShowsSynced: syncLogs.tvShowsSynced })
+      .from(syncLogs)
+      .orderBy(desc(syncLogs.syncedAt))
+      .limit(1)
+      .get();
+    return {
+      moviesSynced: row?.moviesSynced ?? 0,
+      tvShowsSynced: row?.tvShowsSynced ?? 0,
+    };
+  } catch {
+    return { moviesSynced: 0, tvShowsSynced: 0 };
   }
+}
 
-  if (tvSectionId) {
-    if (isJobRunning('syncTvShows')) {
-      console.warn('[Plex Scheduler] Skipping TV sync — manual job in progress');
-    } else {
-      const tvResult = await importTvShowsFromPlex(client, tvSectionId);
-      tvCount = tvResult.synced;
-      tvShowsSynced += tvResult.synced;
-      for (const err of tvResult.errors) {
-        errors.push(`TV: ${err.title} — ${err.reason}`);
-      }
-    }
-  } else {
-    console.warn('[Plex Scheduler] TV section ID not configured — skipping TV sync');
+function getLastSyncError(): string | null {
+  try {
+    const db = getDrizzle();
+    const row = db
+      .select({ errors: syncLogs.errors, syncedAt: syncLogs.syncedAt })
+      .from(syncLogs)
+      .orderBy(desc(syncLogs.syncedAt))
+      .limit(1)
+      .get();
+    if (!row?.errors) return null;
+    const errors = JSON.parse(row.errors) as string[];
+    return errors.length > 0 ? (errors[0] ?? null) : null;
+  } catch {
+    return null;
   }
-
-  // Watchlist sync runs after library sync (items may need to be added to library first)
-  const token = getPlexToken();
-  if (token) {
-    if (isJobRunning('syncWatchlist')) {
-      console.warn('[Plex Scheduler] Skipping watchlist sync — manual job in progress');
-    } else {
-      try {
-        const watchlistResult = await syncWatchlistFromPlex(token);
-        watchlistAdded = watchlistResult.added;
-        for (const err of watchlistResult.errors) {
-          errors.push(`Watchlist: ${err.title} — ${err.reason}`);
-        }
-      } catch (err) {
-        errors.push(`Watchlist sync failed: ${err instanceof Error ? err.message : String(err)}`);
-      }
-    }
-  }
-
-  return { movieCount, tvCount, watchlistAdded, errors };
 }
 
 // ---------------------------------------------------------------------------
@@ -344,18 +305,23 @@ async function executeSyncCycle(
 
 /** Reset all scheduler state — for testing only. */
 export function _resetScheduler(): void {
-  stopScheduler();
-  lastSyncAt = null;
-  lastSyncError = null;
+  isRunning = false;
+  intervalMs = DEFAULT_INTERVAL_MS;
   nextSyncAt = null;
-  moviesSynced = 0;
-  tvShowsSynced = 0;
   movieSectionId = null;
   tvSectionId = null;
-  intervalMs = DEFAULT_INTERVAL_MS;
 }
 
-/** Expose runSync for testing without waiting for interval. */
-export async function _triggerSync(): Promise<void> {
-  return runSync();
+/** Directly write a sync log entry — for testing only. */
+export function _writeSyncLog(
+  syncedAt: string,
+  movieCount: number,
+  tvCount: number,
+  errors: string[] | null,
+  durationMs: number | null
+): void {
+  writeSyncLog(syncedAt, movieCount, tvCount, errors, durationMs);
 }
+
+/** Re-export for external use (e.g., the rotation scheduler). */
+export { writeSyncLog };

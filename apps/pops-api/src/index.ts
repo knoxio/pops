@@ -7,6 +7,7 @@ config({ path: '../../.env', override: false }); // loads root .env without over
 
 import { createApp } from './app.js';
 import { closeDb } from './db.js';
+import { closeQueues } from './jobs/queues.js';
 import { startupCleanup } from './modules/core/envs/registry.js';
 import { startTtlWatcher } from './modules/core/envs/ttl-watcher.js';
 import { resumeSchedulerIfEnabled, stopPlexSchedulerTask } from './modules/media/plex/scheduler.js';
@@ -55,7 +56,7 @@ async function shutdown(signal: string): Promise<void> {
   console.warn(`[pops-api] ${signal} — shutting down`);
   // 1. Stop accepting new requests
   server.close();
-  // 2. Stop schedulers (task-only, preserve settings for auto-resume on restart)
+  // 2. Stop schedulers (preserve settings for auto-resume on restart)
   stopRotationTask();
   stopPlexSchedulerTask();
   // 3. Wait for any in-progress rotation cycle to finish
@@ -64,11 +65,13 @@ async function shutdown(signal: string): Promise<void> {
   }
   // 4. Stop TTL watcher
   clearInterval(ttlWatcher);
-  // 5. Close Redis
+  // 5. Close BullMQ queue connections
+  await closeQueues();
+  // 6. Close Redis
   await shutdownRedis();
-  // 6. Close DB
+  // 7. Close DB
   closeDb();
-  // 7. Exit
+  // 8. Exit
   process.exit(0);
 }
 

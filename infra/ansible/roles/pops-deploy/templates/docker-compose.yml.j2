@@ -2,8 +2,8 @@
 # Paths reference /opt/pops/secrets/ written by the secrets role.
 
 services:
-  redis:
-    image: redis:7-alpine
+  pops-redis:
+    image: redis:{{ redis_version }}
     container_name: pops-redis
     restart: unless-stopped
     networks:
@@ -42,7 +42,8 @@ services:
       NODE_ENV: production
       SQLITE_PATH: /data/sqlite/pops.db
       PORT: "3000"
-      REDIS_URL: "redis://redis:6379"
+      REDIS_HOST: pops-redis
+      REDIS_PORT: "6379"
       # Paperless-ngx integration (optional — leave unset to disable)
       PAPERLESS_BASE_URL: >-
         {{ vault_paperless_base_url | default('') }}
@@ -50,13 +51,43 @@ services:
         {{ vault_paperless_api_token | default('') }}
     expose:
       - "3000"
+    depends_on:
+      pops-redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r=>{if(!r.ok)process.exit(1)})"]
       interval: 30s
       timeout: 5s
       retries: 3
+
+  pops-worker:
+    build:
+      context: {{ docker_compose_dir }}/repo
+      dockerfile: apps/pops-api/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    container_name: pops-worker
+    restart: unless-stopped
+    command: ["node", "dist/worker.js"]
+    networks:
+      - backend
+    volumes:
+      - sqlite-data:/data/sqlite
+    secrets:
+      - notion_api_token
+      - up_bank_token
+      - up_webhook_secret
+      - finance_api_key
+      - claude_api_key
+      - tmdb_api_key
+      - thetvdb_api_key
+    environment:
+      NODE_ENV: production
+      SQLITE_PATH: /data/sqlite/pops.db
+      REDIS_HOST: pops-redis
+      REDIS_PORT: "6379"
     depends_on:
-      redis:
+      pops-redis:
         condition: service_healthy
 
   pops-shell:

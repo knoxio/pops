@@ -1,14 +1,17 @@
 import { Redis } from 'ioredis';
 
-const redisUrl = process.env['REDIS_URL'];
+const redisHost = process.env['REDIS_HOST'];
+const redisPort = Number(process.env['REDIS_PORT'] ?? 6379);
 const keyPrefix = process.env['REDIS_PREFIX'] ?? 'pops:';
 
 let client: Redis | null = null;
 
-if (!redisUrl) {
-  console.warn('[redis] REDIS_URL not set — Redis disabled (degraded mode)');
+if (!redisHost) {
+  console.warn('[redis] REDIS_HOST not set — Redis disabled (degraded mode)');
 } else {
-  client = new Redis(redisUrl, {
+  client = new Redis({
+    host: redisHost,
+    port: redisPort,
     lazyConnect: true,
     keyPrefix,
     enableReadyCheck: true,

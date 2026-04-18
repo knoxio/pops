@@ -297,7 +297,7 @@ describe('PlexSettingsPage', () => {
 
   it('displays inline sync results after movie sync', () => {
     setupDefaults();
-    setSyncJobState('syncMovies', {
+    setSyncJobState('plexSyncMovies', {
       status: 'completed',
       result: {
         synced: 5,
@@ -315,7 +315,7 @@ describe('PlexSettingsPage', () => {
 
   it('displays inline sync results after TV sync', () => {
     setupDefaults();
-    setSyncJobState('syncTvShows', {
+    setSyncJobState('plexSyncTvShows', {
       status: 'completed',
       result: { synced: 3, skipped: 1, errors: [] },
     });
@@ -327,7 +327,7 @@ describe('PlexSettingsPage', () => {
 
   it('shows expandable error details for sync errors', () => {
     setupDefaults();
-    setSyncJobState('syncMovies', {
+    setSyncJobState('plexSyncMovies', {
       status: 'completed',
       result: {
         synced: 1,
@@ -418,7 +418,7 @@ describe('PlexSettingsPage', () => {
 
   it('triggers syncWatchlist start on button click', () => {
     const mockStart = vi.fn();
-    setSyncJobState('syncWatchlist', { start: mockStart });
+    setSyncJobState('plexSyncWatchlist', { start: mockStart });
     setupDefaults();
     renderPage();
 
@@ -428,7 +428,7 @@ describe('PlexSettingsPage', () => {
 
   it('displays watchlist sync results after successful sync', () => {
     setupDefaults();
-    setSyncJobState('syncWatchlist', {
+    setSyncJobState('plexSyncWatchlist', {
       status: 'completed',
       result: { added: 3, removed: 1, skipped: 5, errors: [] },
     });
@@ -442,7 +442,7 @@ describe('PlexSettingsPage', () => {
 
   it('shows expandable error details for watchlist sync errors', () => {
     setupDefaults();
-    setSyncJobState('syncWatchlist', {
+    setSyncJobState('plexSyncWatchlist', {
       status: 'completed',
       result: {
         added: 1,
