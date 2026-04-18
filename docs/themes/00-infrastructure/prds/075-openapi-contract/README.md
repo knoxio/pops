@@ -1,7 +1,7 @@
 # PRD-075: OpenAPI Secondary Contract
 
 > Epic: [08 — Cortex Infrastructure](../../epics/08-cortex-infrastructure.md)
-> Status: Partial
+> Status: Done
 
 ## Overview
 

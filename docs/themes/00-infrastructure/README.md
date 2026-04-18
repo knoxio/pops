@@ -18,17 +18,17 @@ Set up a self-hosted production environment on dedicated hardware with zero-trus
 
 ## Epics
 
-| #   | Epic                                                       | Summary                                                                             | Status      |
-| --- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------- | ----------- |
-| 0   | [Hardware & OS](epics/00-hardware-os.md)                   | Server provisioning, OS hardening, SSH, firewall                                    | Done        |
-| 1   | [Docker Runtime](epics/01-docker-runtime.md)               | Docker Compose, multi-network architecture, health checks, volumes                  | Done        |
-| 2   | [Networking & Access](epics/02-networking-access.md)       | Cloudflare Tunnel ingress, Cloudflare Access zero-trust auth                        | Done        |
-| 3   | [Secrets Management](epics/03-secrets-management.md)       | Ansible Vault for provisioning, Docker secrets for runtime                          | Done        |
-| 4   | [CI/CD Pipelines](epics/04-cicd-pipelines.md)              | GitHub Actions workflows for quality gates, deployment, validation                  | Done        |
-| 5   | [Backups](epics/05-backups.md)                             | Encrypted offsite to Backblaze B2 via rclone                                        | Partial     |
-| 6   | [Monitoring](epics/06-monitoring.md)                       | Health checks, log aggregation, alerting                                            | Done        |
-| 7   | [Database Operations](epics/07-database-operations.md)     | Unified migration system, production guards, pre-migration backups, go-live runbook | Done        |
-| 8   | [Cortex Infrastructure](epics/08-cortex-infrastructure.md) | Redis, BullMQ job queue, OpenAPI secondary contract, sqlite-vec vector storage      | Not started |
+| #   | Epic                                                       | Summary                                                                             | Status  |
+| --- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------- |
+| 0   | [Hardware & OS](epics/00-hardware-os.md)                   | Server provisioning, OS hardening, SSH, firewall                                    | Done    |
+| 1   | [Docker Runtime](epics/01-docker-runtime.md)               | Docker Compose, multi-network architecture, health checks, volumes                  | Done    |
+| 2   | [Networking & Access](epics/02-networking-access.md)       | Cloudflare Tunnel ingress, Cloudflare Access zero-trust auth                        | Done    |
+| 3   | [Secrets Management](epics/03-secrets-management.md)       | Ansible Vault for provisioning, Docker secrets for runtime                          | Done    |
+| 4   | [CI/CD Pipelines](epics/04-cicd-pipelines.md)              | GitHub Actions workflows for quality gates, deployment, validation                  | Done    |
+| 5   | [Backups](epics/05-backups.md)                             | Encrypted offsite to Backblaze B2 via rclone                                        | Partial |
+| 6   | [Monitoring](epics/06-monitoring.md)                       | Health checks, log aggregation, alerting                                            | Done    |
+| 7   | [Database Operations](epics/07-database-operations.md)     | Unified migration system, production guards, pre-migration backups, go-live runbook | Done    |
+| 8   | [Cortex Infrastructure](epics/08-cortex-infrastructure.md) | Redis, BullMQ job queue, OpenAPI secondary contract, sqlite-vec vector storage      | Done    |
 
 Epics 0-2 are sequential (hardware before Docker before networking). Epics 3-6 can be parallelised after 1. Epic 7 depends on Epic 5 (backup system). Epic 8 depends on Epics 1 and 7.
 

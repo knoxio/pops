@@ -44,12 +44,12 @@ Live status of every theme and epic. Updated as work completes.
 
 #### Cortex Infrastructure
 
-| Epic                         | Status      | Notes                                                                                           |
-| ---------------------------- | ----------- | ----------------------------------------------------------------------------------------------- |
-| Redis container & connection | Done        | Redis 7 Alpine, ioredis v5, Ansible role, persistence disabled, healthcheck (#1945)             |
-| Job queue (BullMQ)           | Done        | Typed queues, worker process, DLQ, Plex sync migrated, jobs management API (#1946)              |
-| OpenAPI secondary contract   | In progress | trpc-openapi, spec at /api/docs, CI validation                                                  |
-| Vector storage (sqlite-vec)  | Done        | sqlite-vec extension, embedding schema, similarity search, chunker, background pipeline (#1948) |
+| Epic                         | Status | Notes                                                                                           |
+| ---------------------------- | ------ | ----------------------------------------------------------------------------------------------- |
+| Redis container & connection | Done   | Redis 7 Alpine, ioredis v5, Ansible role, persistence disabled, healthcheck (#1945)             |
+| Job queue (BullMQ)           | Done   | Typed queues, worker process, DLQ, Plex sync migrated, jobs management API (#1946)              |
+| OpenAPI secondary contract   | Done   | trpc-openapi, spec at /api/docs, CI validation, jobs router annotated (#1950)                   |
+| Vector storage (sqlite-vec)  | Done   | sqlite-vec extension, embedding schema, similarity search, chunker, background pipeline (#1948) |
 
 ### Phase 1 — Foundation
 

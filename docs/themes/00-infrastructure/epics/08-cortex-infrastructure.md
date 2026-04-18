@@ -8,12 +8,12 @@ Add the foundational infrastructure that the Cortex service (and other future se
 
 ## PRDs
 
-| #   | PRD                                                                   | Summary                                                                                          | Status      |
-| --- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ----------- |
-| 073 | [Redis Container & Connection](../prds/073-redis-container/README.md) | Add Redis 7 to Docker stack, connection module in pops-api, Ansible provisioning, dev setup      | Done        |
-| 074 | [Job Queue Infrastructure](../prds/074-job-queue/README.md)           | BullMQ queues, typed workers, job management API, failure handling, migration of in-memory jobs  | Done        |
-| 075 | [OpenAPI Secondary Contract](../prds/075-openapi-contract/README.md)  | trpc-openapi annotations on domain CRUD procedures, spec generation, Swagger UI, CI validation   | In progress |
-| 076 | [Vector Storage](../prds/076-vector-storage/README.md)                | sqlite-vec extension, embedding schema, similarity search service, embedding generation pipeline | Not started |
+| #   | PRD                                                                   | Summary                                                                                          | Status |
+| --- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ | ------ |
+| 073 | [Redis Container & Connection](../prds/073-redis-container/README.md) | Add Redis 7 to Docker stack, connection module in pops-api, Ansible provisioning, dev setup      | Done   |
+| 074 | [Job Queue Infrastructure](../prds/074-job-queue/README.md)           | BullMQ queues, typed workers, job management API, failure handling, migration of in-memory jobs  | Done   |
+| 075 | [OpenAPI Secondary Contract](../prds/075-openapi-contract/README.md)  | trpc-openapi annotations on domain CRUD procedures, spec generation, Swagger UI, CI validation   | Done   |
+| 076 | [Vector Storage](../prds/076-vector-storage/README.md)                | sqlite-vec extension, embedding schema, similarity search service, embedding generation pipeline | Done   |
 
 PRD-073 (Redis) must complete before PRD-074 (Job Queue) — BullMQ requires a Redis connection. PRD-075 (OpenAPI) and PRD-076 (Vector Storage) are independent of each other and of PRD-074, but PRD-076 benefits from PRD-074 (embedding generation runs as background jobs).
 
