@@ -10,6 +10,7 @@ import './entities/search-adapter.js';
 import { router } from '../../trpc.js';
 import { aiUsageRouter } from './ai-usage/router.js';
 import { correctionsRouter } from './corrections/router.js';
+import { embeddingsRouter } from './embeddings/router.js';
 import { entitiesRouter } from './entities/router.js';
 import { jobsRouter } from './jobs/router.js';
 import { searchRouter } from './search/router.js';
@@ -21,6 +22,7 @@ export const coreRouter = router({
   aiUsage: aiUsageRouter,
   corrections: correctionsRouter,
   jobs: jobsRouter,
+  embeddings: embeddingsRouter,
   tagRules: tagRulesRouter,
   settings: settingsRouter,
   search: searchRouter,

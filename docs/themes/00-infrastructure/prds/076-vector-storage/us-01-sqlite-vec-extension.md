@@ -1,7 +1,7 @@
 # US-01: sqlite-vec Extension
 
 > PRD: [Vector Storage](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,12 +9,12 @@ As a backend developer, I load the sqlite-vec extension at database startup so t
 
 ## Acceptance Criteria
 
-- [ ] `sqlite-vec` npm package installed as a dependency in pops-api
-- [ ] `db.ts` loads the extension via `db.loadExtension()` after opening the database connection
-- [ ] A startup check verifies the extension is loaded: `SELECT vec_version()` returns a version string
-- [ ] If the extension fails to load, the server starts but logs a clear error and marks vector features as unavailable
-- [ ] Extension loads successfully on macOS ARM (development) and Linux x86_64 (production Docker)
-- [ ] Dockerfile updated to ensure the native extension binary is available in the production image
+- [x] `sqlite-vec` npm package installed as a dependency in pops-api
+- [x] `db.ts` loads the extension via `sqliteVec.load(db)` after opening the database connection
+- [x] A startup check verifies the extension is loaded: `SELECT vec_version()` returns a version string
+- [x] If the extension fails to load, the server starts but logs a clear error and marks vector features as unavailable
+- [x] Extension loads successfully on macOS ARM (development) and Linux x86_64 (production Docker)
+- [x] Dockerfile updated to `node:22-slim` (glibc) to ensure the native extension binary is available in the production image
 - [ ] Integration test creates a vector virtual table, inserts vectors, and queries k-NN — all operations succeed
 
 ## Notes

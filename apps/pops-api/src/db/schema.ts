@@ -646,7 +646,34 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     );
     CREATE UNIQUE INDEX IF NOT EXISTS uq_engram_links_pair ON engram_links(source_id, target_id);
     CREATE INDEX IF NOT EXISTS idx_engram_links_target ON engram_links(target_id);
+
+    -- Embedding metadata table (PRD-076).
+    -- The companion embeddings_vec virtual table requires sqlite-vec and is created separately.
+    CREATE TABLE IF NOT EXISTS embeddings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      source_type TEXT NOT NULL,
+      source_id TEXT NOT NULL,
+      chunk_index INTEGER NOT NULL DEFAULT 0,
+      content_hash TEXT NOT NULL,
+      content_preview TEXT NOT NULL,
+      model TEXT NOT NULL,
+      dimensions INTEGER NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_embeddings_source_chunk
+      ON embeddings(source_type, source_id, chunk_index);
+    CREATE INDEX IF NOT EXISTS idx_embeddings_source_type ON embeddings(source_type);
+    CREATE INDEX IF NOT EXISTS idx_embeddings_content_hash ON embeddings(content_hash);
   `);
+
+  // embeddings_vec virtual table (PRD-076). Requires sqlite-vec extension.
+  // Silently skipped if the extension is not available; it will be created when
+  // the extension loads (or via the 0033_embeddings_vec Drizzle migration on existing DBs).
+  try {
+    db.exec(`CREATE VIRTUAL TABLE IF NOT EXISTS embeddings_vec USING vec0(vector float[1536])`);
+  } catch {
+    // sqlite-vec not available — vector features disabled until extension loads
+  }
 
   // Seed the system "Manual Queue" rotation source (PRD-071 US-01).
   // INSERT OR IGNORE so repeated init is harmless.
@@ -678,7 +705,7 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     const drizzleMigrationsDir = join(import.meta.dirname, 'drizzle-migrations');
     const journalPath = join(drizzleMigrationsDir, 'meta', '_journal.json');
     const journal = JSON.parse(readFileSync(journalPath, 'utf8')) as {
-      entries: { idx: number; tag: string }[];
+      entries: { idx: number; tag: string; when: number }[];
     };
 
     db.exec(`
@@ -693,7 +720,9 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       'INSERT OR IGNORE INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)'
     );
     for (const entry of journal.entries) {
-      insertDrizzle.run(entry.tag, Date.now());
+      // Use the journal's `when` timestamp so Drizzle's timestamp-based check
+      // treats all pre-seeded migrations as already applied (folderMillis <= created_at).
+      insertDrizzle.run(entry.tag, entry.when);
     }
   } catch {
     // Non-fatal — Drizzle migrate at startup will handle it

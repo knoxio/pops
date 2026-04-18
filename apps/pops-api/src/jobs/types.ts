@@ -41,7 +41,20 @@ export type SyncQueueJobData =
   | PlexScheduledSyncJobData;
 
 // ---------------------------------------------------------------------------
-// pops:embeddings / pops:curation / pops:default queues (stubs)
+// pops:embeddings queue
+// ---------------------------------------------------------------------------
+
+export interface EmbedJobData {
+  sourceType: string;
+  sourceId: string;
+  /** Content to embed. If omitted, the handler fetches it from the source table. */
+  content?: string;
+}
+
+export type EmbeddingsQueueJobData = EmbedJobData;
+
+// ---------------------------------------------------------------------------
+// pops:curation / pops:default queues (stubs)
 // ---------------------------------------------------------------------------
 
 export interface GenericJobData {
@@ -49,7 +62,6 @@ export interface GenericJobData {
   [key: string]: unknown;
 }
 
-export type EmbeddingsQueueJobData = GenericJobData;
 export type CurationQueueJobData = GenericJobData;
 export type DefaultQueueJobData = GenericJobData;
 

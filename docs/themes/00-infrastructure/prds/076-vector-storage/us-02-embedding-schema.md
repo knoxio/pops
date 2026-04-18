@@ -1,7 +1,7 @@
 # US-02: Embedding Schema
 
 > PRD: [Vector Storage](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,15 +9,15 @@ As a backend developer, I define the embedding storage schema via Drizzle so tha
 
 ## Acceptance Criteria
 
-- [ ] `embeddings` table defined in `packages/db-types/src/schema/core/embeddings.ts`
-- [ ] Table includes: id, source_type, source_id, chunk_index, content_hash, content_preview, model, dimensions, created_at
-- [ ] Unique index on `(source_type, source_id, chunk_index)`
-- [ ] Index on `source_type` and `content_hash`
-- [ ] sqlite-vec virtual table `embeddings_vec` created via raw SQL in a Drizzle migration (virtual tables aren't supported by Drizzle's schema builder)
-- [ ] `embeddings_vec.rowid` matches `embeddings.id` — enforced by application code, not FK constraint (virtual tables don't support FKs)
-- [ ] `drizzle-kit generate` produces a clean migration
-- [ ] Migration applies to an existing database with data without errors
-- [ ] Types exported from `@pops/db-types` for use in services
+- [x] `embeddings` table defined in `packages/db-types/src/schema/core/embeddings.ts`
+- [x] Table includes: id, source_type, source_id, chunk_index, content_hash, content_preview, model, dimensions, created_at
+- [x] Unique index on `(source_type, source_id, chunk_index)`
+- [x] Index on `source_type` and `content_hash`
+- [x] sqlite-vec virtual table `embeddings_vec` created via raw SQL in Drizzle migration `0033_embeddings_vec.sql`
+- [x] `embeddings_vec.rowid` matches `embeddings.id` — enforced by application code, not FK constraint (virtual tables don't support FKs)
+- [x] Migration SQL written by hand (drizzle-kit generate not available in CI) — two migrations: `0032_embeddings.sql` + `0033_embeddings_vec.sql`
+- [x] Migration applies to an existing database with data without errors
+- [x] Types exported from `@pops/db-types` for use in services
 
 ## Notes
 

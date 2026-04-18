@@ -225,6 +225,20 @@
       "when": 1776487561100,
       "tag": "0031_romantic_hannibal_king",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "6",
+      "when": 1776600000000,
+      "tag": "0032_embeddings",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "6",
+      "when": 1776600001000,
+      "tag": "0033_embeddings_vec",
+      "breakpoints": true
     }
   ]
 }

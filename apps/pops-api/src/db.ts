@@ -6,6 +6,7 @@ import { join } from 'node:path';
 import BetterSqlite3 from 'better-sqlite3';
 import { type BetterSQLite3Database, drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
+import * as sqliteVec from 'sqlite-vec';
 
 import { initializeSchema } from './db/schema.js';
 
@@ -15,6 +16,39 @@ const DRIZZLE_MIGRATIONS_DIR = join(__dirname, 'db', 'drizzle-migrations');
 
 /** Singleton prod database connection. */
 let prodDb: BetterSqlite3.Database | null = null;
+
+/** Whether the sqlite-vec extension loaded successfully. */
+let vecAvailable = false;
+
+/** Returns true if the sqlite-vec extension loaded and vector features are available. */
+export function isVecAvailable(): boolean {
+  return vecAvailable;
+}
+
+/**
+ * Load the sqlite-vec extension into a database connection.
+ * Sets the module-level `vecAvailable` flag on first successful load.
+ * Safe to call on multiple connections — the extension binary is loaded once per process.
+ */
+function tryLoadVecExtension(db: BetterSqlite3.Database): boolean {
+  try {
+    sqliteVec.load(db);
+    if (!vecAvailable) {
+      const version = db.prepare('SELECT vec_version()').pluck().get() as string;
+      console.warn(`[db] sqlite-vec loaded: ${version}`);
+      vecAvailable = true;
+    }
+    return true;
+  } catch (err) {
+    if (!vecAvailable) {
+      console.error(
+        '[db] sqlite-vec extension failed to load — vector features disabled:',
+        (err as Error).message
+      );
+    }
+    return false;
+  }
+}
 
 /**
  * Per-request database context.
@@ -205,6 +239,20 @@ function openDatabase(path: string): BetterSqlite3.Database {
   db.pragma('busy_timeout = 5000');
   db.pragma('foreign_keys = ON');
 
+  // Load sqlite-vec before migrations so the embeddings_vec virtual table migration works.
+  const vecLoaded = tryLoadVecExtension(db);
+
+  // Ensure embeddings_vec exists whenever vec is available — idempotent due to IF NOT EXISTS.
+  // This handles DBs where vec was unavailable on first boot (migration was skipped/marked applied)
+  // and also the init-db.ts path where initializeSchema runs without vec loaded.
+  if (vecLoaded) {
+    try {
+      db.exec(`CREATE VIRTUAL TABLE IF NOT EXISTS embeddings_vec USING vec0(vector float[1536])`);
+    } catch {
+      // Should not happen since vec is loaded, but don't crash
+    }
+  }
+
   // Fresh database: initialize full schema (creates all tables + marks migrations as applied)
   if (isFreshDatabase(db)) {
     console.warn('[db] Fresh database detected — initializing schema...');
@@ -259,8 +307,38 @@ function openDatabase(path: string): BetterSqlite3.Database {
     const drizzleDb = drizzle(db);
     migrate(drizzleDb, { migrationsFolder: DRIZZLE_MIGRATIONS_DIR });
   } catch (err) {
-    console.error('[db] Drizzle migration failed:', err);
-    throw err;
+    // If sqlite-vec failed to load, the embeddings_vec virtual table migration
+    // will fail with "no such module: vec0". Mark it as applied to unblock startup;
+    // vector features remain disabled until the extension is available.
+    if (
+      !vecLoaded &&
+      err instanceof Error &&
+      (err.message.includes('vec0') || err.message.includes('embeddings_vec'))
+    ) {
+      console.error(
+        '[db] embeddings_vec migration skipped (sqlite-vec unavailable) — marking as applied, vector features disabled'
+      );
+      try {
+        const vecMigrationPath = join(DRIZZLE_MIGRATIONS_DIR, '0033_embeddings_vec.sql');
+        const vecSql = readFileSync(vecMigrationPath, 'utf8');
+        const hash = createHash('sha256').update(vecSql).digest('hex');
+        db.exec(`
+          CREATE TABLE IF NOT EXISTS "__drizzle_migrations" (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            hash TEXT NOT NULL,
+            created_at NUMERIC
+          )
+        `);
+        db.prepare(
+          'INSERT OR IGNORE INTO __drizzle_migrations (hash, created_at) VALUES (?, ?)'
+        ).run(hash, Date.now());
+      } catch {
+        // Non-fatal — startup proceeds, migration will retry on next start
+      }
+    } else {
+      console.error('[db] Drizzle migration failed:', err);
+      throw err;
+    }
   }
 
   return db;
@@ -321,6 +399,7 @@ export function openEnvDatabase(path: string): BetterSqlite3.Database {
   db.pragma('journal_mode = WAL');
   db.pragma('busy_timeout = 5000');
   db.pragma('foreign_keys = ON');
+  tryLoadVecExtension(db);
   initializeSchema(db);
   return db;
 }

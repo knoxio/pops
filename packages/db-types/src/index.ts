@@ -13,6 +13,7 @@ import type { comparisonDimensions } from './schema/comparison-dimensions.js';
 import type { comparisonSkipCooloffs } from './schema/comparison-skip-cooloffs.js';
 import type { comparisonStaleness } from './schema/comparison-staleness.js';
 import type { comparisons } from './schema/comparisons.js';
+import type { embeddings } from './schema/core/embeddings.js';
 import type { transactionCorrections } from './schema/corrections.js';
 import type { debriefResults } from './schema/debrief-results.js';
 import type { debriefSessions } from './schema/debrief-sessions.js';
@@ -50,6 +51,7 @@ import type { wishList } from './schema/wishlist.js';
 // Re-export Drizzle table objects for use in queries
 export {
   aiUsage,
+  embeddings,
   budgets,
   comparisonDimensions,
   comparisons,
@@ -103,6 +105,8 @@ export type TransactionCorrectionRow = InferSelectModel<typeof transactionCorrec
 export type TagVocabularyRow = InferSelectModel<typeof tagVocabulary>;
 export type TransactionTagRuleRow = InferSelectModel<typeof transactionTagRules>;
 export type AiUsageRow = InferSelectModel<typeof aiUsage>;
+export type EmbeddingRow = InferSelectModel<typeof embeddings>;
+export type EmbeddingInsert = InferInsertModel<typeof embeddings>;
 export type EnvironmentRow = InferSelectModel<typeof environments>;
 export type MovieRow = InferSelectModel<typeof movies>;
 export type TvShowRow = InferSelectModel<typeof tvShows>;

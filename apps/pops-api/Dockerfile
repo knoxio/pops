@@ -1,4 +1,4 @@
-FROM node:22-alpine AS builder
+FROM node:22-slim AS builder
 WORKDIR /app
 
 # Copy workspace root files
@@ -34,9 +34,9 @@ RUN pnpm build
 # Deploy creates a standalone directory with all runtime deps (no symlinks)
 RUN pnpm --filter @pops/api deploy --prod --legacy /app/deploy
 
-FROM node:22-alpine
+FROM node:22-slim
 WORKDIR /app
-RUN apk add --no-cache curl
+RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/*
 
 # Copy the standalone deployment (includes node_modules with real files, not symlinks)
 COPY --from=builder /app/deploy ./

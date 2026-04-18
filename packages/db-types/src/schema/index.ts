@@ -1,4 +1,5 @@
 export { aiUsage } from './ai-usage.js';
+export { embeddings } from './core/embeddings.js';
 export { budgets } from './budgets.js';
 export { comparisonDimensions } from './comparison-dimensions.js';
 export { comparisonSkipCooloffs } from './comparison-skip-cooloffs.js';
