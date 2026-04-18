@@ -1,7 +1,7 @@
 # PRD-029: Tag Rule Proposals
 
 > Epic: [03 — Corrections](../../epics/03-corrections.md)
-> Status: Partial
+> Status: Done
 
 ## Overview
 
@@ -111,17 +111,17 @@ The UI must support accepting/rejecting suggestions at either scope:
 
 ## User Stories
 
-| #   | Story                                                                       | Summary                                                       | Status  | Parallelisable   |
-| --- | --------------------------------------------------------------------------- | ------------------------------------------------------------- | ------- | ---------------- |
-| 01  | [us-01-tag-rule-contract](us-01-tag-rule-contract.md)                       | Define tag rule model + ChangeSet operations + impact preview | Done    | No (first)       |
-| 02  | [us-02-generate-tag-proposal](us-02-generate-tag-proposal.md)               | Generate bundled tag-rule proposal from tag edits             | Done    | Blocked by us-01 |
-| 03  | [us-03-approve-reject-tag-proposals](us-03-approve-reject-tag-proposals.md) | Approve/apply or reject-with-feedback tag rule ChangeSets     | Partial | Blocked by us-01 |
+| #   | Story                                                                       | Summary                                                       | Status | Parallelisable   |
+| --- | --------------------------------------------------------------------------- | ------------------------------------------------------------- | ------ | ---------------- |
+| 01  | [us-01-tag-rule-contract](us-01-tag-rule-contract.md)                       | Define tag rule model + ChangeSet operations + impact preview | Done   | No (first)       |
+| 02  | [us-02-generate-tag-proposal](us-02-generate-tag-proposal.md)               | Generate bundled tag-rule proposal from tag edits             | Done   | Blocked by us-01 |
+| 03  | [us-03-approve-reject-tag-proposals](us-03-approve-reject-tag-proposals.md) | Approve/apply or reject-with-feedback tag rule ChangeSets     | Done   | Blocked by us-01 |
 
 ## Verification
 
-- Tag edits in the current import can produce a proposal that increases the quality of future tag suggestions. _`TagRuleProposalDialog` is wired into `TagReviewStep` via "Save tag rule…" per entity group (knoxio/pops#1886). Group-scope signal is fully wired; transaction-scope signal is not yet connected._
-- Approving a tag rule proposal immediately improves suggested tags for remaining transactions in the current import without altering entity/type classification. _(Apply is wired and stores the ChangeSet in the import store. Live re-suggestion is now implemented: `handleTagRuleApplied` propagates `preview.affected` into `localTags` and `suggestedTagMeta` for non-user-edited transactions.)_
+- Tag edits in the current import can produce a proposal that increases the quality of future tag suggestions. _`TagRuleProposalDialog` is wired into `TagReviewStep` at both scopes: group-scope via "Save tag rule…" per entity group (knoxio/pops#1886, knoxio/pops#1940) and transaction-scope via "Save rule…" per individual row (closes knoxio/pops#1954)._
+- Approving a tag rule proposal immediately improves suggested tags for remaining transactions in the current import without altering entity/type classification. _Apply is wired and stores the ChangeSet in the import store. Live re-suggestion propagates `preview.affected` into `localTags` and `suggestedTagMeta` for non-user-edited transactions at both scopes._
 
 ## Drift Check
 
-last checked: 2026-04-18
+last checked: 2026-04-19
