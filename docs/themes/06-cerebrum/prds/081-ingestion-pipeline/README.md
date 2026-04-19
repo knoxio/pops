@@ -1,7 +1,7 @@
 # PRD-081: Ingestion Pipeline
 
 > Epic: [02 — Ingest](../../epics/02-ingest.md)
-> Status: Not started
+> Status: In progress
 
 ## Overview
 
@@ -94,11 +94,11 @@ raw input → normalize → classify type → match template → extract entitie
 | #   | Story                                                 | Summary                                                                                                  | Status      | Parallelisable |
 | --- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------- | -------------- |
 | 01  | [us-01-manual-input](us-01-manual-input.md)           | Shell UI form for creating engrams: type selector, template fields, body editor, scope picker, tag input | Not started | No (first)     |
-| 02  | [us-02-agent-input](us-02-agent-input.md)             | MCP tools and API endpoint for writing engrams from Claude Code or external tools                        | Not started | Yes            |
-| 03  | [us-03-quick-capture](us-03-quick-capture.md)         | Minimal-friction capture for Moltbot/CLI: raw text in, classified later                                  | Not started | Yes            |
-| 04  | [us-04-classification](us-04-classification.md)       | LLM-based content classification: infer type, match template, suggest tags                               | Not started | Yes            |
-| 05  | [us-05-entity-extraction](us-05-entity-extraction.md) | Extract people, projects, dates, topics from body into tags and frontmatter                              | Not started | Yes            |
-| 06  | [us-06-scope-inference](us-06-scope-inference.md)     | Rule-based + LLM-based scope assignment with user override                                               | Not started | Yes            |
+| 02  | [us-02-agent-input](us-02-agent-input.md)             | MCP tools and API endpoint for writing engrams from Claude Code or external tools                        | Partial     | Yes            |
+| 03  | [us-03-quick-capture](us-03-quick-capture.md)         | Minimal-friction capture for Moltbot/CLI: raw text in, classified later                                  | Partial     | Yes            |
+| 04  | [us-04-classification](us-04-classification.md)       | LLM-based content classification: infer type, match template, suggest tags                               | Done        | Yes            |
+| 05  | [us-05-entity-extraction](us-05-entity-extraction.md) | Extract people, projects, dates, topics from body into tags and frontmatter                              | Partial     | Yes            |
+| 06  | [us-06-scope-inference](us-06-scope-inference.md)     | Rule-based + LLM-based scope assignment with user override                                               | Done        | Yes            |
 
 US-01, US-02, and US-03 define the three input channels and can parallelise. US-04, US-05, and US-06 define the pipeline processing stages and can parallelise with each other and with the input channels. All stories depend on PRD-077 (engram file format) and PRD-078 (scope model) being implemented.
 

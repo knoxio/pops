@@ -1,7 +1,7 @@
 # US-02: Agent Input via MCP and API
 
 > PRD: [PRD-081: Ingestion Pipeline](README.md)
-> Status: Not started
+> Status: Partial
 
 ## Description
 
@@ -11,13 +11,13 @@ As an AI agent (Claude Code session or external tool), I want to write engrams t
 
 - [ ] An MCP tool `cerebrum_ingest` is registered with the pops MCP server, accepting parameters: `body` (required), `title` (optional), `type` (optional), `scopes` (optional string array), `tags` (optional string array)
 - [ ] An MCP tool `cerebrum_quick_capture` is registered for lightweight capture, accepting a single `text` parameter — delegates to `cerebrum.ingest.quickCapture`
-- [ ] The tRPC procedure `cerebrum.ingest.submit` accepts the full `IngestionRequest` schema and runs the complete pipeline (normalise, classify, extract, scope, deduplicate, write)
-- [ ] When `type` is omitted, the pipeline runs Cortex classification on the body and assigns the inferred type
-- [ ] When `scopes` are omitted, the pipeline runs scope inference (source-based rules first, then LLM-based analysis)
-- [ ] Raw Markdown input is normalised (trimmed, line endings normalised, UTF-8 validated) before processing
+- [x] The tRPC procedure `cerebrum.ingest.submit` accepts the full `IngestionRequest` schema and runs the complete pipeline (normalise, classify, extract, scope, deduplicate, write)
+- [x] When `type` is omitted, the pipeline runs Cortex classification on the body and assigns the inferred type
+- [x] When `scopes` are omitted, the pipeline runs scope inference (source-based rules first, then LLM-based analysis)
+- [x] Raw Markdown input is normalised (trimmed, line endings normalised, UTF-8 validated) before processing
 - [ ] Structured JSON input (detected by content inspection) is converted to Markdown with metadata extracted into frontmatter fields
 - [ ] The MCP tools return the created engram's ID, file path, type, and assigned scopes in the response
-- [ ] Invalid input (empty body, malformed scopes) returns structured error messages with field-level detail, not generic 500 errors
+- [x] Invalid input (empty body, malformed scopes) returns structured error messages with field-level detail, not generic 500 errors
 
 ## Notes
 

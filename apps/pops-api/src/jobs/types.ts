@@ -63,12 +63,17 @@ export interface CrossSourceIndexJobData {
   sourceTypes?: string[];
 }
 
+export interface ClassifyEngramJobData {
+  type: 'classifyEngram';
+  engramId: string;
+}
+
 export interface GenericJobData {
   type: string;
   [key: string]: unknown;
 }
 
-export type CurationQueueJobData = GenericJobData;
+export type CurationQueueJobData = ClassifyEngramJobData | GenericJobData;
 export type DefaultQueueJobData = CrossSourceIndexJobData;
 
 // ---------------------------------------------------------------------------
