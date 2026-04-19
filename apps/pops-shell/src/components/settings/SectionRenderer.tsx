@@ -1,6 +1,6 @@
 import { trpc } from '@/lib/trpc';
 import { CheckCircle2, Loader2, RefreshCw, XCircle } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge, Button, Input, Label, Select, Skeleton, Switch, Textarea, cn } from '@pops/ui';
@@ -375,7 +375,14 @@ interface SectionRendererProps {
 }
 
 export function SectionRenderer({ manifest, optionsLoaders, onTestAction }: SectionRendererProps) {
-  const allKeys = manifest.groups.flatMap((g) => g.fields.map((f) => f.key));
+  const allKeys = useMemo(
+    () => manifest.groups.flatMap((g) => g.fields.map((f) => f.key)),
+    [manifest.groups]
+  );
+  const fieldsByKey = useMemo(
+    () => Object.fromEntries(manifest.groups.flatMap((g) => g.fields.map((f) => [f.key, f]))),
+    [manifest.groups]
+  );
 
   const { data, isLoading } = trpc.core.settings.getBulk.useQuery({ keys: allKeys });
   const setBulkMutation = trpc.core.settings.setBulk.useMutation();
@@ -461,6 +468,9 @@ export function SectionRenderer({ manifest, optionsLoaders, onTestAction }: Sect
                 );
               }, 2000);
               savedTimerRefs.current.set(key, savedTimer);
+              if (fieldsByKey[key]?.requiresRestart) {
+                toast.info('Setting saved — restart required for this change to take effect');
+              }
             },
             onError: (err) => {
               if (saveVersionRefs.current.get(key) !== version) return;
@@ -473,7 +483,7 @@ export function SectionRenderer({ manifest, optionsLoaders, onTestAction }: Sect
 
       debounceRefs.current.set(key, timer);
     },
-    [setBulkMutation]
+    [setBulkMutation, fieldsByKey]
   );
 
   const handleTestAction = useCallback(

@@ -8,6 +8,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const mocks = vi.hoisted(() => ({
   getBulk: vi.fn(),
   setBulkMutate: vi.fn(),
+  toastError: vi.fn(),
+  toastInfo: vi.fn(),
 }));
 
 vi.mock('@/lib/trpc', () => ({
@@ -25,7 +27,7 @@ vi.mock('@/lib/trpc', () => ({
   },
 }));
 
-vi.mock('sonner', () => ({ toast: { error: vi.fn() } }));
+vi.mock('sonner', () => ({ toast: { error: mocks.toastError, info: mocks.toastInfo } }));
 
 import { SectionRenderer } from './SectionRenderer';
 
@@ -316,6 +318,135 @@ describe('SectionRenderer', () => {
 
         expect(onTestAction).toHaveBeenCalledOnce();
         expect(onTestAction).toHaveBeenCalledWith('media.plex.testConnection');
+      } finally {
+        await act(async () => {
+          await vi.runAllTimersAsync();
+        });
+        vi.useRealTimers();
+      }
+    });
+  });
+
+  describe('restart-required toast', () => {
+    it('fires toast.info when a requiresRestart field saves successfully', async () => {
+      vi.useFakeTimers();
+      try {
+        const manifest = makeManifest({
+          groups: [
+            {
+              id: 'g1',
+              title: 'Server',
+              fields: [
+                {
+                  key: 'server.port',
+                  label: 'Port',
+                  type: 'text',
+                  default: '',
+                  requiresRestart: true,
+                },
+              ],
+            },
+          ],
+        });
+        render(<SectionRenderer manifest={manifest} />);
+
+        fireEvent.change(screen.getByRole('textbox'), { target: { value: '9000' } });
+        await act(async () => {
+          vi.advanceTimersByTime(500);
+        });
+
+        expect(mocks.setBulkMutate).toHaveBeenCalledOnce();
+        const [, callbacks] = mocks.setBulkMutate.mock.calls[0] as [
+          unknown,
+          { onSuccess: () => void },
+        ];
+        await act(async () => {
+          callbacks.onSuccess();
+        });
+
+        expect(mocks.toastInfo).toHaveBeenCalledWith(
+          'Setting saved — restart required for this change to take effect'
+        );
+      } finally {
+        await act(async () => {
+          await vi.runAllTimersAsync();
+        });
+        vi.useRealTimers();
+      }
+    });
+
+    it('does not fire toast.info for non-requiresRestart fields on success', async () => {
+      vi.useFakeTimers();
+      try {
+        const manifest = makeManifest({
+          groups: [
+            {
+              id: 'g1',
+              title: 'Server',
+              fields: [{ key: 'plex.url', label: 'URL', type: 'text', default: '' }],
+            },
+          ],
+        });
+        render(<SectionRenderer manifest={manifest} />);
+
+        fireEvent.change(screen.getByRole('textbox'), { target: { value: 'http://plex.local' } });
+        await act(async () => {
+          vi.advanceTimersByTime(500);
+        });
+
+        const [, callbacks] = mocks.setBulkMutate.mock.calls[0] as [
+          unknown,
+          { onSuccess: () => void },
+        ];
+        await act(async () => {
+          callbacks.onSuccess();
+        });
+
+        expect(mocks.toastInfo).not.toHaveBeenCalled();
+      } finally {
+        await act(async () => {
+          await vi.runAllTimersAsync();
+        });
+        vi.useRealTimers();
+      }
+    });
+
+    it('does not fire toast.info on error even for requiresRestart fields', async () => {
+      vi.useFakeTimers();
+      try {
+        const manifest = makeManifest({
+          groups: [
+            {
+              id: 'g1',
+              title: 'Server',
+              fields: [
+                {
+                  key: 'server.port',
+                  label: 'Port',
+                  type: 'text',
+                  default: '',
+                  requiresRestart: true,
+                },
+              ],
+            },
+          ],
+        });
+        render(<SectionRenderer manifest={manifest} />);
+
+        fireEvent.change(screen.getByRole('textbox'), { target: { value: '9000' } });
+        await act(async () => {
+          vi.advanceTimersByTime(500);
+        });
+
+        const [, callbacks] = mocks.setBulkMutate.mock.calls[0] as [
+          unknown,
+          { onError: (err: Error) => void },
+        ];
+        await act(async () => {
+          callbacks.onError(new Error('save failed'));
+        });
+
+        expect(mocks.toastInfo).not.toHaveBeenCalled();
       } finally {
         await act(async () => {
           await vi.runAllTimersAsync();

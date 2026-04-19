@@ -47,7 +47,7 @@ As a user, I want settings fields to render as appropriate input widgets with in
 ### Requires Restart Badge
 
 - [x] Fields with `requiresRestart: true` display an amber "Requires restart" badge next to the field label
-- [ ] When the user changes such a field, a non-blocking toast confirms the change and notes that a restart is needed
+- [x] When the user changes such a field, a non-blocking toast confirms the change and notes that a restart is needed
 
 ### Test Action Button
 
