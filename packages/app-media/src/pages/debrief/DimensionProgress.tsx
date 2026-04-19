@@ -9,19 +9,22 @@ interface DimensionProgressProps {
   currentDimensionId: number | null;
 }
 
+function getBadgeVariant(
+  status: DebriefDimension['status'],
+  isCurrent: boolean
+): 'default' | 'outline' | 'secondary' {
+  if (status === 'complete') return 'default';
+  if (isCurrent) return 'outline';
+  return 'secondary';
+}
+
 export function DimensionProgress({ dimensions, currentDimensionId }: DimensionProgressProps) {
   return (
     <div className="flex flex-wrap gap-2" data-testid="dimension-progress">
       {dimensions.map((dim) => (
         <Badge
           key={dim.dimensionId}
-          variant={
-            dim.status === 'complete'
-              ? 'default'
-              : currentDimensionId === dim.dimensionId
-                ? 'outline'
-                : 'secondary'
-          }
+          variant={getBadgeVariant(dim.status, currentDimensionId === dim.dimensionId)}
           className="gap-1"
         >
           {dim.status === 'complete' ? (
