@@ -1,6 +1,6 @@
 import { trpc } from '@/lib/trpc';
 import { CheckCircle2, Loader2, RefreshCw, XCircle } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Badge, Button, Input, Label, Select, Skeleton, Switch, Textarea, cn } from '@pops/ui';
@@ -375,9 +375,13 @@ interface SectionRendererProps {
 }
 
 export function SectionRenderer({ manifest, optionsLoaders, onTestAction }: SectionRendererProps) {
-  const allKeys = manifest.groups.flatMap((g) => g.fields.map((f) => f.key));
-  const fieldsByKey = Object.fromEntries(
-    manifest.groups.flatMap((g) => g.fields.map((f) => [f.key, f]))
+  const allKeys = useMemo(
+    () => manifest.groups.flatMap((g) => g.fields.map((f) => f.key)),
+    [manifest.groups]
+  );
+  const fieldsByKey = useMemo(
+    () => Object.fromEntries(manifest.groups.flatMap((g) => g.fields.map((f) => [f.key, f]))),
+    [manifest.groups]
   );
 
   const { data, isLoading } = trpc.core.settings.getBulk.useQuery({ keys: allKeys });
