@@ -183,6 +183,7 @@ export function WatchlistItem({
             <div className="flex items-center gap-2">
               <Button
                 variant="link"
+                size="sm"
                 onClick={handleSave}
                 disabled={isUpdating}
                 aria-label="Save note"
@@ -192,6 +193,7 @@ export function WatchlistItem({
               </Button>
               <Button
                 variant="link"
+                size="sm"
                 onClick={handleCancel}
                 disabled={isUpdating}
                 aria-label="Cancel editing"
@@ -208,6 +210,7 @@ export function WatchlistItem({
         ) : entry.notes ? (
           <Button
             variant="ghost"
+            size="sm"
             onClick={() => setEditing(true)}
             aria-label={`Edit notes for ${title}`}
             className="mt-1.5 text-xs text-muted-foreground line-clamp-2 text-left hover:text-foreground justify-start"
@@ -217,6 +220,7 @@ export function WatchlistItem({
         ) : (
           <Button
             variant="ghost"
+            size="sm"
             onClick={() => setEditing(true)}
             aria-label={`Add notes for ${title}`}
             className="mt-1.5 text-xs text-muted-foreground/60 hover:text-muted-foreground"
