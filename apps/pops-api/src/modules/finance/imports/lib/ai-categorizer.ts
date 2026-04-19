@@ -11,11 +11,10 @@ import { dirname, join } from 'node:path';
 
 import Anthropic from '@anthropic-ai/sdk';
 
-import { aiUsage } from '@pops/db-types';
-
-import { getDrizzle, isNamedEnvContext } from '../../../../db.js';
+import { isNamedEnvContext } from '../../../../db.js';
 import { getEnv } from '../../../../env.js';
 import { withRateLimitRetry } from '../../../../lib/ai-retry.js';
+import { trackInference } from '../../../../lib/inference-middleware.js';
 import { logger } from '../../../../lib/logger.js';
 
 export interface AiCacheEntry {
@@ -153,21 +152,17 @@ export async function categorizeWithAi(
       '[AI] Cache hit'
     );
 
-    // Track cache hit
-    getDrizzle()
-      .insert(aiUsage)
-      .values({
-        description: rawRow.trim(),
-        entityName: cached.entityName,
-        category: cached.category,
-        inputTokens: 0,
-        outputTokens: 0,
-        costUsd: 0,
-        cached: 1,
-        importBatchId: importBatchId ?? null,
-        createdAt: new Date().toISOString(),
-      })
-      .run();
+    void trackInference(
+      {
+        provider: 'claude',
+        model: 'claude-haiku-4-5-20251001',
+        operation: 'entity-match',
+        domain: 'finance',
+        contextId: importBatchId,
+        cached: true,
+      },
+      async () => null
+    );
 
     return { result: cached };
   }
@@ -183,25 +178,35 @@ export async function categorizeWithAi(
   logger.debug({ description: sanitizedDescription }, '[AI] Calling API (cache miss)');
 
   try {
-    const response = await withRateLimitRetry(
+    const response = await trackInference(
+      {
+        provider: 'claude',
+        model: 'claude-haiku-4-5-20251001',
+        operation: 'entity-match',
+        domain: 'finance',
+        contextId: importBatchId,
+      },
       () =>
-        client.messages.create({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 200,
-          messages: [
-            {
-              role: 'user',
-              content: `Given this bank transaction data, identify the merchant/entity name and a spending category.
+        withRateLimitRetry(
+          () =>
+            client.messages.create({
+              model: 'claude-haiku-4-5-20251001',
+              max_tokens: 200,
+              messages: [
+                {
+                  role: 'user',
+                  content: `Given this bank transaction data, identify the merchant/entity name and a spending category.
 
 Transaction data: ${rawRow}
 
 Reply in JSON only: {"entityName": "...", "category": "..."}
 Common categories: Groceries, Dining, Transport, Utilities, Entertainment, Shopping, Health, Insurance, Subscriptions, Income, Transfer, Government, Education, Travel, Rent, Other.`,
-            },
-          ],
-        }),
-      sanitizedDescription,
-      { logger, logPrefix: '[AI]' }
+                },
+              ],
+            }),
+          sanitizedDescription,
+          { logger, logPrefix: '[AI]' }
+        )
     );
 
     const text = response.content[0]?.type === 'text' ? response.content[0].text : null;
@@ -222,26 +227,9 @@ Common categories: Groceries, Dining, Transport, Utilities, Entertainment, Shopp
     cache.set(key, entry);
     saveCacheToDisk();
 
-    // Track API usage and cost
-    // Haiku 4.5 pricing: $1.00/MTok input, $5.00/MTok output
     const inputTokens = response.usage.input_tokens;
     const outputTokens = response.usage.output_tokens;
     const costUsd = (inputTokens / 1_000_000) * 1.0 + (outputTokens / 1_000_000) * 5.0;
-
-    getDrizzle()
-      .insert(aiUsage)
-      .values({
-        description: rawRow.trim(),
-        entityName: parsed.entityName,
-        category: parsed.category,
-        inputTokens,
-        outputTokens,
-        costUsd,
-        cached: 0,
-        importBatchId: importBatchId ?? null,
-        createdAt: new Date().toISOString(),
-      })
-      .run();
 
     logger.info(
       {

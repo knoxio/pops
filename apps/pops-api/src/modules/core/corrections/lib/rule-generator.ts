@@ -6,11 +6,12 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { and, isNotNull, ne } from 'drizzle-orm';
 
-import { aiUsage, transactions as transactionsTable } from '@pops/db-types';
+import { transactions as transactionsTable } from '@pops/db-types';
 
 import { getDrizzle } from '../../../../db.js';
 import { getEnv } from '../../../../env.js';
 import { withRateLimitRetry } from '../../../../lib/ai-retry.js';
+import { trackInference } from '../../../../lib/inference-middleware.js';
 import { logger } from '../../../../lib/logger.js';
 import { normalizeDescription } from '../types.js';
 
@@ -159,15 +160,19 @@ Format:
 
 Return ONLY the JSON array, no markdown, no explanation.`;
 
-  const response = await withRateLimitRetry(
+  const response = await trackInference(
+    { provider: 'claude', model: 'claude-haiku-4-5-20251001', operation: 'rule-generation' },
     () =>
-      client.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 2000,
-        messages: [{ role: 'user', content: prompt }],
-      }),
-    'generateRules',
-    { logger, logPrefix: '[RuleGen]' }
+      withRateLimitRetry(
+        () =>
+          client.messages.create({
+            model: 'claude-haiku-4-5-20251001',
+            max_tokens: 2000,
+            messages: [{ role: 'user', content: prompt }],
+          }),
+        'generateRules',
+        { logger, logPrefix: '[RuleGen]' }
+      )
   );
 
   const text = response.content[0]?.type === 'text' ? response.content[0].text : null;
@@ -205,32 +210,8 @@ Return ONLY the JSON array, no markdown, no explanation.`;
     return [];
   }
 
-  // Track AI usage
-  const inputTokens = response.usage.input_tokens;
-  const outputTokens = response.usage.output_tokens;
-  const costUsd = (inputTokens / 1_000_000) * 1.0 + (outputTokens / 1_000_000) * 5.0;
-
-  try {
-    getDrizzle()
-      .insert(aiUsage)
-      .values({
-        description: `generateRules (${transactions.length} transactions)`,
-        entityName: null,
-        category: 'rule-generation',
-        inputTokens,
-        outputTokens,
-        costUsd,
-        cached: 0,
-        importBatchId: null,
-        createdAt: new Date().toISOString(),
-      })
-      .run();
-  } catch {
-    // ai_usage tracking is best-effort — don't fail the request
-  }
-
   logger.info(
-    { count: proposals.length, inputTokens, outputTokens, costUsd: costUsd.toFixed(6) },
+    { count: proposals.length, inputTokens: response.usage.input_tokens },
     '[RuleGen] Generated rules'
   );
 
@@ -289,15 +270,19 @@ Return ONLY the JSON object, no markdown, no explanation.`;
 
   let response;
   try {
-    response = await withRateLimitRetry(
+    response = await trackInference(
+      { provider: 'claude', model: 'claude-haiku-4-5-20251001', operation: 'rule-generation' },
       () =>
-        client.messages.create({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 200,
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      'analyzeCorrection',
-      { logger, logPrefix: '[RuleGen]' }
+        withRateLimitRetry(
+          () =>
+            client.messages.create({
+              model: 'claude-haiku-4-5-20251001',
+              max_tokens: 200,
+              messages: [{ role: 'user', content: prompt }],
+            }),
+          'analyzeCorrection',
+          { logger, logPrefix: '[RuleGen]' }
+        )
     );
   } catch (error) {
     logger.error({ error }, '[RuleGen] AI call failed for correction analysis');
@@ -358,32 +343,8 @@ Return ONLY the JSON object, no markdown, no explanation.`;
     return null;
   }
 
-  // Track AI usage
-  const inputTokens = response.usage.input_tokens;
-  const outputTokens = response.usage.output_tokens;
-  const costUsd = (inputTokens / 1_000_000) * 1.0 + (outputTokens / 1_000_000) * 5.0;
-
-  try {
-    getDrizzle()
-      .insert(aiUsage)
-      .values({
-        description: `analyzeCorrection: "${input.description}" → "${input.entityName}"`,
-        entityName: input.entityName,
-        category: 'correction-analysis',
-        inputTokens,
-        outputTokens,
-        costUsd,
-        cached: 0,
-        importBatchId: null,
-        createdAt: new Date().toISOString(),
-      })
-      .run();
-  } catch {
-    // ai_usage tracking is best-effort
-  }
-
   logger.info(
-    { result, inputTokens, outputTokens, costUsd: costUsd.toFixed(6) },
+    { result, inputTokens: response.usage.input_tokens },
     '[RuleGen] Correction analysis complete'
   );
 

@@ -1,3 +1,7 @@
+export { aiBudgets } from './ai-budgets.js';
+export { aiInferenceLog } from './ai-inference-log.js';
+export { aiModelPricing } from './ai-model-pricing.js';
+export { aiProviders } from './ai-providers.js';
 export { aiUsage } from './ai-usage.js';
 export { embeddings } from './core/embeddings.js';
 export { budgets } from './budgets.js';

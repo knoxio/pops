@@ -8,6 +8,9 @@
 import './entities/search-adapter.js';
 
 import { router } from '../../trpc.js';
+import { aiBudgetsRouter } from './ai-budgets/router.js';
+import { aiObservabilityRouter } from './ai-observability/router.js';
+import { aiProvidersRouter } from './ai-providers/router.js';
 import { aiUsageRouter } from './ai-usage/router.js';
 import { correctionsRouter } from './corrections/router.js';
 import { embeddingsRouter } from './embeddings/router.js';
@@ -20,6 +23,9 @@ import { tagRulesRouter } from './tag-rules/router.js';
 export const coreRouter = router({
   entities: entitiesRouter,
   aiUsage: aiUsageRouter,
+  aiObservability: aiObservabilityRouter,
+  aiProviders: aiProvidersRouter,
+  aiBudgets: aiBudgetsRouter,
   corrections: correctionsRouter,
   jobs: jobsRouter,
   embeddings: embeddingsRouter,
