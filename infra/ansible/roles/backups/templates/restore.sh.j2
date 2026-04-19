@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Restore POPS from a Backblaze B2 backup.
+# With no argument, lists available backups and exits.
+# Usage: restore.sh [pops-YYYYMMDD-HHMMSS.tar.age]
+
+RESTORE_ARCHIVE="${1:-}"
+BACKUP_DIR="{{ backup_dir }}"
+COMPOSE_FILE="{{ docker_compose_dir }}/docker-compose.yml"
+STAGE_DIR="${BACKUP_DIR}/restore-$$"
+
+if [[ -z "${RESTORE_ARCHIVE}" ]]; then
+  echo "Available backups:"
+  rclone ls "{{ rclone_remote_name }}:pops-backups/"
+  echo ""
+  echo "Usage: $0 pops-YYYYMMDD-HHMMSS.tar.age"
+  exit 1
+fi
+
+echo "[$(date)] Starting POPS restore from ${RESTORE_ARCHIVE}..."
+
+cleanup() {
+  rm -rf "${STAGE_DIR}" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+# 1. Download from B2
+echo "[$(date)] Downloading..."
+rclone copy "{{ rclone_remote_name }}:pops-backups/${RESTORE_ARCHIVE}" "${BACKUP_DIR}/" --progress
+
+# 2. Decrypt with age
+echo "[$(date)] Decrypting..."
+DECRYPTED="${BACKUP_DIR}/${RESTORE_ARCHIVE%.age}"
+PASSPHRASE=$(cat "{{ secrets_dir }}/backup_encryption_passphrase")
+echo "${PASSPHRASE}" | age --decrypt --output "${DECRYPTED}" "${BACKUP_DIR}/${RESTORE_ARCHIVE}"
+rm -f "${BACKUP_DIR}/${RESTORE_ARCHIVE}"
+
+# 3. Extract to staging area
+echo "[$(date)] Extracting..."
+mkdir -p "${STAGE_DIR}"
+tar xf "${DECRYPTED}" -C "${STAGE_DIR}"
+rm -f "${DECRYPTED}"
+
+# 4. Stop all services before restoring data
+echo "[$(date)] Stopping services..."
+docker compose -f "${COMPOSE_FILE}" down
+
+# 5. Restore SQLite into named volume
+echo "[$(date)] Restoring SQLite..."
+docker run --rm \
+  -v pops-sqlite-data:/data/sqlite \
+  -v "${STAGE_DIR}/sqlite:/restore:ro" \
+  alpine cp /restore/pops.db /data/sqlite/pops.db
+
+# 6. Restore Paperless — clear then repopulate both volumes
+echo "[$(date)] Restoring Paperless data..."
+docker run --rm \
+  -v pops-paperless-data:/dst \
+  -v "${STAGE_DIR}/paperless/data:/src:ro" \
+  alpine sh -c "find /dst -mindepth 1 -delete && cp -a /src/. /dst/"
+docker run --rm \
+  -v pops-paperless-media:/dst \
+  -v "${STAGE_DIR}/paperless/media:/src:ro" \
+  alpine sh -c "find /dst -mindepth 1 -delete && cp -a /src/. /dst/"
+
+# 7. Restore Metabase data
+echo "[$(date)] Restoring Metabase..."
+docker run --rm \
+  -v pops-metabase-data:/dst \
+  -v "${STAGE_DIR}/metabase:/src:ro" \
+  alpine sh -c "find /dst -mindepth 1 -delete && cp -a /src/. /dst/"
+
+# 8. Restore engrams (host directory)
+echo "[$(date)] Restoring engrams..."
+if [[ -d "${STAGE_DIR}/engrams" ]]; then
+  find "{{ engram_root }}" -mindepth 1 -delete 2>/dev/null || true
+  cp -r "${STAGE_DIR}/engrams/." "{{ engram_root }}/"
+fi
+
+# 9. Start services
+echo "[$(date)] Starting services..."
+docker compose -f "${COMPOSE_FILE}" up -d
+
+echo ""
+echo "[$(date)] Restore complete."
+echo "Verify with:"
+echo "  docker compose -f ${COMPOSE_FILE} ps"
+echo "  docker exec pops-api node -e \"const db=require('better-sqlite3')('/data/sqlite/pops.db'); console.log('entities:', db.prepare('SELECT COUNT(*) as n FROM entities').get().n);\""

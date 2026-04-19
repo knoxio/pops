@@ -2,6 +2,8 @@
 
 > Restore POPS from a Backblaze B2 backup onto a fresh or rebuilt server.
 > This document is stored in the repo so it remains accessible when the server is down.
+>
+> **Quick path (server intact):** run `/opt/pops/restore.sh pops-YYYYMMDD-HHMMSS.tar.age` — it handles Steps 1–5, 7, and 9 automatically.
 
 ## Prerequisites
 
@@ -43,12 +45,19 @@ Replace `YYYYMMDD-HHMMSS` with the actual timestamp.
 ## Step 3: Decrypt
 
 ```bash
+# Non-interactive (passphrase from secrets file on the server)
+cat /opt/pops/secrets/backup_encryption_passphrase \
+  | age --decrypt \
+      --output /tmp/pops-restore/pops-backup.tar \
+      /tmp/pops-restore/pops-YYYYMMDD-HHMMSS.tar.age
+
+# Or interactive (prompts for passphrase — use if restoring to a new server)
 age --decrypt \
   --output /tmp/pops-restore/pops-backup.tar \
   /tmp/pops-restore/pops-YYYYMMDD-HHMMSS.tar.age
 ```
 
-Enter the backup passphrase when prompted (from Ansible Vault or `/opt/pops/secrets/backup_encryption_passphrase`).
+The passphrase is in Ansible Vault (`vault_backup_encryption_passphrase`) and deployed to `/opt/pops/secrets/backup_encryption_passphrase` on the server.
 
 ## Step 4: Stop Services
 
@@ -59,29 +68,68 @@ docker compose down
 
 ## Step 5: Extract and Restore Data
 
+The backup archive layout is:
+
+```
+sqlite/pops.db          ← SQLite database
+paperless/data/         ← Paperless-ngx data volume
+paperless/media/        ← Paperless-ngx media volume
+metabase/               ← Metabase data volume
+engrams/                ← Cerebrum engram files (host directory)
+```
+
+**Option A — automated (recommended):** Use the restore script deployed by Ansible:
+
+```bash
+/opt/pops/restore.sh pops-YYYYMMDD-HHMMSS.tar.age
+```
+
+The script stops services, restores all volumes, restarts services, and cleans up.
+
+**Option B — manual:**
+
 ```bash
 # Extract the archive
 mkdir -p /tmp/pops-restore/extracted
 tar xf /tmp/pops-restore/pops-backup.tar -C /tmp/pops-restore/extracted
+EXT=/tmp/pops-restore/extracted
 
-# Restore SQLite database
-cp /tmp/pops-restore/extracted/pops-backup.db /opt/pops/data/sqlite/pops.db
+# Restore SQLite into Docker named volume
+docker run --rm \
+  -v pops-sqlite-data:/data/sqlite \
+  -v "${EXT}/sqlite:/restore:ro" \
+  alpine cp /restore/pops.db /data/sqlite/pops.db
 
-# Restore Paperless data
-rsync -av /tmp/pops-restore/extracted/paperless/ /opt/pops/data/paperless/
+# Restore Paperless data volumes
+docker run --rm \
+  -v pops-paperless-data:/dst \
+  -v "${EXT}/paperless/data:/src:ro" \
+  alpine sh -c "find /dst -mindepth 1 -delete && cp -a /src/. /dst/"
+docker run --rm \
+  -v pops-paperless-media:/dst \
+  -v "${EXT}/paperless/media:/src:ro" \
+  alpine sh -c "find /dst -mindepth 1 -delete && cp -a /src/. /dst/"
 
-# Restore Metabase data
-rsync -av /tmp/pops-restore/extracted/metabase/ /opt/pops/data/metabase/
+# Restore Metabase data volume
+docker run --rm \
+  -v pops-metabase-data:/dst \
+  -v "${EXT}/metabase:/src:ro" \
+  alpine sh -c "find /dst -mindepth 1 -delete && cp -a /src/. /dst/"
+
+# Restore engrams (host directory)
+find /opt/pops/engrams -mindepth 1 -delete 2>/dev/null || true
+cp -r "${EXT}/engrams/." /opt/pops/engrams/
 ```
 
-### Volume Paths
+### Docker Volumes
 
-| Data            | Host Path                       | Docker Volume          |
-| --------------- | ------------------------------- | ---------------------- |
-| SQLite database | `/opt/pops/data/sqlite/pops.db` | `pops-sqlite-data`     |
-| Paperless data  | `/opt/pops/data/paperless/`     | `pops-paperless-data`  |
-| Paperless media | (included in paperless data)    | `pops-paperless-media` |
-| Metabase data   | `/opt/pops/data/metabase/`      | `pops-metabase-data`   |
+| Data            | Docker Volume          | Archive path        |
+| --------------- | ---------------------- | ------------------- |
+| SQLite database | `pops-sqlite-data`     | `sqlite/pops.db`    |
+| Paperless data  | `pops-paperless-data`  | `paperless/data/`   |
+| Paperless media | `pops-paperless-media` | `paperless/media/`  |
+| Metabase data   | `pops-metabase-data`   | `metabase/`         |
+| Engrams         | host: `/opt/pops/engrams/` | `engrams/`      |
 
 ### Redis
 

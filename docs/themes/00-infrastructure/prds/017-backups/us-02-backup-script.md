@@ -20,3 +20,5 @@ As an operator, I want a backup script that safely copies the database, paperles
 ## Notes
 
 Deployed from `infra/ansible/roles/backups/templates/backup.sh.j2`. Script is mode 0700, root-owned. Timestamped filenames: `pops-YYYYMMDD-HHMMSS.tar.age`.
+
+Archive layout: `sqlite/pops.db`, `paperless/data/`, `paperless/media/`, `metabase/`, `engrams/`. Data is read from Docker named volumes via `docker exec` (SQLite hot backup) and Alpine helper containers (other volumes).

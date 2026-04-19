@@ -37,7 +37,7 @@ Set up encrypted offsite backups of the SQLite database, Paperless-ngx data, and
 
 - Backup runs successfully to B2 (visible in B2 console)
 - Backed up files are encrypted (unreadable without rclone crypt config)
-- Recovery procedure tested end-to-end: pending (see issue #1819)
+- Recovery procedure tested end-to-end: pending — restore tooling in place, live drill required (see issue #1819)
 - Systemd timer triggers daily
 
 ## Out of Scope

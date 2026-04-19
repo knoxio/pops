@@ -2,39 +2,78 @@
 set -euo pipefail
 
 BACKUP_DIR="{{ backup_dir }}"
-SQLITE_PATH="{{ sqlite_data_dir }}/pops.db"
 TIMESTAMP=$(date +%Y%m%d-%H%M%S)
+STAGE_DIR="${BACKUP_DIR}/stage-${TIMESTAMP}"
 ARCHIVE="${BACKUP_DIR}/pops-${TIMESTAMP}.tar"
 
 echo "[$(date)] Starting POPS backup..."
 
-# 1. SQLite online backup (safe with WAL mode)
-sqlite3 "${SQLITE_PATH}" ".backup ${BACKUP_DIR}/pops-backup.db"
+cleanup() {
+  rm -rf "${STAGE_DIR}" "${ARCHIVE}" 2>/dev/null || true
+}
+trap cleanup ERR
 
-# 2. Create tar archive
-# Engrams are namespaced under `engrams/` in the archive so restored
-# Markdown files don't collide with other data directories. Quote the
-# Jinja expansion so spaces or shell metacharacters in engram_root cannot
-# break the command substitution.
-tar cf "${ARCHIVE}" \
-  -C "${BACKUP_DIR}" pops-backup.db \
-  -C "{{ paperless_data_dir }}" . \
-  -C "{{ metabase_data_dir }}" . \
-  -C "$(dirname "{{ engram_root }}")" "$(basename "{{ engram_root }}")"
+mkdir -p \
+  "${STAGE_DIR}/sqlite" \
+  "${STAGE_DIR}/paperless/data" \
+  "${STAGE_DIR}/paperless/media" \
+  "${STAGE_DIR}/metabase" \
+  "${STAGE_DIR}/engrams"
 
-# 3. Encrypt with age
-age --encrypt \
-  --passphrase \
-  --output "${ARCHIVE}.age" \
-  < "${ARCHIVE}" <<< "$(cat {{ secrets_dir }}/backup_encryption_passphrase 2>/dev/null || echo '{{ vault_backup_encryption_passphrase }}')"
+# 1. SQLite hot backup — use .backup API if container is running, otherwise copy from volume directly
+echo "[$(date)] Backing up SQLite..."
+if docker inspect --format '{{ "{{" }}.State.Running{{ "}}" }}' pops-api 2>/dev/null | grep -q 'true'; then
+  docker exec pops-api sqlite3 /data/sqlite/pops.db ".backup /tmp/pops-backup.db"
+  docker cp pops-api:/tmp/pops-backup.db "${STAGE_DIR}/sqlite/pops.db"
+  docker exec pops-api rm -f /tmp/pops-backup.db
+else
+  docker run --rm \
+    -v pops-sqlite-data:/data:ro \
+    -v "${STAGE_DIR}/sqlite:/dst" \
+    alpine cp /data/pops.db /dst/pops.db
+fi
 
-# 4. Upload to B2
+# 2. Paperless-ngx — two separate volumes (data + media)
+echo "[$(date)] Backing up Paperless..."
+docker run --rm \
+  -v pops-paperless-data:/src:ro \
+  -v "${STAGE_DIR}/paperless/data:/dst" \
+  alpine sh -c "cp -a /src/. /dst/"
+docker run --rm \
+  -v pops-paperless-media:/src:ro \
+  -v "${STAGE_DIR}/paperless/media:/dst" \
+  alpine sh -c "cp -a /src/. /dst/"
+
+# 3. Metabase data
+echo "[$(date)] Backing up Metabase..."
+docker run --rm \
+  -v pops-metabase-data:/src:ro \
+  -v "${STAGE_DIR}/metabase:/dst" \
+  alpine sh -c "cp -a /src/. /dst/"
+
+# 4. Engrams (host directory — may be empty before Cerebrum is deployed)
+echo "[$(date)] Backing up engrams..."
+if [[ -d "{{ engram_root }}" ]]; then
+  cp -r "{{ engram_root }}/." "${STAGE_DIR}/engrams/" 2>/dev/null || true
+fi
+
+# 5. Create tar archive with namespaced layout: sqlite/ paperless/ metabase/ engrams/
+echo "[$(date)] Creating archive..."
+tar cf "${ARCHIVE}" -C "${STAGE_DIR}" .
+rm -rf "${STAGE_DIR}"
+
+# 6. Encrypt with age
+echo "[$(date)] Encrypting..."
+PASSPHRASE=$(cat "{{ secrets_dir }}/backup_encryption_passphrase")
+echo "${PASSPHRASE}" | age --encrypt --passphrase --output "${ARCHIVE}.age" "${ARCHIVE}"
+rm -f "${ARCHIVE}"
+
+# 7. Upload to B2
+echo "[$(date)] Uploading to B2..."
 rclone copy "${ARCHIVE}.age" "{{ rclone_remote_name }}:pops-backups/" --progress
+rm -f "${ARCHIVE}.age"
 
-# 5. Cleanup local temp files
-rm -f "${BACKUP_DIR}/pops-backup.db" "${ARCHIVE}" "${ARCHIVE}.age"
-
-# 6. Prune remote backups older than 90 days
+# 8. Prune remote backups older than 90 days
 rclone delete "{{ rclone_remote_name }}:pops-backups/" --min-age 90d
 
 echo "[$(date)] Backup complete."
