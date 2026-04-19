@@ -31,7 +31,7 @@ export function EntitiesResultComponent({ data }: ResultComponentProps) {
       meta={
         aliases.length > 0
           ? [
-              <span key="aliases" className="truncate">
+              <span key="aliases" className="min-w-0 truncate">
                 {aliases.join(', ')}
               </span>,
             ]
