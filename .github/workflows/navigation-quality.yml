@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - "packages/navigation/**"
+      - "packages/db-types/**"
+      - "packages/types/**"
       - ".github/workflows/navigation-quality.yml"
       - ".github/workflows/_pkg-check.yml"
   pull_request:
@@ -33,6 +35,6 @@ jobs:
     uses: ./.github/workflows/_pkg-check.yml
     with:
       package-path: packages/navigation
-      needs-db-build: false
+      needs-db-build: true
       has-test: true
       skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}
