@@ -1,4 +1,4 @@
-import { Clock, Database, Plus, RefreshCw, Trash2 } from 'lucide-react';
+import { Clock, Database, RefreshCw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
@@ -9,6 +9,8 @@ import { trpc } from '@pops/api-client';
  * PRD-072 US-03
  */
 import { Button, Label, NumberInput, Select, Switch } from '@pops/ui';
+
+import { CRUDManagementSection } from './CRUDManagementSection';
 
 // ---------------------------------------------------------------------------
 // Type icons for source types
@@ -410,56 +412,44 @@ export function SourceManagementSection() {
   const sourceTypes = sourceTypesQuery.data?.types ?? [];
 
   return (
-    <div className="rounded-lg border bg-card p-6 space-y-4">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-semibold">Sources</h2>
-          <p className="text-sm text-muted-foreground">
-            Configure where candidate movies come from
-          </p>
-        </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            setEditingSource(null);
-            setShowForm('create');
-          }}
-        >
-          <Plus className="h-3.5 w-3.5 mr-1.5" />
-          Add Source
-        </Button>
-      </div>
-
-      {showForm && (
-        <SourceForm
-          mode={showForm}
-          initialValues={showForm === 'edit' && editingSource ? editingSource : undefined}
-          sourceTypes={sourceTypes}
-          onClose={() => {
-            setShowForm(null);
-            setEditingSource(null);
-          }}
-        />
+    <CRUDManagementSection
+      title="Sources"
+      description="Configure where candidate movies come from"
+      addLabel="Add Source"
+      onAdd={() => {
+        setEditingSource(null);
+        setShowForm('create');
+      }}
+      showForm={!!showForm}
+      form={
+        showForm ? (
+          <SourceForm
+            mode={showForm}
+            initialValues={showForm === 'edit' && editingSource ? editingSource : undefined}
+            sourceTypes={sourceTypes}
+            onClose={() => {
+              setShowForm(null);
+              setEditingSource(null);
+            }}
+          />
+        ) : undefined
+      }
+    >
+      {sourcesQuery.isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading sources...</p>
+      ) : !sourcesQuery.data?.length ? (
+        <p className="text-sm text-muted-foreground">No sources configured</p>
+      ) : (
+        sourcesQuery.data.map((source) => (
+          <SourceCard
+            key={source.id}
+            source={source}
+            onEdit={() => {
+              handleEdit(source);
+            }}
+          />
+        ))
       )}
-
-      <div className="space-y-2">
-        {sourcesQuery.isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading sources...</p>
-        ) : !sourcesQuery.data?.length ? (
-          <p className="text-sm text-muted-foreground">No sources configured</p>
-        ) : (
-          sourcesQuery.data.map((source) => (
-            <SourceCard
-              key={source.id}
-              source={source}
-              onEdit={() => {
-                handleEdit(source);
-              }}
-            />
-          ))
-        )}
-      </div>
-    </div>
+    </CRUDManagementSection>
   );
 }

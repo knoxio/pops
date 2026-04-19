@@ -18,11 +18,12 @@ import {
   DialogTitle,
   DialogTrigger,
   Input,
-  Separator,
   Slider,
   Switch,
   Textarea,
 } from '@pops/ui';
+
+import { CRUDManagementSection } from './CRUDManagementSection';
 
 interface Dimension {
   id: number;
@@ -40,8 +41,181 @@ interface EditState {
   description: string;
 }
 
+interface DimensionListItemProps {
+  dim: Dimension;
+  idx: number;
+  isLast: boolean;
+  editing: EditState | null;
+  setEditing: (e: EditState | null) => void;
+  onSaveEdit: () => void;
+  onReorder: (direction: 'up' | 'down') => void;
+  onStartEdit: () => void;
+  onToggleActive: () => void;
+  onWeightDrag: (value: number) => void;
+  onWeightCommit: (value: number) => void;
+  localWeight: number;
+  isPending: boolean;
+}
+
+function DimensionListItem({
+  dim,
+  idx,
+  isLast,
+  editing,
+  setEditing,
+  onSaveEdit,
+  onReorder,
+  onStartEdit,
+  onToggleActive,
+  onWeightDrag,
+  onWeightCommit,
+  localWeight,
+  isPending,
+}: DimensionListItemProps) {
+  const isEditing = editing?.id === dim.id;
+
+  return (
+    <div className="flex items-center gap-2 rounded-md border border-border p-2">
+      {/* Reorder buttons */}
+      <div className="flex flex-col">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            onReorder('up');
+          }}
+          disabled={idx === 0 || isPending}
+          className="p-0.5 h-auto w-auto text-muted-foreground hover:text-foreground"
+          aria-label={`Move ${dim.name} up`}
+        >
+          <ChevronUp className="h-3 w-3" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => {
+            onReorder('down');
+          }}
+          disabled={isLast || isPending}
+          className="p-0.5 h-auto w-auto text-muted-foreground hover:text-foreground"
+          aria-label={`Move ${dim.name} down`}
+        >
+          <ChevronDown className="h-3 w-3" />
+        </Button>
+      </div>
+
+      {/* Name & description (editable) */}
+      <div className="flex-1 min-w-0">
+        {isEditing && editing ? (
+          <div className="space-y-1">
+            <Input
+              value={editing.name}
+              onChange={(e) => {
+                setEditing({ ...editing, name: e.target.value });
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') onSaveEdit();
+                if (e.key === 'Escape') setEditing(null);
+              }}
+              className="h-7 text-sm"
+              autoFocus
+            />
+            <Textarea
+              value={editing.description}
+              onChange={(e) => {
+                setEditing({ ...editing, description: e.target.value });
+              }}
+              rows={1}
+              className="resize-none text-sm"
+              placeholder="Description"
+            />
+            <div className="flex gap-1">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 px-2"
+                onClick={onSaveEdit}
+                disabled={isPending}
+              >
+                <Check className="h-3 w-3" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-6 px-2"
+                onClick={() => {
+                  setEditing(null);
+                }}
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            <div className="flex items-center gap-1.5">
+              <span className="text-sm font-medium truncate">{dim.name}</span>
+              {!dim.active && (
+                <Badge variant="secondary" className="text-xs">
+                  Inactive
+                </Badge>
+              )}
+            </div>
+            {dim.description && (
+              <p className="text-xs text-muted-foreground truncate">{dim.description}</p>
+            )}
+            {/* Weight slider */}
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground shrink-0">
+                Weight: {localWeight.toFixed(1)}
+              </span>
+              <Slider
+                min={0.1}
+                max={3}
+                step={0.1}
+                value={[localWeight]}
+                onValueChange={([v]) => {
+                  if (v !== undefined) onWeightDrag(v);
+                }}
+                onValueCommit={([v]) => {
+                  if (v !== undefined) onWeightCommit(v);
+                }}
+                disabled={isPending}
+                className="w-24"
+                aria-label={`Weight for ${dim.name}`}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Edit button */}
+      {!isEditing && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onStartEdit}
+          className="p-1 h-auto w-auto text-muted-foreground hover:text-foreground"
+          aria-label={`Edit ${dim.name}`}
+        >
+          <Pencil className="h-3.5 w-3.5" />
+        </Button>
+      )}
+
+      {/* Active toggle */}
+      <Switch
+        checked={dim.active}
+        onCheckedChange={onToggleActive}
+        disabled={isPending}
+        aria-label={`${dim.active ? 'Deactivate' : 'Activate'} ${dim.name}`}
+      />
+    </div>
+  );
+}
+
 export function DimensionManager() {
   const [open, setOpen] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
   const [addName, setAddName] = useState('');
   const [addDescription, setAddDescription] = useState('');
   const [editing, setEditing] = useState<EditState | null>(null);
@@ -97,6 +271,7 @@ export function DimensionManager() {
       description: addDescription.trim() || null,
       sortOrder: dimensions.length,
     });
+    setShowAddForm(false);
   }, [addName, addDescription, dimensions.length, createMutation]);
 
   const handleToggleActive = useCallback(
@@ -182,6 +357,51 @@ export function DimensionManager() {
 
   const sorted = [...dimensions].toSorted((a, b) => a.sortOrder - b.sortOrder);
 
+  const addForm = (
+    <div className="space-y-2">
+      <Input
+        placeholder="Dimension name"
+        value={addName}
+        onChange={(e) => {
+          setAddName(e.target.value);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') handleAdd();
+        }}
+      />
+      <Textarea
+        placeholder="Description (optional)"
+        value={addDescription}
+        onChange={(e) => {
+          setAddDescription(e.target.value);
+        }}
+        rows={2}
+        className="resize-none"
+      />
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          onClick={handleAdd}
+          disabled={!addName.trim() || createMutation.isPending}
+        >
+          <Plus className="h-4 w-4 mr-1" />
+          Add Dimension
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            setShowAddForm(false);
+            setAddName('');
+            setAddDescription('');
+          }}
+        >
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -189,199 +409,62 @@ export function DimensionManager() {
           <Settings className="h-5 w-5" />
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent className="max-w-md p-0">
+        {/* Hidden title for accessibility */}
+        <DialogHeader className="sr-only">
           <DialogTitle>Comparison Dimensions</DialogTitle>
         </DialogHeader>
 
-        {/* Add new dimension */}
-        <div className="space-y-2">
-          <Input
-            placeholder="Dimension name"
-            value={addName}
-            onChange={(e) => {
-              setAddName(e.target.value);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') handleAdd();
-            }}
-          />
-          <Textarea
-            placeholder="Description (optional)"
-            value={addDescription}
-            onChange={(e) => {
-              setAddDescription(e.target.value);
-            }}
-            rows={2}
-            className="resize-none"
-          />
-          <Button
-            size="sm"
-            onClick={handleAdd}
-            disabled={!addName.trim() || createMutation.isPending}
-          >
-            <Plus className="h-4 w-4 mr-1" />
-            Add Dimension
-          </Button>
-        </div>
-
-        <Separator />
-
-        {/* Dimension list */}
-        {isLoading ? (
-          <p className="text-sm text-muted-foreground py-4 text-center">Loading...</p>
-        ) : sorted.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4 text-center">
-            No dimensions yet. Add one above.
-          </p>
-        ) : (
-          <div className="space-y-1 max-h-64 overflow-y-auto">
-            {sorted.map((dim, idx) => (
-              <div
-                key={dim.id}
-                className="flex items-center gap-2 rounded-md border border-border p-2"
-              >
-                {/* Reorder buttons */}
-                <div className="flex flex-col">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      handleReorder(dim, 'up');
-                    }}
-                    disabled={idx === 0 || updateMutation.isPending}
-                    className="p-0.5 h-auto w-auto text-muted-foreground hover:text-foreground"
-                    aria-label={`Move ${dim.name} up`}
-                  >
-                    <ChevronUp className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      handleReorder(dim, 'down');
-                    }}
-                    disabled={idx === sorted.length - 1 || updateMutation.isPending}
-                    className="p-0.5 h-auto w-auto text-muted-foreground hover:text-foreground"
-                    aria-label={`Move ${dim.name} down`}
-                  >
-                    <ChevronDown className="h-3 w-3" />
-                  </Button>
-                </div>
-
-                {/* Name & description (editable) */}
-                <div className="flex-1 min-w-0">
-                  {editing?.id === dim.id ? (
-                    <div className="space-y-1">
-                      <Input
-                        value={editing.name}
-                        onChange={(e) => {
-                          setEditing({ ...editing, name: e.target.value });
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') handleSaveEdit();
-                          if (e.key === 'Escape') setEditing(null);
-                        }}
-                        className="h-7 text-sm"
-                        autoFocus
-                      />
-                      <Textarea
-                        value={editing.description}
-                        onChange={(e) => {
-                          setEditing({ ...editing, description: e.target.value });
-                        }}
-                        rows={1}
-                        className="resize-none text-sm"
-                        placeholder="Description"
-                      />
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 px-2"
-                          onClick={handleSaveEdit}
-                          disabled={updateMutation.isPending}
-                        >
-                          <Check className="h-3 w-3" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 px-2"
-                          onClick={() => {
-                            setEditing(null);
-                          }}
-                        >
-                          <X className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-sm font-medium truncate">{dim.name}</span>
-                        {!dim.active && (
-                          <Badge variant="secondary" className="text-xs">
-                            Inactive
-                          </Badge>
-                        )}
-                      </div>
-                      {dim.description && (
-                        <p className="text-xs text-muted-foreground truncate">{dim.description}</p>
-                      )}
-                      {/* Weight slider */}
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground shrink-0">
-                          Weight: {(localWeights.get(dim.id) ?? dim.weight).toFixed(1)}
-                        </span>
-                        <Slider
-                          min={0.1}
-                          max={3}
-                          step={0.1}
-                          value={[localWeights.get(dim.id) ?? dim.weight]}
-                          onValueChange={([v]) => {
-                            if (v !== undefined) handleWeightDrag(dim.id, v);
-                          }}
-                          onValueCommit={([v]) => {
-                            if (v !== undefined) handleWeightCommit(dim, v);
-                          }}
-                          disabled={updateMutation.isPending}
-                          className="w-24"
-                          aria-label={`Weight for ${dim.name}`}
-                        />
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Edit button */}
-                {editing?.id !== dim.id && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => {
-                      handleStartEdit(dim);
-                    }}
-                    className="p-1 h-auto w-auto text-muted-foreground hover:text-foreground"
-                    aria-label={`Edit ${dim.name}`}
-                  >
-                    <Pencil className="h-3.5 w-3.5" />
-                  </Button>
-                )}
-
-                {/* Active toggle */}
-                <Switch
-                  checked={dim.active}
-                  onCheckedChange={() => {
+        <CRUDManagementSection
+          title="Comparison Dimensions"
+          addLabel="Add Dimension"
+          onAdd={() => {
+            setAddName('');
+            setAddDescription('');
+            setShowAddForm(true);
+          }}
+          showForm={showAddForm}
+          form={addForm}
+        >
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">Loading...</p>
+          ) : sorted.length === 0 ? (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              No dimensions yet. Add one above.
+            </p>
+          ) : (
+            <div className="space-y-1 max-h-64 overflow-y-auto">
+              {sorted.map((dim, idx) => (
+                <DimensionListItem
+                  key={dim.id}
+                  dim={dim}
+                  idx={idx}
+                  isLast={idx === sorted.length - 1}
+                  editing={editing}
+                  setEditing={setEditing}
+                  onSaveEdit={handleSaveEdit}
+                  onReorder={(direction) => {
+                    handleReorder(dim, direction);
+                  }}
+                  onStartEdit={() => {
+                    handleStartEdit(dim);
+                  }}
+                  onToggleActive={() => {
                     handleToggleActive(dim);
                   }}
-                  disabled={updateMutation.isPending}
-                  aria-label={`${dim.active ? 'Deactivate' : 'Activate'} ${dim.name}`}
+                  onWeightDrag={(v) => {
+                    handleWeightDrag(dim.id, v);
+                  }}
+                  onWeightCommit={(v) => {
+                    handleWeightCommit(dim, v);
+                  }}
+                  localWeight={localWeights.get(dim.id) ?? dim.weight}
+                  isPending={updateMutation.isPending}
                 />
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </CRUDManagementSection>
       </DialogContent>
     </Dialog>
   );

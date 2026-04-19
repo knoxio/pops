@@ -1,9 +1,4 @@
-import { Check, ChevronDown, ChevronRight, HardDrive } from 'lucide-react';
-import { useState } from 'react';
-
-import { Switch } from '@pops/ui';
-
-import { formatRuntime } from '../lib/utils';
+import { ExpandableListRow } from './ExpandableListRow';
 
 interface Episode {
   id: number;
@@ -39,128 +34,6 @@ function isUpcoming(airDate: string | null): boolean {
   return new Date(airDate) > today;
 }
 
-function EpisodeRow({
-  ep,
-  isExpanded,
-  onToggle,
-  isWatched,
-  isToggling,
-  onToggleWatched,
-  isMonitored,
-  hasFile,
-  onToggleMonitored,
-  isMonitoringPending,
-}: {
-  ep: Episode;
-  isExpanded: boolean;
-  onToggle: () => void;
-  isWatched: boolean;
-  isToggling: boolean;
-  onToggleWatched?: (episodeId: number, watched: boolean) => void;
-  isMonitored?: boolean;
-  hasFile?: boolean;
-  onToggleMonitored?: (episodeNumber: number, monitored: boolean) => void;
-  isMonitoringPending?: boolean;
-}) {
-  const hasOverview = ep.overview && ep.overview.length > 0;
-  const upcoming = isUpcoming(ep.airDate);
-
-  return (
-    <div className={`px-4 py-3${upcoming ? ' opacity-50' : ''}`}>
-      <div className="flex items-start gap-3">
-        {onToggleWatched && (
-          <button
-            type="button"
-            onClick={() => {
-              onToggleWatched(ep.id, !isWatched);
-            }}
-            disabled={isToggling || upcoming}
-            aria-label={
-              upcoming
-                ? `Episode ${ep.episodeNumber} upcoming`
-                : isWatched
-                  ? `Mark episode ${ep.episodeNumber} as unwatched`
-                  : `Mark episode ${ep.episodeNumber} as watched`
-            }
-            className={`mt-0.5 shrink-0 flex items-center justify-center h-5 w-5 rounded border transition-colors ${
-              isToggling || upcoming
-                ? 'opacity-50 cursor-not-allowed border-muted'
-                : isWatched
-                  ? 'bg-primary border-primary text-primary-foreground'
-                  : 'border-muted-foreground/40 hover:border-primary'
-            }`}
-          >
-            {isWatched && <Check className="h-3.5 w-3.5" />}
-          </button>
-        )}
-
-        {hasOverview ? (
-          <button
-            type="button"
-            onClick={onToggle}
-            aria-expanded={isExpanded}
-            className="mt-0.5 text-muted-foreground shrink-0 hover:text-foreground"
-          >
-            {isExpanded ? (
-              <ChevronDown className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
-            )}
-          </button>
-        ) : null}
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-baseline gap-2">
-            <span className="text-sm font-medium text-muted-foreground shrink-0">
-              {ep.episodeNumber}
-            </span>
-            <span
-              className={`text-sm font-medium truncate ${isWatched ? 'text-muted-foreground' : ''}`}
-            >
-              {ep.name ?? `Episode ${ep.episodeNumber}`}
-            </span>
-            {upcoming && (
-              <span className="text-xs text-warning font-medium shrink-0">Upcoming</span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
-            {ep.airDate && <span>{ep.airDate}</span>}
-            {ep.airDate && ep.runtime && <span>·</span>}
-            {ep.runtime && <span>{formatRuntime(ep.runtime)}</span>}
-          </div>
-        </div>
-
-        {hasFile && (
-          <span
-            className="shrink-0 text-success"
-            title="Downloaded"
-            aria-label={`Episode ${ep.episodeNumber} downloaded`}
-          >
-            <HardDrive className="h-4 w-4" />
-          </span>
-        )}
-
-        {onToggleMonitored && isMonitored !== undefined && (
-          <Switch
-            size="sm"
-            checked={isMonitored}
-            aria-label={`Monitor episode ${ep.episodeNumber}`}
-            disabled={isMonitoringPending}
-            onCheckedChange={(checked: boolean) => {
-              onToggleMonitored(ep.episodeNumber, checked);
-            }}
-          />
-        )}
-      </div>
-
-      {isExpanded && hasOverview && (
-        <p className="mt-2 ml-7 text-sm text-muted-foreground leading-relaxed">{ep.overview}</p>
-      )}
-    </div>
-  );
-}
-
 export function EpisodeList({
   episodes,
   watchedEpisodeIds,
@@ -171,21 +44,8 @@ export function EpisodeList({
   onToggleMonitored,
   monitoringPendingIds,
 }: EpisodeListProps) {
-  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const watched = watchedEpisodeIds ?? new Set<number>();
   const toggling = togglingIds ?? new Set<number>();
-
-  const toggleExpanded = (id: number) => {
-    setExpandedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
 
   if (episodes.length === 0) {
     return <p className="text-muted-foreground text-sm">No episodes available.</p>;
@@ -194,13 +54,9 @@ export function EpisodeList({
   return (
     <div className="divide-y divide-border rounded-lg border">
       {episodes.map((ep) => (
-        <EpisodeRow
+        <ExpandableListRow
           key={ep.id}
-          ep={ep}
-          isExpanded={expandedIds.has(ep.id)}
-          onToggle={() => {
-            toggleExpanded(ep.id);
-          }}
+          item={ep}
           isWatched={watched.has(ep.id)}
           isToggling={toggling.has(ep.id)}
           onToggleWatched={onToggleWatched}
@@ -208,6 +64,7 @@ export function EpisodeList({
           hasFile={hasFileMap?.get(ep.episodeNumber)}
           onToggleMonitored={onToggleMonitored}
           isMonitoringPending={monitoringPendingIds?.has(ep.episodeNumber)}
+          isUpcoming={isUpcoming(ep.airDate)}
         />
       ))}
     </div>

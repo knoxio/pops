@@ -441,7 +441,7 @@ describe('SeasonDetailPage — monitoring', () => {
     it('renders progress bar when progress data exists', () => {
       setupQueries();
       const { container } = renderPage();
-      const bar = container.querySelector("[style*='width: 67%']");
+      const bar = container.querySelector('[aria-valuenow="67"]');
       expect(bar).toBeInTheDocument();
     });
   });

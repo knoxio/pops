@@ -11,9 +11,7 @@ import { trpc } from '@pops/api-client';
  */
 import { Alert, AlertDescription, AlertTitle, Badge, Skeleton } from '@pops/ui';
 
-function formatEpisodeCode(season: number, episode: number): string {
-  return `S${String(season).padStart(2, '0')}E${String(episode).padStart(2, '0')}`;
-}
+import { formatEpisodeCode } from '../lib/format';
 
 /** Parse a date-only string (YYYY-MM-DD) without UTC midnight rollover. */
 function parseLocalDate(dateStr: string): Date {

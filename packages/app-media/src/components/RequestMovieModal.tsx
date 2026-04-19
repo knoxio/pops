@@ -1,4 +1,3 @@
-import { CheckCircle2, RefreshCw } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { trpc } from '@pops/api-client';
@@ -12,16 +11,9 @@ import { trpc } from '@pops/api-client';
  * POPS library entry, and sets rotation_status = 'protected'. No profile or
  * folder selection is shown because those are read from server settings.
  */
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  formatBytes,
-  Select,
-} from '@pops/ui';
+import { Button, formatBytes, Select } from '@pops/ui';
+
+import { RequestDialog } from './RequestDialog';
 
 interface RequestMovieModalProps {
   open: boolean;
@@ -57,7 +49,6 @@ export function RequestMovieModal({
     retry: false,
   });
 
-  // Default to first option once loaded (request mode only)
   useEffect(() => {
     if (!isDownloadMode && profiles.data?.data?.length && qualityProfileId === null) {
       setQualityProfileId(profiles.data.data[0]!.id);
@@ -128,105 +119,74 @@ export function RequestMovieModal({
     }
   };
 
+  const formContent = isDownloadMode ? (
+    <p className="text-sm text-muted-foreground">
+      This movie will be added to Radarr using your rotation settings and marked as protected.
+    </p>
+  ) : profileList.length === 0 || folderList.length === 0 ? (
+    <div className="text-center py-4 space-y-2">
+      <p className="text-sm text-destructive/80">
+        {profileList.length === 0 ? 'No quality profiles found' : 'No root folders found'}.
+      </p>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => {
+          void profiles.refetch();
+          void folders.refetch();
+        }}
+      >
+        Retry
+      </Button>
+    </div>
+  ) : (
+    <>
+      <Select
+        label="Quality Profile"
+        id="quality-profile"
+        value={String(qualityProfileId ?? '')}
+        onChange={(e) => {
+          setQualityProfileId(Number(e.target.value));
+        }}
+        disabled={isPending || success}
+        options={profileList.map((p) => ({
+          value: String(p.id),
+          label: p.name,
+        }))}
+      />
+      <Select
+        label="Root Folder"
+        id="root-folder"
+        value={rootFolderPath}
+        onChange={(e) => {
+          setRootFolderPath(e.target.value);
+        }}
+        disabled={isPending || success}
+        options={folderList.map((f) => ({
+          value: f.path,
+          label: `${f.path} (${formatBytes(f.freeSpace)} free)`,
+        }))}
+      />
+    </>
+  );
+
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>{isDownloadMode ? 'Download Movie' : 'Request Movie'}</DialogTitle>
-          <DialogDescription>
-            {title} ({year})
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="space-y-4 pt-2">
-          {isDownloadMode ? (
-            <p className="text-sm text-muted-foreground">
-              This movie will be added to Radarr using your rotation settings and marked as
-              protected.
-            </p>
-          ) : isDataLoading ? (
-            <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
-              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-              Loading options...
-            </div>
-          ) : profileList.length === 0 || folderList.length === 0 ? (
-            <div className="text-center py-4 space-y-2">
-              <p className="text-sm text-destructive/80">
-                {profileList.length === 0 ? 'No quality profiles found' : 'No root folders found'}.
-              </p>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  void profiles.refetch();
-                  void folders.refetch();
-                }}
-              >
-                Retry
-              </Button>
-            </div>
-          ) : (
-            <>
-              {/* Quality Profile */}
-              <Select
-                label="Quality Profile"
-                id="quality-profile"
-                value={String(qualityProfileId ?? '')}
-                onChange={(e) => {
-                  setQualityProfileId(Number(e.target.value));
-                }}
-                disabled={isPending || success}
-                options={profileList.map((p) => ({
-                  value: String(p.id),
-                  label: p.name,
-                }))}
-              />
-
-              {/* Root Folder */}
-              <Select
-                label="Root Folder"
-                id="root-folder"
-                value={rootFolderPath}
-                onChange={(e) => {
-                  setRootFolderPath(e.target.value);
-                }}
-                disabled={isPending || success}
-                options={folderList.map((f) => ({
-                  value: f.path,
-                  label: `${f.path} (${formatBytes(f.freeSpace)} free)`,
-                }))}
-              />
-            </>
-          )}
-
-          {/* Error */}
-          {error && <p className="text-sm text-destructive/80">{error}</p>}
-
-          {/* Actions */}
-          <div className="flex justify-end gap-2 pt-2">
-            <Button variant="outline" onClick={handleClose} disabled={isPending}>
-              Cancel
-            </Button>
-            <Button onClick={handleSubmit} disabled={!canSubmit}>
-              {success ? (
-                <>
-                  <CheckCircle2 className="h-4 w-4 mr-1.5" />
-                  {isDownloadMode ? 'Movie Downloaded' : 'Movie Added'}
-                </>
-              ) : isPending ? (
-                <>
-                  <RefreshCw className="h-4 w-4 mr-1.5 animate-spin" />
-                  {isDownloadMode ? 'Downloading...' : 'Adding...'}
-                </>
-              ) : isDownloadMode ? (
-                'Download'
-              ) : (
-                'Request'
-              )}
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
+    <RequestDialog
+      open={open}
+      onClose={handleClose}
+      title={isDownloadMode ? 'Download Movie' : 'Request Movie'}
+      description={`${title} (${year})`}
+      isLoading={isDataLoading}
+      error={error}
+      canSubmit={canSubmit}
+      isPending={isPending}
+      isSuccess={success}
+      submitLabel={isDownloadMode ? 'Download' : 'Request'}
+      successLabel={isDownloadMode ? 'Movie Downloaded' : 'Movie Added'}
+      pendingLabel={isDownloadMode ? 'Downloading...' : 'Adding...'}
+      onSubmit={handleSubmit}
+    >
+      {formContent}
+    </RequestDialog>
   );
 }

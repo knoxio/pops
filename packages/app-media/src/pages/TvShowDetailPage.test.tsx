@@ -256,7 +256,7 @@ describe('TvShowDetailPage — season list', () => {
       setupQueries();
       const { container } = renderPage();
       // Season 1 is 100% — should have green bar
-      const progressBars = container.querySelectorAll("[style*='width']");
+      const progressBars = container.querySelectorAll('[role="progressbar"]');
       expect(progressBars.length).toBeGreaterThan(0);
     });
 
@@ -266,7 +266,7 @@ describe('TvShowDetailPage — season list', () => {
         seasons: [{ seasonId: 11, seasonNumber: 1, watched: 7, total: 7, percentage: 100 }],
       });
       const { container } = renderPage();
-      const bar = container.querySelector("[style*='width: 100%']");
+      const bar = container.querySelector('[aria-valuenow="100"]');
       expect(bar).toBeInTheDocument();
       expect(bar?.className).toContain('bg-success');
     });
@@ -277,7 +277,7 @@ describe('TvShowDetailPage — season list', () => {
         seasons: [{ seasonId: 12, seasonNumber: 2, watched: 5, total: 10, percentage: 50 }],
       });
       const { container } = renderPage();
-      const bar = container.querySelector("[style*='width: 50%']");
+      const bar = container.querySelector('[aria-valuenow="50"]');
       expect(bar).toBeInTheDocument();
       expect(bar?.className).toContain('bg-primary');
     });
@@ -289,10 +289,10 @@ describe('TvShowDetailPage — season list', () => {
         seasons: [{ seasonId: 10, seasonNumber: 1, watched: 0, total: 5, percentage: 0 }],
       });
       const { container } = renderPage();
-      // ProgressBar renders a 0-width bar (width: 0%) — the bar div still exists but is invisible
+      // ProgressBar renders a 0-value bar — the bar div still exists but is visually empty
       const seasonLinks = container.querySelectorAll('a[href*="/season/"]');
       expect(seasonLinks).toHaveLength(1);
-      const bar = seasonLinks[0]!.querySelector("[style*='width: 0%']");
+      const bar = seasonLinks[0]!.querySelector('[role="progressbar"]');
       expect(bar).toBeInTheDocument();
     });
   });
@@ -482,8 +482,8 @@ describe('TvShowDetailPage — overall progress bar', () => {
       seasons: PROGRESS.seasons.map((s) => ({ ...s, watched: s.total, percentage: 100 })),
     });
     const { container } = renderPage();
-    // Overall progress bar in hero — find bar with 100% width
-    const bars = container.querySelectorAll("[style*='width: 100%']");
+    // Overall progress bar in hero — find bar with 100% value
+    const bars = container.querySelectorAll('[aria-valuenow="100"]');
     const greenBar = Array.from(bars).find((b) => b.className.includes('bg-success'));
     expect(greenBar).toBeTruthy();
   });
@@ -494,7 +494,7 @@ describe('TvShowDetailPage — overall progress bar', () => {
       overall: { watched: 18, total: 36, percentage: 50 },
     });
     const { container } = renderPage();
-    const bar = container.querySelector("[style*='width: 50%']");
+    const bar = container.querySelector('[aria-valuenow="50"]');
     expect(bar).toBeInTheDocument();
     expect(bar?.className).toContain('bg-primary');
   });

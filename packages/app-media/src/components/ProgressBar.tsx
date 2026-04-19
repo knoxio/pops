@@ -1,4 +1,4 @@
-import { cn } from '@pops/ui';
+import { cn, Progress } from '@pops/ui';
 
 interface ProgressBarProps {
   watched: number;
@@ -15,15 +15,13 @@ export function ProgressBar({ watched, total, className, showLabel = true }: Pro
 
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <div className="flex-1 h-2 rounded-full bg-muted overflow-hidden">
-        <div
-          className={cn(
-            'h-full rounded-full transition-all',
-            isComplete ? 'bg-success' : 'bg-primary'
-          )}
-          style={{ width: `${Math.min(percentage, 100)}%` }}
-        />
-      </div>
+      <Progress
+        value={Math.min(percentage, 100)}
+        className={cn(
+          'flex-1 h-2',
+          isComplete ? '[&>[data-slot=progress-indicator]]:!bg-success' : ''
+        )}
+      />
       {showLabel && (
         <span className="text-xs text-muted-foreground whitespace-nowrap">
           {watched}/{total}

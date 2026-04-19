@@ -33,3 +33,6 @@ export { SearchResultsPanel } from './SearchResultsPanel';
 export type { AppContext, AppContextEntity, AppName, IconName } from './types';
 export { DEFAULT_APP_CONTEXT } from './types';
 export { resolveUri } from './uri-resolver';
+export { MobileSearchOverlay } from './MobileSearchOverlay';
+export { SearchInput } from './SearchInput';
+export { useSearchStore } from './searchStore';

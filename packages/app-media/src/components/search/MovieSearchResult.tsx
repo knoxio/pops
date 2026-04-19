@@ -2,6 +2,8 @@ import { Film, Star } from 'lucide-react';
 
 import { highlightMatch, SearchResultItem } from '@pops/ui';
 
+import { formatRuntime } from '../../lib/format';
+
 /**
  * MovieSearchResult — ResultComponent for movies search hits.
  *
@@ -29,12 +31,9 @@ function Rating({ value }: { value: number | null }) {
   );
 }
 
-function formatRuntime(minutes: number | null): string | null {
+function formatRuntimeOrNull(minutes: number | null): string | null {
   if (minutes == null || minutes <= 0) return null;
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h === 0) return `${m}m`;
-  return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  return formatRuntime(minutes);
 }
 
 export function MovieSearchResult({ data }: ResultComponentProps) {
@@ -45,7 +44,7 @@ export function MovieSearchResult({ data }: ResultComponentProps) {
   const { title, year, posterUrl, voteAverage, runtime } = hit;
   const query = hit._query ?? '';
   const matchType = hit._matchType ?? 'contains';
-  const runtimeLabel = formatRuntime(runtime ?? null);
+  const runtimeLabel = formatRuntimeOrNull(runtime ?? null);
 
   return (
     <SearchResultItem

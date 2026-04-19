@@ -6,19 +6,14 @@
  * Returns null for unwatched movies (null daysSinceWatch).
  */
 
+import { FRESHNESS_STYLES } from '../lib/statusStyles';
+
 interface FreshnessBadgeProps {
   daysSinceWatch: number | null;
   staleness: number;
 }
 
 type FreshnessLevel = 'Fresh' | 'Recent' | 'Fading' | 'Stale';
-
-const LEVEL_STYLES: Record<FreshnessLevel, string> = {
-  Fresh: 'bg-success/20 text-success',
-  Recent: 'bg-info/20 text-info',
-  Fading: 'bg-warning/20 text-warning',
-  Stale: 'bg-destructive/20 text-destructive',
-};
 
 function getLevel(daysSinceWatch: number, staleness: number): FreshnessLevel {
   if (staleness < 1.0) return 'Stale';
@@ -35,7 +30,7 @@ export function FreshnessBadge({ daysSinceWatch, staleness }: FreshnessBadgeProp
 
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium leading-tight ${LEVEL_STYLES[level]}`}
+      className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium leading-tight ${FRESHNESS_STYLES[level]}`}
       data-testid="freshness-badge"
     >
       {level}

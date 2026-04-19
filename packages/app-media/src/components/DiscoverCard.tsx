@@ -1,22 +1,14 @@
-import {
-  Bookmark,
-  BookmarkCheck,
-  Check,
-  Eye,
-  Film,
-  Loader2,
-  Plus,
-  RotateCw,
-  X,
-} from 'lucide-react';
-import { useState } from 'react';
+import { Bookmark, BookmarkCheck, Check, Eye, Loader2, Plus, RotateCw, X } from 'lucide-react';
 
 /**
  * DiscoverCard — poster card for a TMDB discovery result.
  * Displays poster, title, year, TMDB rating, and action buttons.
+ *
+ * Uses CardWithActionOverlay for the poster shell.
  */
-import { Badge, Button, cn, Skeleton } from '@pops/ui';
+import { Badge, Button, cn } from '@pops/ui';
 
+import { CardWithActionOverlay } from './CardWithActionOverlay';
 import { MovieActionButtons } from './MovieActionButtons';
 
 export interface DiscoverCardProps {
@@ -53,7 +45,7 @@ export function DiscoverCard({
   tmdbId,
   title,
   releaseDate,
-  posterUrl: posterUrlProp,
+  posterUrl,
   voteAverage,
   inLibrary,
   isWatched,
@@ -74,166 +66,132 @@ export function DiscoverCard({
   matchReason,
   className,
 }: DiscoverCardProps) {
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
-
-  const posterUrl = posterUrlProp;
-  const showPlaceholder = !posterUrl || imageError;
   const year = releaseDate ? releaseDate.slice(0, 4) : null;
+
+  const topLeft =
+    voteAverage > 0 ? (
+      <Badge variant="default" className="text-xs">
+        {voteAverage.toFixed(1)}
+      </Badge>
+    ) : undefined;
+
+  const topRight = isWatched ? (
+    <Badge variant="secondary" className="gap-0.5 text-xs">
+      <Eye className="h-3 w-3" />
+      Watched
+    </Badge>
+  ) : inLibrary ? (
+    <Badge variant="secondary" className="gap-0.5 text-xs">
+      <Check className="h-3 w-3" />
+      Owned
+    </Badge>
+  ) : undefined;
+
+  const overlay = (
+    <div className="flex gap-1">
+      {!inLibrary && (
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7 text-white hover:bg-white/20"
+          onClick={() => onAddToLibrary?.(tmdbId)}
+          disabled={isAddingToLibrary}
+          title="Add to Library"
+          aria-label="Add to Library"
+        >
+          {isAddingToLibrary ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Plus className="h-3.5 w-3.5" />
+          )}
+        </Button>
+      )}
+      <Button
+        size="icon"
+        variant="ghost"
+        className="h-7 w-7 text-white hover:bg-white/20"
+        onClick={() => (onWatchlist ? onRemoveFromWatchlist?.(tmdbId) : onAddToWatchlist?.(tmdbId))}
+        disabled={isAddingToWatchlist || isRemovingFromWatchlist}
+        title={onWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
+        aria-label={onWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
+      >
+        {isAddingToWatchlist || isRemovingFromWatchlist ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : onWatchlist ? (
+          <BookmarkCheck className="h-3.5 w-3.5" />
+        ) : (
+          <Bookmark className="h-3.5 w-3.5" />
+        )}
+      </Button>
+      {isWatched ? (
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7 text-white hover:bg-white/20"
+          onClick={() => onMarkRewatched?.(tmdbId)}
+          disabled={isMarkingRewatched}
+          title="Mark as Rewatched"
+          aria-label="Mark as Rewatched"
+        >
+          {isMarkingRewatched ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <RotateCw className="h-3.5 w-3.5" />
+          )}
+        </Button>
+      ) : (
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7 text-white hover:bg-white/20"
+          onClick={() => onMarkWatched?.(tmdbId)}
+          disabled={isMarkingWatched}
+          title="Mark as Watched"
+          aria-label="Mark as Watched"
+        >
+          {isMarkingWatched ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Eye className="h-3.5 w-3.5" />
+          )}
+        </Button>
+      )}
+      {!inLibrary && (
+        <MovieActionButtons
+          tmdbId={tmdbId}
+          title={title}
+          year={year ? parseInt(year, 10) : new Date().getFullYear()}
+          rating={voteAverage}
+          variant="compact"
+        />
+      )}
+      <Button
+        size="icon"
+        variant="ghost"
+        className="ml-auto h-7 w-7 text-white hover:bg-white/20"
+        onClick={() => onNotInterested?.(tmdbId)}
+        disabled={isDismissing}
+        title="Not Interested"
+        aria-label="Not Interested"
+      >
+        {isDismissing ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <X className="h-3.5 w-3.5" />
+        )}
+      </Button>
+    </div>
+  );
 
   return (
     <div className={cn('group flex w-36 shrink-0 flex-col gap-1.5 sm:w-40', className)}>
-      {/* Poster */}
-      <div className="relative w-full overflow-hidden rounded-md bg-muted aspect-[2/3]">
-        {/* Rating badge */}
-        {voteAverage > 0 && (
-          <Badge variant="default" className="absolute top-2 left-2 z-10 text-xs">
-            {voteAverage.toFixed(1)}
-          </Badge>
-        )}
-
-        {/* Status badge — Watched replaces Owned */}
-        {isWatched ? (
-          <Badge variant="secondary" className="absolute top-2 right-2 z-10 gap-0.5 text-xs">
-            <Eye className="h-3 w-3" />
-            Watched
-          </Badge>
-        ) : (
-          inLibrary && (
-            <Badge variant="secondary" className="absolute top-2 right-2 z-10 gap-0.5 text-xs">
-              <Check className="h-3 w-3" />
-              Owned
-            </Badge>
-          )
-        )}
-
-        {/* Poster image */}
-        {!showPlaceholder && (
-          <img
-            src={posterUrl}
-            alt={`${title} poster`}
-            loading="lazy"
-            className={cn(
-              'h-full w-full object-cover transition-opacity duration-200',
-              'group-hover:opacity-80',
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            )}
-            onLoad={() => {
-              setImageLoaded(true);
-            }}
-            onError={() => {
-              setImageError(true);
-            }}
-          />
-        )}
-
-        {!showPlaceholder && !imageLoaded && (
-          <Skeleton className="absolute inset-0 h-full w-full rounded-none" />
-        )}
-
-        {showPlaceholder && (
-          <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
-            <Film className="h-10 w-10 opacity-40" />
-          </div>
-        )}
-
-        {/* Action overlay on hover */}
-        <div className="absolute inset-x-0 bottom-0 flex gap-1 bg-gradient-to-t from-black/80 to-transparent p-2 pt-8 opacity-0 transition-opacity group-hover:opacity-100">
-          {!inLibrary && (
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-7 w-7 text-white hover:bg-white/20"
-              onClick={() => onAddToLibrary?.(tmdbId)}
-              disabled={isAddingToLibrary}
-              title="Add to Library"
-              aria-label="Add to Library"
-            >
-              {isAddingToLibrary ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Plus className="h-3.5 w-3.5" />
-              )}
-            </Button>
-          )}
-          <Button
-            size="icon"
-            variant="ghost"
-            className="h-7 w-7 text-white hover:bg-white/20"
-            onClick={() =>
-              onWatchlist ? onRemoveFromWatchlist?.(tmdbId) : onAddToWatchlist?.(tmdbId)
-            }
-            disabled={isAddingToWatchlist || isRemovingFromWatchlist}
-            title={onWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
-            aria-label={onWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
-          >
-            {isAddingToWatchlist || isRemovingFromWatchlist ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : onWatchlist ? (
-              <BookmarkCheck className="h-3.5 w-3.5" />
-            ) : (
-              <Bookmark className="h-3.5 w-3.5" />
-            )}
-          </Button>
-          {isWatched ? (
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-7 w-7 text-white hover:bg-white/20"
-              onClick={() => onMarkRewatched?.(tmdbId)}
-              disabled={isMarkingRewatched}
-              title="Mark as Rewatched"
-              aria-label="Mark as Rewatched"
-            >
-              {isMarkingRewatched ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <RotateCw className="h-3.5 w-3.5" />
-              )}
-            </Button>
-          ) : (
-            <Button
-              size="icon"
-              variant="ghost"
-              className="h-7 w-7 text-white hover:bg-white/20"
-              onClick={() => onMarkWatched?.(tmdbId)}
-              disabled={isMarkingWatched}
-              title="Mark as Watched"
-              aria-label="Mark as Watched"
-            >
-              {isMarkingWatched ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              ) : (
-                <Eye className="h-3.5 w-3.5" />
-              )}
-            </Button>
-          )}
-          {!inLibrary && (
-            <MovieActionButtons
-              tmdbId={tmdbId}
-              title={title}
-              year={year ? parseInt(year, 10) : new Date().getFullYear()}
-              rating={voteAverage}
-              variant="compact"
-            />
-          )}
-          <Button
-            size="icon"
-            variant="ghost"
-            className="ml-auto h-7 w-7 text-white hover:bg-white/20"
-            onClick={() => onNotInterested?.(tmdbId)}
-            disabled={isDismissing}
-            title="Not Interested"
-            aria-label="Not Interested"
-          >
-            {isDismissing ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <X className="h-3.5 w-3.5" />
-            )}
-          </Button>
-        </div>
-      </div>
+      <CardWithActionOverlay
+        src={posterUrl}
+        alt={`${title} poster`}
+        topLeft={topLeft}
+        topRight={topRight}
+        overlay={overlay}
+      />
 
       {/* Title + Year + Match info */}
       <div className="space-y-0.5 px-0.5">

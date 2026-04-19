@@ -19,7 +19,7 @@ interface TvShowHitData {
   voteAverage: number | null;
 }
 
-function StatusBadge({ status }: { status: string | null }) {
+export function TvShowStatusBadge({ status }: { status: string | null }) {
   if (!status) return null;
 
   const isContinuing = status.toLowerCase() === 'continuing';
@@ -71,7 +71,7 @@ export function TvShowSearchResult({ data }: ResultComponentProps) {
           </span>
         ),
       ]}
-      trailing={<StatusBadge status={status} />}
+      trailing={<TvShowStatusBadge status={status} />}
     />
   );
 }

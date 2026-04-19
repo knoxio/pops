@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, History, Minus, SkipForward } from 'lucide-react';
+import { History } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { Link } from 'react-router';
 import { toast } from 'sonner';
@@ -27,6 +27,7 @@ import {
   ComparisonMovieCardSkeleton,
 } from '../components/ComparisonMovieCard';
 import { DimensionManager } from '../components/DimensionManager';
+import { DrawTierButtons } from '../components/DrawTierButtons';
 
 interface ScoreDelta {
   winnerId: number;
@@ -474,69 +475,12 @@ export function CompareArenaPage() {
             />
 
             {/* Center column — actions for both movies */}
-            <div className="flex flex-col items-center gap-1.5">
-              {/* Draw tier buttons */}
-              {(
-                [
-                  {
-                    tier: 'high' as const,
-                    icon: ChevronUp,
-                    label: 'Equally great',
-                    hoverColor: 'hover:border-success hover:text-success',
-                  },
-                  {
-                    tier: 'mid' as const,
-                    icon: Minus,
-                    label: 'Equally average',
-                    hoverColor: 'hover:border-muted-foreground',
-                  },
-                  {
-                    tier: 'low' as const,
-                    icon: ChevronDown,
-                    label: 'Equally poor',
-                    hoverColor: 'hover:border-destructive hover:text-destructive',
-                  },
-                ] as const
-              ).map(({ tier, icon: Icon, label, hoverColor }) => (
-                <Tooltip key={tier}>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => {
-                        handleDraw(tier);
-                      }}
-                      disabled={isPending}
-                      className={`rounded-full h-10 w-10 bg-background ${hoverColor}`}
-                      aria-label={label}
-                    >
-                      <Icon className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">{label}</TooltipContent>
-                </Tooltip>
-              ))}
-
-              {/* Separator */}
-              <div className="w-5 border-t border-border my-1" />
-
-              {/* Skip pair */}
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handleSkip}
-                    disabled={isPending || skipMutation.isPending}
-                    className="rounded-full h-10 w-10 bg-background hover:border-muted-foreground"
-                    aria-label="Skip this pair"
-                  >
-                    <SkipForward className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="right">Skip pair</TooltipContent>
-              </Tooltip>
-            </div>
+            <DrawTierButtons
+              onDraw={handleDraw}
+              onSkip={handleSkip}
+              disabled={isPending}
+              skipPending={skipMutation.isPending}
+            />
 
             {/* Movie B */}
             <ComparisonMovieCard

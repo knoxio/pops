@@ -1,12 +1,4 @@
-import {
-  ArrowRight,
-  CheckCircle,
-  Clock,
-  DoorOpen,
-  SkipForward,
-  Trophy,
-  XCircle,
-} from 'lucide-react';
+import { DoorOpen, SkipForward } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 
@@ -17,7 +9,12 @@ import { trpc } from '@pops/api-client';
  *
  * Designed as composable components for integration into the DebriefPage.
  */
-import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@pops/ui';
+import { Button } from '@pops/ui';
+
+import { SummaryCard } from './SummaryCard';
+
+export type { SummaryCardProps } from './SummaryCard';
+export { SummaryCard };
 
 // ── Types ──
 
@@ -25,7 +22,6 @@ interface DimensionResult {
   dimensionId: number;
   name: string;
   status: 'complete' | 'pending';
-  /** Non-null if a comparison was recorded (not skipped). */
   comparisonId: number | null;
 }
 
@@ -104,7 +100,7 @@ export function DoneForNowButton({ onExit }: DoneForNowButtonProps) {
   );
 }
 
-// ── Completion Summary ──
+// ── Completion Summary (legacy alias — prefer SummaryCard) ──
 
 interface CompletionSummaryProps {
   data: DebriefSummaryData;
@@ -112,72 +108,7 @@ interface CompletionSummaryProps {
 }
 
 export function CompletionSummary({ data, onDoAnother }: CompletionSummaryProps) {
-  const navigate = useNavigate();
-
-  const completed = data.dimensions.filter(
-    (d) => d.status === 'complete' && d.comparisonId !== null
-  );
-  const skipped = data.dimensions.filter((d) => d.status === 'complete' && d.comparisonId === null);
-
-  return (
-    <Card data-testid="completion-summary">
-      <CardHeader className="pb-3">
-        <div className="flex items-center gap-2">
-          <Trophy className="h-5 w-5 text-warning" />
-          <CardTitle className="text-lg">Debrief Complete</CardTitle>
-        </div>
-        <p className="text-muted-foreground text-sm">
-          Finished debrief for <strong>{data.movieTitle}</strong>
-        </p>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="space-y-2">
-          {data.dimensions.map((dim) => (
-            <div key={dim.dimensionId} className="flex items-center justify-between text-sm">
-              <span>{dim.name}</span>
-              {dim.status === 'complete' && dim.comparisonId !== null ? (
-                <Badge variant="default" className="gap-1">
-                  <CheckCircle className="h-3 w-3" />
-                  Compared
-                </Badge>
-              ) : dim.status === 'complete' && dim.comparisonId === null ? (
-                <Badge variant="secondary" className="gap-1">
-                  <XCircle className="h-3 w-3" />
-                  Skipped
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="gap-1">
-                  <Clock className="h-3 w-3" />
-                  Pending
-                </Badge>
-              )}
-            </div>
-          ))}
-        </div>
-
-        <div className="text-muted-foreground border-t pt-3 text-sm">
-          {completed.length} compared, {skipped.length} skipped
-        </div>
-
-        <div className="flex gap-2 pt-1">
-          {onDoAnother && (
-            <Button variant="outline" size="sm" onClick={onDoAnother}>
-              <ArrowRight className="mr-1 h-4 w-4" />
-              Do another
-            </Button>
-          )}
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => navigate('/media/rankings')}
-            data-testid="done-btn"
-          >
-            Done
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
-  );
+  return <SummaryCard {...data} onDoAnother={onDoAnother} />;
 }
 
 // ── Debrief Action Bar ──
@@ -204,7 +135,7 @@ export function DebriefActionBar({
   onDoAnother,
 }: DebriefActionBarProps) {
   if (allComplete && summaryData) {
-    return <CompletionSummary data={summaryData} onDoAnother={onDoAnother} />;
+    return <SummaryCard {...summaryData} onDoAnother={onDoAnother} />;
   }
 
   return (
