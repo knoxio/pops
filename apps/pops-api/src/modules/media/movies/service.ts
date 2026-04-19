@@ -100,40 +100,64 @@ export function createMovie(input: CreateMovieInput): MovieRow {
   }
 }
 
-/** Update an existing movie. Returns the updated row. */
-export function updateMovie(id: number, input: UpdateMovieInput): MovieRow {
-  // Verify it exists first
-  getMovie(id);
+const MOVIE_REQUIRED_KEYS = ['tmdbId', 'title'] as const satisfies ReadonlyArray<
+  keyof UpdateMovieInput & keyof typeof movies.$inferSelect
+>;
 
-  const updates: Partial<typeof movies.$inferSelect> = {};
+const MOVIE_NULLABLE_KEYS = [
+  'imdbId',
+  'originalTitle',
+  'overview',
+  'tagline',
+  'releaseDate',
+  'runtime',
+  'status',
+  'originalLanguage',
+  'budget',
+  'revenue',
+  'posterPath',
+  'backdropPath',
+  'logoPath',
+  'posterOverridePath',
+  'voteAverage',
+  'voteCount',
+] as const satisfies ReadonlyArray<keyof UpdateMovieInput & keyof typeof movies.$inferSelect>;
 
-  if (input.tmdbId !== undefined) updates.tmdbId = input.tmdbId;
-  if (input.imdbId !== undefined) updates.imdbId = input.imdbId ?? null;
-  if (input.title !== undefined) updates.title = input.title;
-  if (input.originalTitle !== undefined) updates.originalTitle = input.originalTitle ?? null;
-  if (input.overview !== undefined) updates.overview = input.overview ?? null;
-  if (input.tagline !== undefined) updates.tagline = input.tagline ?? null;
-  if (input.releaseDate !== undefined) updates.releaseDate = input.releaseDate ?? null;
-  if (input.runtime !== undefined) updates.runtime = input.runtime ?? null;
-  if (input.status !== undefined) updates.status = input.status ?? null;
-  if (input.originalLanguage !== undefined)
-    updates.originalLanguage = input.originalLanguage ?? null;
-  if (input.budget !== undefined) updates.budget = input.budget ?? null;
-  if (input.revenue !== undefined) updates.revenue = input.revenue ?? null;
-  if (input.posterPath !== undefined) updates.posterPath = input.posterPath ?? null;
-  if (input.backdropPath !== undefined) updates.backdropPath = input.backdropPath ?? null;
-  if (input.logoPath !== undefined) updates.logoPath = input.logoPath ?? null;
-  if (input.posterOverridePath !== undefined)
-    updates.posterOverridePath = input.posterOverridePath ?? null;
-  if (input.voteAverage !== undefined) updates.voteAverage = input.voteAverage ?? null;
-  if (input.voteCount !== undefined) updates.voteCount = input.voteCount ?? null;
-  if (input.genres !== undefined) updates.genres = JSON.stringify(input.genres);
+function buildMovieUpdate(input: UpdateMovieInput): Partial<typeof movies.$inferSelect> | null {
+  const updates: Record<string, unknown> = {};
+  let touched = false;
 
-  if (Object.keys(updates).length > 0) {
-    updates.updatedAt = new Date().toISOString();
-    getDrizzle().update(movies).set(updates).where(eq(movies.id, id)).run();
+  for (const key of MOVIE_REQUIRED_KEYS) {
+    const value = input[key];
+    if (value === undefined) continue;
+    updates[key] = value;
+    touched = true;
   }
 
+  for (const key of MOVIE_NULLABLE_KEYS) {
+    const value = input[key];
+    if (value === undefined) continue;
+    updates[key] = value ?? null;
+    touched = true;
+  }
+
+  if (input.genres !== undefined) {
+    updates.genres = JSON.stringify(input.genres);
+    touched = true;
+  }
+
+  if (!touched) return null;
+  updates.updatedAt = new Date().toISOString();
+  return updates as Partial<typeof movies.$inferSelect>;
+}
+
+/** Update an existing movie. Returns the updated row. */
+export function updateMovie(id: number, input: UpdateMovieInput): MovieRow {
+  getMovie(id);
+  const updates = buildMovieUpdate(input);
+  if (updates) {
+    getDrizzle().update(movies).set(updates).where(eq(movies.id, id)).run();
+  }
   return getMovie(id);
 }
 

@@ -199,26 +199,32 @@ export const transactionsRouter = router({
    * Used for autocomplete in tag editors — reflects the actual tags in the SQLite database.
    * Returns an empty array when no transactions exist yet; callers allow free-form input.
    */
-  availableTags: protectedProcedure.query(() => {
-    const db = getDb();
-    const rows = db
-      .prepare("SELECT tags FROM transactions WHERE tags IS NOT NULL AND tags != '[]'")
-      .all() as { tags: string }[];
-
-    const tagSet = new Set<string>();
-    for (const row of rows) {
-      try {
-        const parsed = JSON.parse(row.tags) as unknown;
-        if (Array.isArray(parsed)) {
-          for (const t of parsed) {
-            if (typeof t === 'string' && t.trim()) tagSet.add(t.trim());
-          }
-        }
-      } catch {
-        // malformed JSON — ignore
-      }
-    }
-
-    return [...tagSet].toSorted();
-  }),
+  availableTags: protectedProcedure.query(() => collectAvailableTags()),
 });
+
+function collectAvailableTags(): string[] {
+  const db = getDb();
+  const rows = db
+    .prepare("SELECT tags FROM transactions WHERE tags IS NOT NULL AND tags != '[]'")
+    .all() as { tags: string }[];
+
+  const tagSet = new Set<string>();
+  for (const row of rows) {
+    addTagsFromJson(tagSet, row.tags);
+  }
+
+  return [...tagSet].toSorted();
+}
+
+function addTagsFromJson(tagSet: Set<string>, raw: string): void {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return;
+  }
+  if (!Array.isArray(parsed)) return;
+  for (const t of parsed) {
+    if (typeof t === 'string' && t.trim()) tagSet.add(t.trim());
+  }
+}

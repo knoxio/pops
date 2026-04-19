@@ -119,91 +119,62 @@ export function createTvShow(input: CreateTvShowInput): TvShowRow {
   return row;
 }
 
-export function updateTvShow(id: number, input: UpdateTvShowInput): TvShowRow {
-  const db = getDrizzle();
-  getTvShow(id); // verify exists
+const TV_SHOW_NULLABLE_KEYS = [
+  'originalName',
+  'overview',
+  'firstAirDate',
+  'lastAirDate',
+  'status',
+  'originalLanguage',
+  'numberOfSeasons',
+  'numberOfEpisodes',
+  'episodeRunTime',
+  'posterPath',
+  'backdropPath',
+  'logoPath',
+  'posterOverridePath',
+  'voteAverage',
+  'voteCount',
+] as const satisfies ReadonlyArray<keyof UpdateTvShowInput & keyof typeof tvShows.$inferInsert>;
 
-  const updates: Partial<typeof tvShows.$inferInsert> = {};
-  let hasUpdates = false;
+const TV_SHOW_JSON_KEYS = ['genres', 'networks'] as const satisfies ReadonlyArray<
+  keyof UpdateTvShowInput & keyof typeof tvShows.$inferInsert
+>;
+
+function buildTvShowUpdate(input: UpdateTvShowInput): Partial<typeof tvShows.$inferInsert> | null {
+  const updates: Record<string, unknown> = {};
+  let touched = false;
 
   if (input.name !== undefined) {
     updates.name = input.name;
-    hasUpdates = true;
-  }
-  if (input.originalName !== undefined) {
-    updates.originalName = input.originalName ?? null;
-    hasUpdates = true;
-  }
-  if (input.overview !== undefined) {
-    updates.overview = input.overview ?? null;
-    hasUpdates = true;
-  }
-  if (input.firstAirDate !== undefined) {
-    updates.firstAirDate = input.firstAirDate ?? null;
-    hasUpdates = true;
-  }
-  if (input.lastAirDate !== undefined) {
-    updates.lastAirDate = input.lastAirDate ?? null;
-    hasUpdates = true;
-  }
-  if (input.status !== undefined) {
-    updates.status = input.status ?? null;
-    hasUpdates = true;
-  }
-  if (input.originalLanguage !== undefined) {
-    updates.originalLanguage = input.originalLanguage ?? null;
-    hasUpdates = true;
-  }
-  if (input.numberOfSeasons !== undefined) {
-    updates.numberOfSeasons = input.numberOfSeasons ?? null;
-    hasUpdates = true;
-  }
-  if (input.numberOfEpisodes !== undefined) {
-    updates.numberOfEpisodes = input.numberOfEpisodes ?? null;
-    hasUpdates = true;
-  }
-  if (input.episodeRunTime !== undefined) {
-    updates.episodeRunTime = input.episodeRunTime ?? null;
-    hasUpdates = true;
-  }
-  if (input.posterPath !== undefined) {
-    updates.posterPath = input.posterPath ?? null;
-    hasUpdates = true;
-  }
-  if (input.backdropPath !== undefined) {
-    updates.backdropPath = input.backdropPath ?? null;
-    hasUpdates = true;
-  }
-  if (input.logoPath !== undefined) {
-    updates.logoPath = input.logoPath ?? null;
-    hasUpdates = true;
-  }
-  if (input.posterOverridePath !== undefined) {
-    updates.posterOverridePath = input.posterOverridePath ?? null;
-    hasUpdates = true;
-  }
-  if (input.voteAverage !== undefined) {
-    updates.voteAverage = input.voteAverage ?? null;
-    hasUpdates = true;
-  }
-  if (input.voteCount !== undefined) {
-    updates.voteCount = input.voteCount ?? null;
-    hasUpdates = true;
-  }
-  if (input.genres !== undefined) {
-    updates.genres = JSON.stringify(input.genres);
-    hasUpdates = true;
-  }
-  if (input.networks !== undefined) {
-    updates.networks = JSON.stringify(input.networks);
-    hasUpdates = true;
+    touched = true;
   }
 
-  if (hasUpdates) {
-    updates.updatedAt = new Date().toISOString();
-    db.update(tvShows).set(updates).where(eq(tvShows.id, id)).run();
+  for (const key of TV_SHOW_NULLABLE_KEYS) {
+    const value = input[key];
+    if (value === undefined) continue;
+    updates[key] = value ?? null;
+    touched = true;
   }
 
+  for (const key of TV_SHOW_JSON_KEYS) {
+    const value = input[key];
+    if (value === undefined) continue;
+    updates[key] = JSON.stringify(value);
+    touched = true;
+  }
+
+  if (!touched) return null;
+  updates.updatedAt = new Date().toISOString();
+  return updates as Partial<typeof tvShows.$inferInsert>;
+}
+
+export function updateTvShow(id: number, input: UpdateTvShowInput): TvShowRow {
+  getTvShow(id);
+  const updates = buildTvShowUpdate(input);
+  if (updates) {
+    getDrizzle().update(tvShows).set(updates).where(eq(tvShows.id, id)).run();
+  }
   return getTvShow(id);
 }
 

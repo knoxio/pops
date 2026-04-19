@@ -45,18 +45,22 @@ export function loadKnownTags(): string[] {
   }
 
   for (const row of rows) {
-    try {
-      const parsed = JSON.parse(row.tags) as unknown;
-      if (Array.isArray(parsed)) {
-        for (const t of parsed) {
-          if (typeof t === 'string') seen.add(t);
-        }
-      }
-    } catch {
-      /* ignore malformed JSON */
-    }
+    addTagsToSet(seen, row.tags);
   }
   return Array.from(seen);
+}
+
+function addTagsToSet(target: Set<string>, raw: string): void {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return;
+  }
+  if (!Array.isArray(parsed)) return;
+  for (const t of parsed) {
+    if (typeof t === 'string') target.add(t);
+  }
 }
 
 /**

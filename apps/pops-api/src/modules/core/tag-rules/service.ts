@@ -62,54 +62,77 @@ export function applyTagRuleChangeSet(changeSet: TagRuleChangeSet): TagRuleRow[]
   });
 }
 
-function applyOp(tx: ReturnType<typeof getDrizzle>, op: TagRuleChangeSetOp): void {
-  if (op.op === 'add') {
-    tx.insert(transactionTagRules)
-      .values({
-        descriptionPattern: op.data.descriptionPattern,
-        matchType: op.data.matchType,
-        entityId: op.data.entityId ?? null,
-        tags: JSON.stringify(op.data.tags ?? []),
-        confidence: op.data.confidence ?? 0.95,
-        isActive: op.data.isActive ?? true,
-        priority: op.data.priority ?? 0,
-        timesApplied: 0,
-      })
-      .run();
-    return;
-  }
-  if (op.op === 'edit') {
-    const existing = tx
-      .select({ id: transactionTagRules.id })
-      .from(transactionTagRules)
-      .where(eq(transactionTagRules.id, op.id))
-      .get();
-    if (!existing) throw new NotFoundError('transaction_tag_rules', op.id);
+type TagRulesTx = ReturnType<typeof getDrizzle>;
 
-    tx.update(transactionTagRules)
-      .set({
-        entityId: op.data.entityId !== undefined ? op.data.entityId : undefined,
-        tags: op.data.tags ? JSON.stringify(op.data.tags) : undefined,
-        confidence: op.data.confidence ?? undefined,
-        isActive: op.data.isActive ?? undefined,
-        priority: op.data.priority ?? undefined,
-      })
-      .where(eq(transactionTagRules.id, op.id))
-      .run();
-    return;
-  }
-  if (op.op === 'disable') {
-    const res = tx
-      .update(transactionTagRules)
-      .set({ isActive: false })
-      .where(eq(transactionTagRules.id, op.id))
-      .run();
-    if (res.changes === 0) throw new NotFoundError('transaction_tag_rules', op.id);
-    return;
-  }
-  if (op.op === 'remove') {
-    const res = tx.delete(transactionTagRules).where(eq(transactionTagRules.id, op.id)).run();
-    if (res.changes === 0) throw new NotFoundError('transaction_tag_rules', op.id);
+function addTagRule(
+  tx: TagRulesTx,
+  data: Extract<TagRuleChangeSetOp, { op: 'add' }>['data']
+): void {
+  tx.insert(transactionTagRules)
+    .values({
+      descriptionPattern: data.descriptionPattern,
+      matchType: data.matchType,
+      entityId: data.entityId ?? null,
+      tags: JSON.stringify(data.tags ?? []),
+      confidence: data.confidence ?? 0.95,
+      isActive: data.isActive ?? true,
+      priority: data.priority ?? 0,
+      timesApplied: 0,
+    })
+    .run();
+}
+
+function editTagRule(
+  tx: TagRulesTx,
+  id: string,
+  data: Extract<TagRuleChangeSetOp, { op: 'edit' }>['data']
+): void {
+  const existing = tx
+    .select({ id: transactionTagRules.id })
+    .from(transactionTagRules)
+    .where(eq(transactionTagRules.id, id))
+    .get();
+  if (!existing) throw new NotFoundError('transaction_tag_rules', id);
+
+  tx.update(transactionTagRules)
+    .set({
+      entityId: data.entityId !== undefined ? data.entityId : undefined,
+      tags: data.tags ? JSON.stringify(data.tags) : undefined,
+      confidence: data.confidence ?? undefined,
+      isActive: data.isActive ?? undefined,
+      priority: data.priority ?? undefined,
+    })
+    .where(eq(transactionTagRules.id, id))
+    .run();
+}
+
+function disableTagRule(tx: TagRulesTx, id: string): void {
+  const res = tx
+    .update(transactionTagRules)
+    .set({ isActive: false })
+    .where(eq(transactionTagRules.id, id))
+    .run();
+  if (res.changes === 0) throw new NotFoundError('transaction_tag_rules', id);
+}
+
+function removeTagRule(tx: TagRulesTx, id: string): void {
+  const res = tx.delete(transactionTagRules).where(eq(transactionTagRules.id, id)).run();
+  if (res.changes === 0) throw new NotFoundError('transaction_tag_rules', id);
+}
+
+function applyOp(tx: TagRulesTx, op: TagRuleChangeSetOp): void {
+  switch (op.op) {
+    case 'add':
+      addTagRule(tx, op.data);
+      return;
+    case 'edit':
+      editTagRule(tx, op.id, op.data);
+      return;
+    case 'disable':
+      disableTagRule(tx, op.id);
+      return;
+    case 'remove':
+      removeTagRule(tx, op.id);
   }
 }
 
