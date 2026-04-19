@@ -3,14 +3,7 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { trpc } from '@pops/api-client';
-import {
-  AssetIdBadge,
-  Button,
-  ContainerPanel,
-  formatAUD,
-  Skeleton,
-  TypeBadge,
-} from '@pops/ui';
+import { AssetIdBadge, Button, ContainerPanel, formatAUD, Skeleton, TypeBadge } from '@pops/ui';
 
 import type { InventoryItem } from '@pops/api/modules/inventory/items/types';
 
@@ -77,7 +70,8 @@ export function LocationContentsPanel({
   }, [directData, includeSubLocations, subLocationItems]);
 
   const totalValue = useMemo(
-    () => allItems.reduce((sum: number, item: InventoryItem) => sum + (item.replacementValue ?? 0), 0),
+    () =>
+      allItems.reduce((sum: number, item: InventoryItem) => sum + (item.replacementValue ?? 0), 0),
     [allItems]
   );
 
@@ -103,7 +97,12 @@ export function LocationContentsPanel({
       subtitle={breadcrumb.join(' / ')}
       toggle={
         hasSubLocations
-          ? { label: 'Include sub-locations', value: includeSubLocations, onChange: setIncludeSubLocations, id: 'include-sub' }
+          ? {
+              label: 'Include sub-locations',
+              value: includeSubLocations,
+              onChange: setIncludeSubLocations,
+              id: 'include-sub',
+            }
           : undefined
       }
       summary={summary}
@@ -113,7 +112,9 @@ export function LocationContentsPanel({
           variant="outline"
           size="sm"
           className="w-full"
-          onClick={() => navigate(`/inventory/items/new?locationId=${encodeURIComponent(locationId)}`)}
+          onClick={() =>
+            navigate(`/inventory/items/new?locationId=${encodeURIComponent(locationId)}`)
+          }
         >
           <Plus className="h-4 w-4 mr-1.5" />
           Add Item Here

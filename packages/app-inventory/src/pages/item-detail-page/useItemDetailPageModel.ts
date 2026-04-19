@@ -10,10 +10,11 @@ export function useItemDetailPageModel() {
   const navigate = useNavigate();
   const utils = trpc.useUtils();
 
-  const { data: itemData, isLoading, error } = trpc.inventory.items.get.useQuery(
-    { id: id! },
-    { enabled: !!id }
-  );
+  const {
+    data: itemData,
+    isLoading,
+    error,
+  } = trpc.inventory.items.get.useQuery({ id: id! }, { enabled: !!id });
 
   const { data: connectionsData, isLoading: connectionsLoading } =
     trpc.inventory.connections.listForItem.useQuery({ itemId: id! }, { enabled: !!id });
@@ -24,7 +25,10 @@ export function useItemDetailPageModel() {
   );
 
   const deleteMutation = trpc.inventory.items.delete.useMutation({
-    onSuccess: () => { toast.success('Item deleted'); void navigate('/inventory'); },
+    onSuccess: () => {
+      toast.success('Item deleted');
+      void navigate('/inventory');
+    },
     onError: (err) => toast.error(`Failed to delete: ${err.message}`),
   });
 
@@ -37,16 +41,25 @@ export function useItemDetailPageModel() {
   });
 
   const itemEntity = useMemo(
-    () => ({ uri: `pops:inventory/item/${id ?? ''}`, type: 'item' as const, title: itemData?.data?.itemName ?? '' }),
+    () => ({
+      uri: `pops:inventory/item/${id ?? ''}`,
+      type: 'item' as const,
+      title: itemData?.data?.itemName ?? '',
+    }),
     [id, itemData?.data?.itemName]
   );
   useSetPageContext({ page: 'item-detail', pageType: 'drill-down', entity: itemEntity });
 
   return {
-    id, itemData, isLoading, error,
-    connectionsData, connectionsLoading,
+    id,
+    itemData,
+    isLoading,
+    error,
+    connectionsData,
+    connectionsLoading,
     photosData,
-    deleteMutation, disconnectMutation,
+    deleteMutation,
+    disconnectMutation,
     utils,
   };
 }

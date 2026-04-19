@@ -28,9 +28,7 @@ export function ConnectionsList({
         <h4 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
           <Link2 className="h-4 w-4 text-muted-foreground" />
           Connections
-          <span className="text-xs font-normal text-muted-foreground">
-            ({connections.length})
-          </span>
+          <span className="text-xs font-normal text-muted-foreground">({connections.length})</span>
         </h4>
       </div>
 

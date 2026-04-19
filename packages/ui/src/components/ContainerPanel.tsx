@@ -32,7 +32,8 @@ export function ContainerPanel({
   children,
   className,
 }: ContainerPanelProps) {
-  const toggleId = toggle?.id ?? 'container-panel-toggle';
+  const generatedToggleId = React.useId();
+  const toggleId = toggle?.id ?? generatedToggleId;
 
   return (
     <div className={cn('border rounded-lg p-4 space-y-4', className)}>
@@ -50,9 +51,7 @@ export function ContainerPanel({
         </div>
       )}
 
-      {summary !== undefined && (
-        <div className="text-sm text-muted-foreground">{summary}</div>
-      )}
+      {summary !== undefined && <div className="text-sm text-muted-foreground">{summary}</div>}
 
       {children ?? emptyState ?? null}
 

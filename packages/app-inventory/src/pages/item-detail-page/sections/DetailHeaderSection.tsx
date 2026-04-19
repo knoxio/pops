@@ -16,7 +16,9 @@ import {
 function DetailField({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
-      <dt className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">{label}</dt>
+      <dt className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">
+        {label}
+      </dt>
       <dd className="font-semibold text-foreground">{value}</dd>
     </div>
   );
@@ -37,7 +39,10 @@ function LocationBreadcrumb({ locationId }: { locationId: string | null }) {
         pathData.data.map((loc, i) => (
           <span key={loc.id} className="flex items-center gap-1.5">
             {i > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
-            <Link to={`/inventory?location=${loc.id}`} className="text-app-accent hover:text-app-accent/80 hover:underline font-medium">
+            <Link
+              to={`/inventory?location=${loc.id}`}
+              className="text-app-accent hover:text-app-accent/80 hover:underline font-medium"
+            >
               {loc.name}
             </Link>
           </span>
@@ -50,7 +55,9 @@ function LocationBreadcrumb({ locationId }: { locationId: string | null }) {
 }
 
 function PurchaseLinkSection({
-  purchaseTransactionId, purchasedFromId, purchasedFromName,
+  purchaseTransactionId,
+  purchasedFromId,
+  purchasedFromName,
 }: {
   purchaseTransactionId: string | null;
   purchasedFromId: string | null;
@@ -60,7 +67,10 @@ function PurchaseLinkSection({
   return (
     <div className="mb-8 flex items-center gap-4 text-sm" data-testid="purchase-link-section">
       {purchaseTransactionId && (
-        <Link to={`/finance/transactions/${purchaseTransactionId}`} className="flex items-center gap-1.5 text-app-accent hover:text-app-accent/80 hover:underline font-medium">
+        <Link
+          to={`/finance/transactions/${purchaseTransactionId}`}
+          className="flex items-center gap-1.5 text-app-accent hover:text-app-accent/80 hover:underline font-medium"
+        >
           <ExternalLink className="h-4 w-4" />
           View transaction
         </Link>
@@ -102,27 +112,55 @@ export function DetailHeaderSection({ item }: DetailHeaderSectionProps) {
       <div className="bg-card border-2 border-app-accent/10 rounded-2xl overflow-hidden mb-8 shadow-sm shadow-app-accent/5">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-6 p-6">
           {item.type && <DetailField label="Type" value={<TypeBadge type={item.type} />} />}
-          {item.condition && <DetailField label="Condition" value={<ConditionBadge condition={item.condition as Condition} />} />}
-          <DetailField label="Warranty" value={<WarrantyBadge warrantyExpiry={item.warrantyExpires ?? null} />} />
+          {item.condition && (
+            <DetailField
+              label="Condition"
+              value={<ConditionBadge condition={item.condition as Condition} />}
+            />
+          )}
+          <DetailField
+            label="Warranty"
+            value={<WarrantyBadge warrantyExpiry={item.warrantyExpires ?? null} />}
+          />
           {item.room && <DetailField label="Room" value={item.room} />}
           {item.assetId && (
-            <DetailField label="Asset ID" value={<Badge variant="outline" className="font-mono bg-muted/50">{item.assetId}</Badge>} />
+            <DetailField
+              label="Asset ID"
+              value={
+                <Badge variant="outline" className="font-mono bg-muted/50">
+                  {item.assetId}
+                </Badge>
+              }
+            />
           )}
           <DetailField
             label="Status"
             value={
               item.inUse ? (
-                <Badge className="bg-app-accent/10 text-app-accent border-app-accent/20 hover:bg-app-accent/15">In Use</Badge>
+                <Badge className="bg-app-accent/10 text-app-accent border-app-accent/20 hover:bg-app-accent/15">
+                  In Use
+                </Badge>
               ) : (
                 <Badge variant="secondary">Stored</Badge>
               )
             }
           />
           {item.purchaseDate && (
-            <DetailField label="Purchased" value={new Date(item.purchaseDate).toLocaleDateString('en-AU', { year: 'numeric', month: 'short' })} />
+            <DetailField
+              label="Purchased"
+              value={new Date(item.purchaseDate).toLocaleDateString('en-AU', {
+                year: 'numeric',
+                month: 'short',
+              })}
+            />
           )}
           {item.replacementValue !== null && item.replacementValue !== undefined && (
-            <DetailField label="Replacement" value={<span className="text-app-accent font-bold">{`$${item.replacementValue.toLocaleString()}`}</span>} />
+            <DetailField
+              label="Replacement"
+              value={
+                <span className="text-app-accent font-bold">{`$${item.replacementValue.toLocaleString()}`}</span>
+              }
+            />
           )}
         </div>
       </div>

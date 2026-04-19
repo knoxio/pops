@@ -12,18 +12,37 @@ import { buildBreadcrumb } from './location-tree-page/utils';
 
 export function LocationTreePage() {
   const {
-    treeNodes, nodeMap, isLoading, error,
-    selectedId, addingChildOf, addingRoot, setAddingRoot, setAddingChildOf,
-    movingId, setMovingId, activeId, overId,
-    deleteConfirm, setDeleteConfirm,
+    treeNodes,
+    nodeMap,
+    isLoading,
+    error,
+    selectedId,
+    addingChildOf,
+    addingRoot,
+    setAddingRoot,
+    setAddingChildOf,
+    movingId,
+    setMovingId,
+    activeId,
+    overId,
+    deleteConfirm,
+    setDeleteConfirm,
     deleteMutation,
-    handleSelect, handleAddChild, handleRename,
-    handleNewChildSave, handleNewChildCancel,
-    handleNewRootSave, handleNewRootCancel,
-    handleDelete, handleDeleteConfirm,
-    handleMoveStart, handleMoveTo,
+    handleSelect,
+    handleAddChild,
+    handleRename,
+    handleNewChildSave,
+    handleNewChildCancel,
+    handleNewRootSave,
+    handleNewRootCancel,
+    handleDelete,
+    handleDeleteConfirm,
+    handleMoveStart,
+    handleMoveTo,
     handleReorder,
-    handleDragStart, handleDragOver, handleDragEnd,
+    handleDragStart,
+    handleDragOver,
+    handleDragEnd,
   } = useLocationTreePageModel();
 
   const activeNode = activeId ? nodeMap.get(activeId) : null;
@@ -45,7 +64,10 @@ export function LocationTreePage() {
         icon={<MapPin className="h-6 w-6 text-muted-foreground" />}
         actions={
           <>
-            <Link to="/inventory/report/insurance" className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+            <Link
+              to="/inventory/report/insurance"
+              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+            >
               <FileText className="h-4 w-4" />
               Insurance Report
             </Link>
@@ -54,7 +76,10 @@ export function LocationTreePage() {
               size="sm"
               className="text-app-accent hover:text-app-accent/80"
               prefix={<Plus className="h-4 w-4" />}
-              onClick={() => { setAddingRoot(true); setAddingChildOf(null); }}
+              onClick={() => {
+                setAddingRoot(true);
+                setAddingChildOf(null);
+              }}
             >
               Add Root Location
             </Button>
@@ -65,7 +90,9 @@ export function LocationTreePage() {
       {!isLoading && treeNodes.length === 0 && !addingRoot ? (
         <div className="text-center py-16">
           <MapPin className="h-12 w-12 mx-auto text-muted-foreground/40 mb-4" />
-          <p className="text-muted-foreground">No locations yet. Add your first location to start organising.</p>
+          <p className="text-muted-foreground">
+            No locations yet. Add your first location to start organising.
+          </p>
         </div>
       ) : (
         <div className="flex flex-col md:flex-row gap-6">

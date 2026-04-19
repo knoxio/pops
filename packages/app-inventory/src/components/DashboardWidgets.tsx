@@ -55,8 +55,13 @@ export function DashboardWidgets() {
 
   if (!data?.data) return null;
 
-  const { itemCount, totalReplacementValue, totalResaleValue, warrantiesExpiringSoon, recentlyAdded } =
-    data.data;
+  const {
+    itemCount,
+    totalReplacementValue,
+    totalResaleValue,
+    warrantiesExpiringSoon,
+    recentlyAdded,
+  } = data.data;
 
   return (
     <div className="grid grid-cols-2 gap-4">

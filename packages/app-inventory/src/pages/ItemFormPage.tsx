@@ -1,14 +1,7 @@
 import { Save } from 'lucide-react';
 import { Link } from 'react-router';
 
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-  Button,
-  PageHeader,
-  Skeleton,
-} from '@pops/ui';
+import { Alert, AlertDescription, AlertTitle, Button, PageHeader, Skeleton } from '@pops/ui';
 
 import { ConnectionsSection } from './item-form-page/sections/ConnectionsSection';
 import { CoreFieldsSection } from './item-form-page/sections/CoreFieldsSection';
@@ -21,17 +14,49 @@ export { extractPrefix } from './item-form-page/useItemFormPageModel';
 export function ItemFormPage() {
   const model = useItemFormPageModel();
   const {
-    id, isEditMode, form, assetIdError, assetIdChecking, generating,
-    notesPreview, setNotesPreview, uploadFiles, deleteConfirmId, setDeleteConfirmId,
-    existingPhotos, imageProcessing, pendingConnections, setPendingConnections,
-    connectionSearch, setConnectionSearch, searchResults, searchLoading,
-    locationTree, createLocationMutation, itemData, isLoading, error,
-    reorderMutation, photoDeleteMutation, isMutating,
-    handleFilesSelected, handleRemoveUpload, handleDeletePhoto, confirmDeletePhoto,
-    validateAssetIdUniqueness, handleAutoGenerate, onSubmit,
+    id,
+    isEditMode,
+    form,
+    assetIdError,
+    assetIdChecking,
+    generating,
+    notesPreview,
+    setNotesPreview,
+    uploadFiles,
+    deleteConfirmId,
+    setDeleteConfirmId,
+    existingPhotos,
+    imageProcessing,
+    pendingConnections,
+    setPendingConnections,
+    connectionSearch,
+    setConnectionSearch,
+    searchResults,
+    searchLoading,
+    locationTree,
+    createLocationMutation,
+    itemData,
+    isLoading,
+    error,
+    reorderMutation,
+    photoDeleteMutation,
+    isMutating,
+    handleFilesSelected,
+    handleRemoveUpload,
+    handleDeletePhoto,
+    confirmDeletePhoto,
+    validateAssetIdUniqueness,
+    handleAutoGenerate,
+    onSubmit,
   } = model;
 
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = form;
+  const {
+    register,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = form;
 
   if (isEditMode && isLoading) {
     return (
@@ -52,7 +77,10 @@ export function ItemFormPage() {
           <AlertTitle>{is404 ? 'Item not found' : 'Error'}</AlertTitle>
           <AlertDescription>{is404 ? "This item doesn't exist." : error.message}</AlertDescription>
         </Alert>
-        <Link to="/inventory" className="mt-4 inline-block text-sm text-app-accent hover:text-app-accent/80 underline font-medium">
+        <Link
+          to="/inventory"
+          className="mt-4 inline-block text-sm text-app-accent hover:text-app-accent/80 underline font-medium"
+        >
           Back to inventory
         </Link>
       </div>
@@ -68,7 +96,11 @@ export function ItemFormPage() {
         backHref={isEditMode && id ? `/inventory/items/${id}` : '/inventory'}
         breadcrumbs={
           isEditMode && editItemName
-            ? [{ label: 'Inventory', href: '/inventory' }, { label: editItemName, href: `/inventory/items/${id}` }, { label: 'Edit' }]
+            ? [
+                { label: 'Inventory', href: '/inventory' },
+                { label: editItemName, href: `/inventory/items/${id}` },
+                { label: 'Edit' },
+              ]
             : [{ label: 'Inventory', href: '/inventory' }, { label: 'New Item' }]
         }
         renderLink={Link}
@@ -92,7 +124,6 @@ export function ItemFormPage() {
 
         <PhotoUploadSection
           isEditMode={isEditMode}
-          itemId={id}
           existingPhotos={existingPhotos}
           uploadFiles={uploadFiles}
           imageProcessing={imageProcessing}
@@ -121,8 +152,12 @@ export function ItemFormPage() {
             searchResults={searchResults}
             searchLoading={searchLoading}
             onSearchChange={setConnectionSearch}
-            onAdd={(item) => setPendingConnections((prev) => [...prev, { id: item.id, itemName: item.itemName }])}
-            onRemove={(itemId) => setPendingConnections((prev) => prev.filter((c) => c.id !== itemId))}
+            onAdd={(item) =>
+              setPendingConnections((prev) => [...prev, { id: item.id, itemName: item.itemName }])
+            }
+            onRemove={(itemId) =>
+              setPendingConnections((prev) => prev.filter((c) => c.id !== itemId))
+            }
           />
         )}
 
@@ -138,7 +173,12 @@ export function ItemFormPage() {
             {isEditMode ? 'Save Changes' : 'Create Item'}
           </Button>
           <Link to="/inventory">
-            <Button type="button" variant="outline" size="lg" className="px-8 font-bold border-app-accent/20 hover:bg-app-accent/5">
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              className="px-8 font-bold border-app-accent/20 hover:bg-app-accent/5"
+            >
               Cancel
             </Button>
           </Link>

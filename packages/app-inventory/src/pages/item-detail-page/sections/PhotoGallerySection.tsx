@@ -1,8 +1,8 @@
 import { Camera } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { trpc } from '@pops/api-client';
 import { Skeleton } from '@pops/ui';
-import { toast } from 'sonner';
 
 import { PhotoGallery } from '../../../components/PhotoGallery';
 import { SortablePhotoGrid } from '../../../components/SortablePhotoGrid';
@@ -41,7 +41,9 @@ export function PhotoGallerySection({ itemId }: PhotoGallerySectionProps) {
       <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
         <Camera className="h-5 w-5" />
         Photos
-        {photos.length > 0 && <span className="text-sm font-normal text-muted-foreground">({photos.length})</span>}
+        {photos.length > 0 && (
+          <span className="text-sm font-normal text-muted-foreground">({photos.length})</span>
+        )}
       </h2>
 
       <PhotoGallery photos={photos} baseUrl={BASE_URL} />

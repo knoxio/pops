@@ -70,7 +70,7 @@ export function useLocationTreePageModel() {
     },
   });
 
-  const treeNodes = data?.data ?? [];
+  const treeNodes = useMemo(() => data?.data ?? [], [data]);
   const nodeMap = useMemo(() => {
     const map = new Map<string, LocationTreeNode>();
     if (data?.data) buildNodeMap(data.data, map);
@@ -121,9 +121,12 @@ export function useLocationTreePageModel() {
   const handleMoveTo = useCallback(
     (newParentId: string | null) => {
       if (!movingId) return;
-      updateMutation.mutate({ id: movingId, data: { parentId: newParentId } }, {
-        onSuccess: () => setMovingId(null),
-      });
+      updateMutation.mutate(
+        { id: movingId, data: { parentId: newParentId } },
+        {
+          onSuccess: () => setMovingId(null),
+        }
+      );
     },
     [movingId, updateMutation]
   );
@@ -171,7 +174,8 @@ export function useLocationTreePageModel() {
         if (oldIndex < 0 || newIndex < 0) return;
         const reordered = arrayMove(siblings, oldIndex, newIndex);
         reordered.forEach((n, index) => {
-          if (n.sortOrder !== index) updateMutation.mutate({ id: n.id, data: { sortOrder: index } });
+          if (n.sortOrder !== index)
+            updateMutation.mutate({ id: n.id, data: { sortOrder: index } });
         });
       } else {
         updateMutation.mutate({ id: activeNode.id, data: { parentId: overNode.id } });
@@ -181,17 +185,36 @@ export function useLocationTreePageModel() {
   );
 
   return {
-    treeNodes, nodeMap, isLoading, error,
-    selectedId, addingChildOf, addingRoot, setAddingRoot, setAddingChildOf,
-    movingId, setMovingId, activeId, overId,
-    deleteConfirm, setDeleteConfirm,
+    treeNodes,
+    nodeMap,
+    isLoading,
+    error,
+    selectedId,
+    addingChildOf,
+    addingRoot,
+    setAddingRoot,
+    setAddingChildOf,
+    movingId,
+    setMovingId,
+    activeId,
+    overId,
+    deleteConfirm,
+    setDeleteConfirm,
     deleteMutation,
-    handleSelect, handleAddChild, handleRename,
-    handleNewChildSave, handleNewChildCancel: () => setAddingChildOf(null),
-    handleNewRootSave, handleNewRootCancel: () => setAddingRoot(false),
-    handleDelete, handleDeleteConfirm,
-    handleMoveStart, handleMoveTo,
+    handleSelect,
+    handleAddChild,
+    handleRename,
+    handleNewChildSave,
+    handleNewChildCancel: () => setAddingChildOf(null),
+    handleNewRootSave,
+    handleNewRootCancel: () => setAddingRoot(false),
+    handleDelete,
+    handleDeleteConfirm,
+    handleMoveStart,
+    handleMoveTo,
     handleReorder,
-    handleDragStart, handleDragOver, handleDragEnd,
+    handleDragStart,
+    handleDragOver,
+    handleDragEnd,
   };
 }

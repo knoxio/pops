@@ -17,11 +17,17 @@ interface ConnectionsSectionProps {
 }
 
 export function ConnectionsSection({
-  pendingConnections, connectionSearch, searchResults, searchLoading,
-  onSearchChange, onAdd, onRemove,
+  pendingConnections,
+  connectionSearch,
+  searchResults,
+  searchLoading,
+  onSearchChange,
+  onAdd,
+  onRemove,
 }: ConnectionsSectionProps) {
   const pendingIds = new Set(pendingConnections.map((c) => c.id));
-  const filtered = searchResults?.data.filter((item: InventoryItem) => !pendingIds.has(item.id)) ?? [];
+  const filtered =
+    searchResults?.data.filter((item: InventoryItem) => !pendingIds.has(item.id)) ?? [];
 
   return (
     <section className="space-y-4 p-6 rounded-2xl border-2 border-app-accent/10 bg-card/50 shadow-sm shadow-app-accent/5">
@@ -33,9 +39,18 @@ export function ConnectionsSection({
       {pendingConnections.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {pendingConnections.map((conn) => (
-            <Badge key={conn.id} variant="secondary" className="flex items-center gap-1.5 pl-3 pr-1.5 py-1 bg-app-accent/10 text-app-accent border-app-accent/20">
+            <Badge
+              key={conn.id}
+              variant="secondary"
+              className="flex items-center gap-1.5 pl-3 pr-1.5 py-1 bg-app-accent/10 text-app-accent border-app-accent/20"
+            >
               {conn.itemName}
-              <Button variant="ghost" size="icon" className="h-4 w-4 rounded-full hover:bg-app-accent/20" onClick={() => onRemove(conn.id)}>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-4 w-4 rounded-full hover:bg-app-accent/20"
+                onClick={() => onRemove(conn.id)}
+              >
                 <X className="h-3 w-3" />
               </Button>
             </Badge>
@@ -68,12 +83,16 @@ export function ConnectionsSection({
                 key={item.id}
                 variant="ghost"
                 className="w-full flex items-center justify-between p-2.5 h-auto text-left"
-                onClick={() => { onAdd(item); onSearchChange(''); }}
+                onClick={() => {
+                  onAdd(item);
+                  onSearchChange('');
+                }}
               >
                 <div>
                   <div className="font-medium text-sm">{item.itemName}</div>
                   <div className="text-xs text-muted-foreground">
-                    {[item.brand, item.model, item.assetId].filter(Boolean).join(' · ') || 'No details'}
+                    {[item.brand, item.model, item.assetId].filter(Boolean).join(' · ') ||
+                      'No details'}
                   </div>
                 </div>
                 <Link2 className="h-4 w-4 text-app-accent/50 shrink-0 ml-2" />

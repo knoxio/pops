@@ -1,14 +1,14 @@
 import { ImageIcon } from 'lucide-react';
 
-import { Button, Skeleton } from '@pops/ui';
+import { Button } from '@pops/ui';
 
 import { PhotoUpload, type UploadedFile } from '../../../components/PhotoUpload';
 import { SortablePhotoGrid } from '../../../components/SortablePhotoGrid';
+
 import type { PhotoItem } from '../../../components/PhotoGallery';
 
 interface PhotoUploadSectionProps {
   isEditMode: boolean;
-  itemId: string | undefined;
   existingPhotos: PhotoItem[];
   uploadFiles: UploadedFile[];
   imageProcessing: boolean;
@@ -24,9 +24,19 @@ interface PhotoUploadSectionProps {
 }
 
 export function PhotoUploadSection({
-  isEditMode, itemId, existingPhotos, uploadFiles, imageProcessing,
-  isReordering, deleteConfirmId, isDeleting,
-  onFilesSelected, onRemoveUpload, onDeletePhoto, onConfirmDelete, onCancelDelete, onReorder,
+  isEditMode,
+  existingPhotos,
+  uploadFiles,
+  imageProcessing,
+  isReordering,
+  deleteConfirmId,
+  isDeleting,
+  onFilesSelected,
+  onRemoveUpload,
+  onDeletePhoto,
+  onConfirmDelete,
+  onCancelDelete,
+  onReorder,
 }: PhotoUploadSectionProps) {
   return (
     <section className="space-y-4 p-6 rounded-2xl border-2 border-app-accent/10 bg-card/50 shadow-sm shadow-app-accent/5">
@@ -47,7 +57,9 @@ export function PhotoUploadSection({
       {deleteConfirmId !== null && (
         <div className="flex items-center gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
           <p className="text-sm flex-1">Delete this photo? This cannot be undone.</p>
-          <Button type="button" variant="outline" size="sm" onClick={onCancelDelete}>Cancel</Button>
+          <Button type="button" variant="outline" size="sm" onClick={onCancelDelete}>
+            Cancel
+          </Button>
           <Button
             type="button"
             size="sm"

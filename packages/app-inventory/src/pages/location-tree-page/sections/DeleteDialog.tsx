@@ -45,7 +45,9 @@ export function DeleteDialog({ deleteConfirm, onConfirm, onCancel, isPending }: 
           </div>
         )}
         <DialogFooter>
-          <Button variant="outline" onClick={onCancel}>Cancel</Button>
+          <Button variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
           <Button
             variant="ghost"
             className="text-destructive hover:text-destructive"

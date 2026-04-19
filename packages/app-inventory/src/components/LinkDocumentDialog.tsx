@@ -74,6 +74,7 @@ export function LinkDocumentDialog({ itemId, onLinked }: LinkDocumentDialogProps
       onSearchChange={setSearch}
       isLoading={isLoading}
       results={results}
+      getResultKey={(doc: PaperlessDocResult) => doc.id}
       maxResultsHeight="max-h-72"
       trailing={
         <Select
@@ -89,7 +90,11 @@ export function LinkDocumentDialog({ itemId, onLinked }: LinkDocumentDialogProps
       renderResult={(doc: PaperlessDocResult) => (
         <div className="flex items-center gap-3 p-2.5 rounded-md hover:bg-accent transition-colors">
           {doc.thumbnailUrl ? (
-            <img src={doc.thumbnailUrl} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
+            <img
+              src={doc.thumbnailUrl}
+              alt=""
+              className="h-10 w-10 rounded object-cover shrink-0"
+            />
           ) : (
             <div className="h-10 w-10 rounded bg-muted flex items-center justify-center shrink-0">
               <FileText className="h-5 w-5 text-muted-foreground" />
@@ -107,7 +112,12 @@ export function LinkDocumentDialog({ itemId, onLinked }: LinkDocumentDialogProps
             size="sm"
             onClick={() => {
               setLinkingId(doc.id);
-              linkMutation.mutate({ itemId, paperlessDocumentId: doc.id, documentType: docType, title: doc.title });
+              linkMutation.mutate({
+                itemId,
+                paperlessDocumentId: doc.id,
+                documentType: docType,
+                title: doc.title,
+              });
             }}
             disabled={linkMutation.isPending}
           >

@@ -26,7 +26,9 @@ import { ConnectionTracePanel } from '../../../components/ConnectionTracePanel';
 import type { ItemConnection } from '@pops/api/modules/inventory/connections/types';
 
 function ConnectionRow({
-  connectedItemId, onDisconnect, isDisconnecting,
+  connectedItemId,
+  onDisconnect,
+  isDisconnecting,
 }: {
   connectedItemId: string;
   onDisconnect: () => void;
@@ -50,14 +52,23 @@ function ConnectionRow({
       </Link>
       <AlertDialog>
         <AlertDialogTrigger asChild>
-          <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive shrink-0" disabled={isDisconnecting} title="Disconnect" aria-label="Disconnect">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-destructive hover:text-destructive shrink-0"
+            disabled={isDisconnecting}
+            title="Disconnect"
+            aria-label="Disconnect"
+          >
             <Unlink className="h-4 w-4" />
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Disconnect {itemName}?</AlertDialogTitle>
-            <AlertDialogDescription>This will remove the connection between these items.</AlertDialogDescription>
+            <AlertDialogDescription>
+              This will remove the connection between these items.
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -79,7 +90,12 @@ interface ConnectionsSectionProps {
 }
 
 export function ConnectionsSection({
-  itemId, connections, connectionsLoading, isDisconnecting, onConnected, onDisconnect,
+  itemId,
+  connections,
+  connectionsLoading,
+  isDisconnecting,
+  onConnected,
+  onDisconnect,
 }: ConnectionsSectionProps) {
   const [showGraph, setShowGraph] = useState(false);
 
@@ -127,7 +143,11 @@ export function ConnectionsSection({
               {showGraph ? 'Hide Graph' : 'View Graph'}
             </Button>
           </div>
-          {showGraph ? <ConnectionGraph itemId={itemId} /> : <ConnectionTracePanel itemId={itemId} />}
+          {showGraph ? (
+            <ConnectionGraph itemId={itemId} />
+          ) : (
+            <ConnectionTracePanel itemId={itemId} />
+          )}
         </section>
       ) : null}
     </>

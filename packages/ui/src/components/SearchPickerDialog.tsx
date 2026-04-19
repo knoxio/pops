@@ -1,7 +1,6 @@
 import { Search } from 'lucide-react';
 import * as React from 'react';
 
-import { Skeleton } from '../primitives/skeleton';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../primitives/dialog';
+import { Skeleton } from '../primitives/skeleton';
 import { TextInput } from './TextInput';
 
 export interface SearchPickerDialogProps<T> {
@@ -24,6 +24,7 @@ export interface SearchPickerDialogProps<T> {
   isLoading: boolean;
   results: T[];
   renderResult: (item: T) => React.ReactNode;
+  getResultKey: (item: T) => string | number;
   trailing?: React.ReactNode;
   minChars?: number;
   maxResultsHeight?: string;
@@ -42,6 +43,7 @@ export function SearchPickerDialog<T>({
   isLoading,
   results,
   renderResult,
+  getResultKey,
   trailing,
   minChars = 2,
   maxResultsHeight = 'max-h-64',
@@ -84,8 +86,8 @@ export function SearchPickerDialog<T>({
           ) : results.length === 0 ? (
             <p className="text-sm text-muted-foreground py-4 text-center">{emptyMessage}</p>
           ) : (
-            results.map((item, i) => (
-              <React.Fragment key={i}>{renderResult(item)}</React.Fragment>
+            results.map((item) => (
+              <React.Fragment key={getResultKey(item)}>{renderResult(item)}</React.Fragment>
             ))
           )}
         </div>

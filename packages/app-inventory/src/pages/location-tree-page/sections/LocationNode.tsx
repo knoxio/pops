@@ -1,3 +1,4 @@
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
   ArrowDown,
@@ -15,14 +16,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
 
-import {
-  Badge,
-  Button,
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from '@pops/ui';
-import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { Badge, Button, Collapsible, CollapsibleContent, CollapsibleTrigger } from '@pops/ui';
 
 import { countDescendants, type LocationTreeNode } from '../utils';
 
@@ -104,9 +98,22 @@ export interface LocationNodeProps {
 }
 
 export function LocationNode({
-  node, depth, selectedId, onSelect, onAddChild, onRename, onMoveStart,
-  onReorder, onDelete, addingChildOf, onNewChildSave, onNewChildCancel,
-  siblingIndex, siblingCount, overId, activeId,
+  node,
+  depth,
+  selectedId,
+  onSelect,
+  onAddChild,
+  onRename,
+  onMoveStart,
+  onReorder,
+  onDelete,
+  addingChildOf,
+  onNewChildSave,
+  onNewChildCancel,
+  siblingIndex,
+  siblingCount,
+  overId,
+  activeId,
 }: LocationNodeProps) {
   const [open, setOpen] = useState(depth < 1);
   const [renaming, setRenaming] = useState(false);
@@ -114,11 +121,24 @@ export function LocationNode({
   const isSelected = selectedId === node.id;
   const isAddingChild = addingChildOf === node.id;
 
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging, isOver } =
-    useSortable({ id: node.id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+    isOver,
+  } = useSortable({ id: node.id });
 
-  const sortableStyle = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.4 : 1 };
-  const showDropLine = overId === node.id && activeId !== null && activeId !== node.id && !isDragging;
+  const sortableStyle = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+  const showDropLine =
+    overId === node.id && activeId !== null && activeId !== node.id && !isDragging;
 
   useEffect(() => {
     if (isAddingChild && !open) setOpen(true);
@@ -130,9 +150,14 @@ export function LocationNode({
       <Collapsible open={open} onOpenChange={setOpen}>
         <div
           className={`group flex items-center gap-1.5 py-1.5 px-2 rounded-md cursor-pointer transition-colors hover:bg-app-accent/10 ${isSelected ? 'bg-app-accent/20 text-foreground font-bold border-l-2 border-app-accent rounded-l-none ml-[-2px]' : ''} ${isOver && !isDragging ? 'ring-2 ring-app-accent/50 bg-app-accent/5' : ''}`}
-          style={{ paddingLeft: `calc(${depth} * var(--tree-indent-step) + var(--tree-indent-base))` }}
+          style={{
+            paddingLeft: `calc(${depth} * var(--tree-indent-step) + var(--tree-indent-base))`,
+          }}
           onClick={() => onSelect(node.id)}
-          onDoubleClick={(e) => { e.stopPropagation(); setRenaming(true); }}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            setRenaming(true);
+          }}
           role="treeitem"
           aria-selected={isSelected}
           aria-expanded={hasChildren ? open : undefined}
@@ -151,20 +176,35 @@ export function LocationNode({
 
           {hasChildren ? (
             <CollapsibleTrigger asChild onClick={(e) => e.stopPropagation()}>
-              <button type="button" className="p-0.5 rounded hover:bg-muted" aria-label={open ? 'Collapse' : 'Expand'}>
-                {open ? <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" /> : <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />}
+              <button
+                type="button"
+                className="p-0.5 rounded hover:bg-muted"
+                aria-label={open ? 'Collapse' : 'Expand'}
+              >
+                {open ? (
+                  <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+                )}
               </button>
             </CollapsibleTrigger>
           ) : (
             <span className="w-5.5" />
           )}
 
-          {hasChildren && open ? <FolderOpen className="h-4 w-4 text-muted-foreground shrink-0" /> : <Folder className="h-4 w-4 text-muted-foreground shrink-0" />}
+          {hasChildren && open ? (
+            <FolderOpen className="h-4 w-4 text-muted-foreground shrink-0" />
+          ) : (
+            <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
+          )}
 
           {renaming ? (
             <InlineInput
               defaultValue={node.name}
-              onSave={(name) => { setRenaming(false); if (name !== node.name) onRename(node.id, name); }}
+              onSave={(name) => {
+                setRenaming(false);
+                if (name !== node.name) onRename(node.id, name);
+              }}
               onCancel={() => setRenaming(false)}
             />
           ) : (
@@ -173,37 +213,94 @@ export function LocationNode({
 
           <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-auto shrink-0">
             {siblingCount > 1 && siblingIndex > 0 && (
-              <button type="button" className="p-0.5 rounded hover:bg-muted hidden [@media(pointer:coarse)]:inline-flex" onClick={(e) => { e.stopPropagation(); onReorder(node.id, 'up'); }} aria-label="Move up" title="Move up">
+              <button
+                type="button"
+                className="p-0.5 rounded hover:bg-muted hidden [@media(pointer:coarse)]:inline-flex"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReorder(node.id, 'up');
+                }}
+                aria-label="Move up"
+                title="Move up"
+              >
                 <ArrowUp className="h-3 w-3 text-muted-foreground" />
               </button>
             )}
             {siblingCount > 1 && siblingIndex < siblingCount - 1 && (
-              <button type="button" className="p-0.5 rounded hover:bg-muted hidden [@media(pointer:coarse)]:inline-flex" onClick={(e) => { e.stopPropagation(); onReorder(node.id, 'down'); }} aria-label="Move down" title="Move down">
+              <button
+                type="button"
+                className="p-0.5 rounded hover:bg-muted hidden [@media(pointer:coarse)]:inline-flex"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReorder(node.id, 'down');
+                }}
+                aria-label="Move down"
+                title="Move down"
+              >
                 <ArrowDown className="h-3 w-3 text-muted-foreground" />
               </button>
             )}
-            <button type="button" className="p-0.5 rounded hover:bg-muted" onClick={(e) => { e.stopPropagation(); onMoveStart(node.id); }} aria-label={`Move ${node.name}`} title="Move to...">
+            <button
+              type="button"
+              className="p-0.5 rounded hover:bg-muted"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMoveStart(node.id);
+              }}
+              aria-label={`Move ${node.name}`}
+              title="Move to..."
+            >
               <MoveRight className="h-3 w-3 text-muted-foreground" />
             </button>
-            <button type="button" className="p-0.5 rounded hover:bg-muted" onClick={(e) => { e.stopPropagation(); onAddChild(node.id); }} aria-label={`Add child to ${node.name}`} title="Add child location">
+            <button
+              type="button"
+              className="p-0.5 rounded hover:bg-muted"
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddChild(node.id);
+              }}
+              aria-label={`Add child to ${node.name}`}
+              title="Add child location"
+            >
               <FolderPlus className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
-            <Link to={`/inventory/report/insurance?locationId=${node.id}`} onClick={(e) => e.stopPropagation()} className="p-0.5 rounded hover:bg-muted" title={`Insurance report for ${node.name}`}>
+            <Link
+              to={`/inventory/report/insurance?locationId=${node.id}`}
+              onClick={(e) => e.stopPropagation()}
+              className="p-0.5 rounded hover:bg-muted"
+              title={`Insurance report for ${node.name}`}
+            >
               <FileText className="h-3.5 w-3.5 text-muted-foreground" />
             </Link>
-            <Button type="button" variant="ghost" size="icon" className="h-5 w-5 p-0.5 text-destructive" onClick={(e) => { e.stopPropagation(); onDelete(node.id); }} aria-label={`Delete ${node.name}`} title="Delete location">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 p-0.5 text-destructive"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(node.id);
+              }}
+              aria-label={`Delete ${node.name}`}
+              title="Delete location"
+            >
               <Trash2 className="h-3 w-3" />
             </Button>
           </div>
 
           {hasChildren && (
-            <Badge variant="secondary" className="text-xs shrink-0">{countDescendants(node) + 1}</Badge>
+            <Badge variant="secondary" className="text-xs shrink-0">
+              {countDescendants(node) + 1}
+            </Badge>
           )}
         </div>
 
         {(hasChildren || isAddingChild) && (
           <CollapsibleContent forceMount={isAddingChild ? true : undefined}>
-            <SortableContext items={node.children.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+            <SortableContext
+              items={node.children.map((c) => c.id)}
+              strategy={verticalListSortingStrategy}
+            >
               <div role="group">
                 {node.children.map((child, i) => (
                   <LocationNode
@@ -227,10 +324,19 @@ export function LocationNode({
                   />
                 ))}
                 {isAddingChild && (
-                  <div className="flex items-center gap-1.5 py-1.5 px-2" style={{ paddingLeft: `calc(${depth + 1} * var(--tree-indent-step) + var(--tree-indent-base))` }}>
+                  <div
+                    className="flex items-center gap-1.5 py-1.5 px-2"
+                    style={{
+                      paddingLeft: `calc(${depth + 1} * var(--tree-indent-step) + var(--tree-indent-base))`,
+                    }}
+                  >
                     <span className="w-5.5" />
                     <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <InlineInput onSave={onNewChildSave} onCancel={onNewChildCancel} placeholder="Location name" />
+                    <InlineInput
+                      onSave={onNewChildSave}
+                      onCancel={onNewChildCancel}
+                      placeholder="Location name"
+                    />
                   </div>
                 )}
               </div>

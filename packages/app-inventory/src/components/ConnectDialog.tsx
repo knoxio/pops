@@ -56,6 +56,7 @@ export function ConnectDialog({ currentItemId, onConnected }: ConnectDialogProps
       description="Search for an item to connect by name or asset ID."
       searchPlaceholder="Search items..."
       emptyMessage="No items found"
+      getResultKey={(item: InventoryItem) => item.id}
       search={search}
       onSearchChange={setSearch}
       isLoading={isLoading}

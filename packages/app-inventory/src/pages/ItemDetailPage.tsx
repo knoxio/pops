@@ -27,9 +27,16 @@ import { useItemDetailPageModel } from './item-detail-page/useItemDetailPageMode
 
 export function ItemDetailPage() {
   const {
-    id, itemData, isLoading, error,
-    connectionsData, connectionsLoading,
-    photosData, deleteMutation, disconnectMutation, utils,
+    id,
+    itemData,
+    isLoading,
+    error,
+    connectionsData,
+    connectionsLoading,
+    photosData,
+    deleteMutation,
+    disconnectMutation,
+    utils,
   } = useItemDetailPageModel();
 
   if (isLoading) {
@@ -38,7 +45,9 @@ export function ItemDetailPage() {
         <Skeleton className="h-8 w-48" />
         <Skeleton className="h-6 w-32" />
         <div className="grid grid-cols-2 gap-4">
-          {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-20" />)}
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-20" />
+          ))}
         </div>
       </div>
     );
@@ -52,7 +61,10 @@ export function ItemDetailPage() {
           <AlertTitle>{is404 ? 'Item not found' : 'Error'}</AlertTitle>
           <AlertDescription>{is404 ? "This item doesn't exist." : error.message}</AlertDescription>
         </Alert>
-        <Link to="/inventory" className="mt-4 inline-block text-sm text-app-accent hover:text-app-accent/80 underline font-medium">
+        <Link
+          to="/inventory"
+          className="mt-4 inline-block text-sm text-app-accent hover:text-app-accent/80 underline font-medium"
+        >
           Back to inventory
         </Link>
       </div>
@@ -67,7 +79,9 @@ export function ItemDetailPage() {
       <PageHeader
         title={
           <div>
-            <span className="text-2xl md:text-3xl font-extrabold tracking-tight">{item.itemName}</span>
+            <span className="text-2xl md:text-3xl font-extrabold tracking-tight">
+              {item.itemName}
+            </span>
             {(item.brand || item.model) && (
               <p className="text-muted-foreground font-medium uppercase text-xs tracking-widest opacity-80 mt-1">
                 {[item.brand, item.model].filter(Boolean).join(' • ')}
@@ -80,7 +94,11 @@ export function ItemDetailPage() {
         actions={
           <div className="flex items-center gap-2">
             <Link to={`/inventory/items/${id}/edit`}>
-              <Button variant="outline" size="sm" className="font-bold border-app-accent/20 hover:border-app-accent/50 hover:bg-app-accent/5 transition-colors">
+              <Button
+                variant="outline"
+                size="sm"
+                className="font-bold border-app-accent/20 hover:border-app-accent/50 hover:bg-app-accent/5 transition-colors"
+              >
                 <Pencil className="h-4 w-4 mr-2 text-app-accent" />
                 Edit
               </Button>
@@ -96,12 +114,19 @@ export function ItemDetailPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete {item.itemName}?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will also remove {connectionsData?.data.length ?? 0} connection{(connectionsData?.data.length ?? 0) !== 1 ? 's' : ''} and {photosData?.pagination?.total ?? 0} photo{(photosData?.pagination?.total ?? 0) !== 1 ? 's' : ''}.
+                    This will also remove {connectionsData?.data.length ?? 0} connection
+                    {(connectionsData?.data.length ?? 0) !== 1 ? 's' : ''} and{' '}
+                    {photosData?.pagination?.total ?? 0} photo
+                    {(photosData?.pagination?.total ?? 0) !== 1 ? 's' : ''}.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction variant="ghost" className="text-destructive hover:text-destructive" onClick={() => deleteMutation.mutate({ id: id! })}>
+                  <AlertDialogAction
+                    variant="ghost"
+                    className="text-destructive hover:text-destructive"
+                    onClick={() => deleteMutation.mutate({ id: id! })}
+                  >
                     Delete
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -122,7 +147,9 @@ export function ItemDetailPage() {
         connectionsLoading={connectionsLoading}
         isDisconnecting={disconnectMutation.isPending}
         onConnected={() => void utils.inventory.connections.listForItem.invalidate({ itemId: id! })}
-        onDisconnect={(conn) => disconnectMutation.mutate({ itemAId: conn.itemAId, itemBId: conn.itemBId })}
+        onDisconnect={(conn) =>
+          disconnectMutation.mutate({ itemAId: conn.itemAId, itemBId: conn.itemBId })
+        }
       />
 
       <DocumentsSection itemId={id!} />
