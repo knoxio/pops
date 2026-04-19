@@ -189,7 +189,7 @@ export function ProcessingStep() {
   const completedWarnings =
     progressQuery.data?.result &&
     (progressQuery.data.result as ProcessImportOutput).warnings?.length
-      ? (progressQuery.data.result as ProcessImportOutput).warnings!
+      ? ((progressQuery.data.result as ProcessImportOutput).warnings ?? null)
       : null;
 
   return (

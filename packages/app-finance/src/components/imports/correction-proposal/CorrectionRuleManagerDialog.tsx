@@ -433,7 +433,9 @@ function RuleManagerBody(props: {
         {props.selectedOp ? (
           <DetailPanel
             op={props.selectedOp}
-            onChange={(mutator) => props.onChangeSelectedOp(props.selectedOp!.clientId, mutator)}
+            onChange={(mutator) => {
+              if (props.selectedOp) props.onChangeSelectedOp(props.selectedOp.clientId, mutator);
+            }}
             disabled={false}
           />
         ) : props.selectedRule ? (

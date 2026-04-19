@@ -18,7 +18,8 @@ export function DebriefBanner() {
   if (!debriefs || debriefs.length === 0 || dismissed) return null;
 
   const count = debriefs.length;
-  const firstSession = debriefs[0]!;
+  const firstSession = debriefs[0];
+  if (!firstSession) return null;
 
   return (
     <Alert data-testid="debrief-banner">

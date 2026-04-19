@@ -105,7 +105,7 @@ export function useItemFormPageModel() {
   const { processFiles, processing: imageProcessing } = useImageProcessor();
 
   const { data: photosData, refetch: refetchPhotos } = trpc.inventory.photos.listForItem.useQuery(
-    { itemId: id! },
+    { itemId: id ?? '' },
     { enabled: isEditMode }
   );
   const existingPhotos: PhotoItem[] = photosData?.data ?? [];
@@ -145,7 +145,7 @@ export function useItemFormPageModel() {
     data: itemData,
     isLoading,
     error,
-  } = trpc.inventory.items.get.useQuery({ id: id! }, { enabled: isEditMode });
+  } = trpc.inventory.items.get.useQuery({ id: id ?? '' }, { enabled: isEditMode });
 
   useEffect(() => {
     if (itemData?.data) {
@@ -249,8 +249,10 @@ export function useItemFormPageModel() {
           })
         );
         for (let i = 0; i < processed.length; i++) {
-          const localId = pending[i]!.localId;
-          const p = processed[i]!;
+          const pendingEntry = pending[i];
+          const p = processed[i];
+          if (!pendingEntry || !p) continue;
+          const { localId } = pendingEntry;
           try {
             setUploadFiles((prev) =>
               prev.map((f) => (f.localId === localId ? { ...f, progress: 50 } : f))
@@ -327,7 +329,7 @@ export function useItemFormPageModel() {
     onSuccess: () => {
       toast.success('Item updated');
       void utils.inventory.items.list.invalidate();
-      void utils.inventory.items.get.invalidate({ id: id! });
+      void utils.inventory.items.get.invalidate({ id: id ?? '' });
       navigate(`/inventory/items/${id}`);
     },
     onError: (err) => toast.error(`Failed to update: ${err.message}`),

@@ -10,9 +10,9 @@ export function descriptionPatternFromGroup(descriptions: string[]): string {
     .filter(Boolean);
   if (normalized.length === 0) return '';
 
-  let prefix = normalized[0]!;
+  let prefix = normalized[0] ?? '';
   for (let i = 1; i < normalized.length; i++) {
-    const s = normalized[i]!;
+    const s = normalized[i] ?? '';
     let j = 0;
     while (j < prefix.length && j < s.length && prefix[j] === s[j]) {
       j++;

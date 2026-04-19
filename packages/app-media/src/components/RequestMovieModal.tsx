@@ -48,14 +48,16 @@ export function RequestMovieModal({
   });
 
   useEffect(() => {
-    if (!isDownloadMode && profiles.data?.data?.length && qualityProfileId === null) {
-      setQualityProfileId(profiles.data.data[0]!.id);
+    const firstProfile = profiles.data?.data?.[0];
+    if (!isDownloadMode && firstProfile && qualityProfileId === null) {
+      setQualityProfileId(firstProfile.id);
     }
   }, [isDownloadMode, profiles.data?.data, qualityProfileId]);
 
   useEffect(() => {
-    if (!isDownloadMode && folders.data?.data?.length && !rootFolderPath) {
-      setRootFolderPath(folders.data.data[0]!.path);
+    const firstFolder = folders.data?.data?.[0];
+    if (!isDownloadMode && firstFolder && !rootFolderPath) {
+      setRootFolderPath(firstFolder.path);
     }
   }, [isDownloadMode, folders.data?.data, rootFolderPath]);
 

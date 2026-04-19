@@ -101,7 +101,7 @@ export function BreakdownChart({
           <li key={row.label}>
             <button
               type="button"
-              onClick={interactive ? () => onBarClick!(row.label) : undefined}
+              onClick={onBarClick ? () => onBarClick(row.label) : undefined}
               disabled={!interactive}
               className={cn(
                 'group relative flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors',

@@ -121,12 +121,18 @@ export function LocationTreePage() {
           />
           <div className="md:w-3/5">
             {selectedId && nodeMap.get(selectedId) ? (
-              <LocationContentsPanel
-                locationId={selectedId}
-                locationName={nodeMap.get(selectedId)!.name}
-                breadcrumb={buildBreadcrumb(selectedId, nodeMap)}
-                node={nodeMap.get(selectedId)!}
-              />
+              (() => {
+                const selectedNode = nodeMap.get(selectedId);
+                if (!selectedNode) return null;
+                return (
+                  <LocationContentsPanel
+                    locationId={selectedId}
+                    locationName={selectedNode.name}
+                    breadcrumb={buildBreadcrumb(selectedId, nodeMap)}
+                    node={selectedNode}
+                  />
+                );
+              })()
             ) : (
               <div className="border rounded-lg p-4 text-sm text-muted-foreground text-center">
                 Select a location to see details

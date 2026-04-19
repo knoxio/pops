@@ -63,8 +63,8 @@ export function CalendarPage() {
   const config = configData?.data;
 
   const now = new Date();
-  const start = now.toISOString().split('T')[0]!;
-  const end = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!;
+  const start = now.toISOString().split('T')[0] ?? '';
+  const end = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] ?? '';
 
   const {
     data: calendarData,

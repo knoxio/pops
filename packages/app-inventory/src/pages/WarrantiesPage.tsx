@@ -26,8 +26,8 @@ function daysUntil(dateStr: string): number {
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   // Parse as local calendar date to avoid UTC-offset shifting
-  const [year, month, day] = dateStr.split('-').map(Number);
-  const target = new Date(year!, month! - 1, day!);
+  const [year = 1970, month = 1, day = 1] = dateStr.split('-').map(Number);
+  const target = new Date(year, month - 1, day);
   return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
@@ -187,7 +187,8 @@ interface ExpiringSectionProps {
 
 function ExpiringSection({ tier, items, paperlessBaseUrl, onItemClick }: ExpiringSectionProps) {
   if (items.length === 0) return null;
-  const style = TIER_STYLES[tier]!;
+  const style = TIER_STYLES[tier];
+  if (!style) return null;
 
   return (
     <div

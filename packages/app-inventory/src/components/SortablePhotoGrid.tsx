@@ -62,7 +62,8 @@ export function SortablePhotoGrid({
 
       const reordered = [...sorted];
       const [moved] = reordered.splice(fromIndex, 1);
-      reordered.splice(dropIndex, 0, moved!);
+      if (!moved) return;
+      reordered.splice(dropIndex, 0, moved);
 
       onReorder(reordered.map((p) => p.id));
       setDragIndex(null);

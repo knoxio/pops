@@ -212,25 +212,25 @@ export function DebriefPage() {
 
   // ── Pick / draw ──
   const handlePick = (winnerId: number) => {
-    if (!currentDimension || !debrief || !sessionId || recordMutation.isPending) return;
+    if (!currentDimension?.opponent || !debrief || !sessionId || recordMutation.isPending) return;
 
     recordMutation.mutate({
       sessionId,
       dimensionId: currentDimension.dimensionId,
       opponentType: 'movie' as const,
-      opponentId: currentDimension.opponent!.id,
+      opponentId: currentDimension.opponent.id,
       winnerId,
     });
   };
 
   const handleDraw = (tier: 'high' | 'mid' | 'low') => {
-    if (!currentDimension || !debrief || !sessionId || recordMutation.isPending) return;
+    if (!currentDimension?.opponent || !debrief || !sessionId || recordMutation.isPending) return;
 
     recordMutation.mutate({
       sessionId,
       dimensionId: currentDimension.dimensionId,
       opponentType: 'movie' as const,
-      opponentId: currentDimension.opponent!.id,
+      opponentId: currentDimension.opponent.id,
       winnerId: 0,
       drawTier: tier,
     });
@@ -455,37 +455,43 @@ export function DebriefPage() {
                 </div>
 
                 {/* Movie B (opponent) */}
-                <ComparisonMovieCard
-                  movie={{
-                    id: currentDimension.opponent.id,
-                    title: currentDimension.opponent.title,
-                    posterUrl: currentDimension.opponent.posterUrl ?? null,
-                  }}
-                  onPick={() => {
-                    handlePick(currentDimension.opponent!.id);
-                  }}
-                  disabled={isPending}
-                  onToggleWatchlist={() => {
-                    handleToggleWatchlist(currentDimension.opponent!.id);
-                  }}
-                  isOnWatchlist={watchlistedMovies.has(currentDimension.opponent.id)}
-                  watchlistPending={watchlistPending}
-                  onMarkStale={() => {
-                    handleMarkStale(currentDimension.opponent!.id);
-                  }}
-                  stalePending={markStaleMutation.isPending}
-                  onNA={() => {
-                    handleNA(currentDimension.opponent!.id);
-                  }}
-                  naPending={excludeMutation.isPending}
-                  onBlacklist={() => {
-                    handleBlacklist({
-                      id: currentDimension.opponent!.id,
-                      title: currentDimension.opponent!.title,
-                    });
-                  }}
-                  blacklistPending={blacklistMutation.isPending}
-                />
+                {(() => {
+                  const opponent = currentDimension.opponent;
+                  if (!opponent) return null;
+                  return (
+                    <ComparisonMovieCard
+                      movie={{
+                        id: opponent.id,
+                        title: opponent.title,
+                        posterUrl: opponent.posterUrl ?? null,
+                      }}
+                      onPick={() => {
+                        handlePick(opponent.id);
+                      }}
+                      disabled={isPending}
+                      onToggleWatchlist={() => {
+                        handleToggleWatchlist(opponent.id);
+                      }}
+                      isOnWatchlist={watchlistedMovies.has(opponent.id)}
+                      watchlistPending={watchlistPending}
+                      onMarkStale={() => {
+                        handleMarkStale(opponent.id);
+                      }}
+                      stalePending={markStaleMutation.isPending}
+                      onNA={() => {
+                        handleNA(opponent.id);
+                      }}
+                      naPending={excludeMutation.isPending}
+                      onBlacklist={() => {
+                        handleBlacklist({
+                          id: opponent.id,
+                          title: opponent.title,
+                        });
+                      }}
+                      blacklistPending={blacklistMutation.isPending}
+                    />
+                  );
+                })()}
               </div>
             </>
           ) : (

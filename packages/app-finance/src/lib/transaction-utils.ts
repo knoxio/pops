@@ -60,7 +60,8 @@ export function groupTransactionsByEntity(
         aiSuggestion: transaction.entity?.matchType === 'ai',
       });
     }
-    groups.get(key)!.transactions.push(transaction);
+    const group = groups.get(key);
+    if (group) group.transactions.push(transaction);
   }
 
   // Sort: AI suggestions first, then by transaction count descending

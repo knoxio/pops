@@ -252,8 +252,7 @@
         "complexity": ["error", 40],
         "max-depth": ["error", 4],
         "no-nested-ternary": "off",
-        "typescript/explicit-function-return-type": "off",
-        "typescript/no-non-null-assertion": "off"
+        "typescript/explicit-function-return-type": "off"
       }
     },
     {
@@ -268,7 +267,6 @@
         "max-depth": ["error", 4],
         "no-nested-ternary": "off",
         "typescript/explicit-function-return-type": "off",
-        "typescript/no-non-null-assertion": "off",
         "jsx-a11y/alt-text": "warn",
         "jsx-a11y/aria-role": "warn",
         "jsx-a11y/click-events-have-key-events": "warn"
@@ -291,8 +289,7 @@
         "complexity": ["error", 45],
         "max-depth": ["error", 4],
         "no-nested-ternary": "off",
-        "typescript/explicit-function-return-type": "off",
-        "typescript/no-non-null-assertion": "off"
+        "typescript/explicit-function-return-type": "off"
       }
     },
     {
@@ -306,8 +303,7 @@
         "complexity": ["error", 70],
         "max-depth": ["error", 4],
         "no-nested-ternary": "off",
-        "typescript/explicit-function-return-type": "off",
-        "typescript/no-non-null-assertion": "off"
+        "typescript/explicit-function-return-type": "off"
       }
     },
     {
@@ -327,8 +323,7 @@
         "complexity": ["error", 55],
         "max-depth": ["error", 4],
         "no-nested-ternary": "off",
-        "typescript/explicit-function-return-type": "off",
-        "typescript/no-non-null-assertion": "off"
+        "typescript/explicit-function-return-type": "off"
       }
     },
     {

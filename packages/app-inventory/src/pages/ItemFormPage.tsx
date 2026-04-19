@@ -135,7 +135,9 @@ export function ItemFormPage() {
           onDeletePhoto={handleDeletePhoto}
           onConfirmDelete={confirmDeletePhoto}
           onCancelDelete={() => setDeleteConfirmId(null)}
-          onReorder={(orderedIds) => reorderMutation.mutate({ itemId: id!, orderedIds })}
+          onReorder={(orderedIds) => {
+            if (id) reorderMutation.mutate({ itemId: id, orderedIds });
+          }}
         />
 
         <NotesSection

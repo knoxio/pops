@@ -268,8 +268,8 @@ export function ConnectionGraph({ itemId }: ConnectionGraphProps): React.ReactEl
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    function handleMouseDown(e: MouseEvent): void {
-      const rect = canvas!.getBoundingClientRect();
+    const handleMouseDown = (e: MouseEvent): void => {
+      const rect = canvas.getBoundingClientRect();
       const cx = e.clientX - rect.left;
       const cy = e.clientY - rect.top;
       const node = findNodeAt(cx, cy);
@@ -287,11 +287,11 @@ export function ConnectionGraph({ itemId }: ConnectionGraphProps): React.ReactEl
           ty: t.y,
         };
       }
-    }
+    };
 
-    function handleMouseMove(e: MouseEvent): void {
+    const handleMouseMove = (e: MouseEvent): void => {
       if (dragRef.current?.node) {
-        const rect = canvas!.getBoundingClientRect();
+        const rect = canvas.getBoundingClientRect();
         const cx = e.clientX - rect.left;
         const cy = e.clientY - rect.top;
         const t = transformRef.current;
@@ -305,11 +305,11 @@ export function ConnectionGraph({ itemId }: ConnectionGraphProps): React.ReactEl
         transformRef.current.y = panRef.current.ty + dy;
         draw();
       }
-    }
+    };
 
-    function handleMouseUp(e: MouseEvent): void {
+    const handleMouseUp = (e: MouseEvent): void => {
       if (dragRef.current?.node) {
-        const rect = canvas!.getBoundingClientRect();
+        const rect = canvas.getBoundingClientRect();
         const cx = e.clientX - rect.left;
         const cy = e.clientY - rect.top;
         const dx = cx - dragRef.current.startX;
@@ -331,12 +331,12 @@ export function ConnectionGraph({ itemId }: ConnectionGraphProps): React.ReactEl
         dragRef.current = null;
       }
       panRef.current = null;
-    }
+    };
 
-    function handleWheel(e: WheelEvent): void {
+    const handleWheel = (e: WheelEvent): void => {
       e.preventDefault();
       const t = transformRef.current;
-      const rect = canvas!.getBoundingClientRect();
+      const rect = canvas.getBoundingClientRect();
       const cx = e.clientX - rect.left;
       const cy = e.clientY - rect.top;
 
@@ -349,7 +349,7 @@ export function ConnectionGraph({ itemId }: ConnectionGraphProps): React.ReactEl
       t.k = newK;
 
       draw();
-    }
+    };
 
     canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mousemove', handleMouseMove);

@@ -137,7 +137,7 @@ export function ComboboxSelect({
       ? `${selectedValues.length} selected`
       : placeholder
     : selectedValues.length > 0
-      ? getOptionLabel(selectedValues[0]!)
+      ? getOptionLabel(selectedValues[0] ?? '')
       : placeholder;
 
   return (

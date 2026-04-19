@@ -161,7 +161,8 @@ export function ForceGraph({
 
   const toWorld = useCallback(
     (clientX: number, clientY: number) => {
-      const canvas = canvasRef.current!;
+      const canvas = canvasRef.current;
+      if (!canvas) return { x: 0, y: 0 };
       const rect = canvas.getBoundingClientRect();
       return screenToWorld(rect, transform, clientX, clientY);
     },

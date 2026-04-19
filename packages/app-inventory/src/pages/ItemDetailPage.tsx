@@ -74,7 +74,7 @@ export function ItemDetailPage() {
     );
   }
 
-  if (!itemData) return null;
+  if (!itemData || !id) return null;
   const item = itemData.data;
 
   return (
@@ -128,7 +128,7 @@ export function ItemDetailPage() {
                   <AlertDialogAction
                     variant="ghost"
                     className="text-destructive hover:text-destructive"
-                    onClick={() => deleteMutation.mutate({ id: id! })}
+                    onClick={() => deleteMutation.mutate({ id })}
                   >
                     Delete
                   </AlertDialogAction>
@@ -146,21 +146,21 @@ export function ItemDetailPage() {
         photos={photosData?.data ?? []}
         isLoading={photosLoading}
         isReordering={reorderPhotosMutation.isPending}
-        onReorder={(orderedIds) => reorderPhotosMutation.mutate({ itemId: id!, orderedIds })}
+        onReorder={(orderedIds) => reorderPhotosMutation.mutate({ itemId: id, orderedIds })}
       />
 
       <ConnectionsSection
-        itemId={id!}
+        itemId={id}
         connections={connectionsData?.data ?? []}
         connectionsLoading={connectionsLoading}
         isDisconnecting={disconnectMutation.isPending}
-        onConnected={() => void utils.inventory.connections.listForItem.invalidate({ itemId: id! })}
+        onConnected={() => void utils.inventory.connections.listForItem.invalidate({ itemId: id })}
         onDisconnect={(conn) =>
           disconnectMutation.mutate({ itemAId: conn.itemAId, itemBId: conn.itemBId })
         }
       />
 
-      <DocumentsSection itemId={id!} />
+      <DocumentsSection itemId={id} />
     </div>
   );
 }

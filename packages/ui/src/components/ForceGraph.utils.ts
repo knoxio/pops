@@ -44,8 +44,9 @@ export function simulateStep(nodes: Map<string, InternalNode>, edges: ForceEdge[
   // Repulsion.
   for (let i = 0; i < list.length; i++) {
     for (let j = i + 1; j < list.length; j++) {
-      const a = list[i]!;
-      const b = list[j]!;
+      const a = list[i];
+      const b = list[j];
+      if (!a || !b) continue;
       const dx = (a.x ?? 0) - (b.x ?? 0);
       const dy = (a.y ?? 0) - (b.y ?? 0);
       const dist2 = Math.max(dx * dx + dy * dy, 25);

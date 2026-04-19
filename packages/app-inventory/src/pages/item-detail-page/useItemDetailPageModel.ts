@@ -14,20 +14,20 @@ export function useItemDetailPageModel() {
     data: itemData,
     isLoading,
     error,
-  } = trpc.inventory.items.get.useQuery({ id: id! }, { enabled: !!id });
+  } = trpc.inventory.items.get.useQuery({ id: id ?? '' }, { enabled: !!id });
 
   const locationId = itemData?.data?.locationId ?? null;
 
   const { data: locationPathData } = trpc.inventory.locations.getPath.useQuery(
-    { id: locationId! },
+    { id: locationId ?? '' },
     { enabled: !!locationId }
   );
 
   const { data: connectionsData, isLoading: connectionsLoading } =
-    trpc.inventory.connections.listForItem.useQuery({ itemId: id! }, { enabled: !!id });
+    trpc.inventory.connections.listForItem.useQuery({ itemId: id ?? '' }, { enabled: !!id });
 
   const { data: photosData, isLoading: photosLoading } = trpc.inventory.photos.listForItem.useQuery(
-    { itemId: id! },
+    { itemId: id ?? '' },
     { enabled: !!id }
   );
 
@@ -42,13 +42,13 @@ export function useItemDetailPageModel() {
   const disconnectMutation = trpc.inventory.connections.disconnect.useMutation({
     onSuccess: () => {
       toast.success('Items disconnected');
-      void utils.inventory.connections.listForItem.invalidate({ itemId: id! });
+      void utils.inventory.connections.listForItem.invalidate({ itemId: id ?? '' });
     },
     onError: (err) => toast.error(`Failed to disconnect: ${err.message}`),
   });
 
   const reorderPhotosMutation = trpc.inventory.photos.reorder.useMutation({
-    onSuccess: () => void utils.inventory.photos.listForItem.invalidate({ itemId: id! }),
+    onSuccess: () => void utils.inventory.photos.listForItem.invalidate({ itemId: id ?? '' }),
     onError: (err) => toast.error(`Failed to reorder photos: ${err.message}`),
   });
 

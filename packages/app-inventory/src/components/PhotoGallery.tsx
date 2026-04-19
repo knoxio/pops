@@ -86,8 +86,10 @@ export function PhotoGallery({
 
   const photoSrc = (filePath: string) => `${baseUrl}/${encodeURIComponent(filePath)}`;
 
-  const primaryPhoto = sorted[selectedIndex]!;
+  const primaryPhoto = sorted[selectedIndex];
   const currentPhoto = lightboxIndex !== null ? sorted[lightboxIndex] : null;
+
+  if (!primaryPhoto) return null;
 
   return (
     <>
@@ -207,7 +209,7 @@ export function PhotoGallery({
               <p className="text-white text-sm text-center">{currentPhoto.caption}</p>
             )}
             <p className="text-white/60 text-xs">
-              {lightboxIndex! + 1} / {sorted.length}
+              {(lightboxIndex ?? 0) + 1} / {sorted.length}
             </p>
           </div>
 

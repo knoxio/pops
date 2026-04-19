@@ -71,7 +71,7 @@ export function TierListPage() {
     refetch,
     isFetching,
   } = trpc.media.comparisons.getTierListMovies.useQuery(
-    { dimensionId: effectiveDimension! },
+    { dimensionId: effectiveDimension ?? 0 },
     { enabled: effectiveDimension != null, staleTime: Infinity }
   );
 

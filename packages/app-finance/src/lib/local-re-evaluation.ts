@@ -106,7 +106,8 @@ export function reevaluateTransactions(
 
   for (const txn of uncertain) {
     const allMatches = findAllMatchingRules(txn.description, mergedRules, minConfidence);
-    const match = allMatches.length > 0 ? classifyCorrection(allMatches[0]!) : null;
+    const firstMatch = allMatches[0];
+    const match = firstMatch ? classifyCorrection(firstMatch) : null;
     if (match && match.status === 'matched') {
       const matchedRules: MatchedRule[] = allMatches.map((rule) => ({
         ruleId: rule.id,
@@ -144,7 +145,8 @@ export function reevaluateTransactions(
 
   for (const txn of failed) {
     const allMatches = findAllMatchingRules(txn.description, mergedRules, minConfidence);
-    const match = allMatches.length > 0 ? classifyCorrection(allMatches[0]!) : null;
+    const firstMatch = allMatches[0];
+    const match = firstMatch ? classifyCorrection(firstMatch) : null;
     if (match && match.status === 'matched') {
       const matchedRules: MatchedRule[] = allMatches.map((rule) => ({
         ruleId: rule.id,

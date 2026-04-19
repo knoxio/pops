@@ -133,9 +133,10 @@ function HistoryItem({
     entry.showName != null &&
     entry.seasonNumber != null &&
     entry.episodeNumber != null;
-  const episodeCode = hasEpisodeInfo
-    ? formatEpisodeCode(entry.seasonNumber!, entry.episodeNumber!)
-    : null;
+  const episodeCode =
+    hasEpisodeInfo && entry.seasonNumber != null && entry.episodeNumber != null
+      ? formatEpisodeCode(entry.seasonNumber, entry.episodeNumber)
+      : null;
 
   return (
     <div className="group flex gap-3 p-3 rounded-lg border">
@@ -232,9 +233,10 @@ function HistoryCard({
     entry.showName != null &&
     entry.seasonNumber != null &&
     entry.episodeNumber != null;
-  const episodeCode = hasEpisodeInfo
-    ? formatEpisodeCode(entry.seasonNumber!, entry.episodeNumber!)
-    : null;
+  const episodeCode =
+    hasEpisodeInfo && entry.seasonNumber != null && entry.episodeNumber != null
+      ? formatEpisodeCode(entry.seasonNumber, entry.episodeNumber)
+      : null;
 
   return (
     <div className="group flex flex-col gap-2">
