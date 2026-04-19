@@ -57,7 +57,7 @@ export function ProviderStatusSection() {
               <Button
                 variant="outline"
                 size="sm"
-                className="h-7 text-xs"
+                className="text-xs"
                 onClick={() => healthCheckMutation.mutate({ providerId: p.id })}
                 disabled={healthCheckMutation.isPending}
               >

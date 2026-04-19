@@ -11,7 +11,7 @@ import { ProviderStatusSection } from './provider-status-section';
 import { QualityMetricsSection } from './quality-metrics-section';
 import { UsageHistorySection } from './usage-history-section';
 
-import type { HistoryRecord } from './types';
+import type { HistoryPayload } from './types';
 
 type BreakdownRow = {
   key: string;
@@ -37,11 +37,6 @@ type QualityShape = {
     timeoutRate: number;
     averageLatencyMs: number;
   }>;
-};
-
-type HistoryPayload = {
-  records: HistoryRecord[];
-  summary: { totalCostUsd: number };
 };
 
 type AiUsageMainContentProps = {
