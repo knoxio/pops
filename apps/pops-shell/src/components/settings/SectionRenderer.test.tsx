@@ -277,6 +277,93 @@ describe('SectionRenderer', () => {
     });
   });
 
+  describe('async options loader', () => {
+    it('shows a disabled loading placeholder while in-flight and enables the select after resolve', async () => {
+      let resolveLoader!: (opts: { value: string; label: string }[]) => void;
+      const loaderPromise = new Promise<{ value: string; label: string }[]>((res) => {
+        resolveLoader = res;
+      });
+
+      const manifest = makeManifest({
+        groups: [
+          {
+            id: 'g1',
+            title: 'Async Select',
+            fields: [
+              { key: 'library', label: 'Library', type: 'select', default: '', options: [] },
+            ],
+          },
+        ],
+      });
+
+      render(
+        <SectionRenderer manifest={manifest} optionsLoaders={{ library: () => loaderPromise }} />
+      );
+
+      await act(async () => {});
+
+      // While loading — select is disabled with the placeholder text
+      const select = screen.getByRole('combobox');
+      expect(select).toBeDisabled();
+      expect(screen.getByText('Loading options\u2026')).toBeInTheDocument();
+
+      // Resolve the loader with options
+      await act(async () => {
+        resolveLoader([{ value: 'movies', label: 'Movies' }]);
+        await loaderPromise;
+      });
+
+      // Select is now interactive with the loaded options
+      expect(screen.getByRole('combobox')).not.toBeDisabled();
+      expect(screen.getByText('Movies')).toBeInTheDocument();
+      expect(screen.queryByText('Loading options\u2026')).not.toBeInTheDocument();
+    });
+
+    it('enables the select after the loader rejects, falling back to static options', async () => {
+      let rejectLoader!: (err: Error) => void;
+      const loaderPromise = new Promise<{ value: string; label: string }[]>((_, rej) => {
+        rejectLoader = rej;
+      });
+
+      const manifest = makeManifest({
+        groups: [
+          {
+            id: 'g1',
+            title: 'Async Select',
+            fields: [
+              {
+                key: 'library',
+                label: 'Library',
+                type: 'select',
+                default: '',
+                options: [{ value: 'fallback', label: 'Fallback Option' }],
+              },
+            ],
+          },
+        ],
+      });
+
+      render(
+        <SectionRenderer manifest={manifest} optionsLoaders={{ library: () => loaderPromise }} />
+      );
+
+      await act(async () => {});
+
+      // While loading
+      expect(screen.getByRole('combobox')).toBeDisabled();
+
+      // Reject the loader
+      await act(async () => {
+        rejectLoader(new Error('Network error'));
+        await loaderPromise.catch(() => {});
+      });
+
+      // Select is enabled with static fallback options
+      expect(screen.getByRole('combobox')).not.toBeDisabled();
+      expect(screen.getByText('Fallback Option')).toBeInTheDocument();
+    });
+  });
+
   describe('test action button', () => {
     it('calls onTestAction with the procedure when the test button is clicked', async () => {
       vi.useFakeTimers();
