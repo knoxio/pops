@@ -104,3 +104,25 @@ export * from './components/ConditionBadge';
 export * from './components/LocationBreadcrumb';
 export * from './components/TypeBadge';
 export * from './components/WarrantyBadge';
+
+// Additional standalone primitives (feedback, uploads, media, data viz, layout)
+export * from './components/EmptyState';
+export * from './components/FileUpload';
+export * from './components/ImageWithFallback';
+export * from './components/MediaCard';
+export * from './components/ImageGallery';
+export * from './components/SortableGrid';
+export * from './components/TreeView';
+export * from './components/TreePicker';
+export * from './components/ForceGraph';
+export * from './components/BreakdownChart';
+export * from './components/ScrollShelf';
+export * from './components/ResponsiveCardGrid';
+export * from './components/RadarChart';
+export * from './components/TierListBoard';
+export * from './components/ActionButtonWithDetailPicker';
+export * from './components/DurationFieldInput';
+export * from './components/SettingsForm';
+
+// Hooks
+export * from './hooks/useImageProcessor';

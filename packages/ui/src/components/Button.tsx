@@ -2,6 +2,7 @@
  * Button component with variants, sizes, states, and icon support
  * Follows shadcn/ui patterns with class-variance-authority
  */
+import { Slot } from '@radix-ui/react-slot';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { type ButtonHTMLAttributes, forwardRef, type ReactNode } from 'react';
 
@@ -65,6 +66,12 @@ export interface ButtonProps
    * Accessible label for the loading state
    */
   loadingText?: string;
+  /**
+   * Render the button as its child component (via Radix Slot).
+   * Useful for wrapping links (`<Button asChild><Link to="/" /></Button>`).
+   * Incompatible with `loading`, `prefix`, and `suffix`.
+   */
+  asChild?: boolean;
 }
 
 /**
@@ -90,17 +97,27 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       suffix,
       loading = false,
       loadingText = 'Loading',
+      asChild = false,
       disabled,
       ...props
     },
     ref
   ) => {
     const isDisabled = disabled || loading;
+    const mergedClassName = cn(buttonVariants({ variant, size, shape, className }));
+
+    if (asChild) {
+      return (
+        <Slot ref={ref as never} className={mergedClassName} {...props}>
+          {children}
+        </Slot>
+      );
+    }
 
     return (
       <button
         ref={ref}
-        className={cn(buttonVariants({ variant, size, shape, className }))}
+        className={mergedClassName}
         disabled={isDisabled}
         aria-busy={loading}
         aria-label={loading ? loadingText : undefined}
