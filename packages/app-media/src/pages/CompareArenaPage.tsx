@@ -58,7 +58,11 @@ export function CompareArenaPage() {
   );
 
   const utils = trpc.useUtils();
-  const pair: PairData | null = pairData?.data ?? null;
+  // `pair === undefined` means the query hasn't returned yet (e.g. dimensions
+  // haven't loaded so the smartPair query is disabled). `pair === null` is the
+  // explicit "no pair available" empty-state result from the backend. Keep
+  // these separate so we don't show "not enough movies" while still loading.
+  const pair: PairData | null | undefined = pairData?.data;
   const dimensionId = pair?.dimensionId ?? null;
 
   const resolveTitle = useCallback(
@@ -140,7 +144,7 @@ interface ArenaBodyProps {
   loading: boolean;
   error: string | null;
   onRetry: () => void;
-  pair: PairData | null;
+  pair: PairData | null | undefined;
   watchlistedMoviesSize: number;
   activeDimName: string;
   activeDimDesc: string | null;
@@ -164,8 +168,10 @@ interface ArenaBodyProps {
 function ArenaBody(props: ArenaBodyProps) {
   if (props.loading) return <ArenaSkeleton />;
   if (props.error) return <ArenaError message={props.error} onRetry={props.onRetry} />;
-  if (props.pair === null)
+  if (props.pair === null) {
     return <ArenaEmptyState watchlistedCount={props.watchlistedMoviesSize} />;
+  }
+  if (props.pair === undefined) return null;
 
   return (
     <>

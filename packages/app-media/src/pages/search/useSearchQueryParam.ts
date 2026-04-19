@@ -4,8 +4,14 @@ import { useSearchParams } from 'react-router';
 import { useDebouncedValue } from '@pops/ui';
 
 /**
- * Two-way binding between a debounced search input and the `?q=` URL param.
- * Returns the current input value, a setter, and the debounced query.
+ * Debounced search input bound one-way to the `?q=` URL param.
+ *
+ * The input value is seeded once from `?q=` on mount, then debounced (default
+ * 300ms) and written back to the URL via `setSearchParams({ replace: true })`
+ * so the input owns the canonical value during the session. URL changes that
+ * happen *after* mount (browser back/forward, external nav) are intentionally
+ * not synced back into local state — the input is the source of truth while
+ * the page is mounted.
  */
 export function useSearchQueryParam(debounceMs = 300) {
   const [searchParams, setSearchParams] = useSearchParams();

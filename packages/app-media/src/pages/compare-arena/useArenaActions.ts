@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { trpc } from '@pops/api-client';
@@ -8,7 +8,7 @@ import { buildScoreDelta } from './scoreDelta';
 import type { DrawTier, PairData, ScoreDelta } from './types';
 
 interface UseArenaActionsArgs {
-  pair: PairData | null;
+  pair: PairData | null | undefined;
   dimensionId: number | null;
   resolveTitle: (mediaId: number) => string;
   onAfterAction: () => void;
@@ -37,6 +37,17 @@ export function useArenaActions({
   const utils = trpc.useUtils();
   const [scoreDelta, setScoreDelta] = useState<ScoreDelta | null>(null);
   const [sessionCount, setSessionCount] = useState(0);
+  const deltaTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (deltaTimerRef.current !== null) {
+        clearTimeout(deltaTimerRef.current);
+        deltaTimerRef.current = null;
+      }
+    },
+    []
+  );
 
   const fetchScoreDelta = useCallback(
     async (variables: RecordVariables): Promise<void> => {
@@ -88,7 +99,11 @@ export function useArenaActions({
       setSessionCount((c) => c + 1);
       onAfterAction();
       void utils.media.comparisons.getSmartPair.invalidate();
-      setTimeout(() => setScoreDelta(null), DELTA_DISPLAY_MS);
+      if (deltaTimerRef.current !== null) clearTimeout(deltaTimerRef.current);
+      deltaTimerRef.current = setTimeout(() => {
+        setScoreDelta(null);
+        deltaTimerRef.current = null;
+      }, DELTA_DISPLAY_MS);
     },
   });
 
