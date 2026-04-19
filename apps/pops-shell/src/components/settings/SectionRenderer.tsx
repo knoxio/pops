@@ -414,7 +414,9 @@ export function SectionRenderer({ manifest, optionsLoaders, onTestAction }: Sect
   useEffect(() => {
     if (!optionsLoaders) return;
     let cancelled = false;
+    const keysStarted = new Set<string>();
     for (const [key, loader] of Object.entries(optionsLoaders)) {
+      keysStarted.add(key);
       setLoadingOptionKeys((prev) => new Set([...prev, key]));
       Promise.resolve()
         .then(loader)
@@ -435,6 +437,11 @@ export function SectionRenderer({ manifest, optionsLoaders, onTestAction }: Sect
     }
     return () => {
       cancelled = true;
+      setLoadingOptionKeys((prev) => {
+        const next = new Set(prev);
+        for (const key of keysStarted) next.delete(key);
+        return next;
+      });
     };
   }, [optionsLoaders]);
 
