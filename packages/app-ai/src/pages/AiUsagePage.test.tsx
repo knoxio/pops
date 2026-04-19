@@ -5,6 +5,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Mock trpc hooks
 const mockGetStats = vi.fn();
 const mockGetHistory = vi.fn();
+const mockGetQualityMetrics = vi.fn();
+const mockGetLatencyStats = vi.fn();
 const mockCacheStats = vi.fn();
 const mockClearStaleMutate = vi.fn();
 const mockClearAllMutate = vi.fn();
@@ -13,13 +15,13 @@ const mockInvalidateCacheStats = vi.fn();
 vi.mock('../lib/trpc', () => ({
   trpc: {
     core: {
+      aiObservability: {
+        getStats: { useQuery: () => mockGetStats() },
+        getHistory: { useQuery: () => mockGetHistory() },
+        getQualityMetrics: { useQuery: () => mockGetQualityMetrics() },
+        getLatencyStats: { useQuery: () => mockGetLatencyStats() },
+      },
       aiUsage: {
-        getStats: {
-          useQuery: () => mockGetStats(),
-        },
-        getHistory: {
-          useQuery: () => mockGetHistory(),
-        },
         cacheStats: {
           useQuery: () => mockCacheStats(),
         },
@@ -36,11 +38,26 @@ vi.mock('../lib/trpc', () => ({
           }),
         },
       },
+      aiProviders: {
+        list: { useQuery: () => ({ data: [], isLoading: false }) },
+        healthCheck: {
+          useMutation: (_opts: Record<string, unknown>) => ({
+            mutate: vi.fn(),
+            isPending: false,
+          }),
+        },
+      },
+      aiBudgets: {
+        getBudgetStatus: { useQuery: () => ({ data: [], isLoading: false }) },
+      },
     },
     useUtils: () => ({
       core: {
         aiUsage: {
           cacheStats: { invalidate: mockInvalidateCacheStats },
+        },
+        aiProviders: {
+          list: { invalidate: vi.fn() },
         },
       },
     }),
@@ -57,32 +74,31 @@ vi.mock('sonner', () => ({
 import { AiUsagePage } from './AiUsagePage';
 
 const defaultStats = {
-  totalCost: 0.1234,
-  totalApiCalls: 100,
-  totalCacheHits: 300,
-  cacheHitRate: 0.75,
-  avgCostPerCall: 0.001234,
+  totalCalls: 100,
   totalInputTokens: 50000,
   totalOutputTokens: 10000,
-  last30Days: {
-    cost: 0.05,
-    apiCalls: 40,
-    cacheHits: 120,
-  },
+  totalCostUsd: 0.1234,
+  cacheHitRate: 0.75,
+  errorRate: 0.01,
+  byProvider: [],
+  byModel: [],
+  byDomain: [],
+  byOperation: [],
 };
 
 const defaultHistory = {
   records: [
     {
       date: '2026-03-20',
-      apiCalls: 10,
+      calls: 10,
       cacheHits: 30,
       inputTokens: 5000,
       outputTokens: 1000,
-      cost: 0.01,
+      costUsd: 0.01,
+      errors: 0,
     },
   ],
-  summary: { totalCost: 0.01 },
+  summary: { totalCostUsd: 0.01, totalCalls: 10, totalCacheHits: 30 },
 };
 
 const defaultCacheStats = {
@@ -111,6 +127,8 @@ function setupMocks(overrides?: {
     isLoading: o.historyLoading ?? false,
     error: o.historyError ?? null,
   });
+  mockGetQualityMetrics.mockReturnValue({ data: { byModel: [] }, isLoading: false });
+  mockGetLatencyStats.mockReturnValue({ data: null, isLoading: false });
   mockCacheStats.mockReturnValue({
     data: o.cache === null ? undefined : (o.cache ?? defaultCacheStats),
     isLoading: o.cacheLoading ?? false,
@@ -126,14 +144,14 @@ describe('AiUsagePage', () => {
   it('renders loading skeleton when stats are loading', () => {
     setupMocks({ statsLoading: true });
     render(<AiUsagePage />);
-    expect(screen.getByText('AI Usage')).toBeInTheDocument();
+    expect(screen.getByText('AI Observability')).toBeInTheDocument();
     expect(screen.queryByText('Total Cost')).not.toBeInTheDocument();
   });
 
   it('renders error alert on stats error', () => {
     setupMocks({ statsError: new Error('Network error') });
     render(<AiUsagePage />);
-    expect(screen.getByText('Failed to load AI usage data')).toBeInTheDocument();
+    expect(screen.getByText('Failed to load observability data')).toBeInTheDocument();
     expect(screen.getByText('Network error')).toBeInTheDocument();
   });
 
@@ -141,21 +159,22 @@ describe('AiUsagePage', () => {
     render(<AiUsagePage />);
     expect(screen.getByText('Total Cost')).toBeInTheDocument();
     expect(screen.getByText('$0.1234')).toBeInTheDocument();
-    // These labels appear in both stat cards and table headers
-    expect(screen.getAllByText('API Calls').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Total Calls').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Cache Hit Rate').length).toBeGreaterThanOrEqual(1);
-    expect(screen.getByText('Avg Cost/Call')).toBeInTheDocument();
+    expect(screen.getByText('Error Rate')).toBeInTheDocument();
   });
 
-  it('renders history table when records exist', () => {
+  it('renders daily cost chart when history records exist', () => {
     render(<AiUsagePage />);
-    expect(screen.getByText('Daily Usage History')).toBeInTheDocument();
+    expect(screen.getByText('Daily Cost')).toBeInTheDocument();
   });
 
-  it('renders empty state when no history records', () => {
-    setupMocks({ history: { records: [], summary: { totalCost: 0 } } });
+  it('does not render chart when history has no records', () => {
+    setupMocks({
+      history: { records: [], summary: { totalCostUsd: 0, totalCalls: 0, totalCacheHits: 0 } },
+    });
     render(<AiUsagePage />);
-    expect(screen.getByText('No AI usage data yet')).toBeInTheDocument();
+    expect(screen.queryByText('Daily Cost')).not.toBeInTheDocument();
   });
 });
 
@@ -220,6 +239,6 @@ describe('CacheManagement', () => {
     setupMocks({ cacheLoading: true });
     render(<AiUsagePage />);
     // Cache section should show skeleton, but page still renders
-    expect(screen.getByText('AI Usage')).toBeInTheDocument();
+    expect(screen.getByText('AI Observability')).toBeInTheDocument();
   });
 });
