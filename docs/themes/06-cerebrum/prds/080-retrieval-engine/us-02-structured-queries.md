@@ -1,7 +1,7 @@
 # US-02: Structured Queries
 
 > PRD: [PRD-080: Retrieval Engine](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,14 +9,14 @@ As a system querying Thalamus, I want to filter engrams by type, scope, date ran
 
 ## Acceptance Criteria
 
-- [ ] A `StructuredQueryService` accepts a filters object and builds a parameterised SQL query against `engram_index` and its junction tables (`engram_scopes`, `engram_tags`)
-- [ ] Supported filters: `types` (array of type strings, OR match), `scopes` (array of scope prefixes, OR match using `LIKE 'prefix%'`), `tags` (array of tag strings, AND match — engram must have all specified tags), `dateRange` (from/to ISO 8601 strings filtering on `created_at`), `status` (array of status strings, OR match), `customFields` (key-value pairs queried via `json_extract()` on the `custom_fields` column)
-- [ ] Scope filtering excludes engrams with any `.secret.` scope segment unless `filters.includeSecret` is explicitly `true`
-- [ ] Results are returned as `RetrievalResult[]` with `matchType: 'structured'`, ordered by `modified_at` descending by default
-- [ ] The `limit` parameter caps results (default 20, max 100); an `offset` parameter supports pagination
-- [ ] Results include full metadata from the index: `type`, `source`, `status`, `scopes` (from junction table), `tags` (from junction table), `created_at`, `modified_at`, `word_count`, and `custom_fields`
-- [ ] Orphaned index entries (`status: orphaned`) are excluded from results unless explicitly included via `status: ['orphaned']`
-- [ ] A query with no filters and no query text returns a validation error — at least one filter must be provided
+- [x] A `StructuredQueryService` accepts a filters object and builds a parameterised SQL query against `engram_index` and its junction tables (`engram_scopes`, `engram_tags`)
+- [x] Supported filters: `types` (array of type strings, OR match), `scopes` (array of scope prefixes, OR match using `LIKE 'prefix%'`), `tags` (array of tag strings, AND match — engram must have all specified tags), `dateRange` (from/to ISO 8601 strings filtering on `created_at`), `status` (array of status strings, OR match), `customFields` (key-value pairs queried via `json_extract()` on the `custom_fields` column)
+- [x] Scope filtering excludes engrams with any `.secret.` scope segment unless `filters.includeSecret` is explicitly `true`
+- [x] Results are returned as `RetrievalResult[]` with `matchType: 'structured'`, ordered by `modified_at` descending by default
+- [x] The `limit` parameter caps results (default 20, max 100); an `offset` parameter supports pagination
+- [x] Results include full metadata from the index: `type`, `source`, `status`, `scopes` (from junction table), `tags` (from junction table), `created_at`, `modified_at`, `word_count`, and `custom_fields`
+- [x] Orphaned index entries (`status: orphaned`) are excluded from results unless explicitly included via `status: ['orphaned']`
+- [x] A query with no filters and no query text returns a validation error — at least one filter must be provided
 
 ## Notes
 

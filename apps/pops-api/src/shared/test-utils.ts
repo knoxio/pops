@@ -580,6 +580,19 @@ export function createTestDb(): Database {
     CREATE UNIQUE INDEX IF NOT EXISTS uq_engram_links_pair ON engram_links(source_id, target_id);
     CREATE INDEX IF NOT EXISTS idx_engram_links_target ON engram_links(target_id);
 
+    CREATE TABLE IF NOT EXISTS embeddings (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      source_type   TEXT NOT NULL,
+      source_id     TEXT NOT NULL,
+      chunk_index   INTEGER NOT NULL DEFAULT 0,
+      content_preview TEXT NOT NULL DEFAULT '',
+      content_hash  TEXT NOT NULL DEFAULT '',
+      created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE UNIQUE INDEX IF NOT EXISTS uq_embeddings_chunk
+      ON embeddings(source_type, source_id, chunk_index);
+    CREATE INDEX IF NOT EXISTS idx_embeddings_source ON embeddings(source_type, source_id);
+
     CREATE TABLE IF NOT EXISTS rotation_log (
       id                    INTEGER PRIMARY KEY AUTOINCREMENT,
       executed_at           TEXT    NOT NULL,

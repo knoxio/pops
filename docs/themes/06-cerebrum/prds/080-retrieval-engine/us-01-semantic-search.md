@@ -1,7 +1,7 @@
 # US-01: Semantic Search
 
 > PRD: [PRD-080: Retrieval Engine](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,14 +9,14 @@ As a system querying Thalamus, I want to submit a natural language query and rec
 
 ## Acceptance Criteria
 
-- [ ] A `SemanticSearchService` accepts a query string, embeds it using the same model and pipeline as content embeddings (PRD-076), and runs a k-NN query against the `embeddings_vec` virtual table
-- [ ] Results are returned as `RetrievalResult[]` ordered by ascending distance (closest = most relevant), including `sourceType`, `sourceId`, `title`, `contentPreview` (first 200 characters of the source content), `score` (normalised 0-1 where 1 is most relevant), and `distance` (raw cosine distance)
-- [ ] A configurable distance threshold (default 0.8) excludes results beyond the threshold — they are not included in the output
-- [ ] The `limit` parameter caps the number of results returned (default 20, max 100)
-- [ ] Results join back to `engram_index` (for engram sources) or the originating domain table (for cross-source data) to populate `title` and metadata
-- [ ] Orphaned index entries (`status: orphaned`) are excluded from results
-- [ ] An empty or whitespace-only query returns a validation error — no embedding API call is made
-- [ ] The query embedding is not persisted — it is used for the single k-NN query and discarded
+- [x] A `SemanticSearchService` accepts a query string, embeds it using the same model and pipeline as content embeddings (PRD-076), and runs a k-NN query against the `embeddings_vec` virtual table
+- [x] Results are returned as `RetrievalResult[]` ordered by ascending distance (closest = most relevant), including `sourceType`, `sourceId`, `title`, `contentPreview` (first 200 characters of the source content), `score` (normalised 0-1 where 1 is most relevant), and `distance` (raw cosine distance)
+- [x] A configurable distance threshold (default 0.8) excludes results beyond the threshold — they are not included in the output
+- [x] The `limit` parameter caps the number of results returned (default 20, max 100)
+- [x] Results join back to `engram_index` (for engram sources) or the originating domain table (for cross-source data) to populate `title` and metadata
+- [x] Orphaned index entries (`status: orphaned`) are excluded from results
+- [x] An empty or whitespace-only query returns a validation error — no embedding API call is made
+- [x] The query embedding is not persisted — it is used for the single k-NN query and discarded
 
 ## Notes
 
