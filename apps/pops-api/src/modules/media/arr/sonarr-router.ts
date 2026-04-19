@@ -7,6 +7,12 @@ import * as arrService from './service.js';
 import { SonarrClient } from './sonarr-client.js';
 import { ArrApiError } from './types.js';
 
+function describeArrError(err: unknown): string {
+  if (err instanceof ArrApiError) return err.message;
+  if (err instanceof Error) return err.message;
+  return String(err);
+}
+
 const TestConnectionInput = z.object({
   url: z.string().min(1),
   apiKey: z.string().min(1),
@@ -36,8 +42,7 @@ export const sonarrProcedures = {
         message: 'Sonarr connection successful',
       };
     } catch (err) {
-      const errorMsg =
-        err instanceof ArrApiError ? err.message : err instanceof Error ? err.message : String(err);
+      const errorMsg = describeArrError(err);
       return { data: { configured: true, connected: false, error: errorMsg } };
     }
   }),
@@ -71,8 +76,7 @@ export const sonarrProcedures = {
         message: 'Sonarr connection successful',
       };
     } catch (err) {
-      const errorMsg =
-        err instanceof ArrApiError ? err.message : err instanceof Error ? err.message : String(err);
+      const errorMsg = describeArrError(err);
       return { data: { configured: true, connected: false, error: errorMsg } };
     }
   }),

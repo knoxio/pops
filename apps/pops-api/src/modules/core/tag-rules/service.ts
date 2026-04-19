@@ -239,18 +239,18 @@ function suggestFromRules(
   for (const rule of rules) {
     if (rule.entityId && rule.entityId !== entityId) continue;
     const pattern = rule.descriptionPattern.toUpperCase();
-    const matches =
-      rule.matchType === 'exact'
-        ? normalized === pattern
-        : rule.matchType === 'contains'
-          ? normalized.includes(pattern)
-          : (() => {
-              try {
-                return new RegExp(rule.descriptionPattern, 'i').test(description);
-              } catch {
-                return false;
-              }
-            })();
+    let matches: boolean;
+    if (rule.matchType === 'exact') {
+      matches = normalized === pattern;
+    } else if (rule.matchType === 'contains') {
+      matches = normalized.includes(pattern);
+    } else {
+      try {
+        matches = new RegExp(rule.descriptionPattern, 'i').test(description);
+      } catch {
+        matches = false;
+      }
+    }
 
     if (!matches) continue;
     for (const tag of rule.tags) {

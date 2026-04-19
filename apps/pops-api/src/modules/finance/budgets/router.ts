@@ -37,8 +37,10 @@ export const budgetsRouter = router({
       const limit = input.limit ?? DEFAULT_LIMIT;
       const offset = input.offset ?? DEFAULT_OFFSET;
 
-      const activeFilter =
-        input.active === 'true' ? true : input.active === 'false' ? false : undefined;
+      let activeFilter: boolean | undefined;
+      if (input.active === 'true') activeFilter = true;
+      else if (input.active === 'false') activeFilter = false;
+      else activeFilter = undefined;
 
       const { rows, total } = service.listBudgets(
         input.search,

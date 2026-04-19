@@ -32,12 +32,10 @@ export const searchRouter = router({
       };
     } catch (err) {
       if (err instanceof TRPCError) throw err;
-      const message =
-        err instanceof TmdbApiError
-          ? `TMDB API error: ${err.message}`
-          : err instanceof Error
-            ? err.message
-            : 'Unknown error searching movies';
+      let message: string;
+      if (err instanceof TmdbApiError) message = `TMDB API error: ${err.message}`;
+      else if (err instanceof Error) message = err.message;
+      else message = 'Unknown error searching movies';
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message,
@@ -53,12 +51,10 @@ export const searchRouter = router({
       return { results };
     } catch (err) {
       if (err instanceof TRPCError) throw err;
-      const message =
-        err instanceof TvdbApiError
-          ? `TheTVDB API error: ${err.message}`
-          : err instanceof Error
-            ? err.message
-            : 'Unknown error searching TV shows';
+      let message: string;
+      if (err instanceof TvdbApiError) message = `TheTVDB API error: ${err.message}`;
+      else if (err instanceof Error) message = err.message;
+      else message = 'Unknown error searching TV shows';
       throw new TRPCError({
         code: 'INTERNAL_SERVER_ERROR',
         message,

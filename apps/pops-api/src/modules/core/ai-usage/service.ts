@@ -85,12 +85,10 @@ export function getHistory(startDate?: string, endDate?: string): AiUsageHistory
     conditions.push(lte(sql`DATE(${aiUsage.createdAt})`, endDate));
   }
 
-  const where =
-    conditions.length > 0
-      ? conditions.length === 1
-        ? conditions[0]
-        : and(...conditions)
-      : undefined;
+  let where;
+  if (conditions.length === 0) where = undefined;
+  else if (conditions.length === 1) where = conditions[0];
+  else where = and(...conditions);
 
   // Get daily aggregated stats
   const records = db

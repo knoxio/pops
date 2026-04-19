@@ -25,6 +25,12 @@ export function resolveApiKey(formKey: string, service: 'radarr' | 'sonarr'): st
   return (service === 'radarr' ? s.radarrApiKey : s.sonarrApiKey) ?? null;
 }
 
+function describeArrError(err: unknown): string {
+  if (err instanceof ArrApiError) return err.message;
+  if (err instanceof Error) return err.message;
+  return String(err);
+}
+
 export const radarrProcedures = {
   /** Get configuration state for both services. */
   getConfig: protectedProcedure.query(() => {
@@ -92,8 +98,7 @@ export const radarrProcedures = {
         message: 'Radarr connection successful',
       };
     } catch (err) {
-      const errorMsg =
-        err instanceof ArrApiError ? err.message : err instanceof Error ? err.message : String(err);
+      const errorMsg = describeArrError(err);
       return { data: { configured: true, connected: false, error: errorMsg } };
     }
   }),
@@ -127,8 +132,7 @@ export const radarrProcedures = {
         message: 'Radarr connection successful',
       };
     } catch (err) {
-      const errorMsg =
-        err instanceof ArrApiError ? err.message : err instanceof Error ? err.message : String(err);
+      const errorMsg = describeArrError(err);
       return { data: { configured: true, connected: false, error: errorMsg } };
     }
   }),

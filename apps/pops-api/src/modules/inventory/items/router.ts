@@ -43,9 +43,13 @@ export const inventoryRouter = router({
       const limit = input.limit ?? DEFAULT_LIMIT;
       const offset = input.offset ?? DEFAULT_OFFSET;
 
-      const inUse = input.inUse === 'true' ? true : input.inUse === 'false' ? false : undefined;
-      const deductible =
-        input.deductible === 'true' ? true : input.deductible === 'false' ? false : undefined;
+      const parseTriBool = (value: string | undefined): boolean | undefined => {
+        if (value === 'true') return true;
+        if (value === 'false') return false;
+        return undefined;
+      };
+      const inUse = parseTriBool(input.inUse);
+      const deductible = parseTriBool(input.deductible);
 
       const { rows, total, totalReplacementValue, totalResaleValue } = service.listInventoryItems({
         search: input.search,

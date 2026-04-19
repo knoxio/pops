@@ -71,12 +71,10 @@ function requirePlexClient(): PlexClient {
 }
 
 function bullmqJobToSyncJob(job: Job<SyncQueueJobData>): SyncJob {
-  const state =
-    job.finishedOn != null && !job.failedReason
-      ? 'completed'
-      : job.failedReason
-        ? 'failed'
-        : 'running';
+  let state: 'completed' | 'failed' | 'running';
+  if (job.finishedOn != null && !job.failedReason) state = 'completed';
+  else if (job.failedReason) state = 'failed';
+  else state = 'running';
   const progress = (job.progress ?? {
     processed: 0,
     total: 0,

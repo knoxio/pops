@@ -152,6 +152,12 @@ export function getTierListMovies(dimensionId: number): TierListMovie[] {
   return selected.map(toTierListMovie);
 }
 
+function getMoviePosterUrl(override: string | null, tmdbId: number | null): string | null {
+  if (override) return override;
+  if (tmdbId) return `/media/images/movie/${tmdbId}/poster.jpg`;
+  return null;
+}
+
 function toTierListMovie(row: {
   mediaId: number;
   title: string;
@@ -166,11 +172,7 @@ function toTierListMovie(row: {
     title: row.title,
     // Always generate the URL when tmdbId is available — the images endpoint
     // handles the case where poster_path is null by fetching from TMDB on demand.
-    posterUrl: row.moviePosterOverride
-      ? row.moviePosterOverride
-      : row.movieTmdbId
-        ? `/media/images/movie/${row.movieTmdbId}/poster.jpg`
-        : null,
+    posterUrl: getMoviePosterUrl(row.moviePosterOverride, row.movieTmdbId),
     score: Math.round(row.score * 10) / 10,
     comparisonCount: row.comparisonCount,
   };

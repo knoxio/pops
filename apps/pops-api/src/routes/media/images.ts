@@ -188,8 +188,10 @@ router.get('/media/images/:mediaType/:id/:filename', async (req, res): Promise<v
     const db = getDb();
     const table = mediaType === 'movie' ? 'movies' : 'tv_shows';
     const idColumn = mediaType === 'movie' ? 'tmdb_id' : 'tvdb_id';
-    const pathColumn =
-      imageType === 'poster' ? 'poster_path' : imageType === 'logo' ? 'logo_path' : 'backdrop_path';
+    let pathColumn: string;
+    if (imageType === 'poster') pathColumn = 'poster_path';
+    else if (imageType === 'logo') pathColumn = 'logo_path';
+    else pathColumn = 'backdrop_path';
 
     const record = db
       .prepare(`SELECT ${pathColumn} AS path FROM ${table} WHERE ${idColumn} = ?`)

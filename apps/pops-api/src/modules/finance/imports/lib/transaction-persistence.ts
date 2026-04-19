@@ -259,12 +259,10 @@ export function commitImport(payload: CommitPayload): CommitResult {
         : txn.entityId;
 
       try {
-        const type =
-          txn.transactionType === 'transfer'
-            ? 'Transfer'
-            : txn.transactionType === 'income'
-              ? 'Income'
-              : 'Expense';
+        let type: 'Transfer' | 'Income' | 'Expense';
+        if (txn.transactionType === 'transfer') type = 'Transfer';
+        else if (txn.transactionType === 'income') type = 'Income';
+        else type = 'Expense';
 
         insertTransaction({
           description: txn.description,
@@ -372,13 +370,11 @@ function reclassifyExistingTransactions(
 
       const rule = match.correction;
       const newEntityId = rule.entityId ?? null;
-      const newType = rule.transactionType
-        ? rule.transactionType === 'transfer'
-          ? 'Transfer'
-          : rule.transactionType === 'income'
-            ? 'Income'
-            : 'Expense'
-        : null;
+      let newType: 'Transfer' | 'Income' | 'Expense' | null;
+      if (!rule.transactionType) newType = null;
+      else if (rule.transactionType === 'transfer') newType = 'Transfer';
+      else if (rule.transactionType === 'income') newType = 'Income';
+      else newType = 'Expense';
       const newLocation = rule.location ?? null;
 
       // Check if classification actually changed

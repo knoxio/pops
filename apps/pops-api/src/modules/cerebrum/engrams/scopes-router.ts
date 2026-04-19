@@ -129,14 +129,18 @@ function toTrpcError(err: unknown): never {
   }
   if (err instanceof ValidationError) {
     const details = err.details;
-    const message =
-      typeof details === 'string'
-        ? details
-        : typeof details === 'object' &&
-            details !== null &&
-            typeof (details as { message?: unknown }).message === 'string'
-          ? (details as { message: string }).message
-          : err.message;
+    let message: string;
+    if (typeof details === 'string') {
+      message = details;
+    } else if (
+      typeof details === 'object' &&
+      details !== null &&
+      typeof (details as { message?: unknown }).message === 'string'
+    ) {
+      message = (details as { message: string }).message;
+    } else {
+      message = err.message;
+    }
     throw new TRPCError({ code: 'BAD_REQUEST', message, cause: err });
   }
   if (err instanceof HttpError) {

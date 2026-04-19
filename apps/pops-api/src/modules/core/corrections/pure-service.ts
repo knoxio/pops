@@ -31,7 +31,12 @@ export function findAllMatchingCorrectionFromRules(
   const normalized = normalizeDescription(description);
   const eligible = rules
     .filter((r) => r.isActive && r.confidence >= minConfidence)
-    .toSorted((a, b) => a.priority - b.priority || (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+    .toSorted((a, b) => {
+      if (a.priority !== b.priority) return a.priority - b.priority;
+      if (a.id < b.id) return -1;
+      if (a.id > b.id) return 1;
+      return 0;
+    });
 
   return eligible.filter((rule) => ruleMatchesDescription(rule, normalized));
 }

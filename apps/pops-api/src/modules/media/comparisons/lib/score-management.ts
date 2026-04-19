@@ -65,11 +65,14 @@ export function updateEloScores(input: RecordComparisonInput): { deltaA: number;
 
   const isDraw = input.winnerId === 0;
   const drawOutcome = isDraw ? drawTierOutcome(input.drawTier) : 0.5;
-  const actualA = isDraw
-    ? drawOutcome
-    : input.winnerType === input.mediaAType && input.winnerId === input.mediaAId
-      ? 1
-      : 0;
+  let actualA: number;
+  if (isDraw) {
+    actualA = drawOutcome;
+  } else if (input.winnerType === input.mediaAType && input.winnerId === input.mediaAId) {
+    actualA = 1;
+  } else {
+    actualA = 0;
+  }
   const actualB = isDraw ? drawOutcome : 1 - actualA;
 
   const newScoreA = scoreA.score + ELO_K * (actualA - expectedA);

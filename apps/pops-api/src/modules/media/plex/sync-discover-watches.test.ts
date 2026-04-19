@@ -140,8 +140,10 @@ function makePlexClient(overrides: Partial<PlexClient> = {}): PlexClient {
 
 function mockFetchResponses(responses: Array<{ url: string; body: unknown }>): void {
   vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
-    const url =
-      typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+    let url: string;
+    if (typeof input === 'string') url = input;
+    else if (input instanceof URL) url = input.toString();
+    else url = input.url;
     for (const r of responses) {
       if (url.includes(r.url)) {
         return new Response(JSON.stringify(r.body), {
