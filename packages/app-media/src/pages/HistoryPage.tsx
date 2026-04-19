@@ -56,6 +56,12 @@ function formatShortDate(iso: string): string {
   });
 }
 
+function getEmptyHistoryMessage(filter: MediaTypeFilter): string {
+  if (filter === 'all') return 'No watch history yet. Start watching something!';
+  if (filter === 'movie') return 'No movies in your history.';
+  return 'No episodes in your history.';
+}
+
 function HistorySkeleton() {
   return (
     <>
@@ -421,11 +427,7 @@ export function HistoryPage() {
         if (entries.length === 0) {
           return (
             <div className="text-center py-16">
-              <p className="text-muted-foreground">
-                {filter === 'all'
-                  ? 'No watch history yet. Start watching something!'
-                  : `No ${filter === 'movie' ? 'movies' : 'episodes'} in your history.`}
-              </p>
+              <p className="text-muted-foreground">{getEmptyHistoryMessage(filter)}</p>
               <Link to="/media" className="mt-4 inline-block text-sm text-primary underline">
                 Browse library
               </Link>

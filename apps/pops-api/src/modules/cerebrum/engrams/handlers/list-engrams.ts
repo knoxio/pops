@@ -66,10 +66,11 @@ export function listEngrams(
   const where = conditions.length === 0 ? undefined : and(...conditions);
   const sortField = opts.sort?.field ?? 'modified_at';
   const sortDir = opts.sort?.direction ?? 'desc';
-  let orderColumn;
-  if (sortField === 'title') orderColumn = engramIndex.title;
-  else if (sortField === 'created_at') orderColumn = engramIndex.createdAt;
-  else orderColumn = engramIndex.modifiedAt;
+  const orderColumn = (() => {
+    if (sortField === 'title') return engramIndex.title;
+    if (sortField === 'created_at') return engramIndex.createdAt;
+    return engramIndex.modifiedAt;
+  })();
 
   const limit = opts.ids && opts.limit === undefined ? opts.ids.length : (opts.limit ?? 50);
   const offset = opts.offset ?? 0;
