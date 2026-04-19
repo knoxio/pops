@@ -207,21 +207,68 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       last_edited_time TEXT NOT NULL
     );
 
-    CREATE TABLE IF NOT EXISTS ai_usage (
+    CREATE TABLE IF NOT EXISTS ai_inference_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      description TEXT NOT NULL,
-      entity_name TEXT,
-      category TEXT,
-      input_tokens INTEGER NOT NULL,
-      output_tokens INTEGER NOT NULL,
-      cost_usd REAL NOT NULL,
+      provider TEXT NOT NULL DEFAULT 'claude',
+      model TEXT NOT NULL DEFAULT 'claude-haiku-4-5-20251001',
+      operation TEXT NOT NULL DEFAULT 'entity-match',
+      domain TEXT DEFAULT NULL,
+      input_tokens INTEGER NOT NULL DEFAULT 0,
+      output_tokens INTEGER NOT NULL DEFAULT 0,
+      cost_usd REAL NOT NULL DEFAULT 0,
+      latency_ms INTEGER NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'success',
       cached INTEGER NOT NULL DEFAULT 0,
-      import_batch_id TEXT,
+      context_id TEXT,
+      error_message TEXT,
+      metadata TEXT,
       created_at TEXT NOT NULL
     );
 
-    CREATE INDEX IF NOT EXISTS idx_ai_usage_created_at ON ai_usage(created_at);
-    CREATE INDEX IF NOT EXISTS idx_ai_usage_batch ON ai_usage(import_batch_id);
+    CREATE INDEX IF NOT EXISTS idx_ai_inference_log_created_at ON ai_inference_log(created_at);
+    CREATE INDEX IF NOT EXISTS idx_ai_inference_log_provider_model ON ai_inference_log(provider, model);
+    CREATE INDEX IF NOT EXISTS idx_ai_inference_log_operation ON ai_inference_log(operation);
+    CREATE INDEX IF NOT EXISTS idx_ai_inference_log_domain ON ai_inference_log(domain);
+    CREATE INDEX IF NOT EXISTS idx_ai_inference_log_context_id ON ai_inference_log(context_id);
+    CREATE INDEX IF NOT EXISTS idx_ai_inference_log_status ON ai_inference_log(status);
+
+    CREATE TABLE IF NOT EXISTS ai_providers (
+      id TEXT PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL,
+      base_url TEXT,
+      api_key_ref TEXT,
+      status TEXT NOT NULL DEFAULT 'active',
+      last_health_check TEXT,
+      last_latency_ms INTEGER,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS ai_model_pricing (
+      id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+      provider_id TEXT NOT NULL,
+      model_id TEXT NOT NULL,
+      display_name TEXT,
+      input_cost_per_mtok REAL NOT NULL DEFAULT 0,
+      output_cost_per_mtok REAL NOT NULL DEFAULT 0,
+      context_window INTEGER,
+      is_default INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE(provider_id, model_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS ai_budgets (
+      id TEXT PRIMARY KEY NOT NULL,
+      scope_type TEXT NOT NULL,
+      scope_value TEXT,
+      monthly_token_limit INTEGER,
+      monthly_cost_limit REAL,
+      action TEXT NOT NULL DEFAULT 'warn',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
 
     CREATE TABLE IF NOT EXISTS transaction_corrections (
       id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
@@ -680,6 +727,17 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
   db.exec(`
     INSERT OR IGNORE INTO rotation_sources (id, type, name, priority, enabled)
     VALUES (1, 'manual', 'Manual Queue', 8, 1)
+  `);
+
+  // Seed Claude provider and default model pricing (PRD-092 US-01).
+  db.exec(`
+    INSERT OR IGNORE INTO ai_providers (id, name, type, api_key_ref, status, created_at, updated_at)
+    VALUES ('claude', 'Anthropic Claude', 'cloud', 'anthropic.apiKey', 'active', datetime('now'), datetime('now'));
+
+    INSERT OR IGNORE INTO ai_model_pricing (provider_id, model_id, display_name, input_cost_per_mtok, output_cost_per_mtok, context_window, is_default, created_at, updated_at) VALUES
+      ('claude', 'claude-haiku-4-5-20251001', 'Claude Haiku 4.5', 1.0, 5.0, 200000, 1, datetime('now'), datetime('now')),
+      ('claude', 'claude-sonnet-4-20250514', 'Claude Sonnet 4', 3.0, 15.0, 200000, 0, datetime('now'), datetime('now')),
+      ('claude', 'claude-opus-4-20250514', 'Claude Opus 4', 15.0, 75.0, 200000, 0, datetime('now'), datetime('now'));
   `);
 
   // Seed tag vocabulary (v1) for brand-new databases.

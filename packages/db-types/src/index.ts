@@ -7,6 +7,10 @@
  */
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 
+import type { aiBudgets } from './schema/ai-budgets.js';
+import type { aiInferenceLog } from './schema/ai-inference-log.js';
+import type { aiModelPricing } from './schema/ai-model-pricing.js';
+import type { aiProviders } from './schema/ai-providers.js';
 import type { aiUsage } from './schema/ai-usage.js';
 import type { budgets } from './schema/budgets.js';
 import type { comparisonDimensions } from './schema/comparison-dimensions.js';
@@ -50,6 +54,10 @@ import type { wishList } from './schema/wishlist.js';
 
 // Re-export Drizzle table objects for use in queries
 export {
+  aiBudgets,
+  aiInferenceLog,
+  aiModelPricing,
+  aiProviders,
   aiUsage,
   embeddings,
   budgets,
@@ -105,6 +113,14 @@ export type TransactionCorrectionRow = InferSelectModel<typeof transactionCorrec
 export type TagVocabularyRow = InferSelectModel<typeof tagVocabulary>;
 export type TransactionTagRuleRow = InferSelectModel<typeof transactionTagRules>;
 export type AiUsageRow = InferSelectModel<typeof aiUsage>;
+export type AiInferenceLogRow = InferSelectModel<typeof aiInferenceLog>;
+export type AiInferenceLogInsert = InferInsertModel<typeof aiInferenceLog>;
+export type AiProviderRow = InferSelectModel<typeof aiProviders>;
+export type AiProviderInsert = InferInsertModel<typeof aiProviders>;
+export type AiModelPricingRow = InferSelectModel<typeof aiModelPricing>;
+export type AiModelPricingInsert = InferInsertModel<typeof aiModelPricing>;
+export type AiBudgetRow = InferSelectModel<typeof aiBudgets>;
+export type AiBudgetInsert = InferInsertModel<typeof aiBudgets>;
 export type EmbeddingRow = InferSelectModel<typeof embeddings>;
 export type EmbeddingInsert = InferInsertModel<typeof embeddings>;
 export type EnvironmentRow = InferSelectModel<typeof environments>;

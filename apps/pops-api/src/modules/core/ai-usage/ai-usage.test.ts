@@ -33,7 +33,6 @@ describe('aiUsage.getStats', () => {
 
   it('returns correct stats for a single entry', async () => {
     seedAiUsage(db, {
-      description: 'Categorise Woolworths',
       input_tokens: 150,
       output_tokens: 25,
       cost_usd: 0.003,

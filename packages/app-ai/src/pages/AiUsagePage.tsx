@@ -1,14 +1,19 @@
-import { Database, Trash2 } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock,
+  Database,
+  RefreshCw,
+  Server,
+  Trash2,
+} from 'lucide-react';
 import { useState } from 'react';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import { toast } from 'sonner';
 
-/**
- * AI Usage page - view AI categorization costs and usage
- */
-import { DataTable, DateInput, SortableHeader, StatCard } from '@pops/ui';
+import { DataTable, DateInput, PageHeader, SortableHeader, StatCard } from '@pops/ui';
 import { Badge, Button, Input, Label } from '@pops/ui';
-import { Alert, PageHeader } from '@pops/ui';
+import { Alert } from '@pops/ui';
 import { Skeleton } from '@pops/ui';
 import { Card } from '@pops/ui';
 import {
@@ -92,9 +97,7 @@ function CacheManagement() {
               min={1}
               max={365}
               value={staleDays}
-              onChange={(e) => {
-                setStaleDays(Number(e.target.value) || 30);
-              }}
+              onChange={(e) => setStaleDays(Number(e.target.value) || 30)}
               className="w-16 h-8 px-2 py-1 text-sm text-center"
             />
             <span className="text-sm text-muted-foreground">days</span>
@@ -102,9 +105,7 @@ function CacheManagement() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              clearStaleMutation.mutate({ maxAgeDays: staleDays });
-            }}
+            onClick={() => clearStaleMutation.mutate({ maxAgeDays: staleDays })}
             disabled={clearStaleMutation.isPending || (cacheStats?.totalEntries ?? 0) === 0}
           >
             Clear Stale
@@ -127,8 +128,7 @@ function CacheManagement() {
                 <AlertDialogTitle>Clear entire AI cache?</AlertDialogTitle>
                 <AlertDialogDescription>
                   This will remove all {cacheStats?.totalEntries.toLocaleString() ?? 0} cached
-                  categorization results. Future transactions will require new API calls, which will
-                  incur additional costs.
+                  categorization results. Future transactions will require new API calls.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -136,9 +136,7 @@ function CacheManagement() {
                 <AlertDialogAction
                   variant="ghost"
                   className="text-destructive hover:text-destructive"
-                  onClick={() => {
-                    clearAllMutation.mutate();
-                  }}
+                  onClick={() => clearAllMutation.mutate()}
                 >
                   Clear All
                 </AlertDialogAction>
@@ -151,14 +149,23 @@ function CacheManagement() {
   );
 }
 
-function DailyCostChart({ data }: { data: AiUsageRecord[] }) {
-  // Sort ascending for chart display (oldest first)
+interface HistoryRecord {
+  date: string;
+  calls: number;
+  inputTokens: number;
+  outputTokens: number;
+  costUsd: number;
+  cacheHits: number;
+  errors: number;
+}
+
+function DailyCostChart({ data }: { data: HistoryRecord[] }) {
   const chartData = [...data]
     .toSorted((a, b) => a.date.localeCompare(b.date))
     .map((d) => ({
       date: new Date(d.date).toLocaleDateString('en-AU', { day: '2-digit', month: 'short' }),
-      cost: d.cost,
-      apiCalls: d.apiCalls,
+      cost: d.costUsd,
+      calls: d.calls,
     }));
 
   if (chartData.length === 0) return null;
@@ -166,7 +173,7 @@ function DailyCostChart({ data }: { data: AiUsageRecord[] }) {
   return (
     <Card className="p-4">
       <h3 className="font-semibold mb-4">Daily Cost</h3>
-      <ResponsiveContainer width="100%" height={250}>
+      <ResponsiveContainer width="100%" height={220}>
         <BarChart data={chartData} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
           <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
           <XAxis
@@ -187,12 +194,12 @@ function DailyCostChart({ data }: { data: AiUsageRecord[] }) {
           <Tooltip
             content={({ active, payload }) => {
               if (!active || !payload?.length) return null;
-              const item = payload[0]?.payload as { date: string; cost: number; apiCalls: number };
+              const item = payload[0]?.payload as { date: string; cost: number; calls: number };
               return (
                 <div className="rounded-lg border bg-background p-2 shadow-md text-sm">
                   <p className="font-medium">{item.date}</p>
                   <p className="text-amber-600">Cost: ${item.cost.toFixed(4)}</p>
-                  <p className="text-muted-foreground">{item.apiCalls} API calls</p>
+                  <p className="text-muted-foreground">{item.calls} calls</p>
                 </div>
               );
             }}
@@ -204,113 +211,349 @@ function DailyCostChart({ data }: { data: AiUsageRecord[] }) {
   );
 }
 
-interface AiUsageRecord {
-  date: string;
-  apiCalls: number;
-  cacheHits: number;
-  inputTokens: number;
-  outputTokens: number;
-  cost: number;
+function ProviderStatusSection() {
+  const utils = trpc.useUtils();
+  const { data: providers, isLoading } = trpc.core.aiProviders.list.useQuery();
+
+  const healthCheckMutation = trpc.core.aiProviders.healthCheck.useMutation({
+    onSuccess: (result) => {
+      if (result.status === 'active') {
+        toast.success(`Provider healthy (${result.latencyMs}ms)`);
+      } else {
+        toast.error(`Provider unhealthy: ${result.error ?? 'unknown error'}`);
+      }
+      void utils.core.aiProviders.list.invalidate();
+    },
+    onError: () => toast.error('Health check failed'),
+  });
+
+  if (isLoading) return <Skeleton className="h-32" />;
+  if (!providers?.length) return null;
+
+  return (
+    <div className="space-y-3">
+      <h2 className="text-xl font-semibold">Providers</h2>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {providers.map((p) => (
+          <Card key={p.id} className="p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Server className="h-4 w-4 text-muted-foreground shrink-0" />
+                <div>
+                  <p className="font-medium text-sm">{p.name}</p>
+                  <p className="text-xs text-muted-foreground capitalize">{p.type}</p>
+                </div>
+              </div>
+              <Badge
+                variant={p.status === 'active' ? 'default' : 'destructive'}
+                className="shrink-0"
+              >
+                {p.status === 'active' ? (
+                  <CheckCircle2 className="mr-1 h-3 w-3" />
+                ) : (
+                  <AlertCircle className="mr-1 h-3 w-3" />
+                )}
+                {p.status}
+              </Badge>
+            </div>
+            <div className="mt-3 flex items-center justify-between">
+              <div className="text-xs text-muted-foreground">
+                {p.models.length} model{p.models.length !== 1 ? 's' : ''}
+                {p.lastLatencyMs != null && ` · ${p.lastLatencyMs}ms`}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-7 text-xs"
+                onClick={() => healthCheckMutation.mutate({ providerId: p.id })}
+                disabled={healthCheckMutation.isPending}
+              >
+                <RefreshCw className="mr-1 h-3 w-3" />
+                Check
+              </Button>
+            </div>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BudgetStatusSection() {
+  const { data: budgetStatuses, isLoading } = trpc.core.aiBudgets.getBudgetStatus.useQuery();
+
+  if (isLoading) return <Skeleton className="h-24" />;
+  if (!budgetStatuses?.length) return null;
+
+  return (
+    <div className="space-y-3">
+      <h2 className="text-xl font-semibold">Budgets</h2>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {budgetStatuses.map((b) => {
+          const pct = b.percentageUsed ?? 0;
+          const barColor =
+            pct >= 80 ? 'bg-destructive' : pct >= 60 ? 'bg-amber-500' : 'bg-emerald-500';
+          return (
+            <Card key={b.id} className="p-4 space-y-2">
+              <div className="flex items-center justify-between">
+                <p className="font-medium text-sm capitalize">
+                  {b.scopeValue ? `${b.scopeType}: ${b.scopeValue}` : b.scopeType}
+                </p>
+                <Badge variant="outline" className="text-xs">
+                  {b.action}
+                </Badge>
+              </div>
+              <div className="w-full bg-muted rounded-full h-2">
+                <div
+                  className={`h-2 rounded-full transition-all ${barColor}`}
+                  style={{ width: `${Math.min(pct, 100)}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>
+                  {b.monthlyCostLimit != null
+                    ? `$${b.currentCostUsage.toFixed(4)} / $${b.monthlyCostLimit.toFixed(2)}`
+                    : b.monthlyTokenLimit != null
+                      ? `${b.currentTokenUsage.toLocaleString()} / ${b.monthlyTokenLimit.toLocaleString()} tokens`
+                      : 'No limit'}
+                </span>
+                {b.projectedExhaustionDate && (
+                  <span className="text-amber-600">Exhausts {b.projectedExhaustionDate}</span>
+                )}
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function LatencySection({ startDate, endDate }: { startDate: string; endDate: string }) {
+  const filters = {
+    ...(startDate ? { startDate } : {}),
+    ...(endDate ? { endDate } : {}),
+  };
+  const { data: latency, isLoading } = trpc.core.aiObservability.getLatencyStats.useQuery(filters);
+
+  if (isLoading) return <Skeleton className="h-40" />;
+  if (!latency) return null;
+
+  const hasData = latency.p50 > 0 || latency.p95 > 0;
+  if (!hasData && latency.slowQueries.length === 0) return null;
+
+  return (
+    <div className="space-y-3">
+      <h2 className="text-xl font-semibold">Latency</h2>
+      {hasData && (
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+          {[
+            { label: 'P50', value: latency.p50 },
+            { label: 'P75', value: latency.p75 },
+            { label: 'P95', value: latency.p95 },
+            { label: 'P99', value: latency.p99 },
+          ].map(({ label, value }) => (
+            <Card key={label} className="p-4 text-center">
+              <p className="text-xs text-muted-foreground">{label}</p>
+              <p className="text-2xl font-semibold tabular-nums">{value.toLocaleString()}</p>
+              <p className="text-xs text-muted-foreground">ms</p>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {latency.slowQueries.length > 0 && (
+        <Card className="p-4 space-y-3">
+          <h3 className="font-semibold text-sm flex items-center gap-2">
+            <Clock className="h-4 w-4 text-amber-500" />
+            Slow Queries
+          </h3>
+          <div className="space-y-2">
+            {latency.slowQueries.map((q) => (
+              <div key={q.id} className="flex items-center justify-between text-sm">
+                <div>
+                  <span className="font-mono text-xs text-muted-foreground">{q.model}</span>
+                  <span className="mx-2 text-muted-foreground">·</span>
+                  <span className="text-muted-foreground">{q.operation}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  {q.contextId && (
+                    <span className="text-xs text-muted-foreground font-mono">
+                      {q.contextId.slice(0, 8)}…
+                    </span>
+                  )}
+                  <Badge variant="destructive" className="tabular-nums">
+                    {q.latencyMs.toLocaleString()}ms
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function BreakdownTable({
+  title,
+  data,
+}: {
+  title: string;
+  data: {
+    key: string;
+    calls: number;
+    inputTokens: number;
+    outputTokens: number;
+    costUsd: number;
+  }[];
+}) {
+  type Row = (typeof data)[number];
+  const columns: ColumnDef<Row>[] = [
+    {
+      accessorKey: 'key',
+      header: title,
+      cell: ({ row }) => <span className="font-mono text-sm">{row.original.key}</span>,
+    },
+    {
+      accessorKey: 'calls',
+      header: ({ column }) => (
+        <div className="flex justify-end">
+          <SortableHeader column={column}>Calls</SortableHeader>
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="text-right tabular-nums">{row.original.calls.toLocaleString()}</div>
+      ),
+    },
+    {
+      id: 'tokens',
+      header: () => <div className="text-right">Tokens</div>,
+      cell: ({ row }) => (
+        <div className="text-right text-sm tabular-nums text-muted-foreground">
+          {(row.original.inputTokens + row.original.outputTokens).toLocaleString()}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'costUsd',
+      header: ({ column }) => (
+        <div className="flex justify-end">
+          <SortableHeader column={column}>Cost</SortableHeader>
+        </div>
+      ),
+      cell: ({ row }) => (
+        <div className="text-right font-mono font-medium tabular-nums">
+          ${row.original.costUsd.toFixed(4)}
+        </div>
+      ),
+    },
+  ];
+
+  if (data.length === 0) return null;
+
+  return (
+    <div className="space-y-2">
+      <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+        By {title}
+      </h3>
+      <DataTable columns={columns} data={data} />
+    </div>
+  );
 }
 
 export function AiUsagePage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
-  // Fetch overall stats
+  const filters = {
+    ...(startDate ? { startDate } : {}),
+    ...(endDate ? { endDate } : {}),
+  };
+
   const {
     data: stats,
     isLoading: statsLoading,
     error: statsError,
-  } = trpc.core.aiUsage.getStats.useQuery();
+  } = trpc.core.aiObservability.getStats.useQuery(filters);
 
-  // Fetch usage history with date range filter
   const {
     data: history,
     isLoading: historyLoading,
     error: historyError,
-  } = trpc.core.aiUsage.getHistory.useQuery({
-    ...(startDate ? { startDate } : {}),
-    ...(endDate ? { endDate } : {}),
-  });
+  } = trpc.core.aiObservability.getHistory.useQuery(filters);
 
-  // Loading state
-  if (statsLoading || historyLoading) {
+  const { data: quality } = trpc.core.aiObservability.getQualityMetrics.useQuery(filters);
+
+  const isLoading = statsLoading || historyLoading;
+  const error = statsError ?? historyError;
+
+  if (isLoading) {
     return (
       <div className="space-y-6">
-        <PageHeader title="AI Usage" description="Track AI categorization costs and usage" />
-
+        <PageHeader
+          title="AI Observability"
+          description="Monitor AI usage, costs, latency, and provider health"
+        />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <Skeleton key={i} className="h-32" />
+          {(['cost', 'calls', 'cache', 'error'] as const).map((k) => (
+            <Skeleton key={k} className="h-32" />
           ))}
         </div>
-
-        <Skeleton className="h-96" />
+        <Skeleton className="h-64" />
       </div>
     );
   }
 
-  // Error state
-  if (statsError || historyError) {
+  if (error) {
     return (
       <div className="space-y-6">
-        <PageHeader title="AI Usage" />
+        <PageHeader title="AI Observability" />
         <Alert variant="destructive">
-          <h3 className="font-semibold">Failed to load AI usage data</h3>
-          <p className="text-sm mt-1">
-            {statsError?.message || historyError?.message || 'Unknown error'}
-          </p>
+          <h3 className="font-semibold">Failed to load observability data</h3>
+          <p className="text-sm mt-1">{error.message}</p>
         </Alert>
       </div>
     );
   }
 
-  // Define table columns
-  const columns: ColumnDef<AiUsageRecord>[] = [
+  const cacheHitPct = ((stats?.cacheHitRate ?? 0) * 100).toFixed(1);
+  const errorPct = ((stats?.errorRate ?? 0) * 100).toFixed(1);
+
+  const historyColumns: ColumnDef<HistoryRecord>[] = [
     {
       accessorKey: 'date',
       header: ({ column }) => <SortableHeader column={column}>Date</SortableHeader>,
-      cell: ({ row }) => {
-        const date = new Date(row.original.date);
-        return date.toLocaleDateString('en-AU', {
+      cell: ({ row }) =>
+        new Date(row.original.date).toLocaleDateString('en-AU', {
           day: '2-digit',
           month: 'short',
           year: 'numeric',
-        });
-      },
+        }),
     },
     {
-      accessorKey: 'apiCalls',
+      accessorKey: 'calls',
       header: ({ column }) => (
         <div className="flex justify-end">
-          <SortableHeader column={column}>API Calls</SortableHeader>
+          <SortableHeader column={column}>Calls</SortableHeader>
         </div>
       ),
       cell: ({ row }) => (
-        <div className="text-right font-mono tabular-nums">
-          {row.original.apiCalls.toLocaleString()}
-        </div>
+        <div className="text-right tabular-nums">{row.original.calls.toLocaleString()}</div>
       ),
     },
     {
       accessorKey: 'cacheHits',
-      header: ({ column }) => (
-        <div className="flex justify-end">
-          <SortableHeader column={column}>Cache Hits</SortableHeader>
-        </div>
-      ),
+      header: () => <div className="text-right">Cache Hits</div>,
       cell: ({ row }) => (
-        <div className="text-right font-mono tabular-nums">
-          {row.original.cacheHits.toLocaleString()}
-        </div>
+        <div className="text-right tabular-nums">{row.original.cacheHits.toLocaleString()}</div>
       ),
     },
     {
-      id: 'cacheHitRate',
-      header: () => <div className="text-right">Cache Hit Rate</div>,
+      id: 'cacheRate',
+      header: () => <div className="text-right">Hit Rate</div>,
       cell: ({ row }) => {
-        const total = row.original.apiCalls + row.original.cacheHits;
+        const total = row.original.calls + row.original.cacheHits;
         const rate = total > 0 ? (row.original.cacheHits / total) * 100 : 0;
         return (
           <div className="text-right">
@@ -323,11 +566,7 @@ export function AiUsagePage() {
     },
     {
       accessorKey: 'inputTokens',
-      header: ({ column }) => (
-        <div className="flex justify-end">
-          <SortableHeader column={column}>Input Tokens</SortableHeader>
-        </div>
-      ),
+      header: () => <div className="text-right">Input Tokens</div>,
       cell: ({ row }) => (
         <div className="text-right font-mono text-sm tabular-nums">
           {row.original.inputTokens.toLocaleString()}
@@ -336,11 +575,7 @@ export function AiUsagePage() {
     },
     {
       accessorKey: 'outputTokens',
-      header: ({ column }) => (
-        <div className="flex justify-end">
-          <SortableHeader column={column}>Output Tokens</SortableHeader>
-        </div>
-      ),
+      header: () => <div className="text-right">Output Tokens</div>,
       cell: ({ row }) => (
         <div className="text-right font-mono text-sm tabular-nums">
           {row.original.outputTokens.toLocaleString()}
@@ -348,7 +583,7 @@ export function AiUsagePage() {
       ),
     },
     {
-      accessorKey: 'cost',
+      accessorKey: 'costUsd',
       header: ({ column }) => (
         <div className="flex justify-end">
           <SortableHeader column={column}>Cost</SortableHeader>
@@ -356,80 +591,69 @@ export function AiUsagePage() {
       ),
       cell: ({ row }) => (
         <div className="text-right font-mono font-medium tabular-nums">
-          ${row.original.cost.toFixed(4)}
+          ${row.original.costUsd.toFixed(4)}
         </div>
       ),
     },
   ];
 
-  // Calculate cache hit rate
-  const totalRequests = (stats?.totalApiCalls ?? 0) + (stats?.totalCacheHits ?? 0);
-  const cacheHitRate = totalRequests > 0 ? (stats?.cacheHitRate ?? 0) * 100 : 0;
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <PageHeader
-        title="AI Usage"
-        description="Track AI categorization costs and usage across all imports"
+        title="AI Observability"
+        description="Monitor AI usage, costs, latency, and provider health"
       />
 
-      {/* Stats Cards */}
+      {/* KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Cost"
-          value={`$${(stats?.totalCost ?? 0).toFixed(4)}`}
-          description={
-            stats?.last30Days ? `$${stats.last30Days.cost.toFixed(4)} last 30 days` : undefined
-          }
+          value={`$${(stats?.totalCostUsd ?? 0).toFixed(4)}`}
+          description={`${(stats?.totalCalls ?? 0).toLocaleString()} total calls`}
           color="amber"
         />
-
         <StatCard
-          title="API Calls"
-          value={(stats?.totalApiCalls ?? 0).toLocaleString()}
-          description={
-            stats?.last30Days
-              ? `${stats.last30Days.apiCalls.toLocaleString()} last 30 days`
-              : undefined
-          }
+          title="Total Calls"
+          value={(stats?.totalCalls ?? 0).toLocaleString()}
+          description={`${((stats?.totalInputTokens ?? 0) + (stats?.totalOutputTokens ?? 0)).toLocaleString()} tokens`}
           color="indigo"
         />
-
         <StatCard
           title="Cache Hit Rate"
-          value={`${cacheHitRate.toFixed(1)}%`}
-          description={`${(stats?.totalCacheHits ?? 0).toLocaleString()} cached results`}
+          value={`${cacheHitPct}%`}
+          description="Calls served from cache"
           color="emerald"
         />
-
         <StatCard
-          title="Avg Cost/Call"
-          value={`$${(stats?.avgCostPerCall ?? 0).toFixed(5)}`}
-          description={`${((stats?.totalInputTokens ?? 0) + (stats?.totalOutputTokens ?? 0)).toLocaleString()} total tokens`}
-          color="sky"
+          title="Error Rate"
+          value={`${errorPct}%`}
+          description="Errors, timeouts, blocked"
+          color={Number(errorPct) > 5 ? 'rose' : 'sky'}
         />
       </div>
 
       {/* Cache Management */}
       <CacheManagement />
 
+      {/* Provider Status */}
+      <ProviderStatusSection />
+
+      {/* Budget Status */}
+      <BudgetStatusSection />
+
       {/* Date Range Filter */}
       <div className="flex flex-wrap items-center gap-3">
         <span className="text-sm font-medium">Date Range:</span>
         <DateInput
           value={startDate}
-          onChange={(e) => {
-            setStartDate(e.target.value);
-          }}
+          onChange={(e) => setStartDate(e.target.value)}
           size="sm"
           aria-label="Start date"
         />
         <span className="text-sm text-muted-foreground">to</span>
         <DateInput
           value={endDate}
-          onChange={(e) => {
-            setEndDate(e.target.value);
-          }}
+          onChange={(e) => setEndDate(e.target.value)}
           size="sm"
           aria-label="End date"
         />
@@ -450,22 +674,79 @@ export function AiUsagePage() {
       {/* Daily Cost Chart */}
       {history && history.records.length > 0 && <DailyCostChart data={history.records} />}
 
+      {/* Latency Section */}
+      <LatencySection startDate={startDate} endDate={endDate} />
+
+      {/* Breakdowns */}
+      {stats && (
+        <div className="space-y-6">
+          <h2 className="text-xl font-semibold">Breakdowns</h2>
+          <div className="grid gap-6 lg:grid-cols-2">
+            <BreakdownTable title="Provider" data={stats.byProvider} />
+            <BreakdownTable title="Model" data={stats.byModel} />
+            <BreakdownTable title="Operation" data={stats.byOperation} />
+            <BreakdownTable title="Domain" data={stats.byDomain} />
+          </div>
+        </div>
+      )}
+
+      {/* Quality Metrics */}
+      {quality && quality.byModel.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-xl font-semibold">Quality Metrics</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-left text-muted-foreground">
+                  <th className="pb-2 pr-4">Model</th>
+                  <th className="pb-2 px-4 text-right">Cache Hit</th>
+                  <th className="pb-2 px-4 text-right">Error Rate</th>
+                  <th className="pb-2 px-4 text-right">Timeout Rate</th>
+                  <th className="pb-2 pl-4 text-right">Avg Latency</th>
+                </tr>
+              </thead>
+              <tbody>
+                {quality.byModel.map((m) => (
+                  <tr key={`${m.provider}:${m.model}`} className="border-b last:border-0">
+                    <td className="py-2 pr-4 font-mono text-xs">{m.model}</td>
+                    <td className="py-2 px-4 text-right tabular-nums">
+                      {(m.cacheHitRate * 100).toFixed(1)}%
+                    </td>
+                    <td className="py-2 px-4 text-right tabular-nums">
+                      <span className={m.errorRate > 0.05 ? 'text-destructive' : ''}>
+                        {(m.errorRate * 100).toFixed(1)}%
+                      </span>
+                    </td>
+                    <td className="py-2 px-4 text-right tabular-nums">
+                      {(m.timeoutRate * 100).toFixed(1)}%
+                    </td>
+                    <td className="py-2 pl-4 text-right tabular-nums font-mono">
+                      {m.averageLatencyMs.toFixed(0)}ms
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Usage History Table */}
       {history && history.records.length > 0 ? (
         <div className="space-y-4">
           <div>
-            <h2 className="text-xl font-semibold">Daily Usage History</h2>
+            <h2 className="text-xl font-semibold">Daily History</h2>
             <p className="text-sm text-muted-foreground">
-              Showing {history.records.length} days • Total: ${history.summary.totalCost.toFixed(4)}
+              {history.records.length} days · Total: ${history.summary.totalCostUsd.toFixed(4)}
             </p>
           </div>
-          <DataTable columns={columns} data={history.records} />
+          <DataTable columns={historyColumns} data={history.records} />
         </div>
       ) : (
         <Card className="p-12 text-center">
           <p className="text-muted-foreground">No AI usage data yet</p>
           <p className="text-sm text-muted-foreground mt-2">
-            AI categorization data will appear here after importing transactions
+            AI observability data will appear here after the first AI call
           </p>
         </Card>
       )}

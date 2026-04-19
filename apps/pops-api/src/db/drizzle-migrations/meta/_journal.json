@@ -239,6 +239,20 @@
       "when": 1776600001000,
       "tag": "0033_embeddings_vec",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "6",
+      "when": 1745020800000,
+      "tag": "0034_ai_observability",
+      "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "6",
+      "when": 1745107200000,
+      "tag": "0035_ai_inference_log_drop_legacy_columns",
+      "breakpoints": true
     }
   ]
 }

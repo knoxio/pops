@@ -3,7 +3,7 @@ import { and, desc, gte, lte, sql } from 'drizzle-orm';
 /**
  * AI usage analytics service — Drizzle ORM
  */
-import { aiUsage } from '@pops/db-types';
+import { aiInferenceLog as aiUsage } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 
