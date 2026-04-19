@@ -126,12 +126,12 @@ Live status of every theme and epic. Updated as work completes.
 
 ### Cerebrum — Phase 1 (MVP)
 
-| Epic                          | Status      | Notes                                                                                                                         |
-| ----------------------------- | ----------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| Engram Storage (format, CRUD) | Done        | PRD-077 (format, templates, index schema, CRUD, tRPC, provisioning) + PRD-078 (scope model) complete                          |
-| Thalamus (indexing/retrieval) | Partial     | PRD-079 Done: file watcher, frontmatter sync, embedding trigger, cross-source indexer. PRD-080 (retrieval engine) not started |
-| Ingest (input pipeline)       | Not started | Manual, agent, capture channels + classification + scope inference                                                            |
-| Emit (output production)      | Not started | Query engine, document generation, proactive nudges                                                                           |
+| Epic                          | Status      | Notes                                                                                                         |
+| ----------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------- |
+| Engram Storage (format, CRUD) | Done        | PRD-077 (format, templates, index schema, CRUD, tRPC, provisioning) + PRD-078 (scope model) complete          |
+| Thalamus (indexing/retrieval) | Done        | PRD-079 (indexing/sync) + PRD-080 (retrieval engine: semantic, structured, hybrid, context assembly) complete |
+| Ingest (input pipeline)       | Not started | Manual, agent, capture channels + classification + scope inference                                            |
+| Emit (output production)      | Not started | Query engine, document generation, proactive nudges                                                           |
 
 ### Cerebrum — Phase 2 (Curation & Interface)
 

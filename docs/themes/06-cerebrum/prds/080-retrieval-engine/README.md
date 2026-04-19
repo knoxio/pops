@@ -1,7 +1,7 @@
 # PRD-080: Retrieval Engine
 
 > Epic: [01 — Thalamus](../../epics/01-thalamus.md)
-> Status: Not started
+> Status: Done
 
 ## Overview
 
@@ -57,12 +57,12 @@ Build the unified query layer that combines semantic search (vector k-NN via sql
 
 ## User Stories
 
-| #   | Story                                                   | Summary                                                                                  | Status      | Parallelisable          |
-| --- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ----------- | ----------------------- |
-| 01  | [us-01-semantic-search](us-01-semantic-search.md)       | Natural language query embedding and k-NN search with ranked results                     | Not started | No (first)              |
-| 02  | [us-02-structured-queries](us-02-structured-queries.md) | Filter engrams by type, scope, date range, tags, and custom fields via SQLite            | Not started | Yes                     |
-| 03  | [us-03-hybrid-search](us-03-hybrid-search.md)           | Combine semantic and structured search with reciprocal rank fusion                       | Not started | Blocked by us-01, us-02 |
-| 04  | [us-04-context-assembly](us-04-context-assembly.md)     | Assemble context windows for LLM consumption with token budgeting and source attribution | Not started | Blocked by us-03        |
+| #   | Story                                                   | Summary                                                                                  | Status | Parallelisable          |
+| --- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------ | ----------------------- |
+| 01  | [us-01-semantic-search](us-01-semantic-search.md)       | Natural language query embedding and k-NN search with ranked results                     | Done   | No (first)              |
+| 02  | [us-02-structured-queries](us-02-structured-queries.md) | Filter engrams by type, scope, date range, tags, and custom fields via SQLite            | Done   | Yes                     |
+| 03  | [us-03-hybrid-search](us-03-hybrid-search.md)           | Combine semantic and structured search with reciprocal rank fusion                       | Done   | Blocked by us-01, us-02 |
+| 04  | [us-04-context-assembly](us-04-context-assembly.md)     | Assemble context windows for LLM consumption with token budgeting and source attribution | Done   | Blocked by us-03        |
 
 US-01 and US-02 can parallelise. US-03 merges their outputs and requires both. US-04 builds on the unified search results from US-03.
 
