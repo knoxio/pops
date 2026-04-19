@@ -123,13 +123,13 @@ cp -r "${EXT}/engrams/." /opt/pops/engrams/
 
 ### Docker Volumes
 
-| Data            | Docker Volume          | Archive path        |
-| --------------- | ---------------------- | ------------------- |
-| SQLite database | `pops-sqlite-data`     | `sqlite/pops.db`    |
-| Paperless data  | `pops-paperless-data`  | `paperless/data/`   |
-| Paperless media | `pops-paperless-media` | `paperless/media/`  |
-| Metabase data   | `pops-metabase-data`   | `metabase/`         |
-| Engrams         | host: `/opt/pops/engrams/` | `engrams/`      |
+| Data            | Docker Volume              | Archive path       |
+| --------------- | -------------------------- | ------------------ |
+| SQLite database | `pops-sqlite-data`         | `sqlite/pops.db`   |
+| Paperless data  | `pops-paperless-data`      | `paperless/data/`  |
+| Paperless media | `pops-paperless-media`     | `paperless/media/` |
+| Metabase data   | `pops-metabase-data`       | `metabase/`        |
+| Engrams         | host: `/opt/pops/engrams/` | `engrams/`         |
 
 ### Redis
 
