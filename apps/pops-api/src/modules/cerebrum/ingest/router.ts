@@ -68,7 +68,7 @@ const inferScopesSchema = z.object({
   body: z.string().min(1),
   type: z.string().min(1),
   tags: z.array(z.string().min(1)).optional(),
-  source: z.string().min(1).optional(),
+  source: engramSourceSchema.optional(),
   explicitScopes: z.array(z.string().min(1)).optional(),
   knownScopes: z.array(z.string().min(1)).optional(),
 });

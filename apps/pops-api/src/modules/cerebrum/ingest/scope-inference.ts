@@ -78,9 +78,12 @@ function parseResponse(text: string): LlmScopeResponse {
   }
 }
 
-/** Validate and filter scopes; silently drop any that fail the schema. */
+/** Validate, normalise, and filter scopes; silently drop any that fail the schema. */
 function filterValidScopes(scopes: string[]): string[] {
-  return scopes.filter((s) => scopeStringSchema.safeParse(s).success);
+  return scopes.flatMap((s) => {
+    const result = scopeStringSchema.safeParse(s);
+    return result.success ? [result.data] : [];
+  });
 }
 
 function dedupeScopes(scopes: string[]): string[] {

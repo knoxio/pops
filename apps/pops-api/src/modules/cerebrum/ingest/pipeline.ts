@@ -81,7 +81,7 @@ export class IngestService {
       explicitScopes: input.scopes,
     });
 
-    // Stage 5: deduplication
+    // Stage 5: deduplication (hash is body-only; full-file hash checked post-write by EngramService)
     const contentHash = hashContent(body);
     const duplicate = findDuplicate(contentHash);
     if (duplicate) {
@@ -89,6 +89,9 @@ export class IngestService {
         { duplicateId: duplicate },
         '[IngestService] Duplicate content detected — skipping write'
       );
+      const engramService = getEngramService();
+      const { engram: existing } = engramService.read(duplicate);
+      return { engram: existing, classification, entities, scopeInference };
     }
 
     // Stage 6: write engram
