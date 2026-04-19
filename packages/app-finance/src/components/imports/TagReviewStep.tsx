@@ -1,69 +1,8 @@
-import { BookmarkPlus, ChevronDown, ChevronRight, X } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { toast } from 'sonner';
-
-import { trpc } from '@pops/api-client';
 import { Button } from '@pops/ui';
-import { Badge } from '@pops/ui';
 
-import { cn } from '../../lib/utils';
-import { useImportStore } from '../../store/importStore';
-import { TagEditor, type TagMetaEntry } from '../TagEditor';
-import { TagRuleProposalDialog, type TagRuleLearnSignal } from './TagRuleProposalDialog';
-
-import type { TagRuleChangeSet, TagRuleImpactItem } from '@pops/api/modules/core/tag-rules/types';
-import type { ConfirmedTransaction, SuggestedTag } from '@pops/api/modules/finance/imports';
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-/** Group of confirmed transactions sharing the same entity */
-interface ConfirmedGroup {
-  entityName: string;
-  transactions: ConfirmedTransaction[];
-}
-
-/** State driving the TagRuleProposalDialog — null when dialog is closed. */
-interface TagRuleDialogState {
-  signal: TagRuleLearnSignal;
-  groupEntityName: string;
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Group confirmed transactions by entity name, sorting alphabetically */
-function groupByEntity(transactions: ConfirmedTransaction[]): ConfirmedGroup[] {
-  const map = new Map<string, ConfirmedTransaction[]>();
-  for (const t of transactions) {
-    const key = t.entityName ?? 'No Entity';
-    const existing = map.get(key);
-    if (existing) {
-      existing.push(t);
-    } else {
-      map.set(key, [t]);
-    }
-  }
-  return [...map.entries()]
-    .toSorted(([a], [b]) => a.localeCompare(b))
-    .map(([entityName, txns]) => ({ entityName, transactions: txns }));
-}
-
-/** Union of all distinct tags across an array of tag lists */
-function unionTags(tagLists: string[][]): string[] {
-  return [...new Set(tagLists.flat())].toSorted();
-}
-
-/** Build a tagMeta Map from a SuggestedTag array for the TagEditor */
-function buildTagMetaMap(suggestedTags: SuggestedTag[]): Map<string, TagMetaEntry> {
-  const map = new Map<string, TagMetaEntry>();
-  for (const s of suggestedTags) {
-    map.set(s.tag, { source: s.source, pattern: s.pattern });
-  }
-  return map;
-}
+import { EntityGroup } from './tag-review/EntityGroup';
+import { useTagReviewState } from './tag-review/useTagReviewState';
+import { TagRuleProposalDialog } from './TagRuleProposalDialog';
 
 // ---------------------------------------------------------------------------
 // Main component
@@ -87,223 +26,23 @@ function buildTagMetaMap(suggestedTags: SuggestedTag[]): Map<string, TagMetaEntr
  */
 export function TagReviewStep() {
   const {
-    confirmedTransactions,
-    updateTransactionTags,
-    nextStep,
+    groups,
+    availableTags,
+    localTags,
+    suggestedTagMeta,
+    updateTag,
+    handleAcceptAll,
+    handleApplyGroupTags,
+    handleContinue,
     prevStep,
-    addPendingTagRuleChangeSet,
-  } = useImportStore();
-
-  // Local tag state keyed by checksum — edits don't touch the store until Continue
-  const [localTags, setLocalTags] = useState<Record<string, string[]>>(() =>
-    Object.fromEntries(confirmedTransactions.map((t) => [t.checksum, t.tags ?? []]))
-  );
-
-  // Tracks checksums edited by the user so live re-suggestion skips them.
-  const editedChecksumsRef = useRef<Set<string>>(new Set());
-
-  // Suggested tag metadata per checksum — drives source badges in TagEditor.
-  // Starts from the confirmed transaction snapshot and updates live when rules are applied.
-  const [suggestedTagMeta, setSuggestedTagMeta] = useState<Record<string, SuggestedTag[]>>(() =>
-    Object.fromEntries(confirmedTransactions.map((t) => [t.checksum, t.suggestedTags ?? []]))
-  );
-
-  // If the user returns from Step 6, remount may reuse flow; keep local state aligned
-  // when confirmed transaction tag lists change from the store.
-  useEffect(() => {
-    editedChecksumsRef.current = new Set();
-    setLocalTags((prev) => {
-      const next = { ...prev };
-      for (const t of confirmedTransactions) {
-        next[t.checksum] ??= t.tags ?? [];
-      }
-      const keys = new Set(confirmedTransactions.map((t) => t.checksum));
-      for (const k of Object.keys(next)) {
-        if (!keys.has(k)) delete next[k];
-      }
-      return next;
-    });
-    setSuggestedTagMeta(
-      Object.fromEntries(confirmedTransactions.map((t) => [t.checksum, t.suggestedTags ?? []]))
-    );
-  }, [confirmedTransactions]);
-
-  const groups = useMemo(() => groupByEntity(confirmedTransactions), [confirmedTransactions]);
-
-  const { data: serverTags } = trpc.finance.transactions.availableTags.useQuery();
-
-  // Merge server tags with any tags the user has added locally during this session.
-  // This ensures newly typed tags appear as autocomplete suggestions across all rows.
-  const availableTags = useMemo(() => {
-    const local = Object.values(localTags).flat();
-    return [...new Set([...(serverTags ?? []), ...local])].toSorted();
-  }, [serverTags, localTags]);
-
-  const updateTag = useCallback((checksum: string, tags: string[]) => {
-    setLocalTags((prev) => ({ ...prev, [checksum]: tags }));
-    editedChecksumsRef.current.add(checksum);
-  }, []);
-
-  /** Accept all pre-suggested tags for every transaction (resets to original suggestions). */
-  const handleAcceptAll = useCallback(() => {
-    const updated: Record<string, string[]> = {};
-    for (const t of confirmedTransactions) {
-      updated[t.checksum] = t.tags ?? [];
-    }
-    setLocalTags(updated);
-    toast.success('All suggested tags accepted');
-  }, [confirmedTransactions]);
-
-  /**
-   * Merge a set of tags into every transaction in a group.
-   * Never replaces existing tags — only adds tags the transaction doesn't already have.
-   */
-  const handleApplyGroupTags = useCallback((group: ConfirmedGroup, newTags: string[]) => {
-    setLocalTags((prev) => {
-      const next = { ...prev };
-      for (const t of group.transactions) {
-        const existing = prev[t.checksum] ?? [];
-        const merged = Array.from(new Set([...existing, ...newTags]));
-        next[t.checksum] = merged;
-      }
-      return next;
-    });
-  }, []);
-
-  const handleContinue = useCallback(() => {
-    for (const [checksum, tags] of Object.entries(localTags)) {
-      updateTransactionTags(checksum, tags);
-    }
-    nextStep();
-  }, [localTags, updateTransactionTags, nextStep]);
-
-  // ---------------------------------------------------------------------------
-  // Tag Rule Proposal Dialog state (PRD-029 US-02 / US-03)
-  // ---------------------------------------------------------------------------
-
-  const [tagRuleDialog, setTagRuleDialog] = useState<TagRuleDialogState | null>(null);
-
-  /**
-   * Called when the user clicks "Save tag rule…" on a group header.
-   * Builds a signal from the union of current tags in the group and opens the dialog.
-   */
-  const handleOpenTagRuleDialog = useCallback(
-    (group: ConfirmedGroup) => {
-      const groupTags = unionTags(group.transactions.map((t) => localTags[t.checksum] ?? []));
-      if (groupTags.length === 0) {
-        toast.info('Add at least one tag to this group before saving a rule.');
-        return;
-      }
-      // Use the first transaction's entityId (all transactions in a group share the same entity).
-      const entityId = group.transactions[0]?.entityId ?? null;
-      const signal: TagRuleLearnSignal = {
-        descriptionPattern: group.entityName,
-        matchType: 'contains',
-        entityId: entityId ?? null,
-        tags: groupTags,
-      };
-      setTagRuleDialog({ signal, groupEntityName: group.entityName });
-    },
-    [localTags]
-  );
-
-  /**
-   * Called when the user clicks "Save rule…" on a single transaction row.
-   * Builds a signal from that transaction's description and current tags.
-   */
-  const handleOpenTagRuleDialogForTransaction = useCallback(
-    (transaction: ConfirmedTransaction, tags: string[]) => {
-      if (tags.length === 0) {
-        toast.info('Add at least one tag to this transaction before saving a rule.');
-        return;
-      }
-      const signal: TagRuleLearnSignal = {
-        descriptionPattern: transaction.description,
-        matchType: 'contains',
-        entityId: transaction.entityId ?? null,
-        tags,
-      };
-      setTagRuleDialog({ signal, groupEntityName: transaction.description });
-    },
-    []
-  );
-
-  /**
-   * Capture the entity name at dialog-open time in a ref so it is stable
-   * inside handleTagRuleApplied even when tagRuleDialog state has been cleared.
-   */
-  const dialogGroupNameRef = useRef<string | null>(null);
-  useEffect(() => {
-    if (tagRuleDialog) {
-      dialogGroupNameRef.current = tagRuleDialog.groupEntityName;
-    }
-  }, [tagRuleDialog]);
-
-  /**
-   * Called by the dialog after `applyTagRuleChangeSet` succeeds.
-   * Stores the applied ChangeSet in the import store and performs live
-   * re-suggestion: updates localTags and source badges for transactions
-   * that match the new rule and haven't been manually edited (PRD-029 US-03).
-   */
-  const handleTagRuleApplied = useCallback(
-    (changeSet: TagRuleChangeSet, affected: TagRuleImpactItem[]) => {
-      addPendingTagRuleChangeSet({
-        changeSet,
-        source: `tag-review:${dialogGroupNameRef.current ?? 'unknown'}`,
-      });
-
-      if (affected.length === 0) return;
-
-      setLocalTags((prev) => {
-        const next = { ...prev };
-        for (const item of affected) {
-          // transactionId is the checksum — same key used throughout localTags/suggestedTagMeta
-          const checksum = item.transactionId;
-          if (!editedChecksumsRef.current.has(checksum)) {
-            // Merge rule tags additively — the preview only returns rule-sourced tags,
-            // so we must keep AI/entity suggestions rather than replacing them.
-            const newRuleTags = item.after.suggestedTags.map((s) => s.tag);
-            const existingTags = prev[checksum] ?? [];
-            next[checksum] = [...new Set([...existingTags, ...newRuleTags])];
-          }
-        }
-        return next;
-      });
-
-      setSuggestedTagMeta((prev) => {
-        const next = { ...prev };
-        for (const item of affected) {
-          const checksum = item.transactionId;
-          const ruleSuggestedTags = item.after.suggestedTags.map((s) => ({
-            tag: s.tag,
-            source: (s.source === 'tag_rule' ? 'rule' : s.source) as SuggestedTag['source'],
-            pattern: s.pattern,
-          }));
-          // Merge: keep existing AI/entity entries for tags not covered by the rule,
-          // replace entries for tags the rule now owns (rule takes precedence for badges).
-          const ruleSuggestedTagSet = new Set(ruleSuggestedTags.map((s) => s.tag));
-          const existingMeta = prev[checksum] ?? [];
-          next[checksum] = [
-            ...existingMeta.filter((entry) => !ruleSuggestedTagSet.has(entry.tag)),
-            ...ruleSuggestedTags,
-          ];
-        }
-        return next;
-      });
-    },
-    [addPendingTagRuleChangeSet]
-  );
-
-  /** Preview transactions passed to the dialog for impact computation. */
-  const previewTransactions = useMemo(
-    () =>
-      confirmedTransactions.map((t) => ({
-        checksum: t.checksum,
-        description: t.description,
-        entityId: t.entityId ?? null,
-      })),
-    [confirmedTransactions]
-  );
+    confirmedCount,
+    tagRuleDialog,
+    setTagRuleDialogOpen,
+    handleOpenTagRuleDialog,
+    handleOpenTagRuleDialogForTransaction,
+    previewTransactions,
+    handleTagRuleApplied,
+  } = useTagReviewState();
 
   return (
     <div className="space-y-6">
@@ -316,7 +55,7 @@ export function TagReviewStep() {
       </div>
 
       {/* Top-level bulk action */}
-      {confirmedTransactions.length > 0 && (
+      {confirmedCount > 0 && (
         <Button variant="outline" size="sm" onClick={handleAcceptAll}>
           Accept All Suggestions
         </Button>
@@ -330,7 +69,7 @@ export function TagReviewStep() {
             group={group}
             localTags={localTags}
             suggestedTagMeta={suggestedTagMeta}
-            availableTags={availableTags ?? []}
+            availableTags={availableTags}
             onUpdateTag={updateTag}
             onApplyGroupTags={handleApplyGroupTags}
             onSaveTagRule={handleOpenTagRuleDialog}
@@ -338,7 +77,7 @@ export function TagReviewStep() {
           />
         ))}
 
-        {confirmedTransactions.length === 0 && (
+        {confirmedCount === 0 && (
           <p className="text-center py-8 text-muted-foreground text-sm">
             No transactions to import.
           </p>
@@ -352,453 +91,23 @@ export function TagReviewStep() {
         </Button>
         <Button
           onClick={handleContinue}
-          disabled={confirmedTransactions.length === 0}
+          disabled={confirmedCount === 0}
           aria-label="Continue to final review"
         >
-          {confirmedTransactions.length === 0
+          {confirmedCount === 0
             ? 'Continue to final review'
-            : `Continue to final review (${confirmedTransactions.length} transaction${confirmedTransactions.length !== 1 ? 's' : ''})`}
+            : `Continue to final review (${confirmedCount} transaction${confirmedCount !== 1 ? 's' : ''})`}
         </Button>
       </div>
 
       {/* Tag Rule Proposal Dialog — opened per group (PRD-029 US-02 / US-03) */}
       <TagRuleProposalDialog
         open={tagRuleDialog !== null}
-        onOpenChange={(open) => {
-          if (!open) setTagRuleDialog(null);
-        }}
+        onOpenChange={setTagRuleDialogOpen}
         signal={tagRuleDialog?.signal ?? null}
         previewTransactions={previewTransactions}
         onApplied={handleTagRuleApplied}
       />
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// EntityGroup
-// ---------------------------------------------------------------------------
-
-interface EntityGroupProps {
-  group: ConfirmedGroup;
-  localTags: Record<string, string[]>;
-  suggestedTagMeta: Record<string, SuggestedTag[]>;
-  availableTags: string[];
-  onUpdateTag: (checksum: string, tags: string[]) => void;
-  onApplyGroupTags: (group: ConfirmedGroup, tags: string[]) => void;
-  /** Opens the TagRuleProposalDialog pre-populated with this group's signal. */
-  onSaveTagRule: (group: ConfirmedGroup) => void;
-  /** Opens the TagRuleProposalDialog pre-populated from a single transaction's description + tags. */
-  onSaveTagRuleForTransaction: (transaction: ConfirmedTransaction, tags: string[]) => void;
-}
-
-/**
- * Collapsible group of transactions sharing an entity.
- * Always starts expanded. Includes a bulk-tag row for applying tags to the
- * whole group (merge semantics — never replaces individually-edited tags).
- * Shows a "Save tag rule…" button that opens the tag rule proposal flow.
- */
-function EntityGroup({
-  group,
-  localTags,
-  suggestedTagMeta,
-  availableTags,
-  onUpdateTag,
-  onApplyGroupTags,
-  onSaveTagRule,
-  onSaveTagRuleForTransaction,
-}: EntityGroupProps) {
-  const [expanded, setExpanded] = useState(true);
-
-  // Reactive union of all current tags across this group (updates as user edits)
-  const currentTagsPerTx = group.transactions.map((t) => localTags[t.checksum] ?? []);
-  const currentUnion = unionTags(currentTagsPerTx);
-
-  // Suggested union from current suggestion metadata (for "apply suggestions to all" button)
-  const suggestedUnion = useMemo(() => {
-    return unionTags(
-      group.transactions.map((t) => (suggestedTagMeta[t.checksum] ?? []).map((s) => s.tag))
-    );
-  }, [group.transactions, suggestedTagMeta]);
-
-  // Staged tags for group-level bulk application
-  const [groupStagedTags, setGroupStagedTags] = useState<string[]>([]);
-
-  const handleApplySuggestions = useCallback(() => {
-    if (suggestedUnion.length === 0) return;
-    onApplyGroupTags(group, suggestedUnion);
-    toast.success(
-      `Suggestions merged into ${group.transactions.length} transaction${group.transactions.length !== 1 ? 's' : ''}`
-    );
-  }, [group, suggestedUnion, onApplyGroupTags]);
-
-  const handleApplyStagedToGroup = useCallback(() => {
-    if (groupStagedTags.length === 0) return;
-    onApplyGroupTags(group, groupStagedTags);
-    toast.success(
-      `Tags merged into ${group.transactions.length} transaction${group.transactions.length !== 1 ? 's' : ''}`
-    );
-    setGroupStagedTags([]);
-  }, [group, groupStagedTags, onApplyGroupTags]);
-
-  const removeGroupStagedTag = useCallback((tag: string) => {
-    setGroupStagedTags((prev) => prev.filter((t) => t !== tag));
-  }, []);
-
-  const addGroupStagedTag = useCallback(
-    (tag: string) => {
-      if (!groupStagedTags.includes(tag)) {
-        setGroupStagedTags((prev) => [...prev, tag]);
-      }
-    },
-    [groupStagedTags]
-  );
-
-  return (
-    <div className="border rounded-lg overflow-hidden">
-      {/* Group header */}
-      <div className="flex items-center justify-between gap-3 px-4 py-3 bg-muted/40">
-        <Button
-          variant="ghost"
-          className="flex items-center gap-2 flex-1 text-left h-auto p-0 hover:bg-transparent"
-          onClick={() => {
-            setExpanded((prev) => !prev);
-          }}
-          aria-expanded={expanded}
-        >
-          {expanded ? (
-            <ChevronDown className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
-          ) : (
-            <ChevronRight className="w-4 h-4 flex-shrink-0 text-muted-foreground" />
-          )}
-          <span className="font-medium text-sm">{group.entityName}</span>
-          <span className="text-xs text-muted-foreground">({group.transactions.length})</span>
-        </Button>
-
-        <div className="flex items-center gap-2 flex-shrink-0">
-          {/* Current tag union preview (reactive to edits) */}
-          {currentUnion.length > 0 && (
-            <div className="hidden sm:flex gap-1 flex-wrap max-w-48">
-              {currentUnion.slice(0, 3).map((tag) => (
-                <Badge key={tag} variant="secondary" className="text-xs">
-                  {tag}
-                </Badge>
-              ))}
-              {currentUnion.length > 3 && (
-                <Badge variant="secondary" className="text-xs">
-                  +{currentUnion.length - 3}
-                </Badge>
-              )}
-            </div>
-          )}
-
-          {/* Apply original suggestions to all (if any exist) */}
-          {suggestedUnion.length > 0 && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleApplySuggestions}
-              className="text-xs px-2 py-1 h-auto whitespace-nowrap"
-              title={`Apply suggestions: ${suggestedUnion.join(', ')}`}
-            >
-              Apply suggestions
-            </Button>
-          )}
-
-          {/* Save tag rule — opens TagRuleProposalDialog pre-filled with group signal */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              onSaveTagRule(group);
-            }}
-            className="text-xs px-2 py-1 h-auto whitespace-nowrap text-muted-foreground hover:text-foreground"
-            title="Save a reusable tag rule for this group"
-            aria-label={`Save tag rule for ${group.entityName}`}
-          >
-            <BookmarkPlus className="w-3.5 h-3.5 mr-1" />
-            Save tag rule…
-          </Button>
-        </div>
-      </div>
-
-      {expanded && (
-        <>
-          {/* Group-level bulk tag application row */}
-          <GroupTagBar
-            stagedTags={groupStagedTags}
-            availableTags={availableTags}
-            onAddTag={addGroupStagedTag}
-            onRemoveTag={removeGroupStagedTag}
-            onApply={handleApplyStagedToGroup}
-          />
-
-          {/* Transaction rows */}
-          <div className="divide-y">
-            {group.transactions.map((t) => (
-              <TransactionTagRow
-                key={t.checksum}
-                transaction={t}
-                tags={localTags[t.checksum] ?? []}
-                suggestedTagMeta={suggestedTagMeta[t.checksum] ?? []}
-                availableTags={availableTags}
-                onSave={(tags) => {
-                  onUpdateTag(t.checksum, tags);
-                }}
-                onSaveTagRule={onSaveTagRuleForTransaction}
-              />
-            ))}
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// GroupTagBar
-// ---------------------------------------------------------------------------
-
-interface GroupTagBarProps {
-  stagedTags: string[];
-  availableTags: string[];
-  onAddTag: (tag: string) => void;
-  onRemoveTag: (tag: string) => void;
-  onApply: () => void;
-}
-
-/**
- * Compact inline bar for staging tags to apply to an entire group.
- * Shows a tag picker (filtered from availableTags) and an Apply button.
- * Apply merges staged tags into all transactions in the group — never replaces.
- */
-function GroupTagBar({
-  stagedTags,
-  availableTags,
-  onAddTag,
-  onRemoveTag,
-  onApply,
-}: GroupTagBarProps) {
-  const [inputValue, setInputValue] = useState('');
-  const [showPicker, setShowPicker] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  const filtered = (() => {
-    if (inputValue === '') {
-      return availableTags.filter((t) => !stagedTags.includes(t));
-    }
-    const lower = inputValue.toLowerCase();
-    const startsWith: string[] = [];
-    const contains: string[] = [];
-    for (const t of availableTags) {
-      if (stagedTags.includes(t)) continue;
-      const tLower = t.toLowerCase();
-      if (tLower.startsWith(lower)) startsWith.push(t);
-      else if (tLower.includes(lower)) contains.push(t);
-    }
-    return [...startsWith, ...contains];
-  })();
-
-  // Close picker when clicking outside
-  useEffect(() => {
-    if (!showPicker) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setShowPicker(false);
-        setInputValue('');
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showPicker]);
-
-  const handleAddFromInput = () => {
-    const trimmed = inputValue.trim();
-    if (trimmed) {
-      onAddTag(trimmed);
-      setInputValue('');
-    }
-  };
-
-  return (
-    <div className="px-4 py-2 border-b bg-muted/10 flex flex-wrap items-center gap-2 text-xs">
-      <span className="text-muted-foreground shrink-0">Apply to group:</span>
-
-      {/* Staged tag chips */}
-      {stagedTags.map((tag) => (
-        <span
-          key={tag}
-          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-background border border-border rounded-full"
-        >
-          {tag}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => {
-              onRemoveTag(tag);
-            }}
-            className="text-muted-foreground hover:text-foreground ml-0.5 h-4 w-4 p-0"
-            aria-label={`Remove ${tag}`}
-          >
-            <X className="w-3 h-3" />
-          </Button>
-        </span>
-      ))}
-
-      {/* Tag picker */}
-      <div ref={containerRef} className="relative">
-        <input
-          value={inputValue}
-          onChange={(e) => {
-            setInputValue(e.target.value);
-            setShowPicker(true);
-          }}
-          onFocus={() => {
-            setShowPicker(true);
-          }}
-          onKeyDown={(e) => {
-            if (e.key === 'Tab' && filtered.length > 0) {
-              e.preventDefault();
-              const first = filtered[0];
-              if (first) onAddTag(first);
-              setShowPicker(false);
-              setInputValue('');
-              return;
-            }
-            if (e.key === 'Enter') {
-              e.preventDefault();
-              // If there's an exact match in filtered, pick it; else add free-form
-              const exactMatch = filtered.find((t) => t.toLowerCase() === inputValue.toLowerCase());
-              if (exactMatch) {
-                onAddTag(exactMatch);
-              } else if (inputValue.trim()) {
-                handleAddFromInput();
-              }
-              setShowPicker(false);
-              setInputValue('');
-            } else if (e.key === 'Escape') {
-              setShowPicker(false);
-              setInputValue('');
-            }
-          }}
-          placeholder="+ Add tag…"
-          className="text-xs border border-dashed border-border rounded-full px-2 py-0.5 bg-background focus:outline-none focus:ring-1 focus:ring-ring w-24"
-        />
-
-        {showPicker && filtered.length > 0 && (
-          <div className="absolute top-full left-0 mt-1 z-10 bg-popover border rounded-md shadow-md py-1 min-w-32 max-h-40 overflow-y-auto">
-            {filtered.slice(0, 10).map((tag) => (
-              <button
-                key={tag}
-                className="w-full text-left px-3 py-1 text-xs hover:bg-accent transition-colors"
-                onMouseDown={(e) => {
-                  e.preventDefault(); // prevent input blur
-                  onAddTag(tag);
-                  setShowPicker(false);
-                  setInputValue('');
-                }}
-              >
-                {tag}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Apply button — disabled when no staged tags */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={onApply}
-        disabled={stagedTags.length === 0}
-        className={cn(
-          'px-2 py-0.5 h-auto text-xs whitespace-nowrap',
-          stagedTags.length > 0 && 'border-primary text-primary hover:bg-primary/10'
-        )}
-      >
-        Merge into all
-      </Button>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// TransactionTagRow
-// ---------------------------------------------------------------------------
-
-interface TransactionTagRowProps {
-  transaction: ConfirmedTransaction;
-  tags: string[];
-  suggestedTagMeta: SuggestedTag[];
-  availableTags: string[];
-  onSave: (tags: string[]) => void;
-  onSaveTagRule?: (transaction: ConfirmedTransaction, tags: string[]) => void;
-}
-
-/**
- * Single transaction row with inline tag editor.
- * Tags from suggestions show source badges (🤖 AI, 📋 Rule, 🏪 Entity).
- * Rule-sourced tags include a hover tooltip with the matched description_pattern.
- */
-function TransactionTagRow({
-  transaction,
-  tags,
-  suggestedTagMeta,
-  availableTags,
-  onSave,
-  onSaveTagRule,
-}: TransactionTagRowProps) {
-  const amount = transaction.amount;
-  const isNegative = amount < 0;
-
-  // Build tagMeta map for source badges in TagEditor
-  const tagMeta = useMemo(() => buildTagMetaMap(suggestedTagMeta), [suggestedTagMeta]);
-
-  return (
-    <div className="flex items-center gap-3 px-4 py-2 hover:bg-muted/20 transition-colors group/txrow">
-      {/* Transaction metadata */}
-      <div className="flex-1 min-w-0">
-        <p className="text-sm truncate">{transaction.description}</p>
-        <p className="text-xs text-muted-foreground">{transaction.date}</p>
-      </div>
-
-      {/* Amount */}
-      <span
-        className={cn(
-          'text-sm font-mono tabular-nums flex-shrink-0',
-          isNegative ? 'text-destructive' : 'text-success'
-        )}
-      >
-        {isNegative ? '-' : '+'}${Math.abs(amount).toFixed(2)}
-      </span>
-
-      {/* Save tag rule button — visible on hover */}
-      {onSaveTagRule && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onSaveTagRule(transaction, tags)}
-          className="text-xs px-2 py-1 h-auto whitespace-nowrap text-muted-foreground hover:text-foreground opacity-0 group-hover/txrow:opacity-100 transition-opacity flex-shrink-0"
-          title="Save a reusable tag rule for this transaction"
-          aria-label={`Save tag rule for ${transaction.description}`}
-        >
-          <BookmarkPlus className="w-3.5 h-3.5 mr-1" />
-          Save rule…
-        </Button>
-      )}
-
-      {/* Inline tag editor — with source badge display in trigger */}
-      <div className="flex-shrink-0 w-44">
-        <TagEditor
-          currentTags={tags}
-          onSave={onSave}
-          availableTags={availableTags}
-          tagMeta={tagMeta}
-        />
-      </div>
     </div>
   );
 }
