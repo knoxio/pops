@@ -107,6 +107,13 @@
         "allowHigherOrderFunctions": true
       }
     ],
+    "typescript/explicit-module-boundary-types": [
+      "error",
+      {
+        "allowTypedFunctionExpressions": true,
+        "allowHigherOrderFunctions": true
+      }
+    ],
     "typescript/no-unused-vars": [
       "error",
       {
@@ -224,6 +231,27 @@
       }
     },
     {
+      "files": [
+        "apps/pops-api/src/**/router.ts",
+        "apps/pops-api/src/**/router.tsx",
+        "apps/pops-api/src/trpc.ts"
+      ],
+      "rules": {
+        "typescript/explicit-module-boundary-types": "off"
+      }
+    },
+    {
+      "files": [
+        "apps/pops-shell/src/**/*.{ts,tsx}",
+        "packages/ui/src/**/*.{ts,tsx}",
+        "packages/app-*/src/**/*.{ts,tsx}",
+        "packages/navigation/src/**/*.{ts,tsx}"
+      ],
+      "rules": {
+        "typescript/explicit-module-boundary-types": "off"
+      }
+    },
+    {
       "files": ["packages/import-tools/src/**/*.ts"],
       "rules": {
         "no-console": "off",
@@ -235,6 +263,7 @@
         "complexity": ["error", 20],
         "max-depth": ["error", 4],
         "typescript/explicit-function-return-type": "off",
+        "typescript/explicit-module-boundary-types": "off",
         "typescript/require-await": "off",
         "typescript/no-unnecessary-type-assertion": "error",
         "typescript/no-floating-promises": "error"
@@ -351,6 +380,7 @@
         "typescript/no-explicit-any": "off",
         "typescript/no-non-null-assertion": "off",
         "typescript/explicit-function-return-type": "off",
+        "typescript/explicit-module-boundary-types": "off",
         "typescript/no-floating-promises": "off"
       }
     },
@@ -365,7 +395,8 @@
         "no-console": "off",
         "react/no-array-index-key": "off",
         "react-hooks/rules-of-hooks": "off",
-        "typescript/no-non-null-assertion": "off"
+        "typescript/no-non-null-assertion": "off",
+        "typescript/explicit-module-boundary-types": "off"
       }
     },
     {
@@ -380,7 +411,8 @@
         "complexity": "off",
         "max-depth": "off",
         "no-console": "off",
-        "typescript/explicit-function-return-type": "off"
+        "typescript/explicit-function-return-type": "off",
+        "typescript/explicit-module-boundary-types": "off"
       }
     }
   ],
