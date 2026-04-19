@@ -66,6 +66,168 @@ const CHARGE = 3000;
 const DAMPING = 0.85;
 const CENTRE_PULL = 0.002;
 
+function seedInternalNodes(
+  prev: Map<string, InternalNode>,
+  nodes: ForceNode[]
+): Map<string, InternalNode> {
+  const next = new Map<string, InternalNode>();
+  for (const n of nodes) {
+    const prevNode = prev.get(n.id);
+    next.set(n.id, {
+      ...n,
+      x: prevNode?.x ?? n.x ?? (Math.random() - 0.5) * 200,
+      y: prevNode?.y ?? n.y ?? (Math.random() - 0.5) * 200,
+      vx: prevNode?.vx ?? 0,
+      vy: prevNode?.vy ?? 0,
+      fx: 0,
+      fy: 0,
+    });
+  }
+  return next;
+}
+
+function simulateStep(nodes: Map<string, InternalNode>, edges: ForceEdge[]) {
+  const list = Array.from(nodes.values());
+
+  for (const n of list) {
+    n.fx = 0;
+    n.fy = 0;
+  }
+
+  // Repulsion.
+  for (let i = 0; i < list.length; i++) {
+    for (let j = i + 1; j < list.length; j++) {
+      const a = list[i]!;
+      const b = list[j]!;
+      const dx = (a.x ?? 0) - (b.x ?? 0);
+      const dy = (a.y ?? 0) - (b.y ?? 0);
+      const dist2 = Math.max(dx * dx + dy * dy, 25);
+      const f = CHARGE / dist2;
+      const dist = Math.sqrt(dist2);
+      const nx = dx / dist;
+      const ny = dy / dist;
+      a.fx += nx * f;
+      a.fy += ny * f;
+      b.fx -= nx * f;
+      b.fy -= ny * f;
+    }
+  }
+
+  // Springs.
+  for (const e of edges) {
+    const a = nodes.get(e.source);
+    const b = nodes.get(e.target);
+    if (!a || !b) continue;
+    const dx = (b.x ?? 0) - (a.x ?? 0);
+    const dy = (b.y ?? 0) - (a.y ?? 0);
+    const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+    const target = e.length ?? DEFAULT_EDGE_LENGTH;
+    const f = (dist - target) * SPRING;
+    const nx = dx / dist;
+    const ny = dy / dist;
+    a.fx += nx * f;
+    a.fy += ny * f;
+    b.fx -= nx * f;
+    b.fy -= ny * f;
+  }
+
+  // Integration.
+  for (const n of list) {
+    n.fx += -(n.x ?? 0) * CENTRE_PULL;
+    n.fy += -(n.y ?? 0) * CENTRE_PULL;
+    n.vx = (n.vx + n.fx) * DAMPING;
+    n.vy = (n.vy + n.fy) * DAMPING;
+    n.x = (n.x ?? 0) + n.vx;
+    n.y = (n.y ?? 0) + n.vy;
+  }
+}
+
+function applyCanvasTransform(
+  ctx: CanvasRenderingContext2D,
+  canvas: HTMLCanvasElement,
+  transform: { x: number; y: number; k: number }
+) {
+  const { width, height } = canvas;
+  const dpr = window.devicePixelRatio || 1;
+  ctx.setTransform(
+    dpr * transform.k,
+    0,
+    0,
+    dpr * transform.k,
+    dpr * (width / 2 / dpr + transform.x),
+    dpr * (height / 2 / dpr + transform.y)
+  );
+}
+
+function drawEdges(
+  ctx: CanvasRenderingContext2D,
+  edges: ForceEdge[],
+  nodes: Map<string, InternalNode>,
+  edgeColor: string
+) {
+  ctx.strokeStyle = edgeColor;
+  ctx.lineWidth = 1;
+  for (const e of edges) {
+    const a = nodes.get(e.source);
+    const b = nodes.get(e.target);
+    if (!a || !b) continue;
+    ctx.beginPath();
+    ctx.moveTo(a.x ?? 0, a.y ?? 0);
+    ctx.lineTo(b.x ?? 0, b.y ?? 0);
+    ctx.stroke();
+  }
+}
+
+function drawNodes(
+  ctx: CanvasRenderingContext2D,
+  nodes: Iterable<InternalNode>,
+  opts: { defaultNodeColor: string; labelColor: string; hoveredId: string | null }
+) {
+  ctx.font = '12px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+
+  for (const n of nodes) {
+    const r = n.radius ?? 8;
+    ctx.fillStyle = n.color ?? opts.defaultNodeColor;
+    ctx.beginPath();
+    ctx.arc(n.x ?? 0, n.y ?? 0, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (opts.hoveredId === n.id) {
+      ctx.strokeStyle = '#1d4ed8';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    if (n.label) {
+      ctx.fillStyle = opts.labelColor;
+      ctx.fillText(n.label, n.x ?? 0, (n.y ?? 0) + r + 10);
+    }
+  }
+}
+
+function screenToWorld(
+  canvasRect: DOMRect,
+  transform: { x: number; y: number; k: number },
+  clientX: number,
+  clientY: number
+) {
+  const cx = clientX - canvasRect.left - canvasRect.width / 2 - transform.x;
+  const cy = clientY - canvasRect.top - canvasRect.height / 2 - transform.y;
+  return { x: cx / transform.k, y: cy / transform.k };
+}
+
+function pickNodeAtPoint(nodes: Iterable<InternalNode>, x: number, y: number): InternalNode | null {
+  for (const n of nodes) {
+    const r = n.radius ?? 8;
+    const dx = (n.x ?? 0) - x;
+    const dy = (n.y ?? 0) - y;
+    if (dx * dx + dy * dy <= r * r) return n;
+  }
+  return null;
+}
+
 export function ForceGraph({
   nodes,
   edges,
@@ -90,70 +252,11 @@ export function ForceGraph({
 
   // Seed or update internal node state when inputs change.
   useEffect(() => {
-    const next = new Map<string, InternalNode>();
-    for (const n of nodes) {
-      const prev = nodesRef.current.get(n.id);
-      next.set(n.id, {
-        ...n,
-        x: prev?.x ?? n.x ?? (Math.random() - 0.5) * 200,
-        y: prev?.y ?? n.y ?? (Math.random() - 0.5) * 200,
-        vx: prev?.vx ?? 0,
-        vy: prev?.vy ?? 0,
-        fx: 0,
-        fy: 0,
-      });
-    }
-    nodesRef.current = next;
+    nodesRef.current = seedInternalNodes(nodesRef.current, nodes);
   }, [nodes]);
 
   const step = useCallback(() => {
-    const map = nodesRef.current;
-    const list = Array.from(map.values());
-    for (const n of list) {
-      n.fx = 0;
-      n.fy = 0;
-    }
-    for (let i = 0; i < list.length; i++) {
-      for (let j = i + 1; j < list.length; j++) {
-        const a = list[i]!;
-        const b = list[j]!;
-        const dx = (a.x ?? 0) - (b.x ?? 0);
-        const dy = (a.y ?? 0) - (b.y ?? 0);
-        const dist2 = Math.max(dx * dx + dy * dy, 25);
-        const f = CHARGE / dist2;
-        const dist = Math.sqrt(dist2);
-        const nx = dx / dist;
-        const ny = dy / dist;
-        a.fx += nx * f;
-        a.fy += ny * f;
-        b.fx -= nx * f;
-        b.fy -= ny * f;
-      }
-    }
-    for (const e of edges) {
-      const a = map.get(e.source);
-      const b = map.get(e.target);
-      if (!a || !b) continue;
-      const dx = (b.x ?? 0) - (a.x ?? 0);
-      const dy = (b.y ?? 0) - (a.y ?? 0);
-      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
-      const target = e.length ?? DEFAULT_EDGE_LENGTH;
-      const f = (dist - target) * SPRING;
-      const nx = dx / dist;
-      const ny = dy / dist;
-      a.fx += nx * f;
-      a.fy += ny * f;
-      b.fx -= nx * f;
-      b.fy -= ny * f;
-    }
-    for (const n of list) {
-      n.fx += -(n.x ?? 0) * CENTRE_PULL;
-      n.fy += -(n.y ?? 0) * CENTRE_PULL;
-      n.vx = (n.vx + n.fx) * DAMPING;
-      n.vy = (n.vy + n.fy) * DAMPING;
-      n.x = (n.x ?? 0) + n.vx;
-      n.y = (n.y ?? 0) + n.vy;
-    }
+    simulateStep(nodesRef.current, edges);
   }, [edges]);
 
   const draw = useCallback(() => {
@@ -164,47 +267,14 @@ export function ForceGraph({
     const { width, height: h } = canvas;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, width, h);
-    const dpr = window.devicePixelRatio || 1;
-    ctx.setTransform(
-      dpr * transform.k,
-      0,
-      0,
-      dpr * transform.k,
-      dpr * (width / 2 / dpr + transform.x),
-      dpr * (h / 2 / dpr + transform.y)
-    );
 
-    ctx.strokeStyle = edgeColor;
-    ctx.lineWidth = 1;
-    for (const e of edges) {
-      const a = nodesRef.current.get(e.source);
-      const b = nodesRef.current.get(e.target);
-      if (!a || !b) continue;
-      ctx.beginPath();
-      ctx.moveTo(a.x ?? 0, a.y ?? 0);
-      ctx.lineTo(b.x ?? 0, b.y ?? 0);
-      ctx.stroke();
-    }
-
-    ctx.font = '12px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    for (const n of nodesRef.current.values()) {
-      const r = n.radius ?? 8;
-      ctx.fillStyle = n.color ?? defaultNodeColor;
-      ctx.beginPath();
-      ctx.arc(n.x ?? 0, n.y ?? 0, r, 0, Math.PI * 2);
-      ctx.fill();
-      if (hoverRef.current === n.id) {
-        ctx.strokeStyle = '#1d4ed8';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-      }
-      if (n.label) {
-        ctx.fillStyle = labelColor;
-        ctx.fillText(n.label, n.x ?? 0, (n.y ?? 0) + r + 10);
-      }
-    }
+    applyCanvasTransform(ctx, canvas, transform);
+    drawEdges(ctx, edges, nodesRef.current, edgeColor);
+    drawNodes(ctx, nodesRef.current.values(), {
+      defaultNodeColor,
+      labelColor,
+      hoveredId: hoverRef.current,
+    });
   }, [edges, defaultNodeColor, edgeColor, labelColor, transform]);
 
   useEffect(() => {
@@ -253,24 +323,109 @@ export function ForceGraph({
     return () => wrapper.removeEventListener('wheel', onWheel);
   }, [enableZoom]);
 
-  const toWorld = (clientX: number, clientY: number) => {
-    const canvas = canvasRef.current!;
-    const rect = canvas.getBoundingClientRect();
-    const cx = clientX - rect.left - rect.width / 2 - transform.x;
-    const cy = clientY - rect.top - rect.height / 2 - transform.y;
-    return { x: cx / transform.k, y: cy / transform.k };
-  };
+  const toWorld = useCallback(
+    (clientX: number, clientY: number) => {
+      const canvas = canvasRef.current!;
+      const rect = canvas.getBoundingClientRect();
+      return screenToWorld(rect, transform, clientX, clientY);
+    },
+    [transform]
+  );
 
-  const pickNode = (clientX: number, clientY: number): InternalNode | null => {
-    const { x, y } = toWorld(clientX, clientY);
-    for (const n of nodesRef.current.values()) {
-      const r = n.radius ?? 8;
-      const dx = (n.x ?? 0) - x;
-      const dy = (n.y ?? 0) - y;
-      if (dx * dx + dy * dy <= r * r) return n;
-    }
-    return null;
-  };
+  const pickNode = useCallback(
+    (clientX: number, clientY: number): InternalNode | null => {
+      const { x, y } = toWorld(clientX, clientY);
+      return pickNodeAtPoint(nodesRef.current.values(), x, y);
+    },
+    [toWorld]
+  );
+
+  const applyDrag = useCallback(
+    (clientX: number, clientY: number) => {
+      const drag = draggingRef.current;
+      if (!drag) return false;
+      const { x, y } = toWorld(clientX, clientY);
+      const node = nodesRef.current.get(drag.id);
+      if (node) {
+        node.x = x - drag.dx;
+        node.y = y - drag.dy;
+        node.vx = 0;
+        node.vy = 0;
+      }
+      return true;
+    },
+    [toWorld]
+  );
+
+  const applyPan = useCallback(
+    (clientX: number, clientY: number) => {
+      const pan = panningRef.current;
+      if (!pan || !enableZoom) return false;
+      setTransform((t) => ({
+        ...t,
+        x: pan.ox + (clientX - pan.sx),
+        y: pan.oy + (clientY - pan.sy),
+      }));
+      return true;
+    },
+    [enableZoom]
+  );
+
+  const updateHoverFromPointer = useCallback(
+    (clientX: number, clientY: number) => {
+      const hit = pickNode(clientX, clientY);
+      const nextId = hit?.id ?? null;
+      if (nextId === hoverRef.current) return;
+      hoverRef.current = nextId;
+      onNodeHover?.(nextId);
+      const canvas = canvasRef.current;
+      if (canvas) canvas.style.cursor = nextId ? 'pointer' : 'default';
+    },
+    [onNodeHover, pickNode]
+  );
+
+  const clearHover = useCallback(() => {
+    hoverRef.current = null;
+    onNodeHover?.(null);
+    const canvas = canvasRef.current;
+    if (canvas) canvas.style.cursor = 'default';
+  }, [onNodeHover]);
+
+  const beginPointerInteraction = useCallback(
+    (clientX: number, clientY: number) => {
+      const hit = pickNode(clientX, clientY);
+      if (hit) {
+        const { x, y } = toWorld(clientX, clientY);
+        draggingRef.current = {
+          id: hit.id,
+          dx: x - (hit.x ?? 0),
+          dy: y - (hit.y ?? 0),
+        };
+        return;
+      }
+      if (!enableZoom) return;
+      panningRef.current = {
+        sx: clientX,
+        sy: clientY,
+        ox: transform.x,
+        oy: transform.y,
+      };
+    },
+    [enableZoom, pickNode, toWorld, transform.x, transform.y]
+  );
+
+  const endPointerInteraction = useCallback(
+    (clientX: number, clientY: number) => {
+      if (draggingRef.current) {
+        draggingRef.current = null;
+        return;
+      }
+      panningRef.current = null;
+      const hit = pickNode(clientX, clientY);
+      if (hit && onNodeClick) onNodeClick(hit.id);
+    },
+    [onNodeClick, pickNode]
+  );
 
   return (
     <div
@@ -278,66 +433,16 @@ export function ForceGraph({
       className={cn('relative w-full overflow-hidden rounded-md border border-border', className)}
       style={{ height }}
       onMouseMove={(e) => {
-        if (draggingRef.current) {
-          const { x, y } = toWorld(e.clientX, e.clientY);
-          const node = nodesRef.current.get(draggingRef.current.id);
-          if (node) {
-            node.x = x - draggingRef.current.dx;
-            node.y = y - draggingRef.current.dy;
-            node.vx = 0;
-            node.vy = 0;
-          }
-          return;
-        }
-        if (panningRef.current && enableZoom) {
-          setTransform((t) => ({
-            ...t,
-            x: panningRef.current!.ox + (e.clientX - panningRef.current!.sx),
-            y: panningRef.current!.oy + (e.clientY - panningRef.current!.sy),
-          }));
-          return;
-        }
-        const hit = pickNode(e.clientX, e.clientY);
-        const nextId = hit?.id ?? null;
-        if (nextId !== hoverRef.current) {
-          hoverRef.current = nextId;
-          onNodeHover?.(nextId);
-          const canvas = canvasRef.current;
-          if (canvas) canvas.style.cursor = nextId ? 'pointer' : 'default';
-        }
+        if (applyDrag(e.clientX, e.clientY)) return;
+        if (applyPan(e.clientX, e.clientY)) return;
+        updateHoverFromPointer(e.clientX, e.clientY);
       }}
-      onMouseLeave={() => {
-        hoverRef.current = null;
-        onNodeHover?.(null);
-        const canvas = canvasRef.current;
-        if (canvas) canvas.style.cursor = 'default';
-      }}
+      onMouseLeave={clearHover}
       onMouseDown={(e) => {
-        const hit = pickNode(e.clientX, e.clientY);
-        if (hit) {
-          const { x, y } = toWorld(e.clientX, e.clientY);
-          draggingRef.current = {
-            id: hit.id,
-            dx: x - (hit.x ?? 0),
-            dy: y - (hit.y ?? 0),
-          };
-        } else if (enableZoom) {
-          panningRef.current = {
-            sx: e.clientX,
-            sy: e.clientY,
-            ox: transform.x,
-            oy: transform.y,
-          };
-        }
+        beginPointerInteraction(e.clientX, e.clientY);
       }}
       onMouseUp={(e) => {
-        if (draggingRef.current) {
-          draggingRef.current = null;
-          return;
-        }
-        panningRef.current = null;
-        const hit = pickNode(e.clientX, e.clientY);
-        if (hit && onNodeClick) onNodeClick(hit.id);
+        endPointerInteraction(e.clientX, e.clientY);
       }}
     >
       <canvas ref={canvasRef} className="block" style={{ cursor: 'default' }} />
