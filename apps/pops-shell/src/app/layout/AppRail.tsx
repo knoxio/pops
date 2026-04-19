@@ -1,10 +1,6 @@
-import { iconMap } from '@/app/nav/icon-map';
-import { matchesAtBoundary } from '@/app/nav/path-utils';
 import { registeredApps } from '@/app/nav/registry';
 import { useUIStore } from '@/store/uiStore';
-import { PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router';
+import { useLocation } from 'react-router';
 
 /**
  * App rail — narrow vertical strip showing registered app icons.
@@ -13,31 +9,18 @@ import { useLocation, useNavigate } from 'react-router';
  * Single click navigates to the app's basePath.
  * Collapsible via toggle (state persisted in uiStore).
  */
-import { cn, Tooltip, TooltipContent, TooltipTrigger } from '@pops/ui';
+import { cn } from '@pops/ui';
+
+import { AppRailCollapsed } from './app-rail/AppRailCollapsed';
+import { AppRailFooter } from './app-rail/AppRailFooter';
+import { AppRailIcon } from './app-rail/AppRailIcon';
+import { useIsTablet } from './app-rail/useIsTablet';
 
 interface AppRailProps {
   className?: string;
 }
 
-/** Media query match for tablet range (md but not lg) */
-function useIsTablet(): boolean {
-  const [isTablet, setIsTablet] = useState(false);
-  useEffect(() => {
-    const mql = window.matchMedia('(min-width: 768px) and (max-width: 1023px)');
-    setIsTablet(mql.matches);
-    const handler = (e: MediaQueryListEvent) => {
-      setIsTablet(e.matches);
-    };
-    mql.addEventListener('change', handler);
-    return () => {
-      mql.removeEventListener('change', handler);
-    };
-  }, []);
-  return isTablet;
-}
-
 export function AppRail({ className }: AppRailProps) {
-  const navigate = useNavigate();
   const location = useLocation();
   const railOpen = useUIStore((state) => state.railOpen);
   const toggleRail = useUIStore((state) => state.toggleRail);
@@ -46,23 +29,7 @@ export function AppRail({ className }: AppRailProps) {
   const isTablet = useIsTablet();
 
   if (!railOpen) {
-    return (
-      <div
-        className={cn(
-          'w-0 md:w-10 shrink-0 bg-card border-r border-border',
-          'hidden md:flex flex-col items-center pt-2',
-          className
-        )}
-      >
-        <button
-          onClick={toggleRail}
-          className="min-w-9 min-h-9 flex items-center justify-center hover:bg-muted rounded-lg"
-          aria-label="Expand app rail"
-        >
-          <PanelLeftOpen className="h-4 w-4 text-muted-foreground" />
-        </button>
-      </div>
-    );
+    return <AppRailCollapsed className={className} onToggle={toggleRail} />;
   }
 
   return (
@@ -73,113 +40,18 @@ export function AppRail({ className }: AppRailProps) {
         className
       )}
     >
-      {registeredApps.map((app) => {
-        const isActive = matchesAtBoundary(location.pathname, app.basePath);
-        const Icon = iconMap[app.icon];
-        const appColorClass = app.color ? `app-${app.color}` : undefined;
+      {registeredApps.map((app) => (
+        <AppRailIcon
+          key={app.id}
+          app={app}
+          pathname={location.pathname}
+          isTablet={isTablet}
+          setPageNavOpen={setPageNavOpen}
+          setSkipNextPageNavClose={setSkipNextPageNavClose}
+        />
+      ))}
 
-        return (
-          <Tooltip key={app.id}>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => {
-                  if (isTablet) {
-                    // Set the skip flag before navigate so the location-change
-                    // effect in RootLayout does not collapse the overlay we are
-                    // about to open. The effect will clear the flag on its next run.
-                    setSkipNextPageNavClose(true);
-                  }
-                  navigate(app.basePath);
-                  if (isTablet) {
-                    setPageNavOpen(true);
-                  }
-                }}
-                className={cn(
-                  'relative w-full flex items-center justify-center py-1 transition-colors group',
-                  appColorClass
-                )}
-                aria-label={app.label}
-                aria-current={isActive ? 'page' : undefined}
-              >
-                {/* Active indicator — absolute left edge of rail */}
-                <span
-                  className={cn(
-                    'absolute left-0 top-1/2 -translate-y-1/2 w-1 rounded-r-full transition-all duration-300',
-                    isActive
-                      ? 'h-8 bg-app-accent'
-                      : 'h-0 bg-transparent group-hover:h-4 group-hover:bg-muted-foreground/40'
-                  )}
-                />
-
-                <span
-                  className={cn(
-                    'flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300',
-                    isActive
-                      ? 'bg-app-accent text-app-accent-foreground shadow-lg shadow-foreground/20 rounded-xl scale-100'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground hover:rounded-xl scale-95 hover:scale-100'
-                  )}
-                >
-                  {Icon ? (
-                    <Icon className="h-6 w-6" />
-                  ) : (
-                    <span className="text-lg font-semibold">{app.label[0]}</span>
-                  )}
-                </span>
-              </button>
-            </TooltipTrigger>
-            <TooltipContent side="right">{app.label}</TooltipContent>
-          </Tooltip>
-        );
-      })}
-
-      {/* Settings entry — bottom of app list, above collapse */}
-      <div className="mt-auto flex flex-col gap-2 items-center">
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={() => navigate('/settings')}
-              className={cn(
-                'relative w-full flex items-center justify-center py-1 transition-colors group'
-              )}
-              aria-label="Settings"
-              aria-current={matchesAtBoundary(location.pathname, '/settings') ? 'page' : undefined}
-            >
-              <span
-                className={cn(
-                  'absolute left-0 top-1/2 -translate-y-1/2 w-1 rounded-r-full transition-all duration-300',
-                  matchesAtBoundary(location.pathname, '/settings')
-                    ? 'h-8 bg-muted-foreground'
-                    : 'h-0 bg-transparent group-hover:h-4 group-hover:bg-muted-foreground/40'
-                )}
-              />
-              <span
-                className={cn(
-                  'flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300',
-                  matchesAtBoundary(location.pathname, '/settings')
-                    ? 'bg-muted text-foreground shadow-sm rounded-xl scale-100'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground hover:rounded-xl scale-95 hover:scale-100'
-                )}
-              >
-                <Settings className="h-6 w-6" />
-              </span>
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right">Settings</TooltipContent>
-        </Tooltip>
-
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={toggleRail}
-              className="min-w-9 min-h-9 flex items-center justify-center hover:bg-muted rounded-lg"
-              aria-label="Collapse app rail"
-            >
-              <PanelLeftClose className="h-4 w-4 text-muted-foreground" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right">Collapse</TooltipContent>
-        </Tooltip>
-      </div>
+      <AppRailFooter pathname={location.pathname} onToggle={toggleRail} />
     </div>
   );
 }

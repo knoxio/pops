@@ -43,6 +43,32 @@ interface UseFocusTrapOptions {
   active: boolean;
 }
 
+/**
+ * Decide which element (if any) should receive focus to keep the trap closed.
+ *
+ * Returns `null` when the native Tab behaviour should be allowed to proceed
+ * (i.e. focus stays inside the container without wrapping).
+ */
+function resolveWrapTarget(
+  focusable: HTMLElement[],
+  currentFocus: HTMLElement | null,
+  shiftKey: boolean
+): HTMLElement | null {
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (!first || !last) return null;
+
+  // Focus on/outside the container or on an element not in the computed
+  // focusable list (e.g. tabindex="-1" child) is treated as a boundary and
+  // wraps unconditionally.
+  const focusIndex = currentFocus ? focusable.indexOf(currentFocus) : -1;
+
+  if (shiftKey) {
+    return !currentFocus || focusIndex <= 0 ? last : null;
+  }
+  return !currentFocus || focusIndex === -1 || focusIndex === focusable.length - 1 ? first : null;
+}
+
 export function useFocusTrap({ containerRef, active }: UseFocusTrapOptions): void {
   useEffect(() => {
     if (!active) return;
@@ -56,31 +82,12 @@ export function useFocusTrap({ containerRef, active }: UseFocusTrapOptions): voi
       const focusable = getFocusableElements(container);
       if (focusable.length === 0) return;
 
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      if (!first || !last) return;
-
       const currentFocus = document.activeElement as HTMLElement | null;
+      const target = resolveWrapTarget(focusable, currentFocus, event.shiftKey);
+      if (!target) return;
 
-      // Determine whether the currently focused element is a known tabbable
-      // descendant. If focus is outside the container, on the container itself,
-      // or on an element not in the computed focusable list (e.g. tabindex="-1"
-      // child), we treat it as a boundary and wrap unconditionally.
-      const focusIndex = currentFocus ? focusable.indexOf(currentFocus) : -1;
-
-      if (event.shiftKey) {
-        // Shift+Tab: wrap to last when focus is on/before first, or not in the list
-        if (!currentFocus || focusIndex <= 0) {
-          event.preventDefault();
-          last.focus();
-        }
-      } else {
-        // Tab: wrap to first when focus is on/after last, or not in the list
-        if (!currentFocus || focusIndex === -1 || focusIndex === focusable.length - 1) {
-          event.preventDefault();
-          first.focus();
-        }
-      }
+      event.preventDefault();
+      target.focus();
     }
 
     document.addEventListener('keydown', handleKeyDown);

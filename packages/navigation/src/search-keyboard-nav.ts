@@ -6,6 +6,30 @@
  */
 import { type RefObject, useCallback, useEffect, useState } from 'react';
 
+type KeyAction =
+  | { type: 'next'; index: number }
+  | { type: 'select'; index: number }
+  | { type: 'close' };
+
+function resolveKeyAction(
+  key: string,
+  resultCount: number,
+  selectedIndex: number
+): KeyAction | null {
+  if (key === 'Escape') return { type: 'close' };
+  if (resultCount === 0) return null;
+  if (key === 'ArrowDown') {
+    return { type: 'next', index: selectedIndex < resultCount - 1 ? selectedIndex + 1 : 0 };
+  }
+  if (key === 'ArrowUp') {
+    return { type: 'next', index: selectedIndex > 0 ? selectedIndex - 1 : resultCount - 1 };
+  }
+  if (key === 'Enter' && selectedIndex >= 0) {
+    return { type: 'select', index: selectedIndex };
+  }
+  return null;
+}
+
 interface UseSearchKeyboardNavOptions {
   /** Total number of navigable results across all sections. */
   resultCount: number;
@@ -42,37 +66,19 @@ export function useSearchKeyboardNav({
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
-      if (resultCount === 0) {
-        if (event.key === 'Escape') {
-          event.preventDefault();
-          onClose();
-        }
-        return;
-      }
-
-      switch (event.key) {
-        case 'ArrowDown': {
-          event.preventDefault();
-          setSelectedIndex((prev) => (prev < resultCount - 1 ? prev + 1 : 0));
+      const action = resolveKeyAction(event.key, resultCount, selectedIndex);
+      if (!action) return;
+      event.preventDefault();
+      switch (action.type) {
+        case 'next':
+          setSelectedIndex(action.index);
           break;
-        }
-        case 'ArrowUp': {
-          event.preventDefault();
-          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : resultCount - 1));
+        case 'select':
+          onSelect(action.index);
           break;
-        }
-        case 'Enter': {
-          event.preventDefault();
-          if (selectedIndex >= 0) {
-            onSelect(selectedIndex);
-          }
-          break;
-        }
-        case 'Escape': {
-          event.preventDefault();
+        case 'close':
           onClose();
           break;
-        }
       }
     },
     [resultCount, selectedIndex, onSelect, onClose]

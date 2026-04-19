@@ -18,74 +18,88 @@ function hitRateBadgeVariant(rate: number) {
   return 'outline' as const;
 }
 
+const dateColumn: ColumnDef<HistoryRecord> = {
+  accessorKey: 'date',
+  header: ({ column }) => <SortableHeader column={column}>Date</SortableHeader>,
+  cell: ({ row }) => formatHistoryDate(row.original.date),
+};
+
+const callsColumn: ColumnDef<HistoryRecord> = {
+  accessorKey: 'calls',
+  header: ({ column }) => (
+    <div className="flex justify-end">
+      <SortableHeader column={column}>Calls</SortableHeader>
+    </div>
+  ),
+  cell: ({ row }) => (
+    <div className="text-right tabular-nums">{row.original.calls.toLocaleString()}</div>
+  ),
+};
+
+const cacheHitsColumn: ColumnDef<HistoryRecord> = {
+  accessorKey: 'cacheHits',
+  header: () => <div className="text-right">Cache Hits</div>,
+  cell: ({ row }) => (
+    <div className="text-right tabular-nums">{row.original.cacheHits.toLocaleString()}</div>
+  ),
+};
+
+const cacheRateColumn: ColumnDef<HistoryRecord> = {
+  id: 'cacheRate',
+  header: () => <div className="text-right">Hit Rate</div>,
+  cell: ({ row }) => {
+    const total = row.original.calls + row.original.cacheHits;
+    const rate = total > 0 ? (row.original.cacheHits / total) * 100 : 0;
+    return (
+      <div className="text-right">
+        <Badge variant={hitRateBadgeVariant(rate)}>{rate.toFixed(1)}%</Badge>
+      </div>
+    );
+  },
+};
+
+const inputTokensColumn: ColumnDef<HistoryRecord> = {
+  accessorKey: 'inputTokens',
+  header: () => <div className="text-right">Input Tokens</div>,
+  cell: ({ row }) => (
+    <div className="text-right font-mono text-sm tabular-nums">
+      {row.original.inputTokens.toLocaleString()}
+    </div>
+  ),
+};
+
+const outputTokensColumn: ColumnDef<HistoryRecord> = {
+  accessorKey: 'outputTokens',
+  header: () => <div className="text-right">Output Tokens</div>,
+  cell: ({ row }) => (
+    <div className="text-right font-mono text-sm tabular-nums">
+      {row.original.outputTokens.toLocaleString()}
+    </div>
+  ),
+};
+
+const costColumn: ColumnDef<HistoryRecord> = {
+  accessorKey: 'costUsd',
+  header: ({ column }) => (
+    <div className="flex justify-end">
+      <SortableHeader column={column}>Cost</SortableHeader>
+    </div>
+  ),
+  cell: ({ row }) => (
+    <div className="text-right font-mono font-medium tabular-nums">
+      ${row.original.costUsd.toFixed(4)}
+    </div>
+  ),
+};
+
 export function buildHistoryColumns(): ColumnDef<HistoryRecord>[] {
   return [
-    {
-      accessorKey: 'date',
-      header: ({ column }) => <SortableHeader column={column}>Date</SortableHeader>,
-      cell: ({ row }) => formatHistoryDate(row.original.date),
-    },
-    {
-      accessorKey: 'calls',
-      header: ({ column }) => (
-        <div className="flex justify-end">
-          <SortableHeader column={column}>Calls</SortableHeader>
-        </div>
-      ),
-      cell: ({ row }) => (
-        <div className="text-right tabular-nums">{row.original.calls.toLocaleString()}</div>
-      ),
-    },
-    {
-      accessorKey: 'cacheHits',
-      header: () => <div className="text-right">Cache Hits</div>,
-      cell: ({ row }) => (
-        <div className="text-right tabular-nums">{row.original.cacheHits.toLocaleString()}</div>
-      ),
-    },
-    {
-      id: 'cacheRate',
-      header: () => <div className="text-right">Hit Rate</div>,
-      cell: ({ row }) => {
-        const total = row.original.calls + row.original.cacheHits;
-        const rate = total > 0 ? (row.original.cacheHits / total) * 100 : 0;
-        return (
-          <div className="text-right">
-            <Badge variant={hitRateBadgeVariant(rate)}>{rate.toFixed(1)}%</Badge>
-          </div>
-        );
-      },
-    },
-    {
-      accessorKey: 'inputTokens',
-      header: () => <div className="text-right">Input Tokens</div>,
-      cell: ({ row }) => (
-        <div className="text-right font-mono text-sm tabular-nums">
-          {row.original.inputTokens.toLocaleString()}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'outputTokens',
-      header: () => <div className="text-right">Output Tokens</div>,
-      cell: ({ row }) => (
-        <div className="text-right font-mono text-sm tabular-nums">
-          {row.original.outputTokens.toLocaleString()}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'costUsd',
-      header: ({ column }) => (
-        <div className="flex justify-end">
-          <SortableHeader column={column}>Cost</SortableHeader>
-        </div>
-      ),
-      cell: ({ row }) => (
-        <div className="text-right font-mono font-medium tabular-nums">
-          ${row.original.costUsd.toFixed(4)}
-        </div>
-      ),
-    },
+    dateColumn,
+    callsColumn,
+    cacheHitsColumn,
+    cacheRateColumn,
+    inputTokensColumn,
+    outputTokensColumn,
+    costColumn,
   ];
 }

@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useRef } from 'react';
 
-import { getResultComponent } from './result-component-registry';
+import { SectionView } from './search-results/SectionView';
+import { sortSections, usePanelDismiss } from './search-results/usePanelDismiss';
 
 import type { ReactNode } from 'react';
 
@@ -34,42 +35,6 @@ export interface SearchResultsPanelProps {
   selectedIndex?: number;
 }
 
-const COLOR_CLASSES: Record<string, string> = {
-  purple: 'text-purple-600 dark:text-purple-400',
-  green: 'text-success',
-  blue: 'text-info',
-  red: 'text-destructive',
-  orange: 'text-orange-600 dark:text-orange-400',
-  yellow: 'text-warning',
-  pink: 'text-pink-600 dark:text-pink-400',
-  cyan: 'text-cyan-600 dark:text-cyan-400',
-};
-
-function SectionHeader({
-  icon,
-  label,
-  count,
-  color,
-}: {
-  icon: ReactNode;
-  label: string;
-  count: number;
-  color: string;
-}) {
-  const colorClass = COLOR_CLASSES[color] ?? 'text-foreground';
-
-  return (
-    <div
-      className={`flex items-center gap-2 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide ${colorClass}`}
-      data-testid={`section-header-${label.toLowerCase().replaceAll(/\s+/g, '-')}`}
-    >
-      {icon}
-      <span>{label}</span>
-      <span className="ml-auto text-muted-foreground font-normal">{count}</span>
-    </div>
-  );
-}
-
 export function SearchResultsPanel({
   sections,
   query,
@@ -79,48 +44,10 @@ export function SearchResultsPanel({
   selectedIndex = -1,
 }: SearchResultsPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  usePanelDismiss(panelRef, onClose);
 
-  // Close on outside click
-  const handleOutsideClick = useCallback(
-    (e: MouseEvent) => {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    },
-    [onClose]
-  );
+  const sortedSections = sortSections(sections);
 
-  // Close on Escape
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    },
-    [onClose]
-  );
-
-  useEffect(() => {
-    document.addEventListener('mousedown', handleOutsideClick);
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('mousedown', handleOutsideClick);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [handleOutsideClick, handleKeyDown]);
-
-  // Sort: context section first, then by highest score descending
-  const sortedSections = [...sections]
-    .filter((s) => s.hits.length > 0)
-    .toSorted((a, b) => {
-      if (a.isContext && !b.isContext) return -1;
-      if (!a.isContext && b.isContext) return 1;
-      const aMax = Math.max(...a.hits.map((h) => h.score));
-      const bMax = Math.max(...b.hits.map((h) => h.score));
-      return bMax - aMax;
-    });
-
-  // No results state
   if (sortedSections.length === 0) {
     return (
       <div
@@ -133,8 +60,7 @@ export function SearchResultsPanel({
     );
   }
 
-  let globalIndex = 0;
-
+  let cursor = 0;
   return (
     <div
       ref={panelRef}
@@ -142,57 +68,18 @@ export function SearchResultsPanel({
       data-testid="search-results-panel"
     >
       {sortedSections.map((section) => {
-        const ResultComponent = getResultComponent(section.domain);
-
+        const startIndex = cursor;
+        cursor += section.hits.length;
         return (
-          <div
+          <SectionView
             key={section.domain}
-            className={section.isContext ? 'border-l-2 border-l-primary bg-accent/30' : ''}
-            data-testid={`section-${section.domain}`}
-          >
-            <SectionHeader
-              icon={section.icon}
-              label={section.label}
-              count={section.totalCount}
-              color={section.color}
-            />
-            <ul className="px-1 pb-1">
-              {section.hits.map((hit) => {
-                const itemIndex = globalIndex++;
-                const isSelected = itemIndex === selectedIndex;
-                return (
-                  <li key={hit.uri}>
-                    <button
-                      type="button"
-                      className={`w-full cursor-pointer rounded-md px-2 py-1.5 text-left hover:bg-accent focus-visible:bg-accent focus-visible:outline-none${isSelected ? ' bg-accent' : ''}`}
-                      onClick={() => onResultClick?.(hit.uri)}
-                      data-uri={hit.uri}
-                      data-result-index={itemIndex}
-                    >
-                      <ResultComponent
-                        data={{
-                          ...hit.data,
-                          _query: query,
-                          _matchField: hit.matchField,
-                          _matchType: hit.matchType,
-                        }}
-                      />
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-            {section.totalCount > section.hits.length && (
-              <button
-                type="button"
-                className="w-full px-3 py-1.5 text-xs text-muted-foreground hover:text-foreground text-left hover:bg-accent/50 transition-colors"
-                onClick={() => onShowMore?.(section.domain)}
-                data-testid={`show-more-${section.domain}`}
-              >
-                Show more ({section.totalCount - section.hits.length} remaining)
-              </button>
-            )}
-          </div>
+            section={section}
+            query={query}
+            startIndex={startIndex}
+            selectedIndex={selectedIndex}
+            onResultClick={onResultClick}
+            onShowMore={onShowMore}
+          />
         );
       })}
     </div>

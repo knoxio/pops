@@ -1,7 +1,6 @@
 import { findActiveApp } from '@/app/nav/path-utils';
 import { registeredApps } from '@/app/nav/registry';
 import { useUIStore } from '@/store/uiStore';
-import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router';
 
 /**
@@ -14,8 +13,9 @@ import { Outlet, useLocation } from 'react-router';
 import { AppContextProvider } from '@pops/navigation';
 import { cn, ErrorBoundary } from '@pops/ui';
 
-import { AppRail } from './AppRail';
-import { PageNav } from './PageNav';
+import { AmbientBackground } from './root-layout/AmbientBackground';
+import { NavRegion } from './root-layout/NavRegion';
+import { usePageNavAutoClose } from './root-layout/usePageNavAutoClose';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 
@@ -27,56 +27,17 @@ export function RootLayout() {
   const activeApp = findActiveApp(location.pathname, registeredApps);
   const appColorClass = activeApp?.color ? `app-${activeApp.color}` : undefined;
 
-  // Close tablet overlay on navigation, unless AppRail requested we skip one
-  // cycle (it sets skipNextPageNavClose before calling navigate so the overlay
-  // it is about to open is not immediately collapsed by this effect).
-  // Read the flag imperatively so it's not a reactive dep — subscribing would
-  // cause the effect to fire twice (once to skip/clear the flag, again when the
-  // flag resets to false, which would then close the nav we just opened).
-  useEffect(() => {
-    if (useUIStore.getState().skipNextPageNavClose) {
-      useUIStore.getState().setSkipNextPageNavClose(false);
-      return;
-    }
-    setPageNavOpen(false);
-  }, [location.pathname, setPageNavOpen]);
+  usePageNavAutoClose(location.pathname, setPageNavOpen);
 
   return (
     <AppContextProvider>
       <div className={cn('min-h-screen bg-background relative', appColorClass)}>
-        {/* Ambient background decorative elements */}
-        <div className="fixed top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-0 opacity-20 dark:opacity-10">
-          <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-app-accent/20 blur-[120px]" />
-          <div className="absolute bottom-[-5%] left-[-5%] w-[30%] h-[30%] rounded-full bg-app-accent/10 blur-[100px]" />
-        </div>
+        <AmbientBackground />
 
         <div className="relative z-10 pt-14 md:pt-16">
           <TopBar />
           <div className="flex">
-            {/* Desktop + Tablet: app rail always visible at md+ */}
-            <div className="hidden md:flex h-[calc(100vh-4rem)] sticky top-16 shrink-0">
-              <AppRail />
-              {/* Desktop only: permanent PageNav (lg+) */}
-              <div className="hidden lg:block">
-                <PageNav />
-              </div>
-            </div>
-
-            {/* Tablet overlay: PageNav as overlay (md to lg) */}
-            {pageNavOpen && (
-              <div className="hidden md:block lg:hidden">
-                <div
-                  className="fixed inset-0 bg-black/50 z-40"
-                  onClick={() => {
-                    setPageNavOpen(false);
-                  }}
-                  aria-hidden="true"
-                />
-                <aside className="fixed left-16 top-16 bottom-0 z-50 shadow-lg">
-                  <PageNav />
-                </aside>
-              </div>
-            )}
+            <NavRegion pageNavOpen={pageNavOpen} onClosePageNav={() => setPageNavOpen(false)} />
 
             {/* Mobile: overlay sidebar */}
             <Sidebar open={sidebarOpen} />
