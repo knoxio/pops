@@ -413,21 +413,29 @@ export function SectionRenderer({ manifest, optionsLoaders, onTestAction }: Sect
 
   useEffect(() => {
     if (!optionsLoaders) return;
+    let cancelled = false;
     for (const [key, loader] of Object.entries(optionsLoaders)) {
       setLoadingOptionKeys((prev) => new Set([...prev, key]));
-      loader()
-        .then((opts) => setDynamicOptions((prev) => ({ ...prev, [key]: opts })))
+      Promise.resolve()
+        .then(loader)
+        .then((opts) => {
+          if (!cancelled) setDynamicOptions((prev) => ({ ...prev, [key]: opts }));
+        })
         .catch(() => {
           /* fall back to static options */
         })
         .finally(() => {
-          setLoadingOptionKeys((prev) => {
-            const next = new Set(prev);
-            next.delete(key);
-            return next;
-          });
+          if (!cancelled)
+            setLoadingOptionKeys((prev) => {
+              const next = new Set(prev);
+              next.delete(key);
+              return next;
+            });
         });
     }
+    return () => {
+      cancelled = true;
+    };
   }, [optionsLoaders]);
 
   const debounceRefs = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
