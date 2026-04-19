@@ -36,9 +36,9 @@ export type DateStyle = 'short' | 'medium' | 'long' | 'datetime';
 /**
  * Format a date string or ISO timestamp.
  *
- * - `short`    — "5 Jan 2025"   (en-AU, day/month/year)
- * - `medium`   — "Jan 5, 2025"  (en-AU, month/day/year)
- * - `long`     — "Sunday, 5 January" (en-AU, weekday/month/day)
+ * - `short`    — "5 Jan 2025"      (en-AU, abbreviated month)
+ * - `medium`   — "5 January 2025"  (en-AU, full month name)
+ * - `long`     — "Sunday, 5 January" (en-AU, weekday + day + month)
  * - `datetime` — locale date+time string
  */
 export function formatDate(dateStr: string, style: DateStyle = 'short'): string {
@@ -53,7 +53,7 @@ export function formatDate(dateStr: string, style: DateStyle = 'short'): string 
     case 'medium':
       return date.toLocaleDateString('en-AU', {
         year: 'numeric',
-        month: 'short',
+        month: 'long',
         day: 'numeric',
       });
     case 'long':

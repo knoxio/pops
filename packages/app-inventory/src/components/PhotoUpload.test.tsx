@@ -165,8 +165,8 @@ describe('PhotoUpload', () => {
 
     render(<PhotoUpload onFilesSelected={mockOnFilesSelected} files={files} />);
 
-    expect(screen.getByText(/5\.0MB/)).toBeInTheDocument();
-    expect(screen.getByText(/800KB/)).toBeInTheDocument();
+    expect(screen.getByText(/5\.0 MB/)).toBeInTheDocument();
+    expect(screen.getByText(/800\.0 KB/)).toBeInTheDocument();
   });
 
   it('calls onRemove when remove button is clicked', () => {

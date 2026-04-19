@@ -230,6 +230,17 @@ vi.mock('@pops/ui', async () => {
         },
         ...rest,
       }),
+    formatDate: (dateStr: string) => new Date(dateStr).toLocaleDateString(),
+    useDebouncedCallback: <TArgs extends unknown[]>(
+      fn: (...args: TArgs) => void,
+      delay: number
+    ) => {
+      let timer: ReturnType<typeof setTimeout> | null = null;
+      return (...args: TArgs) => {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+      };
+    },
   };
 });
 

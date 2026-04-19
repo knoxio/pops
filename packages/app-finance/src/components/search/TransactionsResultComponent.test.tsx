@@ -30,7 +30,7 @@ describe('TransactionsResultComponent', () => {
 
   it('renders income amount in green with plus sign', () => {
     render(<TransactionsResultComponent data={makeData({ type: 'income', amount: 3500 })} />);
-    const amount = screen.getByText('+$3500.00');
+    const amount = screen.getByText('+$3,500.00');
     expect(amount).toBeInTheDocument();
     expect(amount.className).toContain('text-success');
   });

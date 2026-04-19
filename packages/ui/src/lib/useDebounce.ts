@@ -12,23 +12,26 @@ export function useDebouncedValue(value: string, delay: number): string {
 
 /**
  * Returns a debounced version of `fn` that only fires after `delay` ms of
- * inactivity. The returned callback is stable (won't change between renders)
- * while always calling the latest version of `fn`.
+ * inactivity. The returned callback is stable unless `delay` changes.
+ * Always calls the latest version of `fn` (no stale closure).
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function useDebouncedCallback<T extends (...args: any[]) => void>(
-  fn: T,
+export function useDebouncedCallback<TArgs extends unknown[]>(
+  fn: (...args: TArgs) => void,
   delay: number
-): (...args: Parameters<T>) => void {
+): (...args: TArgs) => void {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const fnRef = useRef<T>(fn);
+  const fnRef = useRef(fn);
+  fnRef.current = fn;
 
-  useEffect(() => {
-    fnRef.current = fn;
-  });
+  useEffect(
+    () => () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    },
+    []
+  );
 
   return useCallback(
-    (...args: Parameters<T>) => {
+    (...args: TArgs) => {
       if (timerRef.current) clearTimeout(timerRef.current);
       timerRef.current = setTimeout(() => {
         fnRef.current(...args);
