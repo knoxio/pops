@@ -2,7 +2,7 @@ import { ArrowRightLeft, Box, Building2, Film, PiggyBank, Search, Tv, X } from '
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { trpc } from '@pops/api-client';
-import { Button, Input, useDebouncedCallback } from '@pops/ui';
+import { Button, Input } from '@pops/ui';
 
 import { useCurrentApp, useSearchResultNavigation } from './hooks';
 import { useRecentSearches } from './recent-searches';
@@ -116,18 +116,32 @@ export function SearchInput() {
     [sections, query, currentApp, utils]
   );
 
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cancelDebounce = useCallback(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => () => cancelDebounce(), [cancelDebounce]);
+
   const handleResultClick = useCallback(
     (uri: string) => {
+      cancelDebounce();
       if (query) addQuery(query);
+      if (inputRef.current) inputRef.current.value = '';
       navigateTo(uri);
       clear();
     },
-    [query, addQuery, navigateTo, clear]
+    [cancelDebounce, query, addQuery, inputRef, navigateTo, clear]
   );
 
   const handleClose = useCallback(() => {
+    cancelDebounce();
     setOpen(false);
-  }, [setOpen]);
+  }, [cancelDebounce, setOpen]);
 
   const { selectedIndex } = useSearchKeyboardNav({
     containerRef,
@@ -138,22 +152,23 @@ export function SearchInput() {
     onClose: handleClose,
   });
 
-  const debouncedSetQuery = useDebouncedCallback(setQuery, DEBOUNCE_MS);
-
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      debouncedSetQuery(e.target.value);
+      const value = e.target.value;
+      cancelDebounce();
+      debounceTimerRef.current = setTimeout(() => setQuery(value), DEBOUNCE_MS);
     },
-    [debouncedSetQuery]
+    [cancelDebounce, setQuery]
   );
 
   const handleClear = useCallback(() => {
+    cancelDebounce();
     clear();
     if (inputRef.current) {
       inputRef.current.value = '';
       inputRef.current.focus();
     }
-  }, [clear]);
+  }, [cancelDebounce, clear]);
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {

@@ -121,7 +121,13 @@ export function RequestMovieButton({
         )
       }
       modal={({ open, onClose }) => (
-        <RequestMovieModal open={open} onClose={onClose} tmdbId={tmdbId} title={title} year={year} />
+        <RequestMovieModal
+          open={open}
+          onClose={onClose}
+          tmdbId={tmdbId}
+          title={title}
+          year={year}
+        />
       )}
     />
   );

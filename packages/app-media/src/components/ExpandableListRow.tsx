@@ -95,6 +95,11 @@ export function ExpandableListRow({
             type="button"
             onClick={() => setIsExpanded((v) => !v)}
             aria-expanded={isExpanded}
+            aria-label={
+              isExpanded
+                ? `Hide overview for episode ${item.episodeNumber}`
+                : `Show overview for episode ${item.episodeNumber}`
+            }
             className="mt-0.5 text-muted-foreground shrink-0 hover:text-foreground"
           >
             {isExpanded ? (

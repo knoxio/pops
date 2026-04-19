@@ -2,6 +2,8 @@ import { Film, Star } from 'lucide-react';
 
 import { highlightMatch, SearchResultItem } from '@pops/ui';
 
+import { formatRuntime } from '../../lib/format';
+
 /**
  * MovieSearchResult — ResultComponent for movies search hits.
  *
@@ -9,8 +11,6 @@ import { highlightMatch, SearchResultItem } from '@pops/ui';
  * Registered for domain "movies" in the search result component registry.
  */
 import type { ResultComponentProps } from '@pops/navigation';
-
-import { formatRuntime } from '../../lib/format';
 
 interface MovieHitData {
   title: string;

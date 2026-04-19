@@ -17,7 +17,10 @@ export function ProgressBar({ watched, total, className, showLabel = true }: Pro
     <div className={cn('flex items-center gap-2', className)}>
       <Progress
         value={Math.min(percentage, 100)}
-        className={cn('flex-1 h-2', isComplete ? '[&>[data-slot=progress-indicator]]:bg-success' : '')}
+        className={cn(
+          'flex-1 h-2',
+          isComplete ? '[&>[data-slot=progress-indicator]]:bg-success' : ''
+        )}
       />
       {showLabel && (
         <span className="text-xs text-muted-foreground whitespace-nowrap">

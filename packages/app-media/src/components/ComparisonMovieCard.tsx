@@ -101,7 +101,7 @@ export function ComparisonMovieCard({
     ) : undefined;
 
   const overlay =
-    onNA ?? onMarkStale ?? onBlacklist ? (
+    (onNA ?? onMarkStale ?? onBlacklist) ? (
       <div className="flex justify-center gap-2">
         {onNA && (
           <Tooltip>

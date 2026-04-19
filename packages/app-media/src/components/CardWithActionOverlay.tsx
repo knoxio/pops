@@ -40,20 +40,27 @@ export interface CardWithActionOverlayProps {
   'data-testid'?: string;
 }
 
-export function CardWithActionOverlay({
+interface CardPosterContentProps {
+  src: string | null;
+  alt: string;
+  lazy: boolean;
+  hasOnClick: boolean;
+  overlay?: ReactNode;
+  topLeft?: ReactNode;
+  topRight?: ReactNode;
+  overlayGradient: string;
+}
+
+function CardPosterContent({
   src,
   alt,
-  className,
-  aspectClass = 'aspect-[2/3]',
+  lazy,
+  hasOnClick,
   overlay,
   topLeft,
   topRight,
-  lazy = true,
-  onClick,
-  disabled,
-  overlayGradient = 'from-black/80',
-  'data-testid': testId,
-}: CardWithActionOverlayProps) {
+  overlayGradient,
+}: CardPosterContentProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
 
@@ -64,9 +71,8 @@ export function CardWithActionOverlay({
 
   const showPlaceholder = !src || imageError;
 
-  const inner = (
+  return (
     <>
-      {/* Poster */}
       {!showPlaceholder && (
         <img
           src={src}
@@ -74,7 +80,7 @@ export function CardWithActionOverlay({
           loading={lazy ? 'lazy' : 'eager'}
           className={cn(
             'h-full w-full object-cover transition-opacity duration-200',
-            onClick && 'group-hover:opacity-80',
+            hasOnClick && 'group-hover:opacity-80',
             imageLoaded ? 'opacity-100' : 'opacity-0'
           )}
           onLoad={() => setImageLoaded(true)}
@@ -92,11 +98,9 @@ export function CardWithActionOverlay({
         </div>
       )}
 
-      {/* Top badges */}
       {topLeft && <div className="absolute top-2 left-2 z-10">{topLeft}</div>}
       {topRight && <div className="absolute top-2 right-2 z-10">{topRight}</div>}
 
-      {/* Bottom overlay */}
       {overlay && (
         <div
           className={cn(
@@ -110,14 +114,31 @@ export function CardWithActionOverlay({
       )}
     </>
   );
+}
+
+export function CardWithActionOverlay({
+  src,
+  alt,
+  className,
+  aspectClass = 'aspect-[2/3]',
+  overlay,
+  topLeft,
+  topRight,
+  lazy = true,
+  onClick,
+  disabled,
+  overlayGradient = 'from-black/80',
+  'data-testid': testId,
+}: CardWithActionOverlayProps) {
+  const isInteractive = !!onClick && !disabled;
 
   return (
     <div
-      role={onClick ? 'button' : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onClick={onClick}
+      role={isInteractive ? 'button' : undefined}
+      tabIndex={isInteractive ? 0 : undefined}
+      onClick={isInteractive ? onClick : undefined}
       onKeyDown={
-        onClick
+        isInteractive
           ? (e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
@@ -131,13 +152,22 @@ export function CardWithActionOverlay({
       className={cn(
         'group relative w-full overflow-hidden rounded-md bg-muted',
         aspectClass,
-        onClick && !disabled && 'cursor-pointer active:scale-[0.98] transition-transform',
+        isInteractive && 'cursor-pointer active:scale-[0.98] transition-transform',
         onClick && disabled && 'cursor-default',
         className
       )}
       data-testid={testId}
     >
-      {inner}
+      <CardPosterContent
+        src={src}
+        alt={alt}
+        lazy={lazy}
+        hasOnClick={!!onClick}
+        overlay={overlay}
+        topLeft={topLeft}
+        topRight={topRight}
+        overlayGradient={overlayGradient}
+      />
     </div>
   );
 }
