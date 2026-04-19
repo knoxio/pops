@@ -327,39 +327,6 @@
       }
     },
     {
-      "files": ["packages/app-inventory/src/pages/ItemFormPage.tsx"],
-      "rules": {
-        "max-lines": ["error", { "max": 950, "skipBlankLines": true, "skipComments": true }],
-        "max-lines-per-function": [
-          "error",
-          { "max": 750, "skipBlankLines": true, "skipComments": true, "IIFEs": true }
-        ],
-        "complexity": ["error", 45]
-      }
-    },
-    {
-      "files": ["packages/app-inventory/src/pages/LocationTreePage.tsx"],
-      "rules": {
-        "max-lines": ["error", { "max": 1050, "skipBlankLines": true, "skipComments": true }],
-        "max-lines-per-function": [
-          "error",
-          { "max": 460, "skipBlankLines": true, "skipComments": true, "IIFEs": true }
-        ],
-        "complexity": ["error", 50]
-      }
-    },
-    {
-      "files": ["packages/app-inventory/src/pages/ItemDetailPage.tsx"],
-      "rules": {
-        "max-lines": ["error", { "max": 800, "skipBlankLines": true, "skipComments": true }],
-        "max-lines-per-function": [
-          "error",
-          { "max": 320, "skipBlankLines": true, "skipComments": true, "IIFEs": true }
-        ],
-        "complexity": ["error", 40]
-      }
-    },
-    {
       "files": ["packages/app-ai/src/pages/AiUsagePage.tsx"],
       "rules": {
         "max-lines": ["error", { "max": 800, "skipBlankLines": true, "skipComments": true }],

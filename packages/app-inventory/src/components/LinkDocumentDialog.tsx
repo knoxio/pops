@@ -1,27 +1,10 @@
-import { FileText, Link2, Search } from 'lucide-react';
+import { FileText, Link2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
 import { trpc } from '@pops/api-client';
-/**
- * LinkDocumentDialog — search Paperless-ngx and link a document to an inventory item.
- * Opens a dialog with search input, results with thumbnails, document type selector,
- * and link action per result.
- */
-import {
-  Button,
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  Select,
-  Skeleton,
-  TextInput,
-} from '@pops/ui';
+import { Button, SearchPickerDialog, Select } from '@pops/ui';
 
-/** Shape of a document info result from the paperless search API. */
 interface PaperlessDocResult {
   id: number;
   title: string;
@@ -66,20 +49,10 @@ export function LinkDocumentDialog({ itemId, onLinked }: LinkDocumentDialogProps
     },
   });
 
-  const handleLink = (docId: number, title: string) => {
-    setLinkingId(docId);
-    linkMutation.mutate({
-      itemId,
-      paperlessDocumentId: docId,
-      documentType: docType,
-      title,
-    });
-  };
-
   const results: PaperlessDocResult[] = data?.data ?? [];
 
   return (
-    <Dialog
+    <SearchPickerDialog
       open={open}
       onOpenChange={(v) => {
         setOpen(v);
@@ -88,103 +61,64 @@ export function LinkDocumentDialog({ itemId, onLinked }: LinkDocumentDialogProps
           setLinkingId(null);
         }
       }}
-    >
-      <DialogTrigger asChild>
+      trigger={
         <Button variant="outline" size="sm">
           <FileText className="h-4 w-4 mr-1.5" />
           Link Document
         </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Link Document</DialogTitle>
-          <DialogDescription>
-            Search Paperless-ngx for a document to link to this item.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="flex items-center gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <TextInput
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-              }}
-              placeholder="Search documents..."
-              className="pl-9"
-              autoFocus
-            />
-          </div>
-          <Select
-            value={docType}
-            onChange={(e) => {
-              setDocType(e.target.value as typeof docType);
-            }}
-            size="sm"
-            options={DOCUMENT_TYPES.map((t) => ({
-              value: t,
-              label: t.charAt(0).toUpperCase() + t.slice(1),
-            }))}
-          />
-        </div>
-
-        <div className="max-h-72 overflow-y-auto space-y-1">
-          {search.length < 2 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">
-              Type at least 2 characters to search
-            </p>
-          ) : isLoading ? (
-            <div className="space-y-2 py-2">
-              <Skeleton className="h-14 w-full" />
-              <Skeleton className="h-14 w-full" />
-              <Skeleton className="h-14 w-full" />
-            </div>
-          ) : results.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4 text-center">No documents found</p>
+      }
+      title="Link Document"
+      description="Search Paperless-ngx for a document to link to this item."
+      searchPlaceholder="Search documents..."
+      search={search}
+      onSearchChange={setSearch}
+      isLoading={isLoading}
+      results={results}
+      maxResultsHeight="max-h-72"
+      trailing={
+        <Select
+          value={docType}
+          onChange={(e) => setDocType(e.target.value as typeof docType)}
+          size="sm"
+          options={DOCUMENT_TYPES.map((t) => ({
+            value: t,
+            label: t.charAt(0).toUpperCase() + t.slice(1),
+          }))}
+        />
+      }
+      renderResult={(doc: PaperlessDocResult) => (
+        <div className="flex items-center gap-3 p-2.5 rounded-md hover:bg-accent transition-colors">
+          {doc.thumbnailUrl ? (
+            <img src={doc.thumbnailUrl} alt="" className="h-10 w-10 rounded object-cover shrink-0" />
           ) : (
-            results.map((doc) => (
-              <div
-                key={doc.id}
-                className="flex items-center gap-3 p-2.5 rounded-md hover:bg-accent transition-colors"
-              >
-                {doc.thumbnailUrl ? (
-                  <img
-                    src={doc.thumbnailUrl}
-                    alt=""
-                    className="h-10 w-10 rounded object-cover shrink-0"
-                  />
-                ) : (
-                  <div className="h-10 w-10 rounded bg-muted flex items-center justify-center shrink-0">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm truncate">{doc.title}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {doc.created ? new Date(doc.created).toLocaleDateString() : 'No date'}
-                    {doc.originalFileName ? ` · ${doc.originalFileName}` : ''}
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    handleLink(doc.id, doc.title);
-                  }}
-                  disabled={linkMutation.isPending}
-                >
-                  {linkingId === doc.id ? (
-                    <span className="text-xs">Linking...</span>
-                  ) : (
-                    <Link2 className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            ))
+            <div className="h-10 w-10 rounded bg-muted flex items-center justify-center shrink-0">
+              <FileText className="h-5 w-5 text-muted-foreground" />
+            </div>
           )}
+          <div className="flex-1 min-w-0">
+            <div className="font-medium text-sm truncate">{doc.title}</div>
+            <div className="text-xs text-muted-foreground">
+              {doc.created ? new Date(doc.created).toLocaleDateString() : 'No date'}
+              {doc.originalFileName ? ` · ${doc.originalFileName}` : ''}
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => {
+              setLinkingId(doc.id);
+              linkMutation.mutate({ itemId, paperlessDocumentId: doc.id, documentType: docType, title: doc.title });
+            }}
+            disabled={linkMutation.isPending}
+          >
+            {linkingId === doc.id ? (
+              <span className="text-xs">Linking...</span>
+            ) : (
+              <Link2 className="h-4 w-4" />
+            )}
+          </Button>
         </div>
-      </DialogContent>
-    </Dialog>
+      )}
+    />
   );
 }

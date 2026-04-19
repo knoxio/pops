@@ -3,14 +3,14 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { trpc } from '@pops/api-client';
-/**
- * LocationContentsPanel — shows inventory items at a selected location.
- *
- * Displays item list with name, asset ID badge, and type badge.
- * Supports "Include sub-locations" toggle, shows item count + total value,
- * and provides navigation to item detail and item creation.
- */
-import { AssetIdBadge, Button, formatAUD, Label, Skeleton, Switch, TypeBadge } from '@pops/ui';
+import {
+  AssetIdBadge,
+  Button,
+  ContainerPanel,
+  formatAUD,
+  Skeleton,
+  TypeBadge,
+} from '@pops/ui';
 
 import type { InventoryItem } from '@pops/api/modules/inventory/items/types';
 
@@ -22,7 +22,6 @@ interface LocationTreeNode {
   children: LocationTreeNode[];
 }
 
-/** Collect all descendant location IDs (excluding the node itself). */
 function collectDescendantIds(node: LocationTreeNode): string[] {
   const ids: string[] = [];
   for (const child of node.children) {
@@ -51,13 +50,11 @@ export function LocationContentsPanel({
   const descendantIds = useMemo(() => collectDescendantIds(node), [node]);
   const hasSubLocations = descendantIds.length > 0;
 
-  // Query items for this location
   const { data: directData, isLoading: directLoading } = trpc.inventory.items.list.useQuery({
     locationId,
     limit: 200,
   });
 
-  // Query items for sub-locations (only when toggled on and sub-locations exist)
   const subLocationQueries = trpc.useQueries((t) =>
     includeSubLocations && hasSubLocations
       ? descendantIds.map((id) => t.inventory.items.list({ locationId: id, limit: 200 }))
@@ -80,58 +77,56 @@ export function LocationContentsPanel({
   }, [directData, includeSubLocations, subLocationItems]);
 
   const totalValue = useMemo(
-    () =>
-      allItems.reduce((sum: number, item: InventoryItem) => sum + (item.replacementValue ?? 0), 0),
+    () => allItems.reduce((sum: number, item: InventoryItem) => sum + (item.replacementValue ?? 0), 0),
     [allItems]
   );
 
+  const summary = isLoading ? (
+    <Skeleton className="h-4 w-36" />
+  ) : (
+    <>
+      {allItems.length} {allItems.length === 1 ? 'item' : 'items'}
+      {totalValue > 0 && <span> · {formatAUD(totalValue)}</span>}
+    </>
+  );
+
+  const emptyState = (
+    <div className="flex flex-col items-center py-8 text-muted-foreground gap-2">
+      <Package className="h-8 w-8 opacity-40" />
+      <p className="text-sm">No items at this location.</p>
+    </div>
+  );
+
   return (
-    <div className="border rounded-lg p-4 space-y-4">
-      {/* Header */}
-      <div>
-        <p className="text-xs text-muted-foreground">{breadcrumb.join(' / ')}</p>
-        <h2 className="text-lg font-semibold mt-1">{locationName}</h2>
-      </div>
-
-      {/* Sub-locations toggle */}
-      {hasSubLocations && (
-        <div className="flex items-center gap-2">
-          <Switch
-            id="include-sub"
-            checked={includeSubLocations}
-            onCheckedChange={setIncludeSubLocations}
-          />
-          <Label htmlFor="include-sub" className="text-sm">
-            Include sub-locations
-          </Label>
-        </div>
-      )}
-
-      {/* Summary */}
-      <div className="text-sm text-muted-foreground">
-        {isLoading ? (
-          <Skeleton className="h-4 w-36" />
-        ) : (
-          <>
-            {allItems.length} {allItems.length === 1 ? 'item' : 'items'}
-            {totalValue > 0 && <span> · {formatAUD(totalValue)}</span>}
-          </>
-        )}
-      </div>
-
-      {/* Item list */}
+    <ContainerPanel
+      title={locationName}
+      subtitle={breadcrumb.join(' / ')}
+      toggle={
+        hasSubLocations
+          ? { label: 'Include sub-locations', value: includeSubLocations, onChange: setIncludeSubLocations, id: 'include-sub' }
+          : undefined
+      }
+      summary={summary}
+      emptyState={!isLoading && allItems.length === 0 ? emptyState : undefined}
+      action={
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full"
+          onClick={() => navigate(`/inventory/items/new?locationId=${encodeURIComponent(locationId)}`)}
+        >
+          <Plus className="h-4 w-4 mr-1.5" />
+          Add Item Here
+        </Button>
+      }
+    >
       {isLoading ? (
         <div className="space-y-2">
           {Array.from({ length: 4 }).map((_, i) => (
             <Skeleton key={i} className="h-10 w-full" />
           ))}
         </div>
-      ) : allItems.length === 0 ? (
-        <div className="flex flex-col items-center py-8 text-muted-foreground gap-2">
-          <Package className="h-8 w-8 opacity-40" />
-          <p className="text-sm">No items at this location.</p>
-        </div>
-      ) : (
+      ) : allItems.length > 0 ? (
         <ul className="space-y-1">
           {allItems.map((item: InventoryItem) => (
             <li key={item.id}>
@@ -148,20 +143,7 @@ export function LocationContentsPanel({
             </li>
           ))}
         </ul>
-      )}
-
-      {/* Add Item Here */}
-      <Button
-        variant="outline"
-        size="sm"
-        className="w-full"
-        onClick={() =>
-          navigate(`/inventory/items/new?locationId=${encodeURIComponent(locationId)}`)
-        }
-      >
-        <Plus className="h-4 w-4 mr-1.5" />
-        Add Item Here
-      </Button>
-    </div>
+      ) : null}
+    </ContainerPanel>
   );
 }

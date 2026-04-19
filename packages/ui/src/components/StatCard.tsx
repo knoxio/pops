@@ -73,6 +73,8 @@ export interface StatCardProps {
   /** Optional trend indicator shown below the value. */
   trend?: StatCardTrend;
   className?: string;
+  /** Makes the card interactive (navigates or triggers an action). */
+  onClick?: () => void;
 }
 
 const trendIconClass = {
@@ -93,17 +95,23 @@ export function StatCard({
   color = 'slate',
   trend,
   className,
+  onClick,
 }: StatCardProps) {
   const styles = statCardColorMap[color];
 
   return (
     <Card
+      role={onClick ? 'button' : undefined}
+      tabIndex={onClick ? 0 : undefined}
       className={cn(
         'p-5 flex flex-col gap-1 justify-between relative overflow-hidden group transition-all duration-300 hover:scale-[1.02]',
+        onClick && 'cursor-pointer hover:bg-muted/50',
         styles.glow,
         styles.border,
         className
       )}
+      onClick={onClick}
+      onKeyDown={onClick ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(); } } : undefined}
     >
       <div
         className={cn(

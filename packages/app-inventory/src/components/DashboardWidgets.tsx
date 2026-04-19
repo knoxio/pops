@@ -1,15 +1,16 @@
-import { Clock, DollarSign, Package, Shield } from 'lucide-react';
+import { Clock, Shield } from 'lucide-react';
 import { useNavigate } from 'react-router';
 
 import { trpc } from '@pops/api-client';
-/**
- * DashboardWidgets — summary statistics for the inventory report dashboard.
- *
- * Renders four stat cards (item count, replacement value, resale value,
- * expiring warranties) plus a recently-added items list. Data is fetched
- * via a single aggregation query. PRD-051/US-01.
- */
-import { Card, CardContent, formatAUD, formatRelativeTime, Skeleton, TypeBadge } from '@pops/ui';
+import {
+  Card,
+  CardContent,
+  formatAUD,
+  formatRelativeTime,
+  Skeleton,
+  StatCard,
+  TypeBadge,
+} from '@pops/ui';
 
 import { ValueByLocationCard, ValueByTypeCard } from './ValueBreakdown';
 
@@ -54,69 +55,29 @@ export function DashboardWidgets() {
 
   if (!data?.data) return null;
 
-  const {
-    itemCount,
-    totalReplacementValue,
-    totalResaleValue,
-    warrantiesExpiringSoon,
-    recentlyAdded,
-  } = data.data;
+  const { itemCount, totalReplacementValue, totalResaleValue, warrantiesExpiringSoon, recentlyAdded } =
+    data.data;
 
   return (
     <div className="grid grid-cols-2 gap-4">
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 text-muted-foreground mb-1">
-            <Package className="h-4 w-4" />
-            <span className="text-xs font-medium">Items</span>
-          </div>
-          <div className="text-2xl font-bold tabular-nums">{itemCount}</div>
-        </CardContent>
-      </Card>
+      <StatCard title="Items" value={itemCount} color="slate" />
 
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 text-muted-foreground mb-1">
-            <DollarSign className="h-4 w-4" />
-            <span className="text-xs font-medium">Replacement</span>
-          </div>
-          <div className="text-2xl font-bold tabular-nums">{formatAUD(totalReplacementValue)}</div>
-        </CardContent>
-      </Card>
+      <StatCard title="Replacement" value={formatAUD(totalReplacementValue)} color="sky" />
 
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 text-muted-foreground mb-1">
-            <DollarSign className="h-4 w-4" />
-            <span className="text-xs font-medium">Resale</span>
-          </div>
-          <div className="text-2xl font-bold tabular-nums">{formatAUD(totalResaleValue)}</div>
-        </CardContent>
-      </Card>
+      <StatCard title="Resale" value={formatAUD(totalResaleValue)} color="violet" />
 
-      <Card
-        role="button"
-        tabIndex={0}
-        className="cursor-pointer hover:bg-muted/50 transition-colors"
+      <StatCard
+        title="Warranties"
+        value={warrantiesExpiringSoon}
+        color={warrantiesExpiringSoon > 0 ? 'amber' : 'slate'}
+        description={
+          <span className="flex items-center gap-1">
+            <Shield className="h-3 w-3" />
+            expiring soon
+          </span>
+        }
         onClick={() => navigate('/inventory/warranties')}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            navigate('/inventory/warranties');
-          }
-        }}
-      >
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2 text-muted-foreground mb-1">
-            <Shield className="h-4 w-4" />
-            <span className="text-xs font-medium">Warranties</span>
-          </div>
-          <div className="text-2xl font-bold tabular-nums">
-            {warrantiesExpiringSoon}
-            <span className="text-sm font-normal text-muted-foreground ml-1">expiring</span>
-          </div>
-        </CardContent>
-      </Card>
+      />
 
       <Card className="col-span-full">
         <CardContent className="p-4">
