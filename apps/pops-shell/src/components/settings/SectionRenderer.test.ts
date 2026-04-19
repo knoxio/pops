@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 // ── fieldsByKey lookup ────────────────────────────────────────────────
 
@@ -72,67 +72,5 @@ describe('SectionRenderer: restart-required toast trigger', () => {
     onError('server.port', 'Network error');
     expect(toastError).toHaveBeenCalledWith('Failed to save server.port: Network error');
     expect(toastInfo).not.toHaveBeenCalled();
-  });
-});
-
-// ── debounced save ────────────────────────────────────────────────────
-
-describe('SectionRenderer: debounced save', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-
-  afterEach(() => {
-    vi.useRealTimers();
-  });
-
-  function makeHandleChange(mutate: (args: unknown) => void) {
-    const debounceRefs = new Map<string, ReturnType<typeof setTimeout>>();
-    return (key: string, value: string) => {
-      const existing = debounceRefs.get(key);
-      if (existing) clearTimeout(existing);
-      const timer = setTimeout(() => {
-        debounceRefs.delete(key);
-        mutate({ entries: [{ key, value }] });
-      }, 500);
-      debounceRefs.set(key, timer);
-    };
-  }
-
-  it('does not call mutate before the 500ms debounce expires', () => {
-    const mutate = vi.fn();
-    const handleChange = makeHandleChange(mutate);
-
-    handleChange('server.port', '8080');
-    vi.advanceTimersByTime(499);
-    expect(mutate).not.toHaveBeenCalled();
-
-    vi.advanceTimersByTime(1);
-    expect(mutate).toHaveBeenCalledTimes(1);
-  });
-
-  it('debounces rapid changes — only the last value is saved', () => {
-    const mutate = vi.fn();
-    const handleChange = makeHandleChange(mutate);
-
-    handleChange('server.port', '8');
-    handleChange('server.port', '80');
-    handleChange('server.port', '808');
-    handleChange('server.port', '8080');
-
-    vi.advanceTimersByTime(500);
-    expect(mutate).toHaveBeenCalledTimes(1);
-    expect(mutate).toHaveBeenCalledWith({ entries: [{ key: 'server.port', value: '8080' }] });
-  });
-
-  it('saves independently for different keys', () => {
-    const mutate = vi.fn();
-    const handleChange = makeHandleChange(mutate);
-
-    handleChange('key.a', 'val-a');
-    handleChange('key.b', 'val-b');
-
-    vi.advanceTimersByTime(500);
-    expect(mutate).toHaveBeenCalledTimes(2);
   });
 });

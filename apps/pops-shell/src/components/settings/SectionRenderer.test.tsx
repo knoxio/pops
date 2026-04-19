@@ -25,7 +25,7 @@ vi.mock('@/lib/trpc', () => ({
   },
 }));
 
-vi.mock('sonner', () => ({ toast: { error: vi.fn() } }));
+vi.mock('sonner', () => ({ toast: { error: vi.fn(), info: vi.fn() } }));
 
 import { SectionRenderer } from './SectionRenderer';
 
