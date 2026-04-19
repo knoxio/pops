@@ -1,9 +1,3 @@
-import { AlertTriangle, Search } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'react-router';
-import { toast } from 'sonner';
-
-import { trpc } from '@pops/api-client';
 /**
  * SearchPage — search TMDB (movies) and TheTVDB (TV shows) and add to library.
  *
@@ -18,349 +12,71 @@ import { trpc } from '@pops/api-client';
  * "Watched + Library" buttons that add the item then trigger the secondary
  * action in a single click.
  */
-import {
-  Button,
-  Skeleton,
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TextInput,
-  useDebouncedValue,
-} from '@pops/ui';
+import { Search } from 'lucide-react';
+import { useState } from 'react';
 
-import {
-  buildPosterUrl,
-  SearchResultCard,
-  type SearchResultType,
-} from '../components/SearchResultCard';
+import { trpc } from '@pops/api-client';
 
-type SearchMode = 'movies' | 'tv' | 'both';
+import { MovieSearchSection } from './search/MovieSearchSection';
+import { SearchInput } from './search/SearchInput';
+import { TvSearchSection } from './search/TvSearchSection';
+import { useLibraryLookups } from './search/useLibraryLookups';
+import { useSearchAddActions } from './search/useSearchAddActions';
+import { useSearchQueryParam } from './search/useSearchQueryParam';
 
-/** TMDB movie search result shape (from media.search.movies). */
-interface MovieSearchResult {
-  tmdbId: number;
-  title: string;
-  overview: string;
-  releaseDate: string;
-  posterPath: string | null;
-  voteAverage: number;
-  genreIds: number[];
+import type { MovieSearchResult, SearchMode, TvSearchResult } from './search/types';
+
+const MAX_RESULTS_PER_SECTION = 20;
+const STALE_TIME_MS = 60_000;
+
+function SearchEmptyPrompt() {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+      <Search className="h-12 w-12 opacity-20 mb-4" />
+      <p className="text-sm">Start typing to search for movies and TV shows.</p>
+    </div>
+  );
 }
 
-/** TheTVDB search result shape (from media.search.tvShows). */
-interface TvSearchResult {
-  tvdbId: number;
-  name: string;
-  overview: string | null;
-  firstAirDate: string | null;
-  posterPath: string | null;
-  genres: string[];
-  year: string | null;
+function NoResultsMessage({ query }: { query: string }) {
+  return (
+    <p className="text-sm text-muted-foreground py-8 text-center">
+      No results found for &ldquo;{query}&rdquo;. Try a different search term.
+    </p>
+  );
 }
 
 export function SearchPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [query, setQuery] = useState(searchParams.get('q') ?? '');
+  const { query, setQuery, debouncedQuery } = useSearchQueryParam();
   const [mode, setMode] = useState<SearchMode>('both');
-  const debouncedQuery = useDebouncedValue(query, 300);
-
-  // Sync debounced query to URL ?q= param
-  useEffect(() => {
-    setSearchParams(
-      (prev) => {
-        const next = new URLSearchParams(prev);
-        if (debouncedQuery) {
-          next.set('q', debouncedQuery);
-        } else {
-          next.delete('q');
-        }
-        return next;
-      },
-      { replace: true }
-    );
-  }, [debouncedQuery, setSearchParams]);
-
-  // Track which items are being added (by external ID)
-  const [addingIds, setAddingIds] = useState<Set<string>>(new Set());
-  // Track items successfully added this session
-  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
-  // Track compound "add to watchlist" pending state (by tmdbId)
-  const [addingToWatchlistIds, setAddingToWatchlistIds] = useState<Set<number>>(new Set());
-  // Track compound "mark watched" pending state (by tmdbId — not-yet-in-library flow)
-  const [markingWatchedTmdbIds, setMarkingWatchedTmdbIds] = useState<Set<number>>(new Set());
-  // Track in-library "mark watched" pending state (by local DB mediaId)
-  const [markingWatchedMediaIds, setMarkingWatchedMediaIds] = useState<Set<number>>(new Set());
-  /**
-   * Cache tmdbId → local DB id for movies added this session via compound
-   * actions. The library query cache won't reflect newly added items until
-   * it's refetched, so we store the mapping from the addMovie response.
-   */
-  const [sessionMovieLocalIds, setSessionMovieLocalIds] = useState<Map<number, number>>(new Map());
-  const [sessionTvLocalIds, setSessionTvLocalIds] = useState<Map<number, number>>(new Map());
 
   const shouldSearchMovies = debouncedQuery.length > 0 && (mode === 'movies' || mode === 'both');
   const shouldSearchTv = debouncedQuery.length > 0 && (mode === 'tv' || mode === 'both');
 
-  // Search queries
   const movieSearch = trpc.media.search.movies.useQuery(
     { query: debouncedQuery },
-    { enabled: shouldSearchMovies, staleTime: 60_000 }
+    { enabled: shouldSearchMovies, staleTime: STALE_TIME_MS }
   );
   const tvSearch = trpc.media.search.tvShows.useQuery(
     { query: debouncedQuery },
-    { enabled: shouldSearchTv, staleTime: 60_000 }
+    { enabled: shouldSearchTv, staleTime: STALE_TIME_MS }
   );
 
-  // Library lookups for "In Library" detection
-  const libraryMovies = trpc.media.movies.list.useQuery(
-    { limit: 1000 },
-    { enabled: shouldSearchMovies, staleTime: 30_000 }
-  );
-  const libraryTvShows = trpc.media.tvShows.list.useQuery(
-    { limit: 1000 },
-    { enabled: shouldSearchTv, staleTime: 30_000 }
-  );
+  const lookups = useLibraryLookups({ shouldSearchMovies, shouldSearchTv });
+  const actions = useSearchAddActions();
 
-  // Build lookup sets and ID maps for navigation
-  const movieTmdbIds = new Set(
-    (libraryMovies.data?.data ?? []).map((m: { tmdbId: number }) => m.tmdbId)
-  );
-  const tvTvdbIds = new Set(
-    (libraryTvShows.data?.data ?? []).map((s: { tvdbId: number }) => s.tvdbId)
-  );
-  const movieTmdbToLocalId = new Map(
-    (libraryMovies.data?.data ?? []).map((m: { id: number; tmdbId: number }) => [m.tmdbId, m.id])
-  );
-  const tvTvdbToLocalId = new Map(
-    (libraryTvShows.data?.data ?? []).map((s: { id: number; tvdbId: number }) => [s.tvdbId, s.id])
-  );
-  const movieTmdbToRotation = new Map(
-    (libraryMovies.data?.data ?? []).map((m) => [
-      m.tmdbId,
-      { rotationStatus: m.rotationStatus, rotationExpiresAt: m.rotationExpiresAt },
-    ])
-  );
-
-  // Mutations
-  const addMovieMutation = trpc.media.library.addMovie.useMutation();
-  const addTvShowMutation = trpc.media.library.addTvShow.useMutation();
-  const watchlistAddMutation = trpc.media.watchlist.add.useMutation();
-  const watchHistoryLogMutation = trpc.media.watchHistory.log.useMutation();
-
-  const makeKey = (type: SearchResultType, id: number) => `${type}:${id}`;
-
-  const handleAddMovie = useCallback(
-    (tmdbId: number) => {
-      const key = makeKey('movie', tmdbId);
-      setAddingIds((prev) => new Set(prev).add(key));
-      addMovieMutation.mutate(
-        { tmdbId },
-        {
-          onSuccess: (result) => {
-            setAddedIds((prev) => new Set(prev).add(key));
-            setSessionMovieLocalIds((prev) => new Map(prev).set(tmdbId, result.data.id));
-            toast.success('Movie added to library');
-          },
-          onError: (err: { message: string }) => {
-            toast.error(`Failed to add movie: ${err.message}`);
-          },
-          onSettled: () => {
-            setAddingIds((prev) => {
-              const next = new Set(prev);
-              next.delete(key);
-              return next;
-            });
-          },
-        }
-      );
-    },
-    [addMovieMutation]
-  );
-
-  const handleAddTvShow = useCallback(
-    (tvdbId: number) => {
-      const key = makeKey('tv', tvdbId);
-      setAddingIds((prev) => new Set(prev).add(key));
-      addTvShowMutation.mutate(
-        { tvdbId },
-        {
-          onSuccess: (result) => {
-            setAddedIds((prev) => new Set(prev).add(key));
-            setSessionTvLocalIds((prev) => new Map(prev).set(tvdbId, result.data.show.id));
-            toast.success('TV show added to library');
-          },
-          onError: (err: { message: string }) => {
-            toast.error(`Failed to add TV show: ${err.message}`);
-          },
-          onSettled: () => {
-            setAddingIds((prev) => {
-              const next = new Set(prev);
-              next.delete(key);
-              return next;
-            });
-          },
-        }
-      );
-    },
-    [addTvShowMutation, setSessionTvLocalIds]
-  );
-
-  /**
-   * Compound action: add movie to library, then add to watchlist.
-   * The local DB id returned by addMovie is used for the watchlist call and
-   * also stored in sessionMovieLocalIds so subsequent actions have the id.
-   */
-  const handleAddToWatchlistAndLibrary = useCallback(
-    (tmdbId: number) => {
-      const key = makeKey('movie', tmdbId);
-      setAddingToWatchlistIds((prev) => new Set(prev).add(tmdbId));
-      setAddingIds((prev) => new Set(prev).add(key));
-      addMovieMutation.mutate(
-        { tmdbId },
-        {
-          onSuccess: (result) => {
-            const movieId = result.data.id;
-            setAddedIds((prev) => new Set(prev).add(key));
-            setSessionMovieLocalIds((prev) => new Map(prev).set(tmdbId, movieId));
-            watchlistAddMutation.mutate(
-              { mediaType: 'movie', mediaId: movieId },
-              {
-                onSuccess: () => {
-                  toast.success('Added to watchlist and library');
-                },
-                onError: (err: { message: string }) => {
-                  toast.error(`Movie added to library but watchlist failed: ${err.message}`);
-                },
-                onSettled: () => {
-                  setAddingToWatchlistIds((prev) => {
-                    const next = new Set(prev);
-                    next.delete(tmdbId);
-                    return next;
-                  });
-                },
-              }
-            );
-          },
-          onError: (err: { message: string }) => {
-            toast.error(`Failed to add movie: ${err.message}`);
-            setAddingToWatchlistIds((prev) => {
-              const next = new Set(prev);
-              next.delete(tmdbId);
-              return next;
-            });
-          },
-          onSettled: () => {
-            setAddingIds((prev) => {
-              const next = new Set(prev);
-              next.delete(key);
-              return next;
-            });
-          },
-        }
-      );
-    },
-    [addMovieMutation, watchlistAddMutation]
-  );
-
-  /**
-   * Compound action: add movie to library, then log as watched.
-   */
-  const handleMarkWatchedAndLibrary = useCallback(
-    (tmdbId: number) => {
-      const key = makeKey('movie', tmdbId);
-      setMarkingWatchedTmdbIds((prev) => new Set(prev).add(tmdbId));
-      setAddingIds((prev) => new Set(prev).add(key));
-      addMovieMutation.mutate(
-        { tmdbId },
-        {
-          onSuccess: (result) => {
-            const movieId = result.data.id;
-            setAddedIds((prev) => new Set(prev).add(key));
-            setSessionMovieLocalIds((prev) => new Map(prev).set(tmdbId, movieId));
-            watchHistoryLogMutation.mutate(
-              { mediaType: 'movie', mediaId: movieId },
-              {
-                onSuccess: () => {
-                  toast.success('Marked as watched and added to library');
-                },
-                onError: (err: { message: string }) => {
-                  toast.error(`Movie added to library but watch log failed: ${err.message}`);
-                },
-                onSettled: () => {
-                  setMarkingWatchedTmdbIds((prev) => {
-                    const next = new Set(prev);
-                    next.delete(tmdbId);
-                    return next;
-                  });
-                },
-              }
-            );
-          },
-          onError: (err: { message: string }) => {
-            toast.error(`Failed to add movie: ${err.message}`);
-            setMarkingWatchedTmdbIds((prev) => {
-              const next = new Set(prev);
-              next.delete(tmdbId);
-              return next;
-            });
-          },
-          onSettled: () => {
-            setAddingIds((prev) => {
-              const next = new Set(prev);
-              next.delete(key);
-              return next;
-            });
-          },
-        }
-      );
-    },
-    [addMovieMutation, watchHistoryLogMutation]
-  );
-
-  /**
-   * Simple mark-as-watched for an in-library movie (local DB id known).
-   */
-  const handleMarkWatched = useCallback(
-    (mediaId: number) => {
-      setMarkingWatchedMediaIds((prev) => new Set(prev).add(mediaId));
-      watchHistoryLogMutation.mutate(
-        { mediaType: 'movie', mediaId },
-        {
-          onSuccess: () => {
-            toast.success('Marked as watched');
-          },
-          onError: (err: { message: string }) => {
-            toast.error(`Failed to log watch: ${err.message}`);
-          },
-          onSettled: () => {
-            setMarkingWatchedMediaIds((prev) => {
-              const next = new Set(prev);
-              next.delete(mediaId);
-              return next;
-            });
-          },
-        }
-      );
-    },
-    [watchHistoryLogMutation]
-  );
-
-  const hasQuery = debouncedQuery.length > 0;
-
-  const MAX_RESULTS_PER_SECTION = 20;
-
-  // Per-section results (capped)
-  const movieResults = shouldSearchMovies
+  const movieResults: MovieSearchResult[] = shouldSearchMovies
     ? (movieSearch.data?.results ?? []).slice(0, MAX_RESULTS_PER_SECTION)
     : [];
-  const tvResults = shouldSearchTv
+  const tvResults: TvSearchResult[] = shouldSearchTv
     ? (tvSearch.data?.results ?? []).slice(0, MAX_RESULTS_PER_SECTION)
     : [];
 
   const moviesSettled = !shouldSearchMovies || (!movieSearch.isLoading && !movieSearch.error);
   const tvSettled = !shouldSearchTv || (!tvSearch.isLoading && !tvSearch.error);
-  const totalResults = movieResults.length + tvResults.length;
-  const noResults = hasQuery && moviesSettled && tvSettled && totalResults === 0;
+  const hasQuery = debouncedQuery.length > 0;
+  const noResults =
+    hasQuery && moviesSettled && tvSettled && movieResults.length + tvResults.length === 0;
 
   return (
     <div className="space-y-4">
@@ -371,211 +87,62 @@ export function SearchPage() {
         </p>
       </div>
 
-      {/* Search input */}
-      <TextInput
-        type="search"
-        placeholder="Search movies and TV shows…"
-        value={query}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-          setQuery(e.target.value);
-        }}
-        prefix={<Search className="h-4 w-4" />}
-        clearable
-        onClear={() => {
-          setQuery('');
-        }}
-        autoFocus
-      />
+      <SearchInput query={query} mode={mode} onQueryChange={setQuery} onModeChange={setMode} />
 
-      {/* Type toggle */}
-      <Tabs
-        value={mode}
-        onValueChange={(v: string) => {
-          setMode(v as SearchMode);
-        }}
-      >
-        <TabsList>
-          <TabsTrigger value="both">Both</TabsTrigger>
-          <TabsTrigger value="movies">Movies</TabsTrigger>
-          <TabsTrigger value="tv">TV Shows</TabsTrigger>
-        </TabsList>
-      </Tabs>
+      {noResults && <NoResultsMessage query={debouncedQuery} />}
 
-      {/* No results */}
-      {noResults && (
-        <p className="text-sm text-muted-foreground py-8 text-center">
-          No results found for &ldquo;{debouncedQuery}&rdquo;. Try a different search term.
-        </p>
-      )}
-
-      {/* Movie section — independent loading/error/results */}
       {shouldSearchMovies && (
-        <section>
-          {mode === 'both' && (
-            <h2 className="text-sm font-semibold text-muted-foreground mb-2">
-              Movies{movieResults.length > 0 ? ` (${movieResults.length})` : ''}
-            </h2>
-          )}
-          {movieSearch.isLoading && (
-            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex gap-4 rounded-lg border bg-card p-3">
-                  <Skeleton className="w-20 shrink-0 rounded-md aspect-[2/3]" />
-                  <div className="flex flex-1 flex-col gap-2">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
-                    <Skeleton className="h-3 w-full" />
-                    <Skeleton className="h-7 w-28 mt-auto" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {movieSearch.error && (
-            <div className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-              <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">Movie search failed</p>
-                <p className="text-xs text-muted-foreground">{movieSearch.error.message}</p>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => movieSearch.refetch()}>
-                Retry
-              </Button>
-            </div>
-          )}
-          {!movieSearch.isLoading && !movieSearch.error && movieResults.length > 0 && (
-            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {movieResults.map((movie: MovieSearchResult) => {
-                const key = makeKey('movie', movie.tmdbId);
-                const inLibrary = movieTmdbIds.has(movie.tmdbId) || addedIds.has(key);
-                const localId =
-                  movieTmdbToLocalId.get(movie.tmdbId) ?? sessionMovieLocalIds.get(movie.tmdbId);
-                const rotation = movieTmdbToRotation.get(movie.tmdbId);
-                return (
-                  <SearchResultCard
-                    key={movie.tmdbId}
-                    type="movie"
-                    tmdbId={movie.tmdbId}
-                    title={movie.title}
-                    year={movie.releaseDate?.slice(0, 4) ?? null}
-                    overview={movie.overview}
-                    posterUrl={buildPosterUrl(movie.posterPath, 'movie')}
-                    voteAverage={movie.voteAverage}
-                    inLibrary={inLibrary}
-                    rotationStatus={rotation?.rotationStatus}
-                    rotationExpiresAt={rotation?.rotationExpiresAt}
-                    mediaId={localId}
-                    isAdding={addingIds.has(key)}
-                    onAdd={() => {
-                      handleAddMovie(movie.tmdbId);
-                    }}
-                    onAddToWatchlistAndLibrary={
-                      inLibrary
-                        ? undefined
-                        : () => {
-                            handleAddToWatchlistAndLibrary(movie.tmdbId);
-                          }
-                    }
-                    isAddingToWatchlistAndLibrary={addingToWatchlistIds.has(movie.tmdbId)}
-                    onMarkWatchedAndLibrary={
-                      inLibrary
-                        ? undefined
-                        : () => {
-                            handleMarkWatchedAndLibrary(movie.tmdbId);
-                          }
-                    }
-                    isMarkingWatchedAndLibrary={markingWatchedTmdbIds.has(movie.tmdbId)}
-                    onMarkWatched={
-                      localId != null
-                        ? () => {
-                            handleMarkWatched(localId);
-                          }
-                        : undefined
-                    }
-                    isMarkingWatched={localId != null && markingWatchedMediaIds.has(localId)}
-                    href={localId != null ? `/media/movies/${localId}` : undefined}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </section>
+        <MovieSearchSection
+          showHeader={mode === 'both'}
+          isLoading={movieSearch.isLoading}
+          error={movieSearch.error ? { message: movieSearch.error.message } : null}
+          onRetry={() => void movieSearch.refetch()}
+          results={movieResults}
+          lookups={{
+            movieTmdbIds: lookups.movieTmdbIds,
+            movieTmdbToLocalId: lookups.movieTmdbToLocalId,
+            movieTmdbToRotation: lookups.movieTmdbToRotation,
+          }}
+          state={{
+            addedIds: actions.addedIds,
+            addingIds: actions.addingIds,
+            addingToWatchlistIds: actions.addingToWatchlistIds,
+            markingWatchedTmdbIds: actions.markingWatchedTmdbIds,
+            markingWatchedMediaIds: actions.markingWatchedMediaIds,
+            sessionMovieLocalIds: actions.sessionMovieLocalIds,
+          }}
+          handlers={{
+            onAdd: actions.handleAddMovie,
+            onAddToWatchlistAndLibrary: actions.handleAddToWatchlistAndLibrary,
+            onMarkWatchedAndLibrary: actions.handleMarkWatchedAndLibrary,
+            onMarkWatched: actions.handleMarkWatched,
+          }}
+          makeKey={actions.makeKey}
+        />
       )}
 
-      {/* TV section — independent loading/error/results */}
       {shouldSearchTv && (
-        <section>
-          {mode === 'both' && (
-            <h2 className="text-sm font-semibold text-muted-foreground mb-2">
-              TV Shows{tvResults.length > 0 ? ` (${tvResults.length})` : ''}
-            </h2>
-          )}
-          {tvSearch.isLoading && (
-            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="flex gap-4 rounded-lg border bg-card p-3">
-                  <Skeleton className="w-20 shrink-0 rounded-md aspect-[2/3]" />
-                  <div className="flex flex-1 flex-col gap-2">
-                    <Skeleton className="h-4 w-3/4" />
-                    <Skeleton className="h-3 w-1/2" />
-                    <Skeleton className="h-3 w-full" />
-                    <Skeleton className="h-7 w-28 mt-auto" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          {tvSearch.error && (
-            <div className="flex items-center gap-3 rounded-lg border border-destructive/30 bg-destructive/5 p-4">
-              <AlertTriangle className="h-5 w-5 text-destructive shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">TV search failed</p>
-                <p className="text-xs text-muted-foreground">{tvSearch.error.message}</p>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => tvSearch.refetch()}>
-                Retry
-              </Button>
-            </div>
-          )}
-          {!tvSearch.isLoading && !tvSearch.error && tvResults.length > 0 && (
-            <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-              {tvResults.map((show: TvSearchResult) => {
-                const key = makeKey('tv', show.tvdbId);
-                const inLibrary = tvTvdbIds.has(show.tvdbId) || addedIds.has(key);
-                const localId =
-                  tvTvdbToLocalId.get(show.tvdbId) ?? sessionTvLocalIds.get(show.tvdbId);
-                return (
-                  <SearchResultCard
-                    key={show.tvdbId}
-                    type="tv"
-                    title={show.name}
-                    year={show.year ?? show.firstAirDate?.slice(0, 4) ?? null}
-                    overview={show.overview}
-                    posterUrl={buildPosterUrl(show.posterPath, 'tv')}
-                    genres={show.genres}
-                    inLibrary={inLibrary}
-                    mediaId={localId}
-                    isAdding={addingIds.has(key)}
-                    onAdd={() => {
-                      handleAddTvShow(show.tvdbId);
-                    }}
-                    onAddToWatchlistAndLibrary={undefined}
-                    href={localId != null ? `/media/tv/${localId}` : undefined}
-                  />
-                );
-              })}
-            </div>
-          )}
-        </section>
+        <TvSearchSection
+          showHeader={mode === 'both'}
+          isLoading={tvSearch.isLoading}
+          error={tvSearch.error ? { message: tvSearch.error.message } : null}
+          onRetry={() => void tvSearch.refetch()}
+          results={tvResults}
+          lookups={{
+            tvTvdbIds: lookups.tvTvdbIds,
+            tvTvdbToLocalId: lookups.tvTvdbToLocalId,
+          }}
+          state={{
+            addedIds: actions.addedIds,
+            addingIds: actions.addingIds,
+            sessionTvLocalIds: actions.sessionTvLocalIds,
+          }}
+          handlers={{ onAdd: actions.handleAddTvShow }}
+          makeKey={actions.makeKey}
+        />
       )}
 
-      {/* Empty state before search */}
-      {!hasQuery && (
-        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-          <Search className="h-12 w-12 opacity-20 mb-4" />
-          <p className="text-sm">Start typing to search for movies and TV shows.</p>
-        </div>
-      )}
+      {!hasQuery && <SearchEmptyPrompt />}
     </div>
   );
 }
