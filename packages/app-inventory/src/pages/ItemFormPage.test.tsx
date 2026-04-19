@@ -128,7 +128,7 @@ vi.mock('@pops/api-client', () => ({
             return { ...result, refetch: mockRefetchPhotos };
           },
         },
-        attach: {
+        upload: {
           useMutation: (opts?: Record<string, unknown>) => ({
             mutateAsync: mockAttachMutate,
             isPending: false,

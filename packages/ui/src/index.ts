@@ -95,6 +95,11 @@ export * from './components/Select';
 export * from './components/StatCard';
 export * from './components/TextInput';
 
+// Shared composites
+export * from './components/ContainerPanel';
+export * from './components/RelatedItemsList';
+export * from './components/SearchPickerDialog';
+
 // Layout composites
 export * from './components/PageHeader';
 export * from './components/SearchResultItem';

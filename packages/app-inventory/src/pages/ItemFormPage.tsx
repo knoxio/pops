@@ -1,482 +1,62 @@
-import { Eye, ImageIcon, Link2, Loader2, PenLine, Save, Search, Wand2, X } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import Markdown from 'react-markdown';
-import { Link, useNavigate, useParams } from 'react-router';
-import rehypeSanitize from 'rehype-sanitize';
-import { toast } from 'sonner';
+import { Save } from 'lucide-react';
+import { Link } from 'react-router';
 
-import { trpc } from '@pops/api-client';
-/**
- * Item create/edit form page.
- * Supports /inventory/items/new (create) and /inventory/items/:id/edit (edit).
- */
-import {
-  Alert,
-  AlertDescription,
-  AlertTitle,
-  Badge,
-  Button,
-  CheckboxInput,
-  DateInput,
-  Label,
-  PageHeader,
-  Select,
-  Skeleton,
-  Textarea,
-  TextInput,
-} from '@pops/ui';
+import { Alert, AlertDescription, AlertTitle, Button, PageHeader, Skeleton } from '@pops/ui';
 
-import { LocationPicker } from '../components/LocationPicker';
-import { PhotoUpload, type UploadedFile } from '../components/PhotoUpload';
-import { SortablePhotoGrid } from '../components/SortablePhotoGrid';
-import { useImageProcessor } from '../hooks/useImageProcessor';
+import { ConnectionsSection } from './item-form-page/sections/ConnectionsSection';
+import { CoreFieldsSection } from './item-form-page/sections/CoreFieldsSection';
+import { NotesSection } from './item-form-page/sections/NotesSection';
+import { PhotoUploadSection } from './item-form-page/sections/PhotoUploadSection';
+import { useItemFormPageModel } from './item-form-page/useItemFormPageModel';
 
-import type { InventoryItem } from '@pops/api/modules/inventory/items/types';
-
-import type { PhotoItem } from '../components/PhotoGallery';
-
-interface PendingConnection {
-  id: string;
-  itemName: string;
-}
-
-interface ItemFormValues {
-  itemName: string;
-  brand: string;
-  model: string;
-  itemId: string;
-  type: string;
-  condition: string;
-  locationId: string;
-  inUse: boolean;
-  deductible: boolean;
-  purchaseDate: string;
-  warrantyExpires: string;
-  purchasePrice: string;
-  replacementValue: string;
-  resaleValue: string;
-  assetId: string;
-  notes: string;
-}
-
-const ITEM_TYPES = [
-  'Electronics',
-  'Furniture',
-  'Appliance',
-  'Clothing',
-  'Tools',
-  'Sports',
-  'Kitchen',
-  'Office',
-  'Other',
-];
-
-const CONDITIONS = [
-  { value: 'new', label: 'New' },
-  { value: 'good', label: 'Good' },
-  { value: 'fair', label: 'Fair' },
-  { value: 'poor', label: 'Poor' },
-  { value: 'broken', label: 'Broken' },
-];
-
-const defaultValues: ItemFormValues = {
-  itemName: '',
-  brand: '',
-  model: '',
-  itemId: '',
-  type: '',
-  condition: 'good',
-  locationId: '',
-  inUse: false,
-  deductible: false,
-  purchaseDate: '',
-  warrantyExpires: '',
-  purchasePrice: '',
-  replacementValue: '',
-  resaleValue: '',
-  assetId: '',
-  notes: '',
-};
-
-/** Extract a 4-6 character uppercase prefix from an item type for asset ID generation. */
-export function extractPrefix(type: string): string {
-  const firstWord = type.split(/\s+/)[0] ?? '';
-  const upper = firstWord.toUpperCase();
-  // Truncate to 4 chars, unless the word is 5-6 chars — keep up to 6
-  return upper.length <= 6 ? upper : upper.slice(0, 4);
-}
-
-function FormField({
-  label,
-  error,
-  children,
-}: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <Label className="mb-1.5 block">{label}</Label>
-      {children}
-      {error && <p className="text-sm text-destructive mt-1">{error}</p>}
-    </div>
-  );
-}
+export { extractPrefix } from './item-form-page/useItemFormPageModel';
 
 export function ItemFormPage() {
-  const { id } = useParams<{ id: string }>();
-  const isEditMode = !!id;
-  const navigate = useNavigate();
-  const utils = trpc.useUtils();
+  const model = useItemFormPageModel();
+  const {
+    id,
+    isEditMode,
+    form,
+    assetIdError,
+    assetIdChecking,
+    generating,
+    notesPreview,
+    setNotesPreview,
+    uploadFiles,
+    deleteConfirmId,
+    setDeleteConfirmId,
+    existingPhotos,
+    imageProcessing,
+    pendingConnections,
+    setPendingConnections,
+    connectionSearch,
+    setConnectionSearch,
+    searchResults,
+    searchLoading,
+    locationTree,
+    createLocationMutation,
+    itemData,
+    isLoading,
+    error,
+    reorderMutation,
+    photoDeleteMutation,
+    isMutating,
+    handleFilesSelected,
+    handleRemoveUpload,
+    handleDeletePhoto,
+    confirmDeletePhoto,
+    validateAssetIdUniqueness,
+    handleAutoGenerate,
+    onSubmit,
+  } = model;
 
   const {
     register,
     handleSubmit,
-    reset,
     watch,
     setValue,
-    formState: { errors, isDirty },
-  } = useForm<ItemFormValues>({ defaultValues });
-
-  const typeValue = watch('type');
-
-  // Asset ID uniqueness validation
-  const [assetIdError, setAssetIdError] = useState<string | null>(null);
-  const [assetIdChecking, setAssetIdChecking] = useState(false);
-  const [generating, setGenerating] = useState(false);
-  const [notesPreview, setNotesPreview] = useState(false);
-
-  const validateAssetIdUniqueness = useCallback(
-    async (value: string) => {
-      if (!value.trim()) {
-        setAssetIdError(null);
-        return;
-      }
-      setAssetIdChecking(true);
-      try {
-        const result = await utils.inventory.items.searchByAssetId.fetch({
-          assetId: value.trim(),
-        });
-        if (result.data && result.data.id !== id) {
-          setAssetIdError(`Asset ID already in use by ${result.data.itemName}`);
-        } else {
-          setAssetIdError(null);
-        }
-      } catch {
-        setAssetIdError(null);
-      } finally {
-        setAssetIdChecking(false);
-      }
-    },
-    [id, utils]
-  );
-
-  const handleAutoGenerate = useCallback(async () => {
-    if (!typeValue) return;
-    setGenerating(true);
-    try {
-      const prefix = extractPrefix(typeValue);
-      const result = await utils.inventory.items.countByAssetPrefix.fetch({ prefix });
-      const nextNum = result.data + 1;
-      const padded = nextNum >= 100 ? String(nextNum) : String(nextNum).padStart(2, '0');
-      const newAssetId = `${prefix}${padded}`;
-      setValue('assetId', newAssetId, { shouldDirty: true });
-      setAssetIdError(null);
-      void validateAssetIdUniqueness(newAssetId);
-    } catch {
-      toast.error('Failed to generate asset ID');
-    } finally {
-      setGenerating(false);
-    }
-  }, [typeValue, utils, setValue, validateAssetIdUniqueness]);
-
-  // Photo upload state
-  const [uploadFiles, setUploadFiles] = useState<UploadedFile[]>([]);
-  const { processFiles, processing: imageProcessing } = useImageProcessor();
-  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
-
-  // Existing photos (edit mode)
-  const { data: photosData, refetch: refetchPhotos } = trpc.inventory.photos.listForItem.useQuery(
-    { itemId: id! },
-    { enabled: isEditMode }
-  );
-  const existingPhotos: PhotoItem[] = photosData?.data ?? [];
-
-  const attachMutation = trpc.inventory.photos.attach.useMutation({
-    onSuccess: () => {
-      void refetchPhotos();
-    },
-  });
-
-  const deleteMutation = trpc.inventory.photos.remove.useMutation({
-    onSuccess: () => {
-      void refetchPhotos();
-      setDeleteConfirmId(null);
-    },
-  });
-
-  const reorderMutation = trpc.inventory.photos.reorder.useMutation({
-    onSuccess: () => {
-      void refetchPhotos();
-    },
-  });
-
-  const handleFilesSelected = useCallback(
-    async (files: File[]) => {
-      // Create pending entries
-      const pending: UploadedFile[] = files.map((file, i) => ({
-        localId: `${Date.now()}-${i}`,
-        file,
-        previewUrl: '',
-        status: 'pending' as const,
-      }));
-      setUploadFiles((prev) => [...prev, ...pending]);
-
-      // Process images (compress, convert HEIC)
-      try {
-        const processed = await processFiles(files);
-
-        // Update with preview URLs and sizes
-        setUploadFiles((prev) =>
-          prev.map((f) => {
-            const idx = pending.findIndex((p) => p.localId === f.localId);
-            const match = idx >= 0 ? processed[idx] : undefined;
-            if (!match) return f;
-            return {
-              ...f,
-              previewUrl: match.previewUrl,
-              originalSize: match.originalSize,
-              processedSize: match.processedSize,
-              status: 'uploading' as const,
-              progress: 0,
-            };
-          })
-        );
-
-        // Upload each file
-        for (let i = 0; i < processed.length; i++) {
-          const localId = pending[i]!.localId;
-          const p = processed[i]!;
-
-          try {
-            // Simulate progress for tRPC (no XHR progress)
-            setUploadFiles((prev) =>
-              prev.map((f) => (f.localId === localId ? { ...f, progress: 50 } : f))
-            );
-
-            const fileName = `${Date.now()}-${p.original.name.replace(/\.[^.]+$/, '.jpg')}`;
-
-            if (isEditMode && id) {
-              await attachMutation.mutateAsync({
-                itemId: id,
-                filePath: fileName,
-                sortOrder: existingPhotos.length + i,
-              });
-            }
-
-            setUploadFiles((prev) =>
-              prev.map((f) =>
-                f.localId === localId ? { ...f, status: 'done' as const, progress: 100 } : f
-              )
-            );
-          } catch (err: unknown) {
-            setUploadFiles((prev) =>
-              prev.map((f) =>
-                f.localId === localId
-                  ? {
-                      ...f,
-                      status: 'error' as const,
-                      error: err instanceof Error ? err.message : 'Upload failed',
-                    }
-                  : f
-              )
-            );
-            toast.error(`Failed to upload ${p.original.name}`);
-          }
-        }
-      } catch {
-        // Processing failure — mark all pending as error
-        setUploadFiles((prev) =>
-          prev.map((f) =>
-            pending.some((p) => p.localId === f.localId)
-              ? { ...f, status: 'error' as const, error: 'Image processing failed' }
-              : f
-          )
-        );
-        toast.error('Failed to process images');
-      }
-    },
-    [processFiles, isEditMode, id, attachMutation, existingPhotos.length]
-  );
-
-  const handleRemoveUpload = useCallback((localId: string) => {
-    setUploadFiles((prev) => {
-      const file = prev.find((f) => f.localId === localId);
-      if (file?.previewUrl) URL.revokeObjectURL(file.previewUrl);
-      return prev.filter((f) => f.localId !== localId);
-    });
-  }, []);
-
-  const handleDeletePhoto = useCallback((photoId: number) => {
-    setDeleteConfirmId(photoId);
-  }, []);
-
-  const confirmDeletePhoto = useCallback(() => {
-    if (deleteConfirmId !== null) {
-      deleteMutation.mutate({ id: deleteConfirmId });
-    }
-  }, [deleteConfirmId, deleteMutation]);
-
-  // Pending connections for create mode
-  const [pendingConnections, setPendingConnections] = useState<PendingConnection[]>([]);
-  const [connectionSearch, setConnectionSearch] = useState('');
-
-  const { data: searchResults, isLoading: searchLoading } = trpc.inventory.items.list.useQuery(
-    { search: connectionSearch, limit: 10 },
-    { enabled: !isEditMode && connectionSearch.length >= 2 }
-  );
-
-  const connectMutation = trpc.inventory.connections.connect.useMutation();
-
-  // Location tree for LocationPicker
-  const { data: locationsData } = trpc.inventory.locations.tree.useQuery();
-  const locationTree = locationsData?.data ?? [];
-
-  const createLocationMutation = trpc.inventory.locations.create.useMutation({
-    onSuccess: () => {
-      toast.success('Location created');
-      void utils.inventory.locations.tree.invalidate();
-    },
-    onError: (err) => toast.error(`Failed to create location: ${err.message}`),
-  });
-
-  // Fetch existing item for edit mode
-  const {
-    data: itemData,
-    isLoading,
-    error,
-  } = trpc.inventory.items.get.useQuery({ id: id! }, { enabled: isEditMode });
-
-  // Populate form when item loads
-  useEffect(() => {
-    if (itemData?.data) {
-      const item = itemData.data;
-      reset({
-        itemName: item.itemName,
-        brand: item.brand ?? '',
-        model: item.model ?? '',
-        itemId: item.itemId ?? '',
-        type: item.type ?? '',
-        condition: item.condition ?? '',
-        locationId: item.locationId ?? '',
-        inUse: item.inUse,
-        deductible: item.deductible,
-        purchaseDate: item.purchaseDate ?? '',
-        warrantyExpires: item.warrantyExpires ?? '',
-        purchasePrice: item.purchasePrice?.toString() ?? '',
-        replacementValue: item.replacementValue?.toString() ?? '',
-        resaleValue: item.resaleValue?.toString() ?? '',
-        assetId: item.assetId ?? '',
-        notes: item.notes ?? '',
-      });
-    }
-  }, [itemData, reset]);
-
-  // Unsaved changes warning
-  useEffect(() => {
-    if (!isDirty) return;
-    const handler = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-    };
-    window.addEventListener('beforeunload', handler);
-    return () => {
-      window.removeEventListener('beforeunload', handler);
-    };
-  }, [isDirty]);
-
-  const createMutation = trpc.inventory.items.create.useMutation({
-    onSuccess: async (result) => {
-      const newItemId = result.data.id;
-
-      // Create pending connections sequentially
-      if (pendingConnections.length > 0) {
-        let connected = 0;
-        for (const conn of pendingConnections) {
-          try {
-            await connectMutation.mutateAsync({
-              itemAId: newItemId,
-              itemBId: conn.id,
-            });
-            connected++;
-          } catch {
-            // Skip failed connections (e.g. conflict)
-          }
-        }
-        if (connected > 0) {
-          toast.success(`Item created with ${connected} connection${connected > 1 ? 's' : ''}`);
-        } else {
-          toast.success('Item created');
-        }
-      } else {
-        toast.success('Item created');
-      }
-
-      void utils.inventory.items.list.invalidate();
-      navigate(`/inventory/items/${newItemId}`);
-    },
-    onError: (err) => {
-      toast.error(`Failed to create: ${err.message}`);
-    },
-  });
-
-  const updateMutation = trpc.inventory.items.update.useMutation({
-    onSuccess: () => {
-      toast.success('Item updated');
-      void utils.inventory.items.list.invalidate();
-      void utils.inventory.items.get.invalidate({ id: id! });
-      navigate(`/inventory/items/${id}`);
-    },
-    onError: (err) => {
-      toast.error(`Failed to update: ${err.message}`);
-    },
-  });
-
-  const onSubmit = (values: ItemFormValues) => {
-    if (!values.itemName.trim()) {
-      toast.error('Item name is required');
-      return;
-    }
-
-    const payload = {
-      itemName: values.itemName.trim(),
-      brand: values.brand || null,
-      model: values.model || null,
-      itemId: values.itemId || null,
-      type: values.type || null,
-      condition: values.condition || null,
-      room: null,
-      locationId: values.locationId || null,
-      inUse: values.inUse,
-      deductible: values.deductible,
-      purchaseDate: values.purchaseDate || null,
-      warrantyExpires: values.warrantyExpires || null,
-      purchasePrice: values.purchasePrice ? parseFloat(values.purchasePrice) : null,
-      replacementValue: values.replacementValue ? parseFloat(values.replacementValue) : null,
-      resaleValue: values.resaleValue ? parseFloat(values.resaleValue) : null,
-      assetId: values.assetId || null,
-      notes: values.notes || null,
-    };
-
-    if (isEditMode) {
-      updateMutation.mutate({ id: id, data: payload });
-    } else {
-      createMutation.mutate(payload);
-    }
-  };
-
-  const isMutating = createMutation.isPending || updateMutation.isPending;
+    formState: { errors },
+  } = form;
 
   if (isEditMode && isLoading) {
     return (
@@ -528,359 +108,59 @@ export function ItemFormPage() {
       />
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        {/* Basic Info */}
-        <section className="space-y-4 p-6 rounded-2xl border-2 border-app-accent/10 bg-card/50 shadow-sm shadow-app-accent/5">
-          <h2 className="text-lg font-bold flex items-center gap-2 text-foreground">
-            <span className="w-1.5 h-1.5 rounded-full bg-app-accent" />
-            Basic Information
-          </h2>
+        <CoreFieldsSection
+          register={register}
+          watch={watch}
+          setValue={setValue}
+          errors={errors}
+          assetIdError={assetIdError}
+          assetIdChecking={assetIdChecking}
+          generating={generating}
+          locationTree={locationTree}
+          onAutoGenerate={() => void handleAutoGenerate()}
+          onValidateAssetId={(v) => void validateAssetIdUniqueness(v)}
+          onCreateLocation={(name, parentId) => createLocationMutation.mutate({ name, parentId })}
+        />
 
-          <FormField label="Item Name *" error={errors.itemName?.message}>
-            <TextInput
-              {...register('itemName', {
-                required: 'Item name is required',
-              })}
-              placeholder="e.g. MacBook Pro 16-inch"
-              className="font-semibold"
-            />
-          </FormField>
+        <PhotoUploadSection
+          isEditMode={isEditMode}
+          existingPhotos={existingPhotos}
+          uploadFiles={uploadFiles}
+          imageProcessing={imageProcessing}
+          isReordering={reorderMutation.isPending}
+          deleteConfirmId={deleteConfirmId}
+          isDeleting={photoDeleteMutation.isPending}
+          onFilesSelected={handleFilesSelected}
+          onRemoveUpload={handleRemoveUpload}
+          onDeletePhoto={handleDeletePhoto}
+          onConfirmDelete={confirmDeletePhoto}
+          onCancelDelete={() => setDeleteConfirmId(null)}
+          onReorder={(orderedIds) => reorderMutation.mutate({ itemId: id!, orderedIds })}
+        />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="Brand">
-              <TextInput {...register('brand')} placeholder="e.g. Apple" />
-            </FormField>
-            <FormField label="Model">
-              <TextInput {...register('model')} placeholder="e.g. M3 Max" />
-            </FormField>
-          </div>
+        <NotesSection
+          register={register}
+          watch={watch}
+          notesPreview={notesPreview}
+          onTogglePreview={() => setNotesPreview((v) => !v)}
+        />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="Item ID / SKU">
-              <TextInput {...register('itemId')} />
-            </FormField>
-            <FormField label="Asset ID" error={assetIdError ?? undefined}>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <TextInput
-                    {...register('assetId')}
-                    className="font-mono"
-                    onBlur={(e) => void validateAssetIdUniqueness(e.target.value)}
-                  />
-                  {assetIdChecking && (
-                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
-                  )}
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={!typeValue || generating}
-                  onClick={() => void handleAutoGenerate()}
-                  className="shrink-0 whitespace-nowrap"
-                  title={
-                    typeValue ? `Generate ${extractPrefix(typeValue)}XX` : 'Select a type first'
-                  }
-                >
-                  {generating ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Wand2 className="h-4 w-4 mr-1" />
-                  )}
-                  Auto-generate
-                </Button>
-              </div>
-            </FormField>
-          </div>
-        </section>
-
-        {/* Classification */}
-        <section className="space-y-4 p-6 rounded-2xl border-2 border-app-accent/10 bg-card/50 shadow-sm shadow-app-accent/5">
-          <h2 className="text-lg font-bold flex items-center gap-2 text-foreground">
-            <span className="w-1.5 h-1.5 rounded-full bg-app-accent" />
-            Classification
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="Type *" error={errors.type?.message}>
-              <Select
-                {...register('type', { required: 'Type is required' })}
-                options={[
-                  { value: '', label: 'Select type...' },
-                  ...ITEM_TYPES.map((t) => ({ value: t, label: t })),
-                ]}
-              />
-            </FormField>
-            <FormField label="Condition">
-              <Select
-                {...register('condition')}
-                options={[{ value: '', label: 'Select condition...' }, ...CONDITIONS]}
-              />
-            </FormField>
-          </div>
-
-          <FormField label="Location">
-            <LocationPicker
-              locations={locationTree}
-              value={watch('locationId') || null}
-              onChange={(id) => {
-                setValue('locationId', id ?? '', { shouldDirty: true });
-              }}
-              onCreateLocation={(name, parentId) => {
-                createLocationMutation.mutate({ name, parentId });
-              }}
-              placeholder="Select location…"
-            />
-          </FormField>
-
-          <div className="flex gap-6 p-4 rounded-xl bg-app-accent/5">
-            <CheckboxInput label="In Use" {...register('inUse')} />
-            <CheckboxInput label="Tax Deductible" {...register('deductible')} />
-          </div>
-        </section>
-
-        {/* Dates & Values */}
-        <section className="space-y-4 p-6 rounded-2xl border-2 border-app-accent/10 bg-card/50 shadow-sm shadow-app-accent/5">
-          <h2 className="text-lg font-bold flex items-center gap-2 text-foreground">
-            <span className="w-1.5 h-1.5 rounded-full bg-app-accent" />
-            Dates & Values
-          </h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField label="Purchase Date">
-              <DateInput {...register('purchaseDate')} />
-            </FormField>
-            <FormField label="Warranty Expires">
-              <DateInput {...register('warrantyExpires')} />
-            </FormField>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <FormField label="Purchase Price ($)">
-              <TextInput
-                type="number"
-                step="0.01"
-                min="0"
-                {...register('purchasePrice')}
-                placeholder="0.00"
-              />
-            </FormField>
-            <FormField label="Replacement Value ($)">
-              <TextInput
-                type="number"
-                step="0.01"
-                min="0"
-                {...register('replacementValue')}
-                placeholder="0.00"
-                className="font-bold text-app-accent"
-              />
-            </FormField>
-            <FormField label="Resale Value ($)">
-              <TextInput
-                type="number"
-                step="0.01"
-                min="0"
-                {...register('resaleValue')}
-                placeholder="0.00"
-              />
-            </FormField>
-          </div>
-        </section>
-
-        {/* Photos */}
-        <section className="space-y-4 p-6 rounded-2xl border-2 border-app-accent/10 bg-card/50 shadow-sm shadow-app-accent/5">
-          <h2 className="text-lg font-bold flex items-center gap-2 text-foreground">
-            <ImageIcon className="h-5 w-5 text-app-accent" />
-            Photos
-          </h2>
-
-          {/* Existing photos grid (edit mode) */}
-          {isEditMode && existingPhotos.length > 0 && (
-            <SortablePhotoGrid
-              photos={existingPhotos}
-              onReorder={(orderedIds) => {
-                reorderMutation.mutate({ itemId: id!, orderedIds });
-              }}
-              onDelete={handleDeletePhoto}
-              isReordering={reorderMutation.isPending}
-            />
-          )}
-
-          {/* Delete confirmation */}
-          {deleteConfirmId !== null && (
-            <div className="flex items-center gap-3 p-3 rounded-lg bg-destructive/10 border border-destructive/20">
-              <p className="text-sm flex-1">Delete this photo? This cannot be undone.</p>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setDeleteConfirmId(null);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                className="bg-destructive text-white hover:bg-destructive/80"
-                onClick={confirmDeletePhoto}
-                loading={deleteMutation.isPending}
-                loadingText="Deleting..."
-              >
-                Delete
-              </Button>
-            </div>
-          )}
-
-          <PhotoUpload
-            onFilesSelected={(files) => void handleFilesSelected(files)}
-            files={uploadFiles}
-            onRemove={handleRemoveUpload}
-            disabled={imageProcessing}
-            accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif"
-          />
-        </section>
-
-        {/* Notes */}
-        <section className="space-y-4 p-6 rounded-2xl border-2 border-app-accent/10 bg-card/50 shadow-sm shadow-app-accent/5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold flex items-center gap-2 text-foreground">
-              <span className="w-1.5 h-1.5 rounded-full bg-app-accent" />
-              Notes
-            </h2>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setNotesPreview((v) => !v);
-              }}
-              className="text-xs text-muted-foreground"
-            >
-              {notesPreview ? (
-                <>
-                  <PenLine className="h-3.5 w-3.5 mr-1" /> Edit
-                </>
-              ) : (
-                <>
-                  <Eye className="h-3.5 w-3.5 mr-1" /> Preview
-                </>
-              )}
-            </Button>
-          </div>
-          {notesPreview ? (
-            <div className="prose prose-sm dark:prose-invert max-w-none min-h-[6.5rem] p-3 rounded-md border bg-muted/30">
-              {watch('notes') ? (
-                <Markdown rehypePlugins={[rehypeSanitize]}>{watch('notes')}</Markdown>
-              ) : (
-                <p className="text-muted-foreground italic">Nothing to preview</p>
-              )}
-            </div>
-          ) : (
-            <Textarea
-              {...register('notes')}
-              rows={4}
-              placeholder="Add notes about this item... (supports markdown)"
-              className="w-full bg-transparent"
-            />
-          )}
-        </section>
-
-        {/* Connected Items (create mode only) */}
         {!isEditMode && (
-          <section className="space-y-4 p-6 rounded-2xl border-2 border-app-accent/10 bg-card/50 shadow-sm shadow-app-accent/5">
-            <h2 className="text-lg font-bold flex items-center gap-2 text-foreground">
-              <Link2 className="h-5 w-5 text-app-accent" />
-              Connected Items
-            </h2>
-
-            {pendingConnections.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {pendingConnections.map((conn) => (
-                  <Badge
-                    key={conn.id}
-                    variant="secondary"
-                    className="flex items-center gap-1.5 pl-3 pr-1.5 py-1 bg-app-accent/10 text-app-accent border-app-accent/20"
-                  >
-                    {conn.itemName}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-4 w-4 rounded-full hover:bg-app-accent/20"
-                      onClick={() => {
-                        setPendingConnections((prev) => prev.filter((c) => c.id !== conn.id));
-                      }}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </Badge>
-                ))}
-              </div>
-            )}
-
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <TextInput
-                value={connectionSearch}
-                onChange={(e) => {
-                  setConnectionSearch(e.target.value);
-                }}
-                placeholder="Search items to connect..."
-                className="pl-9"
-              />
-            </div>
-
-            {connectionSearch.length >= 2 && (
-              <div className="max-h-48 overflow-y-auto border rounded-lg divide-y">
-                {searchLoading ? (
-                  <div className="space-y-2 p-2">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                ) : (
-                  (() => {
-                    const pendingIds = new Set(pendingConnections.map((c) => c.id));
-                    const filtered =
-                      searchResults?.data.filter(
-                        (item: InventoryItem) => !pendingIds.has(item.id)
-                      ) ?? [];
-                    return filtered.length === 0 ? (
-                      <p className="text-sm text-muted-foreground py-3 text-center">
-                        No items found
-                      </p>
-                    ) : (
-                      filtered.map((item: InventoryItem) => (
-                        <Button
-                          key={item.id}
-                          variant="ghost"
-                          className="w-full flex items-center justify-between p-2.5 h-auto text-left"
-                          onClick={() => {
-                            setPendingConnections((prev) => [
-                              ...prev,
-                              { id: item.id, itemName: item.itemName },
-                            ]);
-                            setConnectionSearch('');
-                          }}
-                        >
-                          <div>
-                            <div className="font-medium text-sm">{item.itemName}</div>
-                            <div className="text-xs text-muted-foreground">
-                              {[item.brand, item.model, item.assetId].filter(Boolean).join(' · ') ||
-                                'No details'}
-                            </div>
-                          </div>
-                          <Link2 className="h-4 w-4 text-app-accent/50 shrink-0 ml-2" />
-                        </Button>
-                      ))
-                    );
-                  })()
-                )}
-              </div>
-            )}
-          </section>
+          <ConnectionsSection
+            pendingConnections={pendingConnections}
+            connectionSearch={connectionSearch}
+            searchResults={searchResults}
+            searchLoading={searchLoading}
+            onSearchChange={setConnectionSearch}
+            onAdd={(item) =>
+              setPendingConnections((prev) => [...prev, { id: item.id, itemName: item.itemName }])
+            }
+            onRemove={(itemId) =>
+              setPendingConnections((prev) => prev.filter((c) => c.id !== itemId))
+            }
+          />
         )}
 
-        {/* Actions */}
         <div className="flex gap-4 pt-6 border-t">
           <Button
             type="submit"
