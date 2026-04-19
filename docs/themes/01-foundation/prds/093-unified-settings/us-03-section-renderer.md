@@ -61,7 +61,7 @@ As a user, I want settings fields to render as appropriate input widgets with in
 
 - [x] `SectionRenderer` accepts an optional `optionsLoaders` map: `Record<string, () => Promise<{ value: string; label: string }[]>>`
 - [x] For select fields whose key appears in `optionsLoaders`, options are loaded asynchronously instead of using the static `options` array from the manifest
-- [ ] While options are loading, the select shows a loading placeholder
+- [x] While options are loading, the select shows a loading placeholder
 - [x] If the async load fails, the select shows the static `options` as a fallback (if any) and an error indicator
 
 ### Tests

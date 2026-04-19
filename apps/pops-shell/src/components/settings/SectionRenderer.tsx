@@ -17,6 +17,7 @@ interface FieldProps {
   onTestAction: (procedure: string) => Promise<void>;
   envFallbackActive: boolean;
   saveState: SaveState;
+  isOptionsLoading?: boolean;
 }
 
 function FieldWrapper({
@@ -119,6 +120,7 @@ function FieldInput({
   onTestAction,
   envFallbackActive,
   saveState,
+  isOptionsLoading,
 }: FieldProps) {
   const [revealed, setRevealed] = useState(false);
   const [testState, setTestState] = useState<TestState>('idle');
@@ -207,11 +209,15 @@ function FieldInput({
   if (field.type === 'select') {
     return (
       <FieldWrapper field={field} saveState={saveState}>
-        <Select
-          options={field.options ?? []}
-          value={value}
-          onChange={(e) => handleChange(e.target.value)}
-        />
+        {isOptionsLoading ? (
+          <Select disabled options={[]} placeholder="Loading options…" value="" />
+        ) : (
+          <Select
+            options={field.options ?? []}
+            value={value}
+            onChange={(e) => handleChange(e.target.value)}
+          />
+        )}
         {envLabel}
       </FieldWrapper>
     );
@@ -333,6 +339,7 @@ interface GroupRendererProps {
   onTestAction: (procedure: string) => Promise<void>;
   dbValues: Record<string, string>;
   saveStates: Record<string, SaveState>;
+  loadingOptionKeys: Set<string>;
 }
 
 function GroupRenderer({
@@ -342,6 +349,7 @@ function GroupRenderer({
   onTestAction,
   dbValues,
   saveStates,
+  loadingOptionKeys,
 }: GroupRendererProps) {
   return (
     <div className="rounded-lg border bg-card p-5 space-y-4">
@@ -361,6 +369,7 @@ function GroupRenderer({
             onTestAction={onTestAction}
             envFallbackActive={!!field.envFallback && !(field.key in dbValues)}
             saveState={saveStates[field.key] ?? 'idle'}
+            isOptionsLoading={loadingOptionKeys.has(field.key)}
           />
         ))}
       </div>
@@ -386,6 +395,7 @@ export function SectionRenderer({ manifest, optionsLoaders, onTestAction }: Sect
     Record<string, { value: string; label: string }[]>
   >({});
   const [saveStates, setSaveStates] = useState<Record<string, SaveState>>({});
+  const [loadingOptionKeys, setLoadingOptionKeys] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (!data?.settings) return;
@@ -404,10 +414,18 @@ export function SectionRenderer({ manifest, optionsLoaders, onTestAction }: Sect
   useEffect(() => {
     if (!optionsLoaders) return;
     for (const [key, loader] of Object.entries(optionsLoaders)) {
+      setLoadingOptionKeys((prev) => new Set([...prev, key]));
       loader()
         .then((opts) => setDynamicOptions((prev) => ({ ...prev, [key]: opts })))
         .catch(() => {
           /* fall back to static options */
+        })
+        .finally(() => {
+          setLoadingOptionKeys((prev) => {
+            const next = new Set(prev);
+            next.delete(key);
+            return next;
+          });
         });
     }
   }, [optionsLoaders]);
@@ -518,6 +536,7 @@ export function SectionRenderer({ manifest, optionsLoaders, onTestAction }: Sect
           onTestAction={handleTestAction}
           dbValues={loadedKeys}
           saveStates={saveStates}
+          loadingOptionKeys={loadingOptionKeys}
         />
       ))}
     </div>
