@@ -1,5 +1,5 @@
 import { registerResultComponent } from '@pops/navigation';
-import { Badge, highlightMatch } from '@pops/ui';
+import { Badge, highlightMatch, SearchResultItem } from '@pops/ui';
 
 import type { ResultComponentProps } from '@pops/navigation';
 
@@ -26,20 +26,22 @@ export function EntitiesResultComponent({ data }: ResultComponentProps) {
   const style = entityTypeStyles[type] || 'bg-muted text-muted-foreground border-transparent';
 
   return (
-    <div className="flex items-center gap-2 min-w-0">
-      <div className="flex flex-col min-w-0">
-        <span className="text-sm font-medium truncate">{highlightMatch(name, query ?? '')}</span>
-        {aliases.length > 0 && (
-          <span className="text-xs text-muted-foreground truncate">{aliases.join(', ')}</span>
-        )}
-      </div>
-      <Badge
-        variant="outline"
-        className={`text-2xs uppercase tracking-wider font-semibold py-0 px-1.5 h-5 shrink-0 ${style}`}
-      >
-        {type}
-      </Badge>
-    </div>
+    <SearchResultItem
+      title={highlightMatch(name, query ?? '')}
+      meta={
+        aliases.length > 0
+          ? [<span key="aliases" className="truncate">{aliases.join(', ')}</span>]
+          : undefined
+      }
+      trailing={
+        <Badge
+          variant="outline"
+          className={`text-2xs uppercase tracking-wider font-semibold py-0 px-1.5 h-5 shrink-0 ${style}`}
+        >
+          {type}
+        </Badge>
+      }
+    />
   );
 }
 

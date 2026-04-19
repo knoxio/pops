@@ -96,6 +96,7 @@ export * from './components/TextInput';
 
 // Layout composites
 export * from './components/PageHeader';
+export * from './components/SearchResultItem';
 export * from './components/ViewToggleGroup';
 
 // Inventory composites

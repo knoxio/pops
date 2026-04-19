@@ -1,6 +1,6 @@
 import { Tv } from 'lucide-react';
 
-import { Badge, cn, highlightMatch } from '@pops/ui';
+import { Badge, cn, highlightMatch, SearchResultItem } from '@pops/ui';
 
 /**
  * TvShowSearchResult — ResultComponent for tv-shows search hits.
@@ -44,43 +44,34 @@ export function TvShowSearchResult({ data }: ResultComponentProps) {
   const matchType = hit._matchType ?? 'contains';
 
   return (
-    <div className="flex items-center gap-3 py-1" data-testid="tv-show-search-result">
-      {/* Poster thumbnail */}
-      <div className="relative h-12 w-8 shrink-0 overflow-hidden rounded bg-muted">
-        {posterUrl ? (
-          <img
-            src={posterUrl}
-            alt={`${name} poster`}
-            className="h-full w-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-            <Tv className="h-4 w-4 opacity-40" />
-          </div>
-        )}
-      </div>
-
-      {/* Text content */}
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="text-sm font-medium leading-tight truncate">
-          {highlightMatch(name, query, matchType)}
-        </span>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {year && <span>{year}</span>}
-          {numberOfSeasons != null && (
-            <>
-              {year && <span>·</span>}
-              <span>
-                {numberOfSeasons} {numberOfSeasons === 1 ? 'season' : 'seasons'}
-              </span>
-            </>
+    <SearchResultItem
+      data-testid="tv-show-search-result"
+      leading={
+        <div className="relative h-12 w-8 shrink-0 overflow-hidden rounded bg-muted">
+          {posterUrl ? (
+            <img
+              src={posterUrl}
+              alt={`${name} poster`}
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+              <Tv className="h-4 w-4 opacity-40" />
+            </div>
           )}
         </div>
-      </div>
-
-      {/* Status badge */}
-      <StatusBadge status={status} />
-    </div>
+      }
+      title={highlightMatch(name, query, matchType)}
+      meta={[
+        year && <span key="year">{year}</span>,
+        numberOfSeasons != null && (
+          <span key="seasons">
+            {numberOfSeasons} {numberOfSeasons === 1 ? 'season' : 'seasons'}
+          </span>
+        ),
+      ]}
+      trailing={<StatusBadge status={status} />}
+    />
   );
 }

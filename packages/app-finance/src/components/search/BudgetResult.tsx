@@ -1,5 +1,5 @@
 import { registerResultComponent, type ResultComponentProps } from '@pops/navigation';
-import { formatCurrency, highlightMatch } from '@pops/ui';
+import { formatCurrency, highlightMatch, SearchResultItem } from '@pops/ui';
 
 function formatAmount(amount: number | null | undefined): string {
   if (amount == null) return '—';
@@ -25,17 +25,15 @@ export function BudgetResult({ data }: ResultComponentProps) {
   const shouldHighlight = matchField === 'category' && query;
 
   return (
-    <div className="flex items-center justify-between gap-2">
-      <div className="min-w-0 flex-1">
-        <div className="truncate font-medium">
-          {shouldHighlight ? highlightMatch(category, query, matchType) : category}
+    <SearchResultItem
+      title={shouldHighlight ? highlightMatch(category, query, matchType) : category}
+      meta={period ? [<span key="period">{formatPeriod(period)}</span>] : undefined}
+      trailing={
+        <div className="text-muted-foreground shrink-0 text-sm font-medium">
+          {formatAmount(amount)}
         </div>
-        {period && <div className="text-muted-foreground text-sm">{formatPeriod(period)}</div>}
-      </div>
-      <div className="text-muted-foreground shrink-0 text-sm font-medium">
-        {formatAmount(amount)}
-      </div>
-    </div>
+      }
+    />
   );
 }
 

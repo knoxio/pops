@@ -1,6 +1,6 @@
 import { Film, Star } from 'lucide-react';
 
-import { highlightMatch } from '@pops/ui';
+import { highlightMatch, SearchResultItem } from '@pops/ui';
 
 /**
  * MovieSearchResult — ResultComponent for movies search hits.
@@ -48,36 +48,30 @@ export function MovieSearchResult({ data }: ResultComponentProps) {
   const runtimeLabel = formatRuntime(runtime ?? null);
 
   return (
-    <div className="flex items-center gap-3 py-1" data-testid="movie-search-result">
-      {/* Poster thumbnail */}
-      <div className="relative h-12 w-8 shrink-0 overflow-hidden rounded bg-muted">
-        {posterUrl ? (
-          <img
-            src={posterUrl}
-            alt={`${title} poster`}
-            className="h-full w-full object-cover"
-            loading="lazy"
-          />
-        ) : (
-          <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-            <Film className="h-4 w-4 opacity-40" />
-          </div>
-        )}
-      </div>
-
-      {/* Text content */}
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate text-sm font-medium leading-tight">
-          {highlightMatch(title, query, matchType)}
-        </span>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {year && <span>{year}</span>}
-          {year && voteAverage != null && <span>·</span>}
-          <Rating value={voteAverage} />
-          {(year || voteAverage != null) && runtimeLabel && <span>·</span>}
-          {runtimeLabel && <span data-testid="runtime">{runtimeLabel}</span>}
+    <SearchResultItem
+      data-testid="movie-search-result"
+      leading={
+        <div className="relative h-12 w-8 shrink-0 overflow-hidden rounded bg-muted">
+          {posterUrl ? (
+            <img
+              src={posterUrl}
+              alt={`${title} poster`}
+              className="h-full w-full object-cover"
+              loading="lazy"
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+              <Film className="h-4 w-4 opacity-40" />
+            </div>
+          )}
         </div>
-      </div>
-    </div>
+      }
+      title={highlightMatch(title, query, matchType)}
+      meta={[
+        year && <span key="year">{year}</span>,
+        voteAverage != null && <Rating key="rating" value={voteAverage} />,
+        runtimeLabel && <span key="runtime" data-testid="runtime">{runtimeLabel}</span>,
+      ]}
+    />
   );
 }

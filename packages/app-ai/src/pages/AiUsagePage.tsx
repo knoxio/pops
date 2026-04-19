@@ -39,6 +39,8 @@ import {
 
 import type { ColumnDef } from '@tanstack/react-table';
 
+import { BreakdownTable } from '../components/BreakdownTable';
+
 function CacheManagement() {
   const utils = trpc.useUtils();
   const [staleDays, setStaleDays] = useState(30);
@@ -391,73 +393,6 @@ function LatencySection({ startDate, endDate }: { startDate: string; endDate: st
           </div>
         </Card>
       )}
-    </div>
-  );
-}
-
-function BreakdownTable({
-  title,
-  data,
-}: {
-  title: string;
-  data: {
-    key: string;
-    calls: number;
-    inputTokens: number;
-    outputTokens: number;
-    costUsd: number;
-  }[];
-}) {
-  type Row = (typeof data)[number];
-  const columns: ColumnDef<Row>[] = [
-    {
-      accessorKey: 'key',
-      header: title,
-      cell: ({ row }) => <span className="font-mono text-sm">{row.original.key}</span>,
-    },
-    {
-      accessorKey: 'calls',
-      header: ({ column }) => (
-        <div className="flex justify-end">
-          <SortableHeader column={column}>Calls</SortableHeader>
-        </div>
-      ),
-      cell: ({ row }) => (
-        <div className="text-right tabular-nums">{row.original.calls.toLocaleString()}</div>
-      ),
-    },
-    {
-      id: 'tokens',
-      header: () => <div className="text-right">Tokens</div>,
-      cell: ({ row }) => (
-        <div className="text-right text-sm tabular-nums text-muted-foreground">
-          {(row.original.inputTokens + row.original.outputTokens).toLocaleString()}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'costUsd',
-      header: ({ column }) => (
-        <div className="flex justify-end">
-          <SortableHeader column={column}>Cost</SortableHeader>
-        </div>
-      ),
-      cell: ({ row }) => (
-        <div className="text-right font-mono font-medium tabular-nums">
-          ${row.original.costUsd.toFixed(4)}
-        </div>
-      ),
-    },
-  ];
-
-  if (data.length === 0) return null;
-
-  return (
-    <div className="space-y-2">
-      <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-        By {title}
-      </h3>
-      <DataTable columns={columns} data={data} />
     </div>
   );
 }

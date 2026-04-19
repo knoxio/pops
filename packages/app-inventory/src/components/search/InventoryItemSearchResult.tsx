@@ -1,6 +1,6 @@
 import { Package } from 'lucide-react';
 
-import { formatAUD, highlightMatch } from '@pops/ui';
+import { formatAUD, highlightMatch, SearchResultItem } from '@pops/ui';
 
 /**
  * InventoryItemSearchResult — ResultComponent for inventory-items search hits.
@@ -30,30 +30,28 @@ export function InventoryItemSearchResult({ data }: ResultComponentProps) {
   const locationText = [room, location].filter(Boolean).join(' · ');
 
   return (
-    <div className="flex items-center gap-3 py-1" data-testid="inventory-item-search-result">
-      {/* Icon */}
-      <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded bg-muted text-muted-foreground">
-        <Package className="h-5 w-5 opacity-50" />
-      </div>
-
-      {/* Text content */}
-      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate text-sm font-medium leading-tight">
-          {highlightMatch(itemName, query, matchType)}
-        </span>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {brand && <span>{brand}</span>}
-          {brand && locationText && <span>·</span>}
-          {locationText && <span>{locationText}</span>}
+    <SearchResultItem
+      data-testid="inventory-item-search-result"
+      leading={
+        <div className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded bg-muted text-muted-foreground">
+          <Package className="h-5 w-5 opacity-50" />
         </div>
-      </div>
-
-      {/* Value */}
-      {replacementValue != null && (
-        <span className="shrink-0 text-xs font-medium text-muted-foreground" data-testid="value">
-          {formatAUD(replacementValue)}
-        </span>
-      )}
-    </div>
+      }
+      title={highlightMatch(itemName, query, matchType)}
+      meta={[
+        brand && <span key="brand">{brand}</span>,
+        locationText && <span key="location">{locationText}</span>,
+      ]}
+      trailing={
+        replacementValue != null ? (
+          <span
+            className="shrink-0 text-xs font-medium text-muted-foreground"
+            data-testid="value"
+          >
+            {formatAUD(replacementValue)}
+          </span>
+        ) : undefined
+      }
+    />
   );
 }
