@@ -174,7 +174,6 @@ describe('settings.delete', () => {
 });
 
 // ---------------------------------------------------------------------------
-<<<<<<< HEAD
 // SettingsRegistry unit tests
 // ---------------------------------------------------------------------------
 
@@ -211,100 +210,11 @@ describe('SettingsRegistry', () => {
 
     expect(() =>
       registry.register(makeManifest('manifest-b', 200, ['b.only', 'shared.key']))
-    ).toThrow(/shared\.key.*manifest-a.*manifest-b|manifest-a.*shared\.key.*manifest-b/);
-=======
-// SettingsRegistry (unit tests — class instances, not the singleton)
-// ---------------------------------------------------------------------------
-
-const makeManifest = (id: string, order: number, keys: string[]): SettingsManifest => ({
-  id,
-  title: id,
-  order,
-  groups: [
-    {
-      id: 'g',
-      title: 'Group',
-      fields: keys.map((k) => ({ key: k, label: k, type: 'text' as const })),
-    },
-  ],
-});
-
-describe('SettingsRegistry', () => {
-  it('returns manifests sorted by order', () => {
-    const registry = new SettingsRegistry();
-    registry.register(makeManifest('b', 200, ['key.b']));
-    registry.register(makeManifest('a', 100, ['key.a']));
-
-    const all = registry.getAll();
-    expect(all.map((m) => m.id)).toEqual(['a', 'b']);
-  });
-
-  it('throws on duplicate key across manifests', () => {
-    const registry = new SettingsRegistry();
-    registry.register(makeManifest('first', 1, ['shared.key']));
-
-    expect(() => registry.register(makeManifest('second', 2, ['shared.key']))).toThrow(
-      /(?=.*shared\.key)(?=.*first)(?=.*second)/
-    );
->>>>>>> 7e84266 (test(settings): add registry and tRPC tests for US-01; export SettingsRegistry class)
+    ).toThrow(/(?=.*shared\.key)(?=.*manifest-a)(?=.*manifest-b)/);
   });
 });
 
 // ---------------------------------------------------------------------------
-<<<<<<< HEAD
-// settings.getBulk / settings.setBulk tRPC procedure tests
-// ---------------------------------------------------------------------------
-
-describe('settings.getBulk', () => {
-  it('returns only the keys that exist in the database', async () => {
-    seedSetting(db, { key: 'bulk.key.1', value: 'v1' });
-    seedSetting(db, { key: 'bulk.key.2', value: 'v2' });
-    seedSetting(db, { key: 'bulk.key.3', value: 'v3' });
-
-    const result = await caller.core.settings.getBulk({
-      keys: ['bulk.key.1', 'bulk.key.2', 'bulk.key.3', 'bulk.key.4', 'bulk.key.5'],
-    });
-
-    expect(Object.keys(result.settings)).toHaveLength(3);
-    expect(result.settings['bulk.key.1']).toBe('v1');
-    expect(result.settings['bulk.key.2']).toBe('v2');
-    expect(result.settings['bulk.key.3']).toBe('v3');
-    expect(result.settings['bulk.key.4']).toBeUndefined();
-    expect(result.settings['bulk.key.5']).toBeUndefined();
-  });
-});
-
-describe('settings.setBulk', () => {
-  it('saves all 3 entries and makes them retrievable', async () => {
-    await caller.core.settings.setBulk({
-      entries: [
-        { key: 'set.bulk.a', value: 'alpha' },
-        { key: 'set.bulk.b', value: 'beta' },
-        { key: 'set.bulk.c', value: 'gamma' },
-      ],
-    });
-
-    const result = await caller.core.settings.getBulk({
-      keys: ['set.bulk.a', 'set.bulk.b', 'set.bulk.c'],
-    });
-
-    expect(Object.keys(result.settings)).toHaveLength(3);
-    expect(result.settings['set.bulk.a']).toBe('alpha');
-    expect(result.settings['set.bulk.b']).toBe('beta');
-    expect(result.settings['set.bulk.c']).toBe('gamma');
-  });
-
-  it('rolls back all entries when one write fails mid-transaction', async () => {
-    // Force a DB error on the 3rd insert by adding a trigger that aborts
-    // when the settings table already has 2 rows
-    db.exec(`
-      CREATE TRIGGER test_settings_limit
-      BEFORE INSERT ON settings
-      WHEN (SELECT COUNT(*) FROM settings) >= 2
-      BEGIN
-        SELECT RAISE(ABORT, 'test: too many settings');
-      END
-=======
 // settings.getManifests (tRPC — uses singleton, cleared after each test)
 // ---------------------------------------------------------------------------
 
@@ -349,22 +259,21 @@ describe('settings.getManifests', () => {
 // ---------------------------------------------------------------------------
 
 describe('settings.getBulk', () => {
-  it('returns only existing keys from the requested set', async () => {
-    seedSetting(db, {
-      key: SETTINGS_KEYS.PLEX_URL,
-      value: 'http://plex:32400',
-    });
-    seedSetting(db, { key: SETTINGS_KEYS.PLEX_TOKEN, value: 'tok' });
-    seedSetting(db, { key: SETTINGS_KEYS.THEME, value: 'dark' });
+  it('returns only the keys that exist in the database', async () => {
+    seedSetting(db, { key: 'bulk.key.1', value: 'v1' });
+    seedSetting(db, { key: 'bulk.key.2', value: 'v2' });
+    seedSetting(db, { key: 'bulk.key.3', value: 'v3' });
 
     const result = await caller.core.settings.getBulk({
-      keys: [SETTINGS_KEYS.PLEX_URL, SETTINGS_KEYS.PLEX_TOKEN, SETTINGS_KEYS.RADARR_URL],
+      keys: ['bulk.key.1', 'bulk.key.2', 'bulk.key.3', 'bulk.key.4', 'bulk.key.5'],
     });
 
-    expect(Object.keys(result.settings)).toHaveLength(2);
-    expect(result.settings[SETTINGS_KEYS.PLEX_URL]).toBe('http://plex:32400');
-    expect(result.settings[SETTINGS_KEYS.PLEX_TOKEN]).toBe('tok');
-    expect(result.settings[SETTINGS_KEYS.RADARR_URL]).toBeUndefined();
+    expect(Object.keys(result.settings)).toHaveLength(3);
+    expect(result.settings['bulk.key.1']).toBe('v1');
+    expect(result.settings['bulk.key.2']).toBe('v2');
+    expect(result.settings['bulk.key.3']).toBe('v3');
+    expect(result.settings['bulk.key.4']).toBeUndefined();
+    expect(result.settings['bulk.key.5']).toBeUndefined();
   });
 
   it('returns empty object for empty keys array', async () => {
@@ -378,61 +287,50 @@ describe('settings.getBulk', () => {
 // ---------------------------------------------------------------------------
 
 describe('settings.setBulk', () => {
-  it('writes all entries and returns them', async () => {
-    const result = await caller.core.settings.setBulk({
+  it('saves all 3 entries and makes them retrievable', async () => {
+    await caller.core.settings.setBulk({
       entries: [
-        { key: SETTINGS_KEYS.PLEX_URL, value: 'http://plex:32400' },
-        { key: SETTINGS_KEYS.THEME, value: 'dark' },
-        { key: SETTINGS_KEYS.RADARR_URL, value: 'http://radarr:7878' },
+        { key: 'set.bulk.a', value: 'alpha' },
+        { key: 'set.bulk.b', value: 'beta' },
+        { key: 'set.bulk.c', value: 'gamma' },
       ],
     });
 
-    expect(result.settings[SETTINGS_KEYS.PLEX_URL]).toBe('http://plex:32400');
-    expect(result.settings[SETTINGS_KEYS.THEME]).toBe('dark');
-    expect(result.settings[SETTINGS_KEYS.RADARR_URL]).toBe('http://radarr:7878');
-
-    // Verify persistence
-    const check = await caller.core.settings.getBulk({
-      keys: [SETTINGS_KEYS.PLEX_URL, SETTINGS_KEYS.THEME, SETTINGS_KEYS.RADARR_URL],
+    const result = await caller.core.settings.getBulk({
+      keys: ['set.bulk.a', 'set.bulk.b', 'set.bulk.c'],
     });
-    expect(Object.keys(check.settings)).toHaveLength(3);
+
+    expect(Object.keys(result.settings)).toHaveLength(3);
+    expect(result.settings['set.bulk.a']).toBe('alpha');
+    expect(result.settings['set.bulk.b']).toBe('beta');
+    expect(result.settings['set.bulk.c']).toBe('gamma');
   });
 
-  it('rolls back all entries when one write fails', async () => {
-    // Add a trigger that rejects inserts once the table already has 1 row
+  it('rolls back all entries when one write fails mid-transaction', async () => {
+    // Force a DB error on the 3rd insert by adding a trigger that aborts
+    // when the settings table already has 2 rows
     db.exec(`
-      CREATE TRIGGER fail_on_second_insert BEFORE INSERT ON settings
-      WHEN (SELECT COUNT(*) FROM settings) >= 1
-      BEGIN SELECT RAISE(ABORT, 'test: max 1 row'); END;
->>>>>>> 7e84266 (test(settings): add registry and tRPC tests for US-01; export SettingsRegistry class)
+      CREATE TRIGGER test_settings_limit
+      BEFORE INSERT ON settings
+      WHEN (SELECT COUNT(*) FROM settings) >= 2
+      BEGIN
+        SELECT RAISE(ABORT, 'test: too many settings');
+      END
     `);
 
     await expect(
       caller.core.settings.setBulk({
         entries: [
-<<<<<<< HEAD
           { key: 'tx.key.1', value: 'v1' },
           { key: 'tx.key.2', value: 'v2' },
           { key: 'tx.key.3', value: 'v3' },
-=======
-          { key: SETTINGS_KEYS.PLEX_URL, value: 'http://plex:32400' },
-          { key: SETTINGS_KEYS.THEME, value: 'dark' },
->>>>>>> 7e84266 (test(settings): add registry and tRPC tests for US-01; export SettingsRegistry class)
         ],
       })
     ).rejects.toThrow();
 
-<<<<<<< HEAD
     const result = await caller.core.settings.getBulk({
       keys: ['tx.key.1', 'tx.key.2', 'tx.key.3'],
     });
     expect(Object.keys(result.settings)).toHaveLength(0);
-=======
-    // Neither entry should be persisted
-    const check = await caller.core.settings.getBulk({
-      keys: [SETTINGS_KEYS.PLEX_URL, SETTINGS_KEYS.THEME],
-    });
-    expect(check.settings).toEqual({});
->>>>>>> 7e84266 (test(settings): add registry and tRPC tests for US-01; export SettingsRegistry class)
   });
 });
