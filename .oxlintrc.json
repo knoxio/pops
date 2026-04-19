@@ -212,7 +212,6 @@
         "complexity": ["error", 30],
         "max-depth": ["error", 4],
         "max-params": ["error", 8],
-        "no-nested-ternary": "off",
         "typescript/explicit-function-return-type": [
           "error",
           {
@@ -251,7 +250,6 @@
         ],
         "complexity": ["error", 40],
         "max-depth": ["error", 4],
-        "no-nested-ternary": "off",
         "typescript/explicit-function-return-type": "off"
       }
     },
@@ -265,7 +263,6 @@
         ],
         "complexity": ["error", 45],
         "max-depth": ["error", 4],
-        "no-nested-ternary": "off",
         "typescript/explicit-function-return-type": "off",
         "jsx-a11y/alt-text": "warn",
         "jsx-a11y/aria-role": "warn",
@@ -288,7 +285,6 @@
         ],
         "complexity": ["error", 45],
         "max-depth": ["error", 4],
-        "no-nested-ternary": "off",
         "typescript/explicit-function-return-type": "off"
       }
     },
@@ -302,7 +298,6 @@
         ],
         "complexity": ["error", 70],
         "max-depth": ["error", 4],
-        "no-nested-ternary": "off",
         "typescript/explicit-function-return-type": "off"
       }
     },
@@ -322,7 +317,6 @@
         ],
         "complexity": ["error", 55],
         "max-depth": ["error", 4],
-        "no-nested-ternary": "off",
         "typescript/explicit-function-return-type": "off"
       }
     },
