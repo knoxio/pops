@@ -4,7 +4,7 @@ import { cn } from '../lib/utils';
 
 import type { HTMLAttributes, ReactNode } from 'react';
 
-interface SearchResultItemProps extends HTMLAttributes<HTMLDivElement> {
+interface SearchResultItemProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
   /** Icon, thumbnail, or avatar displayed before the text content. */
   leading?: ReactNode;
   /** Primary title line — pass a highlighted node or plain string. */
