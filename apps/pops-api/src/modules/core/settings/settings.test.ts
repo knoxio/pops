@@ -244,7 +244,7 @@ describe('SettingsRegistry', () => {
     registry.register(makeManifest('first', 1, ['shared.key']));
 
     expect(() => registry.register(makeManifest('second', 2, ['shared.key']))).toThrow(
-      /shared\.key.*first|first.*shared\.key/
+      /(?=.*shared\.key)(?=.*first)(?=.*second)/
     );
 >>>>>>> 7e84266 (test(settings): add registry and tRPC tests for US-01; export SettingsRegistry class)
   });
