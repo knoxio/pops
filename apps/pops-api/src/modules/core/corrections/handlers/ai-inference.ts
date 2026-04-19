@@ -1,4 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
+import { eq } from 'drizzle-orm';
 
 import { settings, transactionCorrections } from '@pops/db-types';
 
@@ -9,21 +10,10 @@ import { withRateLimitRetry } from '../../../../lib/ai-retry.js';
 import { trackInference } from '../../../../lib/inference-middleware.js';
 import { logger } from '../../../../lib/logger.js';
 import { buildTargetRulesMap } from '../pure-service.js';
-import {
-  ChangeSetImpactSummarySchema,
-  ChangeSetSchema,
-  normalizeDescription,
-} from '../types.js';
+import { ChangeSetImpactSummarySchema, ChangeSetSchema, normalizeDescription } from '../types.js';
 import { AdaptedSignalSchema } from '../types.js';
 
-import { eq } from 'drizzle-orm';
-
-import type {
-  ChangeSet,
-  ChangeSetImpactSummary,
-  Correction,
-  CorrectionSignal,
-} from '../types.js';
+import type { ChangeSet, ChangeSetImpactSummary, Correction, CorrectionSignal } from '../types.js';
 
 export interface RejectedChangeSetFeedbackRecord {
   createdAt: string;

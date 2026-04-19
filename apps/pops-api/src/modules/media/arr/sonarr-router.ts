@@ -2,10 +2,10 @@ import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
 import { protectedProcedure } from '../../../trpc.js';
+import { resolveApiKey } from './radarr-router.js';
 import * as arrService from './service.js';
 import { SonarrClient } from './sonarr-client.js';
 import { ArrApiError } from './types.js';
-import { resolveApiKey } from './radarr-router.js';
 
 const TestConnectionInput = z.object({
   url: z.string().min(1),
