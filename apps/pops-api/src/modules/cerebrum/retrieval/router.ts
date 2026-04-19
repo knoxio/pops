@@ -9,6 +9,7 @@
  *   stats   — retrieval layer health and coverage counts
  */
 import { TRPCError } from '@trpc/server';
+import { count, sql } from 'drizzle-orm';
 import { z } from 'zod';
 
 import { embeddings, engramIndex } from '@pops/db-types';
@@ -70,6 +71,7 @@ export const retrievalRouter = router({
           filters.dateRange?.from ||
           filters.dateRange?.to ||
           filters.status?.length ||
+          filters.sourceTypes?.length ||
           filters.customFields;
         if (!hasFilters) {
           throw new TRPCError({
@@ -170,27 +172,28 @@ export const retrievalRouter = router({
   stats: protectedProcedure.query(() => {
     const db = getDrizzle();
 
-    const indexed = db.select().from(engramIndex).all().length;
+    const [indexedRow] = db.select({ count: count() }).from(engramIndex).all();
+    const indexed = indexedRow?.count ?? 0;
 
-    const embeddingRows = db.select().from(embeddings).all();
-    const embedded = embeddingRows.length;
+    const sourceTypeRows = db
+      .select({ sourceType: embeddings.sourceType, count: count() })
+      .from(embeddings)
+      .groupBy(embeddings.sourceType)
+      .all();
 
-    const sourceTypeCounts = embeddingRows.reduce<Record<string, number>>((acc, row) => {
-      acc[row.sourceType] = (acc[row.sourceType] ?? 0) + 1;
-      return acc;
-    }, {});
+    const embedded = sourceTypeRows.reduce((sum, r) => sum + r.count, 0);
+    const sourceTypeCounts = Object.fromEntries(sourceTypeRows.map((r) => [r.sourceType, r.count]));
 
-    const lastUpdated =
-      embeddingRows
-        .map((r) => r.createdAt)
-        .toSorted()
-        .at(-1) ?? null;
+    const [lastRow] = db
+      .select({ lastUpdated: sql<string | null>`max(${embeddings.createdAt})` })
+      .from(embeddings)
+      .all();
 
     return {
       indexed,
       embedded,
       sourceTypes: sourceTypeCounts,
-      lastUpdated,
+      lastUpdated: lastRow?.lastUpdated ?? null,
     };
   }),
 });

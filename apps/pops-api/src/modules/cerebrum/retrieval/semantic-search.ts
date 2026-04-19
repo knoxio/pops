@@ -1,7 +1,9 @@
 /**
  * SemanticSearchService — wraps core semanticSearch with Thalamus metadata
- * resolution, scope filtering, and RetrievalResult shaping.
+ * resolution, scope/type/status filtering, and RetrievalResult shaping.
  */
+import { createHash } from 'node:crypto';
+
 import { eq } from 'drizzle-orm';
 
 import {
@@ -13,9 +15,9 @@ import {
   tvShows,
 } from '@pops/db-types';
 
-import { getDb } from '../../../db.js';
-import { isVecAvailable } from '../../../db.js';
+import { getDb, isVecAvailable } from '../../../db.js';
 import { getEmbedding, getEmbeddingConfig } from '../../../shared/embedding-client.js';
+import { getRedis, isRedisAvailable, redisKey } from '../../../shared/redis-client.js';
 
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
@@ -23,6 +25,7 @@ import type { RetrievalFilters, RetrievalResult } from './types.js';
 
 const DEFAULT_LIMIT = 20;
 const DEFAULT_THRESHOLD = 0.8;
+const QUERY_CACHE_TTL_SECONDS = 300; // 5 minutes
 
 function vecUnavailableError(): Error {
   return Object.assign(new Error('Vector features unavailable: sqlite-vec extension not loaded'), {
@@ -51,6 +54,24 @@ function isSecretScope(scope: string): boolean {
   return scope.split('.').includes('secret');
 }
 
+/** Embed a query string, using Redis to cache repeated identical queries. */
+async function embedQuery(query: string): Promise<number[]> {
+  const config = getEmbeddingConfig();
+  const queryHash = createHash('sha256').update(query.trim()).digest('hex');
+  const cacheKey = redisKey('query_vec', queryHash);
+
+  const redis = getRedis();
+  if (isRedisAvailable() && redis) {
+    const cached = await redis.get(cacheKey);
+    if (cached) return JSON.parse(cached) as number[];
+    const vector = await getEmbedding(query, config);
+    await redis.set(cacheKey, JSON.stringify(vector), 'EX', QUERY_CACHE_TTL_SECONDS);
+    return vector;
+  }
+
+  return getEmbedding(query, config);
+}
+
 export class SemanticSearchService {
   constructor(private readonly db: BetterSQLite3Database) {}
 
@@ -67,11 +88,10 @@ export class SemanticSearchService {
     }
     if (!isVecAvailable()) throw vecUnavailableError();
 
-    const config = getEmbeddingConfig();
-    const queryVector = await getEmbedding(query, config);
+    const queryVector = await embedQuery(query);
     const vectorBlob = Float32Array.from(queryVector);
 
-    // Fetch more candidates than requested so we can filter and still hit the limit.
+    // Over-fetch so post-filtering still hits the limit.
     const fetchLimit = limit * 3;
 
     const rawDb = getDb();
@@ -104,7 +124,7 @@ export class SemanticSearchService {
     // Apply distance threshold.
     const candidates = rows.filter((r) => r.distance <= threshold);
 
-    // Resolve metadata and apply filters, deduplicating by sourceId (keep best chunk).
+    // Deduplicate by sourceId — keep the closest chunk per source.
     const seen = new Map<string, (typeof candidates)[number]>();
     for (const row of candidates) {
       const key = `${row.source_type}:${row.source_id}`;
@@ -117,7 +137,7 @@ export class SemanticSearchService {
       if (filters.sourceTypes && !filters.sourceTypes.includes(row.source_type)) continue;
 
       const metadata = await this.resolveMetadata(row.source_type, row.source_id, filters);
-      if (!metadata) continue; // orphaned or filtered out
+      if (!metadata) continue; // orphaned, secret-scoped, or filtered out
 
       results.push({
         sourceType: row.source_type,
@@ -127,7 +147,10 @@ export class SemanticSearchService {
         score: Math.max(0, 1 - row.distance),
         distance: row.distance,
         matchType: 'semantic',
-        metadata: metadata.fields,
+        metadata: {
+          ...metadata.fields,
+          contentHash: row.content_hash,
+        },
       });
 
       if (results.length >= limit) break;
@@ -137,7 +160,7 @@ export class SemanticSearchService {
   }
 
   /**
-   * Run a k-NN search using an existing vector (by embeddings.id = rowid).
+   * Run a k-NN search using an existing vector blob (read from embeddings_vec).
    * Used by the `similar` endpoint — no embedding API call needed.
    */
   async searchByVector(
@@ -202,7 +225,10 @@ export class SemanticSearchService {
         score: Math.max(0, 1 - row.distance),
         distance: row.distance,
         matchType: 'semantic',
-        metadata: metadata.fields,
+        metadata: {
+          ...metadata.fields,
+          contentHash: row.content_hash,
+        },
       });
 
       if (results.length >= limit) break;
@@ -241,6 +267,16 @@ export class SemanticSearchService {
       const row = rows[0];
       if (!row || row.status === 'orphaned') return null;
 
+      // Apply type filter.
+      if (filters.types && filters.types.length > 0 && !filters.types.includes(row.type)) {
+        return null;
+      }
+
+      // Apply status filter (when explicitly set — orphaned is excluded by default above).
+      if (filters.status && filters.status.length > 0 && !filters.status.includes(row.status)) {
+        return null;
+      }
+
       // Apply scope filter and secret exclusion.
       const scopes = this.db
         .select({ scope: engramScopes.scope })
@@ -273,7 +309,7 @@ export class SemanticSearchService {
       };
     }
 
-    // Cross-source domain rows — scope filter does not apply.
+    // Cross-source domain rows — scope/type/status filters do not apply.
     const domainRow = this.fetchDomainRow(sourceType, sourceId);
     if (!domainRow) return null;
 

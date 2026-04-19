@@ -85,8 +85,10 @@ export class HybridSearchService {
   ): Promise<RetrievalResult[]> {
     const fetchLimit = limit * 3;
 
+    // Pass `limit` (not fetchLimit) to semantic search — it over-fetches 3x internally.
+    // Structured query gets fetchLimit since it doesn't over-fetch.
     const [semanticResults, structuredResults] = await Promise.all([
-      this.semanticSvc.search(query, filters, fetchLimit, threshold),
+      this.semanticSvc.search(query, filters, limit, threshold),
       this.structuredSvc.query(filters, fetchLimit),
     ]);
 

@@ -17,11 +17,14 @@ function estimateTokens(text: string): number {
 }
 
 function truncateToTokenBudget(text: string, budget: number): { text: string; truncated: boolean } {
+  if (budget <= 0) return { text: '[truncated]', truncated: true };
   const estimated = estimateTokens(text);
   if (estimated <= budget) return { text, truncated: false };
 
-  // Binary-search for the approximate character count that fits.
-  const targetWords = Math.floor(budget / WORDS_TO_TOKENS);
+  // Approximate character count that fits.
+  const targetWords = Math.max(0, Math.floor(budget / WORDS_TO_TOKENS));
+  if (targetWords === 0) return { text: '[truncated]', truncated: true };
+
   const words = text.split(/\s+/);
   const sliced = words.slice(0, targetWords).join(' ');
 
@@ -80,16 +83,15 @@ export class ContextAssemblyService {
     const seen = new Set<string>();
     const sections: string[] = [];
     const sources: SourceAttribution[] = [];
-    let remaining = tokenBudget;
     let anyTruncated = false;
 
-    // Preamble.
+    // Preamble — clamp remaining to 0 if preamble alone exceeds the budget.
     const preamble = `Query: ${query}\n`;
     const preambleTokens = estimateTokens(preamble);
-    remaining -= preambleTokens;
+    let remaining = Math.max(0, tokenBudget - preambleTokens);
 
     for (const result of results) {
-      // Dedup by content hash if available.
+      // Dedup by content hash when available, otherwise by source identity.
       const hashKey = (result.metadata['contentHash'] as string | undefined) ?? '';
       const dedupeKey = hashKey || `${result.sourceType}:${result.sourceId}`;
       if (seen.has(dedupeKey)) continue;
@@ -109,7 +111,7 @@ export class ContextAssemblyService {
         relevanceScore: result.score,
       });
 
-      remaining -= usedTokens;
+      remaining = Math.max(0, remaining - usedTokens);
       if (truncated) {
         anyTruncated = true;
         break;

@@ -1,10 +1,14 @@
 /**
  * StructuredQueryService — filters engram_index and junction tables using
  * parameterised SQL. Returns RetrievalResult[] with matchType: 'structured'.
+ *
+ * Scope/tag/secret filtering is pushed into SQL (EXISTS/COUNT subqueries).
+ * Pagination is SQL-side. Junction tables and embeddings are batch-prefetched
+ * for the result page to avoid N+1 queries.
  */
 import { and, desc, eq, gte, inArray, lte, ne, sql } from 'drizzle-orm';
 
-import { engramIndex, engramScopes, engramTags } from '@pops/db-types';
+import { embeddings, engramIndex, engramScopes, engramTags } from '@pops/db-types';
 
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
@@ -13,23 +17,19 @@ import type { RetrievalFilters, RetrievalResult } from './types.js';
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
 
-/** Check if a scope contains a secret segment. */
-function isSecretScope(scope: string): boolean {
-  return scope.split('.').includes('secret');
-}
-
 export class StructuredQueryService {
   constructor(private readonly db: BetterSQLite3Database) {}
 
   query(filters: RetrievalFilters, limit = DEFAULT_LIMIT, offset = 0): RetrievalResult[] {
-    const cappedLimit = Math.min(limit, MAX_LIMIT);
+    // Structured search only ever returns engrams — skip if caller excluded them.
+    if (filters.sourceTypes && !filters.sourceTypes.includes('engram')) return [];
 
-    // Build conditions list.
+    const cappedLimit = Math.min(limit, MAX_LIMIT);
     const conditions = [ne(engramIndex.status, 'orphaned')];
 
     if (filters.status && filters.status.length > 0) {
-      // If caller explicitly asks for orphaned, allow it.
-      conditions.splice(0, 1); // remove the default exclusion
+      // Caller explicitly requests certain statuses — replace default orphan exclusion.
+      conditions.splice(0, 1);
       conditions.push(inArray(engramIndex.status, filters.status));
     }
 
@@ -44,93 +44,130 @@ export class StructuredQueryService {
       conditions.push(lte(engramIndex.createdAt, filters.dateRange.to));
     }
 
-    // Custom field filter via json_extract.
     if (filters.customFields) {
       for (const [key, value] of Object.entries(filters.customFields)) {
         conditions.push(sql`json_extract(${engramIndex.customFields}, ${`$.${key}`}) = ${value}`);
       }
     }
 
-    // Run main query.
-    let rows = this.db
+    // Secret-scope exclusion via NOT EXISTS — no in-memory pass needed.
+    if (!filters.includeSecret) {
+      conditions.push(sql`not exists (
+        select 1 from ${engramScopes}
+        where ${engramScopes.engramId} = ${engramIndex.id}
+          and (
+            ${engramScopes.scope} = 'secret'
+            or ${engramScopes.scope} like '%.secret.%'
+            or ${engramScopes.scope} like 'secret.%'
+            or ${engramScopes.scope} like '%.secret'
+          )
+      )`);
+    }
+
+    // Scope prefix filter via EXISTS — any matching scope passes.
+    const scopeFilters = filters.scopes;
+    if (scopeFilters && scopeFilters.length > 0) {
+      const scopePredicates = scopeFilters.map((f) => {
+        const prefix = `${f}.%`;
+        return sql`(${engramScopes.scope} = ${f} or ${engramScopes.scope} like ${prefix})`;
+      });
+      conditions.push(sql`exists (
+        select 1 from ${engramScopes}
+        where ${engramScopes.engramId} = ${engramIndex.id}
+          and (${sql.join(scopePredicates, sql` or `)})
+      )`);
+    }
+
+    // Tag AND-filter via COUNT subquery — all required tags must be present.
+    const tagFilters = filters.tags ? [...new Set(filters.tags)] : undefined;
+    if (tagFilters && tagFilters.length > 0) {
+      const tagParams = tagFilters.map((t) => sql`${t}`);
+      conditions.push(sql`(
+        select count(distinct ${engramTags.tag})
+        from ${engramTags}
+        where ${engramTags.engramId} = ${engramIndex.id}
+          and ${engramTags.tag} in (${sql.join(tagParams, sql`, `)})
+      ) = ${tagFilters.length}`);
+    }
+
+    // SQL-side pagination — no full table scan.
+    const rows = this.db
       .select()
       .from(engramIndex)
       .where(and(...conditions))
       .orderBy(desc(engramIndex.modifiedAt))
+      .limit(cappedLimit)
+      .offset(offset)
       .all();
 
-    // Apply scope-based filtering in-memory (requires junction table).
-    const scopeFilters = filters.scopes;
-    if ((scopeFilters && scopeFilters.length > 0) || !filters.includeSecret) {
-      rows = rows.filter((row) => {
-        const scopes = this.db
-          .select({ scope: engramScopes.scope })
-          .from(engramScopes)
-          .where(eq(engramScopes.engramId, row.id))
-          .all()
-          .map((s) => s.scope);
+    if (rows.length === 0) return [];
 
-        if (!filters.includeSecret && scopes.some(isSecretScope)) return false;
+    // Batch-prefetch junction tables and embedding previews for the page.
+    const rowIds = rows.map((r) => r.id);
 
-        if (scopeFilters && scopeFilters.length > 0) {
-          return scopes.some((s) => scopeFilters.some((f) => s === f || s.startsWith(f + '.')));
-        }
+    const scopeRows = this.db
+      .select({ engramId: engramScopes.engramId, scope: engramScopes.scope })
+      .from(engramScopes)
+      .where(inArray(engramScopes.engramId, rowIds))
+      .all();
 
-        return true;
-      });
+    const tagRows = this.db
+      .select({ engramId: engramTags.engramId, tag: engramTags.tag })
+      .from(engramTags)
+      .where(inArray(engramTags.engramId, rowIds))
+      .all();
+
+    const previewRows = this.db
+      .select({ sourceId: embeddings.sourceId, contentPreview: embeddings.contentPreview })
+      .from(embeddings)
+      .where(
+        and(
+          eq(embeddings.sourceType, 'engram'),
+          inArray(embeddings.sourceId, rowIds),
+          eq(embeddings.chunkIndex, 0)
+        )
+      )
+      .all();
+
+    // Build lookup maps from batch results.
+    const scopesByEngramId = new Map<string, string[]>();
+    for (const { engramId, scope } of scopeRows) {
+      const arr = scopesByEngramId.get(engramId);
+      if (arr) arr.push(scope);
+      else scopesByEngramId.set(engramId, [scope]);
     }
 
-    // Apply tag AND-filter in-memory.
-    const tagFilters = filters.tags;
-    if (tagFilters && tagFilters.length > 0) {
-      rows = rows.filter((row) => {
-        const tags = this.db
-          .select({ tag: engramTags.tag })
-          .from(engramTags)
-          .where(eq(engramTags.engramId, row.id))
-          .all()
-          .map((t) => t.tag);
-        return tagFilters.every((required) => tags.includes(required));
-      });
+    const tagsByEngramId = new Map<string, string[]>();
+    for (const { engramId, tag } of tagRows) {
+      const arr = tagsByEngramId.get(engramId);
+      if (arr) arr.push(tag);
+      else tagsByEngramId.set(engramId, [tag]);
     }
 
-    // Paginate and shape.
-    const page = rows.slice(offset, offset + cappedLimit);
+    const previewByEngramId = new Map<string, string>();
+    for (const { sourceId, contentPreview } of previewRows) {
+      previewByEngramId.set(sourceId, contentPreview);
+    }
 
-    return page.map((row) => {
-      const scopes = this.db
-        .select({ scope: engramScopes.scope })
-        .from(engramScopes)
-        .where(eq(engramScopes.engramId, row.id))
-        .all()
-        .map((s) => s.scope);
-
-      const tags = this.db
-        .select({ tag: engramTags.tag })
-        .from(engramTags)
-        .where(eq(engramTags.engramId, row.id))
-        .all()
-        .map((t) => t.tag);
-
-      return {
-        sourceType: 'engram',
-        sourceId: row.id,
-        title: row.title,
-        contentPreview: '',
-        score: 1,
-        matchType: 'structured' as const,
-        metadata: {
-          type: row.type,
-          source: row.source,
-          status: row.status,
-          scopes,
-          tags,
-          createdAt: row.createdAt,
-          modifiedAt: row.modifiedAt,
-          wordCount: row.wordCount,
-          customFields: row.customFields,
-        },
-      };
-    });
+    return rows.map((row) => ({
+      sourceType: 'engram',
+      sourceId: row.id,
+      title: row.title,
+      contentPreview: previewByEngramId.get(row.id) ?? '',
+      score: 1,
+      matchType: 'structured' as const,
+      metadata: {
+        type: row.type,
+        source: row.source,
+        status: row.status,
+        scopes: scopesByEngramId.get(row.id) ?? [],
+        tags: tagsByEngramId.get(row.id) ?? [],
+        createdAt: row.createdAt,
+        modifiedAt: row.modifiedAt,
+        wordCount: row.wordCount,
+        customFields: row.customFields,
+        contentHash: row.contentHash,
+      },
+    }));
   }
 }
