@@ -376,6 +376,9 @@ interface SectionRendererProps {
 
 export function SectionRenderer({ manifest, optionsLoaders, onTestAction }: SectionRendererProps) {
   const allKeys = manifest.groups.flatMap((g) => g.fields.map((f) => f.key));
+  const fieldsByKey = Object.fromEntries(
+    manifest.groups.flatMap((g) => g.fields.map((f) => [f.key, f]))
+  );
 
   const { data, isLoading } = trpc.core.settings.getBulk.useQuery({ keys: allKeys });
   const setBulkMutation = trpc.core.settings.setBulk.useMutation();
@@ -461,6 +464,9 @@ export function SectionRenderer({ manifest, optionsLoaders, onTestAction }: Sect
                 );
               }, 2000);
               savedTimerRefs.current.set(key, savedTimer);
+              if (fieldsByKey[key]?.requiresRestart) {
+                toast.info('Setting saved — restart required for this change to take effect');
+              }
             },
             onError: (err) => {
               if (saveVersionRefs.current.get(key) !== version) return;
@@ -473,7 +479,7 @@ export function SectionRenderer({ manifest, optionsLoaders, onTestAction }: Sect
 
       debounceRefs.current.set(key, timer);
     },
-    [setBulkMutation]
+    [setBulkMutation, fieldsByKey]
   );
 
   const handleTestAction = useCallback(
