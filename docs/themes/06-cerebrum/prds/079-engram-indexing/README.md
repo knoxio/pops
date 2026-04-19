@@ -1,7 +1,7 @@
 # PRD-079: Engram Indexing & Sync
 
 > Epic: [01 — Thalamus](../../epics/01-thalamus.md)
-> Status: Not started
+> Status: Done
 
 ## Overview
 
@@ -64,12 +64,12 @@ Domain data sources are mapped to the `embeddings` table using `source_type` and
 
 ## User Stories
 
-| #   | Story                                                   | Summary                                                                                        | Status      | Parallelisable   |
-| --- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------- | ---------------- |
-| 01  | [us-01-file-watcher](us-01-file-watcher.md)             | Chokidar file watcher on engram directory with debounced change detection and batch processing | Not started | No (first)       |
-| 02  | [us-02-frontmatter-sync](us-02-frontmatter-sync.md)     | Parse frontmatter from changed files, upsert into index tables, detect orphans                 | Not started | Blocked by us-01 |
-| 03  | [us-03-embedding-trigger](us-03-embedding-trigger.md)   | Content hash comparison and BullMQ embedding job enqueue on file change                        | Not started | Blocked by us-02 |
-| 04  | [us-04-cross-source-index](us-04-cross-source-index.md) | Index POPS domain data (transactions, media, inventory) into the embedding pipeline            | Not started | Yes              |
+| #   | Story                                                   | Summary                                                                                        | Status | Parallelisable   |
+| --- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------ | ---------------- |
+| 01  | [us-01-file-watcher](us-01-file-watcher.md)             | Chokidar file watcher on engram directory with debounced change detection and batch processing | Done   | No (first)       |
+| 02  | [us-02-frontmatter-sync](us-02-frontmatter-sync.md)     | Parse frontmatter from changed files, upsert into index tables, detect orphans                 | Done   | Blocked by us-01 |
+| 03  | [us-03-embedding-trigger](us-03-embedding-trigger.md)   | Content hash comparison and BullMQ embedding job enqueue on file change                        | Done   | Blocked by us-02 |
+| 04  | [us-04-cross-source-index](us-04-cross-source-index.md) | Index POPS domain data (transactions, media, inventory) into the embedding pipeline            | Done   | Yes              |
 
 US-02 depends on us-01 (needs file events to process). US-03 depends on us-02 (needs the index entry to compare content hashes). US-04 is independent — it indexes domain data, not engram files.
 

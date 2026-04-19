@@ -57,13 +57,19 @@ export type EmbeddingsQueueJobData = EmbedJobData;
 // pops:curation / pops:default queues (stubs)
 // ---------------------------------------------------------------------------
 
+export interface CrossSourceIndexJobData {
+  type: 'crossSourceIndex';
+  /** Subset of source types to scan; defaults to all when omitted. */
+  sourceTypes?: string[];
+}
+
 export interface GenericJobData {
   type: string;
   [key: string]: unknown;
 }
 
 export type CurationQueueJobData = GenericJobData;
-export type DefaultQueueJobData = GenericJobData;
+export type DefaultQueueJobData = CrossSourceIndexJobData;
 
 // ---------------------------------------------------------------------------
 // pops:dead-letter queue

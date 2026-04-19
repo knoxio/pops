@@ -8,6 +8,7 @@ config({ path: '../../.env', override: false }); // loads root .env without over
 import { createApp } from './app.js';
 import { closeDb } from './db.js';
 import { closeQueues } from './jobs/queues.js';
+import { startThalamus, stopThalamus } from './modules/cerebrum/thalamus/instance.js';
 import { startupCleanup } from './modules/core/envs/registry.js';
 import { startTtlWatcher } from './modules/core/envs/ttl-watcher.js';
 import { resumeSchedulerIfEnabled, stopPlexSchedulerTask } from './modules/media/plex/scheduler.js';
@@ -52,6 +53,11 @@ getRedisClient()
 // Periodically purge expired named environments
 const ttlWatcher = startTtlWatcher();
 
+// Start Thalamus file watcher (Cerebrum indexing middleware)
+startThalamus().catch((err) => {
+  console.error('[thalamus] Failed to start:', err);
+});
+
 async function shutdown(signal: string): Promise<void> {
   console.warn(`[pops-api] ${signal} — shutting down`);
   // 1. Stop accepting new requests
@@ -59,19 +65,21 @@ async function shutdown(signal: string): Promise<void> {
   // 2. Stop schedulers (preserve settings for auto-resume on restart)
   stopRotationTask();
   stopPlexSchedulerTask();
-  // 3. Wait for any in-progress rotation cycle to finish
+  // 3. Stop Thalamus file watcher
+  await stopThalamus();
+  // 4. Wait for any in-progress rotation cycle to finish
   if (process.env['NODE_ENV'] !== 'test') {
     await waitForCycleEnd();
   }
-  // 4. Stop TTL watcher
+  // 5. Stop TTL watcher
   clearInterval(ttlWatcher);
-  // 5. Close BullMQ queue connections
+  // 6. Close BullMQ queue connections
   await closeQueues();
-  // 6. Close Redis
+  // 7. Close Redis
   await shutdownRedis();
-  // 7. Close DB
+  // 8. Close DB
   closeDb();
-  // 8. Exit
+  // 9. Exit
   process.exit(0);
 }
 

@@ -40,7 +40,7 @@ Cerebrum is a subsystem umbrella containing multiple named components:
 | #   | Epic                                         | Summary                                                                        | Status      |
 | --- | -------------------------------------------- | ------------------------------------------------------------------------------ | ----------- |
 | 0   | [Engram Storage](epics/00-engram-storage.md) | File format, templates, directory structure, scope model, CRUD operations      | Partial     |
-| 1   | [Thalamus](epics/01-thalamus.md)             | File watcher, frontmatter indexing, embedding sync, cross-source retrieval     | Not started |
+| 1   | [Thalamus](epics/01-thalamus.md)             | File watcher, frontmatter indexing, embedding sync, cross-source retrieval     | Partial     |
 | 2   | [Ingest](epics/02-ingest.md)                 | Manual/agent/capture input, classification, entity extraction, scope inference | Not started |
 | 3   | [Emit](epics/03-emit.md)                     | Query engine, document generation, proactive nudges                            | Not started |
 | 4   | [Glia](epics/04-glia.md)                     | Curation workers (pruner, consolidator, linker, auditor), trust graduation     | Not started |

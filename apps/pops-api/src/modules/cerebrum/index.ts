@@ -6,9 +6,11 @@ import { router } from '../../trpc.js';
 import { engramsRouter } from './engrams/router.js';
 import { scopesRouter } from './engrams/scopes-router.js';
 import { templatesRouter } from './templates/router.js';
+import { indexRouter } from './thalamus/router.js';
 
 export const cerebrumRouter = router({
   engrams: engramsRouter,
   scopes: scopesRouter,
   templates: templatesRouter,
+  index: indexRouter,
 });
