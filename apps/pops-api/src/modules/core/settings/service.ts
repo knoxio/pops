@@ -1,4 +1,4 @@
-import { count, eq, like } from 'drizzle-orm';
+import { count, eq, inArray, like } from 'drizzle-orm';
 
 /**
  * Settings service — key-value store for application configuration
@@ -71,12 +71,12 @@ export function setSetting(input: SetSettingInput): SettingRow {
 
 /** Get multiple settings by key — missing keys are omitted from the result */
 export function getBulkSettings(keys: string[]): Record<string, string> {
+  if (keys.length === 0) return {};
   const db = getDrizzle();
+  const uniqueKeys = [...new Set(keys)];
+  const rows = db.select().from(settings).where(inArray(settings.key, uniqueKeys)).all();
   const result: Record<string, string> = {};
-  for (const key of keys) {
-    const row = db.select().from(settings).where(eq(settings.key, key)).get();
-    if (row) result[key] = row.value;
-  }
+  for (const row of rows) result[row.key] = row.value;
   return result;
 }
 
@@ -91,11 +91,9 @@ export function setBulkSettings(entries: { key: string; value: string }[]): Reco
         .run();
     }
   });
+  // Echo the written values back — no re-read needed
   const result: Record<string, string> = {};
-  for (const { key } of entries) {
-    const row = db.select().from(settings).where(eq(settings.key, key)).get();
-    if (row) result[key] = row.value;
-  }
+  for (const { key, value } of entries) result[key] = value;
   return result;
 }
 

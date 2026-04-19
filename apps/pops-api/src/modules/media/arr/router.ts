@@ -89,6 +89,76 @@ export const arrRouter = router({
     }
   }),
 
+  /** Test Radarr connection using saved settings (no input required). */
+  testRadarrSaved: protectedProcedure.mutation(async () => {
+    const s = arrService.getArrSettings();
+    if (!s.radarrUrl || !s.radarrApiKey) {
+      return {
+        data: {
+          configured: false,
+          connected: false,
+          error: 'Radarr URL or API key not configured',
+        },
+      };
+    }
+    const client = new RadarrClient(s.radarrUrl, s.radarrApiKey);
+    try {
+      const status = await client.testConnection();
+      if (status.appName && status.appName.toLowerCase() !== 'radarr') {
+        return {
+          data: {
+            configured: true,
+            connected: false,
+            error: `Expected Radarr but connected to ${status.appName}`,
+          },
+        };
+      }
+      return {
+        data: { configured: true, connected: true, ...status },
+        message: 'Radarr connection successful',
+      };
+    } catch (err) {
+      const errorMsg =
+        err instanceof ArrApiError ? err.message : err instanceof Error ? err.message : String(err);
+      return { data: { configured: true, connected: false, error: errorMsg } };
+    }
+  }),
+
+  /** Test Sonarr connection using saved settings (no input required). */
+  testSonarrSaved: protectedProcedure.mutation(async () => {
+    const s = arrService.getArrSettings();
+    if (!s.sonarrUrl || !s.sonarrApiKey) {
+      return {
+        data: {
+          configured: false,
+          connected: false,
+          error: 'Sonarr URL or API key not configured',
+        },
+      };
+    }
+    const client = new SonarrClient(s.sonarrUrl, s.sonarrApiKey);
+    try {
+      const status = await client.testConnection();
+      if (status.appName && status.appName.toLowerCase() !== 'sonarr') {
+        return {
+          data: {
+            configured: true,
+            connected: false,
+            error: `Expected Sonarr but connected to ${status.appName}`,
+          },
+        };
+      }
+      return {
+        data: { configured: true, connected: true, ...status },
+        message: 'Sonarr connection successful',
+      };
+    } catch (err) {
+      const errorMsg =
+        err instanceof ArrApiError ? err.message : err instanceof Error ? err.message : String(err);
+      return { data: { configured: true, connected: false, error: errorMsg } };
+    }
+  }),
+
   /** Get configuration state for both services. */
   getConfig: protectedProcedure.query(() => {
     return { data: arrService.getArrConfig() };

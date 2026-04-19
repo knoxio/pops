@@ -13,6 +13,14 @@ function useSectionObserver(
 ) {
   const [activeId, setActiveId] = useState<string>('');
 
+  // Default to first manifest when data loads and no section is active yet
+  useEffect(() => {
+    if (manifests.length > 0 && !activeId) {
+      const hash = window.location.hash.slice(1);
+      setActiveId(hash && manifests.some((m) => m.id === hash) ? hash : (manifests[0]?.id ?? ''));
+    }
+  }, [manifests, activeId]);
+
   useEffect(() => {
     if (!manifests.length || !contentRef.current) return;
 
@@ -25,7 +33,7 @@ function useSectionObserver(
           setActiveId(visible[0].target.id);
         }
       },
-      { root: contentRef.current, rootMargin: '-10% 0px -70% 0px', threshold: 0 }
+      { root: null, rootMargin: '-10% 0px -70% 0px', threshold: 0 }
     );
 
     for (const m of manifests) {

@@ -4,6 +4,13 @@ class SettingsRegistry {
   private manifests = new Map<string, SettingsManifest>();
 
   register(manifest: SettingsManifest): void {
+    if (this.manifests.has(manifest.id)) {
+      throw new Error(
+        `Settings manifest "${manifest.id}" is already registered — duplicate registration is not allowed`
+      );
+    }
+
+    // Build occupied keys from already-registered manifests
     const occupiedKeys = new Map<string, string>();
     for (const [existingId, m] of this.manifests) {
       for (const group of m.groups) {
@@ -12,8 +19,17 @@ class SettingsRegistry {
         }
       }
     }
+
+    // Check for duplicate keys within this manifest and against existing manifests
+    const seenInManifest = new Set<string>();
     for (const group of manifest.groups) {
       for (const field of group.fields) {
+        if (seenInManifest.has(field.key)) {
+          throw new Error(
+            `Settings key "${field.key}" appears more than once within manifest "${manifest.id}"`
+          );
+        }
+        seenInManifest.add(field.key);
         const claimant = occupiedKeys.get(field.key);
         if (claimant) {
           throw new Error(
@@ -22,6 +38,7 @@ class SettingsRegistry {
         }
       }
     }
+
     this.manifests.set(manifest.id, manifest);
   }
 

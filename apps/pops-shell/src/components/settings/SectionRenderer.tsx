@@ -70,9 +70,14 @@ function DurationFieldInput({
           value={displayValue}
           min={0}
           onChange={(e) => {
-            const n = parseFloat(e.target.value);
-            if (!isNaN(n))
-              onChange(field.key, String(Math.round(n * (UNIT_MULTIPLIERS[unit] ?? 1))));
+            const raw = e.target.value;
+            if (raw === '') {
+              onChange(field.key, '');
+            } else {
+              const n = parseFloat(raw);
+              if (!isNaN(n))
+                onChange(field.key, String(Math.round(n * (UNIT_MULTIPLIERS[unit] ?? 1))));
+            }
           }}
           className="w-32"
         />
@@ -112,11 +117,11 @@ function FieldInput({ field, value, onChange, onTestAction, envFallbackActive }:
           setValidationError(v.message ?? 'Must be a number');
           return false;
         }
-        if (v.min !== undefined && n < v.min) {
+        if (val !== '' && v.min !== undefined && n < v.min) {
           setValidationError(v.message ?? `Must be at least ${v.min}`);
           return false;
         }
-        if (v.max !== undefined && n > v.max) {
+        if (val !== '' && v.max !== undefined && n > v.max) {
           setValidationError(v.message ?? `Must be at most ${v.max}`);
           return false;
         }
@@ -132,7 +137,8 @@ function FieldInput({ field, value, onChange, onTestAction, envFallbackActive }:
   );
 
   const handleChange = (newVal: string) => {
-    validate(newVal);
+    const valid = validate(newVal);
+    if (!valid) return;
     onChange(field.key, newVal);
   };
 
@@ -372,6 +378,12 @@ export function SectionRenderer({ manifest, optionsLoaders, onTestAction }: Sect
   }, [optionsLoaders]);
 
   const debounceRefs = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  useEffect(() => {
+    return () => {
+      for (const timer of debounceRefs.current.values()) clearTimeout(timer);
+    };
+  }, []);
 
   const handleChange = useCallback(
     (key: string, value: string) => {
