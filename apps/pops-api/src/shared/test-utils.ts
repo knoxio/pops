@@ -412,7 +412,7 @@ export function createTestDb(): Database {
     CREATE INDEX IF NOT EXISTS idx_item_documents_item ON item_documents(item_id);
     CREATE INDEX IF NOT EXISTS idx_item_documents_doc ON item_documents(paperless_document_id);
 
-    CREATE TABLE IF NOT EXISTS ai_usage (
+    CREATE TABLE IF NOT EXISTS ai_inference_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       description TEXT NOT NULL,
       entity_name TEXT,
@@ -422,10 +422,61 @@ export function createTestDb(): Database {
       cost_usd REAL NOT NULL,
       cached INTEGER NOT NULL DEFAULT 0,
       import_batch_id TEXT,
-      created_at TEXT NOT NULL
+      created_at TEXT NOT NULL,
+      provider TEXT NOT NULL DEFAULT 'claude',
+      model TEXT NOT NULL DEFAULT 'claude-haiku-4-5-20251001',
+      operation TEXT NOT NULL DEFAULT 'entity-match',
+      domain TEXT DEFAULT 'finance',
+      latency_ms INTEGER NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'success',
+      context_id TEXT,
+      error_message TEXT,
+      metadata TEXT
     );
-    CREATE INDEX IF NOT EXISTS idx_ai_usage_created_at ON ai_usage(created_at);
-    CREATE INDEX IF NOT EXISTS idx_ai_usage_batch ON ai_usage(import_batch_id);
+    CREATE INDEX IF NOT EXISTS idx_ai_inference_log_created_at ON ai_inference_log(created_at);
+    CREATE INDEX IF NOT EXISTS idx_ai_inference_log_provider_model ON ai_inference_log(provider, model);
+    CREATE INDEX IF NOT EXISTS idx_ai_inference_log_operation ON ai_inference_log(operation);
+    CREATE INDEX IF NOT EXISTS idx_ai_inference_log_domain ON ai_inference_log(domain);
+    CREATE INDEX IF NOT EXISTS idx_ai_inference_log_context_id ON ai_inference_log(context_id);
+    CREATE INDEX IF NOT EXISTS idx_ai_inference_log_status ON ai_inference_log(status);
+
+    CREATE TABLE IF NOT EXISTS ai_providers (
+      id TEXT PRIMARY KEY NOT NULL,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL,
+      base_url TEXT,
+      api_key_ref TEXT,
+      status TEXT NOT NULL DEFAULT 'active',
+      last_health_check TEXT,
+      last_latency_ms INTEGER,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS ai_model_pricing (
+      id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+      provider_id TEXT NOT NULL,
+      model_id TEXT NOT NULL,
+      display_name TEXT,
+      input_cost_per_mtok REAL NOT NULL DEFAULT 0,
+      output_cost_per_mtok REAL NOT NULL DEFAULT 0,
+      context_window INTEGER,
+      is_default INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      UNIQUE(provider_id, model_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS ai_budgets (
+      id TEXT PRIMARY KEY NOT NULL,
+      scope_type TEXT NOT NULL,
+      scope_value TEXT,
+      monthly_token_limit INTEGER,
+      monthly_cost_limit REAL,
+      action TEXT NOT NULL DEFAULT 'warn',
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL
+    );
 
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY NOT NULL,
@@ -1346,12 +1397,27 @@ export function seedAiUsage(
     cached: number;
     import_batch_id: string | null;
     created_at: string;
+    provider: string;
+    model: string;
+    operation: string;
+    domain: string | null;
+    latency_ms: number;
+    status: string;
+    context_id: string | null;
+    error_message: string | null;
   }> = {}
 ): number {
   const result = db
     .prepare(
-      `INSERT INTO ai_usage (description, entity_name, category, input_tokens, output_tokens, cost_usd, cached, import_batch_id, created_at)
-     VALUES (@description, @entity_name, @category, @input_tokens, @output_tokens, @cost_usd, @cached, @import_batch_id, @created_at)`
+      `INSERT INTO ai_inference_log (
+        description, entity_name, category, input_tokens, output_tokens, cost_usd,
+        cached, import_batch_id, created_at, provider, model, operation,
+        domain, latency_ms, status, context_id, error_message
+      ) VALUES (
+        @description, @entity_name, @category, @input_tokens, @output_tokens, @cost_usd,
+        @cached, @import_batch_id, @created_at, @provider, @model, @operation,
+        @domain, @latency_ms, @status, @context_id, @error_message
+      )`
     )
     .run({
       description: overrides.description ?? 'Test categorisation',
@@ -1363,6 +1429,14 @@ export function seedAiUsage(
       cached: overrides.cached ?? 0,
       import_batch_id: overrides.import_batch_id ?? null,
       created_at: overrides.created_at ?? new Date().toISOString(),
+      provider: overrides.provider ?? 'claude',
+      model: overrides.model ?? 'claude-haiku-4-5-20251001',
+      operation: overrides.operation ?? 'entity-match',
+      domain: overrides.domain ?? 'finance',
+      latency_ms: overrides.latency_ms ?? 0,
+      status: overrides.status ?? 'success',
+      context_id: overrides.context_id ?? null,
+      error_message: overrides.error_message ?? null,
     });
   return Number(result.lastInsertRowid);
 }
