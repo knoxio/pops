@@ -2,7 +2,7 @@ import { iconMap } from '@/app/nav/icon-map';
 import { matchesAtBoundary } from '@/app/nav/path-utils';
 import { registeredApps } from '@/app/nav/registry';
 import { useUIStore } from '@/store/uiStore';
-import { PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { PanelLeftClose, PanelLeftOpen, Settings } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 
@@ -132,8 +132,41 @@ export function AppRail({ className }: AppRailProps) {
         );
       })}
 
-      {/* Collapse toggle at bottom */}
-      <div className="mt-auto flex justify-center">
+      {/* Settings entry — bottom of app list, above collapse */}
+      <div className="mt-auto flex flex-col gap-2 items-center">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => navigate('/settings')}
+              className={cn(
+                'relative w-full flex items-center justify-center py-1 transition-colors group'
+              )}
+              aria-label="Settings"
+              aria-current={matchesAtBoundary(location.pathname, '/settings') ? 'page' : undefined}
+            >
+              <span
+                className={cn(
+                  'absolute left-0 top-1/2 -translate-y-1/2 w-1 rounded-r-full transition-all duration-300',
+                  matchesAtBoundary(location.pathname, '/settings')
+                    ? 'h-8 bg-muted-foreground'
+                    : 'h-0 bg-transparent group-hover:h-4 group-hover:bg-muted-foreground/40'
+                )}
+              />
+              <span
+                className={cn(
+                  'flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300',
+                  matchesAtBoundary(location.pathname, '/settings')
+                    ? 'bg-muted text-foreground shadow-sm rounded-xl scale-100'
+                    : 'text-muted-foreground hover:bg-muted hover:text-foreground hover:rounded-xl scale-95 hover:scale-100'
+                )}
+              >
+                <Settings className="h-6 w-6" />
+              </span>
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="right">Settings</TooltipContent>
+        </Tooltip>
+
         <Tooltip>
           <TooltipTrigger asChild>
             <button

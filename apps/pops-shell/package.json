@@ -22,6 +22,7 @@
     "@pops/app-inventory": "workspace:*",
     "@pops/app-media": "workspace:*",
     "@pops/navigation": "workspace:*",
+    "@pops/types": "workspace:*",
     "@pops/ui": "workspace:*",
     "@tailwindcss/vite": "4.2.2",
     "@tanstack/react-query": "5.99.0",

@@ -186,6 +186,9 @@ importers:
       '@pops/navigation':
         specifier: workspace:*
         version: link:../../packages/navigation
+      '@pops/types':
+        specifier: workspace:*
+        version: link:../../packages/types
       '@pops/ui':
         specifier: workspace:*
         version: link:../../packages/ui

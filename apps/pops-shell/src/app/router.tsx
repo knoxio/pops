@@ -14,6 +14,7 @@ import { routes as mediaRoutes } from '@pops/app-media';
 
 import { RootLayout } from './layout/RootLayout';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { SettingsPage } from './pages/SettingsPage';
 
 /**
  * Wrap lazy-loaded routes with Suspense so React can show a fallback
@@ -69,6 +70,7 @@ export const router = createBrowserRouter([
         path: 'ai',
         children: withSuspense(aiRoutes),
       },
+      { path: 'settings', element: <SettingsPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

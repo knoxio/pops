@@ -5,6 +5,7 @@
  * these via @pops/app-ai and mounts them under /ai/*.
  */
 import { lazy } from 'react';
+import { Navigate } from 'react-router';
 
 import type { RouteObject } from 'react-router';
 
@@ -16,10 +17,6 @@ const AiUsagePage = lazy(() =>
 
 const PromptViewerPage = lazy(() =>
   import('./pages/PromptViewerPage').then((m) => ({ default: m.PromptViewerPage }))
-);
-
-const ModelConfigPage = lazy(() =>
-  import('./pages/ModelConfigPage').then((m) => ({ default: m.ModelConfigPage }))
 );
 
 const RulesBrowserPage = lazy(() =>
@@ -49,7 +46,6 @@ export const navConfig = {
   items: [
     { path: '', label: 'AI Usage', icon: 'BarChart3' },
     { path: '/prompts', label: 'Prompt Templates', icon: 'FileText' },
-    { path: '/config', label: 'Model Config', icon: 'Settings' },
     { path: '/rules', label: 'Rules', icon: 'BookOpen' },
     { path: '/cache', label: 'Cache', icon: 'Database' },
   ],
@@ -58,7 +54,7 @@ export const navConfig = {
 export const routes: RouteObject[] = [
   { index: true, element: <AiUsagePage /> },
   { path: 'prompts', element: <PromptViewerPage /> },
-  { path: 'config', element: <ModelConfigPage /> },
+  { path: 'config', element: <Navigate to="/settings#ai.config" replace /> },
   { path: 'rules', element: <RulesBrowserPage /> },
   { path: 'cache', element: <CacheManagementPage /> },
 ];

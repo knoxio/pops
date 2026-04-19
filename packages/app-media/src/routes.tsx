@@ -5,6 +5,7 @@
  * these via @pops/app-media and mounts them under /media/*.
  */
 import { lazy } from 'react';
+import { Navigate } from 'react-router';
 
 import type { RouteObject } from 'react-router';
 
@@ -54,21 +55,6 @@ const DiscoverPage = lazy(() =>
 const RankingsPage = lazy(() =>
   import('./pages/RankingsPage').then((m) => ({
     default: m.RankingsPage,
-  }))
-);
-const PlexSettingsPage = lazy(() =>
-  import('./pages/PlexSettingsPage').then((m) => ({
-    default: m.PlexSettingsPage,
-  }))
-);
-const ArrSettingsPage = lazy(() =>
-  import('./pages/ArrSettingsPage').then((m) => ({
-    default: m.ArrSettingsPage,
-  }))
-);
-const RotationSettingsPage = lazy(() =>
-  import('./pages/RotationSettingsPage').then((m) => ({
-    default: m.RotationSettingsPage,
   }))
 );
 const RotationLogPage = lazy(() =>
@@ -153,9 +139,9 @@ export const routes: RouteObject[] = [
   { path: 'compare', element: <CompareArenaPage /> },
   { path: 'compare/history', element: <ComparisonHistoryPage /> },
   { path: 'quick-pick', element: <QuickPickPage /> },
-  { path: 'plex', element: <PlexSettingsPage /> },
-  { path: 'arr', element: <ArrSettingsPage /> },
-  { path: 'rotation', element: <RotationSettingsPage /> },
+  { path: 'plex', element: <Navigate to="/settings#media.plex" replace /> },
+  { path: 'arr', element: <Navigate to="/settings#media.arr" replace /> },
+  { path: 'rotation', element: <Navigate to="/settings#media.rotation" replace /> },
   { path: 'rotation/log', element: <RotationLogPage /> },
   { path: 'rotation/candidates', element: <CandidateQueuePage /> },
   { path: 'arr/calendar', element: <CalendarPage /> },

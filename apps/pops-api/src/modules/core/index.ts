@@ -7,6 +7,11 @@
 // Side-effect: register search adapters
 import './entities/search-adapter.js';
 
+import { aiConfigManifest } from './settings/ai-manifest.js';
+import { settingsRegistry } from './settings/registry.js';
+
+settingsRegistry.register(aiConfigManifest);
+
 import { router } from '../../trpc.js';
 import { aiUsageRouter } from './ai-usage/router.js';
 import { correctionsRouter } from './corrections/router.js';

@@ -38,3 +38,41 @@ export const SettingListSchema = z.object({
   offset: z.coerce.number().nonnegative().optional(),
 });
 export type SettingListInput = z.infer<typeof SettingListSchema>;
+
+/** Zod schemas mirroring the SettingsManifest types from @pops/types */
+export const SettingsFieldSchema = z.object({
+  key: z.string(),
+  label: z.string(),
+  description: z.string().optional(),
+  type: z.enum(['text', 'number', 'toggle', 'select', 'password', 'url', 'duration', 'json']),
+  default: z.string().optional(),
+  options: z.array(z.object({ value: z.string(), label: z.string() })).optional(),
+  validation: z
+    .object({
+      required: z.boolean().optional(),
+      min: z.number().optional(),
+      max: z.number().optional(),
+      pattern: z.string().optional(),
+      message: z.string().optional(),
+    })
+    .optional(),
+  envFallback: z.string().optional(),
+  sensitive: z.boolean().optional(),
+  requiresRestart: z.boolean().optional(),
+  testAction: z.object({ procedure: z.string(), label: z.string() }).optional(),
+});
+
+export const SettingsGroupSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string().optional(),
+  fields: z.array(SettingsFieldSchema),
+});
+
+export const SettingsManifestSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  icon: z.string().optional(),
+  order: z.number(),
+  groups: z.array(SettingsGroupSchema),
+});

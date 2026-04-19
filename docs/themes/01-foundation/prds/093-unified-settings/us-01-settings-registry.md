@@ -10,24 +10,24 @@ As the system, I need a typed settings manifest registry and bulk read/write tRP
 
 ### Types
 
-- [ ] `SettingsManifest`, `SettingsGroup`, and `SettingsField` types are defined in the `@pops/types` package and exported from its public API
-- [ ] `SettingsField.type` is a union of `'text' | 'number' | 'toggle' | 'select' | 'password' | 'url' | 'duration' | 'json'`
-- [ ] `SettingsField` includes optional properties: `default`, `options` (for select), `validation` (with `required`, `min`, `max`, `pattern`, `message`), `envFallback`, `sensitive`, `requiresRestart`, and `testAction` (with `procedure` and `label`)
-- [ ] All settings values are stored and returned as strings — the types do not use `number` or `boolean` for values
+- [x] `SettingsManifest`, `SettingsGroup`, and `SettingsField` types are defined in the `@pops/types` package and exported from its public API
+- [x] `SettingsField.type` is a union of `'text' | 'number' | 'toggle' | 'select' | 'password' | 'url' | 'duration' | 'json'`
+- [x] `SettingsField` includes optional properties: `default`, `options` (for select), `validation` (with `required`, `min`, `max`, `pattern`, `message`), `envFallback`, `sensitive`, `requiresRestart`, and `testAction` (with `procedure` and `label`)
+- [x] All settings values are stored and returned as strings — the types do not use `number` or `boolean` for values
 
 ### Registry
 
-- [ ] `SettingsRegistry` class is implemented in the API layer with `register(manifest: SettingsManifest)` and `getAll(): SettingsManifest[]` methods
-- [ ] `register()` stores manifests in memory (no database persistence for manifests)
-- [ ] `register()` throws a descriptive error if any key in the new manifest's fields collides with a key already registered by another manifest — the error message includes both manifest IDs and the duplicate key
-- [ ] `getAll()` returns all registered manifests sorted by the `order` field (ascending)
+- [x] `SettingsRegistry` class is implemented in the API layer with `register(manifest: SettingsManifest)` and `getAll(): SettingsManifest[]` methods
+- [x] `register()` stores manifests in memory (no database persistence for manifests)
+- [x] `register()` throws a descriptive error if any key in the new manifest's fields collides with a key already registered by another manifest — the error message includes both manifest IDs and the duplicate key
+- [x] `getAll()` returns all registered manifests sorted by the `order` field (ascending)
 
 ### tRPC Procedures
 
-- [ ] `core.settings.getManifests` query procedure exists, takes no input, and returns `{ manifests: SettingsManifest[] }` sorted by `order`
-- [ ] `core.settings.getBulk` query procedure accepts `{ keys: string[] }` and returns `{ settings: Record<string, string> }` containing only keys that have a value in the database — missing keys are omitted, not errored
-- [ ] `core.settings.setBulk` mutation procedure accepts `{ entries: { key: string; value: string }[] }` and writes all entries in a single database transaction
-- [ ] `setBulk` rolls back the entire transaction if any individual write fails — no partial saves
+- [x] `core.settings.getManifests` query procedure exists, takes no input, and returns `{ manifests: SettingsManifest[] }` sorted by `order`
+- [x] `core.settings.getBulk` query procedure accepts `{ keys: string[] }` and returns `{ settings: Record<string, string> }` containing only keys that have a value in the database — missing keys are omitted, not errored
+- [x] `core.settings.setBulk` mutation procedure accepts `{ entries: { key: string; value: string }[] }` and writes all entries in a single database transaction
+- [x] `setBulk` rolls back the entire transaction if any individual write fails — no partial saves
 
 ### Tests
 

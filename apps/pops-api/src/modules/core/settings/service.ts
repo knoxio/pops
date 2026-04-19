@@ -1,4 +1,4 @@
-import { count, eq, like } from 'drizzle-orm';
+import { count, eq, inArray, like } from 'drizzle-orm';
 
 /**
  * Settings service — key-value store for application configuration
@@ -67,6 +67,34 @@ export function setSetting(input: SetSettingInput): SettingRow {
     .run();
 
   return getSetting(input.key);
+}
+
+/** Get multiple settings by key — missing keys are omitted from the result */
+export function getBulkSettings(keys: string[]): Record<string, string> {
+  if (keys.length === 0) return {};
+  const db = getDrizzle();
+  const uniqueKeys = [...new Set(keys)];
+  const rows = db.select().from(settings).where(inArray(settings.key, uniqueKeys)).all();
+  const result: Record<string, string> = {};
+  for (const row of rows) result[row.key] = row.value;
+  return result;
+}
+
+/** Write multiple settings in a single transaction — rolls back all on any failure */
+export function setBulkSettings(entries: { key: string; value: string }[]): Record<string, string> {
+  const db = getDrizzle();
+  db.transaction((tx) => {
+    for (const { key, value } of entries) {
+      tx.insert(settings)
+        .values({ key, value })
+        .onConflictDoUpdate({ target: settings.key, set: { value } })
+        .run();
+    }
+  });
+  // Echo the written values back — no re-read needed
+  const result: Record<string, string> = {};
+  for (const { key, value } of entries) result[key] = value;
+  return result;
 }
 
 /** Delete a setting by key */
