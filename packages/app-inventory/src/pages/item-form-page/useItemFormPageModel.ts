@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
@@ -53,6 +53,15 @@ const defaultValues: ItemFormValues = {
   notes: '',
 };
 
+async function blobToBase64(blob: Blob): Promise<string> {
+  const bytes = new Uint8Array(await blob.arrayBuffer());
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += 8192) {
+    binary += String.fromCharCode(...bytes.subarray(i, i + 8192));
+  }
+  return btoa(binary);
+}
+
 export function extractPrefix(type: string): string {
   const firstWord = type.split(/\s+/)[0] ?? '';
   const upper = firstWord.toUpperCase();
@@ -79,6 +88,16 @@ export function useItemFormPageModel() {
   const [generating, setGenerating] = useState(false);
   const [notesPreview, setNotesPreview] = useState(false);
   const [uploadFiles, setUploadFiles] = useState<UploadedFile[]>([]);
+  const uploadFilesRef = useRef(uploadFiles);
+  uploadFilesRef.current = uploadFiles;
+  useEffect(
+    () => () => {
+      for (const f of uploadFilesRef.current) {
+        if (f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+      }
+    },
+    []
+  );
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [pendingConnections, setPendingConnections] = useState<PendingConnection[]>([]);
   const [connectionSearch, setConnectionSearch] = useState('');
@@ -91,7 +110,7 @@ export function useItemFormPageModel() {
   );
   const existingPhotos: PhotoItem[] = photosData?.data ?? [];
 
-  const attachMutation = trpc.inventory.photos.attach.useMutation({
+  const uploadMutation = trpc.inventory.photos.upload.useMutation({
     onSuccess: () => void refetchPhotos(),
   });
   const photoDeleteMutation = trpc.inventory.photos.remove.useMutation({
@@ -236,11 +255,10 @@ export function useItemFormPageModel() {
             setUploadFiles((prev) =>
               prev.map((f) => (f.localId === localId ? { ...f, progress: 50 } : f))
             );
-            const fileName = `${Date.now()}-${p.original.name.replace(/\.[^.]+$/, '.jpg')}`;
             if (isEditMode && id) {
-              await attachMutation.mutateAsync({
+              await uploadMutation.mutateAsync({
                 itemId: id,
-                filePath: fileName,
+                fileBase64: await blobToBase64(p.processed),
                 sortOrder: existingPhotos.length + i,
               });
             }
@@ -275,7 +293,7 @@ export function useItemFormPageModel() {
         toast.error('Failed to process images');
       }
     },
-    [processFiles, isEditMode, id, attachMutation, existingPhotos.length]
+    [processFiles, isEditMode, id, uploadMutation, existingPhotos.length]
   );
 
   const createMutation = trpc.inventory.items.create.useMutation({

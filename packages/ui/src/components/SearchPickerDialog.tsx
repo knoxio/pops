@@ -13,7 +13,7 @@ import { Skeleton } from '../primitives/skeleton';
 import { TextInput } from './TextInput';
 
 export interface SearchPickerDialogProps<T> {
-  trigger: React.ReactNode;
+  trigger: React.ReactElement;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;

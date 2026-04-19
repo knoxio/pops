@@ -276,7 +276,7 @@ export function LocationNode({
               type="button"
               variant="ghost"
               size="icon"
-              className="h-5 w-5 p-0.5 text-destructive"
+              className="text-destructive"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete(node.id);

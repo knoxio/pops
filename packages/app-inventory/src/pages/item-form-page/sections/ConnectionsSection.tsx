@@ -48,7 +48,7 @@ export function ConnectionsSection({
               <Button
                 variant="ghost"
                 size="icon"
-                className="h-4 w-4 rounded-full hover:bg-app-accent/20"
+                className="rounded-full hover:bg-app-accent/20"
                 onClick={() => onRemove(conn.id)}
               >
                 <X className="h-3 w-3" />
