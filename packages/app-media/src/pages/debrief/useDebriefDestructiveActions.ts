@@ -13,17 +13,15 @@ interface UseDebriefDestructiveActionsArgs {
  * markStale, N/A exclude, and blacklist (Not Watched) mutations for the
  * Debrief flow. Returns mutation handlers and blacklist dialog state.
  */
-export function useDebriefDestructiveActions({
-  movieId,
-  currentDimensionId,
+function useStaleAndExclude({
+  invalidateDebrief,
   resolveTitle,
-}: UseDebriefDestructiveActionsArgs) {
-  const utils = trpc.useUtils();
-
-  const invalidateDebrief = useCallback(() => {
-    void utils.media.comparisons.getDebrief.invalidate({ mediaType: 'movie', mediaId: movieId });
-  }, [utils, movieId]);
-
+  currentDimensionId,
+}: {
+  invalidateDebrief: () => void;
+  resolveTitle: (id: number) => string;
+  currentDimensionId: number | null;
+}) {
   const markStaleMutation = trpc.media.comparisons.markStale.useMutation({
     onSuccess: (data: { data: { staleness: number } }, variables: { mediaId: number }) => {
       const staleness = data.data.staleness;
@@ -59,6 +57,16 @@ export function useDebriefDestructiveActions({
     [currentDimensionId, excludeMutation, resolveTitle, invalidateDebrief]
   );
 
+  return { handleMarkStale, markStaleMutation, handleNA, excludeMutation };
+}
+
+function useBlacklistFlow({
+  invalidateDebrief,
+  resolveTitle,
+}: {
+  invalidateDebrief: () => void;
+  resolveTitle: (id: number) => string;
+}) {
   const [blacklistTarget, setBlacklistTarget] = useState<{ id: number; title: string } | null>(
     null
   );
@@ -80,24 +88,46 @@ export function useDebriefDestructiveActions({
   const openBlacklist = useCallback((movie: { id: number; title: string }) => {
     setBlacklistTarget(movie);
   }, []);
-
   const cancelBlacklist = useCallback(() => setBlacklistTarget(null), []);
-
   const confirmBlacklist = useCallback(() => {
     if (!blacklistTarget) return;
     blacklistMutation.mutate({ mediaType: 'movie', mediaId: blacklistTarget.id });
   }, [blacklistTarget, blacklistMutation]);
 
   return {
-    handleMarkStale,
-    markStalePending: markStaleMutation.isPending,
-    handleNA,
-    naPending: excludeMutation.isPending,
     blacklistTarget,
     comparisonsToPurge,
-    blacklistPending: blacklistMutation.isPending,
+    blacklistMutation,
     openBlacklist,
     cancelBlacklist,
     confirmBlacklist,
+  };
+}
+
+export function useDebriefDestructiveActions({
+  movieId,
+  currentDimensionId,
+  resolveTitle,
+}: UseDebriefDestructiveActionsArgs) {
+  const utils = trpc.useUtils();
+
+  const invalidateDebrief = useCallback(() => {
+    void utils.media.comparisons.getDebrief.invalidate({ mediaType: 'movie', mediaId: movieId });
+  }, [utils, movieId]);
+
+  const stale = useStaleAndExclude({ invalidateDebrief, resolveTitle, currentDimensionId });
+  const blacklist = useBlacklistFlow({ invalidateDebrief, resolveTitle });
+
+  return {
+    handleMarkStale: stale.handleMarkStale,
+    markStalePending: stale.markStaleMutation.isPending,
+    handleNA: stale.handleNA,
+    naPending: stale.excludeMutation.isPending,
+    blacklistTarget: blacklist.blacklistTarget,
+    comparisonsToPurge: blacklist.comparisonsToPurge,
+    blacklistPending: blacklist.blacklistMutation.isPending,
+    openBlacklist: blacklist.openBlacklist,
+    cancelBlacklist: blacklist.cancelBlacklist,
+    confirmBlacklist: blacklist.confirmBlacklist,
   };
 }

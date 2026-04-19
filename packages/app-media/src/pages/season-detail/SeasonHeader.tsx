@@ -33,23 +33,34 @@ interface SeasonHeaderProps {
   onMarkSeasonWatched: () => void;
 }
 
-export function SeasonHeader({
+function SeasonHeaderInfo({
   season,
   seasonLabel,
   episodeCount,
   seasonProgress,
-  sonarrSeries,
-  hasSonarrEpisodes,
-  effectiveMonitored,
-  seasonMonitorPending,
-  episodeMonitorPending,
-  allEpisodesMonitored,
-  onSeasonToggle,
-  onBatchEpisodeToggle,
-  isSeasonWatched,
-  batchLogPending,
-  onMarkSeasonWatched,
-}: SeasonHeaderProps) {
+}: Pick<SeasonHeaderProps, 'season' | 'seasonLabel' | 'episodeCount' | 'seasonProgress'>) {
+  return (
+    <>
+      <h1 className="text-2xl font-bold">{season.name ?? seasonLabel}</h1>
+      <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
+        {episodeCount > 0 && <span>{episodeCount} episodes</span>}
+        {episodeCount > 0 && season.airDate && <span>·</span>}
+        {season.airDate && <span>First aired {season.airDate}</span>}
+      </div>
+      {season.overview && (
+        <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{season.overview}</p>
+      )}
+      {seasonProgress && seasonProgress.total > 0 && (
+        <div className="mt-3">
+          <ProgressBar watched={seasonProgress.watched} total={seasonProgress.total} />
+        </div>
+      )}
+    </>
+  );
+}
+
+export function SeasonHeader(props: SeasonHeaderProps) {
+  const { season, seasonLabel } = props;
   const posterSrc = season.posterUrl;
 
   return (
@@ -61,43 +72,24 @@ export function SeasonHeader({
           className="w-28 aspect-[2/3] rounded-lg object-cover shadow-md shrink-0"
         />
       )}
-
       <div className="flex-1">
-        <h1 className="text-2xl font-bold">{season.name ?? seasonLabel}</h1>
-
-        <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
-          {episodeCount > 0 && <span>{episodeCount} episodes</span>}
-          {episodeCount > 0 && season.airDate && <span>·</span>}
-          {season.airDate && <span>First aired {season.airDate}</span>}
-        </div>
-
-        {season.overview && (
-          <p className="mt-3 text-sm text-muted-foreground leading-relaxed">{season.overview}</p>
-        )}
-
-        {seasonProgress && seasonProgress.total > 0 && (
-          <div className="mt-3">
-            <ProgressBar watched={seasonProgress.watched} total={seasonProgress.total} />
-          </div>
-        )}
-
+        <SeasonHeaderInfo {...props} />
         <SeasonMonitoringControls
           seasonLabel={seasonLabel}
-          sonarrSeries={sonarrSeries}
-          hasSonarrEpisodes={hasSonarrEpisodes}
-          effectiveMonitored={effectiveMonitored}
-          seasonMonitorPending={seasonMonitorPending}
-          episodeMonitorPending={episodeMonitorPending}
-          allEpisodesMonitored={allEpisodesMonitored}
-          onSeasonToggle={onSeasonToggle}
-          onBatchEpisodeToggle={onBatchEpisodeToggle}
+          sonarrSeries={props.sonarrSeries}
+          hasSonarrEpisodes={props.hasSonarrEpisodes}
+          effectiveMonitored={props.effectiveMonitored}
+          seasonMonitorPending={props.seasonMonitorPending}
+          episodeMonitorPending={props.episodeMonitorPending}
+          allEpisodesMonitored={props.allEpisodesMonitored}
+          onSeasonToggle={props.onSeasonToggle}
+          onBatchEpisodeToggle={props.onBatchEpisodeToggle}
         />
-
         {season.id != null && (
           <SeasonWatchedActions
-            isSeasonWatched={isSeasonWatched}
-            isPending={batchLogPending}
-            onMarkWatched={onMarkSeasonWatched}
+            isSeasonWatched={props.isSeasonWatched}
+            isPending={props.batchLogPending}
+            onMarkWatched={props.onMarkSeasonWatched}
           />
         )}
       </div>

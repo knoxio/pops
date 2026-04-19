@@ -68,15 +68,13 @@ const JOB_TYPE_LABELS: Record<SyncJobType, string> = {
   plexSyncDiscoverWatches: 'Cloud watch sync',
 };
 
-export function useSyncJob(jobType: SyncJobType): UseSyncJobReturn {
-  const [jobId, setJobId] = useState<string | null>(null);
-  const [restoredJob, setRestoredJob] = useState<SyncJob | null>(null);
+function useRestoreActiveJob(
+  jobType: SyncJobType,
+  jobId: string | null,
+  setJobId: (id: string) => void,
+  setRestoredJob: (j: SyncJob) => void
+) {
   const restoredRef = useRef(false);
-  const label = JOB_TYPE_LABELS[jobType];
-
-  // On mount, check for any active job of this type to restore.
-  // While this is loading, isRunning reflects the restore state so the
-  // UI stays disabled and doesn't let the user start a duplicate job.
   const activeJobs = trpc.media.plex.getActiveSyncJobs.useQuery(undefined, {
     enabled: !jobId && !restoredRef.current,
     refetchOnWindowFocus: false,
@@ -93,13 +91,18 @@ export function useSyncJob(jobType: SyncJobType): UseSyncJobReturn {
     ) as SyncJob | undefined;
     if (match) {
       setJobId(match.id);
-      // Immediately surface progress from the restore response
-      // so the UI shows "15/700" before the first status poll arrives
       setRestoredJob(match);
     }
-  }, [activeJobs.data?.data, jobId, jobType]);
+  }, [activeJobs.data?.data, jobId, jobType, setJobId, setRestoredJob]);
 
-  // Poll for job status while we have an active job ID
+  return { isRestoring };
+}
+
+function useStatusPolling(
+  jobId: string | null,
+  restoredJob: SyncJob | null,
+  clearRestored: () => void
+) {
   const statusQuery = trpc.media.plex.getSyncJobStatus.useQuery(
     { jobId: jobId ?? '' },
     {
@@ -111,12 +114,55 @@ export function useSyncJob(jobType: SyncJobType): UseSyncJobReturn {
     }
   );
 
-  // Clear restored snapshot once real polling data arrives
   useEffect(() => {
     if (statusQuery.data?.data && restoredJob) {
-      setRestoredJob(null);
+      clearRestored();
     }
-  }, [statusQuery.data?.data, restoredJob]);
+  }, [statusQuery.data?.data, restoredJob, clearRestored]);
+
+  return statusQuery;
+}
+
+function useCompletionToast(label: string, jobId: string | null, statusData: SyncJob | undefined) {
+  useEffect(() => {
+    if (!statusData || !jobId) return;
+    if (statusData.status === 'completed') {
+      toast.success(`${label} complete`);
+    } else if (statusData.status === 'failed') {
+      toast.error(`${label} failed: ${statusData.error ?? 'Unknown error'}`);
+    }
+  }, [statusData?.status, jobId, label, statusData]);
+}
+
+function deriveStatus(
+  isRestoring: boolean,
+  job: SyncJob | undefined | null
+): UseSyncJobReturn['status'] {
+  if (isRestoring) return 'running';
+  if (!job) return 'idle';
+  return job.status;
+}
+
+function buildReturnState(
+  job: SyncJob | undefined | null,
+  isRunning: boolean
+): Pick<UseSyncJobReturn, 'progress' | 'result' | 'error' | 'durationMs' | 'completedAt'> {
+  return {
+    progress: isRunning ? (job?.progress ?? null) : null,
+    result: job?.result ?? null,
+    error: job?.status === 'failed' ? job.error : null,
+    durationMs: job?.durationMs ?? null,
+    completedAt: job?.completedAt ?? null,
+  };
+}
+
+export function useSyncJob(jobType: SyncJobType): UseSyncJobReturn {
+  const [jobId, setJobId] = useState<string | null>(null);
+  const [restoredJob, setRestoredJob] = useState<SyncJob | null>(null);
+  const label = JOB_TYPE_LABELS[jobType];
+
+  const { isRestoring } = useRestoreActiveJob(jobType, jobId, setJobId, setRestoredJob);
+  const statusQuery = useStatusPolling(jobId, restoredJob, () => setRestoredJob(null));
 
   const startMutation = trpc.media.plex.startSyncJob.useMutation({
     onSuccess: (res) => {
@@ -127,18 +173,7 @@ export function useSyncJob(jobType: SyncJobType): UseSyncJobReturn {
     },
   });
 
-  // Show toast on completion/failure
-  useEffect(() => {
-    const job = statusQuery.data?.data;
-    if (!job || !jobId) return;
-
-    if (job.status === 'completed') {
-      toast.success(`${label} complete`);
-    } else if (job.status === 'failed') {
-      toast.error(`${label} failed: ${job.error ?? 'Unknown error'}`);
-    }
-    // Only trigger on status transitions — not on every poll
-  }, [statusQuery.data?.data?.status]);
+  useCompletionToast(label, jobId, statusQuery.data?.data as SyncJob | undefined);
 
   const start = useCallback(
     (params?: SyncJobParams) => {
@@ -147,7 +182,6 @@ export function useSyncJob(jobType: SyncJobType): UseSyncJobReturn {
     [jobType, startMutation]
   );
 
-  // Use polled data when available, otherwise the restored snapshot
   const job = (statusQuery.data?.data as SyncJob | undefined) ?? restoredJob;
   const isRunning = isRestoring || job?.status === 'running';
 
@@ -155,16 +189,8 @@ export function useSyncJob(jobType: SyncJobType): UseSyncJobReturn {
     start,
     isStarting: startMutation.isPending,
     isRunning,
-    progress: isRunning ? (job?.progress ?? null) : null,
-    result: job?.result ?? null,
-    error: job?.status === 'failed' ? job.error : null,
-    durationMs: job?.durationMs ?? null,
-    completedAt: job?.completedAt ?? null,
-    status: (() => {
-      if (isRestoring) return 'running';
-      if (!job) return 'idle';
-      return job.status;
-    })(),
+    ...buildReturnState(job, isRunning),
+    status: deriveStatus(isRestoring, job),
   };
 }
 

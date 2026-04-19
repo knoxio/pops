@@ -82,32 +82,34 @@ export function WatchlistDesktopDnd({
   );
 }
 
+function buildOverlayCardProps(entry: WatchlistEntry, meta: MediaMeta | undefined, idx: number) {
+  const isMovie = entry.mediaType === 'movie';
+  return {
+    entry,
+    title: meta?.title ?? 'Unknown',
+    year: meta?.year ?? null,
+    posterUrl: meta?.posterUrl ?? null,
+    priority: idx + 1,
+    onRemove: () => {},
+    isRemoving: false,
+    rotationStatus: isMovie ? meta?.rotationStatus : undefined,
+    rotationExpiresAt: isMovie ? meta?.rotationExpiresAt : undefined,
+  };
+}
+
 function renderDragOverlay(
   sortedEntries: WatchlistEntry[],
   activeId: number | null,
   getMetaForEntry: (entry: WatchlistEntry) => MediaMeta | undefined
 ) {
   if (activeId == null) return null;
-
   const entry = sortedEntries.find((e) => e.id === activeId);
   if (!entry) return null;
-
   const meta = getMetaForEntry(entry);
   const idx = sortedEntries.findIndex((e) => e.id === activeId);
-
   return (
     <div className="opacity-80 w-48">
-      <WatchlistCard
-        entry={entry}
-        title={meta?.title ?? 'Unknown'}
-        year={meta?.year ?? null}
-        posterUrl={meta?.posterUrl ?? null}
-        priority={idx + 1}
-        onRemove={() => {}}
-        isRemoving={false}
-        rotationStatus={entry.mediaType === 'movie' ? meta?.rotationStatus : undefined}
-        rotationExpiresAt={entry.mediaType === 'movie' ? meta?.rotationExpiresAt : undefined}
-      />
+      <WatchlistCard {...buildOverlayCardProps(entry, meta, idx)} />
     </div>
   );
 }

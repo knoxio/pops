@@ -48,45 +48,34 @@ function buildCardProps(
   };
 }
 
-export function DebriefComparison({
-  movie,
-  dimension,
-  onDraw,
-  isPending,
-  watchlistedMovies,
-  watchlistPending,
-  stalePending,
-  naPending,
-  blacklistPending,
-  onPick,
-  onToggleWatchlist,
-  onMarkStale,
-  onNA,
-  onBlacklist,
-}: DebriefComparisonProps) {
-  if (!dimension.opponent) {
-    return (
-      <div className="text-muted-foreground py-8 text-center">
-        <p>No opponent available for {dimension.name}.</p>
-        <p className="text-sm">Skip this dimension to continue.</p>
-      </div>
-    );
-  }
+function MissingOpponent({ dimensionName }: { dimensionName: string }) {
+  return (
+    <div className="text-muted-foreground py-8 text-center">
+      <p>No opponent available for {dimensionName}.</p>
+      <p className="text-sm">Skip this dimension to continue.</p>
+    </div>
+  );
+}
+
+export function DebriefComparison(props: DebriefComparisonProps) {
+  const { movie, dimension, onDraw, isPending } = props;
+
+  if (!dimension.opponent) return <MissingOpponent dimensionName={dimension.name} />;
 
   const callbacks: CardCallbacks = {
-    onPick,
-    onToggleWatchlist,
-    onMarkStale,
-    onNA,
-    onBlacklist,
+    onPick: props.onPick,
+    onToggleWatchlist: props.onToggleWatchlist,
+    onMarkStale: props.onMarkStale,
+    onNA: props.onNA,
+    onBlacklist: props.onBlacklist,
   };
   const flags: CardFlags = {
     isPending,
-    watchlistedMovies,
-    watchlistPending,
-    stalePending,
-    naPending,
-    blacklistPending,
+    watchlistedMovies: props.watchlistedMovies,
+    watchlistPending: props.watchlistPending,
+    stalePending: props.stalePending,
+    naPending: props.naPending,
+    blacklistPending: props.blacklistPending,
   };
 
   const movieACard = buildCardProps(
@@ -94,7 +83,6 @@ export function DebriefComparison({
     callbacks,
     flags
   );
-
   const opponent = dimension.opponent;
   const movieBCard = buildCardProps(
     { id: opponent.id, title: opponent.title, posterUrl: opponent.posterUrl ?? null },

@@ -14,33 +14,48 @@ import { WatchlistFilterTabs } from './watchlist/WatchlistFilterTabs';
 import { WatchlistMobileList } from './watchlist/WatchlistMobileList';
 import { WatchlistSkeleton } from './watchlist/WatchlistSkeleton';
 
-export function WatchlistPage() {
-  const {
-    filter,
-    setFilter,
-    watchlistError,
-    loading,
-    entries,
-    sortedEntries,
-    hasManyItems,
-    isReordering,
-    removingId,
-    updateErrorId,
-    updateErrorMsg,
-    activeId,
-    sensors,
-    collisionDetection,
-    handleDragStart,
-    handleDragEnd,
-    handleDragCancel,
-    handleMove,
-    getMetaForEntry,
-    onRemove,
-    onUpdateNotes,
-    updateMutation,
-  } = useWatchlistPageModel();
+type Model = ReturnType<typeof useWatchlistPageModel>;
 
-  if (watchlistError) {
+function WatchlistContent({ model }: { model: Model }) {
+  const isUpdatingEntry = (entryId: number) =>
+    model.updateMutation.isPending && model.updateMutation.variables?.id === entryId;
+
+  return (
+    <>
+      <WatchlistMobileList
+        sortedEntries={model.sortedEntries}
+        hasManyItems={model.hasManyItems}
+        isReordering={model.isReordering}
+        removingId={model.removingId}
+        updateErrorId={model.updateErrorId}
+        updateErrorMsg={model.updateErrorMsg}
+        getMetaForEntry={model.getMetaForEntry}
+        onMove={model.handleMove}
+        onRemove={model.onRemove}
+        onUpdateNotes={model.onUpdateNotes}
+        isUpdatingEntry={isUpdatingEntry}
+      />
+      <WatchlistDesktopDnd
+        sensors={model.sensors}
+        collisionDetection={model.collisionDetection}
+        onDragStart={model.handleDragStart}
+        onDragEnd={model.handleDragEnd}
+        onDragCancel={model.handleDragCancel}
+        sortedEntries={model.sortedEntries}
+        hasManyItems={model.hasManyItems}
+        removingId={model.removingId}
+        activeId={model.activeId}
+        getMetaForEntry={model.getMetaForEntry}
+        onRemove={model.onRemove}
+      />
+    </>
+  );
+}
+
+export function WatchlistPage() {
+  const model = useWatchlistPageModel();
+
+  if (model.watchlistError) {
     return (
       <Alert variant="destructive">
         <AlertTitle>Error</AlertTitle>
@@ -49,50 +64,17 @@ export function WatchlistPage() {
     );
   }
 
-  const isUpdatingEntry = (entryId: number) =>
-    updateMutation.isPending && updateMutation.variables?.id === entryId;
+  function renderBody() {
+    if (model.loading) return <WatchlistSkeleton />;
+    if (model.entries.length === 0) return <WatchlistEmptyState filter={model.filter} />;
+    return <WatchlistContent model={model} />;
+  }
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       <h1 className="text-2xl font-bold">Watchlist</h1>
-
-      <WatchlistFilterTabs filter={filter} onFilterChange={setFilter} />
-
-      {(() => {
-        if (loading) return <WatchlistSkeleton />;
-        if (entries.length === 0) return <WatchlistEmptyState filter={filter} />;
-        return (
-          <>
-            <WatchlistMobileList
-              sortedEntries={sortedEntries}
-              hasManyItems={hasManyItems}
-              isReordering={isReordering}
-              removingId={removingId}
-              updateErrorId={updateErrorId}
-              updateErrorMsg={updateErrorMsg}
-              getMetaForEntry={getMetaForEntry}
-              onMove={handleMove}
-              onRemove={onRemove}
-              onUpdateNotes={onUpdateNotes}
-              isUpdatingEntry={isUpdatingEntry}
-            />
-
-            <WatchlistDesktopDnd
-              sensors={sensors}
-              collisionDetection={collisionDetection}
-              onDragStart={handleDragStart}
-              onDragEnd={handleDragEnd}
-              onDragCancel={handleDragCancel}
-              sortedEntries={sortedEntries}
-              hasManyItems={hasManyItems}
-              removingId={removingId}
-              activeId={activeId}
-              getMetaForEntry={getMetaForEntry}
-              onRemove={onRemove}
-            />
-          </>
-        );
-      })()}
+      <WatchlistFilterTabs filter={model.filter} onFilterChange={model.setFilter} />
+      {renderBody()}
     </div>
   );
 }

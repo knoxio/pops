@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { RequestDialog } from '@pops/ui';
 
-import { trpc } from '@pops/api-client';
 /**
  * RequestSeriesModal — Modal for adding a TV series to Sonarr.
  *
  * Presents quality profile, root folder, and language profile dropdowns,
  * season monitoring checkboxes with smart defaults, then submits to Sonarr.
  */
-import { Button, formatBytes, Label, RequestDialog, Select } from '@pops/ui';
+import { RequestSeriesForm } from './request-series/RequestSeriesForm';
+import { useRequestSeriesModel } from './request-series/useRequestSeriesModel';
 
 export interface SeasonInfo {
   seasonNumber: number;
@@ -24,9 +24,15 @@ interface RequestSeriesModalProps {
   seasons: SeasonInfo[];
 }
 
-function isFutureSeason(firstAirDate: string | null): boolean {
-  if (!firstAirDate) return true;
-  return new Date(firstAirDate) > new Date();
+function computeCanSubmit(model: ReturnType<typeof useRequestSeriesModel>): boolean {
+  const { state, addSeries } = model;
+  return (
+    state.qualityProfileId !== null &&
+    !!state.rootFolderPath &&
+    state.languageProfileId !== null &&
+    !addSeries.isPending &&
+    !state.success
+  );
 }
 
 export function RequestSeriesModal({
@@ -37,273 +43,53 @@ export function RequestSeriesModal({
   year,
   seasons,
 }: RequestSeriesModalProps) {
-  const [qualityProfileId, setQualityProfileId] = useState<number | null>(null);
-  const [rootFolderPath, setRootFolderPath] = useState<string>('');
-  const [languageProfileId, setLanguageProfileId] = useState<number | null>(null);
-  const [seasonMonitored, setSeasonMonitored] = useState<Record<number, boolean>>({});
-  const [success, setSuccess] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const model = useRequestSeriesModel({ open, onClose, tvdbId, title, seasons });
+  const { state, queries, addSeries } = model;
 
-  const profiles = trpc.media.arr.getSonarrQualityProfiles.useQuery(undefined, {
-    enabled: open,
-    retry: false,
-  });
-  const folders = trpc.media.arr.getSonarrRootFolders.useQuery(undefined, {
-    enabled: open,
-    retry: false,
-  });
-  const languages = trpc.media.arr.getSonarrLanguageProfiles.useQuery(undefined, {
-    enabled: open,
-    retry: false,
-  });
+  const profileList = queries.profiles.data?.data ?? [];
+  const folderList = queries.folders.data?.data ?? [];
+  const languageList = queries.languages.data?.data ?? [];
+  const isDataLoading =
+    queries.profiles.isLoading || queries.folders.isLoading || queries.languages.isLoading;
 
-  useEffect(() => {
-    const firstProfile = profiles.data?.data?.[0];
-    if (firstProfile && qualityProfileId === null) {
-      setQualityProfileId(firstProfile.id);
-    }
-  }, [profiles.data?.data, qualityProfileId]);
-
-  useEffect(() => {
-    const firstFolder = folders.data?.data?.[0];
-    if (firstFolder && !rootFolderPath) {
-      setRootFolderPath(firstFolder.path);
-    }
-  }, [folders.data?.data, rootFolderPath]);
-
-  useEffect(() => {
-    const firstLanguage = languages.data?.data?.[0];
-    if (firstLanguage && languageProfileId === null) {
-      setLanguageProfileId(firstLanguage.id);
-    }
-  }, [languages.data?.data, languageProfileId]);
-
-  useEffect(() => {
-    if (seasons.length > 0 && Object.keys(seasonMonitored).length === 0) {
-      const defaults: Record<number, boolean> = {};
-      for (const s of seasons) {
-        defaults[s.seasonNumber] = isFutureSeason(s.firstAirDate);
-      }
-      setSeasonMonitored(defaults);
-    }
-  }, [seasons, seasonMonitored]);
-
-  const addSeries = trpc.media.arr.addSeries.useMutation({
-    onSuccess: () => {
-      setSuccess(true);
-      setError(null);
-      setTimeout(() => {
-        onClose();
-        resetState();
-      }, 1500);
-    },
-    onError: (err: { message: string }) => {
-      setError(err.message);
-    },
-  });
-
-  function resetState() {
-    setSuccess(false);
-    setQualityProfileId(null);
-    setRootFolderPath('');
-    setLanguageProfileId(null);
-    setSeasonMonitored({});
-    setError(null);
-  }
-
-  const handleClose = () => {
-    if (!addSeries.isPending) {
-      onClose();
-      resetState();
-    }
-  };
-
-  const profileList = profiles.data?.data ?? [];
-  const folderList = folders.data?.data ?? [];
-  const languageList = languages.data?.data ?? [];
-  const isDataLoading = profiles.isLoading || folders.isLoading || languages.isLoading;
-  const canSubmit =
-    qualityProfileId !== null &&
-    !!rootFolderPath &&
-    languageProfileId !== null &&
-    !addSeries.isPending &&
-    !success;
-
-  const showBulkControls = seasons.length > 3;
-
-  const allChecked = useMemo(
-    () => seasons.length > 0 && seasons.every((s) => seasonMonitored[s.seasonNumber]),
-    [seasons, seasonMonitored]
-  );
-
-  const noneChecked = useMemo(
-    () => seasons.length > 0 && seasons.every((s) => !seasonMonitored[s.seasonNumber]),
-    [seasons, seasonMonitored]
-  );
-
-  const handleSubmit = () => {
-    if (qualityProfileId !== null && rootFolderPath && languageProfileId !== null) {
-      setError(null);
-      addSeries.mutate({
-        tvdbId,
-        title,
-        qualityProfileId,
-        rootFolderPath,
-        languageProfileId,
-        seasons: seasons.map((s) => ({
-          seasonNumber: s.seasonNumber,
-          monitored: seasonMonitored[s.seasonNumber] ?? false,
-        })),
-      });
-    }
-  };
-
-  const formContent =
-    profileList.length === 0 || folderList.length === 0 || languageList.length === 0 ? (
-      <div className="text-center py-4 space-y-2">
-        <p className="text-sm text-destructive/80">
-          {(() => {
-            if (profileList.length === 0) return 'No quality profiles found';
-            if (folderList.length === 0) return 'No root folders found';
-            return 'No language profiles found';
-          })()}
-          .
-        </p>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            void profiles.refetch();
-            void folders.refetch();
-            void languages.refetch();
-          }}
-        >
-          Retry
-        </Button>
-      </div>
-    ) : (
-      <>
-        <Select
-          label="Quality Profile"
-          id="quality-profile"
-          value={String(qualityProfileId ?? '')}
-          onChange={(e) => {
-            setQualityProfileId(Number(e.target.value));
-          }}
-          disabled={addSeries.isPending || success}
-          options={profileList.map((p) => ({
-            value: String(p.id),
-            label: p.name,
-          }))}
-        />
-
-        <Select
-          label="Root Folder"
-          id="root-folder"
-          value={rootFolderPath}
-          onChange={(e) => {
-            setRootFolderPath(e.target.value);
-          }}
-          disabled={addSeries.isPending || success}
-          options={folderList.map((f) => ({
-            value: f.path,
-            label: `${f.path} (${formatBytes(f.freeSpace)} free)`,
-          }))}
-        />
-
-        <Select
-          label="Language Profile"
-          id="language-profile"
-          value={String(languageProfileId ?? '')}
-          onChange={(e) => {
-            setLanguageProfileId(Number(e.target.value));
-          }}
-          disabled={addSeries.isPending || success}
-          options={languageList.map((l) => ({
-            value: String(l.id),
-            label: l.name,
-          }))}
-        />
-
-        {seasons.length > 0 && (
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium">Season Monitoring</span>
-              {showBulkControls && (
-                <div className="flex gap-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs h-auto p-0 text-muted-foreground hover:text-foreground"
-                    disabled={allChecked || addSeries.isPending || success}
-                    onClick={() => {
-                      const all: Record<number, boolean> = {};
-                      for (const s of seasons) all[s.seasonNumber] = true;
-                      setSeasonMonitored(all);
-                    }}
-                  >
-                    Select All
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs h-auto p-0 text-muted-foreground hover:text-foreground"
-                    disabled={noneChecked || addSeries.isPending || success}
-                    onClick={() => {
-                      const none: Record<number, boolean> = {};
-                      for (const s of seasons) none[s.seasonNumber] = false;
-                      setSeasonMonitored(none);
-                    }}
-                  >
-                    Deselect All
-                  </Button>
-                </div>
-              )}
-            </div>
-            <div className="max-h-48 overflow-y-auto space-y-1 rounded-md border p-2">
-              {seasons.map((s) => (
-                <Label
-                  key={s.seasonNumber}
-                  className="flex items-center gap-2 text-sm cursor-pointer font-normal"
-                >
-                  <input
-                    type="checkbox"
-                    checked={seasonMonitored[s.seasonNumber] ?? false}
-                    onChange={(e) => {
-                      setSeasonMonitored((prev) => ({
-                        ...prev,
-                        [s.seasonNumber]: e.target.checked,
-                      }));
-                    }}
-                    disabled={addSeries.isPending || success}
-                  />
-                  {s.seasonNumber === 0 ? 'Specials' : `Season ${s.seasonNumber}`}
-                  {s.firstAirDate && (
-                    <span className="text-muted-foreground">— {s.firstAirDate.slice(0, 4)}</span>
-                  )}
-                </Label>
-              ))}
-            </div>
-          </div>
-        )}
-      </>
-    );
+  const canSubmit = computeCanSubmit(model);
 
   return (
     <RequestDialog
       open={open}
-      onClose={handleClose}
+      onClose={model.handleClose}
       title="Request Series"
       description={`${title} (${year})`}
       isLoading={isDataLoading}
-      error={error}
+      error={state.error}
       canSubmit={canSubmit}
       isPending={addSeries.isPending}
-      isSuccess={success}
+      isSuccess={state.success}
       successLabel="Series Added"
-      onSubmit={handleSubmit}
+      onSubmit={model.handleSubmit}
     >
-      {formContent}
+      <RequestSeriesForm
+        profileList={profileList}
+        folderList={folderList}
+        languageList={languageList}
+        qualityProfileId={state.qualityProfileId}
+        setQualityProfileId={state.setQualityProfileId}
+        rootFolderPath={state.rootFolderPath}
+        setRootFolderPath={state.setRootFolderPath}
+        languageProfileId={state.languageProfileId}
+        setLanguageProfileId={state.setLanguageProfileId}
+        disabled={addSeries.isPending || state.success}
+        onRetry={() => {
+          void queries.profiles.refetch();
+          void queries.folders.refetch();
+          void queries.languages.refetch();
+        }}
+        seasons={seasons}
+        seasonMonitored={state.seasonMonitored}
+        setSeasonMonitored={state.setSeasonMonitored}
+        allChecked={model.allChecked}
+        noneChecked={model.noneChecked}
+      />
     </RequestDialog>
   );
 }

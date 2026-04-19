@@ -41,6 +41,76 @@ function buildHref(type: MediaType, id: number): string {
   return type === 'movie' ? `/media/movies/${id}` : `/media/tv/${id}`;
 }
 
+function usePosterCascade(posterUrl?: string | null, fallbackPosterUrl?: string | null) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState<string | null>(
+    posterUrl ?? fallbackPosterUrl ?? null
+  );
+  const [showPlaceholder, setShowPlaceholder] = useState(!posterUrl && !fallbackPosterUrl);
+
+  const handleImageError = () => {
+    if (currentSrc === posterUrl && fallbackPosterUrl) {
+      setCurrentSrc(fallbackPosterUrl);
+      setImageLoaded(false);
+      return;
+    }
+    setShowPlaceholder(true);
+  };
+
+  return {
+    activeSrc: showPlaceholder ? null : currentSrc,
+    showPlaceholder,
+    imageLoaded,
+    setImageLoaded,
+    handleImageError,
+  };
+}
+
+function PosterImage({
+  activeSrc,
+  title,
+  imageLoaded,
+  setImageLoaded,
+  handleImageError,
+}: {
+  activeSrc: string;
+  title: string;
+  imageLoaded: boolean;
+  setImageLoaded: (v: boolean) => void;
+  handleImageError: () => void;
+}) {
+  return (
+    <>
+      <img
+        src={activeSrc}
+        alt={`${title} poster`}
+        loading="lazy"
+        className={cn(
+          'h-full w-full object-cover transition-opacity duration-200',
+          'group-hover:opacity-80',
+          imageLoaded ? 'opacity-100' : 'opacity-0'
+        )}
+        onLoad={() => {
+          setImageLoaded(true);
+        }}
+        onError={handleImageError}
+      />
+      {!imageLoaded && <Skeleton className="absolute inset-0 h-full w-full rounded-none" />}
+    </>
+  );
+}
+
+function ProgressBar({ progress }: { progress: number }) {
+  return (
+    <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted/50">
+      <div
+        className={cn('h-full transition-all', progress >= 100 ? 'bg-success' : 'bg-primary')}
+        style={{ width: `${Math.min(progress, 100)}%` }}
+      />
+    </div>
+  );
+}
+
 export function MediaCard({
   id,
   type,
@@ -52,25 +122,7 @@ export function MediaCard({
   showTypeBadge = true,
   className,
 }: MediaCardProps) {
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [currentSrc, setCurrentSrc] = useState<string | null>(
-    posterUrl ?? fallbackPosterUrl ?? null
-  );
-  const [showPlaceholder, setShowPlaceholder] = useState(!posterUrl && !fallbackPosterUrl);
-
-  // Resolve the active image source — starts with posterUrl, cascades on error
-  const activeSrc = showPlaceholder ? null : currentSrc;
-
-  const handleImageError = () => {
-    // Tier 1 failed → try tier 2 (fallback)
-    if (currentSrc === posterUrl && fallbackPosterUrl) {
-      setCurrentSrc(fallbackPosterUrl);
-      setImageLoaded(false);
-      return;
-    }
-    // Tier 2 failed (or no fallback) → show placeholder
-    setShowPlaceholder(true);
-  };
+  const cascade = usePosterCascade(posterUrl, fallbackPosterUrl);
 
   return (
     <Link
@@ -82,9 +134,7 @@ export function MediaCard({
         className
       )}
     >
-      {/* Poster container with 2:3 aspect ratio */}
       <div className="relative w-full overflow-hidden rounded-md bg-muted aspect-[2/3]">
-        {/* Type badge */}
         {showTypeBadge && (
           <Badge
             variant={type === 'movie' ? 'default' : 'secondary'}
@@ -94,48 +144,25 @@ export function MediaCard({
           </Badge>
         )}
 
-        {/* Poster image */}
-        {activeSrc && !showPlaceholder && (
-          <img
-            src={activeSrc}
-            alt={`${title} poster`}
-            loading="lazy"
-            className={cn(
-              'h-full w-full object-cover transition-opacity duration-200',
-              'group-hover:opacity-80',
-              imageLoaded ? 'opacity-100' : 'opacity-0'
-            )}
-            onLoad={() => {
-              setImageLoaded(true);
-            }}
-            onError={handleImageError}
+        {cascade.activeSrc && !cascade.showPlaceholder && (
+          <PosterImage
+            activeSrc={cascade.activeSrc}
+            title={title}
+            imageLoaded={cascade.imageLoaded}
+            setImageLoaded={cascade.setImageLoaded}
+            handleImageError={cascade.handleImageError}
           />
         )}
 
-        {/* Loading skeleton — shown while image loads */}
-        {activeSrc && !showPlaceholder && !imageLoaded && (
-          <Skeleton className="absolute inset-0 h-full w-full rounded-none" />
-        )}
-
-        {/* No-poster placeholder */}
-        {showPlaceholder && (
+        {cascade.showPlaceholder && (
           <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
             <Film className="h-10 w-10 opacity-40" />
           </div>
         )}
 
-        {/* Progress bar for TV shows */}
-        {progress != null && progress > 0 && (
-          <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted/50">
-            <div
-              className={cn('h-full transition-all', progress >= 100 ? 'bg-success' : 'bg-primary')}
-              style={{ width: `${Math.min(progress, 100)}%` }}
-            />
-          </div>
-        )}
+        {progress != null && progress > 0 && <ProgressBar progress={progress} />}
       </div>
 
-      {/* Title + Year */}
       <div className="mt-2 space-y-0.5 px-0.5">
         <h3 className="text-sm font-medium leading-tight line-clamp-2">{title}</h3>
         {year && (

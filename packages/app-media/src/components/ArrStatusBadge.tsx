@@ -16,28 +16,29 @@ interface ArrStatusBadgeProps {
   externalId: number;
 }
 
-export function ArrStatusBadge({ kind, externalId }: ArrStatusBadgeProps) {
+function useArrStatus({ kind, externalId }: ArrStatusBadgeProps) {
   const { data: configData } = trpc.media.arr.getConfig.useQuery();
   const config = configData?.data;
-
   const isConfigured = kind === 'movie' ? config?.radarrConfigured : config?.sonarrConfigured;
 
   const movieStatus = trpc.media.arr.getMovieStatus.useQuery(
     { tmdbId: externalId },
     { enabled: kind === 'movie' && isConfigured === true }
   );
-
   const showStatus = trpc.media.arr.getShowStatus.useQuery(
     { tvdbId: externalId },
     { enabled: kind === 'show' && isConfigured === true }
   );
 
-  if (!isConfigured) return null;
+  return { isConfigured, query: kind === 'movie' ? movieStatus : showStatus };
+}
 
-  const query = kind === 'movie' ? movieStatus : showStatus;
+export function ArrStatusBadge({ kind, externalId }: ArrStatusBadgeProps) {
+  const { isConfigured, query } = useArrStatus({ kind, externalId });
+
+  if (!isConfigured) return null;
   if (query.isLoading) return null;
 
-  // Show unavailable badge when service is unreachable
   if (query.error) {
     const unavailableLabel = kind === 'movie' ? 'Radarr unavailable' : 'Sonarr unavailable';
     return <Badge className="bg-muted text-muted-foreground">{unavailableLabel}</Badge>;
