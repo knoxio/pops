@@ -10,7 +10,7 @@ POPS (Personal Operations System) is a self-hosted personal command center for f
 - `apps/moltbot/` — Telegram bot
 - `packages/app-{finance,media,inventory,ai}/` — Domain UI packages
 - `packages/db-types/` — Drizzle schema + all database types
-- `packages/ui/` — Shared component library (86+ shadcn/Radix components)
+- `packages/ui/` — Shared component library (shadcn/Radix primitives + composites)
 - `packages/api-client/` — tRPC client setup
 - `infra/` — Ansible playbooks + Docker Compose
 - `docs/` — PRDs, epics, user stories, ADRs, roadmap
@@ -21,20 +21,20 @@ POPS (Personal Operations System) is a self-hosted personal command center for f
 
 ## Build, Test, and Validate
 
-Always use `mise` (task runner). All commands below must pass before a PR can merge.
+Prefer `mise` for cross-package tasks. Some checks have no `mise` wrapper and must be run directly with `pnpm`. All of the following must pass before a PR can merge:
 
 ```bash
+# Via mise (run from repo root)
 mise lint          # oxlint (type-aware) — zero tolerance for warnings
 mise typecheck     # Full TypeScript strict check across all packages
 mise test          # Vitest unit tests
 mise build         # Turbo build — must produce zero errors
-```
 
-Per-package overrides:
-```bash
-cd apps/pops-api && pnpm openapi:validate   # Validate OpenAPI spec after API changes
-cd apps/pops-shell && pnpm test:e2e         # Playwright E2E (run in CI)
-pnpm format:check                           # oxfmt formatting check
+# Via pnpm (no mise wrapper — run from repo root or package dir)
+pnpm format:check                                    # oxfmt formatting check
+cd apps/pops-api && pnpm openapi:validate            # Required after any API changes
+cd apps/pops-api && pnpm test:integration            # Integration tests (also run in CI)
+cd apps/pops-shell && pnpm test:e2e                  # Playwright E2E (also run in CI)
 ```
 
 Git hooks (enforced via Husky): pre-commit runs `lint-staged` (oxlint + oxfmt on staged files) and `pnpm typecheck`; pre-push checks for merge conflicts with `origin/main`. Recommended to also run `mise lint && mise typecheck && mise test` manually before pushing.
@@ -56,7 +56,7 @@ Do not soften or hedge. Do not say "you might want to consider" or "this is just
 **1. Documentation sync (zero drift tolerated)**
 
 - Every code change that touches a feature, API surface, data model, or behavior must have corresponding updates in `docs/`. Check: the relevant user story (`us-NN-*.md`), PRD (`docs/themes/NN-*/prds/NNN-*/README.md`), and epic.
-- If a PRD or US exists and its acceptance criteria are now met, its status field must be updated (`In progress` → `Done` or `Partial`).
+- Update status fields to reflect the current state: `Done` when all acceptance criteria in the US are met; `Partial` when some criteria are intentionally deferred (with the missing items explicitly documented in the US); `In progress` otherwise. Marking `Partial` without documenting what remains is a blocker.
 - `docs/roadmap.md` must reflect the current state of any phase or PRD that changed.
 - API changes must update or maintain the OpenAPI spec. Run `pnpm openapi:validate`.
 - Schema changes must have a Drizzle migration generated via `mise drizzle:generate`.
