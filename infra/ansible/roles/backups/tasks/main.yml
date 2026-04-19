@@ -25,6 +25,14 @@
     group: root
     mode: '0700'
 
+- name: Create restore script
+  ansible.builtin.template:
+    src: restore.sh.j2
+    dest: /opt/pops/restore.sh
+    owner: root
+    group: root
+    mode: '0700'
+
 - name: Create backup systemd service
   ansible.builtin.copy:
     content: |
