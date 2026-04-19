@@ -108,8 +108,14 @@ describe('SectionRenderer', () => {
       // toggle — renders a checkbox role (Switch)
       expect(screen.getByRole('switch')).toBeInTheDocument();
 
-      // select — renders a combobox
-      expect(screen.getAllByRole('combobox').length).toBeGreaterThanOrEqual(1);
+      // select — renders its own combobox distinct from the duration unit selector
+      const selectField = screen.getAllByRole('combobox').find((el) => {
+        const optionValues = Array.from((el as HTMLSelectElement).options).map((o) => o.value);
+        return !optionValues.every((v) =>
+          ['milliseconds', 'seconds', 'minutes', 'hours'].includes(v)
+        );
+      });
+      expect(selectField).toBeInTheDocument();
 
       // password — renders <input type="password">
       const passwordInput = document.querySelector('input[type="password"]');
@@ -273,40 +279,49 @@ describe('SectionRenderer', () => {
 
   describe('test action button', () => {
     it('calls onTestAction with the procedure when the test button is clicked', async () => {
-      const onTestAction = vi.fn().mockResolvedValue(undefined);
+      vi.useFakeTimers();
 
-      const manifest = makeManifest({
-        groups: [
-          {
-            id: 'g1',
-            title: 'Connection',
-            fields: [
-              {
-                key: 'plex_url',
-                label: 'Plex URL',
-                type: 'url',
-                default: 'http://plex.local',
-                testAction: {
-                  procedure: 'media.plex.testConnection',
-                  label: 'Test Connection',
+      try {
+        const onTestAction = vi.fn().mockResolvedValue(undefined);
+
+        const manifest = makeManifest({
+          groups: [
+            {
+              id: 'g1',
+              title: 'Connection',
+              fields: [
+                {
+                  key: 'plex_url',
+                  label: 'Plex URL',
+                  type: 'url',
+                  default: 'http://plex.local',
+                  testAction: {
+                    procedure: 'media.plex.testConnection',
+                    label: 'Test Connection',
+                  },
                 },
-              },
-            ],
-          },
-        ],
-      });
+              ],
+            },
+          ],
+        });
 
-      render(<SectionRenderer manifest={manifest} onTestAction={onTestAction} />);
+        render(<SectionRenderer manifest={manifest} onTestAction={onTestAction} />);
 
-      const testButton = screen.getByRole('button', { name: /test connection/i });
-      fireEvent.click(testButton);
+        const testButton = screen.getByRole('button', { name: /test connection/i });
+        fireEvent.click(testButton);
 
-      await act(async () => {
-        await Promise.resolve();
-      });
+        await act(async () => {
+          await Promise.resolve();
+        });
 
-      expect(onTestAction).toHaveBeenCalledOnce();
-      expect(onTestAction).toHaveBeenCalledWith('media.plex.testConnection');
+        expect(onTestAction).toHaveBeenCalledOnce();
+        expect(onTestAction).toHaveBeenCalledWith('media.plex.testConnection');
+      } finally {
+        await act(async () => {
+          await vi.runAllTimersAsync();
+        });
+        vi.useRealTimers();
+      }
     });
   });
 });
