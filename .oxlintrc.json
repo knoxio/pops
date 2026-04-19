@@ -343,7 +343,7 @@
         "max-lines": ["error", { "max": 1050, "skipBlankLines": true, "skipComments": true }],
         "max-lines-per-function": [
           "error",
-          { "max": 1050, "skipBlankLines": true, "skipComments": true, "IIFEs": true }
+          { "max": 460, "skipBlankLines": true, "skipComments": true, "IIFEs": true }
         ],
         "complexity": ["error", 50]
       }
@@ -354,7 +354,7 @@
         "max-lines": ["error", { "max": 800, "skipBlankLines": true, "skipComments": true }],
         "max-lines-per-function": [
           "error",
-          { "max": 800, "skipBlankLines": true, "skipComments": true, "IIFEs": true }
+          { "max": 320, "skipBlankLines": true, "skipComments": true, "IIFEs": true }
         ],
         "complexity": ["error", 40]
       }
@@ -365,7 +365,7 @@
         "max-lines": ["error", { "max": 800, "skipBlankLines": true, "skipComments": true }],
         "max-lines-per-function": [
           "error",
-          { "max": 800, "skipBlankLines": true, "skipComments": true, "IIFEs": true }
+          { "max": 310, "skipBlankLines": true, "skipComments": true, "IIFEs": true }
         ],
         "complexity": ["error", 35]
       }
@@ -448,6 +448,8 @@
         "max-lines": "off",
         "max-lines-per-function": "off",
         "complexity": "off",
+        "max-depth": "off",
+        "max-statements": "off",
         "no-console": "off",
         "react/no-array-index-key": "off",
         "react-hooks/rules-of-hooks": "off"
