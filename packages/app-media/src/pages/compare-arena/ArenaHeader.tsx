@@ -23,11 +23,11 @@ export function ArenaHeader({ sessionCount }: ArenaHeaderProps) {
       <div className="flex items-center gap-1">
         <Tooltip>
           <TooltipTrigger asChild>
-            <Link to="/media/compare/history">
-              <Button variant="ghost" size="icon" aria-label="Comparison history">
+            <Button asChild variant="ghost" size="icon" aria-label="Comparison history">
+              <Link to="/media/compare/history">
                 <History className="h-4.5 w-4.5" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </TooltipTrigger>
           <TooltipContent>History</TooltipContent>
         </Tooltip>
