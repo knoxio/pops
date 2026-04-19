@@ -21,6 +21,7 @@ export const engramIndex = sqliteTable(
     modifiedAt: text('modified_at').notNull(),
     title: text('title').notNull(),
     contentHash: text('content_hash').notNull(),
+    bodyHash: text('body_hash'),
     wordCount: integer('word_count').notNull(),
     customFields: text('custom_fields'),
   },
@@ -30,6 +31,7 @@ export const engramIndex = sqliteTable(
     index('idx_engram_index_status').on(table.status),
     index('idx_engram_index_created_at').on(table.createdAt),
     index('idx_engram_index_content_hash').on(table.contentHash),
+    index('idx_engram_index_body_hash').on(table.bodyHash),
   ]
 );
 
