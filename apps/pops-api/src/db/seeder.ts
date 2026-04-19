@@ -1681,39 +1681,48 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
       // AI Usage
       // -------------------------------------------------------------------------
       const insertAiUsage = db.prepare(`
-      INSERT INTO ai_inference_log (description, entity_name, category, input_tokens, output_tokens, cost_usd, cached, import_batch_id, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO ai_inference_log (provider, model, operation, domain, input_tokens, output_tokens, cost_usd, latency_ms, status, cached, context_id, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
       insertAiUsage.run(
-        'Categorize transaction: WOOLWORTHS 1234',
-        'Woolworths',
-        'Groceries',
+        'claude',
+        'claude-haiku-4-5-20251001',
+        'entity-match',
+        'finance',
         150,
         25,
         0.0003,
+        120,
+        'success',
         0,
         'batch-2026-01-15',
         '2026-01-15T10:00:00Z'
       );
       insertAiUsage.run(
-        'Categorize transaction: SPOTIFY PREMIUM',
-        'Spotify',
-        'Subscriptions',
+        'claude',
+        'claude-haiku-4-5-20251001',
+        'entity-match',
+        'finance',
         140,
         20,
         0.0002,
+        110,
+        'success',
         0,
         'batch-2026-01-15',
         '2026-01-15T10:00:01Z'
       );
       insertAiUsage.run(
-        'Categorize transaction: WOOLWORTHS 5678',
-        'Woolworths',
-        'Groceries',
+        'claude',
+        'claude-haiku-4-5-20251001',
+        'entity-match',
+        'finance',
         150,
         25,
         0.0001,
+        0,
+        'success',
         1,
         'batch-2026-02-01',
         '2026-02-01T10:00:00Z'

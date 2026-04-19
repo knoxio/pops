@@ -222,11 +222,7 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       context_id TEXT,
       error_message TEXT,
       metadata TEXT,
-      created_at TEXT NOT NULL,
-      description TEXT,
-      entity_name TEXT,
-      category TEXT,
-      import_batch_id TEXT
+      created_at TEXT NOT NULL
     );
 
     CREATE INDEX IF NOT EXISTS idx_ai_inference_log_created_at ON ai_inference_log(created_at);

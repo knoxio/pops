@@ -414,24 +414,20 @@ export function createTestDb(): Database {
 
     CREATE TABLE IF NOT EXISTS ai_inference_log (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      description TEXT NOT NULL,
-      entity_name TEXT,
-      category TEXT,
-      input_tokens INTEGER NOT NULL,
-      output_tokens INTEGER NOT NULL,
-      cost_usd REAL NOT NULL,
-      cached INTEGER NOT NULL DEFAULT 0,
-      import_batch_id TEXT,
-      created_at TEXT NOT NULL,
       provider TEXT NOT NULL DEFAULT 'claude',
       model TEXT NOT NULL DEFAULT 'claude-haiku-4-5-20251001',
       operation TEXT NOT NULL DEFAULT 'entity-match',
-      domain TEXT DEFAULT 'finance',
+      domain TEXT,
+      input_tokens INTEGER NOT NULL DEFAULT 0,
+      output_tokens INTEGER NOT NULL DEFAULT 0,
+      cost_usd REAL NOT NULL DEFAULT 0,
       latency_ms INTEGER NOT NULL DEFAULT 0,
       status TEXT NOT NULL DEFAULT 'success',
+      cached INTEGER NOT NULL DEFAULT 0,
       context_id TEXT,
       error_message TEXT,
-      metadata TEXT
+      metadata TEXT,
+      created_at TEXT NOT NULL
     );
     CREATE INDEX IF NOT EXISTS idx_ai_inference_log_created_at ON ai_inference_log(created_at);
     CREATE INDEX IF NOT EXISTS idx_ai_inference_log_provider_model ON ai_inference_log(provider, model);
@@ -1388,14 +1384,10 @@ export function seedDimension(
 export function seedAiUsage(
   db: Database,
   overrides: Partial<{
-    description: string;
-    entity_name: string | null;
-    category: string | null;
     input_tokens: number;
     output_tokens: number;
     cost_usd: number;
     cached: number;
-    import_batch_id: string | null;
     created_at: string;
     provider: string;
     model: string;
@@ -1404,39 +1396,31 @@ export function seedAiUsage(
     latency_ms: number;
     status: string;
     context_id: string | null;
-    error_message: string | null;
   }> = {}
 ): number {
   const result = db
     .prepare(
       `INSERT INTO ai_inference_log (
-        description, entity_name, category, input_tokens, output_tokens, cost_usd,
-        cached, import_batch_id, created_at, provider, model, operation,
-        domain, latency_ms, status, context_id, error_message
+        provider, model, operation, domain, input_tokens, output_tokens,
+        cost_usd, latency_ms, status, cached, context_id, created_at
       ) VALUES (
-        @description, @entity_name, @category, @input_tokens, @output_tokens, @cost_usd,
-        @cached, @import_batch_id, @created_at, @provider, @model, @operation,
-        @domain, @latency_ms, @status, @context_id, @error_message
+        @provider, @model, @operation, @domain, @input_tokens, @output_tokens,
+        @cost_usd, @latency_ms, @status, @cached, @context_id, @created_at
       )`
     )
     .run({
-      description: overrides.description ?? 'Test categorisation',
-      entity_name: overrides.entity_name ?? null,
-      category: overrides.category ?? null,
-      input_tokens: overrides.input_tokens ?? 100,
-      output_tokens: overrides.output_tokens ?? 20,
-      cost_usd: overrides.cost_usd ?? 0.001,
-      cached: overrides.cached ?? 0,
-      import_batch_id: overrides.import_batch_id ?? null,
-      created_at: overrides.created_at ?? new Date().toISOString(),
       provider: overrides.provider ?? 'claude',
       model: overrides.model ?? 'claude-haiku-4-5-20251001',
       operation: overrides.operation ?? 'entity-match',
       domain: overrides.domain ?? 'finance',
+      input_tokens: overrides.input_tokens ?? 100,
+      output_tokens: overrides.output_tokens ?? 20,
+      cost_usd: overrides.cost_usd ?? 0.001,
       latency_ms: overrides.latency_ms ?? 0,
       status: overrides.status ?? 'success',
+      cached: overrides.cached ?? 0,
       context_id: overrides.context_id ?? null,
-      error_message: overrides.error_message ?? null,
+      created_at: overrides.created_at ?? new Date().toISOString(),
     });
   return Number(result.lastInsertRowid);
 }

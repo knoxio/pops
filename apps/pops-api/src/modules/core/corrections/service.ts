@@ -5,12 +5,13 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { and, asc, count, desc, eq, gte, sql } from 'drizzle-orm';
 
-import { aiUsage, settings, transactionCorrections, transactions } from '@pops/db-types';
+import { settings, transactionCorrections, transactions } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 import { isNamedEnvContext } from '../../../db.js';
 import { getEnv } from '../../../env.js';
 import { withRateLimitRetry } from '../../../lib/ai-retry.js';
+import { trackInference } from '../../../lib/inference-middleware.js';
 import { logger } from '../../../lib/logger.js';
 import { NotFoundError } from '../../../shared/errors.js';
 import { parseJsonStringArray } from '../../../shared/json.js';
@@ -163,20 +164,24 @@ export async function interpretRejectionFeedback(
   const client = new Anthropic({ apiKey, maxRetries: 0 });
 
   try {
-    const response = await withRateLimitRetry(
+    const response = await trackInference(
+      { provider: 'claude', model: 'claude-haiku-4-5-20251001', operation: 'rejection-interpret' },
       () =>
-        client.messages.create({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 250,
-          messages: [
-            {
-              role: 'user',
-              content: `You are improving a transaction correction rule proposal.\n\nGiven:\n- originalSignal (the user's intended correction rule)\n- rejectedChangeSet (the proposal that was rejected)\n- feedback (free text)\n\nReturn an adapted signal that better matches the user's feedback.\n\nRules:\n- Reply in JSON only as: {"adaptedSignal": { ... }}\n- adaptedSignal MUST be a full signal object with keys: descriptionPattern, matchType, entityId, entityName, location, tags, transactionType.\n- Keep descriptionPattern semantically the same unless feedback explicitly requests changing it.\n- Prefer changing matchType (exact/contains/regex) when feedback indicates specificity.\n\noriginalSignal: ${JSON.stringify(originalSignal)}\nrejectedChangeSet: ${JSON.stringify(rejectedChangeSet)}\nfeedback: ${JSON.stringify(sanitizedFeedback)}\n`,
-            },
-          ],
-        }),
-      'corrections.rejection.interpret',
-      { logger, logPrefix: '[AI]' }
+        withRateLimitRetry(
+          () =>
+            client.messages.create({
+              model: 'claude-haiku-4-5-20251001',
+              max_tokens: 250,
+              messages: [
+                {
+                  role: 'user',
+                  content: `You are improving a transaction correction rule proposal.\n\nGiven:\n- originalSignal (the user's intended correction rule)\n- rejectedChangeSet (the proposal that was rejected)\n- feedback (free text)\n\nReturn an adapted signal that better matches the user's feedback.\n\nRules:\n- Reply in JSON only as: {"adaptedSignal": { ... }}\n- adaptedSignal MUST be a full signal object with keys: descriptionPattern, matchType, entityId, entityName, location, tags, transactionType.\n- Keep descriptionPattern semantically the same unless feedback explicitly requests changing it.\n- Prefer changing matchType (exact/contains/regex) when feedback indicates specificity.\n\noriginalSignal: ${JSON.stringify(originalSignal)}\nrejectedChangeSet: ${JSON.stringify(rejectedChangeSet)}\nfeedback: ${JSON.stringify(sanitizedFeedback)}\n`,
+                },
+              ],
+            }),
+          'corrections.rejection.interpret',
+          { logger, logPrefix: '[AI]' }
+        )
     );
 
     const text = response.content[0]?.type === 'text' ? response.content[0].text : null;
@@ -193,25 +198,6 @@ export async function interpretRejectionFeedback(
 
     const adaptedResult = AdaptedSignalSchema.safeParse(adaptedUnknown);
     if (!adaptedResult.success) return originalSignal;
-
-    const inputTokens = response.usage.input_tokens;
-    const outputTokens = response.usage.output_tokens;
-    const costUsd = (inputTokens / 1_000_000) * 1.0 + (outputTokens / 1_000_000) * 5.0;
-
-    getDrizzle()
-      .insert(aiUsage)
-      .values({
-        description: sanitizedFeedback,
-        entityName: null,
-        category: 'corrections.rejection_interpretation',
-        inputTokens,
-        outputTokens,
-        costUsd,
-        cached: 0,
-        importBatchId: null,
-        createdAt: new Date().toISOString(),
-      })
-      .run();
 
     return adaptedResult.data;
   } catch (error) {
@@ -320,15 +306,19 @@ Return ONLY a single JSON object, no markdown, no explanation:
 
   let response;
   try {
-    response = await withRateLimitRetry(
+    response = await trackInference(
+      { provider: 'claude', model: 'claude-haiku-4-5-20251001', operation: 'revise-changeset' },
       () =>
-        client.messages.create({
-          model: 'claude-haiku-4-5-20251001',
-          max_tokens: 2000,
-          messages: [{ role: 'user', content: prompt }],
-        }),
-      'corrections.revise',
-      { logger, logPrefix: '[AI]' }
+        withRateLimitRetry(
+          () =>
+            client.messages.create({
+              model: 'claude-haiku-4-5-20251001',
+              max_tokens: 2000,
+              messages: [{ role: 'user', content: prompt }],
+            }),
+          'corrections.revise',
+          { logger, logPrefix: '[AI]' }
+        )
     );
   } catch (error) {
     logger.error(
@@ -385,30 +375,6 @@ Return ONLY a single JSON object, no markdown, no explanation:
     typeof rationaleRaw === 'string' && rationaleRaw.trim().length > 0
       ? rationaleRaw.trim()
       : 'ChangeSet revised by AI helper';
-
-  // Best-effort AI usage tracking — matches interpretRejectionFeedback pattern.
-  try {
-    const inputTokens = response.usage.input_tokens;
-    const outputTokens = response.usage.output_tokens;
-    const costUsd = (inputTokens / 1_000_000) * 1.0 + (outputTokens / 1_000_000) * 5.0;
-
-    getDrizzle()
-      .insert(aiUsage)
-      .values({
-        description: sanitizedInstruction,
-        entityName: null,
-        category: 'corrections.revise_changeset',
-        inputTokens,
-        outputTokens,
-        costUsd,
-        cached: 0,
-        importBatchId: null,
-        createdAt: new Date().toISOString(),
-      })
-      .run();
-  } catch {
-    // ai_usage tracking is best-effort — don't fail the request
-  }
 
   return {
     changeSet: changeSetResult.data,
