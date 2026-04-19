@@ -2,7 +2,7 @@ import { BookmarkPlus, ChevronDown, ChevronRight } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 
-import { Badge, Button } from '@pops/ui';
+import { Badge, Button, ButtonPrimitive } from '@pops/ui';
 
 import { GroupTagBar } from './GroupTagBar';
 import { unionTags } from './tagReviewUtils';
@@ -74,7 +74,8 @@ export function EntityGroup({
       <div className="flex items-center justify-between gap-3 px-4 py-3 bg-muted/40">
         <Button
           variant="ghost"
-          className="flex items-center gap-2 flex-1 text-left h-auto p-0 hover:bg-transparent"
+          size="sm"
+          className="flex items-center gap-2 flex-1 justify-start text-left hover:bg-transparent"
           onClick={() => setExpanded((prev) => !prev)}
           aria-expanded={expanded}
         >
@@ -104,31 +105,31 @@ export function EntityGroup({
           )}
 
           {suggestedUnion.length > 0 && (
-            <Button
+            <ButtonPrimitive
               variant="outline"
-              size="sm"
+              size="xs"
               onClick={handleApplySuggestions}
-              className="text-xs px-2 py-1 h-auto whitespace-nowrap"
+              className="whitespace-nowrap"
               title={`Apply suggestions: ${suggestedUnion.join(', ')}`}
             >
               Apply suggestions
-            </Button>
+            </ButtonPrimitive>
           )}
 
-          <Button
+          <ButtonPrimitive
             variant="ghost"
-            size="sm"
+            size="xs"
             onClick={(e) => {
               e.stopPropagation();
               onSaveTagRule(group);
             }}
-            className="text-xs px-2 py-1 h-auto whitespace-nowrap text-muted-foreground hover:text-foreground"
+            className="whitespace-nowrap text-muted-foreground hover:text-foreground"
             title="Save a reusable tag rule for this group"
             aria-label={`Save tag rule for ${group.entityName}`}
           >
             <BookmarkPlus className="w-3.5 h-3.5 mr-1" />
             Save tag rule…
-          </Button>
+          </ButtonPrimitive>
         </div>
       </div>
 

@@ -1,7 +1,7 @@
 import { BookmarkPlus } from 'lucide-react';
 import { useMemo } from 'react';
 
-import { Button } from '@pops/ui';
+import { ButtonPrimitive } from '@pops/ui';
 
 import { cn } from '../../../lib/utils';
 import { TagEditor } from '../../TagEditor';
@@ -53,17 +53,17 @@ export function TransactionTagRow({
       </span>
 
       {onSaveTagRule && (
-        <Button
+        <ButtonPrimitive
           variant="ghost"
-          size="sm"
+          size="xs"
           onClick={() => onSaveTagRule(transaction, tags)}
-          className="text-xs px-2 py-1 h-auto whitespace-nowrap text-muted-foreground hover:text-foreground opacity-0 group-hover/txrow:opacity-100 transition-opacity flex-shrink-0"
+          className="whitespace-nowrap text-muted-foreground hover:text-foreground opacity-0 group-hover/txrow:opacity-100 transition-opacity flex-shrink-0"
           title="Save a reusable tag rule for this transaction"
           aria-label={`Save tag rule for ${transaction.description}`}
         >
           <BookmarkPlus className="w-3.5 h-3.5 mr-1" />
           Save rule…
-        </Button>
+        </ButtonPrimitive>
       )}
 
       <div className="flex-shrink-0 w-44">

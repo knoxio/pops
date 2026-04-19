@@ -1,7 +1,7 @@
 import { X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
-import { Button } from '@pops/ui';
+import { ButtonPrimitive } from '@pops/ui';
 
 import { cn } from '../../../lib/utils';
 
@@ -77,15 +77,15 @@ export function GroupTagBar({
           className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-background border border-border rounded-full"
         >
           {tag}
-          <Button
+          <ButtonPrimitive
             variant="ghost"
-            size="icon"
+            size="icon-xs"
             onClick={() => onRemoveTag(tag)}
-            className="text-muted-foreground hover:text-foreground ml-0.5 h-4 w-4 p-0"
+            className="text-muted-foreground hover:text-foreground ml-0.5"
             aria-label={`Remove ${tag}`}
           >
             <X className="w-3 h-3" />
-          </Button>
+          </ButtonPrimitive>
         </span>
       ))}
 
@@ -147,18 +147,18 @@ export function GroupTagBar({
         )}
       </div>
 
-      <Button
+      <ButtonPrimitive
         variant="outline"
-        size="sm"
+        size="xs"
         onClick={onApply}
         disabled={stagedTags.length === 0}
         className={cn(
-          'px-2 py-0.5 h-auto text-xs whitespace-nowrap',
+          'whitespace-nowrap',
           stagedTags.length > 0 && 'border-primary text-primary hover:bg-primary/10'
         )}
       >
         Merge into all
-      </Button>
+      </ButtonPrimitive>
     </div>
   );
 }

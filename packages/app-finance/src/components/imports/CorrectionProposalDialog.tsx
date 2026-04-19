@@ -56,6 +56,7 @@ export function CorrectionProposalDialog(props: CorrectionProposalDialogProps) {
         onOpenChange={props.onOpenChange}
         onBrowseClose={props.onBrowseClose}
         minConfidence={minConfidence}
+        previewTransactions={props.previewTransactions}
       />
     );
   }

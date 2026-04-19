@@ -20,7 +20,7 @@ import {
 import { localOpsToChangeSet, newClientId, useLocalOps } from '../hooks/useLocalOps';
 import { usePreviewEffects } from '../hooks/usePreviewEffects';
 
-import type { LocalOp } from '../correction-proposal-shared';
+import type { LocalOp, PreviewChangeSetOutput } from '../correction-proposal-shared';
 import type { CorrectionRule } from '../RulePicker';
 
 const BrowseRulesSidebar = lazy(() =>
@@ -32,6 +32,7 @@ export interface CorrectionRuleManagerDialogProps {
   onOpenChange: (open: boolean) => void;
   onBrowseClose?: (hadChanges: boolean) => void;
   minConfidence: number;
+  previewTransactions: Array<{ checksum?: string; description: string }>;
 }
 
 export function CorrectionRuleManagerDialog({
@@ -39,6 +40,7 @@ export function CorrectionRuleManagerDialog({
   onOpenChange,
   onBrowseClose,
   minConfidence,
+  previewTransactions,
 }: CorrectionRuleManagerDialogProps) {
   const pendingChangeSets = useImportStore((s) => s.pendingChangeSets);
   const addPendingChangeSet = useImportStore((s) => s.addPendingChangeSet);
@@ -69,7 +71,7 @@ export function CorrectionRuleManagerDialog({
       localOps,
       selectedOp,
       minConfidence,
-      previewTransactions: [],
+      previewTransactions,
       dbTransactions: dbTxnsQuery.data?.data ?? [],
       pendingChangeSets,
     },
@@ -339,12 +341,12 @@ function RuleManagerBody(props: {
   onAddNewRule: () => void;
   previewView: PreviewView;
   onPreviewViewChange: (v: PreviewView) => void;
-  previewCombined: unknown;
-  previewSelected: unknown;
-  dbPreviewCombined: unknown;
-  dbPreviewSelected: unknown;
-  previewErrorCombined: unknown;
-  previewErrorSelected: unknown;
+  previewCombined: PreviewChangeSetOutput | null;
+  previewSelected: PreviewChangeSetOutput | null;
+  dbPreviewCombined: PreviewChangeSetOutput | null;
+  dbPreviewSelected: PreviewChangeSetOutput | null;
+  previewErrorCombined: string | null;
+  previewErrorSelected: string | null;
   truncatedCombined: boolean;
   truncatedSelected: boolean;
   dbTruncated: boolean | undefined;
@@ -452,11 +454,11 @@ function RuleManagerBody(props: {
         view={props.previewView}
         onViewChange={props.onPreviewViewChange}
         label={label}
-        previewResult={previewResult as never}
-        dbPreviewResult={dbPreviewResult as never}
+        previewResult={previewResult}
+        dbPreviewResult={dbPreviewResult}
         dbTruncated={props.dbTruncated}
         dbTotal={props.dbTotal}
-        previewError={previewError as never}
+        previewError={previewError}
         isPending={props.isPreviewPending}
         stale={props.isPreviewStale}
         truncated={truncated}

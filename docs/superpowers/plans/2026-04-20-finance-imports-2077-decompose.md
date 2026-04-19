@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Decompose `CorrectionProposalDialog.tsx` and `TagReviewStep.tsx` to meet strict Oxlint agent-optimal targets, then tighten/remove the `packages/app-finance/src/components/imports/**/*` override in `.oxlintrc.json`.
+**Goal:** Decompose `CorrectionProposalDialog.tsx` and `TagReviewStep.tsx` to meet strict Oxlint agent-optimal targets, then tighten/remove the `packages/app-finance/src/components/imports/**/`\* override in `.oxlintrc.json`.
 
-**Architecture:** Keep stable entrypoints (`CorrectionProposalDialog.tsx`, `TagReviewStep.tsx`) and move mode- and feature-specific logic into feature-local folders (`correction-proposal/*`, `tag-review/*`). Only promote code into shared packages if clearly reusable beyond finance-imports.
+**Architecture:** Keep stable entrypoints (`CorrectionProposalDialog.tsx`, `TagReviewStep.tsx`) and move mode- and feature-specific logic into feature-local folders (`correction-proposal/`_, `tag-review/_`). Only promote code into shared packages if clearly reusable beyond finance-imports.
 
 **Tech Stack:** React + TypeScript, tRPC client (`@pops/api-client`), UI (`@pops/ui`), Oxlint, Turbo.
 
@@ -33,24 +33,23 @@
 
 - Modify: `packages/app-finance/src/components/imports/CorrectionProposalDialog.tsx`
 - Modify: `packages/app-finance/src/components/imports/TagReviewStep.tsx`
-
-- [ ] **Step 1: Capture baseline lint targets**
+- **Step 1: Capture baseline lint targets**
 
 Run:
 
 ```bash
-cd /Volumes/Knox/jmiranda/pops
+cd <repo-root>
 pnpm -s lint -- --help >/dev/null 2>&1 || true
 ```
 
 Note: we’ll use repo-level `mise lint` / `mise typecheck` at the end as the authoritative pass/fail.
 
-- [ ] **Step 2: Verify both target files are still oversized**
+- **Step 2: Verify both target files are still oversized**
 
 Run:
 
 ```bash
-cd /Volumes/Knox/jmiranda/pops
+cd <repo-root>
 npx oxlint "packages/app-finance/src/components/imports/CorrectionProposalDialog.tsx" "packages/app-finance/src/components/imports/TagReviewStep.tsx"
 ```
 
@@ -63,8 +62,7 @@ Expected: violations for `max-lines` / `max-lines-per-function` / `complexity` (
 - Create: `packages/app-finance/src/components/imports/correction-proposal/CorrectionRuleManagerDialog.tsx`
 - Create: `packages/app-finance/src/components/imports/correction-proposal/CorrectionProposalWorkflow.tsx`
 - Modify: `packages/app-finance/src/components/imports/CorrectionProposalDialog.tsx`
-
-- [ ] **Step 1: Create `CorrectionRuleManagerDialog` (browse mode)**
+- **Step 1: Create `CorrectionRuleManagerDialog` (browse mode)**
 
 Move browse-mode render and handlers from `CorrectionProposalDialog.tsx` into a component with this signature:
 
@@ -86,8 +84,7 @@ Rules:
 - Keep browse-mode TRPC queries in the extracted file if they are browse-only.
 - Keep browse-mode local state in the extracted file (`browseSearch`, `browseSelectedRuleId`, refs).
 - Ensure no exported types are required by external consumers (entrypoint keeps re-exports).
-
-- [ ] **Step 2: Create `CorrectionProposalWorkflow` (proposal mode)**
+- **Step 2: Create `CorrectionProposalWorkflow` (proposal mode)**
 
 Move proposal-mode render (proposal footer/body/subpanel/context header) into a component with this signature:
 
@@ -132,8 +129,7 @@ Rules:
 - Keep “proposal-only” UI composition in this file.
 - Keep non-UI hooks (preview/mutations) inside this file if that materially shrinks the entrypoint and keeps function sizes small.
 - Keep the entrypoint owning the re-export surface and prop types.
-
-- [ ] **Step 3: Reduce `CorrectionProposalDialog.tsx` to a thin entrypoint**
+- **Step 3: Reduce `CorrectionProposalDialog.tsx` to a thin entrypoint**
 
 Target shape:
 
@@ -142,13 +138,12 @@ Target shape:
 - Delegate render to:
   - `CorrectionRuleManagerDialog` when `mode === "browse"`
   - `CorrectionProposalWorkflow` otherwise
-
-- [ ] **Step 4: Validate with oxlint on the three files**
+- **Step 4: Validate with oxlint on the three files**
 
 Run:
 
 ```bash
-cd /Volumes/Knox/jmiranda/pops
+cd <repo-root>
 npx oxlint "packages/app-finance/src/components/imports/CorrectionProposalDialog.tsx" \
   "packages/app-finance/src/components/imports/correction-proposal/CorrectionRuleManagerDialog.tsx" \
   "packages/app-finance/src/components/imports/correction-proposal/CorrectionProposalWorkflow.tsx"
@@ -165,8 +160,7 @@ Expected: no `max-lines`, `max-lines-per-function`, `complexity` violations.
 - Create: `packages/app-finance/src/components/imports/tag-review/EntityGroup.tsx`
 - Create: `packages/app-finance/src/components/imports/tag-review/TransactionTagRow.tsx`
 - Modify: `packages/app-finance/src/components/imports/TagReviewStep.tsx`
-
-- [ ] **Step 1: Move pure helpers into `tagReviewUtils.ts`**
+- **Step 1: Move pure helpers into `tagReviewUtils.ts`**
 
 Move (no behavior changes):
 
@@ -183,7 +177,7 @@ export interface ConfirmedGroup {
 }
 ```
 
-- [ ] **Step 2: Create `useTagReviewState`**
+- **Step 2: Create `useTagReviewState`**
 
 Encapsulate:
 
@@ -203,8 +197,7 @@ Guidelines:
 
 - Keep each function under 60 lines by splitting small internal helpers if needed.
 - Keep hook return stable (object with named properties).
-
-- [ ] **Step 3: Extract `TransactionTagRow.tsx`**
+- **Step 3: Extract `TransactionTagRow.tsx`**
 
 Move the `TransactionTagRow` component and its props.
 
@@ -212,8 +205,7 @@ Keep imports minimal:
 
 - `cn` and `TagEditor` usage stays (finance-only, so leave under app-finance).
 - Use `buildTagMetaMap` from `tagReviewUtils`.
-
-- [ ] **Step 4: Extract `EntityGroup.tsx`**
+- **Step 4: Extract `EntityGroup.tsx`**
 
 Move `EntityGroup` component and its props.
 
@@ -222,8 +214,7 @@ Rules:
 - If `EntityGroup` remains >200 lines, split the “bulk apply row” into a sibling component file in the same folder (only if needed).
 - Keep `toast` usage inside the component(s) that actually invoke it.
 - Use `unionTags` from `tagReviewUtils`.
-
-- [ ] **Step 5: Reduce `TagReviewStep.tsx` to thin entrypoint**
+- **Step 5: Reduce `TagReviewStep.tsx` to thin entrypoint**
 
 `TagReviewStep.tsx` should:
 
@@ -232,13 +223,12 @@ Rules:
 - render page header + footer navigation
 - render groups via extracted `EntityGroup`
 - mount `TagRuleProposalDialog` with hook-provided state/handlers
-
-- [ ] **Step 6: Validate with oxlint**
+- **Step 6: Validate with oxlint**
 
 Run:
 
 ```bash
-cd /Volumes/Knox/jmiranda/pops
+cd <repo-root>
 npx oxlint "packages/app-finance/src/components/imports/TagReviewStep.tsx" \
   "packages/app-finance/src/components/imports/tag-review/useTagReviewState.ts" \
   "packages/app-finance/src/components/imports/tag-review/tagReviewUtils.ts" \
@@ -253,17 +243,16 @@ Expected: strict targets pass.
 **Files:**
 
 - Modify: `.oxlintrc.json`
-
-- [ ] **Step 1: Run oxlint on imports folder**
+- **Step 1: Run oxlint on imports folder**
 
 Run:
 
 ```bash
-cd /Volumes/Knox/jmiranda/pops
+cd <repo-root>
 npx oxlint "packages/app-finance/src/components/imports/**/*.{ts,tsx}"
 ```
 
-- [ ] **Step 2: Remove or narrow the override**
+- **Step 2: Remove or narrow the override**
 
 Preferred outcome: delete the entire override block:
 
@@ -281,24 +270,23 @@ Fallback: narrow it to the remaining offenders (specific files), not the whole f
 **Files:**
 
 - (repo-wide)
-
-- [ ] **Step 1: Run lint**
+- **Step 1: Run lint**
 
 Run:
 
 ```bash
-cd /Volumes/Knox/jmiranda/pops
+cd <repo-root>
 mise lint
 ```
 
 Expected: PASS.
 
-- [ ] **Step 2: Run typecheck**
+- **Step 2: Run typecheck**
 
 Run:
 
 ```bash
-cd /Volumes/Knox/jmiranda/pops
+cd <repo-root>
 mise typecheck
 ```
 
@@ -306,10 +294,10 @@ Expected: PASS.
 
 ## Task 6: Commit hygiene
 
-- [ ] **Step 1: Commit refactor (code)**
+- **Step 1: Commit refactor (code)**
 
 ```bash
-cd /Volumes/Knox/jmiranda/pops
+cd <repo-root>
 git status
 git add -A
 git commit -m "$(cat <<'EOF'
@@ -319,10 +307,10 @@ EOF
 )"
 ```
 
-- [ ] **Step 2: (Optional) Follow-up commit for `.oxlintrc.json` tightening**
+- **Step 2: (Optional) Follow-up commit for `.oxlintrc.json` tightening**
 
 ```bash
-cd /Volumes/Knox/jmiranda/pops
+cd <repo-root>
 git add .oxlintrc.json
 git commit -m "$(cat <<'EOF'
 chore(oxlint): tighten finance imports overrides
@@ -335,9 +323,9 @@ EOF
 
 ## Self-review checklist (run before calling it “done”)
 
-- [ ] `CorrectionProposalDialog.tsx` < 200 lines and < 60 lines per function
-- [ ] `TagReviewStep.tsx` < 200 lines and < 60 lines per function
-- [ ] No new barrels created without clear need
-- [ ] `.oxlintrc.json` override removed or narrowed to specific remaining offenders
-- [ ] `mise lint` PASS
-- [ ] `mise typecheck` PASS
+- `CorrectionProposalDialog.tsx` < 200 lines and < 60 lines per function
+- `TagReviewStep.tsx` < 200 lines and < 60 lines per function
+- No new barrels created without clear need
+- `.oxlintrc.json` override removed or narrowed to specific remaining offenders
+- `mise lint` PASS
+- `mise typecheck` PASS
