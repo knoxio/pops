@@ -1,0 +1,327 @@
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// ---------------------------------------------------------------------------
+// Mocks
+// ---------------------------------------------------------------------------
+
+const mocks = vi.hoisted(() => ({
+  getBulk: vi.fn(),
+  setBulkMutate: vi.fn(),
+}));
+
+vi.mock('@/lib/trpc', () => ({
+  trpc: {
+    core: {
+      settings: {
+        getBulk: {
+          useQuery: (input: unknown) => mocks.getBulk(input),
+        },
+        setBulk: {
+          useMutation: () => ({ mutate: mocks.setBulkMutate }),
+        },
+      },
+    },
+  },
+}));
+
+vi.mock('sonner', () => ({ toast: { error: vi.fn() } }));
+
+import { SectionRenderer } from './SectionRenderer';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function makeManifest(overrides: Record<string, any> = {}): any {
+  return {
+    id: 'test',
+    title: 'Test',
+    order: 0,
+    groups: [],
+    ...overrides,
+  };
+}
+
+function defaultBulkData(settings: Record<string, string> = {}) {
+  return { data: { settings }, isLoading: false };
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+describe('SectionRenderer', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getBulk.mockReturnValue(defaultBulkData());
+  });
+
+  describe('field type rendering', () => {
+    it('renders the correct widget for each field type', () => {
+      const manifest = makeManifest({
+        groups: [
+          {
+            id: 'g1',
+            title: 'All Types',
+            fields: [
+              { key: 'f_text', label: 'Text Field', type: 'text', default: '' },
+              { key: 'f_number', label: 'Number Field', type: 'number', default: '0' },
+              {
+                key: 'f_toggle',
+                label: 'Toggle Field',
+                type: 'toggle',
+                default: 'false',
+              },
+              {
+                key: 'f_select',
+                label: 'Select Field',
+                type: 'select',
+                default: 'a',
+                options: [
+                  { value: 'a', label: 'Option A' },
+                  { value: 'b', label: 'Option B' },
+                ],
+              },
+              { key: 'f_password', label: 'Password Field', type: 'password', default: '' },
+              { key: 'f_url', label: 'URL Field', type: 'url', default: '' },
+              { key: 'f_duration', label: 'Duration Field', type: 'duration', default: '60000' },
+              { key: 'f_json', label: 'JSON Field', type: 'json', default: '{}' },
+            ],
+          },
+        ],
+      });
+
+      render(<SectionRenderer manifest={manifest} />);
+
+      // text — renders <input type="text">
+      const textInput = screen
+        .getAllByRole('textbox')
+        .find((el) => el.getAttribute('type') === 'text' || el.getAttribute('type') === null);
+      expect(textInput).toBeInTheDocument();
+
+      // number — renders <input type="number">
+      const numberInputs = screen.getAllByRole('spinbutton');
+      expect(numberInputs.length).toBeGreaterThanOrEqual(2); // number + duration
+
+      // toggle — renders a checkbox role (Switch)
+      expect(screen.getByRole('switch')).toBeInTheDocument();
+
+      // select — renders its own combobox distinct from the duration unit selector
+      const selectField = screen.getAllByRole('combobox').find((el) => {
+        const optionValues = Array.from((el as HTMLSelectElement).options).map((o) => o.value);
+        return !optionValues.every((v) =>
+          ['milliseconds', 'seconds', 'minutes', 'hours'].includes(v)
+        );
+      });
+      expect(selectField).toBeInTheDocument();
+
+      // password — renders <input type="password">
+      const passwordInput = document.querySelector('input[type="password"]');
+      expect(passwordInput).toBeInTheDocument();
+
+      // url — renders <input type="url">
+      const urlInput = document.querySelector('input[type="url"]');
+      expect(urlInput).toBeInTheDocument();
+
+      // duration — number input + unit selector
+      const durationUnitSelect = screen
+        .getAllByRole('combobox')
+        .find((el) =>
+          ['milliseconds', 'seconds', 'minutes', 'hours'].includes((el as HTMLSelectElement).value)
+        );
+      expect(durationUnitSelect).toBeInTheDocument();
+
+      // json — renders a <textarea>
+      const textarea = document.querySelector('textarea');
+      expect(textarea).toBeInTheDocument();
+    });
+  });
+
+  describe('debounced auto-save', () => {
+    it('calls setBulk after 500ms and not before', async () => {
+      vi.useFakeTimers();
+
+      const manifest = makeManifest({
+        groups: [
+          {
+            id: 'g1',
+            title: 'Auto-save',
+            fields: [{ key: 'api_url', label: 'API URL', type: 'text', default: '' }],
+          },
+        ],
+      });
+
+      render(<SectionRenderer manifest={manifest} />);
+
+      const input = screen.getByRole('textbox');
+      fireEvent.change(input, { target: { value: 'https://example.com' } });
+
+      // Not called immediately
+      expect(mocks.setBulkMutate).not.toHaveBeenCalled();
+
+      // Not called at 499ms
+      await act(async () => {
+        vi.advanceTimersByTime(499);
+      });
+      expect(mocks.setBulkMutate).not.toHaveBeenCalled();
+
+      // Called at 500ms
+      await act(async () => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(mocks.setBulkMutate).toHaveBeenCalledOnce();
+      expect(mocks.setBulkMutate).toHaveBeenCalledWith(
+        { entries: [{ key: 'api_url', value: 'https://example.com' }] },
+        expect.any(Object)
+      );
+
+      vi.useRealTimers();
+    });
+  });
+
+  describe('pattern validation', () => {
+    it('shows error and does not call setBulk when value fails pattern', async () => {
+      vi.useFakeTimers();
+
+      const manifest = makeManifest({
+        groups: [
+          {
+            id: 'g1',
+            title: 'Validation',
+            fields: [
+              {
+                key: 'port',
+                label: 'Port',
+                type: 'text',
+                default: '',
+                validation: {
+                  pattern: '^\\d+$',
+                  message: 'Must be a number',
+                },
+              },
+            ],
+          },
+        ],
+      });
+
+      render(<SectionRenderer manifest={manifest} />);
+
+      const input = screen.getByRole('textbox');
+      fireEvent.change(input, { target: { value: 'not-a-number' } });
+
+      // Error message shown
+      expect(screen.getByText('Must be a number')).toBeInTheDocument();
+
+      // Even after 500ms, setBulk must not have been called
+      await act(async () => {
+        vi.advanceTimersByTime(500);
+      });
+      expect(mocks.setBulkMutate).not.toHaveBeenCalled();
+
+      vi.useRealTimers();
+    });
+  });
+
+  describe('environment variable fallback', () => {
+    it('shows "Using environment variable" label when no DB value exists', () => {
+      const manifest = makeManifest({
+        groups: [
+          {
+            id: 'g1',
+            title: 'Env Fallback',
+            fields: [
+              {
+                key: 'plex_token',
+                label: 'Plex Token',
+                type: 'password',
+                envFallback: 'PLEX_TOKEN',
+              },
+            ],
+          },
+        ],
+      });
+
+      // DB returns no value for plex_token
+      mocks.getBulk.mockReturnValue(defaultBulkData({}));
+
+      render(<SectionRenderer manifest={manifest} />);
+
+      expect(screen.getByText('Using environment variable PLEX_TOKEN')).toBeInTheDocument();
+    });
+
+    it('does not show the label when a DB value exists', () => {
+      const manifest = makeManifest({
+        groups: [
+          {
+            id: 'g1',
+            title: 'Env Fallback',
+            fields: [
+              {
+                key: 'plex_token',
+                label: 'Plex Token',
+                type: 'password',
+                envFallback: 'PLEX_TOKEN',
+              },
+            ],
+          },
+        ],
+      });
+
+      mocks.getBulk.mockReturnValue(defaultBulkData({ plex_token: 'my-secret-token' }));
+
+      render(<SectionRenderer manifest={manifest} />);
+
+      expect(screen.queryByText('Using environment variable PLEX_TOKEN')).not.toBeInTheDocument();
+    });
+  });
+
+  describe('test action button', () => {
+    it('calls onTestAction with the procedure when the test button is clicked', async () => {
+      vi.useFakeTimers();
+
+      try {
+        const onTestAction = vi.fn().mockResolvedValue(undefined);
+
+        const manifest = makeManifest({
+          groups: [
+            {
+              id: 'g1',
+              title: 'Connection',
+              fields: [
+                {
+                  key: 'plex_url',
+                  label: 'Plex URL',
+                  type: 'url',
+                  default: 'http://plex.local',
+                  testAction: {
+                    procedure: 'media.plex.testConnection',
+                    label: 'Test Connection',
+                  },
+                },
+              ],
+            },
+          ],
+        });
+
+        render(<SectionRenderer manifest={manifest} onTestAction={onTestAction} />);
+
+        const testButton = screen.getByRole('button', { name: /test connection/i });
+        fireEvent.click(testButton);
+
+        await act(async () => {
+          await Promise.resolve();
+        });
+
+        expect(onTestAction).toHaveBeenCalledOnce();
+        expect(onTestAction).toHaveBeenCalledWith('media.plex.testConnection');
+      } finally {
+        await act(async () => {
+          await vi.runAllTimersAsync();
+        });
+        vi.useRealTimers();
+      }
+    });
+  });
+});

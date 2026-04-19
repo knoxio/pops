@@ -66,11 +66,11 @@ As a user, I want settings fields to render as appropriate input widgets with in
 
 ### Tests
 
-- [ ] Unit test: render a section with one field of each type — verify the correct widget is rendered for each
-- [ ] Unit test: change a text field value — verify `core.settings.set` is called after the debounce period and not before
-- [ ] Unit test: enter an invalid value in a field with a `pattern` validation rule — verify the error message is displayed and `set` is not called
-- [ ] Unit test: render a field with `envFallback` and no database value — verify the "Using environment variable" label is shown
-- [ ] Unit test: render a field with `testAction`, click the test button — verify the specified procedure is called
+- [x] Unit test: render a section with one field of each type — verify the correct widget is rendered for each
+- [x] Unit test: change a text field value — verify `core.settings.setBulk` is called after the debounce period and not before
+- [x] Unit test: enter an invalid value in a field with a `pattern` validation rule — verify the error message is displayed and `setBulk` is not called
+- [x] Unit test: render a field with `envFallback` and no database value — verify the "Using environment variable" label is shown
+- [x] Unit test: render a field with `testAction`, click the test button — verify the specified procedure is called
 
 ## Notes
 
