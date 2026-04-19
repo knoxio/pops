@@ -1,6 +1,6 @@
 import type { SettingsManifest } from '@pops/types';
 
-class SettingsRegistry {
+export class SettingsRegistry {
   private manifests = new Map<string, SettingsManifest>();
 
   register(manifest: SettingsManifest): void {

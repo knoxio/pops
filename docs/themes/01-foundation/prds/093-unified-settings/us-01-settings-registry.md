@@ -31,11 +31,11 @@ As the system, I need a typed settings manifest registry and bulk read/write tRP
 
 ### Tests
 
-- [ ] Unit test: register two manifests with different keys and orders, call `getAll()`, verify both returned and sorted by `order`
-- [ ] Unit test: register a manifest, then register a second manifest that shares a key with the first — verify the error is thrown with both manifest IDs and the duplicate key in the message
-- [ ] Unit test: `getBulk` with 5 keys where 3 exist in the database — verify the returned record contains exactly the 3 existing keys
-- [ ] Unit test: `setBulk` with 3 valid entries — verify all 3 are saved and retrievable
-- [ ] Unit test: `setBulk` where one entry causes a database error — verify none of the entries are saved (transaction rollback)
+- [x] Unit test: register two manifests with different keys and orders, call `getAll()`, verify both returned and sorted by `order`
+- [x] Unit test: register a manifest, then register a second manifest that shares a key with the first — verify the error is thrown with both manifest IDs and the duplicate key in the message
+- [x] Unit test: `getBulk` with 5 keys where 3 exist in the database — verify the returned record contains exactly the 3 existing keys
+- [x] Unit test: `setBulk` with 3 valid entries — verify all 3 are saved and retrievable
+- [x] Unit test: `setBulk` where one entry causes a database error — verify none of the entries are saved (transaction rollback)
 
 ## Notes
 
