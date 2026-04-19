@@ -45,6 +45,10 @@ export class SettingsRegistry {
   getAll(): SettingsManifest[] {
     return [...this.manifests.values()].toSorted((a, b) => a.order - b.order);
   }
+
+  clear(): void {
+    this.manifests.clear();
+  }
 }
 
 export const settingsRegistry = new SettingsRegistry();

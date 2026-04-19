@@ -117,7 +117,7 @@ The `core.settings.getManifests` procedure reads from the in-memory registry.
 
 | #   | Story                                                           | Summary                                                                                        | Status      | Parallelisable   |
 | --- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------- | ---------------- |
-| 01  | [us-01-settings-registry](us-01-settings-registry.md)           | Manifest schema, in-memory registry, `getManifests` procedure, `getBulk`/`setBulk` procedures  | In progress | No (first)       |
+| 01  | [us-01-settings-registry](us-01-settings-registry.md)           | Manifest schema, in-memory registry, `getManifests` procedure, `getBulk`/`setBulk` procedures  | Done        | No (first)       |
 | 02  | [us-02-settings-page-shell](us-02-settings-page-shell.md)       | `/settings` route, section navigation sidebar, section scroll anchors, app nav entry           | Done        | Yes              |
 | 03  | [us-03-section-renderer](us-03-section-renderer.md)             | Generic section/group/field renderer, typed field widgets, validation, auto-save, test actions | In progress | Blocked by us-01 |
 | 04  | [us-04-migrate-media-settings](us-04-migrate-media-settings.md) | Plex, Arr, and Rotation manifests, redirect old routes, preserve test connection actions       | Done        | Blocked by us-01 |

@@ -19,10 +19,20 @@ export const settingsRouter = router({
   /** List all settings with optional search filter */
   list: protectedProcedure
     .meta({
-      openapi: { method: 'GET', path: '/settings', summary: 'List settings', tags: ['settings'] },
+      openapi: {
+        method: 'GET',
+        path: '/settings',
+        summary: 'List settings',
+        tags: ['settings'],
+      },
     })
     .input(SettingListSchema)
-    .output(z.object({ data: z.array(SettingSchema), pagination: PaginationMetaSchema }))
+    .output(
+      z.object({
+        data: z.array(SettingSchema),
+        pagination: PaginationMetaSchema,
+      })
+    )
     .query(({ input }) => {
       const limit = input.limit ?? DEFAULT_LIMIT;
       const offset = input.offset ?? DEFAULT_OFFSET;
@@ -101,7 +111,11 @@ export const settingsRouter = router({
 
   /** Write multiple settings atomically — rolls back all on any failure */
   setBulk: protectedProcedure
-    .input(z.object({ entries: z.array(z.object({ key: z.string(), value: z.string() })) }))
+    .input(
+      z.object({
+        entries: z.array(z.object({ key: z.string(), value: z.string() })),
+      })
+    )
     .mutation(({ input }) => {
       return { settings: service.setBulkSettings(input.entries) };
     }),
