@@ -8,10 +8,10 @@ Build warranty tracking and asset value reporting. Surface items approaching war
 
 ## PRDs
 
-| #   | PRD                                                                            | Summary                                                                                                                | Status  |
-| --- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- | ------- |
-| 050 | [Warranty Tracking](../prds/050-warranty-tracking/README.md)                   | Warranties page with urgency tiers (expired, expiring soon, active), warranty alerts, expiry date tracking             | Partial |
-| 051 | [Value & Insurance Reporting](../prds/051-value-insurance-reporting/README.md) | Total asset value dashboard, value breakdown by room/type, insurance-ready report with items, values, photos, receipts | Partial |
+| #   | PRD                                                                            | Summary                                                                                                                | Status |
+| --- | ------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------- | ------ |
+| 050 | [Warranty Tracking](../prds/050-warranty-tracking/README.md)                   | Warranties page with urgency tiers (expired, expiring soon, active), warranty alerts, expiry date tracking             | Done   |
+| 051 | [Value & Insurance Reporting](../prds/051-value-insurance-reporting/README.md) | Total asset value dashboard, value breakdown by room/type, insurance-ready report with items, values, photos, receipts | Done   |
 
 PRD-050 and PRD-051 can be built in parallel.
 

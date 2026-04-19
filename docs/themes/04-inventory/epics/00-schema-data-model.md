@@ -8,9 +8,9 @@ Define the inventory domain schema: items with rich metadata, hierarchical locat
 
 ## PRDs
 
-| #   | PRD                                                                          | Summary                                                                                                                      | Status  |
-| --- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------- |
-| 043 | [Inventory Data Model & API](../prds/043-inventory-data-model-api/README.md) | Items table, locations tree (self-referential parent_id), connections junction table, photos, asset IDs, notes, tRPC routers | Partial |
+| #   | PRD                                                                          | Summary                                                                                                                      | Status |
+| --- | ---------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 043 | [Inventory Data Model & API](../prds/043-inventory-data-model-api/README.md) | Items table, locations tree (self-referential parent_id), connections junction table, photos, asset IDs, notes, tRPC routers | Done   |
 
 ## Dependencies
 

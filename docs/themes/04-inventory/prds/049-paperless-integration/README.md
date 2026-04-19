@@ -1,7 +1,7 @@
 # PRD-049: Paperless-ngx Integration
 
 > Epic: [04 — Paperless-ngx Integration](../../epics/04-paperless-integration.md)
-> Status: Partial
+> Status: Done
 
 ## Overview
 
@@ -72,11 +72,11 @@ Auth header: `Authorization: Token XXX` — token stored in settings table or en
 
 ## User Stories
 
-| #   | Story                                               | Summary                                                                                            | Status  | Parallelisable   |
-| --- | --------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------- | ---------------- |
-| 01  | [us-01-paperless-client](us-01-paperless-client.md) | Paperless API client (search, thumbnail, metadata), token auth, health check, graceful degradation | Partial | No (first)       |
-| 02  | [us-02-link-documents](us-02-link-documents.md)     | Document search modal, select + tag, link storage, unlink action                                   | Done    | Blocked by us-01 |
-| 03  | [us-03-document-display](us-03-document-display.md) | Documents section on item detail, grouped by tag, thumbnails, "View in Paperless" links            | Done    | Blocked by us-01 |
+| #   | Story                                               | Summary                                                                                            | Status | Parallelisable   |
+| --- | --------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ------ | ---------------- |
+| 01  | [us-01-paperless-client](us-01-paperless-client.md) | Paperless API client (search, thumbnail, metadata), token auth, health check, graceful degradation | Done   | No (first)       |
+| 02  | [us-02-link-documents](us-02-link-documents.md)     | Document search modal, select + tag, link storage, unlink action                                   | Done   | Blocked by us-01 |
+| 03  | [us-03-document-display](us-03-document-display.md) | Documents section on item detail, grouped by tag, thumbnails, "View in Paperless" links            | Done   | Blocked by us-01 |
 
 US-02 and US-03 can parallelise after US-01.
 

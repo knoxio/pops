@@ -1,7 +1,7 @@
 # US-01: Paperless API client
 
 > PRD: [049 — Paperless-ngx Integration](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 

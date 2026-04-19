@@ -1,7 +1,7 @@
 # PRD-047: Location Tree Management
 
 > Epic: [02 — Location Tree Management](../../epics/02-location-tree-management.md)
-> Status: Partial
+> Status: Done
 
 ## Overview
 
@@ -62,12 +62,12 @@ Build the location tree management UI. Hierarchical browser for creating, editin
 
 ## User Stories
 
-| #   | Story                                                 | Summary                                                                                      | Status  | Parallelisable   |
-| --- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------- | ---------------- |
-| 01  | [us-01-tree-browser](us-01-tree-browser.md)           | Collapsible tree view with expand/collapse, item count badges, multiple root support         | Done    | No (first)       |
-| 02  | [us-02-location-crud](us-02-location-crud.md)         | Add root/child locations, inline rename, delete with cascade confirmation and item orphaning | Done    | Blocked by us-01 |
-| 03  | [us-03-drag-and-drop](us-03-drag-and-drop.md)         | Drag-and-drop reorder and reparent with circular reference prevention, mobile arrow fallback | Partial | Blocked by us-01 |
-| 04  | [us-04-items-at-location](us-04-items-at-location.md) | Items panel for selected location, include sub-locations toggle, item list with navigation   | Done    | Blocked by us-01 |
+| #   | Story                                                 | Summary                                                                                      | Status | Parallelisable   |
+| --- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------- | ------ | ---------------- |
+| 01  | [us-01-tree-browser](us-01-tree-browser.md)           | Collapsible tree view with expand/collapse, item count badges, multiple root support         | Done   | No (first)       |
+| 02  | [us-02-location-crud](us-02-location-crud.md)         | Add root/child locations, inline rename, delete with cascade confirmation and item orphaning | Done   | Blocked by us-01 |
+| 03  | [us-03-drag-and-drop](us-03-drag-and-drop.md)         | Drag-and-drop reorder and reparent with circular reference prevention, mobile arrow fallback | Done   | Blocked by us-01 |
+| 04  | [us-04-items-at-location](us-04-items-at-location.md) | Items panel for selected location, include sub-locations toggle, item list with navigation   | Done   | Blocked by us-01 |
 
 US-02, US-03, and US-04 can parallelise after US-01.
 

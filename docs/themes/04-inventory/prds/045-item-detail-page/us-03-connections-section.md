@@ -1,7 +1,7 @@
 # US-03: Connections section
 
 > PRD: [045 — Item Detail Page](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -19,7 +19,7 @@ As a user, I want to see all items connected to the current item and trace the f
 - [x] Chain visualisation shows the current item highlighted or marked as the starting point
 - [x] "Trace Chain" button is hidden when the item has no connections
 - [x] When no connections exist, the section shows "No connections" text
-- [ ] Tests cover: connected items list rendering, click navigation, trace chain trigger, chain depth display, empty state, trace chain with current item highlighted — no tests
+- [x] Tests cover: connected items list rendering, click navigation, trace chain trigger, chain depth display, empty state, trace chain with current item highlighted
 
 ## Notes
 

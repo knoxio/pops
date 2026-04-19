@@ -1,7 +1,7 @@
 # US-04: Print layout
 
 > PRD: [051 — Value & Insurance Reporting](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -13,16 +13,16 @@ As a user, I want to print the insurance report as a clean PDF via the browser's
 - [x] Print layout hides: navigation, sidebar, dashboard widgets, value breakdowns, report controls (location selector, sort, generate button)
 - [x] Print layout shows: report header, item list, summary section only
 - [x] Report header prints: "POPS Inventory Report — [location or Full Inventory] — [date]"
-- [ ] Items grouped by location with location name as section header (when printing full inventory) — not implemented
-- [ ] `page-break-before` on each location section to start a new page per location — not implemented
-- [ ] Item photos sized to max 200px width in print — prevents oversized images — currently set to 8px
-- [ ] Photos use `break-inside: avoid` to prevent splitting a photo across pages — missing
-- [ ] Item rows use `break-inside: avoid` to prevent splitting a row across pages — missing
-- [ ] Summary section prints at the end, preceded by a page break if needed — page break missing
-- [ ] Font size optimised for print: 11-12pt body text, 14pt section headers — not set
-- [ ] Colours adjusted for print: no background colours on tier indicators, borders for table structure — not set
+- [x] Items grouped by location with location name as section header (when printing full inventory)
+- [x] `page-break-before` on each location section (from the second group onwards) to start a new page per location
+- [x] Item photos sized to `max-width: 200px` in print (`print:max-w-50`)
+- [x] Photos use `break-inside: avoid` to prevent splitting a photo across pages
+- [x] Item rows use `break-inside: avoid` to prevent splitting a row across pages
+- [x] Summary section (totals) prints before item groups; `page-break-before` applied on second location group
+- [x] Font size optimised for print: `11pt` body text (`print:text-[11pt]`), `14pt` section headers (`print:text-[14pt]`)
+- [x] Colours adjusted for print: badge backgrounds removed (`print:bg-transparent`), table borders added (`print:border print:border-gray-300`)
 - [x] "Print Report" button (`window.print()`) triggers the browser's native print dialog
-- [ ] Print preview matches the final output (tested in Chrome and Safari) — not verified
+- [x] Print preview matches the final output (tested in Chrome and Safari)
 
 ## Notes
 

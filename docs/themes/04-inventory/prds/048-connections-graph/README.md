@@ -1,7 +1,7 @@
 # PRD-048: Connections & Graph
 
 > Epic: [03 — Connections & Graph](../../epics/03-connections-graph.md)
-> Status: Partial
+> Status: Done
 
 ## Overview
 
@@ -64,11 +64,11 @@ Build bidirectional item connections and connection chain tracing. One row in th
 
 ## User Stories
 
-| #   | Story                                                     | Summary                                                                                 | Status  | Parallelisable   |
-| --- | --------------------------------------------------------- | --------------------------------------------------------------------------------------- | ------- | ---------------- |
-| 01  | [us-01-connect-dialog](us-01-connect-dialog.md)           | Connect dialog with item search, connection list on detail page, disconnect action      | Partial | No (first)       |
-| 02  | [us-02-chain-tracing](us-02-chain-tracing.md)             | Chain trace with recursive CTE, indented list display, depth indicators, cycle handling | Done    | Blocked by us-01 |
-| 03  | [us-03-graph-visualisation](us-03-graph-visualisation.md) | Interactive graph visualisation (stretch goal) with nodes/edges, click navigation       | Done    | Blocked by us-01 |
+| #   | Story                                                     | Summary                                                                                 | Status | Parallelisable   |
+| --- | --------------------------------------------------------- | --------------------------------------------------------------------------------------- | ------ | ---------------- |
+| 01  | [us-01-connect-dialog](us-01-connect-dialog.md)           | Connect dialog with item search, connection list on detail page, disconnect action      | Done   | No (first)       |
+| 02  | [us-02-chain-tracing](us-02-chain-tracing.md)             | Chain trace with recursive CTE, indented list display, depth indicators, cycle handling | Done   | Blocked by us-01 |
+| 03  | [us-03-graph-visualisation](us-03-graph-visualisation.md) | Interactive graph visualisation (stretch goal) with nodes/edges, click navigation       | Done   | Blocked by us-01 |
 
 US-02 and US-03 can parallelise after US-01.
 

@@ -1,7 +1,7 @@
 # US-02: Warranty item rows
 
 > PRD: [050 — Warranty Tracking](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -9,7 +9,7 @@ As a user, I want each warranty item to show its key details and days remaining 
 
 ## Acceptance Criteria
 
-- [ ] Each item row displays: item name, asset ID, brand, model — in a compact layout — brand, model, and asset ID missing from row
+- [x] Each item row displays: item name, asset ID (`AssetIdBadge`), brand, model — in a compact layout
 - [x] Warranty expiry date shown in localised format (e.g., "15 Jun 2027")
 - [x] Days remaining calculated and displayed: "X days left" for active, "Expired X days ago" for expired
 - [x] Days remaining text colour matches the tier colour (red/yellow/orange/green/grey)
@@ -17,7 +17,7 @@ As a user, I want each warranty item to show its key details and days remaining 
 - [x] Warranty document link shown if an `item_documents` row exists with tag "warranty" — "View Warranty" link opens the Paperless document
 - [x] Warranty document link absent (not shown, not disabled) if no warranty document linked
 - [x] Row layout responsive: stacks vertically on mobile, horizontal on desktop
-- [ ] Brand and model shown as secondary text (smaller, muted) — hidden if both are null — not implemented
+- [x] Brand and model shown as secondary text (smaller, muted via `text-xs text-muted-foreground`) — hidden if both are null
 
 ## Notes
 
