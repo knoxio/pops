@@ -7,7 +7,9 @@ import type { CorrectionRule } from '../components/imports/RulePicker';
 export function compareRulesForBrowse(a: CorrectionRule, b: CorrectionRule): number {
   const pa = a.priority - b.priority;
   if (pa !== 0) return pa;
-  return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
+  if (a.id < b.id) return -1;
+  if (a.id > b.id) return 1;
+  return 0;
 }
 
 export function effectiveRulePriority(rule: CorrectionRule, localOps: LocalOp[]): number {

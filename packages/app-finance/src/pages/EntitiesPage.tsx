@@ -349,13 +349,11 @@ export function EntitiesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Entities"
-        description={
-          data
-            ? showOrphanedOnly
-              ? `${data.pagination.total} orphaned entities`
-              : `${data.pagination.total} total entities`
-            : 'Manage merchants and payees'
-        }
+        description={(() => {
+          if (!data) return 'Manage merchants and payees';
+          if (showOrphanedOnly) return `${data.pagination.total} orphaned entities`;
+          return `${data.pagination.total} total entities`;
+        })()}
         actions={
           <Button onClick={handleAdd}>
             <Plus className="mr-2 h-4 w-4" /> Add Entity

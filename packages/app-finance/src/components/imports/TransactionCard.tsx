@@ -69,19 +69,23 @@ export function TransactionCard({
   }
 
   // Border and background colors based on variant
-  const borderColor =
-    variant === 'uncertain'
-      ? 'border-warning/20'
-      : variant === 'failed'
-        ? 'border-destructive/20'
-        : 'border-gray-200 dark:border-gray-700';
+  let borderColor: string;
+  if (variant === 'uncertain') {
+    borderColor = 'border-warning/20';
+  } else if (variant === 'failed') {
+    borderColor = 'border-destructive/20';
+  } else {
+    borderColor = 'border-gray-200 dark:border-gray-700';
+  }
 
-  const bgColor =
-    variant === 'uncertain'
-      ? 'bg-warning/5'
-      : variant === 'failed'
-        ? 'bg-destructive/5'
-        : 'bg-white dark:bg-gray-800';
+  let bgColor: string;
+  if (variant === 'uncertain') {
+    bgColor = 'bg-warning/5';
+  } else if (variant === 'failed') {
+    bgColor = 'bg-destructive/5';
+  } else {
+    bgColor = 'bg-white dark:bg-gray-800';
+  }
 
   return (
     <div

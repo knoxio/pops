@@ -175,15 +175,15 @@ export function WishlistPage() {
       cell: ({ row }) => {
         const priority = row.original.priority;
         if (!priority) return <span className="text-muted-foreground">—</span>;
-        return (
-          <Badge
-            variant={
-              priority === 'Needing' ? 'default' : priority === 'Soon' ? 'secondary' : 'outline'
-            }
-          >
-            {priority}
-          </Badge>
-        );
+        let badgeVariant: 'default' | 'secondary' | 'outline';
+        if (priority === 'Needing') {
+          badgeVariant = 'default';
+        } else if (priority === 'Soon') {
+          badgeVariant = 'secondary';
+        } else {
+          badgeVariant = 'outline';
+        }
+        return <Badge variant={badgeVariant}>{priority}</Badge>;
       },
     },
     {

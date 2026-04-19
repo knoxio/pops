@@ -363,12 +363,14 @@ function RuleManagerBody(props: {
     return <div className="px-6 pb-6 text-sm text-muted-foreground">Loading rules…</div>;
   }
 
-  const label =
-    props.previewView === 'combined'
-      ? 'Combined effect of all pending changes'
-      : props.selectedOp
-        ? 'Effect of selected operation'
-        : 'No operation selected';
+  let label: string;
+  if (props.previewView === 'combined') {
+    label = 'Combined effect of all pending changes';
+  } else if (props.selectedOp) {
+    label = 'Effect of selected operation';
+  } else {
+    label = 'No operation selected';
+  }
 
   const previewResult =
     props.previewView === 'combined' ? props.previewCombined : props.previewSelected;
@@ -430,26 +432,33 @@ function RuleManagerBody(props: {
       </div>
 
       <div className="flex flex-col min-h-0 overflow-auto">
-        {props.selectedOp ? (
-          <DetailPanel
-            op={props.selectedOp}
-            onChange={(mutator) => {
-              if (props.selectedOp) props.onChangeSelectedOp(props.selectedOp.clientId, mutator);
-            }}
-            disabled={false}
-          />
-        ) : props.selectedRule ? (
-          <BrowseRuleDetailPanel
-            rule={props.selectedRule}
-            onEdit={props.onEditRule}
-            onDisable={props.onDisableRule}
-            onRemove={props.onRemoveRule}
-          />
-        ) : (
-          <div className="p-6 text-sm text-muted-foreground">
-            Select a rule on the left to view or edit it.
-          </div>
-        )}
+        {(() => {
+          const selectedOp = props.selectedOp;
+          if (selectedOp) {
+            return (
+              <DetailPanel
+                op={selectedOp}
+                onChange={(mutator) => props.onChangeSelectedOp(selectedOp.clientId, mutator)}
+                disabled={false}
+              />
+            );
+          }
+          if (props.selectedRule) {
+            return (
+              <BrowseRuleDetailPanel
+                rule={props.selectedRule}
+                onEdit={props.onEditRule}
+                onDisable={props.onDisableRule}
+                onRemove={props.onRemoveRule}
+              />
+            );
+          }
+          return (
+            <div className="p-6 text-sm text-muted-foreground">
+              Select a rule on the left to view or edit it.
+            </div>
+          );
+        })()}
       </div>
 
       <ImpactPanel

@@ -33,7 +33,11 @@ export function TransactionsResultComponent({ data, query, matchField }: ResultC
       trailing={
         <div className="flex flex-col items-end shrink-0">
           <span className={`text-sm font-medium ${amountColorClass(tx.type)}`}>
-            {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
+            {(() => {
+              if (tx.type === 'income') return '+';
+              if (tx.type === 'expense') return '-';
+              return '';
+            })()}
             {formatCurrency(Math.abs(tx.amount), {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,

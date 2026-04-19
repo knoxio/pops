@@ -186,12 +186,12 @@ export function TagEditor({
           ) : (
             tags.slice(0, 3).map((tag) => {
               const meta = tagMeta?.get(tag);
-              const tooltipText =
-                meta?.source === 'rule' && meta?.pattern
-                  ? `Rule: "${meta.pattern}"`
-                  : meta?.source
-                    ? `${meta.source} suggestion`
-                    : undefined;
+              let tooltipText: string | undefined;
+              if (meta?.source === 'rule' && meta?.pattern) {
+                tooltipText = `Rule: "${meta.pattern}"`;
+              } else if (meta?.source) {
+                tooltipText = `${meta.source} suggestion`;
+              }
               const style = hashToColor(tag);
               return (
                 <Badge

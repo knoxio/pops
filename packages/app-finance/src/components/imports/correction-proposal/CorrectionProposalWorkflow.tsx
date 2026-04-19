@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 
 import { trpc } from '@pops/api-client';
 import { Button, WorkflowDialog } from '@pops/ui';
@@ -38,6 +38,25 @@ function previewLabel(view: PreviewView, hasSelectedOp: boolean): string {
   if (view === 'combined') return 'Combined effect of entire ChangeSet';
   if (hasSelectedOp) return 'Effect of selected operation';
   return 'No operation selected';
+}
+
+function renderProposalBodyState(
+  signal: CorrectionSignal | null,
+  proposeQuery: { isError: boolean; isLoading: boolean; error?: { message: string } | null },
+  hasOps: boolean
+): ReactNode {
+  if (!signal) {
+    return (
+      <div className="px-6 pb-6 text-sm text-muted-foreground">No proposal signal provided.</div>
+    );
+  }
+  if (proposeQuery.isError) {
+    return <div className="px-6 pb-6 text-sm text-destructive">{proposeQuery.error?.message}</div>;
+  }
+  if (proposeQuery.isLoading && !hasOps) {
+    return <div className="px-6 pb-6 text-sm text-muted-foreground">Generating proposal…</div>;
+  }
+  return null;
 }
 
 export function CorrectionProposalWorkflow({
@@ -206,11 +225,11 @@ export function CorrectionProposalWorkflow({
   const proposalFooter = (
     <>
       <div className="flex-1 text-xs text-muted-foreground">
-        {hasDirty ? (
-          <span>Preview stale — re-run before applying.</span>
-        ) : localOps.length === 0 ? (
-          <span>ChangeSet is empty.</span>
-        ) : null}
+        {(() => {
+          if (hasDirty) return <span>Preview stale — re-run before applying.</span>;
+          if (localOps.length === 0) return <span>ChangeSet is empty.</span>;
+          return null;
+        })()}
       </div>
       <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isBusy}>
         Cancel
@@ -233,13 +252,8 @@ export function CorrectionProposalWorkflow({
   const isProposalGridReady =
     Boolean(signal) && !proposeQuery.isError && !(proposeQuery.isLoading && localOps.length === 0);
 
-  const proposalBody = !signal ? (
-    <div className="px-6 pb-6 text-sm text-muted-foreground">No proposal signal provided.</div>
-  ) : proposeQuery.isError ? (
-    <div className="px-6 pb-6 text-sm text-destructive">{proposeQuery.error.message}</div>
-  ) : proposeQuery.isLoading && localOps.length === 0 ? (
-    <div className="px-6 pb-6 text-sm text-muted-foreground">Generating proposal…</div>
-  ) : (
+  const proposalBodyState = renderProposalBodyState(signal, proposeQuery, localOps.length > 0);
+  const proposalBody: ReactNode = proposalBodyState ?? (
     <>
       <OpsListPanel
         ops={localOps}

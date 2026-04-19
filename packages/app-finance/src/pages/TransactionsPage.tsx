@@ -207,24 +207,30 @@ export function TransactionsPage() {
         description={data ? `${data.pagination.total} total transactions` : undefined}
       />
 
-      {isLoading ? (
-        <div className="space-y-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-64 w-full" />
-        </div>
-      ) : data ? (
-        <DataTable
-          columns={columns}
-          data={data.data}
-          searchable
-          searchColumn="description"
-          searchPlaceholder="Search transactions..."
-          paginated
-          defaultPageSize={50}
-          pageSizeOptions={[25, 50, 100]}
-          filters={tableFilters}
-        />
-      ) : null}
+      {(() => {
+        if (isLoading) {
+          return (
+            <div className="space-y-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-64 w-full" />
+            </div>
+          );
+        }
+        if (!data) return null;
+        return (
+          <DataTable
+            columns={columns}
+            data={data.data}
+            searchable
+            searchColumn="description"
+            searchPlaceholder="Search transactions..."
+            paginated
+            defaultPageSize={50}
+            pageSizeOptions={[25, 50, 100]}
+            filters={tableFilters}
+          />
+        );
+      })()}
     </div>
   );
 }

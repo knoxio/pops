@@ -116,55 +116,60 @@ export function RulePicker(props: RulePickerProps) {
             onValueChange={setSearch}
           />
           <CommandList>
-            {listQuery.isLoading ? (
-              <CommandEmpty>Loading rules…</CommandEmpty>
-            ) : listQuery.isError ? (
-              <CommandEmpty>Failed to load rules: {listQuery.error.message}</CommandEmpty>
-            ) : filteredRules.length === 0 ? (
-              <CommandEmpty>No matching rules.</CommandEmpty>
-            ) : (
-              <CommandGroup>
-                {filteredRules.map((rule) => (
-                  <CommandItem
-                    key={rule.id}
-                    value={rule.id}
-                    onSelect={() => {
-                      props.onChange(rule);
-                      setOpen(false);
-                      setSearch('');
-                    }}
-                  >
-                    <Check
-                      className={`mr-2 h-4 w-4 ${
-                        props.value === rule.id ? 'opacity-100' : 'opacity-0'
-                      }`}
-                    />
-                    <div className="flex flex-col min-w-0 flex-1 gap-0.5">
-                      <div className="flex items-center gap-2">
-                        <code className="truncate text-xs font-mono">
-                          {rule.descriptionPattern}
-                        </code>
-                        <Badge variant="outline" className="text-[10px] shrink-0">
-                          {rule.matchType}
-                        </Badge>
-                        {!rule.isActive && (
-                          <Badge variant="secondary" className="text-[10px] shrink-0">
-                            off
+            {(() => {
+              if (listQuery.isLoading) {
+                return <CommandEmpty>Loading rules…</CommandEmpty>;
+              }
+              if (listQuery.isError) {
+                return <CommandEmpty>Failed to load rules: {listQuery.error.message}</CommandEmpty>;
+              }
+              if (filteredRules.length === 0) {
+                return <CommandEmpty>No matching rules.</CommandEmpty>;
+              }
+              return (
+                <CommandGroup>
+                  {filteredRules.map((rule) => (
+                    <CommandItem
+                      key={rule.id}
+                      value={rule.id}
+                      onSelect={() => {
+                        props.onChange(rule);
+                        setOpen(false);
+                        setSearch('');
+                      }}
+                    >
+                      <Check
+                        className={`mr-2 h-4 w-4 ${
+                          props.value === rule.id ? 'opacity-100' : 'opacity-0'
+                        }`}
+                      />
+                      <div className="flex flex-col min-w-0 flex-1 gap-0.5">
+                        <div className="flex items-center gap-2">
+                          <code className="truncate text-xs font-mono">
+                            {rule.descriptionPattern}
+                          </code>
+                          <Badge variant="outline" className="text-[10px] shrink-0">
+                            {rule.matchType}
                           </Badge>
+                          {!rule.isActive && (
+                            <Badge variant="secondary" className="text-[10px] shrink-0">
+                              off
+                            </Badge>
+                          )}
+                        </div>
+                        {(rule.entityName || rule.location || rule.transactionType) && (
+                          <div className="text-[11px] text-muted-foreground truncate">
+                            {[rule.entityName, rule.location, rule.transactionType]
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </div>
                         )}
                       </div>
-                      {(rule.entityName || rule.location || rule.transactionType) && (
-                        <div className="text-[11px] text-muted-foreground truncate">
-                          {[rule.entityName, rule.location, rule.transactionType]
-                            .filter(Boolean)
-                            .join(' · ')}
-                        </div>
-                      )}
-                    </div>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            )}
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              );
+            })()}
           </CommandList>
         </Command>
       </PopoverContent>

@@ -152,45 +152,55 @@ export function ImpactPanel(props: {
         )}
       </div>
       <div className="flex-1 overflow-auto px-4 pb-4">
-        {previewError ? (
-          <div className="text-sm text-destructive">{previewError}</div>
-        ) : props.isPending && !previewResult ? (
-          <div className="text-sm text-muted-foreground">Computing preview…</div>
-        ) : !previewResult ? (
-          <div className="text-sm text-muted-foreground">No preview yet.</div>
-        ) : hasTwoSections ? (
-          <div className="space-y-4">
-            <div>
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">
-                Import transactions
+        {(() => {
+          if (previewError) {
+            return <div className="text-sm text-destructive">{previewError}</div>;
+          }
+          if (props.isPending && !previewResult) {
+            return <div className="text-sm text-muted-foreground">Computing preview…</div>;
+          }
+          if (!previewResult) {
+            return <div className="text-sm text-muted-foreground">No preview yet.</div>;
+          }
+          if (hasTwoSections) {
+            return (
+              <div className="space-y-4">
+                <div>
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-2">
+                    Import transactions
+                  </div>
+                  <ImpactContent result={previewResult} />
+                </div>
+                <div className="border-t pt-3">
+                  <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
+                    Existing transactions
+                    {props.dbTruncated && props.dbTotal !== undefined && (
+                      <span
+                        className="text-amber-600 normal-case font-normal"
+                        title={`Preview truncated — showing first ${PREVIEW_CHANGESET_MAX_TRANSACTIONS} of ${props.dbTotal} existing transactions.`}
+                      >
+                        (preview truncated — first {PREVIEW_CHANGESET_MAX_TRANSACTIONS} of{' '}
+                        {props.dbTotal})
+                      </span>
+                    )}
+                  </div>
+                  {(() => {
+                    if (dbPreviewResult) return <ImpactContent result={dbPreviewResult} />;
+                    if (props.isPending) {
+                      return <div className="text-xs text-muted-foreground">Computing…</div>;
+                    }
+                    return (
+                      <div className="text-xs text-muted-foreground">
+                        No existing transactions match.
+                      </div>
+                    );
+                  })()}
+                </div>
               </div>
-              <ImpactContent result={previewResult} />
-            </div>
-            <div className="border-t pt-3">
-              <div className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground mb-2 flex items-center gap-1.5">
-                Existing transactions
-                {props.dbTruncated && props.dbTotal !== undefined && (
-                  <span
-                    className="text-amber-600 normal-case font-normal"
-                    title={`Preview truncated — showing first ${PREVIEW_CHANGESET_MAX_TRANSACTIONS} of ${props.dbTotal} existing transactions.`}
-                  >
-                    (preview truncated — first {PREVIEW_CHANGESET_MAX_TRANSACTIONS} of{' '}
-                    {props.dbTotal})
-                  </span>
-                )}
-              </div>
-              {dbPreviewResult ? (
-                <ImpactContent result={dbPreviewResult} />
-              ) : props.isPending ? (
-                <div className="text-xs text-muted-foreground">Computing…</div>
-              ) : (
-                <div className="text-xs text-muted-foreground">No existing transactions match.</div>
-              )}
-            </div>
-          </div>
-        ) : (
-          <ImpactContent result={previewResult} />
-        )}
+            );
+          }
+          return <ImpactContent result={previewResult} />;
+        })()}
       </div>
     </div>
   );

@@ -146,23 +146,26 @@ export function ProcessingStep() {
       ? (progress.processedCount / progress.totalTransactions) * 100
       : undefined;
 
+  type StepStatus = 'pending' | 'in_progress' | 'done';
+  const dedupStatus: StepStatus = (() => {
+    if (progress?.currentStep === 'deduplicating') return 'in_progress';
+    if (['matching', 'writing'].includes(progress?.currentStep ?? '')) return 'done';
+    return 'pending';
+  })();
+  const matchingStatus: StepStatus = (() => {
+    if (progress?.currentStep === 'matching') return 'in_progress';
+    if (progress?.currentStep === 'writing') return 'done';
+    return 'pending';
+  })();
   const steps = isProcessing
     ? [
         {
           label: 'Checking for duplicates',
-          status: (progress?.currentStep === 'deduplicating'
-            ? 'in_progress'
-            : ['matching', 'writing'].includes(progress?.currentStep ?? '')
-              ? 'done'
-              : 'pending') as 'pending' | 'in_progress' | 'done',
+          status: dedupStatus,
         },
         {
           label: 'Matching entities',
-          status: (progress?.currentStep === 'matching'
-            ? 'in_progress'
-            : progress?.currentStep === 'writing'
-              ? 'done'
-              : 'pending') as 'pending' | 'in_progress' | 'done',
+          status: matchingStatus,
         },
       ]
     : undefined;

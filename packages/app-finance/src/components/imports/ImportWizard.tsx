@@ -36,49 +36,54 @@ export function ImportWizard() {
       {/* Progress indicator */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          {steps.map((step) => (
-            <div
-              key={step.number}
-              className={`flex items-center gap-2 ${
-                step.number === currentStep
-                  ? 'text-info font-semibold'
-                  : step.number < currentStep
-                    ? 'text-success'
-                    : 'text-gray-400 dark:text-gray-600'
-              }`}
-            >
-              <div
-                className={`
-                  w-8 h-8 rounded-full flex items-center justify-center text-sm
-                  ${
-                    step.number === currentStep
-                      ? 'bg-info/10 border-2 border-info'
-                      : step.number < currentStep
-                        ? 'bg-success/10 border-2 border-success'
-                        : 'bg-gray-100 dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-700'
-                  }
-                `}
-              >
-                {step.number}
+          {steps.map((step) => {
+            let textClass: string;
+            if (step.number === currentStep) {
+              textClass = 'text-info font-semibold';
+            } else if (step.number < currentStep) {
+              textClass = 'text-success';
+            } else {
+              textClass = 'text-gray-400 dark:text-gray-600';
+            }
+            let circleClass: string;
+            if (step.number === currentStep) {
+              circleClass = 'bg-info/10 border-2 border-info';
+            } else if (step.number < currentStep) {
+              circleClass = 'bg-success/10 border-2 border-success';
+            } else {
+              circleClass =
+                'bg-gray-100 dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-700';
+            }
+            return (
+              <div key={step.number} className={`flex items-center gap-2 ${textClass}`}>
+                <div
+                  className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${circleClass}`}
+                >
+                  {step.number}
+                </div>
+                <span className="text-sm hidden sm:inline">{step.label}</span>
               </div>
-              <span className="text-sm hidden sm:inline">{step.label}</span>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <Progress value={progress} className="h-2" />
       </div>
 
       {/* Current step content */}
       <div className="bg-white dark:bg-gray-900 rounded-lg border shadow-sm p-6">
-        {currentStep === 4 ? (
-          <Suspense fallback={<div className="text-sm text-muted-foreground">Loading review…</div>}>
-            <ReviewStep />
-          </Suspense>
-        ) : CurrentStepComponent ? (
-          <CurrentStepComponent />
-        ) : (
-          <div>Unknown step</div>
-        )}
+        {(() => {
+          if (currentStep === 4) {
+            return (
+              <Suspense
+                fallback={<div className="text-sm text-muted-foreground">Loading review…</div>}
+              >
+                <ReviewStep />
+              </Suspense>
+            );
+          }
+          if (CurrentStepComponent) return <CurrentStepComponent />;
+          return <div>Unknown step</div>;
+        })()}
       </div>
     </div>
   );
