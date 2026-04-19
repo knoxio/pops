@@ -311,12 +311,18 @@
       }
     },
     {
-      "files": ["packages/app-finance/src/components/imports/**/*.{ts,tsx}"],
+      "files": [
+        "packages/app-finance/src/components/imports/TagRuleProposalDialog.tsx",
+        "packages/app-finance/src/components/imports/ProcessingStep.tsx",
+        "packages/app-finance/src/components/imports/TransactionCard.tsx",
+        "packages/app-finance/src/components/imports/FinalReviewStep.tsx",
+        "packages/app-finance/src/components/imports/ReviewStep.tsx"
+      ],
       "rules": {
         "max-lines": ["error", { "max": 850, "skipBlankLines": true, "skipComments": true }],
         "max-lines-per-function": [
           "error",
-          { "max": 600, "skipBlankLines": true, "skipComments": true, "IIFEs": true }
+          { "max": 400, "skipBlankLines": true, "skipComments": true, "IIFEs": true }
         ],
         "complexity": ["error", 55],
         "max-depth": ["error", 4],

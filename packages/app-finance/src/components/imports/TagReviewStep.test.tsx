@@ -97,18 +97,20 @@ vi.mock('sonner', () => ({
 
 vi.mock('@pops/ui', async () => {
   const React = await import('react');
+  const ButtonStub = ({
+    children,
+    onClick,
+    disabled,
+    'aria-label': ariaLabel,
+  }: {
+    children: React.ReactNode;
+    onClick?: React.MouseEventHandler;
+    disabled?: boolean;
+    'aria-label'?: string;
+  }) => React.createElement('button', { onClick, disabled, 'aria-label': ariaLabel }, children);
   return {
-    Button: ({
-      children,
-      onClick,
-      disabled,
-      'aria-label': ariaLabel,
-    }: {
-      children: React.ReactNode;
-      onClick?: React.MouseEventHandler;
-      disabled?: boolean;
-      'aria-label'?: string;
-    }) => React.createElement('button', { onClick, disabled, 'aria-label': ariaLabel }, children),
+    Button: ButtonStub,
+    ButtonPrimitive: ButtonStub,
     Badge: ({ children }: { children: React.ReactNode }) =>
       React.createElement('span', { 'data-testid': 'badge' }, children),
     Dialog: ({
