@@ -1,13 +1,4 @@
-import {
-  Bookmark,
-  BookmarkCheck,
-  Check,
-  Eye,
-  Loader2,
-  Plus,
-  RotateCw,
-  X,
-} from 'lucide-react';
+import { Bookmark, BookmarkCheck, Check, Eye, Loader2, Plus, RotateCw, X } from 'lucide-react';
 
 /**
  * DiscoverCard — poster card for a TMDB discovery result.
@@ -119,9 +110,7 @@ export function DiscoverCard({
         size="icon"
         variant="ghost"
         className="h-7 w-7 text-white hover:bg-white/20"
-        onClick={() =>
-          onWatchlist ? onRemoveFromWatchlist?.(tmdbId) : onAddToWatchlist?.(tmdbId)
-        }
+        onClick={() => (onWatchlist ? onRemoveFromWatchlist?.(tmdbId) : onAddToWatchlist?.(tmdbId))}
         disabled={isAddingToWatchlist || isRemovingFromWatchlist}
         title={onWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}
         aria-label={onWatchlist ? 'Remove from Watchlist' : 'Add to Watchlist'}

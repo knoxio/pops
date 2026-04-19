@@ -1,8 +1,9 @@
-import { Button, Input, useDebouncedCallback } from "@pops/ui";
-import { ArrowLeft, Search, X } from "lucide-react";
-import { useCallback, useEffect, useRef } from "react";
+import { ArrowLeft, Search, X } from 'lucide-react';
+import { useCallback, useEffect, useRef } from 'react';
 
-import { useSearchStore } from "./searchStore";
+import { Button, Input, useDebouncedCallback } from '@pops/ui';
+
+import { useSearchStore } from './searchStore';
 
 const DEBOUNCE_MS = 300;
 
@@ -11,10 +12,7 @@ interface MobileSearchOverlayProps {
   onClose: () => void;
 }
 
-export function MobileSearchOverlay({
-  open,
-  onClose,
-}: MobileSearchOverlayProps) {
+export function MobileSearchOverlay({ open, onClose }: MobileSearchOverlayProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const query = useSearchStore((s) => s.query);
   const setQuery = useSearchStore((s) => s.setQuery);
@@ -26,20 +24,20 @@ export function MobileSearchOverlay({
     (e: React.ChangeEvent<HTMLInputElement>) => {
       debouncedSetQuery(e.target.value);
     },
-    [debouncedSetQuery],
+    [debouncedSetQuery]
   );
 
   const handleClear = useCallback(() => {
     clear();
     if (inputRef.current) {
-      inputRef.current.value = "";
+      inputRef.current.value = '';
       inputRef.current.focus();
     }
   }, [clear]);
 
   const handleClose = useCallback(() => {
     clear();
-    if (inputRef.current) inputRef.current.value = "";
+    if (inputRef.current) inputRef.current.value = '';
     onClose();
   }, [clear, onClose]);
 
@@ -55,15 +53,15 @@ export function MobileSearchOverlay({
     if (!open) return;
 
     function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         e.preventDefault();
         handleClose();
       }
     }
 
-    document.addEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [open, handleClose]);
 
