@@ -9,6 +9,8 @@ RESTORE_ARCHIVE="${1:-}"
 BACKUP_DIR="{{ backup_dir }}"
 COMPOSE_FILE="{{ docker_compose_dir }}/docker-compose.yml"
 STAGE_DIR="${BACKUP_DIR}/restore-$$"
+DOWNLOADED=""
+DECRYPTED=""
 
 if [[ -z "${RESTORE_ARCHIVE}" ]]; then
   echo "Available backups:"
@@ -22,36 +24,39 @@ echo "[$(date)] Starting POPS restore from ${RESTORE_ARCHIVE}..."
 
 cleanup() {
   rm -rf "${STAGE_DIR}" 2>/dev/null || true
+  [[ -n "${DOWNLOADED}" ]] && rm -f "${DOWNLOADED}" 2>/dev/null || true
+  [[ -n "${DECRYPTED}" ]] && rm -f "${DECRYPTED}" 2>/dev/null || true
 }
-trap cleanup EXIT
+trap cleanup EXIT INT TERM
 
 # 1. Download from B2
 echo "[$(date)] Downloading..."
+DOWNLOADED="${BACKUP_DIR}/${RESTORE_ARCHIVE}"
 rclone copy "{{ rclone_remote_name }}:pops-backups/${RESTORE_ARCHIVE}" "${BACKUP_DIR}/" --progress
 
 # 2. Decrypt with age
 echo "[$(date)] Decrypting..."
 DECRYPTED="${BACKUP_DIR}/${RESTORE_ARCHIVE%.age}"
 PASSPHRASE=$(cat "{{ secrets_dir }}/backup_encryption_passphrase")
-echo "${PASSPHRASE}" | age --decrypt --output "${DECRYPTED}" "${BACKUP_DIR}/${RESTORE_ARCHIVE}"
-rm -f "${BACKUP_DIR}/${RESTORE_ARCHIVE}"
+echo "${PASSPHRASE}" | age --decrypt --output "${DECRYPTED}" "${DOWNLOADED}"
+rm -f "${DOWNLOADED}"; DOWNLOADED=""
 
 # 3. Extract to staging area
 echo "[$(date)] Extracting..."
 mkdir -p "${STAGE_DIR}"
 tar xf "${DECRYPTED}" -C "${STAGE_DIR}"
-rm -f "${DECRYPTED}"
+rm -f "${DECRYPTED}"; DECRYPTED=""
 
 # 4. Stop all services before restoring data
 echo "[$(date)] Stopping services..."
 docker compose -f "${COMPOSE_FILE}" down
 
-# 5. Restore SQLite into named volume
+# 5. Restore SQLite into named volume — clear stale WAL/SHM files first
 echo "[$(date)] Restoring SQLite..."
 docker run --rm \
   -v pops-sqlite-data:/data/sqlite \
   -v "${STAGE_DIR}/sqlite:/restore:ro" \
-  alpine cp /restore/pops.db /data/sqlite/pops.db
+  alpine sh -c "find /data/sqlite -mindepth 1 -delete && cp /restore/pops.db /data/sqlite/pops.db"
 
 # 6. Restore Paperless — clear then repopulate both volumes
 echo "[$(date)] Restoring Paperless data..."
@@ -65,7 +70,7 @@ docker run --rm \
   alpine sh -c "find /dst -mindepth 1 -delete && cp -a /src/. /dst/"
 
 # 7. Restore Metabase data
-echo "[$(date)] Restoring Metabase..."
+echo "[$(date)] Restoring Metabase...]"
 docker run --rm \
   -v pops-metabase-data:/dst \
   -v "${STAGE_DIR}/metabase:/src:ro" \
@@ -74,6 +79,7 @@ docker run --rm \
 # 8. Restore engrams (host directory)
 echo "[$(date)] Restoring engrams..."
 if [[ -d "${STAGE_DIR}/engrams" ]]; then
+  mkdir -p "{{ engram_root }}"
   find "{{ engram_root }}" -mindepth 1 -delete 2>/dev/null || true
   cp -r "${STAGE_DIR}/engrams/." "{{ engram_root }}/"
 fi

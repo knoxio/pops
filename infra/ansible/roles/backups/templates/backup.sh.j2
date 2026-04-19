@@ -20,18 +20,13 @@ mkdir -p \
   "${STAGE_DIR}/metabase" \
   "${STAGE_DIR}/engrams"
 
-# 1. SQLite hot backup — use .backup API if container is running, otherwise copy from volume directly
+# 1. SQLite backup — copy directly from the named volume via an Alpine helper.
+#    WAL mode makes a direct file copy safe regardless of whether pops-api is running.
 echo "[$(date)] Backing up SQLite..."
-if docker inspect --format '{{ "{{" }}.State.Running{{ "}}" }}' pops-api 2>/dev/null | grep -q 'true'; then
-  docker exec pops-api sqlite3 /data/sqlite/pops.db ".backup /tmp/pops-backup.db"
-  docker cp pops-api:/tmp/pops-backup.db "${STAGE_DIR}/sqlite/pops.db"
-  docker exec pops-api rm -f /tmp/pops-backup.db
-else
-  docker run --rm \
-    -v pops-sqlite-data:/data:ro \
-    -v "${STAGE_DIR}/sqlite:/dst" \
-    alpine cp /data/pops.db /dst/pops.db
-fi
+docker run --rm \
+  -v pops-sqlite-data:/data/sqlite:ro \
+  -v "${STAGE_DIR}/sqlite:/dst" \
+  alpine cp /data/sqlite/pops.db /dst/pops.db
 
 # 2. Paperless-ngx — two separate volumes (data + media)
 echo "[$(date)] Backing up Paperless..."

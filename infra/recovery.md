@@ -94,11 +94,11 @@ mkdir -p /tmp/pops-restore/extracted
 tar xf /tmp/pops-restore/pops-backup.tar -C /tmp/pops-restore/extracted
 EXT=/tmp/pops-restore/extracted
 
-# Restore SQLite into Docker named volume
+# Restore SQLite into Docker named volume — clear stale WAL/SHM files first
 docker run --rm \
   -v pops-sqlite-data:/data/sqlite \
   -v "${EXT}/sqlite:/restore:ro" \
-  alpine cp /restore/pops.db /data/sqlite/pops.db
+  alpine sh -c "find /data/sqlite -mindepth 1 -delete && cp /restore/pops.db /data/sqlite/pops.db"
 
 # Restore Paperless data volumes
 docker run --rm \
@@ -116,7 +116,8 @@ docker run --rm \
   -v "${EXT}/metabase:/src:ro" \
   alpine sh -c "find /dst -mindepth 1 -delete && cp -a /src/. /dst/"
 
-# Restore engrams (host directory)
+# Restore engrams (host directory — create if Cerebrum not yet deployed)
+mkdir -p /opt/pops/engrams
 find /opt/pops/engrams -mindepth 1 -delete 2>/dev/null || true
 cp -r "${EXT}/engrams/." /opt/pops/engrams/
 ```
