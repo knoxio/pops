@@ -31,9 +31,12 @@ export function ItemDetailPage() {
     itemData,
     isLoading,
     error,
+    locationPath,
     connectionsData,
     connectionsLoading,
     photosData,
+    photosLoading,
+    reorderPhotosMutation,
     deleteMutation,
     disconnectMutation,
     utils,
@@ -138,8 +141,13 @@ export function ItemDetailPage() {
         className="mb-8"
       />
 
-      <DetailHeaderSection item={item} />
-      <PhotoGallerySection itemId={id!} />
+      <DetailHeaderSection item={item} locationPath={locationPath} />
+      <PhotoGallerySection
+        photos={photosData?.data ?? []}
+        isLoading={photosLoading}
+        isReordering={reorderPhotosMutation.isPending}
+        onReorder={(orderedIds) => reorderPhotosMutation.mutate({ itemId: id!, orderedIds })}
+      />
 
       <ConnectionsSection
         itemId={id!}

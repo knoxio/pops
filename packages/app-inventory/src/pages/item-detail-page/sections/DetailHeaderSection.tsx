@@ -3,7 +3,6 @@ import Markdown from 'react-markdown';
 import { Link } from 'react-router';
 import rehypeSanitize from 'rehype-sanitize';
 
-import { trpc } from '@pops/api-client';
 import {
   Badge,
   type Condition,
@@ -24,19 +23,20 @@ function DetailField({ label, value }: { label: string; value: React.ReactNode }
   );
 }
 
-function LocationBreadcrumb({ locationId }: { locationId: string | null }) {
-  const { data: pathData } = trpc.inventory.locations.getPath.useQuery(
-    { id: locationId! },
-    { enabled: !!locationId }
-  );
-
+function LocationBreadcrumb({
+  locationId,
+  locationPath,
+}: {
+  locationId: string | null;
+  locationPath: { id: string; name: string }[] | null;
+}) {
   return (
     <div className="mb-8 flex items-center gap-1.5 text-sm" data-testid="location-breadcrumb">
       <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
       {!locationId ? (
         <span className="text-muted-foreground">No location assigned</span>
-      ) : pathData?.data ? (
-        pathData.data.map((loc, i) => (
+      ) : locationPath ? (
+        locationPath.map((loc, i) => (
           <span key={loc.id} className="flex items-center gap-1.5">
             {i > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
             <Link
@@ -104,9 +104,10 @@ interface DetailHeaderSectionProps {
     purchasedFromName?: string | null;
     notes?: string | null;
   };
+  locationPath: { id: string; name: string }[] | null;
 }
 
-export function DetailHeaderSection({ item }: DetailHeaderSectionProps) {
+export function DetailHeaderSection({ item, locationPath }: DetailHeaderSectionProps) {
   return (
     <>
       <div className="bg-card border-2 border-app-accent/10 rounded-2xl overflow-hidden mb-8 shadow-sm shadow-app-accent/5">
@@ -165,7 +166,7 @@ export function DetailHeaderSection({ item }: DetailHeaderSectionProps) {
         </div>
       </div>
 
-      <LocationBreadcrumb locationId={item.locationId ?? null} />
+      <LocationBreadcrumb locationId={item.locationId ?? null} locationPath={locationPath} />
 
       <PurchaseLinkSection
         purchaseTransactionId={item.purchaseTransactionId ?? null}

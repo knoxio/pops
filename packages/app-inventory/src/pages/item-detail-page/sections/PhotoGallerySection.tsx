@@ -1,29 +1,25 @@
 import { Camera } from 'lucide-react';
-import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
 import { Skeleton } from '@pops/ui';
 
-import { PhotoGallery } from '../../../components/PhotoGallery';
+import { PhotoGallery, type PhotoItem } from '../../../components/PhotoGallery';
 import { SortablePhotoGrid } from '../../../components/SortablePhotoGrid';
 
 const BASE_URL = '/api/inventory/photos';
 
 interface PhotoGallerySectionProps {
-  itemId: string;
+  photos: PhotoItem[];
+  isLoading: boolean;
+  isReordering: boolean;
+  onReorder: (orderedIds: number[]) => void;
 }
 
-export function PhotoGallerySection({ itemId }: PhotoGallerySectionProps) {
-  const utils = trpc.useUtils();
-  const { data, isLoading } = trpc.inventory.photos.listForItem.useQuery({ itemId });
-
-  const reorderMutation = trpc.inventory.photos.reorder.useMutation({
-    onSuccess: () => void utils.inventory.photos.listForItem.invalidate({ itemId }),
-    onError: (err) => toast.error(`Failed to reorder photos: ${err.message}`),
-  });
-
-  const photos = data?.data ?? [];
-
+export function PhotoGallerySection({
+  photos,
+  isLoading,
+  isReordering,
+  onReorder,
+}: PhotoGallerySectionProps) {
   if (isLoading) {
     return (
       <section className="mb-8">
@@ -54,8 +50,8 @@ export function PhotoGallerySection({ itemId }: PhotoGallerySectionProps) {
           <SortablePhotoGrid
             photos={photos}
             baseUrl={BASE_URL}
-            isReordering={reorderMutation.isPending}
-            onReorder={(orderedIds) => reorderMutation.mutate({ itemId, orderedIds })}
+            isReordering={isReordering}
+            onReorder={onReorder}
           />
         </div>
       )}
