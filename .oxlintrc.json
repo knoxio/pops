@@ -262,9 +262,9 @@
         "max-lines": ["error", { "max": 400, "skipBlankLines": true, "skipComments": true }],
         "max-lines-per-function": [
           "error",
-          { "max": 270, "skipBlankLines": true, "skipComments": true, "IIFEs": true }
+          { "max": 260, "skipBlankLines": true, "skipComments": true, "IIFEs": true }
         ],
-        "complexity": ["error", 70],
+        "complexity": ["error", 45],
         "max-depth": ["error", 4],
         "no-nested-ternary": "off",
         "typescript/explicit-function-return-type": "off",

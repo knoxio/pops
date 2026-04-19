@@ -12,5 +12,5 @@
     "types": []
   },
   "include": ["src"],
-  "exclude": ["node_modules", "src/**/*.test.*"]
+  "exclude": ["node_modules", "src/**/*.test.*", "src/**/*.stories.*", "src/**/*.mdx"]
 }
