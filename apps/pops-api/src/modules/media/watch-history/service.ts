@@ -9,7 +9,7 @@
 export type { BatchLogResult } from './handlers/batch-operations.js';
 export { batchLogWatch } from './handlers/batch-operations.js';
 export type { LogWatchResult } from './handlers/log-watch-event.js';
-export { autoRemoveTvShowIfFullyWatched, logWatch } from './handlers/log-watch-event.js';
+export { logWatch } from './handlers/log-watch-event.js';
 export type {
   RecentWatchHistoryListResult,
   WatchHistoryListResult,

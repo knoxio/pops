@@ -7,9 +7,7 @@ export * from './pure-service.js';
 
 export type { RejectedChangeSetFeedbackRecord } from './handlers/ai-inference.js';
 export {
-  feedbackKey,
   interpretRejectionFeedback,
-  loadLatestRejectedFeedback,
   persistRejectedChangeSetFeedback,
   reviseChangeSet,
 } from './handlers/ai-inference.js';

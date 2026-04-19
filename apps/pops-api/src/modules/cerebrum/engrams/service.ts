@@ -7,17 +7,28 @@ import { readFileSync } from 'node:fs';
 
 import { NotFoundError, ValidationError } from '../../../shared/errors.js';
 import { parseEngramFile, serializeEngram } from './file.js';
-import { canTransitionStatus, type EngramFrontmatter, type EngramStatus } from './schema.js';
-import { buildEngram, type Engram } from './types.js';
 import { archiveEngram } from './handlers/archive-engram.js';
 import { createEngram, type CreateEngramInput } from './handlers/create-engram.js';
-import { absolutePath, applyTitleChange, parseCustomFields, writeFileAtomic } from './handlers/fs-helpers.js';
+import {
+  absolutePath,
+  applyTitleChange,
+  parseCustomFields,
+  writeFileAtomic,
+} from './handlers/fs-helpers.js';
 import { linkEngrams, unlinkEngrams } from './handlers/link-helpers.js';
-import { hydrateEngrams, listEngrams, type ListEngramsOptions, type ListEngramsResult } from './handlers/list-engrams.js';
+import {
+  hydrateEngrams,
+  listEngrams,
+  type ListEngramsOptions,
+  type ListEngramsResult,
+} from './handlers/list-engrams.js';
 import { reindexEngrams } from './handlers/rebuild-index.js';
 import { getIndexRow, upsertIndex } from './handlers/upsert-index.js';
+import { canTransitionStatus, type EngramFrontmatter, type EngramStatus } from './schema.js';
+import { buildEngram, type Engram } from './types.js';
 
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+
 import type { TemplateRegistry } from '../templates/registry.js';
 import type { ScopeRuleEngine } from './scope-rules.js';
 
@@ -58,7 +69,13 @@ export class EngramService {
 
   create(input: CreateEngramInput): Engram {
     const id = createEngram(
-      { root: this.root, db: this.db, templates: this.templates, scopeRuleEngine: this.scopeRuleEngine, now: this.now },
+      {
+        root: this.root,
+        db: this.db,
+        templates: this.templates,
+        scopeRuleEngine: this.scopeRuleEngine,
+        now: this.now,
+      },
       input
     );
     return this.loadEngram(id);
@@ -109,8 +126,17 @@ export class EngramService {
     if (!changes.tags && frontmatter.tags) nextFrontmatter.tags = frontmatter.tags;
     if (nextFrontmatter.tags && nextFrontmatter.tags.length === 0) delete nextFrontmatter.tags;
 
-    writeFileAtomic(absolutePath(this.root, row.file_path), serializeEngram(nextFrontmatter, nextBody));
-    upsertIndex(this.db, { id, filePath: row.file_path, frontmatter: nextFrontmatter, body: nextBody, customFields });
+    writeFileAtomic(
+      absolutePath(this.root, row.file_path),
+      serializeEngram(nextFrontmatter, nextBody)
+    );
+    upsertIndex(this.db, {
+      id,
+      filePath: row.file_path,
+      frontmatter: nextFrontmatter,
+      body: nextBody,
+      customFields,
+    });
 
     return this.loadEngram(id);
   }

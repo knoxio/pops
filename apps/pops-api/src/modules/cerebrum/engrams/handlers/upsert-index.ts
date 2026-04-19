@@ -4,10 +4,11 @@ import { engramIndex, engramLinks, engramScopes, engramTags } from '@pops/db-typ
 
 import { NotFoundError } from '../../../../shared/errors.js';
 import { countWords, deriveTitle, serializeEngram } from '../file.js';
-import type { EngramFrontmatter } from '../schema.js';
 import { dedupe, indexRowFromDrizzle, sha256, type IndexRow } from './fs-helpers.js';
 
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+
+import type { EngramFrontmatter } from '../schema.js';
 
 export function getIndexRow(db: BetterSQLite3Database, id: string): IndexRow {
   const row = findIndexRow(db, id);

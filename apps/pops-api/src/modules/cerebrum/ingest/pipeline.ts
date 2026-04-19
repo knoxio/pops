@@ -6,7 +6,7 @@
  *   2. Classify content type (when not provided)
  *   3. Extract entities → merge into tags
  *   4. Infer scopes (when not provided)
- *   5. Deduplication check by content hash
+ *   5. Deduplication check by body hash
  *   6. Write engram via EngramService
  *
  * Quick capture bypasses classification and entity extraction; a BullMQ

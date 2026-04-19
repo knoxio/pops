@@ -2,11 +2,12 @@ import { and, count, eq, inArray, like, sql } from 'drizzle-orm';
 
 import { engramIndex, engramLinks, engramScopes, engramTags } from '@pops/db-types';
 
-import type { EngramSource, EngramStatus } from '../schema.js';
-import { type Engram } from '../types.js';
 import { bucket, indexRowFromDrizzle, parseCustomFields, type IndexRow } from './fs-helpers.js';
 
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+
+import type { EngramSource, EngramStatus } from '../schema.js';
+import type { Engram } from '../types.js';
 
 export interface ListEngramsOptions {
   type?: string;
@@ -28,7 +29,10 @@ export interface ListEngramsResult {
   total: number;
 }
 
-export function listEngrams(db: BetterSQLite3Database, opts: ListEngramsOptions = {}): ListEngramsResult {
+export function listEngrams(
+  db: BetterSQLite3Database,
+  opts: ListEngramsOptions = {}
+): ListEngramsResult {
   const conditions = [];
   if (opts.type) conditions.push(eq(engramIndex.type, opts.type));
   if (opts.status) conditions.push(eq(engramIndex.status, opts.status));
@@ -37,7 +41,10 @@ export function listEngrams(db: BetterSQLite3Database, opts: ListEngramsOptions 
     conditions.push(
       inArray(
         engramIndex.id,
-        db.select({ engramId: engramScopes.engramId }).from(engramScopes).where(inArray(engramScopes.scope, opts.scopes))
+        db
+          .select({ engramId: engramScopes.engramId })
+          .from(engramScopes)
+          .where(inArray(engramScopes.scope, opts.scopes))
       )
     );
   }
@@ -45,7 +52,10 @@ export function listEngrams(db: BetterSQLite3Database, opts: ListEngramsOptions 
     conditions.push(
       inArray(
         engramIndex.id,
-        db.select({ engramId: engramTags.engramId }).from(engramTags).where(inArray(engramTags.tag, opts.tags))
+        db
+          .select({ engramId: engramTags.engramId })
+          .from(engramTags)
+          .where(inArray(engramTags.tag, opts.tags))
       )
     );
   }
@@ -87,13 +97,25 @@ export function hydrateEngrams(db: BetterSQLite3Database, rows: IndexRow[]): Eng
   const ids = rows.map((r) => r.id);
 
   const scopesByEngram = bucket(
-    db.select({ engramId: engramScopes.engramId, value: engramScopes.scope }).from(engramScopes).where(inArray(engramScopes.engramId, ids)).all()
+    db
+      .select({ engramId: engramScopes.engramId, value: engramScopes.scope })
+      .from(engramScopes)
+      .where(inArray(engramScopes.engramId, ids))
+      .all()
   );
   const tagsByEngram = bucket(
-    db.select({ engramId: engramTags.engramId, value: engramTags.tag }).from(engramTags).where(inArray(engramTags.engramId, ids)).all()
+    db
+      .select({ engramId: engramTags.engramId, value: engramTags.tag })
+      .from(engramTags)
+      .where(inArray(engramTags.engramId, ids))
+      .all()
   );
   const linksByEngram = bucket(
-    db.select({ engramId: engramLinks.sourceId, value: engramLinks.targetId }).from(engramLinks).where(inArray(engramLinks.sourceId, ids)).all()
+    db
+      .select({ engramId: engramLinks.sourceId, value: engramLinks.targetId })
+      .from(engramLinks)
+      .where(inArray(engramLinks.sourceId, ids))
+      .all()
   );
 
   return rows.map((row) => ({

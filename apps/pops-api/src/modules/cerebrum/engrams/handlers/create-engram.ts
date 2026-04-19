@@ -1,20 +1,14 @@
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
-
-import { eq } from 'drizzle-orm';
-
-import { engramIndex } from '@pops/db-types';
-
 import { ValidationError } from '../../../../shared/errors.js';
 import { applyTemplate } from '../../templates/apply.js';
 import { serializeEngram } from '../file.js';
 import { generateEngramId } from '../id.js';
-import { ENGRAM_ID_PATTERN, type EngramFrontmatter, type EngramSource } from '../schema.js';
-import { absolutePath, assertSafeType, dedupe, writeFileAtomic } from './fs-helpers.js';
+import { absolutePath, assertSafeType, dedupe, isIdTaken, writeFileAtomic } from './fs-helpers.js';
 import { upsertIndex } from './upsert-index.js';
 
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+
 import type { TemplateRegistry } from '../../templates/registry.js';
+import type { EngramFrontmatter, EngramSource } from '../schema.js';
 import type { ScopeRuleEngine } from '../scope-rules.js';
 
 export type CreateDeps = {
@@ -62,7 +56,13 @@ export function createEngram(deps: CreateDeps, input: CreateEngramInput): string
       templateName = undefined;
       type = 'capture';
     } else {
-      const applied = applyTemplate({ template, title: input.title, body: input.body, scopes, customFields });
+      const applied = applyTemplate({
+        template,
+        title: input.title,
+        body: input.body,
+        scopes,
+        customFields,
+      });
       body = applied.body;
       mergedScopes = applied.scopes;
       customFields = applied.customFields;
@@ -100,17 +100,9 @@ export function createEngram(deps: CreateDeps, input: CreateEngramInput): string
     ...customFields,
   };
 
-  const fileContent = serializeEngram(frontmatter, body);
-  const relPath = join(type, `${id}.md`);
-  writeFileAtomic(absolutePath(root, relPath), fileContent);
+  const relPath = `${type}/${id}.md`;
+  writeFileAtomic(absolutePath(root, relPath), serializeEngram(frontmatter, body));
   upsertIndex(db, { id, filePath: relPath, frontmatter, body, customFields });
 
   return id;
-}
-
-function isIdTaken(db: BetterSQLite3Database, root: string, candidate: string, type: string): boolean {
-  if (!ENGRAM_ID_PATTERN.test(candidate)) return false;
-  const [row] = db.select({ id: engramIndex.id }).from(engramIndex).where(eq(engramIndex.id, candidate)).all();
-  if (row) return true;
-  return existsSync(join(root, type, `${candidate}.md`));
 }

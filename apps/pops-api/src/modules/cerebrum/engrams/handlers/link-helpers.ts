@@ -6,11 +6,12 @@ import { engramLinks } from '@pops/db-types';
 
 import { ValidationError } from '../../../../shared/errors.js';
 import { parseEngramFile, serializeEngram } from '../file.js';
-import type { EngramFrontmatter } from '../schema.js';
 import { absolutePath, parseCustomFields, writeFileAtomic } from './fs-helpers.js';
 import { findIndexRow, getIndexRow, upsertIndex } from './upsert-index.js';
 
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
+
+import type { EngramFrontmatter } from '../schema.js';
 
 export type LinkDeps = {
   root: string;
@@ -19,11 +20,11 @@ export type LinkDeps = {
 };
 
 export function linkEngrams(deps: LinkDeps, sourceId: string, targetId: string): void {
-  const { db, root, now } = deps;
+  const { db, now } = deps;
   if (sourceId === targetId) {
     throw new ValidationError({ message: 'cannot link an engram to itself' });
   }
-  getIndexRow(db, sourceId); // assert source exists
+  getIndexRow(db, sourceId);
   const targetRow = findIndexRow(db, targetId);
 
   mutateFrontmatter(deps, sourceId, (fm) => {
@@ -51,7 +52,7 @@ export function linkEngrams(deps: LinkDeps, sourceId: string, targetId: string):
 
 export function unlinkEngrams(deps: LinkDeps, sourceId: string, targetId: string): void {
   const { db, now } = deps;
-  getIndexRow(db, sourceId); // assert source exists
+  getIndexRow(db, sourceId);
   const targetRow = findIndexRow(db, targetId);
 
   mutateFrontmatter(deps, sourceId, (fm) => ({
