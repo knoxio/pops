@@ -49,7 +49,8 @@ export function SettingsPage() {
 
       <div className="md:hidden w-full mb-4">
         <Select
-          value={activeId}
+          aria-label="Settings section"
+          value={activeId || (manifests[0]?.id ?? '')}
           onChange={(e) => scrollToSection(e.target.value)}
           options={manifests.map((m) => ({ value: m.id, label: m.title }))}
         />
