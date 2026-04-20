@@ -5,7 +5,7 @@
  * Rules:
  *  - Skip if `wordCount === 0` (empty body — nothing to embed).
  *  - Skip (unless `force`) if `contentHash === previousContentHash` (no change).
- *  - Enqueue `{ sourceType: 'engram', sourceId: engramId }` to pops:embeddings.
+ *  - Enqueue `{ sourceType: 'engram', sourceId: engramId }` to pops-embeddings.
  *  - If BullMQ is unavailable, log the error and return `action: 'error'`.
  */
 import {

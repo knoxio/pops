@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// pops:sync queue
+// pops-sync queue
 // ---------------------------------------------------------------------------
 
 export interface PlexSyncMoviesJobData {
@@ -41,7 +41,7 @@ export type SyncQueueJobData =
   | PlexScheduledSyncJobData;
 
 // ---------------------------------------------------------------------------
-// pops:embeddings queue
+// pops-embeddings queue
 // ---------------------------------------------------------------------------
 
 export interface EmbedJobData {
@@ -54,7 +54,7 @@ export interface EmbedJobData {
 export type EmbeddingsQueueJobData = EmbedJobData;
 
 // ---------------------------------------------------------------------------
-// pops:curation / pops:default queues (stubs)
+// pops-curation / pops-default queues (stubs)
 // ---------------------------------------------------------------------------
 
 export interface CrossSourceIndexJobData {
@@ -77,7 +77,7 @@ export type CurationQueueJobData = ClassifyEngramJobData | GenericJobData;
 export type DefaultQueueJobData = CrossSourceIndexJobData;
 
 // ---------------------------------------------------------------------------
-// pops:dead-letter queue
+// pops-dead-letter queue
 // ---------------------------------------------------------------------------
 
 export interface DeadLetterJobData {

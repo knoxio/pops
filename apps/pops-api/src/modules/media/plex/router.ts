@@ -1,7 +1,7 @@
 /**
  * Plex tRPC router — sync operations and connection management.
  *
- * Sync jobs are enqueued into the pops:sync BullMQ queue (PRD-074).
+ * Sync jobs are enqueued into the pops-sync BullMQ queue (PRD-074).
  * The frontend polls getSyncJobStatus for progress and results.
  *
  * Implementation is split across:

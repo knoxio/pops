@@ -1,7 +1,7 @@
 /**
  * BullMQ job handler for embedding generation.
  *
- * Processes jobs from the `pops:embeddings` queue. Each job embeds the content
+ * Processes jobs from the `pops-embeddings` queue. Each job embeds the content
  * of a source record, storing vectors in embeddings_vec and metadata in embeddings.
  */
 import { getDb, isVecAvailable } from '../../db.js';

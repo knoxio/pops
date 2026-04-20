@@ -10,7 +10,7 @@ As the Thalamus indexing service, I need to detect when an engram's content has 
 ## Acceptance Criteria
 
 - [x] After the frontmatter sync completes for a create or modify event, the `content_hash` (SHA-256 of full file content) is compared to the previously stored `content_hash` in the `engram_index` row
-- [x] If the hash differs (or no previous hash exists), an embedding job is enqueued to the `pops:embeddings` BullMQ queue with payload `{ sourceType: 'engram', sourceId: string, content: string }` — body text is included so the worker does not need to re-read the file
+- [x] If the hash differs (or no previous hash exists), an embedding job is enqueued to the `pops-embeddings` BullMQ queue with payload `{ sourceType: 'engram', sourceId: string, content: string }` — body text is included so the worker does not need to re-read the file
 - [x] If the hash matches the stored value, no embedding job is enqueued — the existing embedding is still valid
 - [x] Engrams with empty bodies (zero words after frontmatter) do not trigger embedding jobs — there is nothing to embed
 - [x] If the BullMQ queue is unavailable (connection error, Redis down), the embedding enqueue fails gracefully — the file is still indexed in SQLite, and a structured error is logged with the engram ID for retry

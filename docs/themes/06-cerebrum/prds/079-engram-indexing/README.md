@@ -41,7 +41,7 @@ Domain data sources are mapped to the `embeddings` table using `source_type` and
 - On file delete: mark the index entry as `status: orphaned` and log a warning — Thalamus does not delete index entries automatically (the CRUD service handles archival; a raw file deletion is unexpected)
 - On startup, Thalamus performs a reconciliation pass: every file on disk is checked against the index, and every index entry is checked against the filesystem
 - Frontmatter parse errors skip the file and log a structured error with the file path and parse failure — the file is not indexed until it is fixed
-- Embedding jobs are enqueued to the `pops:embeddings` BullMQ queue (PRD-076 infrastructure) with `{ sourceType: 'engram', sourceId, contentHash }`
+- Embedding jobs are enqueued to the `pops-embeddings` BullMQ queue (PRD-076 infrastructure) with `{ sourceType: 'engram', sourceId, contentHash }`
 - Domain data indexing runs as a scheduled BullMQ job (configurable interval, default every 6 hours) that scans domain tables for records with no embedding or a stale `content_hash`
 - Domain data records compose embeddable text from multiple columns using source-type-specific formatters — each source type has a `toEmbeddableText()` function
 - The `pops cerebrum reindex` CLI command triggers a full reconciliation + re-index of all engrams and domain sources

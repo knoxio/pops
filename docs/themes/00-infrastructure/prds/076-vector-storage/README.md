@@ -50,7 +50,7 @@ This is a sqlite-vec virtual table that stores the actual vectors and supports k
 
 ## Business Rules
 
-- Embeddings are generated asynchronously via the `pops:embeddings` BullMQ queue (PRD-074)
+- Embeddings are generated asynchronously via the `pops-embeddings` BullMQ queue (PRD-074)
 - The embedding model is called via remote API (not local inference) — model choice is configuration, not code
 - Content is chunked before embedding — chunks are max 512 tokens with 50-token overlap
 - Re-embedding is triggered when `content_hash` changes (content was modified)

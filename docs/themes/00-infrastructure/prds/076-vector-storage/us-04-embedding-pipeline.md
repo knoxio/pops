@@ -9,7 +9,7 @@ As a platform operator, I enqueue content for embedding and it gets processed in
 
 ## Acceptance Criteria
 
-- [x] BullMQ handler in `src/jobs/handlers/embeddings.ts` processes embedding jobs from the `pops:embeddings` queue
+- [x] BullMQ handler in `src/jobs/handlers/embeddings.ts` processes embedding jobs from the `pops-embeddings` queue
 - [x] Job data includes `sourceType`, `sourceId`, and optionally `content` (fetched from DB if not provided)
 - [x] Content is chunked into segments of max 512 tokens with 50-token overlap
 - [x] Each chunk is hashed (SHA-256) — if the hash matches the existing `content_hash` in `embeddings`, skip re-embedding

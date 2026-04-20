@@ -15,10 +15,10 @@ No new SQLite tables. Job state lives in Redis (managed by BullMQ). The existing
 
 | Queue             | Purpose                                | Concurrency | Retry | Priority |
 | ----------------- | -------------------------------------- | ----------- | ----- | -------- |
-| `pops:sync`       | Media sync jobs (Plex, Radarr, Sonarr) | 1           | 3     | Normal   |
-| `pops:embeddings` | Vector embedding generation            | 2           | 3     | Low      |
-| `pops:curation`   | Content consolidation, deduplication   | 1           | 2     | Low      |
-| `pops:default`    | General-purpose jobs                   | 3           | 3     | Normal   |
+| `pops-sync`       | Media sync jobs (Plex, Radarr, Sonarr) | 1           | 3     | Normal   |
+| `pops-embeddings` | Vector embedding generation            | 2           | 3     | Low      |
+| `pops-curation`   | Content consolidation, deduplication   | 1           | 2     | Low      |
+| `pops-default`    | General-purpose jobs                   | 3           | 3     | Normal   |
 
 ## API Surface
 

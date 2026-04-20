@@ -1,6 +1,7 @@
 import { Queue } from 'bullmq';
 
 import { getRedis, isRedisAvailable } from '../shared/redis-client.js';
+import { EMBEDDINGS_QUEUE } from './queues.js';
 
 import type { EmbedJobData } from './handlers/embeddings.js';
 
@@ -11,7 +12,7 @@ export function getEmbeddingsQueue(): Queue<EmbedJobData> | null {
   const redis = getRedis();
   if (!redis || !isRedisAvailable()) return null;
 
-  _embeddingsQueue ??= new Queue<EmbedJobData>('pops-embeddings', {
+  _embeddingsQueue ??= new Queue<EmbedJobData>(EMBEDDINGS_QUEUE, {
     connection: redis,
     defaultJobOptions: {
       attempts: 3,
