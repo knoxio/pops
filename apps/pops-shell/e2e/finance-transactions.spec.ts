@@ -19,9 +19,13 @@ import { expect, test } from '@playwright/test';
 
 import { useRealApi } from './helpers/use-real-api';
 
-/** Find the native <select> inside the filter block whose label matches text. */
-function filterSelect(page: import('@playwright/test').Page, labelText: string) {
-  return page.locator('label', { hasText: labelText }).locator('xpath=..').locator('select');
+/**
+ * Find the native <select> that owns a given option value.
+ * The page-size select only has numeric values (10, 25 …) so any non-numeric
+ * option value uniquely identifies a filter select.
+ */
+function filterSelect(page: import('@playwright/test').Page, optionValue: string) {
+  return page.locator('select').filter({ has: page.locator(`option[value="${optionValue}"]`) });
 }
 
 test.describe('Finance — transactions list smoke test', () => {
@@ -51,7 +55,7 @@ test.describe('Finance — transactions list smoke test', () => {
     // "Amex" matches no seeded transaction accounts → all rows removed from view.
     // This confirms the filter mechanism works even though seeded account names
     // (Bank Account, Credit Card, …) don't match the dropdown options.
-    await filterSelect(page, 'Account').selectOption('Amex');
+    await filterSelect(page, 'Amex').selectOption('Amex');
 
     await expect(page.getByRole('row').filter({ hasText: 'Salary Payment' })).not.toBeVisible();
   });
@@ -61,7 +65,7 @@ test.describe('Finance — transactions list smoke test', () => {
       timeout: 10_000,
     });
 
-    await filterSelect(page, 'Account').selectOption('Amex');
+    await filterSelect(page, 'Amex').selectOption('Amex');
     await expect(page.getByRole('row').filter({ hasText: 'Salary Payment' })).not.toBeVisible();
 
     await page.getByRole('button', { name: /clear all/i }).click();
@@ -74,7 +78,7 @@ test.describe('Finance — transactions list smoke test', () => {
       timeout: 10_000,
     });
 
-    await filterSelect(page, 'Type').selectOption('Income');
+    await filterSelect(page, 'Income').selectOption('Income');
 
     await expect(page.getByRole('row').filter({ hasText: 'Salary Payment' }).first()).toBeVisible();
     await expect(page.getByRole('row').filter({ hasText: 'Woolworths Metro' })).not.toBeVisible();
@@ -85,7 +89,7 @@ test.describe('Finance — transactions list smoke test', () => {
       timeout: 10_000,
     });
 
-    await filterSelect(page, 'Type').selectOption('Income');
+    await filterSelect(page, 'Income').selectOption('Income');
     await expect(page.getByRole('row').filter({ hasText: 'Woolworths Metro' })).not.toBeVisible();
 
     await page.getByRole('button', { name: /clear all/i }).click();

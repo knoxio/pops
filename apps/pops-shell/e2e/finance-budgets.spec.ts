@@ -21,9 +21,13 @@ import { expect, test } from '@playwright/test';
 
 import { useRealApi } from './helpers/use-real-api';
 
-/** Find the native <select> inside the filter block whose label matches text. */
-function filterSelect(page: import('@playwright/test').Page, labelText: string) {
-  return page.locator('label', { hasText: labelText }).locator('xpath=..').locator('select');
+/**
+ * Find the native <select> that owns a given option value.
+ * The page-size select only has numeric values (10, 25 …) so any non-numeric
+ * option value uniquely identifies a filter select.
+ */
+function filterSelect(page: import('@playwright/test').Page, optionValue: string) {
+  return page.locator('select').filter({ has: page.locator(`option[value="${optionValue}"]`) });
 }
 
 const MONTHLY_BUDGETS = [
@@ -78,7 +82,7 @@ test.describe('Finance — budgets list smoke test', () => {
       timeout: 10_000,
     });
 
-    await filterSelect(page, 'Period').selectOption('Yearly');
+    await filterSelect(page, 'Yearly').selectOption('Yearly');
 
     await expect(page.getByRole('row').filter({ hasText: 'Holiday Fund' }).first()).toBeVisible();
     await expect(page.getByRole('row').filter({ hasText: 'Groceries' })).not.toBeVisible();
@@ -89,7 +93,7 @@ test.describe('Finance — budgets list smoke test', () => {
       timeout: 10_000,
     });
 
-    await filterSelect(page, 'Period').selectOption('Monthly');
+    await filterSelect(page, 'Monthly').selectOption('Monthly');
 
     await expect(page.getByRole('row').filter({ hasText: 'Groceries' }).first()).toBeVisible();
     await expect(page.getByRole('row').filter({ hasText: 'Holiday Fund' })).not.toBeVisible();
@@ -100,7 +104,7 @@ test.describe('Finance — budgets list smoke test', () => {
       timeout: 10_000,
     });
 
-    await filterSelect(page, 'Period').selectOption('Yearly');
+    await filterSelect(page, 'Yearly').selectOption('Yearly');
     await expect(page.getByRole('row').filter({ hasText: 'Groceries' })).not.toBeVisible();
 
     await page.getByRole('button', { name: /clear all/i }).click();
