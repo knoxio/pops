@@ -6,23 +6,25 @@ import { getDrizzle } from '../../../../db.js';
 import { getGlobalComparisonCount } from '../global-count.js';
 import { normalizePairOrder } from './comparison-queries.js';
 
+export interface SkipCooloffPair {
+  dimensionId: number;
+  mediaAType: string;
+  mediaAId: number;
+  mediaBType: string;
+  mediaBId: number;
+}
+
 /**
  * Record a skip cooloff for a pair of media items in a dimension.
  * Sets skip_until = current global comparison count + 10.
  * Upserts if the pair already has a cooloff (extends it).
  */
-export function recordSkip(
-  dimensionId: number,
-  mediaAType: string,
-  mediaAId: number,
-  mediaBType: string,
-  mediaBId: number
-): number {
+export function recordSkip(input: SkipCooloffPair): number {
+  const { dimensionId, mediaAType, mediaAId, mediaBType, mediaBId } = input;
   const db = getDrizzle();
   const globalCount = getGlobalComparisonCount();
   const skipUntil = globalCount + 10;
 
-  // Normalize pair ordering for consistent storage (lower id first)
   const [normAType, normAId, normBType, normBId] = normalizePairOrder(
     mediaAType,
     mediaAId,
@@ -30,7 +32,6 @@ export function recordSkip(
     mediaBId
   );
 
-  // Upsert: insert or update skip_until if pair already exists
   const existing = db
     .select()
     .from(comparisonSkipCooloffs)
@@ -71,17 +72,11 @@ export function recordSkip(
  * Returns true if global comparison count < skip_until.
  * Symmetric: A-vs-B matches B-vs-A.
  */
-export function isPairOnCooloff(
-  dimensionId: number,
-  mediaAType: string,
-  mediaAId: number,
-  mediaBType: string,
-  mediaBId: number
-): boolean {
+export function isPairOnCooloff(input: SkipCooloffPair): boolean {
+  const { dimensionId, mediaAType, mediaAId, mediaBType, mediaBId } = input;
   const db = getDrizzle();
   const globalCount = getGlobalComparisonCount();
 
-  // Normalize pair ordering for consistent lookup
   const [normAType, normAId, normBType, normBId] = normalizePairOrder(
     mediaAType,
     mediaAId,

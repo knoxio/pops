@@ -15,6 +15,33 @@ import type { CandidateMovie, RotationSourceAdapter } from './source-types.js';
 
 const MAX_PAGES = 20;
 
+type PageFetchResult =
+  | { kind: 'ok'; html: string }
+  | { kind: 'first-page-error' }
+  | { kind: 'stop' }
+  | { kind: 'network-error' };
+
+async function fetchListPageHtml(pageUrl: string, page: number): Promise<PageFetchResult> {
+  try {
+    const response = await fetch(pageUrl, {
+      headers: { Accept: 'text/html', 'User-Agent': 'POPS/1.0 (rotation source sync)' },
+    });
+    if (!response.ok) {
+      if (page === 1) {
+        logger.warn(`[letterboxd] Failed to fetch list: ${response.status} ${response.statusText}`);
+        return { kind: 'first-page-error' };
+      }
+      return { kind: 'stop' };
+    }
+    return { kind: 'ok', html: await response.text() };
+  } catch (err) {
+    logger.warn(
+      `[letterboxd] Network error fetching page ${page}: ${err instanceof Error ? err.message : String(err)}`
+    );
+    return { kind: 'network-error' };
+  }
+}
+
 export const letterboxdSource: RotationSourceAdapter = {
   type: 'letterboxd',
 
@@ -32,43 +59,15 @@ export const letterboxdSource: RotationSourceAdapter = {
 
     while (page <= MAX_PAGES) {
       const pageUrl = page === 1 ? `${baseUrl}/` : `${baseUrl}/page/${page}/`;
-
-      let html: string;
-      try {
-        const response = await fetch(pageUrl, {
-          headers: {
-            Accept: 'text/html',
-            'User-Agent': 'POPS/1.0 (rotation source sync)',
-          },
-        });
-
-        if (!response.ok) {
-          if (page === 1) {
-            logger.warn(
-              `[letterboxd] Failed to fetch list: ${response.status} ${response.statusText}`
-            );
-            return [];
-          }
-          // Non-first page failing likely means we've exhausted the list
-          break;
-        }
-
-        html = await response.text();
-      } catch (err) {
-        logger.warn(
-          `[letterboxd] Network error fetching page ${page}: ${err instanceof Error ? err.message : String(err)}`
-        );
-        return candidates; // Return what we have so far
-      }
-
+      const fetched = await fetchListPageHtml(pageUrl, page);
+      if (fetched.kind === 'first-page-error') return [];
+      if (fetched.kind === 'stop') break;
+      if (fetched.kind === 'network-error') return candidates;
+      const html = fetched.html;
       const pageMovies = parseLetterboxdListPage(html);
       if (pageMovies.length === 0) break;
-
       candidates.push(...pageMovies);
-
-      // Check if there's a next page link
       if (!html.includes('class="next"')) break;
-
       page++;
     }
 

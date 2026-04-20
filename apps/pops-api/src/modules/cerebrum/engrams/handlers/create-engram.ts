@@ -31,6 +31,88 @@ export interface CreateEngramInput {
   links?: string[];
 }
 
+interface ResolvedTemplate {
+  body: string;
+  customFields: Record<string, unknown>;
+  type: string;
+  templateName: string | undefined;
+  mergedScopes: string[];
+}
+
+function resolveTemplate(
+  templates: TemplateRegistry,
+  input: CreateEngramInput,
+  scopes: string[],
+  initialType: string
+): ResolvedTemplate {
+  const baseFields: Record<string, unknown> = input.customFields ?? {};
+  if (!input.template) {
+    return {
+      body: input.body ?? '',
+      customFields: baseFields,
+      type: initialType,
+      templateName: undefined,
+      mergedScopes: scopes,
+    };
+  }
+
+  const template = templates.get(input.template);
+  if (!template) {
+    console.warn(
+      `[cerebrum] Template '${input.template}' not found — falling back to a 'capture' engram.`
+    );
+    return {
+      body: input.body ?? '',
+      customFields: baseFields,
+      type: 'capture',
+      templateName: undefined,
+      mergedScopes: scopes,
+    };
+  }
+
+  const applied = applyTemplate({
+    template,
+    title: input.title,
+    body: input.body,
+    scopes,
+    customFields: baseFields,
+  });
+  return {
+    body: applied.body,
+    customFields: applied.customFields,
+    type: initialType,
+    templateName: input.template,
+    mergedScopes: applied.scopes,
+  };
+}
+
+function buildFrontmatter(args: {
+  id: string;
+  type: string;
+  mergedScopes: string[];
+  nowIso: string;
+  source: EngramSource;
+  tags: string[];
+  links: string[] | undefined;
+  templateName: string | undefined;
+  customFields: Record<string, unknown>;
+}): EngramFrontmatter {
+  const { id, type, mergedScopes, nowIso, source, tags, links, templateName, customFields } = args;
+  return {
+    id,
+    type,
+    scopes: dedupe(mergedScopes),
+    created: nowIso,
+    modified: nowIso,
+    source,
+    status: 'active',
+    ...(tags.length > 0 ? { tags: dedupe(tags) } : {}),
+    ...(links && links.length > 0 ? { links: dedupe(links) } : {}),
+    ...(templateName ? { template: templateName } : {}),
+    ...customFields,
+  };
+}
+
 export function createEngram(deps: CreateDeps, input: CreateEngramInput): string {
   const { root, db, templates, scopeRuleEngine, now } = deps;
   const scopes = input.scopes ?? [];
@@ -41,68 +123,50 @@ export function createEngram(deps: CreateDeps, input: CreateEngramInput): string
     throw new ValidationError({ message: 'at least one scope is required' });
   }
 
-  let body = input.body ?? '';
-  let customFields: Record<string, unknown> = input.customFields ?? {};
-  let templateName: string | undefined = input.template;
-  let mergedScopes = scopes;
-  let type = input.type || 'capture';
-
-  if (templateName) {
-    const template = templates.get(templateName);
-    if (!template) {
-      console.warn(
-        `[cerebrum] Template '${templateName}' not found — falling back to a 'capture' engram.`
-      );
-      templateName = undefined;
-      type = 'capture';
-    } else {
-      const applied = applyTemplate({
-        template,
-        title: input.title,
-        body: input.body,
-        scopes,
-        customFields,
-      });
-      body = applied.body;
-      mergedScopes = applied.scopes;
-      customFields = applied.customFields;
-    }
-  }
-
+  const resolved = resolveTemplate(templates, input, scopes, input.type || 'capture');
+  let mergedScopes = resolved.mergedScopes;
   if (mergedScopes.length === 0 && scopeRuleEngine) {
-    mergedScopes = scopeRuleEngine.inferScopes({ source, type, tags, explicitScopes: [] });
+    mergedScopes = scopeRuleEngine.inferScopes({
+      source,
+      type: resolved.type,
+      tags,
+      explicitScopes: [],
+    });
   }
-
   if (mergedScopes.length === 0) {
     throw new ValidationError({ message: 'at least one scope is required' });
   }
 
-  assertSafeType(type);
+  assertSafeType(resolved.type);
 
   const id = generateEngramId({
     title: input.title,
     now: now(),
-    isTaken: (candidate) => isIdTaken(db, root, candidate, type),
+    isTaken: (candidate) => isIdTaken(db, root, candidate, resolved.type),
   });
 
   const nowIso = now().toISOString();
-  const frontmatter: EngramFrontmatter = {
+  const frontmatter = buildFrontmatter({
     id,
-    type,
-    scopes: dedupe(mergedScopes),
-    created: nowIso,
-    modified: nowIso,
+    type: resolved.type,
+    mergedScopes,
+    nowIso,
     source,
-    status: 'active',
-    ...(tags.length > 0 ? { tags: dedupe(tags) } : {}),
-    ...(input.links && input.links.length > 0 ? { links: dedupe(input.links) } : {}),
-    ...(templateName ? { template: templateName } : {}),
-    ...customFields,
-  };
+    tags,
+    links: input.links,
+    templateName: resolved.templateName,
+    customFields: resolved.customFields,
+  });
 
-  const relPath = `${type}/${id}.md`;
-  writeFileAtomic(absolutePath(root, relPath), serializeEngram(frontmatter, body));
-  upsertIndex(db, { id, filePath: relPath, frontmatter, body, customFields });
+  const relPath = `${resolved.type}/${id}.md`;
+  writeFileAtomic(absolutePath(root, relPath), serializeEngram(frontmatter, resolved.body));
+  upsertIndex(db, {
+    id,
+    filePath: relPath,
+    frontmatter,
+    body: resolved.body,
+    customFields: resolved.customFields,
+  });
 
   return id;
 }

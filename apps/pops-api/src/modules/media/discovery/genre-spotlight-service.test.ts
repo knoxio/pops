@@ -240,7 +240,13 @@ describe('getGenreSpotlightPage — dismissed filtering', () => {
 
     mockGetDismissedTmdbIds.mockReturnValue(new Set([20]));
 
-    const result = await getGenreSpotlightPage(client, profile, new Set(), 35, 2);
+    const result = await getGenreSpotlightPage({
+      client,
+      profile,
+      libraryIds: new Set(),
+      genreId: 35,
+      page: 2,
+    });
 
     const tmdbIds = result.results.map((r) => r.tmdbId);
     expect(tmdbIds).not.toContain(20);
@@ -254,7 +260,13 @@ describe('getGenreSpotlightPage — dismissed filtering', () => {
     } as unknown as TmdbClient;
     const profile = makeProfile();
 
-    const result = await getGenreSpotlightPage(client, profile, new Set([10]), 35, 2);
+    const result = await getGenreSpotlightPage({
+      client,
+      profile,
+      libraryIds: new Set([10]),
+      genreId: 35,
+      page: 2,
+    });
 
     const tmdbIds = result.results.map((r) => r.tmdbId);
     expect(tmdbIds).not.toContain(10);
@@ -270,7 +282,13 @@ describe('getGenreSpotlightPage — dismissed filtering', () => {
       discoverMovies: vi.fn(async () => makeTmdbResponse([20, 30, 40])),
     } as unknown as TmdbClient;
 
-    const result = await getGenreSpotlightPage(client, makeProfile(), new Set(), 35, 2);
+    const result = await getGenreSpotlightPage({
+      client,
+      profile: makeProfile(),
+      libraryIds: new Set(),
+      genreId: 35,
+      page: 2,
+    });
 
     expect(result.results.find((r) => r.tmdbId === 20)!.isWatched).toBe(true);
     expect(result.results.find((r) => r.tmdbId === 30)!.onWatchlist).toBe(true);

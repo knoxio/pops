@@ -1,15 +1,12 @@
 import { config } from 'dotenv';
 
-// Load env vars using the same pattern as the API server
 config();
 config({ path: '../../.env', override: false });
 
 import { Worker } from 'bullmq';
 import pino from 'pino';
 
-import { syncJobResults } from '@pops/db-types';
-
-import { getDrizzle } from './db.js';
+import { moveToDeadLetter } from './jobs/dead-letter.js';
 import { process as processCuration } from './jobs/handlers/curation.js';
 import { process as processDefault } from './jobs/handlers/default.js';
 import { process as processEmbeddings } from './jobs/handlers/embeddings.js';
@@ -17,13 +14,12 @@ import { process as processSync } from './jobs/handlers/sync.js';
 import {
   CURATION_QUEUE,
   DEFAULT_QUEUE,
-  DEAD_LETTER_QUEUE,
   EMBEDDINGS_QUEUE,
   QUEUE_CONCURRENCY,
   SYNC_QUEUE,
-  getDeadLetterQueue,
 } from './jobs/queues.js';
 import { createRedisConnection } from './jobs/redis.js';
+import { persistSyncResult } from './jobs/sync-results.js';
 import { writeSyncLog } from './modules/media/plex/scheduler.js';
 
 import type {
@@ -34,10 +30,6 @@ import type {
 } from './jobs/types.js';
 
 const logger = pino({ name: 'pops-worker' });
-
-// ---------------------------------------------------------------------------
-// Worker instances (one per queue)
-// ---------------------------------------------------------------------------
 
 const syncWorker = new Worker<SyncQueueJobData>(SYNC_QUEUE, processSync, {
   connection: createRedisConnection(),
@@ -63,67 +55,65 @@ const defaultWorker = new Worker<DefaultQueueJobData>(DEFAULT_QUEUE, processDefa
   stalledInterval: 30_000,
 });
 
-// ---------------------------------------------------------------------------
-// Sync worker events — persist results + dead-letter exhausted jobs
-// ---------------------------------------------------------------------------
+function emitScheduledSyncLog(
+  job: { data: SyncQueueJobData; processedOn?: number; finishedOn?: number },
+  result: unknown
+): void {
+  if (job.data.type !== 'plexScheduledSync') return;
+  const r = result as { movieCount: number; tvCount: number; errors: string[] } | null;
+  writeSyncLog({
+    syncedAt: job.finishedOn ? new Date(job.finishedOn).toISOString() : new Date().toISOString(),
+    movieCount: r?.movieCount ?? 0,
+    tvCount: r?.tvCount ?? 0,
+    errors: r?.errors?.length ? r.errors : null,
+    durationMs: job.processedOn && job.finishedOn ? job.finishedOn - job.processedOn : null,
+  });
+}
 
 syncWorker.on('completed', (job, result) => {
   logger.info({ jobId: job.id, jobName: job.name }, 'Sync job completed');
-  persistSyncResult(
-    job.id,
-    job.data,
-    'completed',
+  persistSyncResult({
+    jobId: job.id,
+    data: job.data,
+    status: 'completed',
     result,
-    null,
-    job.processedOn,
-    job.finishedOn,
-    job.progress
-  );
-
-  if (job.data.type === 'plexScheduledSync') {
-    const r = result as { movieCount: number; tvCount: number; errors: string[] } | null;
-    writeSyncLog(
-      job.finishedOn ? new Date(job.finishedOn).toISOString() : new Date().toISOString(),
-      r?.movieCount ?? 0,
-      r?.tvCount ?? 0,
-      r?.errors?.length ? r.errors : null,
-      job.processedOn && job.finishedOn ? job.finishedOn - job.processedOn : null
-    );
-  }
+    error: null,
+    processedOn: job.processedOn,
+    finishedOn: job.finishedOn,
+    progress: job.progress,
+  });
+  emitScheduledSyncLog(job, result);
 });
 
 syncWorker.on('failed', (job, err) => {
   if (!job) return;
   logger.error(
-    {
-      jobId: job.id,
-      queue: SYNC_QUEUE,
-      attempt: job.attemptsMade,
-      error: err.message,
-    },
+    { jobId: job.id, queue: SYNC_QUEUE, attempt: job.attemptsMade, error: err.message },
     'Sync job failed'
   );
   const exhausted = job.attemptsMade >= (job.opts.attempts ?? 1);
-  if (exhausted) {
-    persistSyncResult(
-      job.id,
-      job.data,
-      'failed',
-      null,
-      err.message,
-      job.processedOn,
-      job.finishedOn,
-      job.progress
-    );
-    moveToDeadLetter(SYNC_QUEUE, job.id, job.name, job.data, job.attemptsMade, err, () =>
-      job.remove()
-    );
-  }
-});
+  if (!exhausted) return;
 
-// ---------------------------------------------------------------------------
-// Shared failure handler for other queues
-// ---------------------------------------------------------------------------
+  persistSyncResult({
+    jobId: job.id,
+    data: job.data,
+    status: 'failed',
+    result: null,
+    error: err.message,
+    processedOn: job.processedOn,
+    finishedOn: job.finishedOn,
+    progress: job.progress,
+  });
+  moveToDeadLetter({
+    queue: SYNC_QUEUE,
+    jobId: job.id,
+    jobName: job.name,
+    data: job.data,
+    attemptsMade: job.attemptsMade,
+    err,
+    removeOriginal: () => job.remove(),
+  });
+});
 
 for (const [worker, queue] of [
   [embeddingsWorker, EMBEDDINGS_QUEUE],
@@ -137,19 +127,20 @@ for (const [worker, queue] of [
       'Job failed'
     );
     const exhausted = job.attemptsMade >= (job.opts.attempts ?? 1);
-    if (exhausted) {
-      moveToDeadLetter(queue, job.id, job.name, job.data, job.attemptsMade, err, () =>
-        job.remove()
-      );
-    }
+    if (!exhausted) return;
+    moveToDeadLetter({
+      queue,
+      jobId: job.id,
+      jobName: job.name,
+      data: job.data,
+      attemptsMade: job.attemptsMade,
+      err,
+      removeOriginal: () => job.remove(),
+    });
   });
 }
 
 logger.info('pops-worker started');
-
-// ---------------------------------------------------------------------------
-// Graceful shutdown (30 s timeout)
-// ---------------------------------------------------------------------------
 
 const SHUTDOWN_TIMEOUT_MS = 30_000;
 const allWorkers = [syncWorker, embeddingsWorker, curationWorker, defaultWorker];
@@ -175,87 +166,3 @@ function scheduleShutdown(signal: string): void {
 
 process.once('SIGTERM', () => scheduleShutdown('SIGTERM'));
 process.once('SIGINT', () => scheduleShutdown('SIGINT'));
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-const PERSISTED_SYNC_TYPES = new Set([
-  'plexSyncMovies',
-  'plexSyncTvShows',
-  'plexSyncWatchlist',
-  'plexSyncWatchHistory',
-  'plexSyncDiscoverWatches',
-]);
-
-function persistSyncResult(
-  jobId: string | undefined,
-  data: SyncQueueJobData,
-  status: 'completed' | 'failed',
-  result: unknown,
-  error: string | null,
-  processedOn: number | null | undefined,
-  finishedOn: number | null | undefined,
-  progress?: unknown
-): void {
-  if (!jobId || !PERSISTED_SYNC_TYPES.has(data.type)) return;
-  try {
-    const db = getDrizzle();
-    const startedAt = processedOn ? new Date(processedOn).toISOString() : new Date().toISOString();
-    const completedAt = finishedOn ? new Date(finishedOn).toISOString() : new Date().toISOString();
-    const durationMs = processedOn && finishedOn ? finishedOn - processedOn : null;
-
-    db.insert(syncJobResults)
-      .values({
-        id: jobId,
-        jobType: data.type,
-        status,
-        startedAt,
-        completedAt,
-        durationMs,
-        progress:
-          progress != null ? JSON.stringify(progress) : JSON.stringify({ processed: 0, total: 0 }),
-        result: result != null ? JSON.stringify(result) : null,
-        error,
-      })
-      .onConflictDoUpdate({
-        target: syncJobResults.id,
-        set: {
-          status,
-          completedAt,
-          durationMs,
-          result: result != null ? JSON.stringify(result) : null,
-          error,
-        },
-      })
-      .run();
-  } catch (err) {
-    logger.error({ err }, 'Failed to persist sync result');
-  }
-}
-
-function moveToDeadLetter(
-  queue: string,
-  jobId: string | undefined,
-  jobName: string,
-  data: unknown,
-  attemptsMade: number,
-  err: Error,
-  removeOriginal?: () => Promise<void>
-): void {
-  void getDeadLetterQueue()
-    .add(DEAD_LETTER_QUEUE, {
-      originalQueue: queue,
-      originalJobId: jobId,
-      originalJobName: jobName,
-      originalData: data,
-      failedAt: new Date().toISOString(),
-      attemptsMade,
-      finalError: err.message,
-      finalErrorStack: err.stack,
-    })
-    .then(() => removeOriginal?.())
-    .catch((addErr: unknown) => {
-      logger.error({ addErr }, 'Failed to move job to dead-letter queue');
-    });
-}

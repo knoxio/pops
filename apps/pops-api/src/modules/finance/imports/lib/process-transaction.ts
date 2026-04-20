@@ -1,17 +1,18 @@
 /**
  * Core processing logic for a single transaction during import.
- *
- * Extracted from service.ts to keep functions small and auditable.
  */
-import { formatImportError } from '../../../../lib/errors.js';
 import { logger } from '../../../../lib/logger.js';
 import { AiCategorizationError, categorizeWithAi } from './ai-categorizer.js';
 import { applyLearnedCorrection } from './correction-application.js';
 import { matchEntity } from './entity-matcher.js';
-import { buildSuggestedTags } from './tag-management.js';
+import {
+  buildFailure,
+  buildMatchedFromEntity,
+  buildUncertainFromAi,
+  buildUncertainNoMatch,
+} from './process-transaction-helpers.js';
 
 import type { ParsedTransaction, ProcessedTransaction } from '../types.js';
-import type { EntityEntry } from './entity-lookup.js';
 import type { AliasMap, EntityLookupMap } from './entity-matcher.js';
 
 export interface AiCounters {
@@ -51,57 +52,6 @@ export function createAiCounters(): AiCounters {
   };
 }
 
-function buildMatchedFromEntity(
-  transaction: ParsedTransaction,
-  entry: EntityEntry,
-  matchType: 'alias' | 'exact' | 'prefix' | 'contains' | 'ai',
-  category: string | null,
-  knownTags: string[]
-): ProcessedTransaction {
-  return {
-    ...transaction,
-    entity: {
-      entityId: entry.id,
-      entityName: entry.name,
-      matchType,
-    },
-    status: 'matched',
-    suggestedTags: buildSuggestedTags(transaction.description, entry.id, [], category, knownTags),
-  };
-}
-
-function buildUncertainFromAi(
-  transaction: ParsedTransaction,
-  entityName: string,
-  category: string | null,
-  knownTags: string[]
-): ProcessedTransaction {
-  return {
-    ...transaction,
-    entity: {
-      entityName,
-      matchType: 'ai',
-      confidence: 0.7,
-    },
-    status: 'uncertain',
-    suggestedTags: buildSuggestedTags(transaction.description, null, [], category, knownTags),
-  };
-}
-
-function buildUncertainNoMatch(
-  transaction: ParsedTransaction,
-  reason: string,
-  knownTags: string[]
-): ProcessedTransaction {
-  return {
-    ...transaction,
-    entity: { matchType: 'none' },
-    status: 'uncertain',
-    error: reason,
-    suggestedTags: buildSuggestedTags(transaction.description, null, [], null, knownTags),
-  };
-}
-
 function tryEntityMatch(
   transaction: ParsedTransaction,
   context: ProcessContext
@@ -113,7 +63,13 @@ function tryEntityMatch(
   if (!entityEntry) {
     throw new Error(`Entity lookup failed for matched entity: ${match.entityName}`);
   }
-  return buildMatchedFromEntity(transaction, entityEntry, match.matchType, null, context.knownTags);
+  return buildMatchedFromEntity({
+    transaction,
+    entry: entityEntry,
+    matchType: match.matchType,
+    category: null,
+    knownTags: context.knownTags,
+  });
 }
 
 async function tryAiCategorization(
@@ -153,44 +109,29 @@ function resolveAiResult(
 ): ProcessedTransaction {
   const entry = context.entityLookup.get(aiEntityName.toLowerCase());
   if (entry) {
-    return buildMatchedFromEntity(transaction, entry, 'ai', category, context.knownTags);
+    return buildMatchedFromEntity({
+      transaction,
+      entry,
+      matchType: 'ai',
+      category,
+      knownTags: context.knownTags,
+    });
   }
   return buildUncertainFromAi(transaction, aiEntityName, category, context.knownTags);
 }
 
-function buildFailure(
-  transaction: ParsedTransaction,
-  error: unknown
-): {
-  failed: ProcessedTransaction;
-  message: string;
-  errorEntry: { description: string; error: string };
-} {
-  const message = error instanceof Error ? error.message : 'Unknown error';
-  const failed: ProcessedTransaction = {
-    ...transaction,
-    entity: { matchType: 'none' },
-    status: 'failed',
-    error: message,
-  };
-  const formatted = formatImportError(error, { transaction: transaction.description });
-  return {
-    failed,
-    message,
-    errorEntry: {
-      description: transaction.description.slice(0, 50),
-      error: formatted.message + (formatted.suggestion ? ` - ${formatted.suggestion}` : ''),
-    },
-  };
+export interface ProcessTransactionArgs {
+  transaction: ParsedTransaction;
+  context: ProcessContext;
+  counters: AiCounters;
+  index: number;
+  total: number;
 }
 
 async function classifyTransaction(
-  transaction: ParsedTransaction,
-  context: ProcessContext,
-  counters: AiCounters,
-  index: number,
-  total: number
+  args: ProcessTransactionArgs
 ): Promise<TransactionProcessResult> {
+  const { transaction, context, counters, index, total } = args;
   const correctionApplied = applyLearnedCorrection({
     transaction,
     minConfidence: 0.7,
@@ -235,16 +176,12 @@ async function classifyTransaction(
 }
 
 export async function processTransactionSafely(
-  transaction: ParsedTransaction,
-  context: ProcessContext,
-  counters: AiCounters,
-  index: number,
-  total: number
+  args: ProcessTransactionArgs
 ): Promise<TransactionProcessResult> {
   try {
-    return await classifyTransaction(transaction, context, counters, index, total);
+    return await classifyTransaction(args);
   } catch (error) {
-    const { failed, errorEntry } = buildFailure(transaction, error);
+    const { failed, errorEntry } = buildFailure(args.transaction, error);
     return { failed, batchStatus: 'failed', errorEntry };
   }
 }

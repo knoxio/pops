@@ -29,10 +29,10 @@ export interface ListEngramsResult {
   total: number;
 }
 
-export function listEngrams(
+function buildConditions(
   db: BetterSQLite3Database,
-  opts: ListEngramsOptions = {}
-): ListEngramsResult {
+  opts: ListEngramsOptions
+): ReturnType<typeof and> | undefined {
   const conditions = [];
   if (opts.type) conditions.push(eq(engramIndex.type, opts.type));
   if (opts.status) conditions.push(eq(engramIndex.status, opts.status));
@@ -62,32 +62,66 @@ export function listEngrams(
   if (opts.ids && opts.ids.length > 0) {
     conditions.push(inArray(engramIndex.id, opts.ids));
   }
+  return conditions.length === 0 ? undefined : and(...conditions);
+}
 
-  const where = conditions.length === 0 ? undefined : and(...conditions);
-  const sortField = opts.sort?.field ?? 'modified_at';
-  const sortDir = opts.sort?.direction ?? 'desc';
-  const orderColumn = (() => {
-    if (sortField === 'title') return engramIndex.title;
-    if (sortField === 'created_at') return engramIndex.createdAt;
-    return engramIndex.modifiedAt;
-  })();
+function resolveOrderColumn(
+  field: NonNullable<ListEngramsOptions['sort']>['field']
+): typeof engramIndex.title | typeof engramIndex.createdAt | typeof engramIndex.modifiedAt {
+  if (field === 'title') return engramIndex.title;
+  if (field === 'created_at') return engramIndex.createdAt;
+  return engramIndex.modifiedAt;
+}
 
-  const limit = opts.ids && opts.limit === undefined ? opts.ids.length : (opts.limit ?? 50);
-  const offset = opts.offset ?? 0;
+interface QueryParams {
+  where: ReturnType<typeof and> | undefined;
+  orderColumn: ReturnType<typeof resolveOrderColumn>;
+  sortDir: 'asc' | 'desc';
+  limit: number;
+  offset: number;
+}
 
+function fetchRows(db: BetterSQLite3Database, p: QueryParams): { rows: unknown[]; total: number } {
   const rowsQuery = db.select().from(engramIndex).$dynamic();
-  const rows = (where ? rowsQuery.where(where) : rowsQuery)
-    .orderBy(sortDir === 'asc' ? orderColumn : sql`${orderColumn} desc`)
-    .limit(limit)
-    .offset(offset)
+  const rows = (p.where ? rowsQuery.where(p.where) : rowsQuery)
+    .orderBy(p.sortDir === 'asc' ? p.orderColumn : sql`${p.orderColumn} desc`)
+    .limit(p.limit)
+    .offset(p.offset)
     .all();
 
   const totalQuery = db.select({ total: count() }).from(engramIndex).$dynamic();
-  const [totalRow] = (where ? totalQuery.where(where) : totalQuery).all();
+  const [totalRow] = (p.where ? totalQuery.where(p.where) : totalQuery).all();
+
+  return { rows, total: totalRow?.total ?? 0 };
+}
+
+function resolveLimit(opts: ListEngramsOptions): number {
+  if (opts.ids && opts.limit === undefined) return opts.ids.length;
+  return opts.limit ?? 50;
+}
+
+export function listEngrams(
+  db: BetterSQLite3Database,
+  opts: ListEngramsOptions = {}
+): ListEngramsResult {
+  const where = buildConditions(db, opts);
+  const sortField = opts.sort?.field ?? 'modified_at';
+  const sortDir = opts.sort?.direction ?? 'desc';
+
+  const { rows, total } = fetchRows(db, {
+    where,
+    orderColumn: resolveOrderColumn(sortField),
+    sortDir,
+    limit: resolveLimit(opts),
+    offset: opts.offset ?? 0,
+  });
 
   return {
-    engrams: hydrateEngrams(db, rows.map(indexRowFromDrizzle)),
-    total: totalRow?.total ?? 0,
+    engrams: hydrateEngrams(
+      db,
+      (rows as Parameters<typeof indexRowFromDrizzle>[0][]).map(indexRowFromDrizzle)
+    ),
+    total,
   };
 }
 

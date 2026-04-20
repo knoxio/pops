@@ -292,13 +292,12 @@ describe('GET /media/images/:mediaType/:id/:filename', () => {
 
       await request(app).get('/media/images/tv/81189/poster.jpg');
 
-      expect(mockDownloadTvShowImages).toHaveBeenCalledWith(
-        81189,
-        'https://artworks.thetvdb.com/poster.jpg',
-        null,
-        undefined,
-        null
-      );
+      expect(mockDownloadTvShowImages).toHaveBeenCalledWith({
+        tvdbId: 81189,
+        posterUrl: 'https://artworks.thetvdb.com/poster.jpg',
+        backdropUrl: null,
+        logoUrl: null,
+      });
     });
 
     it('downloads TV logo from TheTVDB on cache miss', async () => {
@@ -307,13 +306,12 @@ describe('GET /media/images/:mediaType/:id/:filename', () => {
 
       await request(app).get('/media/images/tv/81189/logo.png');
 
-      expect(mockDownloadTvShowImages).toHaveBeenCalledWith(
-        81189,
-        null,
-        null,
-        undefined,
-        'https://artworks.thetvdb.com/logo.png'
-      );
+      expect(mockDownloadTvShowImages).toHaveBeenCalledWith({
+        tvdbId: 81189,
+        posterUrl: null,
+        backdropUrl: null,
+        logoUrl: 'https://artworks.thetvdb.com/logo.png',
+      });
     });
 
     it('does not attempt download when no DB record exists', async () => {

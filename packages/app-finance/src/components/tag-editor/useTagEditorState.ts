@@ -80,11 +80,16 @@ function useCoreState(currentTags: string[]) {
   };
 }
 
-export function useTagEditorState(props: TagEditorProps) {
-  const { currentTags, onSave, onSuggest, availableTags = [] } = props;
-  const s = useCoreState(currentTags);
-  const filtered = filterTagSuggestions(s.inputValue, availableTags, s.tags);
+type CoreStateBag = ReturnType<typeof useCoreState>;
 
+interface ActionsArgs {
+  s: CoreStateBag;
+  currentTags: string[];
+  onSave: TagEditorProps['onSave'];
+  onSuggest: TagEditorProps['onSuggest'];
+}
+
+function useTagActions({ s, currentTags, onSave, onSuggest }: ActionsArgs) {
   const addTag = (tag: string) => {
     const trimmed = tag.trim();
     if (trimmed && !s.tags.includes(trimmed)) s.setTags((prev) => [...prev, trimmed]);
@@ -117,6 +122,19 @@ export function useTagEditorState(props: TagEditorProps) {
         }
       }
     : undefined;
+  return { addTag, removeTag, handleCancel, handleSave, handleSuggest };
+}
+
+export function useTagEditorState(props: TagEditorProps) {
+  const { currentTags, onSave, onSuggest, availableTags = [] } = props;
+  const s = useCoreState(currentTags);
+  const filtered = filterTagSuggestions(s.inputValue, availableTags, s.tags);
+  const { addTag, removeTag, handleCancel, handleSave, handleSuggest } = useTagActions({
+    s,
+    currentTags,
+    onSave,
+    onSuggest,
+  });
 
   const handlers: PanelHandlers = {
     tags: s.tags,

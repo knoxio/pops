@@ -48,18 +48,12 @@ function useTreeUiState() {
   };
 }
 
-export function useLocationTreePageModel() {
-  const { treeNodes, nodeMap, isLoading, error } = useLocationTree();
-  const ui = useTreeUiState();
-  const mutations = useLocationMutations({
-    selectedId: ui.selectedId,
-    setSelectedId: ui.setSelectedId,
-    setAddingRoot: ui.setAddingRoot,
-    setAddingChildOf: ui.setAddingChildOf,
-    nodeMap,
-  });
-  const drag = useDragHandlers(nodeMap, treeNodes, mutations.updateMutation);
+interface CrudHandlersArgs {
+  ui: ReturnType<typeof useTreeUiState>;
+  mutations: ReturnType<typeof useLocationMutations>;
+}
 
+function useCrudHandlers({ ui, mutations }: CrudHandlersArgs) {
   const handleRename = useCallback(
     (id: string, newName: string) =>
       mutations.updateMutation.mutate({ id, data: { name: newName } }),
@@ -84,6 +78,22 @@ export function useLocationTreePageModel() {
     },
     [ui, mutations.updateMutation]
   );
+  return { handleRename, handleNewChildSave, handleNewRootSave, handleMoveStart, handleMoveTo };
+}
+
+export function useLocationTreePageModel() {
+  const { treeNodes, nodeMap, isLoading, error } = useLocationTree();
+  const ui = useTreeUiState();
+  const mutations = useLocationMutations({
+    selectedId: ui.selectedId,
+    setSelectedId: ui.setSelectedId,
+    setAddingRoot: ui.setAddingRoot,
+    setAddingChildOf: ui.setAddingChildOf,
+    nodeMap,
+  });
+  const drag = useDragHandlers(nodeMap, treeNodes, mutations.updateMutation);
+  const { handleRename, handleNewChildSave, handleNewRootSave, handleMoveStart, handleMoveTo } =
+    useCrudHandlers({ ui, mutations });
 
   return {
     treeNodes,

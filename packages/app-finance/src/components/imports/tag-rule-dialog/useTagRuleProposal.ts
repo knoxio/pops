@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { toast } from 'sonner';
+import { useEffect, useMemo, useState } from 'react';
 
 import { trpc } from '@pops/api-client';
 
@@ -7,9 +6,9 @@ import {
   collectNewTagNames,
   parseTags,
   type ProposeOutput,
-  type RejectOutput,
   type TagRuleProposalDialogProps,
 } from './types';
+import { useTagRuleMutations } from './useTagRuleMutations';
 
 const DISABLED_INPUT = {
   signal: {
@@ -119,79 +118,6 @@ function useSyncAcceptedTags(
   }, [proposal, setAcceptedNewTags]);
 }
 
-interface MutationsArgs {
-  props: TagRuleProposalDialogProps;
-  form: FormState;
-  proposal: ProposeOutput | undefined;
-}
-
-function useMutations(args: MutationsArgs) {
-  const { props, form, proposal } = args;
-  const utils = trpc.useUtils();
-  const applyMutation = trpc.core.tagRules.applyTagRuleChangeSet.useMutation({
-    onError: (e) => toast.error(e.message),
-  });
-  const rejectMutation = trpc.core.tagRules.rejectTagRuleChangeSet.useMutation({
-    onSuccess: (data: RejectOutput) => {
-      if (data.followUpProposal) {
-        form.setFollowUpProposal(data.followUpProposal);
-        form.setRejectOpen(false);
-        form.setRejectFeedback('');
-        toast.message('Proposal revised based on your feedback');
-      } else {
-        toast.message('Proposal dismissed');
-        props.onOpenChange(false);
-      }
-    },
-    onError: (e) => toast.error(e.message),
-  });
-
-  const handleApply = useCallback(async () => {
-    if (!proposal) return;
-    const changeSet = proposal.changeSet;
-    await applyMutation.mutateAsync({ changeSet, acceptedNewTags: [...form.acceptedNewTags] });
-    await utils.core.tagRules.listVocabulary.invalidate();
-    toast.success('Tag rule saved');
-    props.onApplied?.(changeSet, proposal.preview.affected);
-    props.onOpenChange(false);
-  }, [proposal, applyMutation, form.acceptedNewTags, utils, props]);
-
-  const handleReject = useCallback(() => {
-    if (!proposal || !props.signal) return;
-    const fb = form.rejectFeedback.trim();
-    if (fb.length === 0) {
-      toast.error('Please add a short note explaining why you are rejecting this proposal.');
-      return;
-    }
-    rejectMutation.mutate({
-      changeSet: proposal.changeSet,
-      feedback: fb,
-      signal: {
-        descriptionPattern: form.pattern.trim() || props.signal.descriptionPattern,
-        matchType: form.matchType,
-        entityId: props.signal.entityId,
-        tags: parseTags(form.tagsText.trim() ? form.tagsText : props.signal.tags.join(', ')),
-      },
-      transactions: props.previewTransactions.map((t) => ({
-        transactionId: t.checksum,
-        description: t.description,
-        entityId: t.entityId ?? null,
-      })),
-      maxPreviewItems: 200,
-    });
-  }, [
-    proposal,
-    props,
-    rejectMutation,
-    form.rejectFeedback,
-    form.pattern,
-    form.matchType,
-    form.tagsText,
-  ]);
-
-  return { applyMutation, rejectMutation, handleApply, handleReject };
-}
-
 export function useTagRuleProposal(props: TagRuleProposalDialogProps) {
   const form = useFormState();
   const proposeInput = useMemo(
@@ -213,7 +139,7 @@ export function useTagRuleProposal(props: TagRuleProposalDialogProps) {
   useResetOnOpen(props, form);
   useSyncAcceptedTags(proposal, form.setAcceptedNewTags);
   const newTagNames = useMemo(() => collectNewTagNames(proposal), [proposal]);
-  const mutations = useMutations({ props, form, proposal });
+  const mutations = useTagRuleMutations({ props, form, proposal });
   const busy = mutations.applyMutation.isPending || mutations.rejectMutation.isPending;
   return { form, proposal, proposeQuery, newTagNames, busy, ...mutations };
 }

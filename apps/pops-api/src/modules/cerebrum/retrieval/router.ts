@@ -21,6 +21,66 @@ import { HybridSearchService } from './hybrid-search.js';
 
 import type { RetrievalFilters } from './types.js';
 
+function hasAnyStructuredFilter(filters: RetrievalFilters): boolean {
+  if (filters.customFields) return true;
+  if (filters.dateRange?.from || filters.dateRange?.to) return true;
+  const arrayLengths = [
+    filters.types?.length,
+    filters.scopes?.length,
+    filters.tags?.length,
+    filters.status?.length,
+    filters.sourceTypes?.length,
+  ];
+  return arrayLengths.some((n) => (n ?? 0) > 0);
+}
+
+interface SearchProcedureInput {
+  query?: string;
+  mode: 'semantic' | 'structured' | 'hybrid';
+  filters?: RetrievalFilters;
+  limit: number;
+  threshold: number;
+  offset: number;
+}
+
+async function runSearchProcedure(input: SearchProcedureInput): Promise<{
+  results: unknown[];
+  meta: { total: number; mode: SearchProcedureInput['mode'] };
+}> {
+  const filters: RetrievalFilters = input.filters ?? {};
+
+  if (input.mode !== 'structured' && !input.query?.trim()) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Query is required for semantic and hybrid search modes',
+    });
+  }
+
+  if (input.mode === 'structured' && !hasAnyStructuredFilter(filters)) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: 'Structured search requires at least one filter',
+    });
+  }
+
+  const svc = new HybridSearchService(getDrizzle());
+  const query = input.query ?? '';
+  let results: unknown[];
+  switch (input.mode) {
+    case 'semantic':
+      results = await svc.semanticSearch(query, filters, input.limit, input.threshold);
+      break;
+    case 'structured':
+      results = svc.structuredOnly(filters, input.limit, input.offset);
+      break;
+    case 'hybrid':
+    default:
+      results = await svc.hybrid(query, filters, input.limit, input.threshold);
+  }
+
+  return { results, meta: { total: results.length, mode: input.mode } };
+}
+
 const filtersSchema = z
   .object({
     types: z.array(z.string()).optional(),
@@ -49,62 +109,7 @@ export const retrievalRouter = router({
         offset: z.number().int().min(0).default(0),
       })
     )
-    .query(async ({ input }) => {
-      const db = getDrizzle();
-      const svc = new HybridSearchService(db);
-      const filters: RetrievalFilters = input.filters ?? {};
-
-      if (input.mode === 'semantic' || input.mode === 'hybrid') {
-        if (!input.query?.trim()) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Query is required for semantic and hybrid search modes',
-          });
-        }
-      }
-
-      if (input.mode === 'structured') {
-        const hasFilters =
-          filters.types?.length ||
-          filters.scopes?.length ||
-          filters.tags?.length ||
-          filters.dateRange?.from ||
-          filters.dateRange?.to ||
-          filters.status?.length ||
-          filters.sourceTypes?.length ||
-          filters.customFields;
-        if (!hasFilters) {
-          throw new TRPCError({
-            code: 'BAD_REQUEST',
-            message: 'Structured search requires at least one filter',
-          });
-        }
-      }
-
-      // query is guaranteed non-empty for semantic/hybrid by the guard above
-      const query = input.query ?? '';
-
-      let results;
-      switch (input.mode) {
-        case 'semantic':
-          results = await svc.semanticSearch(query, filters, input.limit, input.threshold);
-          break;
-        case 'structured':
-          results = svc.structuredOnly(filters, input.limit, input.offset);
-          break;
-        case 'hybrid':
-        default:
-          results = await svc.hybrid(query, filters, input.limit, input.threshold);
-      }
-
-      return {
-        results,
-        meta: {
-          total: results.length,
-          mode: input.mode,
-        },
-      };
-    }),
+    .query(async ({ input }) => runSearchProcedure(input)),
 
   /**
    * Assemble a token-budgeted context window for LLM consumption.

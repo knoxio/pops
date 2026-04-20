@@ -42,13 +42,13 @@ export const budgetsRouter = router({
       else if (input.active === 'false') activeFilter = false;
       else activeFilter = undefined;
 
-      const { rows, total } = service.listBudgets(
-        input.search,
-        input.period,
-        activeFilter,
+      const { rows, total } = service.listBudgets({
+        search: input.search,
+        period: input.period,
+        active: activeFilter,
         limit,
-        offset
-      );
+        offset,
+      });
 
       return {
         data: rows.map(toBudget),

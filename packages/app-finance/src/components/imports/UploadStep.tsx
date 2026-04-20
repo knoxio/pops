@@ -60,10 +60,7 @@ function UploadFooter({
   );
 }
 
-/**
- * Step 1: Upload CSV file and parse it
- */
-export function UploadStep() {
+function useUploadStep() {
   const { file, setFile, setHeaders, setRows, nextStep } = useImportStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,6 +90,15 @@ export function UploadStep() {
     setRows(result.rows ?? []);
     nextStep();
   }, [file, setHeaders, setRows, nextStep]);
+
+  return { file, isProcessing, error, handleFileSelect, handleNext };
+}
+
+/**
+ * Step 1: Upload CSV file and parse it
+ */
+export function UploadStep() {
+  const { file, isProcessing, error, handleFileSelect, handleNext } = useUploadStep();
 
   return (
     <div className="space-y-6">

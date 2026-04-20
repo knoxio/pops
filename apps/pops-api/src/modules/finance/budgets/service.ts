@@ -17,31 +17,24 @@ export interface BudgetListResult {
   total: number;
 }
 
+export interface ListBudgetsOptions {
+  search?: string;
+  period?: string;
+  active?: boolean;
+  limit: number;
+  offset: number;
+}
+
 /**
  * List budgets with optional filters.
- * @param search - LIKE search on category field
- * @param period - Exact match on period field
- * @param active - Filter by active status (boolean)
  */
-export function listBudgets(
-  search: string | undefined,
-  period: string | undefined,
-  active: boolean | undefined,
-  limit: number,
-  offset: number
-): BudgetListResult {
+export function listBudgets(opts: ListBudgetsOptions): BudgetListResult {
   const db = getDrizzle();
   const conditions = [];
 
-  if (search) {
-    conditions.push(like(budgets.category, `%${search}%`));
-  }
-  if (period) {
-    conditions.push(eq(budgets.period, period));
-  }
-  if (active !== undefined) {
-    conditions.push(eq(budgets.active, active ? 1 : 0));
-  }
+  if (opts.search) conditions.push(like(budgets.category, `%${opts.search}%`));
+  if (opts.period) conditions.push(eq(budgets.period, opts.period));
+  if (opts.active !== undefined) conditions.push(eq(budgets.active, opts.active ? 1 : 0));
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
 
@@ -50,13 +43,11 @@ export function listBudgets(
     .from(budgets)
     .where(where)
     .orderBy(asc(budgets.category))
-    .limit(limit)
-    .offset(offset)
+    .limit(opts.limit)
+    .offset(opts.offset)
     .all();
   const countRow = db.select({ total: count() }).from(budgets).where(where).all()[0];
-  const total = countRow?.total ?? 0;
-
-  return { rows, total };
+  return { rows, total: countRow?.total ?? 0 };
 }
 
 /** Get a single budget by id. Throws NotFoundError if missing. */

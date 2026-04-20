@@ -76,6 +76,109 @@ function weightedSample(candidates: ScoredCandidate[], scores: number[]): Scored
   return fallback;
 }
 
+interface CategorisedCandidates {
+  pinnedInstances: ShelfInstance[];
+  allCandidates: ScoredCandidate[];
+}
+
+function categoriseCandidates(
+  profile: PreferenceProfile,
+  impressions: Map<string, number>
+): CategorisedCandidates {
+  const definitions = getRegisteredShelves();
+  const pinnedInstances: ShelfInstance[] = [];
+  const allCandidates: ScoredCandidate[] = [];
+
+  for (const def of definitions) {
+    const instances = def.generate(profile);
+    if (def.pinned) {
+      pinnedInstances.push(...instances.map((inst) => ({ ...inst, pinned: true as const })));
+      continue;
+    }
+    for (const instance of instances) {
+      const count = impressions.get(instance.shelfId) ?? 0;
+      const freshness = getShelfFreshness(count);
+      allCandidates.push({
+        instance,
+        category: def.category,
+        baseScore: instance.score * freshness,
+      });
+    }
+  }
+  return { pinnedInstances, allCandidates };
+}
+
+interface AssemblyState {
+  selected: ShelfInstance[];
+  remaining: ScoredCandidate[];
+  seedCount: number;
+  genreCount: number;
+  lastCategory: ShelfCategory | null;
+}
+
+function localCountInWindow(state: AssemblyState, allCandidates: ScoredCandidate[]): number {
+  return state.selected.slice(-LOCAL_WINDOW_SIZE).filter((s) => {
+    const c = allCandidates.find((c) => c.instance.shelfId === s.shelfId);
+    return c?.category === 'local';
+  }).length;
+}
+
+function pickEligible(state: AssemblyState, localInWindow: number): ScoredCandidate[] {
+  return state.remaining.filter((c) => {
+    if (c.category === 'seed' && state.seedCount >= MAX_SEED_SHELVES) return false;
+    if (isGenreShelf(c.instance.shelfId) && state.genreCount >= MAX_GENRE_SHELVES) return false;
+    if (c.category === 'local' && localInWindow >= MAX_LOCAL_PER_WINDOW) return false;
+    return true;
+  });
+}
+
+function selectShelvesRandomly(
+  allCandidates: ScoredCandidate[],
+  randomTarget: number
+): ShelfInstance[] {
+  const state: AssemblyState = {
+    selected: [],
+    remaining: [...allCandidates],
+    seedCount: 0,
+    genreCount: 0,
+    lastCategory: null,
+  };
+
+  while (state.selected.length < randomTarget && state.remaining.length > 0) {
+    const localInWindow = localCountInWindow(state, allCandidates);
+    const eligible = pickEligible(state, localInWindow);
+    if (eligible.length === 0) break;
+    const scores = eligible.map((c) => Math.max(0.001, computeScore(c, state.lastCategory)));
+    const picked = weightedSample(eligible, scores);
+    state.selected.push(picked.instance);
+    state.remaining.splice(state.remaining.indexOf(picked), 1);
+    state.lastCategory = picked.category;
+    if (picked.category === 'seed') state.seedCount++;
+    if (isGenreShelf(picked.instance.shelfId)) state.genreCount++;
+  }
+
+  return state.selected;
+}
+
+function ensurePersonalShelf(
+  selected: ShelfInstance[],
+  allCandidates: ScoredCandidate[]
+): ShelfInstance[] {
+  if (selected.some((s) => isPersonalShelf(s.shelfId))) return selected;
+  const selectedIds = new Set(selected.map((s) => s.shelfId));
+  const personalCandidate = allCandidates.find(
+    (c) => isPersonalShelf(c.instance.shelfId) && !selectedIds.has(c.instance.shelfId)
+  );
+  if (!personalCandidate) return selected;
+  const result = [...selected];
+  if (result.length >= SESSION_TARGET_MIN) {
+    result[result.length - 1] = personalCandidate.instance;
+  } else {
+    result.push(personalCandidate.instance);
+  }
+  return result;
+}
+
 /**
  * Assemble a discover session from all registered shelves.
  *
@@ -87,97 +190,16 @@ export function assembleSession(
   profile: PreferenceProfile,
   impressions: Map<string, number>
 ): ShelfInstance[] {
-  // Step 1: Generate all candidate instances from registered shelves
-  const definitions = getRegisteredShelves();
-  const pinnedInstances: ShelfInstance[] = [];
-  const allCandidates: ScoredCandidate[] = [];
+  const { pinnedInstances, allCandidates } = categoriseCandidates(profile, impressions);
+  if (pinnedInstances.length === 0 && allCandidates.length === 0) return [];
 
-  for (const def of definitions) {
-    const instances = def.generate(profile);
-    if (def.pinned) {
-      // Pinned shelves are always included — bypass random assembly entirely.
-      // Mark each instance so the router can apply a lower minimum-items threshold.
-      pinnedInstances.push(...instances.map((inst) => ({ ...inst, pinned: true as const })));
-    } else {
-      for (const instance of instances) {
-        const count = impressions.get(instance.shelfId) ?? 0;
-        const freshness = getShelfFreshness(count);
-        allCandidates.push({
-          instance,
-          category: def.category,
-          baseScore: instance.score * freshness,
-        });
-      }
-    }
-  }
-
-  if (pinnedInstances.length === 0 && allCandidates.length === 0) {
-    return [];
-  }
-
-  // Step 2: Weighted random sampling with variety constraints (non-pinned only)
-  const selected: ShelfInstance[] = [];
-  const remaining = [...allCandidates];
-  let seedCount = 0;
-  let genreCount = 0;
-  let lastCategory: ShelfCategory | null = null;
-
-  // Reduce random-selection target by the number of pinned instances so the
-  // overall session stays within SESSION_TARGET_MAX. Floor at 0 — if pinned
-  // instances alone already exceed (or meet) the max, skip random assembly.
   const randomTarget = Math.max(
     0,
     Math.min(SESSION_TARGET_MAX, Math.max(SESSION_TARGET_MIN, allCandidates.length)) -
       pinnedInstances.length
   );
 
-  while (selected.length < randomTarget && remaining.length > 0) {
-    // Filter by variety constraints
-    const localCountInWindow = selected.slice(-LOCAL_WINDOW_SIZE).filter((s) => {
-      const c = allCandidates.find((c) => c.instance.shelfId === s.shelfId);
-      return c?.category === 'local';
-    }).length;
-
-    const eligible = remaining.filter((c) => {
-      if (c.category === 'seed' && seedCount >= MAX_SEED_SHELVES) return false;
-      if (isGenreShelf(c.instance.shelfId) && genreCount >= MAX_GENRE_SHELVES) return false;
-      if (c.category === 'local' && localCountInWindow >= MAX_LOCAL_PER_WINDOW) return false;
-      return true;
-    });
-
-    if (eligible.length === 0) break;
-
-    // Compute scores with variety bonus
-    const scores = eligible.map((c) => Math.max(0.001, computeScore(c, lastCategory)));
-
-    // Weighted random pick
-    const picked = weightedSample(eligible, scores);
-
-    selected.push(picked.instance);
-    remaining.splice(remaining.indexOf(picked), 1);
-    lastCategory = picked.category;
-    if (picked.category === 'seed') seedCount++;
-    if (isGenreShelf(picked.instance.shelfId)) genreCount++;
-  }
-
-  // Step 3: Guarantee at least 1 personal shelf
-  const hasPersonal = selected.some((s) => isPersonalShelf(s.shelfId));
-  if (!hasPersonal) {
-    // Find a personal shelf from the original candidates not already in selected
-    const selectedIds = new Set(selected.map((s) => s.shelfId));
-    const personalCandidate = allCandidates.find(
-      (c) => isPersonalShelf(c.instance.shelfId) && !selectedIds.has(c.instance.shelfId)
-    );
-    if (personalCandidate) {
-      // Replace the last shelf (lowest priority position) with the personal shelf
-      if (selected.length >= SESSION_TARGET_MIN) {
-        selected[selected.length - 1] = personalCandidate.instance;
-      } else {
-        selected.push(personalCandidate.instance);
-      }
-    }
-  }
-
-  // Step 4: Prepend pinned shelves — they always appear before randomly assembled shelves.
-  return [...pinnedInstances, ...selected];
+  const selected = selectShelvesRandomly(allCandidates, randomTarget);
+  const finalSelection = ensurePersonalShelf(selected, allCandidates);
+  return [...pinnedInstances, ...finalSelection];
 }

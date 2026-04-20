@@ -370,12 +370,12 @@ describe('addTvShow', () => {
     const result = await addTvShow(81189, client, mockImageCache as unknown as ImageCacheService);
 
     expect(result.created).toBe(true);
-    expect(mockImageCache.downloadTvShowImages).toHaveBeenCalledWith(
-      81189,
-      'https://artworks.thetvdb.com/poster.jpg',
-      'https://artworks.thetvdb.com/backdrop.jpg',
-      [{ seasonNumber: 1, posterUrl: 'https://artworks.thetvdb.com/s1.jpg' }]
-    );
+    expect(mockImageCache.downloadTvShowImages).toHaveBeenCalledWith({
+      tvdbId: 81189,
+      posterUrl: 'https://artworks.thetvdb.com/poster.jpg',
+      backdropUrl: 'https://artworks.thetvdb.com/backdrop.jpg',
+      seasonPosters: [{ seasonNumber: 1, posterUrl: 'https://artworks.thetvdb.com/s1.jpg' }],
+    });
   });
 
   it('does not call imageCache for existing show', async () => {

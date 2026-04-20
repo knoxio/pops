@@ -3,6 +3,7 @@ import { and, desc, gte, lte, sql } from 'drizzle-orm';
 import { aiInferenceLog } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
+import { buildGroupings } from './group-stats.js';
 
 import type {
   HistoryOutput,
@@ -41,11 +42,26 @@ function buildWhere(filters: ObservabilityFilters): ReturnType<typeof and> | und
   return conditions.length === 0 ? undefined : and(...conditions);
 }
 
-export function getStats(filters: ObservabilityFilters = {}): StatsOutput {
-  const db = getDrizzle();
-  const where = buildWhere(filters);
+interface OverallStats {
+  totalCalls: number;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+  totalCostUsd: number;
+  cacheHits: number;
+  errors: number;
+}
 
-  const [overall] = db
+const EMPTY_OVERALL: OverallStats = {
+  totalCalls: 0,
+  totalInputTokens: 0,
+  totalOutputTokens: 0,
+  totalCostUsd: 0,
+  cacheHits: 0,
+  errors: 0,
+};
+
+function fetchOverallStats(where: ReturnType<typeof buildWhere>): OverallStats {
+  const [row] = getDrizzle()
     .select({
       totalCalls: sql<number>`COUNT(*)`,
       totalInputTokens: sql<number>`COALESCE(SUM(${aiInferenceLog.inputTokens}), 0)`,
@@ -57,74 +73,28 @@ export function getStats(filters: ObservabilityFilters = {}): StatsOutput {
     .from(aiInferenceLog)
     .where(where)
     .all();
+  if (!row) return EMPTY_OVERALL;
+  const out = { ...EMPTY_OVERALL };
+  for (const key of Object.keys(out) as (keyof OverallStats)[]) {
+    const v = row[key];
+    if (v != null) out[key] = v;
+  }
+  return out;
+}
 
-  const totalCalls = overall?.totalCalls ?? 0;
-  const cacheHits = overall?.cacheHits ?? 0;
-  const errors = overall?.errors ?? 0;
-
-  const byProvider = db
-    .select({
-      key: aiInferenceLog.provider,
-      calls: sql<number>`COUNT(*)`,
-      inputTokens: sql<number>`COALESCE(SUM(${aiInferenceLog.inputTokens}), 0)`,
-      outputTokens: sql<number>`COALESCE(SUM(${aiInferenceLog.outputTokens}), 0)`,
-      costUsd: sql<number>`COALESCE(SUM(${aiInferenceLog.costUsd}), 0)`,
-    })
-    .from(aiInferenceLog)
-    .where(where)
-    .groupBy(aiInferenceLog.provider)
-    .all();
-
-  const byModel = db
-    .select({
-      key: aiInferenceLog.model,
-      calls: sql<number>`COUNT(*)`,
-      inputTokens: sql<number>`COALESCE(SUM(${aiInferenceLog.inputTokens}), 0)`,
-      outputTokens: sql<number>`COALESCE(SUM(${aiInferenceLog.outputTokens}), 0)`,
-      costUsd: sql<number>`COALESCE(SUM(${aiInferenceLog.costUsd}), 0)`,
-    })
-    .from(aiInferenceLog)
-    .where(where)
-    .groupBy(aiInferenceLog.model)
-    .all();
-
-  const byDomain = db
-    .select({
-      key: sql<string>`COALESCE(${aiInferenceLog.domain}, 'general')`,
-      calls: sql<number>`COUNT(*)`,
-      inputTokens: sql<number>`COALESCE(SUM(${aiInferenceLog.inputTokens}), 0)`,
-      outputTokens: sql<number>`COALESCE(SUM(${aiInferenceLog.outputTokens}), 0)`,
-      costUsd: sql<number>`COALESCE(SUM(${aiInferenceLog.costUsd}), 0)`,
-    })
-    .from(aiInferenceLog)
-    .where(where)
-    .groupBy(sql`COALESCE(${aiInferenceLog.domain}, 'general')`)
-    .all();
-
-  const byOperation = db
-    .select({
-      key: aiInferenceLog.operation,
-      calls: sql<number>`COUNT(*)`,
-      inputTokens: sql<number>`COALESCE(SUM(${aiInferenceLog.inputTokens}), 0)`,
-      outputTokens: sql<number>`COALESCE(SUM(${aiInferenceLog.outputTokens}), 0)`,
-      costUsd: sql<number>`COALESCE(SUM(${aiInferenceLog.costUsd}), 0)`,
-    })
-    .from(aiInferenceLog)
-    .where(where)
-    .groupBy(aiInferenceLog.operation)
-    .all();
+export function getStats(filters: ObservabilityFilters = {}): StatsOutput {
+  const where = buildWhere(filters);
+  const overall = fetchOverallStats(where);
+  const groupings = buildGroupings(where, filters);
 
   return {
-    totalCalls,
-    totalInputTokens: overall?.totalInputTokens ?? 0,
-    totalOutputTokens: overall?.totalOutputTokens ?? 0,
-    totalCostUsd: overall?.totalCostUsd ?? 0,
-    cacheHitRate: totalCalls > 0 ? cacheHits / totalCalls : 0,
-    errorRate: totalCalls > 0 ? errors / totalCalls : 0,
-    byProvider,
-    byModel,
-    byDomain,
-    byOperation,
+    totalCalls: overall.totalCalls,
+    totalInputTokens: overall.totalInputTokens,
+    totalOutputTokens: overall.totalOutputTokens,
+    totalCostUsd: overall.totalCostUsd,
+    cacheHitRate: overall.totalCalls > 0 ? overall.cacheHits / overall.totalCalls : 0,
+    errorRate: overall.totalCalls > 0 ? overall.errors / overall.totalCalls : 0,
+    ...groupings,
   };
 }
 

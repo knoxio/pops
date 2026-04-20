@@ -40,17 +40,7 @@ export interface ResolveInput {
   explicitScopes?: string[];
 }
 
-/**
- * Parse and validate the raw TOML value into a `ScopeRulesConfig`.
- * Invalid rules are skipped with a console warning.
- */
-function parseConfig(raw: unknown): ScopeRulesConfig {
-  if (typeof raw !== 'object' || raw === null) {
-    throw new Error('scope-rules.toml must be a TOML object at the root level');
-  }
-
-  const obj = raw as Record<string, unknown>;
-
+function parseFallbackScope(obj: Record<string, unknown>): string {
   const fallbackRaw =
     typeof obj['defaults'] === 'object' &&
     obj['defaults'] !== null &&
@@ -64,68 +54,81 @@ function parseConfig(raw: unknown): ScopeRulesConfig {
       `[cerebrum] scope-rules.toml: invalid defaults.fallback_scope '${String(fallbackRaw)}' — using default '${DEFAULT_FALLBACK_SCOPE}'`
     );
   }
-  const fallback_scope = parsedFallback.success ? parsedFallback.data : DEFAULT_FALLBACK_SCOPE;
+  return parsedFallback.success ? parsedFallback.data : DEFAULT_FALLBACK_SCOPE;
+}
 
+function parseAssignScopes(assignRaw: unknown[]): string[] {
+  const validAssign: string[] = [];
+  for (const a of assignRaw) {
+    const parsed = scopeStringSchema.safeParse(a);
+    if (!parsed.success) {
+      console.warn(
+        `[cerebrum] scope-rules.toml: invalid assign scope '${String(a)}' — skipping rule scope`
+      );
+      continue;
+    }
+    validAssign.push(parsed.data);
+  }
+  return validAssign;
+}
+
+function parseMatchObject(matchObj: Record<string, unknown>): ScopeRule['match'] {
+  const match: ScopeRule['match'] = {};
+  if (typeof matchObj['source'] === 'string') match.source = matchObj['source'];
+  if (typeof matchObj['type'] === 'string') match.type = matchObj['type'];
+  if (Array.isArray(matchObj['tags'])) {
+    match.tags = (matchObj['tags'] as unknown[]).filter((t): t is string => typeof t === 'string');
+  }
+  return match;
+}
+
+function parseRuleEntry(r: unknown): ScopeRule | null {
+  if (typeof r !== 'object' || r === null) {
+    console.warn('[cerebrum] scope-rules.toml: skipping non-object rule entry');
+    return null;
+  }
+  const entry = r as Record<string, unknown>;
+  const matchRaw = entry['match'];
+  if (typeof matchRaw !== 'object' || matchRaw === null) {
+    console.warn('[cerebrum] scope-rules.toml: rule missing "match" object — skipping');
+    return null;
+  }
+  const assignRaw = entry['assign'];
+  if (!Array.isArray(assignRaw)) {
+    console.warn('[cerebrum] scope-rules.toml: rule missing "assign" array — skipping');
+    return null;
+  }
+  const validAssign = parseAssignScopes(assignRaw);
+  if (validAssign.length === 0) {
+    console.warn('[cerebrum] scope-rules.toml: rule has no valid assign scopes — skipping');
+    return null;
+  }
+  const priority = typeof entry['priority'] === 'number' ? entry['priority'] : 0;
+  return {
+    match: parseMatchObject(matchRaw as Record<string, unknown>),
+    assign: validAssign,
+    priority,
+  };
+}
+
+/**
+ * Parse and validate the raw TOML value into a `ScopeRulesConfig`.
+ * Invalid rules are skipped with a console warning.
+ */
+function parseConfig(raw: unknown): ScopeRulesConfig {
+  if (typeof raw !== 'object' || raw === null) {
+    throw new Error('scope-rules.toml must be a TOML object at the root level');
+  }
+  const obj = raw as Record<string, unknown>;
+  const fallback_scope = parseFallbackScope(obj);
   const rawRules = Array.isArray(obj['rules']) ? (obj['rules'] as unknown[]) : [];
   const rules: ScopeRule[] = [];
-
   for (const r of rawRules) {
-    if (typeof r !== 'object' || r === null) {
-      console.warn('[cerebrum] scope-rules.toml: skipping non-object rule entry');
-      continue;
-    }
-    const entry = r as Record<string, unknown>;
-    const matchRaw = entry['match'];
-    if (typeof matchRaw !== 'object' || matchRaw === null) {
-      console.warn('[cerebrum] scope-rules.toml: rule missing "match" object — skipping');
-      continue;
-    }
-    const matchObj = matchRaw as Record<string, unknown>;
-
-    const assignRaw = entry['assign'];
-    if (!Array.isArray(assignRaw)) {
-      console.warn('[cerebrum] scope-rules.toml: rule missing "assign" array — skipping');
-      continue;
-    }
-
-    const validAssign: string[] = [];
-    for (const a of assignRaw) {
-      const parsed = scopeStringSchema.safeParse(a);
-      if (!parsed.success) {
-        console.warn(
-          `[cerebrum] scope-rules.toml: invalid assign scope '${String(a)}' — skipping rule scope`
-        );
-        continue;
-      }
-      validAssign.push(parsed.data);
-    }
-
-    if (validAssign.length === 0) {
-      console.warn('[cerebrum] scope-rules.toml: rule has no valid assign scopes — skipping');
-      continue;
-    }
-
-    const priority = typeof entry['priority'] === 'number' ? entry['priority'] : 0;
-
-    const match: ScopeRule['match'] = {};
-    if (typeof matchObj['source'] === 'string') match.source = matchObj['source'];
-    if (typeof matchObj['type'] === 'string') match.type = matchObj['type'];
-    if (Array.isArray(matchObj['tags'])) {
-      match.tags = (matchObj['tags'] as unknown[]).filter(
-        (t): t is string => typeof t === 'string'
-      );
-    }
-
-    rules.push({ match, assign: validAssign, priority });
+    const rule = parseRuleEntry(r);
+    if (rule) rules.push(rule);
   }
-
-  // Sort by priority descending so highest-priority rules are first
   rules.sort((a, b) => b.priority - a.priority);
-
-  return {
-    defaults: { fallback_scope },
-    rules,
-  };
+  return { defaults: { fallback_scope }, rules };
 }
 
 /** Returns `true` when a rule's match conditions are all satisfied by `input`. */

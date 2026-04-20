@@ -27,17 +27,22 @@ export function normalizePairOrder(
   return [bType, bId, aType, aId];
 }
 
+export interface FindExistingComparisonInput {
+  dimensionId: number;
+  mediaAType: string;
+  mediaAId: number;
+  mediaBType: string;
+  mediaBId: number;
+}
+
 /**
  * Find an existing comparison for the same normalized pair on a dimension.
  * Returns the row if found, undefined otherwise.
  */
 export function findExistingComparison(
-  dimensionId: number,
-  mediaAType: string,
-  mediaAId: number,
-  mediaBType: string,
-  mediaBId: number
+  input: FindExistingComparisonInput
 ): ComparisonRow | undefined {
+  const { dimensionId, mediaAType, mediaAId, mediaBType, mediaBId } = input;
   const drizzleDb = getDrizzle();
   const [normAType, normAId, normBType, normBId] = normalizePairOrder(
     mediaAType,
@@ -70,13 +75,16 @@ export function findExistingComparison(
     .get();
 }
 
-export function listComparisonsForMedia(
-  mediaType: string,
-  mediaId: number,
-  dimensionId: number | undefined,
-  limit: number,
-  offset: number
-): ComparisonListResult {
+export interface ListComparisonsForMediaInput {
+  mediaType: string;
+  mediaId: number;
+  dimensionId?: number | undefined;
+  limit: number;
+  offset: number;
+}
+
+export function listComparisonsForMedia(input: ListComparisonsForMediaInput): ComparisonListResult {
+  const { mediaType, mediaId, dimensionId, limit, offset } = input;
   const db = getDrizzle();
 
   const mediaCondition = or(

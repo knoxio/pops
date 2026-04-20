@@ -32,13 +32,13 @@ export const entitiesRouter = router({
       const limit = input.limit ?? DEFAULT_LIMIT;
       const offset = input.offset ?? DEFAULT_OFFSET;
 
-      const { rows, total } = service.listEntities(
-        input.search,
-        input.type,
+      const { rows, total } = service.listEntities({
+        search: input.search,
+        type: input.type,
         limit,
         offset,
-        input.orphanedOnly
-      );
+        orphanedOnly: input.orphanedOnly,
+      });
 
       return {
         data: rows.map(toEntity),

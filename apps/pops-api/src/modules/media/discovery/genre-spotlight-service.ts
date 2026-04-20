@@ -169,16 +169,21 @@ export async function getGenreSpotlight(
   };
 }
 
+export interface GenreSpotlightPageInput {
+  client: TmdbClient;
+  profile: PreferenceProfile;
+  libraryIds: Set<number>;
+  genreId: number;
+  page: number;
+}
+
 /**
  * Fetch additional page of genre spotlight results for a specific genre.
  */
 export async function getGenreSpotlightPage(
-  client: TmdbClient,
-  profile: PreferenceProfile,
-  libraryIds: Set<number>,
-  genreId: number,
-  page: number
+  input: GenreSpotlightPageInput
 ): Promise<GenreSpotlightPageResponse> {
+  const { client, profile, libraryIds, genreId, page } = input;
   const genreName = TMDB_GENRE_MAP[genreId] ?? 'Unknown';
   const dismissedIds = getDismissedTmdbIds();
   const watchedIds = getWatchedTmdbIds();

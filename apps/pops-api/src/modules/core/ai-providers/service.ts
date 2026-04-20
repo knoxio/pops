@@ -81,17 +81,19 @@ export function getProvider(providerId: string): ProviderWithModels | null {
   return { ...provider, models: models.map(rowToModel) };
 }
 
-export function upsertProvider(input: UpsertProviderInput): ProviderWithModels {
-  const db = getDrizzle();
-  const now = new Date().toISOString();
+type ModelInput = NonNullable<UpsertProviderInput['models']>[number];
 
-  db.insert(aiProviders)
+function upsertProviderRow(input: UpsertProviderInput, now: string): void {
+  const baseUrl = input.baseUrl ?? null;
+  const apiKeyRef = input.apiKeyRef ?? null;
+  getDrizzle()
+    .insert(aiProviders)
     .values({
       id: input.id,
       name: input.name,
       type: input.type,
-      baseUrl: input.baseUrl ?? null,
-      apiKeyRef: input.apiKeyRef ?? null,
+      baseUrl,
+      apiKeyRef,
       status: 'active',
       createdAt: now,
       updatedAt: now,
@@ -101,43 +103,56 @@ export function upsertProvider(input: UpsertProviderInput): ProviderWithModels {
       set: {
         name: input.name,
         type: input.type,
-        baseUrl: input.baseUrl ?? null,
-        apiKeyRef: input.apiKeyRef ?? null,
+        baseUrl,
+        apiKeyRef,
         status: 'active',
         updatedAt: now,
       },
     })
     .run();
+}
 
+function upsertModelRow(providerId: string, model: ModelInput, now: string): void {
+  const displayName = model.displayName ?? null;
+  const inputCostPerMtok = model.inputCostPerMtok ?? 0;
+  const outputCostPerMtok = model.outputCostPerMtok ?? 0;
+  const contextWindow = model.contextWindow ?? null;
+  const isDefault = model.isDefault ? 1 : 0;
+  getDrizzle()
+    .insert(aiModelPricing)
+    .values({
+      providerId,
+      modelId: model.modelId,
+      displayName,
+      inputCostPerMtok,
+      outputCostPerMtok,
+      contextWindow,
+      isDefault,
+      createdAt: now,
+      updatedAt: now,
+    })
+    .onConflictDoUpdate({
+      target: [aiModelPricing.providerId, aiModelPricing.modelId],
+      set: {
+        displayName,
+        inputCostPerMtok,
+        outputCostPerMtok,
+        contextWindow,
+        isDefault,
+        updatedAt: now,
+      },
+    })
+    .run();
+}
+
+export function upsertProvider(input: UpsertProviderInput): ProviderWithModels {
+  const now = new Date().toISOString();
+  upsertProviderRow(input, now);
   if (input.models) {
     for (const model of input.models) {
-      db.insert(aiModelPricing)
-        .values({
-          providerId: input.id,
-          modelId: model.modelId,
-          displayName: model.displayName ?? null,
-          inputCostPerMtok: model.inputCostPerMtok ?? 0,
-          outputCostPerMtok: model.outputCostPerMtok ?? 0,
-          contextWindow: model.contextWindow ?? null,
-          isDefault: model.isDefault ? 1 : 0,
-          createdAt: now,
-          updatedAt: now,
-        })
-        .onConflictDoUpdate({
-          target: [aiModelPricing.providerId, aiModelPricing.modelId],
-          set: {
-            displayName: model.displayName ?? null,
-            inputCostPerMtok: model.inputCostPerMtok ?? 0,
-            outputCostPerMtok: model.outputCostPerMtok ?? 0,
-            contextWindow: model.contextWindow ?? null,
-            isDefault: model.isDefault ? 1 : 0,
-            updatedAt: now,
-          },
-        })
-        .run();
+      upsertModelRow(input.id, model, now);
     }
   }
-
   const result = getProvider(input.id);
   if (!result) throw new Error(`Provider not found: ${input.id}`);
   return result;

@@ -116,10 +116,32 @@ interface PlexWatchlistResponse {
  * @param friendUri - The friend's account URI (e.g., "server://uuid/com.plexapp.plugins.library")
  *   or UUID for the community endpoint
  */
+export interface FriendWatchlistInput {
+  token: string;
+  clientId: string;
+  friendUuid: string;
+}
+
+interface PageRequest extends FriendWatchlistInput {
+  start: number;
+  size: number;
+}
+
+function collectMovieItems(
+  pageItems: PlexCommunityWatchlistItem[]
+): Array<{ tmdbId: number; title: string; year: number | null }> {
+  const out: Array<{ tmdbId: number; title: string; year: number | null }> = [];
+  for (const item of pageItems) {
+    if (item.type !== 'movie') continue;
+    const tmdbId = extractTmdbIdFromGuids(item.Guid);
+    if (!tmdbId) continue;
+    out.push({ tmdbId, title: item.title, year: item.year ?? null });
+  }
+  return out;
+}
+
 export async function fetchFriendWatchlist(
-  token: string,
-  clientId: string,
-  friendUuid: string
+  input: FriendWatchlistInput
 ): Promise<Array<{ tmdbId: number; title: string; year: number | null }>> {
   const items: Array<{ tmdbId: number; title: string; year: number | null }> = [];
   let start = 0;
@@ -127,9 +149,8 @@ export async function fetchFriendWatchlist(
   while (true) {
     let data: PlexWatchlistResponse;
     try {
-      data = await fetchFriendWatchlistPage(token, clientId, friendUuid, start, PAGE_SIZE);
+      data = await fetchFriendWatchlistPage({ ...input, start, size: PAGE_SIZE });
     } catch (err) {
-      // If the friend's watchlist is private/inaccessible (401/403/404), return empty
       if (err instanceof PlexApiError && [401, 403, 404].includes(err.status)) {
         return [];
       }
@@ -137,25 +158,10 @@ export async function fetchFriendWatchlist(
     }
 
     const pageItems = data.MediaContainer.Metadata ?? [];
-
-    for (const item of pageItems) {
-      // Only movies
-      if (item.type !== 'movie') continue;
-
-      const tmdbId = extractTmdbIdFromGuids(item.Guid);
-      if (!tmdbId) continue;
-
-      items.push({
-        tmdbId,
-        title: item.title,
-        year: item.year ?? null,
-      });
-    }
+    items.push(...collectMovieItems(pageItems));
 
     if (pageItems.length < PAGE_SIZE) break;
-
     start += pageItems.length;
-
     const totalSize = data.MediaContainer.totalSize;
     if (totalSize !== undefined && start >= totalSize) break;
   }
@@ -163,13 +169,8 @@ export async function fetchFriendWatchlist(
   return items;
 }
 
-async function fetchFriendWatchlistPage(
-  token: string,
-  clientId: string,
-  friendUuid: string,
-  start: number,
-  size: number
-): Promise<PlexWatchlistResponse> {
+async function fetchFriendWatchlistPage(req: PageRequest): Promise<PlexWatchlistResponse> {
+  const { token, clientId, friendUuid, start, size } = req;
   // Use the Plex Discover API's friend watchlist endpoint.
   // The friendUuid is passed as the X-Plex-Account-ID to view their shared data.
   const url =

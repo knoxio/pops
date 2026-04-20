@@ -19,43 +19,35 @@ function vecUnavailableError(): Error {
   });
 }
 
-/**
- * Embed a query string and run k-NN search against stored vectors.
- * Returns empty results immediately if the query is blank.
- */
-export async function semanticSearch(
-  query: string,
-  options: SearchOptions = {}
-): Promise<SearchResult[]> {
-  if (!query.trim()) return [];
-  if (!isVecAvailable()) throw vecUnavailableError();
-
-  const { sourceTypes, limit = 10, threshold = 1.0 } = options;
+async function embedQueryWithCache(query: string): Promise<number[]> {
   const config = getEmbeddingConfig();
-
-  // Embed the query, using Redis cache to avoid re-embedding identical queries.
   const queryHash = createHash('sha256').update(query.trim()).digest('hex');
   const cacheKey = redisKey('query_vec', queryHash);
-
-  let queryVector: number[];
 
   const redis = getRedis();
   if (isRedisAvailable() && redis) {
     const cached = await redis.get(cacheKey);
-    if (cached) {
-      queryVector = JSON.parse(cached) as number[];
-    } else {
-      queryVector = await getEmbedding(query, config);
-      await redis.set(cacheKey, JSON.stringify(queryVector), 'EX', QUERY_CACHE_TTL_SECONDS);
-    }
-  } else {
-    queryVector = await getEmbedding(query, config);
+    if (cached) return JSON.parse(cached) as number[];
+    const vector = await getEmbedding(query, config);
+    await redis.set(cacheKey, JSON.stringify(vector), 'EX', QUERY_CACHE_TTL_SECONDS);
+    return vector;
   }
+  return getEmbedding(query, config);
+}
 
-  const db = getDb();
-  const vectorBlob = Float32Array.from(queryVector);
+interface VecRow {
+  source_type: string;
+  source_id: string;
+  chunk_index: number;
+  content_preview: string;
+  distance: number;
+}
 
-  // Build the k-NN query. sqlite-vec uses a MATCH + k constraint.
+function runKnnQuery(
+  vectorBlob: Float32Array,
+  limit: number,
+  sourceTypes: string[] | undefined
+): VecRow[] {
   let knnSql = `
     SELECT
       e.source_type,
@@ -68,7 +60,7 @@ export async function semanticSearch(
     WHERE ev.vector MATCH ?
       AND ev.k = ?
   `;
-  const params: unknown[] = [vectorBlob, limit * 2]; // over-fetch before threshold filter
+  const params: unknown[] = [vectorBlob, limit * 2];
 
   if (sourceTypes && sourceTypes.length > 0) {
     const placeholders = sourceTypes.map(() => '?').join(', ');
@@ -77,14 +69,25 @@ export async function semanticSearch(
   }
 
   knnSql += ' ORDER BY ev.distance';
+  return getDb()
+    .prepare(knnSql)
+    .all(...params) as VecRow[];
+}
 
-  const rows = db.prepare(knnSql).all(...params) as {
-    source_type: string;
-    source_id: string;
-    chunk_index: number;
-    content_preview: string;
-    distance: number;
-  }[];
+/**
+ * Embed a query string and run k-NN search against stored vectors.
+ * Returns empty results immediately if the query is blank.
+ */
+export async function semanticSearch(
+  query: string,
+  options: SearchOptions = {}
+): Promise<SearchResult[]> {
+  if (!query.trim()) return [];
+  if (!isVecAvailable()) throw vecUnavailableError();
+
+  const { sourceTypes, limit = 10, threshold = 1.0 } = options;
+  const queryVector = await embedQueryWithCache(query);
+  const rows = runKnnQuery(Float32Array.from(queryVector), limit, sourceTypes);
 
   return rows
     .filter((r) => r.distance <= threshold)

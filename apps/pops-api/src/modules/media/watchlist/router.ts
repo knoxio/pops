@@ -23,6 +23,32 @@ import {
 const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
 
+async function tryPushPlexAdd(plexRatingKey: string): Promise<void> {
+  try {
+    const client = getPlexClient();
+    if (!client) return;
+    await client.addToWatchlist(plexRatingKey);
+    console.warn(`[Plex] Pushed watchlist add for ratingKey=${plexRatingKey}`);
+  } catch (err) {
+    console.warn(
+      `[Plex] Failed to push watchlist add for ratingKey=${plexRatingKey}:`,
+      err instanceof Error ? err.message : err
+    );
+  }
+}
+
+async function pushAddToPlex(
+  row: Awaited<ReturnType<typeof service.addToWatchlist>>['row'],
+  input: { mediaType: 'movie' | 'tv_show'; mediaId: number }
+): Promise<void> {
+  const plexRatingKey = (row as Record<string, unknown>).plexRatingKey as string | null;
+  if (plexRatingKey) {
+    await tryPushPlexAdd(plexRatingKey);
+    return;
+  }
+  await pushToPlexWatchlist(row.id, input.mediaType, input.mediaId);
+}
+
 export const watchlistRouter = router({
   /** List watchlist entries with optional filters and pagination. */
   list: protectedProcedure
@@ -86,26 +112,8 @@ export const watchlistRouter = router({
       clearLeavingOnWatchlistAdd(input.mediaType, input.mediaId);
     }
 
-    // Best-effort push to Plex — failures do not block local operation
     if (created) {
-      const plexRatingKey = (row as Record<string, unknown>).plexRatingKey as string | null;
-      if (plexRatingKey) {
-        try {
-          const client = getPlexClient();
-          if (client) {
-            await client.addToWatchlist(plexRatingKey);
-            console.warn(`[Plex] Pushed watchlist add for ratingKey=${plexRatingKey}`);
-          }
-        } catch (err) {
-          console.warn(
-            `[Plex] Failed to push watchlist add for ratingKey=${plexRatingKey}:`,
-            err instanceof Error ? err.message : err
-          );
-        }
-      } else {
-        // Manually added items lack a plexRatingKey — look one up via Discover API
-        await pushToPlexWatchlist(row.id, input.mediaType, input.mediaId);
-      }
+      await pushAddToPlex(row, input);
     }
 
     return {

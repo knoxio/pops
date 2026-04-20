@@ -20,49 +20,50 @@ export interface SyncSourceResult {
   candidatesSkipped: number;
 }
 
-/**
- * Sync a rotation source: fetch candidates via its adapter and upsert
- * into the rotation_candidates table.
- */
-export async function syncSource(sourceId: number): Promise<SyncSourceResult> {
+interface ResolvedSource {
+  source: typeof rotationSources.$inferSelect;
+  config: Record<string, unknown>;
+}
+
+function loadAndValidateSource(sourceId: number): ResolvedSource {
   const db = getDrizzle();
-
   const source = db.select().from(rotationSources).where(eq(rotationSources.id, sourceId)).get();
-
-  if (!source) {
-    throw new Error(`Rotation source ${sourceId} not found`);
-  }
-
+  if (!source) throw new Error(`Rotation source ${sourceId} not found`);
   if (!source.enabled) {
     throw new Error(`Rotation source ${sourceId} (${source.name}) is disabled`);
   }
-
-  const adapter = getSourceAdapter(source.type);
-  if (!adapter) {
-    throw new Error(
-      `No adapter registered for source type "${source.type}". ` +
-        `Registered types: ${JSON.stringify(getRegisteredTypes())}`
-    );
-  }
-
   const config: Record<string, unknown> = source.config
     ? (JSON.parse(source.config) as Record<string, unknown>)
     : {};
+  return { source, config };
+}
 
-  const candidates = await adapter.fetchCandidates(config);
-
-  // Build set of excluded tmdb_ids for status assignment during upsert
-  const excludedTmdbIds = new Set(
+function fetchExcludedTmdbIds(): Set<number> {
+  const db = getDrizzle();
+  return new Set(
     db
       .select({ tmdbId: rotationExclusions.tmdbId })
       .from(rotationExclusions)
       .all()
       .map((r) => r.tmdbId)
   );
+}
 
+interface UpsertCounts {
+  inserted: number;
+  skipped: number;
+}
+
+function upsertCandidates(
+  sourceId: number,
+  candidates: Awaited<
+    ReturnType<NonNullable<ReturnType<typeof getSourceAdapter>>['fetchCandidates']>
+  >,
+  excludedTmdbIds: Set<number>
+): UpsertCounts {
+  const db = getDrizzle();
   let inserted = 0;
   let skipped = 0;
-
   for (const candidate of candidates) {
     const status = excludedTmdbIds.has(candidate.tmdbId) ? 'excluded' : 'pending';
     const result = db
@@ -78,15 +79,31 @@ export async function syncSource(sourceId: number): Promise<SyncSourceResult> {
       })
       .onConflictDoNothing()
       .run();
+    if (result.changes > 0) inserted++;
+    else skipped++;
+  }
+  return { inserted, skipped };
+}
 
-    if (result.changes > 0) {
-      inserted++;
-    } else {
-      skipped++;
-    }
+/**
+ * Sync a rotation source: fetch candidates via its adapter and upsert
+ * into the rotation_candidates table.
+ */
+export async function syncSource(sourceId: number): Promise<SyncSourceResult> {
+  const { source, config } = loadAndValidateSource(sourceId);
+  const adapter = getSourceAdapter(source.type);
+  if (!adapter) {
+    throw new Error(
+      `No adapter registered for source type "${source.type}". ` +
+        `Registered types: ${JSON.stringify(getRegisteredTypes())}`
+    );
   }
 
-  // Update lastSyncedAt on the source
+  const candidates = await adapter.fetchCandidates(config);
+  const excludedTmdbIds = fetchExcludedTmdbIds();
+  const { inserted, skipped } = upsertCandidates(sourceId, candidates, excludedTmdbIds);
+
+  const db = getDrizzle();
   db.update(rotationSources)
     .set({ lastSyncedAt: sql`datetime('now')` })
     .where(eq(rotationSources.id, sourceId))

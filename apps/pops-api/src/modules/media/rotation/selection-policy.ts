@@ -32,20 +32,29 @@ export interface SelectedCandidate {
 // Core selection
 // ---------------------------------------------------------------------------
 
-/**
- * Select `count` candidates using weighted random sampling.
- *
- * Weight formula: source_priority × (rating / 10). Null rating → priority × 0.5.
- * Deduplication: if multiple sources contribute the same tmdb_id, max priority wins.
- * Excludes: movies already in the library, movies in rotation_exclusions.
- */
-export function aggregateCandidates(count: number): SelectedCandidate[] {
-  if (count <= 0) return [];
+interface PendingRow {
+  candidateId: number;
+  tmdbId: number;
+  title: string;
+  year: number | null;
+  rating: number | null;
+  posterPath: string | null;
+  sourceId: number;
+}
 
+interface DedupedCandidate {
+  candidateId: number;
+  tmdbId: number;
+  title: string;
+  year: number | null;
+  rating: number | null;
+  posterPath: string | null;
+  sourcePriority: number;
+}
+
+function fetchPendingCandidates(): PendingRow[] {
   const db = getDrizzle();
-
-  // 1. Get all pending candidates with their source priority
-  const pendingCandidates = db
+  return db
     .select({
       candidateId: rotationCandidates.id,
       tmdbId: rotationCandidates.tmdbId,
@@ -58,46 +67,40 @@ export function aggregateCandidates(count: number): SelectedCandidate[] {
     .from(rotationCandidates)
     .where(eq(rotationCandidates.status, 'pending'))
     .all();
+}
 
-  if (pendingCandidates.length === 0) return [];
-
-  // 2. Get source priorities
+function buildSourcePriorityMap(): Map<number, number> {
+  const db = getDrizzle();
   const sources = db
     .select({ id: rotationSources.id, priority: rotationSources.priority })
     .from(rotationSources)
     .all();
-  const sourcePriorityMap = new Map(sources.map((s) => [s.id, s.priority]));
+  return new Map(sources.map((s) => [s.id, s.priority]));
+}
 
-  // 3. Get exclusion set
+function buildExcludedSets(): { excludedTmdbIds: Set<number>; libraryTmdbIds: Set<number> } {
+  const db = getDrizzle();
   const exclusions = db
     .select({ tmdbId: rotationExclusions.tmdbId })
     .from(rotationExclusions)
     .all();
-  const excludedTmdbIds = new Set(exclusions.map((e) => e.tmdbId));
-
-  // 4. Get library tmdb IDs to exclude already-owned movies
   const libraryMovies = db.select({ tmdbId: movies.tmdbId }).from(movies).all();
-  const libraryTmdbIds = new Set(libraryMovies.map((m) => m.tmdbId));
+  return {
+    excludedTmdbIds: new Set(exclusions.map((e) => e.tmdbId)),
+    libraryTmdbIds: new Set(libraryMovies.map((m) => m.tmdbId)),
+  };
+}
 
-  // 5. Deduplicate by tmdb_id (max priority wins)
-  const deduped = new Map<
-    number,
-    {
-      candidateId: number;
-      tmdbId: number;
-      title: string;
-      year: number | null;
-      rating: number | null;
-      posterPath: string | null;
-      sourcePriority: number;
-    }
-  >();
-
-  for (const c of pendingCandidates) {
-    // Filter exclusions and library
+function dedupePendingCandidates(
+  pending: PendingRow[],
+  sourcePriorityMap: Map<number, number>,
+  excludedTmdbIds: Set<number>,
+  libraryTmdbIds: Set<number>
+): Map<number, DedupedCandidate> {
+  const deduped = new Map<number, DedupedCandidate>();
+  for (const c of pending) {
     if (excludedTmdbIds.has(c.tmdbId)) continue;
     if (libraryTmdbIds.has(c.tmdbId)) continue;
-
     const priority = sourcePriorityMap.get(c.sourceId) ?? 5;
     const existing = deduped.get(c.tmdbId);
     if (!existing || priority > existing.sourcePriority) {
@@ -112,16 +115,37 @@ export function aggregateCandidates(count: number): SelectedCandidate[] {
       });
     }
   }
+  return deduped;
+}
 
-  // 6. Compute weights
+/**
+ * Select `count` candidates using weighted random sampling.
+ *
+ * Weight formula: source_priority × (rating / 10). Null rating → priority × 0.5.
+ * Deduplication: if multiple sources contribute the same tmdb_id, max priority wins.
+ * Excludes: movies already in the library, movies in rotation_exclusions.
+ */
+export function aggregateCandidates(count: number): SelectedCandidate[] {
+  if (count <= 0) return [];
+
+  const pending = fetchPendingCandidates();
+  if (pending.length === 0) return [];
+
+  const sourcePriorityMap = buildSourcePriorityMap();
+  const { excludedTmdbIds, libraryTmdbIds } = buildExcludedSets();
+  const deduped = dedupePendingCandidates(
+    pending,
+    sourcePriorityMap,
+    excludedTmdbIds,
+    libraryTmdbIds
+  );
+
   const weighted = Array.from(deduped.values()).map((c) => ({
     ...c,
     weight: c.sourcePriority * (c.rating != null ? c.rating / 10 : 0.5),
   }));
-
   if (weighted.length === 0) return [];
 
-  // 7. Weighted random sampling without replacement
   return weightedSample(weighted, Math.min(count, weighted.length));
 }
 

@@ -3,7 +3,7 @@
  *
  * Extracted from CorrectionProposalDialog (tb-364).
  */
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { trpc } from '@pops/api-client';
 
@@ -12,12 +12,20 @@ import {
   useCombinedEffect,
   useSelectedOpEffect,
 } from './preview-effect-hooks';
+import {
+  buildResetState,
+  buildReturnValue,
+  usePreviewRefs,
+  type UsePreviewEffectsReturn,
+} from './preview-effects-helpers';
 
 import type {
   LocalOp,
   PreviewChangeSetOutput,
   ServerChangeSet,
 } from '../correction-proposal-shared';
+
+export type { UsePreviewEffectsReturn } from './preview-effects-helpers';
 
 export interface UsePreviewEffectsOptions {
   open: boolean;
@@ -30,25 +38,6 @@ export interface UsePreviewEffectsOptions {
   pendingChangeSets: Array<{ changeSet: ServerChangeSet }>;
 }
 
-export interface UsePreviewEffectsReturn {
-  combinedPreview: PreviewChangeSetOutput | null;
-  combinedPreviewError: string | null;
-  combinedPreviewTruncated: boolean;
-  combinedDbPreview: PreviewChangeSetOutput | null;
-  selectedOpPreview: PreviewChangeSetOutput | null;
-  selectedOpPreviewError: string | null;
-  selectedOpPreviewTruncated: boolean;
-  selectedOpDbPreview: PreviewChangeSetOutput | null;
-  previewMutationPending: boolean;
-  hasDirty: boolean;
-  rerunToken: number;
-  handleRerunPreview: () => void;
-  resetPreviewState: () => void;
-  lastCombinedStructuralSigRef: React.MutableRefObject<string | null>;
-  selectedOpPreviewKeyRef: React.MutableRefObject<string | null>;
-  clearDirtyFlags: () => void;
-}
-
 function useSlot(): PreviewSlotState {
   const [preview, setPreview] = useState<PreviewChangeSetOutput | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -57,71 +46,60 @@ function useSlot(): PreviewSlotState {
   return { preview, setPreview, error, setError, truncated, setTruncated, dbPreview, setDbPreview };
 }
 
-interface PreviewRefs {
-  selectedOpPreviewKeyRef: React.MutableRefObject<string | null>;
-  lastCombinedStructuralSigRef: React.MutableRefObject<string | null>;
-  lastCombinedRerunToken: React.MutableRefObject<number>;
-  lastSelectedRerunToken: React.MutableRefObject<number>;
+type Slot = ReturnType<typeof useSlot>;
+type Refs = ReturnType<typeof usePreviewRefs>;
+
+interface RunEffectsArgs {
+  options: UsePreviewEffectsOptions;
+  setLocalOps: React.Dispatch<React.SetStateAction<LocalOp[]>>;
+  combined: Slot;
+  selected: Slot;
+  refs: Refs;
+  rerunToken: number;
+  previewMutateAsync: ReturnType<
+    typeof trpc.core.corrections.previewChangeSet.useMutation
+  >['mutateAsync'];
+  normalisedDbTransactions: Array<{ description: string; checksum?: string }>;
 }
 
-function usePreviewRefs(): PreviewRefs {
-  return {
-    selectedOpPreviewKeyRef: useRef<string | null>(null),
-    lastCombinedStructuralSigRef: useRef<string | null>(null),
-    lastCombinedRerunToken: useRef<number>(0),
-    lastSelectedRerunToken: useRef<number>(0),
-  };
-}
-
-function buildResetState(
-  combined: PreviewSlotState,
-  selected: PreviewSlotState,
-  refs: PreviewRefs,
-  setRerunToken: (n: number) => void
-) {
-  return () => {
-    combined.setPreview(null);
-    combined.setError(null);
-    combined.setTruncated(false);
-    combined.setDbPreview(null);
-    selected.setPreview(null);
-    selected.setError(null);
-    selected.setTruncated(false);
-    selected.setDbPreview(null);
-    refs.selectedOpPreviewKeyRef.current = null;
-    refs.lastCombinedStructuralSigRef.current = null;
-    refs.lastCombinedRerunToken.current = 0;
-    refs.lastSelectedRerunToken.current = 0;
-    setRerunToken(0);
-  };
-}
-
-function buildReturnValue(
-  combined: PreviewSlotState,
-  selected: PreviewSlotState,
-  refs: PreviewRefs,
-  extras: {
-    previewMutationPending: boolean;
-    hasDirty: boolean;
-    rerunToken: number;
-    handleRerunPreview: () => void;
-    resetPreviewState: () => void;
-    clearDirtyFlags: () => void;
-  }
-): UsePreviewEffectsReturn {
-  return {
-    combinedPreview: combined.preview,
-    combinedPreviewError: combined.error,
-    combinedPreviewTruncated: combined.truncated,
-    combinedDbPreview: combined.dbPreview,
-    selectedOpPreview: selected.preview,
-    selectedOpPreviewError: selected.error,
-    selectedOpPreviewTruncated: selected.truncated,
-    selectedOpDbPreview: selected.dbPreview,
-    lastCombinedStructuralSigRef: refs.lastCombinedStructuralSigRef,
+function usePreviewEffectRunners(args: RunEffectsArgs): void {
+  const {
+    options,
+    setLocalOps,
+    combined,
+    selected,
+    refs,
+    rerunToken,
+    previewMutateAsync,
+    normalisedDbTransactions,
+  } = args;
+  useCombinedEffect({
+    open: options.open,
+    localOps: options.localOps,
+    minConfidence: options.minConfidence,
+    previewTransactions: options.previewTransactions,
+    pendingChangeSets: options.pendingChangeSets,
+    combined,
+    setLocalOps,
+    normalisedDbTransactions,
+    rerunToken,
+    previewMutateAsync,
+    lastSigRef: refs.lastCombinedStructuralSigRef,
+    lastTokenRef: refs.lastCombinedRerunToken,
+  });
+  useSelectedOpEffect({
+    open: options.open,
+    selectedOp: options.selectedOp,
+    minConfidence: options.minConfidence,
+    previewTransactions: options.previewTransactions,
+    pendingChangeSets: options.pendingChangeSets,
+    selected,
+    normalisedDbTransactions,
+    rerunToken,
+    previewMutateAsync,
     selectedOpPreviewKeyRef: refs.selectedOpPreviewKeyRef,
-    ...extras,
-  };
+    lastTokenRef: refs.lastSelectedRerunToken,
+  });
 }
 
 export function usePreviewEffects(
@@ -149,32 +127,15 @@ export function usePreviewEffects(
     [dbTransactions]
   );
 
-  useCombinedEffect({
-    open: options.open,
-    localOps: options.localOps,
-    minConfidence: options.minConfidence,
-    previewTransactions: options.previewTransactions,
-    pendingChangeSets: options.pendingChangeSets,
-    combined,
+  usePreviewEffectRunners({
+    options,
     setLocalOps,
-    normalisedDbTransactions,
-    rerunToken,
-    previewMutateAsync: previewMutation.mutateAsync,
-    lastSigRef: refs.lastCombinedStructuralSigRef,
-    lastTokenRef: refs.lastCombinedRerunToken,
-  });
-  useSelectedOpEffect({
-    open: options.open,
-    selectedOp: options.selectedOp,
-    minConfidence: options.minConfidence,
-    previewTransactions: options.previewTransactions,
-    pendingChangeSets: options.pendingChangeSets,
+    combined,
     selected,
-    normalisedDbTransactions,
+    refs,
     rerunToken,
     previewMutateAsync: previewMutation.mutateAsync,
-    selectedOpPreviewKeyRef: refs.selectedOpPreviewKeyRef,
-    lastTokenRef: refs.lastSelectedRerunToken,
+    normalisedDbTransactions,
   });
 
   const handleRerunPreview = useCallback(() => setRerunToken((t) => t + 1), []);

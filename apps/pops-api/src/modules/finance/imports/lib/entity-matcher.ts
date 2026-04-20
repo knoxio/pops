@@ -57,49 +57,68 @@ export function matchEntity(
   return null;
 }
 
+function normalizeKey(key: string, stripPunctuation: boolean): string {
+  const stripped = stripPunctuation ? key.replaceAll(/[''`]/g, '') : key;
+  return stripped.toUpperCase();
+}
+
+function findExactMatch(
+  normalized: string,
+  entries: [string, EntityEntry][],
+  stripPunctuation: boolean
+): EntityMatch | null {
+  for (const [key, entry] of entries) {
+    if (normalized === normalizeKey(key, stripPunctuation)) {
+      return { entityName: entry.name, entityId: entry.id, matchType: 'exact' };
+    }
+  }
+  return null;
+}
+
+function findPrefixMatch(
+  normalized: string,
+  entries: [string, EntityEntry][],
+  stripPunctuation: boolean
+): EntityMatch | null {
+  let best: EntityMatch | null = null;
+  for (const [key, entry] of entries) {
+    const upper = normalizeKey(key, stripPunctuation);
+    if (!normalized.startsWith(upper)) continue;
+    if (!best || entry.name.length > best.entityName.length) {
+      best = { entityName: entry.name, entityId: entry.id, matchType: 'prefix' };
+    }
+  }
+  return best;
+}
+
+function findContainsMatch(
+  normalized: string,
+  entries: [string, EntityEntry][],
+  stripPunctuation: boolean
+): EntityMatch | null {
+  let best: EntityMatch | null = null;
+  for (const [key, entry] of entries) {
+    if (key.length < 4) continue;
+    const upper = normalizeKey(key, stripPunctuation);
+    if (!normalized.includes(upper)) continue;
+    if (!best || entry.name.length > best.entityName.length) {
+      best = { entityName: entry.name, entityId: entry.id, matchType: 'contains' };
+    }
+  }
+  return best;
+}
+
 function tryMatch(
   normalized: string,
   entityLookup: EntityLookupMap,
   stripPunctuation = false
 ): EntityMatch | null {
-  const entries = Array.from(entityLookup.entries());
-
-  // Stage 2: Exact match (case-insensitive)
-  for (const [key, entry] of entries) {
-    const matchKey = stripPunctuation ? key.replaceAll(/[''`]/g, '') : key;
-    if (normalized === matchKey.toUpperCase()) {
-      return { entityName: entry.name, entityId: entry.id, matchType: 'exact' };
-    }
-  }
-
-  // Stage 3: Prefix match (longest entity name wins)
-  let bestPrefix: EntityMatch | null = null;
-  for (const [key, entry] of entries) {
-    const matchKey = stripPunctuation ? key.replaceAll(/[''`]/g, '') : key;
-    const upper = matchKey.toUpperCase();
-    if (normalized.startsWith(upper)) {
-      if (!bestPrefix || entry.name.length > bestPrefix.entityName.length) {
-        bestPrefix = { entityName: entry.name, entityId: entry.id, matchType: 'prefix' };
-      }
-    }
-  }
-  if (bestPrefix) return bestPrefix;
-
-  // Stage 4: Contains match (min 4 chars, longest entity name wins)
-  let bestContains: EntityMatch | null = null;
-  for (const [key, entry] of entries) {
-    if (key.length < 4) continue;
-    const matchKey = stripPunctuation ? key.replaceAll(/[''`]/g, '') : key;
-    const upper = matchKey.toUpperCase();
-    if (normalized.includes(upper)) {
-      if (!bestContains || entry.name.length > bestContains.entityName.length) {
-        bestContains = { entityName: entry.name, entityId: entry.id, matchType: 'contains' };
-      }
-    }
-  }
-  if (bestContains) return bestContains;
-
-  return null;
+  const entries = [...entityLookup.entries()];
+  return (
+    findExactMatch(normalized, entries, stripPunctuation) ??
+    findPrefixMatch(normalized, entries, stripPunctuation) ??
+    findContainsMatch(normalized, entries, stripPunctuation)
+  );
 }
 
 /** Find an entity by name (case-insensitive) in the lookup */

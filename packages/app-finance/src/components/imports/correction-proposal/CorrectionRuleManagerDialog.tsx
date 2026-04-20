@@ -1,17 +1,15 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback } from 'react';
 import { toast } from 'sonner';
 
-import { trpc } from '@pops/api-client';
 import { WorkflowDialog } from '@pops/ui';
 
 import { useImportStore } from '../../../store/importStore';
 import { type PreviewView } from '../CorrectionProposalDialogPanels';
-import { localOpsToChangeSet, useLocalOps } from '../hooks/useLocalOps';
-import { usePreviewEffects } from '../hooks/usePreviewEffects';
+import { localOpsToChangeSet } from '../hooks/useLocalOps';
+import { buildBodyProps } from './rule-manager/build-body-props';
 import { RuleManagerFooter } from './rule-manager/Footer';
 import { RuleManagerBody } from './rule-manager/RuleManagerBody';
-import { useBrowseRules } from './rule-manager/useBrowseRules';
-import { useBrowseSelection } from './rule-manager/useBrowseSelection';
+import { useRuleManagerHooks } from './rule-manager/useRuleManagerHooks';
 
 export interface CorrectionRuleManagerDialogProps {
   open: boolean;
@@ -51,127 +49,6 @@ function buildOpenChangeHandler(
     cleanup.resetPreviewState();
     onOpenChange(false);
     onBrowseClose?.(hadChanges);
-  };
-}
-
-function useDialogState(open: boolean) {
-  const [previewView, setPreviewView] = useState<PreviewView>('selected');
-  const [browseSearch, setBrowseSearch] = useState('');
-  const browseInitialPendingCountRef = useRef<number>(0);
-  useEffect(() => {
-    if (open) {
-      browseInitialPendingCountRef.current = useImportStore.getState().pendingChangeSets.length;
-    }
-  }, [open]);
-  return {
-    previewView,
-    setPreviewView,
-    browseSearch,
-    setBrowseSearch,
-    browseInitialPendingCountRef,
-  };
-}
-
-function useRuleManagerHooks(props: CorrectionRuleManagerDialogProps) {
-  const { open, minConfidence, previewTransactions } = props;
-  const pendingChangeSets = useImportStore((s) => s.pendingChangeSets);
-  const localOpsHook = useLocalOps({
-    open,
-    signal: null,
-    isBrowseMode: true,
-    proposeData: undefined,
-  });
-  const dialogState = useDialogState(open);
-  const dbTxnsQuery = trpc.finance.transactions.listDescriptionsForPreview.useQuery(undefined, {
-    enabled: open,
-    staleTime: 60_000,
-  });
-  const previewHook = usePreviewEffects(
-    {
-      open,
-      localOps: localOpsHook.localOps,
-      selectedOp: localOpsHook.selectedOp,
-      minConfidence,
-      previewTransactions,
-      dbTransactions: dbTxnsQuery.data?.data ?? [],
-      pendingChangeSets,
-    },
-    localOpsHook.setLocalOps
-  );
-  const browse = useBrowseRules({
-    open,
-    localOps: localOpsHook.localOps,
-    browseSearch: dialogState.browseSearch,
-    setLocalOps: localOpsHook.setLocalOps,
-  });
-  const selection = useBrowseSelection({
-    setLocalOps: localOpsHook.setLocalOps,
-    setSelectedClientId: localOpsHook.setSelectedClientId,
-    localOps: localOpsHook.localOps,
-  });
-  const browseSelectedRule = useMemo(
-    () => browse.browseMergedRules.find((r) => r.id === selection.browseSelectedRuleId) ?? null,
-    [browse.browseMergedRules, selection.browseSelectedRuleId]
-  );
-  return {
-    localOpsHook,
-    dialogState,
-    dbTxnsQuery,
-    previewHook,
-    browse,
-    selection,
-    browseSelectedRule,
-  };
-}
-
-function buildBodyProps(
-  hooks: ReturnType<typeof useRuleManagerHooks>,
-  handleAddNewRuleOp: () => void
-) {
-  const {
-    localOpsHook,
-    dialogState,
-    dbTxnsQuery,
-    previewHook,
-    browse,
-    selection,
-    browseSelectedRule,
-  } = hooks;
-  return {
-    errorMessage: browse.browseListQuery.isError ? browse.browseListQuery.error.message : null,
-    isLoading: browse.browseListQuery.isLoading,
-    search: dialogState.browseSearch,
-    onSearchChange: dialogState.setBrowseSearch,
-    orderedMerged: browse.browseOrderedMerged,
-    orderedFiltered: browse.browseOrderedFiltered,
-    canDragReorder: browse.browseCanDragReorder,
-    selectedRuleId: selection.browseSelectedRuleId,
-    onSelectRule: selection.handleBrowseSelectRule,
-    onReorderFullList: browse.handleBrowseReorderFullList,
-    localOps: localOpsHook.localOps,
-    selectedOp: localOpsHook.selectedOp,
-    onChangeSelectedOp: localOpsHook.updateOp,
-    selectedRule: browseSelectedRule,
-    onEditRule: selection.handleBrowseEditRule,
-    onDisableRule: selection.handleBrowseDisableRule,
-    onRemoveRule: selection.handleBrowseRemoveRule,
-    onAddNewRule: handleAddNewRuleOp,
-    previewView: dialogState.previewView,
-    onPreviewViewChange: dialogState.setPreviewView,
-    previewCombined: previewHook.combinedPreview,
-    previewSelected: previewHook.selectedOpPreview,
-    dbPreviewCombined: previewHook.combinedDbPreview,
-    dbPreviewSelected: previewHook.selectedOpDbPreview,
-    previewErrorCombined: previewHook.combinedPreviewError,
-    previewErrorSelected: previewHook.selectedOpPreviewError,
-    truncatedCombined: previewHook.combinedPreviewTruncated,
-    truncatedSelected: previewHook.selectedOpPreviewTruncated,
-    dbTruncated: dbTxnsQuery.data?.truncated,
-    dbTotal: dbTxnsQuery.data?.total,
-    isPreviewPending: previewHook.previewMutationPending,
-    isPreviewStale: previewHook.hasDirty,
-    onRerunPreview: previewHook.handleRerunPreview,
-    disablePreview: localOpsHook.localOps.length === 0,
   };
 }
 

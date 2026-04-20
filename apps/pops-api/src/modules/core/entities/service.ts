@@ -24,28 +24,26 @@ export interface EntityListResult {
   total: number;
 }
 
-/** List entities with optional search, type, and orphaned filters, including transaction count. */
-export function listEntities(
-  search: string | undefined,
-  type: string | undefined,
-  limit: number,
-  offset: number,
-  orphanedOnly?: boolean
-): EntityListResult {
-  const db = getDrizzle();
+export interface ListEntitiesOptions {
+  search?: string;
+  type?: string;
+  limit: number;
+  offset: number;
+  orphanedOnly?: boolean;
+}
 
+function buildEntityFilter(opts: ListEntitiesOptions): ReturnType<typeof and> | undefined {
   const conditions = [];
-  if (search) {
-    conditions.push(like(entities.name, `%${search}%`));
-  }
-  if (type) {
-    conditions.push(eq(entities.type, type));
-  }
+  if (opts.search) conditions.push(like(entities.name, `%${opts.search}%`));
+  if (opts.type) conditions.push(eq(entities.type, opts.type));
+  return conditions.length > 0 ? and(...conditions) : undefined;
+}
 
-  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
-
-  // LEFT JOIN to get transaction count per entity
-  let query = db
+function fetchEntitiesPage(
+  whereClause: ReturnType<typeof and> | undefined,
+  opts: ListEntitiesOptions
+): EntityWithCount[] {
+  let query = getDrizzle()
     .select({
       id: entities.id,
       notionId: entities.notionId,
@@ -66,36 +64,37 @@ export function listEntities(
     .orderBy(entities.name)
     .$dynamic();
 
-  // Server-side orphaned filter: only entities with zero transactions
-  if (orphanedOnly) {
-    query = query.having(sql`COUNT(${transactions.id}) = 0`);
-  }
+  if (opts.orphanedOnly) query = query.having(sql`COUNT(${transactions.id}) = 0`);
+  return query.limit(opts.limit).offset(opts.offset).all();
+}
 
-  const rows = query.limit(limit).offset(offset).all();
-
-  // Count query must match the same filter conditions
+function countEntities(
+  whereClause: ReturnType<typeof and> | undefined,
+  orphanedOnly?: boolean
+): number {
+  const db = getDrizzle();
   if (orphanedOnly) {
     const countRows = db
-      .select({
-        id: entities.id,
-        txnCount: sql<number>`CAST(COUNT(${transactions.id}) AS INTEGER)`,
-      })
+      .select({ id: entities.id })
       .from(entities)
       .leftJoin(transactions, eq(entities.id, transactions.entityId))
       .where(whereClause)
       .groupBy(entities.id)
       .having(sql`COUNT(${transactions.id}) = 0`)
       .all();
-    return { rows, total: countRows.length };
+    return countRows.length;
   }
-
   let countQuery = db.select({ total: count() }).from(entities).$dynamic();
-  if (whereClause) {
-    countQuery = countQuery.where(whereClause);
-  }
+  if (whereClause) countQuery = countQuery.where(whereClause);
   const [countResult] = countQuery.all();
+  return countResult?.total ?? 0;
+}
 
-  return { rows, total: countResult?.total ?? 0 };
+/** List entities with optional search, type, and orphaned filters, including transaction count. */
+export function listEntities(opts: ListEntitiesOptions): EntityListResult {
+  const whereClause = buildEntityFilter(opts);
+  const rows = fetchEntitiesPage(whereClause, opts);
+  return { rows, total: countEntities(whereClause, opts.orphanedOnly) };
 }
 
 /** Get a single entity by id. Throws NotFoundError if missing. */
@@ -144,64 +143,59 @@ export function createEntity(input: CreateEntityInput): EntityRow {
   return getEntity(id);
 }
 
-/**
- * Update an existing entity. Returns the updated row.
- * Updates directly in SQLite.
- */
-export function updateEntity(id: string, input: UpdateEntityInput): EntityRow {
-  const db = getDrizzle();
+function assertNoDuplicateName(id: string, name: string | undefined): void {
+  if (name === undefined) return;
+  const [existing] = getDrizzle()
+    .select({ id: entities.id })
+    .from(entities)
+    .where(and(eq(entities.name, name), ne(entities.id, id)))
+    .all();
+  if (existing) throw new ConflictError(`Entity with name '${name}' already exists`);
+}
 
-  // Verify it exists first
-  getEntity(id);
-
-  // Check for duplicate name (excluding current entity)
-  if (input.name !== undefined) {
-    const [existing] = db
-      .select({ id: entities.id })
-      .from(entities)
-      .where(and(eq(entities.name, input.name), ne(entities.id, id)))
-      .all();
-
-    if (existing) {
-      throw new ConflictError(`Entity with name '${input.name}' already exists`);
-    }
-  }
-
-  const updates: Partial<typeof entities.$inferInsert> = {};
-  let hasUpdates = false;
-
-  if (input.name !== undefined) {
-    updates.name = input.name;
-    hasUpdates = true;
-  }
-  if (input.type !== undefined) {
-    updates.type = input.type;
-    hasUpdates = true;
-  }
-  if (input.abn !== undefined) {
-    updates.abn = input.abn ?? null;
-    hasUpdates = true;
-  }
-  if (input.aliases !== undefined) {
-    updates.aliases = input.aliases.length > 0 ? input.aliases.join(', ') : null;
-    hasUpdates = true;
-  }
+function buildScalarUpdates(
+  input: UpdateEntityInput,
+  updates: Partial<typeof entities.$inferInsert>
+): void {
+  if (input.name !== undefined) updates.name = input.name;
+  if (input.type !== undefined) updates.type = input.type;
+  if (input.abn !== undefined) updates.abn = input.abn ?? null;
+  if (input.notes !== undefined) updates.notes = input.notes ?? null;
   if (input.defaultTransactionType !== undefined) {
     updates.defaultTransactionType = input.defaultTransactionType ?? null;
-    hasUpdates = true;
+  }
+}
+
+function buildArrayUpdates(
+  input: UpdateEntityInput,
+  updates: Partial<typeof entities.$inferInsert>
+): void {
+  if (input.aliases !== undefined) {
+    updates.aliases = input.aliases.length > 0 ? input.aliases.join(', ') : null;
   }
   if (input.defaultTags !== undefined) {
     updates.defaultTags = input.defaultTags.length > 0 ? JSON.stringify(input.defaultTags) : null;
-    hasUpdates = true;
   }
-  if (input.notes !== undefined) {
-    updates.notes = input.notes ?? null;
-    hasUpdates = true;
-  }
+}
 
-  if (hasUpdates) {
+function buildEntityUpdates(input: UpdateEntityInput): Partial<typeof entities.$inferInsert> {
+  const updates: Partial<typeof entities.$inferInsert> = {};
+  buildScalarUpdates(input, updates);
+  buildArrayUpdates(input, updates);
+  return updates;
+}
+
+/**
+ * Update an existing entity. Returns the updated row.
+ */
+export function updateEntity(id: string, input: UpdateEntityInput): EntityRow {
+  getEntity(id);
+  assertNoDuplicateName(id, input.name);
+
+  const updates = buildEntityUpdates(input);
+  if (Object.keys(updates).length > 0) {
     updates.lastEditedTime = new Date().toISOString();
-    db.update(entities).set(updates).where(eq(entities.id, id)).run();
+    getDrizzle().update(entities).set(updates).where(eq(entities.id, id)).run();
   }
 
   return getEntity(id);

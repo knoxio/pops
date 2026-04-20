@@ -61,36 +61,42 @@ export function getMovieByTmdbId(tmdbId: number): MovieRow | null {
   return db.select().from(movies).where(eq(movies.tmdbId, tmdbId)).get() ?? null;
 }
 
+const MOVIE_NULLABLE_INSERT_KEYS = [
+  'imdbId',
+  'originalTitle',
+  'overview',
+  'tagline',
+  'releaseDate',
+  'runtime',
+  'status',
+  'originalLanguage',
+  'budget',
+  'revenue',
+  'posterPath',
+  'backdropPath',
+  'logoPath',
+  'posterOverridePath',
+  'voteAverage',
+  'voteCount',
+] as const satisfies ReadonlyArray<keyof CreateMovieInput & keyof typeof movies.$inferInsert>;
+
+function buildMovieInsertValues(input: CreateMovieInput): typeof movies.$inferInsert {
+  const values: Record<string, unknown> = {
+    tmdbId: input.tmdbId,
+    title: input.title,
+    genres: JSON.stringify(input.genres ?? []),
+  };
+  for (const key of MOVIE_NULLABLE_INSERT_KEYS) {
+    values[key] = input[key] ?? null;
+  }
+  return values as typeof movies.$inferInsert;
+}
+
 /** Create a new movie. Returns the created row. Throws ConflictError on duplicate tmdbId. */
 export function createMovie(input: CreateMovieInput): MovieRow {
   const db = getDrizzle();
-
   try {
-    const result = db
-      .insert(movies)
-      .values({
-        tmdbId: input.tmdbId,
-        imdbId: input.imdbId ?? null,
-        title: input.title,
-        originalTitle: input.originalTitle ?? null,
-        overview: input.overview ?? null,
-        tagline: input.tagline ?? null,
-        releaseDate: input.releaseDate ?? null,
-        runtime: input.runtime ?? null,
-        status: input.status ?? null,
-        originalLanguage: input.originalLanguage ?? null,
-        budget: input.budget ?? null,
-        revenue: input.revenue ?? null,
-        posterPath: input.posterPath ?? null,
-        backdropPath: input.backdropPath ?? null,
-        logoPath: input.logoPath ?? null,
-        posterOverridePath: input.posterOverridePath ?? null,
-        voteAverage: input.voteAverage ?? null,
-        voteCount: input.voteCount ?? null,
-        genres: JSON.stringify(input.genres ?? []),
-      })
-      .run();
-
+    const result = db.insert(movies).values(buildMovieInsertValues(input)).run();
     return getMovie(Number(result.lastInsertRowid));
   } catch (err) {
     if (err instanceof Error && err.message.includes('UNIQUE constraint failed')) {

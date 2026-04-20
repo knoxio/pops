@@ -31,61 +31,77 @@ export interface SuggestTagsOptions {
   correctionPattern?: string;
 }
 
+interface RuleTagsArgs {
+  description: string;
+  correctionTags: string[] | undefined;
+  correctionPattern: string | undefined;
+  seen: Set<string>;
+  result: SuggestedTag[];
+}
+
+function addRuleTags(args: RuleTagsArgs): void {
+  const { description, correctionTags, correctionPattern, seen, result } = args;
+  if (correctionTags && correctionTags.length > 0) {
+    for (const tag of correctionTags) {
+      if (seen.has(tag)) continue;
+      seen.add(tag);
+      result.push({ tag, source: 'rule', pattern: correctionPattern });
+    }
+    return;
+  }
+  for (const correction of findAllMatchingCorrections(description)) {
+    for (const tag of parseJsonStringArray(correction.tags)) {
+      if (seen.has(tag)) continue;
+      seen.add(tag);
+      result.push({ tag, source: 'rule', pattern: correction.descriptionPattern ?? undefined });
+    }
+  }
+}
+
+function addAiTag(
+  aiCategory: string | null | undefined,
+  knownTags: string[] | undefined,
+  seen: Set<string>,
+  result: SuggestedTag[]
+): void {
+  if (!aiCategory || !knownTags) return;
+  const lowerCategory = aiCategory.toLowerCase();
+  const matched = knownTags.find((t) => t.toLowerCase() === lowerCategory) ?? null;
+  if (matched && !seen.has(matched)) {
+    seen.add(matched);
+    result.push({ tag: matched, source: 'ai' });
+  }
+}
+
+function addEntityTags(entityId: string | null, seen: Set<string>, result: SuggestedTag[]): void {
+  if (!entityId) return;
+  const entity = getDrizzle()
+    .select({ defaultTags: entities.defaultTags })
+    .from(entities)
+    .where(eq(entities.id, entityId))
+    .get();
+  if (!entity?.defaultTags) return;
+
+  for (const tag of parseJsonStringArray(entity.defaultTags)) {
+    if (seen.has(tag)) continue;
+    seen.add(tag);
+    result.push({ tag, source: 'entity' });
+  }
+}
+
 export function suggestTags(opts: SuggestTagsOptions): SuggestedTag[] {
-  const { description, entityId, aiCategory, knownTags, correctionTags, correctionPattern } = opts;
-  const db = getDrizzle();
   const seen = new Set<string>();
   const result: SuggestedTag[] = [];
 
-  // 1. Correction rule tags (pre-parsed or from DB)
-  if (correctionTags && correctionTags.length > 0) {
-    for (const tag of correctionTags) {
-      if (!seen.has(tag)) {
-        seen.add(tag);
-        result.push({ tag, source: 'rule', pattern: correctionPattern });
-      }
-    }
-  } else {
-    const corrections = findAllMatchingCorrections(description);
-    for (const correction of corrections) {
-      const tags = parseJsonStringArray(correction.tags);
-      for (const tag of tags) {
-        if (!seen.has(tag)) {
-          seen.add(tag);
-          result.push({ tag, source: 'rule', pattern: correction.descriptionPattern ?? undefined });
-        }
-      }
-    }
-  }
-
-  // 2. AI category — only if it case-insensitively matches a known tag
-  if (aiCategory && knownTags) {
-    const lowerCategory = aiCategory.toLowerCase();
-    const matched = knownTags.find((t) => t.toLowerCase() === lowerCategory) ?? null;
-    if (matched && !seen.has(matched)) {
-      seen.add(matched);
-      result.push({ tag: matched, source: 'ai' });
-    }
-  }
-
-  // 3. Entity default tags
-  if (entityId) {
-    const entity = db
-      .select({ defaultTags: entities.defaultTags })
-      .from(entities)
-      .where(eq(entities.id, entityId))
-      .get();
-
-    if (entity?.defaultTags) {
-      const tags = parseJsonStringArray(entity.defaultTags);
-      for (const tag of tags) {
-        if (!seen.has(tag)) {
-          seen.add(tag);
-          result.push({ tag, source: 'entity' });
-        }
-      }
-    }
-  }
+  addRuleTags({
+    description: opts.description,
+    correctionTags: opts.correctionTags,
+    correctionPattern: opts.correctionPattern,
+    seen,
+    result,
+  });
+  addAiTag(opts.aiCategory, opts.knownTags, seen, result);
+  addEntityTags(opts.entityId, seen, result);
 
   return result;
 }

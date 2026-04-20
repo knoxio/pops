@@ -85,15 +85,79 @@ export interface AdditionResult {
   skippedReason: string | null;
 }
 
+interface RadarrConfig {
+  qualityProfileId: number;
+  rootFolderPath: string;
+}
+
+function loadRadarrConfig(): RadarrConfig | null {
+  const qualityProfileId = getSetting(SETTINGS_KEYS.qualityProfileId);
+  const rootFolderPath = getSetting(SETTINGS_KEYS.rootFolderPath);
+  if (!qualityProfileId || !rootFolderPath) return null;
+  return { qualityProfileId: Number(qualityProfileId), rootFolderPath };
+}
+
+function markCandidate(candidateId: number, status: 'added' | 'skipped'): void {
+  const db = getDrizzle();
+  db.update(rotationCandidates).set({ status }).where(eq(rotationCandidates.id, candidateId)).run();
+}
+
+async function ensureLibraryEntry(tmdbId: number, title: string): Promise<void> {
+  try {
+    const tmdbClient = getTmdbClient();
+    const imageCache = getImageCache();
+    await addMovieToLibrary(tmdbId, tmdbClient, imageCache);
+  } catch (libErr) {
+    const msg = libErr instanceof Error ? libErr.message : String(libErr);
+    console.warn(`[Rotation] Library entry creation failed for ${title} (tmdb=${tmdbId}): ${msg}`);
+  }
+}
+
+interface AddCandidateResult {
+  added: boolean;
+  ref: AddedMovieRef | null;
+}
+
+async function addCandidate(
+  candidate: ReturnType<typeof aggregateCandidates>[number],
+  client: NonNullable<ReturnType<typeof getRadarrClient>>,
+  config: RadarrConfig
+): Promise<AddCandidateResult> {
+  try {
+    const check = await client.checkMovie(candidate.tmdbId);
+    if (check.exists) {
+      markCandidate(candidate.candidateId, 'skipped');
+      return { added: false, ref: null };
+    }
+
+    await client.addMovie({
+      tmdbId: candidate.tmdbId,
+      title: candidate.title,
+      year: candidate.year ?? new Date().getFullYear(),
+      qualityProfileId: config.qualityProfileId,
+      rootFolderPath: config.rootFolderPath,
+    });
+
+    await ensureLibraryEntry(candidate.tmdbId, candidate.title);
+    markCandidate(candidate.candidateId, 'added');
+    console.warn(
+      `[Rotation] Added: ${candidate.title} (tmdb=${candidate.tmdbId}, weight=${candidate.weight.toFixed(2)})`
+    );
+    return { added: true, ref: { tmdbId: candidate.tmdbId, title: candidate.title } };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(
+      `[Rotation] Failed to add candidate ${candidate.title} (tmdb=${candidate.tmdbId}):`,
+      message
+    );
+    markCandidate(candidate.candidateId, 'skipped');
+    return { added: false, ref: null };
+  }
+}
+
 /**
  * Select and add up to `budget` movies from the candidate queue using the
- * weighted selection policy (PRD-071 US-05). For each selected candidate:
- * 1. Add to Radarr with searchForMovie: true
- * 2. Create a POPS library entry via TMDB metadata
- * 3. Update candidate status to 'added'
- *
- * On failure, marks the candidate as 'skipped' and continues to fill the
- * requested count.
+ * weighted selection policy (PRD-071 US-05).
  */
 export async function addMoviesFromQueue(budget: number): Promise<AdditionResult> {
   if (budget <= 0) {
@@ -113,10 +177,8 @@ export async function addMoviesFromQueue(budget: number): Promise<AdditionResult
     };
   }
 
-  const qualityProfileId = getSetting(SETTINGS_KEYS.qualityProfileId);
-  const rootFolderPath = getSetting(SETTINGS_KEYS.rootFolderPath);
-
-  if (!qualityProfileId || !rootFolderPath) {
+  const config = loadRadarrConfig();
+  if (!config) {
     return {
       added: 0,
       addedMovies: [],
@@ -124,11 +186,7 @@ export async function addMoviesFromQueue(budget: number): Promise<AdditionResult
     };
   }
 
-  const db = getDrizzle();
-
-  // Use weighted selection policy instead of simple ordering
   const selected = aggregateCandidates(budget);
-
   if (selected.length === 0) {
     return { added: 0, addedMovies: [], skippedReason: 'no pending candidates in queue' };
   }
@@ -136,59 +194,10 @@ export async function addMoviesFromQueue(budget: number): Promise<AdditionResult
   let added = 0;
   const addedMovies: AddedMovieRef[] = [];
   for (const candidate of selected) {
-    try {
-      // Check if already in Radarr
-      const check = await client.checkMovie(candidate.tmdbId);
-      if (check.exists) {
-        db.update(rotationCandidates)
-          .set({ status: 'skipped' })
-          .where(eq(rotationCandidates.id, candidate.candidateId))
-          .run();
-        continue;
-      }
-
-      // Add to Radarr
-      await client.addMovie({
-        tmdbId: candidate.tmdbId,
-        title: candidate.title,
-        year: candidate.year ?? new Date().getFullYear(),
-        qualityProfileId: Number(qualityProfileId),
-        rootFolderPath,
-      });
-
-      // Create POPS library entry (idempotent — returns existing if already present)
-      try {
-        const tmdbClient = getTmdbClient();
-        const imageCache = getImageCache();
-        await addMovieToLibrary(candidate.tmdbId, tmdbClient, imageCache);
-      } catch (libErr) {
-        // Log but don't fail the addition — the movie is in Radarr
-        const msg = libErr instanceof Error ? libErr.message : String(libErr);
-        console.warn(
-          `[Rotation] Library entry creation failed for ${candidate.title} (tmdb=${candidate.tmdbId}): ${msg}`
-        );
-      }
-
-      db.update(rotationCandidates)
-        .set({ status: 'added' })
-        .where(eq(rotationCandidates.id, candidate.candidateId))
-        .run();
+    const result = await addCandidate(candidate, client, config);
+    if (result.added && result.ref) {
       added++;
-      addedMovies.push({ tmdbId: candidate.tmdbId, title: candidate.title });
-
-      console.warn(
-        `[Rotation] Added: ${candidate.title} (tmdb=${candidate.tmdbId}, weight=${candidate.weight.toFixed(2)})`
-      );
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(
-        `[Rotation] Failed to add candidate ${candidate.title} (tmdb=${candidate.tmdbId}):`,
-        message
-      );
-      db.update(rotationCandidates)
-        .set({ status: 'skipped' })
-        .where(eq(rotationCandidates.id, candidate.candidateId))
-        .run();
+      addedMovies.push(result.ref);
     }
   }
 

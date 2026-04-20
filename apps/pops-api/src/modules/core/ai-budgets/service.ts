@@ -97,51 +97,68 @@ export function getBudgetStatus(): BudgetStatus[] {
   const start = monthStart();
   const monthStartDate = new Date(start);
 
-  return budgets.map((budget) => {
-    const conditions = [gte(aiInferenceLog.createdAt, start)];
-    if (budget.scopeType === 'provider' && budget.scopeValue) {
-      conditions.push(sql`${aiInferenceLog.provider} = ${budget.scopeValue}`);
-    } else if (budget.scopeType === 'operation' && budget.scopeValue) {
-      conditions.push(sql`${aiInferenceLog.operation} = ${budget.scopeValue}`);
-    }
+  return budgets.map((budget) => buildBudgetStatus(db, budget, start, monthStartDate));
+}
 
-    const [agg] = db
-      .select({
-        totalTokens: sql<number>`COALESCE(SUM(${aiInferenceLog.inputTokens} + ${aiInferenceLog.outputTokens}), 0)`,
-        totalCost: sql<number>`COALESCE(SUM(${aiInferenceLog.costUsd}), 0)`,
-      })
-      .from(aiInferenceLog)
-      .where(and(...conditions))
-      .all();
+type BudgetRow = typeof aiBudgets.$inferSelect;
 
-    const currentTokenUsage = agg?.totalTokens ?? 0;
-    const currentCostUsage = agg?.totalCost ?? 0;
+function getBudgetUsage(
+  db: ReturnType<typeof getDrizzle>,
+  budget: BudgetRow,
+  start: string
+): { currentTokenUsage: number; currentCostUsage: number } {
+  const conditions = [gte(aiInferenceLog.createdAt, start)];
+  if (budget.scopeType === 'provider' && budget.scopeValue) {
+    conditions.push(sql`${aiInferenceLog.provider} = ${budget.scopeValue}`);
+  } else if (budget.scopeType === 'operation' && budget.scopeValue) {
+    conditions.push(sql`${aiInferenceLog.operation} = ${budget.scopeValue}`);
+  }
+  const [agg] = db
+    .select({
+      totalTokens: sql<number>`COALESCE(SUM(${aiInferenceLog.inputTokens} + ${aiInferenceLog.outputTokens}), 0)`,
+      totalCost: sql<number>`COALESCE(SUM(${aiInferenceLog.costUsd}), 0)`,
+    })
+    .from(aiInferenceLog)
+    .where(and(...conditions))
+    .all();
+  return { currentTokenUsage: agg?.totalTokens ?? 0, currentCostUsage: agg?.totalCost ?? 0 };
+}
 
-    let percentageUsed: number | null = null;
-    let projectedExhaustionDate: string | null = null;
-
-    if (budget.monthlyCostLimit != null && budget.monthlyCostLimit > 0) {
-      percentageUsed = (currentCostUsage / budget.monthlyCostLimit) * 100;
-      projectedExhaustionDate = computeProjectedExhaustion(
-        currentCostUsage,
+function computeBudgetStatusFields(
+  budget: BudgetRow,
+  usage: { currentTokenUsage: number; currentCostUsage: number },
+  monthStartDate: Date
+): { percentageUsed: number | null; projectedExhaustionDate: string | null } {
+  if (budget.monthlyCostLimit != null && budget.monthlyCostLimit > 0) {
+    return {
+      percentageUsed: (usage.currentCostUsage / budget.monthlyCostLimit) * 100,
+      projectedExhaustionDate: computeProjectedExhaustion(
+        usage.currentCostUsage,
         budget.monthlyCostLimit,
         monthStartDate
-      );
-    } else if (budget.monthlyTokenLimit != null && budget.monthlyTokenLimit > 0) {
-      percentageUsed = (currentTokenUsage / budget.monthlyTokenLimit) * 100;
-      projectedExhaustionDate = computeProjectedExhaustion(
-        currentTokenUsage,
+      ),
+    };
+  }
+  if (budget.monthlyTokenLimit != null && budget.monthlyTokenLimit > 0) {
+    return {
+      percentageUsed: (usage.currentTokenUsage / budget.monthlyTokenLimit) * 100,
+      projectedExhaustionDate: computeProjectedExhaustion(
+        usage.currentTokenUsage,
         budget.monthlyTokenLimit,
         monthStartDate
-      );
-    }
-
-    return {
-      ...budget,
-      currentTokenUsage,
-      currentCostUsage,
-      percentageUsed,
-      projectedExhaustionDate,
+      ),
     };
-  });
+  }
+  return { percentageUsed: null, projectedExhaustionDate: null };
+}
+
+function buildBudgetStatus(
+  db: ReturnType<typeof getDrizzle>,
+  budget: BudgetRow,
+  start: string,
+  monthStartDate: Date
+): BudgetStatus {
+  const usage = getBudgetUsage(db, budget, start);
+  const fields = computeBudgetStatusFields(budget, usage, monthStartDate);
+  return { ...budget, ...usage, ...fields };
 }

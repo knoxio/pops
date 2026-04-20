@@ -71,6 +71,9 @@ const t = initTRPC.context<Context>().meta<OpenApiMeta>().create();
 /** Base router for composing routers. */
 export const router = t.router;
 
+/** Merge multiple routers into a single router. */
+export const mergeRouters = t.mergeRouters;
+
 /** Base procedure for all endpoints (no auth required). */
 export const publicProcedure = t.procedure;
 
