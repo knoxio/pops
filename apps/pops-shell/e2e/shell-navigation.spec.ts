@@ -4,42 +4,19 @@
  * Tier 1 minimum: shell root loads, each app-rail icon navigates to the
  * correct route, and the active indicator (aria-current="page") updates.
  *
- * Notes: mocked — all tRPC calls are intercepted and return null so the test
- * does not depend on database state or API availability.
+ * Notes: no tRPC mocking needed. The API is started by Playwright's webServer
+ * config and the initialized (empty-schema) database returns empty results.
+ * Empty results are handled gracefully by all pages; no crash occurs.
  */
-import { expect, test, type Page } from '@playwright/test';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/** Intercept all tRPC calls and return null data — pages show empty/loading states. */
-async function mockAllTrpc(page: Page) {
-  await page.route('/trpc/**', async (route) => {
-    const isBatch = new URL(route.request().url()).searchParams.has('batch');
-    const body = isBatch ? [{ result: { data: null } }] : { result: { data: null } };
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(body),
-    });
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
+import { expect, test } from '@playwright/test';
 
 test.describe('Shell — app-rail navigation smoke test', () => {
   test.beforeEach(async ({ page }) => {
-    await mockAllTrpc(page);
     await page.goto('/');
     // Root redirects to /finance — wait for navigation to settle.
     await expect(page).toHaveURL(/\/finance/);
-  });
-
-  test.afterEach(async ({ page }) => {
-    await page.unrouteAll({ behavior: 'ignoreErrors' });
+    // App rail renders after the shell mounts — wait for Finance button.
+    await expect(page.getByRole('button', { name: 'Finance' })).toBeVisible();
   });
 
   test('shell root redirects to /finance', async ({ page }) => {
@@ -48,7 +25,6 @@ test.describe('Shell — app-rail navigation smoke test', () => {
 
   test('Finance rail item is active on load', async ({ page }) => {
     const financeBtn = page.getByRole('button', { name: 'Finance' });
-    await expect(financeBtn).toBeVisible();
     await expect(financeBtn).toHaveAttribute('aria-current', 'page');
   });
 
