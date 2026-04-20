@@ -1,3 +1,5 @@
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@pops/ui';
+
 import { FieldInput } from './FieldInput';
 
 import type { SettingsGroup } from '@pops/types';
@@ -24,14 +26,12 @@ export function GroupRenderer({
   loadingOptionKeys,
 }: GroupRendererProps) {
   return (
-    <div className="rounded-lg border bg-card p-5 space-y-4">
-      <div>
-        <h3 className="font-medium text-sm">{group.title}</h3>
-        {group.description && (
-          <p className="text-xs text-muted-foreground mt-0.5">{group.description}</p>
-        )}
-      </div>
-      <div className="space-y-4">
+    <Card>
+      <CardHeader>
+        <CardTitle>{group.title}</CardTitle>
+        {group.description && <CardDescription>{group.description}</CardDescription>}
+      </CardHeader>
+      <CardContent className="space-y-4">
         {group.fields.map((field) => (
           <FieldInput
             key={field.key}
@@ -44,7 +44,7 @@ export function GroupRenderer({
             isOptionsLoading={loadingOptionKeys.has(field.key)}
           />
         ))}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 }
