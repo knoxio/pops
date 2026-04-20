@@ -31,14 +31,19 @@ test.describe('Inventory — items list smoke test', () => {
     await expect(page.getByText(/replacement/i).first()).toBeVisible({ timeout: 10_000 });
   });
 
-  test('page does not crash (no uncaught errors)', async ({ page }) => {
+  test('page does not crash (no uncaught errors or console errors)', async ({ page }) => {
     // Register BEFORE navigation so errors during first load are captured.
-    const errors: string[] = [];
-    page.on('pageerror', (err) => errors.push(err.message));
+    const pageErrors: string[] = [];
+    const consoleErrors: string[] = [];
+    page.on('pageerror', (err) => pageErrors.push(err.message));
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') consoleErrors.push(msg.text());
+    });
 
     await page.goto('/inventory');
     await expect(page.getByText(/MacBook Pro/i).first()).toBeVisible({ timeout: 10_000 });
 
-    expect(errors).toHaveLength(0);
+    expect(pageErrors).toHaveLength(0);
+    expect(consoleErrors).toHaveLength(0);
   });
 });

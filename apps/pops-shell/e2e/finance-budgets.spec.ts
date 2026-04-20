@@ -113,15 +113,21 @@ test.describe('Finance — budgets list smoke test', () => {
     await expect(page.getByRole('row').filter({ hasText: 'Holiday Fund' }).first()).toBeVisible();
   });
 
-  test('page does not crash (no uncaught errors)', async ({ page }) => {
-    const errors: string[] = [];
-    page.on('pageerror', (err) => errors.push(err.message));
+  test('page does not crash (no uncaught errors or console errors)', async ({ page }) => {
+    // Register BEFORE navigation so errors during first load are captured.
+    const pageErrors: string[] = [];
+    const consoleErrors: string[] = [];
+    page.on('pageerror', (err) => pageErrors.push(err.message));
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') consoleErrors.push(msg.text());
+    });
 
     await page.goto('/finance/budgets');
     await expect(page.getByRole('row').filter({ hasText: 'Groceries' }).first()).toBeVisible({
       timeout: 10_000,
     });
 
-    expect(errors).toHaveLength(0);
+    expect(pageErrors).toHaveLength(0);
+    expect(consoleErrors).toHaveLength(0);
   });
 });
