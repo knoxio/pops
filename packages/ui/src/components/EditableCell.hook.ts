@@ -51,7 +51,7 @@ export function useEditableCell<T>({ initialValue, onSave, validate }: UseEditab
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleSave();
+      void handleSave();
     } else if (e.key === 'Escape') {
       e.preventDefault();
       handleCancel();

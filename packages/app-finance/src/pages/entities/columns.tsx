@@ -51,7 +51,7 @@ const abnColumn: ColumnDef<Entity> = {
   header: 'ABN',
   cell: ({ row }) => (
     <span className="text-sm font-mono">
-      {row.original.abn || <span className="text-muted-foreground">—</span>}
+      {row.original.abn ?? <span className="text-muted-foreground">—</span>}
     </span>
   ),
 };

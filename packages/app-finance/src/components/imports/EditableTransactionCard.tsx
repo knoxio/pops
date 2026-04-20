@@ -108,7 +108,7 @@ function EntityOrTransferNotice({
         <Label htmlFor="entity">Entity (Merchant/Payee)</Label>
         <EntitySelect
           entities={entities}
-          value={transaction.entity?.entityId || ''}
+          value={transaction.entity?.entityId ?? ''}
           placeholder="Select entity..."
         />
       </div>
@@ -140,7 +140,7 @@ export function EditableTransactionCard({
     description: transaction.description,
     amount: transaction.amount,
     date: transaction.date,
-    location: transaction.location || '',
+    location: transaction.location ?? '',
     account: transaction.account,
     transactionType: transaction.transactionType ?? 'purchase',
   });

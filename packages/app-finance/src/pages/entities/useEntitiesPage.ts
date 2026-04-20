@@ -24,7 +24,7 @@ function useEntityMutations(deps: MutationDeps) {
   const createMutation = trpc.core.entities.create.useMutation({
     onSuccess: () => {
       toast.success('Entity created');
-      utils.core.entities.list.invalidate();
+      void utils.core.entities.list.invalidate();
       deps.setIsDialogOpen(false);
     },
     onError: (err) => toast.error(err.message),
@@ -32,7 +32,7 @@ function useEntityMutations(deps: MutationDeps) {
   const updateMutation = trpc.core.entities.update.useMutation({
     onSuccess: () => {
       toast.success('Entity updated');
-      utils.core.entities.list.invalidate();
+      void utils.core.entities.list.invalidate();
       deps.setIsDialogOpen(false);
       deps.setEditingEntity(null);
     },
@@ -41,7 +41,7 @@ function useEntityMutations(deps: MutationDeps) {
   const deleteMutation = trpc.core.entities.delete.useMutation({
     onSuccess: () => {
       toast.success('Entity deleted');
-      utils.core.entities.list.invalidate();
+      void utils.core.entities.list.invalidate();
       deps.setDeletingId(null);
     },
     onError: (err) => toast.error(err.message),
@@ -98,12 +98,12 @@ export function useEntitiesPage() {
     setEditingEntity(entity);
     form.reset({
       name: entity.name,
-      type: entity.type || 'company',
-      abn: entity.abn || '',
+      type: entity.type ?? 'company',
+      abn: entity.abn ?? '',
       aliases: entity.aliases,
-      defaultTransactionType: entity.defaultTransactionType || '',
+      defaultTransactionType: entity.defaultTransactionType ?? '',
       defaultTags: entity.defaultTags,
-      notes: entity.notes || '',
+      notes: entity.notes ?? '',
     });
     setIsDialogOpen(true);
   };

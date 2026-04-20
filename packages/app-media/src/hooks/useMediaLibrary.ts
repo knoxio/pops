@@ -34,7 +34,7 @@ function buildListInput(params: UseMediaLibraryParams) {
     type: params.typeFilter,
     sort: params.sortBy,
     search: params.search || undefined,
-    genre: params.genreFilter || undefined,
+    genre: params.genreFilter ?? undefined,
     page: params.page,
     pageSize: params.pageSize,
   };

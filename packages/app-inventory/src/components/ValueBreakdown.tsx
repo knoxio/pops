@@ -205,7 +205,7 @@ export function ValueByLocationCard({ className }: { className?: string }) {
             data={locationEntries}
             onBarClick={(entry) => {
               if (entry.key) {
-                navigate(`/inventory?locationId=${encodeURIComponent(entry.key)}`);
+                void navigate(`/inventory?locationId=${encodeURIComponent(entry.key)}`);
               }
             }}
           />

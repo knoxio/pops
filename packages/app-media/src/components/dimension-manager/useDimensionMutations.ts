@@ -22,7 +22,7 @@ function useCoreMutations(
   const utils = trpc.useUtils();
   const createMutation = trpc.media.comparisons.createDimension.useMutation({
     onSuccess: () => {
-      utils.media.comparisons.listDimensions.invalidate();
+      void utils.media.comparisons.listDimensions.invalidate();
       args.setAddName('');
       args.setAddDescription('');
       toast.success('Dimension created');
@@ -32,7 +32,7 @@ function useCoreMutations(
 
   const updateMutation = trpc.media.comparisons.updateDimension.useMutation({
     onSuccess: () => {
-      utils.media.comparisons.listDimensions.invalidate();
+      void utils.media.comparisons.listDimensions.invalidate();
       args.setEditing(null);
       toast.success('Dimension updated');
     },

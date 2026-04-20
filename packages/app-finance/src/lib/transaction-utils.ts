@@ -51,10 +51,10 @@ export function groupTransactionsByEntity(
   const groups = new Map<string, TransactionGroup>();
 
   for (const transaction of transactions) {
-    const key = transaction.entity?.entityName || 'unknown';
+    const key = transaction.entity?.entityName ?? 'unknown';
     if (!groups.has(key)) {
       groups.set(key, {
-        entityName: transaction.entity?.entityName || 'Unknown',
+        entityName: transaction.entity?.entityName ?? 'Unknown',
         category: undefined, // Category will be fetched from entities list if needed
         transactions: [],
         aiSuggestion: transaction.entity?.matchType === 'ai',

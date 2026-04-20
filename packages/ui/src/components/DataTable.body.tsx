@@ -90,7 +90,7 @@ function DataTableRows<TData>({
   return (
     <TableRow>
       <TableCell colSpan={columnCount} className="h-24 text-center">
-        {emptyState || 'No results.'}
+        {emptyState ?? 'No results.'}
       </TableCell>
     </TableRow>
   );

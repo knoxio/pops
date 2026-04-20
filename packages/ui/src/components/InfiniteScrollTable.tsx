@@ -112,7 +112,7 @@ function useInfiniteScrollTrigger(
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting && hasMore && !loading) handleLoadMore();
+        if (entries[0]?.isIntersecting && hasMore && !loading) void handleLoadMore();
       },
       { threshold: 0.1, rootMargin: `${scrollThreshold}px` }
     );

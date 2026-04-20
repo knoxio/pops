@@ -11,7 +11,7 @@ function parseSearchParams(searchParams: URLSearchParams) {
   return {
     typeFilter: isValidMediaType(rawType) ? rawType : 'all',
     sortBy: isValidSort(rawSort) ? rawSort : 'title',
-    genreFilter: searchParams.get('genre') || null,
+    genreFilter: searchParams.get('genre') ?? null,
     searchQuery: searchParams.get('q') ?? '',
     page: Math.max(1, Number(searchParams.get('page')) || 1),
     pageSize: PAGE_SIZE_OPTIONS.find((s) => s === Number(searchParams.get('pageSize'))) ?? 24,

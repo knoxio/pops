@@ -140,7 +140,7 @@ export function WatchlistCard(props: WatchlistCardProps) {
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            navigate(href);
+            void navigate(href);
           }
         }}
       >

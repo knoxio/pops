@@ -79,55 +79,45 @@ let _defaultQueue: Queue<DefaultQueueJobData> | null = null;
 let _deadLetterQueue: Queue<DeadLetterJobData> | null = null;
 
 export function getSyncQueue(): Queue<SyncQueueJobData> {
-  if (!_syncQueue) {
-    _syncQueue = new Queue<SyncQueueJobData>(SYNC_QUEUE, {
-      connection: createRedisConnection(),
-      defaultJobOptions: SYNC_JOB_OPTIONS,
-    });
-  }
+  _syncQueue ??= new Queue<SyncQueueJobData>(SYNC_QUEUE, {
+    connection: createRedisConnection(),
+    defaultJobOptions: SYNC_JOB_OPTIONS,
+  });
   return _syncQueue;
 }
 
 export function getEmbeddingsQueue(): Queue<EmbeddingsQueueJobData> {
-  if (!_embeddingsQueue) {
-    _embeddingsQueue = new Queue<EmbeddingsQueueJobData>(EMBEDDINGS_QUEUE, {
-      connection: createRedisConnection(),
-      defaultJobOptions: EMBEDDINGS_JOB_OPTIONS,
-    });
-  }
+  _embeddingsQueue ??= new Queue<EmbeddingsQueueJobData>(EMBEDDINGS_QUEUE, {
+    connection: createRedisConnection(),
+    defaultJobOptions: EMBEDDINGS_JOB_OPTIONS,
+  });
   return _embeddingsQueue;
 }
 
 export function getCurationQueue(): Queue<CurationQueueJobData> {
-  if (!_curationQueue) {
-    _curationQueue = new Queue<CurationQueueJobData>(CURATION_QUEUE, {
-      connection: createRedisConnection(),
-      defaultJobOptions: CURATION_JOB_OPTIONS,
-    });
-  }
+  _curationQueue ??= new Queue<CurationQueueJobData>(CURATION_QUEUE, {
+    connection: createRedisConnection(),
+    defaultJobOptions: CURATION_JOB_OPTIONS,
+  });
   return _curationQueue;
 }
 
 export function getDefaultQueue(): Queue<DefaultQueueJobData> {
-  if (!_defaultQueue) {
-    _defaultQueue = new Queue<DefaultQueueJobData>(DEFAULT_QUEUE, {
-      connection: createRedisConnection(),
-      defaultJobOptions: DEFAULT_JOB_OPTIONS,
-    });
-  }
+  _defaultQueue ??= new Queue<DefaultQueueJobData>(DEFAULT_QUEUE, {
+    connection: createRedisConnection(),
+    defaultJobOptions: DEFAULT_JOB_OPTIONS,
+  });
   return _defaultQueue;
 }
 
 export function getDeadLetterQueue(): Queue<DeadLetterJobData> {
-  if (!_deadLetterQueue) {
-    _deadLetterQueue = new Queue<DeadLetterJobData>(DEAD_LETTER_QUEUE, {
-      connection: createRedisConnection(),
-      defaultJobOptions: {
-        removeOnComplete: { count: 500 },
-        removeOnFail: false,
-      },
-    });
-  }
+  _deadLetterQueue ??= new Queue<DeadLetterJobData>(DEAD_LETTER_QUEUE, {
+    connection: createRedisConnection(),
+    defaultJobOptions: {
+      removeOnComplete: { count: 500 },
+      removeOnFail: false,
+    },
+  });
   return _deadLetterQueue;
 }
 

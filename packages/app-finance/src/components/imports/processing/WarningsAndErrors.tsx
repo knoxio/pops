@@ -43,7 +43,7 @@ export function FatalErrorPanel({ errorMessage, errors, onRetry }: ErrorPanelPro
   return (
     <div className="p-4 max-w-md w-full text-sm text-destructive bg-destructive/10 dark:text-destructive/40 rounded-lg">
       <p className="font-medium mb-1">Processing Failed</p>
-      <p>{errorMessage || 'An unexpected error occurred'}</p>
+      <p>{errorMessage ?? 'An unexpected error occurred'}</p>
       {errors && errors.length > 0 && (
         <div className="mt-2 space-y-1">
           {errors.map((error) => (

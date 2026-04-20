@@ -25,4 +25,4 @@ async function checkCache() {
   }
 }
 
-checkCache();
+void checkCache();

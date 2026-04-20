@@ -11,17 +11,15 @@ export function getEmbeddingsQueue(): Queue<EmbedJobData> | null {
   const redis = getRedis();
   if (!redis || !isRedisAvailable()) return null;
 
-  if (!_embeddingsQueue) {
-    _embeddingsQueue = new Queue<EmbedJobData>('pops:embeddings', {
-      connection: redis,
-      defaultJobOptions: {
-        attempts: 3,
-        backoff: { type: 'exponential', delay: 2000 },
-        removeOnComplete: { count: 100 },
-        removeOnFail: { count: 500 },
-      },
-    });
-  }
+  _embeddingsQueue ??= new Queue<EmbedJobData>('pops:embeddings', {
+    connection: redis,
+    defaultJobOptions: {
+      attempts: 3,
+      backoff: { type: 'exponential', delay: 2000 },
+      removeOnComplete: { count: 100 },
+      removeOnFail: { count: 500 },
+    },
+  });
 
   return _embeddingsQueue;
 }

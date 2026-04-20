@@ -70,7 +70,7 @@ function TraceNodeRow({ node, depth, currentItemId }: TraceNodeRowProps) {
           paddingLeft: `calc(${depth} * var(--tree-indent-step) + var(--tree-indent-base))`,
         }}
         onClick={() => {
-          if (!isCurrent) navigate(`/inventory/items/${node.id}`);
+          if (!isCurrent) void navigate(`/inventory/items/${node.id}`);
         }}
         role="treeitem"
         aria-expanded={hasChildren ? open : undefined}

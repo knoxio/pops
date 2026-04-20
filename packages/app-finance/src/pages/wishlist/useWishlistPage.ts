@@ -23,7 +23,7 @@ function useWishlistMutations(deps: MutationDeps) {
   const createMutation = trpc.finance.wishlist.create.useMutation({
     onSuccess: () => {
       toast.success('Item added to wishlist');
-      utils.finance.wishlist.list.invalidate();
+      void utils.finance.wishlist.list.invalidate();
       deps.setIsDialogOpen(false);
     },
     onError: (err) => toast.error(err.message),
@@ -31,7 +31,7 @@ function useWishlistMutations(deps: MutationDeps) {
   const updateMutation = trpc.finance.wishlist.update.useMutation({
     onSuccess: () => {
       toast.success('Item updated');
-      utils.finance.wishlist.list.invalidate();
+      void utils.finance.wishlist.list.invalidate();
       deps.setIsDialogOpen(false);
       deps.setEditingItem(null);
     },
@@ -40,7 +40,7 @@ function useWishlistMutations(deps: MutationDeps) {
   const deleteMutation = trpc.finance.wishlist.delete.useMutation({
     onSuccess: () => {
       toast.success('Item removed');
-      utils.finance.wishlist.list.invalidate();
+      void utils.finance.wishlist.list.invalidate();
       deps.setDeletingId(null);
     },
     onError: (err) => toast.error(err.message),
@@ -76,9 +76,9 @@ export function useWishlistPage() {
       item: item.item,
       targetAmount: item.targetAmount,
       saved: item.saved,
-      priority: (item.priority as WishlistFormValues['priority']) || 'Soon',
-      url: item.url || '',
-      notes: item.notes || '',
+      priority: (item.priority as WishlistFormValues['priority']) ?? 'Soon',
+      url: item.url ?? '',
+      notes: item.notes ?? '',
     });
     setIsDialogOpen(true);
   };

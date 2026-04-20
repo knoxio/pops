@@ -94,7 +94,7 @@ export function ScrollShelf<T>({
 
   return (
     <section className={cn('flex flex-col gap-3', className)}>
-      {(title || action) && (
+      {(title ?? action) && (
         <div className="flex items-center justify-between gap-3">
           {title ? <h2 className="text-sm font-semibold">{title}</h2> : <span />}
           {action}

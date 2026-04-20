@@ -52,7 +52,7 @@ export function EditableFormFields({ editedFields, setEditedFields }: FieldProps
         id="description"
         label="Description"
         autoFocus
-        value={editedFields.description || ''}
+        value={editedFields.description ?? ''}
         onChange={(v) => update('description', v)}
       />
       <TextField
@@ -60,26 +60,26 @@ export function EditableFormFields({ editedFields, setEditedFields }: FieldProps
         label="Amount"
         type="number"
         step="0.01"
-        value={editedFields.amount || 0}
+        value={editedFields.amount ?? 0}
         onChange={(v) => update('amount', parseFloat(v))}
       />
       <TextField
         id="date"
         label="Date"
         type="date"
-        value={editedFields.date || ''}
+        value={editedFields.date ?? ''}
         onChange={(v) => update('date', v)}
       />
       <TextField
         id="account"
         label="Account"
-        value={editedFields.account || ''}
+        value={editedFields.account ?? ''}
         onChange={(v) => update('account', v)}
       />
       <TextField
         id="location"
         label="Location"
-        value={editedFields.location || ''}
+        value={editedFields.location ?? ''}
         placeholder="Optional"
         onChange={(v) => update('location', v)}
       />

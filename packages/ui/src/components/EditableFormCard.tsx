@@ -34,7 +34,7 @@ export function EditableFormCard({
       className={cn('border-2 border-info rounded-lg p-4 bg-info/5', className)}
       onKeyDown={handleKeyDown}
     >
-      {(title || actions) && (
+      {(title ?? actions) && (
         <div className="flex justify-between items-center mb-4 pb-2 border-b border-info/20">
           {title && <h3 className="font-semibold text-info">{title}</h3>}
           {actions && <div className="flex gap-2">{actions}</div>}

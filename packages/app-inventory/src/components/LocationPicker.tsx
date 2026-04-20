@@ -82,10 +82,7 @@ function useLocationPickerState(value: string | null | undefined, locations: Loc
     () => (search.trim() ? filterTree(locations, search.trim()) : null),
     [locations, search]
   );
-  const effectiveExpanded = useMemo(
-    () => (visibleIds ? visibleIds : expandedIds),
-    [visibleIds, expandedIds]
-  );
+  const effectiveExpanded = useMemo(() => visibleIds ?? expandedIds, [visibleIds, expandedIds]);
 
   const handleToggle = useCallback((id: string) => {
     setExpandedIds((prev) => {

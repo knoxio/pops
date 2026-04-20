@@ -18,7 +18,7 @@ function useBudgetMutations(args: UseBudgetMutationsArgs) {
   const createMutation = trpc.finance.budgets.create.useMutation({
     onSuccess: () => {
       toast.success('Budget created');
-      utils.finance.budgets.list.invalidate();
+      void utils.finance.budgets.list.invalidate();
       args.setIsDialogOpen(false);
     },
     onError: (err) => toast.error(err.message),
@@ -26,7 +26,7 @@ function useBudgetMutations(args: UseBudgetMutationsArgs) {
   const updateMutation = trpc.finance.budgets.update.useMutation({
     onSuccess: () => {
       toast.success('Budget updated');
-      utils.finance.budgets.list.invalidate();
+      void utils.finance.budgets.list.invalidate();
       args.setIsDialogOpen(false);
       args.setEditingBudget(null);
     },
@@ -35,7 +35,7 @@ function useBudgetMutations(args: UseBudgetMutationsArgs) {
   const deleteMutation = trpc.finance.budgets.delete.useMutation({
     onSuccess: () => {
       toast.success('Budget deleted');
-      utils.finance.budgets.list.invalidate();
+      void utils.finance.budgets.list.invalidate();
       args.setDeletingId(null);
     },
     onError: (err) => toast.error(err.message),
@@ -87,10 +87,10 @@ export function useBudgetsPage() {
     setEditingBudget(budget);
     form.reset({
       category: budget.category,
-      period: budget.period || '',
+      period: budget.period ?? '',
       amount: budget.amount !== null ? String(budget.amount) : '',
       active: budget.active,
-      notes: budget.notes || '',
+      notes: budget.notes ?? '',
     });
     setIsDialogOpen(true);
   };

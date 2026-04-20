@@ -79,7 +79,7 @@ function replacePlaceholders(body: string, values: Record<string, string>): stri
   return body.replaceAll(/\{\{\s*([\w-]+)\s*\}\}/g, (match, rawKey: string) => {
     const key = rawKey.trim();
     const replacement = values[key];
-    return replacement === undefined ? match : replacement;
+    return replacement ?? match;
   });
 }
 

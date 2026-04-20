@@ -62,4 +62,4 @@ async function seedData() {
 }
 
 // Run the seeding function
-seedData();
+void seedData();

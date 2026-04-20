@@ -103,7 +103,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     },
     ref
   ) => {
-    const isDisabled = disabled || loading;
+    const isDisabled = disabled ?? loading;
     const mergedClassName = cn(buttonVariants({ variant, size, shape, className }));
 
     if (asChild) {

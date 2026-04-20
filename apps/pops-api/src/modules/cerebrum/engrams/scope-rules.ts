@@ -188,9 +188,7 @@ export class ScopeRuleEngine {
 
   /** Expose the parsed config for testing. */
   getConfig(): ScopeRulesConfig {
-    if (!this.cachedConfig) {
-      this.cachedConfig = this.loadConfig();
-    }
+    this.cachedConfig ??= this.loadConfig();
     return this.cachedConfig;
   }
 

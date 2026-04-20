@@ -132,7 +132,7 @@ export function HistoryCard({ entry, onDelete, isDeleting, debriefSessionId }: H
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            navigate(href);
+            void navigate(href);
           }
         }}
       >

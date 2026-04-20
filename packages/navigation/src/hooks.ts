@@ -75,7 +75,7 @@ export function useSearchResultNavigation(): {
     (uri: string): boolean => {
       const route = resolveUri(uri);
       if (!route) return false;
-      navigate(route);
+      void navigate(route);
       return true;
     },
     [navigate]

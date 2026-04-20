@@ -75,7 +75,7 @@ function AddToLibraryBtn({
       size="sm"
       variant="outline"
       className="h-7 gap-1 text-xs"
-      disabled={addDisabled || isAdding}
+      disabled={addDisabled ?? isAdding}
       title={addDisabledReason}
       onClick={onAdd}
     >
@@ -100,7 +100,7 @@ function WatchlistAndLibraryBtn({
       variant="outline"
       className="h-7 gap-1 text-xs"
       onClick={onAddToWatchlistAndLibrary}
-      disabled={isAdding || isAddingToWatchlistAndLibrary}
+      disabled={isAdding ?? isAddingToWatchlistAndLibrary}
       aria-label="Add to watchlist and library"
     >
       {isAddingToWatchlistAndLibrary ? (
@@ -129,7 +129,7 @@ function WatchedAndLibraryBtn({
       variant="outline"
       className="h-7 gap-1 text-xs"
       onClick={onMarkWatchedAndLibrary}
-      disabled={isAdding || isMarkingWatchedAndLibrary}
+      disabled={isAdding ?? isMarkingWatchedAndLibrary}
       aria-label="Mark as watched and add to library"
     >
       {isMarkingWatchedAndLibrary ? (

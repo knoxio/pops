@@ -47,7 +47,7 @@ export function TierListBoard(props: TierListBoardProps) {
           />
         ))}
         <UnrankedPool movies={model.unrankedMovies} />
-        {(onNotWatched || onMarkStale || onNA) && (
+        {(onNotWatched ?? onMarkStale ?? onNA) && (
           <div className="flex gap-2 mt-4">
             {onNotWatched && <DismissDropZone zone="not-watched" />}
             {onMarkStale && <DismissDropZone zone="stale" />}

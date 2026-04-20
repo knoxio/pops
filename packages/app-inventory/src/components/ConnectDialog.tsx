@@ -19,7 +19,7 @@ interface ConnectResultRowProps {
 }
 
 function ConnectResultRow({ item, disabled, onConnect }: ConnectResultRowProps) {
-  const hasMeta = item.brand || item.model || item.assetId || item.type;
+  const hasMeta = ((item.brand ?? item.model) || item.assetId) ?? item.type;
   return (
     <Button
       variant="ghost"
@@ -31,7 +31,7 @@ function ConnectResultRow({ item, disabled, onConnect }: ConnectResultRowProps) 
         <div className="font-medium text-sm">{item.itemName}</div>
         {hasMeta ? (
           <div className="flex flex-wrap items-center gap-1 mt-0.5">
-            {(item.brand || item.model) && (
+            {(item.brand ?? item.model) && (
               <span className="text-xs text-muted-foreground">
                 {[item.brand, item.model].filter(Boolean).join(' · ')}
               </span>

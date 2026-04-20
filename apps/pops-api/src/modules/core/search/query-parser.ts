@@ -36,7 +36,7 @@ export function parseQuery(input: string): Query {
 
     if (match && match.index === 0 && match[0] === token && KNOWN_KEYS.has(match[1] ?? '')) {
       const key = match[1] ?? '';
-      const operator = match[2] || '';
+      const operator = match[2] ?? '';
       const value = match[3] ?? '';
       filters.push({ key, value: `${operator}${value}` });
     } else {

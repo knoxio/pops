@@ -17,7 +17,7 @@ const typeStyles: Record<string, string> = {
 };
 
 export function TypeBadge({ type, className, ...props }: TypeBadgeProps) {
-  const style = typeStyles[type] || 'bg-muted text-muted-foreground border-transparent';
+  const style = typeStyles[type] ?? 'bg-muted text-muted-foreground border-transparent';
 
   return (
     <Badge

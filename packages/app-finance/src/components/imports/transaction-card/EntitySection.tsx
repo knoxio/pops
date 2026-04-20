@@ -94,7 +94,7 @@ export function EntitySection(props: EntitySectionProps) {
       )}
       <EntitySelect
         entities={entities ?? []}
-        value={transaction.entity?.entityId || ''}
+        value={transaction.entity?.entityId ?? ''}
         onChange={(entityId, entityName) => onEntitySelect?.(transaction, entityId, entityName)}
       />
     </div>

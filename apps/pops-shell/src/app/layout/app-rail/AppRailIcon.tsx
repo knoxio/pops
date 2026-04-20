@@ -32,7 +32,7 @@ export function AppRailIcon({
       // RootLayout does not collapse the overlay we are about to open.
       setSkipNextPageNavClose(true);
     }
-    navigate(app.basePath);
+    void navigate(app.basePath);
     if (isTablet) setPageNavOpen(true);
   };
 

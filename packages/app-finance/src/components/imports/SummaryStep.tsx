@@ -195,7 +195,7 @@ export function SummaryStep() {
       <FooterActions
         onReset={() => {
           reset();
-          navigate('/import');
+          void navigate('/import');
         }}
         onView={() => navigate('/transactions')}
       />

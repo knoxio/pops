@@ -130,7 +130,7 @@ export function DropdownMenu({
     <DropdownMenuPrimitive>
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
       <DropdownMenuContent align={align} side={side} className={className}>
-        {children || renderItems()}
+        {children ?? renderItems()}
       </DropdownMenuContent>
     </DropdownMenuPrimitive>
   );

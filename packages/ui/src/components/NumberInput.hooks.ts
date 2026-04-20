@@ -113,7 +113,7 @@ export function useNumberInput({
     increment,
     decrement,
     handleMouseDown,
-    decrementDisabled: disabled || (min !== undefined && value <= min),
-    incrementDisabled: disabled || (max !== undefined && value >= max),
+    decrementDisabled: disabled ?? (min !== undefined && value <= min),
+    incrementDisabled: disabled ?? (max !== undefined && value >= max),
   };
 }

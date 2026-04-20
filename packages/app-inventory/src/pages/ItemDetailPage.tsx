@@ -57,7 +57,7 @@ function ItemTitle({
   return (
     <div>
       <span className="text-2xl md:text-3xl font-extrabold tracking-tight">{itemName}</span>
-      {(brand || model) && (
+      {(brand ?? model) && (
         <p className="text-muted-foreground font-medium uppercase text-xs tracking-widest opacity-80 mt-1">
           {[brand, model].filter(Boolean).join(' • ')}
         </p>

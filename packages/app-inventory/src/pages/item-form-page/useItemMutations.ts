@@ -82,7 +82,7 @@ export function useItemMutations({ id, isEditMode, pendingConnections }: UseItem
       const connected = await applyConnections(newItemId, pendingConnections, connectMutation);
       reportCreateSuccess(connected, pendingConnections.length > 0);
       void utils.inventory.items.list.invalidate();
-      navigate(`/inventory/items/${newItemId}`);
+      void navigate(`/inventory/items/${newItemId}`);
     },
     onError: (err) => toast.error(`Failed to create: ${err.message}`),
   });
@@ -92,7 +92,7 @@ export function useItemMutations({ id, isEditMode, pendingConnections }: UseItem
       toast.success('Item updated');
       void utils.inventory.items.list.invalidate();
       void utils.inventory.items.get.invalidate({ id: id ?? '' });
-      navigate(`/inventory/items/${id}`);
+      void navigate(`/inventory/items/${id}`);
     },
     onError: (err) => toast.error(`Failed to update: ${err.message}`),
   });

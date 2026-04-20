@@ -70,7 +70,7 @@ function useBlacklistFlow({ movies, refetch }: { movies: TierMovie[]; refetch: (
       toast.success(`${movie?.title ?? 'Movie'} marked as not watched`);
       setBlacklistTarget(null);
       refetch();
-      utils.media.comparisons.getSmartPair.invalidate();
+      void utils.media.comparisons.getSmartPair.invalidate();
     },
   });
 

@@ -79,7 +79,7 @@ function WatchlistToggleButton({
   return (
     <IconButton
       onClick={() => (onWatchlist ? onRemoveFromWatchlist?.(tmdbId) : onAddToWatchlist?.(tmdbId))}
-      disabled={isAddingToWatchlist || isRemovingFromWatchlist}
+      disabled={isAddingToWatchlist ?? isRemovingFromWatchlist}
       title={title}
     >
       {renderIcon()}

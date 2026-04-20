@@ -109,7 +109,7 @@ function RadioHeader({
 }
 
 function RadioOptionRow({ option, disabled }: { option: RadioOption; disabled?: boolean }) {
-  const isDisabled = option.disabled || disabled;
+  const isDisabled = option.disabled ?? disabled;
   return (
     <div className="flex items-start gap-2">
       <RadioGroupItem

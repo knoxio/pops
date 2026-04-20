@@ -313,9 +313,9 @@ const setupMockAPIs = async (page: Page, options: SetupMockAPIsOptions = {}) => 
     }
 
     // tRPC batch requests use {"0": {"json": {"name": "..."}}} body format
-    const requestBody = JSON.parse(route.request().postData() || '{}');
+    const requestBody = JSON.parse(route.request().postData() ?? '{}');
     const input = requestBody['0']?.json ?? requestBody;
-    const entityName = input.name || 'New Entity';
+    const entityName = input.name ?? 'New Entity';
 
     await route.fulfill({
       status: 200,
@@ -795,7 +795,7 @@ test.describe.skip('Import Wizard - Transfer and Income Transactions', () => {
 
     // Override commitImport AFTER setupMockAPIs (last-registered wins) to capture payload
     await page.route(/\/trpc\/imports\.commitImport/, async (route) => {
-      const body = JSON.parse(route.request().postData() || '{}') as Record<string, unknown>;
+      const body = JSON.parse(route.request().postData() ?? '{}') as Record<string, unknown>;
       const item = body['0'] as { json?: { transactions?: unknown[] } } | undefined;
       const txns = item?.json?.transactions ?? [];
       capturedTransactions = txns as Array<Record<string, unknown>>;

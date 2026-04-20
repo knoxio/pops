@@ -34,7 +34,7 @@ export function DropZone({
     <div
       role="button"
       tabIndex={disabled ? -1 : 0}
-      aria-disabled={disabled || undefined}
+      aria-disabled={disabled ?? undefined}
       onKeyDown={(e) => {
         if (disabled) return;
         if (e.key === 'Enter' || e.key === ' ') {

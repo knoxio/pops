@@ -24,7 +24,7 @@ let cachedScopeRuleEngine: ScopeRuleEngine | null = null;
 
 /** Return the engram root directory. Cached after first resolve. */
 export function getEngramRoot(): string {
-  if (!cachedRoot) cachedRoot = resolveRoot();
+  cachedRoot ??= resolveRoot();
   return cachedRoot;
 }
 
@@ -49,9 +49,7 @@ export function getTemplateRegistry(): TemplateRegistry {
 
 /** Return the shared ScopeRuleEngine singleton. */
 export function getScopeRuleEngine(): ScopeRuleEngine {
-  if (!cachedScopeRuleEngine) {
-    cachedScopeRuleEngine = new ScopeRuleEngine(getEngramRoot());
-  }
+  cachedScopeRuleEngine ??= new ScopeRuleEngine(getEngramRoot());
   return cachedScopeRuleEngine;
 }
 

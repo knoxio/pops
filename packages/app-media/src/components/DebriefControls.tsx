@@ -76,7 +76,7 @@ export function DoneForNowButton({ onExit }: DoneForNowButtonProps) {
     if (onExit) {
       onExit();
     } else {
-      navigate('/media');
+      void navigate('/media');
     }
   };
 
@@ -102,7 +102,7 @@ export function CompletionSummary({ data, onDoAnother }: CompletionSummaryProps)
       data={data}
       onDoAnother={onDoAnother}
       onDone={() => {
-        navigate('/media/rankings');
+        void navigate('/media/rankings');
       }}
     />
   );
@@ -139,7 +139,7 @@ export function DebriefActionBar({
         data={summaryData}
         onDoAnother={onDoAnother}
         onDone={() => {
-          navigate('/media/rankings');
+          void navigate('/media/rankings');
         }}
       />
     );

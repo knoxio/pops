@@ -23,7 +23,7 @@ function makeAddedRow(op: Extract<ChangeSetOp, { op: 'add' }>, tempId: string): 
 }
 
 function withDefined<T>(provided: T | undefined, fallback: T): T {
-  return provided !== undefined ? provided : fallback;
+  return provided ?? fallback;
 }
 
 function applyEditOpInMemory(

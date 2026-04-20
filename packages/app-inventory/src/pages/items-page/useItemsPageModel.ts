@@ -129,7 +129,7 @@ function useAssetIdSearchHandler(filters: Filters) {
         const result = await utils.inventory.items.searchByAssetId.fetch({
           assetId: filters.search.trim(),
         });
-        if (result.data) navigate(`/inventory/items/${result.data.id}`);
+        if (result.data) void navigate(`/inventory/items/${result.data.id}`);
       } finally {
         setAssetIdSearching(false);
       }

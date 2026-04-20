@@ -11,7 +11,7 @@ export function DownloadQueue() {
   const { data: configData } = trpc.media.arr.getConfig.useQuery();
   const config = configData?.data;
 
-  const hasAnyService = config?.radarrConfigured || config?.sonarrConfigured;
+  const hasAnyService = config?.radarrConfigured ?? config?.sonarrConfigured;
 
   const { data } = trpc.media.arr.getDownloadQueue.useQuery(undefined, {
     enabled: hasAnyService === true,
