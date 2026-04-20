@@ -2,65 +2,11 @@
  * Select component - styled dropdown for choosing from options
  * Native select with custom styling to match design system
  */
-import { cva, type VariantProps } from 'class-variance-authority';
+import { type VariantProps } from 'class-variance-authority';
 import { forwardRef, type ReactNode, type SelectHTMLAttributes, useState } from 'react';
 
 import { cn } from '../lib/utils';
-
-const containerVariants = cva(
-  'flex items-center gap-2 w-full bg-background text-foreground transition-all outline-0 focus-within:outline-0 ring-0 focus-within:ring-0 relative',
-  {
-    variants: {
-      variant: {
-        default: 'border border-border',
-        ghost: 'border-0 hover:bg-accent',
-        underline: 'border-0 border-b border-border',
-      },
-      size: {
-        sm: 'h-9 px-3 py-1 text-xs',
-        default: 'h-11 px-3 py-2 text-sm',
-        lg: 'h-12 px-4 py-2 text-base',
-      },
-      shape: {
-        default: 'rounded-md',
-        pill: 'rounded-full',
-      },
-    },
-    compoundVariants: [
-      {
-        variant: 'underline',
-        shape: ['default', 'pill'],
-        class: 'rounded-none',
-      },
-    ],
-    defaultVariants: {
-      variant: 'default',
-      size: 'default',
-      shape: 'default',
-    },
-  }
-);
-
-const selectVariants = cva(
-  'flex-1 bg-transparent border-0 outline-0 shadow-none focus:outline-0 focus:ring-0 focus:shadow-none focus-visible:outline-0 focus-visible:ring-0 disabled:cursor-not-allowed appearance-none pr-8 cursor-pointer',
-  {
-    variants: {
-      size: {
-        sm: 'text-xs',
-        default: 'text-sm',
-        lg: 'text-base',
-      },
-      centered: {
-        true: 'text-center',
-        false: '',
-      },
-    },
-    defaultVariants: {
-      size: 'default',
-      centered: false,
-    },
-  }
-);
+import { containerVariants, selectVariants } from './Select.variants';
 
 export interface SelectOption {
   value: string;
@@ -72,33 +18,12 @@ export interface SelectProps
   extends
     Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size' | 'prefix'>,
     VariantProps<typeof containerVariants> {
-  /**
-   * Label for the select
-   */
   label?: string;
-  /**
-   * Error message to display
-   */
   error?: string;
-  /**
-   * Select options
-   */
   options: SelectOption[];
-  /**
-   * Icon or content to display before the select
-   */
   prefix?: ReactNode;
-  /**
-   * Whether to center the text
-   */
   centered?: boolean;
-  /**
-   * Placeholder text (shown as first disabled option)
-   */
   placeholder?: string;
-  /**
-   * Container class name
-   */
   containerClassName?: string;
 }
 
@@ -111,87 +36,125 @@ export interface SelectProps
  * <Select placeholder="Choose..." options={options} />
  * ```
  */
-export const Select = forwardRef<HTMLSelectElement, SelectProps>(
-  (
-    {
-      className,
-      containerClassName,
-      variant,
-      size,
-      shape,
-      label,
-      error,
-      prefix,
-      centered = false,
-      options,
-      placeholder,
-      onFocus,
-      onBlur,
-      disabled,
-      ...props
-    },
-    ref
-  ) => {
-    const [isFocused, setIsFocused] = useState(false);
+export const Select = forwardRef<HTMLSelectElement, SelectProps>((props, ref) => {
+  const {
+    className,
+    containerClassName,
+    variant,
+    size,
+    shape,
+    label,
+    error,
+    prefix,
+    centered = false,
+    options,
+    placeholder,
+    onFocus,
+    onBlur,
+    disabled,
+    ...selectAttrs
+  } = props;
+  const [isFocused, setIsFocused] = useState(false);
 
-    const handleFocus = (e: React.FocusEvent<HTMLSelectElement>) => {
-      setIsFocused(true);
-      onFocus?.(e);
-    };
-
-    const handleBlur = (e: React.FocusEvent<HTMLSelectElement>) => {
-      setIsFocused(false);
-      onBlur?.(e);
-    };
-
-    return (
-      <div className="flex flex-col gap-1.5 w-full">
-        {label && (
-          <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest ml-1">
-            {label}
-          </label>
-        )}
-        <div
-          className={cn(
-            containerVariants({
-              variant,
-              size,
-              shape,
-            }),
-            disabled && 'opacity-50 cursor-not-allowed',
-            error && 'border-destructive ring-destructive/20',
-            containerClassName
-          )}
-          style={isFocused && !error ? { borderColor: 'var(--ring)' } : undefined}
+  return (
+    <div className="flex flex-col gap-1.5 w-full">
+      {label && (
+        <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest ml-1">
+          {label}
+        </label>
+      )}
+      <SelectShell
+        variant={variant}
+        size={size}
+        shape={shape}
+        disabled={disabled}
+        error={!!error}
+        isFocused={isFocused}
+        containerClassName={containerClassName}
+        prefix={prefix}
+      >
+        <select
+          ref={ref}
+          className={cn(selectVariants({ size, centered, className }))}
+          onFocus={(e) => {
+            setIsFocused(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setIsFocused(false);
+            onBlur?.(e);
+          }}
+          disabled={disabled}
+          aria-invalid={!!error}
+          {...selectAttrs}
         >
-          {prefix && <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>}
-          <select
-            ref={ref}
-            className={cn(selectVariants({ size, centered, className }))}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            disabled={disabled}
-            aria-invalid={!!error}
-            {...props}
-          >
-            {placeholder && (
-              <option value="" disabled>
-                {placeholder}
-              </option>
-            )}
-            {options.map((option) => (
-              <option key={option.value} value={option.value} disabled={option.disabled}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-          <ChevronDownIcon />
-        </div>
-        {error && <p className="text-2xs font-medium text-destructive ml-1">{error}</p>}
-      </div>
-    );
-  }
-);
+          <SelectOptions options={options} placeholder={placeholder} />
+        </select>
+        <ChevronDownIcon />
+      </SelectShell>
+      {error && <p className="text-2xs font-medium text-destructive ml-1">{error}</p>}
+    </div>
+  );
+});
+
+function SelectOptions({
+  options,
+  placeholder,
+}: {
+  options: SelectOption[];
+  placeholder?: string;
+}) {
+  return (
+    <>
+      {placeholder && (
+        <option value="" disabled>
+          {placeholder}
+        </option>
+      )}
+      {options.map((option) => (
+        <option key={option.value} value={option.value} disabled={option.disabled}>
+          {option.label}
+        </option>
+      ))}
+    </>
+  );
+}
+
+interface SelectShellProps extends VariantProps<typeof containerVariants> {
+  disabled?: boolean;
+  error: boolean;
+  isFocused: boolean;
+  containerClassName?: string;
+  prefix?: ReactNode;
+  children: ReactNode;
+}
+
+function SelectShell({
+  variant,
+  size,
+  shape,
+  disabled,
+  error,
+  isFocused,
+  containerClassName,
+  prefix,
+  children,
+}: SelectShellProps) {
+  return (
+    <div
+      className={cn(
+        containerVariants({ variant, size, shape }),
+        disabled && 'opacity-50 cursor-not-allowed',
+        error && 'border-destructive ring-destructive/20',
+        containerClassName
+      )}
+      style={isFocused && !error ? { borderColor: 'var(--ring)' } : undefined}
+    >
+      {prefix && <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>}
+      {children}
+    </div>
+  );
+}
 
 Select.displayName = 'Select';
 

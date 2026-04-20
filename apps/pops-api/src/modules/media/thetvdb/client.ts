@@ -1,15 +1,14 @@
 import { fetchWithRetry } from './rate-limiter.js';
 import {
-  type RawTvdbArtwork,
+  mapEpisode,
+  mapSearchResult,
+  mapShowDetail,
   type RawTvdbEpisodesResponse,
   type RawTvdbSearchResponse,
-  type RawTvdbSeasonSummary,
   type RawTvdbSeriesExtendedResponse,
   TvdbApiError,
-  type TvdbArtwork,
   type TvdbEpisode,
   type TvdbSearchResult,
-  type TvdbSeasonSummary,
   type TvdbShowDetail,
 } from './types.js';
 
@@ -34,63 +33,13 @@ export class TheTvdbClient {
   async searchSeries(query: string): Promise<TvdbSearchResult[]> {
     const params = new URLSearchParams({ q: query, type: 'series' });
     const raw = await this.get<RawTvdbSearchResponse>(`/search?${params.toString()}`);
-
-    return raw.data.map((r) => ({
-      tvdbId: Number(r.tvdb_id ?? r.objectID ?? 0),
-      name: r.name,
-      originalName: r.name_translated?.eng ?? null,
-      overview: r.overview ?? r.overviews?.eng ?? null,
-      firstAirDate: r.first_air_time ?? null,
-      status: r.status ?? null,
-      posterPath: r.image_url ?? r.thumbnail ?? null,
-      genres: r.genres ?? [],
-      originalLanguage: r.primary_language ?? null,
-      year: r.year ?? null,
-    }));
+    return raw.data.map(mapSearchResult);
   }
 
   /** Get extended series detail by TheTVDB ID. */
   async getSeriesExtended(tvdbId: number): Promise<TvdbShowDetail> {
     const raw = await this.get<RawTvdbSeriesExtendedResponse>(`/series/${tvdbId}/extended`);
-    const d = raw.data;
-
-    const mapSeason = (s: RawTvdbSeasonSummary): TvdbSeasonSummary => ({
-      tvdbId: s.id,
-      seasonNumber: s.number,
-      name: s.name ?? null,
-      overview: s.overview ?? null,
-      imageUrl: s.image ?? null,
-      episodeCount: Array.isArray(s.episodes) ? s.episodes.length : 0,
-    });
-
-    const mapArtwork = (a: RawTvdbArtwork): TvdbArtwork => ({
-      id: a.id,
-      type: a.type,
-      imageUrl: a.image,
-      language: a.language,
-      score: a.score,
-    });
-
-    // Filter seasons to only "default" type (broadcast order)
-    const seasons = (d.seasons ?? []).filter(
-      (s) => !s.type || s.type.type === 'default' || s.type.type === 'official'
-    );
-
-    return {
-      tvdbId: d.id,
-      name: d.name,
-      originalName: d.originalName ?? null,
-      overview: d.overview ?? null,
-      firstAirDate: d.firstAired ?? null,
-      lastAirDate: d.lastAired ?? null,
-      status: d.status?.name ?? null,
-      originalLanguage: d.originalLanguage ?? null,
-      averageRuntime: d.averageRuntime ?? null,
-      genres: (d.genres ?? []).map((g) => ({ id: g.id, name: g.name })),
-      networks: (d.networks ?? []).map((n) => ({ id: n.id, name: n.name })),
-      seasons: seasons.map(mapSeason),
-      artworks: (d.artworks ?? []).map(mapArtwork),
-    };
+    return mapShowDetail(raw.data);
   }
 
   /** Get episodes for a specific season of a series. */
@@ -98,17 +47,7 @@ export class TheTvdbClient {
     const raw = await this.get<RawTvdbEpisodesResponse>(
       `/series/${tvdbId}/episodes/default?season=${seasonNumber}`
     );
-
-    return raw.data.episodes.map((e) => ({
-      tvdbId: e.id,
-      episodeNumber: e.number,
-      seasonNumber: e.seasonNumber,
-      name: e.name ?? null,
-      overview: e.overview ?? null,
-      airDate: e.aired ?? null,
-      runtime: e.runtime ?? null,
-      imageUrl: e.image ?? null,
-    }));
+    return raw.data.episodes.map(mapEpisode);
   }
 
   /** Generic GET with Bearer auth, error handling, and 401 retry. */

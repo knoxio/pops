@@ -46,39 +46,43 @@ export function matchEntity(
 function tryMatch(normalized: string, entityLookup: EntityLookup): EntityMatch | null {
   const entries = Object.entries(entityLookup);
 
-  // Stage 2: Exact match (case-insensitive)
+  return (
+    findExactMatch(normalized, entries) ??
+    findPrefixMatch(normalized, entries) ??
+    findContainsMatch(normalized, entries)
+  );
+}
+
+function findExactMatch(normalized: string, entries: [string, string][]): EntityMatch | null {
   for (const [name, id] of entries) {
     if (normalized === name.toUpperCase()) {
       return { entityName: name, entityId: id, matchType: 'exact' };
     }
   }
+  return null;
+}
 
-  // Stage 3: Prefix match (longest entity name wins)
-  let bestPrefix: EntityMatch | null = null;
+function findPrefixMatch(normalized: string, entries: [string, string][]): EntityMatch | null {
+  let best: EntityMatch | null = null;
   for (const [name, id] of entries) {
-    const upper = name.toUpperCase();
-    if (normalized.startsWith(upper)) {
-      if (!bestPrefix || name.length > bestPrefix.entityName.length) {
-        bestPrefix = { entityName: name, entityId: id, matchType: 'prefix' };
-      }
+    if (!normalized.startsWith(name.toUpperCase())) continue;
+    if (!best || name.length > best.entityName.length) {
+      best = { entityName: name, entityId: id, matchType: 'prefix' };
     }
   }
-  if (bestPrefix) return bestPrefix;
+  return best;
+}
 
-  // Stage 4: Contains match (min 4 chars, longest entity name wins)
-  let bestContains: EntityMatch | null = null;
+function findContainsMatch(normalized: string, entries: [string, string][]): EntityMatch | null {
+  let best: EntityMatch | null = null;
   for (const [name, id] of entries) {
     if (name.length < 4) continue;
-    const upper = name.toUpperCase();
-    if (normalized.includes(upper)) {
-      if (!bestContains || name.length > bestContains.entityName.length) {
-        bestContains = { entityName: name, entityId: id, matchType: 'contains' };
-      }
+    if (!normalized.includes(name.toUpperCase())) continue;
+    if (!best || name.length > best.entityName.length) {
+      best = { entityName: name, entityId: id, matchType: 'contains' };
     }
   }
-  if (bestContains) return bestContains;
-
-  return null;
+  return best;
 }
 
 function findInLookup(entityName: string, lookup: EntityLookup): string | undefined {

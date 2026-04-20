@@ -31,6 +31,53 @@ export interface SearchPickerDialogProps<T> {
   emptyMessage?: string;
 }
 
+interface ResultsBodyProps<T> {
+  search: string;
+  minChars: number;
+  isLoading: boolean;
+  results: T[];
+  renderResult: (item: T) => React.ReactNode;
+  getResultKey: (item: T) => string | number;
+  emptyMessage: string;
+}
+
+function ResultsBody<T>({
+  search,
+  minChars,
+  isLoading,
+  results,
+  renderResult,
+  getResultKey,
+  emptyMessage,
+}: ResultsBodyProps<T>) {
+  if (search.length < minChars) {
+    return (
+      <p className="text-sm text-muted-foreground py-4 text-center">
+        Type at least {minChars} characters to search
+      </p>
+    );
+  }
+  if (isLoading) {
+    return (
+      <div className="space-y-2 py-2">
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Skeleton className="h-10 w-full" />
+      </div>
+    );
+  }
+  if (results.length === 0) {
+    return <p className="text-sm text-muted-foreground py-4 text-center">{emptyMessage}</p>;
+  }
+  return (
+    <>
+      {results.map((item) => (
+        <React.Fragment key={getResultKey(item)}>{renderResult(item)}</React.Fragment>
+      ))}
+    </>
+  );
+}
+
 export function SearchPickerDialog<T>({
   trigger,
   open,
@@ -57,7 +104,6 @@ export function SearchPickerDialog<T>({
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
-
         <div className={trailing ? 'flex items-center gap-2' : undefined}>
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -71,34 +117,16 @@ export function SearchPickerDialog<T>({
           </div>
           {trailing}
         </div>
-
         <div className={`${maxResultsHeight} overflow-y-auto space-y-1`}>
-          {(() => {
-            if (search.length < minChars) {
-              return (
-                <p className="text-sm text-muted-foreground py-4 text-center">
-                  Type at least {minChars} characters to search
-                </p>
-              );
-            }
-            if (isLoading) {
-              return (
-                <div className="space-y-2 py-2">
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                </div>
-              );
-            }
-            if (results.length === 0) {
-              return (
-                <p className="text-sm text-muted-foreground py-4 text-center">{emptyMessage}</p>
-              );
-            }
-            return results.map((item) => (
-              <React.Fragment key={getResultKey(item)}>{renderResult(item)}</React.Fragment>
-            ));
-          })()}
+          <ResultsBody
+            search={search}
+            minChars={minChars}
+            isLoading={isLoading}
+            results={results}
+            renderResult={renderResult}
+            getResultKey={getResultKey}
+            emptyMessage={emptyMessage}
+          />
         </div>
       </DialogContent>
     </Dialog>

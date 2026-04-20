@@ -35,7 +35,7 @@ export const plexFriendsSource: RotationSourceAdapter = {
 
     let watchlistItems: Awaited<ReturnType<typeof fetchFriendWatchlist>>;
     try {
-      watchlistItems = await fetchFriendWatchlist(token, clientId, friendUuid);
+      watchlistItems = await fetchFriendWatchlist({ token, clientId, friendUuid });
     } catch (err) {
       // Log warning and return empty on access errors (private watchlist, etc.)
       logger.warn(

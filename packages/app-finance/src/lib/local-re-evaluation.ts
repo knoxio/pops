@@ -88,6 +88,72 @@ function findAllMatchingRules(
   return regexMatches;
 }
 
+function correctionToMatchedRule(rule: Correction): MatchedRule {
+  return {
+    ruleId: rule.id,
+    pattern: rule.descriptionPattern,
+    matchType: rule.matchType,
+    confidence: rule.confidence,
+    priority: rule.priority,
+    entityId: rule.entityId ?? null,
+    entityName: rule.entityName ?? null,
+  };
+}
+
+function applyMatch(
+  txn: ProcessedTransaction,
+  allMatches: Correction[],
+  correction: Correction
+): ProcessedTransaction {
+  return {
+    ...txn,
+    entity: {
+      entityId: correction.entityId ?? undefined,
+      entityName: correction.entityName ?? undefined,
+      matchType: 'learned' as const,
+      confidence: correction.confidence,
+    },
+    status: 'matched',
+    transactionType: correction.transactionType ?? txn.transactionType,
+    ruleProvenance: {
+      source: 'correction' as const,
+      ruleId: correction.id,
+      pattern: correction.descriptionPattern,
+      matchType: correction.matchType,
+      confidence: correction.confidence,
+    },
+    matchedRules: allMatches.map(correctionToMatchedRule),
+  };
+}
+
+interface BucketResult {
+  matched: ProcessedTransaction[];
+  remaining: ProcessedTransaction[];
+  affected: number;
+}
+
+function processBucket(
+  txns: ProcessedTransaction[],
+  mergedRules: Correction[],
+  minConfidence: number
+): BucketResult {
+  const matched: ProcessedTransaction[] = [];
+  const remaining: ProcessedTransaction[] = [];
+  let affected = 0;
+  for (const txn of txns) {
+    const allMatches = findAllMatchingRules(txn.description, mergedRules, minConfidence);
+    const firstMatch = allMatches[0];
+    const result = firstMatch ? classifyCorrection(firstMatch) : null;
+    if (result && result.status === 'matched') {
+      matched.push(applyMatch(txn, allMatches, result.correction));
+      affected++;
+    } else {
+      remaining.push(txn);
+    }
+  }
+  return { matched, remaining, affected };
+}
+
 /**
  * Re-evaluate uncertain and failed transactions against the merged rule set.
  * Transactions that now match are promoted to matched with the match result.
@@ -99,93 +165,12 @@ export function reevaluateTransactions(
   mergedRules: Correction[],
   minConfidence: number = 0.7
 ): ReEvaluationResult {
-  const newMatched: ProcessedTransaction[] = [];
-  const stillUncertain: ProcessedTransaction[] = [];
-  const stillFailed: ProcessedTransaction[] = [];
-  let affectedCount = 0;
-
-  for (const txn of uncertain) {
-    const allMatches = findAllMatchingRules(txn.description, mergedRules, minConfidence);
-    const firstMatch = allMatches[0];
-    const match = firstMatch ? classifyCorrection(firstMatch) : null;
-    if (match && match.status === 'matched') {
-      const matchedRules: MatchedRule[] = allMatches.map((rule) => ({
-        ruleId: rule.id,
-        pattern: rule.descriptionPattern,
-        matchType: rule.matchType,
-        confidence: rule.confidence,
-        priority: rule.priority,
-        entityId: rule.entityId ?? null,
-        entityName: rule.entityName ?? null,
-      }));
-      newMatched.push({
-        ...txn,
-        entity: {
-          entityId: match.correction.entityId ?? undefined,
-          entityName: match.correction.entityName ?? undefined,
-          matchType: 'learned' as const,
-          confidence: match.correction.confidence,
-        },
-        status: 'matched',
-        transactionType: match.correction.transactionType ?? txn.transactionType,
-        ruleProvenance: {
-          source: 'correction' as const,
-          ruleId: match.correction.id,
-          pattern: match.correction.descriptionPattern,
-          matchType: match.correction.matchType,
-          confidence: match.correction.confidence,
-        },
-        matchedRules,
-      });
-      affectedCount++;
-    } else {
-      stillUncertain.push(txn);
-    }
-  }
-
-  for (const txn of failed) {
-    const allMatches = findAllMatchingRules(txn.description, mergedRules, minConfidence);
-    const firstMatch = allMatches[0];
-    const match = firstMatch ? classifyCorrection(firstMatch) : null;
-    if (match && match.status === 'matched') {
-      const matchedRules: MatchedRule[] = allMatches.map((rule) => ({
-        ruleId: rule.id,
-        pattern: rule.descriptionPattern,
-        matchType: rule.matchType,
-        confidence: rule.confidence,
-        priority: rule.priority,
-        entityId: rule.entityId ?? null,
-        entityName: rule.entityName ?? null,
-      }));
-      newMatched.push({
-        ...txn,
-        entity: {
-          entityId: match.correction.entityId ?? undefined,
-          entityName: match.correction.entityName ?? undefined,
-          matchType: 'learned' as const,
-          confidence: match.correction.confidence,
-        },
-        status: 'matched',
-        transactionType: match.correction.transactionType ?? txn.transactionType,
-        ruleProvenance: {
-          source: 'correction' as const,
-          ruleId: match.correction.id,
-          pattern: match.correction.descriptionPattern,
-          matchType: match.correction.matchType,
-          confidence: match.correction.confidence,
-        },
-        matchedRules,
-      });
-      affectedCount++;
-    } else {
-      stillFailed.push(txn);
-    }
-  }
-
+  const fromUncertain = processBucket(uncertain, mergedRules, minConfidence);
+  const fromFailed = processBucket(failed, mergedRules, minConfidence);
   return {
-    matched: newMatched,
-    uncertain: stillUncertain,
-    failed: stillFailed,
-    affectedCount,
+    matched: [...fromUncertain.matched, ...fromFailed.matched],
+    uncertain: fromUncertain.remaining,
+    failed: fromFailed.remaining,
+    affectedCount: fromUncertain.affected + fromFailed.affected,
   };
 }

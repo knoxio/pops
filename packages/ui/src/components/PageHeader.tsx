@@ -149,6 +149,31 @@ function BreadcrumbItems({
   });
 }
 
+function HeaderTitle({
+  icon,
+  title,
+  description,
+  actions,
+}: {
+  icon?: ReactNode;
+  title: ReactNode;
+  description?: ReactNode;
+  actions?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <div className="flex items-center gap-3">
+          {icon}
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{title}</h1>
+        </div>
+        {description && <p className="text-muted-foreground text-sm mt-1">{description}</p>}
+      </div>
+      {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
+    </div>
+  );
+}
+
 export function PageHeader({
   title,
   icon,
@@ -165,16 +190,7 @@ export function PageHeader({
   if (isTopLevel) {
     return (
       <header className={cn('space-y-1', className)}>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              {icon}
-              <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{title}</h1>
-            </div>
-            {description && <p className="text-muted-foreground text-sm mt-1">{description}</p>}
-          </div>
-          {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
-        </div>
+        <HeaderTitle icon={icon} title={title} description={description} actions={actions} />
       </header>
     );
   }
@@ -199,16 +215,7 @@ export function PageHeader({
           </Breadcrumb>
         )}
       </div>
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            {icon}
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{title}</h1>
-          </div>
-          {description && <p className="text-muted-foreground text-sm mt-1">{description}</p>}
-        </div>
-        {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
-      </div>
+      <HeaderTitle icon={icon} title={title} description={description} actions={actions} />
     </header>
   );
 }

@@ -33,6 +33,67 @@ export interface ActionButtonWithDetailPickerProps<Detail> {
   className?: string;
 }
 
+interface ConfirmedViewProps {
+  className?: string;
+  busy: boolean;
+  onUndo?: () => void | Promise<void>;
+  undo: () => void;
+  confirmedLabel: ReactNode;
+  undoLabel: ReactNode;
+}
+
+function ConfirmedView({
+  className,
+  busy,
+  onUndo,
+  undo,
+  confirmedLabel,
+  undoLabel,
+}: ConfirmedViewProps) {
+  return (
+    <div className={cn('inline-flex items-center gap-2', className)}>
+      <span className="inline-flex items-center gap-1 text-sm font-medium text-success">
+        <Check className="h-3.5 w-3.5" aria-hidden /> {confirmedLabel}
+      </span>
+      {onUndo ? (
+        <Button variant="ghost" size="sm" loading={busy} onClick={undo}>
+          {undoLabel}
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
+function useConfirmFlow<Detail>(
+  controlledConfirmed: boolean | undefined,
+  onConfirm: (d: Detail) => void | Promise<void>,
+  onUndo: (() => void | Promise<void>) | undefined
+) {
+  const [internalConfirmed, setInternalConfirmed] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const isConfirmed = controlledConfirmed ?? internalConfirmed;
+
+  const runWith = async (fn: () => void | Promise<void>, nextLocal: boolean) => {
+    setBusy(true);
+    try {
+      await fn();
+      if (controlledConfirmed === undefined) setInternalConfirmed(nextLocal);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return {
+    isConfirmed,
+    busy,
+    confirm: async (detail: Detail) => runWith(() => onConfirm(detail), true),
+    undo: async () => {
+      if (!onUndo) return;
+      await runWith(onUndo, false);
+    },
+  };
+}
+
 export function ActionButtonWithDetailPicker<Detail>({
   label,
   icon: Icon,
@@ -48,45 +109,18 @@ export function ActionButtonWithDetailPicker<Detail>({
   className,
 }: ActionButtonWithDetailPickerProps<Detail>) {
   const [open, setOpen] = useState(false);
-  const [internalConfirmed, setInternalConfirmed] = useState(false);
-  const [busy, setBusy] = useState(false);
-
-  const isConfirmed = confirmed ?? internalConfirmed;
-
-  const confirm = async (detail: Detail) => {
-    setBusy(true);
-    try {
-      await onConfirm(detail);
-      if (confirmed === undefined) setInternalConfirmed(true);
-      setOpen(false);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const undo = async () => {
-    if (!onUndo) return;
-    setBusy(true);
-    try {
-      await onUndo();
-      if (confirmed === undefined) setInternalConfirmed(false);
-    } finally {
-      setBusy(false);
-    }
-  };
+  const { isConfirmed, busy, confirm, undo } = useConfirmFlow(confirmed, onConfirm, onUndo);
 
   if (isConfirmed) {
     return (
-      <div className={cn('inline-flex items-center gap-2', className)}>
-        <span className="inline-flex items-center gap-1 text-sm font-medium text-success">
-          <Check className="h-3.5 w-3.5" aria-hidden /> {confirmedLabel}
-        </span>
-        {onUndo ? (
-          <Button variant="ghost" size="sm" loading={busy} onClick={undo}>
-            {undoLabel}
-          </Button>
-        ) : null}
-      </div>
+      <ConfirmedView
+        className={className}
+        busy={busy}
+        onUndo={onUndo}
+        undo={undo}
+        confirmedLabel={confirmedLabel}
+        undoLabel={undoLabel}
+      />
     );
   }
 

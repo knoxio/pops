@@ -1,13 +1,11 @@
-import { ChevronRight, Pencil, Sparkles, Zap } from 'lucide-react';
-import { useState } from 'react';
-
-import { Badge } from '@pops/ui';
-import { Button } from '@pops/ui';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@pops/ui';
-import { Popover, PopoverContent, PopoverTrigger } from '@pops/ui';
-
-import { EntitySelect } from './EntitySelect';
-import { LocationField } from './LocationField';
+import {
+  CardHeader,
+  FieldGrid,
+  getCardClasses,
+  parseRawData,
+  RawDataSection,
+} from './transaction-card/CardChrome';
+import { EntitySection, ReadonlyEntitySummary } from './transaction-card/EntitySection';
 
 import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
 
@@ -41,279 +39,32 @@ export function TransactionCard({
   showMatchType = false,
   variant = 'matched',
 }: TransactionCardProps) {
-  const [isRawDataExpanded, setIsRawDataExpanded] = useState(false);
-
-  const hasAiSuggestion = transaction.entity?.matchType === 'ai' && transaction.entity?.entityName;
-
-  const ruleProvenance = transaction.ruleProvenance;
-  const isRuleMatched = Boolean(ruleProvenance) || transaction.entity?.matchType === 'learned';
-
-  // Overridden rules: all matched rules after the first (winner) entry (US-07).
-  const overriddenRules = transaction.matchedRules?.slice(1) ?? [];
-
-  // Check if AI-suggested entity actually exists in the entities list
-  const aiSuggestedEntityExists =
-    hasAiSuggestion &&
-    entities?.some((e) => e.name.toLowerCase() === transaction.entity?.entityName?.toLowerCase());
-
-  const isAutoMatched = transaction.entity?.matchType === ('auto-matched' as never);
-  const isEdited = (transaction as ProcessedTransaction & { manuallyEdited?: boolean })
-    .manuallyEdited;
-
-  // Parse raw row for display
-  let rawData: Record<string, string>;
-  try {
-    rawData = JSON.parse(transaction.rawRow);
-  } catch {
-    rawData = { error: 'Failed to parse raw data' };
-  }
-
-  // Border and background colors based on variant
-  let borderColor: string;
-  if (variant === 'uncertain') {
-    borderColor = 'border-warning/20';
-  } else if (variant === 'failed') {
-    borderColor = 'border-destructive/20';
-  } else {
-    borderColor = 'border-gray-200 dark:border-gray-700';
-  }
-
-  let bgColor: string;
-  if (variant === 'uncertain') {
-    bgColor = 'bg-warning/5';
-  } else if (variant === 'failed') {
-    bgColor = 'bg-destructive/5';
-  } else {
-    bgColor = 'bg-white dark:bg-gray-800';
-  }
-
+  const { border, bg } = getCardClasses(variant);
+  const rawData = parseRawData(transaction.rawRow);
   return (
     <div
-      className={`border rounded-lg p-4 ${borderColor} ${bgColor}`}
+      className={`border rounded-lg p-4 ${border} ${bg}`}
       data-testid="transaction-card"
       aria-label={transaction.description}
     >
-      {/* Header row: date, amount, description */}
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-medium">{transaction.description}</span>
-            {isEdited && (
-              <Badge variant="secondary" className="text-xs">
-                Edited
-              </Badge>
-            )}
-            {isAutoMatched && (
-              <Badge variant="secondary" className="text-xs flex items-center gap-1">
-                <Zap className="w-3 h-3" />
-                Auto-matched
-              </Badge>
-            )}
-            {isRuleMatched && (
-              <Badge
-                variant="secondary"
-                className="text-xs"
-                title={
-                  ruleProvenance
-                    ? [
-                        `Rule matched`,
-                        `Pattern: ${ruleProvenance.pattern}`,
-                        `Match type: ${ruleProvenance.matchType}`,
-                        `Confidence: ${Math.round(ruleProvenance.confidence * 100)}%`,
-                      ].join('\n')
-                    : 'Rule matched'
-                }
-              >
-                Rule matched
-              </Badge>
-            )}
-            {overriddenRules.length > 0 && (
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Badge
-                    variant="outline"
-                    className="text-xs cursor-pointer hover:bg-accent"
-                    aria-label={`${overriddenRules.length} rule${overriddenRules.length === 1 ? '' : 's'} overridden`}
-                  >
-                    +{overriddenRules.length} overridden
-                  </Badge>
-                </PopoverTrigger>
-                <PopoverContent className="w-72 p-3" align="start">
-                  <p className="text-xs font-medium text-muted-foreground mb-2">
-                    Overridden rules (lower priority)
-                  </p>
-                  <ul className="space-y-2">
-                    {overriddenRules.map((rule) => (
-                      <li key={rule.ruleId} className="text-xs border rounded p-2 space-y-0.5">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <code className="font-mono truncate max-w-[18ch]" title={rule.pattern}>
-                            {rule.pattern}
-                          </code>
-                          <Badge variant="outline" className="text-[10px] shrink-0">
-                            {rule.matchType}
-                          </Badge>
-                        </div>
-                        <div className="text-muted-foreground">
-                          Priority: {rule.priority} • {Math.round(rule.confidence * 100)}%
-                          {rule.entityName && ` • ${rule.entityName}`}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                </PopoverContent>
-              </Popover>
-            )}
-          </div>
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            {transaction.date} • ${Math.abs(transaction.amount).toFixed(2)}
-          </div>
-          {ruleProvenance && (
-            <div className="mt-1 text-xs text-muted-foreground">
-              <span className="font-mono">
-                {ruleProvenance.matchType}
-                {' • '}
-                {Math.round(ruleProvenance.confidence * 100)}%
-              </span>
-              {' • '}
-              <span
-                className="font-mono truncate inline-block max-w-[28ch] align-bottom"
-                title={ruleProvenance.pattern}
-              >
-                {ruleProvenance.pattern}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {onEdit && !readonly && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              onEdit(transaction);
-            }}
-            className="ml-2"
-            aria-label={`Edit ${transaction.description}`}
-          >
-            <Pencil className="w-4 h-4" aria-hidden="true" />
-            <span className="sr-only">Edit</span>
-          </Button>
-        )}
-      </div>
-
-      {/* Field grid: account, location, type */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-        <div className="text-sm">
-          <span className="text-gray-500">Account:</span>{' '}
-          <span className="font-medium">{transaction.account}</span>
-        </div>
-
-        {transaction.location && (
-          <div className="col-span-2">
-            <LocationField transaction={transaction} />
-          </div>
-        )}
-      </div>
-
-      {/* Entity selector with AI suggestions */}
+      <CardHeader transaction={transaction} onEdit={onEdit} readonly={readonly} />
+      <FieldGrid transaction={transaction} />
       {!readonly && (
-        <div className="mb-3">
-          {hasAiSuggestion && (
-            <div className="mb-2 p-2 bg-purple-50 dark:bg-purple-950 rounded-md border border-purple-200 dark:border-purple-800">
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles className="w-4 h-4 text-purple-600 dark:text-purple-400" />
-                <span className="text-sm text-purple-700 dark:text-purple-300">
-                  AI suggestion: {transaction.entity.entityName}
-                </span>
-              </div>
-              <div className="flex gap-2">
-                {onAcceptAiSuggestion && (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => {
-                      onAcceptAiSuggestion(transaction);
-                    }}
-                    className="bg-purple-600 hover:bg-purple-700 flex-1"
-                  >
-                    {aiSuggestedEntityExists ? '✓' : '+'} Accept "{transaction.entity.entityName}"
-                  </Button>
-                )}
-                {onCreateEntity && !aiSuggestedEntityExists && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      onCreateEntity(transaction);
-                    }}
-                    className="flex-1"
-                  >
-                    Create new
-                  </Button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {!hasAiSuggestion && onCreateEntity && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                onCreateEntity(transaction);
-              }}
-              className="w-full mb-2"
-            >
-              + Create new entity
-            </Button>
-          )}
-
-          <EntitySelect
-            entities={entities ?? []}
-            value={transaction.entity?.entityId || ''}
-            onChange={(entityId, entityName) => {
-              if (onEntitySelect) {
-                onEntitySelect(transaction, entityId, entityName);
-              }
-            }}
-          />
-        </div>
+        <EntitySection
+          transaction={transaction}
+          entities={entities}
+          onEntitySelect={onEntitySelect}
+          onCreateEntity={onCreateEntity}
+          onAcceptAiSuggestion={onAcceptAiSuggestion}
+        />
       )}
-
-      {/* Readonly: show entity and match type */}
-      {readonly && transaction.entity?.entityName && (
-        <div className="mb-3">
-          <div className="text-sm">
-            <span className="text-gray-500">Entity:</span>{' '}
-            <span className="font-medium">{transaction.entity.entityName}</span>
-          </div>
-          {showMatchType && (
-            <Badge variant="secondary" className="text-xs mt-1">
-              {transaction.entity.matchType}
-            </Badge>
-          )}
-        </div>
+      {readonly && (
+        <ReadonlyEntitySummary transaction={transaction} showMatchType={showMatchType} />
       )}
-
-      {/* Error display */}
       {transaction.error && (
         <div className="text-sm text-destructive mb-3">{transaction.error}</div>
       )}
-
-      {/* Collapsible raw data section */}
-      <Collapsible open={isRawDataExpanded} onOpenChange={setIsRawDataExpanded}>
-        <CollapsibleTrigger className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
-          <ChevronRight
-            className={`w-4 h-4 transition-transform ${isRawDataExpanded ? 'rotate-90' : ''}`}
-          />
-          <span>Raw CSV data</span>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="mt-2">
-          <pre className="text-xs bg-gray-100 dark:bg-gray-900 p-3 rounded-md overflow-x-auto">
-            {JSON.stringify(rawData, null, 2)}
-          </pre>
-        </CollapsibleContent>
-      </Collapsible>
+      <RawDataSection rawData={rawData} />
     </div>
   );
 }

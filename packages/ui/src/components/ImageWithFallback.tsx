@@ -24,6 +24,18 @@ export interface ImageWithFallbackProps {
   loading?: 'lazy' | 'eager';
 }
 
+function PlaceholderSlot({
+  Placeholder,
+}: {
+  Placeholder?: ImageWithFallbackProps['placeholderIcon'];
+}) {
+  return (
+    <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/50">
+      {Placeholder ? <Placeholder className="h-10 w-10" aria-hidden /> : null}
+    </div>
+  );
+}
+
 export function ImageWithFallback({
   src,
   fallbackSrc,
@@ -57,14 +69,13 @@ export function ImageWithFallback({
   };
 
   const showPlaceholder = failed || activeSrc === null;
+  const showSkeleton = !loaded && !showPlaceholder;
 
   return (
     <div className={cn('relative overflow-hidden bg-muted', aspectRatio, className)}>
-      {!loaded && !showPlaceholder ? <Skeleton className="absolute inset-0 h-full w-full" /> : null}
+      {showSkeleton ? <Skeleton className="absolute inset-0 h-full w-full" /> : null}
       {showPlaceholder ? (
-        <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/50">
-          {Placeholder ? <Placeholder className="h-10 w-10" aria-hidden /> : null}
-        </div>
+        <PlaceholderSlot Placeholder={Placeholder} />
       ) : (
         <img
           src={activeSrc ?? undefined}

@@ -31,6 +31,38 @@ export interface RequestDialogProps {
   children: ReactNode;
 }
 
+function SubmitButtonLabel({
+  isPending,
+  isSuccess,
+  pendingLabel,
+  successLabel,
+  submitLabel,
+}: {
+  isPending: boolean;
+  isSuccess: boolean;
+  pendingLabel: string;
+  successLabel: string;
+  submitLabel: string;
+}) {
+  if (isSuccess) {
+    return (
+      <>
+        <CheckCircle2 className="h-4 w-4 mr-1.5" />
+        {successLabel}
+      </>
+    );
+  }
+  if (isPending) {
+    return (
+      <>
+        <RefreshCw className="h-4 w-4 mr-1.5 animate-spin" />
+        {pendingLabel}
+      </>
+    );
+  }
+  return <>{submitLabel}</>;
+}
+
 export function RequestDialog({
   open,
   onClose,
@@ -58,7 +90,6 @@ export function RequestDialog({
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-
         <div className="space-y-4 pt-2">
           {isLoading ? (
             <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
@@ -68,33 +99,19 @@ export function RequestDialog({
           ) : (
             children
           )}
-
           {error && <p className="text-sm text-destructive/80">{error}</p>}
-
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={handleClose} disabled={isPending}>
               Cancel
             </Button>
             <Button onClick={onSubmit} disabled={!canSubmit}>
-              {(() => {
-                if (isSuccess) {
-                  return (
-                    <>
-                      <CheckCircle2 className="h-4 w-4 mr-1.5" />
-                      {successLabel}
-                    </>
-                  );
-                }
-                if (isPending) {
-                  return (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-1.5 animate-spin" />
-                      {pendingLabel}
-                    </>
-                  );
-                }
-                return submitLabel;
-              })()}
+              <SubmitButtonLabel
+                isPending={!!isPending}
+                isSuccess={isSuccess}
+                pendingLabel={pendingLabel}
+                successLabel={successLabel}
+                submitLabel={submitLabel}
+              />
             </Button>
           </div>
         </div>

@@ -85,6 +85,57 @@ export interface RadioInputProps {
  * />
  * ```
  */
+function RadioHeader({
+  label,
+  description,
+  required,
+}: {
+  label?: string;
+  description?: string;
+  required?: boolean;
+}) {
+  if (!label && !description) return null;
+  return (
+    <div className="flex flex-col gap-1">
+      {label && (
+        <label className="text-sm font-medium">
+          {label}
+          {required && <span className="text-destructive ml-1">*</span>}
+        </label>
+      )}
+      {description && <p className="text-sm text-muted-foreground">{description}</p>}
+    </div>
+  );
+}
+
+function RadioOptionRow({ option, disabled }: { option: RadioOption; disabled?: boolean }) {
+  const isDisabled = option.disabled || disabled;
+  return (
+    <div className="flex items-start gap-2">
+      <RadioGroupItem
+        value={option.value}
+        id={`radio-${option.value}`}
+        disabled={isDisabled}
+        className="mt-0.5"
+      />
+      <div className="flex flex-col gap-0.5">
+        <label
+          htmlFor={`radio-${option.value}`}
+          className={cn(
+            'text-sm font-medium leading-none cursor-pointer select-none',
+            isDisabled && 'opacity-50 cursor-not-allowed'
+          )}
+        >
+          {option.label}
+        </label>
+        {option.description && (
+          <p className="text-sm text-muted-foreground">{option.description}</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export const RadioInput = forwardRef<HTMLDivElement, RadioInputProps>(
   (
     {
@@ -107,17 +158,7 @@ export const RadioInput = forwardRef<HTMLDivElement, RadioInputProps>(
   ) => {
     return (
       <div className={cn('flex flex-col gap-3', className)} ref={ref}>
-        {(label || description) && (
-          <div className="flex flex-col gap-1">
-            {label && (
-              <label className="text-sm font-medium">
-                {label}
-                {required && <span className="text-destructive ml-1">*</span>}
-              </label>
-            )}
-            {description && <p className="text-sm text-muted-foreground">{description}</p>}
-          </div>
-        )}
+        <RadioHeader label={label} description={description} required={required} />
         <RadioGroup
           name={name}
           value={value}
@@ -132,28 +173,7 @@ export const RadioInput = forwardRef<HTMLDivElement, RadioInputProps>(
           {...props}
         >
           {options.map((option) => (
-            <div key={option.value} className="flex items-start gap-2">
-              <RadioGroupItem
-                value={option.value}
-                id={`radio-${option.value}`}
-                disabled={option.disabled || disabled}
-                className="mt-0.5"
-              />
-              <div className="flex flex-col gap-0.5">
-                <label
-                  htmlFor={`radio-${option.value}`}
-                  className={cn(
-                    'text-sm font-medium leading-none cursor-pointer select-none',
-                    (option.disabled || disabled) && 'opacity-50 cursor-not-allowed'
-                  )}
-                >
-                  {option.label}
-                </label>
-                {option.description && (
-                  <p className="text-sm text-muted-foreground">{option.description}</p>
-                )}
-              </div>
-            </div>
+            <RadioOptionRow key={option.value} option={option} disabled={disabled} />
           ))}
         </RadioGroup>
         {error && errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}

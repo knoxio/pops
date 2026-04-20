@@ -1,158 +1,178 @@
-import { logger } from '../../../../lib/logger.js';
-import {
-  applyChangeSetToRules,
-  findAllMatchingCorrectionFromRules,
-} from '../../../core/corrections/pure-service.js';
-import {
-  findAllMatchingCorrectionFromDB,
-  listCorrections,
-} from '../../../core/corrections/service.js';
-import { classifyCorrectionMatch } from '../../../core/corrections/types.js';
+import { applyChangeSetToRules } from '../../../core/corrections/pure-service.js';
+import { listCorrections } from '../../../core/corrections/service.js';
+import { applyLearnedCorrection } from './apply-learned-correction.js';
+import { transactionChanged } from './correction-helpers.js';
 import { loadEntityMaps } from './entity-lookup.js';
 import { matchEntity } from './entity-matcher.js';
-import { buildSuggestedTags, loadKnownTags, parseCorrectionTags } from './tag-management.js';
+import { buildSuggestedTags, loadKnownTags } from './tag-management.js';
 
 import type { ChangeSet, CorrectionRow } from '../../../core/corrections/types.js';
-import type {
-  MatchedRule,
-  ParsedTransaction,
-  ProcessedTransaction,
-  ProcessImportOutput,
-} from '../types.js';
+import type { ProcessedTransaction, ProcessImportOutput } from '../types.js';
 
-export function applyLearnedCorrection(args: {
-  transaction: ParsedTransaction;
+export { applyLearnedCorrection } from './apply-learned-correction.js';
+
+interface ReevaluateContext {
+  rules?: CorrectionRow[];
   minConfidence: number;
   knownTags: string[];
+  entityLookup: ReturnType<typeof loadEntityMaps>['entityLookup'];
+  aliases: ReturnType<typeof loadEntityMaps>['aliasMap'];
+}
+
+interface RemainingItem {
+  tx: ProcessedTransaction;
+  bucket: 'uncertain' | 'failed';
+}
+
+interface BucketAccumulator {
+  matched: ProcessedTransaction[];
+  uncertain: ProcessedTransaction[];
+  failed: ProcessedTransaction[];
+}
+
+interface StageResult {
+  handled: boolean;
+  changed: boolean;
+}
+
+interface StageRunArgs {
+  item: RemainingItem;
+  ctx: ReevaluateContext;
   index: number;
   total: number;
-  /** When provided, matches against this rule set instead of reading from DB. */
-  rules?: CorrectionRow[];
-}): { processed: ProcessedTransaction; bucket: 'matched' | 'uncertain' } | null {
-  const { transaction, minConfidence, knownTags, index, total, rules } = args;
+  buckets: BucketAccumulator;
+}
 
-  // Collect ALL matching rules in priority order — first is the winner, rest are overridden.
-  const allMatchingRules = rules
-    ? findAllMatchingCorrectionFromRules(transaction.description, rules, minConfidence)
-    : findAllMatchingCorrectionFromDB(transaction.description, minConfidence);
+function tryApplyCorrectionStage(args: StageRunArgs): StageResult {
+  const { item, ctx, index, total, buckets } = args;
+  const correctionApplied = applyLearnedCorrection({
+    transaction: item.tx,
+    minConfidence: ctx.minConfidence,
+    knownTags: ctx.knownTags,
+    index,
+    total,
+    rules: ctx.rules,
+  });
+  if (!correctionApplied) return { handled: false, changed: false };
 
-  if (allMatchingRules.length === 0) return null;
+  const nextTx = correctionApplied.processed;
+  const nextBucket = correctionApplied.bucket;
+  if (nextBucket === 'matched') buckets.matched.push(nextTx);
+  else buckets.uncertain.push(nextTx);
 
-  const correction = allMatchingRules[0];
-  if (!correction) return null;
-  const { status } = classifyCorrectionMatch(correction);
-  const entityId = correction.entityId;
+  return { handled: true, changed: transactionChanged(item.tx, nextTx, item.bucket, nextBucket) };
+}
 
-  // Build the matchedRules array for override indicators (US-07).
-  const matchedRules: MatchedRule[] = allMatchingRules.map((rule: CorrectionRow) => ({
-    ruleId: rule.id,
-    pattern: rule.descriptionPattern,
-    matchType: rule.matchType,
-    confidence: rule.confidence,
-    priority: rule.priority,
-    entityId: rule.entityId ?? null,
-    entityName: rule.entityName ?? null,
-  }));
+function tryEntityMatchStage(
+  item: RemainingItem,
+  ctx: ReevaluateContext,
+  buckets: BucketAccumulator,
+  alwaysAffected: boolean
+): StageResult {
+  const match = matchEntity(item.tx.description, ctx.entityLookup, ctx.aliases);
+  if (!match) return { handled: false, changed: false };
 
-  if (!entityId) {
-    // Transfer/income rules are allowed to classify without assigning an entity.
-    if (correction.transactionType) {
-      logger.debug(
-        {
-          index,
-          total,
-          description: transaction.description.slice(0, 50),
-          transactionType: correction.transactionType,
-          confidence: correction.confidence,
-        },
-        '[Import] Applied learned type-only correction'
-      );
-
-      return {
-        processed: {
-          ...transaction,
-          location: correction.location ?? transaction.location,
-          transactionType: correction.transactionType,
-          entity: {
-            matchType: 'learned',
-            confidence: correction.confidence,
-          },
-          ruleProvenance: {
-            source: 'correction',
-            ruleId: correction.id,
-            pattern: correction.descriptionPattern,
-            matchType: correction.matchType,
-            confidence: correction.confidence,
-          },
-          matchedRules,
-          status: 'matched',
-          suggestedTags: buildSuggestedTags(
-            transaction.description,
-            null,
-            parseCorrectionTags(correction.tags),
-            null,
-            knownTags,
-            correction.descriptionPattern
-          ),
-        },
-        bucket: 'matched',
-      };
-    }
-
-    logger.debug(
-      {
-        index,
-        total,
-        description: transaction.description.slice(0, 50),
-        confidence: correction.confidence,
-        status,
-      },
-      '[Import] Learned correction matched but has no entityId; falling through'
-    );
-    return null;
+  const entityEntry = ctx.entityLookup.get(match.entityName.toLowerCase());
+  if (!entityEntry) {
+    if (item.bucket === 'failed') buckets.failed.push(item.tx);
+    else buckets.uncertain.push(item.tx);
+    return { handled: true, changed: false };
   }
 
-  logger.debug(
-    {
-      index,
-      total,
-      description: transaction.description.slice(0, 50),
-      entityName: correction.entityName,
-      confidence: correction.confidence,
-      status,
+  const nextTx: ProcessedTransaction = {
+    ...item.tx,
+    entity: {
+      entityId: entityEntry.id,
+      entityName: entityEntry.name,
+      matchType: match.matchType,
     },
-    '[Import] Applied learned correction'
-  );
+    status: 'matched',
+    error: undefined,
+    suggestedTags: buildSuggestedTags({
+      description: item.tx.description,
+      entityId: entityEntry.id,
+      correctionTags: [],
+      aiCategory: null,
+      knownTags: ctx.knownTags,
+    }),
+  };
+
+  buckets.matched.push(nextTx);
+  return { handled: true, changed: alwaysAffected || transactionChanged(item.tx, nextTx) };
+}
+
+interface RemainingItemArgs {
+  item: RemainingItem;
+  ctx: ReevaluateContext;
+  index: number;
+  total: number;
+  buckets: BucketAccumulator;
+  alwaysAffectedOnEntityMatch: boolean;
+}
+
+function processRemainingItem(args: RemainingItemArgs): boolean {
+  const { item, ctx, buckets, alwaysAffectedOnEntityMatch } = args;
+  const corrStage = tryApplyCorrectionStage({
+    item,
+    ctx,
+    index: args.index,
+    total: args.total,
+    buckets,
+  });
+  if (corrStage.handled) return corrStage.changed;
+
+  const entityStage = tryEntityMatchStage(item, ctx, buckets, alwaysAffectedOnEntityMatch);
+  if (entityStage.handled) return entityStage.changed;
+
+  if (item.bucket === 'failed') buckets.failed.push(item.tx);
+  else buckets.uncertain.push(item.tx);
+  return false;
+}
+
+interface RunReevaluateArgs {
+  result: ProcessImportOutput;
+  ctx: ReevaluateContext;
+  alwaysAffectedOnEntityMatch: boolean;
+}
+
+function runReevaluate(args: RunReevaluateArgs): {
+  nextResult: ProcessImportOutput;
+  affectedCount: number;
+} {
+  const buckets: BucketAccumulator = {
+    matched: [...args.result.matched],
+    uncertain: [],
+    failed: [],
+  };
+
+  const remaining: RemainingItem[] = [
+    ...args.result.uncertain.map((tx) => ({ tx, bucket: 'uncertain' as const })),
+    ...args.result.failed.map((tx) => ({ tx, bucket: 'failed' as const })),
+  ];
+
+  let affectedCount = 0;
+  for (let i = 0; i < remaining.length; i++) {
+    const item = remaining[i];
+    if (!item) continue;
+    const changed = processRemainingItem({
+      item,
+      ctx: args.ctx,
+      index: i + 1,
+      total: remaining.length,
+      buckets,
+      alwaysAffectedOnEntityMatch: args.alwaysAffectedOnEntityMatch,
+    });
+    if (changed) affectedCount += 1;
+  }
 
   return {
-    processed: {
-      ...transaction,
-      location: correction.location ?? transaction.location,
-      entity: {
-        entityId,
-        entityName: correction.entityName ?? 'Unknown',
-        matchType: 'learned',
-        confidence: correction.confidence,
-      },
-      ruleProvenance: {
-        source: 'correction',
-        ruleId: correction.id,
-        pattern: correction.descriptionPattern,
-        matchType: correction.matchType,
-        confidence: correction.confidence,
-      },
-      matchedRules,
-      status,
-      suggestedTags: buildSuggestedTags(
-        transaction.description,
-        entityId,
-        parseCorrectionTags(correction.tags),
-        null,
-        knownTags,
-        correction.descriptionPattern
-      ),
+    nextResult: {
+      ...args.result,
+      matched: buckets.matched,
+      uncertain: buckets.uncertain,
+      failed: buckets.failed,
     },
-    bucket: status === 'matched' ? 'matched' : 'uncertain',
+    affectedCount,
   };
 }
 
@@ -160,218 +180,46 @@ export function reevaluateImportSessionResult(args: {
   result: ProcessImportOutput;
   minConfidence: number;
 }): { nextResult: ProcessImportOutput; affectedCount: number } {
-  const { result, minConfidence } = args;
-
   const { entityLookup, aliasMap: aliases } = loadEntityMaps();
-  const knownTags = loadKnownTags();
-
-  const nextMatched: ProcessedTransaction[] = [...result.matched];
-  const nextUncertain: ProcessedTransaction[] = [];
-  const nextFailed: ProcessedTransaction[] = [];
-
-  let affectedCount = 0;
-
-  const remaining: Array<{ tx: ProcessedTransaction; bucket: 'uncertain' | 'failed' }> = [
-    ...result.uncertain.map((tx) => ({ tx, bucket: 'uncertain' as const })),
-    ...result.failed.map((tx) => ({ tx, bucket: 'failed' as const })),
-  ];
-
-  for (let i = 0; i < remaining.length; i++) {
-    const item = remaining[i];
-    if (!item) continue;
-
-    const prevTx = item.tx;
-    const prevBucket = item.bucket;
-
-    // Stage 1: Corrections (learned rules)
-    const correctionApplied = applyLearnedCorrection({
-      transaction: prevTx,
-      minConfidence,
-      knownTags,
-      index: i + 1,
-      total: remaining.length,
-    });
-
-    if (correctionApplied) {
-      const nextBucket = correctionApplied.bucket;
-      const nextTx = correctionApplied.processed;
-
-      const changed =
-        prevBucket !== nextBucket ||
-        prevTx.status !== nextTx.status ||
-        prevTx.transactionType !== nextTx.transactionType ||
-        prevTx.entity.entityId !== nextTx.entity.entityId ||
-        prevTx.entity.entityName !== nextTx.entity.entityName ||
-        prevTx.entity.matchType !== nextTx.entity.matchType;
-
-      if (changed) affectedCount += 1;
-
-      if (nextBucket === 'matched') nextMatched.push(nextTx);
-      else nextUncertain.push(nextTx);
-      continue;
-    }
-
-    // Stage 2: Universal entity matching (aliases → exact → prefix → contains).
-    // We intentionally do NOT re-run AI in this synchronous path.
-    const match = matchEntity(prevTx.description, entityLookup, aliases);
-    if (match) {
-      const entityEntry = entityLookup.get(match.entityName.toLowerCase());
-      if (!entityEntry) {
-        // If lookup is inconsistent, fall back to leaving it as-is rather than crashing the session.
-        if (prevBucket === 'failed') nextFailed.push(prevTx);
-        else nextUncertain.push(prevTx);
-        continue;
-      }
-
-      const nextTx: ProcessedTransaction = {
-        ...prevTx,
-        entity: {
-          entityId: entityEntry.id,
-          entityName: entityEntry.name,
-          matchType: match.matchType,
-        },
-        status: 'matched',
-        error: undefined,
-        suggestedTags: buildSuggestedTags(prevTx.description, entityEntry.id, [], null, knownTags),
-      };
-
-      const changed =
-        prevTx.status !== nextTx.status ||
-        prevTx.transactionType !== nextTx.transactionType ||
-        prevTx.entity.entityId !== nextTx.entity.entityId ||
-        prevTx.entity.entityName !== nextTx.entity.entityName ||
-        prevTx.entity.matchType !== nextTx.entity.matchType;
-
-      if (changed) affectedCount += 1;
-      nextMatched.push(nextTx);
-      continue;
-    }
-
-    // No deterministic match found: preserve current item as-is.
-    if (prevBucket === 'failed') nextFailed.push(prevTx);
-    else nextUncertain.push(prevTx);
-  }
-
-  return {
-    nextResult: {
-      ...result,
-      matched: nextMatched,
-      uncertain: nextUncertain,
-      failed: nextFailed,
+  return runReevaluate({
+    result: args.result,
+    ctx: {
+      minConfidence: args.minConfidence,
+      knownTags: loadKnownTags(),
+      entityLookup,
+      aliases,
     },
-    affectedCount,
-  };
+    alwaysAffectedOnEntityMatch: false,
+  });
 }
 
 /**
  * Re-evaluate import session using merged rules (DB + pending ChangeSets).
- * Same logic as reevaluateImportSessionResult but uses the provided merged
- * rules for correction matching instead of reading from DB.
  */
 export function reevaluateImportSessionWithRules(args: {
   result: ProcessImportOutput;
   minConfidence: number;
   pendingChangeSets: { changeSet: ChangeSet }[];
 }): { nextResult: ProcessImportOutput; affectedCount: number } {
-  const { result, minConfidence, pendingChangeSets } = args;
-
-  // Build merged rules: DB rules + pending ChangeSets applied in order
   const dbRules = listCorrections(undefined, 50_000, 0).rows;
   const mergedRules =
-    pendingChangeSets.length > 0
-      ? pendingChangeSets.reduce((acc, pcs) => applyChangeSetToRules(acc, pcs.changeSet), dbRules)
+    args.pendingChangeSets.length > 0
+      ? args.pendingChangeSets.reduce(
+          (acc, pcs) => applyChangeSetToRules(acc, pcs.changeSet),
+          dbRules
+        )
       : dbRules;
 
   const { entityLookup, aliasMap: aliases } = loadEntityMaps();
-  const knownTags = loadKnownTags();
-
-  const nextMatched: ProcessedTransaction[] = [...result.matched];
-  const nextUncertain: ProcessedTransaction[] = [];
-  const nextFailed: ProcessedTransaction[] = [];
-
-  let affectedCount = 0;
-
-  const remaining: Array<{ tx: ProcessedTransaction; bucket: 'uncertain' | 'failed' }> = [
-    ...result.uncertain.map((tx) => ({ tx, bucket: 'uncertain' as const })),
-    ...result.failed.map((tx) => ({ tx, bucket: 'failed' as const })),
-  ];
-
-  for (let i = 0; i < remaining.length; i++) {
-    const item = remaining[i];
-    if (!item) continue;
-
-    const prevTx = item.tx;
-    const prevBucket = item.bucket;
-
-    // Stage 1: Corrections using merged rules
-    const correctionApplied = applyLearnedCorrection({
-      transaction: prevTx,
+  return runReevaluate({
+    result: args.result,
+    ctx: {
       rules: mergedRules,
-      minConfidence,
-      knownTags,
-      index: i + 1,
-      total: remaining.length,
-    });
-
-    if (correctionApplied) {
-      const nextBucket = correctionApplied.bucket;
-      const nextTx = correctionApplied.processed;
-
-      const changed =
-        prevBucket !== nextBucket ||
-        prevTx.status !== nextTx.status ||
-        prevTx.transactionType !== nextTx.transactionType ||
-        prevTx.entity.entityId !== nextTx.entity.entityId ||
-        prevTx.entity.entityName !== nextTx.entity.entityName ||
-        prevTx.entity.matchType !== nextTx.entity.matchType;
-
-      if (changed) affectedCount += 1;
-
-      if (nextBucket === 'matched') nextMatched.push(nextTx);
-      else nextUncertain.push(nextTx);
-      continue;
-    }
-
-    // Stage 2: Universal entity matching
-    const match = matchEntity(prevTx.description, entityLookup, aliases);
-    if (match) {
-      const entityEntry = entityLookup.get(match.entityName.toLowerCase());
-      if (!entityEntry) {
-        if (prevBucket === 'failed') nextFailed.push(prevTx);
-        else nextUncertain.push(prevTx);
-        continue;
-      }
-
-      const nextTx: ProcessedTransaction = {
-        ...prevTx,
-        entity: {
-          entityId: entityEntry.id,
-          entityName: entityEntry.name,
-          matchType: match.matchType,
-        },
-        status: 'matched',
-        error: undefined,
-        suggestedTags: buildSuggestedTags(prevTx.description, entityEntry.id, [], null, knownTags),
-      };
-
-      // Entity match found for a previously uncertain/failed tx — always counts as affected.
-      affectedCount += 1;
-      nextMatched.push(nextTx);
-      continue;
-    }
-
-    // No deterministic match found: preserve current item as-is.
-    if (prevBucket === 'failed') nextFailed.push(prevTx);
-    else nextUncertain.push(prevTx);
-  }
-
-  return {
-    nextResult: {
-      ...result,
-      matched: nextMatched,
-      uncertain: nextUncertain,
-      failed: nextFailed,
+      minConfidence: args.minConfidence,
+      knownTags: loadKnownTags(),
+      entityLookup,
+      aliases,
     },
-    affectedCount,
-  };
+    alwaysAffectedOnEntityMatch: true,
+  });
 }

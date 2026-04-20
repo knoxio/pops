@@ -26,18 +26,8 @@ const containerVariants = cva(
         pill: 'rounded-full',
       },
     },
-    compoundVariants: [
-      {
-        variant: 'underline',
-        shape: ['default', 'pill'],
-        class: 'rounded-none',
-      },
-    ],
-    defaultVariants: {
-      variant: 'default',
-      size: 'default',
-      shape: 'default',
-    },
+    compoundVariants: [{ variant: 'underline', shape: ['default', 'pill'], class: 'rounded-none' }],
+    defaultVariants: { variant: 'default', size: 'default', shape: 'default' },
   }
 );
 
@@ -45,20 +35,10 @@ const inputVariants = cva(
   'flex-1 bg-transparent border-0 outline-0 shadow-none focus:outline-0 focus:ring-0 focus:shadow-none focus-visible:outline-0 focus-visible:ring-0 disabled:cursor-not-allowed [color-scheme:light] dark:[color-scheme:dark]',
   {
     variants: {
-      size: {
-        sm: 'text-xs',
-        default: 'text-sm',
-        lg: 'text-base',
-      },
-      centered: {
-        true: 'text-center',
-        false: '',
-      },
+      size: { sm: 'text-xs', default: 'text-sm', lg: 'text-base' },
+      centered: { true: 'text-center', false: '' },
     },
-    defaultVariants: {
-      size: 'default',
-      centered: false,
-    },
+    defaultVariants: { size: 'default', centered: false },
   }
 );
 
@@ -66,28 +46,17 @@ interface BaseInputProps
   extends
     Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'prefix' | 'type'>,
     VariantProps<typeof containerVariants> {
-  /**
-   * Icon or content to display before the input
-   */
   prefix?: ReactNode;
-  /**
-   * Icon or content to display after the input
-   */
   suffix?: ReactNode;
-  /**
-   * Whether to center the text
-   */
   centered?: boolean;
-  /**
-   * Container class name
-   */
   containerClassName?: string;
 }
 
-// Date Input
-export type DateInputProps = BaseInputProps;
+interface NativeDateTimeInputProps extends BaseInputProps {
+  type: 'date' | 'time' | 'datetime-local';
+}
 
-export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
+const NativeDateTimeInput = forwardRef<HTMLInputElement, NativeDateTimeInputProps>(
   (
     {
       className,
@@ -100,30 +69,17 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
       onFocus,
       onBlur,
       disabled,
+      type,
       ...props
     },
     ref
   ) => {
     const [isFocused, setIsFocused] = useState(false);
 
-    const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-      setIsFocused(true);
-      onFocus?.(e);
-    };
-
-    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-      setIsFocused(false);
-      onBlur?.(e);
-    };
-
     return (
       <div
         className={cn(
-          containerVariants({
-            variant,
-            size,
-            shape,
-          }),
+          containerVariants({ variant, size, shape }),
           disabled && 'opacity-50 cursor-not-allowed',
           containerClassName
         )}
@@ -132,10 +88,16 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
         {prefix && <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>}
         <input
           ref={ref}
-          type="date"
+          type={type}
           className={cn(inputVariants({ size, className }))}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
+          onFocus={(e) => {
+            setIsFocused(true);
+            onFocus?.(e);
+          }}
+          onBlur={(e) => {
+            setIsFocused(false);
+            onBlur?.(e);
+          }}
           disabled={disabled}
           {...props}
         />
@@ -145,130 +107,22 @@ export const DateInput = forwardRef<HTMLInputElement, DateInputProps>(
   }
 );
 
+NativeDateTimeInput.displayName = 'NativeDateTimeInput';
+
+export type DateInputProps = BaseInputProps;
+export const DateInput = forwardRef<HTMLInputElement, DateInputProps>((props, ref) => (
+  <NativeDateTimeInput {...props} type="date" ref={ref} />
+));
 DateInput.displayName = 'DateInput';
 
-// Time Input
 export type TimeInputProps = BaseInputProps;
-
-export const TimeInput = forwardRef<HTMLInputElement, TimeInputProps>(
-  (
-    {
-      className,
-      containerClassName,
-      variant,
-      size,
-      shape,
-      prefix,
-      suffix,
-      onFocus,
-      onBlur,
-      disabled,
-      ...props
-    },
-    ref
-  ) => {
-    const [isFocused, setIsFocused] = useState(false);
-
-    const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-      setIsFocused(true);
-      onFocus?.(e);
-    };
-
-    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-      setIsFocused(false);
-      onBlur?.(e);
-    };
-
-    return (
-      <div
-        className={cn(
-          containerVariants({
-            variant,
-            size,
-            shape,
-          }),
-          disabled && 'opacity-50 cursor-not-allowed',
-          containerClassName
-        )}
-        style={isFocused ? { borderColor: 'var(--ring)' } : undefined}
-      >
-        {prefix && <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>}
-        <input
-          ref={ref}
-          type="time"
-          className={cn(inputVariants({ size, className }))}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          disabled={disabled}
-          {...props}
-        />
-        {suffix && <span className="flex-shrink-0 text-muted-foreground">{suffix}</span>}
-      </div>
-    );
-  }
-);
-
+export const TimeInput = forwardRef<HTMLInputElement, TimeInputProps>((props, ref) => (
+  <NativeDateTimeInput {...props} type="time" ref={ref} />
+));
 TimeInput.displayName = 'TimeInput';
 
-// DateTime Input
 export type DateTimeInputProps = BaseInputProps;
-
-export const DateTimeInput = forwardRef<HTMLInputElement, DateTimeInputProps>(
-  (
-    {
-      className,
-      containerClassName,
-      variant,
-      size,
-      shape,
-      prefix,
-      suffix,
-      onFocus,
-      onBlur,
-      disabled,
-      ...props
-    },
-    ref
-  ) => {
-    const [isFocused, setIsFocused] = useState(false);
-
-    const handleFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-      setIsFocused(true);
-      onFocus?.(e);
-    };
-
-    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
-      setIsFocused(false);
-      onBlur?.(e);
-    };
-
-    return (
-      <div
-        className={cn(
-          containerVariants({
-            variant,
-            size,
-            shape,
-          }),
-          disabled && 'opacity-50 cursor-not-allowed',
-          containerClassName
-        )}
-        style={isFocused ? { borderColor: 'var(--ring)' } : undefined}
-      >
-        {prefix && <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>}
-        <input
-          ref={ref}
-          type="datetime-local"
-          className={cn(inputVariants({ size, className }))}
-          onFocus={handleFocus}
-          onBlur={handleBlur}
-          disabled={disabled}
-          {...props}
-        />
-        {suffix && <span className="flex-shrink-0 text-muted-foreground">{suffix}</span>}
-      </div>
-    );
-  }
-);
-
+export const DateTimeInput = forwardRef<HTMLInputElement, DateTimeInputProps>((props, ref) => (
+  <NativeDateTimeInput {...props} type="datetime-local" ref={ref} />
+));
 DateTimeInput.displayName = 'DateTimeInput';

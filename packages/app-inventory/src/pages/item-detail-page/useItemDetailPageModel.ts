@@ -5,31 +5,9 @@ import { toast } from 'sonner';
 import { trpc } from '@pops/api-client';
 import { useSetPageContext } from '@pops/navigation';
 
-export function useItemDetailPageModel() {
-  const { id } = useParams<{ id: string }>();
+function useItemDetailMutations(id: string | undefined) {
   const navigate = useNavigate();
   const utils = trpc.useUtils();
-
-  const {
-    data: itemData,
-    isLoading,
-    error,
-  } = trpc.inventory.items.get.useQuery({ id: id ?? '' }, { enabled: !!id });
-
-  const locationId = itemData?.data?.locationId ?? null;
-
-  const { data: locationPathData } = trpc.inventory.locations.getPath.useQuery(
-    { id: locationId ?? '' },
-    { enabled: !!locationId }
-  );
-
-  const { data: connectionsData, isLoading: connectionsLoading } =
-    trpc.inventory.connections.listForItem.useQuery({ itemId: id ?? '' }, { enabled: !!id });
-
-  const { data: photosData, isLoading: photosLoading } = trpc.inventory.photos.listForItem.useQuery(
-    { itemId: id ?? '' },
-    { enabled: !!id }
-  );
 
   const deleteMutation = trpc.inventory.items.delete.useMutation({
     onSuccess: () => {
@@ -51,6 +29,31 @@ export function useItemDetailPageModel() {
     onSuccess: () => void utils.inventory.photos.listForItem.invalidate({ itemId: id ?? '' }),
     onError: (err) => toast.error(`Failed to reorder photos: ${err.message}`),
   });
+
+  return { deleteMutation, disconnectMutation, reorderPhotosMutation, utils };
+}
+
+export function useItemDetailPageModel() {
+  const { id } = useParams<{ id: string }>();
+  const {
+    data: itemData,
+    isLoading,
+    error,
+  } = trpc.inventory.items.get.useQuery({ id: id ?? '' }, { enabled: !!id });
+  const locationId = itemData?.data?.locationId ?? null;
+
+  const { data: locationPathData } = trpc.inventory.locations.getPath.useQuery(
+    { id: locationId ?? '' },
+    { enabled: !!locationId }
+  );
+  const { data: connectionsData, isLoading: connectionsLoading } =
+    trpc.inventory.connections.listForItem.useQuery({ itemId: id ?? '' }, { enabled: !!id });
+  const { data: photosData, isLoading: photosLoading } = trpc.inventory.photos.listForItem.useQuery(
+    { itemId: id ?? '' },
+    { enabled: !!id }
+  );
+  const { deleteMutation, disconnectMutation, reorderPhotosMutation, utils } =
+    useItemDetailMutations(id);
 
   const itemEntity = useMemo(
     () => ({

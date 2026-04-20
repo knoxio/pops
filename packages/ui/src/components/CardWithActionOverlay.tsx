@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { cn } from '../lib/utils';
 import { Skeleton } from '../primitives/skeleton';
 
-import type { ReactNode } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 
 /**
  * Poster card with hover-revealed bottom overlay and optional corner badges.
@@ -36,6 +36,54 @@ interface CardPosterContentProps {
   overlayGradient: string;
 }
 
+function PosterImage({
+  src,
+  alt,
+  lazy,
+  showHoverDim,
+}: {
+  src: string;
+  alt: string;
+  lazy: boolean;
+  showHoverDim: boolean;
+}) {
+  const [loaded, setLoaded] = useState(false);
+  const [errored, setErrored] = useState(false);
+
+  useEffect(() => {
+    setErrored(false);
+    setLoaded(false);
+  }, [src]);
+
+  if (errored) return <PlaceholderIcon />;
+
+  return (
+    <>
+      <img
+        src={src}
+        alt={alt}
+        loading={lazy ? 'lazy' : 'eager'}
+        className={cn(
+          'h-full w-full object-cover transition-opacity duration-200',
+          showHoverDim && 'group-hover:opacity-80',
+          loaded ? 'opacity-100' : 'opacity-0'
+        )}
+        onLoad={() => setLoaded(true)}
+        onError={() => setErrored(true)}
+      />
+      {!loaded && <Skeleton className="absolute inset-0 h-full w-full rounded-none" />}
+    </>
+  );
+}
+
+function PlaceholderIcon() {
+  return (
+    <div className="flex h-full w-full items-center justify-center text-muted-foreground">
+      <ImageOff className="h-8 w-8 opacity-40" />
+    </div>
+  );
+}
+
 function CardPosterContent({
   src,
   alt,
@@ -46,41 +94,15 @@ function CardPosterContent({
   topRight,
   overlayGradient,
 }: CardPosterContentProps) {
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
-
-  useEffect(() => {
-    setImageError(false);
-    setImageLoaded(false);
-  }, [src]);
-
-  const showPlaceholder = !src || imageError;
+  const showImage = !!src;
+  const showHoverDim = hasOnClick || !!overlay;
 
   return (
     <>
-      {!showPlaceholder && (
-        <img
-          src={src}
-          alt={alt}
-          loading={lazy ? 'lazy' : 'eager'}
-          className={cn(
-            'h-full w-full object-cover transition-opacity duration-200',
-            (hasOnClick || overlay) && 'group-hover:opacity-80',
-            imageLoaded ? 'opacity-100' : 'opacity-0'
-          )}
-          onLoad={() => setImageLoaded(true)}
-          onError={() => setImageError(true)}
-        />
-      )}
-
-      {!showPlaceholder && !imageLoaded && (
-        <Skeleton className="absolute inset-0 h-full w-full rounded-none" />
-      )}
-
-      {showPlaceholder && (
-        <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-          <ImageOff className="h-8 w-8 opacity-40" />
-        </div>
+      {showImage ? (
+        <PosterImage src={src} alt={alt} lazy={lazy} showHoverDim={showHoverDim} />
+      ) : (
+        <PlaceholderIcon />
       )}
 
       {topLeft && <div className="absolute top-2 left-2 z-10">{topLeft}</div>}
@@ -103,6 +125,47 @@ function CardPosterContent({
   );
 }
 
+function makeKeyHandler(onClick: () => void) {
+  return (e: KeyboardEvent) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onClick();
+    }
+  };
+}
+
+interface InteractiveCardProps {
+  isInteractive: boolean;
+  role?: 'button';
+  tabIndex?: 0;
+  onClickHandler?: () => void;
+  onKeyDown?: (e: KeyboardEvent) => void;
+  ariaLabel?: string;
+  ariaDisabled?: true;
+  cursorClass?: string;
+}
+
+function getInteractiveProps(
+  onClick: (() => void) | undefined,
+  disabled: boolean | undefined,
+  ariaLabel: string | undefined,
+  alt: string
+): InteractiveCardProps {
+  const hasClick = !!onClick;
+  if (!hasClick) return { isInteractive: false };
+  const isInteractive = !disabled;
+  return {
+    isInteractive,
+    role: isInteractive ? 'button' : undefined,
+    tabIndex: isInteractive ? 0 : undefined,
+    onClickHandler: isInteractive ? onClick : undefined,
+    onKeyDown: isInteractive && onClick ? makeKeyHandler(onClick) : undefined,
+    ariaLabel: ariaLabel ?? alt,
+    ariaDisabled: disabled ? true : undefined,
+    cursorClass: disabled ? 'cursor-default' : undefined,
+  };
+}
+
 export function CardWithActionOverlay({
   src,
   alt,
@@ -118,30 +181,21 @@ export function CardWithActionOverlay({
   overlayGradient = 'from-black/80',
   'data-testid': testId,
 }: CardWithActionOverlayProps) {
-  const isInteractive = !!onClick && !disabled;
+  const i = getInteractiveProps(onClick, disabled, ariaLabel, alt);
 
   return (
     <div
-      role={isInteractive ? 'button' : undefined}
-      tabIndex={isInteractive ? 0 : undefined}
-      onClick={isInteractive ? onClick : undefined}
-      onKeyDown={
-        isInteractive
-          ? (e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                onClick();
-              }
-            }
-          : undefined
-      }
-      aria-label={onClick ? (ariaLabel ?? alt) : undefined}
-      aria-disabled={onClick && disabled ? true : undefined}
+      role={i.role}
+      tabIndex={i.tabIndex}
+      onClick={i.onClickHandler}
+      onKeyDown={i.onKeyDown}
+      aria-label={i.ariaLabel}
+      aria-disabled={i.ariaDisabled}
       className={cn(
         'group relative w-full overflow-hidden rounded-md bg-muted',
         aspectClass,
-        isInteractive && 'cursor-pointer active:scale-[0.98] transition-transform',
-        onClick && disabled && 'cursor-default',
+        i.isInteractive && 'cursor-pointer active:scale-[0.98] transition-transform',
+        i.cursorClass,
         className
       )}
       data-testid={testId}

@@ -88,43 +88,26 @@ export function createWishListItem(input: CreateWishListItemInput): WishListRow 
  * Update an existing wish list item. Returns the updated row.
  * Updates directly in SQLite.
  */
-export function updateWishListItem(id: string, input: UpdateWishListItemInput): WishListRow {
-  const db = getDrizzle();
+function buildWishListUpdates(
+  input: UpdateWishListItemInput
+): Partial<typeof wishList.$inferInsert> {
+  const updates: Partial<typeof wishList.$inferInsert> = {};
+  if (input.item !== undefined) updates.item = input.item;
+  if (input.targetAmount !== undefined) updates.targetAmount = input.targetAmount ?? null;
+  if (input.saved !== undefined) updates.saved = input.saved ?? null;
+  if (input.priority !== undefined) updates.priority = input.priority ?? null;
+  if (input.url !== undefined) updates.url = input.url ?? null;
+  if (input.notes !== undefined) updates.notes = input.notes ?? null;
+  return updates;
+}
 
-  // Verify it exists first
+export function updateWishListItem(id: string, input: UpdateWishListItemInput): WishListRow {
   getWishListItem(id);
 
-  const updates: Partial<typeof wishList.$inferInsert> = {};
-  let hasUpdates = false;
-
-  if (input.item !== undefined) {
-    updates.item = input.item;
-    hasUpdates = true;
-  }
-  if (input.targetAmount !== undefined) {
-    updates.targetAmount = input.targetAmount ?? null;
-    hasUpdates = true;
-  }
-  if (input.saved !== undefined) {
-    updates.saved = input.saved ?? null;
-    hasUpdates = true;
-  }
-  if (input.priority !== undefined) {
-    updates.priority = input.priority ?? null;
-    hasUpdates = true;
-  }
-  if (input.url !== undefined) {
-    updates.url = input.url ?? null;
-    hasUpdates = true;
-  }
-  if (input.notes !== undefined) {
-    updates.notes = input.notes ?? null;
-    hasUpdates = true;
-  }
-
-  if (hasUpdates) {
+  const updates = buildWishListUpdates(input);
+  if (Object.keys(updates).length > 0) {
     updates.lastEditedTime = new Date().toISOString();
-    db.update(wishList).set(updates).where(eq(wishList.id, id)).run();
+    getDrizzle().update(wishList).set(updates).where(eq(wishList.id, id)).run();
   }
 
   return getWishListItem(id);

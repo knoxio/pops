@@ -10,6 +10,7 @@ import { comparisons } from '@pops/db-types';
 import { getDb, getDrizzle } from '../../../db.js';
 import { NotFoundError, ValidationError } from '../../../shared/errors.js';
 import { getDimension } from './dimensions.service.js';
+import { sourceRank } from './lib/batch-record.js';
 import { findExistingComparison } from './lib/comparison-queries.js';
 import { recordDebriefComparison as recordDebriefComparisonImpl } from './lib/debrief.js';
 import { recalcDimensionElo, updateEloScores } from './lib/score-management.js';
@@ -50,21 +51,71 @@ export { getSmartPair } from './pairs/smart-pair.js';
 export { getRankings, type RankingsResult, resolvePosterUrl } from './rankings.service.js';
 export { getScoresForMedia } from './scores.service.js';
 
-// ── Source Hierarchy ──
+// ── Comparisons ──
 
-/** Source authority ranking: higher rank = more authoritative. null/historical = 0. */
-function sourceRank(source: string | null | undefined): number {
-  switch (source) {
-    case 'arena':
-      return 2;
-    case 'tier_list':
-      return 1;
-    default:
-      return 0;
+function validateRecordInput(input: RecordComparisonInput): void {
+  const dimension = getDimension(input.dimensionId);
+  if (dimension.active !== 1) {
+    throw new ValidationError('Cannot record comparison for inactive dimension');
+  }
+  const isDraw = input.winnerId === 0;
+  const winnerIsA =
+    !isDraw && input.winnerType === input.mediaAType && input.winnerId === input.mediaAId;
+  const winnerIsB =
+    !isDraw && input.winnerType === input.mediaBType && input.winnerId === input.mediaBId;
+  if (!isDraw && !winnerIsA && !winnerIsB) {
+    throw new ValidationError('Winner must match either media A or media B, or be 0 for a draw');
   }
 }
 
-// ── Comparisons ──
+function fetchInserted(insertId: number): ComparisonRow {
+  const drizzleDb = getDrizzle();
+  const inserted = drizzleDb.select().from(comparisons).where(eq(comparisons.id, insertId)).get();
+  if (!inserted) throw new Error('Failed to retrieve recorded comparison');
+  return inserted;
+}
+
+function insertOverride(input: RecordComparisonInput, newSource: string): ComparisonRow {
+  const drizzleDb = getDrizzle();
+  const result = drizzleDb
+    .insert(comparisons)
+    .values({
+      dimensionId: input.dimensionId,
+      mediaAType: input.mediaAType,
+      mediaAId: input.mediaAId,
+      mediaBType: input.mediaBType,
+      mediaBId: input.mediaBId,
+      winnerType: input.winnerType,
+      winnerId: input.winnerId,
+      drawTier: input.drawTier ?? null,
+      source: newSource,
+    })
+    .run();
+  recalcDimensionElo(input.dimensionId);
+  return fetchInserted(Number(result.lastInsertRowid));
+}
+
+function insertIncremental(input: RecordComparisonInput, newSource: string): ComparisonRow {
+  const drizzleDb = getDrizzle();
+  const { deltaA, deltaB } = updateEloScores(input);
+  const result = drizzleDb
+    .insert(comparisons)
+    .values({
+      dimensionId: input.dimensionId,
+      mediaAType: input.mediaAType,
+      mediaAId: input.mediaAId,
+      mediaBType: input.mediaBType,
+      mediaBId: input.mediaBId,
+      winnerType: input.winnerType,
+      winnerId: input.winnerId,
+      drawTier: input.drawTier ?? null,
+      source: newSource,
+      deltaA,
+      deltaB,
+    })
+    .run();
+  return fetchInserted(Number(result.lastInsertRowid));
+}
 
 /**
  * Record a 1v1 comparison and update Elo scores.
@@ -72,106 +123,29 @@ function sourceRank(source: string | null | undefined): number {
  * Wraps insert + Elo update in a transaction for consistency.
  */
 export function recordComparison(input: RecordComparisonInput): ComparisonRow {
-  const drizzleDb = getDrizzle();
-
-  // Verify dimension exists and is active
-  const dimension = getDimension(input.dimensionId);
-  if (dimension.active !== 1) {
-    throw new ValidationError('Cannot record comparison for inactive dimension');
-  }
-
-  // Validate winner matches one of the two media items, or is a draw (winnerId = 0)
-  const isDraw = input.winnerId === 0;
-  const winnerIsA =
-    !isDraw && input.winnerType === input.mediaAType && input.winnerId === input.mediaAId;
-  const winnerIsB =
-    !isDraw && input.winnerType === input.mediaBType && input.winnerId === input.mediaBId;
-
-  if (!isDraw && !winnerIsA && !winnerIsB) {
-    throw new ValidationError('Winner must match either media A or media B, or be 0 for a draw');
-  }
-
+  validateRecordInput(input);
   const newSource = input.source ?? 'arena';
-
-  // Wrap insert + Elo update in a transaction
+  const drizzleDb = getDrizzle();
   const rawDb = getDb();
-  const row = rawDb.transaction(() => {
-    // Check for existing comparison on this pair+dimension
-    const existing = findExistingComparison(
-      input.dimensionId,
-      input.mediaAType,
-      input.mediaAId,
-      input.mediaBType,
-      input.mediaBId
-    );
+  return rawDb.transaction(() => {
+    const existing = findExistingComparison({
+      dimensionId: input.dimensionId,
+      mediaAType: input.mediaAType,
+      mediaAId: input.mediaAId,
+      mediaBType: input.mediaBType,
+      mediaBId: input.mediaBId,
+    });
 
     if (existing) {
       const existingSource = existing.source ?? null;
-      if (sourceRank(newSource) >= sourceRank(existingSource)) {
-        // Override: delete old row, insert new, then full recalc
-        drizzleDb.delete(comparisons).where(eq(comparisons.id, existing.id)).run();
-
-        // Insert without incremental ELO — recalc will rebuild everything
-        const result = drizzleDb
-          .insert(comparisons)
-          .values({
-            dimensionId: input.dimensionId,
-            mediaAType: input.mediaAType,
-            mediaAId: input.mediaAId,
-            mediaBType: input.mediaBType,
-            mediaBId: input.mediaBId,
-            winnerType: input.winnerType,
-            winnerId: input.winnerId,
-            drawTier: input.drawTier ?? null,
-            source: newSource,
-          })
-          .run();
-
-        // Full recalc replays all comparisons and sets correct deltas
-        recalcDimensionElo(input.dimensionId);
-
-        const inserted = drizzleDb
-          .select()
-          .from(comparisons)
-          .where(eq(comparisons.id, Number(result.lastInsertRowid)))
-          .get();
-        if (!inserted) throw new Error('Failed to retrieve recorded comparison');
-        return inserted;
+      if (sourceRank(newSource) < sourceRank(existingSource)) {
+        return existing;
       }
-      // Skip: existing has higher authority
-      return existing;
+      drizzleDb.delete(comparisons).where(eq(comparisons.id, existing.id)).run();
+      return insertOverride(input, newSource);
     }
-
-    // No existing — compute Elo deltas incrementally and store on the comparison
-    const { deltaA, deltaB } = updateEloScores(input);
-
-    const result = drizzleDb
-      .insert(comparisons)
-      .values({
-        dimensionId: input.dimensionId,
-        mediaAType: input.mediaAType,
-        mediaAId: input.mediaAId,
-        mediaBType: input.mediaBType,
-        mediaBId: input.mediaBId,
-        winnerType: input.winnerType,
-        winnerId: input.winnerId,
-        drawTier: input.drawTier ?? null,
-        source: newSource,
-        deltaA,
-        deltaB,
-      })
-      .run();
-
-    const inserted = drizzleDb
-      .select()
-      .from(comparisons)
-      .where(eq(comparisons.id, Number(result.lastInsertRowid)))
-      .get();
-    if (!inserted) throw new Error('Failed to retrieve recorded comparison');
-    return inserted;
+    return insertIncremental(input, newSource);
   })();
-
-  return row;
 }
 
 /**
@@ -196,6 +170,21 @@ export function deleteComparison(id: number): void {
   })();
 }
 
+function findAffectedDimensionIds(mediaType: string, mediaId: number): number[] {
+  const drizzleDb = getDrizzle();
+  const affectedComparisons = drizzleDb
+    .select()
+    .from(comparisons)
+    .where(
+      or(
+        and(eq(comparisons.mediaAType, mediaType), eq(comparisons.mediaAId, mediaId)),
+        and(eq(comparisons.mediaBType, mediaType), eq(comparisons.mediaBId, mediaId))
+      )
+    )
+    .all();
+  return [...new Set(affectedComparisons.map((c) => c.dimensionId))];
+}
+
 /**
  * Blacklist a movie: mark all its watch_history rows as blacklisted,
  * delete all comparisons involving it, and recalculate ELO for affected dimensions.
@@ -205,7 +194,6 @@ export function blacklistMovie(mediaType: string, mediaId: number): BlacklistMov
   const rawDb = getDb();
 
   return rawDb.transaction(() => {
-    // 1. Set blacklisted = 1 on all watch_history rows for this media
     const blacklistResult = rawDb
       .prepare(
         `UPDATE watch_history SET blacklisted = 1
@@ -214,42 +202,24 @@ export function blacklistMovie(mediaType: string, mediaId: number): BlacklistMov
       .run(mediaType, mediaId);
     const blacklistedCount = blacklistResult.changes;
 
-    // 2. Find all comparisons involving this media (either side)
-    const affectedComparisons = drizzleDb
-      .select()
-      .from(comparisons)
+    const affectedDimensionIds = findAffectedDimensionIds(mediaType, mediaId);
+    const deleteResult = drizzleDb
+      .delete(comparisons)
       .where(
         or(
           and(eq(comparisons.mediaAType, mediaType), eq(comparisons.mediaAId, mediaId)),
           and(eq(comparisons.mediaBType, mediaType), eq(comparisons.mediaBId, mediaId))
         )
       )
-      .all();
+      .run();
 
-    const comparisonsDeleted = affectedComparisons.length;
-
-    // 3. Collect affected dimension IDs (unique)
-    const affectedDimensionIds = [...new Set(affectedComparisons.map((c) => c.dimensionId))];
-
-    // 4. Delete all comparisons involving this media
-    if (comparisonsDeleted > 0) {
-      rawDb
-        .prepare(
-          `DELETE FROM comparisons
-           WHERE (media_a_type = ? AND media_a_id = ?)
-              OR (media_b_type = ? AND media_b_id = ?)`
-        )
-        .run(mediaType, mediaId, mediaType, mediaId);
-    }
-
-    // 5. Replay ELO for each affected dimension (resets scores + updates stored deltas)
     for (const dimensionId of affectedDimensionIds) {
       recalcDimensionElo(dimensionId);
     }
 
     return {
       blacklistedCount,
-      comparisonsDeleted,
+      comparisonsDeleted: deleteResult.changes,
       dimensionsRecalculated: affectedDimensionIds.length,
     };
   })();

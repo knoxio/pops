@@ -53,6 +53,34 @@ const VALID_CONDITIONS = new Set<string>([
   'Poor',
 ]);
 
+function locationCell(
+  locationPathMap: ReadonlyMap<string, LocationSegment[]>,
+  row: { original: InventoryTableItem }
+): React.ReactNode {
+  const { locationId, location } = row.original;
+  const segments = locationId ? locationPathMap.get(locationId) : undefined;
+  if (segments && segments.length > 0) {
+    return (
+      <span title={segments.map((s) => s.name).join(' > ')}>
+        <LocationBreadcrumb segments={segments} />
+      </span>
+    );
+  }
+  return <span className="text-muted-foreground">{location ?? '—'}</span>;
+}
+
+function conditionCell(condition: string | null): React.ReactNode {
+  if (!condition || !VALID_CONDITIONS.has(condition)) {
+    return <span className="text-muted-foreground">—</span>;
+  }
+  return <ConditionBadge condition={condition as Condition} />;
+}
+
+function purchaseDateCell(date: string | null): React.ReactNode {
+  if (!date) return <span className="text-muted-foreground">—</span>;
+  return <span className="text-sm tabular-nums">{new Date(date).toLocaleDateString()}</span>;
+}
+
 function createColumns(
   locationPathMap: ReadonlyMap<string, LocationSegment[]>
 ): ColumnDef<InventoryTableItem>[] {
@@ -60,10 +88,8 @@ function createColumns(
     {
       accessorKey: 'assetId',
       header: 'Asset ID',
-      cell: ({ row }) => {
-        const assetId = row.original.assetId;
-        return assetId ? <AssetIdBadge assetId={assetId} /> : null;
-      },
+      cell: ({ row }) =>
+        row.original.assetId ? <AssetIdBadge assetId={row.original.assetId} /> : null,
     },
     {
       accessorKey: 'itemName',
@@ -78,58 +104,28 @@ function createColumns(
     {
       accessorKey: 'type',
       header: 'Type',
-      cell: ({ row }) => {
-        const type = row.original.type;
-        return type ? <TypeBadge type={type} /> : null;
-      },
+      cell: ({ row }) => (row.original.type ? <TypeBadge type={row.original.type} /> : null),
     },
     {
       accessorKey: 'condition',
       header: 'Condition',
-      cell: ({ row }) => {
-        const condition = row.original.condition;
-        if (!condition || !VALID_CONDITIONS.has(condition)) {
-          return <span className="text-muted-foreground">—</span>;
-        }
-        return <ConditionBadge condition={condition as Condition} />;
-      },
+      cell: ({ row }) => conditionCell(row.original.condition),
     },
     {
       accessorKey: 'location',
       header: ({ column }) => <SortableHeader column={column}>Location</SortableHeader>,
-      cell: ({ row }) => {
-        const { locationId, location } = row.original;
-        const segments = locationId ? locationPathMap.get(locationId) : undefined;
-
-        if (segments && segments.length > 0) {
-          return (
-            <span title={segments.map((s) => s.name).join(' > ')}>
-              <LocationBreadcrumb segments={segments} />
-            </span>
-          );
-        }
-
-        // Fall back to legacy free-text location string
-        const fallback = location ?? '—';
-        return <span className="text-muted-foreground">{fallback}</span>;
-      },
+      cell: ({ row }) => locationCell(locationPathMap, row),
     },
     {
       accessorKey: 'replacementValue',
       header: ({ column }) => <SortableHeader column={column}>Value</SortableHeader>,
-      cell: ({ row }) => {
-        const value = row.original.replacementValue;
-        return value != null ? formatAUD(value) : '—';
-      },
+      cell: ({ row }) =>
+        row.original.replacementValue != null ? formatAUD(row.original.replacementValue) : '—',
     },
     {
       accessorKey: 'purchaseDate',
       header: ({ column }) => <SortableHeader column={column}>Purchased</SortableHeader>,
-      cell: ({ row }) => {
-        const date = row.original.purchaseDate;
-        if (!date) return <span className="text-muted-foreground">—</span>;
-        return <span className="text-sm tabular-nums">{new Date(date).toLocaleDateString()}</span>;
-      },
+      cell: ({ row }) => purchaseDateCell(row.original.purchaseDate),
     },
     {
       accessorKey: 'inUse',

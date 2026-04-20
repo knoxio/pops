@@ -100,23 +100,26 @@ export interface ShowMoreResult {
 
 const DEFAULT_SHOW_MORE_LIMIT = 5;
 
-export async function showMore(
-  domain: string,
-  query: Query,
-  context: SearchContext,
-  offset: number,
-  limit: number = DEFAULT_SHOW_MORE_LIMIT
-): Promise<ShowMoreResult> {
-  const adapter = getAdapters().find((a) => a.domain === domain);
+export interface ShowMoreOptions {
+  domain: string;
+  query: Query;
+  context: SearchContext;
+  offset: number;
+  limit?: number;
+}
+
+export async function showMore(opts: ShowMoreOptions): Promise<ShowMoreResult> {
+  const adapter = getAdapters().find((a) => a.domain === opts.domain);
   if (!adapter) {
-    throw new Error(`No search adapter registered for domain "${domain}"`);
+    throw new Error(`No search adapter registered for domain "${opts.domain}"`);
   }
 
-  const hits = await adapter.search(query, context);
+  const limit = opts.limit ?? DEFAULT_SHOW_MORE_LIMIT;
+  const hits = await adapter.search(opts.query, opts.context);
   const sorted = [...hits].toSorted((a, b) => b.score - a.score);
 
   return {
-    hits: sorted.slice(offset, offset + limit),
+    hits: sorted.slice(opts.offset, opts.offset + limit),
     totalCount: sorted.length,
   };
 }

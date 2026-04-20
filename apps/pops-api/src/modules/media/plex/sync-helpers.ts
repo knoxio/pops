@@ -105,6 +105,63 @@ export function logMovieWatch(movieId: number, lastViewedAtUnix: number | null):
   }
 }
 
+const PREVIEW_LIMIT = 10;
+
+interface ProcessEpisodeContext {
+  showId: number;
+  diagnostics: EpisodeSyncDiagnostics;
+  missingSeasonsSet: Set<number>;
+}
+
+function processSingleEpisode(plexEp: PlexEpisode, ctx: ProcessEpisodeContext): void {
+  const { showId, diagnostics, missingSeasonsSet } = ctx;
+  const db = getDrizzle();
+  try {
+    const season = db
+      .select()
+      .from(seasons)
+      .where(and(eq(seasons.tvShowId, showId), eq(seasons.seasonNumber, plexEp.seasonIndex)))
+      .get();
+    if (!season) {
+      diagnostics.seasonNotFound++;
+      missingSeasonsSet.add(plexEp.seasonIndex);
+      return;
+    }
+
+    const episode = db
+      .select()
+      .from(episodes)
+      .where(and(eq(episodes.seasonId, season.id), eq(episodes.episodeNumber, plexEp.episodeIndex)))
+      .get();
+    if (!episode) {
+      diagnostics.episodeNotFound++;
+      if (diagnostics.missingEpisodesPreview.length < PREVIEW_LIMIT) {
+        diagnostics.missingEpisodesPreview.push({
+          seasonNumber: plexEp.seasonIndex,
+          episodeNumber: plexEp.episodeIndex,
+          title: plexEp.title,
+        });
+      }
+      return;
+    }
+
+    const result = logWatch({
+      mediaType: 'episode',
+      mediaId: episode.id,
+      watchedAt: plexEp.lastViewedAt
+        ? new Date(plexEp.lastViewedAt * 1000).toISOString()
+        : new Date().toISOString(),
+      completed: 1,
+      source: 'plex_sync',
+    });
+
+    if (result.created) diagnostics.matched++;
+    else diagnostics.alreadyLogged++;
+  } catch {
+    diagnostics.alreadyLogged++;
+  }
+}
+
 /**
  * Match Plex episodes to local DB episodes by season+episode number
  * and log watch history for watched episodes.
@@ -129,69 +186,14 @@ export function syncEpisodeWatches(
   const show = getTvShowByTvdbId(tvdbId);
   if (!show) return emptyResult;
 
-  const db = getDrizzle();
   const diagnostics: EpisodeSyncDiagnostics = { ...emptyResult };
   const missingSeasonsSet = new Set<number>();
-  const PREVIEW_LIMIT = 10;
+  const ctx: ProcessEpisodeContext = { showId: show.id, diagnostics, missingSeasonsSet };
 
   for (const plexEp of plexEpisodes) {
     if (plexEp.viewCount === 0) continue;
     diagnostics.plexWatched++;
-
-    try {
-      // Find the local season
-      const season = db
-        .select()
-        .from(seasons)
-        .where(and(eq(seasons.tvShowId, show.id), eq(seasons.seasonNumber, plexEp.seasonIndex)))
-        .get();
-
-      if (!season) {
-        diagnostics.seasonNotFound++;
-        missingSeasonsSet.add(plexEp.seasonIndex);
-        continue;
-      }
-
-      // Find the local episode
-      const episode = db
-        .select()
-        .from(episodes)
-        .where(
-          and(eq(episodes.seasonId, season.id), eq(episodes.episodeNumber, plexEp.episodeIndex))
-        )
-        .get();
-
-      if (!episode) {
-        diagnostics.episodeNotFound++;
-        if (diagnostics.missingEpisodesPreview.length < PREVIEW_LIMIT) {
-          diagnostics.missingEpisodesPreview.push({
-            seasonNumber: plexEp.seasonIndex,
-            episodeNumber: plexEp.episodeIndex,
-            title: plexEp.title,
-          });
-        }
-        continue;
-      }
-
-      const result = logWatch({
-        mediaType: 'episode',
-        mediaId: episode.id,
-        watchedAt: plexEp.lastViewedAt
-          ? new Date(plexEp.lastViewedAt * 1000).toISOString()
-          : new Date().toISOString(),
-        completed: 1,
-        source: 'plex_sync',
-      });
-
-      if (result.created) {
-        diagnostics.matched++;
-      } else {
-        diagnostics.alreadyLogged++;
-      }
-    } catch {
-      // Truly unexpected error (not a duplicate)
-      diagnostics.alreadyLogged++;
-    }
+    processSingleEpisode(plexEp, ctx);
   }
 
   diagnostics.missingSeasonsPreview = [...missingSeasonsSet].slice(0, PREVIEW_LIMIT);

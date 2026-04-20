@@ -25,6 +25,8 @@ interface OrphanRow {
   count: number;
 }
 
+type DB = Database.Database;
+
 function getDbPath(): string {
   const dbPath = process.env['SQLITE_DB_PATH'];
   if (!dbPath) {
@@ -34,13 +36,7 @@ function getDbPath(): string {
   return dbPath;
 }
 
-function main(): void {
-  const dbPath = getDbPath();
-  const db = new Database(dbPath, { readonly: true });
-
-  console.log(`[audit] Database: ${dbPath}\n`);
-
-  // Record counts
+function printRecordCounts(db: DB): void {
   const tables = ['transactions', 'entities', 'budgets', 'inventory', 'wish_list'] as const;
   console.log('=== Record Counts ===');
   for (const table of tables) {
@@ -51,8 +47,9 @@ function main(): void {
       console.log(`  ${table}: (table not found)`);
     }
   }
+}
 
-  // Transactions by account
+function printTransactionsByAccount(db: DB): void {
   console.log('\n=== Transactions by Account ===');
   try {
     const rows = db
@@ -67,8 +64,9 @@ function main(): void {
   } catch {
     console.log('  (transactions table not found)');
   }
+}
 
-  // Top categories
+function printTopCategories(db: DB): void {
   console.log('\n=== Top Categories ===');
   try {
     const rows = db
@@ -83,8 +81,9 @@ function main(): void {
   } catch {
     console.log('  (transactions table not found)');
   }
+}
 
-  // Data quality: transactions without entities
+function printDataQuality(db: DB): void {
   console.log('\n=== Data Quality ===');
   try {
     const noEntity = db
@@ -95,7 +94,6 @@ function main(): void {
     console.log('  (could not check entity linkage)');
   }
 
-  // Entities without transactions
   try {
     const orphanEntities = db
       .prepare(
@@ -107,6 +105,18 @@ function main(): void {
   } catch {
     console.log('  (could not check orphan entities)');
   }
+}
+
+function main(): void {
+  const dbPath = getDbPath();
+  const db = new Database(dbPath, { readonly: true });
+
+  console.log(`[audit] Database: ${dbPath}\n`);
+
+  printRecordCounts(db);
+  printTransactionsByAccount(db);
+  printTopCategories(db);
+  printDataQuality(db);
 
   db.close();
   console.log('\n[audit] Done.');

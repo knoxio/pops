@@ -11,133 +11,119 @@ import { trpc } from '@pops/api-client';
 import { useImportStore } from '../../../store/importStore';
 import { localOpsToChangeSet, serverOpToLocalOp } from './useLocalOps';
 
-import type {
-  CorrectionSignal,
-  LocalOp,
-  PreviewChangeSetOutput,
-  ServerChangeSet,
-} from '../correction-proposal-shared';
+import type { ServerChangeSet } from '../correction-proposal-shared';
 import type { AiMessage } from '../CorrectionProposalDialogPanels';
+import type {
+  UseApplyRejectMutationsOptions,
+  UseApplyRejectMutationsReturn,
+} from './applyRejectTypes';
 
-// ---------------------------------------------------------------------------
-// Hook
-// ---------------------------------------------------------------------------
+export type {
+  UseApplyRejectMutationsOptions,
+  UseApplyRejectMutationsReturn,
+} from './applyRejectTypes';
 
-export interface UseApplyRejectMutationsOptions {
-  signal: CorrectionSignal | null;
-  sessionId: string;
-  localOps: LocalOp[];
-  combinedPreview: PreviewChangeSetOutput | null;
-  combinedPreviewError: string | null;
-  previewTransactions: Array<{ checksum?: string; description: string }>;
-  isFetching: boolean;
-  previewMutationPending: boolean;
-  hasDirty: boolean;
-  onApproved?: (changeSet: ServerChangeSet) => void;
-  onClose: () => void;
-  /** Callbacks to update local ops state after AI revise. */
-  setLocalOps: React.Dispatch<React.SetStateAction<LocalOp[]>>;
-  setSelectedClientId: React.Dispatch<React.SetStateAction<string | null>>;
-  setRationale: React.Dispatch<React.SetStateAction<string | null>>;
-  /** Refs to invalidate after AI revise to force preview re-run. */
-  lastCombinedStructuralSigRef: React.MutableRefObject<string | null>;
-  selectedOpPreviewKeyRef: React.MutableRefObject<string | null>;
-}
-
-export interface UseApplyRejectMutationsReturn {
-  rejectMode: boolean;
-  setRejectMode: React.Dispatch<React.SetStateAction<boolean>>;
-  rejectFeedback: string;
-  setRejectFeedback: React.Dispatch<React.SetStateAction<string>>;
-  aiInstruction: string;
-  setAiInstruction: React.Dispatch<React.SetStateAction<string>>;
-  aiMessages: AiMessage[];
-  setAiMessages: React.Dispatch<React.SetStateAction<AiMessage[]>>;
-  aiBusy: boolean;
-  isBusy: boolean;
-  canApply: boolean;
-  handleApprove: () => void;
-  handleConfirmReject: () => void;
-  handleAiSubmit: () => void;
-  handleApplyLocal: (changeSet: ServerChangeSet) => void;
-  rejectMutationPending: boolean;
-  /** Reset all mutation-related state. */
-  resetMutationState: () => void;
-}
-
-export function useApplyRejectMutations(
-  options: UseApplyRejectMutationsOptions
-): UseApplyRejectMutationsReturn {
-  const {
-    signal,
-    sessionId,
-    localOps,
-    combinedPreview,
-    combinedPreviewError,
-    previewTransactions,
-    isFetching,
-    previewMutationPending,
-    hasDirty,
-    onApproved,
-    onClose,
-    setLocalOps,
-    setSelectedClientId,
-    setRationale,
-    lastCombinedStructuralSigRef,
-    selectedOpPreviewKeyRef,
-  } = options;
-
-  const [rejectMode, setRejectMode] = useState(false);
-  const [rejectFeedback, setRejectFeedback] = useState('');
-  const [aiInstruction, setAiInstruction] = useState('');
-  const [aiMessages, setAiMessages] = useState<AiMessage[]>([]);
-  const [aiBusy, setAiBusy] = useState(false);
-
+function useApplyHandlers(opts: UseApplyRejectMutationsOptions) {
   const addPendingChangeSet = useImportStore((s) => s.addPendingChangeSet);
-
-  const rejectMutation = trpc.core.corrections.rejectChangeSet.useMutation({
-    onSuccess: () => {
-      toast.success('Proposal rejected — feedback recorded');
-      onClose();
-    },
-    onError: (err) => {
-      toast.error(err.message);
-    },
-  });
-
-  const reviseMutation = trpc.core.corrections.reviseChangeSet.useMutation({ retry: false });
-  const reviseMutateAsync = reviseMutation.mutateAsync;
-
-  const isBusy = isFetching || previewMutationPending || rejectMutation.isPending || aiBusy;
-
-  const canApply =
-    !isBusy && localOps.length > 0 && !hasDirty && Boolean(sessionId) && !combinedPreviewError;
-
   const handleApplyLocal = useCallback(
     (changeSet: ServerChangeSet) => {
       try {
         addPendingChangeSet({ changeSet, source: 'correction-proposal' });
         toast.success('Rules applied locally');
-        onApproved?.(changeSet);
-        onClose();
+        opts.onApproved?.(changeSet);
+        opts.onClose();
       } catch (err) {
         toast.error(err instanceof Error ? err.message : 'Failed to apply rules');
       }
     },
-    [addPendingChangeSet, onApproved, onClose]
+    [addPendingChangeSet, opts]
   );
-
   const handleApprove = useCallback(() => {
-    const changeSet = localOpsToChangeSet(localOps);
+    const changeSet = localOpsToChangeSet(opts.localOps);
     if (!changeSet) return;
     handleApplyLocal(changeSet);
-  }, [localOps, handleApplyLocal]);
+  }, [opts.localOps, handleApplyLocal]);
+  return { handleApplyLocal, handleApprove };
+}
 
+function appendAssistant(
+  setAiMessages: React.Dispatch<React.SetStateAction<AiMessage[]>>,
+  text: string
+) {
+  setAiMessages((prev) => [...prev, { id: `a-${Date.now()}`, role: 'assistant', text }]);
+}
+
+interface AiSubmitDeps {
+  opts: UseApplyRejectMutationsOptions;
+  aiInstruction: string;
+  setAiInstruction: React.Dispatch<React.SetStateAction<string>>;
+  setAiMessages: React.Dispatch<React.SetStateAction<AiMessage[]>>;
+  setAiBusy: React.Dispatch<React.SetStateAction<boolean>>;
+  reviseMutateAsync: ReturnType<
+    typeof trpc.core.corrections.reviseChangeSet.useMutation
+  >['mutateAsync'];
+}
+
+async function runAiRevise(deps: AiSubmitDeps) {
+  const { opts, aiInstruction, setAiInstruction, setAiMessages, setAiBusy, reviseMutateAsync } =
+    deps;
+  const instruction = aiInstruction.trim();
+  if (!instruction || !opts.signal) return;
+  const currentChangeSet = localOpsToChangeSet(opts.localOps);
+  if (!currentChangeSet) {
+    toast.error('ChangeSet is empty — add at least one operation before asking the AI to revise.');
+    return;
+  }
+  setAiMessages((prev) => [...prev, { id: `u-${Date.now()}`, role: 'user', text: instruction }]);
+  setAiInstruction('');
+  setAiBusy(true);
+  try {
+    const res = await reviseMutateAsync({
+      signal: opts.signal,
+      currentChangeSet,
+      instruction,
+      triggeringTransactions: opts.previewTransactions.slice(0, 100),
+    });
+    const revised = res.changeSet.ops.map((o) => serverOpToLocalOp(o, res.targetRules ?? {}));
+    opts.setLocalOps(revised);
+    opts.setSelectedClientId(revised[0]?.clientId ?? null);
+    opts.setRationale(res.rationale ?? null);
+    opts.lastCombinedStructuralSigRef.current = null;
+    opts.selectedOpPreviewKeyRef.current = null;
+    appendAssistant(setAiMessages, res.rationale ?? 'ChangeSet revised.');
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'AI helper failed';
+    appendAssistant(setAiMessages, `Error: ${message}`);
+    toast.error(message);
+  } finally {
+    setAiBusy(false);
+  }
+}
+
+function useRejectAndAi(
+  options: UseApplyRejectMutationsOptions,
+  state: {
+    rejectFeedback: string;
+    aiInstruction: string;
+    setAiInstruction: React.Dispatch<React.SetStateAction<string>>;
+    setAiMessages: React.Dispatch<React.SetStateAction<AiMessage[]>>;
+    setAiBusy: React.Dispatch<React.SetStateAction<boolean>>;
+  }
+) {
+  const { signal, localOps, combinedPreview, onClose } = options;
+  const rejectMutation = trpc.core.corrections.rejectChangeSet.useMutation({
+    onSuccess: () => {
+      toast.success('Proposal rejected — feedback recorded');
+      onClose();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+  const reviseMutation = trpc.core.corrections.reviseChangeSet.useMutation({ retry: false });
   const handleConfirmReject = useCallback(() => {
     if (!signal) return;
     const changeSet = localOpsToChangeSet(localOps);
     if (!changeSet) return;
-    const trimmed = rejectFeedback.trim();
+    const trimmed = state.rejectFeedback.trim();
     if (!trimmed) return;
     rejectMutation.mutate({
       signal,
@@ -145,66 +131,49 @@ export function useApplyRejectMutations(
       feedback: trimmed,
       impactSummary: combinedPreview?.summary ?? undefined,
     });
-  }, [signal, localOps, rejectFeedback, combinedPreview, rejectMutation]);
-
+  }, [signal, localOps, state.rejectFeedback, combinedPreview, rejectMutation]);
   const handleAiSubmit = useCallback(() => {
-    const instruction = aiInstruction.trim();
-    if (!instruction) return;
-    if (!signal) return;
-    const currentChangeSet = localOpsToChangeSet(localOps);
-    if (!currentChangeSet) {
-      toast.error(
-        'ChangeSet is empty — add at least one operation before asking the AI to revise.'
-      );
-      return;
-    }
+    void runAiRevise({
+      opts: options,
+      aiInstruction: state.aiInstruction,
+      setAiInstruction: state.setAiInstruction,
+      setAiMessages: state.setAiMessages,
+      setAiBusy: state.setAiBusy,
+      reviseMutateAsync: reviseMutation.mutateAsync,
+    });
+  }, [options, state, reviseMutation.mutateAsync]);
+  return { rejectMutation, handleConfirmReject, handleAiSubmit };
+}
 
-    const userMsgId = `u-${Date.now()}`;
-    setAiMessages((prev) => [...prev, { id: userMsgId, role: 'user', text: instruction }]);
-    setAiInstruction('');
-    setAiBusy(true);
-
-    reviseMutateAsync({
-      signal,
-      currentChangeSet,
-      instruction,
-      triggeringTransactions: previewTransactions.slice(0, 100),
-    })
-      .then((res) => {
-        const revised = res.changeSet.ops.map((o) => serverOpToLocalOp(o, res.targetRules ?? {}));
-        setLocalOps(revised);
-        setSelectedClientId(revised[0]?.clientId ?? null);
-        setRationale(res.rationale ?? null);
-        lastCombinedStructuralSigRef.current = null;
-        selectedOpPreviewKeyRef.current = null;
-        setAiMessages((prev) => [
-          ...prev,
-          { id: `a-${Date.now()}`, role: 'assistant', text: res.rationale ?? 'ChangeSet revised.' },
-        ]);
-      })
-      .catch((err) => {
-        const message = err instanceof Error ? err.message : 'AI helper failed';
-        setAiMessages((prev) => [
-          ...prev,
-          { id: `a-${Date.now()}`, role: 'assistant', text: `Error: ${message}` },
-        ]);
-        toast.error(message);
-      })
-      .finally(() => {
-        setAiBusy(false);
-      });
-  }, [
-    aiInstruction,
-    signal,
-    previewTransactions,
+export function useApplyRejectMutations(
+  options: UseApplyRejectMutationsOptions
+): UseApplyRejectMutationsReturn {
+  const {
     localOps,
-    reviseMutateAsync,
-    setLocalOps,
-    setSelectedClientId,
-    setRationale,
-    lastCombinedStructuralSigRef,
-    selectedOpPreviewKeyRef,
-  ]);
+    combinedPreviewError,
+    hasDirty,
+    sessionId,
+    isFetching,
+    previewMutationPending,
+  } = options;
+  const [rejectMode, setRejectMode] = useState(false);
+  const [rejectFeedback, setRejectFeedback] = useState('');
+  const [aiInstruction, setAiInstruction] = useState('');
+  const [aiMessages, setAiMessages] = useState<AiMessage[]>([]);
+  const [aiBusy, setAiBusy] = useState(false);
+
+  const { handleApplyLocal, handleApprove } = useApplyHandlers(options);
+  const { rejectMutation, handleConfirmReject, handleAiSubmit } = useRejectAndAi(options, {
+    rejectFeedback,
+    aiInstruction,
+    setAiInstruction,
+    setAiMessages,
+    setAiBusy,
+  });
+
+  const isBusy = isFetching || previewMutationPending || rejectMutation.isPending || aiBusy;
+  const canApply =
+    !isBusy && localOps.length > 0 && !hasDirty && Boolean(sessionId) && !combinedPreviewError;
 
   const resetMutationState = useCallback(() => {
     setRejectMode(false);

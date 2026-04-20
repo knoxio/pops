@@ -56,7 +56,12 @@ export const searchRouter = router({
         app: input.context?.app ?? null,
         page: input.context?.page ?? null,
       };
-      const result = await showMore(input.domain, { text: input.text }, context, input.offset);
+      const result = await showMore({
+        domain: input.domain,
+        query: { text: input.text },
+        context,
+        offset: input.offset,
+      });
       return result;
     }),
 });

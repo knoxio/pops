@@ -83,103 +83,112 @@ function PurchaseLinkSection({
   );
 }
 
+interface DetailHeaderItem {
+  itemName: string;
+  brand?: string | null;
+  model?: string | null;
+  type?: string | null;
+  condition?: string | null;
+  warrantyExpires?: string | null;
+  room?: string | null;
+  assetId?: string | null;
+  inUse: boolean;
+  purchaseDate?: string | null;
+  replacementValue?: number | null;
+  locationId?: string | null;
+  purchaseTransactionId?: string | null;
+  purchasedFromId?: string | null;
+  purchasedFromName?: string | null;
+  notes?: string | null;
+}
+
 interface DetailHeaderSectionProps {
-  item: {
-    itemName: string;
-    brand?: string | null;
-    model?: string | null;
-    type?: string | null;
-    condition?: string | null;
-    warrantyExpires?: string | null;
-    room?: string | null;
-    assetId?: string | null;
-    inUse: boolean;
-    purchaseDate?: string | null;
-    replacementValue?: number | null;
-    locationId?: string | null;
-    purchaseTransactionId?: string | null;
-    purchasedFromId?: string | null;
-    purchasedFromName?: string | null;
-    notes?: string | null;
-  };
+  item: DetailHeaderItem;
   locationPath: { id: string; name: string }[] | null;
+}
+
+function StatusBadge({ inUse }: { inUse: boolean }) {
+  if (inUse) {
+    return (
+      <Badge className="bg-app-accent/10 text-app-accent border-app-accent/20 hover:bg-app-accent/15">
+        In Use
+      </Badge>
+    );
+  }
+  return <Badge variant="secondary">Stored</Badge>;
+}
+
+function DetailGrid({ item }: { item: DetailHeaderItem }) {
+  return (
+    <div className="bg-card border-2 border-app-accent/10 rounded-2xl overflow-hidden mb-8 shadow-sm shadow-app-accent/5">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-6 p-6">
+        {item.type && <DetailField label="Type" value={<TypeBadge type={item.type} />} />}
+        {item.condition && (
+          <DetailField
+            label="Condition"
+            value={<ConditionBadge condition={item.condition as Condition} />}
+          />
+        )}
+        <DetailField
+          label="Warranty"
+          value={<WarrantyBadge warrantyExpiry={item.warrantyExpires ?? null} />}
+        />
+        {item.room && <DetailField label="Room" value={item.room} />}
+        {item.assetId && (
+          <DetailField
+            label="Asset ID"
+            value={
+              <Badge variant="outline" className="font-mono bg-muted/50">
+                {item.assetId}
+              </Badge>
+            }
+          />
+        )}
+        <DetailField label="Status" value={<StatusBadge inUse={item.inUse} />} />
+        {item.purchaseDate && (
+          <DetailField
+            label="Purchased"
+            value={new Date(item.purchaseDate).toLocaleDateString('en-AU', {
+              year: 'numeric',
+              month: 'short',
+            })}
+          />
+        )}
+        {item.replacementValue !== null && item.replacementValue !== undefined && (
+          <DetailField
+            label="Replacement"
+            value={
+              <span className="text-app-accent font-bold">{`$${item.replacementValue.toLocaleString()}`}</span>
+            }
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NotesPanel({ notes }: { notes: string }) {
+  return (
+    <div className="mb-8">
+      <h2 className="text-lg font-semibold mb-2">Notes</h2>
+      <div className="text-muted-foreground prose prose-sm dark:prose-invert max-w-none">
+        <Markdown rehypePlugins={[rehypeSanitize]}>{notes}</Markdown>
+      </div>
+    </div>
+  );
 }
 
 export function DetailHeaderSection({ item, locationPath }: DetailHeaderSectionProps) {
   return (
     <>
-      <div className="bg-card border-2 border-app-accent/10 rounded-2xl overflow-hidden mb-8 shadow-sm shadow-app-accent/5">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-6 p-6">
-          {item.type && <DetailField label="Type" value={<TypeBadge type={item.type} />} />}
-          {item.condition && (
-            <DetailField
-              label="Condition"
-              value={<ConditionBadge condition={item.condition as Condition} />}
-            />
-          )}
-          <DetailField
-            label="Warranty"
-            value={<WarrantyBadge warrantyExpiry={item.warrantyExpires ?? null} />}
-          />
-          {item.room && <DetailField label="Room" value={item.room} />}
-          {item.assetId && (
-            <DetailField
-              label="Asset ID"
-              value={
-                <Badge variant="outline" className="font-mono bg-muted/50">
-                  {item.assetId}
-                </Badge>
-              }
-            />
-          )}
-          <DetailField
-            label="Status"
-            value={
-              item.inUse ? (
-                <Badge className="bg-app-accent/10 text-app-accent border-app-accent/20 hover:bg-app-accent/15">
-                  In Use
-                </Badge>
-              ) : (
-                <Badge variant="secondary">Stored</Badge>
-              )
-            }
-          />
-          {item.purchaseDate && (
-            <DetailField
-              label="Purchased"
-              value={new Date(item.purchaseDate).toLocaleDateString('en-AU', {
-                year: 'numeric',
-                month: 'short',
-              })}
-            />
-          )}
-          {item.replacementValue !== null && item.replacementValue !== undefined && (
-            <DetailField
-              label="Replacement"
-              value={
-                <span className="text-app-accent font-bold">{`$${item.replacementValue.toLocaleString()}`}</span>
-              }
-            />
-          )}
-        </div>
-      </div>
-
+      <DetailGrid item={item} />
       <LocationBreadcrumb locationId={item.locationId ?? null} locationPath={locationPath} />
-
       <PurchaseLinkSection
         purchaseTransactionId={item.purchaseTransactionId ?? null}
         purchasedFromId={item.purchasedFromId ?? null}
         purchasedFromName={item.purchasedFromName ?? null}
       />
-
-      {item.notes && (
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold mb-2">Notes</h2>
-          <div className="text-muted-foreground prose prose-sm dark:prose-invert max-w-none">
-            <Markdown rehypePlugins={[rehypeSanitize]}>{item.notes}</Markdown>
-          </div>
-        </div>
-      )}
+      {item.notes && <NotesPanel notes={item.notes} />}
     </>
   );
 }

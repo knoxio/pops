@@ -26,72 +26,66 @@ export interface ComparisonScoresProps {
   mediaId: number;
 }
 
-export function ComparisonScores({ mediaType, mediaId }: ComparisonScoresProps) {
-  const { data: scoresResponse, isLoading: scoresLoading } = trpc.media.comparisons.scores.useQuery(
-    { mediaType, mediaId }
-  );
+interface ScoreEntry {
+  dimensionId: number;
+  score: number;
+  comparisonCount: number;
+}
 
-  const { data: dimensionsResponse, isLoading: dimensionsLoading } =
-    trpc.media.comparisons.listDimensions.useQuery();
+interface DimensionEntry {
+  id: number;
+  name: string;
+  sortOrder: number;
+}
 
-  const isLoading = scoresLoading || dimensionsLoading;
+interface RadarDatum {
+  dimension: string;
+  score: number;
+  rawScore: number;
+  comparisons: number;
+  sortOrder: number;
+}
 
-  if (isLoading) {
-    return (
-      <section>
-        <h2 className="text-lg font-semibold mb-2">Comparison Scores</h2>
-        <Skeleton className="h-64 w-full rounded-lg" />
-      </section>
-    );
-  }
-
-  const scores = scoresResponse?.data ?? [];
-  const dimensions = dimensionsResponse?.data ?? [];
-
-  // Check if there are enough comparisons (sum of all comparisonCount across dimensions)
-  const totalComparisons = scores.reduce(
-    (sum: number, s: { comparisonCount: number }) => sum + s.comparisonCount,
-    0
-  );
-
-  // Hide entirely when movie has no comparisons at all
-  if (totalComparisons === 0) {
-    return null;
-  }
-
-  if (totalComparisons < 3) {
-    return (
-      <section>
-        <h2 className="text-lg font-semibold mb-2">Comparison Scores</h2>
-        <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30">
-          <p className="text-sm text-muted-foreground">
-            Not enough data — at least 3 comparisons needed
-          </p>
-        </div>
-      </section>
-    );
-  }
-
-  // Build dimension lookup
-  const dimensionMap = new Map(dimensions.map((d: { id: number; name: string }) => [d.id, d.name]));
-
-  // Merge scores with dimension names, sorted by dimension sortOrder
-  const dimensionOrder = new Map(
-    dimensions.map((d: { id: number; sortOrder: number }) => [d.id, d.sortOrder])
-  );
-  const radarData = scores
-    .map((s: { dimensionId: number; score: number; comparisonCount: number }) => ({
+function buildRadarData(scores: ScoreEntry[], dimensions: DimensionEntry[]): RadarDatum[] {
+  const dimensionMap = new Map(dimensions.map((d) => [d.id, d.name]));
+  const dimensionOrder = new Map(dimensions.map((d) => [d.id, d.sortOrder]));
+  return scores
+    .map((s) => ({
       dimension: dimensionMap.get(s.dimensionId) ?? `Dim ${s.dimensionId}`,
       score: normalizeScore(s.score),
       rawScore: Math.round(s.score),
       comparisons: s.comparisonCount,
       sortOrder: dimensionOrder.get(s.dimensionId) ?? 0,
     }))
-    .toSorted((a: { sortOrder: number }, b: { sortOrder: number }) => a.sortOrder - b.sortOrder);
+    .toSorted((a, b) => a.sortOrder - b.sortOrder);
+}
 
+function ScoresSection({ children }: { children: React.ReactNode }) {
   return (
     <section>
       <h2 className="text-lg font-semibold mb-2">Comparison Scores</h2>
+      {children}
+    </section>
+  );
+}
+
+function RadarTooltip({ payload }: { payload?: { payload?: RadarDatum }[] }) {
+  if (!payload?.length) return null;
+  const entry = payload[0]?.payload;
+  if (!entry) return null;
+  return (
+    <div className="rounded-md border bg-popover px-3 py-2 text-sm shadow-md">
+      <p className="font-medium">{entry.dimension}</p>
+      <p className="text-muted-foreground">
+        Elo: {entry.rawScore} ({entry.comparisons} comparisons)
+      </p>
+    </div>
+  );
+}
+
+function ScoresChart({ radarData }: { radarData: RadarDatum[] }) {
+  return (
+    <ScoresSection>
       <div className="rounded-lg border bg-card p-4">
         <ResponsiveContainer width="100%" height={280}>
           <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="75%">
@@ -107,24 +101,46 @@ export function ComparisonScores({ mediaType, mediaId }: ComparisonScoresProps) 
               fillOpacity={0.2}
               strokeWidth={2}
             />
-            <Tooltip
-              content={({ payload }) => {
-                if (!payload?.length) return null;
-                const entry = payload[0]?.payload as (typeof radarData)[number] | undefined;
-                if (!entry) return null;
-                return (
-                  <div className="rounded-md border bg-popover px-3 py-2 text-sm shadow-md">
-                    <p className="font-medium">{entry.dimension}</p>
-                    <p className="text-muted-foreground">
-                      Elo: {entry.rawScore} ({entry.comparisons} comparisons)
-                    </p>
-                  </div>
-                );
-              }}
-            />
+            <Tooltip content={<RadarTooltip />} />
           </RadarChart>
         </ResponsiveContainer>
       </div>
-    </section>
+    </ScoresSection>
   );
+}
+
+export function ComparisonScores({ mediaType, mediaId }: ComparisonScoresProps) {
+  const { data: scoresResponse, isLoading: scoresLoading } = trpc.media.comparisons.scores.useQuery(
+    { mediaType, mediaId }
+  );
+  const { data: dimensionsResponse, isLoading: dimensionsLoading } =
+    trpc.media.comparisons.listDimensions.useQuery();
+
+  if (scoresLoading || dimensionsLoading) {
+    return (
+      <ScoresSection>
+        <Skeleton className="h-64 w-full rounded-lg" />
+      </ScoresSection>
+    );
+  }
+
+  const scores: ScoreEntry[] = scoresResponse?.data ?? [];
+  const dimensions: DimensionEntry[] = dimensionsResponse?.data ?? [];
+  const totalComparisons = scores.reduce((sum, s) => sum + s.comparisonCount, 0);
+
+  if (totalComparisons === 0) return null;
+
+  if (totalComparisons < 3) {
+    return (
+      <ScoresSection>
+        <div className="flex h-48 items-center justify-center rounded-lg border border-dashed border-border bg-muted/30">
+          <p className="text-sm text-muted-foreground">
+            Not enough data — at least 3 comparisons needed
+          </p>
+        </div>
+      </ScoresSection>
+    );
+  }
+
+  return <ScoresChart radarData={buildRadarData(scores, dimensions)} />;
 }

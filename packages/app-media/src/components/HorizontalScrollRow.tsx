@@ -22,6 +22,61 @@ export interface HorizontalScrollRowProps {
   className?: string;
 }
 
+function ScrollHeader({
+  title,
+  subtitle,
+  onScrollLeft,
+  onScrollRight,
+}: {
+  title: string;
+  subtitle?: string;
+  onScrollLeft: () => void;
+  onScrollRight: () => void;
+}) {
+  return (
+    <div className="flex items-end justify-between gap-2 px-1">
+      <div>
+        <h2 className="text-lg font-semibold">{title}</h2>
+        {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
+      </div>
+      <div className="flex gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={onScrollLeft}
+          aria-label="Scroll left"
+        >
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          onClick={onScrollRight}
+          aria-label="Scroll right"
+        >
+          <ChevronRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function ScrollSkeletons({ count }: { count: number }) {
+  return (
+    <>
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className="w-36 shrink-0 space-y-2 sm:w-40">
+          <Skeleton className="aspect-[2/3] w-full rounded-md" />
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-3 w-1/2" />
+        </div>
+      ))}
+    </>
+  );
+}
+
 export function HorizontalScrollRow({
   title,
   subtitle,
@@ -43,49 +98,18 @@ export function HorizontalScrollRow({
 
   return (
     <section className={cn('space-y-3', className)}>
-      {/* Header */}
-      <div className="flex items-end justify-between gap-2 px-1">
-        <div>
-          <h2 className="text-lg font-semibold">{title}</h2>
-          {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
-        </div>
-        <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => {
-              scroll('left');
-            }}
-            aria-label="Scroll left"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8"
-            onClick={() => {
-              scroll('right');
-            }}
-            aria-label="Scroll right"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Scrollable content */}
+      <ScrollHeader
+        title={title}
+        subtitle={subtitle}
+        onScrollLeft={() => {
+          scroll('left');
+        }}
+        onScrollRight={() => {
+          scroll('right');
+        }}
+      />
       <div ref={scrollRef} className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin">
-        {isLoading
-          ? Array.from({ length: skeletonCount }, (_, i) => (
-              <div key={i} className="w-36 shrink-0 space-y-2 sm:w-40">
-                <Skeleton className="aspect-[2/3] w-full rounded-md" />
-                <Skeleton className="h-4 w-3/4" />
-                <Skeleton className="h-3 w-1/2" />
-              </div>
-            ))
-          : children}
+        {isLoading ? <ScrollSkeletons count={skeletonCount} /> : children}
       </div>
     </section>
   );

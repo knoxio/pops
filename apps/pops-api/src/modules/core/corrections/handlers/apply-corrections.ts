@@ -8,6 +8,59 @@ import { normalizeDescription } from '../types.js';
 
 import type { ChangeSet, ChangeSetOp, CorrectionRow } from '../types.js';
 
+type Tx = Parameters<Parameters<ReturnType<typeof getDrizzle>['transaction']>[0]>[0];
+
+function applyAddOp(tx: Tx, op: Extract<ChangeSetOp, { op: 'add' }>): void {
+  tx.insert(transactionCorrections)
+    .values({
+      descriptionPattern: normalizeDescription(op.data.descriptionPattern),
+      matchType: op.data.matchType,
+      entityId: op.data.entityId ?? null,
+      entityName: op.data.entityName ?? null,
+      location: op.data.location ?? null,
+      tags: JSON.stringify(op.data.tags ?? []),
+      transactionType: op.data.transactionType ?? null,
+      isActive: op.data.isActive ?? true,
+      confidence: op.data.confidence ?? 0.5,
+    })
+    .run();
+}
+
+function applyEditOp(tx: Tx, op: Extract<ChangeSetOp, { op: 'edit' }>): void {
+  const updates: Partial<typeof transactionCorrections.$inferInsert> = {};
+  if (op.data.entityId !== undefined) updates.entityId = op.data.entityId;
+  if (op.data.entityName !== undefined) updates.entityName = op.data.entityName;
+  if (op.data.location !== undefined) updates.location = op.data.location;
+  if (op.data.tags !== undefined) updates.tags = JSON.stringify(op.data.tags);
+  if (op.data.transactionType !== undefined) updates.transactionType = op.data.transactionType;
+  if (op.data.isActive !== undefined) updates.isActive = op.data.isActive;
+  if (op.data.confidence !== undefined) updates.confidence = op.data.confidence;
+
+  tx.update(transactionCorrections).set(updates).where(eq(transactionCorrections.id, op.id)).run();
+}
+
+function applyMutatingOp(tx: Tx, op: Exclude<ChangeSetOp, { op: 'add' }>): void {
+  const existing = tx
+    .select()
+    .from(transactionCorrections)
+    .where(eq(transactionCorrections.id, op.id))
+    .get();
+  if (!existing) throw new NotFoundError('Correction', op.id);
+
+  if (op.op === 'edit') {
+    applyEditOp(tx, op);
+    return;
+  }
+  if (op.op === 'disable') {
+    tx.update(transactionCorrections)
+      .set({ isActive: false })
+      .where(eq(transactionCorrections.id, op.id))
+      .run();
+    return;
+  }
+  tx.delete(transactionCorrections).where(eq(transactionCorrections.id, op.id)).run();
+}
+
 export function applyChangeSet(changeSet: ChangeSet): CorrectionRow[] {
   const db = getDrizzle();
 
@@ -16,57 +69,8 @@ export function applyChangeSet(changeSet: ChangeSet): CorrectionRow[] {
     const ops = [...changeSet.ops].toSorted((a, b) => order[a.op] - order[b.op]);
 
     for (const op of ops) {
-      if (op.op === 'add') {
-        tx.insert(transactionCorrections)
-          .values({
-            descriptionPattern: normalizeDescription(op.data.descriptionPattern),
-            matchType: op.data.matchType,
-            entityId: op.data.entityId ?? null,
-            entityName: op.data.entityName ?? null,
-            location: op.data.location ?? null,
-            tags: JSON.stringify(op.data.tags ?? []),
-            transactionType: op.data.transactionType ?? null,
-            isActive: op.data.isActive ?? true,
-            confidence: op.data.confidence ?? 0.5,
-          })
-          .run();
-        continue;
-      }
-
-      const existing = tx
-        .select()
-        .from(transactionCorrections)
-        .where(eq(transactionCorrections.id, op.id))
-        .get();
-      if (!existing) throw new NotFoundError('Correction', op.id);
-
-      if (op.op === 'edit') {
-        const updates: Partial<typeof transactionCorrections.$inferInsert> = {};
-        if (op.data.entityId !== undefined) updates.entityId = op.data.entityId;
-        if (op.data.entityName !== undefined) updates.entityName = op.data.entityName;
-        if (op.data.location !== undefined) updates.location = op.data.location;
-        if (op.data.tags !== undefined) updates.tags = JSON.stringify(op.data.tags);
-        if (op.data.transactionType !== undefined)
-          updates.transactionType = op.data.transactionType;
-        if (op.data.isActive !== undefined) updates.isActive = op.data.isActive;
-        if (op.data.confidence !== undefined) updates.confidence = op.data.confidence;
-
-        tx.update(transactionCorrections)
-          .set(updates)
-          .where(eq(transactionCorrections.id, op.id))
-          .run();
-        continue;
-      }
-
-      if (op.op === 'disable') {
-        tx.update(transactionCorrections)
-          .set({ isActive: false })
-          .where(eq(transactionCorrections.id, op.id))
-          .run();
-        continue;
-      }
-
-      tx.delete(transactionCorrections).where(eq(transactionCorrections.id, op.id)).run();
+      if (op.op === 'add') applyAddOp(tx, op);
+      else applyMutatingOp(tx, op);
     }
 
     return tx

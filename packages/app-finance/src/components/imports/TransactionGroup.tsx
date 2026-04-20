@@ -1,11 +1,9 @@
-import { ChevronRight, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button, Label, Select as UiSelect } from '@pops/ui';
-import { Badge } from '@pops/ui';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@pops/ui';
+import { Collapsible, CollapsibleContent, Label, Select as UiSelect } from '@pops/ui';
 
 import { EditableTransactionCard } from './EditableTransactionCard';
+import { GroupHeader } from './transaction-group/GroupHeader';
 import { TransactionCard } from './TransactionCard';
 
 import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
@@ -35,33 +33,103 @@ interface TransactionGroupProps {
   variant?: 'uncertain' | 'failed';
 }
 
+interface BulkEntitySelectorProps {
+  group: TransactionGroupType;
+  entities: Array<{ id: string; name: string; type: string }>;
+  onBulkEntitySelect?: TransactionGroupProps['onBulkEntitySelect'];
+  onEntitySelect: TransactionGroupProps['onEntitySelect'];
+  onClose: () => void;
+}
+
+function BulkEntitySelector({
+  group,
+  entities,
+  onBulkEntitySelect,
+  onEntitySelect,
+  onClose,
+}: BulkEntitySelectorProps) {
+  return (
+    <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600">
+      <Label className="block mb-2">
+        Select entity to assign to all {group.transactions.length} transactions:
+      </Label>
+      <UiSelect
+        placeholder="Choose entity..."
+        options={entities.map((entity) => ({ label: entity.name, value: entity.id }))}
+        onChange={(e) => {
+          const selectedEntity = entities.find((ent) => ent.id === e.target.value);
+          if (!selectedEntity) return;
+          if (onBulkEntitySelect) {
+            onBulkEntitySelect(group.transactions, selectedEntity.id, selectedEntity.name);
+          } else {
+            for (const t of group.transactions) {
+              onEntitySelect(t, selectedEntity.id, selectedEntity.name);
+            }
+          }
+          onClose();
+        }}
+        defaultValue=""
+      />
+    </div>
+  );
+}
+
+interface TransactionListProps {
+  group: TransactionGroupType;
+  editingTransaction?: ProcessedTransaction | null;
+  onSaveEdit?: TransactionGroupProps['onSaveEdit'];
+  onCancelEdit?: () => void;
+  onEntitySelect: TransactionGroupProps['onEntitySelect'];
+  onCreateEntity: TransactionGroupProps['onCreateEntity'];
+  onAcceptAiSuggestion: TransactionGroupProps['onAcceptAiSuggestion'];
+  onEdit: TransactionGroupProps['onEdit'];
+  entities?: TransactionGroupProps['entities'];
+  variant: 'uncertain' | 'failed';
+}
+
+function TransactionList(props: TransactionListProps) {
+  const { group, editingTransaction, onSaveEdit, onCancelEdit, entities, variant } = props;
+  return (
+    <div className="p-4 space-y-3 border-t dark:border-gray-700">
+      {group.transactions.map((transaction, idx) =>
+        editingTransaction === transaction && onSaveEdit && onCancelEdit ? (
+          <EditableTransactionCard
+            key={idx}
+            transaction={transaction}
+            onSave={onSaveEdit}
+            onCancel={onCancelEdit}
+            entities={entities}
+          />
+        ) : (
+          <TransactionCard
+            key={idx}
+            transaction={transaction}
+            onEntitySelect={props.onEntitySelect}
+            onCreateEntity={props.onCreateEntity}
+            onAcceptAiSuggestion={props.onAcceptAiSuggestion}
+            onEdit={props.onEdit}
+            entities={entities}
+            variant={variant}
+          />
+        )
+      )}
+    </div>
+  );
+}
+
 /**
  * Grouped view of transactions with bulk actions
  */
-export function TransactionGroup({
-  group,
-  onAcceptAll,
-  onCreateAndAssignAll,
-  onEntitySelect,
-  onBulkEntitySelect,
-  onCreateEntity,
-  onAcceptAiSuggestion,
-  onEdit,
-  editingTransaction,
-  onSaveEdit,
-  onCancelEdit,
-  entities,
-  variant = 'uncertain',
-}: TransactionGroupProps) {
+export function TransactionGroup(props: TransactionGroupProps) {
+  const { group, entities, variant = 'uncertain' } = props;
   const [isExpanded, setIsExpanded] = useState(false);
   const [showEntitySelector, setShowEntitySelector] = useState(false);
 
   const totalAmount = group.transactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-  // Check if AI-suggested entity exists
-  const entityExists =
+  const entityExists = Boolean(
     group.aiSuggestion &&
-    entities?.some((e) => e.name.toLowerCase() === group.entityName.toLowerCase());
+    entities?.some((e) => e.name.toLowerCase() === group.entityName.toLowerCase())
+  );
 
   return (
     <div
@@ -73,149 +141,37 @@ export function TransactionGroup({
       data-testid="transaction-group"
     >
       <Collapsible open={isExpanded} onOpenChange={setIsExpanded}>
-        <div
-          className={`p-4 ${
-            group.aiSuggestion ? 'bg-purple-50 dark:bg-purple-950' : 'bg-gray-50 dark:bg-gray-900'
-          }`}
-        >
-          <div className="flex items-start justify-between">
-            <div className="flex-1">
-              <CollapsibleTrigger
-                className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-                aria-label={isExpanded ? 'Collapse' : 'Expand'}
-              >
-                <ChevronRight
-                  className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-                  aria-hidden="true"
-                />
-                <div className="flex items-center gap-2">
-                  {group.aiSuggestion && (
-                    <Sparkles className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                  )}
-                  <h3 className="font-semibold text-lg">{group.entityName}</h3>
-                </div>
-              </CollapsibleTrigger>
-
-              <div className="flex items-center gap-3 mt-2 ml-7">
-                <Badge variant="secondary">
-                  {group.transactions.length} transaction
-                  {group.transactions.length !== 1 ? 's' : ''}
-                </Badge>
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  Total: ${totalAmount.toFixed(2)}
-                </span>
-                {group.category && (
-                  <Badge variant="outline" className="text-xs">
-                    {group.category}
-                  </Badge>
-                )}
-              </div>
-            </div>
-
-            {/* Bulk actions */}
-            <div className="flex gap-2">
-              {group.aiSuggestion && (
-                <>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => {
-                      onAcceptAll(group.transactions);
-                    }}
-                    className="bg-purple-600 hover:bg-purple-700"
-                  >
-                    {entityExists ? '✓' : '+'} Accept All as "{group.entityName}"
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      onCreateAndAssignAll(group.transactions, group.entityName);
-                    }}
-                  >
-                    Create new for all
-                  </Button>
-                </>
-              )}
-              {!group.aiSuggestion && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    onCreateAndAssignAll(group.transactions, group.entityName);
-                  }}
-                >
-                  + Create new for all
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setShowEntitySelector(!showEntitySelector);
-                }}
-              >
-                Choose existing...
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Entity selector for bulk assignment */}
+        <GroupHeader
+          group={group}
+          isExpanded={isExpanded}
+          totalAmount={totalAmount}
+          entityExists={entityExists}
+          onAcceptAll={props.onAcceptAll}
+          onCreateAndAssignAll={props.onCreateAndAssignAll}
+          onToggleEntitySelector={() => setShowEntitySelector((v) => !v)}
+        />
         {showEntitySelector && entities && entities.length > 0 && (
-          <div className="mt-3 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-300 dark:border-gray-600">
-            <Label className="block mb-2">
-              Select entity to assign to all {group.transactions.length} transactions:
-            </Label>
-            <UiSelect
-              placeholder="Choose entity..."
-              options={entities.map((entity) => ({
-                label: entity.name,
-                value: entity.id,
-              }))}
-              onChange={(e) => {
-                const selectedEntity = entities.find((ent) => ent.id === e.target.value);
-                if (selectedEntity) {
-                  if (onBulkEntitySelect) {
-                    onBulkEntitySelect(group.transactions, selectedEntity.id, selectedEntity.name);
-                  } else {
-                    group.transactions.forEach((t) => {
-                      onEntitySelect(t, selectedEntity.id, selectedEntity.name);
-                    });
-                  }
-                  setShowEntitySelector(false);
-                }
-              }}
-              defaultValue=""
-            />
-          </div>
+          <BulkEntitySelector
+            group={group}
+            entities={entities}
+            onBulkEntitySelect={props.onBulkEntitySelect}
+            onEntitySelect={props.onEntitySelect}
+            onClose={() => setShowEntitySelector(false)}
+          />
         )}
-
         <CollapsibleContent>
-          <div className="p-4 space-y-3 border-t dark:border-gray-700">
-            {group.transactions.map((transaction, idx) =>
-              editingTransaction === transaction && onSaveEdit && onCancelEdit ? (
-                <EditableTransactionCard
-                  key={idx}
-                  transaction={transaction}
-                  onSave={onSaveEdit}
-                  onCancel={onCancelEdit}
-                  entities={entities}
-                />
-              ) : (
-                <TransactionCard
-                  key={idx}
-                  transaction={transaction}
-                  onEntitySelect={onEntitySelect}
-                  onCreateEntity={onCreateEntity}
-                  onAcceptAiSuggestion={onAcceptAiSuggestion}
-                  onEdit={onEdit}
-                  entities={entities}
-                  variant={variant}
-                />
-              )
-            )}
-          </div>
+          <TransactionList
+            group={group}
+            editingTransaction={props.editingTransaction}
+            onSaveEdit={props.onSaveEdit}
+            onCancelEdit={props.onCancelEdit}
+            onEntitySelect={props.onEntitySelect}
+            onCreateEntity={props.onCreateEntity}
+            onAcceptAiSuggestion={props.onAcceptAiSuggestion}
+            onEdit={props.onEdit}
+            entities={entities}
+            variant={variant}
+          />
         </CollapsibleContent>
       </Collapsible>
     </div>

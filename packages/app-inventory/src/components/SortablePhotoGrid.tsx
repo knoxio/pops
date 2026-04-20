@@ -18,39 +18,121 @@ interface SortablePhotoGridProps {
   isReordering?: boolean;
 }
 
-export function SortablePhotoGrid({
-  photos,
-  onReorder,
+interface DragHandlers {
+  onStart: (index: number) => void;
+  onOver: (e: React.DragEvent, index: number) => void;
+  onDrop: (e: React.DragEvent, index: number) => void;
+  onEnd: () => void;
+}
+
+interface PhotoCellProps {
+  photo: PhotoItem;
+  index: number;
+  src: string;
+  canReorder: boolean;
+  isReordering: boolean;
+  isDragging: boolean;
+  isDropTarget: boolean;
+  onDelete?: (photoId: number) => void;
+  handlers: DragHandlers;
+}
+
+function buildCellClassName(
+  canReorder: boolean,
+  isDragging: boolean,
+  isDropTarget: boolean,
+  isReordering: boolean
+): string {
+  const classes = ['relative group rounded-md overflow-hidden border transition-all'];
+  if (canReorder) classes.push('cursor-grab active:cursor-grabbing');
+  if (isDragging) classes.push('opacity-40 scale-95');
+  if (isDropTarget) classes.push('ring-2 ring-app-accent');
+  if (isReordering) classes.push('pointer-events-none opacity-60');
+  return classes.join(' ');
+}
+
+function PhotoCell({
+  photo,
+  index,
+  src,
+  canReorder,
+  isReordering,
+  isDragging,
+  isDropTarget,
   onDelete,
-  baseUrl = '/api/inventory/photos',
-  isReordering = false,
-}: SortablePhotoGridProps) {
-  const sorted = [...photos].toSorted((a, b) => a.sortOrder - b.sortOrder);
+  handlers,
+}: PhotoCellProps) {
+  return (
+    <div
+      role="listitem"
+      draggable={canReorder}
+      onDragStart={canReorder ? () => handlers.onStart(index) : undefined}
+      onDragOver={canReorder ? (e) => handlers.onOver(e, index) : undefined}
+      onDrop={canReorder ? (e) => handlers.onDrop(e, index) : undefined}
+      onDragEnd={canReorder ? handlers.onEnd : undefined}
+      className={buildCellClassName(canReorder, isDragging, isDropTarget, isReordering)}
+      aria-label={`Photo ${index + 1}: ${photo.caption ?? 'no caption'}`}
+    >
+      <div className="aspect-square">
+        <img
+          src={src}
+          alt={photo.caption ?? `Photo ${index + 1}`}
+          className="w-full h-full object-cover"
+          loading="lazy"
+          draggable={false}
+        />
+      </div>
+      {canReorder && (
+        <div className="absolute top-1 left-1 p-0.5 rounded bg-background/70 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
+          <GripVertical className="h-3.5 w-3.5" />
+        </div>
+      )}
+      {onDelete && (
+        <button
+          type="button"
+          onClick={() => onDelete(photo.id)}
+          className="absolute top-1 right-1 h-6 w-6 flex items-center justify-center rounded-full bg-background/80 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
+          aria-label={`Delete photo ${photo.caption ?? photo.id}`}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      )}
+      {index === 0 && (
+        <span className="absolute bottom-1 left-1 text-2xs font-bold bg-app-accent text-white px-1.5 py-0.5 rounded">
+          Primary
+        </span>
+      )}
+    </div>
+  );
+}
+
+function useDragHandlers(
+  sorted: PhotoItem[],
+  onReorder: (ids: number[]) => void
+): {
+  dragIndex: number | null;
+  overIndex: number | null;
+  handlers: DragHandlers;
+} {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
   const dragRef = useRef<number | null>(null);
 
-  const photoSrc = (filePath: string) => `${baseUrl}/${encodeURIComponent(filePath)}`;
-
-  const handleDragStart = useCallback((index: number) => {
+  const onStart = useCallback((index: number) => {
     dragRef.current = index;
     setDragIndex(index);
   }, []);
 
-  const handleDragOver = useCallback(
+  const onOver = useCallback(
     (e: React.DragEvent, index: number) => {
       e.preventDefault();
-      if (e.dataTransfer) {
-        e.dataTransfer.dropEffect = 'move';
-      }
-      if (index !== overIndex) {
-        setOverIndex(index);
-      }
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+      if (index !== overIndex) setOverIndex(index);
     },
     [overIndex]
   );
 
-  const handleDrop = useCallback(
+  const onDrop = useCallback(
     (e: React.DragEvent, dropIndex: number) => {
       e.preventDefault();
       const fromIndex = dragRef.current;
@@ -59,12 +141,10 @@ export function SortablePhotoGrid({
         setOverIndex(null);
         return;
       }
-
       const reordered = [...sorted];
       const [moved] = reordered.splice(fromIndex, 1);
       if (!moved) return;
       reordered.splice(dropIndex, 0, moved);
-
       onReorder(reordered.map((p) => p.id));
       setDragIndex(null);
       setOverIndex(null);
@@ -72,11 +152,24 @@ export function SortablePhotoGrid({
     [sorted, onReorder]
   );
 
-  const handleDragEnd = useCallback(() => {
+  const onEnd = useCallback(() => {
     setDragIndex(null);
     setOverIndex(null);
     dragRef.current = null;
   }, []);
+
+  return { dragIndex, overIndex, handlers: { onStart, onOver, onDrop, onEnd } };
+}
+
+export function SortablePhotoGrid({
+  photos,
+  onReorder,
+  onDelete,
+  baseUrl = '/api/inventory/photos',
+  isReordering = false,
+}: SortablePhotoGridProps) {
+  const sorted = [...photos].toSorted((a, b) => a.sortOrder - b.sortOrder);
+  const { dragIndex, overIndex, handlers } = useDragHandlers(sorted, onReorder);
 
   if (photos.length === 0) return null;
   const canReorder = photos.length > 1;
@@ -88,51 +181,18 @@ export function SortablePhotoGrid({
       aria-label="Reorder photos"
     >
       {sorted.map((photo, index) => (
-        <div
+        <PhotoCell
           key={photo.id}
-          role="listitem"
-          draggable={canReorder}
-          onDragStart={canReorder ? () => handleDragStart(index) : undefined}
-          onDragOver={canReorder ? (e) => handleDragOver(e, index) : undefined}
-          onDrop={canReorder ? (e) => handleDrop(e, index) : undefined}
-          onDragEnd={canReorder ? handleDragEnd : undefined}
-          className={`relative group rounded-md overflow-hidden border transition-all ${canReorder ? 'cursor-grab active:cursor-grabbing' : ''} ${
-            dragIndex === index ? 'opacity-40 scale-95' : ''
-          } ${overIndex === index && dragIndex !== index ? 'ring-2 ring-app-accent' : ''} ${
-            isReordering ? 'pointer-events-none opacity-60' : ''
-          }`}
-          aria-label={`Photo ${index + 1}: ${photo.caption ?? 'no caption'}`}
-        >
-          <div className="aspect-square">
-            <img
-              src={photoSrc(photo.filePath)}
-              alt={photo.caption ?? `Photo ${index + 1}`}
-              className="w-full h-full object-cover"
-              loading="lazy"
-              draggable={false}
-            />
-          </div>
-          {canReorder && (
-            <div className="absolute top-1 left-1 p-0.5 rounded bg-background/70 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
-              <GripVertical className="h-3.5 w-3.5" />
-            </div>
-          )}
-          {onDelete && (
-            <button
-              type="button"
-              onClick={() => onDelete(photo.id)}
-              className="absolute top-1 right-1 h-6 w-6 flex items-center justify-center rounded-full bg-background/80 text-destructive opacity-0 group-hover:opacity-100 transition-opacity hover:bg-background"
-              aria-label={`Delete photo ${photo.caption ?? photo.id}`}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          )}
-          {index === 0 && (
-            <span className="absolute bottom-1 left-1 text-2xs font-bold bg-app-accent text-white px-1.5 py-0.5 rounded">
-              Primary
-            </span>
-          )}
-        </div>
+          photo={photo}
+          index={index}
+          src={`${baseUrl}/${encodeURIComponent(photo.filePath)}`}
+          canReorder={canReorder}
+          isReordering={isReordering}
+          isDragging={dragIndex === index}
+          isDropTarget={overIndex === index && dragIndex !== index}
+          onDelete={onDelete}
+          handlers={handlers}
+        />
       ))}
     </div>
   );

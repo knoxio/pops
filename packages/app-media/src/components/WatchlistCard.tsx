@@ -40,19 +40,90 @@ export interface WatchlistCardProps extends RotationMeta {
   dragListeners?: Record<string, unknown>;
 }
 
-export function WatchlistCard({
+function PosterImage({
+  posterUrl,
+  title,
+  imageError,
+  setImageError,
+}: {
+  posterUrl: string | null;
+  title: string;
+  imageError: boolean;
+  setImageError: (v: boolean) => void;
+}) {
+  if (!posterUrl || imageError) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
+        <Film className="h-10 w-10 opacity-40" />
+      </div>
+    );
+  }
+  return (
+    <img
+      src={posterUrl}
+      alt={`${title} poster`}
+      loading="lazy"
+      className="h-full w-full object-cover group-hover:opacity-80 transition-opacity"
+      onError={() => {
+        setImageError(true);
+      }}
+    />
+  );
+}
+
+function CardActions({
   entry,
   title,
-  year,
-  posterUrl,
-  priority,
-  onRemove,
   isRemoving,
+  onRemove,
   dragAttributes,
   dragListeners,
-  rotationStatus,
-  rotationExpiresAt,
-}: WatchlistCardProps) {
+}: Pick<
+  WatchlistCardProps,
+  'entry' | 'title' | 'isRemoving' | 'onRemove' | 'dragAttributes' | 'dragListeners'
+>) {
+  return (
+    <>
+      {dragListeners && (
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={`Drag to reorder ${title}`}
+          className="absolute top-2 left-1/2 -translate-x-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white rounded-md h-auto w-auto p-1 cursor-grab active:cursor-grabbing hover:bg-black/80"
+          onClick={(e) => {
+            e.stopPropagation();
+          }}
+          {...dragListeners}
+          {...dragAttributes}
+        >
+          <GripVertical className="h-4 w-4" />
+        </Button>
+      )}
+      <Badge
+        variant={entry.mediaType === 'movie' ? 'default' : 'secondary'}
+        className="absolute top-2 right-2 z-10"
+      >
+        {entry.mediaType === 'movie' ? 'Movie' : 'TV'}
+      </Badge>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove(entry.id);
+        }}
+        disabled={isRemoving}
+        aria-label={`Remove ${title} from watchlist`}
+        className="absolute bottom-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity h-auto w-auto p-1.5 text-destructive hover:text-destructive"
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </Button>
+    </>
+  );
+}
+
+export function WatchlistCard(props: WatchlistCardProps) {
+  const { entry, title, year, posterUrl, priority, rotationStatus, rotationExpiresAt } = props;
   const navigate = useNavigate();
   const [imageError, setImageError] = useState(false);
 
@@ -76,59 +147,13 @@ export function WatchlistCard({
         <div className="absolute top-2 left-2 z-10 bg-primary text-primary-foreground text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
           #{priority}
         </div>
-
-        {dragListeners && (
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={`Drag to reorder ${title}`}
-            className="absolute top-2 left-1/2 -translate-x-1/2 z-10 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white rounded-md h-auto w-auto p-1 cursor-grab active:cursor-grabbing hover:bg-black/80"
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
-            {...dragListeners}
-            {...dragAttributes}
-          >
-            <GripVertical className="h-4 w-4" />
-          </Button>
-        )}
-
-        <Badge
-          variant={entry.mediaType === 'movie' ? 'default' : 'secondary'}
-          className="absolute top-2 right-2 z-10"
-        >
-          {entry.mediaType === 'movie' ? 'Movie' : 'TV'}
-        </Badge>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove(entry.id);
-          }}
-          disabled={isRemoving}
-          aria-label={`Remove ${title} from watchlist`}
-          className="absolute bottom-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity h-auto w-auto p-1.5 text-destructive hover:text-destructive"
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
-
-        {!posterUrl || imageError ? (
-          <div className="flex h-full w-full items-center justify-center bg-muted text-muted-foreground">
-            <Film className="h-10 w-10 opacity-40" />
-          </div>
-        ) : (
-          <img
-            src={posterUrl}
-            alt={`${title} poster`}
-            loading="lazy"
-            className="h-full w-full object-cover group-hover:opacity-80 transition-opacity"
-            onError={() => {
-              setImageError(true);
-            }}
-          />
-        )}
+        <CardActions {...props} />
+        <PosterImage
+          posterUrl={posterUrl}
+          title={title}
+          imageError={imageError}
+          setImageError={setImageError}
+        />
       </div>
 
       <div className="space-y-0.5 px-0.5">

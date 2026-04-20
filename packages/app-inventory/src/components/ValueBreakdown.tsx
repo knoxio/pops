@@ -39,9 +39,22 @@ function formatBreakdownValue(value: number): string {
   return value > 0 ? formatCurrency(value) : '\u2014';
 }
 
+function BreakdownTooltipContent({ payload }: { payload?: Array<{ payload: BreakdownEntry }> }) {
+  if (!payload?.length) return null;
+  const first = payload[0];
+  if (!first) return null;
+  const entry = first.payload;
+  return (
+    <div className="rounded-md border bg-popover px-3 py-2 text-sm shadow-md">
+      <p className="font-medium">{entry.name}</p>
+      <p className="text-muted-foreground">
+        {formatBreakdownValue(entry.totalValue)} ({entry.itemCount} items)
+      </p>
+    </div>
+  );
+}
+
 export function BreakdownChart({ data, onBarClick }: BreakdownChartProps) {
-  // Show empty state when there are no entries at all, or when every entry has
-  // zero total value (meaning no items have replacementValue set).
   const hasAnyValue = data.some((entry) => entry.totalValue > 0);
 
   if (data.length === 0 || !hasAnyValue) {
@@ -73,20 +86,7 @@ export function BreakdownChart({ data, onBarClick }: BreakdownChartProps) {
           tickLine={false}
         />
         <Tooltip
-          content={({ payload }) => {
-            if (!payload?.length) return null;
-            const first = payload[0];
-            if (!first) return null;
-            const entry = first.payload as BreakdownEntry;
-            return (
-              <div className="rounded-md border bg-popover px-3 py-2 text-sm shadow-md">
-                <p className="font-medium">{entry.name}</p>
-                <p className="text-muted-foreground">
-                  {formatBreakdownValue(entry.totalValue)} ({entry.itemCount} items)
-                </p>
-              </div>
-            );
-          }}
+          content={(props) => <BreakdownTooltipContent payload={props.payload as never} />}
         />
         <Bar
           dataKey="totalValue"

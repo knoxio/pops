@@ -39,6 +39,83 @@ export interface BreakdownChartProps {
 
 const defaultFormatter = (v: number) => v.toLocaleString();
 
+function LoadingState({ className }: { className?: string }) {
+  return (
+    <div className={cn('flex flex-col gap-2', className)}>
+      {Array.from({ length: 5 }).map((_, i) => (
+        <Skeleton key={i} className="h-7 w-full" />
+      ))}
+    </div>
+  );
+}
+
+function ErrorState({
+  error,
+  onRetry,
+  className,
+}: {
+  error: string;
+  onRetry?: () => void;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn(
+        'flex flex-col items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm',
+        className
+      )}
+      role="alert"
+    >
+      <div className="font-medium text-destructive">{error}</div>
+      {onRetry ? (
+        <Button size="sm" variant="outline" onClick={onRetry}>
+          Retry
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
+interface BarRowProps {
+  row: BreakdownDatum;
+  max: number;
+  formatter: (v: number) => string;
+  onBarClick?: (label: string) => void;
+}
+
+function BarRow({ row, max, formatter, onBarClick }: BarRowProps) {
+  const pct = max === 0 ? 0 : Math.round((row.value / max) * 100);
+  const interactive = typeof onBarClick === 'function';
+  return (
+    <li>
+      <button
+        type="button"
+        onClick={onBarClick ? () => onBarClick(row.label) : undefined}
+        disabled={!interactive}
+        className={cn(
+          'group relative flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors',
+          interactive && 'hover:bg-accent'
+        )}
+      >
+        <div className="w-32 shrink-0 truncate text-xs font-medium">{row.label}</div>
+        <div className="relative h-5 flex-1 overflow-hidden rounded-sm bg-muted">
+          <div
+            className="h-full rounded-sm transition-all"
+            style={{
+              width: `${pct}%`,
+              minWidth: row.value > 0 ? '2px' : 0,
+              background: row.color ?? 'var(--chart-1, oklch(0.65 0.2 240))',
+            }}
+          />
+        </div>
+        <div className="w-24 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
+          {formatter(row.value)}
+        </div>
+      </button>
+    </li>
+  );
+}
+
 export function BreakdownChart({
   data,
   formatter = defaultFormatter,
@@ -51,33 +128,8 @@ export function BreakdownChart({
   emptyDescription,
   className,
 }: BreakdownChartProps) {
-  if (loading) {
-    return (
-      <div className={cn('flex flex-col gap-2', className)}>
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-7 w-full" />
-        ))}
-      </div>
-    );
-  }
-  if (error) {
-    return (
-      <div
-        className={cn(
-          'flex flex-col items-start gap-2 rounded-md border border-destructive/30 bg-destructive/10 p-4 text-sm',
-          className
-        )}
-        role="alert"
-      >
-        <div className="font-medium text-destructive">{error}</div>
-        {onRetry ? (
-          <Button size="sm" variant="outline" onClick={onRetry}>
-            Retry
-          </Button>
-        ) : null}
-      </div>
-    );
-  }
+  if (loading) return <LoadingState className={className} />;
+  if (error) return <ErrorState error={error} onRetry={onRetry} className={className} />;
   if (data.length === 0) {
     return (
       <EmptyState
@@ -94,39 +146,9 @@ export function BreakdownChart({
 
   return (
     <ul className={cn('flex flex-col gap-1.5', className)}>
-      {rows.map((row) => {
-        const pct = max === 0 ? 0 : Math.round((row.value / max) * 100);
-        const interactive = typeof onBarClick === 'function';
-        return (
-          <li key={row.label}>
-            <button
-              type="button"
-              onClick={onBarClick ? () => onBarClick(row.label) : undefined}
-              disabled={!interactive}
-              className={cn(
-                'group relative flex w-full items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors',
-                interactive && 'hover:bg-accent'
-              )}
-            >
-              <div className="w-32 shrink-0 truncate text-xs font-medium">{row.label}</div>
-              <div className="relative h-5 flex-1 overflow-hidden rounded-sm bg-muted">
-                <div
-                  className="h-full rounded-sm transition-all"
-                  style={{
-                    width: `${pct}%`,
-                    // Keep tiny non-zero bars visible without inflating the %.
-                    minWidth: row.value > 0 ? '2px' : 0,
-                    background: row.color ?? 'var(--chart-1, oklch(0.65 0.2 240))',
-                  }}
-                />
-              </div>
-              <div className="w-24 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
-                {formatter(row.value)}
-              </div>
-            </button>
-          </li>
-        );
-      })}
+      {rows.map((row) => (
+        <BarRow key={row.label} row={row} max={max} formatter={formatter} onBarClick={onBarClick} />
+      ))}
     </ul>
   );
 }

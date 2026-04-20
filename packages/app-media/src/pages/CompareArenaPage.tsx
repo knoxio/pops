@@ -38,7 +38,7 @@ function ArenaSkeleton() {
   );
 }
 
-export function CompareArenaPage() {
+function useCompareArenaPageModel() {
   const [manualDimensionId, setManualDimensionId] = useState<number | null>(null);
 
   const { data: dimensionsData, isLoading: dimsLoading } =
@@ -46,23 +46,13 @@ export function CompareArenaPage() {
   const activeDimensions: Dimension[] =
     dimensionsData?.data?.filter((d: { active: boolean }) => d.active) ?? [];
 
-  const {
-    data: pairData,
-    isLoading: pairLoading,
-    isFetching: pairFetching,
-    error: pairError,
-    refetch: refetchPair,
-  } = trpc.media.comparisons.getSmartPair.useQuery(
+  const pairQuery = trpc.media.comparisons.getSmartPair.useQuery(
     manualDimensionId ? { dimensionId: manualDimensionId } : {},
     { enabled: activeDimensions.length > 0, refetchOnWindowFocus: false, gcTime: 0, staleTime: 0 }
   );
 
   const utils = trpc.useUtils();
-  // `pair === undefined` means the query hasn't returned yet (e.g. dimensions
-  // haven't loaded so the smartPair query is disabled). `pair === null` is the
-  // explicit "no pair available" empty-state result from the backend. Keep
-  // these separate so we don't show "not enough movies" while still loading.
-  const pair: PairData | null | undefined = pairData?.data;
+  const pair: PairData | null | undefined = pairQuery.data?.data;
   const dimensionId = pair?.dimensionId ?? null;
 
   const resolveTitle = useCallback(
@@ -81,8 +71,6 @@ export function CompareArenaPage() {
   const blacklist = useArenaBlacklist({ resolveTitle, onAfterAction });
 
   const activeDim = activeDimensions.find((d) => d.id === dimensionId);
-  const activeDimName = activeDim?.name ?? 'Overall';
-  const activeDimDesc = activeDim?.description ?? null;
 
   const onDimensionChange = useCallback(
     (id: number) => {
@@ -93,48 +81,63 @@ export function CompareArenaPage() {
     [actions, utils]
   );
 
+  return {
+    dimsLoading,
+    activeDimensions,
+    pair,
+    pairQuery,
+    dimensionId,
+    activeDimName: activeDim?.name ?? 'Overall',
+    activeDimDesc: activeDim?.description ?? null,
+    watchlist,
+    actions,
+    blacklist,
+    onDimensionChange,
+  };
+}
+
+export function CompareArenaPage() {
+  const m = useCompareArenaPageModel();
+
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-5">
-      <ArenaHeader sessionCount={actions.sessionCount} />
-
+      <ArenaHeader sessionCount={m.actions.sessionCount} />
       <ArenaDimensionPicker
-        loading={dimsLoading}
-        activeDimensions={activeDimensions}
-        dimensionId={dimensionId}
-        onChange={onDimensionChange}
+        loading={m.dimsLoading}
+        activeDimensions={m.activeDimensions}
+        dimensionId={m.dimensionId}
+        onChange={m.onDimensionChange}
       />
-
       <ArenaBody
-        loading={pairLoading || pairFetching}
-        error={pairError ? pairError.message : null}
-        onRetry={refetchPair}
-        pair={pair}
-        watchlistedMoviesSize={watchlist.watchlistedMovies.size}
-        activeDimName={activeDimName}
-        activeDimDesc={activeDimDesc}
-        scoreDelta={actions.scoreDelta}
-        watchlistedMovies={watchlist.watchlistedMovies}
-        watchlistPending={watchlist.pending}
-        stalePending={actions.markStalePending}
-        naPending={actions.naPending}
-        blacklistPending={blacklist.isPending}
-        isPending={actions.isPending}
-        skipPending={actions.skipPending}
-        onPick={actions.handlePick}
-        onDraw={actions.handleDraw}
-        onSkip={actions.handleSkip}
-        onMarkStale={actions.handleMarkStale}
-        onNA={actions.handleNA}
-        onToggleWatchlist={watchlist.handleToggleWatchlist}
-        onBlacklist={blacklist.open}
+        loading={m.pairQuery.isLoading || m.pairQuery.isFetching}
+        error={m.pairQuery.error ? m.pairQuery.error.message : null}
+        onRetry={m.pairQuery.refetch}
+        pair={m.pair}
+        watchlistedMoviesSize={m.watchlist.watchlistedMovies.size}
+        activeDimName={m.activeDimName}
+        activeDimDesc={m.activeDimDesc}
+        scoreDelta={m.actions.scoreDelta}
+        watchlistedMovies={m.watchlist.watchlistedMovies}
+        watchlistPending={m.watchlist.pending}
+        stalePending={m.actions.markStalePending}
+        naPending={m.actions.naPending}
+        blacklistPending={m.blacklist.isPending}
+        isPending={m.actions.isPending}
+        skipPending={m.actions.skipPending}
+        onPick={m.actions.handlePick}
+        onDraw={m.actions.handleDraw}
+        onSkip={m.actions.handleSkip}
+        onMarkStale={m.actions.handleMarkStale}
+        onNA={m.actions.handleNA}
+        onToggleWatchlist={m.watchlist.handleToggleWatchlist}
+        onBlacklist={m.blacklist.open}
       />
-
       <BlacklistConfirmDialog
-        target={blacklist.target}
-        comparisonsToPurge={blacklist.comparisonsToPurge}
-        isPending={blacklist.isPending}
-        onConfirm={blacklist.confirm}
-        onCancel={blacklist.cancel}
+        target={m.blacklist.target}
+        comparisonsToPurge={m.blacklist.comparisonsToPurge}
+        isPending={m.blacklist.isPending}
+        onConfirm={m.blacklist.confirm}
+        onCancel={m.blacklist.cancel}
       />
     </div>
   );

@@ -46,10 +46,7 @@ function NoResultsMessage({ query }: { query: string }) {
   );
 }
 
-export function SearchPage() {
-  const { query, setQuery, debouncedQuery } = useSearchQueryParam();
-  const [mode, setMode] = useState<SearchMode>('both');
-
+function useSearchQueries(debouncedQuery: string, mode: SearchMode) {
   const shouldSearchMovies = debouncedQuery.length > 0 && (mode === 'movies' || mode === 'both');
   const shouldSearchTv = debouncedQuery.length > 0 && (mode === 'tv' || mode === 'both');
 
@@ -62,21 +59,112 @@ export function SearchPage() {
     { enabled: shouldSearchTv, staleTime: STALE_TIME_MS }
   );
 
-  const lookups = useLibraryLookups({ shouldSearchMovies, shouldSearchTv });
-  const actions = useSearchAddActions();
+  return { shouldSearchMovies, shouldSearchTv, movieSearch, tvSearch };
+}
 
-  const movieResults: MovieSearchResult[] = shouldSearchMovies
-    ? (movieSearch.data?.results ?? []).slice(0, MAX_RESULTS_PER_SECTION)
-    : [];
-  const tvResults: TvSearchResult[] = shouldSearchTv
-    ? (tvSearch.data?.results ?? []).slice(0, MAX_RESULTS_PER_SECTION)
-    : [];
+function isSettled(shouldSearch: boolean, search: { isLoading: boolean; error: unknown }): boolean {
+  return !shouldSearch || (!search.isLoading && !search.error);
+}
 
-  const moviesSettled = !shouldSearchMovies || (!movieSearch.isLoading && !movieSearch.error);
-  const tvSettled = !shouldSearchTv || (!tvSearch.isLoading && !tvSearch.error);
+function deriveResults(queries: ReturnType<typeof useSearchQueries>, debouncedQuery: string) {
+  const movieResults: MovieSearchResult[] = queries.shouldSearchMovies
+    ? (queries.movieSearch.data?.results ?? []).slice(0, MAX_RESULTS_PER_SECTION)
+    : [];
+  const tvResults: TvSearchResult[] = queries.shouldSearchTv
+    ? (queries.tvSearch.data?.results ?? []).slice(0, MAX_RESULTS_PER_SECTION)
+    : [];
   const hasQuery = debouncedQuery.length > 0;
   const noResults =
-    hasQuery && moviesSettled && tvSettled && movieResults.length + tvResults.length === 0;
+    hasQuery &&
+    isSettled(queries.shouldSearchMovies, queries.movieSearch) &&
+    isSettled(queries.shouldSearchTv, queries.tvSearch) &&
+    movieResults.length + tvResults.length === 0;
+  return { movieResults, tvResults, hasQuery, noResults };
+}
+
+function useSearchPageModel() {
+  const { query, setQuery, debouncedQuery } = useSearchQueryParam();
+  const [mode, setMode] = useState<SearchMode>('both');
+  const queries = useSearchQueries(debouncedQuery, mode);
+  const lookups = useLibraryLookups({
+    shouldSearchMovies: queries.shouldSearchMovies,
+    shouldSearchTv: queries.shouldSearchTv,
+  });
+  const actions = useSearchAddActions();
+  const derived = deriveResults(queries, debouncedQuery);
+
+  return {
+    query,
+    setQuery,
+    debouncedQuery,
+    mode,
+    setMode,
+    ...queries,
+    lookups,
+    actions,
+    ...derived,
+  };
+}
+
+function MovieSection({ m }: { m: ReturnType<typeof useSearchPageModel> }) {
+  if (!m.shouldSearchMovies) return null;
+  return (
+    <MovieSearchSection
+      showHeader={m.mode === 'both'}
+      isLoading={m.movieSearch.isLoading}
+      error={m.movieSearch.error ? { message: m.movieSearch.error.message } : null}
+      onRetry={() => void m.movieSearch.refetch()}
+      results={m.movieResults}
+      lookups={{
+        movieTmdbIds: m.lookups.movieTmdbIds,
+        movieTmdbToLocalId: m.lookups.movieTmdbToLocalId,
+        movieTmdbToRotation: m.lookups.movieTmdbToRotation,
+      }}
+      state={{
+        addedIds: m.actions.addedIds,
+        addingIds: m.actions.addingIds,
+        addingToWatchlistIds: m.actions.addingToWatchlistIds,
+        markingWatchedTmdbIds: m.actions.markingWatchedTmdbIds,
+        markingWatchedMediaIds: m.actions.markingWatchedMediaIds,
+        sessionMovieLocalIds: m.actions.sessionMovieLocalIds,
+      }}
+      handlers={{
+        onAdd: m.actions.handleAddMovie,
+        onAddToWatchlistAndLibrary: m.actions.handleAddToWatchlistAndLibrary,
+        onMarkWatchedAndLibrary: m.actions.handleMarkWatchedAndLibrary,
+        onMarkWatched: m.actions.handleMarkWatched,
+      }}
+      makeKey={m.actions.makeKey}
+    />
+  );
+}
+
+function TvSection({ m }: { m: ReturnType<typeof useSearchPageModel> }) {
+  if (!m.shouldSearchTv) return null;
+  return (
+    <TvSearchSection
+      showHeader={m.mode === 'both'}
+      isLoading={m.tvSearch.isLoading}
+      error={m.tvSearch.error ? { message: m.tvSearch.error.message } : null}
+      onRetry={() => void m.tvSearch.refetch()}
+      results={m.tvResults}
+      lookups={{
+        tvTvdbIds: m.lookups.tvTvdbIds,
+        tvTvdbToLocalId: m.lookups.tvTvdbToLocalId,
+      }}
+      state={{
+        addedIds: m.actions.addedIds,
+        addingIds: m.actions.addingIds,
+        sessionTvLocalIds: m.actions.sessionTvLocalIds,
+      }}
+      handlers={{ onAdd: m.actions.handleAddTvShow }}
+      makeKey={m.actions.makeKey}
+    />
+  );
+}
+
+export function SearchPage() {
+  const m = useSearchPageModel();
 
   return (
     <div className="space-y-4">
@@ -86,63 +174,16 @@ export function SearchPage() {
           Search for movies and TV shows to add to your library.
         </p>
       </div>
-
-      <SearchInput query={query} mode={mode} onQueryChange={setQuery} onModeChange={setMode} />
-
-      {noResults && <NoResultsMessage query={debouncedQuery} />}
-
-      {shouldSearchMovies && (
-        <MovieSearchSection
-          showHeader={mode === 'both'}
-          isLoading={movieSearch.isLoading}
-          error={movieSearch.error ? { message: movieSearch.error.message } : null}
-          onRetry={() => void movieSearch.refetch()}
-          results={movieResults}
-          lookups={{
-            movieTmdbIds: lookups.movieTmdbIds,
-            movieTmdbToLocalId: lookups.movieTmdbToLocalId,
-            movieTmdbToRotation: lookups.movieTmdbToRotation,
-          }}
-          state={{
-            addedIds: actions.addedIds,
-            addingIds: actions.addingIds,
-            addingToWatchlistIds: actions.addingToWatchlistIds,
-            markingWatchedTmdbIds: actions.markingWatchedTmdbIds,
-            markingWatchedMediaIds: actions.markingWatchedMediaIds,
-            sessionMovieLocalIds: actions.sessionMovieLocalIds,
-          }}
-          handlers={{
-            onAdd: actions.handleAddMovie,
-            onAddToWatchlistAndLibrary: actions.handleAddToWatchlistAndLibrary,
-            onMarkWatchedAndLibrary: actions.handleMarkWatchedAndLibrary,
-            onMarkWatched: actions.handleMarkWatched,
-          }}
-          makeKey={actions.makeKey}
-        />
-      )}
-
-      {shouldSearchTv && (
-        <TvSearchSection
-          showHeader={mode === 'both'}
-          isLoading={tvSearch.isLoading}
-          error={tvSearch.error ? { message: tvSearch.error.message } : null}
-          onRetry={() => void tvSearch.refetch()}
-          results={tvResults}
-          lookups={{
-            tvTvdbIds: lookups.tvTvdbIds,
-            tvTvdbToLocalId: lookups.tvTvdbToLocalId,
-          }}
-          state={{
-            addedIds: actions.addedIds,
-            addingIds: actions.addingIds,
-            sessionTvLocalIds: actions.sessionTvLocalIds,
-          }}
-          handlers={{ onAdd: actions.handleAddTvShow }}
-          makeKey={actions.makeKey}
-        />
-      )}
-
-      {!hasQuery && <SearchEmptyPrompt />}
+      <SearchInput
+        query={m.query}
+        mode={m.mode}
+        onQueryChange={m.setQuery}
+        onModeChange={m.setMode}
+      />
+      {m.noResults && <NoResultsMessage query={m.debouncedQuery} />}
+      <MovieSection m={m} />
+      <TvSection m={m} />
+      {!m.hasQuery && <SearchEmptyPrompt />}
     </div>
   );
 }

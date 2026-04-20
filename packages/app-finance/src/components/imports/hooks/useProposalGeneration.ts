@@ -25,6 +25,79 @@ export interface TriggeringTransaction {
   previousTransactionType?: 'purchase' | 'transfer' | 'income' | null;
 }
 
+function computeFallbackPattern(description: string): string {
+  return description.toUpperCase().replaceAll(/\d+/g, '').replaceAll(/\s+/g, ' ').trim();
+}
+
+function buildTriggeringContext(transaction: ProcessedTransaction): TriggeringTransaction {
+  return {
+    description: transaction.description,
+    amount: transaction.amount,
+    date: transaction.date,
+    account: transaction.account,
+    location: transaction.location ?? null,
+    previousEntityName: transaction.entity?.entityName ?? null,
+    previousTransactionType: transaction.transactionType ?? null,
+  };
+}
+
+interface GenerateArgs {
+  triggeringTransaction: ProcessedTransaction;
+  entityId: string | null;
+  entityName: string | null;
+  location?: string | null;
+  transactionType?: 'purchase' | 'transfer' | 'income' | null;
+}
+
+interface GenerateDeps {
+  analyzeCorrectionMutation: ReturnType<typeof trpc.core.corrections.analyzeCorrection.useMutation>;
+  setProposalSignal: React.Dispatch<React.SetStateAction<ProposalSignal | null>>;
+  setProposalTriggeringTransaction: React.Dispatch<
+    React.SetStateAction<TriggeringTransaction | null>
+  >;
+  setProposalOpen: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+async function runGenerate(args: GenerateArgs, deps: GenerateDeps): Promise<void> {
+  const originalDescription = args.triggeringTransaction.description;
+  const originalAmount = args.triggeringTransaction.amount;
+  const fallbackPattern = computeFallbackPattern(originalDescription);
+  const triggeringContext = buildTriggeringContext(args.triggeringTransaction);
+  const baseSignal = {
+    entityId: args.entityId,
+    entityName: args.entityName,
+    location: args.location ?? null,
+    transactionType: args.transactionType ?? null,
+    tags: [] as string[],
+  };
+  try {
+    const res = await deps.analyzeCorrectionMutation.mutateAsync({
+      description: originalDescription,
+      entityName: args.entityName ?? 'unknown',
+      amount: originalAmount,
+    });
+    const analysis = res.data;
+    const useAi = analysis && analysis.pattern.length >= 3;
+    deps.setProposalSignal({
+      descriptionPattern: useAi ? analysis.pattern : fallbackPattern,
+      matchType: useAi ? analysis.matchType : 'contains',
+      ...baseSignal,
+    });
+    deps.setProposalTriggeringTransaction(triggeringContext);
+    deps.setProposalOpen(true);
+    toast.success('Proposal generated — review and approve to learn');
+  } catch {
+    deps.setProposalSignal({
+      descriptionPattern: fallbackPattern,
+      matchType: 'contains',
+      ...baseSignal,
+    });
+    deps.setProposalTriggeringTransaction(triggeringContext);
+    deps.setProposalOpen(true);
+    toast.info('Proposal generated (fallback) — review and approve to learn');
+  }
+}
+
 /**
  * Manages proposal generation, correction analysis, and the proposal/browse
  * dialog state for the ReviewStep.
@@ -38,84 +111,17 @@ export function useProposalGeneration() {
 
   const analyzeCorrectionMutation = trpc.core.corrections.analyzeCorrection.useMutation();
 
-  const computeFallbackPattern = useCallback((description: string) => {
-    return description.toUpperCase().replaceAll(/\d+/g, '').replaceAll(/\s+/g, ' ').trim();
-  }, []);
-
   const generateProposal = useCallback(
-    async (args: {
-      /** The triggering transaction in its original (pre-correction) state. */
-      triggeringTransaction: ProcessedTransaction;
-      /** The user's correction — the entity/type/location they intend to apply. */
-      entityId: string | null;
-      entityName: string | null;
-      location?: string | null;
-      transactionType?: 'purchase' | 'transfer' | 'income' | null;
-    }) => {
-      // The AI must analyse the ORIGINAL description, not the user's
-      // correction. Otherwise the rule it learns will only ever match the
-      // (already-corrected) value the user entered, defeating the point.
-      const originalDescription = args.triggeringTransaction.description;
-      const originalAmount = args.triggeringTransaction.amount;
-      const fallbackPattern = computeFallbackPattern(originalDescription);
-
-      const triggeringContext: TriggeringTransaction = {
-        description: originalDescription,
-        amount: originalAmount,
-        date: args.triggeringTransaction.date,
-        account: args.triggeringTransaction.account,
-        location: args.triggeringTransaction.location ?? null,
-        previousEntityName: args.triggeringTransaction.entity?.entityName ?? null,
-        previousTransactionType: args.triggeringTransaction.transactionType ?? null,
-      };
-
-      try {
-        const res = await analyzeCorrectionMutation.mutateAsync({
-          description: originalDescription,
-          entityName: args.entityName ?? 'unknown',
-          amount: originalAmount,
-        });
-        const analysis = res.data;
-
-        const suggestedPattern =
-          analysis && analysis.pattern.length >= 3 ? analysis.pattern : fallbackPattern;
-        const suggestedMatchType =
-          analysis && analysis.pattern.length >= 3 ? analysis.matchType : 'contains';
-
-        setProposalSignal({
-          descriptionPattern: suggestedPattern,
-          matchType: suggestedMatchType,
-          entityId: args.entityId,
-          entityName: args.entityName,
-          location: args.location ?? null,
-          transactionType: args.transactionType ?? null,
-          tags: [],
-        });
-        setProposalTriggeringTransaction(triggeringContext);
-        setProposalOpen(true);
-        toast.success('Proposal generated — review and approve to learn');
-      } catch {
-        setProposalSignal({
-          descriptionPattern: fallbackPattern,
-          matchType: 'contains',
-          entityId: args.entityId,
-          entityName: args.entityName,
-          location: args.location ?? null,
-          transactionType: args.transactionType ?? null,
-          tags: [],
-        });
-        setProposalTriggeringTransaction(triggeringContext);
-        setProposalOpen(true);
-        toast.info('Proposal generated (fallback) — review and approve to learn');
-      }
-    },
-    [analyzeCorrectionMutation, computeFallbackPattern]
+    (args: GenerateArgs) =>
+      runGenerate(args, {
+        analyzeCorrectionMutation,
+        setProposalSignal,
+        setProposalTriggeringTransaction,
+        setProposalOpen,
+      }),
+    [analyzeCorrectionMutation]
   );
 
-  /**
-   * Open the Rule Proposal dialog for a correction signal.
-   * Rule changes only happen after explicit approval in the proposal dialog.
-   */
   const openRuleProposalDialog = useCallback(
     (triggeringTransaction: ProcessedTransaction, entityId: string, entityName: string) => {
       void generateProposal({ triggeringTransaction, entityId, entityName });

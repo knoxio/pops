@@ -3,22 +3,22 @@
  *
  * GET /media/images/:mediaType/:id/:filename
  *
- * Three-tier fallback strategy (every poster must load):
- * 1. Serve locally cached image
- * 2. Download from CDN → cache → serve
- * 3. Redirect to CDN URL (browser fetches directly)
- *
- * Falls back to 404 only when there is genuinely no image source.
+ * Three-tier fallback strategy: serve cached → download+cache → redirect to CDN.
  */
-import { createHash } from 'node:crypto';
-import { open, stat, unlink } from 'node:fs/promises';
-import { basename, extname, join, resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 
-import { type Router as ExpressRouter, Router } from 'express';
+import { type Router as ExpressRouter, type Request, type Response, Router } from 'express';
 
 import { getDb } from '../../db.js';
 import { MEDIA_DIR_NAMES } from '../../modules/media/tmdb/image-cache.js';
-import { getImageCache, getTmdbClient } from '../../modules/media/tmdb/index.js';
+import { downloadAndServe, fetchPosterPathFromTmdb } from './images-fallback.js';
+import {
+  buildCdnFallbackUrl,
+  removeCorruptedPlaceholder,
+  resolveImageType,
+  safeJoin,
+  tryServeFile,
+} from './images-helpers.js';
 
 const VALID_MEDIA_TYPES = ['movie', 'tv'] as const;
 const VALID_FILENAMES = ['poster.jpg', 'backdrop.jpg', 'logo.png', 'override.jpg'] as const;
@@ -27,202 +27,133 @@ type ValidFilename = (typeof VALID_FILENAMES)[number];
 /** Season poster filenames follow the pattern season_{N}.jpg. */
 const SEASON_POSTER_RE = /^season_\d+\.jpg$/;
 
-const CONTENT_TYPES: Record<string, string> = {
-  '.jpg': 'image/jpeg',
-  '.png': 'image/png',
-};
-
-/** Cache for 7 days, revalidate via ETag after that. Never use `immutable` — if a
- *  corrupt file is ever served, the browser would be stuck for the full max-age. */
-const CACHE_CONTROL = 'public, max-age=604800';
-
-/** CDN size presets for TMDB redirect fallback. */
-const TMDB_CDN_SIZES: Record<string, string> = {
-  poster: 'w780',
-  backdrop: 'w1280',
-  logo: 'original',
-};
-
 function getImagesDir(): string {
   const dir = process.env.MEDIA_IMAGES_DIR ?? './data/media/images';
-  return resolve(dir); // Return absolute path
+  return resolve(dir);
 }
 
-/**
- * Join `filename` to `dir` safely. Uses `basename` to strip any directory
- * components from `filename` (path traversal sanitizer), then verifies the
- * result stays within `dir`. Returns the resolved absolute path, or null on
- * failure.
- */
-function safeJoin(dir: string, filename: string): string | null {
-  const safe = basename(filename); // strip any path separators — CodeQL sanitizer
-  if (!safe || safe === '.' || safe === '..') return null;
-  const resolved = resolve(dir, safe);
-  return resolved.startsWith(dir + '/') || resolved === dir ? resolved : null;
+interface ValidationFailure {
+  status: number;
+  body: { error: string };
 }
 
-/**
- * Resolve the image type from the filename.
- * Returns "poster", "backdrop", "logo", or "override".
- * "override" is a user upload — never downloaded on-demand.
- */
-function resolveImageType(filename: string): 'poster' | 'backdrop' | 'logo' | 'override' {
-  if (filename === 'override.jpg') return 'override';
-  if (filename.startsWith('poster') || filename.startsWith('season_')) return 'poster';
-  if (filename.startsWith('logo')) return 'logo';
-  return 'backdrop';
+interface ValidatedParams {
+  mediaType: string;
+  id: string;
+  filename: string;
 }
 
-/**
- * Build a CDN fallback URL from the stored path.
- * Movies store TMDB-relative paths (e.g. /abc123.jpg) → prepend CDN base.
- * TV shows store full TheTVDB URLs (e.g. https://artworks.thetvdb.com/...) → use as-is.
- */
-function buildCdnFallbackUrl(
-  mediaType: string,
-  path: string,
-  imageType: 'poster' | 'backdrop' | 'logo'
-): string | null {
-  if (mediaType === 'movie' && path.startsWith('/')) {
-    const size = TMDB_CDN_SIZES[imageType] ?? 'w780';
-    return `https://image.tmdb.org/t/p/${size}${path}`;
-  }
-  if (mediaType === 'tv' && path.startsWith('http')) {
-    return path;
-  }
-  return null;
-}
+function validateParams(req: Request): ValidatedParams | ValidationFailure {
+  const mediaType = String(req.params['mediaType'] ?? '');
+  const id = String(req.params['id'] ?? '');
+  const filename = String(req.params['filename'] ?? '');
 
-/**
- * Detect and remove corrupted SVG placeholders (SVG content saved as .jpg).
- * Reads only 4 bytes to check. If corrupted, deletes the file so downstream
- * downloads aren't blocked by the skip-if-exists check in ImageCacheService.
- * Returns true if a corrupted file was found and removed.
- */
-async function removeCorruptedPlaceholder(filePath: string): Promise<boolean> {
-  let fh: Awaited<ReturnType<typeof open>> | undefined;
-  try {
-    fh = await open(filePath, 'r');
-    const buf = Buffer.alloc(4);
-    const { bytesRead } = await fh.read(buf, 0, 4, 0);
-    if (bytesRead < 4) return false;
-
-    if (buf.toString('ascii', 0, 4) === '<svg') {
-      await fh.close();
-      fh = undefined;
-      await unlink(filePath).catch(() => {});
-      return true;
-    }
-    return false;
-  } catch {
-    return false;
-  } finally {
-    await fh?.close();
-  }
-}
-
-const router: ExpressRouter = Router();
-
-router.get('/media/images/:mediaType/:id/:filename', async (req, res): Promise<void> => {
-  const { mediaType, id, filename } = req.params;
-
-  // Validate mediaType
   if (!VALID_MEDIA_TYPES.includes(mediaType as (typeof VALID_MEDIA_TYPES)[number])) {
-    res.status(400).json({ error: `Invalid media type: ${mediaType}` });
-    return;
+    return { status: 400, body: { error: `Invalid media type: ${mediaType}` } };
   }
-
-  // Validate id is numeric
-  if (!/^\d+$/.test(id)) {
-    res.status(400).json({ error: `Invalid id: ${id}` });
-    return;
-  }
-
-  // Validate filename
+  if (!/^\d+$/.test(id)) return { status: 400, body: { error: `Invalid id: ${id}` } };
   if (!VALID_FILENAMES.includes(filename as ValidFilename) && !SEASON_POSTER_RE.test(filename)) {
-    res.status(400).json({ error: `Invalid filename: ${filename}` });
-    return;
+    return { status: 400, body: { error: `Invalid filename: ${filename}` } };
   }
+  return { mediaType, id, filename };
+}
 
+function isValidationFailure(
+  value: ValidatedParams | ValidationFailure
+): value is ValidationFailure {
+  return 'status' in value;
+}
+
+function getMediaDir(mediaType: string, id: string): string | null {
   const imagesDir = getImagesDir();
   const mediaDirName = MEDIA_DIR_NAMES[mediaType] ?? `${mediaType}s`;
-  const mediaDir = join(imagesDir, mediaDirName, id);
+  const resolvedDir = resolve(join(imagesDir, mediaDirName, id));
+  if (!resolvedDir.startsWith(resolve(imagesDir))) return null;
+  return resolvedDir;
+}
 
-  // Path traversal defense: ensure resolved path stays within imagesDir
-  const resolvedDir = resolve(mediaDir);
-  if (!resolvedDir.startsWith(resolve(imagesDir))) {
-    res.status(400).json({ error: 'Invalid path' });
-    return;
-  }
-
-  // Override resolution: if requesting poster.jpg, check for override.jpg first
+async function tryOverrideOrCached(
+  resolvedDir: string,
+  filename: string,
+  res: Response
+): Promise<{ served: true } | { served: false; filePath: string }> {
   if (filename === 'poster.jpg') {
     const overridePath = safeJoin(resolvedDir, 'override.jpg');
-    if (overridePath) {
-      const served = await tryServeFile(overridePath, res);
-      if (served) return;
-    }
+    if (overridePath && (await tryServeFile(overridePath, res))) return { served: true };
   }
 
-  // Remove corrupted SVG placeholders so they don't block downloads or get served
   const filePath = safeJoin(resolvedDir, filename);
   if (!filePath) {
     res.status(400).json({ error: 'Invalid path' });
-    return;
-  }
-  const wasCorrupted = await removeCorruptedPlaceholder(filePath);
-  if (!wasCorrupted) {
-    const served = await tryServeFile(filePath, res);
-    if (served) return;
+    return { served: true };
   }
 
-  // Cache miss — try to download on-demand from original source
-  // Overrides are user uploads — never downloaded on-demand
-  const imageType = resolveImageType(filename);
+  const wasCorrupted = await removeCorruptedPlaceholder(filePath);
+  if (!wasCorrupted && (await tryServeFile(filePath, res))) return { served: true };
+  return { served: false, filePath };
+}
+
+interface DbLookupResult {
+  pathColumn: string;
+  resolvedPath: string | null;
+}
+
+async function lookupImagePath(
+  mediaType: string,
+  id: string,
+  imageType: 'poster' | 'backdrop' | 'logo'
+): Promise<DbLookupResult> {
+  const db = getDb();
+  const table = mediaType === 'movie' ? 'movies' : 'tv_shows';
+  const idColumn = mediaType === 'movie' ? 'tmdb_id' : 'tvdb_id';
+  let pathColumn: string;
+  if (imageType === 'poster') pathColumn = 'poster_path';
+  else if (imageType === 'logo') pathColumn = 'logo_path';
+  else pathColumn = 'backdrop_path';
+
+  const record = db
+    .prepare(`SELECT ${pathColumn} AS path FROM ${table} WHERE ${idColumn} = ?`)
+    .get(id) as { path: string | null } | undefined;
+
+  let resolvedPath = record?.path ?? null;
+  if (!resolvedPath && mediaType === 'movie' && imageType === 'poster' && record !== undefined) {
+    resolvedPath = await fetchPosterPathFromTmdb(Number(id));
+  }
+  return { pathColumn, resolvedPath };
+}
+
+interface FallbackArgs {
+  mediaType: string;
+  id: string;
+  filename: string;
+  filePath: string;
+  res: Response;
+}
+
+async function attemptFallbacks(args: FallbackArgs): Promise<void> {
+  const imageType = resolveImageType(args.filename);
   if (imageType === 'override') {
-    res.status(404).json({ error: 'Image not found' });
+    args.res.status(404).json({ error: 'Image not found' });
     return;
   }
 
   try {
-    const db = getDb();
-    const table = mediaType === 'movie' ? 'movies' : 'tv_shows';
-    const idColumn = mediaType === 'movie' ? 'tmdb_id' : 'tvdb_id';
-    let pathColumn: string;
-    if (imageType === 'poster') pathColumn = 'poster_path';
-    else if (imageType === 'logo') pathColumn = 'logo_path';
-    else pathColumn = 'backdrop_path';
-
-    const record = db
-      .prepare(`SELECT ${pathColumn} AS path FROM ${table} WHERE ${idColumn} = ?`)
-      .get(id) as { path: string | null } | undefined;
-
-    // For movies with null poster_path, fetch from TMDB API to get the current path
-    let resolvedPath = record?.path ?? null;
-    if (!resolvedPath && mediaType === 'movie' && imageType === 'poster' && record !== undefined) {
-      const tmdbPath = await fetchPosterPathFromTmdb(Number(id));
-      if (tmdbPath) {
-        resolvedPath = tmdbPath;
-      }
-    }
-
+    const { resolvedPath } = await lookupImagePath(args.mediaType, args.id, imageType);
     if (resolvedPath) {
-      // Tier 2: Download from CDN → cache → serve
-      const downloaded = await downloadAndServe(
-        mediaType,
-        Number(id),
-        resolvedPath,
+      const downloaded = await downloadAndServe({
+        mediaType: args.mediaType,
+        id: Number(args.id),
+        originalPath: resolvedPath,
         imageType,
-        filePath,
-        res
-      );
+        filePath: args.filePath,
+        res: args.res,
+      });
       if (downloaded) return;
 
-      // Tier 3: Redirect browser to CDN URL directly
-      const cdnUrl = buildCdnFallbackUrl(mediaType, resolvedPath, imageType);
+      const cdnUrl = buildCdnFallbackUrl(args.mediaType, resolvedPath, imageType);
       if (cdnUrl) {
-        res.set('Cache-Control', 'private, max-age=300');
-        res.redirect(302, cdnUrl);
+        args.res.set('Cache-Control', 'private, max-age=300');
+        args.res.redirect(302, cdnUrl);
         return;
       }
     }
@@ -230,104 +161,34 @@ router.get('/media/images/:mediaType/:id/:filename', async (req, res): Promise<v
     console.error('[Images] Fallback failed:', err);
   }
 
-  // No image source at all
-  res.status(404).json({ error: 'Image not found' });
+  args.res.status(404).json({ error: 'Image not found' });
+}
+
+const router: ExpressRouter = Router();
+
+router.get('/media/images/:mediaType/:id/:filename', async (req, res): Promise<void> => {
+  const params = validateParams(req);
+  if (isValidationFailure(params)) {
+    res.status(params.status).json(params.body);
+    return;
+  }
+
+  const resolvedDir = getMediaDir(params.mediaType, params.id);
+  if (!resolvedDir) {
+    res.status(400).json({ error: 'Invalid path' });
+    return;
+  }
+
+  const cached = await tryOverrideOrCached(resolvedDir, params.filename, res);
+  if (cached.served) return;
+
+  await attemptFallbacks({
+    mediaType: params.mediaType,
+    id: params.id,
+    filename: params.filename,
+    filePath: cached.filePath,
+    res,
+  });
 });
-
-/**
- * Fetch the poster_path for a movie from the TMDB API when the DB has no stored path.
- * Returns the TMDB-relative path (e.g. "/abc123.jpg"), or null on failure/no result.
- */
-async function fetchPosterPathFromTmdb(tmdbId: number): Promise<string | null> {
-  try {
-    const client = getTmdbClient();
-    const detail = await client.getMovie(tmdbId);
-    return detail.posterPath ?? null;
-  } catch (err) {
-    console.warn(`[Images] TMDB lookup for ${tmdbId} failed:`, err);
-    return null;
-  }
-}
-
-/**
- * Download an image from its original source (TMDB or TheTVDB) to the local cache,
- * then serve it. Returns true if the image was served, false on failure.
- */
-async function downloadAndServe(
-  mediaType: string,
-  id: number,
-  originalPath: string,
-  imageType: 'poster' | 'backdrop' | 'logo',
-  filePath: string,
-  res: import('express').Response
-): Promise<boolean> {
-  const imageCache = getImageCache();
-
-  try {
-    if (mediaType === 'movie') {
-      const posterPath = imageType === 'poster' ? originalPath : null;
-      const backdropPath = imageType === 'backdrop' ? originalPath : null;
-      const logoPath = imageType === 'logo' ? originalPath : null;
-      await imageCache.downloadMovieImages(id, posterPath, backdropPath, logoPath);
-    } else if (mediaType === 'tv') {
-      const posterUrl = imageType === 'poster' ? originalPath : null;
-      const backdropUrl = imageType === 'backdrop' ? originalPath : null;
-      const logoUrl = imageType === 'logo' ? originalPath : null;
-      await imageCache.downloadTvShowImages(id, posterUrl, backdropUrl, undefined, logoUrl);
-    }
-
-    // Serve the freshly downloaded file
-    return await tryServeFile(filePath, res);
-  } catch (err) {
-    console.warn(`[Images] On-demand download failed for ${mediaType}/${id}:`, err);
-    return false;
-  }
-}
-
-/**
- * Try to serve a file with cache headers.
- * Returns true if the file was served, false if it doesn't exist.
- */
-async function tryServeFile(filePath: string, res: import('express').Response): Promise<boolean> {
-  try {
-    const fileStat = await stat(filePath);
-    const ext = extname(filePath);
-    const contentType = CONTENT_TYPES[ext] ?? 'application/octet-stream';
-
-    // Generate ETag from mtime + size
-    const etag = createHash('md5').update(`${fileStat.mtimeMs}-${fileStat.size}`).digest('hex');
-
-    res.set({
-      'Content-Type': contentType,
-      'Cache-Control': CACHE_CONTROL,
-      ETag: `"${etag}"`,
-    });
-
-    // Check If-None-Match for conditional requests
-    const ifNoneMatch = res.req.get('If-None-Match');
-    if (ifNoneMatch === `"${etag}"`) {
-      res.status(304).end();
-      return true;
-    }
-
-    return new Promise<boolean>((resolvePromise) => {
-      res.sendFile(resolve(filePath), (err) => {
-        if (err) {
-          if (!res.headersSent) {
-            // Clear immutable cache headers so the error isn't cached
-            res.removeHeader('Cache-Control');
-            res.removeHeader('ETag');
-            res.status(500).json({ error: 'Failed to send file' });
-          }
-          resolvePromise(true); // Response was handled (even if errored)
-        } else {
-          resolvePromise(true);
-        }
-      });
-    });
-  } catch {
-    return false;
-  }
-}
 
 export default router;

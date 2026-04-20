@@ -201,7 +201,13 @@ describe('showMore', () => {
     );
     registerSearchAdapter(makeAdapter('movies', hits));
 
-    const result = await showMore('movies', { text: 'test' }, defaultContext, 0, 5);
+    const result = await showMore({
+      domain: 'movies',
+      query: { text: 'test' },
+      context: defaultContext,
+      offset: 0,
+      limit: 5,
+    });
     expect(result.hits).toHaveLength(5);
     expect(result.totalCount).toBe(10);
   });
@@ -212,7 +218,13 @@ describe('showMore', () => {
     );
     registerSearchAdapter(makeAdapter('movies', hits));
 
-    const result = await showMore('movies', { text: 'test' }, defaultContext, 5, 5);
+    const result = await showMore({
+      domain: 'movies',
+      query: { text: 'test' },
+      context: defaultContext,
+      offset: 5,
+      limit: 5,
+    });
     expect(result.hits).toHaveLength(5);
     expect(result.hits[0]!.uri).toBe('pops:test/5');
   });
@@ -223,15 +235,21 @@ describe('showMore', () => {
     );
     registerSearchAdapter(makeAdapter('movies', hits));
 
-    const result = await showMore('movies', { text: 'test' }, defaultContext, 5, 5);
+    const result = await showMore({
+      domain: 'movies',
+      query: { text: 'test' },
+      context: defaultContext,
+      offset: 5,
+      limit: 5,
+    });
     expect(result.hits).toHaveLength(2);
     expect(result.totalCount).toBe(7);
   });
 
   it('throws for unknown domain', async () => {
-    await expect(showMore('unknown', { text: 'test' }, defaultContext, 0)).rejects.toThrow(
-      'No search adapter registered for domain "unknown"'
-    );
+    await expect(
+      showMore({ domain: 'unknown', query: { text: 'test' }, context: defaultContext, offset: 0 })
+    ).rejects.toThrow('No search adapter registered for domain "unknown"');
   });
 
   it('sorts hits by score descending', async () => {
@@ -242,7 +260,13 @@ describe('showMore', () => {
     ];
     registerSearchAdapter(makeAdapter('movies', hits));
 
-    const result = await showMore('movies', { text: 'test' }, defaultContext, 0, 10);
+    const result = await showMore({
+      domain: 'movies',
+      query: { text: 'test' },
+      context: defaultContext,
+      offset: 0,
+      limit: 10,
+    });
     expect(result.hits[0]!.score).toBe(0.9);
     expect(result.hits[1]!.score).toBe(0.6);
     expect(result.hits[2]!.score).toBe(0.3);
@@ -254,7 +278,12 @@ describe('showMore', () => {
     );
     registerSearchAdapter(makeAdapter('movies', hits));
 
-    const result = await showMore('movies', { text: 'test' }, defaultContext, 0);
+    const result = await showMore({
+      domain: 'movies',
+      query: { text: 'test' },
+      context: defaultContext,
+      offset: 0,
+    });
     expect(result.hits).toHaveLength(5);
   });
 
@@ -262,7 +291,12 @@ describe('showMore', () => {
     const hits = [makeHit({ uri: 'pops:test/1' })];
     registerSearchAdapter(makeAdapter('movies', hits));
 
-    const result = await showMore('movies', { text: 'test' }, defaultContext, 10);
+    const result = await showMore({
+      domain: 'movies',
+      query: { text: 'test' },
+      context: defaultContext,
+      offset: 10,
+    });
     expect(result.hits).toHaveLength(0);
     expect(result.totalCount).toBe(1);
   });
@@ -273,7 +307,12 @@ describe('showMore', () => {
     registerSearchAdapter(moviesAdapter);
     registerSearchAdapter(tvAdapter);
 
-    await showMore('movies', { text: 'test' }, defaultContext, 0);
+    await showMore({
+      domain: 'movies',
+      query: { text: 'test' },
+      context: defaultContext,
+      offset: 0,
+    });
     expect(moviesAdapter.search).toHaveBeenCalled();
     expect(tvAdapter.search).not.toHaveBeenCalled();
   });

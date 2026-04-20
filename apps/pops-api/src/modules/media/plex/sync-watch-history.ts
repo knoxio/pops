@@ -69,29 +69,21 @@ export interface WatchHistorySyncResult {
  * @param movieSectionId - Plex library section ID for movies (optional)
  * @param tvSectionId - Plex library section ID for TV shows (optional)
  */
-export async function syncWatchHistoryFromPlex(
-  plexClient: PlexClient,
-  movieSectionId?: string,
-  tvSectionId?: string,
-  onProgress?: (processed: number, total: number) => void
-): Promise<WatchHistorySyncResult> {
-  let movieResult: MovieWatchSyncResult | null = null;
+interface SyncTvShowWatchesArgs {
+  plexClient: PlexClient;
+  tvItems: PlexMediaItem[];
+  startProcessed: number;
+  totalItems: number;
+  onProgress?: (processed: number, total: number) => void;
+}
+
+async function syncTvShowWatches(
+  args: SyncTvShowWatchesArgs
+): Promise<{ showResults: ShowWatchDiagnostics[]; processed: number }> {
+  const { plexClient, tvItems, startProcessed, totalItems, onProgress } = args;
   const showResults: ShowWatchDiagnostics[] = [];
+  let processed = startProcessed;
 
-  // Fetch items from both sections to calculate total for progress
-  const movieItems = movieSectionId ? await plexClient.getAllItems(movieSectionId) : [];
-  const tvItems = tvSectionId ? await plexClient.getAllItems(tvSectionId) : [];
-  const totalItems = movieItems.length + tvItems.length;
-  let processed = 0;
-
-  // Sync movie watches
-  if (movieItems.length > 0) {
-    movieResult = syncMovieWatches(movieItems);
-    processed += movieItems.length;
-    onProgress?.(processed, totalItems);
-  }
-
-  // Sync TV episode watches
   for (const item of tvItems) {
     const tvdbId = extractExternalIdAsNumber(item, 'tvdb');
     if (!tvdbId) {
@@ -101,12 +93,7 @@ export async function syncWatchHistoryFromPlex(
     }
 
     const plexEpisodes = await plexClient.getEpisodes(item.ratingKey);
-
-    const diagnostics = getDb().transaction(() => {
-      return syncEpisodeWatches(tvdbId, plexEpisodes);
-    })();
-
-    // Only include shows that have some watched content or gaps
+    const diagnostics = getDb().transaction(() => syncEpisodeWatches(tvdbId, plexEpisodes))();
     if (diagnostics.plexWatched > 0) {
       showResults.push({
         title: item.title,
@@ -115,12 +102,17 @@ export async function syncWatchHistoryFromPlex(
         diagnostics,
       });
     }
-
     processed++;
     onProgress?.(processed, totalItems);
   }
 
-  // Build summary — count both new matches and previously logged as "tracked"
+  return { showResults, processed };
+}
+
+function summariseResults(
+  movieResult: MovieWatchSyncResult | null,
+  showResults: ShowWatchDiagnostics[]
+): WatchHistorySyncResult['summary'] {
   const episodesLogged = showResults.reduce((sum, s) => sum + s.diagnostics.matched, 0);
   const episodesAlreadyLogged = showResults.reduce(
     (sum, s) => sum + s.diagnostics.alreadyLogged,
@@ -131,17 +123,45 @@ export async function syncWatchHistoryFromPlex(
     const totalTracked = s.diagnostics.matched + s.diagnostics.alreadyLogged;
     return totalTracked < s.plexViewedLeafCount;
   }).length;
+  return {
+    moviesLogged: movieResult?.logged ?? 0,
+    episodesLogged,
+    episodesAlreadyLogged,
+    showsProcessed: showResults.length,
+    showsWithGaps,
+  };
+}
+
+export async function syncWatchHistoryFromPlex(
+  plexClient: PlexClient,
+  movieSectionId?: string,
+  tvSectionId?: string,
+  onProgress?: (processed: number, total: number) => void
+): Promise<WatchHistorySyncResult> {
+  let movieResult: MovieWatchSyncResult | null = null;
+  const movieItems = movieSectionId ? await plexClient.getAllItems(movieSectionId) : [];
+  const tvItems = tvSectionId ? await plexClient.getAllItems(tvSectionId) : [];
+  const totalItems = movieItems.length + tvItems.length;
+  let processed = 0;
+
+  if (movieItems.length > 0) {
+    movieResult = syncMovieWatches(movieItems);
+    processed += movieItems.length;
+    onProgress?.(processed, totalItems);
+  }
+
+  const { showResults } = await syncTvShowWatches({
+    plexClient,
+    tvItems,
+    startProcessed: processed,
+    totalItems,
+    onProgress,
+  });
 
   return {
     movies: movieResult,
     shows: showResults,
-    summary: {
-      moviesLogged: movieResult?.logged ?? 0,
-      episodesLogged,
-      episodesAlreadyLogged,
-      showsProcessed: showResults.length,
-      showsWithGaps,
-    },
+    summary: summariseResults(movieResult, showResults),
   };
 }
 

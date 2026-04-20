@@ -118,52 +118,62 @@ export function createTransaction(input: CreateTransactionInput): TransactionRow
  * Update an existing transaction. Returns the updated row.
  * Updates directly in SQLite.
  */
-export function updateTransaction(id: string, input: UpdateTransactionInput): TransactionRow {
-  // Verify it exists first
-  getTransaction(id);
+function buildCoreFields(
+  input: UpdateTransactionInput,
+  updates: Partial<typeof transactions.$inferSelect>
+): void {
+  if (input.description !== undefined) updates.description = input.description;
+  if (input.account !== undefined) updates.account = input.account;
+  if (input.amount !== undefined) updates.amount = input.amount;
+  if (input.date !== undefined) updates.date = input.date;
+  if (input.type !== undefined) updates.type = input.type ?? '';
+  if (input.tags !== undefined) updates.tags = JSON.stringify(input.tags);
+}
 
-  const updates: Partial<typeof transactions.$inferSelect> = {};
+function buildEntityFields(
+  input: UpdateTransactionInput,
+  updates: Partial<typeof transactions.$inferSelect>
+): void {
+  if (input.entityId !== undefined) updates.entityId = input.entityId ?? null;
+  if (input.entityName !== undefined) updates.entityName = input.entityName ?? null;
+}
 
-  if (input.description !== undefined) {
-    updates.description = input.description;
-  }
-  if (input.account !== undefined) {
-    updates.account = input.account;
-  }
-  if (input.amount !== undefined) {
-    updates.amount = input.amount;
-  }
-  if (input.date !== undefined) {
-    updates.date = input.date;
-  }
-  if (input.type !== undefined) {
-    updates.type = input.type ?? '';
-  }
-  if (input.tags !== undefined) {
-    updates.tags = JSON.stringify(input.tags);
-  }
-  if (input.entityId !== undefined) {
-    updates.entityId = input.entityId ?? null;
-  }
-  if (input.entityName !== undefined) {
-    updates.entityName = input.entityName ?? null;
-  }
-  if (input.location !== undefined) {
-    updates.location = input.location ?? null;
-  }
-  if (input.country !== undefined) {
-    updates.country = input.country ?? null;
-  }
+function buildLocationFields(
+  input: UpdateTransactionInput,
+  updates: Partial<typeof transactions.$inferSelect>
+): void {
+  if (input.location !== undefined) updates.location = input.location ?? null;
+  if (input.country !== undefined) updates.country = input.country ?? null;
+}
+
+function buildMetadataFields(
+  input: UpdateTransactionInput,
+  updates: Partial<typeof transactions.$inferSelect>
+): void {
   if (input.relatedTransactionId !== undefined) {
     updates.relatedTransactionId = input.relatedTransactionId ?? null;
   }
-  if (input.notes !== undefined) {
-    updates.notes = input.notes ?? null;
-  }
+  if (input.notes !== undefined) updates.notes = input.notes ?? null;
+}
+
+function buildRelationshipFields(
+  input: UpdateTransactionInput,
+  updates: Partial<typeof transactions.$inferSelect>
+): void {
+  buildEntityFields(input, updates);
+  buildLocationFields(input, updates);
+  buildMetadataFields(input, updates);
+}
+
+export function updateTransaction(id: string, input: UpdateTransactionInput): TransactionRow {
+  getTransaction(id);
+
+  const updates: Partial<typeof transactions.$inferSelect> = {};
+  buildCoreFields(input, updates);
+  buildRelationshipFields(input, updates);
 
   if (Object.keys(updates).length > 0) {
     updates.lastEditedTime = new Date().toISOString();
-
     getDrizzle().update(transactions).set(updates).where(eq(transactions.id, id)).run();
   }
 

@@ -25,89 +25,91 @@ import { TagRuleProposalDialog } from './TagRuleProposalDialog';
  * - "Save tag rule…" button per group — opens TagRuleProposalDialog (PRD-029 US-02/US-03)
  */
 export function TagReviewStep() {
-  const {
-    groups,
-    availableTags,
-    localTags,
-    suggestedTagMeta,
-    updateTag,
-    handleAcceptAll,
-    handleApplyGroupTags,
-    handleContinue,
-    prevStep,
-    confirmedCount,
-    tagRuleDialog,
-    setTagRuleDialogOpen,
-    handleOpenTagRuleDialog,
-    handleOpenTagRuleDialogForTransaction,
-    previewTransactions,
-    handleTagRuleApplied,
-  } = useTagReviewState();
-
+  const state = useTagReviewState();
+  const { confirmedCount, handleAcceptAll, prevStep, handleContinue } = state;
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-semibold mb-2">Tag Review</h2>
-        <p className="text-sm text-muted-foreground">
-          Review and adjust tags. Nothing is written to the database until you approve on Final
-          Review. Tags are pre-filled from AI suggestions, learned rules, and entity defaults.
-        </p>
-      </div>
-
-      {/* Top-level bulk action */}
+      <TagReviewHeader />
       {confirmedCount > 0 && (
         <Button variant="outline" size="sm" onClick={handleAcceptAll}>
           Accept All Suggestions
         </Button>
       )}
-
-      {/* Entity groups */}
-      <div className="space-y-4">
-        {groups.map((group) => (
-          <EntityGroup
-            key={group.entityName}
-            group={group}
-            localTags={localTags}
-            suggestedTagMeta={suggestedTagMeta}
-            availableTags={availableTags}
-            onUpdateTag={updateTag}
-            onApplyGroupTags={handleApplyGroupTags}
-            onSaveTagRule={handleOpenTagRuleDialog}
-            onSaveTagRuleForTransaction={handleOpenTagRuleDialogForTransaction}
-          />
-        ))}
-
-        {confirmedCount === 0 && (
-          <p className="text-center py-8 text-muted-foreground text-sm">
-            No transactions to import.
-          </p>
-        )}
-      </div>
-
-      {/* Footer navigation */}
-      <div className="flex justify-between items-center pt-2">
-        <Button variant="outline" onClick={prevStep}>
-          Back
-        </Button>
-        <Button
-          onClick={handleContinue}
-          disabled={confirmedCount === 0}
-          aria-label="Continue to final review"
-        >
-          {confirmedCount === 0
-            ? 'Continue to final review'
-            : `Continue to final review (${confirmedCount} transaction${confirmedCount !== 1 ? 's' : ''})`}
-        </Button>
-      </div>
-
-      {/* Tag Rule Proposal Dialog — opened per group (PRD-029 US-02 / US-03) */}
-      <TagRuleProposalDialog
-        open={tagRuleDialog !== null}
-        onOpenChange={setTagRuleDialogOpen}
-        signal={tagRuleDialog?.signal ?? null}
-        previewTransactions={previewTransactions}
-        onApplied={handleTagRuleApplied}
+      <EntityGroups state={state} />
+      <TagReviewFooter
+        confirmedCount={confirmedCount}
+        onBack={prevStep}
+        onContinue={handleContinue}
       />
+      <TagRuleProposalDialog
+        open={state.tagRuleDialog !== null}
+        onOpenChange={state.setTagRuleDialogOpen}
+        signal={state.tagRuleDialog?.signal ?? null}
+        previewTransactions={state.previewTransactions}
+        onApplied={state.handleTagRuleApplied}
+      />
+    </div>
+  );
+}
+
+function EntityGroups({ state }: { state: ReturnType<typeof useTagReviewState> }) {
+  return (
+    <div className="space-y-4">
+      {state.groups.map((group) => (
+        <EntityGroup
+          key={group.entityName}
+          group={group}
+          localTags={state.localTags}
+          suggestedTagMeta={state.suggestedTagMeta}
+          availableTags={state.availableTags}
+          onUpdateTag={state.updateTag}
+          onApplyGroupTags={state.handleApplyGroupTags}
+          onSaveTagRule={state.handleOpenTagRuleDialog}
+          onSaveTagRuleForTransaction={state.handleOpenTagRuleDialogForTransaction}
+        />
+      ))}
+      {state.confirmedCount === 0 && (
+        <p className="text-center py-8 text-muted-foreground text-sm">No transactions to import.</p>
+      )}
+    </div>
+  );
+}
+
+function TagReviewHeader() {
+  return (
+    <div>
+      <h2 className="text-2xl font-semibold mb-2">Tag Review</h2>
+      <p className="text-sm text-muted-foreground">
+        Review and adjust tags. Nothing is written to the database until you approve on Final
+        Review. Tags are pre-filled from AI suggestions, learned rules, and entity defaults.
+      </p>
+    </div>
+  );
+}
+
+interface TagReviewFooterProps {
+  confirmedCount: number;
+  onBack: () => void;
+  onContinue: () => void;
+}
+
+function TagReviewFooter({ confirmedCount, onBack, onContinue }: TagReviewFooterProps) {
+  const label =
+    confirmedCount === 0
+      ? 'Continue to final review'
+      : `Continue to final review (${confirmedCount} transaction${confirmedCount !== 1 ? 's' : ''})`;
+  return (
+    <div className="flex justify-between items-center pt-2">
+      <Button variant="outline" onClick={onBack}>
+        Back
+      </Button>
+      <Button
+        onClick={onContinue}
+        disabled={confirmedCount === 0}
+        aria-label="Continue to final review"
+      >
+        {label}
+      </Button>
     </div>
   );
 }

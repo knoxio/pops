@@ -73,15 +73,12 @@ interface TreeSectionProps {
   onDragEnd: (event: DragEndEvent) => void;
 }
 
-export function TreeSection({
+function TreeNodeList({
   treeNodes,
-  isLoading,
-  addingRoot,
   selectedId,
   addingChildOf,
   overId,
   activeId,
-  activeNode,
   onSelect,
   onAddChild,
   onRename,
@@ -90,64 +87,89 @@ export function TreeSection({
   onDelete,
   onNewChildSave,
   onNewChildCancel,
-  onNewRootSave,
-  onNewRootCancel,
-  onDragStart,
-  onDragOver,
-  onDragEnd,
-}: TreeSectionProps) {
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+}: Pick<
+  TreeSectionProps,
+  | 'treeNodes'
+  | 'selectedId'
+  | 'addingChildOf'
+  | 'overId'
+  | 'activeId'
+  | 'onSelect'
+  | 'onAddChild'
+  | 'onRename'
+  | 'onMoveStart'
+  | 'onReorder'
+  | 'onDelete'
+  | 'onNewChildSave'
+  | 'onNewChildCancel'
+>) {
+  return (
+    <SortableContext items={treeNodes.map((n) => n.id)} strategy={verticalListSortingStrategy}>
+      {treeNodes.map((node, i) => (
+        <LocationNode
+          key={node.id}
+          node={node}
+          depth={0}
+          selectedId={selectedId}
+          onSelect={onSelect}
+          onAddChild={onAddChild}
+          onRename={onRename}
+          onMoveStart={onMoveStart}
+          onReorder={onReorder}
+          onDelete={onDelete}
+          addingChildOf={addingChildOf}
+          onNewChildSave={onNewChildSave}
+          onNewChildCancel={onNewChildCancel}
+          siblingIndex={i}
+          siblingCount={treeNodes.length}
+          overId={overId}
+          activeId={activeId}
+        />
+      ))}
+    </SortableContext>
+  );
+}
 
-  if (isLoading) return <TreeSkeleton />;
+function NewRootInput({
+  onSave,
+  onCancel,
+}: {
+  onSave: (name: string) => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div
+      className="flex items-center gap-1.5 py-1.5 px-2"
+      style={{ paddingLeft: 'var(--tree-indent-base)' }}
+    >
+      <span className="w-5.5" />
+      <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
+      <InlineInput onSave={onSave} onCancel={onCancel} placeholder="Root location name" />
+    </div>
+  );
+}
+
+export function TreeSection(props: TreeSectionProps) {
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+  if (props.isLoading) return <TreeSkeleton />;
 
   return (
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
-      onDragStart={onDragStart}
-      onDragOver={onDragOver}
-      onDragEnd={onDragEnd}
+      onDragStart={props.onDragStart}
+      onDragOver={props.onDragOver}
+      onDragEnd={props.onDragEnd}
     >
       <div className="md:w-2/5 border rounded-lg py-2" role="tree" aria-label="Location tree">
-        <SortableContext items={treeNodes.map((n) => n.id)} strategy={verticalListSortingStrategy}>
-          {treeNodes.map((node, i) => (
-            <LocationNode
-              key={node.id}
-              node={node}
-              depth={0}
-              selectedId={selectedId}
-              onSelect={onSelect}
-              onAddChild={onAddChild}
-              onRename={onRename}
-              onMoveStart={onMoveStart}
-              onReorder={onReorder}
-              onDelete={onDelete}
-              addingChildOf={addingChildOf}
-              onNewChildSave={onNewChildSave}
-              onNewChildCancel={onNewChildCancel}
-              siblingIndex={i}
-              siblingCount={treeNodes.length}
-              overId={overId}
-              activeId={activeId}
-            />
-          ))}
-        </SortableContext>
-        {addingRoot && (
-          <div
-            className="flex items-center gap-1.5 py-1.5 px-2"
-            style={{ paddingLeft: 'var(--tree-indent-base)' }}
-          >
-            <span className="w-5.5" />
-            <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
-            <InlineInput
-              onSave={onNewRootSave}
-              onCancel={onNewRootCancel}
-              placeholder="Root location name"
-            />
-          </div>
+        <TreeNodeList {...props} />
+        {props.addingRoot && (
+          <NewRootInput onSave={props.onNewRootSave} onCancel={props.onNewRootCancel} />
         )}
       </div>
-      <DragOverlay>{activeNode ? <DragOverlayNode node={activeNode} /> : null}</DragOverlay>
+      <DragOverlay>
+        {props.activeNode ? <DragOverlayNode node={props.activeNode} /> : null}
+      </DragOverlay>
     </DndContext>
   );
 }

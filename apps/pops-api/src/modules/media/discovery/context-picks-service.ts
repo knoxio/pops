@@ -42,16 +42,23 @@ function getLibraryTmdbIds(): Set<number> {
   return new Set(rows.map((r) => r.tmdbId));
 }
 
+interface FlagSets {
+  libraryIds: Set<number>;
+  dismissedIds: Set<number>;
+  watchedIds: Set<number>;
+  watchlistIds: Set<number>;
+}
+
+interface FetchCollectionArgs {
+  client: TmdbClient;
+  collection: ContextCollection;
+  flags: FlagSets;
+  page: number;
+}
+
 /** Fetch discover results for a single context collection. */
-async function fetchCollectionResults(
-  client: TmdbClient,
-  collection: ContextCollection,
-  libraryIds: Set<number>,
-  dismissedIds: Set<number>,
-  watchedIds: Set<number>,
-  watchlistIds: Set<number>,
-  page: number
-): Promise<DiscoverResult[]> {
+async function fetchCollectionResults(args: FetchCollectionArgs): Promise<DiscoverResult[]> {
+  const { client, collection, flags, page } = args;
   const response = await client.discoverMovies({
     genreIds: collection.genreIds.length > 0 ? collection.genreIds : undefined,
     keywordIds: collection.keywordIds.length > 0 ? collection.keywordIds : undefined,
@@ -61,26 +68,23 @@ async function fetchCollectionResults(
   });
 
   return response.results
-    .filter((r) => !libraryIds.has(r.tmdbId) && !dismissedIds.has(r.tmdbId))
-    .map((r) => {
-      const inLibrary = false; // Already filtered out library movies
-      return {
-        tmdbId: r.tmdbId,
-        title: r.title,
-        overview: r.overview,
-        releaseDate: r.releaseDate,
-        posterPath: r.posterPath,
-        posterUrl: buildPosterUrl(r.posterPath, r.tmdbId, inLibrary),
-        backdropPath: r.backdropPath,
-        voteAverage: r.voteAverage,
-        voteCount: r.voteCount,
-        genreIds: r.genreIds,
-        popularity: r.popularity,
-        inLibrary,
-        isWatched: watchedIds.has(r.tmdbId),
-        onWatchlist: watchlistIds.has(r.tmdbId),
-      };
-    });
+    .filter((r) => !flags.libraryIds.has(r.tmdbId) && !flags.dismissedIds.has(r.tmdbId))
+    .map((r) => ({
+      tmdbId: r.tmdbId,
+      title: r.title,
+      overview: r.overview,
+      releaseDate: r.releaseDate,
+      posterPath: r.posterPath,
+      posterUrl: buildPosterUrl(r.posterPath, r.tmdbId, false),
+      backdropPath: r.backdropPath,
+      voteAverage: r.voteAverage,
+      voteCount: r.voteCount,
+      genreIds: r.genreIds,
+      popularity: r.popularity,
+      inLibrary: false,
+      isWatched: flags.watchedIds.has(r.tmdbId),
+      onWatchlist: flags.watchlistIds.has(r.tmdbId),
+    }));
 }
 
 /**
@@ -98,23 +102,17 @@ export async function getContextPicks(
   const dayOfWeek = now.getDay();
 
   const activeCollections = getActiveCollections(hour, month, dayOfWeek);
-  const libraryIds = getLibraryTmdbIds();
-  const dismissedIds = getDismissedTmdbIds();
-  const watchedIds = getWatchedTmdbIds();
-  const watchlistIds = getWatchlistTmdbIds();
+  const flags: FlagSets = {
+    libraryIds: getLibraryTmdbIds(),
+    dismissedIds: getDismissedTmdbIds(),
+    watchedIds: getWatchedTmdbIds(),
+    watchlistIds: getWatchlistTmdbIds(),
+  };
 
   const collectionResults = await Promise.all(
     activeCollections.map(async (col) => {
       const page = pages?.[col.id] ?? 1;
-      const results = await fetchCollectionResults(
-        client,
-        col,
-        libraryIds,
-        dismissedIds,
-        watchedIds,
-        watchlistIds,
-        page
-      );
+      const results = await fetchCollectionResults({ client, collection: col, flags, page });
       return {
         id: col.id,
         title: col.title,

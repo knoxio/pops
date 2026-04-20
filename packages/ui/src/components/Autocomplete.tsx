@@ -71,6 +71,36 @@ export interface AutocompleteProps {
  * />
  * ```
  */
+function SuggestionItems({
+  suggestions,
+  onPick,
+}: {
+  suggestions: AutocompleteSuggestion[];
+  onPick: (s: AutocompleteSuggestion) => void;
+}) {
+  return (
+    <CommandGroup>
+      {suggestions.map((suggestion) => (
+        <CommandItem
+          key={suggestion.value}
+          value={suggestion.label}
+          onSelect={() => {
+            if (!suggestion.disabled) onPick(suggestion);
+          }}
+          disabled={suggestion.disabled}
+        >
+          <div className="flex flex-col">
+            <span>{suggestion.label}</span>
+            {suggestion.description && (
+              <span className="text-xs text-muted-foreground">{suggestion.description}</span>
+            )}
+          </div>
+        </CommandItem>
+      ))}
+    </CommandGroup>
+  );
+}
+
 export function Autocomplete({
   suggestions,
   value = '',
@@ -85,7 +115,6 @@ export function Autocomplete({
   const [inputValue, setInputValue] = useState(value);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Sync external value changes
   useEffect(() => {
     setInputValue(value);
   }, [value]);
@@ -93,9 +122,7 @@ export function Autocomplete({
   const handleInputChange = (newValue: string) => {
     setInputValue(newValue);
     onChange?.(newValue);
-    if (!open && newValue) {
-      setOpen(true);
-    }
+    if (!open && newValue) setOpen(true);
   };
 
   const handleSelect = (suggestion: AutocompleteSuggestion) => {
@@ -123,33 +150,11 @@ export function Autocomplete({
           className="w-[var(--radix-popover-trigger-width)] p-0"
           side="bottom"
           align="start"
-          onOpenAutoFocus={(e: Event) => {
-            e.preventDefault();
-          }}
+          onOpenAutoFocus={(e: Event) => e.preventDefault()}
         >
           <CommandList>
             <CommandEmpty>{emptyMessage}</CommandEmpty>
-            <CommandGroup>
-              {suggestions.map((suggestion) => (
-                <CommandItem
-                  key={suggestion.value}
-                  value={suggestion.label}
-                  onSelect={() => {
-                    if (!suggestion.disabled) handleSelect(suggestion);
-                  }}
-                  disabled={suggestion.disabled}
-                >
-                  <div className="flex flex-col">
-                    <span>{suggestion.label}</span>
-                    {suggestion.description && (
-                      <span className="text-xs text-muted-foreground">
-                        {suggestion.description}
-                      </span>
-                    )}
-                  </div>
-                </CommandItem>
-              ))}
-            </CommandGroup>
+            <SuggestionItems suggestions={suggestions} onPick={handleSelect} />
           </CommandList>
         </PopoverContent>
       </Command>

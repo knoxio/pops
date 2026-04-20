@@ -1,5 +1,5 @@
 import { ArrowLeft, Search, X } from 'lucide-react';
-import { useCallback, useEffect, useRef } from 'react';
+import { type RefObject, useCallback, useEffect, useRef } from 'react';
 
 import { Button, Input } from '@pops/ui';
 
@@ -12,12 +12,20 @@ interface MobileSearchOverlayProps {
   onClose: () => void;
 }
 
-export function MobileSearchOverlay({ open, onClose }: MobileSearchOverlayProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const query = useSearchStore((s) => s.query);
+interface SearchHandlers {
+  handleChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleClear: () => void;
+  handleClose: () => void;
+  cancelDebounce: () => void;
+}
+
+function useMobileSearchHandlers(
+  inputRef: RefObject<HTMLInputElement | null>,
+  onClose: () => void
+): SearchHandlers {
   const setQuery = useSearchStore((s) => s.setQuery);
   const clear = useSearchStore((s) => s.clear);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const cancelDebounce = useCallback(() => {
     if (debounceTimerRef.current) {
@@ -44,23 +52,19 @@ export function MobileSearchOverlay({ open, onClose }: MobileSearchOverlayProps)
       inputRef.current.value = '';
       inputRef.current.focus();
     }
-  }, [cancelDebounce, clear]);
+  }, [cancelDebounce, clear, inputRef]);
 
   const handleClose = useCallback(() => {
     cancelDebounce();
     clear();
     if (inputRef.current) inputRef.current.value = '';
     onClose();
-  }, [cancelDebounce, clear, onClose]);
+  }, [cancelDebounce, clear, onClose, inputRef]);
 
-  useEffect(() => {
-    if (open) {
-      requestAnimationFrame(() => {
-        inputRef.current?.focus();
-      });
-    }
-  }, [open]);
+  return { handleChange, handleClear, handleClose, cancelDebounce };
+}
 
+function useOverlayKeyboard(open: boolean, onClose: () => void, cancelDebounce: () => void): void {
   useEffect(() => {
     if (!open) {
       cancelDebounce();
@@ -70,7 +74,7 @@ export function MobileSearchOverlay({ open, onClose }: MobileSearchOverlayProps)
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         e.preventDefault();
-        handleClose();
+        onClose();
       }
     }
 
@@ -78,7 +82,65 @@ export function MobileSearchOverlay({ open, onClose }: MobileSearchOverlayProps)
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [open, handleClose, cancelDebounce]);
+  }, [open, onClose, cancelDebounce]);
+}
+
+function useAutoFocusOnOpen(open: boolean, inputRef: RefObject<HTMLInputElement | null>): void {
+  useEffect(() => {
+    if (open) {
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+      });
+    }
+  }, [open, inputRef]);
+}
+
+interface OverlayInputProps {
+  inputRef: RefObject<HTMLInputElement | null>;
+  query: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onClear: () => void;
+}
+
+function OverlayInput({ inputRef, query, onChange, onClear }: OverlayInputProps) {
+  return (
+    <div className="relative flex flex-1 items-center">
+      <Search className="pointer-events-none absolute left-2.5 h-4 w-4 text-muted-foreground" />
+      <Input
+        ref={inputRef}
+        type="text"
+        placeholder="Search POPS..."
+        defaultValue={query}
+        onChange={onChange}
+        className="h-9 border-transparent bg-muted/50 pl-9 pr-9 transition-colors focus:border-border focus:bg-background"
+        aria-label="Search POPS"
+        data-testid="mobile-search-input"
+      />
+      {query && (
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClear}
+          className="absolute right-1 h-7 w-7 text-muted-foreground hover:text-foreground"
+          aria-label="Clear search"
+        >
+          <X className="h-3.5 w-3.5" />
+        </Button>
+      )}
+    </div>
+  );
+}
+
+export function MobileSearchOverlay({ open, onClose }: MobileSearchOverlayProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const query = useSearchStore((s) => s.query);
+  const { handleChange, handleClear, handleClose, cancelDebounce } = useMobileSearchHandlers(
+    inputRef,
+    onClose
+  );
+
+  useAutoFocusOnOpen(open, inputRef);
+  useOverlayKeyboard(open, handleClose, cancelDebounce);
 
   if (!open) return null;
 
@@ -97,31 +159,12 @@ export function MobileSearchOverlay({ open, onClose }: MobileSearchOverlayProps)
       >
         <ArrowLeft className="h-5 w-5" />
       </Button>
-
-      <div className="relative flex flex-1 items-center">
-        <Search className="pointer-events-none absolute left-2.5 h-4 w-4 text-muted-foreground" />
-        <Input
-          ref={inputRef}
-          type="text"
-          placeholder="Search POPS..."
-          defaultValue={query}
-          onChange={handleChange}
-          className="h-9 border-transparent bg-muted/50 pl-9 pr-9 transition-colors focus:border-border focus:bg-background"
-          aria-label="Search POPS"
-          data-testid="mobile-search-input"
-        />
-        {query && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleClear}
-            className="absolute right-1 h-7 w-7 text-muted-foreground hover:text-foreground"
-            aria-label="Clear search"
-          >
-            <X className="h-3.5 w-3.5" />
-          </Button>
-        )}
-      </div>
+      <OverlayInput
+        inputRef={inputRef}
+        query={query}
+        onChange={handleChange}
+        onClear={handleClear}
+      />
     </div>
   );
 }

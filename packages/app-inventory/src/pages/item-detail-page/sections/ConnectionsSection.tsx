@@ -89,6 +89,65 @@ interface ConnectionsSectionProps {
   onDisconnect: (conn: ItemConnection) => void;
 }
 
+interface ConnectedItemsListProps {
+  itemId: string;
+  connections: ItemConnection[];
+  connectionsLoading: boolean;
+  isDisconnecting: boolean;
+  onDisconnect: (conn: ItemConnection) => void;
+}
+
+function ConnectedItemsList({
+  itemId,
+  connections,
+  connectionsLoading,
+  isDisconnecting,
+  onDisconnect,
+}: ConnectedItemsListProps) {
+  if (connectionsLoading) {
+    return (
+      <div className="space-y-2">
+        <Skeleton className="h-12 w-full" />
+        <Skeleton className="h-12 w-full" />
+      </div>
+    );
+  }
+  if (!connections.length) {
+    return <p className="text-muted-foreground text-sm">No connected items yet.</p>;
+  }
+  return (
+    <div className="space-y-2">
+      {connections.map((conn) => (
+        <ConnectionRow
+          key={conn.id}
+          connectedItemId={conn.itemAId === itemId ? conn.itemBId : conn.itemAId}
+          onDisconnect={() => onDisconnect(conn)}
+          isDisconnecting={isDisconnecting}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ConnectionChainSection({ itemId }: { itemId: string }) {
+  const [showGraph, setShowGraph] = useState(false);
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <GitBranch className="h-5 w-5" />
+          Connection Chain
+        </h2>
+        <Button variant="outline" size="sm" onClick={() => setShowGraph((v) => !v)}>
+          <Network className="h-4 w-4 mr-1.5" />
+          {showGraph ? 'Hide Graph' : 'View Graph'}
+        </Button>
+      </div>
+      {showGraph ? <ConnectionGraph itemId={itemId} /> : <ConnectionTracePanel itemId={itemId} />}
+    </section>
+  );
+}
+
 export function ConnectionsSection({
   itemId,
   connections,
@@ -97,8 +156,6 @@ export function ConnectionsSection({
   onConnected,
   onDisconnect,
 }: ConnectionsSectionProps) {
-  const [showGraph, setShowGraph] = useState(false);
-
   return (
     <>
       <section>
@@ -109,53 +166,15 @@ export function ConnectionsSection({
           </h2>
           <ConnectDialog currentItemId={itemId} onConnected={onConnected} />
         </div>
-
-        {(() => {
-          if (connectionsLoading) {
-            return (
-              <div className="space-y-2">
-                <Skeleton className="h-12 w-full" />
-                <Skeleton className="h-12 w-full" />
-              </div>
-            );
-          }
-          if (connections.length) {
-            return (
-              <div className="space-y-2">
-                {connections.map((conn: ItemConnection) => (
-                  <ConnectionRow
-                    key={conn.id}
-                    connectedItemId={conn.itemAId === itemId ? conn.itemBId : conn.itemAId}
-                    onDisconnect={() => onDisconnect(conn)}
-                    isDisconnecting={isDisconnecting}
-                  />
-                ))}
-              </div>
-            );
-          }
-          return <p className="text-muted-foreground text-sm">No connected items yet.</p>;
-        })()}
+        <ConnectedItemsList
+          itemId={itemId}
+          connections={connections}
+          connectionsLoading={connectionsLoading}
+          isDisconnecting={isDisconnecting}
+          onDisconnect={onDisconnect}
+        />
       </section>
-
-      {connections.length ? (
-        <section>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <GitBranch className="h-5 w-5" />
-              Connection Chain
-            </h2>
-            <Button variant="outline" size="sm" onClick={() => setShowGraph((v) => !v)}>
-              <Network className="h-4 w-4 mr-1.5" />
-              {showGraph ? 'Hide Graph' : 'View Graph'}
-            </Button>
-          </div>
-          {showGraph ? (
-            <ConnectionGraph itemId={itemId} />
-          ) : (
-            <ConnectionTracePanel itemId={itemId} />
-          )}
-        </section>
-      ) : null}
+      {connections.length ? <ConnectionChainSection itemId={itemId} /> : null}
     </>
   );
 }

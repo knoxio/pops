@@ -5,36 +5,24 @@ import cron, { type ScheduledTask } from 'node-cron';
 /**
  * Rotation scheduler — daily cron job orchestrating the full rotation cycle.
  *
- * Follows the Plex scheduler singleton pattern: module-level state,
- * settings-driven, auto-resume on startup.
+ * The cycle implementation lives in `rotation-cycle.ts`; the rotation log
+ * writer in `rotation-log.ts`; shared types in `rotation-cycle-types.ts`.
  *
  * PRD-070 US-06
  */
-import { rotationLog, settings } from '@pops/db-types';
+import { settings } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
-import {
-  addMoviesFromQueue,
-  getAdditionBudget,
-  getAvgMovieGb,
-  getDailyAdditions,
-} from './addition-gating.js';
-import {
-  calculateRemovalDeficit,
-  getDownloadingTmdbIds,
-  getEligibleForRemoval,
-  getLeavingMovieSizeGb,
-  getRadarrDiskSpace,
-  getRadarrMovieSizes,
-  markMoviesAsLeaving,
-  processExpiredMovies,
-  selectMoviesForRemoval,
-} from './removal-selection.js';
-import { syncAllSources } from './sync-source.js';
+import { emptyResult } from './rotation-cycle-types.js';
+import { executeRotationCycle } from './rotation-cycle.js';
+import { writeRotationLog } from './rotation-log.js';
 
-// ---------------------------------------------------------------------------
-// Settings keys
-// ---------------------------------------------------------------------------
+export {
+  emptyResult,
+  type RotationCycleResult,
+  type RotationFailedMovieRef,
+  type RotationMovieRef,
+} from './rotation-cycle-types.js';
 
 const SETTINGS_KEYS = {
   enabled: 'rotation_enabled',
@@ -43,13 +31,9 @@ const SETTINGS_KEYS = {
   leavingDays: 'rotation_leaving_days',
 } as const;
 
-const DEFAULT_CRON = '0 3 * * *'; // 3 AM daily
+const DEFAULT_CRON = '0 3 * * *';
 const DEFAULT_TARGET_FREE_GB = 100;
 const DEFAULT_LEAVING_DAYS = 7;
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
 
 export interface RotationSchedulerStatus {
   isRunning: boolean;
@@ -60,45 +44,11 @@ export interface RotationSchedulerStatus {
   nextRunAt: string | null;
 }
 
-/** Per-movie reference stored in the rotation log details. */
-export interface RotationMovieRef {
-  tmdbId: number;
-  title: string;
-}
-
-/** Per-movie reference for failed removals, which may carry an error message. */
-export interface RotationFailedMovieRef extends RotationMovieRef {
-  error?: string;
-}
-
-export interface RotationCycleResult {
-  moviesMarkedLeaving: number;
-  moviesRemoved: number;
-  moviesAdded: number;
-  removalsFailed: number;
-  freeSpaceGb: number;
-  targetFreeGb: number;
-  skippedReason: string | null;
-  /** Per-movie detail lists written to the rotation_log details column. */
-  marked: RotationMovieRef[];
-  removed: RotationMovieRef[];
-  added: RotationMovieRef[];
-  failed: RotationFailedMovieRef[];
-}
-
-// ---------------------------------------------------------------------------
-// Module singleton state
-// ---------------------------------------------------------------------------
-
 let task: ScheduledTask | null = null;
 let cronExpression = DEFAULT_CRON;
 let isCycleRunning = false;
 let lastCycleAt: string | null = null;
 let lastCycleError: string | null = null;
-
-// ---------------------------------------------------------------------------
-// Settings helpers
-// ---------------------------------------------------------------------------
 
 function getSetting(key: string): string | null {
   const db = getDrizzle();
@@ -129,16 +79,10 @@ function getLeavingDays(): number {
   return val ? Number(val) : DEFAULT_LEAVING_DAYS;
 }
 
-// ---------------------------------------------------------------------------
-// Public API
-// ---------------------------------------------------------------------------
-
-/** Start the rotation scheduler. No-op if already running. */
 export function startRotationScheduler(options?: {
   cronExpression?: string;
 }): RotationSchedulerStatus {
   if (task) return getRotationSchedulerStatus();
-
   cronExpression =
     options?.cronExpression ?? getSetting(SETTINGS_KEYS.cronExpression) ?? DEFAULT_CRON;
 
@@ -148,26 +92,21 @@ export function startRotationScheduler(options?: {
 
   saveSetting(SETTINGS_KEYS.enabled, 'true');
   saveSetting(SETTINGS_KEYS.cronExpression, cronExpression);
-
   console.warn(`[Rotation] Scheduler started (cron: ${cronExpression})`);
   return getRotationSchedulerStatus();
 }
 
-/** Stop the rotation scheduler. No-op if not running. */
 export function stopRotationScheduler(): RotationSchedulerStatus {
   if (task) {
     void task.stop();
     task = null;
   }
-
   deleteSetting(SETTINGS_KEYS.enabled);
   deleteSetting(SETTINGS_KEYS.cronExpression);
-
   console.warn('[Rotation] Scheduler stopped');
   return getRotationSchedulerStatus();
 }
 
-/** Get current scheduler status. */
 export function getRotationSchedulerStatus(): RotationSchedulerStatus {
   let nextRunAt: string | null = null;
   if (task && cronExpression) {
@@ -178,7 +117,6 @@ export function getRotationSchedulerStatus(): RotationSchedulerStatus {
       // Invalid cron — leave null
     }
   }
-
   return {
     isRunning: task !== null,
     isCycleRunning,
@@ -189,18 +127,17 @@ export function getRotationSchedulerStatus(): RotationSchedulerStatus {
   };
 }
 
-/** Auto-resume the scheduler on server startup if previously enabled. */
 export function resumeRotationSchedulerIfEnabled(): RotationSchedulerStatus | null {
   const enabled = getSetting(SETTINGS_KEYS.enabled);
   if (enabled !== 'true') return null;
-
   const savedCron = getSetting(SETTINGS_KEYS.cronExpression) ?? DEFAULT_CRON;
   console.warn(`[Rotation] Auto-resuming scheduler (cron: ${savedCron})`);
   return startRotationScheduler({ cronExpression: savedCron });
 }
 
-/** Trigger an immediate rotation cycle. Returns null if a cycle is already running. */
-export async function runRotationCycleNow(): Promise<RotationCycleResult | null> {
+export async function runRotationCycleNow(): Promise<ReturnType<
+  typeof executeRotationCycle
+> | null> {
   if (isCycleRunning) {
     console.warn('[Rotation] Cycle already in progress — skipping');
     return null;
@@ -208,24 +145,13 @@ export async function runRotationCycleNow(): Promise<RotationCycleResult | null>
   return runRotationCycle();
 }
 
-// ---------------------------------------------------------------------------
-// Core rotation cycle
-// ---------------------------------------------------------------------------
-
-export async function runRotationCycle(): Promise<RotationCycleResult> {
+export async function runRotationCycle(): Promise<
+  Awaited<ReturnType<typeof executeRotationCycle>>
+> {
   if (isCycleRunning) {
-    const result: RotationCycleResult = {
-      moviesMarkedLeaving: 0,
-      moviesRemoved: 0,
-      moviesAdded: 0,
-      removalsFailed: 0,
-      freeSpaceGb: 0,
-      targetFreeGb: getTargetFreeGb(),
+    const result = {
+      ...emptyResult(getTargetFreeGb()),
       skippedReason: 'Concurrent cycle already running',
-      marked: [],
-      removed: [],
-      added: [],
-      failed: [],
     };
     writeRotationLog(result);
     return result;
@@ -236,130 +162,22 @@ export async function runRotationCycle(): Promise<RotationCycleResult> {
   const leavingDays = getLeavingDays();
 
   try {
-    // Step 0: Sync all rotation sources (refresh candidate queue)
-    await syncAllSources();
-
-    // Step 1: Process expired leaving movies (Radarr delete)
-    const expiredResults = await processExpiredMovies();
-    const moviesRemoved = expiredResults.filter((r) => r.success).length;
-    const removalsFailed = expiredResults.filter((r) => !r.success).length;
-    const removedMovies: RotationMovieRef[] = expiredResults
-      .filter((r) => r.success)
-      .map((r) => ({ tmdbId: r.tmdbId, title: r.title }));
-    const failedMovies: RotationFailedMovieRef[] = expiredResults
-      .filter((r) => !r.success)
-      .map((r) => ({ tmdbId: r.tmdbId, title: r.title, error: r.error }));
-
-    // Step 2: Measure free space
-    let freeSpaceGb: number;
-    try {
-      freeSpaceGb = await getRadarrDiskSpace();
-    } catch {
-      const result: RotationCycleResult = {
-        moviesMarkedLeaving: 0,
-        moviesRemoved,
-        moviesAdded: 0,
-        removalsFailed,
-        freeSpaceGb: 0,
-        targetFreeGb,
-        skippedReason: 'Radarr unavailable — cannot measure disk space',
-        marked: [],
-        removed: removedMovies,
-        added: [],
-        failed: failedMovies,
-      };
-      writeRotationLog(result);
-      lastCycleAt = new Date().toISOString();
-      lastCycleError = result.skippedReason;
-      return result;
-    }
-
-    // Step 3: Calculate deficit and select movies for removal
-    const movieSizes = await getRadarrMovieSizes();
-    const leavingSizeGb = getLeavingMovieSizeGb(movieSizes);
-    const deficit = calculateRemovalDeficit(targetFreeGb, freeSpaceGb, leavingSizeGb);
-
-    let moviesMarkedLeaving = 0;
-    let markedMovies: RotationMovieRef[] = [];
-    if (deficit > 0) {
-      const downloadingIds = await getDownloadingTmdbIds();
-      const eligible = getEligibleForRemoval(movieSizes, downloadingIds);
-      const selection = selectMoviesForRemoval(eligible, movieSizes, deficit);
-
-      if (selection.moviesToMark.length > 0) {
-        const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + leavingDays);
-        markMoviesAsLeaving(
-          selection.moviesToMark.map((m) => m.id),
-          expiresAt.toISOString()
-        );
-        moviesMarkedLeaving = selection.moviesToMark.length;
-        markedMovies = selection.moviesToMark.map((m) => ({ tmdbId: m.tmdbId, title: m.title }));
-      }
-    }
-
-    // Step 4: Re-check free space and add movies from candidate queue
-    let postFreeSpaceGb: number;
-    try {
-      postFreeSpaceGb = await getRadarrDiskSpace();
-    } catch {
-      postFreeSpaceGb = freeSpaceGb; // fall back to earlier measurement
-    }
-
-    const budget = getAdditionBudget(
-      postFreeSpaceGb,
-      targetFreeGb,
-      getAvgMovieGb(),
-      getDailyAdditions()
-    );
-    const additionResult = await addMoviesFromQueue(budget);
-    const moviesAdded = additionResult.added;
-
-    if (budget === 0) {
-      console.warn('[Rotation] Additions skipped — below target free space');
-    }
-
-    const result: RotationCycleResult = {
-      moviesMarkedLeaving,
-      moviesRemoved,
-      moviesAdded,
-      removalsFailed,
-      freeSpaceGb,
-      targetFreeGb,
-      skippedReason: null,
-      marked: markedMovies,
-      removed: removedMovies,
-      added: additionResult.addedMovies,
-      failed: failedMovies,
-    };
-
+    const result = await executeRotationCycle({ targetFreeGb, leavingDays });
     writeRotationLog(result);
     lastCycleAt = new Date().toISOString();
-    lastCycleError = null;
-
+    lastCycleError = result.skippedReason;
     console.warn(
-      `[Rotation] Cycle complete: ${moviesRemoved} removed, ${moviesMarkedLeaving} marked leaving, ${moviesAdded} added, ${freeSpaceGb.toFixed(1)} GB free`
+      `[Rotation] Cycle complete: ${result.moviesRemoved} removed, ${result.moviesMarkedLeaving} marked leaving, ${result.moviesAdded} added, ${result.freeSpaceGb.toFixed(1)} GB free`
     );
-
     return result;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     lastCycleAt = new Date().toISOString();
     lastCycleError = message;
     console.error('[Rotation] Cycle failed:', message);
-
-    const result: RotationCycleResult = {
-      moviesMarkedLeaving: 0,
-      moviesRemoved: 0,
-      moviesAdded: 0,
-      removalsFailed: 0,
-      freeSpaceGb: 0,
-      targetFreeGb,
+    const result = {
+      ...emptyResult(targetFreeGb),
       skippedReason: `Cycle error: ${message}`,
-      marked: [],
-      removed: [],
-      added: [],
-      failed: [],
     };
     writeRotationLog(result);
     return result;
@@ -368,49 +186,8 @@ export async function runRotationCycle(): Promise<RotationCycleResult> {
   }
 }
 
-// ---------------------------------------------------------------------------
-// Rotation log
-// ---------------------------------------------------------------------------
-
-function writeRotationLog(result: RotationCycleResult): void {
-  const db = getDrizzle();
-  const hasDetails =
-    result.marked.length > 0 ||
-    result.removed.length > 0 ||
-    result.added.length > 0 ||
-    result.failed.length > 0;
-  const details = hasDetails
-    ? JSON.stringify({
-        marked: result.marked,
-        removed: result.removed,
-        added: result.added,
-        failed: result.failed,
-      })
-    : null;
-  db.insert(rotationLog)
-    .values({
-      executedAt: new Date().toISOString(),
-      moviesMarkedLeaving: result.moviesMarkedLeaving,
-      moviesRemoved: result.moviesRemoved,
-      moviesAdded: result.moviesAdded,
-      removalsFailed: result.removalsFailed,
-      freeSpaceGb: result.freeSpaceGb,
-      targetFreeGb: result.targetFreeGb,
-      skippedReason: result.skippedReason,
-      details,
-    })
-    .run();
-}
-
-// ---------------------------------------------------------------------------
-// Graceful shutdown helpers
-// ---------------------------------------------------------------------------
-
 /**
  * Stop the in-memory cron task without touching persisted settings.
- * Use this during graceful shutdown so the scheduler auto-resumes on restart.
- * For user-initiated disable (which should prevent auto-resume), use
- * `stopRotationScheduler()` instead.
  */
 export function stopRotationTask(): void {
   if (task) {
@@ -422,7 +199,6 @@ export function stopRotationTask(): void {
 
 /**
  * Returns a promise that resolves once any in-progress rotation cycle finishes.
- * Resolves immediately if no cycle is running.
  */
 export function waitForCycleEnd(): Promise<void> {
   if (!isCycleRunning) return Promise.resolve();
@@ -436,10 +212,6 @@ export function waitForCycleEnd(): Promise<void> {
   });
 }
 
-// ---------------------------------------------------------------------------
-// Test helpers
-// ---------------------------------------------------------------------------
-
 /** Reset all scheduler state — for testing only. */
 export function _resetRotationScheduler(): void {
   stopRotationScheduler();
@@ -450,6 +222,4 @@ export function _resetRotationScheduler(): void {
 }
 
 /** Expose writeRotationLog for unit testing — for testing only. */
-export function _writeRotationLogForTest(result: RotationCycleResult): void {
-  writeRotationLog(result);
-}
+export const _writeRotationLogForTest = writeRotationLog;

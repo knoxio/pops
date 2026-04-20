@@ -83,10 +83,37 @@ const trendIconClass = {
   neutral: 'text-muted-foreground',
 } as const;
 
+function trendIcon(direction: StatCardTrend['direction']) {
+  if (direction === 'up') return <TrendingUp className="h-3 w-3" aria-hidden="true" />;
+  if (direction === 'down') return <TrendingDown className="h-3 w-3" aria-hidden="true" />;
+  return null;
+}
+
+function trendSign(direction: StatCardTrend['direction']) {
+  if (direction === 'up') return '+';
+  if (direction === 'down') return '-';
+  return '';
+}
+
+function TrendBadge({ trend }: { trend: StatCardTrend }) {
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-1 text-2xs font-semibold',
+        trendIconClass[trend.direction]
+      )}
+    >
+      {trendIcon(trend.direction)}
+      <span>
+        {trendSign(trend.direction)}
+        {Math.abs(trend.value)}%
+      </span>
+    </div>
+  );
+}
+
 /**
  * StatCard — a high-impact card for displaying key metrics.
- * Features domain-specific coloring, subtle glow effects, and an optional
- * trend indicator (TrendingUp / TrendingDown Lucide icons).
  */
 export function StatCard({
   title,
@@ -135,37 +162,7 @@ export function StatCard({
         <p className={cn('text-3xl font-bold tabular-nums tracking-normal', styles.text)}>
           {value}
         </p>
-        {trend &&
-          (() => {
-            const renderTrendIcon = () => {
-              if (trend.direction === 'up') {
-                return <TrendingUp className="h-3 w-3" aria-hidden="true" />;
-              }
-              if (trend.direction === 'down') {
-                return <TrendingDown className="h-3 w-3" aria-hidden="true" />;
-              }
-              return null;
-            };
-            const trendSign = (() => {
-              if (trend.direction === 'up') return '+';
-              if (trend.direction === 'down') return '-';
-              return '';
-            })();
-            return (
-              <div
-                className={cn(
-                  'flex items-center gap-1 text-2xs font-semibold',
-                  trendIconClass[trend.direction]
-                )}
-              >
-                {renderTrendIcon()}
-                <span>
-                  {trendSign}
-                  {Math.abs(trend.value)}%
-                </span>
-              </div>
-            );
-          })()}
+        {trend && <TrendBadge trend={trend} />}
       </div>
       {description && (
         <div className="text-2xs text-muted-foreground font-medium uppercase tracking-normal opacity-70 relative z-10">

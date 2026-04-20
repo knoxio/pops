@@ -9,14 +9,50 @@ import { getDrizzle } from '../../../db.js';
 
 import type { AiUsageHistoryOutput, AiUsageHistoryRecord, AiUsageStatsOutput } from './types.js';
 
-/**
- * Get overall AI usage statistics
- */
-export function getStats(): AiUsageStatsOutput {
-  const db = getDrizzle();
+interface OverallUsage {
+  totalCost: number;
+  totalApiCalls: number;
+  totalCacheHits: number;
+  totalInputTokens: number;
+  totalOutputTokens: number;
+}
 
-  // Overall stats (all time)
-  const [overall] = db
+interface RecentUsage {
+  cost: number;
+  apiCalls: number;
+  cacheHits: number;
+  inputTokens: number;
+  outputTokens: number;
+}
+
+const EMPTY_OVERALL: OverallUsage = {
+  totalCost: 0,
+  totalApiCalls: 0,
+  totalCacheHits: 0,
+  totalInputTokens: 0,
+  totalOutputTokens: 0,
+};
+
+const EMPTY_RECENT: RecentUsage = {
+  cost: 0,
+  apiCalls: 0,
+  cacheHits: 0,
+  inputTokens: 0,
+  outputTokens: 0,
+};
+
+function coalesceNulls<T extends Record<string, number>>(defaults: T, row: T | undefined): T {
+  if (!row) return defaults;
+  const out = { ...defaults };
+  for (const key of Object.keys(out) as (keyof T)[]) {
+    const value = row[key];
+    if (value != null) out[key] = value;
+  }
+  return out;
+}
+
+function fetchOverallUsage(): OverallUsage {
+  const [row] = getDrizzle()
     .select({
       totalCost: sql<number>`SUM(CASE WHEN ${aiUsage.cached} = 0 THEN ${aiUsage.costUsd} ELSE 0 END)`,
       totalApiCalls: sql<number>`SUM(CASE WHEN ${aiUsage.cached} = 0 THEN 1 ELSE 0 END)`,
@@ -26,13 +62,11 @@ export function getStats(): AiUsageStatsOutput {
     })
     .from(aiUsage)
     .all();
+  return coalesceNulls(EMPTY_OVERALL, row);
+}
 
-  // Last 30 days stats
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const thirtyDaysAgoIso = thirtyDaysAgo.toISOString();
-
-  const [last30Days] = db
+function fetchRecentUsage(sinceIso: string): RecentUsage {
+  const [row] = getDrizzle()
     .select({
       cost: sql<number>`SUM(CASE WHEN ${aiUsage.cached} = 0 THEN ${aiUsage.costUsd} ELSE 0 END)`,
       apiCalls: sql<number>`SUM(CASE WHEN ${aiUsage.cached} = 0 THEN 1 ELSE 0 END)`,
@@ -41,32 +75,33 @@ export function getStats(): AiUsageStatsOutput {
       outputTokens: sql<number>`SUM(CASE WHEN ${aiUsage.cached} = 0 THEN ${aiUsage.outputTokens} ELSE 0 END)`,
     })
     .from(aiUsage)
-    .where(gte(aiUsage.createdAt, thirtyDaysAgoIso))
+    .where(gte(aiUsage.createdAt, sinceIso))
     .all();
+  return coalesceNulls(EMPTY_RECENT, row);
+}
 
-  const totalApiCalls = overall?.totalApiCalls ?? 0;
-  const totalCacheHits = overall?.totalCacheHits ?? 0;
-  const totalCost = overall?.totalCost ?? 0;
+/**
+ * Get overall AI usage statistics
+ */
+export function getStats(): AiUsageStatsOutput {
+  const overall = fetchOverallUsage();
+
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const last30Days = fetchRecentUsage(thirtyDaysAgo.toISOString());
+
+  const totalEvents = overall.totalApiCalls + overall.totalCacheHits;
+  const has30dActivity = last30Days.apiCalls > 0 || last30Days.cacheHits > 0;
 
   return {
-    totalCost,
-    totalApiCalls,
-    totalCacheHits,
-    cacheHitRate:
-      totalApiCalls + totalCacheHits > 0 ? totalCacheHits / (totalApiCalls + totalCacheHits) : 0,
-    avgCostPerCall: totalApiCalls > 0 ? totalCost / totalApiCalls : 0,
-    totalInputTokens: overall?.totalInputTokens ?? 0,
-    totalOutputTokens: overall?.totalOutputTokens ?? 0,
-    last30Days:
-      last30Days?.apiCalls || last30Days?.cacheHits
-        ? {
-            cost: last30Days?.cost ?? 0,
-            apiCalls: last30Days?.apiCalls ?? 0,
-            cacheHits: last30Days?.cacheHits ?? 0,
-            inputTokens: last30Days?.inputTokens ?? 0,
-            outputTokens: last30Days?.outputTokens ?? 0,
-          }
-        : undefined,
+    totalCost: overall.totalCost,
+    totalApiCalls: overall.totalApiCalls,
+    totalCacheHits: overall.totalCacheHits,
+    cacheHitRate: totalEvents > 0 ? overall.totalCacheHits / totalEvents : 0,
+    avgCostPerCall: overall.totalApiCalls > 0 ? overall.totalCost / overall.totalApiCalls : 0,
+    totalInputTokens: overall.totalInputTokens,
+    totalOutputTokens: overall.totalOutputTokens,
+    last30Days: has30dActivity ? last30Days : undefined,
   };
 }
 

@@ -78,14 +78,11 @@ export function buildEntityMaps(
 
   for (const entity of entitiesData) {
     entityLookup.set(entity.name.toLowerCase(), { id: entity.id, name: entity.name });
-
-    if (entity.aliases) {
-      const aliasList = entity.aliases.split(',');
-      for (const raw of aliasList) {
-        const alias = raw.trim();
-        if (alias.length === 0) continue;
-        aliasMap.set(alias.toLowerCase(), entity.name);
-      }
+    if (!entity.aliases) continue;
+    for (const raw of entity.aliases.split(',')) {
+      const alias = raw.trim();
+      if (alias.length === 0) continue;
+      aliasMap.set(alias.toLowerCase(), entity.name);
     }
   }
 

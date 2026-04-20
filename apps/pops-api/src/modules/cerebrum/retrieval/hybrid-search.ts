@@ -134,6 +134,12 @@ export class HybridSearchService {
     if (!vector) {
       return [];
     }
-    return this.semanticSvc.searchByVector(vector, engramId, filters, limit, threshold);
+    return this.semanticSvc.searchByVector({
+      vectorBlob: vector,
+      sourceIdToExclude: engramId,
+      filters,
+      limit,
+      threshold,
+    });
   }
 }

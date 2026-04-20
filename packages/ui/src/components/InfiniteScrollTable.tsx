@@ -90,21 +90,12 @@ export interface InfiniteScrollTableProps<TData, TValue = unknown> {
  * />
  * ```
  */
-export function InfiniteScrollTable<TData, TValue>({
-  columns,
-  data,
-  onLoadMore,
-  hasMore,
-  loading = false,
-  searchable = false,
-  searchPlaceholder,
-  searchColumn,
-  columnVisibility = true,
-  emptyState,
-  className,
-  onRowClick,
-  scrollThreshold = 200,
-}: InfiniteScrollTableProps<TData, TValue>) {
+function useInfiniteScrollTrigger(
+  hasMore: boolean,
+  loading: boolean,
+  scrollThreshold: number,
+  onLoadMore: () => void | Promise<void>
+) {
   const observerTarget = useRef<HTMLDivElement>(null);
   const loadingRef = useRef(false);
 
@@ -121,24 +112,36 @@ export function InfiniteScrollTable<TData, TValue>({
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0]?.isIntersecting && hasMore && !loading) {
-          handleLoadMore();
-        }
+        if (entries[0]?.isIntersecting && hasMore && !loading) handleLoadMore();
       },
       { threshold: 0.1, rootMargin: `${scrollThreshold}px` }
     );
-
     const currentTarget = observerTarget.current;
-    if (currentTarget) {
-      observer.observe(currentTarget);
-    }
-
+    if (currentTarget) observer.observe(currentTarget);
     return () => {
-      if (currentTarget) {
-        observer.unobserve(currentTarget);
-      }
+      if (currentTarget) observer.unobserve(currentTarget);
     };
   }, [hasMore, loading, handleLoadMore, scrollThreshold]);
+
+  return observerTarget;
+}
+
+export function InfiniteScrollTable<TData, TValue>({
+  columns,
+  data,
+  onLoadMore,
+  hasMore,
+  loading = false,
+  searchable = false,
+  searchPlaceholder,
+  searchColumn,
+  columnVisibility = true,
+  emptyState,
+  className,
+  onRowClick,
+  scrollThreshold = 200,
+}: InfiniteScrollTableProps<TData, TValue>) {
+  const observerTarget = useInfiniteScrollTrigger(hasMore, loading, scrollThreshold, onLoadMore);
 
   return (
     <div className={className}>
@@ -154,7 +157,6 @@ export function InfiniteScrollTable<TData, TValue>({
         onRowClick={onRowClick}
         paginated={false}
       />
-      {/* Infinite scroll trigger */}
       {data.length > 0 && (
         <div ref={observerTarget} className="py-4 text-center">
           {loading && <div className="text-sm text-muted-foreground">Loading more...</div>}

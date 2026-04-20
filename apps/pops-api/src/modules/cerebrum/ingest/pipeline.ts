@@ -50,13 +50,19 @@ export class IngestService {
     this.entityExtractor = new CortexEntityExtractor();
   }
 
-  /** Run the full ingestion pipeline and write an engram. */
-  async submit(input: IngestInput): Promise<IngestResult> {
+  private async runPipelineStages(input: IngestInput): Promise<{
+    body: string;
+    type: string;
+    classification: ClassificationResult | null;
+    entities: EntityExtractionResult['entities'];
+    mergedTags: string[];
+    scopeInference: ScopeInferenceResult;
+    source: EngramSource;
+  }> {
     const body = normaliseBody(input.body);
     const source: EngramSource = input.source ?? 'manual';
     const existingTags = input.tags ?? [];
 
-    // Stage 2: classify
     let classification: ClassificationResult | null = null;
     let type = input.type ?? '';
     if (!type) {
@@ -64,7 +70,6 @@ export class IngestService {
       type = classification.type;
     }
 
-    // Stage 3: entity extraction
     const { entities, tags: entityTags } = await this.entityExtractor.extract(body, existingTags);
     const mergedTags = dedupe([
       ...existingTags,
@@ -72,7 +77,6 @@ export class IngestService {
       ...(classification?.suggestedTags ?? []),
     ]);
 
-    // Stage 4: scope inference
     const scopeInference = await this.inferScopes({
       body,
       type,
@@ -81,22 +85,25 @@ export class IngestService {
       explicitScopes: input.scopes,
     });
 
-    // Stage 5: deduplication by body hash (body-only; full-file content_hash is separate)
-    const bodyHash = hashContent(body);
-    const duplicate = findDuplicate(bodyHash);
+    return { body, type, classification, entities, mergedTags, scopeInference, source };
+  }
+
+  /** Run the full ingestion pipeline and write an engram. */
+  async submit(input: IngestInput): Promise<IngestResult> {
+    const stages = await this.runPipelineStages(input);
+    const { body, type, classification, entities, mergedTags, scopeInference, source } = stages;
+
+    const duplicate = findDuplicate(hashContent(body));
     if (duplicate) {
       logger.warn(
         { duplicateId: duplicate },
         '[IngestService] Duplicate content detected — skipping write'
       );
-      const engramService = getEngramService();
-      const { engram: existing } = engramService.read(duplicate);
+      const { engram: existing } = getEngramService().read(duplicate);
       return { engram: existing, classification, entities, scopeInference };
     }
 
-    // Stage 6: write engram
-    const engramService = getEngramService();
-    const engram = engramService.create({
+    const engram = getEngramService().create({
       type,
       title: input.title ?? deriveTitle(body),
       body,
@@ -112,33 +119,13 @@ export class IngestService {
 
   /** Preview what the pipeline would produce without writing. */
   async preview(input: IngestInput): Promise<PreviewResult> {
-    const body = normaliseBody(input.body);
-    const source: EngramSource = input.source ?? 'manual';
-    const existingTags = input.tags ?? [];
-
-    let classification: ClassificationResult | null = null;
-    let type = input.type ?? '';
-    if (!type) {
-      classification = await this.classifier.classify(body, input.title);
-      type = classification.type;
-    }
-
-    const { entities, tags: entityTags } = await this.entityExtractor.extract(body, existingTags);
-    const mergedTags = dedupe([
-      ...existingTags,
-      ...entityTags,
-      ...(classification?.suggestedTags ?? []),
-    ]);
-
-    const scopeInference = await this.inferScopes({
-      body,
-      type,
-      tags: mergedTags,
-      source,
-      explicitScopes: input.scopes,
-    });
-
-    return { normalisedBody: body, classification, entities, scopeInference };
+    const stages = await this.runPipelineStages(input);
+    return {
+      normalisedBody: stages.body,
+      classification: stages.classification,
+      entities: stages.entities,
+      scopeInference: stages.scopeInference,
+    };
   }
 
   /**

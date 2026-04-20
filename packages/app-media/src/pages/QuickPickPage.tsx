@@ -65,67 +65,95 @@ export function QuickPickPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h1 className="text-lg font-semibold flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-app-accent" />
-          Quick Pick
-        </h1>
-        <div className="flex items-center gap-3">
-          {/* Count selector */}
-          <div
-            className="flex items-center gap-1 rounded-lg border p-1"
-            role="group"
-            aria-label="Number of picks"
+      <QuickPickHeader count={count} setCount={setCount} onRefresh={() => refetch()} />
+      <QuickPickGrid picks={picks} navigate={navigate} />
+    </div>
+  );
+}
+
+function QuickPickHeader({
+  count,
+  setCount,
+  onRefresh,
+}: {
+  count: number;
+  setCount: (n: number) => void;
+  onRefresh: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between flex-wrap gap-3">
+      <h1 className="text-lg font-semibold flex items-center gap-2">
+        <Sparkles className="h-5 w-5 text-app-accent" />
+        Quick Pick
+      </h1>
+      <div className="flex items-center gap-3">
+        <div
+          className="flex items-center gap-1 rounded-lg border p-1"
+          role="group"
+          aria-label="Number of picks"
+        >
+          {COUNT_OPTIONS.map((n) => (
+            <button
+              key={n}
+              onClick={() => {
+                setCount(n);
+              }}
+              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
+                n === count
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-muted'
+              }`}
+              aria-pressed={n === count}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+        <Button variant="outline" size="sm" onClick={onRefresh}>
+          <RefreshCw className="h-4 w-4 mr-1.5" />
+          Show me others
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+interface QuickPickMovie {
+  id: number;
+  title: string;
+  releaseDate: string | null;
+  posterUrl: string | null;
+}
+
+function QuickPickGrid({
+  picks,
+  navigate,
+}: {
+  picks: QuickPickMovie[];
+  navigate: (path: string) => void;
+}) {
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+      {picks.map((movie) => (
+        <div key={movie.id} className="space-y-2">
+          <MediaCard
+            id={movie.id}
+            type="movie"
+            title={movie.title}
+            year={movie.releaseDate}
+            posterUrl={movie.posterUrl}
+            showTypeBadge={false}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full font-medium"
+            onClick={() => navigate(`/media/movies/${movie.id}`)}
           >
-            {COUNT_OPTIONS.map((n) => (
-              <button
-                key={n}
-                onClick={() => {
-                  setCount(n);
-                }}
-                className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                  n === count
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-muted'
-                }`}
-                aria-pressed={n === count}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
-          {/* Show me others */}
-          <Button variant="outline" size="sm" onClick={() => refetch()}>
-            <RefreshCw className="h-4 w-4 mr-1.5" />
-            Show me others
+            Watch This
           </Button>
         </div>
-      </div>
-
-      {/* Poster grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-        {picks.map((movie) => (
-          <div key={movie.id} className="space-y-2">
-            <MediaCard
-              id={movie.id}
-              type="movie"
-              title={movie.title}
-              year={movie.releaseDate}
-              posterUrl={movie.posterUrl}
-              showTypeBadge={false}
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              className="w-full font-medium"
-              onClick={() => navigate(`/media/movies/${movie.id}`)}
-            >
-              Watch This
-            </Button>
-          </div>
-        ))}
-      </div>
+      ))}
     </div>
   );
 }

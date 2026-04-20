@@ -33,15 +33,14 @@ export function seedInternalNodes(
   return next;
 }
 
-export function simulateStep(nodes: Map<string, InternalNode>, edges: ForceEdge[]) {
-  const list = Array.from(nodes.values());
-
+function resetForces(list: InternalNode[]) {
   for (const n of list) {
     n.fx = 0;
     n.fy = 0;
   }
+}
 
-  // Repulsion.
+function applyRepulsion(list: InternalNode[]) {
   for (let i = 0; i < list.length; i++) {
     for (let j = i + 1; j < list.length; j++) {
       const a = list[i];
@@ -60,8 +59,9 @@ export function simulateStep(nodes: Map<string, InternalNode>, edges: ForceEdge[
       b.fy -= ny * f;
     }
   }
+}
 
-  // Springs.
+function applySprings(nodes: Map<string, InternalNode>, edges: ForceEdge[]) {
   for (const e of edges) {
     const a = nodes.get(e.source);
     const b = nodes.get(e.target);
@@ -78,8 +78,9 @@ export function simulateStep(nodes: Map<string, InternalNode>, edges: ForceEdge[
     b.fx -= nx * f;
     b.fy -= ny * f;
   }
+}
 
-  // Integration.
+function integrate(list: InternalNode[]) {
   for (const n of list) {
     n.fx += -(n.x ?? 0) * CENTRE_PULL;
     n.fy += -(n.y ?? 0) * CENTRE_PULL;
@@ -88,6 +89,14 @@ export function simulateStep(nodes: Map<string, InternalNode>, edges: ForceEdge[
     n.x = (n.x ?? 0) + n.vx;
     n.y = (n.y ?? 0) + n.vy;
   }
+}
+
+export function simulateStep(nodes: Map<string, InternalNode>, edges: ForceEdge[]) {
+  const list = Array.from(nodes.values());
+  resetForces(list);
+  applyRepulsion(list);
+  applySprings(nodes, edges);
+  integrate(list);
 }
 
 export function applyCanvasTransform(

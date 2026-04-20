@@ -54,6 +54,26 @@ const UNIT_LABELS: Record<DurationUnit, string> = {
   hours: 'hours',
 };
 
+function useDurationUnit(value: number, units: DurationUnit[], defaultUnit?: DurationUnit) {
+  const clampUnit = useCallback(
+    (u: DurationUnit): DurationUnit => (units.includes(u) ? u : (units[0] ?? 'ms')),
+    [units]
+  );
+  const [unit, setUnit] = useState<DurationUnit>(() => clampUnit(defaultUnit ?? inferUnit(value)));
+
+  useEffect(() => {
+    if (value === 0) return;
+    const multiplier = UNIT_MULTIPLIERS[unit];
+    if (value % multiplier !== 0) setUnit(clampUnit(inferUnit(value)));
+  }, [value, unit, clampUnit]);
+
+  useEffect(() => {
+    if (!units.includes(unit)) setUnit(clampUnit(unit));
+  }, [units, unit, clampUnit]);
+
+  return [unit, setUnit] as const;
+}
+
 export function DurationFieldInput({
   value,
   onChange,
@@ -65,28 +85,11 @@ export function DurationFieldInput({
   id,
   'aria-label': ariaLabel,
 }: DurationFieldInputProps) {
-  const clampUnit = useCallback(
-    (u: DurationUnit): DurationUnit => (units.includes(u) ? u : (units[0] ?? 'ms')),
-    [units]
-  );
-  const [unit, setUnit] = useState<DurationUnit>(() => clampUnit(defaultUnit ?? inferUnit(value)));
+  const [unit, setUnit] = useDurationUnit(value, units, defaultUnit);
   const displayValue = useMemo(() => {
-    const multiplier = UNIT_MULTIPLIERS[unit];
     if (value === 0) return '';
-    return String(value / multiplier);
+    return String(value / UNIT_MULTIPLIERS[unit]);
   }, [value, unit]);
-
-  useEffect(() => {
-    // Keep unit selection consistent if the value is changed externally.
-    if (value === 0) return;
-    const multiplier = UNIT_MULTIPLIERS[unit];
-    if (value % multiplier !== 0) setUnit(clampUnit(inferUnit(value)));
-  }, [value, unit, clampUnit]);
-
-  useEffect(() => {
-    // Re-clamp if the allowed units change and the current one is no longer valid.
-    if (!units.includes(unit)) setUnit(clampUnit(unit));
-  }, [units, unit, clampUnit]);
 
   const handleNumberChange = (raw: string) => {
     if (raw === '') {
@@ -96,11 +99,6 @@ export function DurationFieldInput({
     const num = Number(raw);
     if (!Number.isFinite(num) || num < 0) return;
     onChange(Math.round(num * UNIT_MULTIPLIERS[unit]));
-  };
-
-  const handleUnitChange = (nextUnit: string) => {
-    const nu = nextUnit as DurationUnit;
-    setUnit(nu);
   };
 
   return (
@@ -118,7 +116,7 @@ export function DurationFieldInput({
         onChange={(e) => handleNumberChange(e.target.value)}
         className="w-32"
       />
-      <Select value={unit} onValueChange={handleUnitChange} disabled={disabled}>
+      <Select value={unit} onValueChange={(v) => setUnit(v as DurationUnit)} disabled={disabled}>
         <SelectTrigger className="w-36">
           <SelectValue />
         </SelectTrigger>

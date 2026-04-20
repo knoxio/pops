@@ -26,6 +26,34 @@ export interface ProcessedFile {
   processedSize: number;
 }
 
+async function convertHeicToJpeg(file: File): Promise<File> {
+  const heic2any = (await import('heic2any')).default;
+  const blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: QUALITY });
+  const converted: Blob | undefined = Array.isArray(blob) ? blob[0] : blob;
+  if (!converted) {
+    throw new Error(`HEIC conversion failed for ${file.name}: empty result`);
+  }
+  const newName = file.name.replace(/\.heic$/i, '.jpg').replace(/\.heif$/i, '.jpg');
+  return new File([converted], newName, { type: 'image/jpeg' });
+}
+
+async function processSingle(file: File): Promise<ProcessedFile> {
+  const input = isHeic(file) ? await convertHeicToJpeg(file) : file;
+  const compressed = await imageCompression(input, {
+    maxWidthOrHeight: MAX_DIMENSION,
+    initialQuality: QUALITY,
+    useWebWorker: true,
+    exifOrientation: undefined,
+  });
+  return {
+    original: file,
+    processed: compressed,
+    previewUrl: URL.createObjectURL(compressed),
+    originalSize: file.size,
+    processedSize: compressed.size,
+  };
+}
+
 export function useImageProcessor() {
   const [processing, setProcessing] = useState(false);
 
@@ -33,46 +61,9 @@ export function useImageProcessor() {
     setProcessing(true);
     try {
       const results: ProcessedFile[] = [];
-
       for (const file of files) {
-        let input: File = file;
-
-        // Convert HEIC/HEIF to JPEG
-        if (isHeic(file)) {
-          const heic2any = (await import('heic2any')).default;
-          const blob = await heic2any({ blob: file, toType: 'image/jpeg', quality: QUALITY });
-          const converted: Blob | undefined = Array.isArray(blob) ? blob[0] : blob;
-          if (!converted) {
-            throw new Error(`HEIC conversion failed for ${file.name}: empty result`);
-          }
-          input = new File(
-            [converted],
-            file.name.replace(/\.heic$/i, '.jpg').replace(/\.heif$/i, '.jpg'),
-            {
-              type: 'image/jpeg',
-            }
-          );
-        }
-
-        // Compress and resize
-        const compressed = await imageCompression(input, {
-          maxWidthOrHeight: MAX_DIMENSION,
-          initialQuality: QUALITY,
-          useWebWorker: true,
-          exifOrientation: undefined, // strip EXIF
-        });
-
-        const previewUrl = URL.createObjectURL(compressed);
-
-        results.push({
-          original: file,
-          processed: compressed,
-          previewUrl,
-          originalSize: file.size,
-          processedSize: compressed.size,
-        });
+        results.push(await processSingle(file));
       }
-
       return results;
     } finally {
       setProcessing(false);

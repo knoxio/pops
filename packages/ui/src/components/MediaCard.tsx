@@ -32,6 +32,43 @@ export interface MediaCardProps {
   imageClassName?: string;
 }
 
+function CardOverlays({
+  topLeft,
+  topRight,
+  bottomLeft,
+}: {
+  topLeft?: ReactNode;
+  topRight?: ReactNode;
+  bottomLeft?: ReactNode;
+}) {
+  return (
+    <>
+      {topLeft ? <div className="absolute left-2 top-2 z-10">{topLeft}</div> : null}
+      {topRight ? <div className="absolute right-2 top-2 z-10">{topRight}</div> : null}
+      {bottomLeft ? <div className="absolute bottom-2 left-2 z-10">{bottomLeft}</div> : null}
+    </>
+  );
+}
+
+function CardFooter({
+  title,
+  subtitle,
+  footer,
+}: {
+  title?: ReactNode;
+  subtitle?: ReactNode;
+  footer?: ReactNode;
+}) {
+  if (!title && !subtitle && !footer) return null;
+  return (
+    <div className="flex flex-col gap-0.5 p-3">
+      {title ? <div className="truncate text-sm font-medium">{title}</div> : null}
+      {subtitle ? <div className="truncate text-xs text-muted-foreground">{subtitle}</div> : null}
+      {footer ? <div className="mt-1.5">{footer}</div> : null}
+    </div>
+  );
+}
+
 export function MediaCard({
   src,
   fallbackSrc,
@@ -76,23 +113,13 @@ export function MediaCard({
           aspectRatio={aspectRatio}
           className={imageClassName}
         />
-        {overlayTopLeft ? <div className="absolute left-2 top-2 z-10">{overlayTopLeft}</div> : null}
-        {overlayTopRight ? (
-          <div className="absolute right-2 top-2 z-10">{overlayTopRight}</div>
-        ) : null}
-        {overlayBottomLeft ? (
-          <div className="absolute bottom-2 left-2 z-10">{overlayBottomLeft}</div>
-        ) : null}
+        <CardOverlays
+          topLeft={overlayTopLeft}
+          topRight={overlayTopRight}
+          bottomLeft={overlayBottomLeft}
+        />
       </div>
-      {(title || subtitle || footer) && (
-        <div className="flex flex-col gap-0.5 p-3">
-          {title ? <div className="truncate text-sm font-medium">{title}</div> : null}
-          {subtitle ? (
-            <div className="truncate text-xs text-muted-foreground">{subtitle}</div>
-          ) : null}
-          {footer ? <div className="mt-1.5">{footer}</div> : null}
-        </div>
-      )}
+      <CardFooter title={title} subtitle={subtitle} footer={footer} />
     </Card>
   );
 }

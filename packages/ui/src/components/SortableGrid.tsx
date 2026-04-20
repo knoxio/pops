@@ -20,15 +20,12 @@ export interface SortableGridProps<T> {
   className?: string;
 }
 
-export function SortableGrid<T>({
-  items,
-  getKey,
-  renderItem,
-  onReorder,
-  columnsClassName = 'grid-cols-3',
-  disabled,
-  className,
-}: SortableGridProps<T>) {
+function useSortableDrag<T>(
+  items: T[],
+  getKey: (item: T, index: number) => string | number,
+  onReorder: (next: T[]) => void,
+  disabled?: boolean
+) {
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [overIndex, setOverIndex] = useState<number | null>(null);
 
@@ -36,7 +33,6 @@ export function SortableGrid<T>({
     if (disabled) return;
     setDragIndex(i);
     e.dataTransfer.effectAllowed = 'move';
-    // Firefox requires some data payload for the drag to initiate.
     const item = items[i];
     if (item !== undefined) e.dataTransfer.setData('text/plain', String(getKey(item, i)));
   };
@@ -69,19 +65,33 @@ export function SortableGrid<T>({
     setOverIndex(null);
   };
 
+  return { dragIndex, overIndex, handleDragStart, handleDragOver, handleDrop, handleDragEnd };
+}
+
+export function SortableGrid<T>({
+  items,
+  getKey,
+  renderItem,
+  onReorder,
+  columnsClassName = 'grid-cols-3',
+  disabled,
+  className,
+}: SortableGridProps<T>) {
+  const drag = useSortableDrag(items, getKey, onReorder, disabled);
+
   return (
     <div className={cn('grid gap-3', columnsClassName, className)}>
       {items.map((item, i) => {
-        const isDragging = dragIndex === i;
-        const isOver = overIndex === i && dragIndex !== i;
+        const isDragging = drag.dragIndex === i;
+        const isOver = drag.overIndex === i && drag.dragIndex !== i;
         return (
           <div
             key={getKey(item, i)}
             draggable={!disabled}
-            onDragStart={handleDragStart(i)}
-            onDragOver={handleDragOver(i)}
-            onDrop={handleDrop(i)}
-            onDragEnd={handleDragEnd}
+            onDragStart={drag.handleDragStart(i)}
+            onDragOver={drag.handleDragOver(i)}
+            onDrop={drag.handleDrop(i)}
+            onDragEnd={drag.handleDragEnd}
             className={cn(
               'transition-all',
               isDragging && 'opacity-40',

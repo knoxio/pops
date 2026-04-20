@@ -9,6 +9,12 @@ import { X } from 'lucide-react';
 import { type ReactNode, useState } from 'react';
 
 import { cn } from '../lib/utils';
+import { TierRow, UNRANKED_POOL_KEY } from './TierListBoard.row';
+
+export { UNRANKED_POOL_KEY } from './TierListBoard.row';
+
+const POOL = UNRANKED_POOL_KEY;
+const DISMISS = '__dismiss';
 
 export interface TierDefinition {
   id: string;
@@ -35,10 +41,67 @@ export interface TierListBoardProps<T> {
   className?: string;
 }
 
-/** Reserved key in `assignments` for unranked items. */
-export const UNRANKED_POOL_KEY = '__pool';
-const POOL = UNRANKED_POOL_KEY;
-const DISMISS = '__dismiss';
+interface UseTierDropArgs {
+  assignments: Record<string, string[]>;
+  onAssignmentsChange: (n: Record<string, string[]>) => void;
+  onDismiss?: (id: string) => void;
+  dragId: string | null;
+  setDragId: (v: string | null) => void;
+  setOverZone: (v: string | null) => void;
+}
+
+function useTierDrop({
+  assignments,
+  onAssignmentsChange,
+  onDismiss,
+  dragId,
+  setDragId,
+  setOverZone,
+}: UseTierDropArgs) {
+  return (zone: string) => (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setOverZone(null);
+    if (!dragId) return;
+    const next: Record<string, string[]> = {};
+    for (const [k, v] of Object.entries(assignments)) next[k] = v.filter((id) => id !== dragId);
+    if (zone === DISMISS) {
+      onAssignmentsChange(next);
+      onDismiss?.(dragId);
+      setDragId(null);
+      return;
+    }
+    next[zone] = [...(next[zone] ?? []), dragId];
+    onAssignmentsChange(next);
+    setDragId(null);
+  };
+}
+
+function DismissZone({
+  active,
+  setOverZone,
+  onDrop,
+}: {
+  active: boolean;
+  setOverZone: React.Dispatch<React.SetStateAction<string | null>>;
+  onDrop: (e: React.DragEvent<HTMLDivElement>) => void;
+}) {
+  return (
+    <div
+      onDragOver={(e) => {
+        e.preventDefault();
+        if (!active) setOverZone(DISMISS);
+      }}
+      onDragLeave={() => setOverZone((z) => (z === DISMISS ? null : z))}
+      onDrop={onDrop}
+      className={cn(
+        'flex min-h-[56px] items-center justify-center gap-2 rounded-md border-2 border-dashed border-destructive/40 p-2 text-sm text-destructive transition-colors',
+        active && 'bg-destructive/10'
+      )}
+    >
+      <X className="h-4 w-4" aria-hidden /> Drop here to remove
+    </div>
+  );
+}
 
 export function TierListBoard<T>({
   tiers,
@@ -55,99 +118,41 @@ export function TierListBoard<T>({
   const [overZone, setOverZone] = useState<string | null>(null);
 
   const rows = [
-    ...tiers.map((t) => ({ id: t.id, label: t.label, color: t.color })),
+    ...tiers.map((t) => ({ id: t.id, label: t.label as ReactNode, color: t.color })),
     { id: POOL, label: unrankedLabel, color: undefined },
   ];
 
-  const handleDrop = (zone: string) => (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setOverZone(null);
-    if (!dragId) return;
-    if (zone === DISMISS) {
-      const next: Record<string, string[]> = {};
-      for (const [k, v] of Object.entries(assignments)) next[k] = v.filter((id) => id !== dragId);
-      onAssignmentsChange(next);
-      onDismiss?.(dragId);
-      setDragId(null);
-      return;
-    }
-    const next: Record<string, string[]> = {};
-    for (const [k, v] of Object.entries(assignments)) next[k] = v.filter((id) => id !== dragId);
-    const current = next[zone] ?? [];
-    next[zone] = [...current, dragId];
-    onAssignmentsChange(next);
-    setDragId(null);
-  };
+  const handleDrop = useTierDrop({
+    assignments,
+    onAssignmentsChange,
+    onDismiss,
+    dragId,
+    setDragId,
+    setOverZone,
+  });
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
-      {rows.map((row) => {
-        const zoneItems = assignments[row.id] ?? [];
-        const isOver = overZone === row.id;
-        return (
-          <div
-            key={row.id}
-            onDragOver={(e) => {
-              e.preventDefault();
-              if (overZone !== row.id) setOverZone(row.id);
-            }}
-            onDragLeave={() => setOverZone((z) => (z === row.id ? null : z))}
-            onDrop={handleDrop(row.id)}
-            className={cn(
-              'flex min-h-[72px] items-stretch gap-3 rounded-md border border-border bg-card p-2 transition-colors',
-              isOver && 'ring-2 ring-ring',
-              row.id === POOL && 'bg-muted/40'
-            )}
-          >
-            <div
-              className="flex w-20 shrink-0 items-center justify-center rounded-sm px-2 text-sm font-semibold text-white"
-              style={{ background: row.color ?? 'var(--muted)' }}
-            >
-              {row.label}
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {zoneItems.map((id) => {
-                const item = items[id];
-                if (!item) return null;
-                return (
-                  <div
-                    key={id}
-                    draggable
-                    onDragStart={(e) => {
-                      // Firefox requires some data payload for the drag to initiate.
-                      e.dataTransfer.setData('text/plain', id);
-                      e.dataTransfer.effectAllowed = 'move';
-                      setDragId(id);
-                    }}
-                    onDragEnd={() => setDragId(null)}
-                    className={cn(
-                      'cursor-grab active:cursor-grabbing transition-opacity',
-                      dragId === id && 'opacity-40'
-                    )}
-                  >
-                    {renderItem(item, id)}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })}
+      {rows.map((row) => (
+        <TierRow
+          key={row.id}
+          row={row}
+          zoneItems={assignments[row.id] ?? []}
+          items={items}
+          isOver={overZone === row.id}
+          setOverZone={setOverZone}
+          onDrop={handleDrop}
+          dragId={dragId}
+          setDragId={setDragId}
+          renderItem={renderItem}
+        />
+      ))}
       {showDismissZone ? (
-        <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            if (overZone !== DISMISS) setOverZone(DISMISS);
-          }}
-          onDragLeave={() => setOverZone((z) => (z === DISMISS ? null : z))}
+        <DismissZone
+          active={overZone === DISMISS}
+          setOverZone={setOverZone}
           onDrop={handleDrop(DISMISS)}
-          className={cn(
-            'flex min-h-[56px] items-center justify-center gap-2 rounded-md border-2 border-dashed border-destructive/40 p-2 text-sm text-destructive transition-colors',
-            overZone === DISMISS && 'bg-destructive/10'
-          )}
-        >
-          <X className="h-4 w-4" aria-hidden /> Drop here to remove
-        </div>
+        />
       ) : null}
     </div>
   );

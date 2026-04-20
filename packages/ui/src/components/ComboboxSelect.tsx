@@ -2,21 +2,10 @@
  * ComboboxSelect - Advanced select with filtering using shadcn primitives
  * Built on Popover + Command for proper positioning and filtering
  */
-import { Check, ChevronsUpDown } from 'lucide-react';
 import { useState } from 'react';
 
 import { cn } from '../lib/utils';
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '../primitives/command';
-import { Popover, PopoverContent, PopoverTrigger } from '../primitives/popover';
-import { Button } from './Button';
-import { Chip } from './Chip';
+import { ComboboxPopover, SelectedChips } from './ComboboxSelect.popover';
 
 export interface ComboboxOption {
   label: string;
@@ -25,75 +14,37 @@ export interface ComboboxOption {
 }
 
 export interface ComboboxSelectProps {
-  /**
-   * Available options
-   */
   options: ComboboxOption[];
-  /**
-   * Selected value(s) - string for single, array for multi
-   */
   value?: string | string[];
-  /**
-   * Callback when selection changes
-   */
   onChange?: (value: string | string[]) => void;
-  /**
-   * Enable multi-select mode
-   */
   multiple?: boolean;
-  /**
-   * Placeholder text
-   */
   placeholder?: string;
-  /**
-   * Search placeholder
-   */
   searchPlaceholder?: string;
-  /**
-   * Empty message
-   */
   emptyMessage?: string;
-  /**
-   * Disabled state
-   */
   disabled?: boolean;
-  /**
-   * Button variant
-   */
   variant?: 'default' | 'outline' | 'ghost';
-  /**
-   * Button size
-   */
   size?: 'default' | 'sm' | 'lg';
-  /**
-   * Container className
-   */
   className?: string;
 }
 
-/**
- * ComboboxSelect component
- *
- * @example
- * ```tsx
- * // Single select
- * <ComboboxSelect
- *   options={options}
- *   value={selected}
- *   onChange={setSelected}
- *   placeholder="Select..."
- * />
- *
- * // Multi-select with chips
- * <ComboboxSelect
- *   options={options}
- *   value={selected}
- *   onChange={setSelected}
- *   multiple
- *   placeholder="Select multiple..."
- * />
- * ```
- */
+function getSelectedValues(value: string | string[] | undefined): string[] {
+  if (Array.isArray(value)) return value;
+  if (value) return [value];
+  return [];
+}
+
+function getDisplayText(
+  multiple: boolean,
+  selectedValues: string[],
+  getOptionLabel: (v: string) => string,
+  placeholder: string
+): string {
+  if (multiple) {
+    return selectedValues.length > 0 ? `${selectedValues.length} selected` : placeholder;
+  }
+  return selectedValues.length > 0 ? getOptionLabel(selectedValues[0] ?? '') : placeholder;
+}
+
 export function ComboboxSelect({
   options,
   value,
@@ -108,12 +59,9 @@ export function ComboboxSelect({
   className,
 }: ComboboxSelectProps) {
   const [open, setOpen] = useState(false);
-  const getSelectedValues = (): string[] => {
-    if (Array.isArray(value)) return value;
-    if (value) return [value];
-    return [];
-  };
-  const selectedValues = getSelectedValues();
+  const selectedValues = getSelectedValues(value);
+  const getOptionLabel = (val: string): string =>
+    options.find((opt) => opt.value === val)?.label ?? val;
 
   const toggleOption = (optionValue: string) => {
     if (multiple) {
@@ -121,94 +69,36 @@ export function ComboboxSelect({
         ? selectedValues.filter((v) => v !== optionValue)
         : [...selectedValues, optionValue];
       onChange?.(newValues);
-    } else {
-      onChange?.(optionValue);
-      setOpen(false);
+      return;
     }
+    onChange?.(optionValue);
+    setOpen(false);
   };
 
   const removeValue = (optionValue: string) => {
     if (!multiple) return;
-    const newValues = selectedValues.filter((v) => v !== optionValue);
-    onChange?.(newValues);
+    onChange?.(selectedValues.filter((v) => v !== optionValue));
   };
-
-  const getOptionLabel = (val: string): string => {
-    return options.find((opt) => opt.value === val)?.label ?? val;
-  };
-
-  const getDisplayText = (): string => {
-    if (multiple) {
-      return selectedValues.length > 0 ? `${selectedValues.length} selected` : placeholder;
-    }
-    return selectedValues.length > 0 ? getOptionLabel(selectedValues[0] ?? '') : placeholder;
-  };
-  const displayText = getDisplayText();
 
   return (
     <div className={cn('flex flex-col gap-2', className)}>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant={variant}
-            size={size}
-            role="combobox"
-            aria-expanded={open}
-            disabled={disabled}
-            className={cn('justify-between', className)}
-          >
-            <span className="truncate">{displayText}</span>
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-          <Command>
-            <CommandInput placeholder={searchPlaceholder} />
-            <CommandList>
-              <CommandEmpty>{emptyMessage}</CommandEmpty>
-              <CommandGroup>
-                {options.map((option) => {
-                  const isSelected = selectedValues.includes(option.value);
-                  return (
-                    <CommandItem
-                      key={option.value}
-                      value={option.value}
-                      onSelect={() => {
-                        if (!option.disabled) toggleOption(option.value);
-                      }}
-                      disabled={option.disabled}
-                    >
-                      {multiple && (
-                        <Check
-                          className={cn('mr-2 h-4 w-4', isSelected ? 'opacity-100' : 'opacity-0')}
-                        />
-                      )}
-                      {option.label}
-                      {!multiple && isSelected && <Check className="ml-auto h-4 w-4" />}
-                    </CommandItem>
-                  );
-                })}
-              </CommandGroup>
-            </CommandList>
-          </Command>
-        </PopoverContent>
-      </Popover>
+      <ComboboxPopover
+        open={open}
+        setOpen={setOpen}
+        options={options}
+        selectedValues={selectedValues}
+        multiple={multiple}
+        variant={variant}
+        size={size}
+        disabled={disabled}
+        displayText={getDisplayText(multiple, selectedValues, getOptionLabel, placeholder)}
+        searchPlaceholder={searchPlaceholder}
+        emptyMessage={emptyMessage}
+        className={className}
+        onToggle={toggleOption}
+      />
       {multiple && selectedValues.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {selectedValues.map((val) => (
-            <Chip
-              key={val}
-              variant="default"
-              size="sm"
-              removable
-              onRemove={() => {
-                removeValue(val);
-              }}
-            >
-              {getOptionLabel(val)}
-            </Chip>
-          ))}
-        </div>
+        <SelectedChips values={selectedValues} getLabel={getOptionLabel} onRemove={removeValue} />
       )}
     </div>
   );

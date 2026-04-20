@@ -7,7 +7,6 @@ import {
   comparisonDimensions,
   debriefResults,
   debriefSessions,
-  debriefStatus,
   movies,
   watchHistory,
 } from '@pops/db-types';
@@ -88,25 +87,23 @@ export interface DebriefResponse {
   dimensions: DebriefDimension[];
 }
 
-/**
- * Get a debrief session with movie info, dimensions, and opponents.
- *
- * For each active dimension:
- *  - If a debrief_result exists for that dimension → status = "complete"
- *  - Otherwise → status = "pending", opponent fetched via getDebriefOpponent
- *
- * If the session is "pending", transitions it to "active" on first read.
- */
-export function getDebrief(sessionId: number): DebriefResponse {
+interface MovieMetaRow {
+  id: number;
+  title: string;
+  posterPath: string | null;
+  tmdbId: number;
+  posterOverridePath: string | null;
+}
+
+function loadDebriefSessionEntities(sessionId: number): {
+  session: typeof debriefSessions.$inferSelect;
+  watchEntry: typeof watchHistory.$inferSelect;
+  movieRow: MovieMetaRow;
+} {
   const db = getDrizzle();
-
-  // Fetch session
   const session = db.select().from(debriefSessions).where(eq(debriefSessions.id, sessionId)).get();
-  if (!session) {
-    throw new NotFoundError('Debrief session', String(sessionId));
-  }
+  if (!session) throw new NotFoundError('Debrief session', String(sessionId));
 
-  // Fetch watch history entry
   const watchEntry = db
     .select()
     .from(watchHistory)
@@ -116,7 +113,6 @@ export function getDebrief(sessionId: number): DebriefResponse {
     throw new NotFoundError('Watch history entry', String(session.watchHistoryId));
   }
 
-  // Fetch movie metadata
   const movieRow = db
     .select({
       id: movies.id,
@@ -128,15 +124,16 @@ export function getDebrief(sessionId: number): DebriefResponse {
     .from(movies)
     .where(eq(movies.id, watchEntry.mediaId))
     .get();
-  if (!movieRow) {
-    throw new NotFoundError('Movie', String(watchEntry.mediaId));
-  }
+  if (!movieRow) throw new NotFoundError('Movie', String(watchEntry.mediaId));
 
-  const posterUrl = movieRow.posterOverridePath
-    ? movieRow.posterOverridePath
-    : `/media/images/movie/${movieRow.tmdbId}/poster.jpg`;
+  return { session, watchEntry, movieRow };
+}
 
-  // Get active dimensions
+function buildDebriefDimensions(
+  sessionId: number,
+  watchEntry: typeof watchHistory.$inferSelect
+): DebriefDimension[] {
+  const db = getDrizzle();
   const dims = db
     .select()
     .from(comparisonDimensions)
@@ -144,7 +141,6 @@ export function getDebrief(sessionId: number): DebriefResponse {
     .orderBy(asc(comparisonDimensions.sortOrder))
     .all();
 
-  // Get completed debrief results for this session
   const results = db
     .select()
     .from(debriefResults)
@@ -152,10 +148,8 @@ export function getDebrief(sessionId: number): DebriefResponse {
     .all();
   const completedByDimension = new Map(results.map((r) => [r.dimensionId, r.comparisonId]));
 
-  // Build dimensions array
-  const dimensions: DebriefDimension[] = dims.map((dim) => {
-    const completed = completedByDimension.has(dim.id);
-    if (completed) {
+  return dims.map((dim) => {
+    if (completedByDimension.has(dim.id)) {
       return {
         dimensionId: dim.id,
         name: dim.name,
@@ -164,27 +158,44 @@ export function getDebrief(sessionId: number): DebriefResponse {
         opponent: null,
       };
     }
-
-    // Fetch opponent for pending dimension
-    const opponent = getDebriefOpponent(watchEntry.mediaType, watchEntry.mediaId, dim.id);
     return {
       dimensionId: dim.id,
       name: dim.name,
       status: 'pending' as const,
       comparisonId: null,
-      opponent,
+      opponent: getDebriefOpponent(watchEntry.mediaType, watchEntry.mediaId, dim.id),
     };
   });
+}
 
-  // Transition pending → active on first read
-  let currentStatus = session.status;
-  if (currentStatus === 'pending') {
-    db.update(debriefSessions)
-      .set({ status: 'active' })
-      .where(eq(debriefSessions.id, sessionId))
-      .run();
-    currentStatus = 'active';
-  }
+function activateIfPending(
+  sessionId: number,
+  status: typeof debriefSessions.$inferSelect.status
+): typeof debriefSessions.$inferSelect.status {
+  if (status !== 'pending') return status;
+  const db = getDrizzle();
+  db.update(debriefSessions)
+    .set({ status: 'active' })
+    .where(eq(debriefSessions.id, sessionId))
+    .run();
+  return 'active';
+}
+
+/**
+ * Get a debrief session with movie info, dimensions, and opponents.
+ *
+ * For each active dimension:
+ *  - If a debrief_result exists for that dimension → status = "complete"
+ *  - Otherwise → status = "pending", opponent fetched via getDebriefOpponent
+ *
+ * If the session is "pending", transitions it to "active" on first read.
+ */
+export function getDebrief(sessionId: number): DebriefResponse {
+  const { session, watchEntry, movieRow } = loadDebriefSessionEntities(sessionId);
+  const posterUrl =
+    movieRow.posterOverridePath ?? `/media/images/movie/${movieRow.tmdbId}/poster.jpg`;
+  const dimensions = buildDebriefDimensions(sessionId, watchEntry);
+  const currentStatus = activateIfPending(sessionId, session.status);
 
   return {
     sessionId: session.id,
@@ -235,43 +246,4 @@ export function getDebriefByMedia(
   return getDebrief(session.id);
 }
 
-/**
- * Queue debrief status rows for a media item — one per active dimension.
- *
- * On conflict (re-watch), resets debriefed and dismissed to 0 so the
- * user is prompted to debrief again.
- */
-export function queueDebriefStatus(mediaType: string, mediaId: number): number {
-  const db = getDrizzle();
-
-  // Get all active dimensions
-  const dims = db
-    .select({ id: comparisonDimensions.id })
-    .from(comparisonDimensions)
-    .where(eq(comparisonDimensions.active, 1))
-    .all();
-
-  if (dims.length === 0) return 0;
-
-  const now = new Date().toISOString();
-
-  for (const dim of dims) {
-    db.insert(debriefStatus)
-      .values({
-        mediaType,
-        mediaId,
-        dimensionId: dim.id,
-      })
-      .onConflictDoUpdate({
-        target: [debriefStatus.mediaType, debriefStatus.mediaId, debriefStatus.dimensionId],
-        set: {
-          debriefed: 0,
-          dismissed: 0,
-          updatedAt: now,
-        },
-      })
-      .run();
-  }
-
-  return dims.length;
-}
+export { queueDebriefStatus } from './queue-status.js';

@@ -92,11 +92,11 @@ describe('plexFriendsSource', () => {
       posterPath: null,
     });
 
-    expect(mockFetchFriendWatchlist).toHaveBeenCalledWith(
-      'test-token',
-      'test-client-id',
-      'abc-123'
-    );
+    expect(mockFetchFriendWatchlist).toHaveBeenCalledWith({
+      token: 'test-token',
+      clientId: 'test-client-id',
+      friendUuid: 'abc-123',
+    });
   });
 
   it('returns empty array and logs warning when friend watchlist is inaccessible', async () => {

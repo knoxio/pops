@@ -1,133 +1,21 @@
-import { Layers, List } from 'lucide-react';
+import { EmptyStateTab } from '@pops/ui';
 
-import { Button, EmptyStateTab } from '@pops/ui';
-
-import { EditableTransactionCard } from '../EditableTransactionCard';
-import { TransactionCard } from '../TransactionCard';
-import { TransactionGroup } from '../TransactionGroup';
-
-import type { groupTransactionsByEntity } from '../../../lib/transaction-utils';
-import type { ProcessedTransaction } from '../../../store/importStore';
-import type { ViewMode } from '../hooks/useTransactionReview';
-
-interface UncertainTabProps {
-  transactions: ProcessedTransaction[];
-  groups: ReturnType<typeof groupTransactionsByEntity>;
-  viewMode: ViewMode;
-  onViewModeChange: (mode: ViewMode) => void;
-  onEntitySelect: (t: ProcessedTransaction, entityId: string, entityName: string) => void;
-  onBulkEntitySelect?: (ts: ProcessedTransaction[], entityId: string, entityName: string) => void;
-  onCreateEntity: (t: ProcessedTransaction) => void;
-  onAcceptAiSuggestion: (t: ProcessedTransaction) => void;
-  onAcceptAll: (transactions: ProcessedTransaction[]) => void;
-  onCreateAndAssignAll: (transactions: ProcessedTransaction[], entityName: string) => void;
-  onEdit: (t: ProcessedTransaction) => void;
-  editingTransaction: ProcessedTransaction | null;
-  onSaveEdit: (t: ProcessedTransaction, edited: Partial<ProcessedTransaction>) => void;
-  onCancelEdit: () => void;
-  entities?: Array<{ id: string; name: string; type: string }>;
-}
+import { GroupedView, ListView, type ReviewTabBaseProps, ViewModeToggle } from './ReviewTabShared';
 
 /**
  * Uncertain tab - needs user review
  */
-export function UncertainTab({
-  transactions,
-  groups,
-  viewMode,
-  onViewModeChange,
-  onEntitySelect,
-  onBulkEntitySelect,
-  onCreateEntity,
-  onAcceptAiSuggestion,
-  onAcceptAll,
-  onCreateAndAssignAll,
-  onEdit,
-  editingTransaction,
-  onSaveEdit,
-  onCancelEdit,
-  entities,
-}: UncertainTabProps) {
-  if (transactions.length === 0) {
+export function UncertainTab(props: ReviewTabBaseProps) {
+  if (props.transactions.length === 0) {
     return <EmptyStateTab message="No uncertain transactions" />;
   }
-
   return (
     <div className="space-y-4">
-      {/* View mode toggle */}
-      <div className="flex items-center justify-end gap-2">
-        <Button
-          variant={viewMode === 'list' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => {
-            onViewModeChange('list');
-          }}
-          aria-pressed={viewMode === 'list'}
-        >
-          <List className="w-4 h-4 mr-1" aria-hidden="true" />
-          List
-        </Button>
-        <Button
-          variant={viewMode === 'grouped' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => {
-            onViewModeChange('grouped');
-          }}
-          aria-pressed={viewMode === 'grouped'}
-        >
-          <Layers className="w-4 h-4 mr-1" aria-hidden="true" />
-          Grouped
-        </Button>
-      </div>
-
-      {/* Grouped view */}
-      {viewMode === 'grouped' ? (
-        <div className="space-y-3">
-          {groups.map((group, idx) => (
-            <TransactionGroup
-              key={idx}
-              group={group}
-              onAcceptAll={onAcceptAll}
-              onCreateAndAssignAll={onCreateAndAssignAll}
-              onEntitySelect={onEntitySelect}
-              onBulkEntitySelect={onBulkEntitySelect}
-              onCreateEntity={onCreateEntity}
-              onAcceptAiSuggestion={onAcceptAiSuggestion}
-              onEdit={onEdit}
-              editingTransaction={editingTransaction}
-              onSaveEdit={onSaveEdit}
-              onCancelEdit={onCancelEdit}
-              entities={entities}
-              variant="uncertain"
-            />
-          ))}
-        </div>
+      <ViewModeToggle viewMode={props.viewMode} onViewModeChange={props.onViewModeChange} />
+      {props.viewMode === 'grouped' ? (
+        <GroupedView variant="uncertain" props={props} />
       ) : (
-        /* List view */
-        <div className="space-y-3">
-          {transactions.map((t, idx) =>
-            editingTransaction === t ? (
-              <EditableTransactionCard
-                key={idx}
-                transaction={t}
-                onSave={onSaveEdit}
-                onCancel={onCancelEdit}
-                entities={entities}
-              />
-            ) : (
-              <TransactionCard
-                key={idx}
-                transaction={t}
-                onEntitySelect={onEntitySelect}
-                onCreateEntity={onCreateEntity}
-                onAcceptAiSuggestion={onAcceptAiSuggestion}
-                onEdit={onEdit}
-                entities={entities}
-                variant="uncertain"
-              />
-            )
-          )}
-        </div>
+        <ListView variant="uncertain" props={props} />
       )}
     </div>
   );

@@ -450,15 +450,15 @@ describe('downloadTvShowImages — season posters', () => {
   it('downloads season posters alongside show images', async () => {
     fetchMock.mockResolvedValue(mockImageResponse());
 
-    await service.downloadTvShowImages(
-      81189,
-      'https://artworks.thetvdb.com/banners/posters/81189.jpg',
-      null,
-      [
+    await service.downloadTvShowImages({
+      tvdbId: 81189,
+      posterUrl: 'https://artworks.thetvdb.com/banners/posters/81189.jpg',
+      backdropUrl: null,
+      seasonPosters: [
         { seasonNumber: 1, posterUrl: 'https://artworks.thetvdb.com/banners/seasons/81189-1.jpg' },
         { seasonNumber: 2, posterUrl: 'https://artworks.thetvdb.com/banners/seasons/81189-2.jpg' },
-      ]
-    );
+      ],
+    });
 
     // show poster + 2 season posters = 3 downloads
     expect(fetchMock).toHaveBeenCalledTimes(3);
@@ -472,7 +472,12 @@ describe('downloadTvShowImages — season posters', () => {
   it('skips null season poster URLs', async () => {
     fetchMock.mockResolvedValue(mockImageResponse());
 
-    await service.downloadTvShowImages(81189, null, null, [{ seasonNumber: 1, posterUrl: null }]);
+    await service.downloadTvShowImages({
+      tvdbId: 81189,
+      posterUrl: null,
+      backdropUrl: null,
+      seasonPosters: [{ seasonNumber: 1, posterUrl: null }],
+    });
 
     expect(fetchMock).not.toHaveBeenCalled();
   });
@@ -480,13 +485,12 @@ describe('downloadTvShowImages — season posters', () => {
   it('downloads logo alongside other TV images', async () => {
     fetchMock.mockResolvedValue(mockImageResponse());
 
-    await service.downloadTvShowImages(
-      81189,
-      'https://artworks.thetvdb.com/banners/posters/81189.jpg',
-      null,
-      undefined,
-      'https://artworks.thetvdb.com/banners/logos/81189.png'
-    );
+    await service.downloadTvShowImages({
+      tvdbId: 81189,
+      posterUrl: 'https://artworks.thetvdb.com/banners/posters/81189.jpg',
+      backdropUrl: null,
+      logoUrl: 'https://artworks.thetvdb.com/banners/logos/81189.png',
+    });
 
     expect(fetchMock).toHaveBeenCalledTimes(2);
 

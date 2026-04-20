@@ -58,44 +58,31 @@ export function getCorrection(id: string): CorrectionRow {
   return row;
 }
 
-export function createOrUpdateCorrection(input: CreateCorrectionInput): CorrectionRow {
+function updateExistingCorrection(
+  existing: CorrectionRow,
+  input: CreateCorrectionInput
+): CorrectionRow {
   const db = getDrizzle();
-  const normalized = normalizeDescription(input.descriptionPattern);
+  db.update(transactionCorrections)
+    .set({
+      confidence: Math.min(existing.confidence + 0.1, 1.0),
+      timesApplied: existing.timesApplied + 1,
+      lastUsedAt: new Date().toISOString(),
+      entityId: input.entityId ?? existing.entityId,
+      entityName: input.entityName ?? existing.entityName,
+      location: input.location ?? existing.location,
+      tags: JSON.stringify(input.tags ?? []),
+      transactionType: input.transactionType ?? existing.transactionType,
+      priority: input.priority ?? existing.priority,
+      isActive: true,
+    })
+    .where(eq(transactionCorrections.id, existing.id))
+    .run();
+  return getCorrection(existing.id);
+}
 
-  const [existing] = db
-    .select()
-    .from(transactionCorrections)
-    .where(
-      and(
-        eq(transactionCorrections.descriptionPattern, normalized),
-        eq(transactionCorrections.matchType, input.matchType)
-      )
-    )
-    .all();
-
-  if (existing) {
-    const newConfidence = Math.min(existing.confidence + 0.1, 1.0);
-    const newTimesApplied = existing.timesApplied + 1;
-
-    db.update(transactionCorrections)
-      .set({
-        confidence: newConfidence,
-        timesApplied: newTimesApplied,
-        lastUsedAt: new Date().toISOString(),
-        entityId: input.entityId ?? existing.entityId,
-        entityName: input.entityName ?? existing.entityName,
-        location: input.location ?? existing.location,
-        tags: JSON.stringify(input.tags ?? []),
-        transactionType: input.transactionType ?? existing.transactionType,
-        priority: input.priority ?? existing.priority,
-        isActive: true,
-      })
-      .where(eq(transactionCorrections.id, existing.id))
-      .run();
-
-    return getCorrection(existing.id);
-  }
-
+function insertNewCorrection(input: CreateCorrectionInput, normalized: string): CorrectionRow {
+  const db = getDrizzle();
   const result = db
     .insert(transactionCorrections)
     .values({
@@ -111,18 +98,33 @@ export function createOrUpdateCorrection(input: CreateCorrectionInput): Correcti
     })
     .run();
 
-  // lastInsertRowid is the integer rowid, not the UUID text primary key.
   const [inserted] = db
     .select()
     .from(transactionCorrections)
     .where(sql`rowid = ${result.lastInsertRowid}`)
     .all();
 
-  if (!inserted) {
-    throw new NotFoundError('Correction', String(result.lastInsertRowid));
-  }
-
+  if (!inserted) throw new NotFoundError('Correction', String(result.lastInsertRowid));
   return inserted;
+}
+
+export function createOrUpdateCorrection(input: CreateCorrectionInput): CorrectionRow {
+  const db = getDrizzle();
+  const normalized = normalizeDescription(input.descriptionPattern);
+
+  const [existing] = db
+    .select()
+    .from(transactionCorrections)
+    .where(
+      and(
+        eq(transactionCorrections.descriptionPattern, normalized),
+        eq(transactionCorrections.matchType, input.matchType)
+      )
+    )
+    .all();
+
+  if (existing) return updateExistingCorrection(existing, input);
+  return insertNewCorrection(input, normalized);
 }
 
 export function updateCorrection(id: string, input: UpdateCorrectionInput): CorrectionRow {

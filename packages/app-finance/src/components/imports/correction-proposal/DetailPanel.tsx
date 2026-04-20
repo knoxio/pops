@@ -1,7 +1,9 @@
-import { Input, Label, Select, Separator, Textarea } from '@pops/ui';
+import { Label, Separator, Textarea } from '@pops/ui';
+
+import { EditDataEditor, RuleDataEditor } from './detail-panel/Editors';
 
 import type { CorrectionRule } from '../RulePicker';
-import type { AddRuleData, EditRuleData, LocalOp } from './types';
+import type { LocalOp } from './types';
 
 function TargetRuleCard(props: { rule: CorrectionRule | null; targetRuleId: string }) {
   if (!props.rule) {
@@ -27,137 +29,82 @@ function TargetRuleCard(props: { rule: CorrectionRule | null; targetRuleId: stri
   );
 }
 
-function RuleDataEditor(props: {
-  data: AddRuleData;
-  onChange: (next: AddRuleData) => void;
+function AddOpView({
+  op,
+  onChange,
+  disabled,
+}: {
+  op: Extract<LocalOp, { kind: 'add' }>;
+  onChange: (mutator: (op: LocalOp) => LocalOp) => void;
   disabled: boolean;
-  mode: 'add';
 }) {
-  const { data, onChange, disabled } = props;
   return (
-    <div className="space-y-3">
-      <div className="space-y-1">
-        <Label>Description pattern</Label>
-        <Input
-          value={data.descriptionPattern}
-          onChange={(e) => {
-            onChange({ ...data, descriptionPattern: e.target.value });
-          }}
-          disabled={disabled}
-        />
-      </div>
-      <div className="space-y-1">
-        <Label>Match type</Label>
-        <Select
-          value={data.matchType}
-          onChange={(e) => {
-            onChange({
-              ...data,
-              matchType: e.target.value as 'exact' | 'contains' | 'regex',
-            });
-          }}
-          options={[
-            { value: 'exact', label: 'Exact' },
-            { value: 'contains', label: 'Contains' },
-            { value: 'regex', label: 'Regex' },
-          ]}
-          disabled={disabled}
-        />
-      </div>
-      <div className="space-y-1">
-        <Label>Entity name</Label>
-        <Input
-          value={data.entityName ?? ''}
-          onChange={(e) => {
-            onChange({ ...data, entityName: e.target.value || undefined });
-          }}
-          placeholder="e.g. Woolworths"
-          disabled={disabled}
-        />
-      </div>
-      <div className="space-y-1">
-        <Label>Transaction type</Label>
-        <Select
-          value={data.transactionType ?? ''}
-          onChange={(e) => {
-            onChange({
-              ...data,
-              transactionType:
-                e.target.value === ''
-                  ? undefined
-                  : (e.target.value as 'purchase' | 'transfer' | 'income'),
-            });
-          }}
-          options={[
-            { value: '', label: '— none —' },
-            { value: 'purchase', label: 'Purchase' },
-            { value: 'transfer', label: 'Transfer' },
-            { value: 'income', label: 'Income' },
-          ]}
-          disabled={disabled}
-        />
-      </div>
-      <div className="space-y-1">
-        <Label>Location</Label>
-        <Input
-          value={data.location ?? ''}
-          onChange={(e) => {
-            onChange({ ...data, location: e.target.value || undefined });
-          }}
-          disabled={disabled}
-        />
-      </div>
+    <div className="p-6 overflow-auto space-y-4">
+      <div className="text-xs uppercase tracking-wide text-muted-foreground">Add new rule</div>
+      <RuleDataEditor
+        data={op.data}
+        onChange={(next) =>
+          onChange((current) => (current.kind === 'add' ? { ...current, data: next } : current))
+        }
+        disabled={disabled}
+      />
     </div>
   );
 }
 
-function EditDataEditor(props: {
-  data: EditRuleData;
-  onChange: (next: EditRuleData) => void;
+function EditOpView({
+  op,
+  onChange,
+  disabled,
+}: {
+  op: Extract<LocalOp, { kind: 'edit' }>;
+  onChange: (mutator: (op: LocalOp) => LocalOp) => void;
   disabled: boolean;
 }) {
-  const { data, onChange, disabled } = props;
   return (
-    <div className="space-y-3">
-      <div className="space-y-1">
-        <Label>Entity name</Label>
-        <Input
-          value={data.entityName ?? ''}
-          onChange={(e) => {
-            onChange({ ...data, entityName: e.target.value || undefined });
-          }}
-          disabled={disabled}
-        />
+    <div className="p-6 overflow-auto space-y-4">
+      <div className="text-xs uppercase tracking-wide text-muted-foreground">Edit rule</div>
+      <TargetRuleCard rule={op.targetRule} targetRuleId={op.targetRuleId} />
+      <Separator />
+      <EditDataEditor
+        data={op.data}
+        onChange={(next) =>
+          onChange((current) => (current.kind === 'edit' ? { ...current, data: next } : current))
+        }
+        disabled={disabled}
+      />
+    </div>
+  );
+}
+
+function DisableRemoveOpView({
+  op,
+  onChange,
+  disabled,
+}: {
+  op: Extract<LocalOp, { kind: 'disable' | 'remove' }>;
+  onChange: (mutator: (op: LocalOp) => LocalOp) => void;
+  disabled: boolean;
+}) {
+  return (
+    <div className="p-6 overflow-auto space-y-4">
+      <div className="text-xs uppercase tracking-wide text-muted-foreground">
+        {op.kind === 'disable' ? 'Disable rule' : 'Remove rule'}
       </div>
-      <div className="space-y-1">
-        <Label>Transaction type</Label>
-        <Select
-          value={data.transactionType ?? ''}
-          onChange={(e) => {
-            onChange({
-              ...data,
-              transactionType:
-                e.target.value === ''
-                  ? undefined
-                  : (e.target.value as 'purchase' | 'transfer' | 'income'),
-            });
-          }}
-          options={[
-            { value: '', label: '— none —' },
-            { value: 'purchase', label: 'Purchase' },
-            { value: 'transfer', label: 'Transfer' },
-            { value: 'income', label: 'Income' },
-          ]}
-          disabled={disabled}
-        />
-      </div>
-      <div className="space-y-1">
-        <Label>Location</Label>
-        <Input
-          value={data.location ?? ''}
-          onChange={(e) => {
-            onChange({ ...data, location: e.target.value || undefined });
-          }}
+      <TargetRuleCard rule={op.targetRule} targetRuleId={op.targetRuleId} />
+      <div className="space-y-2">
+        <Label>Rationale (optional)</Label>
+        <Textarea
+          value={op.rationale}
+          onChange={(e) =>
+            onChange((current) =>
+              current.kind === 'disable' || current.kind === 'remove'
+                ? { ...current, rationale: e.target.value }
+                : current
+            )
+          }
+          placeholder="Why is this rule being removed?"
+          rows={3}
           disabled={disabled}
         />
       </div>
@@ -178,68 +125,7 @@ export function DetailPanel(props: {
       </div>
     );
   }
-
-  if (op.kind === 'add') {
-    return (
-      <div className="p-6 overflow-auto space-y-4">
-        <div className="text-xs uppercase tracking-wide text-muted-foreground">Add new rule</div>
-        <RuleDataEditor
-          data={op.data}
-          onChange={(next) => {
-            onChange((current) => {
-              if (current.kind !== 'add') return current;
-              return { ...current, data: next };
-            });
-          }}
-          disabled={disabled}
-          mode="add"
-        />
-      </div>
-    );
-  }
-
-  if (op.kind === 'edit') {
-    return (
-      <div className="p-6 overflow-auto space-y-4">
-        <div className="text-xs uppercase tracking-wide text-muted-foreground">Edit rule</div>
-        <TargetRuleCard rule={op.targetRule} targetRuleId={op.targetRuleId} />
-        <Separator />
-        <EditDataEditor
-          data={op.data}
-          onChange={(next) => {
-            onChange((current) => {
-              if (current.kind !== 'edit') return current;
-              return { ...current, data: next };
-            });
-          }}
-          disabled={disabled}
-        />
-      </div>
-    );
-  }
-
-  // disable / remove
-  return (
-    <div className="p-6 overflow-auto space-y-4">
-      <div className="text-xs uppercase tracking-wide text-muted-foreground">
-        {op.kind === 'disable' ? 'Disable rule' : 'Remove rule'}
-      </div>
-      <TargetRuleCard rule={op.targetRule} targetRuleId={op.targetRuleId} />
-      <div className="space-y-2">
-        <Label>Rationale (optional)</Label>
-        <Textarea
-          value={op.rationale}
-          onChange={(e) => {
-            onChange((current) => {
-              if (current.kind !== 'disable' && current.kind !== 'remove') return current;
-              return { ...current, rationale: e.target.value };
-            });
-          }}
-          placeholder="Why is this rule being removed?"
-          rows={3}
-          disabled={disabled}
-        />
-      </div>
-    </div>
-  );
+  if (op.kind === 'add') return <AddOpView op={op} onChange={onChange} disabled={disabled} />;
+  if (op.kind === 'edit') return <EditOpView op={op} onChange={onChange} disabled={disabled} />;
+  return <DisableRemoveOpView op={op} onChange={onChange} disabled={disabled} />;
 }

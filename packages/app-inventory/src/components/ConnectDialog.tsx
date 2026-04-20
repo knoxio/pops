@@ -12,6 +12,42 @@ interface ConnectDialogProps {
   onConnected: () => void;
 }
 
+interface ConnectResultRowProps {
+  item: InventoryItem;
+  disabled: boolean;
+  onConnect: (itemId: string) => void;
+}
+
+function ConnectResultRow({ item, disabled, onConnect }: ConnectResultRowProps) {
+  const hasMeta = item.brand || item.model || item.assetId || item.type;
+  return (
+    <Button
+      variant="ghost"
+      className="w-full flex items-center justify-between p-2.5 h-auto text-left"
+      onClick={() => onConnect(item.id)}
+      disabled={disabled}
+    >
+      <div className="flex-1 min-w-0">
+        <div className="font-medium text-sm">{item.itemName}</div>
+        {hasMeta ? (
+          <div className="flex flex-wrap items-center gap-1 mt-0.5">
+            {(item.brand || item.model) && (
+              <span className="text-xs text-muted-foreground">
+                {[item.brand, item.model].filter(Boolean).join(' · ')}
+              </span>
+            )}
+            {item.assetId && <AssetIdBadge assetId={item.assetId} />}
+            {item.type && <TypeBadge type={item.type} />}
+          </div>
+        ) : (
+          <span className="text-xs text-muted-foreground mt-0.5">No details</span>
+        )}
+      </div>
+      <Link2 className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
+    </Button>
+  );
+}
+
 export function ConnectDialog({ currentItemId, onConnected }: ConnectDialogProps) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -62,30 +98,11 @@ export function ConnectDialog({ currentItemId, onConnected }: ConnectDialogProps
       isLoading={isLoading}
       results={results}
       renderResult={(item: InventoryItem) => (
-        <Button
-          variant="ghost"
-          className="w-full flex items-center justify-between p-2.5 h-auto text-left"
-          onClick={() => connectMutation.mutate({ itemAId: currentItemId, itemBId: item.id })}
+        <ConnectResultRow
+          item={item}
           disabled={connectMutation.isPending}
-        >
-          <div className="flex-1 min-w-0">
-            <div className="font-medium text-sm">{item.itemName}</div>
-            {item.brand || item.model || item.assetId || item.type ? (
-              <div className="flex flex-wrap items-center gap-1 mt-0.5">
-                {(item.brand || item.model) && (
-                  <span className="text-xs text-muted-foreground">
-                    {[item.brand, item.model].filter(Boolean).join(' · ')}
-                  </span>
-                )}
-                {item.assetId && <AssetIdBadge assetId={item.assetId} />}
-                {item.type && <TypeBadge type={item.type} />}
-              </div>
-            ) : (
-              <span className="text-xs text-muted-foreground mt-0.5">No details</span>
-            )}
-          </div>
-          <Link2 className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
-        </Button>
+          onConnect={(itemBId) => connectMutation.mutate({ itemAId: currentItemId, itemBId })}
+        />
       )}
     />
   );

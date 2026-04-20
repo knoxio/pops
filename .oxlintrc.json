@@ -211,14 +211,6 @@
     {
       "files": ["apps/pops-api/src/**/*.{ts,tsx}"],
       "rules": {
-        "max-lines": ["error", { "max": 600, "skipBlankLines": true, "skipComments": true }],
-        "max-lines-per-function": [
-          "error",
-          { "max": 200, "skipBlankLines": true, "skipComments": true, "IIFEs": true }
-        ],
-        "complexity": ["error", 30],
-        "max-depth": ["error", 4],
-        "max-params": ["error", 8],
         "typescript/explicit-function-return-type": [
           "error",
           {
@@ -255,13 +247,6 @@
       "files": ["packages/import-tools/src/**/*.ts"],
       "rules": {
         "no-console": "off",
-        "max-lines": ["error", { "max": 400, "skipBlankLines": true, "skipComments": true }],
-        "max-lines-per-function": [
-          "error",
-          { "max": 200, "skipBlankLines": true, "skipComments": true, "IIFEs": true }
-        ],
-        "complexity": ["error", 20],
-        "max-depth": ["error", 4],
         "typescript/explicit-function-return-type": "off",
         "typescript/explicit-module-boundary-types": "off",
         "typescript/require-await": "off",
@@ -270,83 +255,22 @@
       }
     },
     {
-      "files": ["apps/pops-shell/src/**/*.{ts,tsx}"],
+      "files": [
+        "apps/pops-shell/src/**/*.{ts,tsx}",
+        "packages/ui/src/**/*.{ts,tsx}",
+        "packages/app-*/src/**/*.{ts,tsx}",
+        "packages/navigation/src/**/*.{ts,tsx}"
+      ],
       "rules": {
-        "max-lines": ["error", { "max": 600, "skipBlankLines": true, "skipComments": true }],
-        "max-lines-per-function": [
-          "error",
-          { "max": 270, "skipBlankLines": true, "skipComments": true, "IIFEs": true }
-        ],
-        "complexity": ["error", 40],
-        "max-depth": ["error", 4],
         "typescript/explicit-function-return-type": "off"
       }
     },
     {
       "files": ["packages/ui/src/**/*.{ts,tsx}"],
       "rules": {
-        "max-lines": ["error", { "max": 400, "skipBlankLines": true, "skipComments": true }],
-        "max-lines-per-function": [
-          "error",
-          { "max": 260, "skipBlankLines": true, "skipComments": true, "IIFEs": true }
-        ],
-        "complexity": ["error", 45],
-        "max-depth": ["error", 4],
-        "typescript/explicit-function-return-type": "off",
         "jsx-a11y/alt-text": "warn",
         "jsx-a11y/aria-role": "warn",
         "jsx-a11y/click-events-have-key-events": "warn"
-      }
-    },
-    {
-      "files": [
-        "packages/app-*/src/components/**/*.{ts,tsx}",
-        "packages/app-*/src/hooks/**/*.{ts,tsx}",
-        "packages/app-*/src/store/**/*.{ts,tsx}",
-        "packages/app-*/src/lib/**/*.{ts,tsx}",
-        "packages/navigation/src/**/*.{ts,tsx}"
-      ],
-      "rules": {
-        "max-lines": ["error", { "max": 500, "skipBlankLines": true, "skipComments": true }],
-        "max-lines-per-function": [
-          "error",
-          { "max": 270, "skipBlankLines": true, "skipComments": true, "IIFEs": true }
-        ],
-        "complexity": ["error", 45],
-        "max-depth": ["error", 4],
-        "typescript/explicit-function-return-type": "off"
-      }
-    },
-    {
-      "files": ["packages/app-*/src/pages/**/*.{ts,tsx}"],
-      "rules": {
-        "max-lines": ["error", { "max": 800, "skipBlankLines": true, "skipComments": true }],
-        "max-lines-per-function": [
-          "error",
-          { "max": 500, "skipBlankLines": true, "skipComments": true, "IIFEs": true }
-        ],
-        "complexity": ["error", 70],
-        "max-depth": ["error", 4],
-        "typescript/explicit-function-return-type": "off"
-      }
-    },
-    {
-      "files": [
-        "packages/app-finance/src/components/imports/TagRuleProposalDialog.tsx",
-        "packages/app-finance/src/components/imports/ProcessingStep.tsx",
-        "packages/app-finance/src/components/imports/TransactionCard.tsx",
-        "packages/app-finance/src/components/imports/FinalReviewStep.tsx",
-        "packages/app-finance/src/components/imports/ReviewStep.tsx"
-      ],
-      "rules": {
-        "max-lines": ["error", { "max": 850, "skipBlankLines": true, "skipComments": true }],
-        "max-lines-per-function": [
-          "error",
-          { "max": 400, "skipBlankLines": true, "skipComments": true, "IIFEs": true }
-        ],
-        "complexity": ["error", 55],
-        "max-depth": ["error", 4],
-        "typescript/explicit-function-return-type": "off"
       }
     },
     {

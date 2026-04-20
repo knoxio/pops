@@ -27,6 +27,40 @@ export interface DanglingEntityRefError {
   changeSetTempId: string;
 }
 
+interface OpWithEntity {
+  op: 'add' | 'edit' | 'disable' | 'remove';
+  data?: { entityId?: string | null };
+}
+
+function getOpEntityId(op: OpWithEntity): string | null {
+  if ((op.op === 'add' || op.op === 'edit') && op.data?.entityId) return op.data.entityId;
+  return null;
+}
+
+function validateChangeSetEntities(
+  pcsList: Array<{ tempId: string; changeSet: { ops: OpWithEntity[] } }>,
+  validTempEntityIds: Set<string>,
+  label: 'ChangeSet' | 'Tag rule ChangeSet'
+): void {
+  for (const pcs of pcsList) {
+    for (const op of pcs.changeSet.ops) {
+      const entityId = getOpEntityId(op);
+      if (!entityId?.startsWith('temp:entity:') || validTempEntityIds.has(entityId)) continue;
+      const err: DanglingEntityRefError = {
+        type: 'dangling-entity-ref',
+        tempId: entityId,
+        changeSetTempId: pcs.tempId,
+      };
+      throw Object.assign(
+        new Error(
+          `Dangling entity reference: ${label} ${pcs.tempId} references temp entity ${entityId} which does not exist in the pending entity list`
+        ),
+        err
+      );
+    }
+  }
+}
+
 /**
  * Build a structured commit payload from pending entities, pending ChangeSets,
  * and confirmed transactions. Validates referential integrity: every temp entity
@@ -43,52 +77,13 @@ export function buildCommitPayload(
   pendingTagRuleChangeSets: PendingTagRuleChangeSet[],
   confirmedTransactions: ConfirmedTransaction[]
 ): CommitPayload {
-  // Build lookup of valid temp entity IDs
   const validTempEntityIds = new Set(pendingEntities.map((e) => e.tempId));
-
-  // Validate ChangeSet ops don't reference dangling temp entity IDs
-  for (const pcs of pendingChangeSets) {
-    for (const op of pcs.changeSet.ops) {
-      const entityId =
-        (op.op === 'add' || op.op === 'edit') && op.data.entityId ? op.data.entityId : null;
-
-      if (entityId?.startsWith('temp:entity:') && !validTempEntityIds.has(entityId)) {
-        const err: DanglingEntityRefError = {
-          type: 'dangling-entity-ref',
-          tempId: entityId,
-          changeSetTempId: pcs.tempId,
-        };
-        throw Object.assign(
-          new Error(
-            `Dangling entity reference: ChangeSet ${pcs.tempId} references temp entity ${entityId} which does not exist in the pending entity list`
-          ),
-          err
-        );
-      }
-    }
-  }
-
-  for (const pcs of pendingTagRuleChangeSets) {
-    for (const op of pcs.changeSet.ops) {
-      const entityId =
-        (op.op === 'add' || op.op === 'edit') && op.data.entityId ? op.data.entityId : null;
-
-      if (entityId?.startsWith('temp:entity:') && !validTempEntityIds.has(entityId)) {
-        const err: DanglingEntityRefError = {
-          type: 'dangling-entity-ref',
-          tempId: entityId,
-          changeSetTempId: pcs.tempId,
-        };
-        throw Object.assign(
-          new Error(
-            `Dangling entity reference: Tag rule ChangeSet ${pcs.tempId} references temp entity ${entityId} which does not exist in the pending entity list`
-          ),
-          err
-        );
-      }
-    }
-  }
-
+  validateChangeSetEntities(pendingChangeSets as never, validTempEntityIds, 'ChangeSet');
+  validateChangeSetEntities(
+    pendingTagRuleChangeSets as never,
+    validTempEntityIds,
+    'Tag rule ChangeSet'
+  );
   return {
     entities: [...pendingEntities],
     changeSets: pendingChangeSets.map((pcs) => pcs.changeSet),

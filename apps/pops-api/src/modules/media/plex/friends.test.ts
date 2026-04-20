@@ -146,7 +146,11 @@ describe('fetchFriendWatchlist', () => {
       }),
     });
 
-    const items = await fetchFriendWatchlist('token', 'client-id', 'friend-uuid');
+    const items = await fetchFriendWatchlist({
+      token: 'token',
+      clientId: 'client-id',
+      friendUuid: 'friend-uuid',
+    });
 
     // Only movies with TMDB IDs
     expect(items).toHaveLength(2);
@@ -161,7 +165,11 @@ describe('fetchFriendWatchlist', () => {
       statusText: 'Unauthorized',
     });
 
-    const items = await fetchFriendWatchlist('token', 'client-id', 'private-friend');
+    const items = await fetchFriendWatchlist({
+      token: 'token',
+      clientId: 'client-id',
+      friendUuid: 'private-friend',
+    });
     expect(items).toHaveLength(0);
   });
 
@@ -172,7 +180,11 @@ describe('fetchFriendWatchlist', () => {
       statusText: 'Forbidden',
     });
 
-    const items = await fetchFriendWatchlist('token', 'client-id', 'restricted-friend');
+    const items = await fetchFriendWatchlist({
+      token: 'token',
+      clientId: 'client-id',
+      friendUuid: 'restricted-friend',
+    });
     expect(items).toHaveLength(0);
   });
 
@@ -183,7 +195,11 @@ describe('fetchFriendWatchlist', () => {
       statusText: 'Not Found',
     });
 
-    const items = await fetchFriendWatchlist('token', 'client-id', 'unknown-friend');
+    const items = await fetchFriendWatchlist({
+      token: 'token',
+      clientId: 'client-id',
+      friendUuid: 'unknown-friend',
+    });
     expect(items).toHaveLength(0);
   });
 
@@ -194,9 +210,9 @@ describe('fetchFriendWatchlist', () => {
       statusText: 'Internal Server Error',
     });
 
-    await expect(fetchFriendWatchlist('token', 'client-id', 'friend-uuid')).rejects.toThrow(
-      PlexApiError
-    );
+    await expect(
+      fetchFriendWatchlist({ token: 'token', clientId: 'client-id', friendUuid: 'friend-uuid' })
+    ).rejects.toThrow(PlexApiError);
   });
 
   it('skips movies without TMDB ID', async () => {
@@ -217,7 +233,11 @@ describe('fetchFriendWatchlist', () => {
       }),
     });
 
-    const items = await fetchFriendWatchlist('token', 'client-id', 'friend-uuid');
+    const items = await fetchFriendWatchlist({
+      token: 'token',
+      clientId: 'client-id',
+      friendUuid: 'friend-uuid',
+    });
     expect(items).toHaveLength(0);
   });
 
@@ -227,7 +247,11 @@ describe('fetchFriendWatchlist', () => {
       json: async () => ({ MediaContainer: {} }),
     });
 
-    const items = await fetchFriendWatchlist('token', 'client-id', 'friend-uuid');
+    const items = await fetchFriendWatchlist({
+      token: 'token',
+      clientId: 'client-id',
+      friendUuid: 'friend-uuid',
+    });
     expect(items).toHaveLength(0);
   });
 
@@ -260,7 +284,11 @@ describe('fetchFriendWatchlist', () => {
         json: async () => ({ MediaContainer: { totalSize: 55, Metadata: page2Items } }),
       });
 
-    const items = await fetchFriendWatchlist('token', 'client-id', 'friend-uuid');
+    const items = await fetchFriendWatchlist({
+      token: 'token',
+      clientId: 'client-id',
+      friendUuid: 'friend-uuid',
+    });
 
     expect(items).toHaveLength(55);
     expect(mockFetch).toHaveBeenCalledTimes(2);
@@ -278,7 +306,11 @@ describe('fetchFriendWatchlist', () => {
       json: async () => ({ MediaContainer: {} }),
     });
 
-    await fetchFriendWatchlist('my-token', 'my-client', 'friend-uuid-123');
+    await fetchFriendWatchlist({
+      token: 'my-token',
+      clientId: 'my-client',
+      friendUuid: 'friend-uuid-123',
+    });
 
     const url = mockFetch.mock.calls[0]![0] as string;
     expect(url).toContain('X-Plex-Token=my-token');

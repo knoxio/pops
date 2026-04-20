@@ -94,7 +94,8 @@ export const CheckboxInput = forwardRef<HTMLButtonElement, CheckboxInputProps>(
     },
     ref
   ) => {
-    const generatedId = id || `checkbox-${Math.random().toString(36).substr(2, 9)}`;
+    const generatedId = id ?? `checkbox-${Math.random().toString(36).substr(2, 9)}`;
+    const showError = error && errorMessage;
 
     return (
       <div className={cn('flex flex-col gap-2', className)}>
@@ -117,25 +118,45 @@ export const CheckboxInput = forwardRef<HTMLButtonElement, CheckboxInputProps>(
             {...props}
           />
           {label && (
-            <div className="flex flex-col gap-0.5">
-              <label
-                htmlFor={generatedId}
-                className={cn(
-                  'text-sm font-medium leading-none cursor-pointer select-none',
-                  disabled && 'opacity-50 cursor-not-allowed'
-                )}
-              >
-                {label}
-                {required && <span className="text-destructive ml-1">*</span>}
-              </label>
-              {description && <p className="text-sm text-muted-foreground">{description}</p>}
-            </div>
+            <CheckboxLabel
+              id={generatedId}
+              label={label}
+              description={description}
+              disabled={disabled}
+              required={required}
+            />
           )}
         </div>
-        {error && errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
+        {showError && <p className="text-sm text-destructive">{errorMessage}</p>}
       </div>
     );
   }
 );
+
+interface CheckboxLabelProps {
+  id: string;
+  label: ReactNode;
+  description?: string;
+  disabled?: boolean;
+  required?: boolean;
+}
+
+function CheckboxLabel({ id, label, description, disabled, required }: CheckboxLabelProps) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <label
+        htmlFor={id}
+        className={cn(
+          'text-sm font-medium leading-none cursor-pointer select-none',
+          disabled && 'opacity-50 cursor-not-allowed'
+        )}
+      >
+        {label}
+        {required && <span className="text-destructive ml-1">*</span>}
+      </label>
+      {description && <p className="text-sm text-muted-foreground">{description}</p>}
+    </div>
+  );
+}
 
 CheckboxInput.displayName = 'CheckboxInput';

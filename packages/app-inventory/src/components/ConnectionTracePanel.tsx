@@ -33,6 +33,25 @@ interface TraceNodeRowProps {
   currentItemId: string;
 }
 
+function ExpandToggle({ open }: { open: boolean }) {
+  return (
+    <CollapsibleTrigger
+      asChild
+      onClick={(e: React.MouseEvent) => {
+        e.stopPropagation();
+      }}
+    >
+      <button
+        type="button"
+        className="p-0.5 rounded hover:bg-muted"
+        aria-label={open ? 'Collapse' : 'Expand'}
+      >
+        {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
+      </button>
+    </CollapsibleTrigger>
+  );
+}
+
 function TraceNodeRow({ node, depth, currentItemId }: TraceNodeRowProps) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(depth < 2);
@@ -56,44 +75,19 @@ function TraceNodeRow({ node, depth, currentItemId }: TraceNodeRowProps) {
         role="treeitem"
         aria-expanded={hasChildren ? open : undefined}
       >
-        {hasChildren ? (
-          <CollapsibleTrigger
-            asChild
-            onClick={(e: React.MouseEvent) => {
-              e.stopPropagation();
-            }}
-          >
-            <button
-              type="button"
-              className="p-0.5 rounded hover:bg-muted"
-              aria-label={open ? 'Collapse' : 'Expand'}
-            >
-              {open ? (
-                <ChevronDown className="h-3.5 w-3.5" />
-              ) : (
-                <ChevronRight className="h-3.5 w-3.5" />
-              )}
-            </button>
-          </CollapsibleTrigger>
-        ) : (
-          <span className="w-4.5" />
-        )}
-
+        {hasChildren ? <ExpandToggle open={open} /> : <span className="w-4.5" />}
         <span className={`text-sm truncate ${isCurrent ? 'font-semibold' : 'font-medium'}`}>
           {node.itemName}
           {isCurrent && <span className="text-xs ml-1">(current)</span>}
         </span>
-
         {node.assetId && <AssetIdBadge assetId={node.assetId} />}
         {node.type && <TypeBadge type={node.type} />}
-
         {hasChildren && (
           <span className="text-xs text-muted-foreground ml-auto shrink-0">
             {node.children.length}
           </span>
         )}
       </div>
-
       {hasChildren && (
         <CollapsibleContent>
           <div role="group">

@@ -22,6 +22,41 @@ interface TierListSummaryProps {
   onDone: () => void;
 }
 
+function deltaClasses(delta: number): string {
+  if (delta > 0) return 'bg-success/20 text-success';
+  if (delta < 0) return 'bg-destructive/20 text-destructive';
+  return 'bg-muted text-muted-foreground';
+}
+
+function DeltaIcon({ delta }: { delta: number }) {
+  if (delta > 0) return <ArrowUpRight className="h-3 w-3" />;
+  if (delta < 0) return <ArrowDownRight className="h-3 w-3" />;
+  return <Minus className="h-3 w-3" />;
+}
+
+function ScoreChangeRow({ change }: { change: ScoreChange }) {
+  const delta = Math.round((change.newScore - change.oldScore) * 10) / 10;
+  const isPositive = delta > 0;
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-lg border p-3">
+      <span className="text-sm font-medium truncate">{change.title}</span>
+      <div className="flex items-center gap-2 shrink-0">
+        <span className="text-xs text-muted-foreground">{Math.round(change.oldScore)}</span>
+        <span className="text-muted-foreground">→</span>
+        <span className="text-sm font-medium">{Math.round(change.newScore)}</span>
+        <span
+          className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs font-medium ${deltaClasses(delta)}`}
+          data-testid={`delta-${change.movieId}`}
+        >
+          <DeltaIcon delta={delta} />
+          {isPositive ? '+' : ''}
+          {delta}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export function TierListSummary({
   comparisonsRecorded,
   scoreChanges,
@@ -41,41 +76,9 @@ export function TierListSummary({
       </div>
 
       <div className="space-y-2">
-        {scoreChanges.map((change) => {
-          const delta = Math.round((change.newScore - change.oldScore) * 10) / 10;
-          const isPositive = delta > 0;
-          const isNegative = delta < 0;
-
-          return (
-            <div
-              key={change.movieId}
-              className="flex items-center justify-between gap-3 rounded-lg border p-3"
-            >
-              <span className="text-sm font-medium truncate">{change.title}</span>
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-xs text-muted-foreground">{Math.round(change.oldScore)}</span>
-                <span className="text-muted-foreground">→</span>
-                <span className="text-sm font-medium">{Math.round(change.newScore)}</span>
-                <span
-                  className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs font-medium ${(() => {
-                    if (isPositive) return 'bg-success/20 text-success';
-                    if (isNegative) return 'bg-destructive/20 text-destructive';
-                    return 'bg-muted text-muted-foreground';
-                  })()}`}
-                  data-testid={`delta-${change.movieId}`}
-                >
-                  {(() => {
-                    if (isPositive) return <ArrowUpRight className="h-3 w-3" />;
-                    if (isNegative) return <ArrowDownRight className="h-3 w-3" />;
-                    return <Minus className="h-3 w-3" />;
-                  })()}
-                  {isPositive ? '+' : ''}
-                  {delta}
-                </span>
-              </div>
-            </div>
-          );
-        })}
+        {scoreChanges.map((change) => (
+          <ScoreChangeRow key={change.movieId} change={change} />
+        ))}
       </div>
 
       <div className="flex gap-3 justify-center">

@@ -4,18 +4,10 @@
  * Route: /media/debrief/:movieId
  *
  * Shows movie poster header, dimension progress tracker, and comparison
- * cards with Pick A / Pick B / draw-tier buttons. Uses getDebrief query
- * and recordDebriefComparison mutation. Advances through pending
- * dimensions; shows CompletionSummary when all are done.
- *
- * Each comparison card exposes the same action overlay as the Arena:
- * watchlist toggle, mark stale, N/A exclusion, and blacklist (not watched).
+ * cards with Pick A / Pick B / draw-tier buttons.
  */
-import { useCallback } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
-import { toast } from 'sonner';
+import { Link, useParams } from 'react-router';
 
-import { trpc } from '@pops/api-client';
 import { PageHeader } from '@pops/ui';
 
 import { BlacklistConfirmDialog } from '../components/BlacklistConfirmDialog';
@@ -24,8 +16,7 @@ import { DebriefComparison } from './debrief/DebriefComparison';
 import { DebriefHeader } from './debrief/DebriefHeader';
 import { DebriefSkeleton } from './debrief/DebriefSkeleton';
 import { DimensionProgress } from './debrief/DimensionProgress';
-import { useDebriefDestructiveActions } from './debrief/useDebriefDestructiveActions';
-import { useDebriefWatchlist } from './debrief/useDebriefWatchlist';
+import { useDebriefPageModel } from './debrief/useDebriefPageModel';
 
 import type { Debrief } from './debrief/types';
 
@@ -68,160 +59,105 @@ function buildSummaryData(debrief: Debrief, allComplete: boolean) {
   };
 }
 
-export function DebriefPage() {
-  const { movieId: rawId } = useParams<{ movieId: string }>();
-  const movieId = Number(rawId);
-  const navigate = useNavigate();
-  const utils = trpc.useUtils();
-
-  const {
-    data: debriefData,
-    isLoading,
-    error,
-    refetch,
-  } = trpc.media.comparisons.getDebrief.useQuery(
-    { mediaType: 'movie', mediaId: movieId },
-    { enabled: !Number.isNaN(movieId) && movieId > 0 }
-  );
-
-  const debrief: Debrief | undefined = debriefData?.data;
-  const pendingDimensions = debrief?.dimensions.filter((d) => d.status === 'pending') ?? [];
-  const allComplete = debrief ? pendingDimensions.length === 0 : false;
-  const currentDimension = pendingDimensions[0] ?? null;
-
-  const recordMutation = trpc.media.comparisons.recordDebriefComparison.useMutation({
-    onSuccess: (result) => {
-      toast.success(result.data.sessionComplete ? 'Debrief complete!' : 'Comparison recorded');
-      void utils.media.comparisons.getDebrief.invalidate({ mediaType: 'movie', mediaId: movieId });
-      void utils.media.comparisons.getPendingDebriefs.invalidate();
-    },
-    onError: (err) => toast.error(err.message),
-  });
-
-  const resolveTitle = useCallback(
-    (id: number) => {
-      if (id === debrief?.movie.mediaId) return debrief.movie.title;
-      if (id === currentDimension?.opponent?.id) return currentDimension.opponent.title;
-      return 'Movie';
-    },
-    [debrief, currentDimension]
-  );
-
-  const watchlist = useDebriefWatchlist({ enabled: !!debrief, resolveTitle });
-  const destructive = useDebriefDestructiveActions({
-    movieId,
-    currentDimensionId: currentDimension?.dimensionId ?? null,
-    resolveTitle,
-  });
-
-  const handlePick = useCallback(
-    (winnerId: number) => {
-      if (!currentDimension?.opponent || !debrief || recordMutation.isPending) return;
-      recordMutation.mutate({
-        sessionId: debrief.sessionId,
-        dimensionId: currentDimension.dimensionId,
-        opponentType: 'movie' as const,
-        opponentId: currentDimension.opponent.id,
-        winnerId,
-      });
-    },
-    [currentDimension, debrief, recordMutation]
-  );
-
-  const handleDraw = useCallback(
-    (tier: 'high' | 'mid' | 'low') => {
-      if (!currentDimension?.opponent || !debrief || recordMutation.isPending) return;
-      recordMutation.mutate({
-        sessionId: debrief.sessionId,
-        dimensionId: currentDimension.dimensionId,
-        opponentType: 'movie' as const,
-        opponentId: currentDimension.opponent.id,
-        winnerId: 0,
-        drawTier: tier,
-      });
-    },
-    [currentDimension, debrief, recordMutation]
-  );
-
-  const handleDimensionSkipped = useCallback(() => {
-    void utils.media.comparisons.getDebrief.invalidate({ mediaType: 'movie', mediaId: movieId });
-  }, [utils, movieId]);
-
-  const handleDoAnother = useCallback(() => navigate('/media/compare'), [navigate]);
-
-  if (Number.isNaN(movieId) || movieId <= 0) return <InvalidIdMessage />;
-  if (isLoading) return <DebriefSkeleton />;
-  if (error || !debrief) {
-    return <ErrorMessage message={error?.message ?? 'Session not found'} onRetry={refetch} />;
-  }
-
-  const summaryData = buildSummaryData(debrief, allComplete);
-
+function DebriefComparisonSection({
+  model,
+  debrief,
+}: {
+  model: ReturnType<typeof useDebriefPageModel>;
+  debrief: Debrief;
+}) {
+  if (model.allComplete || !model.currentDimension) return null;
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-6">
-      <PageHeader
-        title={debrief.movie.title}
-        backHref="/media/history"
-        breadcrumbs={[
-          { label: 'Media', href: '/media' },
-          { label: 'History', href: '/media/history' },
-          { label: debrief.movie.title },
-        ]}
-        renderLink={Link}
-      />
+    <DebriefComparison
+      movie={debrief.movie}
+      dimension={model.currentDimension}
+      isPending={model.recordMutation.isPending}
+      watchlistedMovies={model.watchlist.watchlistedMovies}
+      watchlistPending={model.watchlist.pending}
+      stalePending={model.destructive.markStalePending}
+      naPending={model.destructive.naPending}
+      blacklistPending={model.destructive.blacklistPending}
+      onPick={model.handlePick}
+      onDraw={model.handleDraw}
+      onToggleWatchlist={model.watchlist.handleToggleWatchlist}
+      onMarkStale={model.destructive.handleMarkStale}
+      onNA={model.destructive.handleNA}
+      onBlacklist={model.destructive.openBlacklist}
+    />
+  );
+}
 
+function DebriefPageBody({
+  model,
+  debrief,
+}: {
+  model: ReturnType<typeof useDebriefPageModel>;
+  debrief: Debrief;
+}) {
+  const summaryData = buildSummaryData(debrief, model.allComplete);
+  return (
+    <>
       <DebriefHeader
         movie={debrief.movie}
-        pendingCount={pendingDimensions.length}
-        allComplete={allComplete}
+        pendingCount={model.pendingDimensions.length}
+        allComplete={model.allComplete}
       />
-
       <DimensionProgress
         dimensions={debrief.dimensions}
-        currentDimensionId={currentDimension?.dimensionId ?? null}
+        currentDimensionId={model.currentDimension?.dimensionId ?? null}
       />
-
-      {!allComplete && currentDimension && (
-        <DebriefComparison
-          movie={debrief.movie}
-          dimension={currentDimension}
-          isPending={recordMutation.isPending}
-          watchlistedMovies={watchlist.watchlistedMovies}
-          watchlistPending={watchlist.pending}
-          stalePending={destructive.markStalePending}
-          naPending={destructive.naPending}
-          blacklistPending={destructive.blacklistPending}
-          onPick={handlePick}
-          onDraw={handleDraw}
-          onToggleWatchlist={watchlist.handleToggleWatchlist}
-          onMarkStale={destructive.handleMarkStale}
-          onNA={destructive.handleNA}
-          onBlacklist={destructive.openBlacklist}
-        />
-      )}
-
+      <DebriefComparisonSection model={model} debrief={debrief} />
       <div className="flex justify-center">
         <DebriefActionBar
           sessionId={debrief.sessionId}
           currentDimension={
-            currentDimension
-              ? { id: currentDimension.dimensionId, name: currentDimension.name }
+            model.currentDimension
+              ? { id: model.currentDimension.dimensionId, name: model.currentDimension.name }
               : null
           }
-          allComplete={allComplete}
+          allComplete={model.allComplete}
           summaryData={summaryData}
-          onDimensionSkipped={handleDimensionSkipped}
-          onDoAnother={handleDoAnother}
+          onDimensionSkipped={model.handleDimensionSkipped}
+          onDoAnother={model.handleDoAnother}
         />
       </div>
-
       <BlacklistConfirmDialog
-        target={destructive.blacklistTarget}
-        comparisonsToPurge={destructive.comparisonsToPurge}
-        isPending={destructive.blacklistPending}
-        onConfirm={destructive.confirmBlacklist}
-        onCancel={destructive.cancelBlacklist}
+        target={model.destructive.blacklistTarget}
+        comparisonsToPurge={model.destructive.comparisonsToPurge}
+        isPending={model.destructive.blacklistPending}
+        onConfirm={model.destructive.confirmBlacklist}
+        onCancel={model.destructive.cancelBlacklist}
       />
+    </>
+  );
+}
+
+export function DebriefPage() {
+  const { movieId: rawId } = useParams<{ movieId: string }>();
+  const movieId = Number(rawId);
+  const model = useDebriefPageModel(movieId);
+
+  if (Number.isNaN(movieId) || movieId <= 0) return <InvalidIdMessage />;
+  if (model.isLoading) return <DebriefSkeleton />;
+  if (model.error || !model.debrief) {
+    return (
+      <ErrorMessage message={model.error?.message ?? 'Session not found'} onRetry={model.refetch} />
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-6 p-6">
+      <PageHeader
+        title={model.debrief.movie.title}
+        backHref="/media/history"
+        breadcrumbs={[
+          { label: 'Media', href: '/media' },
+          { label: 'History', href: '/media/history' },
+          { label: model.debrief.movie.title },
+        ]}
+        renderLink={Link}
+      />
+      <DebriefPageBody model={model} debrief={model.debrief} />
     </div>
   );
 }

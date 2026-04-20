@@ -59,9 +59,21 @@ describe('skip cooloff', () => {
   describe('recordSkip', () => {
     it('creates a cooloff entry for a skipped pair', () => {
       const { dimId, movieA, movieB } = seedComparisonPair();
-      recordSkip(dimId, 'movie', movieA, 'movie', movieB);
+      recordSkip({
+        dimensionId: dimId,
+        mediaAType: 'movie',
+        mediaAId: movieA,
+        mediaBType: 'movie',
+        mediaBId: movieB,
+      });
 
-      const onCooloff = isPairOnCooloff(dimId, 'movie', movieA, 'movie', movieB);
+      const onCooloff = isPairOnCooloff({
+        dimensionId: dimId,
+        mediaAType: 'movie',
+        mediaAId: movieA,
+        mediaBType: 'movie',
+        mediaBId: movieB,
+      });
       expect(onCooloff).toBe(true);
     });
 
@@ -69,7 +81,13 @@ describe('skip cooloff', () => {
       const { dimId, movieA, movieB } = seedComparisonPair();
 
       // First skip at global count 0 → skip_until = 10
-      recordSkip(dimId, 'movie', movieA, 'movie', movieB);
+      recordSkip({
+        dimensionId: dimId,
+        mediaAType: 'movie',
+        mediaAId: movieA,
+        mediaBType: 'movie',
+        mediaBId: movieB,
+      });
 
       // Add 5 comparisons (each must be a unique pair to avoid override dedup)
       const extraMovies: number[] = [];
@@ -92,30 +110,72 @@ describe('skip cooloff', () => {
       expect(getGlobalComparisonCount()).toBe(5);
 
       // Second skip at global count 5 → skip_until = 15
-      recordSkip(dimId, 'movie', movieA, 'movie', movieB);
+      recordSkip({
+        dimensionId: dimId,
+        mediaAType: 'movie',
+        mediaAId: movieA,
+        mediaBType: 'movie',
+        mediaBId: movieB,
+      });
 
       // Still on cooloff (5 < 15)
-      expect(isPairOnCooloff(dimId, 'movie', movieA, 'movie', movieB)).toBe(true);
+      expect(
+        isPairOnCooloff({
+          dimensionId: dimId,
+          mediaAType: 'movie',
+          mediaAId: movieA,
+          mediaBType: 'movie',
+          mediaBId: movieB,
+        })
+      ).toBe(true);
     });
   });
 
   describe('isPairOnCooloff', () => {
     it('returns false when no cooloff exists', () => {
       const { dimId, movieA, movieB } = seedComparisonPair();
-      expect(isPairOnCooloff(dimId, 'movie', movieA, 'movie', movieB)).toBe(false);
+      expect(
+        isPairOnCooloff({
+          dimensionId: dimId,
+          mediaAType: 'movie',
+          mediaAId: movieA,
+          mediaBType: 'movie',
+          mediaBId: movieB,
+        })
+      ).toBe(false);
     });
 
     it('returns true during cooloff period', () => {
       const { dimId, movieA, movieB } = seedComparisonPair();
-      recordSkip(dimId, 'movie', movieA, 'movie', movieB);
+      recordSkip({
+        dimensionId: dimId,
+        mediaAType: 'movie',
+        mediaAId: movieA,
+        mediaBType: 'movie',
+        mediaBId: movieB,
+      });
 
       // Global count is 0, skip_until is 10
-      expect(isPairOnCooloff(dimId, 'movie', movieA, 'movie', movieB)).toBe(true);
+      expect(
+        isPairOnCooloff({
+          dimensionId: dimId,
+          mediaAType: 'movie',
+          mediaAId: movieA,
+          mediaBType: 'movie',
+          mediaBId: movieB,
+        })
+      ).toBe(true);
     });
 
     it('returns false after 10 more comparisons', () => {
       const { dimId, movieA, movieB } = seedComparisonPair();
-      recordSkip(dimId, 'movie', movieA, 'movie', movieB);
+      recordSkip({
+        dimensionId: dimId,
+        mediaAType: 'movie',
+        mediaAId: movieA,
+        mediaBType: 'movie',
+        mediaBId: movieB,
+      });
       // skip_until = 10
 
       // Add 10 comparisons (each must be a unique pair to avoid override dedup)
@@ -139,25 +199,61 @@ describe('skip cooloff', () => {
 
       expect(getGlobalComparisonCount()).toBe(10);
       // Global count 10 is NOT < skip_until 10 → cooloff expired
-      expect(isPairOnCooloff(dimId, 'movie', movieA, 'movie', movieB)).toBe(false);
+      expect(
+        isPairOnCooloff({
+          dimensionId: dimId,
+          mediaAType: 'movie',
+          mediaAId: movieA,
+          mediaBType: 'movie',
+          mediaBId: movieB,
+        })
+      ).toBe(false);
     });
 
     it('symmetry: checking B-vs-A matches A-vs-B', () => {
       const { dimId, movieA, movieB } = seedComparisonPair();
       // Skip with A, B order
-      recordSkip(dimId, 'movie', movieA, 'movie', movieB);
+      recordSkip({
+        dimensionId: dimId,
+        mediaAType: 'movie',
+        mediaAId: movieA,
+        mediaBType: 'movie',
+        mediaBId: movieB,
+      });
 
       // Check with B, A order — should still be on cooloff
-      expect(isPairOnCooloff(dimId, 'movie', movieB, 'movie', movieA)).toBe(true);
+      expect(
+        isPairOnCooloff({
+          dimensionId: dimId,
+          mediaAType: 'movie',
+          mediaAId: movieB,
+          mediaBType: 'movie',
+          mediaBId: movieA,
+        })
+      ).toBe(true);
     });
 
     it('symmetry: skip recorded as B-vs-A is found when checking A-vs-B', () => {
       const { dimId, movieA, movieB } = seedComparisonPair();
       // Skip with B, A order
-      recordSkip(dimId, 'movie', movieB, 'movie', movieA);
+      recordSkip({
+        dimensionId: dimId,
+        mediaAType: 'movie',
+        mediaAId: movieB,
+        mediaBType: 'movie',
+        mediaBId: movieA,
+      });
 
       // Check with A, B order
-      expect(isPairOnCooloff(dimId, 'movie', movieA, 'movie', movieB)).toBe(true);
+      expect(
+        isPairOnCooloff({
+          dimensionId: dimId,
+          mediaAType: 'movie',
+          mediaAId: movieA,
+          mediaBType: 'movie',
+          mediaBId: movieB,
+        })
+      ).toBe(true);
     });
   });
 });

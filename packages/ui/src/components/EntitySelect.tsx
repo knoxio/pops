@@ -34,6 +34,50 @@ export interface EntitySelectProps {
   className?: string;
 }
 
+function EntityTriggerLabel({
+  selected,
+  placeholder,
+}: {
+  selected?: EntityOption;
+  placeholder: string;
+}) {
+  if (!selected) return <span className="text-muted-foreground">{placeholder}</span>;
+  return (
+    <span className="flex items-center gap-2 truncate">
+      <span className={cn('truncate', selected.pending && 'italic')}>{selected.name}</span>
+      {selected.pending && (
+        <Badge variant="secondary" className="text-xs shrink-0">
+          Pending
+        </Badge>
+      )}
+      {selected.type && (
+        <Badge variant="outline" className="text-xs capitalize shrink-0">
+          {selected.type}
+        </Badge>
+      )}
+    </span>
+  );
+}
+
+function EntityRow({ entity, selectedId }: { entity: EntityOption; selectedId?: string }) {
+  return (
+    <>
+      <Check className={`mr-2 h-4 w-4 ${selectedId === entity.id ? 'opacity-100' : 'opacity-0'}`} />
+      <span className={cn('truncate', entity.pending && 'italic')}>{entity.name}</span>
+      {entity.pending && (
+        <Badge variant="secondary" className="ml-1 text-xs shrink-0">
+          Pending
+        </Badge>
+      )}
+      {entity.type && (
+        <Badge variant="outline" className="ml-auto text-xs capitalize shrink-0">
+          {entity.type}
+        </Badge>
+      )}
+    </>
+  );
+}
+
 /**
  * Searchable combobox for selecting from a list of named entities.
  * Supports optional type badges and pending (locally-created) entity indicators.
@@ -61,23 +105,7 @@ export function EntitySelect({
           disabled={disabled}
           className={cn('w-full justify-between font-normal', className)}
         >
-          {selected ? (
-            <span className="flex items-center gap-2 truncate">
-              <span className={cn('truncate', selected.pending && 'italic')}>{selected.name}</span>
-              {selected.pending && (
-                <Badge variant="secondary" className="text-xs shrink-0">
-                  Pending
-                </Badge>
-              )}
-              {selected.type && (
-                <Badge variant="outline" className="text-xs capitalize shrink-0">
-                  {selected.type}
-                </Badge>
-              )}
-            </span>
-          ) : (
-            <span className="text-muted-foreground">{placeholder}</span>
-          )}
+          <EntityTriggerLabel selected={selected} placeholder={placeholder} />
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
@@ -96,20 +124,7 @@ export function EntitySelect({
                     setOpen(false);
                   }}
                 >
-                  <Check
-                    className={`mr-2 h-4 w-4 ${value === entity.id ? 'opacity-100' : 'opacity-0'}`}
-                  />
-                  <span className={cn('truncate', entity.pending && 'italic')}>{entity.name}</span>
-                  {entity.pending && (
-                    <Badge variant="secondary" className="ml-1 text-xs shrink-0">
-                      Pending
-                    </Badge>
-                  )}
-                  {entity.type && (
-                    <Badge variant="outline" className="ml-auto text-xs capitalize shrink-0">
-                      {entity.type}
-                    </Badge>
-                  )}
+                  <EntityRow entity={entity} selectedId={value} />
                 </CommandItem>
               ))}
             </CommandGroup>

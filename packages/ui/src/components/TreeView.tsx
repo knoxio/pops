@@ -31,6 +31,94 @@ export interface TreeViewProps<T> {
   className?: string;
 }
 
+function flattenTree<T>(nodes: TreeNode<T>[], expanded: Set<string>) {
+  const out: { node: TreeNode<T>; level: number }[] = [];
+  const walk = (list: TreeNode<T>[], level: number) => {
+    for (const n of list) {
+      out.push({ node: n, level });
+      if (expanded.has(n.id)) walk(n.children, level + 1);
+    }
+  };
+  walk(nodes, 0);
+  return out;
+}
+
+interface TreeRowProps<T> {
+  node: TreeNode<T>;
+  level: number;
+  isExpanded: boolean;
+  isSelected: boolean;
+  toggle: (id: string) => void;
+  onSelect?: (node: TreeNode<T>) => void;
+  renderNode: TreeViewProps<T>['renderNode'];
+}
+
+function TreeRow<T>({
+  node,
+  level,
+  isExpanded,
+  isSelected,
+  toggle,
+  onSelect,
+  renderNode,
+}: TreeRowProps<T>) {
+  const hasChildren = node.children.length > 0;
+  return (
+    <div
+      className={cn(
+        'flex items-center gap-1 py-1',
+        isSelected && 'bg-accent text-accent-foreground rounded-sm'
+      )}
+      style={{ paddingLeft: `${level * 14}px` }}
+    >
+      {hasChildren ? (
+        <button
+          type="button"
+          aria-label={isExpanded ? 'Collapse' : 'Expand'}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggle(node.id);
+          }}
+          className="p-0.5 text-muted-foreground hover:text-foreground"
+        >
+          <ChevronRight
+            className={cn('h-3.5 w-3.5 transition-transform', isExpanded && 'rotate-90')}
+            aria-hidden
+          />
+        </button>
+      ) : (
+        <span className="inline-block w-[18px]" aria-hidden />
+      )}
+      <div className="flex-1 min-w-0 cursor-pointer" onClick={() => onSelect?.(node)}>
+        {renderNode(node, { level, expanded: isExpanded, selected: isSelected })}
+      </div>
+    </div>
+  );
+}
+
+function makeKeyHandler<T>(
+  flat: { node: TreeNode<T>; level: number }[],
+  expanded: Set<string>,
+  toggle: (id: string) => void,
+  onSelect?: (node: TreeNode<T>) => void
+) {
+  return (index: number) => (e: KeyboardEvent<HTMLLIElement>) => {
+    const entry = flat[index];
+    if (!entry) return;
+    const { node } = entry;
+    if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      if (node.children.length > 0 && !expanded.has(node.id)) toggle(node.id);
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      if (expanded.has(node.id)) toggle(node.id);
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      onSelect?.(node);
+    }
+  };
+}
+
 export function TreeView<T>({
   nodes,
   renderNode,
@@ -57,81 +145,35 @@ export function TreeView<T>({
     [expanded, expandedIds, onExpandedChange]
   );
 
-  const flat = useMemo(() => {
-    const out: { node: TreeNode<T>; level: number }[] = [];
-    const walk = (list: TreeNode<T>[], level: number) => {
-      for (const n of list) {
-        out.push({ node: n, level });
-        if (expanded.has(n.id)) walk(n.children, level + 1);
-      }
-    };
-    walk(nodes, 0);
-    return out;
-  }, [nodes, expanded]);
-
-  const handleKeyDown = (index: number) => (e: KeyboardEvent<HTMLLIElement>) => {
-    const entry = flat[index];
-    if (!entry) return;
-    const { node } = entry;
-    if (e.key === 'ArrowRight') {
-      e.preventDefault();
-      if (node.children.length > 0 && !expanded.has(node.id)) toggle(node.id);
-    } else if (e.key === 'ArrowLeft') {
-      e.preventDefault();
-      if (expanded.has(node.id)) toggle(node.id);
-    } else if (e.key === 'Enter' || e.key === ' ') {
-      e.preventDefault();
-      onSelect?.(node);
-    }
-  };
+  const flat = useMemo(() => flattenTree(nodes, expanded), [nodes, expanded]);
+  const handleKeyDown = makeKeyHandler(flat, expanded, toggle, onSelect);
 
   return (
     <ul role="tree" className={cn('flex flex-col', className)}>
       {flat.map((entry, i) => {
         const { node, level } = entry;
         const isExpanded = expanded.has(node.id);
-        const hasChildren = node.children.length > 0;
         const isSelected = node.id === selectedId;
         return (
           <li
             key={node.id}
             role="treeitem"
-            aria-expanded={hasChildren ? isExpanded : undefined}
+            aria-expanded={node.children.length > 0 ? isExpanded : undefined}
             aria-selected={isSelected}
             aria-level={level + 1}
             tabIndex={0}
             onKeyDown={handleKeyDown(i)}
             className="outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
           >
-            <div
-              className={cn(
-                'flex items-center gap-1 py-1',
-                isSelected && 'bg-accent text-accent-foreground rounded-sm'
-              )}
-              style={{ paddingLeft: `${level * 14}px` }}
-            >
-              {hasChildren ? (
-                <button
-                  type="button"
-                  aria-label={isExpanded ? 'Collapse' : 'Expand'}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggle(node.id);
-                  }}
-                  className="p-0.5 text-muted-foreground hover:text-foreground"
-                >
-                  <ChevronRight
-                    className={cn('h-3.5 w-3.5 transition-transform', isExpanded && 'rotate-90')}
-                    aria-hidden
-                  />
-                </button>
-              ) : (
-                <span className="inline-block w-[18px]" aria-hidden />
-              )}
-              <div className="flex-1 min-w-0 cursor-pointer" onClick={() => onSelect?.(node)}>
-                {renderNode(node, { level, expanded: isExpanded, selected: isSelected })}
-              </div>
-            </div>
+            <TreeRow
+              node={node}
+              level={level}
+              isExpanded={isExpanded}
+              isSelected={isSelected}
+              toggle={toggle}
+              onSelect={onSelect}
+              renderNode={renderNode}
+            />
           </li>
         );
       })}

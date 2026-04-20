@@ -1,223 +1,61 @@
 import { Download, FileText, Printer } from 'lucide-react';
-import { useCallback, useMemo } from 'react';
-import { useNavigate, useSearchParams } from 'react-router';
+import { useMemo } from 'react';
+import { useNavigate } from 'react-router';
 
-import { trpc } from '@pops/api-client';
-/**
- * InsuranceReportPage — print-friendly insurance report for inventory items.
- *
- * Shows items grouped by location with name, asset ID, brand, condition,
- * warranty status, value, and photo thumbnail. Summary totals at bottom.
- * PRD-023/US-4 (tb-133).
- */
-import {
-  AssetIdBadge,
-  Badge,
-  Button,
-  CheckboxInput,
-  type Condition,
-  ConditionBadge,
-  formatAUD,
-  formatDate,
-  Label,
-  PageHeader,
-  Select,
-  Skeleton,
-} from '@pops/ui';
+import { Button, PageHeader, Skeleton } from '@pops/ui';
 
-import { LocationPicker } from '../components/LocationPicker';
+import { downloadCsv } from './insurance-report-page/csv';
+import { GroupTable } from './insurance-report-page/GroupTable';
+import { ReportFilters } from './insurance-report-page/ReportFilters';
+import { ReportSummary } from './insurance-report-page/ReportSummary';
+import { useReportModel } from './insurance-report-page/useReportModel';
 
-type SortBy = 'value' | 'name' | 'type';
-
-function warrantyStatus(expiryStr: string | null): {
-  label: string;
-  variant: 'default' | 'destructive' | 'secondary';
-} {
-  if (!expiryStr) return { label: 'None', variant: 'secondary' };
-  const now = new Date();
-  now.setHours(0, 0, 0, 0);
-  const expiry = new Date(expiryStr);
-  const days = Math.ceil((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-  if (days < 0) return { label: 'Expired', variant: 'destructive' };
-  if (days <= 90) return { label: `${days}d left`, variant: 'default' };
-  return { label: formatDate(expiryStr), variant: 'secondary' };
-}
-
-interface ReportItem {
-  id: string;
-  itemName: string;
-  assetId: string | null;
-  brand: string | null;
-  condition: string | null;
-  warrantyExpires: string | null;
-  replacementValue: number | null;
-  photoPath: string | null;
-  locationId: string | null;
-  locationName: string | null;
-  receiptDocumentIds: number[];
-}
-
-interface ReportGroup {
-  locationId: string | null;
-  locationName: string;
-  items: ReportItem[];
-}
-
-function buildCsvContent(groups: ReportGroup[]): string {
-  const headers = [
-    'Location',
-    'Name',
-    'Asset ID',
-    'Brand',
-    'Condition',
-    'Warranty Expires',
-    'Replacement Value',
-    'Photo',
-    'Receipts',
-  ];
-  const rows: string[][] = [headers];
-
-  for (const group of groups) {
-    for (const item of group.items) {
-      rows.push([
-        group.locationName,
-        item.itemName,
-        item.assetId ?? '',
-        item.brand ?? '',
-        item.condition ?? '',
-        item.warrantyExpires ?? '',
-        item.replacementValue != null ? String(item.replacementValue) : '',
-        item.photoPath ? 'Yes' : 'No',
-        item.receiptDocumentIds.map((id) => `#${id}`).join(', '),
-      ]);
-    }
-  }
-
-  return rows
-    .map((row) => row.map((cell) => `"${cell.replaceAll(/"/g, '""')}"`).join(','))
-    .join('\n');
-}
-
-export function InsuranceReportPage(): React.ReactElement {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const navigate = useNavigate();
-  const locationId = searchParams.get('locationId') ?? undefined;
-  const includeChildren = searchParams.get('includeChildren') !== 'false';
-  const sortBy = (searchParams.get('sortBy') as SortBy) || 'value';
-
-  const { data, isLoading } = trpc.inventory.reports.insuranceReport.useQuery({
-    locationId,
-    includeChildren: locationId ? includeChildren : undefined,
-    sortBy,
-  });
-
-  const { data: locationsData } = trpc.inventory.locations.tree.useQuery();
-  const locationTree = locationsData?.data ?? [];
-
-  const report = data?.data;
-
-  const today = useMemo(() => {
-    return new Date().toLocaleDateString('en-AU', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  }, []);
-
-  const updateParam = useCallback(
-    (key: string, value: string | null) => {
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev);
-          if (value) {
-            next.set(key, value);
-          } else {
-            next.delete(key);
-          }
-          return next;
-        },
-        { replace: true }
-      );
-    },
-    [setSearchParams]
+function ReportActions({ onExportCsv }: { onExportCsv: () => void }) {
+  return (
+    <div className="flex items-center gap-2 print:hidden">
+      <Button
+        variant="outline"
+        size="sm"
+        prefix={<Download className="h-4 w-4" />}
+        onClick={onExportCsv}
+      >
+        Export CSV
+      </Button>
+      <Button size="sm" prefix={<Printer className="h-4 w-4" />} onClick={() => window.print()}>
+        Print / PDF
+      </Button>
+    </div>
   );
+}
 
-  const handleLocationChange = useCallback(
-    (id: string | null) => {
-      setSearchParams(
-        (prev) => {
-          const next = new URLSearchParams(prev);
-          if (id) {
-            next.set('locationId', id);
-          } else {
-            next.delete('locationId');
-            next.delete('includeChildren');
-          }
-          return next;
-        },
-        { replace: true }
-      );
-    },
-    [setSearchParams]
+function LoadingState() {
+  return (
+    <div className="p-6 space-y-4">
+      <Skeleton className="h-8 w-64" />
+      <Skeleton className="h-4 w-48" />
+      <Skeleton className="h-64 w-full" />
+    </div>
   );
+}
 
-  const handleExportCsv = useCallback(() => {
-    if (!report) return;
-    const csv = buildCsvContent(report.groups);
-    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `insurance-report-${new Date().toISOString().slice(0, 10)}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [report]);
+type ReportData = NonNullable<ReturnType<typeof useReportModel>['report']>;
 
-  if (isLoading) {
-    return (
-      <div className="p-6 space-y-4">
-        <Skeleton className="h-8 w-64" />
-        <Skeleton className="h-4 w-48" />
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
-  }
+interface ReportContentProps {
+  report: ReportData;
+  today: string;
+  model: ReturnType<typeof useReportModel>;
+  onOpenItem: (id: string) => void;
+}
 
-  if (!report) {
-    return (
-      <div className="p-6">
-        <p className="text-muted-foreground">Failed to load report.</p>
-      </div>
-    );
-  }
-
+function ReportContent({ report, today, model, onOpenItem }: ReportContentProps) {
+  const { locationId, includeChildren, sortBy, locationTree, updateParam, handleLocationChange } =
+    model;
   return (
     <div className="p-6 max-w-5xl mx-auto print:p-0 print:max-w-none print:text-[11pt]">
-      {/* Header */}
       <PageHeader
         title={<span className="print:text-[14pt]">Insurance Report</span>}
         icon={<FileText className="h-6 w-6 text-muted-foreground print:hidden" />}
-        actions={
-          <div className="flex items-center gap-2 print:hidden">
-            <Button
-              variant="outline"
-              size="sm"
-              prefix={<Download className="h-4 w-4" />}
-              onClick={handleExportCsv}
-            >
-              Export CSV
-            </Button>
-            <Button
-              size="sm"
-              prefix={<Printer className="h-4 w-4" />}
-              onClick={() => {
-                window.print();
-              }}
-            >
-              Print / PDF
-            </Button>
-          </div>
-        }
+        actions={<ReportActions onExportCsv={() => downloadCsv(report.groups)} />}
         className="mb-6 print:mb-4"
       />
       <p className="text-sm text-muted-foreground -mt-5 mb-6">
@@ -226,187 +64,62 @@ export function InsuranceReportPage(): React.ReactElement {
           <> — {report.groups[0].locationName}</>
         )}
       </p>
-
-      {/* Filters */}
-      <div className="flex flex-wrap items-end gap-4 mb-6 print:hidden">
-        <div className="w-64">
-          <Label className="block mb-1">Filter by location</Label>
-          <LocationPicker
-            value={locationId ?? null}
-            onChange={handleLocationChange}
-            locations={locationTree}
-            placeholder="All locations"
-          />
-        </div>
-        {locationId && (
-          <CheckboxInput
-            label="Include sub-locations"
-            checked={includeChildren}
-            onCheckedChange={(checked) => {
-              updateParam('includeChildren', checked ? null : 'false');
-            }}
-          />
-        )}
-        <Select
-          label="Sort by"
-          size="sm"
-          value={sortBy}
-          onChange={(e) => {
-            updateParam('sortBy', e.target.value === 'value' ? null : e.target.value);
-          }}
-          options={[
-            { value: 'value', label: 'Value (high first)' },
-            { value: 'name', label: 'Name' },
-            { value: 'type', label: 'Type' },
-          ]}
-        />
-      </div>
-
-      {/* Summary */}
-      <div className="grid grid-cols-2 gap-6 mb-8 p-6 rounded-2xl bg-app-accent/10 border-2 border-app-accent/10 print:bg-transparent print:border print:border-gray-300 print:rounded-none">
-        <div>
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">
-            Total Items
-          </p>
-          <p className="text-3xl font-black text-foreground">{report.totalItems}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest mb-1">
-            Total Replacement Value
-          </p>
-          <p className="text-3xl font-black text-app-accent dark:text-app-accent">
-            {formatAUD(report.totalValue)}
-          </p>
-        </div>
-      </div>
-
-      {/* Location Groups */}
+      <ReportFilters
+        locationId={locationId}
+        includeChildren={includeChildren}
+        sortBy={sortBy}
+        locationTree={locationTree}
+        onLocationChange={handleLocationChange}
+        onIncludeChildrenChange={(checked) =>
+          updateParam('includeChildren', checked ? null : 'false')
+        }
+        onSortByChange={(value) => updateParam('sortBy', value === 'value' ? null : value)}
+      />
+      <ReportSummary totalItems={report.totalItems} totalValue={report.totalValue} />
       {report.groups.map((group, groupIndex) => (
-        <div
+        <GroupTable
           key={group.locationId ?? 'unlocated'}
-          className={`mb-8 print:mb-4 ${groupIndex > 0 ? 'print:break-before-page' : ''}`}
-        >
-          <h2 className="text-lg font-semibold mb-3 pb-1 border-b print:text-[14pt]">
-            {group.locationName}
-            <span className="ml-2 text-sm font-normal text-muted-foreground">
-              ({group.items.length} {group.items.length === 1 ? 'item' : 'items'})
-            </span>
-          </h2>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm print:text-[11pt] print:border-collapse print:border print:border-gray-300">
-              <thead>
-                <tr className="border-b text-left text-muted-foreground print:border-gray-300">
-                  <th className="py-2 pr-3 w-10 print:border print:border-gray-300 print:p-1">
-                    Photo
-                  </th>
-                  <th className="py-2 pr-3 print:border print:border-gray-300 print:p-1">Name</th>
-                  <th className="py-2 pr-3 print:border print:border-gray-300 print:p-1">
-                    Asset ID
-                  </th>
-                  <th className="py-2 pr-3 print:border print:border-gray-300 print:p-1">Brand</th>
-                  <th className="py-2 pr-3 print:border print:border-gray-300 print:p-1">
-                    Condition
-                  </th>
-                  <th className="py-2 pr-3 print:border print:border-gray-300 print:p-1">
-                    Warranty
-                  </th>
-                  <th className="py-2 pr-3 text-right print:border print:border-gray-300 print:p-1">
-                    Value
-                  </th>
-                  <th className="py-2 pr-3 print:border print:border-gray-300 print:p-1">
-                    Receipts
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {group.items.map((item) => {
-                  const warranty = warrantyStatus(item.warrantyExpires);
-                  return (
-                    <tr
-                      key={item.id}
-                      className="border-b last:border-0 hover:bg-muted/30 cursor-pointer print:hover:bg-transparent print:cursor-default print:break-inside-avoid print:border-gray-300"
-                      onClick={() => navigate(`/inventory/items/${item.id}`)}
-                    >
-                      <td className="py-2 pr-3 print:border print:border-gray-300 print:p-1">
-                        {item.photoPath ? (
-                          <img
-                            src={`/inventory/photos/${item.photoPath}`}
-                            alt={`Photo of ${item.itemName}`}
-                            className="w-8 h-8 rounded object-cover print:w-auto print:h-auto print:max-w-50 print:break-inside-avoid"
-                          />
-                        ) : (
-                          <div
-                            className="w-8 h-8 rounded bg-muted print:bg-gray-100"
-                            role="img"
-                            aria-label="No photo available"
-                          />
-                        )}
-                      </td>
-                      <td className="py-2 pr-3 font-medium print:border print:border-gray-300 print:p-1 print:text-[12pt]">
-                        {item.itemName}
-                      </td>
-                      <td className="py-2 pr-3 print:border print:border-gray-300 print:p-1 [&_span]:print:bg-transparent [&_span]:print:text-black">
-                        {item.assetId ? (
-                          <AssetIdBadge assetId={item.assetId} />
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                      <td className="py-2 pr-3 print:border print:border-gray-300 print:p-1">
-                        {item.brand ?? '—'}
-                      </td>
-                      <td className="py-2 pr-3 print:border print:border-gray-300 print:p-1 [&_span]:print:bg-transparent [&_span]:print:text-black">
-                        {item.condition ? (
-                          <ConditionBadge condition={item.condition as Condition} />
-                        ) : (
-                          <span className="text-muted-foreground">—</span>
-                        )}
-                      </td>
-                      <td className="py-2 pr-3 print:border print:border-gray-300 print:p-1">
-                        <Badge
-                          variant={warranty.variant}
-                          className="print:bg-transparent print:border print:border-gray-400 print:text-black"
-                        >
-                          {warranty.label}
-                        </Badge>
-                      </td>
-                      <td className="py-2 pr-3 text-right tabular-nums print:border print:border-gray-300 print:p-1">
-                        {item.replacementValue != null ? formatAUD(item.replacementValue) : '—'}
-                      </td>
-                      <td className="py-2 pr-3 text-sm text-muted-foreground print:border print:border-gray-300 print:p-1">
-                        {item.receiptDocumentIds.length > 0
-                          ? item.receiptDocumentIds.map((id) => `#${id}`).join(', ')
-                          : '—'}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-              {group.items.some((i) => i.replacementValue != null) && (
-                <tfoot>
-                  <tr className="font-semibold">
-                    <td colSpan={7} className="py-2 pr-3 text-right">
-                      Subtotal
-                    </td>
-                    <td className="py-2 pr-3 text-right tabular-nums">
-                      {formatAUD(
-                        group.items.reduce((sum, i) => sum + (i.replacementValue ?? 0), 0)
-                      )}
-                    </td>
-                  </tr>
-                </tfoot>
-              )}
-            </table>
-          </div>
-        </div>
+          group={group}
+          groupIndex={groupIndex}
+          onOpenItem={onOpenItem}
+        />
       ))}
-
       {report.groups.length === 0 && (
         <div className="text-center py-12 text-muted-foreground">
           <p>No inventory items found.</p>
         </div>
       )}
     </div>
+  );
+}
+
+export function InsuranceReportPage(): React.ReactElement {
+  const navigate = useNavigate();
+  const model = useReportModel();
+  const today = useMemo(
+    () =>
+      new Date().toLocaleDateString('en-AU', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }),
+    []
+  );
+
+  if (model.isLoading) return <LoadingState />;
+  if (!model.report) {
+    return (
+      <div className="p-6">
+        <p className="text-muted-foreground">Failed to load report.</p>
+      </div>
+    );
+  }
+  return (
+    <ReportContent
+      report={model.report}
+      today={today}
+      model={model}
+      onOpenItem={(id) => navigate(`/inventory/items/${id}`)}
+    />
   );
 }

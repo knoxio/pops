@@ -1,14 +1,15 @@
 /**
- * ScrollShelf + LazyScrollShelf — horizontal "shelf" of items with
- * left/right scroll buttons and an optional IntersectionObserver-based
- * lazy loader for offscreen shelves.
+ * ScrollShelf — horizontal "shelf" of items with left/right scroll buttons.
+ *
+ * For an offscreen-lazy variant see `LazyScrollShelf` in `./ScrollShelf.lazy`.
  */
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 
 import { cn } from '../lib/utils';
 import { Button } from '../primitives/button';
-import { Skeleton } from '../primitives/skeleton';
+
+export { LazyScrollShelf, type LazyScrollShelfProps } from './ScrollShelf.lazy';
 
 export interface ScrollShelfProps<T> {
   title?: ReactNode;
@@ -22,15 +23,7 @@ export interface ScrollShelfProps<T> {
   className?: string;
 }
 
-export function ScrollShelf<T>({
-  title,
-  action,
-  items,
-  renderItem,
-  getKey,
-  itemWidth = 192,
-  className,
-}: ScrollShelfProps<T>) {
+function useScrollButtons(itemsLength: number) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -53,7 +46,44 @@ export function ScrollShelf<T>({
       el.removeEventListener('scroll', handler);
       window.removeEventListener('resize', handler);
     };
-  }, [updateButtons, items.length]);
+  }, [updateButtons, itemsLength]);
+
+  return { scrollRef, canScrollLeft, canScrollRight };
+}
+
+function ScrollButton({
+  direction,
+  onClick,
+}: {
+  direction: 'left' | 'right';
+  onClick: () => void;
+}) {
+  return (
+    <Button
+      size="icon-sm"
+      variant="secondary"
+      aria-label={`Scroll ${direction}`}
+      onClick={onClick}
+      className={cn(
+        'absolute top-1/2 -translate-y-1/2 shadow-md',
+        direction === 'left' ? 'left-1' : 'right-1'
+      )}
+    >
+      {direction === 'left' ? <ChevronLeft /> : <ChevronRight />}
+    </Button>
+  );
+}
+
+export function ScrollShelf<T>({
+  title,
+  action,
+  items,
+  renderItem,
+  getKey,
+  itemWidth = 192,
+  className,
+}: ScrollShelfProps<T>) {
+  const { scrollRef, canScrollLeft, canScrollRight } = useScrollButtons(items.length);
 
   const scrollBy = (direction: 1 | -1) => {
     const el = scrollRef.current;
@@ -81,130 +111,9 @@ export function ScrollShelf<T>({
             </div>
           ))}
         </div>
-        {canScrollLeft ? (
-          <Button
-            size="icon-sm"
-            variant="secondary"
-            aria-label="Scroll left"
-            onClick={() => scrollBy(-1)}
-            className="absolute left-1 top-1/2 -translate-y-1/2 shadow-md"
-          >
-            <ChevronLeft />
-          </Button>
-        ) : null}
-        {canScrollRight ? (
-          <Button
-            size="icon-sm"
-            variant="secondary"
-            aria-label="Scroll right"
-            onClick={() => scrollBy(1)}
-            className="absolute right-1 top-1/2 -translate-y-1/2 shadow-md"
-          >
-            <ChevronRight />
-          </Button>
-        ) : null}
+        {canScrollLeft ? <ScrollButton direction="left" onClick={() => scrollBy(-1)} /> : null}
+        {canScrollRight ? <ScrollButton direction="right" onClick={() => scrollBy(1)} /> : null}
       </div>
     </section>
-  );
-}
-
-export interface LazyScrollShelfProps<T> extends Omit<ScrollShelfProps<T>, 'items'> {
-  /** Loader fired once the shelf becomes visible. */
-  loadItems: () => Promise<T[]>;
-  /** Skeleton placeholder count. Default 6. */
-  placeholderCount?: number;
-}
-
-export function LazyScrollShelf<T>({
-  loadItems,
-  placeholderCount = 6,
-  ...rest
-}: LazyScrollShelfProps<T>) {
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const [items, setItems] = useState<T[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [retryTick, setRetryTick] = useState(0);
-
-  useEffect(() => {
-    const el = wrapperRef.current;
-    if (!el || items !== null) return;
-    let cancelled = false;
-    let triggered = false;
-    const io = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting || triggered) continue;
-          triggered = true;
-          setLoading(true);
-          setError(null);
-          loadItems()
-            .then((data) => {
-              if (cancelled) return;
-              setItems(data);
-              io.disconnect();
-            })
-            .catch((e: unknown) => {
-              if (cancelled) return;
-              setError(e instanceof Error ? e.message : 'Failed to load');
-              // Allow the observer to retrigger on a subsequent intersect.
-              triggered = false;
-            })
-            .finally(() => {
-              if (!cancelled) setLoading(false);
-            });
-          break;
-        }
-      },
-      { rootMargin: '200px' }
-    );
-    io.observe(el);
-    return () => {
-      cancelled = true;
-      io.disconnect();
-    };
-  }, [loadItems, items, retryTick]);
-
-  const itemWidth = rest.itemWidth ?? 192;
-  const placeholderIds = useMemo(
-    () => Array.from({ length: placeholderCount }, (_, i) => `ph-${placeholderCount}-${i}`),
-    [placeholderCount]
-  );
-
-  return (
-    <div ref={wrapperRef}>
-      {items === null ? (
-        <section className={cn('flex flex-col gap-3', rest.className)}>
-          {rest.title ? <h2 className="text-sm font-semibold">{rest.title}</h2> : null}
-          {error ? (
-            <div
-              role="alert"
-              className="flex items-center justify-between gap-3 rounded-md border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive"
-            >
-              <span>{error}</span>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setError(null);
-                  setRetryTick((t) => t + 1);
-                }}
-              >
-                Retry
-              </Button>
-            </div>
-          ) : (
-            <div className="flex gap-3 overflow-hidden">
-              {placeholderIds.map((id) => (
-                <Skeleton key={id} className="shrink-0 h-48" style={{ width: itemWidth }} />
-              ))}
-            </div>
-          )}
-        </section>
-      ) : (
-        <ScrollShelf {...rest} items={items} />
-      )}
-      {loading && items === null ? <span className="sr-only">Loading</span> : null}
-    </div>
   );
 }

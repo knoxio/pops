@@ -1,15 +1,11 @@
-import { Camera, ImageIcon, Upload, X } from 'lucide-react';
+import { Camera } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
 
-/**
- * PhotoUpload — Drag-and-drop zone with click-to-browse for item photos.
- *
- * Handles file selection, shows upload progress per file,
- * and allows deleting individual queued/uploaded photos.
- */
-import { Button, formatBytes, Progress } from '@pops/ui';
+import { Button } from '@pops/ui';
 
 import { cn } from '../lib/utils';
+import { DropZone } from './photo-upload/DropZone';
+import { UploadedFileRow } from './photo-upload/UploadedFileRow';
 
 export interface UploadedFile {
   /** Client-side identifier for tracking */
@@ -47,6 +43,65 @@ interface PhotoUploadProps {
 const DEFAULT_MAX_SIZE_MB = 10;
 const DEFAULT_ACCEPT = 'image/*';
 
+function validateFiles(fileList: File[], maxSizeMb: number): { valid: File[]; errors: string[] } {
+  const maxBytes = maxSizeMb * 1024 * 1024;
+  const valid: File[] = [];
+  const errors: string[] = [];
+
+  for (const file of fileList) {
+    const isImage = file.type.startsWith('image/');
+    const isHeic = /\.heic$/i.test(file.name) || /\.heif$/i.test(file.name);
+    if (!isImage && !isHeic) {
+      errors.push(`${file.name}: not an image`);
+      continue;
+    }
+    if (file.size > maxBytes) {
+      errors.push(`${file.name}: exceeds ${maxSizeMb}MB limit`);
+      continue;
+    }
+    valid.push(file);
+  }
+  return { valid, errors };
+}
+
+function useFileHandling(maxSizeMb: number, onFilesSelected: (files: File[]) => void) {
+  const [validationError, setValidationError] = useState<string | null>(null);
+
+  const handleFiles = useCallback(
+    (fileList: FileList | null) => {
+      if (!fileList || fileList.length === 0) return;
+      const { valid, errors } = validateFiles(Array.from(fileList), maxSizeMb);
+      setValidationError(errors.length > 0 ? errors.join(', ') : null);
+      if (valid.length > 0) onFilesSelected(valid);
+    },
+    [maxSizeMb, onFilesSelected]
+  );
+
+  return { handleFiles, validationError };
+}
+
+function CameraButton({
+  disabled,
+  cameraRef,
+}: {
+  disabled: boolean;
+  cameraRef: React.RefObject<HTMLInputElement | null>;
+}) {
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => !disabled && cameraRef.current?.click()}
+      disabled={disabled}
+      className="w-full"
+      type="button"
+    >
+      <Camera className="h-4 w-4 mr-1.5" />
+      Take Photo
+    </Button>
+  );
+}
+
 export function PhotoUpload({
   onFilesSelected,
   files = [],
@@ -56,224 +111,46 @@ export function PhotoUpload({
   disabled = false,
   className,
 }: PhotoUploadProps) {
-  const [isDragOver, setIsDragOver] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
-
-  const validateFiles = useCallback(
-    (fileList: File[]): File[] => {
-      const maxBytes = maxSizeMb * 1024 * 1024;
-      const valid: File[] = [];
-      const errors: string[] = [];
-
-      for (const file of fileList) {
-        const isImage = file.type.startsWith('image/');
-        const isHeic = /\.heic$/i.test(file.name) || /\.heif$/i.test(file.name);
-        if (!isImage && !isHeic) {
-          errors.push(`${file.name}: not an image`);
-          continue;
-        }
-        if (file.size > maxBytes) {
-          errors.push(`${file.name}: exceeds ${maxSizeMb}MB limit`);
-          continue;
-        }
-        valid.push(file);
-      }
-
-      if (errors.length > 0) {
-        setValidationError(errors.join(', '));
-      } else {
-        setValidationError(null);
-      }
-
-      return valid;
-    },
-    [maxSizeMb]
-  );
-
-  const handleFiles = useCallback(
-    (fileList: FileList | null) => {
-      if (!fileList || fileList.length === 0) return;
-      const valid = validateFiles(Array.from(fileList));
-      if (valid.length > 0) {
-        onFilesSelected(valid);
-      }
-    },
-    [validateFiles, onFilesSelected]
-  );
-
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      setIsDragOver(false);
-      if (disabled) return;
-      handleFiles(e.dataTransfer.files);
-    },
-    [disabled, handleFiles]
-  );
-
-  const handleDragOver = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      if (!disabled) setIsDragOver(true);
-    },
-    [disabled]
-  );
-
-  const handleDragLeave = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-  }, []);
-
-  const handleClick = useCallback(() => {
-    if (!disabled) inputRef.current?.click();
-  }, [disabled]);
-
-  const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      handleFiles(e.target.files);
-      // Reset input so the same file can be re-selected
-      if (inputRef.current) inputRef.current.value = '';
-    },
-    [handleFiles]
-  );
-
-  const handleCameraChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      handleFiles(e.target.files);
-      if (cameraRef.current) cameraRef.current.value = '';
-    },
-    [handleFiles]
-  );
+  const { handleFiles, validationError } = useFileHandling(maxSizeMb, onFilesSelected);
 
   return (
     <div className={cn('space-y-3', className)}>
-      {/* Drop zone */}
-      <div
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onClick={handleClick}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') handleClick();
-        }}
-        aria-label="Upload photos"
-        className={cn(
-          'flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 cursor-pointer transition-colors',
-          isDragOver
-            ? 'border-app-accent bg-app-accent/10'
-            : 'border-muted-foreground/25 hover:border-muted-foreground/50',
-          disabled && 'opacity-50 cursor-not-allowed'
-        )}
-      >
-        <Upload className="h-8 w-8 text-muted-foreground" />
-        <p className="text-sm text-muted-foreground text-center">
-          <span className="font-medium text-foreground">Click to browse</span> or drag and drop
-        </p>
-        <p className="text-xs text-muted-foreground">Images up to {maxSizeMb}MB</p>
-      </div>
-
+      <DropZone
+        disabled={disabled}
+        maxSizeMb={maxSizeMb}
+        onClick={() => !disabled && inputRef.current?.click()}
+        onFiles={handleFiles}
+      />
       <input
         ref={inputRef}
         type="file"
         accept={accept}
         multiple
-        onChange={handleInputChange}
+        onChange={(e) => {
+          handleFiles(e.target.files);
+          if (inputRef.current) inputRef.current.value = '';
+        }}
         className="hidden"
       />
-
-      {/* Camera capture (mobile) */}
       <input
         ref={cameraRef}
         type="file"
         accept="image/*"
         capture="environment"
-        onChange={handleCameraChange}
+        onChange={(e) => {
+          handleFiles(e.target.files);
+          if (cameraRef.current) cameraRef.current.value = '';
+        }}
         className="hidden"
       />
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => !disabled && cameraRef.current?.click()}
-        disabled={disabled}
-        className="w-full"
-        type="button"
-      >
-        <Camera className="h-4 w-4 mr-1.5" />
-        Take Photo
-      </Button>
-
-      {/* Validation error */}
+      <CameraButton disabled={disabled} cameraRef={cameraRef} />
       {validationError && <p className="text-sm text-destructive">{validationError}</p>}
-
-      {/* File preview list */}
       {files.length > 0 && (
         <div className="space-y-2">
           {files.map((f) => (
-            <div
-              key={f.localId}
-              className="flex items-center gap-3 rounded-md border border-border p-2"
-            >
-              {/* Thumbnail */}
-              <div className="h-10 w-10 shrink-0 rounded overflow-hidden bg-muted">
-                {f.previewUrl ? (
-                  <img
-                    src={f.previewUrl}
-                    alt={f.file.name}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center">
-                    <ImageIcon className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                )}
-              </div>
-
-              {/* File info */}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm truncate">{f.file.name}</p>
-                {f.status === 'uploading' && (
-                  <div className="mt-1 space-y-1">
-                    <Progress value={f.progress ?? 0} className="h-1.5" />
-                    <span className="text-xs text-muted-foreground">{f.progress ?? 0}%</span>
-                  </div>
-                )}
-                {f.status !== 'uploading' && (
-                  <div className="flex items-center gap-2">
-                    {f.status === 'done' && <span className="text-xs text-success">Uploaded</span>}
-                    {f.status === 'error' && (
-                      <span className="text-xs text-destructive">{f.error ?? 'Upload failed'}</span>
-                    )}
-                    {f.status === 'pending' && (
-                      <span className="text-xs text-muted-foreground">Ready</span>
-                    )}
-                    {f.originalSize != null && f.processedSize != null && (
-                      <span className="text-xs text-muted-foreground">
-                        {formatBytes(f.originalSize)} → {formatBytes(f.processedSize)}
-                      </span>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {/* Remove button */}
-              {onRemove && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 shrink-0"
-                  onClick={() => {
-                    onRemove(f.localId);
-                  }}
-                  aria-label={`Remove ${f.file.name}`}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
+            <UploadedFileRow key={f.localId} f={f} onRemove={onRemove} />
           ))}
         </div>
       )}

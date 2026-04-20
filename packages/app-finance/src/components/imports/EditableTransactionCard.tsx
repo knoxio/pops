@@ -1,20 +1,15 @@
-import { ChevronRight, Save, X } from 'lucide-react';
+import { Save, X } from 'lucide-react';
 import { useState } from 'react';
 
-import {
-  Button,
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-  EditableFormCard,
-  Input,
-  Label,
-  Select as UiSelect,
-} from '@pops/ui';
+import { Button, EditableFormCard, Label, Select as UiSelect } from '@pops/ui';
 
+import { EditableFormFields } from './editable-card/EditableFormFields';
+import { RawDataDisclosure } from './editable-card/RawDataDisclosure';
 import { EntitySelect } from './EntitySelect';
 
 import type { ProcessedTransaction } from '@pops/api/modules/finance/imports';
+
+type TransactionType = 'purchase' | 'transfer' | 'income';
 
 interface EditableTransactionCardProps {
   transaction: ProcessedTransaction;
@@ -27,6 +22,111 @@ interface EditableTransactionCardProps {
   entities?: Array<{ id: string; name: string; type: string }>;
 }
 
+function parseRaw(rawRow: string): Record<string, string> {
+  try {
+    return JSON.parse(rawRow);
+  } catch {
+    return { error: 'Failed to parse raw data' };
+  }
+}
+
+function TransactionTypeSelect({
+  value,
+  onChange,
+}: {
+  value: TransactionType;
+  onChange: (next: TransactionType) => void;
+}) {
+  return (
+    <div className="mb-4 p-3 bg-info/10 rounded-lg">
+      <Label htmlFor="transactionType" className="block mb-2 font-semibold">
+        Transaction Type
+      </Label>
+      <UiSelect
+        id="transactionType"
+        name="type"
+        value={value}
+        onChange={(e) => onChange(e.target.value as TransactionType)}
+        options={[
+          { label: 'Purchase (requires entity)', value: 'purchase' },
+          { label: 'Transfer (between accounts, no entity)', value: 'transfer' },
+          { label: 'Income (salary, refund, etc.)', value: 'income' },
+        ]}
+      />
+      <p className="text-xs mt-1 text-info">
+        {value === 'transfer' &&
+          "Transfers don't need an entity - they move money between accounts"}
+        {value === 'income' && 'Income transactions: salary, interest, refunds, etc.'}
+        {value === 'purchase' && 'Purchases require an entity (merchant/payee)'}
+      </p>
+    </div>
+  );
+}
+
+function EditActions({
+  onSave,
+  onCancel,
+}: {
+  onSave: (shouldLearn: boolean) => void;
+  onCancel: () => void;
+}) {
+  return (
+    <>
+      <Button
+        variant="default"
+        size="sm"
+        onClick={() => onSave(true)}
+        className="bg-purple-600 hover:bg-purple-700"
+      >
+        <Save className="w-4 h-4 mr-1" />
+        Save & Learn
+      </Button>
+      <Button variant="outline" size="sm" onClick={() => onSave(false)}>
+        <Save className="w-4 h-4 mr-1" />
+        Save Once
+      </Button>
+      <Button variant="outline" size="sm" onClick={onCancel}>
+        <X className="w-4 h-4 mr-1" />
+        Cancel
+      </Button>
+    </>
+  );
+}
+
+function EntityOrTransferNotice({
+  transactionType,
+  transaction,
+  entities,
+}: {
+  transactionType: TransactionType;
+  transaction: ProcessedTransaction;
+  entities?: Array<{ id: string; name: string; type: string }>;
+}) {
+  if (transactionType === 'purchase' && entities && entities.length > 0) {
+    return (
+      <div className="space-y-2 mb-4">
+        <Label htmlFor="entity">Entity (Merchant/Payee)</Label>
+        <EntitySelect
+          entities={entities}
+          value={transaction.entity?.entityId || ''}
+          placeholder="Select entity..."
+        />
+      </div>
+    );
+  }
+  if (transactionType === 'transfer') {
+    return (
+      <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg mb-4 text-sm">
+        <p className="text-gray-700 dark:text-gray-300">
+          💡 <strong>Transfer transactions</strong> don't require an entity. They represent money
+          moving between your accounts (e.g., credit card payments, savings transfers).
+        </p>
+      </div>
+    );
+  }
+  return null;
+}
+
 /**
  * Inline editing form for transaction fields
  */
@@ -36,7 +136,6 @@ export function EditableTransactionCard({
   onCancel,
   entities,
 }: EditableTransactionCardProps) {
-  const [isRawDataExpanded, setIsRawDataExpanded] = useState(false);
   const [editedFields, setEditedFields] = useState<Partial<ProcessedTransaction>>({
     description: transaction.description,
     amount: transaction.amount,
@@ -47,178 +146,27 @@ export function EditableTransactionCard({
   });
 
   const transactionType = editedFields.transactionType ?? 'purchase';
+  const rawData = parseRaw(transaction.rawRow);
 
-  // Parse raw row for reference
-  let rawData: Record<string, string>;
-  try {
-    rawData = JSON.parse(transaction.rawRow);
-  } catch {
-    rawData = { error: 'Failed to parse raw data' };
-  }
-
-  const handleSave = (shouldLearn: boolean = false) => {
-    onSave(transaction, editedFields, shouldLearn);
-  };
-
-  const actions = (
-    <>
-      <Button
-        variant="default"
-        size="sm"
-        onClick={() => handleSave(true)}
-        className="bg-purple-600 hover:bg-purple-700"
-      >
-        <Save className="w-4 h-4 mr-1" />
-        Save & Learn
-      </Button>
-      <Button variant="outline" size="sm" onClick={() => handleSave(false)}>
-        <Save className="w-4 h-4 mr-1" />
-        Save Once
-      </Button>
-      <Button variant="outline" size="sm" onClick={onCancel}>
-        <X className="w-4 h-4 mr-1" />
-        Cancel
-      </Button>
-    </>
-  );
+  const handleSave = (shouldLearn = false) => onSave(transaction, editedFields, shouldLearn);
 
   return (
-    <EditableFormCard title="Edit Transaction" actions={actions} onEscape={onCancel}>
-      {/* Transaction Type */}
-      <div className="mb-4 p-3 bg-info/10 rounded-lg">
-        <Label htmlFor="transactionType" className="block mb-2 font-semibold">
-          Transaction Type
-        </Label>
-        <UiSelect
-          id="transactionType"
-          name="type"
-          value={transactionType}
-          onChange={(e) => {
-            setEditedFields({
-              ...editedFields,
-              transactionType: e.target.value as 'purchase' | 'transfer' | 'income',
-            });
-          }}
-          options={[
-            { label: 'Purchase (requires entity)', value: 'purchase' },
-            { label: 'Transfer (between accounts, no entity)', value: 'transfer' },
-            { label: 'Income (salary, refund, etc.)', value: 'income' },
-          ]}
-        />
-        <p className="text-xs mt-1 text-info">
-          {transactionType === 'transfer' &&
-            "Transfers don't need an entity - they move money between accounts"}
-          {transactionType === 'income' && 'Income transactions: salary, interest, refunds, etc.'}
-          {transactionType === 'purchase' && 'Purchases require an entity (merchant/payee)'}
-        </p>
-      </div>
-
-      {/* Form fields */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        <div className="space-y-2">
-          <Label htmlFor="description">Description</Label>
-          <Input
-            id="description"
-            autoFocus
-            value={editedFields.description || ''}
-            onChange={(e) => {
-              setEditedFields({ ...editedFields, description: e.target.value });
-            }}
-            className="bg-white dark:bg-gray-800"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="amount">Amount</Label>
-          <Input
-            id="amount"
-            type="number"
-            step="0.01"
-            value={editedFields.amount || 0}
-            onChange={(e) => {
-              setEditedFields({
-                ...editedFields,
-                amount: parseFloat(e.target.value),
-              });
-            }}
-            className="bg-white dark:bg-gray-800"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="date">Date</Label>
-          <Input
-            id="date"
-            type="date"
-            value={editedFields.date || ''}
-            onChange={(e) => {
-              setEditedFields({ ...editedFields, date: e.target.value });
-            }}
-            className="bg-white dark:bg-gray-800"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="account">Account</Label>
-          <Input
-            id="account"
-            value={editedFields.account || ''}
-            onChange={(e) => {
-              setEditedFields({ ...editedFields, account: e.target.value });
-            }}
-            className="bg-white dark:bg-gray-800"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="location">Location</Label>
-          <Input
-            id="location"
-            value={editedFields.location || ''}
-            onChange={(e) => {
-              setEditedFields({ ...editedFields, location: e.target.value });
-            }}
-            placeholder="Optional"
-            className="bg-white dark:bg-gray-800"
-          />
-        </div>
-      </div>
-
-      {/* Entity selector - only show for purchases */}
-      {transactionType === 'purchase' && entities && entities.length > 0 && (
-        <div className="space-y-2 mb-4">
-          <Label htmlFor="entity">Entity (Merchant/Payee)</Label>
-          <EntitySelect
-            entities={entities}
-            value={transaction.entity?.entityId || ''}
-            placeholder="Select entity..."
-          />
-        </div>
-      )}
-
-      {transactionType === 'transfer' && (
-        <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-lg mb-4 text-sm">
-          <p className="text-gray-700 dark:text-gray-300">
-            💡 <strong>Transfer transactions</strong> don't require an entity. They represent money
-            moving between your accounts (e.g., credit card payments, savings transfers).
-          </p>
-        </div>
-      )}
-
-      {/* Collapsible raw data for reference */}
-      <Collapsible open={isRawDataExpanded} onOpenChange={setIsRawDataExpanded}>
-        <CollapsibleTrigger className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors">
-          <ChevronRight
-            className={`w-4 h-4 transition-transform ${isRawDataExpanded ? 'rotate-90' : ''}`}
-          />
-          <span>View source CSV data</span>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="mt-2">
-          <pre className="text-xs bg-gray-100 dark:bg-gray-900 p-3 rounded-md overflow-x-auto">
-            {JSON.stringify(rawData, null, 2)}
-          </pre>
-        </CollapsibleContent>
-      </Collapsible>
+    <EditableFormCard
+      title="Edit Transaction"
+      actions={<EditActions onSave={handleSave} onCancel={onCancel} />}
+      onEscape={onCancel}
+    >
+      <TransactionTypeSelect
+        value={transactionType}
+        onChange={(next) => setEditedFields({ ...editedFields, transactionType: next })}
+      />
+      <EditableFormFields editedFields={editedFields} setEditedFields={setEditedFields} />
+      <EntityOrTransferNotice
+        transactionType={transactionType}
+        transaction={transaction}
+        entities={entities}
+      />
+      <RawDataDisclosure rawData={rawData} />
     </EditableFormCard>
   );
 }

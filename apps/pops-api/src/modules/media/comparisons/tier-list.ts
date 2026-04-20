@@ -41,10 +41,24 @@ function assignTier(index: number, total: number): Tier {
   return 'F';
 }
 
-export function deriveTierList(dimensionId: number): TierGroup[] {
-  const rawDb = getDb();
+interface DerivedTierRow {
+  mediaType: string;
+  mediaId: number;
+  score: number;
+  comparisonCount: number;
+  title: string;
+  year: number | null;
+  moviePosterPath: string | null;
+  movieTmdbId: number | null;
+  moviePosterOverride: string | null;
+  tvPosterPath: string | null;
+  tvTvdbId: number | null;
+  tvPosterOverride: string | null;
+}
 
-  const rows = rawDb
+function fetchScoredRows(dimensionId: number): DerivedTierRow[] {
+  const rawDb = getDb();
+  return rawDb
     .prepare(
       `SELECT
         ms.media_type as mediaType,
@@ -68,42 +82,34 @@ export function deriveTierList(dimensionId: number): TierGroup[] {
       WHERE ms.dimension_id = ? AND ms.excluded = 0 AND ms.comparison_count > 0
       ORDER BY ms.score DESC, COALESCE(m.title, tv.name) ASC`
     )
-    .all(dimensionId) as Array<{
-    mediaType: string;
-    mediaId: number;
-    score: number;
-    comparisonCount: number;
-    title: string;
-    year: number | null;
-    moviePosterPath: string | null;
-    movieTmdbId: number | null;
-    moviePosterOverride: string | null;
-    tvPosterPath: string | null;
-    tvTvdbId: number | null;
-    tvPosterOverride: string | null;
-  }>;
+    .all(dimensionId) as DerivedTierRow[];
+}
 
+function rowToTierMovie(row: DerivedTierRow): TierMovie {
+  return {
+    mediaType: row.mediaType,
+    mediaId: row.mediaId,
+    title: row.title,
+    year: row.year,
+    posterUrl: resolvePosterUrl(row),
+    score: Math.round(row.score * 10) / 10,
+    comparisonCount: row.comparisonCount,
+  };
+}
+
+export function deriveTierList(dimensionId: number): TierGroup[] {
+  const rows = fetchScoredRows(dimensionId);
   if (rows.length === 0) return [];
 
   const tierMap: Record<Tier, TierMovie[]> = { S: [], A: [], B: [], C: [], D: [], F: [] };
-
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i];
     if (!row) continue;
     const tier = assignTier(i, rows.length);
-    tierMap[tier].push({
-      mediaType: row.mediaType,
-      mediaId: row.mediaId,
-      title: row.title,
-      year: row.year,
-      posterUrl: resolvePosterUrl(row),
-      score: Math.round(row.score * 10) / 10,
-      comparisonCount: row.comparisonCount,
-    });
+    tierMap[tier].push(rowToTierMovie(row));
   }
 
-  return TIERS.map((tier) => ({
-    tier,
-    movies: tierMap[tier],
-  })).filter((group) => group.movies.length > 0);
+  return TIERS.map((tier) => ({ tier, movies: tierMap[tier] })).filter(
+    (group) => group.movies.length > 0
+  );
 }

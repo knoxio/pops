@@ -74,20 +74,22 @@ function addTagsToSet(target: Set<string>, raw: string): void {
  * The "ai" match is case-insensitive against tags returned by availableTags
  * (i.e. what's actually in the transactions table), so no hardcoded list.
  */
-export function buildSuggestedTags(
-  description: string,
-  entityId: string | null,
-  correctionTags: string[],
-  aiCategory: string | null,
-  knownTags: string[],
-  correctionPattern?: string
-): SuggestedTag[] {
+export interface BuildSuggestedTagsOptions {
+  description: string;
+  entityId: string | null;
+  correctionTags: string[];
+  aiCategory: string | null;
+  knownTags: string[];
+  correctionPattern?: string;
+}
+
+export function buildSuggestedTags(opts: BuildSuggestedTagsOptions): SuggestedTag[] {
   return suggestTags({
-    description,
-    entityId,
-    aiCategory,
-    knownTags,
-    correctionTags,
-    correctionPattern,
+    description: opts.description,
+    entityId: opts.entityId,
+    aiCategory: opts.aiCategory,
+    knownTags: opts.knownTags,
+    correctionTags: opts.correctionTags,
+    correctionPattern: opts.correctionPattern,
   });
 }

@@ -18,64 +18,53 @@ interface RadarChartProps {
 /** Number of concentric grid rings to draw */
 const GRID_RINGS = 4;
 
-export function RadarChart({
-  dimensions,
-  size = 280,
-  minScore = 1200,
-  maxScore = 1800,
-}: RadarChartProps) {
-  if (dimensions.length < 3) return null;
+interface RadarGeometry {
+  cx: number;
+  cy: number;
+  radius: number;
+  angleStep: number;
+  polarToXY: (index: number, value: number) => [number, number];
+  normalize: (score: number) => number;
+}
 
+function buildGeometry(
+  size: number,
+  count: number,
+  minScore: number,
+  maxScore: number
+): RadarGeometry {
   const cx = size / 2;
   const cy = size / 2;
-  const radius = size / 2 - 40; // Leave room for labels
-  const angleStep = (2 * Math.PI) / dimensions.length;
+  const radius = size / 2 - 40;
+  const angleStep = (2 * Math.PI) / count;
+  return {
+    cx,
+    cy,
+    radius,
+    angleStep,
+    polarToXY(index, value) {
+      const angle = index * angleStep - Math.PI / 2;
+      return [cx + radius * value * Math.cos(angle), cy + radius * value * Math.sin(angle)];
+    },
+    normalize(score) {
+      return Math.max(0, Math.min(1, (score - minScore) / (maxScore - minScore)));
+    },
+  };
+}
 
-  /** Convert a dimension index + normalized value (0–1) to SVG coordinates. */
-  function polarToXY(index: number, value: number): [number, number] {
-    const angle = index * angleStep - Math.PI / 2; // Start from top
-    return [cx + radius * value * Math.cos(angle), cy + radius * value * Math.sin(angle)];
-  }
-
-  /** Normalize a score to 0–1 range, clamped. */
-  function normalize(score: number): number {
-    return Math.max(0, Math.min(1, (score - minScore) / (maxScore - minScore)));
-  }
-
-  // Build grid rings
+function GridAndAxes({
+  dimensions,
+  geom,
+}: {
+  dimensions: RadarChartProps['dimensions'];
+  geom: RadarGeometry;
+}) {
   const gridRings = Array.from({ length: GRID_RINGS }, (_, i) => {
     const fraction = (i + 1) / GRID_RINGS;
-    const points = dimensions.map((_, idx) => polarToXY(idx, fraction).join(',')).join(' ');
-    return points;
+    return dimensions.map((_, idx) => geom.polarToXY(idx, fraction).join(',')).join(' ');
   });
-
-  // Build axis lines
-  const axisLines = dimensions.map((_, idx) => {
-    const [x, y] = polarToXY(idx, 1);
-    return { x1: cx, y1: cy, x2: x, y2: y };
-  });
-
-  // Build data polygon
-  const dataPoints = dimensions
-    .map((d, idx) => polarToXY(idx, normalize(d.score)).join(','))
-    .join(' ');
-
-  // Label positions (slightly outside the chart)
-  const labels = dimensions.map((d, idx) => {
-    const [x, y] = polarToXY(idx, 1.2);
-    return { x, y, name: d.name, score: Math.round(d.score) };
-  });
-
   return (
-    <svg
-      viewBox={`0 0 ${size} ${size}`}
-      width={size}
-      height={size}
-      className="mx-auto"
-      role="img"
-      aria-label="Radar chart showing scores across dimensions"
-    >
-      {/* Grid rings */}
+    <>
       {gridRings.map((points, i) => (
         <polygon
           key={`ring-${i}`}
@@ -86,22 +75,37 @@ export function RadarChart({
           opacity={0.15}
         />
       ))}
+      {dimensions.map((_, idx) => {
+        const [x, y] = geom.polarToXY(idx, 1);
+        return (
+          <line
+            key={`axis-${idx}`}
+            x1={geom.cx}
+            y1={geom.cy}
+            x2={x}
+            y2={y}
+            stroke="currentColor"
+            strokeWidth={0.5}
+            opacity={0.15}
+          />
+        );
+      })}
+    </>
+  );
+}
 
-      {/* Axis lines */}
-      {axisLines.map((line, i) => (
-        <line
-          key={`axis-${i}`}
-          x1={line.x1}
-          y1={line.y1}
-          x2={line.x2}
-          y2={line.y2}
-          stroke="currentColor"
-          strokeWidth={0.5}
-          opacity={0.15}
-        />
-      ))}
-
-      {/* Data polygon */}
+function DataLayer({
+  dimensions,
+  geom,
+}: {
+  dimensions: RadarChartProps['dimensions'];
+  geom: RadarGeometry;
+}) {
+  const dataPoints = dimensions
+    .map((d, idx) => geom.polarToXY(idx, geom.normalize(d.score)).join(','))
+    .join(' ');
+  return (
+    <>
       <polygon
         points={dataPoints}
         fill="var(--primary)"
@@ -109,36 +113,72 @@ export function RadarChart({
         stroke="var(--primary)"
         strokeWidth={2}
       />
-
-      {/* Data points */}
       {dimensions.map((d, idx) => {
-        const [x, y] = polarToXY(idx, normalize(d.score));
+        const [x, y] = geom.polarToXY(idx, geom.normalize(d.score));
         return <circle key={`point-${idx}`} cx={x} cy={y} r={3} fill="var(--primary)" />;
       })}
+    </>
+  );
+}
 
-      {/* Labels */}
-      {labels.map((label, idx) => {
-        // Determine text-anchor based on position
-        const angle = idx * angleStep - Math.PI / 2;
-        const cos = Math.cos(angle);
-        let textAnchor: 'start' | 'middle' | 'end' = 'middle';
-        if (cos > 0.1) textAnchor = 'start';
-        else if (cos < -0.1) textAnchor = 'end';
+function getTextAnchor(angle: number): 'start' | 'middle' | 'end' {
+  const cos = Math.cos(angle);
+  if (cos > 0.1) return 'start';
+  if (cos < -0.1) return 'end';
+  return 'middle';
+}
 
+function Labels({
+  dimensions,
+  geom,
+}: {
+  dimensions: RadarChartProps['dimensions'];
+  geom: RadarGeometry;
+}) {
+  return (
+    <>
+      {dimensions.map((d, idx) => {
+        const [x, y] = geom.polarToXY(idx, 1.2);
+        const angle = idx * geom.angleStep - Math.PI / 2;
         return (
           <text
             key={`label-${idx}`}
-            x={label.x}
-            y={label.y}
-            textAnchor={textAnchor}
+            x={x}
+            y={y}
+            textAnchor={getTextAnchor(angle)}
             dominantBaseline="central"
             className="fill-muted-foreground"
             fontSize={11}
           >
-            {label.name}
+            {d.name}
           </text>
         );
       })}
+    </>
+  );
+}
+
+export function RadarChart({
+  dimensions,
+  size = 280,
+  minScore = 1200,
+  maxScore = 1800,
+}: RadarChartProps) {
+  if (dimensions.length < 3) return null;
+  const geom = buildGeometry(size, dimensions.length, minScore, maxScore);
+
+  return (
+    <svg
+      viewBox={`0 0 ${size} ${size}`}
+      width={size}
+      height={size}
+      className="mx-auto"
+      role="img"
+      aria-label="Radar chart showing scores across dimensions"
+    >
+      <GridAndAxes dimensions={dimensions} geom={geom} />
+      <DataLayer dimensions={dimensions} geom={geom} />
+      <Labels dimensions={dimensions} geom={geom} />
     </svg>
   );
 }
