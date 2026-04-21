@@ -1,6 +1,6 @@
 # Spike — POPS as a suite of apps on a shell
 
-Investigation. Not committed. Sibling spikes: [deployment-split](./deployment-split-spike.md), [feature-toggles](./feature-toggles-spike.md).
+Investigation only — recommendations, no code changes. Sibling spikes: [deployment-split](./deployment-split-spike.md), [feature-toggles](./feature-toggles-spike.md).
 
 ## Question
 
@@ -12,7 +12,7 @@ The bones are already here:
 
 - `apps/pops-shell/src/app/router.tsx:10-13` — shell statically imports four app packages (`@pops/app-finance`, `@pops/app-media`, `@pops/app-inventory`, `@pops/app-ai`) and mounts their exported routes
 - `apps/pops-api/src/router.ts:24-30` — tRPC root manually composes per-domain routers (`finance`, `media`, `inventory`, `cerebrum`, `core`)
-- `packages/app-*` — each app is a proper workspace package with its own `src/index.ts`, routes, pages, store. Research confirms **no app imports another app** — they only depend on `@pops/ui`, `@pops/api-client`, `@pops/navigation`, `@pops/db-types`
+- `packages/app-*` — each app is a proper workspace package with its own `src/index.ts`, routes, pages, store. Research confirms **no app imports another app** — apps import shared workspace packages (`@pops/ui`, `@pops/api-client`, `@pops/navigation`, `@pops/db-types`, `@pops/types`, etc.) and external libraries as needed
 - [ADR-002](../architecture/adr-002-shell-architecture.md) explicitly states "apps import from `@pops/ui` and shared packages, never from other apps. Cross-app communication goes through the API or shared stores"
 - [ADR-004](../architecture/adr-004-api-domain-modules.md) limits backend modules to importing from `core/` only
 - `@pops/navigation` already uses a **side-effect registry** (`registerResultComponent`) for search result components; backend search adapters are a separate registry (`registerSearchAdapter`) in `apps/pops-api/src/modules/core/search` — the seed of the right pattern

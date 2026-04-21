@@ -1,6 +1,6 @@
 # Spike — Feature toggles (install-time and runtime)
 
-Investigation. Not committed. Sibling spikes: [deployment-split](./deployment-split-spike.md), [modular-apps](./modular-apps-spike.md).
+Investigation only — recommendations, no code changes. Sibling spikes: [deployment-split](./deployment-split-spike.md), [modular-apps](./modular-apps-spike.md).
 
 ## Question
 
@@ -51,14 +51,21 @@ export const mediaFeatures: FeatureManifest = {
     label: 'Plex sync',
     description: 'Background job that pulls library + watch history from Plex.',
     default: false,
-    requires: ['PLEX_URL', 'PLEX_TOKEN'],
+    requires: ['plex_url', 'plex_token'], // settings keys (env fallback supported)
     scope: 'system',
   },
-  arr: {
-    label: 'Radarr / Sonarr',
-    description: 'Request downloads for watchlist items.',
+  radarr: {
+    label: 'Radarr',
+    description: 'Request movie downloads for watchlist items.',
     default: false,
-    requires: ['RADARR_URL', 'RADARR_API_KEY'],
+    requires: ['radarr_url', 'radarr_api_key'],
+    scope: 'system',
+  },
+  sonarr: {
+    label: 'Sonarr',
+    description: 'Request TV downloads for watchlist items.',
+    default: false,
+    requires: ['sonarr_url', 'sonarr_api_key'],
     scope: 'system',
   },
   rotation: {
@@ -72,7 +79,7 @@ export const mediaFeatures: FeatureManifest = {
 
 - `scope: 'system'` — admin-only toggle.
 - `scope: 'user'` — per-user preference (e.g. "show connected-status badges on inventory items").
-- `requires: [...]` — names of env vars / secrets that must resolve. If missing, the toggle is visible but disabled with a "configure credentials first" hint.
+- `requires: [...]` — settings keys (see `packages/types/src/settings-keys.ts`) that must resolve to a non-empty value. Credentials live in the `settings` table today, with env-var fallback for some keys via the `envFallback` pattern. If any required key is empty in both settings and env, the toggle is visible but disabled with a "configure credentials first" hint.
 
 The shell builds the admin Features page from the union of all active modules' manifests. No per-module ad-hoc pages.
 
@@ -84,7 +91,7 @@ One helper, everywhere:
 const enabled = await features.isEnabled('media.plex', { user });
 ```
 
-Backed by a cached read from the `settings` table keyed by `<module>.<flag>`. Replaces the scattered `if (process.env.X === 'true')` checks.
+Backed by a cached read from the `settings` table keyed by `<module>.<flag>`. Centralises runtime settings lookups and standardises credential/capability gating so each module isn't rolling its own "is the Plex scheduler enabled and do we have the credentials?" logic.
 
 ### 3. Install-time vs runtime — what lives where
 

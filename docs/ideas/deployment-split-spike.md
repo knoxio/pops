@@ -1,6 +1,6 @@
 # Spike — Extract deployment to a separate repo
 
-Investigation. Not committed. Sibling spikes: [modular-apps](./modular-apps-spike.md), [feature-toggles](./feature-toggles-spike.md).
+Investigation only — recommendations, no code changes. Sibling spikes: [modular-apps](./modular-apps-spike.md), [feature-toggles](./feature-toggles-spike.md).
 
 ## Question
 
@@ -9,7 +9,7 @@ Should the deployment surface move out of this repo into a dedicated `mu-deploy`
 ## Current coupling
 
 - `deploy.sh` — root-level script; expects to be run from the repo
-- `infra/docker-compose.yml` — references `../apps/pops-api/Dockerfile`, `../apps/pops-shell/Dockerfile`, `../packages/import-tools`, `../apps/moltbot/config`, `../secrets/*`
+- `infra/docker-compose.yml` — uses `context: ..` with `dockerfile: apps/pops-api/Dockerfile` and `dockerfile: apps/pops-shell/Dockerfile`; also references `../packages/import-tools`, `../apps/moltbot/config`, `../secrets/*`
 - `infra/ansible/` — 8 roles, most of which are **server-generic** (`common`, `docker`, `github-runner`, `secrets`, `cloudflare-tunnel`, `monitoring`, `backups`) and one that is **pops-specific** (`pops-deploy`)
 - `.github/workflows/root-deploy.yml` and `infra-quality.yml` — couple CI to the co-located infra
 - `scripts/setup-github-runner.sh` — generic server bootstrap, not pops-specific
