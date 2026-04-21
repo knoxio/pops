@@ -9,8 +9,8 @@ Some features should be toggleable — at install time, at runtime, or both. Exa
 ## What already exists
 
 - **Runtime settings** (`settings` table, read at request time):
-  - `PLEX_SCHEDULER_ENABLED` — gates the Plex sync cron
-  - `ROTATION_ENABLED` — gates the carousel rotation feature
+  - `plex_scheduler_enabled` — gates the Plex sync cron
+  - `rotation_enabled` — gates the carousel rotation feature
 - **Credentials-as-toggle** (env / Docker secrets):
   - Paperless — absent `PAPERLESS_BASE_URL` / `PAPERLESS_API_TOKEN` disables the integration; thumbnail endpoint returns 404 gracefully
   - Radarr/Sonarr, TMDB, TVDB — no credentials ⇒ routes compile but calls fail soft
@@ -141,7 +141,7 @@ Not a system-wide toggle. Not an env var. Not a compile-time option.
 Yes to this layering. Order of implementation:
 
 1. Define the `FeatureManifest` type and the `features.isEnabled` helper. Small, contained.
-2. Migrate existing ad-hoc toggles (`PLEX_SCHEDULER_ENABLED`, `ROTATION_ENABLED`, paperless gating) into manifests. No behaviour change, just centralisation.
+2. Migrate existing ad-hoc toggles (`plex_scheduler_enabled`, `rotation_enabled`, paperless gating) into manifests. No behaviour change, just centralisation.
 3. Build the admin Features page that renders from manifests.
 4. Add `requires: [...]` credential-gating.
 5. When modular apps land (see [modular-apps](./modular-apps-spike.md)), each module registers its manifest on install.

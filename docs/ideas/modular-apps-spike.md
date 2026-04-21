@@ -15,7 +15,7 @@ The bones are already here:
 - `packages/app-*` — each app is a proper workspace package with its own `src/index.ts`, routes, pages, store. Research confirms **no app imports another app** — they only depend on `@pops/ui`, `@pops/api-client`, `@pops/navigation`, `@pops/db-types`
 - [ADR-002](../architecture/adr-002-shell-architecture.md) explicitly states "apps import from `@pops/ui` and shared packages, never from other apps. Cross-app communication goes through the API or shared stores"
 - [ADR-004](../architecture/adr-004-api-domain-modules.md) limits backend modules to importing from `core/` only
-- `@pops/navigation` already uses a **side-effect registry** (`registerResultComponent`) for search adapters — the seed of the right pattern
+- `@pops/navigation` already uses a **side-effect registry** (`registerResultComponent`) for search result components; backend search adapters are a separate registry (`registerSearchAdapter`) in `apps/pops-api/src/modules/core/search` — the seed of the right pattern
 
 So the architecture is already close. The remaining work is to make app presence a runtime decision instead of a compile-time one, and to formalise contracts.
 
@@ -23,14 +23,14 @@ So the architecture is already close. The remaining work is to make app presence
 
 Always present (the "shell"):
 
-| Surface            | Provided by                                                             |
-| ------------------ | ----------------------------------------------------------------------- |
-| Auth, user, admin  | `apps/pops-api/src/modules/core/*`, `@pops/auth`                        |
-| Settings           | `apps/pops-shell/src/app/pages/SettingsPage.tsx`, `core/settings`       |
-| Navigation, search | `packages/navigation`, shell layout                                     |
-| UI library         | `packages/ui`                                                           |
-| API client + types | `packages/api-client`, `packages/db-types` (core schema)                |
-| Shared entities    | `core/entities` ([ADR-005](../architecture/adr-005-shared-entities.md)) |
+| Surface            | Provided by                                                                                                       |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Auth, user, admin  | `apps/pops-api/src/modules/core/*`, `apps/pops-api/src/trpc.ts`, `apps/pops-api/src/middleware/cloudflare-jwt.ts` |
+| Settings           | `apps/pops-shell/src/app/pages/SettingsPage.tsx`, `core/settings`                                                 |
+| Navigation, search | `packages/navigation`, shell layout                                                                               |
+| UI library         | `packages/ui`                                                                                                     |
+| API client + types | `packages/api-client`, `packages/db-types` (core schema)                                                          |
+| Shared entities    | `core/entities` ([ADR-005](../architecture/adr-005-shared-entities.md))                                           |
 
 Optional (the "apps"):
 
@@ -130,7 +130,7 @@ Tier 1 is ~1 week. Tier 2 is 2–3 weeks after Tier 1 lands.
 
 ## Open questions
 
-- **Ego / AI / cerebrum.** You wrote "everything but ego". The repo has `app-ai` (frontend: AI usage, budgets, model config) and `cerebrum` (backend: engrams, templates, scopes). Are these the same thing in your head? Is "ego" a rename of the user-facing AI app, or a new fifth app? **This shapes the boundary work.**
+- **Ego / AI / cerebrum.** You wrote "everything but ego". The repo has `app-ai` (frontend: AI usage, prompt templates, rules, cache management, plus a settings redirect) and `cerebrum` (backend: engrams, templates, scopes). Are these the same thing in your head? Is "ego" a rename of the user-facing AI app, or a new fifth app? **This shapes the boundary work.**
 - Should engrams (`cerebrum`) be **core** (shell-level, always present, like entities) or an **app** (removable)? Universal URIs, the AI overlay, and cross-domain context all lean on engrams — arguments for core.
 - Are settings-per-app owned by the app (with the app's manifest registering them) or all in core?
 - Does admin (user management, audit, system settings) live in the shell or become its own mini-app?
