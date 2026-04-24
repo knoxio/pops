@@ -54,6 +54,7 @@ interface MockProfile {
   totalMoviesWatched: number;
   genreAffinities: never[];
   dimensionWeights: never[];
+  genreDistribution: never[];
 }
 
 const MOCK_SHELF: MockShelf = {
@@ -100,6 +101,7 @@ const MOCK_PROFILE: MockProfile = {
   totalMoviesWatched: 10,
   genreAffinities: [],
   dimensionWeights: [],
+  genreDistribution: [],
 };
 
 const MOCK_DISMISSED: number[] = [];
