@@ -210,9 +210,14 @@ function buildLibraryItem(): LibraryListItem {
 
 // ---------------------------------------------------------------------------
 // tRPC route helpers — httpBatchLink combines procedures with "," in the path
-// (e.g. /trpc/media.library.list,media.library.genres). A single handler must
-// answer the batched request with a response array in the same order.
+// (e.g. /trpc/media.library.list,media.library.genres?batch=1&input=...).
+// Mixed batches (known + unknown procedures) are split: known procedures are
+// answered from the mock state, unknown ones are forwarded to the real e2e API
+// in a separate request, and the two sets of responses are merged in the
+// original procedure order before fulfilling the route.
 // ---------------------------------------------------------------------------
+
+const E2E_ENV = 'e2e';
 
 function parseProcedures(url: string): string[] {
   const match = /\/trpc\/([^?]+)/.exec(url);
@@ -254,6 +259,39 @@ function resolveProcedureData(name: string, state: MockState): unknown {
   return null;
 }
 
+/**
+ * Shape of a single tRPC response envelope. The success branch carries
+ * `result.data`; the error branch carries `error`. We preserve the full
+ * envelope verbatim when forwarding unknown procedures to the real API.
+ */
+type TrpcEnvelope = Record<string, unknown>;
+
+/**
+ * Rewrites the batched GET URL to contain ONLY the procedures at the given
+ * indexes, reindexing `input.N` so positions are 0..len-1 in the subset.
+ */
+function buildSubsetUrl(originalUrl: URL, procedures: string[], indexes: number[]): URL {
+  const subsetProcedures = indexes.map((i) => procedures[i] ?? '').filter((n) => n.length > 0);
+  const subsetUrl = new URL(originalUrl.toString());
+  subsetUrl.pathname = `/trpc/${subsetProcedures.join(',')}`;
+
+  const rawInput = originalUrl.searchParams.get('input');
+  if (rawInput !== null) {
+    const parsed: unknown = JSON.parse(rawInput);
+    if (typeof parsed === 'object' && parsed !== null) {
+      const record = parsed as Record<string, unknown>;
+      const reindexed: Record<string, unknown> = {};
+      indexes.forEach((origIndex, newIndex) => {
+        const value = record[String(origIndex)];
+        if (value !== undefined) reindexed[String(newIndex)] = value;
+      });
+      subsetUrl.searchParams.set('input', JSON.stringify(reindexed));
+    }
+  }
+  subsetUrl.searchParams.set('env', E2E_ENV);
+  return subsetUrl;
+}
+
 async function installMediaMocks(page: Page): Promise<MockState> {
   const state: MockState = { movieAdded: false };
   const knownProcedures = new Set([
@@ -263,19 +301,79 @@ async function installMediaMocks(page: Page): Promise<MockState> {
   ]);
 
   await page.route('/trpc/**', async (route) => {
-    const procedures = parseProcedures(route.request().url());
-    const allKnown = procedures.length > 0 && procedures.every((n) => knownProcedures.has(n));
-    if (!allKnown) {
+    const request = route.request();
+    const url = new URL(request.url());
+    const procedures = parseProcedures(request.url());
+
+    // No procedure names → defer to the next handler (real API).
+    if (procedures.length === 0) {
       await route.fallback();
       return;
     }
 
-    const isBatch = new URL(route.request().url()).searchParams.has('batch');
-    const payloads = procedures.map((n) => ({ result: { data: resolveProcedureData(n, state) } }));
+    const knownIndexes: number[] = [];
+    const unknownIndexes: number[] = [];
+    procedures.forEach((name, i) => {
+      if (knownProcedures.has(name)) knownIndexes.push(i);
+      else unknownIndexes.push(i);
+    });
+
+    // Fully unknown batch → defer to useRealApi.
+    if (knownIndexes.length === 0) {
+      await route.fallback();
+      return;
+    }
+
+    const isBatch = url.searchParams.has('batch');
+    const merged: (TrpcEnvelope | undefined)[] = Array.from<TrpcEnvelope | undefined>({
+      length: procedures.length,
+    });
+
+    for (const i of knownIndexes) {
+      const name = procedures[i] ?? '';
+      merged[i] = { result: { data: resolveProcedureData(name, state) } };
+    }
+
+    // Mutations (POST) are never mixed with unrelated procedures in this
+    // test — the addMovie click fires a single-procedure batch. Only GET
+    // queries need the subset-fetch merge path.
+    if (unknownIndexes.length > 0) {
+      if (request.method() !== 'GET') {
+        throw new Error(
+          `Mixed known/unknown procedures in a non-GET batch is not supported: ${procedures.join(',')}`
+        );
+      }
+      const subsetUrl = buildSubsetUrl(url, procedures, unknownIndexes);
+      const realResponse = await route.fetch({ url: subsetUrl.toString() });
+      const body: unknown = await realResponse.json();
+      if (!Array.isArray(body)) {
+        throw new Error(`Expected tRPC batch array response, got: ${typeof body}`);
+      }
+      const envelopes: TrpcEnvelope[] = body.map((entry): TrpcEnvelope => {
+        if (typeof entry !== 'object' || entry === null) {
+          throw new Error(`Expected tRPC envelope object, got: ${typeof entry}`);
+        }
+        return entry as TrpcEnvelope;
+      });
+      envelopes.forEach((env, j) => {
+        const origIndex = unknownIndexes[j];
+        if (origIndex !== undefined) merged[origIndex] = env;
+      });
+    }
+
+    // Every slot must be filled — either by the mock state or by the real-API
+    // subset fetch. A missing slot indicates a bug in the merge logic.
+    const finalEnvelopes: TrpcEnvelope[] = merged.map((env, i) => {
+      if (env === undefined) {
+        throw new Error(`Missing tRPC envelope for procedure ${procedures[i] ?? '?'}`);
+      }
+      return env;
+    });
+
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(isBatch ? payloads : payloads[0]),
+      body: JSON.stringify(isBatch ? finalEnvelopes : finalEnvelopes[0]),
     });
   });
 
