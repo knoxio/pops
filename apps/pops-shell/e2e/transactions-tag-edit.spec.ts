@@ -21,14 +21,17 @@
  *
  * Interaction notes
  * -----------------
- * - TagEditor is a Radix Popover (role="dialog"). The trigger button has
- *   aria-label="Edit tags"; there is one per row, so we scope it inside the
- *   row locator for "Coles Local".
+ * - TagEditor is a Radix Popover. We locate it by its stable DOM hook
+ *   `[data-slot="popover-content"]` — ARIA role="dialog" is set by Radix but
+ *   WebKit's accessibility tree does not always surface non-modal popovers
+ *   under that role, so the DOM attribute is the portable choice.
+ * - The trigger button has aria-label="Edit tags"; there is one per row, so
+ *   we scope it inside the row locator for "Coles Local".
  * - The input inside the popover is a bare <input type="text"> identified by
  *   its placeholder. Enter commits a free-text tag.
- * - The existing Groceries tag renders as a Chip with a remove button
- *   (aria-label="Remove"). We scope to the dialog and filter by chip text.
- * - No keyboard/click ambiguity encountered; all locators are semantic.
+ * - Each tag renders as a @pops/ui Chip: a <div> containing the tag text and
+ *   a <button aria-label="Remove">. We scope the remove click by filtering
+ *   Chip containers by their exact tag text, then target the Remove button.
  */
 import { expect, test, type Locator, type Page } from '@playwright/test';
 
@@ -38,38 +41,49 @@ const TARGET_DESCRIPTION = 'Coles Local';
 const SEEDED_TAG = 'Groceries';
 const UNIQUE_TAG = `e2e-tag-${Date.now()}`;
 
+function escapeRegex(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 function targetRow(page: Page): Locator {
   return page.getByRole('row').filter({ hasText: TARGET_DESCRIPTION }).first();
 }
 
+function popover(page: Page): Locator {
+  return page.locator('[data-slot="popover-content"]');
+}
+
 async function openTagEditor(page: Page): Promise<Locator> {
   await targetRow(page).getByRole('button', { name: 'Edit tags' }).click();
-  const dialog = page.getByRole('dialog');
-  await expect(dialog).toBeVisible();
-  return dialog;
+  const content = popover(page);
+  await expect(content).toBeVisible();
+  return content;
 }
 
-async function addFreeTextTag(dialog: Locator, tag: string): Promise<void> {
-  const input = dialog.getByPlaceholder('Type to add a tag…');
+async function addFreeTextTag(content: Locator, tag: string): Promise<void> {
+  const input = content.getByPlaceholder('Type to add a tag…');
   await input.fill(tag);
   await input.press('Enter');
-  // Newly-added tag appears as a removable Chip inside the dialog.
-  await expect(dialog.getByText(tag, { exact: true })).toBeVisible();
+  // Newly-added tag appears as a removable Chip inside the popover.
+  await expect(content.getByText(tag, { exact: true })).toBeVisible();
 }
 
-async function removeTag(dialog: Locator, tag: string): Promise<void> {
-  // Each tag renders as a Chip: a <div> containing a <span class="truncate">
-  // with the label and a <button aria-label="Remove">. Locate the span with
-  // the exact tag, walk up to the parent Chip, then click its Remove button.
-  const chipLabel = dialog.locator('span.truncate', { hasText: tag }).first();
-  await expect(chipLabel).toBeVisible();
-  await chipLabel.locator('..').getByRole('button', { name: 'Remove' }).click();
-  await expect(dialog.getByText(tag, { exact: true })).toHaveCount(0);
+async function removeTag(content: Locator, tag: string): Promise<void> {
+  // Locate the Chip <div> whose full text matches the tag, then click its
+  // Remove button. Filtering by exact hasText avoids substring collisions
+  // (e.g. two chips sharing a prefix) without relying on DOM shape.
+  const chip = content
+    .locator('div')
+    .filter({ hasText: new RegExp(`^${escapeRegex(tag)}$`) })
+    .first();
+  await expect(chip).toBeVisible();
+  await chip.getByRole('button', { name: 'Remove' }).click();
+  await expect(content.getByText(tag, { exact: true })).toHaveCount(0);
 }
 
-async function save(page: Page, dialog: Locator): Promise<void> {
-  await dialog.getByRole('button', { name: 'Save' }).click();
-  await expect(page.getByRole('dialog')).toHaveCount(0);
+async function save(page: Page, content: Locator): Promise<void> {
+  await content.getByRole('button', { name: 'Save' }).click();
+  await expect(popover(page)).toHaveCount(0);
 }
 
 test.describe('Finance — transactions tag edit (real API)', () => {
@@ -106,15 +120,15 @@ test.describe('Finance — transactions tag edit (real API)', () => {
     page,
   }) => {
     // 1) Open editor and perform the edits.
-    let dialog = await openTagEditor(page);
-    await addFreeTextTag(dialog, UNIQUE_TAG);
-    await removeTag(dialog, SEEDED_TAG);
-    await save(page, dialog);
+    let editor = await openTagEditor(page);
+    await addFreeTextTag(editor, UNIQUE_TAG);
+    await removeTag(editor, SEEDED_TAG);
+    await save(page, editor);
 
     // 2) Row reflects the new state immediately (after list invalidation).
     //    Row badges apply text-transform: uppercase, so match case-insensitively.
-    const uniqueTagRe = new RegExp(`^${UNIQUE_TAG}$`, 'i');
-    const seededTagRe = new RegExp(`^${SEEDED_TAG}$`, 'i');
+    const uniqueTagRe = new RegExp(`^${escapeRegex(UNIQUE_TAG)}$`, 'i');
+    const seededTagRe = new RegExp(`^${escapeRegex(SEEDED_TAG)}$`, 'i');
     const row = targetRow(page);
     await expect(row.getByText(uniqueTagRe)).toBeVisible();
     await expect(row.getByText(seededTagRe)).toHaveCount(0);
@@ -128,10 +142,10 @@ test.describe('Finance — transactions tag edit (real API)', () => {
 
     // 4) Teardown: restore original seeded state so the shared e2e DB does
     //    not drift across runs (belt-and-braces with the unique tag name).
-    dialog = await openTagEditor(page);
-    await addFreeTextTag(dialog, SEEDED_TAG);
-    await removeTag(dialog, UNIQUE_TAG);
-    await save(page, dialog);
+    editor = await openTagEditor(page);
+    await addFreeTextTag(editor, SEEDED_TAG);
+    await removeTag(editor, UNIQUE_TAG);
+    await save(page, editor);
 
     await expect(targetRow(page).getByText(seededTagRe)).toBeVisible();
     await expect(targetRow(page).getByText(uniqueTagRe)).toHaveCount(0);

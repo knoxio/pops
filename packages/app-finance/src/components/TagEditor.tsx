@@ -1,4 +1,14 @@
-import { Badge, Button, hashToColor, Popover, PopoverContent, PopoverTrigger } from '@pops/ui';
+import { forwardRef } from 'react';
+
+import {
+  Badge,
+  Button,
+  type ButtonProps,
+  hashToColor,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@pops/ui';
 
 import { cn } from '../lib/utils';
 import { TagEditorPanel } from './tag-editor/TagEditorPanel';
@@ -13,9 +23,8 @@ const SOURCE_ICONS: Record<TagSource, string> = {
   entity: '🏪',
 };
 
-interface TriggerProps {
+interface TriggerProps extends Omit<ButtonProps, 'children'> {
   tags: string[];
-  disabled: boolean;
   tagMeta?: Map<string, TagMetaEntry>;
 }
 
@@ -25,16 +34,25 @@ function tooltipFor(meta: TagMetaEntry | undefined): string | undefined {
   return undefined;
 }
 
-function TriggerContent({ tags, disabled, tagMeta }: TriggerProps) {
-  return (
+/**
+ * TriggerContent must forward refs and spread remaining props so that
+ * Radix's `<PopoverTrigger asChild>` can inject its click/keyboard handlers,
+ * ref, aria-haspopup, and aria-expanded onto the underlying Button. Without
+ * this, clicking the tags cell would not open the popover.
+ */
+const TriggerContent = forwardRef<HTMLButtonElement, TriggerProps>(
+  ({ tags, tagMeta, className, disabled, ...rest }, ref) => (
     <Button
+      ref={ref}
       variant="ghost"
       className={cn(
         'flex flex-wrap gap-1 min-h-10 text-left w-full rounded px-2 py-1.5 transition-colors items-center h-auto',
-        disabled ? 'cursor-default' : 'hover:bg-accent/50 cursor-pointer'
+        disabled ? 'cursor-default' : 'hover:bg-accent/50 cursor-pointer',
+        className
       )}
       aria-label="Edit tags"
       disabled={disabled}
+      {...rest}
     >
       {tags.length === 0 ? (
         <span className="text-muted-foreground text-xs">—</span>
@@ -61,8 +79,9 @@ function TriggerContent({ tags, disabled, tagMeta }: TriggerProps) {
         </Badge>
       )}
     </Button>
-  );
-}
+  )
+);
+TriggerContent.displayName = 'TagEditorTriggerContent';
 
 /**
  * TagEditor — inline popover for editing transaction tags.
