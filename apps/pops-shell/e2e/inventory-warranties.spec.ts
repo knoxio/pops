@@ -66,8 +66,12 @@ test.describe('Inventory — warranties list with expiry flagging', () => {
   });
 
   test('renders a seeded future-expiry item inside the Active section', async ({ page }) => {
-    // Active section expands by default. MacBook Pro has a 2027 expiry → >90d out.
-    await expect(page.getByText(/^Active$/).first()).toBeVisible({ timeout: 10_000 });
+    // Active section expands by default. Its header renders as a toggle
+    // <button> whose accessible name is "Active <count>" (e.g. "Active 6").
+    // MacBook Pro has a 2027 expiry → >90d out, so it lives in Active.
+    await expect(page.getByRole('button', { name: /^Active\s+\d+/ })).toBeVisible({
+      timeout: 10_000,
+    });
     await expect(page.getByText(/MacBook Pro/i).first()).toBeVisible();
     // Future-expiry items render a "N days" remaining badge (no urgency flag).
     await expect(page.getByText(/^\d+ days$/).first()).toBeVisible();
