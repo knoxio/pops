@@ -106,18 +106,32 @@ test.describe('Media — watch history (log a watch event)', () => {
     await page.goto('/media/history');
     await expect(page.getByRole('heading', { name: 'Watch History' })).toBeVisible();
 
-    // Interstellar should now appear in the list. Multiple viewports render
-    // different components (HistoryCard on md+, HistoryItem on mobile), but
-    // both use an <h3> with the title text — a semantic locator covers both.
-    const titleHeading = page.getByRole('heading', { level: 3, name: MOVIE_TITLE }).first();
+    // Interstellar should now appear in the list. Both HistoryCard (md+ grid)
+    // and HistoryItem (mobile list) are always present in the DOM — only their
+    // visibility is toggled via Tailwind `hidden`/`md:hidden`. Asserting on
+    // `.first()` alone would match the mobile entry, which is display:none at
+    // the Playwright desktop viewport, so we filter to the visible heading.
+    const titleHeading = page
+      .getByRole('heading', { level: 3, name: MOVIE_TITLE })
+      .filter({ visible: true })
+      .first();
     await expect(titleHeading).toBeVisible({ timeout: 10_000 });
 
-    // The entry must render a timestamp. HistoryCard shows a short "D MMM"
-    // badge; HistoryItem shows a long "D MMM YYYY, HH:MM" string. Today's
-    // entry will always include the current month abbreviation in en-AU.
+    // The entry must render a timestamp. HistoryCard (desktop) shows a short
+    // "D MMM" badge; HistoryItem (mobile) shows a long "D MMM YYYY, HH:MM"
+    // string. Both layouts always exist in the DOM at CI's 1280×720 WebKit
+    // viewport — we must scope to the visible card to avoid resolving to a
+    // hidden sibling and failing `toBeVisible()`.
     const monthShort = new Date().toLocaleDateString('en-AU', { month: 'short' });
     const dayNumeric = new Date().toLocaleDateString('en-AU', { day: 'numeric' });
     const timestampPattern = new RegExp(`${dayNumeric}\\s+${monthShort}`);
-    await expect(page.getByText(timestampPattern).first()).toBeVisible({ timeout: 10_000 });
+    const interstellarCard = page
+      .locator('div.group')
+      .filter({ has: page.getByRole('heading', { level: 3, name: MOVIE_TITLE }) })
+      .filter({ visible: true })
+      .first();
+    await expect(interstellarCard.getByText(timestampPattern).first()).toBeVisible({
+      timeout: 10_000,
+    });
   });
 });
