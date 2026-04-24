@@ -38,19 +38,52 @@ import type { Page, Route } from '@playwright/test';
 const PROCESS_SESSION_ID = 'e2e-process-session';
 
 /**
- * Mock tRPC response — tRPC's HTTP link accepts either a single-procedure
- * envelope `{ result: { data: ... } }` or a batched array of those envelopes.
- * Detect via the `?batch=1` query param and wrap accordingly.
+ * tRPC v11 `httpBatchLink` batches multiple procedures of the same type
+ * (query/mutation) into a single HTTP request. The URL path becomes a
+ * comma-joined list (e.g. `/trpc/core.entities.list,core.corrections.list`)
+ * and the client always expects an array of envelopes matching the
+ * procedure order when `?batch=1` is present.
+ *
+ * A single-procedure regex mock (`/\/trpc\/core\.entities\.list/`) will
+ * match the batched URL prefix but can only return ONE envelope, which
+ * makes the client reject the remaining items with `Missing result`.
+ *
+ * To handle this correctly, the test installs one `/trpc/**` route that:
+ *   1. Splits the procedure path list from the URL,
+ *   2. Looks up a registered payload provider for each procedure,
+ *   3. Emits an envelope array matching the request order.
  */
-async function fulfillTrpc(route: Route, data: unknown): Promise<void> {
-  const url = new URL(route.request().url());
-  const isBatch = url.searchParams.has('batch');
-  const envelope = { result: { data } };
-  await route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    body: JSON.stringify(isBatch ? [envelope] : envelope),
-  });
+type PayloadProvider = (input: unknown) => unknown;
+
+/** Build a tRPC v11 success envelope. */
+function envelope(data: unknown): { result: { data: unknown } } {
+  return { result: { data } };
+}
+
+/**
+ * Parse the `?input=...` query param for a batched tRPC request.
+ * Batched inputs are keyed by positional index: `{ "0": { json: ... }, "1": ... }`.
+ */
+function parseBatchInputs(rawInput: string | null): Record<string, unknown> {
+  if (!rawInput) return {};
+  try {
+    const parsed: unknown = JSON.parse(decodeURIComponent(rawInput));
+    if (parsed && typeof parsed === 'object') {
+      return parsed as Record<string, unknown>;
+    }
+    return {};
+  } catch {
+    return {};
+  }
+}
+
+/** Extract a single procedure's input from a parsed batch inputs bag. */
+function inputAt(inputs: Record<string, unknown>, index: number): unknown {
+  const entry = inputs[String(index)];
+  if (entry && typeof entry === 'object' && 'json' in entry) {
+    return (entry as { json: unknown }).json;
+  }
+  return entry;
 }
 
 /** Two matched transactions so the Review step auto-lands on Matched tab. */
@@ -93,57 +126,86 @@ const processedOutput = {
   warnings: [],
 };
 
+/**
+ * Map of tRPC procedure path → function producing the raw return value
+ * (pre-envelope). Procedures not listed here fall through to a 404 so
+ * unexpected calls surface as visible failures.
+ */
+const payloadProviders: Record<string, PayloadProvider> = {
+  'finance.imports.processImport': () => ({ sessionId: PROCESS_SESSION_ID }),
+  'finance.imports.getImportProgress': () => ({
+    sessionId: PROCESS_SESSION_ID,
+    status: 'completed',
+    result: processedOutput,
+  }),
+  // commitImport router wraps its result as `{ data, message }`.
+  'finance.imports.commitImport': () => ({
+    data: {
+      entitiesCreated: 0,
+      rulesApplied: { add: 0, edit: 0, disable: 0, remove: 0 },
+      tagRulesApplied: 0,
+      transactionsImported: 2,
+      transactionsFailed: 0,
+      failedDetails: [],
+      retroactiveReclassifications: 0,
+    },
+    message: 'Import committed',
+  }),
+  // entities.list router returns `{ data, pagination }`.
+  'core.entities.list': () => ({
+    data: [
+      { id: 'entity-woolworths', name: 'Woolworths', type: 'company' },
+      { id: 'entity-netflix', name: 'Netflix', type: 'company' },
+    ],
+    pagination: { total: 2, limit: 50, offset: 0, hasMore: false },
+  }),
+  'core.corrections.list': () => ({
+    data: [],
+    pagination: { total: 0, limit: 50, offset: 0, hasMore: false },
+  }),
+  'finance.transactions.availableTags': () => [],
+};
+
+async function handleTrpcRoute(route: Route): Promise<void> {
+  const url = new URL(route.request().url());
+  // The pathname looks like `/trpc/core.entities.list,core.corrections.list`.
+  const pathSegment = url.pathname.replace(/^.*\/trpc\//, '');
+  const procedures = pathSegment.split(',').filter(Boolean);
+  const isBatch = url.searchParams.has('batch');
+  const inputs = parseBatchInputs(url.searchParams.get('input'));
+
+  const envelopes = procedures.map((procedure, index) => {
+    const provider = payloadProviders[procedure];
+    if (!provider) {
+      // Return a tRPC-shaped error so the client surfaces it instead of
+      // rejecting with the opaque "Missing result" message.
+      return {
+        error: {
+          json: {
+            message: `Unmocked procedure: ${procedure}`,
+            code: -32603,
+            data: {
+              code: 'INTERNAL_SERVER_ERROR',
+              httpStatus: 500,
+              path: procedure,
+            },
+          },
+        },
+      };
+    }
+    return envelope(provider(inputAt(inputs, index)));
+  });
+
+  const body = isBatch ? envelopes : envelopes[0];
+  await route.fulfill({
+    status: 200,
+    contentType: 'application/json',
+    body: JSON.stringify(body),
+  });
+}
+
 async function setupMocks(page: Page): Promise<void> {
-  // finance.imports.processImport → returns sessionId synchronously
-  await page.route(/\/trpc\/finance\.imports\.processImport/, async (route) => {
-    await fulfillTrpc(route, { sessionId: PROCESS_SESSION_ID });
-  });
-
-  // finance.imports.getImportProgress → always return completed with matched-only output
-  await page.route(/\/trpc\/finance\.imports\.getImportProgress/, async (route) => {
-    await fulfillTrpc(route, { status: 'completed', result: processedOutput });
-  });
-
-  // finance.imports.commitImport → one call, returns CommitResult
-  await page.route(/\/trpc\/finance\.imports\.commitImport/, async (route) => {
-    await fulfillTrpc(route, {
-      data: {
-        entitiesCreated: 0,
-        rulesApplied: { add: 0, edit: 0, disable: 0, remove: 0 },
-        tagRulesApplied: 0,
-        transactionsImported: 2,
-        transactionsFailed: 0,
-        failedDetails: [],
-        retroactiveReclassifications: 0,
-      },
-      message: 'Import committed',
-    });
-  });
-
-  // core.entities.list → include the matched entities so the Review step
-  // doesn't have to create any pending entity placeholders.
-  await page.route(/\/trpc\/core\.entities\.list/, async (route) => {
-    await fulfillTrpc(route, {
-      data: [
-        { id: 'entity-woolworths', name: 'Woolworths', type: 'company' },
-        { id: 'entity-netflix', name: 'Netflix', type: 'company' },
-      ],
-      pagination: { total: 2, limit: 50, offset: 0, hasMore: false },
-    });
-  });
-
-  // core.corrections.list → empty; used by the re-evaluation effect in ReviewStep.
-  await page.route(/\/trpc\/core\.corrections\.list/, async (route) => {
-    await fulfillTrpc(route, {
-      data: [],
-      pagination: { total: 0, limit: 50, offset: 0, hasMore: false },
-    });
-  });
-
-  // finance.transactions.availableTags → empty tag dictionary.
-  await page.route(/\/trpc\/finance\.transactions\.availableTags/, async (route) => {
-    await fulfillTrpc(route, []);
-  });
+  await page.route('**/trpc/**', handleTrpcRoute);
 }
 
 const csvContent = `Date,Description,Amount
