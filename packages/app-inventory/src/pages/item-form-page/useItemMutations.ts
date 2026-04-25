@@ -81,8 +81,11 @@ export function useItemMutations({ id, isEditMode, pendingConnections }: UseItem
       const newItemId = result.data.id;
       const connected = await applyConnections(newItemId, pendingConnections, connectMutation);
       reportCreateSuccess(connected, pendingConnections.length > 0);
-      void utils.inventory.items.list.invalidate();
+      // Navigate BEFORE invalidations to avoid a race where the cache invalidation
+      // triggers a refetch + re-render of the current page that drops the
+      // navigate call (observed in React 19; see issue #2157).
       void navigate(`/inventory/items/${newItemId}`);
+      void utils.inventory.items.list.invalidate();
     },
     onError: (err) => toast.error(`Failed to create: ${err.message}`),
   });
@@ -90,9 +93,13 @@ export function useItemMutations({ id, isEditMode, pendingConnections }: UseItem
   const updateMutation = trpc.inventory.items.update.useMutation({
     onSuccess: () => {
       toast.success('Item updated');
+      // Navigate BEFORE invalidations to avoid a race where the cache invalidation
+      // triggers a refetch + re-render of the edit page that silently drops the
+      // navigate call (observed in React 19; see issue #2157). The destination
+      // detail page fetches fresh data on mount via its own queries.
+      void navigate(`/inventory/items/${id}`);
       void utils.inventory.items.list.invalidate();
       void utils.inventory.items.get.invalidate({ id: id ?? '' });
-      void navigate(`/inventory/items/${id}`);
     },
     onError: (err) => toast.error(`Failed to update: ${err.message}`),
   });

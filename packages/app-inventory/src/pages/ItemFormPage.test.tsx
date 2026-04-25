@@ -4,6 +4,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { extractPrefix } from './ItemFormPage';
 
+const mockNavigate = vi.fn();
+
+vi.mock('react-router', async () => {
+  const actual = await vi.importActual<typeof import('react-router')>('react-router');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
 // ---------- prefix extraction tests (pure function) ----------
 
 describe('extractPrefix', () => {
@@ -78,6 +88,8 @@ const mockAttachMutate = vi.fn();
 const mockRemoveMutate = vi.fn();
 const mockReorderMutate = vi.fn();
 const mockRefetchPhotos = vi.fn();
+const mockListInvalidate = vi.fn();
+const mockGetInvalidate = vi.fn();
 
 vi.mock('@pops/api-client', () => ({
   trpc: {
@@ -153,8 +165,8 @@ vi.mock('@pops/api-client', () => ({
     useUtils: () => ({
       inventory: {
         items: {
-          list: { invalidate: vi.fn() },
-          get: { invalidate: vi.fn() },
+          list: { invalidate: mockListInvalidate },
+          get: { invalidate: mockGetInvalidate },
           searchByAssetId: { fetch: mockSearchByAssetIdFetch },
           countByAssetPrefix: { fetch: mockCountByAssetPrefixFetch },
         },
@@ -613,5 +625,97 @@ describe('ItemFormPage — Form gaps (#1851)', () => {
     const editBtn = screen.getByRole('button', { name: /edit/i });
     fireEvent.click(editBtn);
     expect(document.querySelector('textarea[name="notes"]')).toBeInTheDocument();
+  });
+});
+
+describe('ItemFormPage — Navigation order on save (#2157)', () => {
+  it('navigates to detail page before invalidating cache on update', async () => {
+    mockItemQuery.mockReturnValue({
+      data: {
+        data: {
+          id: 'item-1',
+          itemName: 'MacBook',
+          brand: null,
+          model: null,
+          itemId: null,
+          type: 'Electronics',
+          condition: 'good',
+          room: null,
+          inUse: false,
+          deductible: false,
+          purchaseDate: null,
+          warrantyExpires: null,
+          replacementValue: null,
+          resaleValue: null,
+          purchasePrice: null,
+          assetId: null,
+          notes: null,
+          locationId: null,
+          lastEditedTime: '2026-01-01',
+          purchaseTransactionId: null,
+          purchasedFromId: null,
+          purchasedFromName: null,
+        },
+      },
+      isLoading: false,
+      error: null,
+    });
+
+    renderEdit('item-1');
+
+    // Save the form (no field changes required — RHF submits current values).
+    fireEvent.click(screen.getByRole('button', { name: /save changes/i }));
+
+    await vi.waitFor(() => {
+      expect(mockUpdateMutate).toHaveBeenCalledTimes(1);
+    });
+
+    // Navigate must be called with the detail URL.
+    expect(mockNavigate).toHaveBeenCalledWith('/inventory/items/item-1');
+
+    // Both invalidations must run after navigation.
+    expect(mockListInvalidate).toHaveBeenCalled();
+    expect(mockGetInvalidate).toHaveBeenCalledWith({ id: 'item-1' });
+
+    // Assert call order via Vitest's invocation call order: navigate must
+    // happen BEFORE either invalidate to avoid the React 19 race that drops
+    // the navigation when the cache invalidation triggers a refetch + rerender.
+    const [navOrder] = mockNavigate.mock.invocationCallOrder;
+    const [listOrder] = mockListInvalidate.mock.invocationCallOrder;
+    const [getOrder] = mockGetInvalidate.mock.invocationCallOrder;
+    if (navOrder === undefined || listOrder === undefined || getOrder === undefined) {
+      throw new Error('Expected navigate, list.invalidate and get.invalidate to be called');
+    }
+    expect(navOrder).toBeLessThan(listOrder);
+    expect(navOrder).toBeLessThan(getOrder);
+  });
+
+  it('navigates to detail page before invalidating cache on create', async () => {
+    renderCreate();
+
+    const nameInput = document.querySelector('input[name="itemName"]') as HTMLInputElement;
+    const typeSelect = document.querySelector('select[name="type"]') as HTMLSelectElement;
+    fireEvent.change(nameInput, { target: { value: 'New Item' } });
+    fireEvent.change(typeSelect, { target: { value: 'Electronics' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /create item/i }));
+
+    await vi.waitFor(() => {
+      expect(mockCreateMutate).toHaveBeenCalledTimes(1);
+    });
+
+    // mockCreateMutate's onSuccess returns { data: { id: 'new-id' } }.
+    await vi.waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/inventory/items/new-id');
+    });
+
+    expect(mockListInvalidate).toHaveBeenCalled();
+
+    const [navOrder] = mockNavigate.mock.invocationCallOrder;
+    const [listOrder] = mockListInvalidate.mock.invocationCallOrder;
+    if (navOrder === undefined || listOrder === undefined) {
+      throw new Error('Expected navigate and list.invalidate to be called');
+    }
+    expect(navOrder).toBeLessThan(listOrder);
   });
 });
