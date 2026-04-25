@@ -84,8 +84,20 @@ async function sendFileWithErrorHandling(res: Response, filePath: string): Promi
   });
 }
 
-/** Try to serve a file with cache headers. Returns true if the file was served. */
-export async function tryServeFile(filePath: string, res: Response): Promise<boolean> {
+/**
+ * Try to serve a file with cache headers. Returns true if the file was served.
+ *
+ * @param filePath absolute path to the file on disk
+ * @param res Express response
+ * @param cacheControl override the default `Cache-Control` header. Defaults to
+ *   `public, max-age=604800` (suitable for immutable media images). Pass a
+ *   stricter value (e.g. `private, max-age=3600`) for user-uploaded content.
+ */
+export async function tryServeFile(
+  filePath: string,
+  res: Response,
+  cacheControl: string = CACHE_CONTROL
+): Promise<boolean> {
   try {
     const fileStat = await stat(filePath);
     const ext = extname(filePath);
@@ -94,7 +106,7 @@ export async function tryServeFile(filePath: string, res: Response): Promise<boo
 
     res.set({
       'Content-Type': contentType,
-      'Cache-Control': CACHE_CONTROL,
+      'Cache-Control': cacheControl,
       ETag: `"${etag}"`,
     });
 

@@ -189,25 +189,46 @@ describe('inventory.photos.upload', () => {
     }
   });
 
-  it('throws BAD_REQUEST when INVENTORY_IMAGES_DIR is not set', async () => {
+  it('falls back to ./data/inventory/images when INVENTORY_IMAGES_DIR is unset', async () => {
+    // Run the upload from a temp cwd so the default relative path
+    // (`./data/inventory/images`) resolves inside a sandbox we can clean up,
+    // rather than polluting the repo working tree.
+    const { default: sharp } = await import('sharp');
+    const fakeJpegBuffer = await sharp({
+      create: { width: 50, height: 50, channels: 3, background: { r: 0, g: 0, b: 0 } },
+    })
+      .jpeg()
+      .toBuffer();
+
+    const sandboxCwd = join(tmpdir(), `pops-upload-default-${Date.now()}`);
+    mkdirSync(sandboxCwd, { recursive: true });
+    const originalCwd = process.cwd();
     const originalEnv = process.env.INVENTORY_IMAGES_DIR;
     delete process.env.INVENTORY_IMAGES_DIR;
+    process.chdir(sandboxCwd);
 
     try {
       const itemId = seedInventoryItem(db, { item_name: 'Camera' });
-      const fakeBase64 = Buffer.from('fake-data').toString('base64');
 
-      await expect(
-        caller.inventory.photos.upload({ itemId, fileBase64: fakeBase64 })
-      ).rejects.toThrow(TRPCError);
+      const result = await caller.inventory.photos.upload({
+        itemId,
+        fileBase64: fakeJpegBuffer.toString('base64'),
+      });
 
-      try {
-        await caller.inventory.photos.upload({ itemId, fileBase64: fakeBase64 });
-      } catch (err) {
-        expect((err as TRPCError).code).toBe('BAD_REQUEST');
-      }
+      expect(result.message).toBe('Photo uploaded');
+      expect(result.data.filePath).toMatch(/^items\/.+\/photo_001\.jpg$/);
+      // The file should land under the resolved default dir.
+      expect(
+        existsSync(join(sandboxCwd, 'data', 'inventory', 'images', result.data.filePath))
+      ).toBe(true);
     } finally {
-      process.env.INVENTORY_IMAGES_DIR = originalEnv;
+      process.chdir(originalCwd);
+      if (originalEnv === undefined) {
+        delete process.env.INVENTORY_IMAGES_DIR;
+      } else {
+        process.env.INVENTORY_IMAGES_DIR = originalEnv;
+      }
+      rmSync(sandboxCwd, { recursive: true, force: true });
     }
   });
 

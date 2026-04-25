@@ -11,6 +11,7 @@ import { homeInventory, itemPhotos } from '@pops/db-types';
 
 import { getDb, getDrizzle } from '../../../db.js';
 import { NotFoundError, ValidationError } from '../../../shared/errors.js';
+import { getInventoryImagesDir } from './paths.js';
 
 import type {
   AttachPhotoInput,
@@ -89,10 +90,7 @@ export async function uploadPhoto(input: UploadPhotoInput): Promise<ItemPhotoRow
 
   assertItemExists(input.itemId);
 
-  const baseDir = process.env.INVENTORY_IMAGES_DIR;
-  if (!baseDir) {
-    throw new ValidationError('INVENTORY_IMAGES_DIR is not configured');
-  }
+  const baseDir = getInventoryImagesDir();
 
   // Compress the image (resize, convert HEIC→JPEG, strip EXIF)
   const compressed = await compressImage(input.buffer);
@@ -144,12 +142,10 @@ export function removePhoto(id: number): void {
   const photo = getPhoto(id); // Validates existence
 
   // Delete file from disk (best-effort — missing file is not an error)
-  const baseDir = process.env.INVENTORY_IMAGES_DIR;
-  if (baseDir) {
-    const fullPath = resolve(baseDir, photo.filePath);
-    if (existsSync(fullPath)) {
-      unlinkSync(fullPath);
-    }
+  const baseDir = getInventoryImagesDir();
+  const fullPath = resolve(baseDir, photo.filePath);
+  if (existsSync(fullPath)) {
+    unlinkSync(fullPath);
   }
 
   const db = getDrizzle();

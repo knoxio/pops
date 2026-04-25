@@ -68,8 +68,12 @@ export function PhotoGallery({
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const sorted = [...photos].toSorted((a, b) => a.sortOrder - b.sortOrder);
+  // Encode each path segment individually so slashes survive the URL.
+  // `encodeURIComponent(filePath)` would turn `items/{id}/photo_001.jpg` into
+  // `items%2F{id}%2Fphoto_001.jpg`, which Express routes as a single segment
+  // and would not match `/items/:itemId/:filename`.
   const photoSrc = useCallback(
-    (filePath: string) => `${baseUrl}/${encodeURIComponent(filePath)}`,
+    (filePath: string) => `${baseUrl}/${filePath.split('/').map(encodeURIComponent).join('/')}`,
     [baseUrl]
   );
 

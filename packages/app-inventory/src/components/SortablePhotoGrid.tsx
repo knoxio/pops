@@ -185,7 +185,7 @@ export function SortablePhotoGrid({
           key={photo.id}
           photo={photo}
           index={index}
-          src={`${baseUrl}/${encodeURIComponent(photo.filePath)}`}
+          src={`${baseUrl}/${photo.filePath.split('/').map(encodeURIComponent).join('/')}`}
           canReorder={canReorder}
           isReordering={isReordering}
           isDragging={dragIndex === index}

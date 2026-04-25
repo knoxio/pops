@@ -98,10 +98,25 @@ describe('SortablePhotoGrid', () => {
     });
   });
 
-  it('uses custom baseUrl for image sources', () => {
+  it('uses custom baseUrl for image sources, encoding each path segment', () => {
     render(<SortablePhotoGrid photos={photos} onReorder={vi.fn()} baseUrl="/custom/url" />);
     const imgs = screen.getAllByRole('img');
-    expect(imgs[0]).toHaveAttribute('src', '/custom/url/item-1%2Fphoto-a.jpg');
+    // Slashes are preserved so the URL maps to /items/:itemId/:filename on the API.
+    expect(imgs[0]).toHaveAttribute('src', '/custom/url/item-1/photo-a.jpg');
+  });
+
+  it('percent-encodes special characters in path segments', () => {
+    const tricky: PhotoItem[] = [
+      { id: 1, filePath: 'item with space/photo a.jpg', caption: null, sortOrder: 0 },
+    ];
+    render(
+      <SortablePhotoGrid photos={tricky} onReorder={vi.fn()} baseUrl="/api/inventory/photos" />
+    );
+    const imgs = screen.getAllByRole('img');
+    expect(imgs[0]).toHaveAttribute(
+      'src',
+      '/api/inventory/photos/item%20with%20space/photo%20a.jpg'
+    );
   });
 
   it('clears drag state on dragEnd', () => {
