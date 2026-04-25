@@ -3,7 +3,7 @@
  * Supports controlled and uncontrolled modes
  */
 import { type VariantProps } from 'class-variance-authority';
-import { forwardRef, type InputHTMLAttributes, type ReactNode } from 'react';
+import { forwardRef, useMemo, useRef, type InputHTMLAttributes, type ReactNode } from 'react';
 
 import { cn } from '../lib/utils';
 import { useTextInput } from './TextInput.hooks';
@@ -50,12 +50,21 @@ export interface TextInputProps
 /**
  * TextInput component
  *
+ * Modes:
+ * - **Controlled** — pass `value` and `onChange`. The component renders a
+ *   controlled input and React owns the value.
+ * - **Uncontrolled** — omit `value`. The component renders an uncontrolled
+ *   input (no `value` prop, only `defaultValue`). This is what
+ *   `react-hook-form`'s `register()` expects: it writes to the input via the
+ *   ref on `form.reset()`, and React must not clobber that value on re-render.
+ *
  * @example
  * ```tsx
  * <TextInput placeholder="Enter text..." />
  * <TextInput variant="ghost" clearable />
  * <TextInput prefix={<SearchIcon />} />
  * <TextInput suffix={<Icon />} clearable />
+ * <TextInput {...form.register('name')} defaultValue={item?.name} />
  * ```
  */
 interface TextInputBodyProps {
@@ -72,6 +81,30 @@ interface TextInputBodyProps {
   inputProps: React.InputHTMLAttributes<HTMLInputElement>;
 }
 
+/**
+ * Imperatively clear an uncontrolled input and notify listeners. Uses the
+ * native value setter so React's synthetic event system sees the change, and
+ * dispatches a bubbling `input` event so ref-based subscribers (e.g.
+ * react-hook-form) react to the cleared value.
+ */
+function clearUncontrolledInput(el: HTMLInputElement) {
+  const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
+  setter?.call(el, '');
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+}
+
+/** Merge a local ref with a forwarded ref (callback or object). */
+function mergeRefs(
+  local: React.RefObject<HTMLInputElement | null>,
+  forwarded: React.Ref<HTMLInputElement>
+) {
+  return (el: HTMLInputElement | null) => {
+    local.current = el;
+    if (typeof forwarded === 'function') forwarded(el);
+    else if (forwarded) forwarded.current = el;
+  };
+}
+
 function TextInputBody({
   ti,
   inputRef,
@@ -85,14 +118,22 @@ function TextInputBody({
   inputClassName,
   inputProps,
 }: TextInputBodyProps) {
+  const localRef = useRef<HTMLInputElement | null>(null);
   const showClearButton = clearable && ti.hasValue && !disabled;
+  const setRef = useMemo(() => mergeRefs(localRef, inputRef), [inputRef]);
+
+  const handleClear = () => {
+    if (!ti.isControlled && localRef.current) clearUncontrolledInput(localRef.current);
+    ti.handleClear();
+  };
+
   return (
     <>
       {prefix && <span className="flex-shrink-0 text-muted-foreground">{prefix}</span>}
       <input
-        ref={inputRef}
+        ref={setRef}
         className={inputClassName}
-        value={ti.value}
+        {...(ti.isControlled ? { value: ti.value } : { defaultValue: ti.defaultValue })}
         onChange={ti.handleChange}
         onFocus={(e) => {
           ti.setIsFocused(true);
@@ -106,7 +147,7 @@ function TextInputBody({
         aria-invalid={!!error}
         {...inputProps}
       />
-      <TrailingSlot showClearButton={showClearButton} suffix={suffix} onClear={ti.handleClear} />
+      <TrailingSlot showClearButton={showClearButton} suffix={suffix} onClear={handleClear} />
     </>
   );
 }
