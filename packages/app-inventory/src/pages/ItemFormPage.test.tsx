@@ -719,3 +719,108 @@ describe('ItemFormPage — Navigation order on save (#2157)', () => {
     expect(navOrder).toBeLessThan(listOrder);
   });
 });
+
+// ---------- checkbox population (#2175) ----------
+
+/**
+ * Edit-mode regression coverage for #2175. The Radix `CheckboxInput` exposes
+ * `checked` / `onCheckedChange`, which is incompatible with RHF's `register()`
+ * spread. The form now wires `inUse` / `deductible` through `Controller`, so
+ * `reset(itemToFormValues(item))` must propagate the seeded boolean values
+ * into the rendered `<button role="checkbox">` elements.
+ */
+function seededItem(overrides: { inUse?: boolean; deductible?: boolean } = {}) {
+  return {
+    id: 'item-1',
+    itemName: 'MacBook',
+    brand: null,
+    model: null,
+    itemId: null,
+    type: 'Electronics',
+    condition: 'good',
+    room: null,
+    inUse: overrides.inUse ?? false,
+    deductible: overrides.deductible ?? false,
+    purchaseDate: null,
+    warrantyExpires: null,
+    replacementValue: null,
+    resaleValue: null,
+    purchasePrice: null,
+    assetId: 'ELEC01',
+    notes: null,
+    locationId: null,
+    lastEditedTime: '2026-01-01',
+    purchaseTransactionId: null,
+    purchasedFromId: null,
+    purchasedFromName: null,
+  };
+}
+
+describe('ItemFormPage — checkbox population (#2175)', () => {
+  it('populates In Use checkbox from seeded item in edit mode', async () => {
+    mockItemQuery.mockReturnValue({
+      data: { data: seededItem({ inUse: true }) },
+      isLoading: false,
+      error: null,
+    });
+
+    renderEdit('item-1');
+
+    const inUse = await screen.findByRole('checkbox', { name: /in use/i });
+    await vi.waitFor(() => {
+      expect(inUse.getAttribute('aria-checked')).toBe('true');
+    });
+  });
+
+  it('populates Tax Deductible checkbox from seeded item in edit mode', async () => {
+    mockItemQuery.mockReturnValue({
+      data: { data: seededItem({ deductible: true }) },
+      isLoading: false,
+      error: null,
+    });
+
+    renderEdit('item-1');
+
+    const deductible = await screen.findByRole('checkbox', { name: /tax deductible/i });
+    await vi.waitFor(() => {
+      expect(deductible.getAttribute('aria-checked')).toBe('true');
+    });
+  });
+
+  it('toggles the In Use checkbox in create mode', () => {
+    renderCreate();
+
+    const inUse = screen.getByRole('checkbox', { name: /in use/i });
+    expect(inUse.getAttribute('aria-checked')).toBe('false');
+
+    fireEvent.click(inUse);
+    expect(inUse.getAttribute('aria-checked')).toBe('true');
+
+    fireEvent.click(inUse);
+    expect(inUse.getAttribute('aria-checked')).toBe('false');
+  });
+
+  it('submits the toggled inUse value in the create payload', async () => {
+    renderCreate();
+
+    const inUse = screen.getByRole('checkbox', { name: /in use/i });
+    expect(inUse.getAttribute('aria-checked')).toBe('false');
+
+    fireEvent.click(inUse);
+    expect(inUse.getAttribute('aria-checked')).toBe('true');
+
+    // Required fields for the create submit path.
+    const nameInput = document.querySelector('input[name="itemName"]') as HTMLInputElement;
+    const typeSelect = document.querySelector('select[name="type"]') as HTMLSelectElement;
+    fireEvent.change(nameInput, { target: { value: 'New Gadget' } });
+    fireEvent.change(typeSelect, { target: { value: 'Electronics' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /create item/i }));
+
+    await vi.waitFor(() => {
+      expect(mockCreateMutate).toHaveBeenCalledWith(
+        expect.objectContaining({ inUse: true, deductible: false })
+      );
+    });
+  });
+});

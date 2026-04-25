@@ -65,6 +65,7 @@ function CoreSection({ model }: { model: Model }) {
   const {
     form: {
       register,
+      control,
       watch,
       setValue,
       formState: { errors },
@@ -80,6 +81,7 @@ function CoreSection({ model }: { model: Model }) {
   return (
     <CoreFieldsSection
       register={register}
+      control={control}
       watch={watch}
       setValue={setValue}
       errors={errors}

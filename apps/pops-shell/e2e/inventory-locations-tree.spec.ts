@@ -90,11 +90,9 @@ async function createChildLocation(
  * Open the item edit page, pick the target location via LocationPicker, save.
  * Uses the search field to filter to the freshly-created location.
  *
- * Known product bug (#2157): the update mutation's onSuccess navigate() back
- * to the detail page does not reliably fire in e2e — the toast and cache
- * invalidation succeed, but the URL can stay on `/edit`. To avoid depending
- * on that redirect we treat the success toast as the positive completion
- * signal; tree-side assertions in the sibling test prove the write persisted.
+ * Treat the success toast as the positive completion signal rather than the
+ * post-save redirect; tree-side assertions in the sibling test prove the
+ * write persisted.
  */
 async function assignItemToLocation(
   page: Page,
@@ -158,23 +156,12 @@ async function deleteEmptyLocation(page: Page, name: string): Promise<void> {
 }
 
 /*
- * Skipped until the underlying item-edit-form bug lands: on WebKit under the
- * e2e harness, react-hook-form's `reset(itemToFormValues(item))` populates
- * selects/dates/notes but leaves the registered text inputs (itemName, brand,
- * model, itemId, assetId) and checkboxes (inUse, deductible) empty. Clicking
- * Save Changes then trips the `itemName is required` validation, the update
- * mutation never fires, and the success toast the assignment flow waits for
- * never appears.
- *
- * Product bugs tracking the underlying failures:
- *   - #2175 — form reset() does not sync text inputs + checkboxes on WebKit
- *   - #2157 — post-save navigate() silently drops (separate but adjacent)
- *
- * Once #2175 is fixed, flip the `.skip` back to a normal `test.describe` and
- * re-enable both scenarios. The tree CRUD half of the flow is already covered
- * indirectly by the location helpers below.
+ * End-to-end coverage for the locations tree: parent/child CRUD plus the
+ * assignment of a seeded item to the new child via the item edit form's
+ * LocationPicker. The serial pair verifies that the assignment persists in
+ * the tree contents panel after navigation.
  */
-test.describe.skip('Inventory — locations tree CRUD and item assignment', () => {
+test.describe('Inventory — locations tree CRUD and item assignment', () => {
   test.describe.configure({ mode: 'serial' });
 
   // Shared across the serial tests in this describe block.
@@ -215,7 +202,7 @@ test.describe.skip('Inventory — locations tree CRUD and item assignment', () =
     await createChildLocation(page, parentName, childName);
 
     // Assigning the item to the new child persists the link that the next
-    // test verifies from the tree UI. Blocked by #2175 on WebKit.
+    // test verifies from the tree UI.
     await assignItemToLocation(page, SEEDED_ITEM_ID, childName);
   });
 
@@ -252,9 +239,7 @@ test.describe.skip('Inventory — locations tree CRUD and item assignment', () =
       await useRealApi(page);
 
       // 1. Reassign the seeded item back to its original seeded location.
-      //    Same form-reset bug (#2175) + nav bug (#2157) apply here — assert
-      //    on the success toast rather than the post-save URL redirect which
-      //    may not fire.
+      //    Assert on the success toast rather than the post-save URL redirect.
       await page.goto(`/inventory/items/${SEEDED_ITEM_ID}/edit`);
       await expect(page.getByRole('heading', { name: /edit item/i })).toBeVisible({
         timeout: 10_000,

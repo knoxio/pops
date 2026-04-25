@@ -3,12 +3,19 @@ import { BasicInfoSection } from './core-fields/BasicInfoSection';
 import { ClassificationSection } from './core-fields/ClassificationSection';
 import { DatesAndValuesSection } from './core-fields/DatesAndValuesSection';
 
-import type { FieldErrors, UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form';
+import type {
+  Control,
+  FieldErrors,
+  UseFormRegister,
+  UseFormSetValue,
+  UseFormWatch,
+} from 'react-hook-form';
 
 import type { LocationTreeNode } from '../../location-tree-page/utils';
 
 interface CoreFieldsSectionProps {
   register: UseFormRegister<ItemFormValues>;
+  control: Control<ItemFormValues>;
   watch: UseFormWatch<ItemFormValues>;
   setValue: UseFormSetValue<ItemFormValues>;
   errors: FieldErrors<ItemFormValues>;
@@ -23,6 +30,7 @@ interface CoreFieldsSectionProps {
 
 export function CoreFieldsSection({
   register,
+  control,
   watch,
   setValue,
   errors,
@@ -49,6 +57,7 @@ export function CoreFieldsSection({
       />
       <ClassificationSection
         register={register}
+        control={control}
         watch={watch}
         setValue={setValue}
         errors={errors}

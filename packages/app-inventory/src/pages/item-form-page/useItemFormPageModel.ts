@@ -69,10 +69,11 @@ function useResetFromItem(
   itemData: ItemQueryResult | undefined,
   reset: (values: ItemFormValues) => void
 ): void {
+  const item = itemData?.data;
   useEffect(() => {
-    if (!itemData?.data) return;
-    reset(itemToFormValues(itemData.data));
-  }, [itemData, reset]);
+    if (!item) return;
+    reset(itemToFormValues(item));
+  }, [item, reset]);
 }
 
 function useUnsavedChangesGuard(isDirty: boolean): void {
