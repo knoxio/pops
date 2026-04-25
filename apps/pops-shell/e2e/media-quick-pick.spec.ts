@@ -7,13 +7,17 @@
  * to the watchlist, and confirm it appears on `/media/watchlist`.
  *
  * Seed context (apps/pops-api/src/db/seeder.ts):
- *   `quickPick` filters out movies with completed watch_history rows, so the
- *   eligible pool is the 5 unwatched seeded movies: Forrest Gump, Fight Club,
- *   The Matrix, Interstellar, Spider-Man: Across the Spider-Verse. Of those,
- *   Fight Club / The Matrix / Interstellar are seeded onto the watchlist
- *   already; Forrest Gump and Spider-Verse are NOT — but the picker is
- *   random so any of the 5 may surface. The test handles both starting
- *   states ("Add to watchlist" vs already-on) symmetrically.
+ *   `quickPick` filters out movies with completed watch_history rows. The
+ *   seeded pool starts at 5 unwatched movies (Forrest Gump, Fight Club, The
+ *   Matrix, Interstellar, Spider-Verse), but other specs running earlier in
+ *   the session — notably `media-debrief-flow` — also mark movies as watched,
+ *   so the pool can be smaller by the time this spec runs. The count
+ *   assertions therefore target a small N that the pool can always satisfy
+ *   (count=2 with a >=2 pool always shows exactly 2 cards) rather than
+ *   asserting the max. Of the 5, Fight Club / The Matrix / Interstellar are
+ *   seeded onto the watchlist already; Forrest Gump and Spider-Verse are
+ *   NOT — but the picker is random so any may surface. The test handles
+ *   both starting states ("Add to watchlist" vs already-on) symmetrically.
  *
  * Cleanup:
  *   The seeded `e2e` env is long-lived, so the test removes any watchlist
@@ -122,19 +126,22 @@ test.describe('Media — quick pick generate and add to watchlist (#2130)', () =
 
     // Default count is 3 — the URL search param drives the query and the
     // selected button reflects via aria-pressed. Wait for the grid to
-    // populate (skeletons disappear) before counting cards.
+    // populate (skeletons disappear) before counting cards. The pool has
+    // shrunk in earlier sessions (debrief flow marks movies watched), so
+    // assert at-least-2 rather than exactly-3.
     await expect(countButton(page, 3)).toHaveAttribute('aria-pressed', 'true');
     const watchThis = page.getByRole('button', { name: /^Watch This$/ });
     await expect(watchThis.first()).toBeVisible({ timeout: 10_000 });
-    await expect(watchThis).toHaveCount(3);
+    const initialCount = await watchThis.count();
+    expect(initialCount).toBeGreaterThanOrEqual(2);
 
-    // ----- Step 2: change count to 5 and verify cards track ----------------
-    // The eligible unwatched pool is 5 movies (see file header), so count=5
-    // returns exactly 5 picks.
-    await countButton(page, 5).click();
-    await expect(countButton(page, 5)).toHaveAttribute('aria-pressed', 'true');
-    await expect(page).toHaveURL(/[?&]count=5(&|$)/);
-    await expect(watchThis).toHaveCount(5, { timeout: 10_000 });
+    // ----- Step 2: change count to 2 and verify cards track ----------------
+    // count=2 reliably returns exactly 2 even when the unwatched pool has
+    // shrunk to its minimum, so this is the strict equality assertion.
+    await countButton(page, 2).click();
+    await expect(countButton(page, 2)).toHaveAttribute('aria-pressed', 'true');
+    await expect(page).toHaveURL(/[?&]count=2(&|$)/);
+    await expect(watchThis).toHaveCount(2, { timeout: 10_000 });
 
     // ----- Step 3: capture the first pick's title --------------------------
     // Each pick wraps a MediaCard whose accessible name is `${title} (Movie)`.
