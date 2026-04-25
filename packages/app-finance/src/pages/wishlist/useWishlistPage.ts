@@ -83,8 +83,16 @@ export function useWishlistPage() {
     setIsDialogOpen(true);
   };
   const onSubmit = (values: WishlistFormValues) => {
-    if (editingItem) updateMutation.mutate({ id: editingItem.id, data: values });
-    else createMutation.mutate(values);
+    // The server rejects empty strings for `url` (must pass `z.string().url()`).
+    // Coerce empty strings to `null` so the strict server contract holds without
+    // forcing the form input to use a `null`-valued state.
+    const payload = {
+      ...values,
+      url: values.url === '' ? null : (values.url ?? null),
+      notes: values.notes === '' ? null : (values.notes ?? null),
+    };
+    if (editingItem) updateMutation.mutate({ id: editingItem.id, data: payload });
+    else createMutation.mutate(payload);
   };
 
   return {
