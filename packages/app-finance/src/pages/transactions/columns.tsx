@@ -1,21 +1,23 @@
-import { Badge, type ColumnFilter, dateRangeFilter, SortableHeader } from '@pops/ui';
+import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+
+import {
+  Badge,
+  Button,
+  type ColumnFilter,
+  dateRangeFilter,
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  SortableHeader,
+} from '@pops/ui';
 
 import { TagEditor } from '../../components/TagEditor';
 
 import type { ColumnDef } from '@tanstack/react-table';
 
-export interface Transaction {
-  id: string;
-  description: string;
-  account: string;
-  amount: number;
-  date: string;
-  type: string;
-  tags: string[];
-  entityId: string | null;
-  entityName: string | null;
-  location: string | null;
-}
+import type { Transaction } from './types';
+
+export type { Transaction } from './types';
 
 interface BuildColumnsArgs {
   availableTags: string[];
@@ -25,6 +27,8 @@ interface BuildColumnsArgs {
     description: string
   ) => (tags: string[]) => Promise<void>;
   onTagSuggest: (description: string, entityId: string | null) => () => Promise<string[]>;
+  onEdit: (transaction: Transaction) => void;
+  onDelete: (id: string) => void;
 }
 
 const dateColumn: ColumnDef<Transaction> = {
@@ -122,6 +126,35 @@ function buildTagsColumn(args: BuildColumnsArgs): ColumnDef<Transaction> {
   };
 }
 
+function buildActionsColumn(args: BuildColumnsArgs): ColumnDef<Transaction> {
+  return {
+    id: 'actions',
+    cell: ({ row }) => (
+      <div className="text-right">
+        <DropdownMenu
+          trigger={
+            <Button variant="ghost" size="icon" aria-label="Actions">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          }
+          align="end"
+        >
+          <DropdownMenuItem onClick={() => args.onEdit(row.original)}>
+            <Pencil className="mr-2 h-4 w-4" /> Edit
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
+            onClick={() => args.onDelete(row.original.id)}
+          >
+            <Trash2 className="mr-2 h-4 w-4" /> Delete
+          </DropdownMenuItem>
+        </DropdownMenu>
+      </div>
+    ),
+  };
+}
+
 export function buildColumns(args: BuildColumnsArgs): ColumnDef<Transaction>[] {
   return [
     dateColumn,
@@ -130,6 +163,7 @@ export function buildColumns(args: BuildColumnsArgs): ColumnDef<Transaction>[] {
     amountColumn,
     typeColumn,
     buildTagsColumn(args),
+    buildActionsColumn(args),
   ];
 }
 

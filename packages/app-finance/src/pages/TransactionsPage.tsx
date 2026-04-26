@@ -1,3 +1,4 @@
+import { Plus } from 'lucide-react';
 import { useCallback } from 'react';
 
 import { trpc } from '@pops/api-client';
@@ -5,6 +6,9 @@ import { useSetPageContext } from '@pops/navigation';
 import { Alert, Button, DataTable, PageHeader, Skeleton } from '@pops/ui';
 
 import { buildColumns, TRANSACTION_TABLE_FILTERS, type Transaction } from './transactions/columns';
+import { DeleteTransactionDialog } from './transactions/DeleteTransactionDialog';
+import { TransactionFormDialog } from './transactions/TransactionFormDialog';
+import { useTransactionsPage } from './transactions/useTransactionsPage';
 
 function ErrorView({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
@@ -81,21 +85,54 @@ function useTagHandlers() {
 
 export function TransactionsPage() {
   useSetPageContext({ page: 'transactions' });
-  const { data, isLoading, error, refetch } = trpc.finance.transactions.list.useQuery({
-    limit: 100,
-  });
-  const { data: availableTags } = trpc.finance.transactions.availableTags.useQuery();
+  const state = useTransactionsPage();
   const { onTagSave, onTagSuggest } = useTagHandlers();
-  const columns = buildColumns({ availableTags: availableTags ?? [], onTagSave, onTagSuggest });
 
-  if (error) return <ErrorView message={error.message} onRetry={() => refetch()} />;
+  if (state.query.error) {
+    return <ErrorView message={state.query.error.message} onRetry={() => state.query.refetch()} />;
+  }
+
+  const columns = buildColumns({
+    availableTags: state.availableTags,
+    onTagSave,
+    onTagSuggest,
+    onEdit: state.handleEdit,
+    onDelete: state.setDeletingId,
+  });
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Transactions"
-        description={data ? `${data.pagination.total} total transactions` : undefined}
+        description={
+          state.query.data ? `${state.query.data.pagination.total} total transactions` : undefined
+        }
+        actions={
+          <Button onClick={state.handleAdd}>
+            <Plus className="mr-2 h-4 w-4" /> Add Transaction
+          </Button>
+        }
       />
-      <TableContent isLoading={isLoading} transactions={data?.data} columns={columns} />
+      <TableContent
+        isLoading={state.query.isLoading}
+        transactions={state.query.data?.data}
+        columns={columns}
+      />
+      <TransactionFormDialog
+        open={state.isDialogOpen}
+        onOpenChange={state.setIsDialogOpen}
+        editingTransaction={state.editingTransaction}
+        form={state.form}
+        isSubmitting={state.isSubmitting}
+        onSubmit={state.onSubmit}
+        entities={state.entities}
+      />
+      <DeleteTransactionDialog
+        deletingId={state.deletingId}
+        setDeletingId={state.setDeletingId}
+        isDeleting={state.deleteMutation.isPending}
+        onConfirm={(id) => state.deleteMutation.mutate({ id })}
+      />
     </div>
   );
 }
