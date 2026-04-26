@@ -35,9 +35,13 @@ import { useRealApi } from './helpers/use-real-api';
 const E2E_ENV = 'e2e';
 const API_BASE = 'http://localhost:3000';
 
-interface DimensionResponse {
-  result: { data: { data: { id: number; name: string } } };
-}
+/**
+ * The page captures responses via `page.waitForResponse`, which sees the
+ * tRPC client's batched call (`?batch=1`) — the response is an array even
+ * for a single procedure. Direct API calls below (`req.get`/`req.post`) are
+ * unbatched and use the singular `DimensionDirectResponse` shape.
+ */
+type DimensionResponse = Array<{ result: { data: { data: { id: number; name: string } } } }>;
 
 interface DimensionListResponse {
   result: { data: { data: { id: number; name: string; active: boolean }[] } };
@@ -203,7 +207,7 @@ test.describe('Media — tier list create, drag, save, reload (#2131, #2190)', (
     const createResponse = await createPromise;
     expect(createResponse.ok()).toBe(true);
     const createBody = (await createResponse.json()) as DimensionResponse;
-    createdDimensionId = createBody.result.data.data.id;
+    createdDimensionId = createBody[0].result.data.data.id;
     expect(createdDimensionId).toBeGreaterThan(0);
 
     // ----- Step 3: dimension chip is selected, unranked pool populates -----
