@@ -76,7 +76,11 @@ function uniqueAlphaSuffix(): string {
 }
 
 async function expectPreviewIncludes(dialog: Locator, description: string): Promise<void> {
-  await expect(previewMatchRows(dialog).filter({ hasText: description })).toBeVisible({
+  // Multiple seeded transactions can match a single description fragment
+  // (e.g. "Woolworths Metro" + "Woolworths" + "Woolworths Petrol"), so scope
+  // the visibility check to the first match — the preview just needs to
+  // surface at least one row containing the description.
+  await expect(previewMatchRows(dialog).filter({ hasText: description }).first()).toBeVisible({
     timeout: 10_000,
   });
 }
