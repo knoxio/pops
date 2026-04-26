@@ -1,21 +1,26 @@
-import { LayoutGrid } from 'lucide-react';
+import { LayoutGrid, Plus } from 'lucide-react';
 
 /**
  * TierListPage — dimension selector + TierListBoard for drag-and-drop tier placement.
  */
-import { Alert, AlertDescription, AlertTitle } from '@pops/ui';
+import { Alert, AlertDescription, AlertTitle, Button } from '@pops/ui';
 
 import { TierListSummary } from '../components/TierListSummary';
 import { BlacklistDialog } from './tier-list/BlacklistDialog';
+import { CreateDimensionDialog } from './tier-list/CreateDimensionDialog';
 import { DimensionChips } from './tier-list/DimensionChips';
 import { PoolSkeleton } from './tier-list/PoolSkeleton';
 import { TierBoardSection } from './tier-list/TierBoardSection';
 import { useTierListPageModel } from './tier-list/useTierListPageModel';
 
-function NoActiveDimensions() {
+function NoActiveDimensions({ onCreate }: { onCreate: () => void }) {
   return (
-    <div className="text-center py-16">
+    <div className="text-center py-16 space-y-4">
       <p className="text-muted-foreground">No active dimensions. Create one to get started.</p>
+      <Button onClick={onCreate}>
+        <Plus className="h-4 w-4 mr-1" />
+        Create dimension
+      </Button>
     </div>
   );
 }
@@ -48,16 +53,29 @@ function TierListBody({ m }: { m: ReturnType<typeof useTierListPageModel> }) {
   );
 }
 
-function TierListMain({ m }: { m: ReturnType<typeof useTierListPageModel> }) {
-  if (m.dimsLoading) return <PoolSkeleton />;
-  if (m.activeDimensions.length === 0) return <NoActiveDimensions />;
+function DimensionHeader({ m }: { m: ReturnType<typeof useTierListPageModel> }) {
   return (
-    <>
+    <div className="flex flex-wrap items-center justify-center gap-2">
       <DimensionChips
         activeDimensions={m.activeDimensions}
         effectiveDimension={m.effectiveDimension}
         onChange={m.handleDimensionChange}
       />
+      <Button size="sm" variant="outline" onClick={() => m.setDialogOpen(true)}>
+        <Plus className="h-4 w-4 mr-1" />
+        New
+      </Button>
+    </div>
+  );
+}
+
+function TierListMain({ m }: { m: ReturnType<typeof useTierListPageModel> }) {
+  if (m.dimsLoading) return <PoolSkeleton />;
+  if (m.activeDimensions.length === 0)
+    return <NoActiveDimensions onCreate={() => m.setDialogOpen(true)} />;
+  return (
+    <>
+      <DimensionHeader m={m} />
       {m.submitState.error && (
         <Alert variant="destructive">
           <AlertTitle>Submission Failed</AlertTitle>
@@ -91,6 +109,12 @@ export function TierListPage() {
           }
         }}
         isPending={m.mutations.blacklistMutation.isPending}
+      />
+      <CreateDimensionDialog
+        open={m.dialogOpen}
+        onOpenChange={m.setDialogOpen}
+        onSubmit={m.handleCreateDimension}
+        isPending={m.createDimensionMutation.isPending}
       />
     </div>
   );

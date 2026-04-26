@@ -59,6 +59,7 @@ const mockDimensionsQuery = vi.fn();
 const mockTierListQuery = vi.fn();
 const mockRefetch = vi.fn();
 const mockMutate = vi.fn();
+const mockCreateDimension = vi.fn();
 
 vi.mock('@pops/api-client', () => ({
   trpc: {
@@ -67,6 +68,7 @@ vi.mock('@pops/api-client', () => ({
         comparisons: {
           getTierListMovies: { invalidate: vi.fn() },
           getSmartPair: { invalidate: vi.fn() },
+          listDimensions: { invalidate: vi.fn() },
         },
       },
     }),
@@ -104,6 +106,13 @@ vi.mock('@pops/api-client', () => ({
           useMutation: () => ({
             mutate: vi.fn(),
             isPending: false,
+          }),
+        },
+        createDimension: {
+          useMutation: () => ({
+            mutate: mockCreateDimension,
+            isPending: false,
+            error: null,
           }),
         },
       },
@@ -316,6 +325,68 @@ describe('TierListPage', () => {
         { movieId: 10, tier: 'S' },
         { movieId: 20, tier: 'A' },
       ]),
+    });
+  });
+
+  it('empty-state CTA opens the create dimension dialog', () => {
+    mockDimensionsQuery.mockReturnValue({
+      data: { data: [] },
+      isLoading: false,
+    });
+    mockTierListQuery.mockReturnValue({
+      data: { data: [] },
+      isLoading: false,
+      error: null,
+    });
+
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: /Create dimension/i }));
+
+    // DialogTitle becomes visible — Radix renders into a portal under document.body.
+    expect(screen.getByRole('heading', { name: 'New dimension' })).toBeTruthy();
+  });
+
+  it('header "+ New" button is visible when dimensions exist', () => {
+    setupPage();
+    renderPage();
+
+    // Distinct from the empty-state "Create dimension" button — header CTA is
+    // a small "New" button with the same plus icon.
+    expect(screen.getByRole('button', { name: /^\s*New\s*$/i })).toBeTruthy();
+  });
+
+  it('submitting the create dimension form fires the createDimension mutation', () => {
+    mockDimensionsQuery.mockReturnValue({
+      data: { data: [] },
+      isLoading: false,
+    });
+    mockTierListQuery.mockReturnValue({
+      data: { data: [] },
+      isLoading: false,
+      error: null,
+    });
+
+    renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: /Create dimension/i }));
+
+    const nameInput = screen.getByPlaceholderText(/e\.g\. Cinematography/i);
+    fireEvent.change(nameInput, { target: { value: ' Soundtrack ' } });
+
+    const descriptionInput = screen.getByPlaceholderText(/Optional/i);
+    fireEvent.change(descriptionInput, { target: { value: 'How the music holds up' } });
+
+    // Footer submit — the "Create dimension" button inside the dialog footer.
+    const submitButtons = screen.getAllByRole('button', { name: /Create dimension/i });
+    // After opening the dialog there are two — the empty-state CTA and the
+    // dialog footer submit. Click the last one (the dialog's).
+    fireEvent.click(submitButtons[submitButtons.length - 1]!);
+
+    expect(mockCreateDimension).toHaveBeenCalledWith({
+      name: 'Soundtrack',
+      description: 'How the music holds up',
+      active: true,
     });
   });
 });

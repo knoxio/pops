@@ -8,6 +8,11 @@ import { type Tier, type TierMovie } from '../../components/TierListBoard';
 import { useTierListSubmit } from '../../hooks/useTierListSubmit';
 import { useTierListMutations } from './useTierListMutations';
 
+interface CreateDimensionInput {
+  name: string;
+  description: string | null;
+}
+
 function useDimensionsAndMovies() {
   const [selectedDimension, setSelectedDimension] = useState<number | null>(null);
 
@@ -50,10 +55,50 @@ function useDimensionsAndMovies() {
   };
 }
 
+/**
+ * Wires the `createDimension` mutation, dialog open state, and post-create
+ * book-keeping. On success: invalidate `listDimensions`, select the new
+ * dimension, and close the dialog. Errors surface via toast.
+ */
+function useCreateDimension(args: {
+  setSelectedDimension: (id: number) => void;
+  setDialogOpen: (open: boolean) => void;
+}) {
+  const utils = trpc.useUtils();
+  const createDimensionMutation = trpc.media.comparisons.createDimension.useMutation({
+    onSuccess: (result) => {
+      void utils.media.comparisons.listDimensions.invalidate();
+      const newId = result?.data?.id;
+      if (typeof newId === 'number') args.setSelectedDimension(newId);
+      args.setDialogOpen(false);
+      toast.success('Dimension created');
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  const handleCreateDimension = useCallback(
+    (input: CreateDimensionInput) => {
+      createDimensionMutation.mutate({
+        name: input.name,
+        description: input.description,
+        active: true,
+      });
+    },
+    [createDimensionMutation]
+  );
+
+  return { createDimensionMutation, handleCreateDimension };
+}
+
 export function useTierListPageModel() {
   const navigate = useNavigate();
   const data = useDimensionsAndMovies();
   const { effectiveDimension, movies, tierMoviesQuery } = data;
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const { createDimensionMutation, handleCreateDimension } = useCreateDimension({
+    setSelectedDimension: data.setSelectedDimension,
+    setDialogOpen,
+  });
 
   const movieTitles = useMemo(() => {
     const map = new Map<number, string>();
@@ -98,5 +143,9 @@ export function useTierListPageModel() {
     handleDoAnother,
     handleDone,
     handleSubmit,
+    dialogOpen,
+    setDialogOpen,
+    createDimensionMutation,
+    handleCreateDimension,
   };
 }
