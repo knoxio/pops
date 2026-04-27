@@ -40,6 +40,7 @@ function useDimensionsAndMovies() {
         posterUrl: m.posterUrl,
         score: m.score,
         comparisonCount: m.comparisonCount,
+        tierOverride: (m.tierOverride as TierMovie['tierOverride']) ?? null,
       })),
     [tierMoviesQuery.data]
   );

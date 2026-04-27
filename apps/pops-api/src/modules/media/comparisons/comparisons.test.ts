@@ -2209,6 +2209,39 @@ describe('getTierListMovies', () => {
     expect(result.data[0]!.title).toBe('API Movie');
     expect(result.data[0]!.score).toBe(1500);
   });
+
+  it('includes tierOverride when override exists', () => {
+    const dimId = seedDimension(db, { name: 'Override Dim' });
+    const m1 = seedMovie(db, { title: 'Overridden Movie', tmdb_id: 961 });
+    const m2 = seedMovie(db, { title: 'No Override Movie', tmdb_id: 962 });
+
+    seedScore(db, m1, dimId, 1500, 5);
+    seedScore(db, m2, dimId, 1400, 3);
+
+    // Set a tier override for m1
+    db.prepare(
+      "INSERT INTO tier_overrides (media_type, media_id, dimension_id, tier) VALUES ('movie', ?, ?, 'S')"
+    ).run(m1, dimId);
+
+    const results = getTierListMovies(dimId);
+    expect(results).toHaveLength(2);
+
+    const overridden = results.find((r) => r.id === m1);
+    const unranked = results.find((r) => r.id === m2);
+
+    expect(overridden?.tierOverride).toBe('S');
+    expect(unranked?.tierOverride).toBeNull();
+  });
+
+  it('returns null tierOverride when no override exists', () => {
+    const dimId = seedDimension(db, { name: 'No Override Dim' });
+    const m1 = seedMovie(db, { title: 'Plain Movie', tmdb_id: 963 });
+    seedScore(db, m1, dimId, 1500, 5);
+
+    const results = getTierListMovies(dimId);
+    expect(results).toHaveLength(1);
+    expect(results[0]!.tierOverride).toBeNull();
+  });
 });
 
 describe('batchRecordComparisons', () => {

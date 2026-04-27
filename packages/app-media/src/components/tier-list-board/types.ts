@@ -26,6 +26,8 @@ export interface TierMovie {
   posterUrl: string | null;
   score: number;
   comparisonCount: number;
+  /** Persisted tier override from a previous submission, or null if unranked. */
+  tierOverride: Tier | null;
 }
 
 export type TierPlacements = Record<Tier, number[]>;

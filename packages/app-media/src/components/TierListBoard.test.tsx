@@ -66,6 +66,7 @@ const sampleMovies: TierMovie[] = [
     posterUrl: null,
     score: 1600,
     comparisonCount: 5,
+    tierOverride: null,
   },
   {
     mediaType: 'movie',
@@ -74,6 +75,7 @@ const sampleMovies: TierMovie[] = [
     posterUrl: null,
     score: 1500,
     comparisonCount: 3,
+    tierOverride: null,
   },
   {
     mediaType: 'movie',
@@ -82,6 +84,7 @@ const sampleMovies: TierMovie[] = [
     posterUrl: null,
     score: 1400,
     comparisonCount: 8,
+    tierOverride: null,
   },
   {
     mediaType: 'movie',
@@ -90,6 +93,7 @@ const sampleMovies: TierMovie[] = [
     posterUrl: null,
     score: 1300,
     comparisonCount: 2,
+    tierOverride: null,
   },
 ];
 
@@ -200,5 +204,42 @@ describe('TierListBoard', () => {
       dndHandlers.onDragEnd?.({ active: { id: '1' }, over: { id: 'unranked' } });
     });
     expect(screen.getByText('Unranked (4)')).toBeTruthy();
+  });
+
+  it('hydrates placements from tier overrides on mount', () => {
+    const moviesWithOverrides: TierMovie[] = [
+      {
+        mediaType: 'movie',
+        mediaId: 1,
+        title: 'The Matrix',
+        posterUrl: null,
+        score: 1600,
+        comparisonCount: 5,
+        tierOverride: 'S',
+      },
+      {
+        mediaType: 'movie',
+        mediaId: 2,
+        title: 'Inception',
+        posterUrl: null,
+        score: 1500,
+        comparisonCount: 3,
+        tierOverride: 'B',
+      },
+      {
+        mediaType: 'movie',
+        mediaId: 3,
+        title: 'Interstellar',
+        posterUrl: null,
+        score: 1400,
+        comparisonCount: 8,
+        tierOverride: null,
+      },
+    ];
+
+    render(<TierListBoard movies={moviesWithOverrides} onSubmit={vi.fn()} />);
+
+    // 2 movies placed (S + B), 1 unranked
+    expect(screen.getByText('Unranked (1)')).toBeTruthy();
   });
 });

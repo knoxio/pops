@@ -1,5 +1,5 @@
 import { PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 
 import {
   DISMISS_ZONES,
@@ -151,6 +151,20 @@ function useDragHandlers(args: DragHandlerArgs) {
   return { handleDragStart, handleDragOver, handleDragEnd };
 }
 
+/**
+ * Build initial placements from movies that have a persisted tierOverride.
+ * Movies without an override stay in the unranked pool.
+ */
+function hydrateFromOverrides(movies: TierMovie[]): TierPlacements {
+  const placements: TierPlacements = { S: [], A: [], B: [], C: [], D: [] };
+  for (const movie of movies) {
+    if (movie.tierOverride && TIERS.includes(movie.tierOverride)) {
+      placements[movie.tierOverride].push(movie.mediaId);
+    }
+  }
+  return placements;
+}
+
 export function useTierBoardModel({
   movies,
   onSubmit,
@@ -158,13 +172,18 @@ export function useTierBoardModel({
   onMarkStale,
   onNA,
 }: UseTierBoardArgs) {
-  const [placements, setPlacements] = useState<TierPlacements>({
-    S: [],
-    A: [],
-    B: [],
-    C: [],
-    D: [],
-  });
+  // Hydrate placements from tier overrides on initial render.
+  // The ref tracks which movies array was used for hydration so we
+  // re-hydrate when the movie set changes (e.g. dimension switch).
+  const hydratedRef = useRef<TierMovie[]>([]);
+  const [placements, setPlacements] = useState<TierPlacements>(() => hydrateFromOverrides(movies));
+
+  // Re-hydrate when movies array identity changes (dimension switch or refetch).
+  if (movies !== hydratedRef.current && movies.length > 0) {
+    hydratedRef.current = movies;
+    setPlacements(hydrateFromOverrides(movies));
+  }
+
   const [activeId, setActiveId] = useState<number | null>(null);
 
   const movieMap = useMemo(() => new Map(movies.map((m) => [m.mediaId, m])), [movies]);

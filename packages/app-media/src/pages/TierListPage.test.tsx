@@ -126,9 +126,30 @@ const dim1 = { id: 1, name: 'Cinematography', active: true, description: null, s
 const dim2 = { id: 2, name: 'Entertainment', active: true, description: null, sortOrder: 1 };
 
 const movies = [
-  { id: 10, title: 'The Matrix', posterUrl: null, score: 1500, comparisonCount: 5 },
-  { id: 20, title: 'Inception', posterUrl: null, score: 1480, comparisonCount: 3 },
-  { id: 30, title: 'Interstellar', posterUrl: null, score: 1520, comparisonCount: 8 },
+  {
+    id: 10,
+    title: 'The Matrix',
+    posterUrl: null,
+    score: 1500,
+    comparisonCount: 5,
+    tierOverride: null,
+  },
+  {
+    id: 20,
+    title: 'Inception',
+    posterUrl: null,
+    score: 1480,
+    comparisonCount: 3,
+    tierOverride: null,
+  },
+  {
+    id: 30,
+    title: 'Interstellar',
+    posterUrl: null,
+    score: 1520,
+    comparisonCount: 8,
+    tierOverride: null,
+  },
 ];
 
 function renderPage() {

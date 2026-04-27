@@ -1,7 +1,9 @@
 import { getDb } from '../../../../db.js';
 import { getDimension } from '../dimensions.service.js';
+import { getTierOverrides } from '../tier-overrides.js';
 import { normalizePairOrder } from './comparison-queries.js';
 
+import type { TierOverride } from '../tier-overrides.js';
 import type { TierListMovie } from '../types.js';
 
 const MAX_TIER_LIST_MOVIES = 8;
@@ -23,13 +25,23 @@ function getMoviePosterUrl(override: string | null, tmdbId: number | null): stri
   return null;
 }
 
-function toTierListMovie(row: ScoreRow): TierListMovie {
+/** Build a map of mediaId → tier from tier overrides for fast lookup. */
+function buildTierOverrideMap(overrides: TierOverride[]): Map<number, string> {
+  const map = new Map<number, string>();
+  for (const o of overrides) {
+    map.set(o.mediaId, o.tier);
+  }
+  return map;
+}
+
+function toTierListMovie(row: ScoreRow, tierOverrideMap: Map<number, string>): TierListMovie {
   return {
     id: row.mediaId,
     title: row.title,
     posterUrl: getMoviePosterUrl(row.moviePosterOverride, row.movieTmdbId),
     score: Math.round(row.score * 10) / 10,
     comparisonCount: row.comparisonCount,
+    tierOverride: tierOverrideMap.get(row.mediaId) ?? null,
   };
 }
 
@@ -154,12 +166,19 @@ function greedySelect(rows: ScoreRow[], existingPairs: Set<string>): ScoreRow[] 
  *  3. Tie-break by lowest comparison count (highest uncertainty)
  *  - Exclude: blacklisted, excluded-for-dimension, staleness < 0.3
  *  - Returns fewer than 8 if not enough eligible (min 0)
+ *  - Includes persisted tier overrides so the client can hydrate placements.
  */
 export function getTierListMovies(dimensionId: number): TierListMovie[] {
   getDimension(dimensionId);
   const rows = fetchEligibleRows(dimensionId);
   if (rows.length === 0) return [];
-  if (rows.length <= MAX_TIER_LIST_MOVIES) return rows.map(toTierListMovie);
+
+  const overrides = getTierOverrides(dimensionId);
+  const tierOverrideMap = buildTierOverrideMap(overrides);
+
+  if (rows.length <= MAX_TIER_LIST_MOVIES) {
+    return rows.map((r) => toTierListMovie(r, tierOverrideMap));
+  }
   const existingPairs = fetchExistingPairKeys(dimensionId);
-  return greedySelect(rows, existingPairs).map(toTierListMovie);
+  return greedySelect(rows, existingPairs).map((r) => toTierListMovie(r, tierOverrideMap));
 }

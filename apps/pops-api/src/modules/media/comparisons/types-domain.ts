@@ -184,6 +184,8 @@ export interface TierListMovie {
   posterUrl: string | null;
   score: number;
   comparisonCount: number;
+  /** Persisted tier override from a previous submission, or null if unranked. */
+  tierOverride: string | null;
 }
 
 const TIER_RANKS = ['S', 'A', 'B', 'C', 'D'] as const;
