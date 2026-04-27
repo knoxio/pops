@@ -131,14 +131,14 @@ Live status of every theme and epic. Updated as work completes.
 | Engram Storage (format, CRUD) | Done        | PRD-077 (format, templates, index schema, CRUD, tRPC, provisioning) + PRD-078 (scope model) complete          |
 | Thalamus (indexing/retrieval) | Done        | PRD-079 (indexing/sync) + PRD-080 (retrieval engine: semantic, structured, hybrid, context assembly) complete |
 | Ingest (input pipeline)       | Not started | Manual, agent, capture channels + classification + scope inference                                            |
-| Emit (output production)      | Not started | Query engine, document generation, proactive nudges                                                           |
+| Emit (output production)      | Partial     | PRD-082 (Query Engine) done. Document generation and proactive nudges not started                             |
 
 ### Cerebrum — Phase 2 (Curation & Interface)
 
-| Epic                    | Status      | Notes                                                              |
-| ----------------------- | ----------- | ------------------------------------------------------------------ |
-| Glia (curation workers) | Not started | Pruner, consolidator, linker, auditor + trust graduation           |
-| Ego (chat agent)        | Not started | Conversation engine, shell panel, MCP, Moltbot. Supersedes PRD-054 |
+| Epic                    | Status      | Notes                                                       |
+| ----------------------- | ----------- | ----------------------------------------------------------- |
+| Glia (curation workers) | Not started | Pruner, consolidator, linker, auditor + trust graduation    |
+| Ego (chat agent)        | Partial     | PRD-088 (Ego Channels) done. PRD-087 (Ego Core) not started |
 
 ### Cerebrum — Phase 3 (Automation & Ecosystem)
 

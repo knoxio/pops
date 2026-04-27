@@ -10,7 +10,7 @@ Build the output layer that transforms stored knowledge into usable artifacts. E
 
 | #   | PRD                                                              | Summary                                                                               | Status      |
 | --- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ----------- |
-| 082 | [Query Engine](../prds/082-query-engine/README.md)               | Natural language Q&A, scope-aware retrieval, source attribution, multi-domain queries | Not started |
+| 082 | [Query Engine](../prds/082-query-engine/README.md)               | Natural language Q&A, scope-aware retrieval, source attribution, multi-domain queries | Done        |
 | 083 | [Document Generation](../prds/083-document-generation/README.md) | Reports, summaries, timelines — scope-filtered, audience-aware output documents       | Not started |
 | 084 | [Proactive Nudges](../prds/084-proactive-nudges/README.md)       | Consolidation proposals, staleness alerts, pattern detection, notification delivery   | Not started |
 
