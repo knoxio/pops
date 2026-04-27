@@ -10,7 +10,7 @@ As a user, I want Plex, Arr, and Rotation settings to appear in the unified sett
 
 ### Plex Manifest (`media.plex`, order: 100)
 
-- [ ] Manifest is defined in the `@pops/app-media` package with `id: 'media.plex'`, `title: 'Plex'`, and `order: 100`
+- [x] Manifest is defined in the API media module (`apps/pops-api/src/modules/media/settings/manifests.ts`) with `id: 'media.plex'`, `title: 'Plex'`, and `order: 100` — server-side placement is required since manifests are registered at API startup via `settingsRegistry.register()`
 - [x] **Connection group**: `plex_url` (url field), `plex_token` (password field with `sensitive: true` and `testAction` calling `media.plex.testConnection` with label "Test Connection")
 - [x] **Library group**: `plex_movie_section_id` (select field), `plex_tv_section_id` (select field) — options loaded dynamically via an async options loader that calls `media.plex.getSections`
 - [x] **Sync group**: `plex_scheduler_enabled` (toggle field), `plex_scheduler_interval_ms` (duration field)

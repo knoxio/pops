@@ -8,8 +8,7 @@ import type { SaveState } from './types';
 interface SetBulkMutation {
   mutate: (
     input: { entries: { key: string; value: string }[] },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    callbacks: { onSuccess: () => void; onError: (err: any) => void }
+    callbacks: { onSuccess: () => void; onError: (err: { message: string }) => void }
   ) => void;
 }
 
