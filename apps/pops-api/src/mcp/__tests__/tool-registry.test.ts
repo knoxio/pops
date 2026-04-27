@@ -21,6 +21,13 @@ vi.mock('../../modules/cerebrum/ingest/pipeline.js', () => ({
     }
   },
 }));
+vi.mock('../../modules/cerebrum/query/query-service.js', () => ({
+  QueryService: class {
+    async ask() {
+      return { answer: 'test', sources: [], scopes: [], confidence: 'low' };
+    }
+  },
+}));
 vi.mock('../../modules/cerebrum/instance.js', () => ({
   getEngramService: () => ({
     read: () => ({
@@ -49,8 +56,8 @@ vi.mock('../../modules/cerebrum/instance.js', () => ({
 const { dispatchTool, toolDefinitions } = await import('../tools/index.js');
 
 describe('toolDefinitions', () => {
-  it('registers exactly 4 tools', () => {
-    expect(toolDefinitions).toHaveLength(4);
+  it('registers exactly 5 tools', () => {
+    expect(toolDefinitions).toHaveLength(5);
   });
 
   it('includes cerebrum.search', () => {
@@ -67,6 +74,10 @@ describe('toolDefinitions', () => {
 
   it('includes cerebrum.engram.write', () => {
     expect(toolDefinitions.some((t) => t.name === 'cerebrum.engram.write')).toBe(true);
+  });
+
+  it('includes cerebrum.query', () => {
+    expect(toolDefinitions.some((t) => t.name === 'cerebrum.query')).toBe(true);
   });
 
   it('all tools have a description and inputSchema', () => {
@@ -101,6 +112,11 @@ describe('dispatchTool', () => {
 
   it('dispatches cerebrum.engram.write', () => {
     const result = dispatchTool('cerebrum.engram.write', { id: 'eng_test', body: 'new' });
+    expect(result).toBeInstanceOf(Promise);
+  });
+
+  it('dispatches cerebrum.query', () => {
+    const result = dispatchTool('cerebrum.query', { question: 'test' });
     expect(result).toBeInstanceOf(Promise);
   });
 

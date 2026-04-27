@@ -63,13 +63,16 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:all": "vitest run && vitest run --config vitest.integration.config.ts",
     "test:watch": "vitest",
-    "openapi:validate": "tsx scripts/validate-openapi.ts"
+    "openapi:validate": "tsx scripts/validate-openapi.ts",
+    "ego": "tsx src/cli/ego.ts",
+    "mcp": "tsx src/mcp/server.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.90.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
     "@pops/db-types": "workspace:*",
     "@pops/types": "workspace:*",
+    "@trpc/client": "11.16.0",
     "@trpc/server": "^11.16.0",
     "better-sqlite3": "^12.9.0",
     "bullmq": "^5.75.2",

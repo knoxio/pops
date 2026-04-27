@@ -44,6 +44,9 @@ importers:
       '@pops/types':
         specifier: workspace:*
         version: link:../../packages/types
+      '@trpc/client':
+        specifier: 11.16.0
+        version: 11.16.0(@trpc/server@11.16.0(typescript@6.0.3))(typescript@6.0.3)
       '@trpc/server':
         specifier: ^11.16.0
         version: 11.16.0(typescript@6.0.3)

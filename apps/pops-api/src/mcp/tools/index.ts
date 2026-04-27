@@ -1,9 +1,10 @@
-import { engramReadSchema, handleEngramRead } from './cerebrum-engram-read.js';
-import { engramWriteSchema, handleEngramWrite } from './cerebrum-engram-write.js';
 /**
  * Tool registry — central catalogue of all MCP tools and their dispatch logic.
  */
+import { engramReadSchema, handleEngramRead } from './cerebrum-engram-read.js';
+import { engramWriteSchema, handleEngramWrite } from './cerebrum-engram-write.js';
 import { cerebrumIngestSchema, handleCerebrumIngest } from './cerebrum-ingest.js';
+import { cerebrumQuerySchema, handleCerebrumQuery } from './cerebrum-query.js';
 import { cerebrumSearchSchema, handleCerebrumSearch } from './cerebrum-search.js';
 
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
@@ -43,6 +44,12 @@ export const toolDefinitions: ToolDefinition[] = [
       'Update an existing engram. Can modify body, title, scopes, and/or tags. Returns updated metadata.',
     inputSchema: engramWriteSchema,
   },
+  {
+    name: 'cerebrum.query',
+    description:
+      'Ask a natural language question about the knowledge base. Returns a grounded answer with source citations. Limits retrieval to top-3 results for low latency.',
+    inputSchema: cerebrumQuerySchema,
+  },
 ];
 
 /** Map of tool name → handler function. */
@@ -51,6 +58,7 @@ const handlers: Record<string, ToolHandler> = {
   'cerebrum.ingest': handleCerebrumIngest,
   'cerebrum.engram.read': handleEngramRead,
   'cerebrum.engram.write': handleEngramWrite,
+  'cerebrum.query': handleCerebrumQuery,
 };
 
 /** Dispatch a tool call by name. Returns null if the tool is not registered. */
