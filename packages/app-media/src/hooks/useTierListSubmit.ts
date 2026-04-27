@@ -48,6 +48,7 @@ export function useTierListSubmit({ movieTitles, onSuccess }: UseTierListSubmitO
       };
       setResult(enriched);
       void utils.media.comparisons.getTierListMovies.invalidate();
+      void utils.media.comparisons.getTierListPlacements.invalidate();
       void utils.media.comparisons.listAll.invalidate();
       void utils.media.comparisons.scores.invalidate();
       onSuccess?.(enriched);

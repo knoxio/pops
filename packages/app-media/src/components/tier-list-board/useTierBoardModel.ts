@@ -9,16 +9,26 @@ import {
   type TierMovie,
   type TierPlacements,
 } from './types';
+import { useHydratedPlacements } from './useHydratedPlacements';
 
 import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
 
 interface UseTierBoardArgs {
   movies: TierMovie[];
   onSubmit: (placements: Array<{ movieId: number; tier: Tier }>) => void;
+  /**
+   * Initial board state — used by the tier-list page to hydrate placements
+   * from the persisted `tier_overrides` table on mount, so that reloading
+   * the page after a submit shows movies still in their assigned tiers
+   * (#2195). Defaults to all-empty when no persisted state exists.
+   */
+  initialPlacements?: TierPlacements;
   onNotWatched?: (movieId: number) => void;
   onMarkStale?: (movieId: number) => void;
   onNA?: (movieId: number) => void;
 }
+
+const EMPTY_PLACEMENTS: TierPlacements = { S: [], A: [], B: [], C: [], D: [] };
 
 function findTierContaining(placements: TierPlacements, movieId: number): Tier | 'unranked' {
   for (const tier of TIERS) {
@@ -154,18 +164,17 @@ function useDragHandlers(args: DragHandlerArgs) {
 export function useTierBoardModel({
   movies,
   onSubmit,
+  initialPlacements,
   onNotWatched,
   onMarkStale,
   onNA,
 }: UseTierBoardArgs) {
-  const [placements, setPlacements] = useState<TierPlacements>({
-    S: [],
-    A: [],
-    B: [],
-    C: [],
-    D: [],
-  });
+  const [placements, setPlacements] = useState<TierPlacements>(
+    () => initialPlacements ?? EMPTY_PLACEMENTS
+  );
   const [activeId, setActiveId] = useState<number | null>(null);
+
+  useHydratedPlacements(initialPlacements, setPlacements);
 
   const movieMap = useMemo(() => new Map(movies.map((m) => [m.mediaId, m])), [movies]);
   const placedIds = useMemo(() => new Set(Object.values(placements).flat()), [placements]);

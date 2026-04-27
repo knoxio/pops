@@ -2,13 +2,24 @@ import { LayoutGrid, RefreshCw } from 'lucide-react';
 
 import { Alert, AlertDescription, AlertTitle, cn } from '@pops/ui';
 
-import { type Tier, TierListBoard, type TierMovie } from '../../components/TierListBoard';
+import {
+  type Tier,
+  TierListBoard,
+  type TierMovie,
+  type TierPlacements,
+} from '../../components/TierListBoard';
 import { PoolSkeleton } from './PoolSkeleton';
 
 interface TierBoardSectionProps {
   movies: TierMovie[];
   moviesLoading: boolean;
   moviesError: { message: string } | null;
+  /**
+   * Persisted placements (see #2195) hydrated from `tier_overrides` so that
+   * a reload after a submit shows movies in their last-saved tiers rather
+   * than dumping everything back into the unranked pool.
+   */
+  initialPlacements?: TierPlacements;
   isPending: boolean;
   isFetching: boolean;
   refetch: () => void;
@@ -63,6 +74,7 @@ export function TierBoardSection(props: TierBoardSectionProps) {
     return (
       <TierListBoard
         movies={movies}
+        initialPlacements={props.initialPlacements}
         onSubmit={props.handleSubmit}
         submitPending={props.isPending}
         onNotWatched={props.handleNotWatched}

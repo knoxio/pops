@@ -40,6 +40,7 @@ function TierListBody({ m }: { m: ReturnType<typeof useTierListPageModel> }) {
   return (
     <TierBoardSection
       movies={m.movies}
+      initialPlacements={m.initialPlacements}
       moviesLoading={m.tierMoviesQuery.isLoading}
       moviesError={m.tierMoviesQuery.error ? { message: m.tierMoviesQuery.error.message } : null}
       isPending={m.submitState.isPending}

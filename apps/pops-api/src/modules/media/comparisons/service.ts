@@ -46,6 +46,7 @@ export {
 } from './lib/score-management.js';
 export { isPairOnCooloff, recordSkip } from './lib/skip-cooloff.js';
 export { batchRecordComparisons, getTierListMovies, submitTierList } from './lib/tier-list.js';
+export { getTierListPlacementsForDimension, type TierListPlacement } from './tier-overrides.js';
 export { getRandomPair } from './pairs/random-pair.js';
 export { getSmartPair } from './pairs/smart-pair.js';
 export { getRankings, type RankingsResult, resolvePosterUrl } from './rankings.service.js';

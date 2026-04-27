@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { seedDimension, setupTestContext } from '../../../shared/test-utils.js';
+import { seedDimension, seedMovie, setupTestContext } from '../../../shared/test-utils.js';
 import {
+  getTierListPlacementsForDimension,
   getTierOverrideForMedia,
   getTierOverrides,
   removeTierOverride,
@@ -9,6 +10,20 @@ import {
 } from './tier-overrides.js';
 
 import type { Database } from 'better-sqlite3';
+
+function seedMediaScore(
+  db: Database,
+  mediaId: number,
+  dimensionId: number,
+  score: number,
+  comparisonCount = 1
+): void {
+  db.prepare(
+    `INSERT INTO media_scores
+       (media_type, media_id, dimension_id, score, comparison_count, updated_at)
+     VALUES ('movie', ?, ?, ?, ?, datetime('now'))`
+  ).run(mediaId, dimensionId, score, comparisonCount);
+}
 
 const ctx = setupTestContext();
 let db: Database;
@@ -127,5 +142,74 @@ describe('getTierOverrideForMedia', () => {
   it('returns null when no override exists', () => {
     const dimId = seedDimension(db, { name: 'Overall' });
     expect(getTierOverrideForMedia('movie', 999, dimId)).toBeNull();
+  });
+});
+
+describe('getTierListPlacementsForDimension', () => {
+  it('returns placements joined with movie metadata', () => {
+    const dimId = seedDimension(db, { name: 'Overall' });
+    const movieA = seedMovie(db, { tmdb_id: 100, title: 'Alpha' });
+    const movieB = seedMovie(db, { tmdb_id: 200, title: 'Bravo' });
+    seedMediaScore(db, movieA, dimId, 1620, 4);
+    seedMediaScore(db, movieB, dimId, 1480, 3);
+    setTierOverride('movie', movieA, dimId, 'S');
+    setTierOverride('movie', movieB, dimId, 'B');
+
+    const placements = getTierListPlacementsForDimension(dimId);
+
+    expect(placements).toHaveLength(2);
+    const byTier = Object.fromEntries(placements.map((p) => [p.tier, p]));
+    expect(byTier.S).toMatchObject({
+      mediaId: movieA,
+      mediaType: 'movie',
+      title: 'Alpha',
+      score: 1620,
+      comparisonCount: 4,
+      posterUrl: '/media/images/movie/100/poster.jpg',
+    });
+    expect(byTier.B).toMatchObject({
+      mediaId: movieB,
+      title: 'Bravo',
+      score: 1480,
+      comparisonCount: 3,
+    });
+  });
+
+  it('falls back to default score when no media_scores row exists', () => {
+    const dimId = seedDimension(db, { name: 'Overall' });
+    const movieA = seedMovie(db, { tmdb_id: 100, title: 'Alpha' });
+    setTierOverride('movie', movieA, dimId, 'S');
+
+    const placements = getTierListPlacementsForDimension(dimId);
+
+    expect(placements).toHaveLength(1);
+    expect(placements[0]).toMatchObject({ score: 1500, comparisonCount: 0 });
+  });
+
+  it('prefers poster_override_path over the tmdb-derived URL', () => {
+    const dimId = seedDimension(db, { name: 'Overall' });
+    const movieA = seedMovie(db, {
+      tmdb_id: 100,
+      title: 'Alpha',
+      poster_override_path: '/custom/poster.jpg',
+    });
+    setTierOverride('movie', movieA, dimId, 'A');
+
+    const [placement] = getTierListPlacementsForDimension(dimId);
+    expect(placement?.posterUrl).toBe('/custom/poster.jpg');
+  });
+
+  it('does not return placements from other dimensions', () => {
+    const dim1 = seedDimension(db, { name: 'Overall' });
+    const dim2 = seedDimension(db, { name: 'Acting' });
+    const movieA = seedMovie(db, { tmdb_id: 100, title: 'Alpha' });
+    setTierOverride('movie', movieA, dim1, 'S');
+
+    expect(getTierListPlacementsForDimension(dim2)).toEqual([]);
+  });
+
+  it('returns an empty array when no placements exist', () => {
+    const dimId = seedDimension(db, { name: 'Overall' });
+    expect(getTierListPlacementsForDimension(dimId)).toEqual([]);
   });
 });

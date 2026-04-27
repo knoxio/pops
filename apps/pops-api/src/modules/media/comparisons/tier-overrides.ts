@@ -83,6 +83,82 @@ export function getTierOverrides(dimensionId: number): TierOverride[] {
 }
 
 /**
+ * A tier override joined with the placed movie's metadata, ready to render
+ * directly on the tier-list board.
+ */
+export interface TierListPlacement {
+  mediaId: number;
+  mediaType: 'movie';
+  tier: string;
+  title: string;
+  posterUrl: string | null;
+  score: number;
+  comparisonCount: number;
+}
+
+/**
+ * Get all tier-list placements for a dimension, joined with the movie's
+ * display metadata (title, poster, current score, comparison count).
+ *
+ * Used by the tier-list page on mount to hydrate the board with previously-
+ * submitted placements. Movies that lack a `media_scores` row for the
+ * dimension default to score 1500 / 0 comparisons — this can happen when an
+ * override is set before any comparison has been recorded for that pair.
+ */
+export function getTierListPlacementsForDimension(dimensionId: number): TierListPlacement[] {
+  const db = getDb();
+
+  return db
+    .prepare(
+      `SELECT
+         tov.media_id        AS mediaId,
+         tov.tier            AS tier,
+         m.title             AS title,
+         m.tmdb_id           AS movieTmdbId,
+         m.poster_override_path AS moviePosterOverride,
+         COALESCE(ms.score, 1500.0)        AS score,
+         COALESCE(ms.comparison_count, 0)  AS comparisonCount
+       FROM tier_overrides tov
+       JOIN movies m
+         ON tov.media_type = 'movie' AND m.id = tov.media_id
+       LEFT JOIN media_scores ms
+         ON ms.media_type = 'movie'
+        AND ms.media_id = tov.media_id
+        AND ms.dimension_id = tov.dimension_id
+       WHERE tov.dimension_id = ?
+         AND tov.media_type = 'movie'
+       ORDER BY tov.tier, m.title`
+    )
+    .all(dimensionId)
+    .map((row) => {
+      const r = row as {
+        mediaId: number;
+        tier: string;
+        title: string;
+        movieTmdbId: number | null;
+        moviePosterOverride: string | null;
+        score: number;
+        comparisonCount: number;
+      };
+      return {
+        mediaId: r.mediaId,
+        mediaType: 'movie' as const,
+        tier: r.tier,
+        title: r.title,
+        posterUrl: resolvePosterUrl(r.moviePosterOverride, r.movieTmdbId),
+        score: Math.round(r.score * 10) / 10,
+        comparisonCount: r.comparisonCount,
+      };
+    });
+}
+
+function resolvePosterUrl(override: string | null, tmdbId: number | null): string | null {
+  if (override) return override;
+  if (tmdbId) return `/media/images/movie/${tmdbId}/poster.jpg`;
+  return null;
+}
+
+/**
  * Get the tier override for a specific media item in a dimension, or null.
  */
 export function getTierOverrideForMedia(

@@ -1,34 +1,36 @@
 /**
- * E2E — Media tier list: create dimension, drag movies into tiers, save, reload (#2131 + #2190)
+ * E2E — Media tier list (#2131, #2190, #2195)
  *
- * Tier 3 flow: navigate to `/media/tier-list`, create a fresh comparison
- * dimension via the page's empty-state CTA (or the header "+ New" button),
- * confirm the unranked pool populates from the seeded library, drag two
- * movies into tiers via dnd-kit's pointer sensor, submit the tier list,
- * reload, and assert the tier assignments persist.
+ * Two scenarios live in this file:
  *
- * Why we create the dimension here rather than relying on a seeded one:
- *   The seeded `e2e` env may have shared dimensions with comparisons recorded
- *   by other tests, leading to flaky pool selection. Creating a dimension
- *   under a unique timestamped name guarantees a clean tier-list state with
- *   no prior placements or comparisons.
+ * 1. **Create dimension from empty-state CTA** (#2131 + #2190).
+ *    Creates a fresh, timestamped dimension via the page's CTA, confirms
+ *    the chip activates, and verifies the dimension survives a reload.
+ *    Stops short of the full drag flow because a brand-new dimension has
+ *    no `media_scores` rows yet, so `fetchEligibleRows` returns nothing.
  *
- * Cleanup:
- *   The seeded `e2e` SQLite is long-lived. We deactivate the dimension we
- *   created in `afterEach` via `media.comparisons.updateDimension` so it no
- *   longer surfaces in the chips. The underlying row stays — the dimension
- *   API does not currently expose a hard delete, but `active: false` is the
- *   established cleanup path mirrored by the dimension manager UI.
+ * 2. **Persisted placements survive reload** (#2195).
+ *    Uses the seeded `Cinematography` dimension (which has 4 scored movies)
+ *    to exercise the full drag → submit → reload → assert flow. After
+ *    submitting, the page is reloaded and the test asserts that the same
+ *    movies are still rendered inside their assigned tier rows. This is
+ *    the gap closed by #2195 — `tier_overrides` is now read back into the
+ *    board on hydration.
  *
  * Drag-drop technique:
  *   The board uses dnd-kit's PointerSensor with a 5px activation distance.
- *   Playwright's mouse APIs (`mouse.move` / `mouse.down` / `mouse.up`) drive
- *   real pointer events with arbitrary intermediate steps, which dnd-kit
- *   relays through its synthetic drag pipeline. We move the mouse onto the
- *   movie card, press, drift past the activation distance, hover over the
- *   target tier row, and release — mirroring a real user drag.
+ *   Playwright's `mouse.move` / `mouse.down` / `mouse.up` drive real pointer
+ *   events with arbitrary intermediate steps, which dnd-kit relays through
+ *   its synthetic drag pipeline.
+ *
+ * Cleanup:
+ *   The seeded `e2e` SQLite is long-lived. The first test deactivates the
+ *   dimension it created in `afterEach`. The second test relies on
+ *   `tier_overrides`'s upsert semantics — a re-run replaces prior placements
+ *   for the same (mediaId, dimensionId), so leaving overrides behind is
+ *   self-healing across runs.
  */
-import { expect, test, type APIRequestContext } from '@playwright/test';
+import { expect, test, type APIRequestContext, type Page } from '@playwright/test';
 
 import { useRealApi } from './helpers/use-real-api';
 
@@ -194,5 +196,134 @@ test.describe('Media — tier list create, drag, save, reload (#2131, #2190)', (
       await reloadedChip.click();
       await expect(reloadedChip).toHaveAttribute('aria-selected', 'true');
     }
+  });
+});
+
+/**
+ * Drive a dnd-kit PointerSensor drag from the source movie card to the named
+ * target drop zone. The 5px activation constraint requires at least one
+ * intermediate move past 5px before the drop element starts tracking.
+ */
+async function dragMovieToTier(
+  page: Page,
+  movieTitle: string,
+  tier: 'S' | 'A' | 'B' | 'C' | 'D'
+): Promise<void> {
+  const card = page.locator(`[aria-label="${movieTitle}"]`).first();
+  const target = page.locator(`[aria-label="Tier ${tier}"]`).first();
+
+  await card.scrollIntoViewIfNeeded();
+  const cardBox = await card.boundingBox();
+  if (!cardBox) throw new Error(`bounding box missing for movie card "${movieTitle}"`);
+  const targetBox = await target.boundingBox();
+  if (!targetBox) throw new Error(`bounding box missing for tier "${tier}"`);
+
+  const startX = cardBox.x + cardBox.width / 2;
+  const startY = cardBox.y + cardBox.height / 2;
+  const endX = targetBox.x + targetBox.width / 2;
+  const endY = targetBox.y + targetBox.height / 2;
+
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  // dnd-kit PointerSensor activates after 5px — 10px nudge is comfortably past it.
+  await page.mouse.move(startX + 10, startY + 10, { steps: 5 });
+  await page.mouse.move(endX, endY, { steps: 15 });
+  await page.mouse.up();
+}
+
+test.describe('Media — tier list placements survive reload (#2195)', () => {
+  // The seeded Cinematography dimension has 4 movies with media_scores rows
+  // (Shawshank, Godfather, Dark Knight, Interstellar) so the unranked pool is
+  // populated immediately — no need to seed scores ourselves.
+  const DIMENSION_NAME = 'Cinematography';
+  const MOVIE_S = 'The Shawshank Redemption';
+  const MOVIE_B = 'The Dark Knight';
+
+  let pageErrors: string[] = [];
+  let consoleErrors: string[] = [];
+
+  test.beforeEach(async ({ page }) => {
+    pageErrors = [];
+    consoleErrors = [];
+    await useRealApi(page);
+    page.on('pageerror', (err) => pageErrors.push(err.message));
+    page.on('console', (msg) => {
+      if (msg.type() === 'error') consoleErrors.push(msg.text());
+    });
+  });
+
+  test.afterEach(async ({ page }) => {
+    await page.unrouteAll({ behavior: 'ignoreErrors' });
+    const realConsoleErrors = consoleErrors.filter(
+      (e) =>
+        !e.includes('React Router') &&
+        !e.includes('Download the React DevTools') &&
+        !e.includes('Failed to load resource')
+    );
+    expect(pageErrors).toHaveLength(0);
+    expect(realConsoleErrors).toHaveLength(0);
+  });
+
+  test('places movies in S/B, submits, then reload shows them still in S/B', async ({ page }) => {
+    // ----- Step 1: navigate and select Cinematography ----------------------
+    await page.goto('/media/tier-list');
+    await expect(page.getByRole('heading', { name: 'Tier List', level: 1 })).toBeVisible({
+      timeout: 10_000,
+    });
+
+    const dimensionChip = page.getByRole('tab', { name: DIMENSION_NAME });
+    await expect(dimensionChip).toBeVisible({ timeout: 10_000 });
+    if ((await dimensionChip.getAttribute('aria-selected')) !== 'true') {
+      await dimensionChip.click();
+      await expect(dimensionChip).toHaveAttribute('aria-selected', 'true');
+    }
+
+    // The board should render at least the two movies we want to place. They
+    // may already be in S / B from a prior run (tier_overrides is upserted),
+    // which is fine — the reload assertion checks final state, not that the
+    // drag itself moved anything.
+    await expect(page.getByRole('button', { name: /^Submit Tier List/i })).toBeVisible({
+      timeout: 15_000,
+    });
+
+    // ----- Step 2: drag both movies into their tiers -----------------------
+    // If the movie is already inside the target tier from a prior run, the
+    // mouse move ends inside that tier and dnd-kit treats it as a no-op.
+    await dragMovieToTier(page, MOVIE_S, 'S');
+    await dragMovieToTier(page, MOVIE_B, 'B');
+
+    // ----- Step 3: submit ---------------------------------------------------
+    const submitBtn = page.getByRole('button', { name: /^Submit Tier List/i });
+    await expect(submitBtn).toBeEnabled({ timeout: 5_000 });
+    const submitResponse = page.waitForResponse(
+      (res) =>
+        res.url().includes('/trpc/media.comparisons.submitTierList') &&
+        res.request().method() === 'POST'
+    );
+    await submitBtn.click();
+    const submitRes = await submitResponse;
+    expect(submitRes.ok()).toBe(true);
+
+    // After submit the page switches to the TierListSummary view.
+    await expect(page.getByText(/comparisons/i).first()).toBeVisible({ timeout: 10_000 });
+
+    // ----- Step 4: reload and re-select the dimension ----------------------
+    await page.goto('/media/tier-list');
+    await expect(page.getByRole('heading', { name: 'Tier List', level: 1 })).toBeVisible({
+      timeout: 10_000,
+    });
+    const reloadedChip = page.getByRole('tab', { name: DIMENSION_NAME });
+    await expect(reloadedChip).toBeVisible({ timeout: 10_000 });
+    if ((await reloadedChip.getAttribute('aria-selected')) !== 'true') {
+      await reloadedChip.click();
+      await expect(reloadedChip).toHaveAttribute('aria-selected', 'true');
+    }
+
+    // ----- Step 5: assert placements survived ------------------------------
+    const tierS = page.locator('[aria-label="Tier S"]').first();
+    const tierB = page.locator('[aria-label="Tier B"]').first();
+
+    await expect(tierS.locator(`[aria-label="${MOVIE_S}"]`)).toBeVisible({ timeout: 10_000 });
+    await expect(tierB.locator(`[aria-label="${MOVIE_B}"]`)).toBeVisible({ timeout: 10_000 });
   });
 });

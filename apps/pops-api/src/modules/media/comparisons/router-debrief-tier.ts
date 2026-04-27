@@ -42,6 +42,22 @@ export const debriefAndTierProcedures = {
     }
   }),
 
+  /**
+   * Get persisted tier-list placements for a dimension.
+   *
+   * Hydrates the board with previously-submitted placements so the UI can
+   * round-trip a tier list across reloads (see #2195). Returns the joined
+   * movie metadata so the placed cards can render without a separate fetch.
+   */
+  getTierListPlacements: protectedProcedure.input(GetTierListMoviesSchema).query(({ input }) => {
+    try {
+      const placements = service.getTierListPlacementsForDimension(input.dimensionId);
+      return { data: placements };
+    } catch (err) {
+      rethrowKnownErrors(err);
+    }
+  }),
+
   /** Submit a tier list: converts placements to pairwise comparisons + tier overrides. */
   submitTierList: protectedProcedure.input(SubmitTierListSchema).mutation(({ input }) => {
     try {

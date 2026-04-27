@@ -4,13 +4,51 @@ import { toast } from 'sonner';
 
 import { trpc } from '@pops/api-client';
 
-import { type Tier, type TierMovie } from '../../components/TierListBoard';
+import { TIERS } from '../../components/tier-list-board/types';
+import { type Tier, type TierMovie, type TierPlacements } from '../../components/TierListBoard';
 import { useTierListSubmit } from '../../hooks/useTierListSubmit';
 import { useTierListMutations } from './useTierListMutations';
+
+interface TierPlacementResponse {
+  mediaId: number;
+  mediaType: 'movie';
+  tier: string;
+  title: string;
+  posterUrl: string | null;
+  score: number;
+  comparisonCount: number;
+}
+
+function buildInitialPlacements(rows: TierPlacementResponse[]): TierPlacements {
+  const placements: TierPlacements = { S: [], A: [], B: [], C: [], D: [] };
+  for (const row of rows) {
+    if (TIERS.includes(row.tier as Tier)) {
+      placements[row.tier as Tier].push(row.mediaId);
+    }
+  }
+  return placements;
+}
 
 interface CreateDimensionInput {
   name: string;
   description: string | null;
+}
+
+/**
+ * Merge placed movies with the unranked pool. A movie can be in both sets
+ * when the next round picked it again before it was placed; dedupe by
+ * mediaId, preferring the placed copy so we keep its persisted score.
+ */
+function mergeMovieLists(placed: TierMovie[], unranked: TierMovie[]): TierMovie[] {
+  const seen = new Set<number>();
+  const merged: TierMovie[] = [];
+  for (const m of [...placed, ...unranked]) {
+    if (!seen.has(m.mediaId)) {
+      merged.push(m);
+      seen.add(m.mediaId);
+    }
+  }
+  return merged;
 }
 
 function useDimensionsAndMovies() {
@@ -31,17 +69,39 @@ function useDimensionsAndMovies() {
     { enabled: effectiveDimension != null, staleTime: Infinity }
   );
 
-  const movies: TierMovie[] = useMemo(
+  const placementsQuery = trpc.media.comparisons.getTierListPlacements.useQuery(
+    { dimensionId: effectiveDimension ?? 0 },
+    { enabled: effectiveDimension != null, staleTime: Infinity }
+  );
+
+  const placedMovies: TierMovie[] = useMemo(
     () =>
-      (tierMoviesQuery.data?.data ?? []).map((m) => ({
-        mediaType: 'movie' as const,
-        mediaId: m.id,
-        title: m.title,
-        posterUrl: m.posterUrl,
-        score: m.score,
-        comparisonCount: m.comparisonCount,
+      (placementsQuery.data?.data ?? []).map((p: TierPlacementResponse) => ({
+        mediaType: p.mediaType,
+        mediaId: p.mediaId,
+        title: p.title,
+        posterUrl: p.posterUrl,
+        score: p.score,
+        comparisonCount: p.comparisonCount,
       })),
-    [tierMoviesQuery.data]
+    [placementsQuery.data]
+  );
+
+  const movies: TierMovie[] = useMemo(() => {
+    const unranked = (tierMoviesQuery.data?.data ?? []).map((m) => ({
+      mediaType: 'movie' as const,
+      mediaId: m.id,
+      title: m.title,
+      posterUrl: m.posterUrl,
+      score: m.score,
+      comparisonCount: m.comparisonCount,
+    }));
+    return mergeMovieLists(placedMovies, unranked);
+  }, [placedMovies, tierMoviesQuery.data]);
+
+  const initialPlacements = useMemo(
+    () => buildInitialPlacements((placementsQuery.data?.data ?? []) as TierPlacementResponse[]),
+    [placementsQuery.data]
   );
 
   return {
@@ -51,7 +111,9 @@ function useDimensionsAndMovies() {
     activeDimensions,
     effectiveDimension,
     tierMoviesQuery,
+    placementsQuery,
     movies,
+    initialPlacements,
   };
 }
 

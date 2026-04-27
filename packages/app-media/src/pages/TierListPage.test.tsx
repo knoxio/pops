@@ -67,6 +67,7 @@ vi.mock('@pops/api-client', () => ({
       media: {
         comparisons: {
           getTierListMovies: { invalidate: vi.fn() },
+          getTierListPlacements: { invalidate: vi.fn() },
           getSmartPair: { invalidate: vi.fn() },
           listDimensions: { invalidate: vi.fn() },
         },
@@ -82,6 +83,9 @@ vi.mock('@pops/api-client', () => ({
             const result = mockTierListQuery(...args);
             return { ...result, refetch: mockRefetch, isFetching: false };
           },
+        },
+        getTierListPlacements: {
+          useQuery: () => ({ data: { data: [] }, isLoading: false, isFetching: false }),
         },
         submitTierList: {
           useMutation: () => ({

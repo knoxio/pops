@@ -201,4 +201,20 @@ describe('TierListBoard', () => {
     });
     expect(screen.getByText('Unranked (4)')).toBeTruthy();
   });
+
+  it('hydrates from initialPlacements so persisted tiers survive reload', () => {
+    render(
+      <TierListBoard
+        movies={sampleMovies}
+        onSubmit={vi.fn()}
+        initialPlacements={{ S: [1], A: [], B: [2], C: [], D: [] }}
+      />
+    );
+
+    // Two of the four sample movies are pre-placed → unranked has the
+    // remaining two. The submit button is enabled because >=2 are placed.
+    expect(screen.getByText('Unranked (2)')).toBeTruthy();
+    const submitBtn = screen.getByRole('button', { name: /submit tier list/i });
+    expect(submitBtn.hasAttribute('disabled')).toBe(false);
+  });
 });

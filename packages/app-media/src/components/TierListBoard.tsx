@@ -19,6 +19,12 @@ export type { Tier, TierMovie, TierPlacements };
 interface TierListBoardProps {
   movies: TierMovie[];
   onSubmit: (placements: Array<{ movieId: number; tier: Tier }>) => void;
+  /**
+   * Hydrate the board with persisted placements (see #2195). When omitted,
+   * the board starts empty — used by callers that don't round-trip through
+   * `tier_overrides` (e.g. unit tests, isolated component stories).
+   */
+  initialPlacements?: TierPlacements;
   submitPending?: boolean;
   onNotWatched?: (movieId: number) => void;
   onMarkStale?: (movieId: number) => void;
