@@ -195,6 +195,20 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     CREATE INDEX IF NOT EXISTS idx_item_documents_item ON item_documents(item_id);
     CREATE INDEX IF NOT EXISTS idx_item_documents_doc ON item_documents(paperless_document_id);
 
+    CREATE TABLE IF NOT EXISTS item_uploaded_files (
+      id          INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+      item_id     TEXT NOT NULL,
+      file_name   TEXT NOT NULL,
+      file_path   TEXT NOT NULL,
+      mime_type   TEXT NOT NULL,
+      file_size   INTEGER NOT NULL,
+      uploaded_at TEXT NOT NULL DEFAULT (datetime('now')),
+      created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (item_id) REFERENCES home_inventory(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_item_uploaded_files_item ON item_uploaded_files(item_id);
+
     CREATE TABLE IF NOT EXISTS wish_list (
       id TEXT PRIMARY KEY DEFAULT (lower(hex(randomblob(16)))),
       notion_id TEXT UNIQUE,

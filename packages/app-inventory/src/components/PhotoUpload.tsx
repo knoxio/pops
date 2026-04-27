@@ -128,6 +128,7 @@ export function PhotoUpload({
         type="file"
         accept={accept}
         multiple
+        data-testid="photo-upload-input"
         onChange={(e) => {
           handleFiles(e.target.files);
           if (inputRef.current) inputRef.current.value = '';

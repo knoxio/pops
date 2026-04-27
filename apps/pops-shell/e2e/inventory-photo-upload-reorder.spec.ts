@@ -132,7 +132,7 @@ test.describe('Inventory — photo upload, reorder, delete (#2125)', () => {
     await page.goto(`/inventory/items/${TEST_ITEM_ID}/edit`);
     await expect(page.getByRole('heading', { name: 'Photos' })).toBeVisible({ timeout: 15_000 });
 
-    const fileInput = page.locator('input[type="file"][multiple]');
+    const fileInput = page.getByTestId('photo-upload-input');
     await fileInput.setInputFiles([loadFixture(FIXTURE_RED), loadFixture(FIXTURE_BLUE)]);
 
     // SortablePhotoGrid renders one cell per existing photo. Wait for both.
