@@ -10,7 +10,7 @@ As a user, I want settings fields to render as appropriate input widgets with in
 
 ### Section & Group Rendering
 
-- [ ] A `SectionRenderer` component accepts a `SettingsManifest` and a `Record<string, string>` of current values, and renders all groups and fields
+- [x] A `SectionRenderer` component accepts a `SettingsManifest`, fetches current values via `getBulk`, and renders all groups and fields
 - [x] Each group renders as a card with its `title`, optional `description`, and its fields listed vertically
 - [x] When the section loads, all settings keys declared in the manifest are fetched via `core.settings.getBulk` — fields with no database value use the manifest's `default`
 

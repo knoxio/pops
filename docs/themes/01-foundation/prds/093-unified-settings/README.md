@@ -1,7 +1,7 @@
 # PRD-093: Unified Settings System
 
 > Epic: [08 — Settings System](../../epics/08-settings-system.md)
-> Status: In progress
+> Status: Done
 
 ## Overview
 
@@ -115,13 +115,13 @@ The `core.settings.getManifests` procedure reads from the in-memory registry.
 
 ## User Stories
 
-| #   | Story                                                           | Summary                                                                                        | Status      | Parallelisable   |
-| --- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------- | ---------------- |
-| 01  | [us-01-settings-registry](us-01-settings-registry.md)           | Manifest schema, in-memory registry, `getManifests` procedure, `getBulk`/`setBulk` procedures  | Done        | No (first)       |
-| 02  | [us-02-settings-page-shell](us-02-settings-page-shell.md)       | `/settings` route, section navigation sidebar, section scroll anchors, app nav entry           | Done        | Yes              |
-| 03  | [us-03-section-renderer](us-03-section-renderer.md)             | Generic section/group/field renderer, typed field widgets, validation, auto-save, test actions | In progress | Blocked by us-01 |
-| 04  | [us-04-migrate-media-settings](us-04-migrate-media-settings.md) | Plex, Arr, and Rotation manifests, redirect old routes, preserve test connection actions       | Done        | Blocked by us-01 |
-| 05  | [us-05-migrate-ai-settings](us-05-migrate-ai-settings.md)       | AI model config manifest, redirect `/ai/config`, model selector and budget fields              | Done        | Blocked by us-01 |
+| #   | Story                                                           | Summary                                                                                        | Status | Parallelisable   |
+| --- | --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------ | ---------------- |
+| 01  | [us-01-settings-registry](us-01-settings-registry.md)           | Manifest schema, in-memory registry, `getManifests` procedure, `getBulk`/`setBulk` procedures  | Done   | No (first)       |
+| 02  | [us-02-settings-page-shell](us-02-settings-page-shell.md)       | `/settings` route, section navigation sidebar, section scroll anchors, app nav entry           | Done   | Yes              |
+| 03  | [us-03-section-renderer](us-03-section-renderer.md)             | Generic section/group/field renderer, typed field widgets, validation, auto-save, test actions | Done   | Blocked by us-01 |
+| 04  | [us-04-migrate-media-settings](us-04-migrate-media-settings.md) | Plex, Arr, and Rotation manifests, redirect old routes, preserve test connection actions       | Done   | Blocked by us-01 |
+| 05  | [us-05-migrate-ai-settings](us-05-migrate-ai-settings.md)       | AI model config manifest, redirect `/ai/config`, model selector and budget fields              | Done   | Blocked by us-01 |
 
 US-02 and US-01 can parallelise (page shell has no runtime dependency on the registry — it can render a loading state). US-03 depends on the manifest schema from US-01. US-04 and US-05 can parallelise once US-01 and US-03 are done.
 
@@ -148,4 +148,4 @@ US-02 and US-01 can parallelise (page shell has no runtime dependency on the reg
 
 ## Drift Check
 
-last checked: 2026-04-17
+last checked: 2026-04-27

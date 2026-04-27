@@ -31,12 +31,13 @@ vi.mock('sonner', () => ({ toast: { error: mocks.toastError, info: mocks.toastIn
 
 import { SectionRenderer } from './SectionRenderer';
 
+import type { SettingsManifest } from '@pops/types';
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function makeManifest(overrides: Record<string, any> = {}): any {
+function makeManifest(overrides: Partial<SettingsManifest> = {}): SettingsManifest {
   return {
     id: 'test',
     title: 'Test',

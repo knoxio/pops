@@ -10,7 +10,7 @@ As a user, I want AI model configuration to appear in the unified settings page 
 
 ### AI Config Manifest (`ai.config`, order: 200)
 
-- [ ] Manifest is defined in the `@pops/app-ai` package with `id: 'ai.config'`, `title: 'AI Configuration'`, and `order: 200`
+- [x] Manifest is defined in the API core module (`apps/pops-api/src/modules/core/settings/ai-manifest.ts`) with `id: 'ai.config'`, `title: 'AI Configuration'`, and `order: 200` — server-side placement is required since manifests are registered at API startup via `settingsRegistry.register()`
 - [x] **Model group**: `ai.model` (select field) with options for available models — initially `{ value: 'claude-haiku-4-5-20251001', label: 'Claude Haiku' }` and any other models currently supported
 - [x] **Budget group**: `ai.monthlyTokenBudget` (number field with `validation.min: 0`), `ai.budgetExceededFallback` (select field with options `{ value: 'skip', label: 'Skip requests' }` and `{ value: 'alert', label: 'Alert and continue' }`)
 

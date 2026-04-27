@@ -149,9 +149,9 @@ Live status of every theme and epic. Updated as work completes.
 
 ### Phase 1 — Foundation (continued)
 
-| Epic                    | Status      | Notes                                                                       |
-| ----------------------- | ----------- | --------------------------------------------------------------------------- |
-| Unified Settings System | Not started | Self-registering settings page, replaces scattered Plex/Arr/Rotation/AI UIs |
+| Epic                    | Status | Notes                                                                       |
+| ----------------------- | ------ | --------------------------------------------------------------------------- |
+| Unified Settings System | Done   | Self-registering settings page, replaces scattered Plex/Arr/Rotation/AI UIs |
 
 ### Phase 3 — AI Layer
 
