@@ -1,7 +1,7 @@
 # US-03: Timeline Generation
 
 > PRD: [PRD-083: Document Generation](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,14 +9,14 @@ As a user, I want to generate chronological timelines from dated engrams — dec
 
 ## Acceptance Criteria
 
-- [ ] The `cerebrum.emit.generateTimeline` procedure accepts optional filters (scopes, dateRange, audienceScope, includeSecret, types, tags) and returns a `GeneratedDocument` formatted as a timeline
-- [ ] The timeline is a chronological list of entries ordered by engram creation date (oldest first), each containing: date (formatted as `YYYY-MM-DD`), title, type badge (e.g., `[decision]`, `[meeting]`), and a one-line summary
-- [ ] Optional grouping by type produces parallel timelines (one per type) within the same document, each with its own chronological sequence
-- [ ] Optional grouping by month/quarter produces section headers that break the timeline into time periods
-- [ ] A timeline with a single entry is valid — returned with a note that it represents a single point in time
-- [ ] Metadata-only engrams (empty body) are included in the timeline with their title and date but marked as "metadata only" in place of a summary
-- [ ] The timeline's `dateRange` in the response reflects the actual span from the earliest to latest included engram
-- [ ] Source citations reference every engram included in the timeline
+- [x] The `cerebrum.emit.generateTimeline` procedure accepts optional filters (scopes, dateRange, audienceScope, includeSecret, types, tags) and returns a `GeneratedDocument` formatted as a timeline
+- [x] The timeline is a chronological list of entries ordered by engram creation date (oldest first), each containing: date (formatted as `YYYY-MM-DD`), title, type badge (e.g., `[decision]`, `[meeting]`), and a one-line summary
+- [x] Optional grouping by type produces parallel timelines (one per type) within the same document, each with its own chronological sequence
+- [x] Optional grouping by month/quarter produces section headers that break the timeline into time periods
+- [x] A timeline with a single entry is valid — returned with a note that it represents a single point in time
+- [x] Metadata-only engrams (empty body) are included in the timeline with their title and date but marked as "metadata only" in place of a summary
+- [x] The timeline's `dateRange` in the response reflects the actual span from the earliest to latest included engram
+- [x] Source citations reference every engram included in the timeline
 
 ## Notes
 

@@ -1,7 +1,7 @@
 # PRD-083: Document Generation
 
 > Epic: [03 — Emit](../../epics/03-emit.md)
-> Status: Not started
+> Status: Done
 
 ## Overview
 
@@ -75,12 +75,12 @@ Define the document generation system that produces structured output documents 
 
 ## User Stories
 
-| #   | Story                                                         | Summary                                                                       | Status      | Parallelisable   |
-| --- | ------------------------------------------------------------- | ----------------------------------------------------------------------------- | ----------- | ---------------- |
-| 01  | [us-01-report-generation](us-01-report-generation.md)         | Generate structured reports from a query or topic with sections and citations | Not started | No (first)       |
-| 02  | [us-02-summary-generation](us-02-summary-generation.md)       | Generate summaries over time ranges or topics: weekly digest, monthly review  | Not started | Blocked by us-01 |
-| 03  | [us-03-timeline-generation](us-03-timeline-generation.md)     | Generate chronological timelines from dated engrams with optional grouping    | Not started | Blocked by us-01 |
-| 04  | [us-04-scope-filtered-output](us-04-scope-filtered-output.md) | All generated documents respect audience scope and hard-block secret content  | Not started | Yes              |
+| #   | Story                                                         | Summary                                                                       | Status | Parallelisable   |
+| --- | ------------------------------------------------------------- | ----------------------------------------------------------------------------- | ------ | ---------------- |
+| 01  | [us-01-report-generation](us-01-report-generation.md)         | Generate structured reports from a query or topic with sections and citations | Done   | No (first)       |
+| 02  | [us-02-summary-generation](us-02-summary-generation.md)       | Generate summaries over time ranges or topics: weekly digest, monthly review  | Done   | Blocked by us-01 |
+| 03  | [us-03-timeline-generation](us-03-timeline-generation.md)     | Generate chronological timelines from dated engrams with optional grouping    | Done   | Blocked by us-01 |
+| 04  | [us-04-scope-filtered-output](us-04-scope-filtered-output.md) | All generated documents respect audience scope and hard-block secret content  | Done   | Yes              |
 
 US-01 establishes the core generation pipeline (retrieval, synthesis, formatting) that US-02 and US-03 extend with mode-specific behaviour. US-04 is the scope filtering layer and can parallelise with US-01 since it is a cross-cutting concern applied to all modes.
 

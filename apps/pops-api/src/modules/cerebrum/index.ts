@@ -3,6 +3,7 @@
  * See docs/themes/06-cerebrum for the full spec.
  */
 import { router } from '../../trpc.js';
+import { emitRouter } from './emit/router.js';
 import { engramsRouter } from './engrams/router.js';
 import { scopesRouter } from './engrams/scopes-router.js';
 import { ingestRouter } from './ingest/router.js';
@@ -19,4 +20,5 @@ export const cerebrumRouter = router({
   retrieval: retrievalRouter,
   ingest: ingestRouter,
   query: queryRouter,
+  emit: emitRouter,
 });
