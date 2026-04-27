@@ -25,6 +25,14 @@ vi.mock('../../cerebrum/retrieval/hybrid-search.js', () => ({
   },
 }));
 
+vi.mock('../../cerebrum/instance.js', () => ({
+  getEngramService: () => ({
+    read: () => {
+      throw new Error('No engram in test context');
+    },
+  }),
+}));
+
 const mockCreate = vi.fn();
 
 vi.mock('@anthropic-ai/sdk', () => ({
@@ -288,7 +296,7 @@ describe('ConversationEngine', () => {
       );
 
       const callArgs = mockCreate.mock.calls[0]?.[0] as { system: string };
-      expect(callArgs.system).toContain('finance');
+      expect(callArgs.system).toContain('Finance app');
     });
 
     it('attaches retrieved engram context to the user message', async () => {

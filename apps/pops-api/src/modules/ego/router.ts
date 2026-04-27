@@ -31,15 +31,44 @@ function getEngine(): ConversationEngine {
   return new ConversationEngine();
 }
 
-/** Persist chat results: scope changes, messages, and engram context. */
-function persistChatResults(
-  persistence: ConversationPersistence,
-  conversationId: string,
-  userMessage: string,
-  result: ChatResult
-): Message {
+/**
+ * Check whether two AppContext values differ (by value, not reference).
+ * Returns true if the incoming context is meaningfully different from stored.
+ */
+function appContextChanged(
+  stored: AppContext | undefined | null,
+  incoming: AppContext | undefined
+): boolean {
+  if (!stored && !incoming) return false;
+  if (!stored || !incoming) return true;
+  return (
+    stored.app !== incoming.app ||
+    stored.route !== incoming.route ||
+    stored.entityId !== incoming.entityId ||
+    stored.entityType !== incoming.entityType
+  );
+}
+
+interface PersistChatParams {
+  persistence: ConversationPersistence;
+  conversationId: string;
+  userMessage: string;
+  result: ChatResult;
+  storedAppContext?: AppContext | null;
+  incomingAppContext?: AppContext;
+}
+
+/** Persist chat results: scope changes, app context changes, messages, and engram context. */
+function persistChatResults(params: PersistChatParams): Message {
+  const { persistence, conversationId, userMessage, result } = params;
+
   if (result.scopeNegotiation?.changed) {
     persistence.updateScopes(conversationId, result.scopeNegotiation.scopes);
+  }
+
+  // US-03: Detect app context change and persist it.
+  if (appContextChanged(params.storedAppContext, params.incomingAppContext)) {
+    persistence.updateAppContext(conversationId, params.incomingAppContext ?? null);
   }
 
   persistence.appendMessage(conversationId, { role: 'user', content: userMessage });
@@ -126,11 +155,6 @@ const chatInputSchema = z.object({
   knownScopes: z.array(z.string().min(1)).optional(),
 });
 
-const setScopesSchema = z.object({
-  conversationId: z.string().min(1),
-  scopes: z.array(z.string()),
-});
-
 export const chatRouter = router({
   chat: protectedProcedure.input(chatInputSchema).mutation(async ({ input }) => {
     const store = getStore();
@@ -166,7 +190,14 @@ export const chatRouter = router({
       throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message });
     }
 
-    const assistantMsg = persistChatResults(persistence, conversation.id, input.message, result);
+    const assistantMsg = persistChatResults({
+      persistence,
+      conversationId: conversation.id,
+      userMessage: input.message,
+      result,
+      storedAppContext: conversation.appContext as AppContext | undefined | null,
+      incomingAppContext: appContext,
+    });
 
     return {
       conversationId: conversation.id,
@@ -201,21 +232,5 @@ export const conversationsRouter = router({
   delete: protectedProcedure.input(deleteSchema).mutation(({ input }) => {
     getPersistence().deleteConversation(input.id);
     return { success: true };
-  }),
-});
-
-/** Context sub-router: explicit scope management (PRD-087 US-04). */
-export const contextRouter = router({
-  setScopes: protectedProcedure.input(setScopesSchema).mutation(({ input }) => {
-    const persistence = getPersistence();
-    const existing = persistence.getConversation(input.conversationId);
-    if (!existing) {
-      throw new TRPCError({
-        code: 'NOT_FOUND',
-        message: `Conversation '${input.conversationId}' not found`,
-      });
-    }
-    persistence.updateScopes(input.conversationId, input.scopes);
-    return { scopes: input.scopes };
   }),
 });

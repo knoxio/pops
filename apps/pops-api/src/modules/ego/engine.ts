@@ -1,5 +1,5 @@
 /**
- * ConversationEngine — multi-turn conversation manager for Ego (PRD-087 US-01).
+ * ConversationEngine — multi-turn conversation manager for Ego (PRD-087 US-01, US-03).
  *
  * Orchestrates the chat pipeline: scope negotiation, Thalamus retrieval,
  * context window assembly, LLM call, citation parsing, and token tracking.
@@ -9,6 +9,7 @@ import { logger } from '../../lib/logger.js';
 import { CitationParser } from '../cerebrum/query/citation-parser.js';
 import { ContextAssemblyService } from '../cerebrum/retrieval/context-assembly.js';
 import { HybridSearchService } from '../cerebrum/retrieval/hybrid-search.js';
+import { biasScopes, loadViewedEngram } from './context-helpers.js';
 import { callChatLlm, callSummariseLlm } from './llm-client.js';
 import { buildEgoSystemPrompt, buildSummarisationPrompt } from './prompts.js';
 import { ConversationScopeNegotiator } from './scope-negotiator.js';
@@ -75,9 +76,19 @@ export class ConversationEngine {
     const negotiation = this.negotiateScopes(params);
     const effectiveScopes = negotiation.scopes;
 
-    const retrievalResults = await this.retrieveEngrams(message, effectiveScopes);
+    // US-03: Bias scopes towards the active app context (additive).
+    const biasedScopes = biasScopes(effectiveScopes, appContext);
+
+    // US-03: Auto-load viewed engram when user is viewing one in Cerebrum.
+    const viewedEngram = loadViewedEngram(appContext);
+
+    const retrievalResults = await this.retrieveEngrams(message, biasedScopes);
+
+    // Prepend the viewed engram if it wasn't already retrieved.
+    const allResults = this.mergeViewedEngram(viewedEngram, retrievalResults);
+
     const { systemPrompt, contextBlock } = this.buildContextWindow(
-      retrievalResults,
+      allResults,
       effectiveScopes,
       appContext
     );
@@ -86,10 +97,7 @@ export class ConversationEngine {
     const scopeNotice = this.buildScopeNotice(negotiation);
     const llmMessages = this.buildLlmMessages(history, message, contextBlock);
     const llmResponse = await callChatLlm(this.config.model, systemPrompt, llmMessages);
-    const { cleanedAnswer, citations } = this.citationParser.parse(
-      llmResponse.content,
-      retrievalResults
-    );
+    const { cleanedAnswer, citations } = this.citationParser.parse(llmResponse.content, allResults);
 
     const responseContent = scopeNotice ? `${scopeNotice}\n\n${cleanedAnswer}` : cleanedAnswer;
 
@@ -100,7 +108,7 @@ export class ConversationEngine {
         tokensIn: llmResponse.tokensIn,
         tokensOut: llmResponse.tokensOut,
       },
-      retrievedEngrams: retrievalResults.map((r) => ({
+      retrievedEngrams: allResults.map((r) => ({
         engramId: r.sourceId,
         relevanceScore: r.score,
       })),
@@ -149,6 +157,20 @@ export class ConversationEngine {
       parts.push(negotiation.secretNotice);
     }
     return parts.length > 0 ? parts.join('\n\n') : null;
+  }
+
+  /**
+   * Merge the auto-loaded viewed engram with retrieval results.
+   * Prepends it if not already present (avoids duplicates).
+   */
+  private mergeViewedEngram(
+    viewedEngram: RetrievalResult | null,
+    retrievalResults: RetrievalResult[]
+  ): RetrievalResult[] {
+    if (!viewedEngram) return retrievalResults;
+    const alreadyRetrieved = retrievalResults.some((r) => r.sourceId === viewedEngram.sourceId);
+    if (alreadyRetrieved) return retrievalResults;
+    return [viewedEngram, ...retrievalResults];
   }
 
   private async retrieveEngrams(query: string, scopes: string[]): Promise<RetrievalResult[]> {

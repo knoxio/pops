@@ -175,6 +175,34 @@ export class ConversationPersistence {
       .run();
   }
 
+  /** Update the conversation's app context (US-03). */
+  updateAppContext(conversationId: string, appContext: unknown): void {
+    this.db
+      .update(conversations)
+      .set({
+        appContext: appContext != null ? JSON.stringify(appContext) : null,
+        updatedAt: this.now().toISOString(),
+      })
+      .where(eq(conversations.id, conversationId))
+      .run();
+  }
+
+  /** Get all context entries (engram associations) for a conversation (US-03). */
+  getContextEntries(
+    conversationId: string
+  ): Array<{ engramId: string; relevanceScore: number | null; loadedAt: string }> {
+    return this.db
+      .select({
+        engramId: conversationContext.engramId,
+        relevanceScore: conversationContext.relevanceScore,
+        loadedAt: conversationContext.loadedAt,
+      })
+      .from(conversationContext)
+      .where(eq(conversationContext.conversationId, conversationId))
+      .orderBy(desc(conversationContext.loadedAt))
+      .all();
+  }
+
   /** Auto-generate title from first user message when no title is set. */
   private maybeAutoTitle(conversationId: string, input: AppendMessageInput): void {
     if (input.role !== 'user') return;
