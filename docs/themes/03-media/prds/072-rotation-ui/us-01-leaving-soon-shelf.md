@@ -13,7 +13,7 @@ As a user, I want to see which movies are about to leave my library — on both 
 - [x] On both pages, movies are sorted by `rotation_expires_at` ASC (soonest departures first)
 - [x] Each card shows a countdown badge: "Leaving in X days", "Last day" (< 24h), or "Leaving tomorrow" (< 48h)
 - [x] Badge colour: red when ≤ 3 days, amber when ≤ 7 days, neutral when > 7 days
-- [ ] The countdown badge also appears on movie cards elsewhere in the app (search, detail page, watchlist) when that movie is leaving
+- [x] The countdown badge also appears on movie cards elsewhere in the app (search, detail page, watchlist) when that movie is leaving
 - [x] Each card has a "Keep" action that clears the leaving status (calls `rotation.cancelLeaving`)
 - [x] Both shelves are hidden when rotation is disabled or no movies are leaving
 - [x] Shelf uses the existing `MediaCard` component — badge is an overlay, not a new card type

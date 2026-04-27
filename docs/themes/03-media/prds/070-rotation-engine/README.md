@@ -98,14 +98,14 @@ The rotation engine is a daily automated job that manages the movie library life
 
 ## User Stories
 
-| #   | Story                                                   | Summary                                                                               | Status  | Parallelisable                  |
-| --- | ------------------------------------------------------- | ------------------------------------------------------------------------------------- | ------- | ------------------------------- |
-| 01  | [us-01-rotation-schema](us-01-rotation-schema.md)       | Schema migration: new columns on `movies`, `rotation_log` table                       | Done    | Yes                             |
-| 02  | [us-02-removal-selection](us-02-removal-selection.md)   | Disk-space-driven removal: deficit calculation, oldest-first selection, Radarr delete | Done    | Blocked by US-01                |
-| 03  | [us-03-leaving-lifecycle](us-03-leaving-lifecycle.md)   | Leaving state machine: mark, expire, watchlist interaction                            | Done    | Blocked by US-01                |
-| 04  | [us-04-addition-execution](us-04-addition-execution.md) | Add movies from queue to Radarr with search trigger                                   | Done    | Blocked by US-01, PRD-071 US-01 |
-| 05  | [us-05-disk-space-gating](us-05-disk-space-gating.md)   | Addition gating: only add movies when free space is above target                      | Done    | Blocked by US-02, US-04         |
-| 06  | [us-06-daily-cron](us-06-daily-cron.md)                 | Scheduler: cron-based job orchestrating the full cycle                                | Partial | Blocked by US-02, US-03, US-04  |
+| #   | Story                                                   | Summary                                                                               | Status | Parallelisable                  |
+| --- | ------------------------------------------------------- | ------------------------------------------------------------------------------------- | ------ | ------------------------------- |
+| 01  | [us-01-rotation-schema](us-01-rotation-schema.md)       | Schema migration: new columns on `movies`, `rotation_log` table                       | Done   | Yes                             |
+| 02  | [us-02-removal-selection](us-02-removal-selection.md)   | Disk-space-driven removal: deficit calculation, oldest-first selection, Radarr delete | Done   | Blocked by US-01                |
+| 03  | [us-03-leaving-lifecycle](us-03-leaving-lifecycle.md)   | Leaving state machine: mark, expire, watchlist interaction                            | Done   | Blocked by US-01                |
+| 04  | [us-04-addition-execution](us-04-addition-execution.md) | Add movies from queue to Radarr with search trigger                                   | Done   | Blocked by US-01, PRD-071 US-01 |
+| 05  | [us-05-disk-space-gating](us-05-disk-space-gating.md)   | Addition gating: only add movies when free space is above target                      | Done   | Blocked by US-02, US-04         |
+| 06  | [us-06-daily-cron](us-06-daily-cron.md)                 | Scheduler: cron-based job orchestrating the full cycle                                | Done   | Blocked by US-02, US-03, US-04  |
 
 ## Out of Scope
 
@@ -116,4 +116,4 @@ The rotation engine is a daily automated job that manages the movie library life
 
 ## Drift Check
 
-last checked: 2026-04-17
+last checked: 2026-04-27
