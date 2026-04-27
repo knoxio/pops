@@ -107,6 +107,72 @@ export interface AppendMessageInput {
 }
 
 // ---------------------------------------------------------------------------
+// Engine types (PRD-087 US-01)
+// ---------------------------------------------------------------------------
+
+/** Which pops app the user is currently viewing. */
+export interface AppContext {
+  app: string;
+  route?: string;
+  entityId?: string;
+  entityType?: string;
+}
+
+/** Result returned from ConversationEngine.chat(). */
+export interface ChatResult {
+  response: {
+    content: string;
+    citations: string[];
+    tokensIn: number;
+    tokensOut: number;
+  };
+  retrievedEngrams: Array<{
+    engramId: string;
+    relevanceScore: number;
+  }>;
+}
+
+/** Parameters for ConversationEngine.chat(). */
+export interface ChatParams {
+  conversationId: string;
+  message: string;
+  history: Message[];
+  activeScopes: string[];
+  appContext?: AppContext;
+}
+
+/** Configuration for the conversation engine. */
+export interface EngineConfig {
+  model: string;
+  maxHistoryMessages: number;
+  maxRetrievalResults: number;
+  tokenBudget: number;
+  relevanceThreshold: number;
+}
+
+/**
+ * Abstraction over conversation persistence for the engine.
+ * Implemented by PersistenceStoreAdapter wrapping ConversationPersistence.
+ */
+export interface ConversationStore {
+  getConversation(id: string): Promise<Conversation | null>;
+  createConversation(params: {
+    id: string;
+    title: string | null;
+    activeScopes: string[];
+    appContext: AppContext | null;
+    model: string;
+  }): Promise<Conversation>;
+  getMessages(conversationId: string): Promise<Message[]>;
+  addMessage(conversationId: string, message: Message): Promise<void>;
+  touchConversation(conversationId: string): Promise<void>;
+  addContextEngrams(
+    conversationId: string,
+    engrams: Array<{ engramId: string; relevanceScore: number }>
+  ): Promise<void>;
+}
+
+// ---------------------------------------------------------------------------
 // Row → domain mappers
 // ---------------------------------------------------------------------------
 
