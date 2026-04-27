@@ -1,7 +1,7 @@
 # US-02: Scope-Aware Retrieval
 
 > PRD: [PRD-082: Query Engine](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -9,13 +9,13 @@ As a user asking questions in different contexts (work, personal, mixed), I want
 
 ## Acceptance Criteria
 
-- [ ] A `QueryScopeInferencer` analyses the question text to infer appropriate scopes: mentions of "work," "office," project names, or professional topics filter to `work.*`; personal references ("journal," "therapy," family names) filter to `personal.*`; ambiguous questions default to all non-secret scopes
-- [ ] Explicit `scopes` in the `QueryRequest` override inference entirely — when provided, the inferencer is skipped
-- [ ] The `*.secret.*` hard-block is enforced at retrieval time: Thalamus queries exclude engrams with any `*.secret.*` scope unless `includeSecret: true` is passed in the request
-- [ ] An engram with both secret and non-secret scopes (e.g., `[work.projects.karbon, work.secret.jobsearch]`) is excluded from retrieval when `includeSecret` is `false`
-- [ ] If the question explicitly references a secret scope or asks about known-secret topics, the response includes a notice: "This query may involve secret-scoped content. Pass includeSecret: true to include it."
-- [ ] The inferred scopes are included in the `QueryResponse.scopes` field so the user can see what filtering was applied
-- [ ] Scope inference keywords and patterns are configurable — not hardcoded — loaded from a configuration file or the scope registry
+- [x] A `QueryScopeInferencer` analyses the question text to infer appropriate scopes: mentions of "work," "office," project names, or professional topics filter to `work.*`; personal references ("journal," "therapy," family names) filter to `personal.*`; ambiguous questions default to all non-secret scopes
+- [x] Explicit `scopes` in the `QueryRequest` override inference entirely — when provided, the inferencer is skipped
+- [x] The `*.secret.*` hard-block is enforced at retrieval time: Thalamus queries exclude engrams with any `*.secret.*` scope unless `includeSecret: true` is passed in the request
+- [x] An engram with both secret and non-secret scopes (e.g., `[work.projects.karbon, work.secret.jobsearch]`) is excluded from retrieval when `includeSecret` is `false`
+- [x] If the question explicitly references a secret scope or asks about known-secret topics, the response includes a notice: "This query may involve secret-scoped content. Pass includeSecret: true to include it."
+- [x] The inferred scopes are included in the `QueryResponse.scopes` field so the user can see what filtering was applied
+- [x] Scope inference keywords and patterns are configurable — not hardcoded — loaded from a configuration file or the scope registry
 
 ## Notes
 

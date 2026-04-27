@@ -1,7 +1,7 @@
 # PRD-082: Query Engine
 
 > Epic: [03 — Emit](../../epics/03-emit.md)
-> Status: Not started
+> Status: Done
 
 ## Overview
 
@@ -76,12 +76,12 @@ Define the natural language Q&A engine that accepts a question, infers the appro
 
 ## User Stories
 
-| #   | Story                                                         | Summary                                                                     | Status      | Parallelisable   |
-| --- | ------------------------------------------------------------- | --------------------------------------------------------------------------- | ----------- | ---------------- |
-| 01  | [us-01-natural-language-qa](us-01-natural-language-qa.md)     | Accept a question, retrieve context, generate grounded answer, cite sources | Not started | No (first)       |
-| 02  | [us-02-scope-aware-retrieval](us-02-scope-aware-retrieval.md) | Infer scopes from question context, filter retrieval by inferred scopes     | Not started | Yes              |
-| 03  | [us-03-source-attribution](us-03-source-attribution.md)       | Cite specific engrams in every answer with ID, title, excerpt, relevance    | Not started | Blocked by us-01 |
-| 04  | [us-04-multi-domain](us-04-multi-domain.md)                   | Queries span engrams and POPS SQLite data via Thalamus cross-source index   | Not started | Blocked by us-01 |
+| #   | Story                                                         | Summary                                                                     | Status | Parallelisable   |
+| --- | ------------------------------------------------------------- | --------------------------------------------------------------------------- | ------ | ---------------- |
+| 01  | [us-01-natural-language-qa](us-01-natural-language-qa.md)     | Accept a question, retrieve context, generate grounded answer, cite sources | Done   | No (first)       |
+| 02  | [us-02-scope-aware-retrieval](us-02-scope-aware-retrieval.md) | Infer scopes from question context, filter retrieval by inferred scopes     | Done   | Yes              |
+| 03  | [us-03-source-attribution](us-03-source-attribution.md)       | Cite specific engrams in every answer with ID, title, excerpt, relevance    | Done   | Blocked by us-01 |
+| 04  | [us-04-multi-domain](us-04-multi-domain.md)                   | Queries span engrams and POPS SQLite data via Thalamus cross-source index   | Done   | Blocked by us-01 |
 
 US-02 can parallelise with US-01 (scope inference is a separable module). US-03 and US-04 depend on the core Q&A pipeline from US-01.
 
@@ -106,4 +106,4 @@ US-02 can parallelise with US-01 (scope inference is a separable module). US-03 
 
 ## Drift Check
 
-last checked: 2026-04-17
+last checked: 2026-04-27
