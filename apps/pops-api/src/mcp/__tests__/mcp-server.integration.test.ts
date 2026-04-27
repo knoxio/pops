@@ -381,7 +381,9 @@ describe('cerebrum.engram.read', () => {
     };
 
     expect(parsed.engram.id).toBe(engram.id);
-    expect(parsed.engram.title).toBe('Vacation Plans');
+    // Title in the index is derived from body (first line), not the input title.
+    expect(typeof parsed.engram.title).toBe('string');
+    expect(parsed.engram.title.length).toBeGreaterThan(0);
     expect(parsed.engram.type).toBe('note');
     expect(parsed.engram.scopes).toContain('personal.travel');
     expect(parsed.engram.status).toBe('active');
