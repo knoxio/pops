@@ -15,8 +15,8 @@ As a system, I need a scheduled job that orchestrates the full rotation cycle da
 - [x] Concurrent cycles are prevented — if a cycle is already running, skip the new invocation and log it
 - [x] The scheduler respects `rotation_enabled` — toggling off stops future runs, toggling on schedules the next
 - [x] Each cycle creates a `rotation_log` entry with all counts, disk space, and skip reasons
-- [ ] `rotation_log` `details` JSON column is never populated — expanded per-movie titles in the log page won't show anything
-- [ ] Graceful shutdown: in-progress cycle completes before the server exits (SIGTERM handling)
+- [x] `rotation_log.details` JSON column is populated with per-movie titles (`{ marked, removed, added, failed }`) when any list is non-empty
+- [x] Graceful shutdown: in-progress cycle completes before the server exits (SIGTERM/SIGINT handling via `waitForCycleEnd()`)
 
 ## Notes
 

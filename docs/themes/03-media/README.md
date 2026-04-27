@@ -17,17 +17,17 @@ Build a personal media intelligence app — not just a tracker, but a system tha
 
 ## Epics
 
-| #   | Epic                                                                 | Summary                                                                                        | Status      |
-| --- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ----------- |
-| 0   | [Data Model & API](epics/00-data-model-api.md)                       | Split tables (movies, shows, seasons, episodes), comparisons schema, tRPC routers              | Done        |
-| 1   | [Metadata Integration](epics/01-metadata-integration.md)             | TMDB (movies) and TheTVDB (TV) — search, metadata fetch, poster cache, rate limiting           | Done        |
-| 2   | [App Package & Core UI](epics/02-app-package-ui.md)                  | `@pops/app-media` — routes, pages, browse/search/detail views                                  | Done        |
-| 3   | [Tracking & Watchlist](epics/03-tracking-watchlist.md)               | Watch history, watchlist management, episode-level progress                                    | Done        |
-| 4   | [Ratings & Comparisons](epics/04-ratings-comparisons.md)             | 1v1 pairwise comparisons, ELO scoring, rankings, radar charts                                  | Done        |
-| 5   | [Discovery & Recommendations](epics/05-discovery-recommendations.md) | Trending, new releases, personalised suggestions                                               | Done        |
-| 6   | [Plex Sync](epics/06-plex-sync.md)                                   | Library import, watch history sync (local + Discover cloud), watchlist sync, auto-check on add | Done        |
-| 7   | [Radarr & Sonarr](epics/07-radarr-sonarr.md)                         | Status display, request management — evolves toward full Overseerr replacement                 | Done        |
-| 8   | [Library Rotation](epics/08-library-rotation.md)                     | Automated movie lifecycle: source lists, daily add/remove cycle, disk space gating             | Not started |
+| #   | Epic                                                                 | Summary                                                                                        | Status |
+| --- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------ |
+| 0   | [Data Model & API](epics/00-data-model-api.md)                       | Split tables (movies, shows, seasons, episodes), comparisons schema, tRPC routers              | Done   |
+| 1   | [Metadata Integration](epics/01-metadata-integration.md)             | TMDB (movies) and TheTVDB (TV) — search, metadata fetch, poster cache, rate limiting           | Done   |
+| 2   | [App Package & Core UI](epics/02-app-package-ui.md)                  | `@pops/app-media` — routes, pages, browse/search/detail views                                  | Done   |
+| 3   | [Tracking & Watchlist](epics/03-tracking-watchlist.md)               | Watch history, watchlist management, episode-level progress                                    | Done   |
+| 4   | [Ratings & Comparisons](epics/04-ratings-comparisons.md)             | 1v1 pairwise comparisons, ELO scoring, rankings, radar charts                                  | Done   |
+| 5   | [Discovery & Recommendations](epics/05-discovery-recommendations.md) | Trending, new releases, personalised suggestions                                               | Done   |
+| 6   | [Plex Sync](epics/06-plex-sync.md)                                   | Library import, watch history sync (local + Discover cloud), watchlist sync, auto-check on add | Done   |
+| 7   | [Radarr & Sonarr](epics/07-radarr-sonarr.md)                         | Status display, request management — evolves toward full Overseerr replacement                 | Done   |
+| 8   | [Library Rotation](epics/08-library-rotation.md)                     | Automated movie lifecycle: source lists, daily add/remove cycle, disk space gating             | Done   |
 
 Epic 0 is prerequisite to everything. Epic 1 prerequisite to 2. Epics 3-4 parallel after 2. Epic 5 depends on 4. Epics 6-7 parallel after 3. Epic 8 depends on 3, 6, and 7.
 

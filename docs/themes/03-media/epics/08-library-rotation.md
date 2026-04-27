@@ -12,11 +12,11 @@ Movies only. TV shows are out of scope.
 
 ## PRDs
 
-| #   | PRD                                                      | Summary                                                                             | Status      |
-| --- | -------------------------------------------------------- | ----------------------------------------------------------------------------------- | ----------- |
-| 070 | [Rotation Engine](../prds/070-rotation-engine/README.md) | Daily cron, state machine, removal selection, addition execution, disk space gating | Not started |
-| 071 | [Source Lists](../prds/071-source-lists/README.md)       | Source plugin system, candidate queue, exclusion list, weighted selection policy    | Not started |
-| 072 | [Rotation UI](../prds/072-rotation-ui/README.md)         | "Leaving Soon" shelf, rotation settings, source management, queue/exclusion views   | Not started |
+| #   | PRD                                                      | Summary                                                                             | Status |
+| --- | -------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------ |
+| 070 | [Rotation Engine](../prds/070-rotation-engine/README.md) | Daily cron, state machine, removal selection, addition execution, disk space gating | Done   |
+| 071 | [Source Lists](../prds/071-source-lists/README.md)       | Source plugin system, candidate queue, exclusion list, weighted selection policy    | Done   |
+| 072 | [Rotation UI](../prds/072-rotation-ui/README.md)         | "Leaving Soon" shelf, rotation settings, source management, queue/exclusion views   | Done   |
 
 PRD-070 is the foundation — the engine that runs the daily cycle. PRD-071 provides the candidate pipeline that feeds it. PRD-072 is the UI layer over both. Build order: 070 → 071 (blocked by 070's schema) → 072 (can start once 070's state machine exists, parallelisable with 071 for the settings/leaving-soon parts).
 

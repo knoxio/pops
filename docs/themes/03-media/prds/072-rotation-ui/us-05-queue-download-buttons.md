@@ -10,7 +10,7 @@ As a user, I want "Add to Queue" and "Download" buttons on movie discovery pages
 
 - [x] On search results, Discover page, and anywhere a non-library movie card appears: show two action buttons
 - [x] **"Add to Queue"** — creates a `rotation_candidates` entry with source = `manual`. Toast: "Added to rotation queue". Button changes to "In Queue" badge after click
-- [ ] **"Download"** — adds to Radarr with `searchForMovie: true`, creates POPS library entry with `rotation_status = 'protected'`. Toast: "Downloading — protected for 30 days". Button changes to status indicator (downloading/available) — current implementation opens `RequestMovieModal` (uses `arr.addMovie`) which does not set `rotation_status = 'protected'`
+- [x] **"Download"** — adds to Radarr with `searchForMovie: true`, creates POPS library entry with `rotation_status = 'protected'`. Toast: "Downloading — protected for 30 days". Button changes to status indicator (downloading/available)
 - [x] If the movie is already in the library: show library status instead of action buttons (existing behaviour)
 - [x] If the movie is already in the candidate queue: show "In Queue" badge with option to remove
 - [x] If the movie is in the exclusion list: show "Excluded" badge with option to un-exclude
