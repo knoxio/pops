@@ -18,6 +18,7 @@
   "dependencies": {
     "@pops/api-client": "workspace:*",
     "@pops/app-ai": "workspace:*",
+    "@pops/app-cerebrum": "workspace:*",
     "@pops/app-finance": "workspace:*",
     "@pops/app-inventory": "workspace:*",
     "@pops/app-media": "workspace:*",

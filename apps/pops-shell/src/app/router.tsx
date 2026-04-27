@@ -8,6 +8,7 @@ import { createBrowserRouter, Link, Navigate } from 'react-router';
  * Finance routes are lazily loaded from @pops/app-finance.
  */
 import { routes as aiRoutes } from '@pops/app-ai';
+import { routes as cerebrumRoutes } from '@pops/app-cerebrum';
 import { routes as financeRoutes } from '@pops/app-finance';
 import { routes as inventoryRoutes } from '@pops/app-inventory';
 import { routes as mediaRoutes } from '@pops/app-media';
@@ -69,6 +70,10 @@ export const router = createBrowserRouter([
       {
         path: 'ai',
         children: withSuspense(aiRoutes),
+      },
+      {
+        path: 'cerebrum',
+        children: withSuspense(cerebrumRoutes),
       },
       { path: 'settings', element: <SettingsPage /> },
       { path: '*', element: <NotFoundPage /> },

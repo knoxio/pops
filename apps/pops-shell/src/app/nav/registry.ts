@@ -8,6 +8,7 @@
  * 4. Add its routes to the shell router (app/router.tsx)
  */
 import { navConfig as aiNavConfig } from '@pops/app-ai';
+import { navConfig as cerebrumNavConfig } from '@pops/app-cerebrum';
 import { navConfig as financeNavConfig } from '@pops/app-finance';
 import { navConfig as inventoryNavConfig } from '@pops/app-inventory';
 import { navConfig as mediaNavConfig } from '@pops/app-media';
@@ -20,6 +21,7 @@ export const registeredApps: AppNavConfig[] = [
   mediaNavConfig,
   inventoryNavConfig,
   aiNavConfig,
+  cerebrumNavConfig,
 ];
 
 export type { AppNavConfig, AppNavItem } from './types';
