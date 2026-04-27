@@ -70,6 +70,20 @@ const chatInputSchema = z.object({
   appContext: appContextSchema,
 });
 
+/**
+ * Detect whether the incoming appContext differs from the stored one.
+ * Uses JSON serialisation for deep equality since AppContext is a simple object.
+ */
+function appContextChanged(stored: unknown | null, incoming: AppContext | undefined): boolean {
+  if (!stored && !incoming) return false;
+  if (!stored || !incoming) return true;
+  return JSON.stringify(stored) !== JSON.stringify(incoming);
+}
+
+const contextGetActiveSchema = z.object({
+  conversationId: z.string().min(1),
+});
+
 export const chatRouter = router({
   chat: protectedProcedure.input(chatInputSchema).mutation(async ({ input }) => {
     const store = getStore();
@@ -93,10 +107,17 @@ export const chatRouter = router({
       conversationId = conversation.id;
     }
 
+    // Update app context if it changed between turns (US-03).
+    if (appContext && appContextChanged(conversation.appContext, appContext)) {
+      persistence.updateAppContext(conversation.id, appContext);
+      conversation = { ...conversation, appContext };
+    }
+
     // Load message history.
     const history = await store.getMessages(conversation.id);
 
-    // Run the conversation engine.
+    // Run the conversation engine — use incoming appContext for current turn.
+    const effectiveAppContext = (appContext ?? conversation.appContext) as AppContext | undefined;
     let result;
     try {
       result = await engine.chat({
@@ -104,7 +125,7 @@ export const chatRouter = router({
         message: input.message,
         history,
         activeScopes: conversation.activeScopes,
-        appContext: conversation.appContext as AppContext | undefined,
+        appContext: effectiveAppContext,
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -135,6 +156,31 @@ export const chatRouter = router({
       conversationId: conversation.id,
       response: assistantMsg,
       retrievedEngrams: result.retrievedEngrams,
+    };
+  }),
+});
+
+export const contextRouter = router({
+  getActive: protectedProcedure.input(contextGetActiveSchema).query(({ input }) => {
+    const persistence = getPersistence();
+    const result = persistence.getConversation(input.conversationId);
+
+    if (!result) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: `Conversation '${input.conversationId}' not found`,
+      });
+    }
+
+    const contextEntries = persistence.getContextEntries(input.conversationId);
+
+    return {
+      scopes: result.conversation.activeScopes,
+      appContext: result.conversation.appContext,
+      engrams: contextEntries.map((entry) => ({
+        id: entry.engramId,
+        relevanceScore: entry.relevanceScore ?? 0,
+      })),
     };
   }),
 });
