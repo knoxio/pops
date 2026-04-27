@@ -8,6 +8,10 @@ export interface Budget {
   active: boolean;
   notes: string | null;
   lastEditedTime: string;
+  /** Aggregated outflow over the budget's period (always >= 0). */
+  spent: number;
+  /** `amount - spent`, or `null` when the budget has no target amount. */
+  remaining: number | null;
 }
 
 export const BudgetFormSchema = z.object({

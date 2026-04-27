@@ -71,7 +71,7 @@ export const budgetsRouter = router({
     .query(({ input }) => {
       try {
         const row = service.getBudget(input.id);
-        return { data: toBudget(row) };
+        return { data: toBudget(service.withSpend(row)) };
       } catch (err) {
         if (err instanceof NotFoundError) {
           throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
@@ -85,7 +85,7 @@ export const budgetsRouter = router({
     try {
       const row = service.createBudget(input);
       return {
-        data: toBudget(row),
+        data: toBudget(service.withSpend(row)),
         message: 'Budget created',
       };
     } catch (err) {
@@ -108,7 +108,7 @@ export const budgetsRouter = router({
       try {
         const row = service.updateBudget(input.id, input.data);
         return {
-          data: toBudget(row),
+          data: toBudget(service.withSpend(row)),
           message: 'Budget updated',
         };
       } catch (err) {

@@ -5,7 +5,14 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { budgets as budgetsTable } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
-import { createCaller, seedBudget, setupTestContext } from '../../../shared/test-utils.js';
+import {
+  createCaller,
+  seedBudget,
+  seedTransaction,
+  setupTestContext,
+} from '../../../shared/test-utils.js';
+import { periodWindowStart } from './period-window.js';
+import { listBudgets } from './service.js';
 
 import type { Database } from 'better-sqlite3';
 
@@ -63,6 +70,8 @@ describe('budgets.list', () => {
     expect(budget).toHaveProperty('active', true);
     expect(budget).toHaveProperty('notes', 'Monthly grocery budget');
     expect(budget).toHaveProperty('lastEditedTime', '2025-06-15T10:00:00.000Z');
+    expect(budget).toHaveProperty('spent');
+    expect(budget).toHaveProperty('remaining');
     // No snake_case leaking
     expect(budget).not.toHaveProperty('notion_id');
     expect(budget).not.toHaveProperty('last_edited_time');
@@ -447,5 +456,199 @@ describe('budgets.delete', () => {
     // Verify row is gone from SQLite
     const row = getDrizzle().select().from(budgetsTable).where(eq(budgetsTable.id, id)).get();
     expect(row).toBeUndefined();
+  });
+});
+
+/**
+ * Spend aggregation behaviour for `budgets.list`. The service exposes a
+ * `now` override on `listBudgets()` so we can pin the period window to a
+ * deterministic point — the tRPC caller does not expose that knob, so this
+ * suite calls `listBudgets` directly.
+ */
+describe('budgets.list — spend aggregation', () => {
+  // Pin "now" to mid-Feb 2026 so MTD = Feb-1 → today; YTD = Jan-1 → today.
+  const NOW = new Date('2026-02-15T12:00:00.000Z');
+
+  function seedGroceriesBudget(amount: number, period: string | null = 'Monthly'): string {
+    return seedBudget(db, { category: 'Groceries', period, amount, active: 1 });
+  }
+
+  it('reports zero spend when no matching transactions exist', () => {
+    seedGroceriesBudget(800);
+
+    const { rows } = listBudgets({ limit: 10, offset: 0, now: NOW });
+    expect(rows).toHaveLength(1);
+    expect(rows[0]!.spent).toBe(0);
+    expect(rows[0]!.remaining).toBe(800);
+  });
+
+  it('sums month-to-date outflows that match the budget category', () => {
+    seedGroceriesBudget(800);
+    seedTransaction(db, {
+      description: 'Woolworths',
+      amount: -100,
+      date: '2026-02-03',
+      type: 'Expense',
+      tags: JSON.stringify(['Groceries']),
+    });
+    seedTransaction(db, {
+      description: 'Coles',
+      amount: -50.5,
+      date: '2026-02-10',
+      type: 'Expense',
+      tags: JSON.stringify(['Groceries']),
+    });
+
+    const { rows } = listBudgets({ limit: 10, offset: 0, now: NOW });
+    expect(rows[0]!.spent).toBeCloseTo(150.5, 2);
+    expect(rows[0]!.remaining).toBeCloseTo(649.5, 2);
+  });
+
+  it('ignores income (positive amounts) when summing spend', () => {
+    seedGroceriesBudget(800);
+    seedTransaction(db, {
+      description: 'Refund',
+      amount: 25,
+      date: '2026-02-05',
+      type: 'Income',
+      tags: JSON.stringify(['Groceries']),
+    });
+
+    const { rows } = listBudgets({ limit: 10, offset: 0, now: NOW });
+    expect(rows[0]!.spent).toBe(0);
+    expect(rows[0]!.remaining).toBe(800);
+  });
+
+  it('ignores transactions with type=Transfer', () => {
+    seedGroceriesBudget(800);
+    seedTransaction(db, {
+      description: 'Transfer to Savings',
+      amount: -500,
+      date: '2026-02-05',
+      type: 'Transfer',
+      tags: JSON.stringify(['Groceries', 'Transfer']),
+    });
+
+    const { rows } = listBudgets({ limit: 10, offset: 0, now: NOW });
+    expect(rows[0]!.spent).toBe(0);
+    expect(rows[0]!.remaining).toBe(800);
+  });
+
+  it('ignores transactions tagged with other categories', () => {
+    seedGroceriesBudget(800);
+    seedTransaction(db, {
+      description: 'Netflix',
+      amount: -22.99,
+      date: '2026-02-05',
+      type: 'Expense',
+      tags: JSON.stringify(['Entertainment']),
+    });
+
+    const { rows } = listBudgets({ limit: 10, offset: 0, now: NOW });
+    expect(rows[0]!.spent).toBe(0);
+  });
+
+  it('yearly window includes prior months in the same year but excludes prior year', () => {
+    seedGroceriesBudget(5000, 'Yearly');
+    // Inside the YTD window
+    seedTransaction(db, {
+      description: 'January spend',
+      amount: -200,
+      date: '2026-01-15',
+      type: 'Expense',
+      tags: JSON.stringify(['Groceries']),
+    });
+    seedTransaction(db, {
+      description: 'February spend',
+      amount: -100,
+      date: '2026-02-10',
+      type: 'Expense',
+      tags: JSON.stringify(['Groceries']),
+    });
+    // Prior year — should be excluded
+    seedTransaction(db, {
+      description: 'Last year December',
+      amount: -999,
+      date: '2025-12-28',
+      type: 'Expense',
+      tags: JSON.stringify(['Groceries']),
+    });
+
+    const { rows } = listBudgets({ limit: 10, offset: 0, now: NOW });
+    expect(rows[0]!.spent).toBeCloseTo(300, 2);
+    expect(rows[0]!.remaining).toBeCloseTo(4700, 2);
+  });
+
+  it('honours the custom `now` override for the period window', () => {
+    seedGroceriesBudget(800);
+    // Spend in March 2026 — only visible if "now" lands inside March.
+    seedTransaction(db, {
+      description: 'March spend',
+      amount: -120,
+      date: '2026-03-04',
+      type: 'Expense',
+      tags: JSON.stringify(['Groceries']),
+    });
+
+    const febNow = new Date('2026-02-20T12:00:00.000Z');
+    const marchNow = new Date('2026-03-20T12:00:00.000Z');
+
+    const feb = listBudgets({ limit: 10, offset: 0, now: febNow });
+    const march = listBudgets({ limit: 10, offset: 0, now: marchNow });
+
+    expect(feb.rows[0]!.spent).toBe(0);
+    expect(march.rows[0]!.spent).toBeCloseTo(120, 2);
+  });
+
+  it('counts a multi-tag transaction once when it carries the budget category', () => {
+    seedGroceriesBudget(800);
+    seedTransaction(db, {
+      description: 'Groceries + bonus',
+      amount: -75,
+      date: '2026-02-04',
+      type: 'Expense',
+      tags: JSON.stringify(['Groceries', 'Shopping', 'Essentials']),
+    });
+
+    const { rows } = listBudgets({ limit: 10, offset: 0, now: NOW });
+    expect(rows[0]!.spent).toBeCloseTo(75, 2);
+  });
+
+  it('produces a negative `remaining` when spend exceeds the budget amount', () => {
+    seedGroceriesBudget(100);
+    seedTransaction(db, {
+      description: 'Big shop',
+      amount: -250,
+      date: '2026-02-05',
+      type: 'Expense',
+      tags: JSON.stringify(['Groceries']),
+    });
+
+    const { rows } = listBudgets({ limit: 10, offset: 0, now: NOW });
+    expect(rows[0]!.spent).toBeCloseTo(250, 2);
+    expect(rows[0]!.remaining).toBeCloseTo(-150, 2);
+    expect(rows[0]!.remaining! < 0).toBe(true);
+  });
+});
+
+describe('periodWindowStart', () => {
+  it('returns the first day of the current month for "Monthly"', () => {
+    expect(periodWindowStart('Monthly', new Date('2026-02-15T12:00:00.000Z'))).toBe('2026-02-01');
+    expect(periodWindowStart('Monthly', new Date('2026-12-31T23:59:59.000Z'))).toBe('2026-12-01');
+    // Single-digit month should be zero-padded to keep ISO ordering.
+    expect(periodWindowStart('Monthly', new Date('2026-03-04T00:00:00.000Z'))).toBe('2026-03-01');
+  });
+
+  it('returns the first day of the current year for "Yearly"', () => {
+    expect(periodWindowStart('Yearly', new Date('2026-06-15T12:00:00.000Z'))).toBe('2026-01-01');
+    expect(periodWindowStart('Yearly', new Date('2026-01-02T00:00:00.000Z'))).toBe('2026-01-01');
+  });
+
+  it('returns null for null/undefined/unknown periods (all-time)', () => {
+    expect(periodWindowStart(null)).toBeNull();
+    expect(periodWindowStart(undefined)).toBeNull();
+    expect(periodWindowStart('')).toBeNull();
+    expect(periodWindowStart('weekly')).toBeNull();
+    expect(periodWindowStart('Quarterly')).toBeNull();
   });
 });

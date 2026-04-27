@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 import type { BudgetRow } from '@pops/db-types';
 
+import type { BudgetWithSpend } from './service.js';
+
 export type { BudgetRow };
 
 /** API response shape (camelCase). */
@@ -13,13 +15,17 @@ export interface Budget {
   active: boolean;
   notes: string | null;
   lastEditedTime: string;
+  /** Aggregated outflow over the budget's period (always >= 0). */
+  spent: number;
+  /** `amount - spent`, or `null` when the budget has no target amount. */
+  remaining: number | null;
 }
 
 /**
- * Map a SQLite row to the API response shape.
+ * Map a SQLite row (enriched with spend aggregates) to the API response shape.
  * Converts active from INTEGER (0/1) to boolean.
  */
-export function toBudget(row: BudgetRow): Budget {
+export function toBudget(row: BudgetWithSpend): Budget {
   return {
     id: row.id,
     category: row.category,
@@ -28,6 +34,8 @@ export function toBudget(row: BudgetRow): Budget {
     active: row.active === 1,
     notes: row.notes,
     lastEditedTime: row.lastEditedTime,
+    spent: row.spent,
+    remaining: row.remaining,
   };
 }
 
@@ -40,6 +48,8 @@ export const BudgetSchema = z.object({
   active: z.boolean(),
   notes: z.string().nullable(),
   lastEditedTime: z.string(),
+  spent: z.number(),
+  remaining: z.number().nullable(),
 });
 
 /** Zod schema for creating a budget. */
