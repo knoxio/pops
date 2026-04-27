@@ -667,6 +667,41 @@ export function createTestDb(): Database {
       skipped_reason        TEXT,
       details               TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS conversations (
+      id            TEXT PRIMARY KEY NOT NULL,
+      title         TEXT,
+      active_scopes TEXT NOT NULL,
+      app_context   TEXT,
+      model         TEXT NOT NULL,
+      created_at    TEXT NOT NULL,
+      updated_at    TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_conversations_created_at ON conversations(created_at);
+    CREATE INDEX IF NOT EXISTS idx_conversations_updated_at ON conversations(updated_at);
+
+    CREATE TABLE IF NOT EXISTS messages (
+      id              TEXT PRIMARY KEY NOT NULL,
+      conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+      role            TEXT NOT NULL,
+      content         TEXT NOT NULL,
+      citations       TEXT,
+      tool_calls      TEXT,
+      tokens_in       INTEGER,
+      tokens_out      INTEGER,
+      created_at      TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_messages_conversation_created ON messages(conversation_id, created_at);
+
+    CREATE TABLE IF NOT EXISTS conversation_context (
+      conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+      engram_id       TEXT NOT NULL,
+      relevance_score REAL,
+      loaded_at       TEXT NOT NULL,
+      PRIMARY KEY (conversation_id, engram_id)
+    );
+    CREATE INDEX IF NOT EXISTS idx_conversation_context_conversation ON conversation_context(conversation_id);
+    CREATE INDEX IF NOT EXISTS idx_conversation_context_engram ON conversation_context(engram_id);
   `);
 
   // Seed tag vocabulary (v1) for tests to match dev/prod init behavior.
