@@ -27,11 +27,15 @@ interface LlmEntity {
   confidence: number;
 }
 
-function buildPrompt(body: string, existingTags: string[]): string {
+function buildPrompt(body: string, existingTags: string[], referenceDate?: string): string {
   const tagsSection =
     existingTags.length > 0
       ? `\nExisting tags (do not duplicate): ${existingTags.join(', ')}\n`
       : '';
+
+  const dateContext = referenceDate
+    ? `\nReference date for resolving relative dates: ${referenceDate}\n`
+    : '';
 
   return `Extract named entities from the following content. Focus on:
 - person: Named individuals (e.g. "Alice Smith", "Bob")
@@ -39,7 +43,7 @@ function buildPrompt(body: string, existingTags: string[]): string {
 - date: Specific dates or time references (e.g. "Q1 2025", "next Monday", "2025-03-15")
 - topic: Key subject areas or concepts (e.g. "machine learning", "tax return")
 - organisation: Companies, teams, institutions (e.g. "Anthropic", "Finance team")
-${tagsSection}
+${tagsSection}${dateContext}
 Content:
 ---
 ${body.slice(0, 4000)}${body.length > 4000 ? '\n...[truncated]' : ''}
@@ -57,7 +61,8 @@ Return a JSON array only (no markdown, no explanation outside JSON):
 
 Rules:
 - Include 0-15 entities total
-- Normalise dates to ISO 8601 where possible (YYYY-MM-DD)
+- Normalise ALL dates to ISO 8601 (YYYY-MM-DD). Resolve relative dates ("last Tuesday", "next week", "yesterday") against the reference date
+- For date ranges or quarters, use the start date (e.g. "Q1 2025" → "2025-01-01")
 - Name capitalisation: Title Case for people and orgs, lowercase for topics
 - Omit low-confidence (<0.5) entities entirely
 - Omit generic terms ("system", "user", "data")`;
@@ -100,6 +105,26 @@ function toTag(entity: LlmEntity): string {
   return `${entity.type}:${entity.normalised}`;
 }
 
+/** ISO 8601 date pattern: YYYY-MM-DD (with optional time component). */
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}/;
+
+/**
+ * Collect normalised date entity values into a deduplicated, sorted array
+ * of ISO 8601 date strings for storage as `referenced_dates` custom field.
+ */
+function collectReferencedDates(entities: LlmEntity[]): string[] {
+  const dates = new Set<string>();
+  for (const e of entities) {
+    if (e.type !== 'date') continue;
+    const match = ISO_DATE_RE.exec(e.normalised);
+    if (match) {
+      // Store date-only portion (YYYY-MM-DD) for consistency.
+      dates.add(match[0]);
+    }
+  }
+  return [...dates].toSorted();
+}
+
 function dedupeEntities(entities: LlmEntity[], existingTags: string[]): LlmEntity[] {
   const existingSet = new Set(existingTags.map((t) => t.toLowerCase()));
   const seen = new Set<string>();
@@ -118,15 +143,28 @@ export class CortexEntityExtractor {
     this.confidenceThreshold = options?.confidenceThreshold ?? DEFAULT_CONFIDENCE_THRESHOLD;
   }
 
-  async extract(body: string, existingTags: string[] = []): Promise<EntityExtractionResult> {
+  /**
+   * Extract entities from body text.
+   *
+   * @param body         — Engram body content.
+   * @param existingTags — Tags already assigned (for dedup).
+   * @param referenceDate — ISO 8601 date string for resolving relative dates
+   *                        (e.g. "last Tuesday"). Defaults to now.
+   */
+  async extract(
+    body: string,
+    existingTags: string[] = [],
+    referenceDate?: string
+  ): Promise<EntityExtractionResult> {
     const apiKey = getEnv('ANTHROPIC_API_KEY');
     if (!apiKey) {
       logger.warn('[CortexEntityExtractor] ANTHROPIC_API_KEY not set — skipping entity extraction');
-      return { entities: [], tags: [] };
+      return { entities: [], tags: [], referencedDates: [] };
     }
 
+    const refDate = referenceDate ?? new Date().toISOString().slice(0, 10);
     const client = new Anthropic({ apiKey, maxRetries: 0 });
-    const prompt = buildPrompt(body, existingTags);
+    const prompt = buildPrompt(body, existingTags, refDate);
 
     let rawEntities: LlmEntity[];
     try {
@@ -153,7 +191,7 @@ export class CortexEntityExtractor {
         { error: err instanceof Error ? err.message : String(err) },
         '[CortexEntityExtractor] Extraction failed — returning empty'
       );
-      return { entities: [], tags: [] };
+      return { entities: [], tags: [], referencedDates: [] };
     }
 
     const aboveThreshold = rawEntities.filter((e) => e.confidence >= this.confidenceThreshold);
@@ -168,6 +206,9 @@ export class CortexEntityExtractor {
 
     const tags = deduped.map(toTag);
 
-    return { entities, tags };
+    // Collect date entities into referenced_dates for frontmatter custom field.
+    const referencedDates = collectReferencedDates(deduped);
+
+    return { entities, tags, referencedDates };
   }
 }

@@ -12,19 +12,19 @@
  * Quick capture bypasses classification and entity extraction; a BullMQ
  * job is enqueued to enrich the engram asynchronously (US-03).
  */
-import { createHash } from 'node:crypto';
-
-import { and, eq } from 'drizzle-orm';
-
-import { engramIndex } from '@pops/db-types';
-
-import { getDrizzle } from '../../../db.js';
 import { getCurationQueue } from '../../../jobs/queues.js';
 import { logger } from '../../../lib/logger.js';
 import { getEngramService, getScopeRuleEngine } from '../instance.js';
 import { CortexClassifier } from './classifier.js';
 import { CortexEntityExtractor } from './entity-extractor.js';
 import { normaliseBody } from './normalizer.js';
+import {
+  dedupe,
+  deriveTitle,
+  findDuplicate,
+  hashContent,
+  mergeReferencedDates,
+} from './pipeline-helpers.js';
 import { createScopeInferenceService } from './scope-inference.js';
 
 import type { EngramSource } from '../engrams/schema.js';
@@ -55,6 +55,7 @@ export class IngestService {
     type: string;
     classification: ClassificationResult | null;
     entities: EntityExtractionResult['entities'];
+    referencedDates: string[];
     mergedTags: string[];
     scopeInference: ScopeInferenceResult;
     source: EngramSource;
@@ -62,6 +63,7 @@ export class IngestService {
     const body = normaliseBody(input.body);
     const source: EngramSource = input.source ?? 'manual';
     const existingTags = input.tags ?? [];
+    const referenceDate = new Date().toISOString().slice(0, 10);
 
     let classification: ClassificationResult | null = null;
     let type = input.type ?? '';
@@ -70,7 +72,11 @@ export class IngestService {
       type = classification.type;
     }
 
-    const { entities, tags: entityTags } = await this.entityExtractor.extract(body, existingTags);
+    const {
+      entities,
+      tags: entityTags,
+      referencedDates,
+    } = await this.entityExtractor.extract(body, existingTags, referenceDate);
     const mergedTags = dedupe([
       ...existingTags,
       ...entityTags,
@@ -85,13 +91,31 @@ export class IngestService {
       explicitScopes: input.scopes,
     });
 
-    return { body, type, classification, entities, mergedTags, scopeInference, source };
+    return {
+      body,
+      type,
+      classification,
+      entities,
+      referencedDates,
+      mergedTags,
+      scopeInference,
+      source,
+    };
   }
 
   /** Run the full ingestion pipeline and write an engram. */
   async submit(input: IngestInput): Promise<IngestResult> {
     const stages = await this.runPipelineStages(input);
-    const { body, type, classification, entities, mergedTags, scopeInference, source } = stages;
+    const {
+      body,
+      type,
+      classification,
+      entities,
+      referencedDates,
+      mergedTags,
+      scopeInference,
+      source,
+    } = stages;
 
     const duplicate = findDuplicate(hashContent(body));
     if (duplicate) {
@@ -103,6 +127,9 @@ export class IngestService {
       return { engram: existing, classification, entities, scopeInference };
     }
 
+    // Merge extracted referenced_dates into custom fields.
+    const customFields = mergeReferencedDates(input.customFields, referencedDates);
+
     const engram = getEngramService().create({
       type,
       title: input.title ?? deriveTitle(body),
@@ -111,7 +138,7 @@ export class IngestService {
       tags: mergedTags.length > 0 ? mergedTags : undefined,
       template: input.template ?? classification?.template ?? undefined,
       source,
-      customFields: input.customFields,
+      customFields,
     });
 
     return { engram, classification, entities, scopeInference };
@@ -124,6 +151,7 @@ export class IngestService {
       normalisedBody: stages.body,
       classification: stages.classification,
       entities: stages.entities,
+      referencedDates: stages.referencedDates,
       scopeInference: stages.scopeInference,
     };
   }
@@ -206,40 +234,4 @@ export class IngestService {
     const svc = createScopeInferenceService(config);
     return svc.infer(input);
   }
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function hashContent(body: string): string {
-  return createHash('sha256').update(body, 'utf8').digest('hex');
-}
-
-function findDuplicate(bodyHash: string): string | null {
-  try {
-    const db = getDrizzle();
-    const row = db
-      .select({ id: engramIndex.id })
-      .from(engramIndex)
-      .where(and(eq(engramIndex.bodyHash, bodyHash), eq(engramIndex.status, 'active')))
-      .get();
-    return row?.id ?? null;
-  } catch {
-    return null;
-  }
-}
-
-function deriveTitle(body: string): string {
-  for (const line of body.split('\n')) {
-    const trimmed = line.trim();
-    if (trimmed.length > 0) {
-      return trimmed.replace(/^#+\s*/, '').slice(0, 120);
-    }
-  }
-  return 'Untitled';
-}
-
-function dedupe(values: string[]): string[] {
-  return [...new Set(values)];
 }
