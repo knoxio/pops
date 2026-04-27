@@ -51,6 +51,8 @@ export interface EntityExtractionResult {
   entities: ExtractedEntity[];
   /** Entity values that pass the confidence threshold, prefixed by type. */
   tags: string[];
+  /** ISO 8601 date strings extracted from date entities, for `referenced_dates` frontmatter. */
+  referencedDates: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -80,6 +82,8 @@ export interface PreviewResult {
   normalisedBody: string;
   classification: ClassificationResult | null;
   entities: ExtractedEntity[];
+  /** ISO 8601 dates extracted from date entities. */
+  referencedDates: string[];
   scopeInference: ScopeInferenceResult;
 }
 
