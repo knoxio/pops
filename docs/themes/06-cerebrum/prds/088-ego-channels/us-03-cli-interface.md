@@ -8,14 +8,14 @@ As a developer, I want a `pops ego` CLI command for one-shot questions and piped
 
 ## Acceptance Criteria
 
-- [ ] `pops ego "question text"` sends a one-shot query to the Ego conversation engine, prints the response to stdout, and exits with code 0
-- [ ] `pops ego` with no arguments and no piped input prints usage help showing available options and examples, then exits with code 1
-- [ ] Piped input is supported: `cat notes.md | pops ego "summarise this"` — the piped content is prepended to the question as context with a clear delimiter (e.g., `--- Context ---\n{piped content}\n--- Question ---\n{question}`)
-- [ ] Output format is selectable via `--format` flag: `markdown` (default — renders Markdown with terminal formatting), `json` (structured output: `{ answer, citations, scopes }`), `plain` (strip all Markdown formatting)
-- [ ] `--scopes` flag accepts comma-separated scope strings to set the active scopes for the query: `pops ego --scopes work.projects.karbon "what's the status?"`
-- [ ] `--model` flag allows overriding the default LLM model for this query
-- [ ] Errors print to stderr with a descriptive message and exit with code 1 — errors include: Ego service unavailable, Thalamus timeout, invalid scope format
-- [ ] Responses include citation references in all formats: Markdown shows `[title](id)` links, JSON includes a `citations` array, plain shows `[title] (id)` inline references
+- [x] `pops ego "question text"` sends a one-shot query to the Ego conversation engine, prints the response to stdout, and exits with code 0
+- [x] `pops ego` with no arguments and no piped input prints usage help showing available options and examples, then exits with code 1
+- [x] Piped input is supported: `cat notes.md | pops ego "summarise this"` — the piped content is prepended to the question as context with a clear delimiter (e.g., `--- Context ---\n{piped content}\n--- Question ---\n{question}`)
+- [x] Output format is selectable via `--format` flag: `markdown` (default — renders Markdown with terminal formatting), `json` (structured output: `{ answer, citations, scopes }`), `plain` (strip all Markdown formatting)
+- [x] `--scopes` flag accepts comma-separated scope strings to set the active scopes for the query: `pops ego --scopes work.projects.karbon "what's the status?"`
+- [x] `--model` flag allows overriding the default LLM model for this query
+- [x] Errors print to stderr with a descriptive message and exit with code 1 — errors include: Ego service unavailable, Thalamus timeout, invalid scope format
+- [x] Responses include citation references in all formats: Markdown shows `[title](id)` links, JSON includes a `citations` array, plain shows `[title] (id)` inline references
 
 ## Notes
 

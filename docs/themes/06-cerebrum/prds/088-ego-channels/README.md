@@ -1,7 +1,7 @@
 # PRD-088: Ego Channels
 
 > Epic: [05 — Ego](../../epics/05-ego.md)
-> Status: Not started
+> Status: Done
 
 ## Overview
 
@@ -46,11 +46,11 @@ Build the thin adapter layers that connect Ego Core (PRD-087) to different inter
 
 ## User Stories
 
-| #   | Story                                             | Summary                                                                        | Status      | Parallelisable |
-| --- | ------------------------------------------------- | ------------------------------------------------------------------------------ | ----------- | -------------- |
-| 01  | [us-01-mcp-tools](us-01-mcp-tools.md)             | MCP tool definitions for Claude Code: search, ingest, query, read, write       | Not started | Yes            |
-| 02  | [us-02-moltbot-channel](us-02-moltbot-channel.md) | Moltbot skills for quick capture and query via Telegram                        | Not started | Yes            |
-| 03  | [us-03-cli-interface](us-03-cli-interface.md)     | CLI command for one-shot questions with format options and piped input support | Not started | Yes            |
+| #   | Story                                             | Summary                                                                        | Status | Parallelisable |
+| --- | ------------------------------------------------- | ------------------------------------------------------------------------------ | ------ | -------------- |
+| 01  | [us-01-mcp-tools](us-01-mcp-tools.md)             | MCP tool definitions for Claude Code: search, ingest, query, read, write       | Done   | Yes            |
+| 02  | [us-02-moltbot-channel](us-02-moltbot-channel.md) | Moltbot skills for quick capture and query via Telegram                        | Done   | Yes            |
+| 03  | [us-03-cli-interface](us-03-cli-interface.md)     | CLI command for one-shot questions with format options and piped input support | Done   | Yes            |
 
 All three channels are independent adapters and can be built in parallel. Each depends on PRD-087 (Ego Core) being implemented.
 
@@ -76,4 +76,4 @@ All three channels are independent adapters and can be built in parallel. Each d
 
 ## Drift Check
 
-last checked: 2026-04-17
+last checked: 2026-04-27
