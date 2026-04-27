@@ -3,6 +3,7 @@
  *
  * Domain structure:
  *   core      — entities, ai-usage, corrections
+ *   ego       — AI conversation persistence
  *   finance   — transactions, budgets, imports, wishlist
  *   inventory — items
  *   media     — comparisons
@@ -12,6 +13,7 @@
  */
 import { cerebrumRouter } from './modules/cerebrum/index.js';
 import { coreRouter } from './modules/core/index.js';
+import { egoRouter } from './modules/ego/index.js';
 import { financeRouter } from './modules/finance/index.js';
 import { inventoryRouter } from './modules/inventory/index.js';
 import { mediaRouter } from './modules/media/index.js';
@@ -24,6 +26,7 @@ import { router } from './trpc.js';
 export const appRouter = router({
   cerebrum: cerebrumRouter,
   core: coreRouter,
+  ego: egoRouter,
   finance: financeRouter,
   inventory: inventoryRouter,
   media: mediaRouter,
