@@ -13,6 +13,7 @@ import type { IconName } from '@pops/navigation';
 const IngestPage = lazy(() =>
   import('./pages/IngestPage').then((m) => ({ default: m.IngestPage }))
 );
+const ChatPage = lazy(() => import('./pages/ChatPage').then((m) => ({ default: m.ChatPage })));
 
 /** Local type mirror for compile-time safety (shell owns the canonical types). */
 interface AppNavConfigShape {
@@ -30,7 +31,13 @@ export const navConfig = {
   icon: 'BookOpen',
   color: 'sky',
   basePath: '/cerebrum',
-  items: [{ path: '', label: 'Ingest', icon: 'FileText' }],
+  items: [
+    { path: '', label: 'Ingest', icon: 'FileText' },
+    { path: 'chat', label: 'Chat', icon: 'MessageSquare' },
+  ],
 } satisfies AppNavConfigShape;
 
-export const routes: RouteObject[] = [{ index: true, element: <IngestPage /> }];
+export const routes: RouteObject[] = [
+  { index: true, element: <IngestPage /> },
+  { path: 'chat', element: <ChatPage /> },
+];

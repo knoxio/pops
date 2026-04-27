@@ -36,6 +36,7 @@ export type IconName =
   | 'LayoutDashboard'
   | 'Library'
   | 'MapPin'
+  | 'MessageSquare'
   | 'Package'
   | 'PiggyBank'
   | 'Search'
