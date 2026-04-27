@@ -14,7 +14,7 @@ import { PersistenceStoreAdapter } from './persistence-store.js';
 import { ConversationPersistence } from './persistence.js';
 import { autoTitle } from './types.js';
 
-import type { AppContext } from './types.js';
+import type { AppContext, ChatResult, Conversation, Message } from './types.js';
 
 const DEFAULT_MODEL = 'claude-sonnet-4-20250514';
 
@@ -29,6 +29,58 @@ function getStore(): PersistenceStoreAdapter {
 
 function getEngine(): ConversationEngine {
   return new ConversationEngine();
+}
+
+/** Persist chat results: scope changes, messages, and engram context. */
+function persistChatResults(
+  persistence: ConversationPersistence,
+  conversationId: string,
+  userMessage: string,
+  result: ChatResult
+): Message {
+  if (result.scopeNegotiation?.changed) {
+    persistence.updateScopes(conversationId, result.scopeNegotiation.scopes);
+  }
+
+  persistence.appendMessage(conversationId, { role: 'user', content: userMessage });
+
+  const assistantMsg = persistence.appendMessage(conversationId, {
+    role: 'assistant',
+    content: result.response.content,
+    citations: result.response.citations,
+    tokensIn: result.response.tokensIn,
+    tokensOut: result.response.tokensOut,
+  });
+
+  for (const { engramId, relevanceScore } of result.retrievedEngrams) {
+    persistence.upsertContext(conversationId, engramId, relevanceScore);
+  }
+
+  return assistantMsg;
+}
+
+interface ResolveConversationParams {
+  store: PersistenceStoreAdapter;
+  persistence: ConversationPersistence;
+  conversationId: string | undefined;
+  message: string;
+  scopes: string[];
+  appContext: AppContext | undefined;
+}
+
+/** Load an existing conversation or create a new one. */
+async function resolveConversation(params: ResolveConversationParams): Promise<Conversation> {
+  const { store, persistence, conversationId, message, scopes, appContext } = params;
+  if (conversationId) {
+    const existing = await store.getConversation(conversationId);
+    if (existing) return existing;
+  }
+  return persistence.createConversation({
+    title: autoTitle(message),
+    scopes,
+    appContext,
+    model: DEFAULT_MODEL,
+  });
 }
 
 const createSchema = z.object({
@@ -63,11 +115,20 @@ const appContextSchema = z
   })
   .optional();
 
+const channelSchema = z.enum(['shell', 'moltbot', 'mcp', 'cli']).optional();
+
 const chatInputSchema = z.object({
   conversationId: z.string().min(1).optional(),
   message: z.string().min(1),
   scopes: z.array(z.string().min(1)).optional(),
   appContext: appContextSchema,
+  channel: channelSchema,
+  knownScopes: z.array(z.string().min(1)).optional(),
+});
+
+const setScopesSchema = z.object({
+  conversationId: z.string().min(1),
+  scopes: z.array(z.string()),
 });
 
 export const chatRouter = router({
@@ -79,25 +140,17 @@ export const chatRouter = router({
     const scopes = input.scopes ?? [];
     const appContext: AppContext | undefined = input.appContext ?? undefined;
 
-    // Load or create conversation.
-    let conversationId = input.conversationId;
-    let conversation = conversationId ? await store.getConversation(conversationId) : null;
-
-    if (!conversation) {
-      conversation = persistence.createConversation({
-        title: autoTitle(input.message),
-        scopes,
-        appContext: appContext ?? undefined,
-        model: DEFAULT_MODEL,
-      });
-      conversationId = conversation.id;
-    }
-
-    // Load message history.
+    const conversation = await resolveConversation({
+      store,
+      persistence,
+      conversationId: input.conversationId,
+      message: input.message,
+      scopes,
+      appContext,
+    });
     const history = await store.getMessages(conversation.id);
 
-    // Run the conversation engine.
-    let result;
+    let result: ChatResult;
     try {
       result = await engine.chat({
         conversationId: conversation.id,
@@ -105,36 +158,21 @@ export const chatRouter = router({
         history,
         activeScopes: conversation.activeScopes,
         appContext: conversation.appContext as AppContext | undefined,
+        channel: input.channel ?? 'shell',
+        knownScopes: input.knownScopes,
       });
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message });
     }
 
-    // Persist user message.
-    persistence.appendMessage(conversation.id, {
-      role: 'user',
-      content: input.message,
-    });
-
-    // Persist assistant response.
-    const assistantMsg = persistence.appendMessage(conversation.id, {
-      role: 'assistant',
-      content: result.response.content,
-      citations: result.response.citations,
-      tokensIn: result.response.tokensIn,
-      tokensOut: result.response.tokensOut,
-    });
-
-    // Record retrieved engrams in context.
-    for (const { engramId, relevanceScore } of result.retrievedEngrams) {
-      persistence.upsertContext(conversation.id, engramId, relevanceScore);
-    }
+    const assistantMsg = persistChatResults(persistence, conversation.id, input.message, result);
 
     return {
       conversationId: conversation.id,
       response: assistantMsg,
       retrievedEngrams: result.retrievedEngrams,
+      scopeNegotiation: result.scopeNegotiation ?? null,
     };
   }),
 });
@@ -163,5 +201,21 @@ export const conversationsRouter = router({
   delete: protectedProcedure.input(deleteSchema).mutation(({ input }) => {
     getPersistence().deleteConversation(input.id);
     return { success: true };
+  }),
+});
+
+/** Context sub-router: explicit scope management (PRD-087 US-04). */
+export const contextRouter = router({
+  setScopes: protectedProcedure.input(setScopesSchema).mutation(({ input }) => {
+    const persistence = getPersistence();
+    const existing = persistence.getConversation(input.conversationId);
+    if (!existing) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: `Conversation '${input.conversationId}' not found`,
+      });
+    }
+    persistence.updateScopes(input.conversationId, input.scopes);
+    return { scopes: input.scopes };
   }),
 });

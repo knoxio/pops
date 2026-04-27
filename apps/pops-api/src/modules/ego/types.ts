@@ -118,6 +118,14 @@ export interface AppContext {
   entityType?: string;
 }
 
+/** Scope negotiation outcome included in ChatResult. */
+export interface ScopeNegotiation {
+  scopes: string[];
+  changed: boolean;
+  reason: string | null;
+  secretNotice: string | null;
+}
+
 /** Result returned from ConversationEngine.chat(). */
 export interface ChatResult {
   response: {
@@ -130,6 +138,8 @@ export interface ChatResult {
     engramId: string;
     relevanceScore: number;
   }>;
+  /** Scope negotiation outcome, present when negotiation was run. */
+  scopeNegotiation?: ScopeNegotiation;
 }
 
 /** Parameters for ConversationEngine.chat(). */
@@ -139,6 +149,10 @@ export interface ChatParams {
   history: Message[];
   activeScopes: string[];
   appContext?: AppContext;
+  /** Channel the conversation originates from (for scope defaults). */
+  channel?: 'shell' | 'moltbot' | 'mcp' | 'cli';
+  /** All known scopes in the system (for scope negotiation matching). */
+  knownScopes?: string[];
 }
 
 /** Configuration for the conversation engine. */
