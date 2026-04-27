@@ -8,14 +8,14 @@ As the Ego system, I need to infer appropriate scopes from conversation content 
 
 ## Acceptance Criteria
 
-- [ ] Explicit scope mentions in user messages are detected and applied: phrases like "at work", "for my personal stuff", "about the karbon project" are mapped to scope prefixes (`work.*`, `personal.*`, `work.projects.karbon`) using a configurable mapping in `glia.toml` or a dedicated scope-inference config
-- [ ] Topic inference analyses the conversation content (user messages + assistant responses) and proposes scope adjustments when the topic clearly falls within a specific scope domain — e.g., discussing recipes infers `personal.cooking.*`, discussing a specific client infers `work.clients.*`
-- [ ] Channel defaults provide baseline scopes when no explicit or inferred scopes are available: shell defaults to all non-secret scopes, Moltbot defaults to `personal.*`, MCP defaults to `work.*` (all configurable)
-- [ ] The `.secret.` scope segment is a hard block — scopes containing `.secret.` are never inferred or auto-added. The user must explicitly set them via `ego.context.setScopes` or a direct message like "include my secret notes"
-- [ ] Scope changes during a conversation are applied from the next retrieval query onward — they do not retroactively re-retrieve engrams for previous turns
-- [ ] The user can override inferred scopes at any time by explicitly stating scope preferences ("only look at personal stuff") or via the `ego.context.setScopes` API — explicit overrides always win over inference
-- [ ] Inferred scope changes are communicated to the user in the response — e.g., "I've narrowed the search to your work projects based on our discussion" — so the user is never surprised by scope changes
-- [ ] When no scopes can be determined (no explicit mention, no topic inference, no channel default), the conversation defaults to all non-secret scopes
+- [x] Explicit scope mentions in user messages are detected and applied: phrases like "at work", "for my personal stuff", "about the karbon project" are mapped to scope prefixes (`work.*`, `personal.*`, `work.projects.karbon`) using a configurable mapping in `glia.toml` or a dedicated scope-inference config
+- [x] Topic inference analyses the conversation content (user messages + assistant responses) and proposes scope adjustments when the topic clearly falls within a specific scope domain — e.g., discussing recipes infers `personal.cooking.*`, discussing a specific client infers `work.clients.*`
+- [x] Channel defaults provide baseline scopes when no explicit or inferred scopes are available: shell defaults to all non-secret scopes, Moltbot defaults to `personal.*`, MCP defaults to `work.*` (all configurable)
+- [x] The `.secret.` scope segment is a hard block — scopes containing `.secret.` are never inferred or auto-added. The user must explicitly set them via `ego.context.setScopes` or a direct message like "include my secret notes"
+- [x] Scope changes during a conversation are applied from the next retrieval query onward — they do not retroactively re-retrieve engrams for previous turns
+- [x] The user can override inferred scopes at any time by explicitly stating scope preferences ("only look at personal stuff") or via the `ego.context.setScopes` API — explicit overrides always win over inference
+- [x] Inferred scope changes are communicated to the user in the response — e.g., "I've narrowed the search to your work projects based on our discussion" — so the user is never surprised by scope changes
+- [x] When no scopes can be determined (no explicit mention, no topic inference, no channel default), the conversation defaults to all non-secret scopes
 
 ## Notes
 

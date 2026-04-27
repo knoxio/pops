@@ -1,8 +1,8 @@
 /**
  * ConversationEngine — multi-turn conversation manager for Ego (PRD-087 US-01).
  *
- * Orchestrates the chat pipeline: Thalamus retrieval, context window assembly,
- * LLM call, citation parsing, and token tracking.
+ * Orchestrates the chat pipeline: scope negotiation, Thalamus retrieval,
+ * context window assembly, LLM call, citation parsing, and token tracking.
  */
 import { getDrizzle } from '../../db.js';
 import { logger } from '../../lib/logger.js';
@@ -11,9 +11,10 @@ import { ContextAssemblyService } from '../cerebrum/retrieval/context-assembly.j
 import { HybridSearchService } from '../cerebrum/retrieval/hybrid-search.js';
 import { callChatLlm, callSummariseLlm } from './llm-client.js';
 import { buildEgoSystemPrompt, buildSummarisationPrompt } from './prompts.js';
+import { ConversationScopeNegotiator } from './scope-negotiator.js';
 
 import type { RetrievalFilters, RetrievalResult } from '../cerebrum/retrieval/types.js';
-import type { ChatParams, ChatResult, EngineConfig, Message } from './types.js';
+import type { ChatParams, ChatResult, EngineConfig, Message, ScopeNegotiation } from './types.js';
 
 const DEFAULT_MODEL = 'claude-sonnet-4-20250514';
 const DEFAULT_MAX_HISTORY = 20;
@@ -60,6 +61,7 @@ export class ConversationEngine {
   private readonly config: EngineConfig;
   private readonly citationParser = new CitationParser();
   private readonly assembler = new ContextAssemblyService();
+  private readonly scopeNegotiator = new ConversationScopeNegotiator();
 
   constructor(config?: Partial<EngineConfig>) {
     this.config = buildDefaultConfig(config);
@@ -67,14 +69,21 @@ export class ConversationEngine {
 
   /** Process a user message and generate a response. */
   async chat(params: ChatParams): Promise<ChatResult> {
-    const { message, history, activeScopes, appContext } = params;
+    const { message, history, appContext } = params;
 
-    const retrievalResults = await this.retrieveEngrams(message, activeScopes);
+    // Run scope negotiation to potentially adjust scopes.
+    const negotiation = this.negotiateScopes(params);
+    const effectiveScopes = negotiation.scopes;
+
+    const retrievalResults = await this.retrieveEngrams(message, effectiveScopes);
     const { systemPrompt, contextBlock } = this.buildContextWindow(
       retrievalResults,
-      activeScopes,
+      effectiveScopes,
       appContext
     );
+
+    // If scopes changed or there's a secret notice, prepend info to response.
+    const scopeNotice = this.buildScopeNotice(negotiation);
     const llmMessages = this.buildLlmMessages(history, message, contextBlock);
     const llmResponse = await callChatLlm(this.config.model, systemPrompt, llmMessages);
     const { cleanedAnswer, citations } = this.citationParser.parse(
@@ -82,9 +91,11 @@ export class ConversationEngine {
       retrievalResults
     );
 
+    const responseContent = scopeNotice ? `${scopeNotice}\n\n${cleanedAnswer}` : cleanedAnswer;
+
     return {
       response: {
-        content: cleanedAnswer,
+        content: responseContent,
         citations: citations.map((c) => c.id),
         tokensIn: llmResponse.tokensIn,
         tokensOut: llmResponse.tokensOut,
@@ -93,6 +104,7 @@ export class ConversationEngine {
         engramId: r.sourceId,
         relevanceScore: r.score,
       })),
+      scopeNegotiation: negotiation,
     };
   }
 
@@ -101,6 +113,42 @@ export class ConversationEngine {
     const formatted = formatHistoryForContext(messages);
     const prompt = buildSummarisationPrompt(formatted);
     return callSummariseLlm(this.config.model, prompt, messages.length);
+  }
+
+  /**
+   * Run scope negotiation for the current message.
+   */
+  private negotiateScopes(params: ChatParams): ScopeNegotiation {
+    const { message, activeScopes, history, channel, knownScopes } = params;
+    const result = this.scopeNegotiator.negotiate({
+      message,
+      currentScopes: activeScopes,
+      conversationHistory: history,
+      channel: channel ?? 'shell',
+      knownScopes,
+    });
+    const secretNotice = this.scopeNegotiator.detectSecretMention(message);
+    return {
+      scopes: result.scopes,
+      changed: result.changed,
+      reason: result.reason,
+      secretNotice,
+    };
+  }
+
+  /**
+   * Build a user-facing notice string when scopes changed or secret content
+   * was mentioned.
+   */
+  private buildScopeNotice(negotiation: ScopeNegotiation): string | null {
+    const parts: string[] = [];
+    if (negotiation.changed && negotiation.reason) {
+      parts.push(`*${negotiation.reason}*`);
+    }
+    if (negotiation.secretNotice) {
+      parts.push(negotiation.secretNotice);
+    }
+    return parts.length > 0 ? parts.join('\n\n') : null;
   }
 
   private async retrieveEngrams(query: string, scopes: string[]): Promise<RetrievalResult[]> {
