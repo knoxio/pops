@@ -22,6 +22,13 @@ import type { ClassifyEngramJobData, CurationQueueJobData } from '../types.js';
 
 const logger = pino({ name: 'worker:curation' });
 
+const GLIA_JOB_TYPES = ['glia:prune', 'glia:consolidate', 'glia:link', 'glia:audit'] as const;
+type GliaJobType = (typeof GLIA_JOB_TYPES)[number];
+
+function isGliaJobType(type: string): type is GliaJobType {
+  return (GLIA_JOB_TYPES as readonly string[]).includes(type);
+}
+
 export async function process(job: Job<CurationQueueJobData>): Promise<unknown> {
   const { type } = job.data;
   logger.info({ jobId: job.id, type }, 'Curation job received');
@@ -29,6 +36,12 @@ export async function process(job: Job<CurationQueueJobData>): Promise<unknown> 
   if (job.data.type === 'classifyEngram') {
     const data = job.data as ClassifyEngramJobData;
     return processClassifyEngram(data.engramId);
+  }
+
+  if (isGliaJobType(type)) {
+    const { processGliaJob } = await import('../../modules/cerebrum/workers/handler.js');
+    const dryRun = (job.data as Record<string, unknown>)['dryRun'] as boolean | undefined;
+    return processGliaJob({ type, dryRun });
   }
 
   throw new Error(`Curation handler not implemented for type: ${type}`);

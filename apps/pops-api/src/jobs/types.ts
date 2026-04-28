@@ -68,12 +68,38 @@ export interface ClassifyEngramJobData {
   engramId: string;
 }
 
+export interface GliaPruneJobData {
+  type: 'glia:prune';
+  dryRun?: boolean;
+}
+
+export interface GliaConsolidateJobData {
+  type: 'glia:consolidate';
+  dryRun?: boolean;
+}
+
+export interface GliaLinkJobData {
+  type: 'glia:link';
+  dryRun?: boolean;
+}
+
+export interface GliaAuditJobData {
+  type: 'glia:audit';
+  dryRun?: boolean;
+}
+
 export interface GenericJobData {
   type: string;
   [key: string]: unknown;
 }
 
-export type CurationQueueJobData = ClassifyEngramJobData | GenericJobData;
+export type GliaJobData =
+  | GliaPruneJobData
+  | GliaConsolidateJobData
+  | GliaLinkJobData
+  | GliaAuditJobData;
+
+export type CurationQueueJobData = ClassifyEngramJobData | GliaJobData | GenericJobData;
 export type DefaultQueueJobData = CrossSourceIndexJobData;
 
 // ---------------------------------------------------------------------------

@@ -2,11 +2,11 @@
  * Cerebrum domain — engram storage and retrieval.
  * See docs/themes/06-cerebrum for the full spec.
  */
-import { router } from '../../trpc.js';
+import { mergeRouters, router } from '../../trpc.js';
 import { emitRouter } from './emit/router.js';
 import { engramsRouter } from './engrams/router.js';
 import { scopesRouter } from './engrams/scopes-router.js';
-import { gliaRouter } from './glia/router.js';
+import { gliaRouter as gliaTrustRouter } from './glia/router.js';
 import { ingestRouter } from './ingest/router.js';
 import { nudgesRouter } from './nudges/router.js';
 import { plexusRouter } from './plexus/router.js';
@@ -15,6 +15,7 @@ import { reflexRouter } from './reflex/router.js';
 import { retrievalRouter } from './retrieval/router.js';
 import { templatesRouter } from './templates/router.js';
 import { indexRouter } from './thalamus/router.js';
+import { gliaRouter as gliaWorkersRouter } from './workers/router.js';
 
 export const cerebrumRouter = router({
   engrams: engramsRouter,
@@ -25,7 +26,7 @@ export const cerebrumRouter = router({
   ingest: ingestRouter,
   query: queryRouter,
   emit: emitRouter,
-  glia: gliaRouter,
+  glia: mergeRouters(gliaTrustRouter, gliaWorkersRouter),
   nudges: nudgesRouter,
   plexus: plexusRouter,
   reflex: reflexRouter,
