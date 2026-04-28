@@ -59,7 +59,7 @@ function BodyEditor({ value, onChange }: { value: string; onChange: (v: string) 
   return (
     <div className="flex flex-col gap-1.5 w-full">
       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest ml-1">
-        Body
+        {t('ingest.bodyLabel')}
       </label>
       <Textarea
         value={value}
@@ -78,7 +78,7 @@ function TagInput({ value, onChange }: { value: string[]; onChange: (v: string[]
   return (
     <div className="flex flex-col gap-1.5 w-full">
       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest ml-1">
-        Tags
+        {t('ingest.tagsLabel')}
       </label>
       <ChipInput
         value={value}

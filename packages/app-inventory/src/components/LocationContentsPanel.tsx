@@ -191,7 +191,7 @@ export function LocationContentsPanel({
           }
         >
           <Plus className="h-4 w-4 mr-1.5" />
-          Add Item Here
+          {t('locations.addItemHere')}
         </Button>
       }
     >

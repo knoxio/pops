@@ -149,7 +149,7 @@ export function DashboardWidgets() {
         description={
           <span className="flex items-center gap-1">
             <Shield className="h-3 w-3" />
-            expiring
+            {t('dashboard.expiring')}
           </span>
         }
         onClick={() => navigate('/inventory/warranties')}

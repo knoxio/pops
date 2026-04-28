@@ -159,7 +159,7 @@ export function LocationPicker({
   className,
 }: LocationPickerProps) {
   const { t } = useTranslation('inventory');
-  const effectivePlaceholder = placeholder ?? t('locations.selectLocation');
+  const resolvedPlaceholder = placeholder ?? t('locations.selectLocation');
   const [open, setOpen] = useState(false);
   const { search, setSearch, selectedPath, visibleIds, effectiveExpanded, handleToggle } =
     useLocationPickerState(value, locations);
@@ -183,7 +183,7 @@ export function LocationPicker({
       <PopoverTrigger asChild>
         <PickerTrigger
           selectedPath={selectedPath}
-          placeholder={effectivePlaceholder}
+          placeholder={resolvedPlaceholder}
           open={open}
           disabled={disabled}
           className={className}

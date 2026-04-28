@@ -95,7 +95,7 @@ function ConversationListHeader({ onNew }: { onNew: () => void }) {
         prefix={<MessageSquarePlus className="h-4 w-4" />}
         aria-label={t('chat.newConversation')}
       >
-        New
+        {t('chat.new')}
       </Button>
     </div>
   );
@@ -147,7 +147,7 @@ function DeleteConfirmationDialog({
         <AlertDialogFooter>
           <AlertDialogCancel>{t('chat.cancel')}</AlertDialogCancel>
           <AlertDialogAction variant="destructive" onClick={onConfirm} disabled={isDeleting}>
-            Delete
+            {t('chat.delete')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
