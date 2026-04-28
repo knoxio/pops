@@ -1,6 +1,7 @@
 # US-05: Conversation Persistence
 
 > PRD: [PRD-087: Ego Core](README.md)
+> Status: Done
 
 ## Description
 

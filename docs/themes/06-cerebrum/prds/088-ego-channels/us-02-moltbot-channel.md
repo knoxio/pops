@@ -1,6 +1,7 @@
 # US-02: Moltbot Channel
 
 > PRD: [PRD-088: Ego Channels](README.md)
+> Status: Done
 
 ## Description
 

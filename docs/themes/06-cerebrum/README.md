@@ -41,12 +41,12 @@ Cerebrum is a subsystem umbrella containing multiple named components:
 | --- | -------------------------------------------- | ------------------------------------------------------------------------------ | ----------- |
 | 0   | [Engram Storage](epics/00-engram-storage.md) | File format, templates, directory structure, scope model, CRUD operations      | Partial     |
 | 1   | [Thalamus](epics/01-thalamus.md)             | File watcher, frontmatter indexing, embedding sync, cross-source retrieval     | Partial     |
-| 2   | [Ingest](epics/02-ingest.md)                 | Manual/agent/capture input, classification, entity extraction, scope inference | Not started |
+| 2   | [Ingest](epics/02-ingest.md)                 | Manual/agent/capture input, classification, entity extraction, scope inference | In progress |
 | 3   | [Emit](epics/03-emit.md)                     | Query engine, document generation, proactive nudges                            | Partial     |
-| 4   | [Glia](epics/04-glia.md)                     | Curation workers (pruner, consolidator, linker, auditor), trust graduation     | Not started |
+| 4   | [Glia](epics/04-glia.md)                     | Curation workers (pruner, consolidator, linker, auditor), trust graduation     | Partial     |
 | 5   | [Ego](epics/05-ego.md)                       | Chat agent — shell panel, MCP tools, Moltbot, CLI. Supersedes PRD-054          | Partial     |
 | 6   | [Reflex](epics/06-reflex.md)                 | Automation triggers — event, threshold, scheduled. reflexes.toml               | Done        |
-| 7   | [Plexus](epics/07-plexus.md)                 | Plugin system — adapter interface, core integrations (email, calendar, GitHub) | Partial     |
+| 7   | [Plexus](epics/07-plexus.md)                 | Plugin system — adapter interface, core integrations (email, calendar, GitHub) | Done        |
 
 Epics 0-3 form Phase 1 (MVP): store, index, ingest, retrieve. Epics 4-5 form Phase 2: curation and chat interface. Epics 6-7 form Phase 3: automation and ecosystem. Within each phase, epics are sequential on their dependencies (0 before 1 before 2, etc.) but later phases can begin individual epics as their dependencies are met.
 

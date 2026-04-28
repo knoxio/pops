@@ -1,6 +1,7 @@
 # US-01: Adapter Interface
 
 > PRD: [PRD-090: Plugin Architecture](README.md)
+> Status: Done
 
 ## Description
 

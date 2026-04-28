@@ -130,22 +130,22 @@ Live status of every theme and epic. Updated as work completes.
 | ----------------------------- | ----------- | ------------------------------------------------------------------------------------------------------------- |
 | Engram Storage (format, CRUD) | Done        | PRD-077 (format, templates, index schema, CRUD, tRPC, provisioning) + PRD-078 (scope model) complete          |
 | Thalamus (indexing/retrieval) | Done        | PRD-079 (indexing/sync) + PRD-080 (retrieval engine: semantic, structured, hybrid, context assembly) complete |
-| Ingest (input pipeline)       | Not started | Manual, agent, capture channels + classification + scope inference                                            |
+| Ingest (input pipeline)       | In progress | PRD-081 in progress — normaliser, classifier, entity extraction, scope inference implemented                  |
 | Emit (output production)      | Partial     | PRD-082 (Query Engine) done. Document generation and proactive nudges not started                             |
 
 ### Cerebrum — Phase 2 (Curation & Interface)
 
-| Epic                    | Status      | Notes                                                                               |
-| ----------------------- | ----------- | ----------------------------------------------------------------------------------- |
-| Glia (curation workers) | Not started | Pruner, consolidator, linker, auditor + trust graduation                            |
-| Ego (chat agent)        | Partial     | PRD-088 (Ego Channels) done. PRD-087 (Ego Core) partial — SSE streaming gap remains |
+| Epic                    | Status  | Notes                                                                                |
+| ----------------------- | ------- | ------------------------------------------------------------------------------------ |
+| Glia (curation workers) | Partial | PRD-085 (workers) done. PRD-086 (trust graduation) partial — review UI + reverts gap |
+| Ego (chat agent)        | Partial | PRD-088 (Ego Channels) done. PRD-087 (Ego Core) partial — SSE streaming gap remains  |
 
 ### Cerebrum — Phase 3 (Automation & Ecosystem)
 
-| Epic                   | Status      | Notes                                                            |
-| ---------------------- | ----------- | ---------------------------------------------------------------- |
-| Reflex (automation)    | Not started | reflexes.toml, event/threshold/scheduled triggers                |
-| Plexus (plugin system) | Partial     | PRD-090 (architecture) done; PRD-091 (core adapters) not started |
+| Epic                   | Status | Notes                                                                    |
+| ---------------------- | ------ | ------------------------------------------------------------------------ |
+| Reflex (automation)    | Done   | PRD-089 complete — definitions, event/threshold/scheduled triggers, mgmt |
+| Plexus (plugin system) | Done   | PRD-090 (architecture) + PRD-091 (email, calendar, GitHub adapters) done |
 
 ### Phase 1 — Foundation (continued)
 

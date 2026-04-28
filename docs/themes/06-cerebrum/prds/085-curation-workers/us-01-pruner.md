@@ -1,6 +1,7 @@
 # US-01: Pruner Worker
 
 > PRD: [PRD-085: Curation Workers](README.md)
+> Status: Done
 
 ## Description
 

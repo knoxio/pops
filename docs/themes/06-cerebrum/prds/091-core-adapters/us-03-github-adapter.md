@@ -1,6 +1,7 @@
 # US-03: GitHub Adapter
 
 > PRD: [PRD-091: Core Integration Adapters](README.md)
+> Status: Done
 
 ## Description
 

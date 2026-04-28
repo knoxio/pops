@@ -96,4 +96,4 @@ All three adapters are independent implementations of the same interface and can
 
 ## Drift Check
 
-last checked: 2026-04-17
+last checked: 2026-04-28

@@ -1,6 +1,7 @@
 # US-01: Conversation Engine
 
 > PRD: [PRD-087: Ego Core](README.md)
+> Status: Partial
 
 ## Description
 

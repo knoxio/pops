@@ -1,6 +1,7 @@
 # US-02: Plugin Lifecycle
 
 > PRD: [PRD-090: Plugin Architecture](README.md)
+> Status: Done
 
 ## Description
 

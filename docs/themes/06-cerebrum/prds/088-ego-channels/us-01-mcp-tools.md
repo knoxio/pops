@@ -1,6 +1,7 @@
 # US-01: MCP Tools for Claude Code
 
 > PRD: [PRD-088: Ego Channels](README.md)
+> Status: Done
 
 ## Description
 

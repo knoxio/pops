@@ -1,6 +1,7 @@
 # US-03: Linker Worker
 
 > PRD: [PRD-085: Curation Workers](README.md)
+> Status: Done
 
 ## Description
 
