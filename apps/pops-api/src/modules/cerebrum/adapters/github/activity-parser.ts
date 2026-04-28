@@ -1,3 +1,5 @@
+import { buildActivityBody } from './github-helpers.js';
+
 /**
  * GitHub activity parser — converts raw GitHub API data into EngineData.
  *
@@ -65,58 +67,6 @@ export interface GitHubApiEvent {
 }
 
 // ---------------------------------------------------------------------------
-// Body construction
-// ---------------------------------------------------------------------------
-
-function buildActivityBody(activity: RawGitHubActivity): string {
-  const sections: string[] = [];
-
-  sections.push(`**Type:** ${formatEventType(activity.eventType)}`);
-  sections.push(`**Repository:** [${activity.repo}](https://github.com/${activity.repo})`);
-  sections.push(`**Author:** @${activity.actor.login}`);
-  sections.push(`**Link:** [View on GitHub](${activity.url})`);
-  appendOptionalSections(sections, activity);
-
-  if (activity.body && activity.body.trim().length > 0) {
-    const body = activity.body.trim();
-    const truncated = body.length > 2000 ? `${body.slice(0, 2000)}...\n\n*(truncated)*` : body;
-    sections.push(`---\n\n${truncated}`);
-  }
-
-  return sections.join('\n');
-}
-
-function appendOptionalSections(sections: string[], activity: RawGitHubActivity): void {
-  if (activity.labels && activity.labels.length > 0) {
-    sections.push(`**Labels:** ${activity.labels.map((l) => `\`${l.name}\``).join(', ')}`);
-  }
-  if (activity.milestone) {
-    sections.push(`**Milestone:** ${activity.milestone}`);
-  }
-  if (activity.eventType.startsWith('pull_request') && activity.changedFiles !== undefined) {
-    sections.push(
-      `**Changes:** ${activity.changedFiles} files, +${activity.additions ?? 0} / -${activity.deletions ?? 0}`
-    );
-  }
-  if (activity.linkedIssues && activity.linkedIssues.length > 0) {
-    sections.push(`**Linked:** ${activity.linkedIssues.join(', ')}`);
-  }
-}
-
-function formatEventType(eventType: GitHubEventType): string {
-  const labels: Record<GitHubEventType, string> = {
-    'issues.assigned': 'Issue Assigned',
-    'pull_request.review_requested': 'PR Review Requested',
-    'pull_request.merged': 'PR Merged',
-    'issue_comment.mentioned': 'Mentioned in Comment',
-    commit: 'Commit',
-    'pull_request.opened': 'PR Opened',
-    'issues.opened': 'Issue Opened',
-  };
-  return labels[eventType] ?? eventType;
-}
-
-// ---------------------------------------------------------------------------
 // Tag extraction & bot detection
 // ---------------------------------------------------------------------------
 
@@ -149,7 +99,7 @@ export function isBot(actor: GitHubActor): boolean {
 }
 
 // ---------------------------------------------------------------------------
-// Activity → EngineData conversion
+// Activity -> EngineData conversion
 // ---------------------------------------------------------------------------
 
 export interface GitHubParserOptions {

@@ -12,10 +12,10 @@ import {
   type AdapterConfig,
   type AdapterStatus,
   type EngineData,
-  type IngestFilter,
   type IngestOptions,
 } from '../types.js';
-import { eventMatchesFilter, parseCalendarEvent, type RawCalendarEvent } from './event-parser.js';
+import { passesCalendarFilters } from './calendar-helpers.js';
+import { parseCalendarEvent, type RawCalendarEvent } from './event-parser.js';
 
 // ---------------------------------------------------------------------------
 // Adapter-specific settings
@@ -40,9 +40,7 @@ export interface CalendarAdapterSettings {
 // Calendar transport abstraction
 // ---------------------------------------------------------------------------
 
-/**
- * Abstraction over the calendar transport (CalDAV, Google API, etc.).
- */
+/** Abstraction over the calendar transport (CalDAV, Google API, etc.). */
 export interface CalendarTransport {
   /** Establish connection / authenticate. */
   connect(config: AdapterConfig<CalendarAdapterSettings>): Promise<void>;
@@ -59,7 +57,7 @@ export interface CalendarTransport {
 // ---------------------------------------------------------------------------
 
 interface CalendarSyncState {
-  /** Map of externalId → last-modified timestamp for already-ingested events. */
+  /** Map of externalId -> last-modified timestamp for already-ingested events. */
   ingestedEvents: Map<string, string>;
 }
 
@@ -113,8 +111,7 @@ export class CalendarAdapter extends BaseAdapter<CalendarAdapterSettings> {
 
     const { start, end, scope } = this.computeSyncWindow(config.settings, options.since);
     const events = await this.transport.fetchEvents(start, end);
-
-    const results = this.processEvents(events, scope, options.filters);
+    const results = this.processEvents(events, scope, options);
 
     if (options.limit && results.length > options.limit) {
       return results.slice(0, options.limit);
@@ -139,15 +136,10 @@ export class CalendarAdapter extends BaseAdapter<CalendarAdapterSettings> {
         status: 'healthy',
         message: `Connected — ${calendars.length} calendar(s) accessible`,
         lastChecked: new Date().toISOString(),
-        metrics: {
-          calendars,
-          trackedEvents: this.syncState.ingestedEvents.size,
-        },
+        metrics: { calendars, trackedEvents: this.syncState.ingestedEvents.size },
       };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-
-      // Distinguish auth errors from transient failures
       if (message.includes('401') || message.includes('auth')) {
         this.status = 'error';
         return {
@@ -156,7 +148,6 @@ export class CalendarAdapter extends BaseAdapter<CalendarAdapterSettings> {
           lastChecked: new Date().toISOString(),
         };
       }
-
       this.status = 'degraded';
       return {
         status: 'degraded',
@@ -190,7 +181,6 @@ export class CalendarAdapter extends BaseAdapter<CalendarAdapterSettings> {
     const daysBehind = settings.syncDaysBehind ?? 7;
     const daysAhead = settings.syncDaysAhead ?? 30;
     const scopeLabel = settings.scopeLabel ?? 'personal';
-
     const now = new Date();
     return {
       start: since ?? new Date(now.getTime() - daysBehind * 24 * 60 * 60 * 1000),
@@ -202,18 +192,15 @@ export class CalendarAdapter extends BaseAdapter<CalendarAdapterSettings> {
   private processEvents(
     events: RawCalendarEvent[],
     scope: string,
-    filters?: IngestFilter[]
+    options: IngestOptions
   ): EngineData[] {
     const results: EngineData[] = [];
-
     for (const event of events) {
-      if (!this.passesFilters(event, filters)) continue;
+      if (!passesCalendarFilters(event, options.filters)) continue;
       if (this.isAlreadyIngested(event)) continue;
-
       results.push(parseCalendarEvent(event, { scopeLabel: scope }));
       this.trackEvent(event);
     }
-
     return results;
   }
 
@@ -223,7 +210,6 @@ export class CalendarAdapter extends BaseAdapter<CalendarAdapterSettings> {
         ? `${event.uid}::${event.occurrenceDate}`
         : event.uid;
     const previouslyModified = this.syncState.ingestedEvents.get(externalId);
-
     if (!previouslyModified || !event.lastModified) return false;
     return event.lastModified <= previouslyModified;
   }
@@ -234,24 +220,5 @@ export class CalendarAdapter extends BaseAdapter<CalendarAdapterSettings> {
         ? `${event.uid}::${event.occurrenceDate}`
         : event.uid;
     this.syncState.ingestedEvents.set(externalId, event.lastModified ?? new Date().toISOString());
-  }
-
-  private passesFilters(event: RawCalendarEvent, filters?: IngestFilter[]): boolean {
-    if (!filters || filters.length === 0) return true;
-
-    const includes = filters.filter((f) => f.type === 'include');
-    const excludes = filters.filter((f) => f.type === 'exclude');
-
-    if (includes.length > 0) {
-      const included = includes.some((f) => eventMatchesFilter(event, f.field, f.pattern));
-      if (!included) return false;
-    }
-
-    if (excludes.length > 0) {
-      const excluded = excludes.some((f) => eventMatchesFilter(event, f.field, f.pattern));
-      if (excluded) return false;
-    }
-
-    return true;
   }
 }

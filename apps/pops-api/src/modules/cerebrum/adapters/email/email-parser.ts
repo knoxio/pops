@@ -1,3 +1,5 @@
+import { stripHtmlToMarkdown } from './email-helpers.js';
+
 /**
  * Email parser — converts raw email data into EngineData for ingestion.
  *
@@ -5,6 +7,9 @@
  * and formats attachment listings.
  */
 import type { EngineData } from '../types.js';
+
+// Re-export for external consumers.
+export { stripHtmlToMarkdown } from './email-helpers.js';
 
 // ---------------------------------------------------------------------------
 // Raw email types (from IMAP or API)
@@ -36,84 +41,12 @@ export interface RawEmail {
 }
 
 // ---------------------------------------------------------------------------
-// HTML → Markdown conversion (lightweight, no external dependency)
-// ---------------------------------------------------------------------------
-
-/**
- * Strip HTML to clean Markdown. Preserves links, lists, headers, emphasis.
- * Removes scripts, styles, tracking pixels, and comments.
- */
-export function stripHtmlToMarkdown(html: string): string {
-  let text = html;
-
-  // Remove comments
-  text = text.replace(/<!--[\s\S]*?-->/g, '');
-
-  // Remove script and style blocks
-  text = text.replace(/<script[\s\S]*?<\/script>/gi, '');
-  text = text.replace(/<style[\s\S]*?<\/style>/gi, '');
-
-  // Remove tracking pixels (1x1 images)
-  text = text.replace(/<img[^>]*(?:width|height)\s*=\s*["']?1["']?[^>]*>/gi, '');
-
-  // Convert headers
-  text = text.replace(/<h1[^>]*>([\s\S]*?)<\/h1>/gi, '# $1\n\n');
-  text = text.replace(/<h2[^>]*>([\s\S]*?)<\/h2>/gi, '## $1\n\n');
-  text = text.replace(/<h3[^>]*>([\s\S]*?)<\/h3>/gi, '### $1\n\n');
-  text = text.replace(/<h4[^>]*>([\s\S]*?)<\/h4>/gi, '#### $1\n\n');
-
-  // Convert emphasis
-  text = text.replace(/<(?:strong|b)>([\s\S]*?)<\/(?:strong|b)>/gi, '**$1**');
-  text = text.replace(/<(?:em|i)>([\s\S]*?)<\/(?:em|i)>/gi, '*$1*');
-
-  // Convert links
-  text = text.replace(/<a[^>]*href=["']([^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi, '[$2]($1)');
-
-  // Convert unordered list items
-  text = text.replace(/<li[^>]*>([\s\S]*?)<\/li>/gi, '- $1\n');
-
-  // Remove list container tags
-  text = text.replace(/<\/?(?:ul|ol)[^>]*>/gi, '\n');
-
-  // Convert line breaks and paragraphs
-  text = text.replace(/<br\s*\/?>/gi, '\n');
-  text = text.replace(/<\/p>/gi, '\n\n');
-  text = text.replace(/<p[^>]*>/gi, '');
-
-  // Convert blockquotes
-  text = text.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (_, content: string) => {
-    return content
-      .split('\n')
-      .map((line) => `> ${line.trim()}`)
-      .join('\n');
-  });
-
-  // Remove remaining HTML tags
-  text = text.replace(/<[^>]+>/g, '');
-
-  // Decode common HTML entities
-  text = text.replace(/&amp;/g, '&');
-  text = text.replace(/&lt;/g, '<');
-  text = text.replace(/&gt;/g, '>');
-  text = text.replace(/&quot;/g, '"');
-  text = text.replace(/&#39;/g, "'");
-  text = text.replace(/&nbsp;/g, ' ');
-
-  // Clean up excessive whitespace
-  text = text.replace(/[ \t]+/g, ' ');
-  text = text.replace(/\n{3,}/g, '\n\n');
-  text = text.trim();
-
-  return text;
-}
-
-// ---------------------------------------------------------------------------
 // Tag extraction
 // ---------------------------------------------------------------------------
 
 /**
  * Extract a display name or address from a full email string.
- * e.g. "John Doe <john@example.com>" → "john@example.com"
+ * e.g. "John Doe <john@example.com>" -> "john@example.com"
  */
 function extractEmailAddress(raw: string): string {
   const match = /<([^>]+)>/.exec(raw);
@@ -170,7 +103,7 @@ function buildBody(email: RawEmail): string {
 }
 
 // ---------------------------------------------------------------------------
-// Email → EngineData conversion
+// Email -> EngineData conversion
 // ---------------------------------------------------------------------------
 
 export interface EmailParserOptions {
@@ -178,9 +111,7 @@ export interface EmailParserOptions {
   scopeLabel: string;
 }
 
-/**
- * Convert a raw email into EngineData for the ingestion pipeline.
- */
+/** Convert a raw email into EngineData for the ingestion pipeline. */
 export function parseEmail(email: RawEmail, options: EmailParserOptions): EngineData {
   return {
     title: email.subject || '(no subject)',
@@ -204,10 +135,7 @@ export function parseEmail(email: RawEmail, options: EmailParserOptions): Engine
 // Filter helpers
 // ---------------------------------------------------------------------------
 
-/**
- * Check if an email matches a filter pattern on a given field.
- * Returns true if the pattern matches the field value.
- */
+/** Check if an email matches a filter pattern on a given field. */
 export function emailMatchesFilter(email: RawEmail, field: string, pattern: string): boolean {
   const regex = new RegExp(pattern, 'i');
 

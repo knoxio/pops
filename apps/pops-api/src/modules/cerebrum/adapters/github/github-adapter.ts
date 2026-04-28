@@ -9,20 +9,23 @@ import {
   type AdapterConfig,
   type AdapterStatus,
   type EngineData,
-  type IngestFilter,
   type IngestOptions,
 } from '../types.js';
 import {
-  activityMatchesFilter,
   isBot,
   parseGitHubActivity,
   type GitHubEventType,
   type RawGitHubActivity,
 } from './activity-parser.js';
 import {
+  buildErrorHealthStatus,
+  buildMetrics,
+  now,
+  passesGitHubFilters,
+} from './github-helpers.js';
+import {
   FetchGitHubTransport,
   GitHubRateLimitError,
-  type GitHubRateLimit,
   type GitHubTransport,
 } from './github-transport.js';
 
@@ -87,7 +90,7 @@ export class GitHubAdapter extends BaseAdapter<GitHubAdapterSettings> {
   override async ingest(options: IngestOptions): Promise<EngineData[]> {
     const config = this.requireConfig();
     const activities = await this.fetchActivitiesFromTransport(config, options);
-    const results = this.filterAndConvert(activities, config, options.filters);
+    const results = this.filterAndConvert(activities, config, options);
     this.updateRepoTimestamps(activities);
     return results;
   }
@@ -145,14 +148,14 @@ export class GitHubAdapter extends BaseAdapter<GitHubAdapterSettings> {
   private filterAndConvert(
     activities: RawGitHubActivity[],
     config: AdapterConfig<GitHubAdapterSettings>,
-    filters?: IngestFilter[]
+    options: IngestOptions
   ): EngineData[] {
     const scopeLabel = config.settings.scopeLabel ?? 'work.dev.github';
     const results: EngineData[] = [];
 
     for (const activity of activities) {
       if (isBot(activity.actor)) continue;
-      if (!passesFilters(activity, filters)) continue;
+      if (!passesGitHubFilters(activity, options.filters)) continue;
       if (this.isAlreadyFetched(activity)) continue;
       results.push(parseGitHubActivity(activity, { scopeLabel }));
     }
@@ -205,44 +208,4 @@ export class GitHubAdapter extends BaseAdapter<GitHubAdapterSettings> {
       metrics,
     };
   }
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function passesFilters(activity: RawGitHubActivity, filters?: IngestFilter[]): boolean {
-  if (!filters || filters.length === 0) return true;
-  const includes = filters.filter((f) => f.type === 'include');
-  const excludes = filters.filter((f) => f.type === 'exclude');
-  if (includes.length > 0) {
-    const matched = includes.some((f) => activityMatchesFilter(activity, f.field, f.pattern));
-    if (!matched) return false;
-  }
-  if (excludes.some((f) => activityMatchesFilter(activity, f.field, f.pattern))) return false;
-  return true;
-}
-
-function buildErrorHealthStatus(err: unknown): AdapterStatus {
-  const msg = err instanceof Error ? err.message : String(err);
-  const isAuthError = msg.includes('401') || msg.includes('invalid token');
-  return {
-    status: isAuthError ? 'error' : 'degraded',
-    message: isAuthError ? `Token invalid: ${msg}` : `Health check failed: ${msg}`,
-    lastChecked: now(),
-  };
-}
-
-function buildMetrics(rl: GitHubRateLimit, pct: number, repos: number): Record<string, unknown> {
-  return {
-    rateLimit: rl.limit,
-    rateLimitRemaining: rl.remaining,
-    rateLimitReset: new Date(rl.reset * 1000).toISOString(),
-    rateLimitUsagePercent: Math.round(pct),
-    trackedRepos: repos,
-  };
-}
-
-function now(): string {
-  return new Date().toISOString();
 }
