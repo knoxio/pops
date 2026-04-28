@@ -248,7 +248,7 @@ describe('AuditorWorker', () => {
       expect(lowQuality).toBeDefined();
       const payload = narrowPayload<LowQualityPayload>(lowQuality!, 'low_quality');
       expect(payload.suggestions).toEqual(
-        expect.arrayContaining([expect.stringContaining('Expand body content')])
+        expect.arrayContaining([expect.stringContaining('Expand body')])
       );
     });
   });
