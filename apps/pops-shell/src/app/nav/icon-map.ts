@@ -1,6 +1,7 @@
 import {
   ArrowLeftRight,
   BarChart3,
+  Bell,
   Bookmark,
   BookOpen,
   Bot,
@@ -13,6 +14,7 @@ import {
   Download,
   FileText,
   Film,
+  GitPullRequest,
   History,
   Layers,
   LayoutDashboard,
@@ -50,6 +52,7 @@ import type { IconName } from '@pops/navigation';
 export const iconMap = {
   ArrowLeftRight,
   BarChart3,
+  Bell,
   Bookmark,
   BookOpen,
   Bot,
@@ -62,6 +65,7 @@ export const iconMap = {
   Download,
   FileText,
   Film,
+  GitPullRequest,
   History,
   Layers,
   LayoutDashboard,

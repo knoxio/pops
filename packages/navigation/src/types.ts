@@ -19,6 +19,7 @@ export type AppName = 'finance' | 'media' | 'inventory' | 'ai' | 'cerebrum';
 export type IconName =
   | 'ArrowLeftRight'
   | 'BarChart3'
+  | 'Bell'
   | 'Bookmark'
   | 'BookOpen'
   | 'Bot'
@@ -31,6 +32,7 @@ export type IconName =
   | 'Download'
   | 'FileText'
   | 'Film'
+  | 'GitPullRequest'
   | 'History'
   | 'Layers'
   | 'LayoutDashboard'
