@@ -1,7 +1,7 @@
 # PRD-091: Core Integration Adapters
 
 > Epic: [07 — Plexus](../../epics/07-plexus.md)
-> Status: Not started
+> Status: Done
 
 ## Overview
 
@@ -65,11 +65,11 @@ No new procedures — adapters are managed through the Plexus adapter API (PRD-0
 
 ## User Stories
 
-| #   | Story                                               | Summary                                                                 | Status      | Parallelisable |
-| --- | --------------------------------------------------- | ----------------------------------------------------------------------- | ----------- | -------------- |
-| 01  | [us-01-email-adapter](us-01-email-adapter.md)       | IMAP/API email ingestion: connect, filter, extract, create engrams      | Not started | Yes            |
-| 02  | [us-02-calendar-adapter](us-02-calendar-adapter.md) | CalDAV/API calendar sync: import events, schedule-aware context for Ego | Not started | Yes            |
-| 03  | [us-03-github-adapter](us-03-github-adapter.md)     | GitHub API: ingest filtered activity, skip noise, create engrams        | Not started | Yes            |
+| #   | Story                                               | Summary                                                                 | Status | Parallelisable |
+| --- | --------------------------------------------------- | ----------------------------------------------------------------------- | ------ | -------------- |
+| 01  | [us-01-email-adapter](us-01-email-adapter.md)       | IMAP/API email ingestion: connect, filter, extract, create engrams      | Done   | Yes            |
+| 02  | [us-02-calendar-adapter](us-02-calendar-adapter.md) | CalDAV/API calendar sync: import events, schedule-aware context for Ego | Done   | Yes            |
+| 03  | [us-03-github-adapter](us-03-github-adapter.md)     | GitHub API: ingest filtered activity, skip noise, create engrams        | Done   | Yes            |
 
 All three adapters are independent implementations of the same interface and can be built in parallel. Each depends on PRD-090 (Plugin Architecture) being implemented.
 
