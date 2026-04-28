@@ -712,6 +712,24 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     CREATE UNIQUE INDEX IF NOT EXISTS uq_engram_links_pair ON engram_links(source_id, target_id);
     CREATE INDEX IF NOT EXISTS idx_engram_links_target ON engram_links(target_id);
 
+    -- Reflex execution log (PRD-089).
+    CREATE TABLE IF NOT EXISTS reflex_executions (
+      id            TEXT PRIMARY KEY,
+      reflex_name   TEXT NOT NULL,
+      trigger_type  TEXT NOT NULL,
+      trigger_data  TEXT,
+      action_type   TEXT NOT NULL,
+      action_verb   TEXT NOT NULL,
+      status        TEXT NOT NULL,
+      result        TEXT,
+      triggered_at  TEXT NOT NULL,
+      completed_at  TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_reflex_exec_name ON reflex_executions(reflex_name);
+    CREATE INDEX IF NOT EXISTS idx_reflex_exec_trigger_type ON reflex_executions(trigger_type);
+    CREATE INDEX IF NOT EXISTS idx_reflex_exec_status ON reflex_executions(status);
+    CREATE INDEX IF NOT EXISTS idx_reflex_exec_triggered_at ON reflex_executions(triggered_at);
+
     -- Ego conversation persistence (PRD-087).
     CREATE TABLE IF NOT EXISTS conversations (
       id            TEXT PRIMARY KEY NOT NULL,

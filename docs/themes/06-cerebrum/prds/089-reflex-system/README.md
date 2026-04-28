@@ -1,7 +1,7 @@
 # PRD-089: Reflex System
 
 > Epic: [06 — Reflex](../../epics/06-reflex.md)
-> Status: Not started
+> Status: Done
 
 ## Overview
 
@@ -97,13 +97,13 @@ action = { type = "glia", verb = "prune" }
 
 ## User Stories
 
-| #   | Story                                                   | Summary                                                              | Status      | Parallelisable   |
-| --- | ------------------------------------------------------- | -------------------------------------------------------------------- | ----------- | ---------------- |
-| 01  | [us-01-reflex-definitions](us-01-reflex-definitions.md) | reflexes.toml format parsing, validation, and TOML file watching     | Not started | No (first)       |
-| 02  | [us-02-event-triggers](us-02-event-triggers.md)         | Event-based triggers on engram lifecycle events via BullMQ event bus | Not started | Blocked by us-01 |
-| 03  | [us-03-threshold-triggers](us-03-threshold-triggers.md) | Threshold-based triggers evaluating Thalamus metrics periodically    | Not started | Blocked by us-01 |
-| 04  | [us-04-scheduled-triggers](us-04-scheduled-triggers.md) | Cron-based triggers via BullMQ repeatable jobs                       | Not started | Blocked by us-01 |
-| 05  | [us-05-reflex-management](us-05-reflex-management.md)   | Enable/disable, dry-run testing, execution history viewing           | Not started | Blocked by us-01 |
+| #   | Story                                                   | Summary                                                              | Status | Parallelisable   |
+| --- | ------------------------------------------------------- | -------------------------------------------------------------------- | ------ | ---------------- |
+| 01  | [us-01-reflex-definitions](us-01-reflex-definitions.md) | reflexes.toml format parsing, validation, and TOML file watching     | Done   | No (first)       |
+| 02  | [us-02-event-triggers](us-02-event-triggers.md)         | Event-based triggers on engram lifecycle events via BullMQ event bus | Done   | Blocked by us-01 |
+| 03  | [us-03-threshold-triggers](us-03-threshold-triggers.md) | Threshold-based triggers evaluating Thalamus metrics periodically    | Done   | Blocked by us-01 |
+| 04  | [us-04-scheduled-triggers](us-04-scheduled-triggers.md) | Cron-based triggers via BullMQ repeatable jobs                       | Done   | Blocked by us-01 |
+| 05  | [us-05-reflex-management](us-05-reflex-management.md)   | Enable/disable, dry-run testing, execution history viewing           | Done   | Blocked by us-01 |
 
 US-01 defines the reflex format and parsing — all other stories depend on it. US-02, US-03, US-04, and US-05 can be built in parallel after US-01.
 
@@ -128,4 +128,4 @@ US-01 defines the reflex format and parsing — all other stories depend on it. 
 
 ## Drift Check
 
-last checked: 2026-04-17
+last checked: 2026-04-28

@@ -8,14 +8,14 @@ As the Cerebrum system, I need event-based triggers that fire reflexes on engram
 
 ## Acceptance Criteria
 
-- [ ] An event bus built on BullMQ publishes engram lifecycle events: `engram.created`, `engram.modified`, `engram.archived`, `engram.linked` — each event carries a payload with the engram ID, type, scopes, source, and the change details
-- [ ] Event-triggered reflexes subscribe to their configured event type on load — when an event matches a reflex's trigger, the reflex's action is dispatched
-- [ ] The optional `conditions` object on event triggers filters events by engram fields: `type` (exact match), `scopes` (prefix match — `work.*` matches any scope starting with `work.`), `source` (exact match) — only events matching all conditions trigger the reflex
-- [ ] Template variables in action payloads are resolved from the event payload: `{{engram_id}}` resolves to the affected engram's ID, `{{engram_type}}` to its type, `{{engram_scopes}}` to a comma-separated list of scopes
-- [ ] Event dispatching is asynchronous — the event emitter (engram CRUD service) enqueues events to BullMQ and does not wait for reflex execution. Reflex actions run in their own job context
-- [ ] Each reflex execution creates a `reflex_executions` row with `trigger_type: 'event'`, the event payload in `trigger_data`, and the action outcome in `result`
-- [ ] Multiple reflexes can fire on the same event — each executes independently with no ordering guarantees. One failing reflex does not block others
-- [ ] Event triggers are re-subscribed when `reflexes.toml` is reloaded — stale subscriptions from removed or disabled reflexes are cleaned up
+- [x] An event bus built on BullMQ publishes engram lifecycle events: `engram.created`, `engram.modified`, `engram.archived`, `engram.linked` — each event carries a payload with the engram ID, type, scopes, source, and the change details
+- [x] Event-triggered reflexes subscribe to their configured event type on load — when an event matches a reflex's trigger, the reflex's action is dispatched
+- [x] The optional `conditions` object on event triggers filters events by engram fields: `type` (exact match), `scopes` (prefix match — `work.*` matches any scope starting with `work.`), `source` (exact match) — only events matching all conditions trigger the reflex
+- [x] Template variables in action payloads are resolved from the event payload: `{{engram_id}}` resolves to the affected engram's ID, `{{engram_type}}` to its type, `{{engram_scopes}}` to a comma-separated list of scopes
+- [x] Event dispatching is asynchronous — the event emitter (engram CRUD service) enqueues events to BullMQ and does not wait for reflex execution. Reflex actions run in their own job context
+- [x] Each reflex execution creates a `reflex_executions` row with `trigger_type: 'event'`, the event payload in `trigger_data`, and the action outcome in `result`
+- [x] Multiple reflexes can fire on the same event — each executes independently with no ordering guarantees. One failing reflex does not block others
+- [x] Event triggers are re-subscribed when `reflexes.toml` is reloaded — stale subscriptions from removed or disabled reflexes are cleaned up
 
 ## Notes
 

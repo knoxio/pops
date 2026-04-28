@@ -8,14 +8,14 @@ As a user, I want to enable, disable, test, and view execution history for my re
 
 ## Acceptance Criteria
 
-- [ ] `cerebrum.reflexes.enable` sets the `enabled` field to `true` in `reflexes.toml` for the specified reflex name, writes the updated file, and triggers a reload — the reflex's triggers are activated immediately
-- [ ] `cerebrum.reflexes.disable` sets the `enabled` field to `false` in `reflexes.toml` for the specified reflex name, writes the updated file, and triggers a reload — the reflex's triggers are deactivated (scheduled jobs removed, event subscriptions cleared)
-- [ ] `cerebrum.reflexes.test` performs a dry-run execution of the specified reflex: event triggers fire with a synthetic event payload, threshold triggers evaluate current metrics without acting, scheduled triggers fire immediately. The action runs in dry-run mode (Glia `dryRun: true`, Emit preview, Ingest preview) — no side effects
-- [ ] The test result is returned directly and also logged as a `reflex_executions` row with `status: 'completed'` and a `dry_run: true` flag in the `result` JSON
-- [ ] `cerebrum.reflexes.list` returns all reflexes from `reflexes.toml` with runtime state: enabled status, trigger type, last execution timestamp, next fire time (for scheduled triggers), total execution count
-- [ ] `cerebrum.reflexes.history` returns paginated execution history from the `reflex_executions` table, filterable by reflex name, trigger type, status, and date range
-- [ ] Enabling or disabling a non-existent reflex returns a `NOT_FOUND` error with the reflex name
-- [ ] TOML file writes preserve formatting, comments, and ordering — only the `enabled` field is modified
+- [x] `cerebrum.reflexes.enable` sets the `enabled` field to `true` in `reflexes.toml` for the specified reflex name, writes the updated file, and triggers a reload — the reflex's triggers are activated immediately
+- [x] `cerebrum.reflexes.disable` sets the `enabled` field to `false` in `reflexes.toml` for the specified reflex name, writes the updated file, and triggers a reload — the reflex's triggers are deactivated (scheduled jobs removed, event subscriptions cleared)
+- [x] `cerebrum.reflexes.test` performs a dry-run execution of the specified reflex: event triggers fire with a synthetic event payload, threshold triggers evaluate current metrics without acting, scheduled triggers fire immediately. The action runs in dry-run mode (Glia `dryRun: true`, Emit preview, Ingest preview) — no side effects
+- [x] The test result is returned directly and also logged as a `reflex_executions` row with `status: 'completed'` and a `dry_run: true` flag in the `result` JSON
+- [x] `cerebrum.reflexes.list` returns all reflexes from `reflexes.toml` with runtime state: enabled status, trigger type, last execution timestamp, next fire time (for scheduled triggers), total execution count
+- [x] `cerebrum.reflexes.history` returns paginated execution history from the `reflex_executions` table, filterable by reflex name, trigger type, status, and date range
+- [x] Enabling or disabling a non-existent reflex returns a `NOT_FOUND` error with the reflex name
+- [x] TOML file writes preserve formatting, comments, and ordering — only the `enabled` field is modified
 
 ## Notes
 

@@ -8,14 +8,14 @@ As the Cerebrum system, I need threshold-based triggers that fire reflexes when 
 
 ## Acceptance Criteria
 
-- [ ] A threshold evaluator runs periodically (configurable interval, default every 30 minutes) as a BullMQ repeatable job, checking all enabled threshold-triggered reflexes
-- [ ] Supported metrics: `similar_count` (queries Thalamus for clusters of engrams above a similarity threshold — value is the minimum cluster size), `staleness_max` (queries the highest staleness score across all active engrams — value is the staleness threshold), `topic_frequency` (counts engrams tagged with any single topic — value is the minimum count to trigger)
-- [ ] The optional `scopes` array restricts metric evaluation to engrams within those scope prefixes — e.g., `scopes = ["work.*"]` only evaluates work-scoped engrams
-- [ ] Threshold triggers are edge-detected, not level-detected: a threshold that has been crossed fires once per evaluation cycle, then is suppressed until the metric drops below the threshold and crosses again. A `last_triggered_value` field in the execution log prevents duplicate firings
-- [ ] When a threshold is crossed, the reflex's action is dispatched with context about which metric, what value triggered it, and which engrams are involved (if applicable — e.g., `similar_count` includes the cluster engram IDs)
-- [ ] Each reflex execution creates a `reflex_executions` row with `trigger_type: 'threshold'`, the metric name and current value in `trigger_data`, and the action outcome in `result`
-- [ ] Threshold evaluation failures (Thalamus unavailable, query timeout) log an error and skip the current cycle — the threshold is re-evaluated on the next cycle
-- [ ] Metrics are computed by querying existing services — threshold triggers do not maintain their own data stores
+- [x] A threshold evaluator runs periodically (configurable interval, default every 30 minutes) as a BullMQ repeatable job, checking all enabled threshold-triggered reflexes
+- [x] Supported metrics: `similar_count` (queries Thalamus for clusters of engrams above a similarity threshold — value is the minimum cluster size), `staleness_max` (queries the highest staleness score across all active engrams — value is the staleness threshold), `topic_frequency` (counts engrams tagged with any single topic — value is the minimum count to trigger)
+- [x] The optional `scopes` array restricts metric evaluation to engrams within those scope prefixes — e.g., `scopes = ["work.*"]` only evaluates work-scoped engrams
+- [x] Threshold triggers are edge-detected, not level-detected: a threshold that has been crossed fires once per evaluation cycle, then is suppressed until the metric drops below the threshold and crosses again. A `last_triggered_value` field in the execution log prevents duplicate firings
+- [x] When a threshold is crossed, the reflex's action is dispatched with context about which metric, what value triggered it, and which engrams are involved (if applicable — e.g., `similar_count` includes the cluster engram IDs)
+- [x] Each reflex execution creates a `reflex_executions` row with `trigger_type: 'threshold'`, the metric name and current value in `trigger_data`, and the action outcome in `result`
+- [x] Threshold evaluation failures (Thalamus unavailable, query timeout) log an error and skip the current cycle — the threshold is re-evaluated on the next cycle
+- [x] Metrics are computed by querying existing services — threshold triggers do not maintain their own data stores
 
 ## Notes
 

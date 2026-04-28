@@ -16,6 +16,7 @@ export { debriefStatus } from './debrief-status.js';
 export { dismissedDiscover } from './dismissed-discover.js';
 export { conversations, conversationContext, messages } from './ego.js';
 export { engramIndex, engramLinks, engramScopes, engramTags } from './engrams.js';
+export { reflexExecutions } from './reflex-executions.js';
 export { entities } from './entities.js';
 export { gliaActions, gliaTrustState } from './glia.js';
 export { environments } from './environments.js';

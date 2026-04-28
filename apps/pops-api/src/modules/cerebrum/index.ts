@@ -11,6 +11,7 @@ import { ingestRouter } from './ingest/router.js';
 import { nudgesRouter } from './nudges/router.js';
 import { plexusRouter } from './plexus/router.js';
 import { queryRouter } from './query/router.js';
+import { reflexRouter } from './reflex/router.js';
 import { retrievalRouter } from './retrieval/router.js';
 import { templatesRouter } from './templates/router.js';
 import { indexRouter } from './thalamus/router.js';
@@ -24,8 +25,8 @@ export const cerebrumRouter = router({
   ingest: ingestRouter,
   query: queryRouter,
   emit: emitRouter,
-
   glia: gliaRouter,
   nudges: nudgesRouter,
   plexus: plexusRouter,
+  reflex: reflexRouter,
 });
