@@ -142,6 +142,38 @@ export interface ChatResult {
   scopeNegotiation?: ScopeNegotiation;
 }
 
+// ---------------------------------------------------------------------------
+// Streaming types (PRD-087 US-01 AC #6)
+// ---------------------------------------------------------------------------
+
+/** A partial text token yielded during streaming. */
+export interface ChatStreamToken {
+  type: 'token';
+  text: string;
+}
+
+/** Final metadata yielded when the stream completes. */
+export interface ChatStreamDone {
+  type: 'done';
+  content: string;
+  citations: string[];
+  tokensIn: number;
+  tokensOut: number;
+}
+
+/** Union of events yielded by the engine's streaming generator. */
+export type ChatStreamEvent = ChatStreamToken | ChatStreamDone;
+
+/** Preparation result from ConversationEngine.prepareStream(). */
+export interface ChatStreamPreparation {
+  /** Async generator that yields token chunks and a final done event. */
+  stream: AsyncGenerator<ChatStreamEvent>;
+  /** Engrams retrieved during context assembly. */
+  retrievedEngrams: Array<{ engramId: string; relevanceScore: number }>;
+  /** Scope negotiation outcome. */
+  scopeNegotiation: ScopeNegotiation;
+}
+
 /** Parameters for ConversationEngine.chat(). */
 export interface ChatParams {
   conversationId: string;

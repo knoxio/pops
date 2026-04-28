@@ -10,53 +10,25 @@ import { CitationParser } from '../cerebrum/query/citation-parser.js';
 import { ContextAssemblyService } from '../cerebrum/retrieval/context-assembly.js';
 import { HybridSearchService } from '../cerebrum/retrieval/hybrid-search.js';
 import { biasScopes, loadViewedEngram } from './context-helpers.js';
+import {
+  buildDefaultConfig,
+  buildRetrievalFilters,
+  formatHistoryForContext,
+} from './engine-helpers.js';
+import { generateStreamEvents } from './engine-stream.js';
 import { callChatLlm, callSummariseLlm } from './llm-client.js';
 import { buildEgoSystemPrompt, buildSummarisationPrompt } from './prompts.js';
 import { ConversationScopeNegotiator } from './scope-negotiator.js';
 
-import type { RetrievalFilters, RetrievalResult } from '../cerebrum/retrieval/types.js';
-import type { ChatParams, ChatResult, EngineConfig, Message, ScopeNegotiation } from './types.js';
-
-const DEFAULT_MODEL = 'claude-sonnet-4-20250514';
-const DEFAULT_MAX_HISTORY = 20;
-const DEFAULT_MAX_RETRIEVAL = 5;
-const DEFAULT_TOKEN_BUDGET = 4096;
-const DEFAULT_RELEVANCE_THRESHOLD = 0.3;
-
-function isSecretScope(scope: string): boolean {
-  return scope.split('.').includes('secret');
-}
-
-function buildRetrievalFilters(scopes: string[]): RetrievalFilters {
-  const filters: RetrievalFilters = {};
-  if (scopes.length > 0) {
-    filters.scopes = scopes;
-  }
-  if (scopes.some(isSecretScope)) {
-    filters.includeSecret = true;
-  }
-  return filters;
-}
-
-function roleLabel(role: string): string {
-  if (role === 'user') return 'User';
-  if (role === 'assistant') return 'Assistant';
-  return 'System';
-}
-
-function formatHistoryForContext(messages: Message[]): string {
-  return messages.map((m) => `${roleLabel(m.role)}: ${m.content}`).join('\n\n');
-}
-
-function buildDefaultConfig(config?: Partial<EngineConfig>): EngineConfig {
-  return {
-    model: config?.model ?? DEFAULT_MODEL,
-    maxHistoryMessages: config?.maxHistoryMessages ?? DEFAULT_MAX_HISTORY,
-    maxRetrievalResults: config?.maxRetrievalResults ?? DEFAULT_MAX_RETRIEVAL,
-    tokenBudget: config?.tokenBudget ?? DEFAULT_TOKEN_BUDGET,
-    relevanceThreshold: config?.relevanceThreshold ?? DEFAULT_RELEVANCE_THRESHOLD,
-  };
-}
+import type { RetrievalResult } from '../cerebrum/retrieval/types.js';
+import type {
+  ChatParams,
+  ChatResult,
+  ChatStreamPreparation,
+  EngineConfig,
+  Message,
+  ScopeNegotiation,
+} from './types.js';
 
 export class ConversationEngine {
   private readonly config: EngineConfig;
@@ -70,36 +42,15 @@ export class ConversationEngine {
 
   /** Process a user message and generate a response. */
   async chat(params: ChatParams): Promise<ChatResult> {
-    const { message, history, appContext } = params;
-
-    // Run scope negotiation to potentially adjust scopes.
-    const negotiation = this.negotiateScopes(params);
-    const effectiveScopes = negotiation.scopes;
-
-    // US-03: Bias scopes towards the active app context (additive).
-    const biasedScopes = biasScopes(effectiveScopes, appContext);
-
-    // US-03: Auto-load viewed engram when user is viewing one in Cerebrum.
-    const viewedEngram = loadViewedEngram(appContext);
-
-    const retrievalResults = await this.retrieveEngrams(message, biasedScopes);
-
-    // Prepend the viewed engram if it wasn't already retrieved.
-    const allResults = this.mergeViewedEngram(viewedEngram, retrievalResults);
-
-    const { systemPrompt, contextBlock } = this.buildContextWindow(
-      allResults,
-      effectiveScopes,
-      appContext
+    const ctx = await this.assembleContext(params);
+    const llmResponse = await callChatLlm(this.config.model, ctx.systemPrompt, ctx.llmMessages);
+    const { cleanedAnswer, citations } = this.citationParser.parse(
+      llmResponse.content,
+      ctx.allResults
     );
-
-    // If scopes changed or there's a secret notice, prepend info to response.
-    const scopeNotice = this.buildScopeNotice(negotiation);
-    const llmMessages = this.buildLlmMessages(history, message, contextBlock);
-    const llmResponse = await callChatLlm(this.config.model, systemPrompt, llmMessages);
-    const { cleanedAnswer, citations } = this.citationParser.parse(llmResponse.content, allResults);
-
-    const responseContent = scopeNotice ? `${scopeNotice}\n\n${cleanedAnswer}` : cleanedAnswer;
+    const responseContent = ctx.scopeNotice
+      ? `${ctx.scopeNotice}\n\n${cleanedAnswer}`
+      : cleanedAnswer;
 
     return {
       response: {
@@ -108,12 +59,55 @@ export class ConversationEngine {
         tokensIn: llmResponse.tokensIn,
         tokensOut: llmResponse.tokensOut,
       },
-      retrievedEngrams: allResults.map((r) => ({
+      retrievedEngrams: ctx.allResults.map((r) => ({
         engramId: r.sourceId,
         relevanceScore: r.score,
       })),
-      scopeNegotiation: negotiation,
+      scopeNegotiation: ctx.negotiation,
     };
+  }
+
+  /** Prepare a streaming chat response. Returns metadata + an async event generator. */
+  async prepareStream(params: ChatParams): Promise<ChatStreamPreparation> {
+    const ctx = await this.assembleContext(params);
+    return {
+      stream: generateStreamEvents({
+        model: this.config.model,
+        systemPrompt: ctx.systemPrompt,
+        llmMessages: ctx.llmMessages,
+        scopeNotice: ctx.scopeNotice,
+        allResults: ctx.allResults,
+      }),
+      retrievedEngrams: ctx.allResults.map((r) => ({
+        engramId: r.sourceId,
+        relevanceScore: r.score,
+      })),
+      scopeNegotiation: ctx.negotiation,
+    };
+  }
+
+  /** Shared context assembly: scope negotiation, retrieval, context window, LLM messages. */
+  private async assembleContext(params: ChatParams): Promise<{
+    negotiation: ScopeNegotiation;
+    allResults: RetrievalResult[];
+    systemPrompt: string;
+    scopeNotice: string | null;
+    llmMessages: Array<{ role: 'user' | 'assistant'; content: string }>;
+  }> {
+    const { message, history, appContext } = params;
+    const negotiation = this.negotiateScopes(params);
+    const biasedScopes = biasScopes(negotiation.scopes, appContext);
+    const viewedEngram = loadViewedEngram(appContext);
+    const retrievalResults = await this.retrieveEngrams(message, biasedScopes);
+    const allResults = this.mergeViewedEngram(viewedEngram, retrievalResults);
+    const { systemPrompt, contextBlock } = this.buildContextWindow(
+      allResults,
+      negotiation.scopes,
+      appContext
+    );
+    const scopeNotice = this.buildScopeNotice(negotiation);
+    const llmMessages = this.buildLlmMessages(history, message, contextBlock);
+    return { negotiation, allResults, systemPrompt, scopeNotice, llmMessages };
   }
 
   /** Summarise older conversation messages into a condensed block. */

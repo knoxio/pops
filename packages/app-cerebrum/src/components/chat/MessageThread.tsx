@@ -21,6 +21,8 @@ export interface MessageThreadProps {
   isLoading: boolean;
   /** Whether a new message is being sent (shows typing indicator). */
   isSending: boolean;
+  /** Partial streaming content from the assistant (null when not streaming). */
+  streamingContent?: string | null;
   /** Additional CSS classes for the outer wrapper. */
   className?: string;
 }
@@ -65,7 +67,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
   );
 }
 
-/** Typing indicator shown while waiting for assistant response. */
+/** Typing indicator shown while waiting for assistant response (before tokens arrive). */
 function TypingIndicator() {
   return (
     <div className="flex gap-3">
@@ -81,15 +83,38 @@ function TypingIndicator() {
   );
 }
 
-export function MessageThread({ messages, isLoading, isSending, className }: MessageThreadProps) {
-  const bottomRef = useRef<HTMLDivElement>(null);
+/** Streaming message bubble — renders partial assistant content as it arrives. */
+function StreamingBubble({ content }: { content: string }) {
+  return (
+    <div className="flex gap-3">
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-app-accent/10 text-app-accent">
+        <Bot className="h-4 w-4" />
+      </div>
+      <div className="max-w-[80%] rounded-lg bg-muted/50 px-4 py-3 text-foreground">
+        <div className="prose prose-sm prose-invert max-w-none text-sm [&_p]:my-1 [&_ul]:my-1 [&_ol]:my-1 [&_pre]:my-2 [&_code]:text-xs">
+          <Markdown>{content}</Markdown>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-  // Auto-scroll to bottom when messages change or sending state changes.
+export function MessageThread({
+  messages,
+  isLoading,
+  isSending,
+  streamingContent,
+  className,
+}: MessageThreadProps) {
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const isStreaming = streamingContent !== null && streamingContent !== undefined;
+
+  // Auto-scroll to bottom when messages change, sending state changes, or streaming content updates.
   useEffect(() => {
     if (typeof bottomRef.current?.scrollIntoView === 'function') {
       bottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages, isSending]);
+  }, [messages, isSending, streamingContent]);
 
   if (isLoading) {
     return (
@@ -106,7 +131,8 @@ export function MessageThread({ messages, isLoading, isSending, className }: Mes
       {messages.map((msg) => (
         <MessageBubble key={msg.id} message={msg} />
       ))}
-      {isSending && <TypingIndicator />}
+      {isStreaming && streamingContent.length > 0 && <StreamingBubble content={streamingContent} />}
+      {isSending && !isStreaming && <TypingIndicator />}
       <div ref={bottomRef} />
     </div>
   );

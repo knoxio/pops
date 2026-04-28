@@ -63,4 +63,6 @@ export interface ChatPageModel {
   activeScopes: string[];
   /** Retrieved engrams for the current conversation context. */
   retrievedEngrams: RetrievedEngram[];
+  /** Partial streaming content being received (null when not streaming). */
+  streamingContent: string | null;
 }

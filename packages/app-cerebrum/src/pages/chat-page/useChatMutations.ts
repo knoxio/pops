@@ -1,20 +1,17 @@
 /**
- * Sub-hook: chat and delete mutations.
+ * Sub-hook: chat mutations (SSE streaming) and delete.
+ *
+ * The streaming path uses the SSE endpoint for token-by-token rendering.
+ * The non-streaming tRPC ego.chat mutation remains for MCP/CLI channels.
  */
 import { useCallback, useState } from 'react';
 
 import { trpc } from '@pops/api-client';
 
-import type { ChatMessage, RetrievedEngram } from './types';
+import { useStreamingChat } from './useStreamingChat';
 
-/** Shape returned by the ego.chat mutation. */
-interface ChatResponse {
-  conversationId: string;
-  response: ChatMessage;
-  retrievedEngrams: RetrievedEngram[];
-}
+import type { RetrievedEngram } from './types';
 
-/** Shape of the ego.conversations.delete mutation input. */
 interface DeleteInput {
   id: string;
 }
@@ -35,24 +32,32 @@ export function useChatMutations({
   const [retrievedEngrams, setRetrievedEngrams] = useState<RetrievedEngram[]>([]);
   const utils = trpc.useUtils();
 
-  const chatMutation = trpc.ego.chat.useMutation({
-    onSuccess: (data: ChatResponse) => {
-      setSelectedConversationId(data.conversationId);
-      setRetrievedEngrams(data.retrievedEngrams);
-      void utils.ego.conversations.list.invalidate();
-      void utils.ego.conversations.get.invalidate({ id: data.conversationId });
-    },
-  });
+  const streaming = useStreamingChat();
 
   const sendMessage = useCallback(() => {
     const trimmed = inputValue.trim();
-    if (!trimmed) return;
+    if (!trimmed || streaming.isStreaming) return;
+
     setInputValue('');
-    chatMutation.mutate({
-      conversationId: selectedConversationId ?? undefined,
-      message: trimmed,
-    });
-  }, [inputValue, selectedConversationId, chatMutation, setInputValue]);
+    streaming.stream(
+      { conversationId: selectedConversationId, message: trimmed },
+      {
+        onConversation: setSelectedConversationId,
+        onEngrams: setRetrievedEngrams,
+        onInvalidate: (conversationId) => {
+          void utils.ego.conversations.list.invalidate();
+          void utils.ego.conversations.get.invalidate({ id: conversationId });
+        },
+      }
+    );
+  }, [
+    inputValue,
+    selectedConversationId,
+    streaming,
+    setInputValue,
+    setSelectedConversationId,
+    utils,
+  ]);
 
   const deleteMutation = trpc.ego.conversations.delete.useMutation({
     onSuccess: (_data: { success: boolean }, variables: DeleteInput) => {
@@ -73,11 +78,12 @@ export function useChatMutations({
 
   return {
     sendMessage,
-    isSending: chatMutation.isPending,
-    sendError: chatMutation.error?.message ?? null,
+    isSending: streaming.isStreaming,
+    sendError: streaming.error,
     deleteConversation,
     isDeleting: deleteMutation.isPending,
     retrievedEngrams,
     clearEngrams,
+    streamingContent: streaming.streamingContent,
   };
 }

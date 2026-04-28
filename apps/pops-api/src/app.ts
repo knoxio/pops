@@ -10,6 +10,7 @@ import { rateLimiter } from './middleware/rate-limit.js';
 import { envRouter } from './modules/core/envs/router.js';
 import { openApiDocument } from './openapi.js';
 import { appRouter } from './router.js';
+import egoChatStreamRouter from './routes/ego/chat-stream.js';
 import healthRouter from './routes/health.js';
 import inventoryDocumentFilesRouter from './routes/inventory/document-files.js';
 import documentThumbnailRouter from './routes/inventory/documents.js';
@@ -72,6 +73,10 @@ export function createApp(): express.Express {
   // Env context middleware — reads ?env=NAME, validates the env, and scopes
   // the DB connection for all downstream handlers (tRPC, webhooks, etc.).
   app.use(envContextMiddleware);
+
+  // Ego SSE streaming — POST /api/ego/chat/stream
+  // Placed after auth + env context so the user is authenticated and the DB is scoped.
+  app.use(egoChatStreamRouter);
 
   // OpenAPI spec endpoint
   app.get('/api/openapi.json', (_req, res) => {

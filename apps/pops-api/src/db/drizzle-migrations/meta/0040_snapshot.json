@@ -1,7 +1,7 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "85418fd1-8a50-4d74-b3e8-27a9dc072b7d",
+  "id": "ed5879af-3c41-4c24-ada0-e9956e99c12d",
   "prevId": "81c42218-cda7-468c-8021-6286babdf7b4",
   "tables": {
     "ai_budgets": {
@@ -2123,204 +2123,6 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "glia_actions": {
-      "name": "glia_actions",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "action_type": {
-          "name": "action_type",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "affected_ids": {
-          "name": "affected_ids",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "rationale": {
-          "name": "rationale",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "payload": {
-          "name": "payload",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "phase": {
-          "name": "phase",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "user_decision": {
-          "name": "user_decision",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "user_note": {
-          "name": "user_note",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "executed_at": {
-          "name": "executed_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "decided_at": {
-          "name": "decided_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "reverted_at": {
-          "name": "reverted_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "idx_glia_actions_action_type": {
-          "name": "idx_glia_actions_action_type",
-          "columns": ["action_type"],
-          "isUnique": false
-        },
-        "idx_glia_actions_status": {
-          "name": "idx_glia_actions_status",
-          "columns": ["status"],
-          "isUnique": false
-        },
-        "idx_glia_actions_phase": {
-          "name": "idx_glia_actions_phase",
-          "columns": ["phase"],
-          "isUnique": false
-        },
-        "idx_glia_actions_created_at": {
-          "name": "idx_glia_actions_created_at",
-          "columns": ["created_at"],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
-    "glia_trust_state": {
-      "name": "glia_trust_state",
-      "columns": {
-        "action_type": {
-          "name": "action_type",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "current_phase": {
-          "name": "current_phase",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "approved_count": {
-          "name": "approved_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "rejected_count": {
-          "name": "rejected_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "reverted_count": {
-          "name": "reverted_count",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false,
-          "default": 0
-        },
-        "autonomous_since": {
-          "name": "autonomous_since",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "last_revert_at": {
-          "name": "last_revert_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "graduated_at": {
-          "name": "graduated_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false,
-          "autoincrement": false
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
     "home_inventory": {
       "name": "home_inventory",
       "columns": {
@@ -3327,6 +3129,128 @@
         "idx_movies_release_date": {
           "name": "idx_movies_release_date",
           "columns": ["release_date"],
+          "isUnique": false
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
+    "nudge_log": {
+      "name": "nudge_log",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "type": {
+          "name": "type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "body": {
+          "name": "body",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "engram_ids": {
+          "name": "engram_ids",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "priority": {
+          "name": "priority",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "status": {
+          "name": "status",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "acted_at": {
+          "name": "acted_at",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "action_type": {
+          "name": "action_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "action_label": {
+          "name": "action_label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "action_params": {
+          "name": "action_params",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        }
+      },
+      "indexes": {
+        "idx_nudge_log_type": {
+          "name": "idx_nudge_log_type",
+          "columns": ["type"],
+          "isUnique": false
+        },
+        "idx_nudge_log_status": {
+          "name": "idx_nudge_log_status",
+          "columns": ["status"],
+          "isUnique": false
+        },
+        "idx_nudge_log_priority": {
+          "name": "idx_nudge_log_priority",
+          "columns": ["priority"],
+          "isUnique": false
+        },
+        "idx_nudge_log_created_at": {
+          "name": "idx_nudge_log_created_at",
+          "columns": ["created_at"],
           "isUnique": false
         }
       },
