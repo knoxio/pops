@@ -10,21 +10,28 @@ const mockApps: AppNavConfig[] = [
   {
     id: 'finance',
     label: 'Finance',
+    labelKey: 'finance',
     icon: 'DollarSign',
     basePath: '/finance',
     items: [
-      { path: '', label: 'Dashboard', icon: 'LayoutDashboard' },
-      { path: '/transactions', label: 'Transactions', icon: 'CreditCard' },
+      { path: '', label: 'Dashboard', labelKey: 'finance.dashboard', icon: 'LayoutDashboard' },
+      {
+        path: '/transactions',
+        label: 'Transactions',
+        labelKey: 'finance.transactions',
+        icon: 'CreditCard',
+      },
     ],
   },
   {
     id: 'media',
     label: 'Media',
+    labelKey: 'media',
     icon: 'Film',
     basePath: '/media',
     items: [
-      { path: '', label: 'Library', icon: 'Film' },
-      { path: '/watchlist', label: 'Watchlist', icon: 'Star' },
+      { path: '', label: 'Library', labelKey: 'media.library', icon: 'Film' },
+      { path: '/watchlist', label: 'Watchlist', labelKey: 'media.watchlist', icon: 'Star' },
     ],
   },
 ];

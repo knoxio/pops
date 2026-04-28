@@ -1,5 +1,6 @@
 import { matchesAtBoundary } from '@/app/nav/path-utils';
 import { PanelLeftClose, Settings } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from '@pops/ui';
@@ -10,6 +11,7 @@ interface AppRailFooterProps {
 }
 
 export function AppRailFooter({ pathname, onToggle }: AppRailFooterProps) {
+  const { t } = useTranslation('shell');
   const navigate = useNavigate();
   const settingsActive = matchesAtBoundary(pathname, '/settings');
 
@@ -20,7 +22,7 @@ export function AppRailFooter({ pathname, onToggle }: AppRailFooterProps) {
           <button
             onClick={() => navigate('/settings')}
             className="relative w-full flex items-center justify-center py-1 transition-colors group"
-            aria-label="Settings"
+            aria-label={t('settings')}
             aria-current={settingsActive ? 'page' : undefined}
           >
             <span
@@ -43,7 +45,7 @@ export function AppRailFooter({ pathname, onToggle }: AppRailFooterProps) {
             </span>
           </button>
         </TooltipTrigger>
-        <TooltipContent side="right">Settings</TooltipContent>
+        <TooltipContent side="right">{t('settings')}</TooltipContent>
       </Tooltip>
 
       <Tooltip>
@@ -51,12 +53,12 @@ export function AppRailFooter({ pathname, onToggle }: AppRailFooterProps) {
           <button
             onClick={onToggle}
             className="min-w-9 min-h-9 flex items-center justify-center hover:bg-muted rounded-lg"
-            aria-label="Collapse app rail"
+            aria-label={t('collapseAppRail')}
           >
             <PanelLeftClose className="h-4 w-4 text-muted-foreground" />
           </button>
         </TooltipTrigger>
-        <TooltipContent side="right">Collapse</TooltipContent>
+        <TooltipContent side="right">{t('collapse')}</TooltipContent>
       </Tooltip>
     </div>
   );

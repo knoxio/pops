@@ -10,22 +10,27 @@ import { registeredApps } from '@/app/nav/registry';
  *
  * Colour is inherited from --app-accent CSS variable set on the shell root.
  */
+import { useTranslation } from 'react-i18next';
 import { Link, useLocation } from 'react-router';
 
 export function PageNav() {
+  const { t } = useTranslation('navigation');
+  const { t: tShell } = useTranslation('shell');
   const location = useLocation();
   const activeApp = findActiveApp(location.pathname, registeredApps);
 
   if (!activeApp) return null;
 
+  const appLabel = t(activeApp.labelKey);
+
   return (
     <nav
       className="w-50 bg-card border-r border-border h-full overflow-y-auto transition-all duration-200"
-      aria-label={`${activeApp.label} pages`}
+      aria-label={tShell('appPages', { app: appLabel })}
     >
       <div className="px-4 py-4 border-b border-border">
         <span className="text-2xs font-bold uppercase tracking-label text-app-accent">
-          {activeApp.label}
+          {appLabel}
         </span>
       </div>
 
@@ -54,7 +59,7 @@ export function PageNav() {
                   }`}
                 />
               )}
-              <span>{item.label}</span>
+              <span>{t(item.labelKey)}</span>
             </Link>
           );
         })}

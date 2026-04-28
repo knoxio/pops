@@ -31,23 +31,30 @@ const CacheManagementPage = lazy(() =>
 interface AppNavConfigShape {
   id: string;
   label: string;
+  labelKey: string;
   icon: IconName;
   color?: 'emerald' | 'indigo' | 'amber' | 'rose' | 'sky' | 'violet';
   basePath: string;
-  items: { path: string; label: string; icon: IconName }[];
+  items: { path: string; label: string; labelKey: string; icon: IconName }[];
 }
 
 export const navConfig = {
   id: 'ai',
   label: 'AI',
+  labelKey: 'ai',
   icon: 'Bot',
   color: 'violet',
   basePath: '/ai',
   items: [
-    { path: '', label: 'AI Usage', icon: 'BarChart3' },
-    { path: '/prompts', label: 'Prompt Templates', icon: 'FileText' },
-    { path: '/rules', label: 'Rules', icon: 'BookOpen' },
-    { path: '/cache', label: 'Cache', icon: 'Database' },
+    { path: '', label: 'AI Usage', labelKey: 'ai.usage', icon: 'BarChart3' },
+    {
+      path: '/prompts',
+      label: 'Prompt Templates',
+      labelKey: 'ai.promptTemplates',
+      icon: 'FileText',
+    },
+    { path: '/rules', label: 'Rules', labelKey: 'ai.rules', icon: 'BookOpen' },
+    { path: '/cache', label: 'Cache', labelKey: 'ai.cache', icon: 'Database' },
   ],
 } satisfies AppNavConfigShape;
 

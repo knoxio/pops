@@ -19,21 +19,23 @@ const ChatPage = lazy(() => import('./pages/ChatPage').then((m) => ({ default: m
 interface AppNavConfigShape {
   id: string;
   label: string;
+  labelKey: string;
   icon: IconName;
   color?: 'emerald' | 'indigo' | 'amber' | 'rose' | 'sky' | 'violet';
   basePath: string;
-  items: { path: string; label: string; icon: IconName }[];
+  items: { path: string; label: string; labelKey: string; icon: IconName }[];
 }
 
 export const navConfig = {
   id: 'cerebrum',
   label: 'Cerebrum',
+  labelKey: 'cerebrum',
   icon: 'BookOpen',
   color: 'sky',
   basePath: '/cerebrum',
   items: [
-    { path: '', label: 'Ingest', icon: 'FileText' },
-    { path: 'chat', label: 'Chat', icon: 'MessageSquare' },
+    { path: '', label: 'Ingest', labelKey: 'cerebrum.ingest', icon: 'FileText' },
+    { path: 'chat', label: 'Chat', labelKey: 'cerebrum.chat', icon: 'MessageSquare' },
   ],
 } satisfies AppNavConfigShape;
 

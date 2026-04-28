@@ -34,25 +34,32 @@ const ImportPage = lazy(() =>
 interface AppNavConfigShape {
   id: string;
   label: string;
+  labelKey: string;
   icon: IconName;
   color?: 'emerald' | 'indigo' | 'amber' | 'rose' | 'sky' | 'violet';
   basePath: string;
-  items: { path: string; label: string; icon: IconName }[];
+  items: { path: string; label: string; labelKey: string; icon: IconName }[];
 }
 
 export const navConfig = {
   id: 'finance',
   label: 'Finance',
+  labelKey: 'finance',
   icon: 'DollarSign',
   color: 'emerald',
   basePath: '/finance',
   items: [
-    { path: '', label: 'Dashboard', icon: 'LayoutDashboard' },
-    { path: '/transactions', label: 'Transactions', icon: 'CreditCard' },
-    { path: '/entities', label: 'Entities', icon: 'Building2' },
-    { path: '/budgets', label: 'Budgets', icon: 'PiggyBank' },
-    { path: '/wishlist', label: 'Wish List', icon: 'Star' },
-    { path: '/import', label: 'Import', icon: 'Download' },
+    { path: '', label: 'Dashboard', labelKey: 'finance.dashboard', icon: 'LayoutDashboard' },
+    {
+      path: '/transactions',
+      label: 'Transactions',
+      labelKey: 'finance.transactions',
+      icon: 'CreditCard',
+    },
+    { path: '/entities', label: 'Entities', labelKey: 'finance.entities', icon: 'Building2' },
+    { path: '/budgets', label: 'Budgets', labelKey: 'finance.budgets', icon: 'PiggyBank' },
+    { path: '/wishlist', label: 'Wish List', labelKey: 'finance.wishList', icon: 'Star' },
+    { path: '/import', label: 'Import', labelKey: 'finance.import', icon: 'Download' },
   ],
 } satisfies AppNavConfigShape;
 

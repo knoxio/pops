@@ -1,6 +1,7 @@
 import { useUIStore } from '@/store/uiStore';
 import { Menu } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 /**
  * Top bar - user info, theme toggle, menu button, search
@@ -18,6 +19,7 @@ import { SearchInput } from './SearchInput';
 import { TopBarActions } from './top-bar/TopBarActions';
 
 export function TopBar() {
+  const { t } = useTranslation('shell');
   const toggleSidebar = useUIStore((state) => state.toggleSidebar);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
 
@@ -29,7 +31,7 @@ export function TopBar() {
           size="icon"
           onClick={toggleSidebar}
           className="min-w-[44px] min-h-[44px] mr-2 md:hidden"
-          aria-label="Toggle sidebar"
+          aria-label={t('toggleSidebar')}
         >
           <Menu className="h-5 w-5" />
         </Button>
