@@ -138,7 +138,7 @@ Live status of every theme and epic. Updated as work completes.
 | Epic                    | Status  | Notes                                                                                |
 | ----------------------- | ------- | ------------------------------------------------------------------------------------ |
 | Glia (curation workers) | Partial | PRD-085 (workers) done. PRD-086 (trust graduation) partial — review UI + reverts gap |
-| Ego (chat agent)        | Partial | PRD-088 (Ego Channels) done. PRD-087 (Ego Core) partial — SSE streaming gap remains |
+| Ego (chat agent)        | Partial | PRD-088 (Ego Channels) done. PRD-087 (Ego Core) partial — SSE streaming gap remains  |
 
 ### Cerebrum — Phase 3 (Automation & Ecosystem)
 
