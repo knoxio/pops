@@ -1,7 +1,7 @@
 # US-04: Notification Delivery
 
 > PRD: [PRD-084: Proactive Nudges](README.md)
-> Status: Not started
+> Status: Partial
 
 ## Description
 
@@ -9,7 +9,7 @@ As a user, I want nudges delivered via shell notifications and Moltbot (Telegram
 
 ## Acceptance Criteria
 
-- [ ] New nudges with `status: pending` are delivered to two channels: (1) the pops shell notification system (appears on next shell interaction), and (2) Moltbot on Telegram (immediate delivery)
+- [x] New nudges with `status: pending` are delivered to two channels: (1) the pops shell notification system (appears on next shell interaction), and (2) Moltbot on Telegram (immediate delivery)
 - [ ] Shell notifications display the nudge title, type badge (e.g., `[consolidation]`, `[staleness]`), and a one-line summary — the user can run `pops cerebrum nudges` to see the full list
 - [ ] Moltbot messages include the nudge title, type, a brief body excerpt, and inline action buttons: "Act" (executes the suggested action), "Dismiss" (marks as dismissed), "Details" (shows full nudge context)
 - [ ] Delivery respects nudge priority: `high` nudges are delivered immediately to both channels; `medium` nudges are batched and delivered at most once per hour; `low` nudges are included in a daily digest only

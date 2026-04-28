@@ -36,6 +36,7 @@ import type { locations } from './schema/locations.js';
 import type { mediaScores } from './schema/media-scores.js';
 import type { mediaWatchlist } from './schema/media-watchlist.js';
 import type { movies } from './schema/movies.js';
+import type { nudgeLog } from './schema/nudge-log.js';
 import type { rotationCandidates } from './schema/rotation-candidates.js';
 import type { rotationExclusions } from './schema/rotation-exclusions.js';
 import type { rotationLog } from './schema/rotation-log.js';
@@ -86,6 +87,7 @@ export {
   mediaScores,
   mediaWatchlist,
   movies,
+  nudgeLog,
   rotationCandidates,
   rotationExclusions,
   rotationLog,
@@ -202,6 +204,8 @@ export type RotationCandidateRow = InferSelectModel<typeof rotationCandidates>;
 export type RotationCandidateInsert = InferInsertModel<typeof rotationCandidates>;
 export type RotationExclusionRow = InferSelectModel<typeof rotationExclusions>;
 export type RotationExclusionInsert = InferInsertModel<typeof rotationExclusions>;
+export type NudgeLogRow = InferSelectModel<typeof nudgeLog>;
+export type NudgeLogInsert = InferInsertModel<typeof nudgeLog>;
 
 // Constants
 export const ENTITY_TYPES = ['company', 'person', 'place', 'brand', 'organisation'] as const;

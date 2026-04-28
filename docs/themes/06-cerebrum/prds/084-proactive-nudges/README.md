@@ -1,7 +1,7 @@
 # PRD-084: Proactive Nudges
 
 > Epic: [03 — Emit](../../epics/03-emit.md)
-> Status: Not started
+> Status: In progress
 
 ## Overview
 
@@ -105,12 +105,12 @@ Define the proactive nudge system that surfaces system-initiated suggestions wit
 
 ## User Stories
 
-| #   | Story                                                             | Summary                                                                                   | Status      | Parallelisable |
-| --- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ----------- | -------------- |
-| 01  | [us-01-consolidation-proposals](us-01-consolidation-proposals.md) | Detect similar engram clusters via Thalamus, propose consolidation into curated documents | Not started | No (first)     |
-| 02  | [us-02-staleness-alerts](us-02-staleness-alerts.md)               | Detect engrams not referenced or modified in N days, flag as stale                        | Not started | Yes            |
-| 03  | [us-03-pattern-detection](us-03-pattern-detection.md)             | Detect recurring topics, emerging themes, contradictions — surface as insights            | Not started | Yes            |
-| 04  | [us-04-notification-delivery](us-04-notification-delivery.md)     | Deliver nudges via shell notifications and Moltbot: lightweight, actionable               | Not started | Yes            |
+| #   | Story                                                             | Summary                                                                                   | Status  | Parallelisable |
+| --- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------- | -------------- |
+| 01  | [us-01-consolidation-proposals](us-01-consolidation-proposals.md) | Detect similar engram clusters via Thalamus, propose consolidation into curated documents | Partial | No (first)     |
+| 02  | [us-02-staleness-alerts](us-02-staleness-alerts.md)               | Detect engrams not referenced or modified in N days, flag as stale                        | Partial | Yes            |
+| 03  | [us-03-pattern-detection](us-03-pattern-detection.md)             | Detect recurring topics, emerging themes, contradictions — surface as insights            | Partial | Yes            |
+| 04  | [us-04-notification-delivery](us-04-notification-delivery.md)     | Deliver nudges via shell notifications and Moltbot: lightweight, actionable               | Partial | Yes            |
 
 US-01 establishes the nudge data model, storage, and action framework. US-02 and US-03 are independent detection modes that can parallelise with each other and with US-01 (they produce nudges in the same format). US-04 is the delivery layer and can parallelise with all detection stories.
 
