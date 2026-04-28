@@ -4,7 +4,14 @@ import type { TransactionCorrectionRow } from '@pops/db-types';
 
 export type CorrectionRow = TransactionCorrectionRow;
 
+import { getSettingValue } from '../settings/service.js';
+
 export const HIGH_CONFIDENCE_THRESHOLD = 0.9;
+
+/** Read the high-confidence threshold from settings. */
+export function getHighConfidenceThreshold(): number {
+  return getSettingValue('core.corrections.highConfidenceThreshold', HIGH_CONFIDENCE_THRESHOLD);
+}
 
 export type CorrectionMatchStatus = 'matched' | 'uncertain';
 
@@ -16,7 +23,7 @@ export interface CorrectionMatchResult {
 export function classifyCorrectionMatch(correction: CorrectionRow): CorrectionMatchResult {
   return {
     correction,
-    status: correction.confidence >= HIGH_CONFIDENCE_THRESHOLD ? 'matched' : 'uncertain',
+    status: correction.confidence >= getHighConfidenceThreshold() ? 'matched' : 'uncertain',
   };
 }
 

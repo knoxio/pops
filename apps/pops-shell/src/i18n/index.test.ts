@@ -11,10 +11,14 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import i18n, { DEFAULT_LOCALE, LOCALE_STORAGE_KEY, SUPPORTED_LOCALES } from '.';
+import enAUCerebrum from './locales/en-AU/cerebrum.json';
 import enAUCommon from './locales/en-AU/common.json';
+import enAUInventory from './locales/en-AU/inventory.json';
 import enAUNavigation from './locales/en-AU/navigation.json';
 import enAUShell from './locales/en-AU/shell.json';
+import ptBRCerebrum from './locales/pt-BR/cerebrum.json';
 import ptBRCommon from './locales/pt-BR/common.json';
+import ptBRInventory from './locales/pt-BR/inventory.json';
 import ptBRNavigation from './locales/pt-BR/navigation.json';
 import ptBRShell from './locales/pt-BR/shell.json';
 
@@ -23,8 +27,20 @@ import ptBRShell from './locales/pt-BR/shell.json';
 // ---------------------------------------------------------------------------
 
 /** All key sets grouped by namespace for comparison. */
-const EN_AU_BUNDLES = { common: enAUCommon, shell: enAUShell, navigation: enAUNavigation };
-const PT_BR_BUNDLES = { common: ptBRCommon, shell: ptBRShell, navigation: ptBRNavigation };
+const EN_AU_BUNDLES = {
+  common: enAUCommon,
+  shell: enAUShell,
+  navigation: enAUNavigation,
+  inventory: enAUInventory,
+  cerebrum: enAUCerebrum,
+};
+const PT_BR_BUNDLES = {
+  common: ptBRCommon,
+  shell: ptBRShell,
+  navigation: ptBRNavigation,
+  inventory: ptBRInventory,
+  cerebrum: ptBRCerebrum,
+};
 
 function sortedKeys(obj: Record<string, string>): string[] {
   return Object.keys(obj).toSorted();
@@ -60,11 +76,13 @@ describe('i18n initialization', () => {
     expect(SUPPORTED_LOCALES).toEqual(['en-AU', 'pt-BR']);
   });
 
-  it('registers all three namespaces', () => {
+  it('registers all namespaces', () => {
     const ns = i18n.options.ns;
     expect(ns).toContain('common');
     expect(ns).toContain('shell');
     expect(ns).toContain('navigation');
+    expect(ns).toContain('inventory');
+    expect(ns).toContain('cerebrum');
   });
 
   it('uses common as the default namespace', () => {
@@ -122,7 +140,7 @@ describe('locale persistence', () => {
 // ---------------------------------------------------------------------------
 
 describe('translation completeness', () => {
-  for (const ns of ['common', 'shell', 'navigation'] as const) {
+  for (const ns of ['common', 'shell', 'navigation', 'inventory', 'cerebrum'] as const) {
     it(`${ns}: en-AU and pt-BR have identical key sets`, () => {
       const enKeys = sortedKeys(EN_AU_BUNDLES[ns]);
       const ptKeys = sortedKeys(PT_BR_BUNDLES[ns]);

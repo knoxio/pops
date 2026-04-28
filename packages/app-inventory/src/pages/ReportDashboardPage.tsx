@@ -1,4 +1,5 @@
 import { FileText } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
 /**
@@ -13,11 +14,12 @@ import { Button, PageHeader } from '@pops/ui';
 import { DashboardWidgets } from '../components/DashboardWidgets';
 
 export function ReportDashboardPage() {
+  const { t } = useTranslation('inventory');
   const navigate = useNavigate();
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Reports" />
+      <PageHeader title={t('reports')} />
 
       <DashboardWidgets />
 
@@ -27,7 +29,7 @@ export function ReportDashboardPage() {
           prefix={<FileText className="h-4 w-4" />}
           onClick={() => navigate('/inventory/report/insurance')}
         >
-          Insurance Report
+          {t('report.insurance')}
         </Button>
       </div>
     </div>

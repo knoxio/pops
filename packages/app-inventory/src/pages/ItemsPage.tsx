@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import { PageHeader } from '@pops/ui';
 
 import { FiltersBar } from './items-page/FiltersBar';
@@ -6,13 +8,14 @@ import { SummaryAndView } from './items-page/SummaryAndView';
 import { useItemsPageModel, VIEW_STORAGE } from './items-page/useItemsPageModel';
 
 export function ItemsPage() {
+  const { t } = useTranslation('inventory');
   const model = useItemsPageModel();
   const { filters, navigate } = model;
   const hasSearchOrFilters = !!filters.search || model.hasActiveFilters;
 
   return (
     <div className="space-y-6">
-      <PageHeader title="Inventory" />
+      <PageHeader title={t('title')} />
       <FiltersBar
         search={filters.search}
         typeFilter={filters.typeFilter}

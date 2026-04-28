@@ -6,6 +6,7 @@
  */
 import { SendHorizontal } from 'lucide-react';
 import { type ChangeEvent, type KeyboardEvent, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, Textarea, cn } from '@pops/ui';
 
@@ -23,6 +24,7 @@ export interface ChatInputProps {
 }
 
 export function ChatInput({ value, onChange, onSend, isSending, className }: ChatInputProps) {
+  const { t } = useTranslation('cerebrum');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleKeyDown = useCallback(
@@ -46,10 +48,10 @@ export function ChatInput({ value, onChange, onSend, isSending, className }: Cha
         value={value}
         onChange={(e: ChangeEvent<HTMLTextAreaElement>) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
-        placeholder="Message Ego..."
+        placeholder={t('chat.placeholder')}
         rows={1}
         className="min-h-11 max-h-40 resize-none"
-        aria-label="Message input"
+        aria-label={t('chat.input')}
         disabled={isSending}
       />
       <Button
@@ -57,7 +59,7 @@ export function ChatInput({ value, onChange, onSend, isSending, className }: Cha
         onClick={onSend}
         disabled={!canSend}
         loading={isSending}
-        aria-label="Send message"
+        aria-label={t('chat.send')}
       >
         <SendHorizontal className="h-4 w-4" />
       </Button>

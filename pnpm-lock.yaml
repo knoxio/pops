@@ -433,6 +433,9 @@ importers:
       react-dom:
         specifier: ^19.2.5
         version: 19.2.5(react@19.2.5)
+      react-i18next:
+        specifier: ^17.0.6
+        version: 17.0.6(i18next@26.0.8(typescript@6.0.3))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.3)
       react-markdown:
         specifier: ^10.1.0
         version: 10.1.0(@types/react@19.2.14)(react@19.2.5)
@@ -621,6 +624,9 @@ importers:
       react-hook-form:
         specifier: ^7.73.1
         version: 7.73.1(react@19.2.5)
+      react-i18next:
+        specifier: ^17.0.6
+        version: 17.0.6(i18next@26.0.8(typescript@6.0.3))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)(typescript@6.0.3)
       react-markdown:
         specifier: ^10.1.0
         version: 10.1.0(@types/react@19.2.14)(react@19.2.5)

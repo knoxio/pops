@@ -3,7 +3,7 @@ import { and, asc, eq } from 'drizzle-orm';
 import { comparisonDimensions, comparisons, mediaScores } from '@pops/db-types';
 
 import { getDrizzle } from '../../../../db.js';
-import { drawTierOutcome, ELO_K, expectedScore } from './elo-calculator.js';
+import { drawTierOutcome, expectedScore, getEloK } from './elo-calculator.js';
 
 import type { MediaScoreRow, RecordComparisonInput } from '../types.js';
 
@@ -75,8 +75,9 @@ export function updateEloScores(input: RecordComparisonInput): { deltaA: number;
   }
   const actualB = isDraw ? drawOutcome : 1 - actualA;
 
-  const newScoreA = scoreA.score + ELO_K * (actualA - expectedA);
-  const newScoreB = scoreB.score + ELO_K * (actualB - expectedB);
+  const k = getEloK();
+  const newScoreA = scoreA.score + k * (actualA - expectedA);
+  const newScoreB = scoreB.score + k * (actualB - expectedB);
   const deltaA = Math.round(newScoreA - scoreA.score);
   const deltaB = Math.round(newScoreB - scoreB.score);
   const now = new Date().toISOString();

@@ -98,7 +98,11 @@ export interface ShowMoreResult {
   totalCount: number;
 }
 
-const DEFAULT_SHOW_MORE_LIMIT = 5;
+import { getSettingValue } from '../settings/service.js';
+
+function getShowMoreLimit(): number {
+  return getSettingValue('core.search.showMoreLimit', 5);
+}
 
 export interface ShowMoreOptions {
   domain: string;
@@ -114,7 +118,7 @@ export async function showMore(opts: ShowMoreOptions): Promise<ShowMoreResult> {
     throw new Error(`No search adapter registered for domain "${opts.domain}"`);
   }
 
-  const limit = opts.limit ?? DEFAULT_SHOW_MORE_LIMIT;
+  const limit = opts.limit ?? getShowMoreLimit();
   const hits = await adapter.search(opts.query, opts.context);
   const sorted = [...hits].toSorted((a, b) => b.score - a.score);
 

@@ -5,6 +5,11 @@
 import './transactions/search-adapter.js';
 import './budgets/search-adapter.js';
 
+import { settingsRegistry } from '../core/settings/index.js';
+import { financeManifest } from './settings-manifest.js';
+
+settingsRegistry.register(financeManifest);
+
 import { router } from '../../trpc.js';
 import { budgetsRouter } from './budgets/router.js';
 import { importsRouter } from './imports/router.js';

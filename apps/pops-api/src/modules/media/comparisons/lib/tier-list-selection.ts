@@ -1,4 +1,5 @@
 import { getDb } from '../../../../db.js';
+import { getSettingValue } from '../../../core/settings/service.js';
 import { getDimension } from '../dimensions.service.js';
 import { getTierOverrides } from '../tier-overrides.js';
 import { normalizePairOrder } from './comparison-queries.js';
@@ -6,8 +7,13 @@ import { normalizePairOrder } from './comparison-queries.js';
 import type { TierOverride } from '../tier-overrides.js';
 import type { TierListMovie } from '../types.js';
 
-const MAX_TIER_LIST_MOVIES = 8;
-const STALENESS_THRESHOLD = 0.3;
+function getMaxTierListMovies(): number {
+  return getSettingValue('media.comparisons.maxTierListMovies', 8);
+}
+
+function getStalenessThreshold(): number {
+  return getSettingValue('media.comparisons.stalenessThreshold', 0.3);
+}
 
 interface ScoreRow {
   mediaId: number;
@@ -68,7 +74,7 @@ function fetchEligibleRows(dimensionId: number): ScoreRow[] {
         AND COALESCE(cs.staleness, 1.0) >= ?
       ORDER BY ms.comparison_count ASC, ms.score DESC`
     )
-    .all(dimensionId, STALENESS_THRESHOLD) as ScoreRow[];
+    .all(dimensionId, getStalenessThreshold()) as ScoreRow[];
 }
 
 function fetchExistingPairKeys(dimensionId: number): Set<string> {
@@ -146,7 +152,7 @@ function pickBestCandidate(
 function greedySelect(rows: ScoreRow[], existingPairs: Set<string>): ScoreRow[] {
   const selected: ScoreRow[] = [];
   const selectedIds = new Set<number>();
-  for (let round = 0; round < MAX_TIER_LIST_MOVIES && rows.length > 0; round++) {
+  for (let round = 0; round < getMaxTierListMovies() && rows.length > 0; round++) {
     const bestIdx = pickBestCandidate(rows, selected, selectedIds, existingPairs);
     if (bestIdx === -1) break;
     const pick = rows[bestIdx];
@@ -176,7 +182,7 @@ export function getTierListMovies(dimensionId: number): TierListMovie[] {
   const overrides = getTierOverrides(dimensionId);
   const tierOverrideMap = buildTierOverrideMap(overrides);
 
-  if (rows.length <= MAX_TIER_LIST_MOVIES) {
+  if (rows.length <= getMaxTierListMovies()) {
     return rows.map((r) => toTierListMovie(r, tierOverrideMap));
   }
   const existingPairs = fetchExistingPairKeys(dimensionId);

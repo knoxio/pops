@@ -2,7 +2,7 @@ import { getTmdbClient } from '../../tmdb/index.js';
 import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from '../flags.js';
 import { scoreDiscoverResults } from '../service.js';
 import { getLibraryTmdbIds, toDiscoverResults } from '../tmdb-service.js';
-import { GENRE_NAME_TO_ID, isRelatedPair, MAX_CROSSOVER_PAIRS } from './genre-shelves-common.js';
+import { GENRE_NAME_TO_ID, getMaxCrossoverPairs, isRelatedPair } from './genre-shelves-common.js';
 import { registerShelf } from './registry.js';
 
 import type { GenreAffinity, PreferenceProfile } from '../types.js';
@@ -10,8 +10,8 @@ import type { ShelfDefinition, ShelfInstance } from './types.js';
 
 function pickCrossoverPairs(topGenres: GenreAffinity[]): Array<[GenreAffinity, GenreAffinity]> {
   const pairs: Array<[GenreAffinity, GenreAffinity]> = [];
-  for (let i = 0; i < topGenres.length && pairs.length < MAX_CROSSOVER_PAIRS; i++) {
-    for (let j = i + 1; j < topGenres.length && pairs.length < MAX_CROSSOVER_PAIRS; j++) {
+  for (let i = 0; i < topGenres.length && pairs.length < getMaxCrossoverPairs(); i++) {
+    for (let j = i + 1; j < topGenres.length && pairs.length < getMaxCrossoverPairs(); j++) {
       const g1 = topGenres[i];
       const g2 = topGenres[j];
       if (!g1 || !g2) continue;

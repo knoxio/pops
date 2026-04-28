@@ -38,7 +38,7 @@ export {
 } from './lib/comparison-queries.js';
 export { dismissDebriefDimension, getDebriefOpponent, getPendingDebriefs } from './lib/debrief.js';
 export { excludeFromDimension, includeInDimension } from './lib/dimension-exclusion.js';
-export { drawTierOutcome, ELO_K, expectedScore } from './lib/elo-calculator.js';
+export { drawTierOutcome, ELO_K, expectedScore, getEloK } from './lib/elo-calculator.js';
 export {
   recalcAllDimensions,
   recalcDimensionElo,

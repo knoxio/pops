@@ -1,4 +1,5 @@
 import { Clock, Shield } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
 import { trpc } from '@pops/api-client';
@@ -112,6 +113,7 @@ function RecentlyAddedCard({
 }
 
 export function DashboardWidgets() {
+  const { t } = useTranslation('inventory');
   const navigate = useNavigate();
   const { data, isLoading } = trpc.inventory.reports.dashboard.useQuery();
 
@@ -128,11 +130,19 @@ export function DashboardWidgets() {
 
   return (
     <div className="grid grid-cols-2 gap-4">
-      <StatCard title="Items" value={itemCount} color="slate" />
-      <StatCard title="Replacement" value={formatAUD(totalReplacementValue)} color="sky" />
-      <StatCard title="Resale" value={formatAUD(totalResaleValue)} color="violet" />
+      <StatCard title={t('dashboard.statItems')} value={itemCount} color="slate" />
       <StatCard
-        title="Warranties"
+        title={t('dashboard.statReplacement')}
+        value={formatAUD(totalReplacementValue)}
+        color="sky"
+      />
+      <StatCard
+        title={t('dashboard.statResale')}
+        value={formatAUD(totalResaleValue)}
+        color="violet"
+      />
+      <StatCard
+        title={t('dashboard.statWarranties')}
         value={warrantiesExpiringSoon}
         color={warrantiesExpiringSoon > 0 ? 'amber' : 'slate'}
         description={

@@ -9,10 +9,12 @@ import './rotation/register-sources.js';
 
 import { settingsRegistry } from '../core/settings/index.js';
 import { arrManifest, plexManifest, rotationManifest } from './settings/manifests.js';
+import { mediaOperationalManifest } from './settings/operational-manifest.js';
 
 settingsRegistry.register(plexManifest);
 settingsRegistry.register(arrManifest);
 settingsRegistry.register(rotationManifest);
+settingsRegistry.register(mediaOperationalManifest);
 
 import { router } from '../../trpc.js';
 import { arrRouter } from './arr/index.js';

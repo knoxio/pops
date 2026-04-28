@@ -1,5 +1,6 @@
 import { ShieldCheck } from 'lucide-react';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
 import { trpc } from '@pops/api-client';
@@ -17,6 +18,7 @@ interface WarrantyContentProps {
 }
 
 function WarrantyContent({ tiers, paperlessBaseUrl, onItemClick }: WarrantyContentProps) {
+  const { t } = useTranslation('inventory');
   const { critical, warning, caution, active, expired } = tiers;
   const hasExpiringItems = critical.length + warning.length + caution.length > 0;
 
@@ -41,7 +43,7 @@ function WarrantyContent({ tiers, paperlessBaseUrl, onItemClick }: WarrantyConte
         onItemClick={onItemClick}
       />
       {active.length > 0 && (
-        <CollapsibleSection title="Active" count={active.length} defaultOpen>
+        <CollapsibleSection title={t('section.active')} count={active.length} defaultOpen>
           {active.map((item) => (
             <WarrantyRow
               key={item.id}
@@ -55,7 +57,7 @@ function WarrantyContent({ tiers, paperlessBaseUrl, onItemClick }: WarrantyConte
       )}
       {expired.length > 0 && (
         <CollapsibleSection
-          title="Expired"
+          title={t('section.expired')}
           count={expired.length}
           defaultOpen={!hasExpiringItems && active.length === 0}
         >
@@ -104,6 +106,7 @@ function WarrantiesBody({
 }
 
 export function WarrantiesPage() {
+  const { t } = useTranslation('inventory');
   const navigate = useNavigate();
   const { data, isLoading, isError, refetch } = trpc.inventory.reports.warranties.useQuery();
   const { data: paperlessData } = trpc.inventory.paperless.status.useQuery();
@@ -113,7 +116,7 @@ export function WarrantiesPage() {
   return (
     <div className="space-y-6 max-w-3xl">
       <PageHeader
-        title="Warranty Tracking"
+        title={t('section.warrantyTracking')}
         icon={
           <div className="p-2 rounded-xl bg-app-accent/10">
             <ShieldCheck className="h-6 w-6 text-app-accent" />

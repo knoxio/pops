@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { getSettingValue } from '../../core/settings/service.js';
+
 import type { ItemUploadedFileRow } from '@pops/db-types';
 
 export type { ItemUploadedFileRow };
@@ -39,6 +41,11 @@ export const ALLOWED_MIME_PREFIXES = ['application/pdf', 'image/', 'text/'] as c
  * a tRPC base64 payload.
  */
 export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+
+/** Read the maximum file size from settings. */
+export function getMaxFileSizeBytes(): number {
+  return getSettingValue('inventory.maxFileSizeBytes', MAX_FILE_SIZE_BYTES);
+}
 
 /**
  * Server-side input for {@link uploadDocument}. The router decodes

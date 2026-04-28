@@ -1,22 +1,35 @@
+import { TokenBucketRateLimiter } from '../../../shared/rate-limiter.js';
 /**
  * TheTVDB-specific rate limiter.
  *
  * Wraps a TokenBucketRateLimiter (20 tokens, 2/sec refill) with
  * exponential backoff retry on 429 responses (up to 3 retries).
  */
-import { TokenBucketRateLimiter } from '../../../shared/rate-limiter.js';
+import { getSettingValue } from '../../core/settings/service.js';
 
 const THETVDB_CAPACITY = 20;
 const THETVDB_REFILL_RATE = 2; // tokens per second
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 1000;
 
+function getCapacity(): number {
+  return getSettingValue('media.thetvdb.rateLimitCapacity', THETVDB_CAPACITY);
+}
+
+function getRefillRate(): number {
+  return getSettingValue('media.thetvdb.rateLimitRefillRate', THETVDB_REFILL_RATE);
+}
+
+function getMaxRetries(): number {
+  return getSettingValue('media.thetvdb.maxRetries', MAX_RETRIES);
+}
+
 /** Pre-configured rate limiter instance for TheTVDB. */
 let instance: TokenBucketRateLimiter | null = null;
 
 /** Get or create the singleton TheTVDB rate limiter. */
 export function getTvdbRateLimiter(): TokenBucketRateLimiter {
-  instance ??= new TokenBucketRateLimiter(THETVDB_CAPACITY, THETVDB_REFILL_RATE);
+  instance ??= new TokenBucketRateLimiter(getCapacity(), getRefillRate());
   return instance;
 }
 
@@ -38,7 +51,8 @@ export function setTvdbRateLimiter(limiter: TokenBucketRateLimiter | null): void
 export async function fetchWithRetry(fn: () => Promise<Response>): Promise<Response> {
   const limiter = getTvdbRateLimiter();
 
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+  const maxRetries = getMaxRetries();
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
     await limiter.acquire();
     const response = await fn();
 
@@ -47,7 +61,7 @@ export async function fetchWithRetry(fn: () => Promise<Response>): Promise<Respo
     }
 
     // Last attempt — don't retry
-    if (attempt === MAX_RETRIES) {
+    if (attempt === maxRetries) {
       return response;
     }
 

@@ -1,9 +1,14 @@
+import { getSettingValue } from '../../../core/settings/service.js';
 import { TMDB_GENRE_MAP } from '../types.js';
 
 import type { PreferenceProfile } from '../types.js';
 
-export const MAX_BEST_IN_GENRE = 5;
-export const MAX_CROSSOVER_PAIRS = 6;
+export function getMaxBestInGenre(): number {
+  return getSettingValue('media.discovery.maxBestInGenre', 5);
+}
+export function getMaxCrossoverPairs(): number {
+  return getSettingValue('media.discovery.maxCrossoverPairs', 6);
+}
 export const MAX_TOP_DIMENSION = 5;
 export const MAX_DIMENSION_INSPIRED = 3;
 

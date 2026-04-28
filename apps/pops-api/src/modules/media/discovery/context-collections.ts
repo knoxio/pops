@@ -5,6 +5,7 @@
  * and/or keyword IDs. `getActiveCollections` picks up to 2 that match
  * the current moment, falling back to rainy-day when fewer than 2 match.
  */
+import { getSettingValue } from '../../core/settings/service.js';
 
 export interface ContextCollection {
   id: string;
@@ -115,7 +116,9 @@ export const CONTEXT_COLLECTIONS: ContextCollection[] = [
   },
 ];
 
-const MAX_ACTIVE = 2;
+function maxActive(): number {
+  return getSettingValue('media.discovery.maxActiveCollections', 2);
+}
 
 /**
  * Return up to 2 context collections whose trigger matches the given time.
@@ -132,14 +135,14 @@ export function getActiveCollections(
     if (col.id === FALLBACK_ID) continue;
     if (col.trigger(hour, month, dayOfWeek)) {
       matched.push(col);
-      if (matched.length === MAX_ACTIVE) return matched;
+      if (matched.length === maxActive()) return matched;
     }
   }
 
   // Fill remaining slots with fallback
   const fallback = CONTEXT_COLLECTIONS.find((c) => c.id === FALLBACK_ID);
   if (fallback) {
-    while (matched.length < MAX_ACTIVE) {
+    while (matched.length < maxActive()) {
       matched.push(fallback);
     }
   }

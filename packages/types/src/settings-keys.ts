@@ -103,6 +103,75 @@ export const SETTINGS_KEYS = {
   EGO_SUMMARY_MAX_TOKENS: 'ego.summary.maxTokens',
   EGO_SUMMARY_TEMPERATURE: 'ego.summary.temperature',
 
+  // Media — Comparisons
+  MEDIA_COMPARISONS_ELO_K: 'media.comparisons.eloK',
+  MEDIA_COMPARISONS_DEFAULT_SCORE: 'media.comparisons.defaultScore',
+  MEDIA_COMPARISONS_MAX_TIER_LIST_MOVIES: 'media.comparisons.maxTierListMovies',
+  MEDIA_COMPARISONS_STALENESS_THRESHOLD: 'media.comparisons.stalenessThreshold',
+  MEDIA_COMPARISONS_DEFAULT_LIMIT: 'media.comparisons.defaultLimit',
+
+  // Media — Discovery
+  MEDIA_DISCOVERY_SESSION_TARGET_MIN: 'media.discovery.sessionTargetMin',
+  MEDIA_DISCOVERY_SESSION_TARGET_MAX: 'media.discovery.sessionTargetMax',
+  MEDIA_DISCOVERY_MAX_SEED_SHELVES: 'media.discovery.maxSeedShelves',
+  MEDIA_DISCOVERY_MAX_GENRE_SHELVES: 'media.discovery.maxGenreShelves',
+  MEDIA_DISCOVERY_MAX_ACTIVE_COLLECTIONS: 'media.discovery.maxActiveCollections',
+  MEDIA_DISCOVERY_MAX_BYW_SEEDS: 'media.discovery.maxBecauseYouWatchedSeeds',
+  MEDIA_DISCOVERY_MAX_CREDITS_SEEDS: 'media.discovery.maxCreditsSeeds',
+  MEDIA_DISCOVERY_MAX_BEST_IN_GENRE: 'media.discovery.maxBestInGenre',
+  MEDIA_DISCOVERY_MAX_CROSSOVER_PAIRS: 'media.discovery.maxCrossoverPairs',
+
+  // Media — Integrations
+  MEDIA_THETVDB_RATE_LIMIT_CAPACITY: 'media.thetvdb.rateLimitCapacity',
+  MEDIA_THETVDB_RATE_LIMIT_REFILL_RATE: 'media.thetvdb.rateLimitRefillRate',
+  MEDIA_THETVDB_MAX_RETRIES: 'media.thetvdb.maxRetries',
+  MEDIA_TMDB_GENRE_CACHE_TTL_MS: 'media.tmdb.genreCacheTtlMs',
+  MEDIA_TMDB_IMAGE_MAX_RETRIES: 'media.tmdb.imageMaxRetries',
+  MEDIA_TMDB_IMAGE_RETRY_DELAY_MS: 'media.tmdb.imageRetryDelayMs',
+  MEDIA_PLEX_RATE_LIMIT_DELAY_MS: 'media.plex.rateLimitDelayMs',
+  MEDIA_PLEX_CLIENT_PAGE_SIZE: 'media.plex.clientPageSize',
+  MEDIA_PLEX_FRIENDS_PAGE_SIZE: 'media.plex.friendsPageSize',
+  MEDIA_DEFAULT_LIMIT: 'media.defaultLimit',
+  MEDIA_ROTATION_TMDB_DEFAULT_PAGES: 'media.rotation.tmdbDefaultPages',
+  MEDIA_ROTATION_TMDB_MAX_PAGES: 'media.rotation.tmdbMaxPages',
+  MEDIA_ROTATION_TMDB_MIN_VOTE_COUNT: 'media.rotation.tmdbMinVoteCount',
+  MEDIA_ROTATION_LETTERBOXD_MAX_PAGES: 'media.rotation.letterboxdMaxPages',
+
+  // Finance
+  FINANCE_AI_CATEGORIZER_MODEL: 'finance.aiCategorizer.model',
+  FINANCE_AI_CATEGORIZER_MAX_TOKENS: 'finance.aiCategorizer.maxTokens',
+  FINANCE_RULE_GEN_MODEL: 'finance.ruleGen.model',
+  FINANCE_RULE_GEN_MAX_TOKENS: 'finance.ruleGen.maxTokens',
+  FINANCE_DEFAULT_LIMIT: 'finance.defaultLimit',
+
+  // Inventory
+  INVENTORY_DEFAULT_LIMIT: 'inventory.defaultLimit',
+  INVENTORY_SEARCH_DEFAULT_LIMIT: 'inventory.searchDefaultLimit',
+  INVENTORY_MAX_FILE_SIZE_BYTES: 'inventory.maxFileSizeBytes',
+
+  // Core — Corrections
+  CORE_CORRECTIONS_HIGH_CONFIDENCE: 'core.corrections.highConfidenceThreshold',
+  CORE_CORRECTIONS_MIN_PATTERN_LENGTH: 'core.corrections.minPatternLength',
+  CORE_CORRECTIONS_PREVIEW_LIMIT: 'core.corrections.previewLimit',
+  CORE_CORRECTIONS_PREVIEW_HARD_LIMIT: 'core.corrections.previewHardLimit',
+  CORE_CORRECTIONS_PREVIEW_RULES_FETCH: 'core.corrections.previewRulesFetchLimit',
+
+  // Core — Search
+  CORE_SEARCH_SHOW_MORE_LIMIT: 'core.search.showMoreLimit',
+
+  // Core — AI Retry
+  CORE_AI_RETRY_MAX_RETRIES: 'core.aiRetry.maxRetries',
+  CORE_AI_RETRY_BASE_DELAY_MS: 'core.aiRetry.baseDelayMs',
+
+  // Core — Pagination
+  CORE_DEFAULT_LIMIT: 'core.defaultLimit',
+
+  // Core — Queue
+  CORE_QUEUE_SYNC_CONCURRENCY: 'core.queue.syncConcurrency',
+  CORE_QUEUE_EMBEDDINGS_CONCURRENCY: 'core.queue.embeddingsConcurrency',
+  CORE_QUEUE_DEFAULT_CONCURRENCY: 'core.queue.defaultConcurrency',
+  CORE_QUEUE_COMPLETED_RETENTION: 'core.queue.completedRetention',
+
   // App
   THEME: 'theme',
 } as const;

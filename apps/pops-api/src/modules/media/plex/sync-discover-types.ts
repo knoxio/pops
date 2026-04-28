@@ -40,6 +40,12 @@ export function pushError(result: DiscoverItemResult, title: string, err: unknow
   }
 }
 
+import { getSettingValue } from '../../core/settings/service.js';
+
 export const RATE_LIMIT_DELAY_MS = 200;
+
+export function getRateLimitDelayMs(): number {
+  return getSettingValue('media.plex.rateLimitDelayMs', RATE_LIMIT_DELAY_MS);
+}
 
 export const delay = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));

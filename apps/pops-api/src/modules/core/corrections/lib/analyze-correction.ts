@@ -4,7 +4,16 @@ import { getEnv } from '../../../../env.js';
 import { withRateLimitRetry } from '../../../../lib/ai-retry.js';
 import { trackInference } from '../../../../lib/inference-middleware.js';
 import { logger } from '../../../../lib/logger.js';
+import { getSettingValue } from '../../settings/service.js';
 import { patternMatchesDescription } from './pattern-match.js';
+
+function getRuleGenModel(): string {
+  return getSettingValue('finance.ruleGen.model', 'claude-haiku-4-5-20251001');
+}
+
+function getRuleGenMaxTokens(): number {
+  return getSettingValue('finance.ruleGen.maxTokens', 200);
+}
 
 export interface CorrectionInput {
   description: string;
@@ -18,7 +27,9 @@ export interface CorrectionAnalysis {
   confidence: number;
 }
 
-const MIN_PATTERN_LENGTH = 3;
+function getMinPatternLength(): number {
+  return getSettingValue('core.corrections.minPatternLength', 3);
+}
 
 function buildAnalyzePrompt(input: CorrectionInput): string {
   return `You are a bank transaction pattern analyzer. A user has assigned a transaction to an entity and we need a reusable rule that will identify FUTURE transactions belonging to the same entity.
@@ -40,7 +51,7 @@ Return a single JSON object:
   - "exact"   — the full normalized description is the identifier
   - "contains" — the pattern is a substring of the description (preferred default)
   - "regex"   — a regular expression that will match this and similar descriptions; use only when neither exact nor a literal substring is sufficient
-- "pattern": the matching pattern string (min ${MIN_PATTERN_LENGTH} chars, uppercase). For "exact" and "contains" the pattern must appear verbatim (case-insensitive) inside the description. For "regex" the pattern must be a valid JavaScript regular expression that tests true against the description.
+- "pattern": the matching pattern string (min ${getMinPatternLength()} chars, uppercase). For "exact" and "contains" the pattern must appear verbatim (case-insensitive) inside the description. For "regex" the pattern must be a valid JavaScript regular expression that tests true against the description.
 - "confidence": 0.0-1.0 (how confident you are this rule correctly identifies future transactions for this entity)
 
 Examples:
@@ -60,13 +71,13 @@ async function callClaude(prompt: string, apiKey: string): Promise<string | null
   let response;
   try {
     response = await trackInference(
-      { provider: 'claude', model: 'claude-haiku-4-5-20251001', operation: 'rule-generation' },
+      { provider: 'claude', model: getRuleGenModel(), operation: 'rule-generation' },
       () =>
         withRateLimitRetry(
           () =>
             client.messages.create({
-              model: 'claude-haiku-4-5-20251001',
-              max_tokens: 200,
+              model: getRuleGenModel(),
+              max_tokens: getRuleGenMaxTokens(),
               messages: [{ role: 'user', content: prompt }],
             }),
           'analyzeCorrection',
@@ -99,7 +110,7 @@ function parseAnalysis(text: string): CorrectionAnalysis | null {
 
     if (
       !['exact', 'contains', 'regex'].includes(matchType) ||
-      pattern.length < MIN_PATTERN_LENGTH ||
+      pattern.length < getMinPatternLength() ||
       confidence < 0 ||
       confidence > 1
     ) {

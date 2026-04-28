@@ -3,6 +3,7 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { mediaScores } from '@pops/db-types';
 
 import { getDb, getDrizzle } from '../../../../db.js';
+import { getSettingValue } from '../../../core/settings/service.js';
 import { convertTierPlacements } from '../tier-conversion.js';
 import { setTierOverride } from '../tier-overrides.js';
 import { batchRecordComparisons } from './batch-record.js';
@@ -14,7 +15,9 @@ import type {
   SubmitTierListResult,
 } from '../types.js';
 
-const DEFAULT_SCORE = 1500.0;
+function getDefaultScore(): number {
+  return getSettingValue('media.comparisons.defaultScore', 1500);
+}
 
 function fetchScoresMap(movieIds: number[], dimensionId: number): Map<number, number> {
   const drizzleDb = getDrizzle();
@@ -39,7 +42,7 @@ function captureOldScores(input: SubmitTierListInput): Map<number, number> {
   const ids = input.placements.map((p) => p.movieId);
   const map = fetchScoresMap(ids, input.dimensionId);
   for (const id of ids) {
-    if (!map.has(id)) map.set(id, DEFAULT_SCORE);
+    if (!map.has(id)) map.set(id, getDefaultScore());
   }
   return map;
 }
@@ -74,8 +77,8 @@ function collectScoreChanges(
   const newScores = fetchScoresMap(ids, input.dimensionId);
   return input.placements.map((placement) => ({
     movieId: placement.movieId,
-    oldScore: oldScores.get(placement.movieId) ?? DEFAULT_SCORE,
-    newScore: newScores.get(placement.movieId) ?? DEFAULT_SCORE,
+    oldScore: oldScores.get(placement.movieId) ?? getDefaultScore(),
+    newScore: newScores.get(placement.movieId) ?? getDefaultScore(),
   }));
 }
 

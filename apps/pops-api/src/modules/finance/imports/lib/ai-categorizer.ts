@@ -9,9 +9,10 @@ import Anthropic from '@anthropic-ai/sdk';
 
 import { isNamedEnvContext } from '../../../../db.js';
 import { getEnv } from '../../../../env.js';
-import { withRateLimitRetry } from '../../../../lib/ai-retry.js';
 import { trackInference } from '../../../../lib/inference-middleware.js';
 import { logger } from '../../../../lib/logger.js';
+import { getSettingValue } from '../../../core/settings/service.js';
+import { buildEntryFromText, callApiOrThrow } from './ai-categorizer-api.js';
 import {
   getCachedEntry,
   loadCacheFromDisk,
@@ -29,6 +30,16 @@ export {
 } from './ai-categorizer-cache.js';
 export { AiCategorizationError } from './ai-categorizer-error.js';
 
+const DEFAULT_CATEGORIZER_MODEL = 'claude-haiku-4-5-20251001';
+
+function getCategorizerModel(): string {
+  return getSettingValue('finance.aiCategorizer.model', DEFAULT_CATEGORIZER_MODEL);
+}
+
+function getCategorizerMaxTokens(): number {
+  return getSettingValue('finance.aiCategorizer.maxTokens', 200);
+}
+
 export interface AiUsageStats {
   inputTokens: number;
   outputTokens: number;
@@ -44,7 +55,7 @@ function trackCacheHit(importBatchId: string | undefined): void {
   void trackInference(
     {
       provider: 'claude',
-      model: 'claude-haiku-4-5-20251001',
+      model: getCategorizerModel(),
       operation: 'entity-match',
       domain: 'finance',
       contextId: importBatchId,
@@ -52,120 +63,6 @@ function trackCacheHit(importBatchId: string | undefined): void {
     },
     async () => null
   );
-}
-
-function buildPrompt(rawRow: string): string {
-  return `Given this bank transaction data, identify the merchant/entity name and a spending category.
-
-Transaction data: ${rawRow}
-
-Reply in JSON only: {"entityName": "...", "category": "..."}
-Common categories: Groceries, Dining, Transport, Utilities, Entertainment, Shopping, Health, Insurance, Subscriptions, Income, Transfer, Government, Education, Travel, Rent, Other.`;
-}
-
-interface ApiCallResponse {
-  text: string | null;
-  inputTokens: number;
-  outputTokens: number;
-}
-
-async function callApi(
-  client: Anthropic,
-  rawRow: string,
-  sanitizedDescription: string,
-  importBatchId: string | undefined
-): Promise<ApiCallResponse> {
-  const response = await trackInference(
-    {
-      provider: 'claude',
-      model: 'claude-haiku-4-5-20251001',
-      operation: 'entity-match',
-      domain: 'finance',
-      contextId: importBatchId,
-    },
-    () =>
-      withRateLimitRetry(
-        () =>
-          client.messages.create({
-            model: 'claude-haiku-4-5-20251001',
-            max_tokens: 200,
-            messages: [{ role: 'user', content: buildPrompt(rawRow) }],
-          }),
-        sanitizedDescription,
-        { logger, logPrefix: '[AI]' }
-      )
-  );
-
-  const text = response.content[0]?.type === 'text' ? response.content[0].text : null;
-  return {
-    text,
-    inputTokens: response.usage.input_tokens,
-    outputTokens: response.usage.output_tokens,
-  };
-}
-
-function buildEntryFromText(text: string, rawRow: string): AiCacheEntry {
-  const cleanedText = text
-    .trim()
-    .replaceAll(/^```(?:json)?\s*\n?/gm, '')
-    .replaceAll(/\n?```\s*$/gm, '');
-  const parsed = JSON.parse(cleanedText) as { entityName: string; category: string };
-  return {
-    description: rawRow.trim(),
-    entityName: parsed.entityName,
-    category: parsed.category,
-    cachedAt: new Date().toISOString(),
-  };
-}
-
-function throwApiError(error: unknown): never {
-  if (error && typeof error === 'object' && 'status' in error) {
-    const apiError = error as {
-      status: number;
-      message?: string;
-      error?: { error?: { message?: string } };
-    };
-    if (apiError.status === 400) {
-      const errorMessage =
-        apiError.error?.error?.message ??
-        (apiError as { message?: string }).message ??
-        'Unknown API error';
-      if (errorMessage.toLowerCase().includes('credit balance')) {
-        throw new AiCategorizationError(
-          'Anthropic API credit balance too low. Please add credits at https://console.anthropic.com/settings/plans',
-          'INSUFFICIENT_CREDITS'
-        );
-      }
-    }
-    throw new AiCategorizationError(
-      `Anthropic API error: ${apiError.message ?? 'Unknown error'}`,
-      'API_ERROR'
-    );
-  }
-  throw new AiCategorizationError(
-    `Failed to categorize: ${error instanceof Error ? error.message : 'Unknown error'}`,
-    'API_ERROR'
-  );
-}
-
-async function callApiOrThrow(
-  client: Anthropic,
-  rawRow: string,
-  sanitizedDescription: string,
-  importBatchId?: string
-): Promise<ApiCallResponse> {
-  try {
-    return await callApi(client, rawRow, sanitizedDescription, importBatchId);
-  } catch (error) {
-    logger.error(
-      {
-        description: sanitizedDescription,
-        error: error instanceof Error ? error.message : String(error),
-      },
-      '[AI] API call failed'
-    );
-    throwApiError(error);
-  }
 }
 
 export async function categorizeWithAi(
@@ -201,7 +98,14 @@ export async function categorizeWithAi(
   const client = new Anthropic({ apiKey, maxRetries: 0 });
   logger.debug({ description: sanitizedDescription }, '[AI] Calling API (cache miss)');
 
-  const response = await callApiOrThrow(client, rawRow, sanitizedDescription, importBatchId);
+  const response = await callApiOrThrow({
+    client,
+    rawRow,
+    sanitizedDescription,
+    importBatchId,
+    model: getCategorizerModel(),
+    maxTokens: getCategorizerMaxTokens(),
+  });
 
   if (!response.text) return { result: null };
 

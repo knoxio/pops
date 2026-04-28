@@ -1,3 +1,5 @@
+import { getSettingValue } from '../modules/core/settings/service.js';
+
 import type { Logger } from 'pino';
 
 const MAX_RETRIES = 5;
@@ -15,20 +17,22 @@ export async function withRateLimitRetry<T>(
   const logger = args?.logger;
   const logPrefix = args?.logPrefix ?? '[AI]';
 
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+  const maxRetries = getSettingValue('core.aiRetry.maxRetries', MAX_RETRIES);
+  const baseDelay = getSettingValue('core.aiRetry.baseDelayMs', BASE_DELAY_MS);
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       return await fn();
     } catch (error) {
       const isRateLimit =
         error instanceof Error && 'status' in error && (error as { status: number }).status === 429;
 
-      if (!isRateLimit || attempt === MAX_RETRIES) {
+      if (!isRateLimit || attempt === maxRetries) {
         throw error;
       }
 
-      const delay = BASE_DELAY_MS * 2 ** attempt + Math.random() * 500;
+      const delay = baseDelay * 2 ** attempt + Math.random() * 500;
       logger?.warn(
-        { context, attempt: attempt + 1, maxRetries: MAX_RETRIES, delayMs: Math.round(delay) },
+        { context, attempt: attempt + 1, maxRetries, delayMs: Math.round(delay) },
         `${logPrefix} Rate limited (429) — retrying with backoff`
       );
       await new Promise((resolve) => setTimeout(resolve, delay));
