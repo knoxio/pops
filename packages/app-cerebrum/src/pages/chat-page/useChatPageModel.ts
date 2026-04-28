@@ -57,5 +57,6 @@ export function useChatPageModel(): ChatPageModel {
     setSearchQuery: list.setSearchQuery,
     activeScopes: detail.activeScopes,
     retrievedEngrams: mutations.retrievedEngrams,
+    streamingContent: mutations.streamingContent,
   };
 }

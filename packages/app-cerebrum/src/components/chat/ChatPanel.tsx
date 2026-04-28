@@ -41,6 +41,7 @@ function ThreadArea({ model }: { model: ChatPageModel }) {
           messages={model.messages}
           isLoading={model.messagesLoading}
           isSending={model.isSending}
+          streamingContent={model.streamingContent}
         />
       )}
 
