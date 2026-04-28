@@ -1,3 +1,4 @@
+import { getSettingValue } from '../../core/settings/service.js';
 import { SemanticSearchService } from './semantic-search.js';
 import { StructuredQueryService } from './structured-query.js';
 
@@ -12,9 +13,17 @@ import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
 import type { RetrievalFilters, RetrievalResult } from './types.js';
 
-const RRF_K = 60;
-const DEFAULT_LIMIT = 20;
-const DEFAULT_THRESHOLD = 0.8;
+function getHybridRrfK(): number {
+  return getSettingValue('cerebrum.hybrid.rrfK', 60);
+}
+
+function getHybridDefaultLimit(): number {
+  return getSettingValue('cerebrum.hybrid.defaultLimit', 20);
+}
+
+function getHybridDefaultThreshold(): number {
+  return getSettingValue('cerebrum.hybrid.defaultThreshold', 0.8);
+}
 
 function isSecretScope(scope: string): boolean {
   return scope.split('.').includes('secret');
@@ -26,11 +35,12 @@ function reciprocalRankFusion(
   structuredResults: RetrievalResult[],
   limit: number
 ): RetrievalResult[] {
+  const rrfK = getHybridRrfK();
   const scores = new Map<string, { score: number; result: RetrievalResult; inBoth: boolean }>();
 
   for (const [i, r] of semanticResults.entries()) {
     const key = `${r.sourceType}:${r.sourceId}`;
-    const contribution = 1 / (RRF_K + i + 1);
+    const contribution = 1 / (rrfK + i + 1);
     const existing = scores.get(key);
     if (existing) {
       existing.score += contribution;
@@ -42,7 +52,7 @@ function reciprocalRankFusion(
 
   for (const [i, r] of structuredResults.entries()) {
     const key = `${r.sourceType}:${r.sourceId}`;
-    const contribution = 1 / (RRF_K + i + 1);
+    const contribution = 1 / (rrfK + i + 1);
     const existing = scores.get(key);
     if (existing) {
       existing.score += contribution;
@@ -80,8 +90,8 @@ export class HybridSearchService {
   async hybrid(
     query: string,
     filters: RetrievalFilters = {},
-    limit = DEFAULT_LIMIT,
-    threshold = DEFAULT_THRESHOLD
+    limit = getHybridDefaultLimit(),
+    threshold = getHybridDefaultThreshold()
   ): Promise<RetrievalResult[]> {
     const fetchLimit = limit * 3;
 
@@ -109,14 +119,18 @@ export class HybridSearchService {
   async semanticSearch(
     query: string,
     filters: RetrievalFilters = {},
-    limit = DEFAULT_LIMIT,
-    threshold = DEFAULT_THRESHOLD
+    limit = getHybridDefaultLimit(),
+    threshold = getHybridDefaultThreshold()
   ): Promise<RetrievalResult[]> {
     return this.semanticSvc.search(query, filters, limit, threshold);
   }
 
   /** Structured-only search. */
-  structuredOnly(filters: RetrievalFilters, limit = DEFAULT_LIMIT, offset = 0): RetrievalResult[] {
+  structuredOnly(
+    filters: RetrievalFilters,
+    limit = getHybridDefaultLimit(),
+    offset = 0
+  ): RetrievalResult[] {
     return this.structuredSvc.query(filters, limit, offset);
   }
 
@@ -127,8 +141,8 @@ export class HybridSearchService {
   async similar(
     engramId: string,
     filters: RetrievalFilters = {},
-    limit = DEFAULT_LIMIT,
-    threshold = DEFAULT_THRESHOLD
+    limit = getHybridDefaultLimit(),
+    threshold = getHybridDefaultThreshold()
   ): Promise<RetrievalResult[]> {
     const vector = this.semanticSvc.getVectorForEngram(engramId);
     if (!vector) {

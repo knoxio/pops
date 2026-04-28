@@ -2,6 +2,11 @@
  * Cerebrum domain — engram storage and retrieval.
  * See docs/themes/06-cerebrum for the full spec.
  */
+import { settingsRegistry } from '../core/settings/index.js';
+import { cerebrumManifest } from './settings-manifest.js';
+
+settingsRegistry.register(cerebrumManifest);
+
 import { mergeRouters, router } from '../../trpc.js';
 import { emitRouter } from './emit/router.js';
 import { engramsRouter } from './engrams/router.js';

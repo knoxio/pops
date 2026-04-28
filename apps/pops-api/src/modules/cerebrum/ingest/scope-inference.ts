@@ -16,14 +16,18 @@ import { getEnv } from '../../../env.js';
 import { withRateLimitRetry } from '../../../lib/ai-retry.js';
 import { trackInference } from '../../../lib/inference-middleware.js';
 import { logger } from '../../../lib/logger.js';
+import { getSettingValue } from '../../core/settings/service.js';
 import { resolveScopes } from '../engrams/scope-rules.js';
 import { scopeStringSchema } from '../engrams/scope-schema.js';
 
 import type { ScopeRulesConfig } from '../engrams/scope-rules.js';
 import type { ScopeInferenceResult } from './types.js';
 
-const MODEL = 'claude-haiku-4-5-20251001';
 const OPERATION = 'cerebrum.infer-scopes';
+
+function getScopeInferenceModel(): string {
+  return getSettingValue('cerebrum.scopeInference.model', 'claude-haiku-4-5-20251001');
+}
 
 interface LlmScopeResponse {
   scopes: string[];
@@ -153,15 +157,16 @@ export class ScopeInferenceService {
 
     const client = new Anthropic({ apiKey, maxRetries: 0 });
     const prompt = buildPrompt(body, type, tags, knownScopes);
+    const model = getScopeInferenceModel();
 
     try {
       const response = await trackInference(
-        { provider: 'claude', model: MODEL, operation: OPERATION, domain: 'cerebrum' },
+        { provider: 'claude', model, operation: OPERATION, domain: 'cerebrum' },
         () =>
           withRateLimitRetry(
             () =>
               client.messages.create({
-                model: MODEL,
+                model,
                 max_tokens: 128,
                 temperature: 0,
                 messages: [{ role: 'user', content: prompt }],

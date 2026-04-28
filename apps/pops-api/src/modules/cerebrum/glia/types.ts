@@ -80,14 +80,48 @@ export interface GraduationThresholds {
   demotionWindowDays: number;
 }
 
-/** Default graduation thresholds per ADR-021. */
-export const DEFAULT_THRESHOLDS: GraduationThresholds = {
+import { getSettingValue } from '../../core/settings/service.js';
+
+/** Hardcoded graduation thresholds per ADR-021. */
+const FALLBACK_THRESHOLDS: GraduationThresholds = {
   proposeToActReportMinApproved: 20,
   proposeToActReportMaxRejectionRate: 0.1,
   actReportToSilentMinDays: 60,
   demotionRevertThreshold: 2,
   demotionWindowDays: 7,
 };
+
+/** Read graduation thresholds from settings (with hardcoded fallbacks). */
+export function getGliaThresholds(): GraduationThresholds {
+  return {
+    proposeToActReportMinApproved: getSettingValue(
+      'cerebrum.glia.proposeMinApproved',
+      FALLBACK_THRESHOLDS.proposeToActReportMinApproved
+    ),
+    proposeToActReportMaxRejectionRate: getSettingValue(
+      'cerebrum.glia.proposeMaxRejectionRate',
+      FALLBACK_THRESHOLDS.proposeToActReportMaxRejectionRate
+    ),
+    actReportToSilentMinDays: getSettingValue(
+      'cerebrum.glia.actReportMinDays',
+      FALLBACK_THRESHOLDS.actReportToSilentMinDays
+    ),
+    demotionRevertThreshold: getSettingValue(
+      'cerebrum.glia.demotionRevertThreshold',
+      FALLBACK_THRESHOLDS.demotionRevertThreshold
+    ),
+    demotionWindowDays: getSettingValue(
+      'cerebrum.glia.demotionWindowDays',
+      FALLBACK_THRESHOLDS.demotionWindowDays
+    ),
+  };
+}
+
+/**
+ * @deprecated Use `getGliaThresholds()` instead. Retained for backward
+ * compatibility with tests that depend on a static constant.
+ */
+export const DEFAULT_THRESHOLDS: GraduationThresholds = FALLBACK_THRESHOLDS;
 
 /** Filters for querying actions. */
 export interface ActionListFilters {

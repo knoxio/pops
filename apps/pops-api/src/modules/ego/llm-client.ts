@@ -11,8 +11,25 @@ import { getEnv } from '../../env.js';
 import { withRateLimitRetry } from '../../lib/ai-retry.js';
 import { trackInference } from '../../lib/inference-middleware.js';
 import { logger } from '../../lib/logger.js';
+import { getSettingValue } from '../core/settings/service.js';
 
 import type { MessageStream } from '@anthropic-ai/sdk/lib/MessageStream';
+
+function getEgoChatMaxTokens(): number {
+  return getSettingValue('ego.chat.maxTokens', 2048);
+}
+
+function getEgoChatTemperature(): number {
+  return getSettingValue('ego.chat.temperature', 0.3);
+}
+
+function getEgoSummaryMaxTokens(): number {
+  return getSettingValue('ego.summary.maxTokens', 512);
+}
+
+function getEgoSummaryTemperature(): number {
+  return getSettingValue('ego.summary.temperature', 0);
+}
 
 const LLM_UNAVAILABLE_MSG =
   'I can help with that, but the LLM is currently unavailable. Please try again later.';
@@ -47,8 +64,8 @@ export async function callChatLlm(
           () =>
             client.messages.create({
               model,
-              max_tokens: 2048,
-              temperature: 0.3,
+              max_tokens: getEgoChatMaxTokens(),
+              temperature: getEgoChatTemperature(),
               system: systemPrompt,
               messages,
             }),
@@ -131,8 +148,8 @@ export async function* streamChatLlm(
   try {
     stream = client.messages.stream({
       model,
-      max_tokens: 2048,
-      temperature: 0.3,
+      max_tokens: getEgoChatMaxTokens(),
+      temperature: getEgoChatTemperature(),
       system: systemPrompt,
       messages,
     });
@@ -199,8 +216,8 @@ export async function callSummariseLlm(
           () =>
             client.messages.create({
               model,
-              max_tokens: 512,
-              temperature: 0,
+              max_tokens: getEgoSummaryMaxTokens(),
+              temperature: getEgoSummaryTemperature(),
               messages: [{ role: 'user', content: prompt }],
             }),
           'ego.summarise',

@@ -1,3 +1,5 @@
+import { getSettingValue } from '../../core/settings/service.js';
+
 /**
  * ContextAssemblyService — assembles a token-budgeted context window from
  * retrieval results, formatted for LLM consumption with source attribution.
@@ -7,7 +9,9 @@
  */
 import type { RetrievalResult, SourceAttribution } from './types.js';
 
-const DEFAULT_TOKEN_BUDGET = 4096;
+function getContextTokenBudget(): number {
+  return getSettingValue('cerebrum.context.tokenBudget', 4096);
+}
 const WORDS_TO_TOKENS = 1.3;
 const SENTENCE_BOUNDARY = /[.!?]\s/;
 
@@ -78,7 +82,7 @@ export interface ContextAssemblyOutput {
 
 export class ContextAssemblyService {
   assemble(input: ContextAssemblyInput): ContextAssemblyOutput {
-    const { query, results, tokenBudget = DEFAULT_TOKEN_BUDGET, includeMetadata = true } = input;
+    const { query, results, tokenBudget = getContextTokenBudget(), includeMetadata = true } = input;
 
     const seen = new Set<string>();
     const sections: string[] = [];

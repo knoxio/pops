@@ -12,6 +12,7 @@
  * ContextAssemblyService, CitationParser).
  */
 import { getDrizzle } from '../../../db.js';
+import { getSettingValue } from '../../core/settings/service.js';
 import { CitationParser } from '../query/citation-parser.js';
 import { ContextAssemblyService } from '../retrieval/context-assembly.js';
 import { HybridSearchService } from '../retrieval/hybrid-search.js';
@@ -31,9 +32,17 @@ import { buildScopeFilters, computeDefaultAudienceScope, filterByScope } from '.
 import type { RetrievalFilters, RetrievalResult } from '../retrieval/types.js';
 import type { GenerationRequest, GenerationResult, PreviewResult } from './types.js';
 
-const GENERATION_TOKEN_BUDGET = 8192;
-const RELEVANCE_THRESHOLD = 0.2;
-const DEFAULT_MAX_SOURCES = 20;
+function getEmitTokenBudget(): number {
+  return getSettingValue('cerebrum.emit.tokenBudget', 8192);
+}
+
+function getEmitRelevanceThreshold(): number {
+  return getSettingValue('cerebrum.emit.relevanceThreshold', 0.2);
+}
+
+function getEmitMaxSources(): number {
+  return getSettingValue('cerebrum.emit.maxSources', 20);
+}
 
 /**
  * Build retrieval filters from a generation request.
@@ -79,7 +88,7 @@ export class GenerationService {
     const assembled = this.assembler.assemble({
       query,
       results: filtered,
-      tokenBudget: GENERATION_TOKEN_BUDGET,
+      tokenBudget: getEmitTokenBudget(),
       includeMetadata: true,
     });
 
@@ -108,7 +117,7 @@ export class GenerationService {
     const assembled = this.assembler.assemble({
       query,
       results: capped,
-      tokenBudget: GENERATION_TOKEN_BUDGET,
+      tokenBudget: getEmitTokenBudget(),
       includeMetadata: true,
     });
 
@@ -144,7 +153,7 @@ export class GenerationService {
     const assembled = this.assembler.assemble({
       query,
       results: sorted,
-      tokenBudget: GENERATION_TOKEN_BUDGET,
+      tokenBudget: getEmitTokenBudget(),
       includeMetadata: true,
     });
 
@@ -171,7 +180,7 @@ export class GenerationService {
     const assembled = this.assembler.assemble({
       query,
       results: filtered,
-      tokenBudget: GENERATION_TOKEN_BUDGET,
+      tokenBudget: getEmitTokenBudget(),
       includeMetadata: true,
     });
     const outline = await callEmitLlm(buildOutlinePrompt(assembled.context), query);
@@ -181,6 +190,6 @@ export class GenerationService {
   /** Run hybrid search against Thalamus. */
   private async retrieve(query: string, filters: RetrievalFilters): Promise<RetrievalResult[]> {
     const hybridSearch = new HybridSearchService(getDrizzle());
-    return hybridSearch.hybrid(query, filters, DEFAULT_MAX_SOURCES, RELEVANCE_THRESHOLD);
+    return hybridSearch.hybrid(query, filters, getEmitMaxSources(), getEmitRelevanceThreshold());
   }
 }

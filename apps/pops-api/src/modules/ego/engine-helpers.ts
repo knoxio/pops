@@ -3,14 +3,30 @@
  *
  * Extracted to keep engine.ts within the max-lines lint rule.
  */
+import { getSettingValue } from '../core/settings/service.js';
+
 import type { RetrievalFilters } from '../cerebrum/retrieval/types.js';
 import type { EngineConfig, Message } from './types.js';
 
-const DEFAULT_MODEL = 'claude-sonnet-4-20250514';
-const DEFAULT_MAX_HISTORY = 20;
-const DEFAULT_MAX_RETRIEVAL = 5;
-const DEFAULT_TOKEN_BUDGET = 4096;
-const DEFAULT_RELEVANCE_THRESHOLD = 0.3;
+function getEgoDefaultModel(): string {
+  return getSettingValue('ego.defaultModel', 'claude-sonnet-4-20250514');
+}
+
+function getEgoMaxHistory(): number {
+  return getSettingValue('ego.maxHistory', 20);
+}
+
+function getEgoMaxRetrieval(): number {
+  return getSettingValue('ego.maxRetrieval', 5);
+}
+
+function getEgoTokenBudget(): number {
+  return getSettingValue('ego.tokenBudget', 4096);
+}
+
+function getEgoRelevanceThreshold(): number {
+  return getSettingValue('ego.relevanceThreshold', 0.3);
+}
 
 function isSecretScope(scope: string): boolean {
   return scope.split('.').includes('secret');
@@ -39,10 +55,10 @@ export function formatHistoryForContext(messages: Message[]): string {
 
 export function buildDefaultConfig(config?: Partial<EngineConfig>): EngineConfig {
   return {
-    model: config?.model ?? DEFAULT_MODEL,
-    maxHistoryMessages: config?.maxHistoryMessages ?? DEFAULT_MAX_HISTORY,
-    maxRetrievalResults: config?.maxRetrievalResults ?? DEFAULT_MAX_RETRIEVAL,
-    tokenBudget: config?.tokenBudget ?? DEFAULT_TOKEN_BUDGET,
-    relevanceThreshold: config?.relevanceThreshold ?? DEFAULT_RELEVANCE_THRESHOLD,
+    model: config?.model ?? getEgoDefaultModel(),
+    maxHistoryMessages: config?.maxHistoryMessages ?? getEgoMaxHistory(),
+    maxRetrievalResults: config?.maxRetrievalResults ?? getEgoMaxRetrieval(),
+    tokenBudget: config?.tokenBudget ?? getEgoTokenBudget(),
+    relevanceThreshold: config?.relevanceThreshold ?? getEgoRelevanceThreshold(),
   };
 }

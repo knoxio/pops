@@ -55,8 +55,10 @@ export interface NudgeThresholds {
   nudgeCooldownHours: number;
 }
 
-/** Default thresholds per PRD-084 specification. */
-export const DEFAULT_THRESHOLDS: NudgeThresholds = {
+import { getSettingValue } from '../../core/settings/service.js';
+
+/** Hardcoded fallback thresholds per PRD-084 specification. */
+const FALLBACK_THRESHOLDS: NudgeThresholds = {
   consolidationSimilarity: 0.85,
   consolidationMinCluster: 3,
   stalenessDays: 90,
@@ -64,6 +66,42 @@ export const DEFAULT_THRESHOLDS: NudgeThresholds = {
   maxPendingNudges: 20,
   nudgeCooldownHours: 24,
 };
+
+/** Default thresholds from settings (falls back to hardcoded defaults). */
+export function getDefaultNudgeThresholds(): NudgeThresholds {
+  return {
+    consolidationSimilarity: getSettingValue(
+      'cerebrum.nudge.consolidationSimilarity',
+      FALLBACK_THRESHOLDS.consolidationSimilarity
+    ),
+    consolidationMinCluster: getSettingValue(
+      'cerebrum.nudge.consolidationMinCluster',
+      FALLBACK_THRESHOLDS.consolidationMinCluster
+    ),
+    stalenessDays: getSettingValue(
+      'cerebrum.nudge.stalenessDays',
+      FALLBACK_THRESHOLDS.stalenessDays
+    ),
+    patternMinOccurrences: getSettingValue(
+      'cerebrum.nudge.patternMinOccurrences',
+      FALLBACK_THRESHOLDS.patternMinOccurrences
+    ),
+    maxPendingNudges: getSettingValue(
+      'cerebrum.nudge.maxPending',
+      FALLBACK_THRESHOLDS.maxPendingNudges
+    ),
+    nudgeCooldownHours: getSettingValue(
+      'cerebrum.nudge.cooldownHours',
+      FALLBACK_THRESHOLDS.nudgeCooldownHours
+    ),
+  };
+}
+
+/**
+ * @deprecated Use `getDefaultNudgeThresholds()` instead. Retained for backward
+ * compatibility with tests that depend on a static constant.
+ */
+export const DEFAULT_THRESHOLDS: NudgeThresholds = FALLBACK_THRESHOLDS;
 
 /** Result from a detector scan — zero or more nudge candidates. */
 export interface DetectorResult {
