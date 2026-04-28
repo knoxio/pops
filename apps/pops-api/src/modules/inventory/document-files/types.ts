@@ -2,6 +2,10 @@ import { z } from 'zod';
 
 import type { ItemUploadedFileRow } from '@pops/db-types';
 
+import { SETTINGS_KEYS } from '@pops/types';
+
+import { resolveNumber } from '../../core/settings/index.js';
+
 export type { ItemUploadedFileRow };
 
 /** API response shape for an item uploaded file. */
@@ -34,11 +38,12 @@ export function toUploadedFile(row: ItemUploadedFileRow): ItemUploadedFile {
 export const ALLOWED_MIME_PREFIXES = ['application/pdf', 'image/', 'text/'] as const;
 
 /**
- * Hard cap on accepted upload bytes (10 MiB). Direct uploads are stored on
+ * Hard cap on accepted upload bytes (default 10 MiB). Direct uploads are stored on
  * the API filesystem; we do not want to ship multi-hundred-MB blobs through
- * a tRPC base64 payload.
+ * a tRPC base64 payload. Configurable via settings.
  */
-export const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+export const getMaxFileSizeBytes = (): number =>
+  resolveNumber(SETTINGS_KEYS.INVENTORY_MAX_FILE_SIZE_BYTES, 10 * 1024 * 1024);
 
 /**
  * Server-side input for {@link uploadDocument}. The router decodes

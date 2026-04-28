@@ -40,6 +40,12 @@ export function pushError(result: DiscoverItemResult, title: string, err: unknow
   }
 }
 
-export const RATE_LIMIT_DELAY_MS = 200;
+import { SETTINGS_KEYS } from '@pops/types';
+
+import { resolveNumber } from '../../core/settings/index.js';
+
+/** Delay between Plex Discover API calls — configurable via settings. */
+export const getRateLimitDelayMs = (): number =>
+  resolveNumber(SETTINGS_KEYS.PLEX_RATE_LIMIT_DELAY_MS, 200);
 
 export const delay = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));

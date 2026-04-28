@@ -24,16 +24,24 @@
  *   varietyBonus = 0.2 if category !== previous selected category, else 0
  *   contextBonus = 0.3 if category === 'context' (time-triggered shelves), else 0
  */
+import { SETTINGS_KEYS } from '@pops/types';
+
+import { resolveNumber } from '../../../core/settings/index.js';
 import { getShelfFreshness } from './impressions.service.js';
 import { getRegisteredShelves } from './registry.js';
 
 import type { PreferenceProfile, ShelfCategory, ShelfInstance } from './types.js';
 
-const SESSION_TARGET_MIN = 10;
-const SESSION_TARGET_MAX = 15;
-const MAX_SEED_SHELVES = 3;
-const MAX_GENRE_SHELVES = 2;
-const MAX_LOCAL_PER_WINDOW = 1;
+const getSessionTargetMin = (): number =>
+  resolveNumber(SETTINGS_KEYS.DISCOVERY_SESSION_TARGET_MIN, 10);
+const getSessionTargetMax = (): number =>
+  resolveNumber(SETTINGS_KEYS.DISCOVERY_SESSION_TARGET_MAX, 15);
+const getMaxSeedShelves = (): number =>
+  resolveNumber(SETTINGS_KEYS.DISCOVERY_MAX_SEED_SHELVES, 3);
+const getMaxGenreShelves = (): number =>
+  resolveNumber(SETTINGS_KEYS.DISCOVERY_MAX_GENRE_SHELVES, 2);
+const getMaxLocalPerWindow = (): number =>
+  resolveNumber(SETTINGS_KEYS.DISCOVERY_MAX_LOCAL_PER_WINDOW, 1);
 const LOCAL_WINDOW_SIZE = 3;
 const VARIETY_BONUS = 0.2;
 const CONTEXT_BOOST = 0.3;
@@ -124,10 +132,13 @@ function localCountInWindow(state: AssemblyState, allCandidates: ScoredCandidate
 }
 
 function pickEligible(state: AssemblyState, localInWindow: number): ScoredCandidate[] {
+  const maxSeeds = getMaxSeedShelves();
+  const maxGenres = getMaxGenreShelves();
+  const maxLocal = getMaxLocalPerWindow();
   return state.remaining.filter((c) => {
-    if (c.category === 'seed' && state.seedCount >= MAX_SEED_SHELVES) return false;
-    if (isGenreShelf(c.instance.shelfId) && state.genreCount >= MAX_GENRE_SHELVES) return false;
-    if (c.category === 'local' && localInWindow >= MAX_LOCAL_PER_WINDOW) return false;
+    if (c.category === 'seed' && state.seedCount >= maxSeeds) return false;
+    if (isGenreShelf(c.instance.shelfId) && state.genreCount >= maxGenres) return false;
+    if (c.category === 'local' && localInWindow >= maxLocal) return false;
     return true;
   });
 }
@@ -171,7 +182,7 @@ function ensurePersonalShelf(
   );
   if (!personalCandidate) return selected;
   const result = [...selected];
-  if (result.length >= SESSION_TARGET_MIN) {
+  if (result.length >= getSessionTargetMin()) {
     result[result.length - 1] = personalCandidate.instance;
   } else {
     result.push(personalCandidate.instance);
@@ -195,7 +206,7 @@ export function assembleSession(
 
   const randomTarget = Math.max(
     0,
-    Math.min(SESSION_TARGET_MAX, Math.max(SESSION_TARGET_MIN, allCandidates.length)) -
+    Math.min(getSessionTargetMax(), Math.max(getSessionTargetMin(), allCandidates.length)) -
       pinnedInstances.length
   );
 

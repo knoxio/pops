@@ -4,13 +4,15 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
+import { SETTINGS_KEYS } from '@pops/types';
+
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 import { paginationMeta } from '../../../shared/pagination.js';
 import { protectedProcedure, router } from '../../../trpc.js';
+import { resolveNumber } from '../../core/settings/index.js';
 import * as service from './service.js';
 import { DocumentQuerySchema, LinkDocumentSchema, toItemDocument } from './types.js';
 
-const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
 
 export const documentsRouter = router({
@@ -55,7 +57,8 @@ export const documentsRouter = router({
 
   /** List all documents linked to an item. */
   listForItem: protectedProcedure.input(DocumentQuerySchema).query(({ input }) => {
-    const limit = input.limit ?? DEFAULT_LIMIT;
+    const limit =
+      input.limit ?? resolveNumber(SETTINGS_KEYS.INVENTORY_DOCUMENTS_DEFAULT_LIMIT, 50);
     const offset = input.offset ?? DEFAULT_OFFSET;
 
     const { rows, total } = service.listDocumentsForItem(input.itemId, limit, offset);

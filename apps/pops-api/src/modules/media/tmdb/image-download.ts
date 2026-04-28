@@ -1,5 +1,9 @@
 import { stat, writeFile } from 'node:fs/promises';
 
+import { SETTINGS_KEYS } from '@pops/types';
+
+import { resolveNumber } from '../../core/settings/index.js';
+
 /** Allowed hostnames for image downloads. */
 const ALLOWED_IMAGE_HOSTS = new Set(['image.tmdb.org', 'artworks.thetvdb.com']);
 
@@ -58,16 +62,16 @@ async function fetchWithRetries(
   destPath: string,
   rateLimiter?: RateLimiter
 ): Promise<void> {
-  const MAX_RETRIES = 2;
-  const RETRY_DELAY_MS = 500;
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+  const maxRetries = resolveNumber(SETTINGS_KEYS.TMDB_IMAGE_MAX_RETRIES, 2);
+  const retryDelayMs = resolveNumber(SETTINGS_KEYS.TMDB_IMAGE_RETRY_DELAY_MS, 500);
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
     const result = await attemptDownload(url, destPath, rateLimiter);
     if (result === 'success' || result === 'permanent-failure') return;
-    if (attempt === MAX_RETRIES) {
-      console.warn(`[ImageCache] Failed to download ${url} after ${MAX_RETRIES + 1} attempts`);
+    if (attempt === maxRetries) {
+      console.warn(`[ImageCache] Failed to download ${url} after ${maxRetries + 1} attempts`);
       return;
     }
-    const delay = RETRY_DELAY_MS * (attempt + 1);
+    const delay = retryDelayMs * (attempt + 1);
     console.warn(`[ImageCache] Attempt ${attempt + 1} failed for ${url}, retrying in ${delay}ms`);
     await new Promise((r) => setTimeout(r, delay));
   }

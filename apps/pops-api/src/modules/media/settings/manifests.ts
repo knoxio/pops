@@ -50,6 +50,22 @@ export const plexManifest: SettingsManifest = {
           type: 'duration',
           description: 'How often to sync the Plex library.',
         },
+        {
+          key: 'plex_rate_limit_delay_ms',
+          label: 'Discover Rate Limit Delay (ms)',
+          type: 'number',
+          default: '200',
+          description: 'Milliseconds to wait between Plex Discover API calls.',
+          validation: { min: 0 },
+        },
+        {
+          key: 'plex_preview_limit',
+          label: 'Sync Preview Limit',
+          type: 'number',
+          default: '10',
+          description: 'Max items shown in sync diagnostic previews (missing seasons/episodes).',
+          validation: { min: 1 },
+        },
       ],
     },
   ],
@@ -163,5 +179,21 @@ export const rotationManifest: SettingsManifest = {
         },
       ],
     },
+    {
+      id: 'tmdb-source',
+      title: 'TMDB Source',
+      description: 'Configuration for the TMDB top-rated rotation source.',
+      fields: [
+        {
+          key: 'rotation_tmdb_min_vote_count',
+          label: 'TMDB Min Vote Count',
+          type: 'number',
+          default: '500',
+          description: 'Minimum vote count for TMDB top-rated candidates.',
+          validation: { min: 1 },
+        },
+      ],
+    },
   ],
 };
+

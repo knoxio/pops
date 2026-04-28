@@ -4,9 +4,12 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
+import { SETTINGS_KEYS } from '@pops/types';
+
 import { NotFoundError } from '../../../shared/errors.js';
 import { paginationMeta } from '../../../shared/pagination.js';
 import { protectedProcedure, router } from '../../../trpc.js';
+import { resolveNumber } from '../../core/settings/index.js';
 import * as service from './service.js';
 import {
   CreateWishListItemSchema,
@@ -15,14 +18,13 @@ import {
   WishListQuerySchema,
 } from './types.js';
 
-/** Default pagination values. */
-const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
 
 export const wishlistRouter = router({
   /** List wish list items with optional search/priority filters and pagination. */
   list: protectedProcedure.input(WishListQuerySchema).query(({ input }) => {
-    const limit = input.limit ?? DEFAULT_LIMIT;
+    const limit =
+      input.limit ?? resolveNumber(SETTINGS_KEYS.FINANCE_WISHLIST_DEFAULT_LIMIT, 50);
     const offset = input.offset ?? DEFAULT_OFFSET;
 
     const { rows, total } = service.listWishListItems(input.search, input.priority, limit, offset);

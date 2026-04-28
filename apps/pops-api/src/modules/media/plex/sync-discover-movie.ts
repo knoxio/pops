@@ -6,8 +6,8 @@ import { addMovie } from '../library/service.js';
 import { logWatch } from '../watch-history/service.js';
 import {
   delay,
+  getRateLimitDelayMs,
   pushError,
-  RATE_LIMIT_DELAY_MS,
   type DiscoverItemResult,
 } from './sync-discover-types.js';
 import { extractExternalIdAsNumber } from './sync-helpers.js';
@@ -56,7 +56,7 @@ async function resolveMovie(
     db,
   } = args;
 
-  await delay(RATE_LIMIT_DELAY_MS);
+  await delay(getRateLimitDelayMs());
   const meta = await plexClient.getDiscoverMetadata(ratingKey);
   if (!meta) {
     result.notFound++;

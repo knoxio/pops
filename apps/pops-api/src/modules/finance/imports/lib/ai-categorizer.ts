@@ -7,11 +7,14 @@
  */
 import Anthropic from '@anthropic-ai/sdk';
 
+import { SETTINGS_KEYS } from '@pops/types';
+
 import { isNamedEnvContext } from '../../../../db.js';
 import { getEnv } from '../../../../env.js';
 import { withRateLimitRetry } from '../../../../lib/ai-retry.js';
 import { trackInference } from '../../../../lib/inference-middleware.js';
 import { logger } from '../../../../lib/logger.js';
+import { resolveNumber, resolveString } from '../../../core/settings/index.js';
 import {
   getCachedEntry,
   loadCacheFromDisk,
@@ -29,6 +32,13 @@ export {
 } from './ai-categorizer-cache.js';
 export { AiCategorizationError } from './ai-categorizer-error.js';
 
+const DEFAULT_AI_MODEL = 'claude-haiku-4-5-20251001';
+
+const getCategorizerModel = (): string =>
+  resolveString(SETTINGS_KEYS.FINANCE_AI_CATEGORIZER_MODEL, DEFAULT_AI_MODEL);
+const getCategorizerMaxTokens = (): number =>
+  resolveNumber(SETTINGS_KEYS.FINANCE_AI_CATEGORIZER_MAX_TOKENS, 200);
+
 export interface AiUsageStats {
   inputTokens: number;
   outputTokens: number;
@@ -44,7 +54,7 @@ function trackCacheHit(importBatchId: string | undefined): void {
   void trackInference(
     {
       provider: 'claude',
-      model: 'claude-haiku-4-5-20251001',
+      model: getCategorizerModel(),
       operation: 'entity-match',
       domain: 'finance',
       contextId: importBatchId,
@@ -75,10 +85,12 @@ async function callApi(
   sanitizedDescription: string,
   importBatchId: string | undefined
 ): Promise<ApiCallResponse> {
+  const model = getCategorizerModel();
+  const maxTokens = getCategorizerMaxTokens();
   const response = await trackInference(
     {
       provider: 'claude',
-      model: 'claude-haiku-4-5-20251001',
+      model,
       operation: 'entity-match',
       domain: 'finance',
       contextId: importBatchId,
@@ -87,8 +99,8 @@ async function callApi(
       withRateLimitRetry(
         () =>
           client.messages.create({
-            model: 'claude-haiku-4-5-20251001',
-            max_tokens: 200,
+            model,
+            max_tokens: maxTokens,
             messages: [{ role: 'user', content: buildPrompt(rawRow) }],
           }),
         sanitizedDescription,

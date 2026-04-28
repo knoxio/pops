@@ -11,15 +11,19 @@
  *  - Tests do NOT call startTtlWatcher() — they invoke deleteExpiredEnvs() directly
  *    so no leaked intervals are created in the test process.
  */
+import { SETTINGS_KEYS } from '@pops/types';
+
+import { resolveNumber } from '../settings/resolve.js';
 import { deleteExpiredEnvs } from './registry.js';
 
-const INTERVAL_MS = 30_000; // 30 seconds
+const DEFAULT_INTERVAL_MS = 30_000; // 30 seconds
 
 /**
  * Start the TTL watcher.
  * Returns the interval handle so callers can clear it on shutdown.
  */
 export function startTtlWatcher(): ReturnType<typeof setInterval> {
+  const intervalMs = resolveNumber(SETTINGS_KEYS.ENV_TTL_WATCHER_INTERVAL_MS, DEFAULT_INTERVAL_MS);
   return setInterval(() => {
     try {
       const deleted = deleteExpiredEnvs();
@@ -29,5 +33,5 @@ export function startTtlWatcher(): ReturnType<typeof setInterval> {
     } catch (err) {
       console.error('[env-watcher] Error purging expired environments:', err);
     }
-  }, INTERVAL_MS);
+  }, intervalMs);
 }

@@ -105,7 +105,11 @@ export function logMovieWatch(movieId: number, lastViewedAtUnix: number | null):
   }
 }
 
-const PREVIEW_LIMIT = 10;
+import { SETTINGS_KEYS } from '@pops/types';
+
+import { resolveNumber } from '../../core/settings/index.js';
+
+const getPreviewLimit = (): number => resolveNumber(SETTINGS_KEYS.PLEX_PREVIEW_LIMIT, 10);
 
 interface ProcessEpisodeContext {
   showId: number;
@@ -135,7 +139,7 @@ function processSingleEpisode(plexEp: PlexEpisode, ctx: ProcessEpisodeContext): 
       .get();
     if (!episode) {
       diagnostics.episodeNotFound++;
-      if (diagnostics.missingEpisodesPreview.length < PREVIEW_LIMIT) {
+      if (diagnostics.missingEpisodesPreview.length < getPreviewLimit()) {
         diagnostics.missingEpisodesPreview.push({
           seasonNumber: plexEp.seasonIndex,
           episodeNumber: plexEp.episodeIndex,
@@ -196,6 +200,6 @@ export function syncEpisodeWatches(
     processSingleEpisode(plexEp, ctx);
   }
 
-  diagnostics.missingSeasonsPreview = [...missingSeasonsSet].slice(0, PREVIEW_LIMIT);
+  diagnostics.missingSeasonsPreview = [...missingSeasonsSet].slice(0, getPreviewLimit());
   return diagnostics;
 }

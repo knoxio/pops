@@ -4,9 +4,12 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
+import { SETTINGS_KEYS } from '@pops/types';
+
 import { ConflictError, NotFoundError } from '../../../shared/errors.js';
 import { paginationMeta, PaginationMetaSchema } from '../../../shared/pagination.js';
 import { protectedProcedure, router } from '../../../trpc.js';
+import { resolveNumber } from '../../core/settings/index.js';
 import * as service from './service.js';
 import {
   ConnectionQuerySchema,
@@ -18,7 +21,6 @@ import {
   TraceQuerySchema,
 } from './types.js';
 
-const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
 
 export const connectionsRouter = router({
@@ -67,7 +69,8 @@ export const connectionsRouter = router({
     .input(ConnectionQuerySchema)
     .output(z.object({ data: z.array(ItemConnectionSchema), pagination: PaginationMetaSchema }))
     .query(({ input }) => {
-      const limit = input.limit ?? DEFAULT_LIMIT;
+      const limit =
+        input.limit ?? resolveNumber(SETTINGS_KEYS.INVENTORY_CONNECTIONS_DEFAULT_LIMIT, 50);
       const offset = input.offset ?? DEFAULT_OFFSET;
 
       const { rows, total } = service.listConnectionsForItem(input.itemId, limit, offset);

@@ -5,8 +5,8 @@ import { tvShows } from '@pops/db-types';
 import { addTvShow } from '../library/tv-show-service.js';
 import {
   delay,
+  getRateLimitDelayMs,
   pushError,
-  RATE_LIMIT_DELAY_MS,
   type DiscoverItemResult,
 } from './sync-discover-types.js';
 import { extractExternalIdAsNumber } from './sync-helpers.js';
@@ -49,7 +49,7 @@ export async function resolveShow(
 ): Promise<{ showId: number; tvdbId: number } | null> {
   const { plexClient, tvdbClient, imageCache, showTitle, result, db } = args;
   try {
-    await delay(RATE_LIMIT_DELAY_MS);
+    await delay(getRateLimitDelayMs());
     const searchResults = await plexClient.searchDiscover(showTitle, 'show');
     if (searchResults.length === 0) {
       result.notFound++;

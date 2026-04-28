@@ -4,9 +4,12 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
+import { SETTINGS_KEYS } from '@pops/types';
+
 import { NotFoundError } from '../../../shared/errors.js';
 import { paginationMeta, PaginationMetaSchema } from '../../../shared/pagination.js';
 import { protectedProcedure, router } from '../../../trpc.js';
+import { resolveNumber } from '../../core/settings/index.js';
 import * as service from './service.js';
 import {
   CreateInventoryItemSchema,
@@ -16,8 +19,6 @@ import {
   UpdateInventoryItemSchema,
 } from './types.js';
 
-/** Default pagination values. */
-const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
 
 export const inventoryRouter = router({
@@ -40,7 +41,8 @@ export const inventoryRouter = router({
       })
     )
     .query(({ input }) => {
-      const limit = input.limit ?? DEFAULT_LIMIT;
+      const limit =
+        input.limit ?? resolveNumber(SETTINGS_KEYS.INVENTORY_ITEMS_DEFAULT_LIMIT, 50);
       const offset = input.offset ?? DEFAULT_OFFSET;
 
       const parseTriBool = (value: string | undefined): boolean | undefined => {

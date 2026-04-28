@@ -2,7 +2,7 @@ import { getTmdbClient } from '../../tmdb/index.js';
 import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from '../flags.js';
 import { scoreDiscoverResults } from '../service.js';
 import { getLibraryTmdbIds, toDiscoverResults } from '../tmdb-service.js';
-import { GENRE_NAME_TO_ID, MAX_BEST_IN_GENRE, normalizeScore } from './genre-shelves-common.js';
+import { GENRE_NAME_TO_ID, getMaxBestInGenre, normalizeScore } from './genre-shelves-common.js';
 import { registerShelf } from './registry.js';
 
 import type { PreferenceProfile } from '../types.js';
@@ -16,7 +16,7 @@ export const bestInGenreShelf: ShelfDefinition = {
     const topGenres = profile.genreAffinities
       .slice()
       .toSorted((a, b) => b.avgScore - a.avgScore)
-      .slice(0, MAX_BEST_IN_GENRE)
+      .slice(0, getMaxBestInGenre())
       .filter((a) => GENRE_NAME_TO_ID.has(a.genre));
 
     if (topGenres.length === 0) return [];

@@ -15,7 +15,7 @@ import { NotFoundError, ValidationError } from '../../../shared/errors.js';
 import { getInventoryDocumentsDir } from './paths.js';
 import {
   ALLOWED_MIME_PREFIXES,
-  MAX_FILE_SIZE_BYTES,
+  getMaxFileSizeBytes,
   type ItemUploadedFileRow,
   type UploadDocumentInput,
 } from './types.js';
@@ -73,10 +73,9 @@ function assertAllowedMime(mimeType: string): void {
 }
 
 function assertWithinSizeLimit(buffer: Buffer): void {
-  if (buffer.byteLength > MAX_FILE_SIZE_BYTES) {
-    throw new ValidationError(
-      `File too large: ${buffer.byteLength} bytes (max ${MAX_FILE_SIZE_BYTES})`
-    );
+  const maxBytes = getMaxFileSizeBytes();
+  if (buffer.byteLength > maxBytes) {
+    throw new ValidationError(`File too large: ${buffer.byteLength} bytes (max ${maxBytes})`);
   }
 }
 

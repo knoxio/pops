@@ -15,7 +15,7 @@ import {
   CURATION_QUEUE,
   DEFAULT_QUEUE,
   EMBEDDINGS_QUEUE,
-  QUEUE_CONCURRENCY,
+  getQueueConcurrency,
   SYNC_QUEUE,
 } from './jobs/queues.js';
 import { createRedisConnection } from './jobs/redis.js';
@@ -31,27 +31,29 @@ import type {
 
 const logger = pino({ name: 'pops-worker' });
 
+const concurrency = getQueueConcurrency();
+
 const syncWorker = new Worker<SyncQueueJobData>(SYNC_QUEUE, processSync, {
   connection: createRedisConnection(),
-  concurrency: QUEUE_CONCURRENCY[SYNC_QUEUE],
+  concurrency: concurrency[SYNC_QUEUE],
   stalledInterval: 30_000,
 });
 
 const embeddingsWorker = new Worker<EmbeddingsQueueJobData>(EMBEDDINGS_QUEUE, processEmbeddings, {
   connection: createRedisConnection(),
-  concurrency: QUEUE_CONCURRENCY[EMBEDDINGS_QUEUE],
+  concurrency: concurrency[EMBEDDINGS_QUEUE],
   stalledInterval: 30_000,
 });
 
 const curationWorker = new Worker<CurationQueueJobData>(CURATION_QUEUE, processCuration, {
   connection: createRedisConnection(),
-  concurrency: QUEUE_CONCURRENCY[CURATION_QUEUE],
+  concurrency: concurrency[CURATION_QUEUE],
   stalledInterval: 30_000,
 });
 
 const defaultWorker = new Worker<DefaultQueueJobData>(DEFAULT_QUEUE, processDefault, {
   connection: createRedisConnection(),
-  concurrency: QUEUE_CONCURRENCY[DEFAULT_QUEUE],
+  concurrency: concurrency[DEFAULT_QUEUE],
   stalledInterval: 30_000,
 });
 

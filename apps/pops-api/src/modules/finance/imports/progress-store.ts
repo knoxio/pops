@@ -4,6 +4,10 @@
  * Stores real-time progress updates that can be polled by the frontend.
  * Progress entries auto-expire after 5 minutes to prevent memory leaks.
  */
+import { SETTINGS_KEYS } from '@pops/types';
+
+import { resolveNumber } from '../../core/settings/index.js';
+
 import type { ExecuteImportOutput, ProcessImportOutput } from './types.js';
 
 export interface ImportProgress {
@@ -24,15 +28,19 @@ export interface ImportProgress {
 
 const progressStore = new Map<string, ImportProgress>();
 
-const CLEANUP_DELAY_MS = 5 * 60 * 1000; // 5 minutes
+const DEFAULT_CLEANUP_DELAY_MS = 5 * 60 * 1000; // 5 minutes
 
 /**
  * Store progress for a session.
- * Auto-cleanup after 5 minutes.
+ * Auto-cleanup after configurable delay (default 5 minutes).
  */
 export function setProgress(sessionId: string, progress: ImportProgress): void {
   progressStore.set(sessionId, progress);
-  setTimeout(() => progressStore.delete(sessionId), CLEANUP_DELAY_MS);
+  const delayMs = resolveNumber(
+    SETTINGS_KEYS.FINANCE_IMPORT_CLEANUP_DELAY_MS,
+    DEFAULT_CLEANUP_DELAY_MS
+  );
+  setTimeout(() => progressStore.delete(sessionId), delayMs);
 }
 
 /**

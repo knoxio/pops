@@ -1,11 +1,18 @@
+import { SETTINGS_KEYS } from '@pops/types';
+
+import { resolveNumber } from '../../../core/settings/index.js';
 import { TMDB_GENRE_MAP } from '../types.js';
 
 import type { PreferenceProfile } from '../types.js';
 
-export const MAX_BEST_IN_GENRE = 5;
-export const MAX_CROSSOVER_PAIRS = 6;
-export const MAX_TOP_DIMENSION = 5;
-export const MAX_DIMENSION_INSPIRED = 3;
+export const getMaxBestInGenre = (): number =>
+  resolveNumber(SETTINGS_KEYS.DISCOVERY_MAX_BEST_IN_GENRE, 5);
+export const getMaxCrossoverPairs = (): number =>
+  resolveNumber(SETTINGS_KEYS.DISCOVERY_MAX_CROSSOVER_PAIRS, 6);
+export const getMaxTopDimension = (): number =>
+  resolveNumber(SETTINGS_KEYS.DISCOVERY_MAX_TOP_DIMENSION, 5);
+export const getMaxDimensionInspired = (): number =>
+  resolveNumber(SETTINGS_KEYS.DISCOVERY_MAX_DIMENSION_INSPIRED, 3);
 
 const RELATED_GENRE_PAIRS = new Set([
   'Action+Adventure',
@@ -43,6 +50,6 @@ export function getActiveDimensions(profile: PreferenceProfile): DimensionSeed[]
   return profile.dimensionWeights
     .filter((d) => d.comparisonCount >= 5)
     .toSorted((a, b) => b.comparisonCount - a.comparisonCount)
-    .slice(0, MAX_TOP_DIMENSION)
+    .slice(0, getMaxTopDimension())
     .map((d) => ({ dimensionId: d.dimensionId, name: d.name, avgScore: d.avgScore }));
 }

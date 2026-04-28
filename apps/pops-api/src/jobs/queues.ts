@@ -1,5 +1,8 @@
 import { Queue } from 'bullmq';
 
+import { SETTINGS_KEYS } from '@pops/types';
+
+import { resolveNumber } from '../modules/core/settings/resolve.js';
 import { createRedisConnection } from './redis.js';
 
 import type { DefaultJobOptions } from 'bullmq';
@@ -26,15 +29,17 @@ export const ALL_QUEUES = [SYNC_QUEUE, EMBEDDINGS_QUEUE, CURATION_QUEUE, DEFAULT
 export type QueueName = (typeof ALL_QUEUES)[number] | typeof DEAD_LETTER_QUEUE;
 
 // ---------------------------------------------------------------------------
-// Per-queue concurrency
+// Per-queue concurrency — configurable via settings
 // ---------------------------------------------------------------------------
 
-export const QUEUE_CONCURRENCY: Record<string, number> = {
-  [SYNC_QUEUE]: 1,
-  [EMBEDDINGS_QUEUE]: 2,
-  [CURATION_QUEUE]: 1,
-  [DEFAULT_QUEUE]: 3,
-};
+export function getQueueConcurrency(): Record<string, number> {
+  return {
+    [SYNC_QUEUE]: resolveNumber(SETTINGS_KEYS.QUEUE_SYNC_CONCURRENCY, 1),
+    [EMBEDDINGS_QUEUE]: resolveNumber(SETTINGS_KEYS.QUEUE_EMBEDDINGS_CONCURRENCY, 2),
+    [CURATION_QUEUE]: resolveNumber(SETTINGS_KEYS.QUEUE_CURATION_CONCURRENCY, 1),
+    [DEFAULT_QUEUE]: resolveNumber(SETTINGS_KEYS.QUEUE_DEFAULT_CONCURRENCY, 3),
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Default job options per queue

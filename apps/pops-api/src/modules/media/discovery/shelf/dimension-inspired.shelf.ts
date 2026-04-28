@@ -7,7 +7,7 @@ import { getTmdbClient } from '../../tmdb/index.js';
 import { getDismissedTmdbIds, getWatchedTmdbIds, getWatchlistTmdbIds } from '../flags.js';
 import { scoreDiscoverResults } from '../service.js';
 import { getLibraryTmdbIds, toDiscoverResults } from '../tmdb-service.js';
-import { getActiveDimensions, MAX_DIMENSION_INSPIRED } from './genre-shelves-common.js';
+import { getActiveDimensions, getMaxDimensionInspired } from './genre-shelves-common.js';
 import { registerShelf } from './registry.js';
 
 import type { PreferenceProfile } from '../types.js';
@@ -42,7 +42,7 @@ export const dimensionInspiredShelf: ShelfDefinition = {
   template: true,
   category: 'seed',
   generate(profile: PreferenceProfile): ShelfInstance[] {
-    const dimensions = getActiveDimensions(profile).slice(0, MAX_DIMENSION_INSPIRED);
+    const dimensions = getActiveDimensions(profile).slice(0, getMaxDimensionInspired());
     if (dimensions.length === 0) return [];
 
     const instances: ShelfInstance[] = [];

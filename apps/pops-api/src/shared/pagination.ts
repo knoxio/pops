@@ -4,8 +4,13 @@
  */
 import { z } from 'zod';
 
-const DEFAULT_LIMIT = 50;
-const MAX_LIMIT = 500;
+import { SETTINGS_KEYS } from '@pops/types';
+
+import { resolveNumber } from '../modules/core/settings/resolve.js';
+
+const getDefaultLimit = (): number =>
+  resolveNumber(SETTINGS_KEYS.SHARED_PAGINATION_DEFAULT_LIMIT, 50);
+const getMaxLimit = (): number => resolveNumber(SETTINGS_KEYS.SHARED_PAGINATION_MAX_LIMIT, 500);
 
 /** Parsed pagination parameters from query string. */
 export interface PaginationParams {
@@ -20,8 +25,8 @@ export function parsePagination(query: Record<string, unknown>): PaginationParam
 
   return {
     limit: Math.min(
-      Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : DEFAULT_LIMIT,
-      MAX_LIMIT
+      Number.isFinite(rawLimit) && rawLimit > 0 ? rawLimit : getDefaultLimit(),
+      getMaxLimit()
     ),
     offset: Number.isFinite(rawOffset) && rawOffset >= 0 ? rawOffset : 0,
   };

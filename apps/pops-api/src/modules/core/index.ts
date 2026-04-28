@@ -8,9 +8,11 @@
 import './entities/search-adapter.js';
 
 import { aiConfigManifest } from './settings/ai-manifest.js';
+import { coreManifest } from './settings/core-manifest.js';
 import { settingsRegistry } from './settings/registry.js';
 
 settingsRegistry.register(aiConfigManifest);
+settingsRegistry.register(coreManifest);
 
 import { router } from '../../trpc.js';
 import { aiBudgetsRouter } from './ai-budgets/router.js';

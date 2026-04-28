@@ -5,12 +5,14 @@ import { z } from 'zod';
  * Transaction tRPC router — CRUD procedures for transactions.
  */
 import { transactions as transactionsTable } from '@pops/db-types';
+import { SETTINGS_KEYS } from '@pops/types';
 
 import { getDb, getDrizzle } from '../../../db.js';
 import { NotFoundError } from '../../../shared/errors.js';
 import { paginationMeta, PaginationMetaSchema } from '../../../shared/pagination.js';
 import { suggestTags } from '../../../shared/tag-suggester.js';
 import { protectedProcedure, router } from '../../../trpc.js';
+import { resolveNumber } from '../../core/settings/index.js';
 import * as service from './service.js';
 import {
   CreateTransactionSchema,
@@ -24,8 +26,6 @@ import {
 /** Cap on transactions returned for rule-preview purposes (mirrors PREVIEW_CHANGESET_MAX_TRANSACTIONS on the client). */
 const PREVIEW_DESCRIPTIONS_LIMIT = 2000;
 
-/** Default pagination values. */
-const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
 
 export const transactionsRouter = router({
@@ -42,7 +42,8 @@ export const transactionsRouter = router({
     .input(TransactionQuerySchema)
     .output(z.object({ data: z.array(TransactionSchema), pagination: PaginationMetaSchema }))
     .query(({ input }) => {
-      const limit = input.limit ?? DEFAULT_LIMIT;
+      const limit =
+        input.limit ?? resolveNumber(SETTINGS_KEYS.FINANCE_TRANSACTIONS_DEFAULT_LIMIT, 50);
       const offset = input.offset ?? DEFAULT_OFFSET;
 
       const filters: TransactionFilters = {

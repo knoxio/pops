@@ -5,14 +5,16 @@
  * to scraping IMDB (which has no public API). Uses TMDB's discover
  * endpoint sorted by vote average with a minimum vote count threshold.
  */
+import { SETTINGS_KEYS } from '@pops/types';
+
 import { logger } from '../../../lib/logger.js';
+import { resolveNumber } from '../../core/settings/index.js';
 import { getTmdbClient } from '../tmdb/index.js';
 
 import type { CandidateMovie, RotationSourceAdapter } from './source-types.js';
 
 const DEFAULT_PAGES = 5;
 const MAX_PAGES = 25;
-const MIN_VOTE_COUNT = 500;
 
 export const tmdbTopRatedSource: RotationSourceAdapter = {
   type: 'tmdb_top_rated',
@@ -38,7 +40,7 @@ export const tmdbTopRatedSource: RotationSourceAdapter = {
       try {
         result = await client.discoverMovies({
           sortBy: 'vote_average.desc',
-          voteCountGte: MIN_VOTE_COUNT,
+          voteCountGte: resolveNumber(SETTINGS_KEYS.ROTATION_TMDB_MIN_VOTE_COUNT, 500),
           page,
         });
       } catch (err) {

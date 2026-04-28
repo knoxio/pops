@@ -8,11 +8,21 @@ import './search/tv-shows-adapter.js';
 import './rotation/register-sources.js';
 
 import { settingsRegistry } from '../core/settings/index.js';
+import {
+  comparisonsManifest,
+  discoveryManifest,
+  thetvdbManifest,
+  tmdbManifest,
+} from './settings/extended-manifests.js';
 import { arrManifest, plexManifest, rotationManifest } from './settings/manifests.js';
 
 settingsRegistry.register(plexManifest);
 settingsRegistry.register(arrManifest);
 settingsRegistry.register(rotationManifest);
+settingsRegistry.register(thetvdbManifest);
+settingsRegistry.register(tmdbManifest);
+settingsRegistry.register(comparisonsManifest);
+settingsRegistry.register(discoveryManifest);
 
 import { router } from '../../trpc.js';
 import { arrRouter } from './arr/index.js';

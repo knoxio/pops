@@ -4,19 +4,25 @@
  * Wraps a TokenBucketRateLimiter (20 tokens, 2/sec refill) with
  * exponential backoff retry on 429 responses (up to 3 retries).
  */
+import { SETTINGS_KEYS } from '@pops/types';
+
+import { resolveNumber } from '../../core/settings/index.js';
 import { TokenBucketRateLimiter } from '../../../shared/rate-limiter.js';
 
-const THETVDB_CAPACITY = 20;
-const THETVDB_REFILL_RATE = 2; // tokens per second
-const MAX_RETRIES = 3;
-const BASE_DELAY_MS = 1000;
+const DEFAULT_CAPACITY = 20;
+const DEFAULT_REFILL_RATE = 2;
+const DEFAULT_MAX_RETRIES = 3;
+const DEFAULT_BASE_DELAY_MS = 1000;
 
 /** Pre-configured rate limiter instance for TheTVDB. */
 let instance: TokenBucketRateLimiter | null = null;
 
 /** Get or create the singleton TheTVDB rate limiter. */
 export function getTvdbRateLimiter(): TokenBucketRateLimiter {
-  instance ??= new TokenBucketRateLimiter(THETVDB_CAPACITY, THETVDB_REFILL_RATE);
+  instance ??= new TokenBucketRateLimiter(
+    resolveNumber(SETTINGS_KEYS.THETVDB_CAPACITY, DEFAULT_CAPACITY),
+    resolveNumber(SETTINGS_KEYS.THETVDB_REFILL_RATE, DEFAULT_REFILL_RATE)
+  );
   return instance;
 }
 
@@ -37,8 +43,10 @@ export function setTvdbRateLimiter(limiter: TokenBucketRateLimiter | null): void
  */
 export async function fetchWithRetry(fn: () => Promise<Response>): Promise<Response> {
   const limiter = getTvdbRateLimiter();
+  const maxRetries = resolveNumber(SETTINGS_KEYS.THETVDB_MAX_RETRIES, DEFAULT_MAX_RETRIES);
+  const baseDelay = resolveNumber(SETTINGS_KEYS.THETVDB_BASE_DELAY_MS, DEFAULT_BASE_DELAY_MS);
 
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
     await limiter.acquire();
     const response = await fn();
 
@@ -47,13 +55,13 @@ export async function fetchWithRetry(fn: () => Promise<Response>): Promise<Respo
     }
 
     // Last attempt — don't retry
-    if (attempt === MAX_RETRIES) {
+    if (attempt === maxRetries) {
       return response;
     }
 
     // Exponential backoff: 1s, 2s, 4s
-    const delay = BASE_DELAY_MS * Math.pow(2, attempt);
-    await sleep(delay);
+    const delayMs = baseDelay * Math.pow(2, attempt);
+    await sleep(delayMs);
   }
 
   // Unreachable, but TypeScript needs it

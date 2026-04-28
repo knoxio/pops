@@ -1,5 +1,9 @@
 import rateLimit from 'express-rate-limit';
 
+import { SETTINGS_KEYS } from '@pops/types';
+
+import { resolveNumber } from '../modules/core/settings/resolve.js';
+
 /**
  * Rate limiter for public/unauthenticated endpoints (health, webhooks).
  * tRPC endpoints are excluded — they're behind Cloudflare Access auth and
@@ -11,8 +15,8 @@ import rateLimit from 'express-rate-limit';
  * cached files behind Cloudflare Access, so rate-limiting them is unnecessary.
  */
 export const rateLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  limit: 100,
+  windowMs: resolveNumber(SETTINGS_KEYS.RATE_LIMIT_WINDOW_MS, 15 * 60 * 1000),
+  limit: resolveNumber(SETTINGS_KEYS.RATE_LIMIT_MAX_REQUESTS, 100),
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { error: 'Too many requests, try again later' },

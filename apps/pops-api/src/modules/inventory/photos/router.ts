@@ -4,9 +4,12 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
+import { SETTINGS_KEYS } from '@pops/types';
+
 import { NotFoundError, ValidationError } from '../../../shared/errors.js';
 import { paginationMeta } from '../../../shared/pagination.js';
 import { protectedProcedure, router } from '../../../trpc.js';
+import { resolveNumber } from '../../core/settings/index.js';
 import * as service from './service.js';
 import {
   AttachPhotoSchema,
@@ -17,7 +20,6 @@ import {
   UploadPhotoSchema,
 } from './types.js';
 
-const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
 
 export const photosRouter = router({
@@ -104,7 +106,8 @@ export const photosRouter = router({
 
   /** List photos for an item, ordered by sortOrder. */
   listForItem: protectedProcedure.input(PhotoQuerySchema).query(({ input }) => {
-    const limit = input.limit ?? DEFAULT_LIMIT;
+    const limit =
+      input.limit ?? resolveNumber(SETTINGS_KEYS.INVENTORY_PHOTOS_DEFAULT_LIMIT, 50);
     const offset = input.offset ?? DEFAULT_OFFSET;
 
     const { rows, total } = service.listPhotosForItem(input.itemId, limit, offset);

@@ -6,13 +6,15 @@
 import { TRPCError } from '@trpc/server';
 import { z } from 'zod';
 
+import { SETTINGS_KEYS } from '@pops/types';
+
 import { NotFoundError, ValidationError } from '../../../shared/errors.js';
 import { paginationMeta } from '../../../shared/pagination.js';
 import { protectedProcedure, router } from '../../../trpc.js';
+import { resolveNumber } from '../../core/settings/index.js';
 import * as service from './service.js';
 import { DocumentFileQuerySchema, toUploadedFile, UploadDocumentSchema } from './types.js';
 
-const DEFAULT_LIMIT = 50;
 const DEFAULT_OFFSET = 0;
 
 export const documentFilesRouter = router({
@@ -62,7 +64,8 @@ export const documentFilesRouter = router({
 
   /** List uploaded documents for an item, newest first. */
   listForItem: protectedProcedure.input(DocumentFileQuerySchema).query(({ input }) => {
-    const limit = input.limit ?? DEFAULT_LIMIT;
+    const limit =
+      input.limit ?? resolveNumber(SETTINGS_KEYS.INVENTORY_DOCUMENT_FILES_DEFAULT_LIMIT, 50);
     const offset = input.offset ?? DEFAULT_OFFSET;
 
     const { rows, total } = service.listUploadsForItem(input.itemId, limit, offset);
