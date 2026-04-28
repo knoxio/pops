@@ -1,6 +1,7 @@
 import { SectionRenderer } from '@/components/settings/SectionRenderer';
 import { trpc } from '@/lib/trpc';
 import { useCallback, useEffect, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Select } from '@pops/ui';
 
@@ -12,6 +13,7 @@ import { useTestActionHandler } from './settings-page/useTestActionHandler';
 import type { SettingsManifest } from '@pops/types';
 
 export function SettingsPage() {
+  const { t } = useTranslation('shell');
   const { data, isLoading } = trpc.core.settings.getManifests.useQuery();
   const manifests = useMemo(() => (data?.manifests ?? []) as SettingsManifest[], [data?.manifests]);
   const activeId = useSectionObserver(manifests);
@@ -42,14 +44,14 @@ export function SettingsPage() {
       {/* Sidebar — hidden on mobile; top-20 clears the fixed TopBar (h-16 = 4rem) */}
       <aside className="w-48 shrink-0 hidden md:block sticky top-20 self-start max-h-[calc(100vh-5rem)] overflow-y-auto">
         <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3 px-3">
-          Settings
+          {t('settings')}
         </p>
         <SectionNav manifests={manifests} activeId={activeId} onSelect={scrollToSection} />
       </aside>
 
       <div className="md:hidden w-full mb-4">
         <Select
-          aria-label="Settings section"
+          aria-label={t('settingsSection')}
           value={activeId || (manifests[0]?.id ?? '')}
           onChange={(e) => scrollToSection(e.target.value)}
           options={manifests.map((m) => ({ value: m.id, label: m.title }))}

@@ -1,6 +1,7 @@
 import { registeredApps } from '@/app/nav/registry';
 import { useUIStore } from '@/store/uiStore';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
 
 /**
@@ -19,6 +20,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ open }: SidebarProps) {
+  const { t } = useTranslation('shell');
   const location = useLocation();
   const setSidebarOpen = useUIStore((state) => state.setSidebarOpen);
   const close = () => setSidebarOpen(false);
@@ -44,7 +46,7 @@ export function Sidebar({ open }: SidebarProps) {
             size="icon"
             onClick={close}
             className="min-w-[44px] min-h-[44px]"
-            aria-label="Close sidebar"
+            aria-label={t('closeSidebar')}
           >
             <X className="h-5 w-5" />
           </Button>

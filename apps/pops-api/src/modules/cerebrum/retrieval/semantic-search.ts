@@ -7,6 +7,7 @@ import { createHash } from 'node:crypto';
 import { getDb, isVecAvailable } from '../../../db.js';
 import { getEmbedding, getEmbeddingConfig } from '../../../shared/embedding-client.js';
 import { getRedis, isRedisAvailable, redisKey } from '../../../shared/redis-client.js';
+import { getSettingValue } from '../../core/settings/service.js';
 import {
   collectResults,
   dedupeBySource,
@@ -19,9 +20,17 @@ import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
 import type { RetrievalFilters, RetrievalResult } from './types.js';
 
-const DEFAULT_LIMIT = 20;
-const DEFAULT_THRESHOLD = 0.8;
-const QUERY_CACHE_TTL_SECONDS = 300;
+function getSemanticDefaultLimit(): number {
+  return getSettingValue('cerebrum.semantic.defaultLimit', 20);
+}
+
+function getSemanticDefaultThreshold(): number {
+  return getSettingValue('cerebrum.semantic.defaultThreshold', 0.8);
+}
+
+function getSemanticQueryCacheTtl(): number {
+  return getSettingValue('cerebrum.semantic.queryCacheTtl', 300);
+}
 
 export interface SearchByVectorOptions {
   vectorBlob: Float32Array;
@@ -41,7 +50,7 @@ async function embedQuery(query: string): Promise<number[]> {
     const cached = await redis.get(cacheKey);
     if (cached) return JSON.parse(cached) as number[];
     const vector = await getEmbedding(query, config);
-    await redis.set(cacheKey, JSON.stringify(vector), 'EX', QUERY_CACHE_TTL_SECONDS);
+    await redis.set(cacheKey, JSON.stringify(vector), 'EX', getSemanticQueryCacheTtl());
     return vector;
   }
 
@@ -54,8 +63,8 @@ export class SemanticSearchService {
   async search(
     query: string,
     filters: RetrievalFilters = {},
-    limit = DEFAULT_LIMIT,
-    threshold = DEFAULT_THRESHOLD
+    limit = getSemanticDefaultLimit(),
+    threshold = getSemanticDefaultThreshold()
   ): Promise<RetrievalResult[]> {
     if (!query.trim()) {
       throw Object.assign(new Error('Query is required for semantic search'), {
@@ -83,8 +92,8 @@ export class SemanticSearchService {
    */
   async searchByVector(opts: SearchByVectorOptions): Promise<RetrievalResult[]> {
     if (!isVecAvailable()) throw vecUnavailableError();
-    const limit = opts.limit ?? DEFAULT_LIMIT;
-    const threshold = opts.threshold ?? DEFAULT_THRESHOLD;
+    const limit = opts.limit ?? getSemanticDefaultLimit();
+    const threshold = opts.threshold ?? getSemanticDefaultThreshold();
     const filters = opts.filters ?? {};
 
     const rows = knnQuery(opts.vectorBlob, limit * 3).filter(

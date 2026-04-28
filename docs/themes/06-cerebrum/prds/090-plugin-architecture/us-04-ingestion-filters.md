@@ -1,6 +1,7 @@
 # US-04: Ingestion Filters
 
 > PRD: [PRD-090: Plugin Architecture](README.md)
+> Status: Done
 
 ## Description
 

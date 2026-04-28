@@ -1,0 +1,19 @@
+{
+  "save": "Salvar",
+  "cancel": "Cancelar",
+  "delete": "Excluir",
+  "edit": "Editar",
+  "search": "Pesquisar",
+  "loading": "Carregando...",
+  "error": "Erro",
+  "success": "Sucesso",
+  "confirm": "Confirmar",
+  "close": "Fechar",
+  "back": "Voltar",
+  "next": "Seguinte",
+  "previous": "Anterior",
+  "submit": "Enviar",
+  "reset": "Redefinir",
+  "saving": "Salvando...",
+  "deleting": "Excluindo..."
+}

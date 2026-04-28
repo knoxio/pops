@@ -1,3 +1,4 @@
+import { getSettingValue } from '../../core/settings/service.js';
 /**
  * Plexus lifecycle manager (PRD-090, US-02).
  *
@@ -24,10 +25,19 @@ import type {
   PlexusAdapterRow,
 } from './types.js';
 
-const DEFAULT_HEALTH_INTERVAL_MS = 5 * 60 * 1000;
-const HEALTH_CHECK_TIMEOUT_MS = 10_000;
 const SHUTDOWN_TIMEOUT_MS = 5_000;
-const MAX_CONSECUTIVE_FAILURES = 3;
+
+function getPlexusHealthIntervalMs(): number {
+  return getSettingValue('cerebrum.plexus.healthIntervalMs', 5 * 60 * 1000);
+}
+
+function getPlexusHealthTimeoutMs(): number {
+  return getSettingValue('cerebrum.plexus.healthTimeoutMs', 10_000);
+}
+
+function getPlexusMaxConsecutiveFailures(): number {
+  return getSettingValue('cerebrum.plexus.maxConsecutiveFailures', 3);
+}
 
 interface RegisteredAdapter {
   instance: PlexusAdapterInterface;
@@ -63,7 +73,7 @@ export class PlexusLifecycleManager {
   private healthIntervalMs: number;
 
   constructor(options?: { healthIntervalMs?: number }) {
-    this.healthIntervalMs = options?.healthIntervalMs ?? DEFAULT_HEALTH_INTERVAL_MS;
+    this.healthIntervalMs = options?.healthIntervalMs ?? getPlexusHealthIntervalMs();
   }
 
   /** Register an adapter and immediately attempt initialisation. */
@@ -80,7 +90,7 @@ export class PlexusLifecycleManager {
     try {
       await withTimeout(
         adapter.initialize(config),
-        HEALTH_CHECK_TIMEOUT_MS,
+        getPlexusHealthTimeoutMs(),
         `initialize(${adapter.name})`
       );
       updateAdapterStatus(id, 'healthy');
@@ -197,7 +207,7 @@ export class PlexusLifecycleManager {
     try {
       const result = await withTimeout(
         entry.instance.healthCheck(),
-        HEALTH_CHECK_TIMEOUT_MS,
+        getPlexusHealthTimeoutMs(),
         `healthCheck(${adapterId})`
       );
       if (result.status === 'healthy') {
@@ -219,7 +229,7 @@ export class PlexusLifecycleManager {
     now: string
   ): HealthResult {
     entry.consecutiveFailures++;
-    if (entry.consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+    if (entry.consecutiveFailures >= getPlexusMaxConsecutiveFailures()) {
       updateAdapterStatus(adapterId, 'error', message);
       if (entry.healthTimer) clearTimeout(entry.healthTimer);
       this.adapters.delete(adapterId);

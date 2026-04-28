@@ -10,6 +10,7 @@
  *  - Orders output citations by relevance (highest first).
  */
 import { logger } from '../../../lib/logger.js';
+import { getSettingValue } from '../../core/settings/service.js';
 
 import type { RetrievalResult } from '../retrieval/types.js';
 import type { CitationParseResult, SourceCitation } from './types.js';
@@ -23,18 +24,21 @@ const ENGRAM_CITATION_RE = /\[eng_\d{8}_\d{4}_[a-z0-9-]+\]/g;
  */
 const TYPED_CITATION_RE = /\[(engram|transaction|media|inventory):([^\]]+)\]/g;
 
-const EXCERPT_MAX_LENGTH = 200;
+function getExcerptMaxLength(): number {
+  return getSettingValue('cerebrum.citation.excerptMaxLength', 200);
+}
 
 /**
  * Truncate text to a maximum length at a word boundary, appending ellipsis.
  */
 function truncateExcerpt(text: string): string {
-  if (text.length <= EXCERPT_MAX_LENGTH) return text;
+  const maxLen = getExcerptMaxLength();
+  if (text.length <= maxLen) return text;
 
   // Find last space within budget.
-  const truncated = text.slice(0, EXCERPT_MAX_LENGTH);
+  const truncated = text.slice(0, maxLen);
   const lastSpace = truncated.lastIndexOf(' ');
-  const cutPoint = lastSpace > 0 ? lastSpace : EXCERPT_MAX_LENGTH;
+  const cutPoint = lastSpace > 0 ? lastSpace : maxLen;
   return text.slice(0, cutPoint) + '…';
 }
 

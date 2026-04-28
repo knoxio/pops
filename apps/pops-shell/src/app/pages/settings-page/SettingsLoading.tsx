@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import { Skeleton } from '@pops/ui';
 
 export function SettingsLoading() {
@@ -17,9 +19,11 @@ export function SettingsLoading() {
 }
 
 export function SettingsEmpty() {
+  const { t } = useTranslation('shell');
+
   return (
     <div className="flex items-center justify-center h-64 text-muted-foreground text-sm">
-      No settings registered
+      {t('noSettingsRegistered')}
     </div>
   );
 }

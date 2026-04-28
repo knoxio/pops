@@ -97,6 +97,30 @@ export function setBulkSettings(entries: { key: string; value: string }[]): Reco
   return result;
 }
 
+/**
+ * Read a setting's value, returning `fallback` if the key does not exist in the
+ * database or if the settings table is not available. This is the preferred way
+ * for modules to consume settings — it avoids throwing on missing keys and
+ * keeps the default co-located with the call site.
+ */
+export function getSettingValue<T extends string | number>(key: string, fallback: T): T {
+  try {
+    const db = getDrizzle();
+    const [row] = db.select().from(settings).where(eq(settings.key, key)).all();
+    if (!row) return fallback;
+    // Coerce to the same primitive type as the fallback.
+    if (typeof fallback === 'number') {
+      const parsed = Number(row.value);
+      return (Number.isNaN(parsed) ? fallback : parsed) as T;
+    }
+    return row.value as T;
+  } catch {
+    // Settings table may not exist in test databases or during early
+    // bootstrapping — gracefully degrade to the hardcoded fallback.
+    return fallback;
+  }
+}
+
 /** Delete a setting by key */
 export function deleteSetting(key: SettingsKey): void {
   const db = getDrizzle();

@@ -1,6 +1,7 @@
 # US-02: Shell Chat Panel
 
 > PRD: [PRD-087: Ego Core](README.md)
+> Status: Partial
 
 ## Description
 

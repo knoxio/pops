@@ -11,12 +11,19 @@ import { getEnv } from '../../../env.js';
 import { withRateLimitRetry } from '../../../lib/ai-retry.js';
 import { trackInference } from '../../../lib/inference-middleware.js';
 import { logger } from '../../../lib/logger.js';
+import { getSettingValue } from '../../core/settings/service.js';
 
 import type { ClassificationResult } from './types.js';
 
-const MODEL = 'claude-haiku-4-5-20251001';
 const OPERATION = 'cerebrum.classify';
-const DEFAULT_CONFIDENCE_THRESHOLD = 0.6;
+
+function getClassifierModel(): string {
+  return getSettingValue('cerebrum.classifier.model', 'claude-haiku-4-5-20251001');
+}
+
+function getClassifierConfidenceThreshold(): number {
+  return getSettingValue('cerebrum.classifier.confidenceThreshold', 0.6);
+}
 const FALLBACK_TYPE = 'capture';
 
 const KNOWN_TYPES = [
@@ -95,7 +102,7 @@ export class CortexClassifier {
   private readonly confidenceThreshold: number;
 
   constructor(options?: { confidenceThreshold?: number }) {
-    this.confidenceThreshold = options?.confidenceThreshold ?? DEFAULT_CONFIDENCE_THRESHOLD;
+    this.confidenceThreshold = options?.confidenceThreshold ?? getClassifierConfidenceThreshold();
   }
 
   async classify(body: string, title?: string): Promise<ClassificationResult> {
@@ -107,16 +114,17 @@ export class CortexClassifier {
 
     const client = new Anthropic({ apiKey, maxRetries: 0 });
     const prompt = buildPrompt(body, title);
+    const model = getClassifierModel();
 
     let parsed: LlmClassifyResponse;
     try {
       const response = await trackInference(
-        { provider: 'claude', model: MODEL, operation: OPERATION, domain: 'cerebrum' },
+        { provider: 'claude', model, operation: OPERATION, domain: 'cerebrum' },
         () =>
           withRateLimitRetry(
             () =>
               client.messages.create({
-                model: MODEL,
+                model,
                 max_tokens: 256,
                 temperature: 0,
                 messages: [{ role: 'user', content: prompt }],

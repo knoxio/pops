@@ -7,6 +7,11 @@
  *   ego.context.setScopes                    — explicit scope override (US-04)
  *   ego.context.getActive                    — current context state (US-03)
  */
+import { settingsRegistry } from '../core/settings/index.js';
+import { egoManifest } from './settings-manifest.js';
+
+settingsRegistry.register(egoManifest);
+
 import { mergeRouters, router } from '../../trpc.js';
 import { contextRouter } from './router-context.js';
 import { chatRouter, conversationsRouter } from './router.js';

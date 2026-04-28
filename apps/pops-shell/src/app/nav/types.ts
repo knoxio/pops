@@ -14,6 +14,8 @@ export interface AppNavItem {
   /** Relative to basePath. Empty string '' for the index/default page. */
   path: string;
   label: string;
+  /** i18n key in the `navigation` namespace (e.g. `finance.dashboard`). */
+  labelKey: string;
   /** Lucide icon component name — must be a member of IconName. */
   icon: IconName;
 }
@@ -23,6 +25,8 @@ export interface AppNavConfig {
   id: string;
   /** Display name shown in the app rail tooltip and page nav header. */
   label: string;
+  /** i18n key in the `navigation` namespace (e.g. `finance`). */
+  labelKey: string;
   /** Lucide icon component name for the app rail — must be a member of IconName. */
   icon: IconName;
   /** Optional theme color for this app (e.g. 'emerald', 'indigo'). */

@@ -11,9 +11,14 @@ import { join } from 'node:path';
 
 import { parse as parseToml } from 'smol-toml';
 
+import { getSettingValue } from '../../core/settings/service.js';
 import { scopeStringSchema } from './scope-schema.js';
 
-const DEFAULT_FALLBACK_SCOPE = 'personal.captures';
+const HARDCODED_FALLBACK_SCOPE = 'personal.captures';
+
+function getDefaultFallbackScope(): string {
+  return getSettingValue('cerebrum.engram.fallbackScope', HARDCODED_FALLBACK_SCOPE);
+}
 
 export interface ScopeRule {
   match: {
@@ -46,15 +51,15 @@ function parseFallbackScope(obj: Record<string, unknown>): string {
     obj['defaults'] !== null &&
     typeof (obj['defaults'] as Record<string, unknown>)['fallback_scope'] === 'string'
       ? ((obj['defaults'] as Record<string, unknown>)['fallback_scope'] as string)
-      : DEFAULT_FALLBACK_SCOPE;
+      : HARDCODED_FALLBACK_SCOPE;
 
   const parsedFallback = scopeStringSchema.safeParse(fallbackRaw);
   if (!parsedFallback.success) {
     console.warn(
-      `[cerebrum] scope-rules.toml: invalid defaults.fallback_scope '${String(fallbackRaw)}' — using default '${DEFAULT_FALLBACK_SCOPE}'`
+      `[cerebrum] scope-rules.toml: invalid defaults.fallback_scope '${String(fallbackRaw)}' — using default '${HARDCODED_FALLBACK_SCOPE}'`
     );
   }
-  return parsedFallback.success ? parsedFallback.data : DEFAULT_FALLBACK_SCOPE;
+  return parsedFallback.success ? parsedFallback.data : HARDCODED_FALLBACK_SCOPE;
 }
 
 function parseAssignScopes(assignRaw: unknown[]): string[] {
@@ -222,7 +227,7 @@ export class ScopeRuleEngine {
 
 function defaultConfig(): ScopeRulesConfig {
   return {
-    defaults: { fallback_scope: DEFAULT_FALLBACK_SCOPE },
+    defaults: { fallback_scope: getDefaultFallbackScope() },
     rules: [],
   };
 }

@@ -19,12 +19,12 @@ import { ConsolidationDetector } from './detectors/consolidation.js';
 import { PatternDetector } from './detectors/patterns.js';
 import { StalenessDetector } from './detectors/staleness.js';
 import { NudgeService } from './nudge-service.js';
-import { DEFAULT_THRESHOLDS } from './types.js';
+import { getDefaultNudgeThresholds } from './types.js';
 
 import type { NudgeThresholds } from './types.js';
 
 /** Module-scoped thresholds — mutated by `configure`, shared across requests. */
-let activeThresholds: NudgeThresholds = { ...DEFAULT_THRESHOLDS };
+let activeThresholds: NudgeThresholds = getDefaultNudgeThresholds();
 
 /** Build a NudgeService for the current request context. */
 function getService(): NudgeService {

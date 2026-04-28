@@ -1,6 +1,7 @@
 # US-04: Audit Trail
 
 > PRD: [PRD-086: Trust Graduation](README.md)
+> Status: Partial
 
 ## Description
 

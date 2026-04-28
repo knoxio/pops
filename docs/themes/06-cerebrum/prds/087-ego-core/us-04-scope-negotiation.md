@@ -1,6 +1,7 @@
 # US-04: Scope Negotiation
 
 > PRD: [PRD-087: Ego Core](README.md)
+> Status: Done
 
 ## Description
 

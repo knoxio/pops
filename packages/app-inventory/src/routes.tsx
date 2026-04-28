@@ -44,23 +44,30 @@ const LocationTreePage = lazy(() =>
 interface AppNavConfigShape {
   id: string;
   label: string;
+  labelKey: string;
   icon: IconName;
   color?: 'emerald' | 'indigo' | 'amber' | 'rose' | 'sky' | 'violet';
   basePath: string;
-  items: { path: string; label: string; icon: IconName }[];
+  items: { path: string; label: string; labelKey: string; icon: IconName }[];
 }
 
 export const navConfig = {
   id: 'inventory',
   label: 'Inventory',
+  labelKey: 'inventory',
   icon: 'Package',
   color: 'amber',
   basePath: '/inventory',
   items: [
-    { path: '', label: 'Items', icon: 'Package' },
-    { path: '/warranties', label: 'Warranties', icon: 'ShieldCheck' },
-    { path: '/locations', label: 'Locations', icon: 'MapPin' },
-    { path: '/report', label: 'Reports', icon: 'BarChart3' },
+    { path: '', label: 'Items', labelKey: 'inventory.items', icon: 'Package' },
+    {
+      path: '/warranties',
+      label: 'Warranties',
+      labelKey: 'inventory.warranties',
+      icon: 'ShieldCheck',
+    },
+    { path: '/locations', label: 'Locations', labelKey: 'inventory.locations', icon: 'MapPin' },
+    { path: '/report', label: 'Reports', labelKey: 'inventory.reports', icon: 'BarChart3' },
   ],
 } satisfies AppNavConfigShape;
 

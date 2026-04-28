@@ -1,6 +1,7 @@
 # US-03: CLI Interface
 
 > PRD: [PRD-088: Ego Channels](README.md)
+> Status: Done
 
 ## Description
 

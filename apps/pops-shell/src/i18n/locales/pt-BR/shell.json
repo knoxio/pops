@@ -1,0 +1,19 @@
+{
+  "toggleSidebar": "Alternar barra lateral",
+  "closeSidebar": "Fechar barra lateral",
+  "openSearch": "Abrir pesquisa",
+  "toggleTheme": "Alternar tema",
+  "settings": "Configuracoes",
+  "settingsSection": "Seccao de configuracoes",
+  "noSettingsRegistered": "Nenhuma configuracao registada",
+  "expandAppRail": "Expandir barra de aplicacoes",
+  "collapseAppRail": "Recolher barra de aplicacoes",
+  "collapse": "Recolher",
+  "pageNotFound": "Pagina nao encontrada",
+  "pageNotFoundDescription": "A pagina que procura nao existe ou foi movida.",
+  "goHome": "Ir para o inicio",
+  "appPages": "Paginas de {{app}}",
+  "locale": "Idioma",
+  "localeEnAU": "English (Australia)",
+  "localePtBR": "Portugues (Brasil)"
+}

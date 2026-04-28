@@ -1,6 +1,7 @@
 # US-04: Scheduled Triggers
 
 > PRD: [PRD-089: Reflex System](README.md)
+> Status: Done
 
 ## Description
 

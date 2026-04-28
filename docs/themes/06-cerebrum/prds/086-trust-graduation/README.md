@@ -116,4 +116,4 @@ US-01 and US-02 can be built in parallel. US-03 and US-04 both depend on the `gl
 
 ## Drift Check
 
-last checked: 2026-04-17
+last checked: 2026-04-28

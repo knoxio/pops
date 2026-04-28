@@ -1,0 +1,19 @@
+{
+  "toggleSidebar": "Toggle sidebar",
+  "closeSidebar": "Close sidebar",
+  "openSearch": "Open search",
+  "toggleTheme": "Toggle theme",
+  "settings": "Settings",
+  "settingsSection": "Settings section",
+  "noSettingsRegistered": "No settings registered",
+  "expandAppRail": "Expand app rail",
+  "collapseAppRail": "Collapse app rail",
+  "collapse": "Collapse",
+  "pageNotFound": "Page not found",
+  "pageNotFoundDescription": "The page you're looking for doesn't exist or has been moved.",
+  "goHome": "Go home",
+  "appPages": "{{app}} pages",
+  "locale": "Language",
+  "localeEnAU": "English (Australia)",
+  "localePtBR": "Portuguese (Brazil)"
+}

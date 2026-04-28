@@ -1,6 +1,7 @@
 # US-03: Graduation Logic
 
 > PRD: [PRD-086: Trust Graduation](README.md)
+> Status: Partial
 
 ## Description
 

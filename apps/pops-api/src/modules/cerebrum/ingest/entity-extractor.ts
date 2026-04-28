@@ -11,12 +11,19 @@ import { getEnv } from '../../../env.js';
 import { withRateLimitRetry } from '../../../lib/ai-retry.js';
 import { trackInference } from '../../../lib/inference-middleware.js';
 import { logger } from '../../../lib/logger.js';
+import { getSettingValue } from '../../core/settings/service.js';
 
 import type { EntityExtractionResult, EntityType, ExtractedEntity } from './types.js';
 
-const MODEL = 'claude-haiku-4-5-20251001';
 const OPERATION = 'cerebrum.extract-entities';
-const DEFAULT_CONFIDENCE_THRESHOLD = 0.7;
+
+function getEntityExtractorModel(): string {
+  return getSettingValue('cerebrum.entityExtractor.model', 'claude-haiku-4-5-20251001');
+}
+
+function getEntityExtractorConfidenceThreshold(): number {
+  return getSettingValue('cerebrum.entityExtractor.confidenceThreshold', 0.7);
+}
 
 const ENTITY_TYPES: EntityType[] = ['person', 'project', 'date', 'topic', 'organisation'];
 
@@ -140,7 +147,8 @@ export class CortexEntityExtractor {
   private readonly confidenceThreshold: number;
 
   constructor(options?: { confidenceThreshold?: number }) {
-    this.confidenceThreshold = options?.confidenceThreshold ?? DEFAULT_CONFIDENCE_THRESHOLD;
+    this.confidenceThreshold =
+      options?.confidenceThreshold ?? getEntityExtractorConfidenceThreshold();
   }
 
   /**
@@ -165,16 +173,17 @@ export class CortexEntityExtractor {
     const refDate = referenceDate ?? new Date().toISOString().slice(0, 10);
     const client = new Anthropic({ apiKey, maxRetries: 0 });
     const prompt = buildPrompt(body, existingTags, refDate);
+    const model = getEntityExtractorModel();
 
     let rawEntities: LlmEntity[];
     try {
       const response = await trackInference(
-        { provider: 'claude', model: MODEL, operation: OPERATION, domain: 'cerebrum' },
+        { provider: 'claude', model, operation: OPERATION, domain: 'cerebrum' },
         () =>
           withRateLimitRetry(
             () =>
               client.messages.create({
-                model: MODEL,
+                model,
                 max_tokens: 512,
                 temperature: 0,
                 messages: [{ role: 'user', content: prompt }],

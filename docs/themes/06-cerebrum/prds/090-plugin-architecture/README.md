@@ -110,4 +110,4 @@ US-01 defines the interface that US-02 and US-03 depend on. US-04 (ingestion fil
 
 ## Drift Check
 
-last checked: 2026-04-17
+last checked: 2026-04-28

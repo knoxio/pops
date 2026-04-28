@@ -5,14 +5,16 @@
  * Limits retrieval to top-3 results for low MCP latency.
  */
 import { QueryService } from '../../modules/cerebrum/query/query-service.js';
+import { getSettingValue } from '../../modules/core/settings/service.js';
 import { mapServiceError, mcpError, mcpSuccess } from '../errors.js';
 
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 import type { QueryDomain } from '../../modules/cerebrum/query/types.js';
 
-/** MCP-specific max sources — lower than the default for faster responses. */
-const MCP_MAX_SOURCES = 3;
+function getMcpQueryMaxSources(): number {
+  return getSettingValue('cerebrum.mcp.queryMaxSources', 3);
+}
 
 const VALID_DOMAINS = new Set<string>(['engrams', 'transactions', 'media', 'inventory']);
 
@@ -48,7 +50,7 @@ export async function handleCerebrumQuery(raw: Record<string, unknown>): Promise
     const result = await svc.ask({
       question: args.question,
       scopes: args.scopes,
-      maxSources: MCP_MAX_SOURCES,
+      maxSources: getMcpQueryMaxSources(),
       domains,
     });
 

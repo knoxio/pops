@@ -5,14 +5,20 @@
  */
 import { getDrizzle } from '../../db.js';
 import { HybridSearchService } from '../../modules/cerebrum/retrieval/hybrid-search.js';
+import { getSettingValue } from '../../modules/core/settings/service.js';
 import { mapServiceError, mcpError, mcpSuccess } from '../errors.js';
 
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 
 import type { RetrievalResult } from '../../modules/cerebrum/retrieval/types.js';
 
-const MAX_SNIPPET_LENGTH = 200;
-const DEFAULT_LIMIT = 20;
+function getMcpSearchSnippetLength(): number {
+  return getSettingValue('cerebrum.mcp.searchSnippetLength', 200);
+}
+
+function getMcpSearchDefaultLimit(): number {
+  return getSettingValue('cerebrum.mcp.searchDefaultLimit', 20);
+}
 
 interface SearchArgs {
   query: string;
@@ -29,8 +35,9 @@ function hasExplicitSecretScope(scopes: string[] | undefined): boolean {
 }
 
 function truncateSnippet(text: string): string {
-  if (text.length <= MAX_SNIPPET_LENGTH) return text;
-  return text.slice(0, MAX_SNIPPET_LENGTH) + '…';
+  const maxLen = getMcpSearchSnippetLength();
+  if (text.length <= maxLen) return text;
+  return text.slice(0, maxLen) + '…';
 }
 
 function mapResult(result: RetrievalResult): {
@@ -79,7 +86,12 @@ export async function handleCerebrumSearch(raw: Record<string, unknown>): Promis
       includeSecret,
     };
 
-    const results = await svc.hybrid(args.query, filters, args.limit ?? DEFAULT_LIMIT, 0.8);
+    const results = await svc.hybrid(
+      args.query,
+      filters,
+      args.limit ?? getMcpSearchDefaultLimit(),
+      0.8
+    );
 
     return mcpSuccess({ results: results.map(mapResult) });
   } catch (err) {

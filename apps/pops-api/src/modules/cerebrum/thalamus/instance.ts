@@ -14,6 +14,7 @@ import { engramIndex } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 import { DEFAULT_JOB_OPTIONS, getDefaultQueue } from '../../../jobs/queues.js';
+import { getSettingValue } from '../../core/settings/service.js';
 import { getEngramRoot } from '../instance.js';
 import { EmbeddingTrigger } from './embedding-trigger.js';
 import { FrontmatterSyncService } from './sync.js';
@@ -22,7 +23,10 @@ import { FileWatcherService } from './watcher.js';
 import type { WatchEvent } from './watcher.js';
 
 const CROSS_SOURCE_SCHEDULER_ID = 'pops-cross-source-index';
-const CROSS_SOURCE_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 hours
+
+function getCrossSourceIntervalMs(): number {
+  return getSettingValue('cerebrum.thalamus.crossSourceIntervalMs', 6 * 60 * 60 * 1000);
+}
 
 let watcher: FileWatcherService | null = null;
 
@@ -87,7 +91,7 @@ export async function startThalamus(): Promise<void> {
   void getDefaultQueue()
     .upsertJobScheduler(
       CROSS_SOURCE_SCHEDULER_ID,
-      { every: CROSS_SOURCE_INTERVAL_MS },
+      { every: getCrossSourceIntervalMs() },
       { name: 'crossSourceIndex', data: { type: 'crossSourceIndex' }, opts: DEFAULT_JOB_OPTIONS }
     )
     .catch((err: unknown) => {

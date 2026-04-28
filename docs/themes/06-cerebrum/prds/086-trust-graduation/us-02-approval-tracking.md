@@ -1,6 +1,7 @@
 # US-02: Approval Tracking
 
 > PRD: [PRD-086: Trust Graduation](README.md)
+> Status: Done
 
 ## Description
 

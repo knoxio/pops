@@ -1,5 +1,6 @@
 import { iconMap } from '@/app/nav/icon-map';
 import { isPageActive } from '@/app/nav/path-utils';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
 import type { AppNavConfig, AppNavItem } from '@/app/nav/registry';
@@ -12,6 +13,7 @@ interface SidebarNavLinkProps {
 }
 
 export function SidebarNavLink({ app, item, pathname, onNavigate }: SidebarNavLinkProps) {
+  const { t } = useTranslation('navigation');
   const fullPath = `${app.basePath}${item.path}`;
   const isActive = isPageActive(pathname, app.basePath, item.path);
   const Icon = iconMap[item.icon];
@@ -27,7 +29,7 @@ export function SidebarNavLink({ app, item, pathname, onNavigate }: SidebarNavLi
       }`}
     >
       {Icon && <Icon className="h-5 w-5 shrink-0" />}
-      <span>{item.label}</span>
+      <span>{t(item.labelKey)}</span>
     </Link>
   );
 }

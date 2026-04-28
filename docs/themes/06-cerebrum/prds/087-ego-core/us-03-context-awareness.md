@@ -1,6 +1,7 @@
 # US-03: Context Awareness
 
 > PRD: [PRD-087: Ego Core](README.md)
+> Status: Partial
 
 ## Description
 

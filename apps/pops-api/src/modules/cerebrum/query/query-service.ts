@@ -13,6 +13,7 @@ import { getEnv } from '../../../env.js';
 import { withRateLimitRetry } from '../../../lib/ai-retry.js';
 import { trackInference } from '../../../lib/inference-middleware.js';
 import { logger } from '../../../lib/logger.js';
+import { getSettingValue } from '../../core/settings/service.js';
 import { ContextAssemblyService } from '../retrieval/context-assembly.js';
 import { HybridSearchService } from '../retrieval/hybrid-search.js';
 import { CitationParser } from './citation-parser.js';
@@ -29,11 +30,23 @@ import type {
   SourceCitation,
 } from './types.js';
 
-const MODEL = 'claude-sonnet-4-20250514';
 const OPERATION = 'cerebrum.query';
-const DEFAULT_MAX_SOURCES = 10;
-const RELEVANCE_THRESHOLD = 0.3;
-const TOKEN_BUDGET = 4096;
+
+function getQueryModel(): string {
+  return getSettingValue('cerebrum.query.model', 'claude-sonnet-4-20250514');
+}
+
+function getQueryMaxSources(): number {
+  return getSettingValue('cerebrum.query.maxSources', 10);
+}
+
+function getQueryRelevanceThreshold(): number {
+  return getSettingValue('cerebrum.query.relevanceThreshold', 0.3);
+}
+
+function getQueryTokenBudget(): number {
+  return getSettingValue('cerebrum.query.tokenBudget', 4096);
+}
 
 const NO_INFO_ANSWER = "I don't have information about that.";
 
@@ -85,7 +98,7 @@ export class QueryService {
    */
   async ask(request: QueryRequest): Promise<QueryResponse> {
     const question = request.question.trim();
-    const maxSources = request.maxSources ?? DEFAULT_MAX_SOURCES;
+    const maxSources = request.maxSources ?? getQueryMaxSources();
     const includeSecret = request.includeSecret ?? false;
 
     // 1. Scope inference.
@@ -94,7 +107,8 @@ export class QueryService {
     // 2. Build filters and retrieve.
     const filters = buildRetrievalFilters(scopeResult.scopes, includeSecret, request.domains);
     const hybridSearch = new HybridSearchService(getDrizzle());
-    const results = await hybridSearch.hybrid(question, filters, maxSources, RELEVANCE_THRESHOLD);
+    const relevanceThreshold = getQueryRelevanceThreshold();
+    const results = await hybridSearch.hybrid(question, filters, maxSources, relevanceThreshold);
 
     // 3. Zero results → short-circuit.
     if (results.length === 0) {
@@ -110,7 +124,7 @@ export class QueryService {
     const assembled = this.assembler.assemble({
       query: question,
       results,
-      tokenBudget: TOKEN_BUDGET,
+      tokenBudget: getQueryTokenBudget(),
       includeMetadata: true,
     });
 
@@ -145,13 +159,18 @@ export class QueryService {
     maxSources?: number
   ): Promise<{ sources: SourceCitation[] }> {
     const trimmed = question.trim();
-    const limit = maxSources ?? DEFAULT_MAX_SOURCES;
+    const limit = maxSources ?? getQueryMaxSources();
     const secret = includeSecret ?? false;
 
     const scopeResult = this.inferencer.infer(trimmed, undefined, scopes, secret);
     const filters = buildRetrievalFilters(scopeResult.scopes, secret);
     const hybridSearch = new HybridSearchService(getDrizzle());
-    const results = await hybridSearch.hybrid(trimmed, filters, limit, RELEVANCE_THRESHOLD);
+    const results = await hybridSearch.hybrid(
+      trimmed,
+      filters,
+      limit,
+      getQueryRelevanceThreshold()
+    );
 
     const sources: SourceCitation[] = results.map((r) => ({
       id: r.sourceId,
@@ -182,8 +201,8 @@ export class QueryService {
       scopeInference: scopeResult,
       retrievalPlan: {
         filters,
-        maxSources: DEFAULT_MAX_SOURCES,
-        threshold: RELEVANCE_THRESHOLD,
+        maxSources: getQueryMaxSources(),
+        threshold: getQueryRelevanceThreshold(),
       },
       secretNotice,
     };
@@ -198,15 +217,16 @@ export class QueryService {
     }
 
     const client = new Anthropic({ apiKey, maxRetries: 0 });
+    const model = getQueryModel();
 
     try {
       const response = await trackInference(
-        { provider: 'claude', model: MODEL, operation: OPERATION, domain: 'cerebrum' },
+        { provider: 'claude', model, operation: OPERATION, domain: 'cerebrum' },
         () =>
           withRateLimitRetry(
             () =>
               client.messages.create({
-                model: MODEL,
+                model,
                 max_tokens: 1024,
                 temperature: 0,
                 system: systemPrompt,

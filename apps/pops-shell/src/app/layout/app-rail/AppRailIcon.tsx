@@ -1,5 +1,6 @@
 import { iconMap } from '@/app/nav/icon-map';
 import { matchesAtBoundary } from '@/app/nav/path-utils';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
 import { cn, Tooltip, TooltipContent, TooltipTrigger } from '@pops/ui';
@@ -21,10 +22,12 @@ export function AppRailIcon({
   setPageNavOpen,
   setSkipNextPageNavClose,
 }: AppRailIconProps) {
+  const { t } = useTranslation('navigation');
   const navigate = useNavigate();
   const isActive = matchesAtBoundary(pathname, app.basePath);
   const Icon = iconMap[app.icon];
   const appColorClass = app.color ? `app-${app.color}` : undefined;
+  const appLabel = t(app.labelKey);
 
   const handleClick = () => {
     if (isTablet) {
@@ -45,7 +48,7 @@ export function AppRailIcon({
             'relative w-full flex items-center justify-center py-1 transition-colors group',
             appColorClass
           )}
-          aria-label={app.label}
+          aria-label={appLabel}
           aria-current={isActive ? 'page' : undefined}
         >
           <span
@@ -67,12 +70,12 @@ export function AppRailIcon({
             {Icon ? (
               <Icon className="h-6 w-6" />
             ) : (
-              <span className="text-lg font-semibold">{app.label[0]}</span>
+              <span className="text-lg font-semibold">{appLabel[0]}</span>
             )}
           </span>
         </button>
       </TooltipTrigger>
-      <TooltipContent side="right">{app.label}</TooltipContent>
+      <TooltipContent side="right">{appLabel}</TooltipContent>
     </Tooltip>
   );
 }

@@ -102,27 +102,29 @@ const DebriefResultsPage = lazy(() =>
 interface AppNavConfigShape {
   id: string;
   label: string;
+  labelKey: string;
   icon: IconName;
   color?: 'emerald' | 'indigo' | 'amber' | 'rose' | 'sky' | 'violet';
   basePath: string;
-  items: { path: string; label: string; icon: IconName }[];
+  items: { path: string; label: string; labelKey: string; icon: IconName }[];
 }
 
 export const navConfig = {
   id: 'media',
   label: 'Media',
+  labelKey: 'media',
   icon: 'Film',
   color: 'indigo',
   basePath: '/media',
   items: [
-    { path: '', label: 'Library', icon: 'Library' },
-    { path: '/watchlist', label: 'Watchlist', icon: 'Bookmark' },
-    { path: '/history', label: 'History', icon: 'Clock' },
-    { path: '/discover', label: 'Discover', icon: 'Compass' },
-    { path: '/rankings', label: 'Rankings', icon: 'Trophy' },
-    { path: '/search', label: 'Search', icon: 'Search' },
-    { path: '/compare', label: 'Compare', icon: 'ArrowLeftRight' },
-    { path: '/tier-list', label: 'Tier List', icon: 'Layers' },
+    { path: '', label: 'Library', labelKey: 'media.library', icon: 'Library' },
+    { path: '/watchlist', label: 'Watchlist', labelKey: 'media.watchlist', icon: 'Bookmark' },
+    { path: '/history', label: 'History', labelKey: 'media.history', icon: 'Clock' },
+    { path: '/discover', label: 'Discover', labelKey: 'media.discover', icon: 'Compass' },
+    { path: '/rankings', label: 'Rankings', labelKey: 'media.rankings', icon: 'Trophy' },
+    { path: '/search', label: 'Search', labelKey: 'media.search', icon: 'Search' },
+    { path: '/compare', label: 'Compare', labelKey: 'media.compare', icon: 'ArrowLeftRight' },
+    { path: '/tier-list', label: 'Tier List', labelKey: 'media.tierList', icon: 'Layers' },
   ],
 } satisfies AppNavConfigShape;
 

@@ -1,6 +1,7 @@
 # US-03: Plugin Registry
 
 > PRD: [PRD-090: Plugin Architecture](README.md)
+> Status: Done
 
 ## Description
 

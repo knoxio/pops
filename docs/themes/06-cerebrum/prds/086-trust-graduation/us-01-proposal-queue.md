@@ -1,6 +1,7 @@
 # US-01: Proposal Review Queue
 
 > PRD: [PRD-086: Trust Graduation](README.md)
+> Status: Partial
 
 ## Description
 

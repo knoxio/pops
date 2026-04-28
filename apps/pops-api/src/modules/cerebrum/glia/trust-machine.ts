@@ -1,4 +1,4 @@
-import { DEFAULT_THRESHOLDS } from './types.js';
+import { getGliaThresholds } from './types.js';
 
 /**
  * GliaTrustMachine — phase transitions and automatic demotion.
@@ -24,7 +24,7 @@ export interface TransitionResult {
 export class GliaTrustMachine {
   constructor(
     private readonly actionService: GliaActionService,
-    private readonly getThresholds: () => GraduationThresholds = () => DEFAULT_THRESHOLDS,
+    private readonly getThresholds: () => GraduationThresholds = getGliaThresholds,
     private readonly now: () => Date = () => new Date()
   ) {}
 
