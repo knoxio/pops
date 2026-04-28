@@ -1,5 +1,3 @@
-import { buildActivityBody } from './github-helpers.js';
-
 /**
  * GitHub activity parser — converts raw GitHub API data into EngineData.
  *
@@ -8,12 +6,7 @@ import { buildActivityBody } from './github-helpers.js';
  */
 import type { EngineData } from '../types.js';
 
-// Re-export event normalisation from its own module.
 export { normaliseGitHubEvent } from './event-normaliser.js';
-
-// ---------------------------------------------------------------------------
-// GitHub event types
-// ---------------------------------------------------------------------------
 
 export type GitHubEventType =
   | 'issues.assigned'
@@ -34,10 +27,6 @@ export interface GitHubLabel {
   color?: string;
 }
 
-// ---------------------------------------------------------------------------
-// Raw GitHub activity (normalised from API responses)
-// ---------------------------------------------------------------------------
-
 export interface RawGitHubActivity {
   id: string;
   eventType: GitHubEventType;
@@ -56,7 +45,6 @@ export interface RawGitHubActivity {
   deletions?: number;
 }
 
-/** GitHub API event shape (from the /events endpoint). */
 export interface GitHubApiEvent {
   id: string;
   type: string;
@@ -64,6 +52,56 @@ export interface GitHubApiEvent {
   actor: { login: string; display_login?: string };
   payload: Record<string, unknown>;
   created_at: string;
+}
+
+// ---------------------------------------------------------------------------
+// Body construction
+// ---------------------------------------------------------------------------
+
+const EVENT_TYPE_LABELS: Record<GitHubEventType, string> = {
+  'issues.assigned': 'Issue Assigned',
+  'pull_request.review_requested': 'PR Review Requested',
+  'pull_request.merged': 'PR Merged',
+  'issue_comment.mentioned': 'Mentioned in Comment',
+  commit: 'Commit',
+  'pull_request.opened': 'PR Opened',
+  'issues.opened': 'Issue Opened',
+};
+
+/** Collect optional metadata sections for activity body. */
+function collectOptionalSections(activity: RawGitHubActivity): string[] {
+  const optional: string[] = [];
+  if (activity.labels && activity.labels.length > 0) {
+    optional.push(`**Labels:** ${activity.labels.map((l) => `\`${l.name}\``).join(', ')}`);
+  }
+  if (activity.milestone) optional.push(`**Milestone:** ${activity.milestone}`);
+  if (activity.eventType.startsWith('pull_request') && activity.changedFiles !== undefined) {
+    optional.push(
+      `**Changes:** ${activity.changedFiles} files, +${activity.additions ?? 0} / -${activity.deletions ?? 0}`
+    );
+  }
+  if (activity.linkedIssues && activity.linkedIssues.length > 0) {
+    optional.push(`**Linked:** ${activity.linkedIssues.join(', ')}`);
+  }
+  return optional;
+}
+
+function buildActivityBody(activity: RawGitHubActivity): string {
+  const typeLabel = EVENT_TYPE_LABELS[activity.eventType] ?? activity.eventType;
+  const sections = [
+    `**Type:** ${typeLabel}`,
+    `**Repository:** [${activity.repo}](https://github.com/${activity.repo})`,
+    `**Author:** @${activity.actor.login}`,
+    `**Link:** [View on GitHub](${activity.url})`,
+    ...collectOptionalSections(activity),
+  ];
+  const trimmedBody = activity.body?.trim();
+  if (trimmedBody && trimmedBody.length > 0) {
+    const truncated =
+      trimmedBody.length > 2000 ? `${trimmedBody.slice(0, 2000)}...\n\n*(truncated)*` : trimmedBody;
+    sections.push(`---\n\n${truncated}`);
+  }
+  return sections.join('\n');
 }
 
 // ---------------------------------------------------------------------------

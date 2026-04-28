@@ -9,20 +9,17 @@ import {
   type AdapterConfig,
   type AdapterStatus,
   type EngineData,
+  type IngestFilter,
   type IngestOptions,
 } from '../types.js';
 import {
+  activityMatchesFilter,
   isBot,
   parseGitHubActivity,
   type GitHubEventType,
   type RawGitHubActivity,
 } from './activity-parser.js';
-import {
-  buildErrorHealthStatus,
-  buildMetrics,
-  now,
-  passesGitHubFilters,
-} from './github-helpers.js';
+import { buildErrorHealthStatus, buildMetrics, now } from './github-helpers.js';
 import {
   FetchGitHubTransport,
   GitHubRateLimitError,
@@ -31,10 +28,6 @@ import {
 
 export { FetchGitHubTransport, GitHubRateLimitError } from './github-transport.js';
 export type { GitHubRateLimit, GitHubTransport } from './github-transport.js';
-
-// ---------------------------------------------------------------------------
-// Adapter-specific settings
-// ---------------------------------------------------------------------------
 
 export interface GitHubAdapterSettings {
   username: string;
@@ -51,13 +44,8 @@ const DEFAULT_EVENT_TYPES: GitHubEventType[] = [
   'issue_comment.mentioned',
 ];
 
-// ---------------------------------------------------------------------------
-// GitHubAdapter
-// ---------------------------------------------------------------------------
-
 export class GitHubAdapter extends BaseAdapter<GitHubAdapterSettings> {
   readonly name = 'github';
-
   private transport: GitHubTransport;
   private authenticatedUser: string = '';
   private lastFetchedPerRepo = new Map<string, string>();
@@ -74,7 +62,6 @@ export class GitHubAdapter extends BaseAdapter<GitHubAdapterSettings> {
   override async initialize(config: AdapterConfig<GitHubAdapterSettings>): Promise<void> {
     await super.initialize(config);
     const token = this.requireCredential('token');
-
     try {
       this.authenticatedUser = await this.transport.authenticate(token);
       this.status = 'healthy';
@@ -89,7 +76,7 @@ export class GitHubAdapter extends BaseAdapter<GitHubAdapterSettings> {
 
   override async ingest(options: IngestOptions): Promise<EngineData[]> {
     const config = this.requireConfig();
-    const activities = await this.fetchActivitiesFromTransport(config, options);
+    const activities = await this.fetchActivities(config, options);
     const results = this.filterAndConvert(activities, config, options);
     this.updateRepoTimestamps(activities);
     return results;
@@ -120,11 +107,7 @@ export class GitHubAdapter extends BaseAdapter<GitHubAdapterSettings> {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Private
-  // ---------------------------------------------------------------------------
-
-  private async fetchActivitiesFromTransport(
+  private async fetchActivities(
     config: AdapterConfig<GitHubAdapterSettings>,
     options: IngestOptions
   ): Promise<RawGitHubActivity[]> {
@@ -152,14 +135,12 @@ export class GitHubAdapter extends BaseAdapter<GitHubAdapterSettings> {
   ): EngineData[] {
     const scopeLabel = config.settings.scopeLabel ?? 'work.dev.github';
     const results: EngineData[] = [];
-
     for (const activity of activities) {
       if (isBot(activity.actor)) continue;
-      if (!passesGitHubFilters(activity, options.filters)) continue;
+      if (!this.passesFilters(activity, options.filters)) continue;
       if (this.isAlreadyFetched(activity)) continue;
       results.push(parseGitHubActivity(activity, { scopeLabel }));
     }
-
     return results;
   }
 
@@ -181,7 +162,6 @@ export class GitHubAdapter extends BaseAdapter<GitHubAdapterSettings> {
     const rateLimit = await this.transport.getRateLimit();
     const pct = ((rateLimit.limit - rateLimit.remaining) / rateLimit.limit) * 100;
     const metrics = buildMetrics(rateLimit, pct, this.lastFetchedPerRepo.size);
-
     if (rateLimit.remaining === 0) {
       this.status = 'degraded';
       return {
@@ -195,7 +175,7 @@ export class GitHubAdapter extends BaseAdapter<GitHubAdapterSettings> {
       this.status = 'degraded';
       return {
         status: 'degraded',
-        message: `Rate limit low: ${rateLimit.remaining}/${rateLimit.limit} remaining`,
+        message: `Rate limit low: ${rateLimit.remaining}/${rateLimit.limit}`,
         lastChecked: now(),
         metrics,
       };
@@ -207,5 +187,16 @@ export class GitHubAdapter extends BaseAdapter<GitHubAdapterSettings> {
       lastChecked: now(),
       metrics,
     };
+  }
+
+  private passesFilters(activity: RawGitHubActivity, filters?: IngestFilter[]): boolean {
+    if (!filters || filters.length === 0) return true;
+    const includes = filters.filter((f) => f.type === 'include');
+    const excludes = filters.filter((f) => f.type === 'exclude');
+    if (includes.length > 0) {
+      if (!includes.some((f) => activityMatchesFilter(activity, f.field, f.pattern))) return false;
+    }
+    if (excludes.some((f) => activityMatchesFilter(activity, f.field, f.pattern))) return false;
+    return true;
   }
 }

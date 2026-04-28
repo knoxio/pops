@@ -13,10 +13,11 @@ import {
   type EmitContent,
   type EmitOptions,
   type EngineData,
+  type IngestFilter,
   type IngestOptions,
 } from '../types.js';
-import { markdownToSimpleHtml, passesEmailFilters } from './email-helpers.js';
-import { parseEmail, type RawEmail } from './email-parser.js';
+import { markdownToSimpleHtml } from './email-helpers.js';
+import { emailMatchesFilter, parseEmail, type RawEmail } from './email-parser.js';
 
 export interface EmailAdapterSettings {
   protocol: 'imap' | 'api';
@@ -89,7 +90,7 @@ export class EmailAdapter extends BaseAdapter<EmailAdapterSettings> {
       const emails = await this.transport.fetchEmails(folder, since, options.limit);
 
       for (const email of emails) {
-        if (!passesEmailFilters(email, options.filters)) continue;
+        if (!this.passesFilters(email, options.filters)) continue;
         allResults.push(parseEmail(email, { scopeLabel: scope }));
       }
 
@@ -169,5 +170,16 @@ export class EmailAdapter extends BaseAdapter<EmailAdapterSettings> {
     for (const [folder, folderState] of Object.entries(state)) {
       this.syncState.set(folder, folderState);
     }
+  }
+
+  private passesFilters(email: RawEmail, filters?: IngestFilter[]): boolean {
+    if (!filters || filters.length === 0) return true;
+    const includes = filters.filter((f) => f.type === 'include');
+    const excludes = filters.filter((f) => f.type === 'exclude');
+    if (includes.length > 0) {
+      if (!includes.some((f) => emailMatchesFilter(email, f.field, f.pattern))) return false;
+    }
+    if (excludes.some((f) => emailMatchesFilter(email, f.field, f.pattern))) return false;
+    return true;
   }
 }
