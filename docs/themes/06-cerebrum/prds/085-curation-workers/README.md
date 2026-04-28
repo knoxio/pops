@@ -1,7 +1,7 @@
 # PRD-085: Curation Workers
 
 > Epic: [04 — Glia](../../epics/04-glia.md)
-> Status: Not started
+> Status: Done
 
 ## Overview
 
@@ -87,12 +87,12 @@ Score range: 0.0 (poor) to 1.0 (high quality). Threshold for flagging in `glia.t
 
 ## User Stories
 
-| #   | Story                                       | Summary                                                                          | Status      | Parallelisable |
-| --- | ------------------------------------------- | -------------------------------------------------------------------------------- | ----------- | -------------- |
-| 01  | [us-01-pruner](us-01-pruner.md)             | Staleness scoring, orphan detection, archive proposals                           | Not started | Yes            |
-| 02  | [us-02-consolidator](us-02-consolidator.md) | Cluster detection via Thalamus, merge plan generation, archive originals         | Not started | Yes            |
-| 03  | [us-03-linker](us-03-linker.md)             | Cross-reference discovery, shared entity detection, bidirectional link proposals | Not started | Yes            |
-| 04  | [us-04-auditor](us-04-auditor.md)           | Contradiction detection, quality scoring, coverage gap flagging                  | Not started | Yes            |
+| #   | Story                                       | Summary                                                                          | Status | Parallelisable |
+| --- | ------------------------------------------- | -------------------------------------------------------------------------------- | ------ | -------------- |
+| 01  | [us-01-pruner](us-01-pruner.md)             | Staleness scoring, orphan detection, archive proposals                           | Done   | Yes            |
+| 02  | [us-02-consolidator](us-02-consolidator.md) | Cluster detection via Thalamus, merge plan generation, archive originals         | Done   | Yes            |
+| 03  | [us-03-linker](us-03-linker.md)             | Cross-reference discovery, shared entity detection, bidirectional link proposals | Done   | Yes            |
+| 04  | [us-04-auditor](us-04-auditor.md)           | Contradiction detection, quality scoring, coverage gap flagging                  | Done   | Yes            |
 
 All four workers are independent and can be built in parallel. Each worker depends on PRD-077 (engram storage), PRD-079 (Thalamus indexing), and the `glia_actions` table from PRD-086 for dispatching actions through the trust system.
 
