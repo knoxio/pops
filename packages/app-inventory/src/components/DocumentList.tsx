@@ -1,4 +1,5 @@
 import { Download, FileText, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, formatBytes, formatDate } from '@pops/ui';
 
@@ -29,13 +30,14 @@ function buildDownloadHref(baseUrl: string, filePath: string): string {
 }
 
 function EmptyState() {
+  const { t } = useTranslation('inventory');
   return (
     <div
       className="flex flex-col items-center justify-center py-8 text-muted-foreground"
       data-testid="document-list-empty"
     >
       <FileText className="h-12 w-12 mb-2 opacity-30" />
-      <p className="text-sm">No documents yet</p>
+      <p className="text-sm">{t('documents.noDocumentsYet')}</p>
     </div>
   );
 }

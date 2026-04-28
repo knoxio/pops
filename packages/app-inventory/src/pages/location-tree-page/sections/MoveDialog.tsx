@@ -1,4 +1,5 @@
 import { Folder, MapPin } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@pops/ui';
 
@@ -70,14 +71,13 @@ export function MoveDialog({
   onMoveTo,
   onClose,
 }: MoveDialogProps) {
+  const { t } = useTranslation('inventory');
   return (
     <Dialog open={!!movingId} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Move &ldquo;{movingNode?.name}&rdquo;</DialogTitle>
-          <DialogDescription>
-            Select a new parent location, or move to root level.
-          </DialogDescription>
+          <DialogDescription>{t('locations.selectNewParent')}</DialogDescription>
         </DialogHeader>
         <div className="max-h-64 overflow-y-auto border rounded-lg py-2">
           <button
@@ -87,7 +87,7 @@ export function MoveDialog({
             style={{ paddingLeft: 'var(--tree-indent-base)' }}
           >
             <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            <span className="text-sm font-medium">Root level</span>
+            <span className="text-sm font-medium">{t('locations.rootLevel')}</span>
           </button>
           {movingId && (
             <MoveTargetPicker

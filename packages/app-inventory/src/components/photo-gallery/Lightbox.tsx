@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@pops/ui';
 
@@ -50,6 +51,7 @@ function LightboxBody({
   total: number;
   src: string;
 }) {
+  const { t } = useTranslation('inventory');
   return (
     <div
       className="max-w-[90vw] max-h-[85vh] flex flex-col items-center gap-3"
@@ -57,7 +59,7 @@ function LightboxBody({
     >
       <img
         src={src}
-        alt={photo.caption ?? 'Photo'}
+        alt={photo.caption ?? t('photos.title')}
         className="max-w-full max-h-[80vh] object-contain rounded-md"
       />
       {photo.caption && <p className="text-white text-sm text-center">{photo.caption}</p>}
@@ -81,6 +83,7 @@ function useLightboxKeys(onClose: () => void, onNext: () => void, onPrev: () => 
 }
 
 export function Lightbox({ photo, index, total, src, onClose, onNext, onPrev }: LightboxProps) {
+  const { t } = useTranslation('inventory');
   useLightboxKeys(onClose, onNext, onPrev);
   const showNav = total > 1;
 
@@ -90,21 +93,21 @@ export function Lightbox({ photo, index, total, src, onClose, onNext, onPrev }: 
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="Photo lightbox"
+      aria-label={t('photos.photoLightbox')}
     >
       <Button
         variant="ghost"
         size="icon"
         className="absolute top-4 right-4 text-white hover:bg-white/20"
         onClick={onClose}
-        aria-label="Close lightbox"
+        aria-label={t('photos.closeLightbox')}
       >
         <X className="h-6 w-6" />
       </Button>
       {showNav && (
         <NavButton
           side="left"
-          ariaLabel="Previous photo"
+          ariaLabel={t('photos.previousPhoto')}
           onClick={(e) => {
             e.stopPropagation();
             onPrev();
@@ -117,7 +120,7 @@ export function Lightbox({ photo, index, total, src, onClose, onNext, onPrev }: 
       {showNav && (
         <NavButton
           side="right"
-          ariaLabel="Next photo"
+          ariaLabel={t('photos.nextPhoto')}
           onClick={(e) => {
             e.stopPropagation();
             onNext();

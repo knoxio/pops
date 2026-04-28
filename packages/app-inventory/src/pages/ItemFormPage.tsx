@@ -13,6 +13,7 @@ import {
 import { useItemFormPageModel } from './item-form-page/useItemFormPageModel';
 
 export { extractPrefix } from './item-form-page/useItemFormPageModel';
+import { useTranslation } from 'react-i18next';
 
 type Model = ReturnType<typeof useItemFormPageModel>;
 
@@ -32,12 +33,13 @@ function ErrorView({
 }: {
   error: { data?: { code?: string | undefined } | null; message: string };
 }) {
+  const { t } = useTranslation('inventory');
   const is404 = error.data?.code === 'NOT_FOUND';
   return (
     <div className="p-6">
       <Alert variant="destructive">
-        <AlertTitle>{is404 ? 'Item not found' : 'Error'}</AlertTitle>
-        <AlertDescription>{is404 ? "This item doesn't exist." : error.message}</AlertDescription>
+        <AlertTitle>{is404 ? t('detail.itemNotFound') : t('detail.error')}</AlertTitle>
+        <AlertDescription>{is404 ? t('detail.itemDoesNotExist') : error.message}</AlertDescription>
       </Alert>
       <Link
         to="/inventory"
@@ -50,18 +52,19 @@ function ErrorView({
 }
 
 function buildBreadcrumbs(
+  t: (k: string) => string,
   isEditMode: boolean,
   id: string | undefined,
   editItemName: string | undefined
 ) {
   if (isEditMode && editItemName) {
     return [
-      { label: 'Inventory', href: '/inventory' },
+      { label: t('items.title'), href: '/inventory' },
       { label: editItemName, href: `/inventory/items/${id}` },
-      { label: 'Edit' },
+      { label: t('detail.edit') },
     ];
   }
-  return [{ label: 'Inventory', href: '/inventory' }, { label: 'New Item' }];
+  return [{ label: 'Inventory', href: '/inventory' }, { label: t('form.newItem') }];
 }
 
 function FormBody({ model }: { model: Model }) {
@@ -84,6 +87,7 @@ function FormBody({ model }: { model: Model }) {
 }
 
 export function ItemFormPage() {
+  const { t } = useTranslation('inventory');
   const model = useItemFormPageModel();
   const { id, isEditMode, isLoading, error, itemData } = model;
 
@@ -94,9 +98,9 @@ export function ItemFormPage() {
   return (
     <div className="p-6 max-w-2xl">
       <PageHeader
-        title={isEditMode ? 'Edit Item' : 'New Item'}
+        title={isEditMode ? t('form.editItem') : t('form.newItem')}
         backHref={isEditMode && id ? `/inventory/items/${id}` : '/inventory'}
-        breadcrumbs={buildBreadcrumbs(isEditMode, id, editItemName)}
+        breadcrumbs={buildBreadcrumbs(t, isEditMode, id, editItemName)}
         renderLink={Link}
         className="mb-8"
       />

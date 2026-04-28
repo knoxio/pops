@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import { DateInput, TextInput } from '@pops/ui';
 
 import { type ItemFormValues } from '../../useItemFormPageModel';
@@ -10,6 +12,7 @@ interface DatesAndValuesSectionProps {
 }
 
 export function DatesAndValuesSection({ register }: DatesAndValuesSectionProps) {
+  const { t } = useTranslation('inventory');
   return (
     <section className="space-y-4 p-6 rounded-2xl border-2 border-app-accent/10 bg-card/50 shadow-sm shadow-app-accent/5">
       <h2 className="text-lg font-bold flex items-center gap-2 text-foreground">
@@ -17,15 +20,15 @@ export function DatesAndValuesSection({ register }: DatesAndValuesSectionProps) 
         Dates & Values
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField label="Purchase Date">
+        <FormField label={t('form.purchaseDate')}>
           <DateInput {...register('purchaseDate')} />
         </FormField>
-        <FormField label="Warranty Expires">
+        <FormField label={t('form.warrantyExpires')}>
           <DateInput {...register('warrantyExpires')} />
         </FormField>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <FormField label="Purchase Price ($)">
+        <FormField label={t('form.purchasePrice')}>
           <TextInput
             type="number"
             step="0.01"
@@ -34,7 +37,7 @@ export function DatesAndValuesSection({ register }: DatesAndValuesSectionProps) 
             placeholder="0.00"
           />
         </FormField>
-        <FormField label="Replacement Value ($)">
+        <FormField label={t('form.replacementValue')}>
           <TextInput
             type="number"
             step="0.01"
@@ -44,7 +47,7 @@ export function DatesAndValuesSection({ register }: DatesAndValuesSectionProps) 
             className="font-bold text-app-accent"
           />
         </FormField>
-        <FormField label="Resale Value ($)">
+        <FormField label={t('form.resaleValue')}>
           <TextInput
             type="number"
             step="0.01"

@@ -1,4 +1,5 @@
 import { Loader2, Wand2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, TextInput } from '@pops/ui';
 
@@ -59,6 +60,7 @@ function AssetIdField({
 }
 
 export function BasicInfoSection(props: BasicInfoSectionProps) {
+  const { t } = useTranslation('inventory');
   const { register, errors, assetIdError } = props;
   return (
     <section className="space-y-4 p-6 rounded-2xl border-2 border-app-accent/10 bg-card/50 shadow-sm shadow-app-accent/5">
@@ -66,26 +68,26 @@ export function BasicInfoSection(props: BasicInfoSectionProps) {
         <span className="w-1.5 h-1.5 rounded-full bg-app-accent" />
         Basic Information
       </h2>
-      <FormField label="Item Name *" error={errors.itemName?.message}>
+      <FormField label={t('form.itemNameRequired')} error={errors.itemName?.message}>
         <TextInput
-          {...register('itemName', { required: 'Item name is required' })}
-          placeholder="e.g. MacBook Pro 16-inch"
+          {...register('itemName', { required: t('form.itemNameIsRequired') })}
+          placeholder={t('form.itemNamePlaceholder')}
           className="font-semibold"
         />
       </FormField>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField label="Brand">
-          <TextInput {...register('brand')} placeholder="e.g. Apple" />
+        <FormField label={t('form.brandLabel')}>
+          <TextInput {...register('brand')} placeholder={t('form.brandPlaceholder')} />
         </FormField>
-        <FormField label="Model">
-          <TextInput {...register('model')} placeholder="e.g. M3 Max" />
+        <FormField label={t('form.modelLabel')}>
+          <TextInput {...register('model')} placeholder={t('form.modelPlaceholder')} />
         </FormField>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField label="Item ID / SKU">
+        <FormField label={t('form.itemIdLabel')}>
           <TextInput {...register('itemId')} />
         </FormField>
-        <FormField label="Asset ID" error={assetIdError ?? undefined}>
+        <FormField label={t('form.assetIdLabel')} error={assetIdError ?? undefined}>
           <AssetIdField {...props} />
         </FormField>
       </div>

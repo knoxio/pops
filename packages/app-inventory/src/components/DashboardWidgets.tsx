@@ -1,4 +1,5 @@
 import { Clock, Shield } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
 import { trpc } from '@pops/api-client';
@@ -90,12 +91,13 @@ function RecentlyAddedCard({
   items: RecentItem[];
   onOpen: (id: string) => void;
 }) {
+  const { t } = useTranslation('inventory');
   return (
     <Card className="col-span-full">
       <CardContent className="p-4">
         <div className="flex items-center gap-2 text-muted-foreground mb-3">
           <Clock className="h-4 w-4" />
-          <span className="text-xs font-medium">Recently Added</span>
+          <span className="text-xs font-medium">{t('dashboard.recentlyAdded')}</span>
         </div>
         {items.length > 0 ? (
           <ul className="space-y-1.5">
@@ -104,7 +106,7 @@ function RecentlyAddedCard({
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-muted-foreground">No items yet</p>
+          <p className="text-sm text-muted-foreground">{t('dashboard.noItemsYet')}</p>
         )}
       </CardContent>
     </Card>
@@ -112,6 +114,7 @@ function RecentlyAddedCard({
 }
 
 export function DashboardWidgets() {
+  const { t } = useTranslation('inventory');
   const navigate = useNavigate();
   const { data, isLoading } = trpc.inventory.reports.dashboard.useQuery();
 
@@ -128,11 +131,19 @@ export function DashboardWidgets() {
 
   return (
     <div className="grid grid-cols-2 gap-4">
-      <StatCard title="Items" value={itemCount} color="slate" />
-      <StatCard title="Replacement" value={formatAUD(totalReplacementValue)} color="sky" />
-      <StatCard title="Resale" value={formatAUD(totalResaleValue)} color="violet" />
+      <StatCard title={t('dashboard.itemsTitle')} value={itemCount} color="slate" />
       <StatCard
-        title="Warranties"
+        title={t('dashboard.replacementTitle')}
+        value={formatAUD(totalReplacementValue)}
+        color="sky"
+      />
+      <StatCard
+        title={t('dashboard.resaleTitle')}
+        value={formatAUD(totalResaleValue)}
+        color="violet"
+      />
+      <StatCard
+        title={t('dashboard.warrantiesTitle')}
         value={warrantiesExpiringSoon}
         color={warrantiesExpiringSoon > 0 ? 'amber' : 'slate'}
         description={

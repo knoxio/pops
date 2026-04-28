@@ -1,4 +1,5 @@
 import { Eye, PenLine } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import Markdown from 'react-markdown';
 import rehypeSanitize from 'rehype-sanitize';
 
@@ -21,6 +22,7 @@ export function NotesSection({
   notesPreview,
   onTogglePreview,
 }: NotesSectionProps) {
+  const { t } = useTranslation('inventory');
   return (
     <section className="space-y-4 p-6 rounded-2xl border-2 border-app-accent/10 bg-card/50 shadow-sm shadow-app-accent/5">
       <div className="flex items-center justify-between">
@@ -37,11 +39,11 @@ export function NotesSection({
         >
           {notesPreview ? (
             <>
-              <PenLine className="h-3.5 w-3.5 mr-1" /> Edit
+              <PenLine className="h-3.5 w-3.5 mr-1" /> {t('form.editNotes')}
             </>
           ) : (
             <>
-              <Eye className="h-3.5 w-3.5 mr-1" /> Preview
+              <Eye className="h-3.5 w-3.5 mr-1" /> {t('form.previewNotes')}
             </>
           )}
         </Button>
@@ -51,14 +53,14 @@ export function NotesSection({
           {watch('notes') ? (
             <Markdown rehypePlugins={[rehypeSanitize]}>{watch('notes')}</Markdown>
           ) : (
-            <p className="text-muted-foreground italic">Nothing to preview</p>
+            <p className="text-muted-foreground italic">{t('form.nothingToPreview')}</p>
           )}
         </div>
       ) : (
         <Textarea
           {...register('notes')}
           rows={4}
-          placeholder="Add notes about this item... (supports markdown)"
+          placeholder={t('form.notesPlaceholder')}
           className="w-full bg-transparent"
         />
       )}

@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import { LocationContentsPanel } from '../../../components/LocationContentsPanel';
 import { buildBreadcrumb, type LocationTreeNode } from '../utils';
 
@@ -7,10 +9,11 @@ interface SelectedLocationPanelProps {
 }
 
 export function SelectedLocationPanel({ selectedId, nodeMap }: SelectedLocationPanelProps) {
+  const { t } = useTranslation('inventory');
   if (!selectedId) {
     return (
       <div className="border rounded-lg p-4 text-sm text-muted-foreground text-center">
-        Select a location to see details
+        {t('locations.selectToSeeDetails')}
       </div>
     );
   }

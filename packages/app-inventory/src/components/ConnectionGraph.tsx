@@ -1,4 +1,5 @@
 import { useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
 import { trpc } from '@pops/api-client';
@@ -14,6 +15,7 @@ export interface ConnectionGraphProps {
 }
 
 function GraphCanvas({ itemId }: { itemId: string }): React.ReactElement {
+  const { t } = useTranslation('inventory');
   const navigate = useNavigate();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -48,24 +50,24 @@ function GraphCanvas({ itemId }: { itemId: string }): React.ReactElement {
     >
       <canvas ref={canvasRef} className="w-full h-full cursor-grab active:cursor-grabbing" />
       <div className="absolute bottom-2 right-2 text-xs text-muted-foreground">
-        Scroll to zoom, drag to pan, click node to navigate
+        {t('connections.graphHint')}
       </div>
     </div>
   );
 }
 
 export function ConnectionGraph({ itemId }: ConnectionGraphProps): React.ReactElement {
+  const { t } = useTranslation('inventory');
   const { data, isLoading, error } = trpc.inventory.connections.graph.useQuery(
     { itemId },
     { enabled: !!itemId }
   );
 
   if (isLoading) return <Skeleton className="h-100 w-full rounded-lg" />;
-  if (error) return <p className="text-sm text-destructive">Failed to load connection graph.</p>;
+  if (error)
+    return <p className="text-sm text-destructive">{t('connections.failedToLoadGraph')}</p>;
   if (!data?.data.nodes.length || data.data.nodes.length < 2) {
-    return (
-      <p className="text-sm text-muted-foreground">Not enough connections to display a graph.</p>
-    );
+    return <p className="text-sm text-muted-foreground">{t('connections.notEnoughConnections')}</p>;
   }
 
   return <GraphCanvas itemId={itemId} />;

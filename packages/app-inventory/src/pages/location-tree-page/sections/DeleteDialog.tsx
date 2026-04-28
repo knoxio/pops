@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import {
   Button,
   Dialog,
@@ -18,12 +20,13 @@ interface DeleteDialogProps {
 }
 
 export function DeleteDialog({ deleteConfirm, onConfirm, onCancel, isPending }: DeleteDialogProps) {
+  const { t } = useTranslation('inventory');
   return (
     <Dialog open={!!deleteConfirm} onOpenChange={(open) => !open && onCancel()}>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Delete &ldquo;{deleteConfirm?.name}&rdquo;?</DialogTitle>
-          <DialogDescription>This action cannot be undone.</DialogDescription>
+          <DialogDescription>{t('deleteDialog.cannotBeUndone')}</DialogDescription>
         </DialogHeader>
         {deleteConfirm && (
           <div className="space-y-2 text-sm">
@@ -46,7 +49,7 @@ export function DeleteDialog({ deleteConfirm, onConfirm, onCancel, isPending }: 
         )}
         <DialogFooter>
           <Button variant="outline" onClick={onCancel}>
-            Cancel
+            {t('deleteDialog.cancel')}
           </Button>
           <Button
             variant="ghost"
@@ -54,7 +57,7 @@ export function DeleteDialog({ deleteConfirm, onConfirm, onCancel, isPending }: 
             onClick={onConfirm}
             disabled={isPending}
           >
-            Delete
+            {t('deleteDialog.delete')}
           </Button>
         </DialogFooter>
       </DialogContent>

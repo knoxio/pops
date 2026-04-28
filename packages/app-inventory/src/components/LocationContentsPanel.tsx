@@ -1,5 +1,6 @@
 import { Package, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
 import { trpc } from '@pops/api-client';
@@ -114,12 +115,15 @@ function ItemsBody({
   return <ItemsList items={items} onItemClick={onItemClick} />;
 }
 
-const EMPTY_STATE = (
-  <div className="flex flex-col items-center py-8 text-muted-foreground gap-2">
-    <Package className="h-8 w-8 opacity-40" />
-    <p className="text-sm">No items at this location.</p>
-  </div>
-);
+function LocationEmptyState() {
+  const { t } = useTranslation('inventory');
+  return (
+    <div className="flex flex-col items-center py-8 text-muted-foreground gap-2">
+      <Package className="h-8 w-8 opacity-40" />
+      <p className="text-sm">{t('locations.noItemsAtLocation')}</p>
+    </div>
+  );
+}
 
 function PanelSummary({
   isLoading,
@@ -145,6 +149,7 @@ export function LocationContentsPanel({
   breadcrumb,
   node,
 }: LocationContentsPanelProps) {
+  const { t } = useTranslation('inventory');
   const navigate = useNavigate();
   const [includeSubLocations, setIncludeSubLocations] = useState(true);
   const descendantIds = useMemo(() => collectDescendantIds(node), [node]);
@@ -160,7 +165,7 @@ export function LocationContentsPanel({
   );
   const toggle = hasSubLocations
     ? {
-        label: 'Include sub-locations',
+        label: t('locations.includeSubLocations'),
         value: includeSubLocations,
         onChange: setIncludeSubLocations,
         id: 'include-sub',
@@ -175,7 +180,7 @@ export function LocationContentsPanel({
       summary={
         <PanelSummary isLoading={isLoading} count={allItems.length} totalValue={totalValue} />
       }
-      emptyState={!isLoading && allItems.length === 0 ? EMPTY_STATE : undefined}
+      emptyState={!isLoading && allItems.length === 0 ? <LocationEmptyState /> : undefined}
       action={
         <Button
           variant="outline"

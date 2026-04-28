@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUp, FileText, FolderPlus, MoveRight, Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
 import { Button } from '@pops/ui';
@@ -26,6 +27,7 @@ function ReorderButtons({
   siblingCount: number;
   onReorder: (id: string, direction: 'up' | 'down') => void;
 }) {
+  const { t } = useTranslation('inventory');
   if (siblingCount <= 1) return null;
   return (
     <>
@@ -37,8 +39,8 @@ function ReorderButtons({
             e.stopPropagation();
             onReorder(node.id, 'up');
           }}
-          aria-label="Move up"
-          title="Move up"
+          aria-label={t('locations.moveUp')}
+          title={t('locations.moveUp')}
         >
           <ArrowUp className="h-3 w-3 text-muted-foreground" />
         </button>
@@ -51,8 +53,8 @@ function ReorderButtons({
             e.stopPropagation();
             onReorder(node.id, 'down');
           }}
-          aria-label="Move down"
-          title="Move down"
+          aria-label={t('locations.moveDown')}
+          title={t('locations.moveDown')}
         >
           <ArrowDown className="h-3 w-3 text-muted-foreground" />
         </button>
@@ -91,11 +93,12 @@ function PrimaryActions({
   onMoveStart,
   onDelete,
 }: Omit<NodeActionsProps, 'siblingIndex' | 'siblingCount' | 'onReorder'>) {
+  const { t } = useTranslation('inventory');
   return (
     <>
       <ActionIconButton
         ariaLabel={`Move ${node.name}`}
-        title="Move to..."
+        title={t('locations.moveTo')}
         onClick={(e) => {
           e.stopPropagation();
           onMoveStart(node.id);
@@ -105,7 +108,7 @@ function PrimaryActions({
       </ActionIconButton>
       <ActionIconButton
         ariaLabel={`Add child to ${node.name}`}
-        title="Add child location"
+        title={t('locations.addChildLocation')}
         onClick={(e) => {
           e.stopPropagation();
           onAddChild(node.id);
@@ -131,7 +134,7 @@ function PrimaryActions({
           onDelete(node.id);
         }}
         aria-label={`Delete ${node.name}`}
-        title="Delete location"
+        title={t('locations.deleteLocation')}
       >
         <Trash2 className="h-3 w-3" />
       </Button>

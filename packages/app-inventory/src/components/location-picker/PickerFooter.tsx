@@ -1,5 +1,6 @@
 import { Plus, X } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@pops/ui';
 
@@ -9,12 +10,13 @@ interface AddLocationFormProps {
 }
 
 function AddLocationForm({ onSave, onCancel }: AddLocationFormProps) {
+  const { t } = useTranslation('inventory');
   const [name, setName] = useState('');
   return (
     <div className="flex items-center gap-1">
       <input
         type="text"
-        placeholder="Location name…"
+        placeholder={t('locations.locationName')}
         value={name}
         onChange={(e) => setName(e.target.value)}
         onKeyDown={(e) => {
@@ -45,6 +47,7 @@ interface PickerFooterProps {
 }
 
 export function PickerFooter({ value, canCreate, onClear, onCreateLocation }: PickerFooterProps) {
+  const { t } = useTranslation('inventory');
   const [showAddForm, setShowAddForm] = useState(false);
 
   return (
@@ -57,7 +60,7 @@ export function PickerFooter({ value, canCreate, onClear, onCreateLocation }: Pi
           prefix={<X className="h-3.5 w-3.5" />}
           onClick={onClear}
         >
-          Clear selection
+          {t('locations.clearSelection')}
         </Button>
       )}
       {canCreate && !showAddForm && (
@@ -68,7 +71,7 @@ export function PickerFooter({ value, canCreate, onClear, onCreateLocation }: Pi
           prefix={<Plus className="h-3.5 w-3.5" />}
           onClick={() => setShowAddForm(true)}
         >
-          Add location
+          {t('locations.addLocation')}
         </Button>
       )}
       {canCreate && showAddForm && (

@@ -2,6 +2,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-
 import { CSS } from '@dnd-kit/utilities';
 import { Folder } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Collapsible, CollapsibleContent } from '@pops/ui';
 
@@ -40,6 +41,7 @@ function NewChildInput({
   onSave: (name: string) => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation('inventory');
   return (
     <div
       className="flex items-center gap-1.5 py-1.5 px-2"
@@ -49,7 +51,7 @@ function NewChildInput({
     >
       <span className="w-5.5" />
       <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
-      <InlineInput onSave={onSave} onCancel={onCancel} placeholder="Location name" />
+      <InlineInput onSave={onSave} onCancel={onCancel} placeholder={t('locations.locationName')} />
     </div>
   );
 }

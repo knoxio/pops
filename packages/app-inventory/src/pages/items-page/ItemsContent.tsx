@@ -1,4 +1,5 @@
 import { Package, Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, type LocationSegment, Skeleton } from '@pops/ui';
 
@@ -34,14 +35,15 @@ function EmptyState({
   hasSearchOrFilters: boolean;
   onAdd: () => void;
 }) {
+  const { t } = useTranslation('inventory');
   return (
     <div className="flex flex-col items-center justify-center h-64 text-muted-foreground gap-4">
       <Package className="h-12 w-12 opacity-40" />
       {hasSearchOrFilters ? (
-        <p>No items match your filters.</p>
+        <p>{t('items.noMatchFilters')}</p>
       ) : (
         <>
-          <p>No inventory items yet.</p>
+          <p>{t('items.noItemsYet')}</p>
           <Button prefix={<Plus className="h-4 w-4" />} onClick={onAdd}>
             Add your first item
           </Button>

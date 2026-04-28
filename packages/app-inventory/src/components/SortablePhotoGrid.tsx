@@ -7,6 +7,7 @@
  */
 import { GripVertical, Trash2 } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import type { PhotoItem } from './PhotoGallery';
 
@@ -62,6 +63,7 @@ function PhotoCell({
   onDelete,
   handlers,
 }: PhotoCellProps) {
+  const { t } = useTranslation('inventory');
   return (
     <div
       role="listitem"
@@ -71,7 +73,7 @@ function PhotoCell({
       onDrop={canReorder ? (e) => handlers.onDrop(e, index) : undefined}
       onDragEnd={canReorder ? handlers.onEnd : undefined}
       className={buildCellClassName(canReorder, isDragging, isDropTarget, isReordering)}
-      aria-label={`Photo ${index + 1}: ${photo.caption ?? 'no caption'}`}
+      aria-label={`Photo ${index + 1}: ${photo.caption ?? t('photos.noCaption')}`}
     >
       <div className="aspect-square">
         <img
@@ -168,6 +170,7 @@ export function SortablePhotoGrid({
   baseUrl = '/api/inventory/photos',
   isReordering = false,
 }: SortablePhotoGridProps) {
+  const { t } = useTranslation('inventory');
   const sorted = [...photos].toSorted((a, b) => a.sortOrder - b.sortOrder);
   const { dragIndex, overIndex, handlers } = useDragHandlers(sorted, onReorder);
 
@@ -178,7 +181,7 @@ export function SortablePhotoGrid({
     <div
       className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2"
       role="list"
-      aria-label="Reorder photos"
+      aria-label={t('photos.reorderPhotos')}
     >
       {sorted.map((photo, index) => (
         <PhotoCell

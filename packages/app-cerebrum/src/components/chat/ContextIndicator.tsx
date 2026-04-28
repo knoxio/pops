@@ -5,6 +5,7 @@
  */
 import { ChevronDown, Database, Tag } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Badge, Collapsible, CollapsibleContent, CollapsibleTrigger, cn } from '@pops/ui';
 
@@ -54,25 +55,23 @@ export function ContextIndicator({
 }
 
 function ScopeSummary({ count }: { count: number }) {
+  const { t } = useTranslation('cerebrum');
   if (count === 0) return null;
   return (
     <span className="flex items-center gap-1.5">
       <Tag className="h-3 w-3" aria-hidden />
-      <span>
-        {count} scope{count !== 1 ? 's' : ''}
-      </span>
+      <span>{t('context.scopeCount', { count })}</span>
     </span>
   );
 }
 
 function EngramSummary({ count }: { count: number }) {
+  const { t } = useTranslation('cerebrum');
   if (count === 0) return null;
   return (
     <span className="flex items-center gap-1.5">
       <Database className="h-3 w-3" aria-hidden />
-      <span>
-        {count} engram{count !== 1 ? 's' : ''} in context
-      </span>
+      <span>{t('context.engramCount', { count })}</span>
     </span>
   );
 }
@@ -84,6 +83,7 @@ function ContextDetails({
   activeScopes: string[];
   contextEngrams: ContextEngram[];
 }) {
+  const { t } = useTranslation('cerebrum');
   return (
     <div className="mt-1 space-y-2 rounded-md border border-border/50 bg-muted/20 p-3">
       {activeScopes.length > 0 && (
@@ -105,7 +105,7 @@ function ContextDetails({
           <div className="mb-1.5 text-2xs font-medium uppercase tracking-wider text-muted-foreground">
             Context Engrams
           </div>
-          <ul className="space-y-1" role="list" aria-label="Context engrams">
+          <ul className="space-y-1" role="list" aria-label={t('context.contextEngrams')}>
             {contextEngrams.map((engram) => (
               <li
                 key={engram.engramId}
@@ -113,7 +113,7 @@ function ContextDetails({
               >
                 <span className="font-mono text-foreground">{engram.engramId}</span>
                 <span className="text-muted-foreground">
-                  {(engram.relevanceScore * 100).toFixed(0)}% relevance
+                  {t('context.relevance', { score: (engram.relevanceScore * 100).toFixed(0) })}
                 </span>
               </li>
             ))}

@@ -11,6 +11,7 @@ import {
 } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { Folder, GripVertical } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Badge, Skeleton } from '@pops/ui';
 
@@ -137,6 +138,7 @@ function NewRootInput({
   onSave: (name: string) => void;
   onCancel: () => void;
 }) {
+  const { t } = useTranslation('inventory');
   return (
     <div
       className="flex items-center gap-1.5 py-1.5 px-2"
@@ -144,12 +146,17 @@ function NewRootInput({
     >
       <span className="w-5.5" />
       <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
-      <InlineInput onSave={onSave} onCancel={onCancel} placeholder="Root location name" />
+      <InlineInput
+        onSave={onSave}
+        onCancel={onCancel}
+        placeholder={t('locations.rootLocationName')}
+      />
     </div>
   );
 }
 
 export function TreeSection(props: TreeSectionProps) {
+  const { t } = useTranslation('inventory');
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
   if (props.isLoading) return <TreeSkeleton />;
 
@@ -161,7 +168,11 @@ export function TreeSection(props: TreeSectionProps) {
       onDragOver={props.onDragOver}
       onDragEnd={props.onDragEnd}
     >
-      <div className="md:w-2/5 border rounded-lg py-2" role="tree" aria-label="Location tree">
+      <div
+        className="md:w-2/5 border rounded-lg py-2"
+        role="tree"
+        aria-label={t('locations.title')}
+      >
         <TreeNodeList {...props} />
         {props.addingRoot && (
           <NewRootInput onSave={props.onNewRootSave} onCancel={props.onNewRootCancel} />

@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
 import { trpc } from '@pops/api-client';
@@ -34,6 +35,7 @@ interface TraceNodeRowProps {
 }
 
 function ExpandToggle({ open }: { open: boolean }) {
+  const { t } = useTranslation('inventory');
   return (
     <CollapsibleTrigger
       asChild
@@ -44,7 +46,7 @@ function ExpandToggle({ open }: { open: boolean }) {
       <button
         type="button"
         className="p-0.5 rounded hover:bg-muted"
-        aria-label={open ? 'Collapse' : 'Expand'}
+        aria-label={open ? t('locations.collapse') : t('locations.expand')}
       >
         {open ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}
       </button>
@@ -53,6 +55,7 @@ function ExpandToggle({ open }: { open: boolean }) {
 }
 
 function TraceNodeRow({ node, depth, currentItemId }: TraceNodeRowProps) {
+  const { t } = useTranslation('inventory');
   const navigate = useNavigate();
   const [open, setOpen] = useState(depth < 2);
   const hasChildren = node.children.length > 0;
@@ -78,7 +81,7 @@ function TraceNodeRow({ node, depth, currentItemId }: TraceNodeRowProps) {
         {hasChildren ? <ExpandToggle open={open} /> : <span className="w-4.5" />}
         <span className={`text-sm truncate ${isCurrent ? 'font-semibold' : 'font-medium'}`}>
           {node.itemName}
-          {isCurrent && <span className="text-xs ml-1">(current)</span>}
+          {isCurrent && <span className="text-xs ml-1">{t('connections.current')}</span>}
         </span>
         {node.assetId && <AssetIdBadge assetId={node.assetId} />}
         {node.type && <TypeBadge type={node.type} />}
@@ -130,6 +133,7 @@ export interface ConnectionTracePanelProps {
 }
 
 export function ConnectionTracePanel({ itemId }: ConnectionTracePanelProps) {
+  const { t } = useTranslation('inventory');
   const { data, isLoading, error } = trpc.inventory.connections.trace.useQuery(
     { itemId },
     { enabled: !!itemId }
@@ -138,12 +142,12 @@ export function ConnectionTracePanel({ itemId }: ConnectionTracePanelProps) {
   if (isLoading) return <TraceSkeleton />;
 
   if (error) {
-    return <p className="text-sm text-destructive">Failed to load connection trace.</p>;
+    return <p className="text-sm text-destructive">{t('connections.failedToLoadTrace')}</p>;
   }
 
   const tree = data?.data;
   if (!tree || tree.children.length === 0) {
-    return <p className="text-sm text-muted-foreground">No connection chain found.</p>;
+    return <p className="text-sm text-muted-foreground">{t('connections.noConnectionChain')}</p>;
   }
 
   const totalNodes = countNodes(tree) - 1; // Exclude root
@@ -153,7 +157,11 @@ export function ConnectionTracePanel({ itemId }: ConnectionTracePanelProps) {
       <p className="text-xs text-muted-foreground">
         {totalNodes} connected {totalNodes === 1 ? 'item' : 'items'} in chain
       </p>
-      <div className="border rounded-lg py-2" role="tree" aria-label="Connection chain">
+      <div
+        className="border rounded-lg py-2"
+        role="tree"
+        aria-label={t('connections.connectionChain')}
+      >
         <TraceNodeRow node={tree} depth={0} currentItemId={itemId} />
       </div>
     </div>

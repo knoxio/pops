@@ -1,4 +1,5 @@
 import { MapPin } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { PageHeader } from '@pops/ui';
 
@@ -12,21 +13,24 @@ import { useLocationTreePageModel } from './location-tree-page/useLocationTreePa
 type Model = ReturnType<typeof useLocationTreePageModel>;
 
 function EmptyState() {
+  const { t } = useTranslation('inventory');
   return (
     <div className="text-center py-16">
       <MapPin className="h-12 w-12 mx-auto text-muted-foreground/40 mb-4" />
-      <p className="text-muted-foreground">
-        No locations yet. Add your first location to start organising.
-      </p>
+      <p className="text-muted-foreground">{t('locations.emptyState')}</p>
     </div>
   );
 }
 
 function ErrorState() {
+  const { t } = useTranslation('inventory');
   return (
     <div className="space-y-6 max-w-4xl">
-      <PageHeader title="Locations" icon={<MapPin className="h-6 w-6 text-muted-foreground" />} />
-      <p className="text-destructive">Failed to load locations.</p>
+      <PageHeader
+        title={t('locations.title')}
+        icon={<MapPin className="h-6 w-6 text-muted-foreground" />}
+      />
+      <p className="text-destructive">{t('locations.failedToLoad')}</p>
     </div>
   );
 }
@@ -66,6 +70,7 @@ function TreeAndPanel({ model }: { model: Model }) {
 }
 
 export function LocationTreePage() {
+  const { t } = useTranslation('inventory');
   const model = useLocationTreePageModel();
   if (model.error) return <ErrorState />;
 
@@ -75,7 +80,7 @@ export function LocationTreePage() {
   return (
     <div className="space-y-6 max-w-4xl">
       <PageHeader
-        title="Locations"
+        title={t('locations.title')}
         icon={<MapPin className="h-6 w-6 text-muted-foreground" />}
         actions={
           <PageHeaderActions

@@ -3,6 +3,7 @@
  * and manual entry for new scopes.
  */
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Chip } from '@pops/ui';
 
@@ -55,10 +56,10 @@ function ScopeDropdown({
   );
 }
 
-function getPlaceholder(loading: boolean, hasScopes: boolean): string {
-  if (loading) return 'Loading scopes…';
-  if (!hasScopes) return 'Add scopes (type or select)…';
-  return 'Add more…';
+function getPlaceholder(t: (k: string) => string, loading: boolean, hasScopes: boolean): string {
+  if (loading) return t('ingest.loadingScopes');
+  if (!hasScopes) return t('ingest.addScopes');
+  return t('ingest.addMore');
 }
 
 function useScopePickerState(
@@ -107,6 +108,7 @@ function useScopePickerState(
 }
 
 export function ScopePicker({ value, suggestions, loading, onChange }: ScopePickerProps) {
+  const { t } = useTranslation('cerebrum');
   const state = useScopePickerState(value, suggestions, onChange);
 
   return (
@@ -123,9 +125,9 @@ export function ScopePicker({ value, suggestions, loading, onChange }: ScopePick
             value={state.inputValue}
             onChange={(e) => state.setInputValue(e.target.value)}
             onKeyDown={state.handleKeyDown}
-            placeholder={getPlaceholder(loading, value.length > 0)}
+            placeholder={getPlaceholder(t, loading, value.length > 0)}
             disabled={loading}
-            aria-label="Scope input"
+            aria-label={t('ingest.scopeInputLabel')}
           />
         </div>
         {state.inputValue && (
@@ -133,9 +135,7 @@ export function ScopePicker({ value, suggestions, loading, onChange }: ScopePick
         )}
       </div>
       {value.length === 0 && (
-        <p className="text-xs text-muted-foreground ml-1">
-          Leave empty to infer scopes automatically on submit.
-        </p>
+        <p className="text-xs text-muted-foreground ml-1">{t('ingest.scopeInferHint')}</p>
       )}
     </div>
   );

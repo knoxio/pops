@@ -1,5 +1,6 @@
 import { Package } from 'lucide-react';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Lightbox } from './photo-gallery/Lightbox';
 import { ThumbnailStrip } from './photo-gallery/ThumbnailStrip';
@@ -27,6 +28,7 @@ function PrimaryPhoto({
   onClick: () => void;
   src: string;
 }) {
+  const { t } = useTranslation('inventory');
   return (
     <>
       <button
@@ -34,11 +36,11 @@ function PrimaryPhoto({
         onClick={onClick}
         className="w-full rounded-lg overflow-hidden border bg-muted cursor-zoom-in focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         data-testid="primary-photo"
-        aria-label="View photo in lightbox"
+        aria-label={t('photos.viewInLightbox')}
       >
         <img
           src={src}
-          alt={photo.caption ?? 'Primary photo'}
+          alt={photo.caption ?? t('photos.primaryPhoto')}
           className="w-full max-h-96 object-contain"
         />
       </button>
@@ -48,13 +50,14 @@ function PrimaryPhoto({
 }
 
 function EmptyState() {
+  const { t } = useTranslation('inventory');
   return (
     <div
       className="flex flex-col items-center justify-center py-12 text-muted-foreground"
       data-testid="photo-placeholder"
     >
       <Package className="h-16 w-16 mb-3 opacity-30" />
-      <p className="text-sm">No photos yet</p>
+      <p className="text-sm">{t('photos.noPhotosYet')}</p>
     </div>
   );
 }

@@ -6,6 +6,8 @@
  * No hardcoded template-specific logic — everything is driven by the
  * template schema.
  */
+import { useTranslation } from 'react-i18next';
+
 import { ChipInput, TextInput } from '@pops/ui';
 
 interface TemplateFieldDef {
@@ -185,6 +187,7 @@ function TemplateFieldWidget({
 }
 
 export function TemplateFields({ fields, values, onChange, requiredFields }: TemplateFieldsProps) {
+  const { t } = useTranslation('cerebrum');
   const required = new Set(requiredFields ?? []);
   const entries = Object.entries(fields);
 
@@ -193,7 +196,7 @@ export function TemplateFields({ fields, values, onChange, requiredFields }: Tem
   return (
     <div className="space-y-4">
       <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
-        Template Fields
+        {t('ingest.templateFields')}
       </h3>
       {entries.map(([name, def]) => (
         <TemplateFieldWidget

@@ -1,10 +1,12 @@
 import { ImageIcon, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, formatBytes, Progress } from '@pops/ui';
 
 import type { UploadedFile } from '../PhotoUpload';
 
 function FileStatus({ f }: { f: UploadedFile }) {
+  const { t } = useTranslation('inventory');
   if (f.status === 'uploading') {
     return (
       <div className="mt-1 space-y-1">
@@ -15,11 +17,13 @@ function FileStatus({ f }: { f: UploadedFile }) {
   }
   return (
     <div className="flex items-center gap-2">
-      {f.status === 'done' && <span className="text-xs text-success">Uploaded</span>}
+      {f.status === 'done' && <span className="text-xs text-success">{t('photos.uploaded')}</span>}
       {f.status === 'error' && (
-        <span className="text-xs text-destructive">{f.error ?? 'Upload failed'}</span>
+        <span className="text-xs text-destructive">{f.error ?? t('photos.uploadFailed')}</span>
       )}
-      {f.status === 'pending' && <span className="text-xs text-muted-foreground">Ready</span>}
+      {f.status === 'pending' && (
+        <span className="text-xs text-muted-foreground">{t('photos.ready')}</span>
+      )}
       {f.originalSize != null && f.processedSize != null && (
         <span className="text-xs text-muted-foreground">
           {formatBytes(f.originalSize)} → {formatBytes(f.processedSize)}

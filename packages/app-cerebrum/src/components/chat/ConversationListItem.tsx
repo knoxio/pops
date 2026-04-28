@@ -4,6 +4,7 @@
  * Shows title, relative timestamp, and a delete button on hover.
  */
 import { Trash2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { cn, formatRelativeTime } from '@pops/ui';
 
@@ -22,6 +23,7 @@ export function ConversationListItem({
   onSelect,
   onRequestDelete,
 }: ConversationListItemProps) {
+  const { t } = useTranslation('cerebrum');
   return (
     <div
       role="listitem"
@@ -37,7 +39,7 @@ export function ConversationListItem({
         aria-current={isSelected ? 'true' : undefined}
       >
         <span className="truncate text-sm font-medium">
-          {conversation.title ?? 'Untitled conversation'}
+          {conversation.title ?? t('chat.untitledConversation')}
         </span>
         <span className="text-2xs text-muted-foreground">
           {formatRelativeTime(conversation.updatedAt)}

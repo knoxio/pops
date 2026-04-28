@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 /**
  * ConversationListBody — the scrollable list body showing conversations,
  * loading skeletons, or an empty message.
@@ -25,6 +27,7 @@ export function ConversationListBody({
   onSelect,
   onRequestDelete,
 }: ConversationListBodyProps) {
+  const { t } = useTranslation('cerebrum');
   if (isLoading) {
     return (
       <div className="space-y-2 px-3 py-2">
@@ -38,7 +41,7 @@ export function ConversationListBody({
   if (conversations.length === 0) {
     return (
       <div className="px-3 py-8 text-center text-sm text-muted-foreground">
-        {searchQuery ? 'No conversations match your search' : 'No conversations yet'}
+        {searchQuery ? t('chat.noConversationsMatch') : t('chat.noConversationsYet')}
       </div>
     );
   }

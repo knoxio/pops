@@ -4,6 +4,7 @@
  * purely presentational.
  */
 import { Loader2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, ChipInput, Select, Textarea, TextInput } from '@pops/ui';
 
@@ -31,28 +32,30 @@ function TypeSelector({
   loading: boolean;
   onChange: (v: string) => void;
 }) {
+  const { t } = useTranslation('cerebrum');
   if (loading) {
     return (
       <div className="flex items-center gap-2 text-muted-foreground text-sm h-11">
         <Loader2 className="h-4 w-4 animate-spin" />
-        Loading templates…
+        {t('ingest.loadingTemplates')}
       </div>
     );
   }
 
   return (
     <Select
-      label="Type"
+      label={t('ingest.typeLabel')}
       value={value}
       onChange={(e) => onChange(e.target.value)}
       options={options.map((o) => ({ value: o.value, label: o.label }))}
-      placeholder="Select type…"
-      aria-label="Engram type"
+      placeholder={t('ingest.selectType')}
+      aria-label={t('ingest.typeLabel')}
     />
   );
 }
 
 function BodyEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { t } = useTranslation('cerebrum');
   return (
     <div className="flex flex-col gap-1.5 w-full">
       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest ml-1">
@@ -61,16 +64,17 @@ function BodyEditor({ value, onChange }: { value: string; onChange: (v: string) 
       <Textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        placeholder="Markdown content…"
+        placeholder={t('ingest.bodyPlaceholder')}
         rows={8}
         className="min-h-[160px] font-mono text-sm"
-        aria-label="Body"
+        aria-label={t('ingest.bodyLabel')}
       />
     </div>
   );
 }
 
 function TagInput({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const { t } = useTranslation('cerebrum');
   return (
     <div className="flex flex-col gap-1.5 w-full">
       <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest ml-1">
@@ -79,17 +83,21 @@ function TagInput({ value, onChange }: { value: string[]; onChange: (v: string[]
       <ChipInput
         value={value}
         onChange={onChange}
-        placeholder="Add tags (comma-separated)…"
-        aria-label="Tags"
+        placeholder={t('ingest.tagsPlaceholder')}
+        aria-label={t('ingest.tagsLabel')}
       />
     </div>
   );
 }
 
-function getSubmitLabel(isInferring: boolean, isSubmitting: boolean): string {
-  if (isInferring) return 'Inferring Scopes…';
-  if (isSubmitting) return 'Submitting…';
-  return 'Submit';
+function getSubmitLabel(
+  t: (k: string) => string,
+  isInferring: boolean,
+  isSubmitting: boolean
+): string {
+  if (isInferring) return t('ingest.inferringScopes');
+  if (isSubmitting) return t('ingest.submitting');
+  return t('ingest.submit');
 }
 
 function FormActions({
@@ -103,6 +111,7 @@ function FormActions({
   isInferring: boolean;
   onSubmit: () => void;
 }) {
+  const { t } = useTranslation('cerebrum');
   const busy = isSubmitting || isInferring;
   return (
     <div className="flex justify-end pt-4">
@@ -111,13 +120,14 @@ function FormActions({
         disabled={!isValid || busy}
         prefix={busy ? <Loader2 className="h-4 w-4 animate-spin" /> : undefined}
       >
-        {getSubmitLabel(isInferring, isSubmitting)}
+        {getSubmitLabel(t, isInferring, isSubmitting)}
       </Button>
     </div>
   );
 }
 
 function IngestFormFields({ model }: IngestFormProps) {
+  const { t } = useTranslation('cerebrum');
   return (
     <div className="space-y-6">
       <TypeSelector
@@ -135,11 +145,11 @@ function IngestFormFields({ model }: IngestFormProps) {
         />
       )}
       <TextInput
-        label="Title"
+        label={t('ingest.titleLabel')}
         value={model.form.title}
         onChange={(e) => model.updateField('title', e.target.value)}
-        placeholder="Engram title (optional — inferred from body if absent)"
-        aria-label="Title"
+        placeholder={t('ingest.titlePlaceholder')}
+        aria-label={t('ingest.titleLabel')}
       />
       <BodyEditor value={model.form.body} onChange={(v) => model.updateField('body', v)} />
       <ScopePicker

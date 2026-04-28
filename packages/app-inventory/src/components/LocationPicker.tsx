@@ -1,5 +1,6 @@
 import { MapPin } from 'lucide-react';
 import { forwardRef, useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, cn, Popover, PopoverContent, PopoverTrigger } from '@pops/ui';
 
@@ -65,11 +66,12 @@ const PickerTrigger = forwardRef<HTMLButtonElement, PickerTriggerProps>(function
 });
 
 function SearchInput({ search, onChange }: { search: string; onChange: (v: string) => void }) {
+  const { t } = useTranslation('inventory');
   return (
     <div className="border-b px-3 py-2">
       <input
         type="text"
-        placeholder="Search locations…"
+        placeholder={t('locations.searchLocations')}
         value={search}
         onChange={(e) => onChange(e.target.value)}
         className="w-full bg-transparent text-sm outline-none placeholder:text-muted-foreground"
@@ -121,8 +123,13 @@ function LocationList({
   onToggle,
   onSelect,
 }: LocationListProps) {
+  const { t } = useTranslation('inventory');
   if (locations.length === 0) {
-    return <p className="py-4 text-center text-sm text-muted-foreground">No locations found</p>;
+    return (
+      <p className="py-4 text-center text-sm text-muted-foreground">
+        {t('locations.noLocationsFound')}
+      </p>
+    );
   }
   return (
     <>
@@ -147,10 +154,12 @@ export function LocationPicker({
   onChange,
   locations,
   onCreateLocation,
-  placeholder = 'Select location…',
+  placeholder,
   disabled = false,
   className,
 }: LocationPickerProps) {
+  const { t } = useTranslation('inventory');
+  const effectivePlaceholder = placeholder ?? t('locations.selectLocation');
   const [open, setOpen] = useState(false);
   const { search, setSearch, selectedPath, visibleIds, effectiveExpanded, handleToggle } =
     useLocationPickerState(value, locations);
@@ -174,7 +183,7 @@ export function LocationPicker({
       <PopoverTrigger asChild>
         <PickerTrigger
           selectedPath={selectedPath}
-          placeholder={placeholder}
+          placeholder={effectivePlaceholder}
           open={open}
           disabled={disabled}
           className={className}

@@ -1,4 +1,5 @@
 import { AlertCircle, MapPin, RefreshCw, Tag } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 import { Bar, BarChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
@@ -55,12 +56,13 @@ function BreakdownTooltipContent({ payload }: { payload?: Array<{ payload: Break
 }
 
 export function BreakdownChart({ data, onBarClick }: BreakdownChartProps) {
+  const { t } = useTranslation('inventory');
   const hasAnyValue = data.some((entry) => entry.totalValue > 0);
 
   if (data.length === 0 || !hasAnyValue) {
     return (
       <div className="flex h-32 items-center justify-center text-sm text-muted-foreground">
-        No items with replacement values
+        {t('dashboard.noReplacementValues')}
       </div>
     );
   }
@@ -108,6 +110,7 @@ export function BreakdownChart({ data, onBarClick }: BreakdownChartProps) {
 }
 
 export function ValueByTypeCard({ className }: { className?: string }) {
+  const { t } = useTranslation('inventory');
   const navigate = useNavigate();
 
   const {
@@ -135,13 +138,13 @@ export function ValueByTypeCard({ className }: { className?: string }) {
       <CardContent className="p-4">
         <div className="flex items-center gap-2 text-muted-foreground mb-3">
           <Tag className="h-4 w-4" />
-          <span className="text-xs font-medium">Value by Type</span>
+          <span className="text-xs font-medium">{t('dashboard.valueByType')}</span>
         </div>
         {typeError ? (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="flex items-center justify-between gap-2">
-              <span>Failed to load type breakdown</span>
+              <span>{t('dashboard.failedToLoadTypeBreakdown')}</span>
               <Button variant="outline" size="sm" onClick={() => refetchType()}>
                 <RefreshCw className="h-3 w-3 mr-1" />
                 Retry
@@ -160,6 +163,7 @@ export function ValueByTypeCard({ className }: { className?: string }) {
 }
 
 export function ValueByLocationCard({ className }: { className?: string }) {
+  const { t } = useTranslation('inventory');
   const navigate = useNavigate();
 
   const {
@@ -187,13 +191,13 @@ export function ValueByLocationCard({ className }: { className?: string }) {
       <CardContent className="p-4">
         <div className="flex items-center gap-2 text-muted-foreground mb-3">
           <MapPin className="h-4 w-4" />
-          <span className="text-xs font-medium">Value by Location</span>
+          <span className="text-xs font-medium">{t('dashboard.valueByLocation')}</span>
         </div>
         {locationError ? (
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="flex items-center justify-between gap-2">
-              <span>Failed to load location breakdown</span>
+              <span>{t('dashboard.failedToLoadLocationBreakdown')}</span>
               <Button variant="outline" size="sm" onClick={() => refetchLocation()}>
                 <RefreshCw className="h-3 w-3 mr-1" />
                 Retry

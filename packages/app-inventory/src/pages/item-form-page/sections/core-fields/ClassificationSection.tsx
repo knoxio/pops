@@ -1,4 +1,5 @@
 import { Controller } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
 import { CheckboxInput, Select } from '@pops/ui';
 
@@ -89,6 +90,7 @@ export function ClassificationSection({
   locationTree,
   onCreateLocation,
 }: ClassificationSectionProps) {
+  const { t } = useTranslation('inventory');
   return (
     <section className="space-y-4 p-6 rounded-2xl border-2 border-app-accent/10 bg-card/50 shadow-sm shadow-app-accent/5">
       <h2 className="text-lg font-bold flex items-center gap-2 text-foreground">
@@ -96,34 +98,34 @@ export function ClassificationSection({
         Classification
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <FormField label="Type *" error={errors.type?.message}>
+        <FormField label={t('form.typeRequired')} error={errors.type?.message}>
           <Select
-            {...register('type', { required: 'Type is required' })}
+            {...register('type', { required: t('form.typeRequired') })}
             options={[
-              { value: '', label: 'Select type...' },
+              { value: '', label: t('form.selectType') },
               ...ITEM_TYPES.map((t) => ({ value: t, label: t })),
             ]}
           />
         </FormField>
-        <FormField label="Condition">
+        <FormField label={t('detail.conditionLabel')}>
           <Select
             {...register('condition')}
-            options={[{ value: '', label: 'Select condition...' }, ...CONDITIONS]}
+            options={[{ value: '', label: t('form.selectCondition') }, ...CONDITIONS]}
           />
         </FormField>
       </div>
-      <FormField label="Location">
+      <FormField label={t('form.locationLabel')}>
         <LocationPicker
           locations={locationTree}
           value={watch('locationId') || null}
           onChange={(id) => setValue('locationId', id ?? '', { shouldDirty: true })}
           onCreateLocation={onCreateLocation}
-          placeholder="Select location…"
+          placeholder={t('form.selectLocation')}
         />
       </FormField>
       <div className="flex gap-6 p-4 rounded-xl bg-app-accent/5">
-        <BooleanCheckbox name="inUse" control={control} label="In Use" />
-        <BooleanCheckbox name="deductible" control={control} label="Tax Deductible" />
+        <BooleanCheckbox name="inUse" control={control} label={t('form.inUseLabel')} />
+        <BooleanCheckbox name="deductible" control={control} label={t('form.taxDeductible')} />
       </div>
     </section>
   );

@@ -1,5 +1,6 @@
 import { Camera } from 'lucide-react';
 import { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@pops/ui';
 
@@ -87,6 +88,7 @@ function CameraButton({
   disabled: boolean;
   cameraRef: React.RefObject<HTMLInputElement | null>;
 }) {
+  const { t } = useTranslation('inventory');
   return (
     <Button
       variant="outline"
@@ -97,7 +99,7 @@ function CameraButton({
       type="button"
     >
       <Camera className="h-4 w-4 mr-1.5" />
-      Take Photo
+      {t('photos.takePhoto')}
     </Button>
   );
 }

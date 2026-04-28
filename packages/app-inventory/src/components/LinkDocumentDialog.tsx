@@ -1,5 +1,6 @@
 import { FileText, Link2 } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import { trpc } from '@pops/api-client';
@@ -28,6 +29,7 @@ interface DocumentResultRowProps {
 }
 
 function DocumentResultRow({ doc, linkingId, isPending, onLink }: DocumentResultRowProps) {
+  const { t } = useTranslation('inventory');
   return (
     <div className="flex items-center gap-3 p-2.5 rounded-md hover:bg-accent transition-colors">
       {doc.thumbnailUrl ? (
@@ -40,13 +42,13 @@ function DocumentResultRow({ doc, linkingId, isPending, onLink }: DocumentResult
       <div className="flex-1 min-w-0">
         <div className="font-medium text-sm truncate">{doc.title}</div>
         <div className="text-xs text-muted-foreground">
-          {doc.created ? new Date(doc.created).toLocaleDateString() : 'No date'}
+          {doc.created ? new Date(doc.created).toLocaleDateString() : t('documents.noDate')}
           {doc.originalFileName ? ` · ${doc.originalFileName}` : ''}
         </div>
       </div>
       <Button variant="ghost" size="sm" onClick={() => onLink(doc)} disabled={isPending}>
         {linkingId === doc.id ? (
-          <span className="text-xs">Linking...</span>
+          <span className="text-xs">{t('documents.linking')}</span>
         ) : (
           <Link2 className="h-4 w-4" />
         )}
@@ -92,9 +94,10 @@ function useLinkDocumentMutation(
   setSearch: (v: string) => void,
   setLinkingId: (v: number | null) => void
 ) {
+  const { t } = useTranslation('inventory');
   return trpc.inventory.documents.link.useMutation({
     onSuccess: () => {
-      toast.success('Document linked');
+      toast.success(t('documents.documentLinked'));
       onLinked();
       setLinkingId(null);
       setOpen(false);
@@ -103,15 +106,16 @@ function useLinkDocumentMutation(
     onError: (err) => {
       setLinkingId(null);
       if (err.data?.code === 'CONFLICT') {
-        toast.error('This document is already linked to this item');
+        toast.error(t('documents.alreadyLinked'));
       } else {
-        toast.error(`Failed to link: ${err.message}`);
+        toast.error(t('documents.failedToLink', { message: err.message }));
       }
     },
   });
 }
 
 export function LinkDocumentDialog({ itemId, onLinked }: LinkDocumentDialogProps) {
+  const { t } = useTranslation('inventory');
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [docType, setDocType] = useState<DocType>('receipt');
@@ -135,9 +139,9 @@ export function LinkDocumentDialog({ itemId, onLinked }: LinkDocumentDialogProps
         }
       }}
       trigger={TRIGGER}
-      title="Link Document"
-      description="Search Paperless-ngx for a document to link to this item."
-      searchPlaceholder="Search documents..."
+      title={t('documents.linkDocument')}
+      description={t('documents.linkDescription')}
+      searchPlaceholder={t('documents.searchDocuments')}
       search={search}
       onSearchChange={setSearch}
       isLoading={isLoading}

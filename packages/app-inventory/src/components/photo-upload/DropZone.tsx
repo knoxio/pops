@@ -1,5 +1,6 @@
 import { Upload } from 'lucide-react';
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { cn } from '../../lib/utils';
 
@@ -22,9 +23,11 @@ export function DropZone({
   maxSizeMb,
   onClick,
   onFiles,
-  ariaLabel = 'Upload photos',
+  ariaLabel,
   helperText,
 }: DropZoneProps) {
+  const { t } = useTranslation('inventory');
+  const resolvedAriaLabel = ariaLabel ?? t('photos.uploadPhotos');
   const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDrop = useCallback(
@@ -54,7 +57,7 @@ export function DropZone({
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') onClick();
       }}
-      aria-label={ariaLabel}
+      aria-label={resolvedAriaLabel}
       className={cn(
         'flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed p-6 cursor-pointer transition-colors',
         isDragOver
@@ -65,9 +68,12 @@ export function DropZone({
     >
       <Upload className="h-8 w-8 text-muted-foreground" />
       <p className="text-sm text-muted-foreground text-center">
-        <span className="font-medium text-foreground">Click to browse</span> or drag and drop
+        <span className="font-medium text-foreground">{t('photos.clickToBrowse')}</span>{' '}
+        {t('photos.orDragAndDrop')}
       </p>
-      <p className="text-xs text-muted-foreground">{helperText ?? `Images up to ${maxSizeMb}MB`}</p>
+      <p className="text-xs text-muted-foreground">
+        {helperText ?? t('photos.imagesUpTo', { size: String(maxSizeMb) })}
+      </p>
     </div>
   );
 }

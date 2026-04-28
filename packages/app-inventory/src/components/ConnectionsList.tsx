@@ -1,4 +1,5 @@
 import { Link2, Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { AssetIdBadge, Button, cn, RelatedItemsList, TypeBadge } from '@pops/ui';
 
@@ -22,6 +23,7 @@ export function ConnectionsList({
   onConnect,
   className,
 }: ConnectionsListProps) {
+  const { t } = useTranslation('inventory');
   return (
     <div className={cn('space-y-2', className)}>
       <div className="flex items-center justify-between">
@@ -34,7 +36,7 @@ export function ConnectionsList({
 
       <RelatedItemsList
         items={connections}
-        emptyMessage="No connected items"
+        emptyMessage={t('connections.noConnectedItems')}
         renderItem={(item) => (
           <button
             type="button"

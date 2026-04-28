@@ -6,6 +6,7 @@
  */
 import { MessageSquarePlus, Search } from 'lucide-react';
 import { type ChangeEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import {
   AlertDialog,
@@ -50,13 +51,14 @@ export function ConversationList({
   onSearchChange,
   className,
 }: ConversationListProps) {
+  const { t } = useTranslation('cerebrum');
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
   return (
     <div className={cn('flex h-full flex-col', className)}>
       <ConversationListHeader onNew={onNew} />
       <ConversationSearchBar value={searchQuery} onChange={onSearchChange} />
-      <div className="flex-1 overflow-y-auto" role="list" aria-label="Conversation list">
+      <div className="flex-1 overflow-y-auto" role="list" aria-label={t('chat.conversationList')}>
         <ConversationListBody
           conversations={conversations}
           isLoading={isLoading}
@@ -82,15 +84,16 @@ export function ConversationList({
 }
 
 function ConversationListHeader({ onNew }: { onNew: () => void }) {
+  const { t } = useTranslation('cerebrum');
   return (
     <div className="flex items-center justify-between border-b border-border/50 px-3 py-3">
-      <h2 className="text-sm font-semibold text-foreground">Conversations</h2>
+      <h2 className="text-sm font-semibold text-foreground">{t('chat.conversations')}</h2>
       <Button
         variant="ghost"
         size="sm"
         onClick={onNew}
         prefix={<MessageSquarePlus className="h-4 w-4" />}
-        aria-label="New conversation"
+        aria-label={t('chat.newConversation')}
       >
         New
       </Button>
@@ -105,6 +108,7 @@ function ConversationSearchBar({
   value: string;
   onChange: (q: string) => void;
 }) {
+  const { t } = useTranslation('cerebrum');
   return (
     <div className="px-3 py-2">
       <div className="relative">
@@ -112,9 +116,9 @@ function ConversationSearchBar({
         <Input
           value={value}
           onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
-          placeholder="Search conversations..."
+          placeholder={t('chat.searchConversations')}
           className="h-9 pl-8 text-sm"
-          aria-label="Search conversations"
+          aria-label={t('chat.searchConversationsLabel')}
         />
       </div>
     </div>
@@ -132,17 +136,16 @@ function DeleteConfirmationDialog({
   onConfirm: () => void;
   isDeleting: boolean;
 }) {
+  const { t } = useTranslation('cerebrum');
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent size="sm">
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This will permanently delete this conversation and all its messages.
-          </AlertDialogDescription>
+          <AlertDialogTitle>{t('chat.deleteConversation')}</AlertDialogTitle>
+          <AlertDialogDescription>{t('chat.deleteConversationDescription')}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>{t('chat.cancel')}</AlertDialogCancel>
           <AlertDialogAction variant="destructive" onClick={onConfirm} disabled={isDeleting}>
             Delete
           </AlertDialogAction>

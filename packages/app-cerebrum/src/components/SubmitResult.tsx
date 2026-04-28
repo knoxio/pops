@@ -3,6 +3,7 @@
  * Shows the engram ID, file path, and classified type.
  */
 import { CheckCircle2 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Badge, Button, Card } from '@pops/ui';
 
@@ -14,20 +15,21 @@ interface SubmitResultProps {
 }
 
 export function SubmitResult({ id, filePath, type, onReset }: SubmitResultProps) {
+  const { t } = useTranslation('cerebrum');
   return (
     <Card className="p-6 space-y-4 border-success/30 bg-success/5">
       <div className="flex items-center gap-3">
         <CheckCircle2 className="h-5 w-5 text-success shrink-0" />
-        <h3 className="text-lg font-semibold">Engram Created</h3>
+        <h3 className="text-lg font-semibold">{t('ingest.engramCreated')}</h3>
       </div>
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
-        <dt className="text-muted-foreground">ID</dt>
+        <dt className="text-muted-foreground">{t('ingest.id')}</dt>
         <dd className="font-mono text-xs break-all">{id}</dd>
-        <dt className="text-muted-foreground">Type</dt>
+        <dt className="text-muted-foreground">{t('ingest.typeLabel')}</dt>
         <dd>
           <Badge variant="secondary">{type}</Badge>
         </dd>
-        <dt className="text-muted-foreground">Path</dt>
+        <dt className="text-muted-foreground">{t('ingest.path')}</dt>
         <dd className="font-mono text-xs break-all">{filePath}</dd>
       </dl>
       <Button variant="outline" onClick={onReset}>

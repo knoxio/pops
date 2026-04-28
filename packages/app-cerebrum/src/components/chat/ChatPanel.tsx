@@ -5,6 +5,7 @@
  * into a two-column layout (sidebar + thread) for the chat page.
  */
 import { MessageSquare } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { EmptyState, cn } from '@pops/ui';
 
@@ -23,6 +24,7 @@ export interface ChatPanelProps {
 }
 
 function ThreadArea({ model }: { model: ChatPageModel }) {
+  const { t } = useTranslation('cerebrum');
   const showEmpty = model.selectedConversationId === null && model.messages.length === 0;
 
   return (
@@ -31,8 +33,8 @@ function ThreadArea({ model }: { model: ChatPageModel }) {
         <div className="flex flex-1 items-center justify-center">
           <EmptyState
             icon={MessageSquare}
-            title="Start a conversation"
-            description="Send a message to begin chatting with Ego, or select an existing conversation from the sidebar."
+            title={t('chat.startConversation')}
+            description={t('chat.startConversationDescription')}
             size="lg"
           />
         </div>

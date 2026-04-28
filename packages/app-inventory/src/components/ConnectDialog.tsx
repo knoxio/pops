@@ -1,5 +1,6 @@
 import { Link2 } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import { trpc } from '@pops/api-client';
@@ -19,6 +20,7 @@ interface ConnectResultRowProps {
 }
 
 function ConnectResultRow({ item, disabled, onConnect }: ConnectResultRowProps) {
+  const { t } = useTranslation('inventory');
   const hasMeta = ((item.brand ?? item.model) || item.assetId) ?? item.type;
   return (
     <Button
@@ -40,7 +42,7 @@ function ConnectResultRow({ item, disabled, onConnect }: ConnectResultRowProps) 
             {item.type && <TypeBadge type={item.type} />}
           </div>
         ) : (
-          <span className="text-xs text-muted-foreground mt-0.5">No details</span>
+          <span className="text-xs text-muted-foreground mt-0.5">{t('connections.noDetails')}</span>
         )}
       </div>
       <Link2 className="h-4 w-4 text-muted-foreground shrink-0 ml-2" />
@@ -49,6 +51,7 @@ function ConnectResultRow({ item, disabled, onConnect }: ConnectResultRowProps) 
 }
 
 export function ConnectDialog({ currentItemId, onConnected }: ConnectDialogProps) {
+  const { t } = useTranslation('inventory');
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
 
@@ -59,16 +62,16 @@ export function ConnectDialog({ currentItemId, onConnected }: ConnectDialogProps
 
   const connectMutation = trpc.inventory.connections.connect.useMutation({
     onSuccess: () => {
-      toast.success('Items connected');
+      toast.success(t('connections.itemsConnected'));
       onConnected();
       setOpen(false);
       setSearch('');
     },
     onError: (err) => {
       if (err.data?.code === 'CONFLICT') {
-        toast.error('These items are already connected');
+        toast.error(t('connections.alreadyConnected'));
       } else {
-        toast.error(`Failed to connect: ${err.message}`);
+        toast.error(t('connections.failedToConnect', { message: err.message }));
       }
     },
   });
@@ -88,10 +91,10 @@ export function ConnectDialog({ currentItemId, onConnected }: ConnectDialogProps
           Connect Item
         </Button>
       }
-      title="Connect Item"
-      description="Search for an item to connect by name or asset ID."
-      searchPlaceholder="Search items..."
-      emptyMessage="No items found"
+      title={t('connections.connectItem')}
+      description={t('connections.searchDescription')}
+      searchPlaceholder={t('connections.searchPlaceholder')}
+      emptyMessage={t('connections.noItemsFound')}
       getResultKey={(item: InventoryItem) => item.id}
       search={search}
       onSearchChange={setSearch}

@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
 import { trpc } from '@pops/api-client';
@@ -27,7 +28,8 @@ export interface LocationMutationsArgs {
 function useDeleteFlow(
   args: LocationMutationsArgs,
   pendingDeleteRef: React.MutableRefObject<{ id: string; name: string } | null>,
-  setDeleteConfirm: (v: DeleteConfirmState | null) => void
+  setDeleteConfirm: (v: DeleteConfirmState | null) => void,
+  t: (key: string, opts?: Record<string, string>) => string
 ) {
   const utils = trpc.useUtils();
   return trpc.inventory.locations.delete.useMutation({
@@ -37,14 +39,14 @@ function useDeleteFlow(
         if (node) setDeleteConfirm({ id: node.id, name: node.name, stats: result.stats });
         return;
       }
-      toast.success('Location deleted');
+      toast.success(t('mutations.locationDeleted'));
       void utils.inventory.locations.tree.invalidate();
       if (args.selectedId === pendingDeleteRef.current?.id) args.setSelectedId(null);
       setDeleteConfirm(null);
       pendingDeleteRef.current = null;
     },
     onError: (err) => {
-      toast.error(`Failed to delete: ${err.message}`);
+      toast.error(t('mutations.failedToDelete', { message: err.message }));
       setDeleteConfirm(null);
       pendingDeleteRef.current = null;
     },
@@ -58,23 +60,24 @@ export function useLocationMutations(args: LocationMutationsArgs) {
 
   const createMutation = trpc.inventory.locations.create.useMutation({
     onSuccess: () => {
-      toast.success('Location created');
+      toast.success(t('mutations.locationCreated'));
       void utils.inventory.locations.tree.invalidate();
       args.setAddingChildOf(null);
       args.setAddingRoot(false);
     },
-    onError: (err) => toast.error(`Failed to create location: ${err.message}`),
+    onError: (err) => toast.error(t('mutations.failedToCreateLocation', { message: err.message })),
   });
 
   const updateMutation = trpc.inventory.locations.update.useMutation({
     onSuccess: () => {
-      toast.success('Location updated');
+      toast.success(t('mutations.locationUpdated'));
       void utils.inventory.locations.tree.invalidate();
     },
-    onError: (err) => toast.error(`Failed to update location: ${err.message}`),
+    onError: (err) => toast.error(t('mutations.failedToUpdateLocation', { message: err.message })),
   });
 
-  const deleteMutation = useDeleteFlow(args, pendingDeleteRef, setDeleteConfirm);
+  const { t } = useTranslation('inventory');
+  const deleteMutation = useDeleteFlow(args, pendingDeleteRef, setDeleteConfirm, t);
 
   const handleDelete = useCallback(
     (id: string) => {

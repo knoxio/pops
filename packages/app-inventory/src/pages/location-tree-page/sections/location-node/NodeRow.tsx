@@ -1,4 +1,5 @@
 import { ChevronDown, ChevronRight, Folder, FolderOpen, GripVertical } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Badge, CollapsibleTrigger } from '@pops/ui';
 
@@ -30,12 +31,13 @@ interface NodeRowProps {
 }
 
 function ExpandToggle({ open }: { open: boolean }) {
+  const { t } = useTranslation('inventory');
   return (
     <CollapsibleTrigger asChild onClick={(e) => e.stopPropagation()}>
       <button
         type="button"
         className="p-0.5 rounded hover:bg-muted"
-        aria-label={open ? 'Collapse' : 'Expand'}
+        aria-label={open ? t('locations.collapse') : t('locations.expand')}
       >
         {open ? (
           <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
