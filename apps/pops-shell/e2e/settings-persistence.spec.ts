@@ -98,11 +98,7 @@ test.describe('Settings — change, save, and persistence', () => {
 
   test('deep-links to rotation, changes a setting, saves, and persists across navigation', async ({
     page,
-  }, testInfo) => {
-    // Skip on webkit — flaky due to "Importing a module script failed" errors
-    // in the settings page lazy-loaded chunks. Tracked as a known CI issue.
-    test.skip(testInfo.project.name === 'webkit', 'Flaky on webkit — module import failures');
-
+  }) => {
     // 1. Deep-link to the rotation section of the settings page.
     await page.goto(`/settings#${ROTATION_SECTION_ID}`);
 
