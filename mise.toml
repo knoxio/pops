@@ -204,27 +204,27 @@ run = "pnpm audit"
 
 [tasks."docker:build"]
 description = "Build all Docker images"
-run = "docker compose -f infra/docker-compose.yml build"
+run = "docker compose -f infra/docker-compose.dev.yml build"
 
 [tasks."docker:up"]
 description = "Start all Docker services"
-run = "docker compose -f infra/docker-compose.yml up -d"
+run = "docker compose -f infra/docker-compose.dev.yml up -d"
 
 [tasks."docker:down"]
 description = "Stop all Docker services"
-run = "docker compose -f infra/docker-compose.yml down"
+run = "docker compose -f infra/docker-compose.dev.yml down"
 
 [tasks."docker:logs"]
 description = "Show Docker logs (pass service name as arg)"
-run = "docker compose -f infra/docker-compose.yml logs -f $@"
+run = "docker compose -f infra/docker-compose.dev.yml logs -f $@"
 
 [tasks."docker:config"]
 description = "Validate Docker Compose configuration"
-run = "docker compose -f infra/docker-compose.yml config"
+run = "docker compose -f infra/docker-compose.dev.yml config"
 
 [tasks."docker:import"]
 description = "Run import tool via Docker (e.g., mise docker:import src/import-anz.ts /data/imports/anz.csv)"
-run = "docker compose -f infra/docker-compose.yml --profile tools run --rm tools $@"
+run = "docker compose -f infra/docker-compose.dev.yml --profile tools run --rm tools $@"
 
 # ============================================================================
 # Redis (local development)
