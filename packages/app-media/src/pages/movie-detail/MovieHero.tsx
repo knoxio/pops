@@ -1,3 +1,5 @@
+import { useState } from 'react';
+
 import { formatRuntime } from '../../lib/format';
 import { MovieHeroActions } from './MovieHeroActions';
 import { MovieHeroBreadcrumb } from './MovieHeroBreadcrumb';
@@ -24,12 +26,15 @@ interface MovieHeroProps {
 }
 
 function HeroPoster({ posterUrl, title }: { posterUrl: string | null; title: string }) {
-  if (posterUrl) {
+  const [imgError, setImgError] = useState(false);
+
+  if (posterUrl && !imgError) {
     return (
       <img
         src={posterUrl}
         alt={`${title} poster`}
         className="w-28 md:w-44 aspect-[2/3] rounded-lg object-cover shadow-lg shrink-0"
+        onError={() => setImgError(true)}
       />
     );
   }
