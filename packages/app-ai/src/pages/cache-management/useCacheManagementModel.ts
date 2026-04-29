@@ -17,10 +17,11 @@ type CacheStats = {
 function deriveDisplayMetrics(usage: UsageStats | undefined, cache: CacheStats | undefined) {
   const totalCacheHits = usage?.totalCacheHits ?? 0;
   const totalRequests = (usage?.totalApiCalls ?? 0) + totalCacheHits;
-  const hitRatePct = totalRequests > 0 ? ((usage?.cacheHitRate ?? 0) * 100).toFixed(1) : '0.0';
+  const hitRateDisplay =
+    totalRequests > 0 ? `${((usage?.cacheHitRate ?? 0) * 100).toFixed(1)}%` : '—';
   const totalEntries = cache?.totalEntries ?? 0;
   const diskSizeBytes = cache?.diskSizeBytes ?? 0;
-  return { totalCacheHits, hitRatePct, totalEntries, diskSizeBytes };
+  return { totalCacheHits, hitRateDisplay, totalEntries, diskSizeBytes };
 }
 
 function useClearStaleMutation() {
