@@ -204,6 +204,8 @@ vi.mock('@pops/ui', async () => {
       React.createElement('div', null, children),
     DialogTitle: ({ children }: { children: React.ReactNode }) =>
       React.createElement('h3', null, children),
+    DialogDescription: ({ children }: { children: React.ReactNode }) =>
+      React.createElement('p', null, children),
     DialogFooter: ({ children }: { children: React.ReactNode }) =>
       React.createElement('div', null, children),
     Skeleton: ({ className }: { className?: string }) =>
@@ -438,5 +440,70 @@ describe('IngestPage', () => {
 
     // Scope inference should be triggered
     expect(refetchFn).toHaveBeenCalled();
+  });
+
+  it('shows inferred scopes in dialog after submit with no scopes', async () => {
+    const refetchFn = vi.fn().mockResolvedValue({
+      data: { scopes: ['personal.captures'], source: 'llm', confidence: 0.8 },
+    });
+    mockInferScopesQuery.mockReturnValue({
+      data: undefined,
+      isFetching: false,
+      error: null,
+      refetch: refetchFn,
+    });
+
+    const user = userEvent.setup();
+    renderPage();
+
+    const body = screen.getByLabelText('Body');
+    await user.type(body, 'A note without scopes');
+
+    const submit = screen.getByRole('button', { name: /submit/i });
+    await user.click(submit);
+
+    // Dialog opens with inferred scope badge
+    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    expect(screen.getByText('personal.captures')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /accept/i })).toBeInTheDocument();
+  });
+
+  it('Accept & Submit fires the submit mutation with inferred scopes', async () => {
+    const refetchFn = vi.fn().mockResolvedValue({
+      data: { scopes: ['personal.captures'], source: 'llm', confidence: 0.8 },
+    });
+    mockInferScopesQuery.mockReturnValue({
+      data: undefined,
+      isFetching: false,
+      error: null,
+      refetch: refetchFn,
+    });
+
+    const user = userEvent.setup();
+    renderPage();
+
+    const titleInput = screen.getByLabelText('Title');
+    await user.type(titleInput, 'Test');
+
+    const body = screen.getByLabelText('Body');
+    await user.type(body, 'Test body');
+
+    // Submit without scopes — triggers inference dialog
+    const submit = screen.getByRole('button', { name: /submit/i });
+    await user.click(submit);
+
+    // Click "Accept & Submit" in the dialog
+    const acceptBtn = screen.getByRole('button', { name: /accept/i });
+    await user.click(acceptBtn);
+
+    // Submit mutation should be called with the inferred scope
+    expect(mockSubmitMutate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        body: 'Test body',
+        title: 'Test',
+        source: 'manual',
+        scopes: ['personal.captures'],
+      })
+    );
   });
 });
