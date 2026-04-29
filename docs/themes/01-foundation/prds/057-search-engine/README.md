@@ -85,6 +85,8 @@ v1 is plain text only. Structured syntax added as v2 USs.
 | 08  | [us-08-fan-out-ranking](us-08-fan-out-ranking.md)                                     | Query fan-out to all adapters, section collection, context ordering             | Done                      | —              |
 | 08b | [us-08b-show-more-pagination](us-08b-show-more-pagination.md)                         | Show more pagination within a single domain section                             | Done                      | —              |
 | 09  | [us-09-structured-syntax](us-09-structured-syntax.md)                                 | Parse structured query syntax (type:, domain:, year:, value:) and apply filters | Not started (deferred v2) | —              |
+| 10  | [us-10-wishlist-adapter](us-10-wishlist-adapter.md)                                   | Wishlist backend adapter: search by item name                                   | Done                      | —              |
+| 10b | [us-10b-wishlist-result-component](us-10b-wishlist-result-component.md)               | Wishlist ResultComponent: item name + priority + target amount                  | Done                      | —              |
 
 All 6 backend adapters (us-02 through us-07) can parallelise. All 6 frontend components (us-02b through us-07b) can parallelise once their backend counterpart is done.
 
@@ -98,7 +100,7 @@ All 6 backend adapters (us-02 through us-07) can parallelise. All 6 frontend com
 - Each adapter receives `SearchContext` and may use it to boost results (e.g. inventory adapter boosts items in the current location). Adapters may also ignore context entirely
 - Adapter registry location: `apps/pops-api/src/modules/core/search/`. Each domain adapter calls `registerSearchAdapter()` at startup
 - `ResultComponent` is registered alongside the search function — the engine passes `hit` and `query` string, the component owns layout and match highlighting
-- Domain→app mapping for context ordering: `movies` and `tv-shows` → media app, `transactions`, `entities`, `budgets` → finance app, `inventory-items` → inventory app. All domains belonging to the current app are context sections
+- Domain→app mapping for context ordering: `movies` and `tv-shows` → media app, `transactions`, `entities`, `budgets`, `wishlist` → finance app, `inventory-items` → inventory app. All domains belonging to the current app are context sections
 
 ## Out of Scope
 

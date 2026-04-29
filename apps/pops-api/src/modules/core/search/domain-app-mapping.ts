@@ -12,6 +12,7 @@ const DOMAIN_APP_MAP: Record<string, string> = {
   transactions: 'finance',
   entities: 'finance',
   budgets: 'finance',
+  wishlist: 'finance',
   'inventory-items': 'inventory',
 };
 

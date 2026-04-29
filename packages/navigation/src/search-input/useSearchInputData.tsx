@@ -1,4 +1,4 @@
-import { ArrowRightLeft, Box, Building2, Film, PiggyBank, Search, Tv } from 'lucide-react';
+import { ArrowRightLeft, Box, Building2, Film, PiggyBank, Search, Star, Tv } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { trpc } from '@pops/api-client';
@@ -17,6 +17,7 @@ const ICON_MAP: Record<string, ReactNode> = {
   ArrowRightLeft: <ArrowRightLeft className="h-3.5 w-3.5" />,
   PiggyBank: <PiggyBank className="h-3.5 w-3.5" />,
   Building2: <Building2 className="h-3.5 w-3.5" />,
+  Star: <Star className="h-3.5 w-3.5" />,
 };
 
 function domainToLabel(domain: string): string {

@@ -4,6 +4,7 @@
 // Side-effect: register search adapters
 import './transactions/search-adapter.js';
 import './budgets/search-adapter.js';
+import './wishlist/search-adapter.js';
 
 import { settingsRegistry } from '../core/settings/index.js';
 import { financeManifest } from './settings-manifest.js';

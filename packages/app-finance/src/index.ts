@@ -10,3 +10,4 @@ export { navConfig, routes } from './routes';
 import './components/search/EntitiesResultComponent';
 import './components/search/TransactionsResultComponent';
 import './components/search/BudgetResult';
+import './components/search/WishlistResult';
