@@ -108,8 +108,8 @@ export function EntitiesPage() {
         title={t('entities')}
         description={getDescription(t, query.data, state.showOrphanedOnly)}
         actions={
-          <Button onClick={state.handleAdd}>
-            <Plus className="mr-2 h-4 w-4" /> {t('entities.addEntity')}
+          <Button onClick={state.handleAdd} prefix={<Plus className="h-4 w-4" />}>
+            {t('entities.addEntity')}
           </Button>
         }
       />

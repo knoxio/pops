@@ -77,8 +77,8 @@ function RulesBrowserBody({ model }: { model: Model }) {
         title={t('rules.title')}
         description={t('rules.description')}
         actions={
-          <Button onClick={model.handleAddRule}>
-            <Plus className="mr-2 h-4 w-4" /> {t('rules.addRule')}
+          <Button onClick={model.handleAddRule} prefix={<Plus className="h-4 w-4" />}>
+            {t('rules.addRule')}
           </Button>
         }
       />
