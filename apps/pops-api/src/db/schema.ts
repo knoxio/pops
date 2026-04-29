@@ -851,6 +851,27 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       enabled     INTEGER NOT NULL DEFAULT 1
     );
     CREATE INDEX IF NOT EXISTS idx_plexus_filters_adapter_id ON plexus_filters(adapter_id);
+
+    -- Nudge log (PRD-084). Stores proactive nudges from background scans.
+    CREATE TABLE IF NOT EXISTS nudge_log (
+      id            TEXT PRIMARY KEY NOT NULL,
+      type          TEXT NOT NULL,
+      title         TEXT NOT NULL,
+      body          TEXT NOT NULL,
+      engram_ids    TEXT NOT NULL,
+      priority      TEXT NOT NULL,
+      status        TEXT NOT NULL,
+      created_at    TEXT NOT NULL,
+      expires_at    TEXT,
+      acted_at      TEXT,
+      action_type   TEXT,
+      action_label  TEXT,
+      action_params TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_nudge_log_type ON nudge_log(type);
+    CREATE INDEX IF NOT EXISTS idx_nudge_log_status ON nudge_log(status);
+    CREATE INDEX IF NOT EXISTS idx_nudge_log_priority ON nudge_log(priority);
+    CREATE INDEX IF NOT EXISTS idx_nudge_log_created_at ON nudge_log(created_at);
   `);
 
   // embeddings_vec virtual table (PRD-076). Requires sqlite-vec extension.

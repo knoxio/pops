@@ -10,7 +10,7 @@ import { NudgeCard } from '../components/NudgeCard';
 
 export function NudgesPage() {
   const utils = trpc.useUtils();
-  const { data, isLoading } = trpc.cerebrum.nudges.list.useQuery({
+  const { data, isLoading, isError, error, refetch } = trpc.cerebrum.nudges.list.useQuery({
     status: 'pending',
     limit: 50,
   });
@@ -24,6 +24,22 @@ export function NudgesPage() {
 
   if (isLoading) {
     return <div className="p-6 text-muted-foreground">Loading nudges...</div>;
+  }
+
+  if (isError) {
+    const message =
+      (error as { message?: string } | null)?.message ?? 'An unexpected error occurred.';
+    return (
+      <div className="p-6 text-center" data-testid="nudges-error">
+        <p className="text-destructive mb-3">Failed to load nudges. {message}</p>
+        <button
+          className="px-3 py-1.5 text-sm rounded border border-border bg-background hover:bg-muted"
+          onClick={() => void refetch()}
+        >
+          Retry
+        </button>
+      </div>
+    );
   }
 
   const nudges = data?.nudges ?? [];
