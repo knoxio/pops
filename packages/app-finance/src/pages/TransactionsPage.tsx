@@ -55,7 +55,6 @@ function TableContent({
       searchPlaceholder={t('transactions.searchPlaceholder')}
       paginated
       defaultPageSize={50}
-      pageSizeOptions={[25, 50, 100]}
       filters={TRANSACTION_TABLE_FILTERS}
     />
   );

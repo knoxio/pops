@@ -75,7 +75,6 @@ function TableSection({
         searchPlaceholder={t('entities.searchPlaceholder')}
         paginated
         defaultPageSize={50}
-        pageSizeOptions={[25, 50, 100]}
         filters={ENTITY_TABLE_FILTERS}
       />
     </>
