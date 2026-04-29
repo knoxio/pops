@@ -247,17 +247,17 @@ describe('ItemsPage', () => {
   });
 
   describe('Empty state', () => {
-    it('shows empty state with Add button when no items exist', () => {
+    it('shows empty state message and persistent Add Item button when no items exist', () => {
       renderPage();
 
       expect(screen.getByText('No inventory items yet.')).toBeInTheDocument();
-      expect(screen.getByText('Add your first item')).toBeInTheDocument();
+      expect(screen.getByText('Add Item')).toBeInTheDocument();
     });
 
-    it('navigates to new item page when Add button is clicked', () => {
+    it('navigates to new item page when Add Item button is clicked', () => {
       renderPage();
 
-      fireEvent.click(screen.getByText('Add your first item'));
+      fireEvent.click(screen.getByText('Add Item'));
       expect(screen.getByTestId('item-new-page')).toBeInTheDocument();
     });
 
