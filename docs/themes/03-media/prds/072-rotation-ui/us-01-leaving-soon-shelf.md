@@ -11,7 +11,7 @@ As a user, I want to see which movies are about to leave my library — on both 
 - [x] A "Leaving Soon" shelf appears on the movie library page when there are movies with `rotation_status = 'leaving'`
 - [x] The same "Leaving Soon" shelf appears on the Discover page, registered in the shelf registry (PRD-065 pattern). Category: `local`. It is pinned (`pinned: true` in `ShelfDefinition`) — always shown when leaving movies exist, not subject to random shelf assembly or `MAX_LOCAL_PER_WINDOW` constraint; prepended before randomly assembled shelves
 - [x] On both pages, movies are sorted by `rotation_expires_at` ASC (soonest departures first)
-- [x] Each card shows a countdown badge: "Leaving in X days", "Last day" (< 24h), or "Leaving tomorrow" (< 48h)
+- [x] Each card shows a per-item countdown badge: "Leaving today" (≤ 0 days), "Leaving tomorrow" (1 day), "Leaving in N days" (2–6 days), or "Leaving in N week(s)" (≥ 7 days)
 - [x] Badge colour: red when ≤ 3 days, amber when ≤ 7 days, neutral when > 7 days
 - [x] The countdown badge also appears on movie cards elsewhere in the app (search, detail page, watchlist) when that movie is leaving
 - [x] Each card has a "Keep" action that clears the leaving status (calls `rotation.cancelLeaving`)

@@ -102,6 +102,7 @@ interface Shelf {
     inLibrary: boolean;
     isWatched?: boolean;
     onWatchlist?: boolean;
+    rotationExpiresAt?: string;
   }[];
   hasMore: boolean;
 }

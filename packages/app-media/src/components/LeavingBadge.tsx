@@ -20,9 +20,11 @@ function getDaysRemaining(expiresAt: string): number {
 }
 
 function getBadgeText(days: number): string {
-  if (days <= 0) return 'Last day';
+  if (days <= 0) return 'Leaving today';
   if (days === 1) return 'Leaving tomorrow';
-  return `Leaving in ${days} days`;
+  if (days < 7) return `Leaving in ${days} days`;
+  const weeks = Math.round(days / 7);
+  return weeks === 1 ? 'Leaving in 1 week' : `Leaving in ${weeks} weeks`;
 }
 
 function getBadgeColor(days: number): string {
