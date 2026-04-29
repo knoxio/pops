@@ -17,11 +17,11 @@ Build the inventory items list — a dual-mode view (table and grid) of all inve
 
 ### Table View
 
-| Element          | Detail                                                                                           |
-| ---------------- | ------------------------------------------------------------------------------------------------ |
-| Columns          | Name, Asset ID, Type, Location (breadcrumb), Condition (badge), Purchase Date, Replacement Value |
-| Sortable columns | Name, Type, Replacement Value, Purchase Date                                                     |
-| Row click        | Navigates to `/inventory/items/:id`                                                              |
+| Element          | Detail                                                                                                  |
+| ---------------- | ------------------------------------------------------------------------------------------------------- |
+| Columns          | Name, Asset ID, Type, Location (breadcrumb), Condition (badge), Purchase Date, Replacement Value        |
+| Sortable columns | Name, Type, Replacement Value, Purchase Date                                                            |
+| Row click        | Navigates to `/inventory/items/:id`                                                                     |
 | Actions menu     | Per-row `⋯` button opens a dropdown: Edit (→ `/inventory/items/:id/edit`), Delete (confirmation dialog) |
 
 ### Grid View
