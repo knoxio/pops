@@ -101,7 +101,7 @@ function locationExistsInTree(nodes: LocationTreeNode[], id: string): boolean {
 function useLocationIdPrefill(
   isEditMode: boolean,
   locationTree: LocationTreeNode[],
-  setValue: (name: 'locationId', value: string, opts?: { shouldDirty?: boolean }) => void,
+  setValue: (name: 'locationId', value: string, opts?: { shouldDirty?: boolean }) => void
 ) {
   const [searchParams] = useSearchParams();
   useEffect(() => {
