@@ -15,6 +15,8 @@ interface UIState {
    * immediately collapsing the overlay it is about to open.
    */
   skipNextPageNavClose: boolean;
+  /** Whether the global Cerebrum chat overlay is open. */
+  cerebrumChatOpen: boolean;
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
   toggleRail: () => void;
@@ -22,6 +24,8 @@ interface UIState {
   togglePageNav: () => void;
   setPageNavOpen: (open: boolean) => void;
   setSkipNextPageNavClose: (skip: boolean) => void;
+  toggleCerebrumChat: () => void;
+  setCerebrumChatOpen: (open: boolean) => void;
 }
 
 export const useUIStore = create<UIState>()(

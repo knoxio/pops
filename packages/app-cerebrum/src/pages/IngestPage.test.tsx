@@ -283,12 +283,12 @@ describe('IngestPage', () => {
     renderPage();
     const select = screen.getByRole('combobox', { name: /select type/i });
     expect(select).toBeInTheDocument();
-    // Verify options include capture + templates
+    // Verify options include capture + templates (Title Case labels)
     const options = within(select).getAllByRole('option');
     const values = options.map((o) => o.textContent);
-    expect(values).toContain('capture');
-    expect(values).toContain('decision');
-    expect(values).toContain('journal');
+    expect(values).toContain('Capture');
+    expect(values).toContain('Decision');
+    expect(values).toContain('Journal');
   });
 
   it('renders title and body inputs', () => {

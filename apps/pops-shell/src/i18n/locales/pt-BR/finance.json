@@ -21,6 +21,7 @@
 
   "transactions.failedToLoad": "Falha ao carregar transações",
   "transactions.totalCount": "{{count}} transações no total",
+  "transactions.filteredCount": "{{filtered}} de {{total}} transações",
   "transactions.searchPlaceholder": "Buscar transações...",
   "transactions.addTransaction": "Adicionar Transação",
   "transactions.editTransaction": "Editar Transação",
