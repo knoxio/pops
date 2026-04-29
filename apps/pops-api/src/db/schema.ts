@@ -688,6 +688,7 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       modified_at   TEXT NOT NULL,
       title         TEXT NOT NULL,
       content_hash  TEXT NOT NULL,
+      body_hash     TEXT,
       word_count    INTEGER NOT NULL,
       custom_fields TEXT
     );
@@ -696,6 +697,7 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     CREATE INDEX IF NOT EXISTS idx_engram_index_status ON engram_index(status);
     CREATE INDEX IF NOT EXISTS idx_engram_index_created_at ON engram_index(created_at);
     CREATE INDEX IF NOT EXISTS idx_engram_index_content_hash ON engram_index(content_hash);
+    CREATE INDEX IF NOT EXISTS idx_engram_index_body_hash ON engram_index(body_hash);
 
     CREATE TABLE IF NOT EXISTS engram_scopes (
       engram_id TEXT NOT NULL REFERENCES engram_index(id) ON DELETE CASCADE,
