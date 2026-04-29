@@ -114,14 +114,14 @@ function buildActionsColumn(args: {
           align="end"
         >
           <DropdownMenuItem onClick={() => args.onEdit(row.original)}>
-            <Pencil className="mr-2 h-4 w-4" /> Edit
+            <Pencil /> Edit
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
             className="text-destructive focus:text-destructive"
             onClick={() => args.onDelete(row.original.id)}
           >
-            <Trash2 className="mr-2 h-4 w-4" /> Delete
+            <Trash2 /> Delete
           </DropdownMenuItem>
         </DropdownMenu>
       </div>

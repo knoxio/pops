@@ -114,8 +114,8 @@ export function TransactionsPage() {
             : undefined
         }
         actions={
-          <Button onClick={state.handleAdd}>
-            <Plus className="mr-2 h-4 w-4" /> {t('transactions.addTransaction')}
+          <Button onClick={state.handleAdd} prefix={<Plus className="h-4 w-4" />}>
+            {t('transactions.addTransaction')}
           </Button>
         }
       />
