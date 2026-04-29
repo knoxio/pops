@@ -1,6 +1,6 @@
-import { Package, Plus } from 'lucide-react';
+import { Package } from 'lucide-react';
 
-import { Button, type LocationSegment, Skeleton } from '@pops/ui';
+import { type LocationSegment, Skeleton } from '@pops/ui';
 
 import { InventoryCard } from '../../components/InventoryCard';
 import { InventoryTable } from '../../components/InventoryTable';
@@ -27,26 +27,11 @@ function ItemsPageSkeleton() {
   );
 }
 
-function EmptyState({
-  hasSearchOrFilters,
-  onAdd,
-}: {
-  hasSearchOrFilters: boolean;
-  onAdd: () => void;
-}) {
+function EmptyState({ hasSearchOrFilters }: { hasSearchOrFilters: boolean }) {
   return (
     <div className="flex flex-col items-center justify-center h-64 text-muted-foreground gap-4">
       <Package className="h-12 w-12 opacity-40" />
-      {hasSearchOrFilters ? (
-        <p>No items match your filters.</p>
-      ) : (
-        <>
-          <p>No inventory items yet.</p>
-          <Button prefix={<Plus className="h-4 w-4" />} onClick={onAdd}>
-            Add your first item
-          </Button>
-        </>
-      )}
+      {hasSearchOrFilters ? <p>No items match your filters.</p> : <p>No inventory items yet.</p>}
     </div>
   );
 }
@@ -77,7 +62,6 @@ interface ItemsContentProps {
   viewMode: ViewMode;
   hasSearchOrFilters: boolean;
   locationPathMap: ReadonlyMap<string, LocationSegment[]>;
-  onAdd: () => void;
   onOpen: (id: string) => void;
   onEdit: (id: string) => void;
   onDeleteRequest: (id: string) => void;
@@ -89,14 +73,12 @@ export function ItemsContent({
   viewMode,
   hasSearchOrFilters,
   locationPathMap,
-  onAdd,
   onOpen,
   onEdit,
   onDeleteRequest,
 }: ItemsContentProps) {
   if (isLoading) return <ItemsPageSkeleton />;
-  if (items.length === 0)
-    return <EmptyState hasSearchOrFilters={hasSearchOrFilters} onAdd={onAdd} />;
+  if (items.length === 0) return <EmptyState hasSearchOrFilters={hasSearchOrFilters} />;
   if (viewMode === 'table') {
     return (
       <InventoryTable

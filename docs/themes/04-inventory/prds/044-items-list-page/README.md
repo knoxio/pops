@@ -15,6 +15,13 @@ Build the inventory items list — a dual-mode view (table and grid) of all inve
 
 ## UI Components
 
+### Page Header
+
+| Element               | Detail                                              |
+| --------------------- | --------------------------------------------------- |
+| Title                 | "Inventory" (translated)                            |
+| **+ Add Item** button | Always visible; navigates to `/inventory/items/new` |
+
 ### Table View
 
 | Element          | Detail                                                                                                  |
@@ -58,7 +65,7 @@ Build the inventory items list — a dual-mode view (table and grid) of all inve
 - View toggle state (table/grid) is persisted in localStorage
 - Type select is dynamically populated from the distinct types present in the items table
 - All filter and sort state is persisted in URL query parameters
-- Empty library shows a call-to-action: "No items yet — Add your first item" with a link to the create form
+- Empty library shows a "No inventory items yet." message; the persistent **+ Add Item** header button is the primary CTA
 
 ## Edge Cases
 

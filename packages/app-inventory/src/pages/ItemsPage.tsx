@@ -1,3 +1,4 @@
+import { Plus } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -11,6 +12,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Button,
   PageHeader,
 } from '@pops/ui';
 
@@ -70,9 +72,15 @@ export function ItemsPage() {
     },
   });
 
+  const addButton = (
+    <Button onClick={() => navigate('/inventory/items/new')} prefix={<Plus className="h-4 w-4" />}>
+      Add Item
+    </Button>
+  );
+
   return (
     <div className="space-y-6">
-      <PageHeader title={t('title')} />
+      <PageHeader title={t('title')} actions={addButton} />
       <FiltersBar
         search={filters.search}
         typeFilter={filters.typeFilter}
@@ -102,7 +110,6 @@ export function ItemsPage() {
         viewMode={model.viewMode}
         hasSearchOrFilters={hasSearchOrFilters}
         locationPathMap={model.locationPathMap}
-        onAdd={() => navigate('/inventory/items/new')}
         onOpen={(id) => navigate(`/inventory/items/${id}`)}
         onEdit={(id) => navigate(`/inventory/items/${id}/edit`)}
         onDeleteRequest={setDeletingItemId}
