@@ -1,4 +1,6 @@
-import { Badge, Card, SkeletonGrid } from '@pops/ui';
+import { Link } from 'react-router';
+
+import { Badge, Button, Card, SkeletonGrid } from '@pops/ui';
 
 import type { Transaction } from '@pops/api/modules/finance/transactions/types';
 
@@ -59,8 +61,16 @@ export function RecentTransactions({ transactions, isLoading }: RecentTransactio
   }
   if (!transactions || transactions.length === 0) {
     return (
-      <Card className="p-12 text-center text-muted-foreground border-dashed">
-        No transactions found
+      <Card className="p-12 text-center border-dashed">
+        <p className="text-muted-foreground mb-4">No transactions yet.</p>
+        <div className="flex items-center justify-center gap-3">
+          <Button asChild size="sm">
+            <Link to="/finance/import">Import</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link to="/finance/transactions">Add Transaction</Link>
+          </Button>
+        </div>
       </Card>
     );
   }

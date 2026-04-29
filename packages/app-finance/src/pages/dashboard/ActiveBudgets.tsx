@@ -1,4 +1,6 @@
-import { Badge, Card, SkeletonGrid } from '@pops/ui';
+import { Link } from 'react-router';
+
+import { Badge, Button, Card, SkeletonGrid } from '@pops/ui';
 
 import type { Budget } from '@pops/api/modules/finance/budgets/types';
 
@@ -36,7 +38,14 @@ export function ActiveBudgets({
     return <SkeletonGrid count={3} itemHeight="h-32" cols="md:grid-cols-3" />;
   }
   if (!budgets || budgets.length === 0) {
-    return <p className="text-sm text-muted-foreground">No active budgets found</p>;
+    return (
+      <Card className="p-12 text-center border-dashed">
+        <p className="text-muted-foreground mb-4">No active budgets found.</p>
+        <Button asChild size="sm">
+          <Link to="/finance/budgets">Manage Budgets</Link>
+        </Button>
+      </Card>
+    );
   }
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

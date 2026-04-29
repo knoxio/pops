@@ -15,7 +15,8 @@ As a user, I want a dashboard page showing key financial stats and recent transa
 - [x] Active budgets section (first 3) — links to budgets page
 - [x] Loading skeletons for stats and transaction rows
 - [x] Error state with expandable technical details
-- [x] Empty state when no transactions exist
+- [x] Empty state when no transactions exist — shows "No transactions yet." with "Import" (→ `/finance/import`) and "Add Transaction" (→ `/finance/transactions`) CTAs
+- [x] Empty state when no active budgets exist — shows "No active budgets found." with "Manage Budgets" CTA (→ `/finance/budgets`)
 - [x] Read-only — no CRUD operations from dashboard
 - [x] Transaction rows have hover effect and link to transactions page with filter applied
 
