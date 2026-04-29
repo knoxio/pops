@@ -83,7 +83,7 @@ const MOVIE_NULLABLE_INSERT_KEYS = [
 function buildMovieInsertValues(input: CreateMovieInput): typeof movies.$inferInsert {
   const values: Record<string, unknown> = {
     tmdbId: input.tmdbId,
-    title: input.title,
+    title: input.title.replace(/^"+|"+$/g, ''),
     genres: JSON.stringify(input.genres ?? []),
   };
   for (const key of MOVIE_NULLABLE_INSERT_KEYS) {
@@ -136,7 +136,7 @@ function buildMovieUpdate(input: UpdateMovieInput): Partial<typeof movies.$infer
   for (const key of MOVIE_REQUIRED_KEYS) {
     const value = input[key];
     if (value === undefined) continue;
-    updates[key] = value;
+    updates[key] = key === 'title' && typeof value === 'string' ? value.replace(/^"+|"+$/g, '') : value;
     touched = true;
   }
 
