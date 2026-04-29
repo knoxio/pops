@@ -4,7 +4,13 @@
  * Flags engrams that have not been modified within the configured threshold
  * (default 90 days). Respects the 30-day suppression rule on fresh corpora
  * and excludes archived/consolidated engrams.
+ *
+ * Citation tracking (#2242): engrams that are frequently cited in query
+ * responses get an adjusted (higher) threshold, making them less likely
+ * to be flagged as stale.
  */
+import { adjustedStalenessDays } from './citation-tracker.js';
+
 import type {
   DetectorResult,
   EngramSummary,
@@ -42,6 +48,7 @@ export class StalenessDetector {
   /**
    * Scan engrams for staleness. Returns nudge candidates for engrams
    * whose `modifiedAt` timestamp exceeds the configured threshold.
+   * Citation count adjusts the effective threshold per-engram.
    */
   detect(engrams: EngramSummary[]): DetectorResult {
     const active = engrams.filter((e) => e.status !== 'archived' && e.status !== 'consolidated');
@@ -65,9 +72,11 @@ export class StalenessDetector {
 
     for (const engram of active) {
       const staleDays = daysBetween(engram.modifiedAt, nowIso);
-      if (staleDays < this.thresholds.stalenessDays) continue;
+      // Adjust threshold based on citation count — cited engrams are less stale
+      const effectiveThreshold = adjustedStalenessDays(this.thresholds.stalenessDays, engram.id);
+      if (staleDays < effectiveThreshold) continue;
 
-      const priority = stalePriority(staleDays, this.thresholds.stalenessDays);
+      const priority = stalePriority(staleDays, effectiveThreshold);
 
       nudges.push({
         type: 'staleness',

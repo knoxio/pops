@@ -14,6 +14,12 @@ const IngestPage = lazy(() =>
   import('./pages/IngestPage').then((m) => ({ default: m.IngestPage }))
 );
 const ChatPage = lazy(() => import('./pages/ChatPage').then((m) => ({ default: m.ChatPage })));
+const NudgesPage = lazy(() =>
+  import('./pages/NudgesPage').then((m) => ({ default: m.NudgesPage }))
+);
+const ProposalQueuePage = lazy(() =>
+  import('./pages/ProposalQueuePage').then((m) => ({ default: m.ProposalQueuePage }))
+);
 
 /** Local type mirror for compile-time safety (shell owns the canonical types). */
 interface AppNavConfigShape {
@@ -36,10 +42,19 @@ export const navConfig = {
   items: [
     { path: '', label: 'Ingest', labelKey: 'cerebrum.ingest', icon: 'FileText' },
     { path: 'chat', label: 'Chat', labelKey: 'cerebrum.chat', icon: 'MessageSquare' },
+    { path: 'nudges', label: 'Nudges', labelKey: 'cerebrum.nudges', icon: 'Bell' },
+    {
+      path: 'proposals',
+      label: 'Proposals',
+      labelKey: 'cerebrum.proposals',
+      icon: 'GitPullRequest',
+    },
   ],
 } satisfies AppNavConfigShape;
 
 export const routes: RouteObject[] = [
   { index: true, element: <IngestPage /> },
   { path: 'chat', element: <ChatPage /> },
+  { path: 'nudges', element: <NudgesPage /> },
+  { path: 'proposals', element: <ProposalQueuePage /> },
 ];
