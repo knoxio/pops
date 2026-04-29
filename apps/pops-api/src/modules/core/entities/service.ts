@@ -61,7 +61,7 @@ function fetchEntitiesPage(
     .leftJoin(transactions, eq(entities.id, transactions.entityId))
     .where(whereClause)
     .groupBy(entities.id)
-    .orderBy(entities.name)
+    .orderBy(sql`${entities.name} COLLATE NOCASE`)
     .$dynamic();
 
   if (opts.orphanedOnly) query = query.having(sql`COUNT(${transactions.id}) = 0`);
