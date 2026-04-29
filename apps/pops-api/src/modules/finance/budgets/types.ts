@@ -52,10 +52,12 @@ export const BudgetSchema = z.object({
   remaining: z.number().nullable(),
 });
 
+const BudgetPeriodSchema = z.enum(['Monthly', 'Yearly']).nullable().optional();
+
 /** Zod schema for creating a budget. */
 export const CreateBudgetSchema = z.object({
   category: z.string().min(1, 'Category is required'),
-  period: z.string().nullable().optional(),
+  period: BudgetPeriodSchema,
   amount: z.number().nullable().optional(),
   active: z.boolean().optional().default(false),
   notes: z.string().nullable().optional(),
@@ -65,7 +67,7 @@ export type CreateBudgetInput = z.infer<typeof CreateBudgetSchema>;
 /** Zod schema for updating a budget (all fields optional). */
 export const UpdateBudgetSchema = z.object({
   category: z.string().min(1, 'Category cannot be empty').optional(),
-  period: z.string().nullable().optional(),
+  period: BudgetPeriodSchema,
   amount: z.number().nullable().optional(),
   active: z.boolean().optional(),
   notes: z.string().nullable().optional(),
