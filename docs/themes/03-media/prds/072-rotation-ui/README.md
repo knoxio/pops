@@ -17,7 +17,7 @@ A shelf showing movies with `rotation_status = 'leaving'`, sorted by `rotation_e
 
 Shelf behaviour:
 
-- Each card shows a countdown badge: "Leaving in X days" (or "Last day" when < 24h remain)
+- Each card shows a per-item countdown badge: "Leaving today" (≤ 0 days), "Leaving tomorrow" (1 day), "Leaving in N days" (2–6 days), or "Leaving in N week(s)" (≥ 7 days, using `Math.floor`)
 - Clicking a card opens the movie detail page (existing)
 - A "Keep" action on each card clears the leaving status (calls `rotation.cancelLeaving`)
 - Adding a leaving movie to the watchlist also clears leaving status (handled by PRD-070 business rule)
