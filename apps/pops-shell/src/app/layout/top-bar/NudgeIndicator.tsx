@@ -10,22 +10,28 @@ import { useNavigate } from 'react-router';
 import { trpc } from '@pops/api-client';
 import { Button } from '@pops/ui';
 
+const POLL_BASE_MS = 60_000;
+const MAX_FAILURES = 5;
+
+/**
+ * Exponential backoff for the nudges poller.
+ * Uses fetchFailureCount (resets to 0 on success) so the interval recovers
+ * automatically after the endpoint starts returning 200s.
+ * Intervals: 60s → 2m → 4m → 8m → 16m → stop.
+ */
+export function nudgeRefetchInterval(query: {
+  state: { fetchFailureCount: number };
+}): number | false {
+  const failures = query.state.fetchFailureCount;
+  if (failures >= MAX_FAILURES) return false;
+  return POLL_BASE_MS * 2 ** failures;
+}
+
 export function NudgeIndicator() {
   const navigate = useNavigate();
   const { data } = trpc.cerebrum.nudges.list.useQuery(
     { status: 'pending', limit: 1 },
-    {
-      retry: false,
-      staleTime: 30_000,
-      // Back off exponentially on consecutive errors; give up after 5 failures
-      // to avoid spamming a persistently-broken endpoint (e.g. missing table).
-      refetchInterval: (query) => {
-        const errors = query.state.errorUpdateCount;
-        if (errors >= 5) return false;
-        if (errors >= 3) return 5 * 60_000;
-        return 60_000;
-      },
-    }
+    { retry: false, staleTime: 30_000, refetchInterval: nudgeRefetchInterval }
   );
 
   const pendingCount = data?.total ?? 0;

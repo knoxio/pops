@@ -10,7 +10,7 @@ As a user, I want nudges delivered via shell notifications and Moltbot (Telegram
 ## Acceptance Criteria
 
 - [x] New nudges with `status: pending` are delivered to two channels: (1) the pops shell notification system (appears on next shell interaction), and (2) Moltbot on Telegram (immediate delivery)
-- [x] The shell NudgeIndicator bell polls `nudges.list` at 60-second intervals; on persistent errors it backs off to 5-minute intervals after 3 consecutive failures and stops polling after 5 failures — preventing endless 500 spam against a broken/missing endpoint
+- [x] The shell NudgeIndicator bell polls `nudges.list` with exponential backoff: base 60 s doubled per consecutive failure (60 s → 2 min → 4 min → 8 min → 16 min), stopping entirely after 5 consecutive failures; recovers automatically to 60 s on a successful response
 - [ ] Shell notifications display the nudge title, type badge (e.g., `[consolidation]`, `[staleness]`), and a one-line summary — the user can run `pops cerebrum nudges` to see the full list
 - [ ] Moltbot messages include the nudge title, type, a brief body excerpt, and inline action buttons: "Act" (executes the suggested action), "Dismiss" (marks as dismissed), "Details" (shows full nudge context)
 - [ ] Delivery respects nudge priority: `high` nudges are delivered immediately to both channels; `medium` nudges are batched and delivered at most once per hour; `low` nudges are included in a daily digest only
