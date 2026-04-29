@@ -24,7 +24,7 @@ export function computeStats(
   };
 }
 
-function signedColor(amount: number): StatCardColor {
+export function signedColor(amount: number): StatCardColor {
   if (amount > 0) return 'emerald';
   if (amount < 0) return 'rose';
   return 'slate';
@@ -49,13 +49,13 @@ export function StatsGrid({ stats, isLoading }: { stats: Stats | null; isLoading
         title={t('dashboard.recentIncome')}
         value={`$${stats.totalIncome.toFixed(2)}`}
         description={t('dashboard.last10')}
-        color={stats.totalIncome > 0 ? 'emerald' : 'slate'}
+        color={signedColor(stats.totalIncome)}
       />
       <StatCard
         title={t('dashboard.recentExpenses')}
         value={`$${stats.totalExpenses.toFixed(2)}`}
         description={t('dashboard.last10')}
-        color={stats.totalExpenses > 0 ? 'rose' : 'slate'}
+        color={signedColor(-stats.totalExpenses)}
       />
       <StatCard
         title={t('dashboard.netBalance')}
