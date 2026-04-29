@@ -50,6 +50,8 @@ export function RootLayout() {
             </main>
           </div>
         </div>
+
+        <CerebrumChatOverlay />
       </div>
     </AppContextProvider>
   );
