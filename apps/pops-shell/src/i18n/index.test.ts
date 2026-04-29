@@ -243,8 +243,8 @@ describe('translation lookups', () => {
   it('resolves pt-BR translations', async () => {
     await i18n.changeLanguage('pt-BR');
     expect(i18n.t('common:save')).toBe('Salvar');
-    expect(i18n.t('shell:settings')).toBe('Configuracoes');
-    expect(i18n.t('navigation:finance')).toBe('Financas');
+    expect(i18n.t('shell:settings')).toBe('Configurações');
+    expect(i18n.t('navigation:finance')).toBe('Finanças');
   });
 });
 
@@ -259,7 +259,7 @@ describe('interpolation', () => {
 
   it('interpolates {{app}} in pt-BR shell.appPages', async () => {
     await i18n.changeLanguage('pt-BR');
-    expect(i18n.t('shell:appPages', { app: 'Financas' })).toBe('Paginas de Financas');
+    expect(i18n.t('shell:appPages', { app: 'Finanças' })).toBe('Páginas de Finanças');
   });
 
   it('interpolates finance namespace variables', () => {
