@@ -3,15 +3,30 @@ import { Badge, formatCurrency, formatDate, highlightMatch, SearchResultItem } f
 
 import type { ResultComponentProps } from '@pops/navigation';
 
+type TxType = 'income' | 'expense' | 'transfer';
+
 interface TransactionData {
   description: string;
   amount: number;
   date: string;
   entityName: string | null;
-  type: 'income' | 'expense' | 'transfer';
+  type: TxType;
 }
 
-function amountColorClass(type: 'income' | 'expense' | 'transfer'): string {
+const VALID_TYPES = new Set<string>(['income', 'expense', 'transfer']);
+
+function parseTransactionData(data: Record<string, unknown>): TransactionData {
+  const rawType = String(data['type'] ?? '');
+  return {
+    description: String(data['description'] ?? ''),
+    amount: Number(data['amount'] ?? 0),
+    date: String(data['date'] ?? ''),
+    entityName: data['entityName'] != null ? String(data['entityName']) : null,
+    type: VALID_TYPES.has(rawType) ? (rawType as TxType) : 'expense',
+  };
+}
+
+function amountColorClass(type: TxType): string {
   switch (type) {
     case 'income':
       return 'text-success';
@@ -23,7 +38,7 @@ function amountColorClass(type: 'income' | 'expense' | 'transfer'): string {
 }
 
 export function TransactionsResultComponent({ data, query, matchField }: ResultComponentProps) {
-  const tx = data as unknown as TransactionData;
+  const tx = parseTransactionData(data);
   const shouldHighlight = matchField === 'description' && query;
 
   return (

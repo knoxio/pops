@@ -2,7 +2,11 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { closeDb, setDb } from '../../../db.js';
 import { createTestDb, seedTransaction } from '../../../shared/test-utils.js';
-import { type TransactionHitData, transactionsSearchAdapter } from './search-adapter.js';
+import {
+  normalizeTransactionType,
+  type TransactionHitData,
+  transactionsSearchAdapter,
+} from './search-adapter.js';
 
 import type { Database } from 'better-sqlite3';
 
@@ -20,6 +24,23 @@ afterEach(() => {
 });
 
 const adapter = transactionsSearchAdapter;
+
+describe('normalizeTransactionType', () => {
+  it.each([
+    ['Income', 'income'],
+    ['income', 'income'],
+    ['Expense', 'expense'],
+    ['expense', 'expense'],
+    ['purchase', 'expense'],
+    ['Purchase', 'expense'],
+    ['Transfer', 'transfer'],
+    ['transfer', 'transfer'],
+    ['unknown_value', 'expense'],
+    ['', 'expense'],
+  ])('normalizes %s → %s', (input, expected) => {
+    expect(normalizeTransactionType(input)).toBe(expected);
+  });
+});
 
 describe('transactions search adapter', () => {
   it('is registered with correct domain, icon, and color', () => {
@@ -87,6 +108,17 @@ describe('transactions search adapter', () => {
     expect(income.data.type).toBe('income');
     expect(expense.data.type).toBe('expense');
     expect(transfer.data.type).toBe('transfer');
+  });
+
+  it('maps legacy purchase type to expense', () => {
+    seedTransaction(db, { description: 'Old purchase', amount: -42, type: 'purchase' });
+    const hits = adapter.search(
+      { text: 'Old purchase' },
+      { app: 'finance', page: null }
+    ) as SearchHit<TransactionHitData>[];
+
+    expect(hits).toHaveLength(1);
+    expect(hits[0]!.data.type).toBe('expense');
   });
 
   it('finds exact match case-insensitively', () => {

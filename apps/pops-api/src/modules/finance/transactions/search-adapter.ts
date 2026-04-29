@@ -15,6 +15,24 @@ export interface TransactionHitData {
   type: 'income' | 'expense' | 'transfer';
 }
 
+/** Normalize raw DB type strings to the canonical lowercase union.
+ *  - Capitalised variants ('Expense', 'Income', 'Transfer') come from the import pipeline.
+ *  - 'purchase' is a legacy value used before 'expense' was standardised (migrations 007/010).
+ *  - Anything else (including null/undefined coerced to '') falls back to 'expense'.
+ */
+export function normalizeTransactionType(raw: string): 'income' | 'expense' | 'transfer' {
+  switch (raw.toLowerCase()) {
+    case 'income':
+      return 'income';
+    case 'transfer':
+      return 'transfer';
+    case 'expense':
+    case 'purchase':
+    default:
+      return 'expense';
+  }
+}
+
 function scoreHit(
   description: string,
   queryText: string
@@ -76,7 +94,7 @@ export const transactionsSearchAdapter: SearchAdapter<TransactionHitData> = {
           amount: row.amount,
           date: row.date,
           entityName: row.entityName,
-          type: (row.type as string).toLowerCase() as 'income' | 'expense' | 'transfer',
+          type: normalizeTransactionType(row.type),
         },
       });
     }
