@@ -1,71 +1,97 @@
 import { SectionRenderer } from '@/components/settings/SectionRenderer';
 import { trpc } from '@/lib/trpc';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Select } from '@pops/ui';
 
 import { SectionNav } from './settings-page/SectionNav';
 import { SettingsEmpty, SettingsLoading } from './settings-page/SettingsLoading';
-import { useSectionObserver } from './settings-page/useSectionObserver';
 import { useTestActionHandler } from './settings-page/useTestActionHandler';
 
 import type { SettingsManifest } from '@pops/types';
+
+function ManifestPanel({
+  manifest,
+  onTestAction,
+}: {
+  manifest: SettingsManifest;
+  onTestAction: (procedure: string) => Promise<void>;
+}) {
+  return (
+    <>
+      <h2 className="text-lg font-semibold mb-4">{manifest.title}</h2>
+      <SectionRenderer manifest={manifest} onTestAction={onTestAction} />
+    </>
+  );
+}
 
 export function SettingsPage() {
   const { t } = useTranslation('shell');
   const { data, isLoading } = trpc.core.settings.getManifests.useQuery();
   const manifests = useMemo(() => (data?.manifests ?? []) as SettingsManifest[], [data?.manifests]);
-  const activeId = useSectionObserver(manifests);
   const handleTestAction = useTestActionHandler();
 
-  // Handle hash-based deep linking on load
+  const [selectedId, setSelectedId] = useState<string>(() => window.location.hash.slice(1));
+
+  // Once manifests load, resolve the selection against valid manifest ids.
   useEffect(() => {
+    if (!manifests.length) return;
     const hash = window.location.hash.slice(1);
-    if (hash) {
-      const el = document.getElementById(hash);
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
-    }
+    const hasValidHash = hash !== '' && manifests.some((m) => m.id === hash);
+    setSelectedId(hasValidHash ? hash : (manifests[0]?.id ?? ''));
   }, [manifests]);
 
-  const scrollToSection = useCallback((id: string) => {
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
-      window.history.replaceState(null, '', `#${id}`);
-    }
+  const handleSelect = useCallback((id: string) => {
+    setSelectedId(id);
+    window.history.replaceState(null, '', `#${id}`);
   }, []);
+
+  const selectedManifest = useMemo(
+    () => manifests.find((m) => m.id === selectedId) ?? manifests[0],
+    [manifests, selectedId]
+  );
 
   if (isLoading) return <SettingsLoading />;
   if (!manifests.length) return <SettingsEmpty />;
 
   return (
-    <div className="flex gap-8 p-6 max-w-5xl mx-auto">
-      {/* Sidebar — hidden on mobile; top-20 clears the fixed TopBar (h-16 = 4rem) */}
-      <aside className="w-48 shrink-0 hidden md:block sticky top-20 self-start max-h-[calc(100vh-5rem)] overflow-y-auto">
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-3 px-3">
-          {t('settings')}
-        </p>
-        <SectionNav manifests={manifests} activeId={activeId} onSelect={scrollToSection} />
+    <div className="flex h-full min-h-0">
+      {/* Sticky left sidebar — desktop only */}
+      <aside className="w-60 shrink-0 hidden md:flex flex-col border-r border-border/50">
+        <div className="p-4 border-b border-border/50">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t('settings')}
+          </p>
+        </div>
+        <div className="flex-1 overflow-y-auto p-2">
+          <SectionNav manifests={manifests} activeId={selectedId} onSelect={handleSelect} />
+        </div>
       </aside>
 
-      <div className="md:hidden w-full mb-4">
-        <Select
-          aria-label={t('settingsSection')}
-          value={activeId || (manifests[0]?.id ?? '')}
-          onChange={(e) => scrollToSection(e.target.value)}
-          options={manifests.map((m) => ({ value: m.id, label: m.title }))}
-        />
+      {/* Mobile: dropdown + content */}
+      <div className="md:hidden w-full flex flex-col min-h-0">
+        <div className="p-4 border-b border-border/50 shrink-0">
+          <Select
+            aria-label={t('settingsSection')}
+            value={selectedId || (manifests[0]?.id ?? '')}
+            onChange={(e) => handleSelect(e.target.value)}
+            options={manifests.map((m) => ({ value: m.id, label: m.title }))}
+          />
+        </div>
+        {selectedManifest && (
+          <div className="flex-1 overflow-y-auto p-6">
+            <ManifestPanel manifest={selectedManifest} onTestAction={handleTestAction} />
+          </div>
+        )}
       </div>
 
-      <div className="flex-1 space-y-10 min-w-0">
-        {manifests.map((manifest) => (
-          <section key={manifest.id} id={manifest.id} className="scroll-mt-14 md:scroll-mt-20">
-            <h2 className="text-lg font-semibold mb-4">{manifest.title}</h2>
-            <SectionRenderer manifest={manifest} onTestAction={handleTestAction} />
-          </section>
-        ))}
-      </div>
+      {/* Desktop: right content pane */}
+      {selectedManifest && (
+        <div className="hidden md:block flex-1 overflow-y-auto p-6 min-w-0">
+          <ManifestPanel manifest={selectedManifest} onTestAction={handleTestAction} />
+        </div>
+      )}
     </div>
   );
 }
