@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { ENTITY_TYPES } from '@pops/db-types';
+
 import { ChangeSetSchema } from '../../core/corrections/types.js';
 import { TagRuleChangeSetSchema } from '../../core/tag-rules/types.js';
 
@@ -241,7 +243,7 @@ export type ApplyChangeSetAndReevaluateOutput = z.infer<
 export const pendingEntitySchema = z.object({
   tempId: z.string().regex(/^temp:entity:[0-9a-f-]{36}$/, 'Temp ID must match temp:entity:{uuid}'),
   name: z.string().min(1),
-  type: z.enum(['company', 'person', 'government', 'bank']).default('company'),
+  type: z.enum(ENTITY_TYPES).default('company'),
 });
 
 export type PendingEntity = z.infer<typeof pendingEntitySchema>;
