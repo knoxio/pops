@@ -13,6 +13,7 @@ import cron, { type ScheduledTask } from 'node-cron';
 import { settings } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
+import { isEnabled } from '../../core/features/index.js';
 import { emptyResult } from './rotation-cycle-types.js';
 import { executeRotationCycle } from './rotation-cycle.js';
 import { writeRotationLog } from './rotation-log.js';
@@ -128,8 +129,7 @@ export function getRotationSchedulerStatus(): RotationSchedulerStatus {
 }
 
 export function resumeRotationSchedulerIfEnabled(): RotationSchedulerStatus | null {
-  const enabled = getSetting(SETTINGS_KEYS.enabled);
-  if (enabled !== 'true') return null;
+  if (!isEnabled('media.rotation')) return null;
   const savedCron = getSetting(SETTINGS_KEYS.cronExpression) ?? DEFAULT_CRON;
   console.warn(`[Rotation] Auto-resuming scheduler (cron: ${savedCron})`);
   return startRotationScheduler({ cronExpression: savedCron });

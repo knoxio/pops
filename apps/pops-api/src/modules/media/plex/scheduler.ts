@@ -14,9 +14,14 @@ import { settings } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 import { getSyncQueue } from '../../../jobs/queues.js';
+import { isEnabled } from '../../core/features/index.js';
 import { SETTINGS_KEYS } from '../../core/settings/keys.js';
 import { getLastSyncAt, getLastSyncCounts, getLastSyncError } from './scheduler-sync-logs.js';
 import { getPlexSectionIds } from './service.js';
+
+function isPlexSchedulerEnabled(): boolean {
+  return isEnabled('media.plex.scheduler');
+}
 
 export {
   getSyncLogs,
@@ -161,8 +166,7 @@ export function getSchedulerStatus(): SchedulerStatus {
 }
 
 export function getPersistedSchedulerState(): { enabled: boolean; intervalMs: number } | null {
-  const enabled = getSetting(SCHEDULER_KEYS.enabled);
-  if (enabled !== 'true') return null;
+  if (!isPlexSchedulerEnabled()) return null;
   const interval = getSetting(SCHEDULER_KEYS.intervalMs);
   return { enabled: true, intervalMs: interval ? Number(interval) : DEFAULT_INTERVAL_MS };
 }

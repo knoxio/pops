@@ -17,3 +17,10 @@ export type {
   SettingsGroup,
   SettingsManifest,
 } from './settings-manifest.js';
+export type {
+  FeatureCredentialStatus,
+  FeatureDefinition,
+  FeatureManifest,
+  FeatureScope,
+  FeatureStatus,
+} from './feature-manifest.js';

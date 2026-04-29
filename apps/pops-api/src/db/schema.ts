@@ -528,6 +528,14 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
       value TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS user_settings (
+      user_email TEXT NOT NULL,
+      key        TEXT NOT NULL,
+      value      TEXT NOT NULL,
+      PRIMARY KEY (user_email, key)
+    );
+    CREATE INDEX IF NOT EXISTS idx_user_settings_user ON user_settings(user_email);
+
     CREATE TABLE IF NOT EXISTS sync_logs (
       id            INTEGER PRIMARY KEY AUTOINCREMENT,
       synced_at     TEXT NOT NULL,

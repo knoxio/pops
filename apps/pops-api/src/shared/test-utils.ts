@@ -492,6 +492,13 @@ export function createTestDb(): Database {
       value TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS user_settings (
+      user_email TEXT NOT NULL,
+      key        TEXT NOT NULL,
+      value      TEXT NOT NULL,
+      PRIMARY KEY (user_email, key)
+    );
+
     CREATE TABLE IF NOT EXISTS dismissed_discover (
       tmdb_id INTEGER PRIMARY KEY,
       dismissed_at TEXT NOT NULL DEFAULT (datetime('now'))

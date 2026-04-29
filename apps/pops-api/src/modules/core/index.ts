@@ -14,6 +14,11 @@ import { settingsRegistry } from './settings/registry.js';
 settingsRegistry.register(aiConfigManifest);
 settingsRegistry.register(coreOperationalManifest);
 
+import { coreFeaturesManifest } from './features/manifest.js';
+import { featuresRegistry } from './features/registry.js';
+
+featuresRegistry.register(coreFeaturesManifest);
+
 import { router } from '../../trpc.js';
 import { aiBudgetsRouter } from './ai-budgets/router.js';
 import { aiObservabilityRouter } from './ai-observability/router.js';
@@ -22,6 +27,7 @@ import { aiUsageRouter } from './ai-usage/router.js';
 import { correctionsRouter } from './corrections/router.js';
 import { embeddingsRouter } from './embeddings/router.js';
 import { entitiesRouter } from './entities/router.js';
+import { featuresRouter } from './features/router.js';
 import { jobsRouter } from './jobs/router.js';
 import { searchRouter } from './search/router.js';
 import { settingsRouter } from './settings/router.js';
@@ -38,5 +44,6 @@ export const coreRouter = router({
   embeddings: embeddingsRouter,
   tagRules: tagRulesRouter,
   settings: settingsRouter,
+  features: featuresRouter,
   search: searchRouter,
 });

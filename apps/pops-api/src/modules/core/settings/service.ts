@@ -24,7 +24,7 @@ export function getSetting(key: SettingsKey): SettingRow {
 }
 
 /** Get a single setting by key, returning null if not found */
-export function getSettingOrNull(key: SettingsKey): SettingRow | null {
+export function getSettingOrNull(key: SettingsKey | string): SettingRow | null {
   const db = getDrizzle();
   const [row] = db.select().from(settings).where(eq(settings.key, key)).all();
   return row ?? null;
@@ -56,17 +56,31 @@ export function listSettings(
 
 /** Set a setting value (upsert — creates or updates) */
 export function setSetting(input: SetSettingInput): SettingRow {
+  return setRawSetting(input.key, input.value);
+}
+
+/**
+ * Untyped upsert into the settings table — used by callers that own their own
+ * key namespace (e.g. the feature-toggle framework, which manages keys via the
+ * features registry rather than `SETTINGS_KEYS`). Prefer `setSetting` whenever
+ * the key is one of the typed `SettingsKey` values.
+ */
+export function setRawSetting(key: string, value: string): SettingRow {
   const db = getDrizzle();
 
   db.insert(settings)
-    .values({ key: input.key, value: input.value })
+    .values({ key, value })
     .onConflictDoUpdate({
       target: settings.key,
-      set: { value: input.value },
+      set: { value },
     })
     .run();
 
-  return getSetting(input.key);
+  const [row] = db.select().from(settings).where(eq(settings.key, key)).all();
+  if (!row) {
+    throw new NotFoundError('Setting', key);
+  }
+  return row;
 }
 
 /** Get multiple settings by key — missing keys are omitted from the result */

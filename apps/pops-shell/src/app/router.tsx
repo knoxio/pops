@@ -14,6 +14,7 @@ import { routes as inventoryRoutes } from '@pops/app-inventory';
 import { routes as mediaRoutes } from '@pops/app-media';
 
 import { RootLayout } from './layout/RootLayout';
+import { FeaturesPage } from './pages/features-page/FeaturesPage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { SettingsPage } from './pages/SettingsPage';
 
@@ -76,6 +77,7 @@ export const router = createBrowserRouter([
         children: withSuspense(cerebrumRoutes),
       },
       { path: 'settings', element: <SettingsPage /> },
+      { path: 'features', element: <FeaturesPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

@@ -88,6 +88,19 @@ vi.mock('@pops/db-types', () => ({
   syncLogs: { syncedAt: 'synced_at', id: 'id', errors: 'errors' },
 }));
 
+// The scheduler reads enable state via the features framework; in this isolated
+// test the registry is empty and we don't exercise feature registration. Mock
+// `isEnabled` so that it mirrors the in-test settings store behaviour for the
+// `media.plex.scheduler` key (legacy `plex_scheduler_enabled`).
+vi.mock('../../core/features/index.js', () => ({
+  isEnabled: vi.fn((key: string) => {
+    if (key === 'media.plex.scheduler') {
+      return settingsStore.get('plex_scheduler_enabled') === 'true';
+    }
+    return false;
+  }),
+}));
+
 import {
   _resetScheduler,
   getPersistedSchedulerState,

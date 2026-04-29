@@ -7,7 +7,9 @@ import './search/tv-shows-adapter.js';
 // Side-effect: register rotation source adapters
 import './rotation/register-sources.js';
 
+import { featuresRegistry } from '../core/features/index.js';
 import { settingsRegistry } from '../core/settings/index.js';
+import { mediaFeaturesManifest } from './features.js';
 import { arrManifest, plexManifest, rotationManifest } from './settings/manifests.js';
 import { mediaOperationalManifest } from './settings/operational-manifest.js';
 
@@ -15,6 +17,8 @@ settingsRegistry.register(plexManifest);
 settingsRegistry.register(arrManifest);
 settingsRegistry.register(rotationManifest);
 settingsRegistry.register(mediaOperationalManifest);
+
+featuresRegistry.register(mediaFeaturesManifest);
 
 import { router } from '../../trpc.js';
 import { arrRouter } from './arr/index.js';

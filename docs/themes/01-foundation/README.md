@@ -30,8 +30,9 @@ Build a multi-app platform from a shared foundation: one monorepo, one shell, on
 | 6   | [Drizzle ORM](epics/06-drizzle-orm.md)                     | Type-safe queries and schema-as-code, replacing raw SQL                                                           | Done    |
 | 7   | [Search](epics/07-search.md)                               | Platform-wide search from TopBar, context-aware results, structured query syntax, cross-domain via universal URIs | Done    |
 | 8   | [Settings System](epics/08-settings-system.md)             | Unified, self-registering settings page — modular sections per app, replaces scattered settings UIs               | Done    |
+| 9   | [Feature Toggles](epics/09-feature-toggles.md)             | FeatureManifest + `isEnabled()` helper, admin Features page, credential gating, per-user preferences              | Partial |
 
-Epic 0 is prerequisite to everything. Epics 1-5 can be built incrementally. Epic 6 is independent. Epic 8 depends on Epic 4 (settings table) and Epic 2 (shell routing).
+Epic 0 is prerequisite to everything. Epics 1-5 can be built incrementally. Epic 6 is independent. Epic 8 depends on Epic 4 (settings table) and Epic 2 (shell routing). Epic 9 depends on Epic 8 (manifest pattern) and Epic 4 (`user_settings` table).
 
 ## Key Decisions
 

@@ -4,10 +4,13 @@
 // Side-effect: register search adapters
 import './items/search-adapter.js';
 
+import { featuresRegistry } from '../core/features/index.js';
 import { settingsRegistry } from '../core/settings/index.js';
+import { inventoryFeaturesManifest } from './features.js';
 import { inventoryManifest } from './settings-manifest.js';
 
 settingsRegistry.register(inventoryManifest);
+featuresRegistry.register(inventoryFeaturesManifest);
 
 import { router } from '../../trpc.js';
 import { connectionsRouter } from './connections/index.js';
