@@ -145,7 +145,7 @@ function PickContent({
   onRefresh,
 }: {
   isLoading: boolean;
-  error: Error | null;
+  error: { message: string } | null;
   movies: unknown[];
   isFinished: boolean;
   currentMovie: ReturnType<typeof useQuickPickModel>['currentMovie'];
