@@ -30,7 +30,6 @@ export function RulesFilters({
           onMatchTypeChange(e.target.value);
         }}
         options={MATCH_TYPE_OPTIONS}
-        placeholder="All Match Types"
         className="w-44"
       />
       <TextInput

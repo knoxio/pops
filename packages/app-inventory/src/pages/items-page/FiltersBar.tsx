@@ -78,28 +78,24 @@ export function FiltersBar({
         value={typeFilter}
         onChange={(e) => onParamChange('type', e.target.value)}
         options={typeOptions}
-        placeholder="All Types"
         className="w-36"
       />
       <Select
         value={conditionFilter}
         onChange={(e) => onParamChange('condition', e.target.value)}
         options={CONDITION_OPTIONS}
-        placeholder="All Conditions"
         className="w-40"
       />
       <Select
         value={inUseFilter}
         onChange={(e) => onParamChange('inUse', e.target.value)}
         options={IN_USE_OPTIONS}
-        placeholder="All"
         className="w-28"
       />
       <Select
         value={locationFilter}
         onChange={(e) => onParamChange('locationId', e.target.value)}
         options={locationOptions}
-        placeholder="All Locations"
         className="w-40"
       />
       {hasActiveFilters && (

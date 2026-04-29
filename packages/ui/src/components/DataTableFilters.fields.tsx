@@ -35,7 +35,7 @@ export function SelectFilter({ column, options, placeholder }: SelectFilterProps
       value={(column.getFilterValue() as string) ?? ''}
       onChange={(e) => column.setFilterValue(e.target.value || undefined)}
       options={options}
-      placeholder={placeholder ?? 'Select...'}
+      placeholder={placeholder}
       className="w-full sm:w-45"
     />
   );

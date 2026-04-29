@@ -512,7 +512,7 @@ describe('RulesBrowserPage', () => {
   it('passes matchType to server query when filter selected', async () => {
     const user = userEvent.setup();
     renderPage();
-    const select = screen.getByRole('combobox', { name: /all match types/i });
+    const select = screen.getByRole('combobox');
     await user.selectOptions(select, 'exact');
     // Verify the query was called with matchType param (server-side filter)
     const lastCall = mockListQuery.mock.calls.at(-1);
@@ -523,7 +523,7 @@ describe('RulesBrowserPage', () => {
     const user = userEvent.setup();
     renderPage();
     expect(screen.queryByText('Clear filters')).not.toBeInTheDocument();
-    const select = screen.getByRole('combobox', { name: /all match types/i });
+    const select = screen.getByRole('combobox');
     await user.selectOptions(select, 'exact');
     expect(screen.getByText('Clear filters')).toBeInTheDocument();
   });
