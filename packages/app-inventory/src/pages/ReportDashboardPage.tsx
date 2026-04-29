@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
 
 /**
- * ReportDashboardPage — inventory reporting hub at `/inventory/report`.
+ * ReportDashboardPage — inventory reporting hub at `/inventory/reports`.
  *
  * Shows the summary dashboard widgets (item count, values, expiring warranties,
  * recently added) and a navigation card to the detailed insurance report.
@@ -27,7 +27,7 @@ export function ReportDashboardPage() {
         <Button
           variant="outline"
           prefix={<FileText className="h-4 w-4" />}
-          onClick={() => navigate('/inventory/report/insurance')}
+          onClick={() => navigate('/inventory/reports/insurance')}
         >
           {t('report.insurance')}
         </Button>

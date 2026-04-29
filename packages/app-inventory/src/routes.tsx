@@ -5,6 +5,7 @@
  * these via @pops/app-inventory and mounts them under /inventory/*.
  */
 import { lazy } from 'react';
+import { Navigate } from 'react-router';
 
 import type { RouteObject } from 'react-router';
 
@@ -67,7 +68,7 @@ export const navConfig = {
       icon: 'ShieldCheck',
     },
     { path: '/locations', label: 'Locations', labelKey: 'inventory.locations', icon: 'MapPin' },
-    { path: '/report', label: 'Reports', labelKey: 'inventory.reports', icon: 'BarChart3' },
+    { path: '/reports', label: 'Reports', labelKey: 'inventory.reports', icon: 'BarChart3' },
   ],
 } satisfies AppNavConfigShape;
 
@@ -79,10 +80,12 @@ export const routes: RouteObject[] = [
   { path: 'warranties', element: <WarrantiesPage /> },
   { path: 'locations', element: <LocationTreePage /> },
   {
-    path: 'report',
+    path: 'reports',
     children: [
       { index: true, element: <ReportDashboardPage /> },
       { path: 'insurance', element: <InsuranceReportPage /> },
     ],
   },
+  { path: 'report', element: <Navigate to="/inventory/reports" replace /> },
+  { path: 'report/insurance', element: <Navigate to="/inventory/reports/insurance" replace /> },
 ];

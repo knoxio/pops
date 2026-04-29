@@ -1,7 +1,7 @@
 /**
  * Integration test — Inventory insurance report filtered by location (#2114)
  *
- * Tier 2: navigate to /inventory/report/insurance, pick a seeded location filter,
+ * Tier 2: navigate to /inventory/reports/insurance, pick a seeded location filter,
  * verify only items from that location are shown, the displayed total matches the
  * sum of those items' replacement values, and no console errors occur.
  *
@@ -96,7 +96,7 @@ test.describe('Inventory — insurance report filtered by location', () => {
   });
 
   test('deep-link with ?locationId scopes items and total to that location', async ({ page }) => {
-    await page.goto(`/inventory/report/insurance?locationId=${LOCATION_ID}`);
+    await page.goto(`/inventory/reports/insurance?locationId=${LOCATION_ID}`);
 
     // Summary renders before we assert totals.
     await expect(page.getByRole('heading', { name: /Insurance Report/i })).toBeVisible({
@@ -106,7 +106,7 @@ test.describe('Inventory — insurance report filtered by location', () => {
   });
 
   test('selecting a location via the picker scopes items and total', async ({ page }) => {
-    await page.goto('/inventory/report/insurance');
+    await page.goto('/inventory/reports/insurance');
 
     // Sanity: unfiltered report is visible first — Road Bike must be present
     // somewhere in the all-locations view so we know the page rendered fully.

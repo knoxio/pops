@@ -1,7 +1,7 @@
 /**
  * E2E — Inventory reports: value breakdown by location (#2128)
  *
- * Tier 3: navigate to `/inventory/report`, confirm the Value by Location
+ * Tier 3: navigate to `/inventory/reports`, confirm the Value by Location
  * widget renders, at least one seeded location shows a non-zero replacement
  * value, and the sum across all locations equals the overall replacement
  * value shown in the items list summary.
@@ -106,7 +106,7 @@ test.describe('Inventory reports — value breakdown by location', () => {
     page.on('console', (msg) => {
       if (msg.type() === 'error') consoleErrors.push(msg.text());
     });
-    await page.goto('/inventory/report');
+    await page.goto('/inventory/reports');
   });
 
   test.afterEach(async ({ page }) => {

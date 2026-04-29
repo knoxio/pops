@@ -114,7 +114,7 @@ function PrimaryActions({
         <FolderPlus className="h-3.5 w-3.5 text-muted-foreground" />
       </ActionIconButton>
       <Link
-        to={`/inventory/report/insurance?locationId=${node.id}`}
+        to={`/inventory/reports/insurance?locationId=${node.id}`}
         onClick={(e) => e.stopPropagation()}
         className="p-0.5 rounded hover:bg-muted"
         title={`Insurance report for ${node.name}`}

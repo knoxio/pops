@@ -25,14 +25,14 @@ vi.mock('../components/ValueBreakdown', () => ({
 
 import { ReportDashboardPage } from './ReportDashboardPage';
 
-function renderPage(initialPath = '/inventory/report') {
+function renderPage(initialPath = '/inventory/reports') {
   return render(
     <MemoryRouter initialEntries={[initialPath]}>
       <Routes>
-        <Route path="/inventory/report" element={<ReportDashboardPage />} />
+        <Route path="/inventory/reports" element={<ReportDashboardPage />} />
         <Route path="/inventory/warranties" element={<div data-testid="warranties-page" />} />
         <Route
-          path="/inventory/report/insurance"
+          path="/inventory/reports/insurance"
           element={<div data-testid="insurance-report-page" />}
         />
         <Route path="/inventory/items/:id" element={<div data-testid="item-detail-page" />} />
@@ -91,7 +91,7 @@ describe('ReportDashboardPage', () => {
     expect(screen.getByText('Insurance Report')).toBeInTheDocument();
   });
 
-  it('navigates to /inventory/report/insurance on Insurance Report click', () => {
+  it('navigates to /inventory/reports/insurance on Insurance Report click', () => {
     mocks.dashboardQuery.mockReturnValue({ ...populatedDashboard, isLoading: false });
     renderPage();
     fireEvent.click(screen.getByText('Insurance Report'));
