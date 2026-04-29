@@ -16,7 +16,7 @@ export interface Budget {
 
 export const BudgetFormSchema = z.object({
   category: z.string().min(1, 'Category is required'),
-  period: z.string(),
+  period: z.enum(['', 'Monthly', 'Yearly']),
   amount: z.string(),
   active: z.boolean(),
   notes: z.string(),
@@ -25,7 +25,7 @@ export const BudgetFormSchema = z.object({
 export type BudgetFormValues = z.infer<typeof BudgetFormSchema>;
 
 export const PERIOD_OPTIONS = [
-  { label: 'None (One-time)', value: '' },
+  { label: 'One-time', value: '' },
   { label: 'Monthly', value: 'Monthly' },
   { label: 'Yearly', value: 'Yearly' },
 ];

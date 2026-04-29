@@ -11,7 +11,7 @@ As a user, I want a budgets page showing all budget categories so that I can see
 
 - [x] DataTable with columns: Category (sortable), Period (Monthly/Yearly badge), Amount (sortable, right-aligned), Status (Active/Inactive badge), Notes (truncated)
 - [x] Search by category
-- [x] Filter by: Period (Monthly/Yearly), Status (Active/Inactive)
+- [x] Filter by: Period (One-time/Monthly/Yearly), Status (Active/Inactive)
 - [x] Pagination with limit 100
 - [x] Loading skeleton and empty state
 

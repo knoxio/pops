@@ -26,7 +26,12 @@ const periodColumn: ColumnDef<Budget> = {
   header: 'Period',
   cell: ({ row }) => {
     const period = row.original.period;
-    if (!period) return <span className="text-muted-foreground">—</span>;
+    if (!period)
+      return (
+        <Badge variant="outline" className="text-muted-foreground border-muted-foreground/20">
+          One-time
+        </Badge>
+      );
     return (
       <Badge
         variant="outline"
@@ -39,6 +44,12 @@ const periodColumn: ColumnDef<Budget> = {
         {period}
       </Badge>
     );
+  },
+  filterFn: (row, columnId, filterValue) => {
+    if (filterValue === undefined || filterValue === null || filterValue === '') return true;
+    const value = row.getValue<string | null>(columnId);
+    if (filterValue === '__null__') return value === null;
+    return value === filterValue;
   },
 };
 
@@ -190,6 +201,7 @@ export const BUDGET_TABLE_FILTERS: ColumnFilter[] = [
     label: 'Period',
     options: [
       { label: 'All Periods', value: '' },
+      { label: 'One-time', value: '__null__' },
       { label: 'Monthly', value: 'Monthly' },
       { label: 'Yearly', value: 'Yearly' },
     ],

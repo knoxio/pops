@@ -87,7 +87,7 @@ export function useBudgetsPage() {
     setEditingBudget(budget);
     form.reset({
       category: budget.category,
-      period: budget.period ?? '',
+      period: budget.period === 'Monthly' || budget.period === 'Yearly' ? budget.period : '',
       amount: budget.amount !== null ? String(budget.amount) : '',
       active: budget.active,
       notes: budget.notes ?? '',

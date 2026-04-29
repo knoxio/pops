@@ -221,32 +221,32 @@ describe('budgets.create', () => {
   it('creates a budget with all fields', async () => {
     const result = await caller.finance.budgets.create({
       category: 'Groceries',
-      period: '2025-06',
+      period: 'Monthly',
       amount: 500,
       active: true,
       notes: 'Monthly grocery budget',
     });
 
     expect(result.data.category).toBe('Groceries');
-    expect(result.data.period).toBe('2025-06');
+    expect(result.data.period).toBe('Monthly');
     expect(result.data.amount).toBe(500);
     expect(result.data.active).toBe(true);
     expect(result.data.notes).toBe('Monthly grocery budget');
   });
 
   it('throws CONFLICT for duplicate category+period combination', async () => {
-    seedBudget(db, { category: 'Groceries', period: '2025-06' });
+    seedBudget(db, { category: 'Groceries', period: 'Monthly' });
 
     await expect(
       caller.finance.budgets.create({
         category: 'Groceries',
-        period: '2025-06',
+        period: 'Monthly',
       })
     ).rejects.toThrow(TRPCError);
     await expect(
       caller.finance.budgets.create({
         category: 'Groceries',
-        period: '2025-06',
+        period: 'Monthly',
       })
     ).rejects.toMatchObject({
       code: 'CONFLICT',
@@ -271,15 +271,15 @@ describe('budgets.create', () => {
   });
 
   it('allows same category with different periods', async () => {
-    seedBudget(db, { category: 'Groceries', period: '2025-06' });
+    seedBudget(db, { category: 'Groceries', period: 'Monthly' });
 
     const result = await caller.finance.budgets.create({
       category: 'Groceries',
-      period: '2025-07',
+      period: 'Yearly',
     });
 
     expect(result.data.category).toBe('Groceries');
-    expect(result.data.period).toBe('2025-07');
+    expect(result.data.period).toBe('Yearly');
   });
 
   it('persists to the database', async () => {
@@ -296,7 +296,7 @@ describe('budgets.create', () => {
   it('stores all fields in SQLite', async () => {
     const result = await caller.finance.budgets.create({
       category: 'Groceries',
-      period: '2025-06',
+      period: 'Monthly',
       amount: 500,
       active: true,
       notes: 'Test notes',
@@ -310,7 +310,7 @@ describe('budgets.create', () => {
       .get();
     expect(row).toBeDefined();
     expect(row!.category).toBe('Groceries');
-    expect(row!.period).toBe('2025-06');
+    expect(row!.period).toBe('Monthly');
     expect(row!.amount).toBe(500);
     expect(row!.active).toBe(1);
     expect(row!.notes).toBe('Test notes');
@@ -335,13 +335,13 @@ describe('budgets.update', () => {
       id,
       data: {
         category: 'Food & Groceries',
-        period: '2025-06',
+        period: 'Monthly',
         amount: 500,
       },
     });
 
     expect(result.data.category).toBe('Food & Groceries');
-    expect(result.data.period).toBe('2025-06');
+    expect(result.data.period).toBe('Monthly');
     expect(result.data.amount).toBe(500);
   });
 
