@@ -1,0 +1,265 @@
+# Development compose — uses local build: contexts. Production uses ghcr.io images (see mu-deploy).
+services:
+  # ── JOB QUEUE ────────────────────────────────────────────────────
+  pops-redis:
+    image: redis:7-alpine
+    container_name: pops-redis
+    restart: unless-stopped
+    networks:
+      - backend
+    volumes:
+      - pops-redis-data:/data
+    command: redis-server --save "" --appendonly no --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ── BACKEND ──────────────────────────────────────────────────────
+
+  pops-api:
+    build:
+      context: ..
+      dockerfile: apps/pops-api/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    container_name: pops-api
+    restart: unless-stopped
+    networks:
+      - frontend
+      - backend
+    volumes:
+      - sqlite-data:/data/sqlite
+    secrets:
+      - notion_api_token
+      - up_bank_token
+      - up_webhook_secret
+      - finance_api_key
+      - claude_api_key
+      - tmdb_api_key
+      - thetvdb_api_key
+    environment:
+      NODE_ENV: production
+      SQLITE_PATH: /data/sqlite/pops.db
+      PORT: '3000'
+      REDIS_HOST: pops-redis
+      REDIS_PORT: '6379'
+      # Paperless-ngx integration (optional — leave unset to disable)
+      PAPERLESS_BASE_URL: ${PAPERLESS_BASE_URL:-}
+      PAPERLESS_API_TOKEN: ${PAPERLESS_API_TOKEN:-}
+    expose:
+      - '3000'
+    depends_on:
+      pops-redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3000/health').then(r=>{if(!r.ok)process.exit(1)})",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  pops-worker:
+    build:
+      context: ..
+      dockerfile: apps/pops-api/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    container_name: pops-worker
+    restart: unless-stopped
+    command: ['node', 'dist/worker.js']
+    networks:
+      - backend
+    volumes:
+      - sqlite-data:/data/sqlite
+    secrets:
+      - notion_api_token
+      - up_bank_token
+      - up_webhook_secret
+      - finance_api_key
+      - claude_api_key
+      - tmdb_api_key
+      - thetvdb_api_key
+    environment:
+      NODE_ENV: production
+      SQLITE_PATH: /data/sqlite/pops.db
+      REDIS_HOST: pops-redis
+      REDIS_PORT: '6379'
+    depends_on:
+      pops-redis:
+        condition: service_healthy
+
+  # ── FRONTEND ─────────────────────────────────────────────────────
+  pops-shell:
+    build:
+      context: ..
+      dockerfile: apps/pops-shell/Dockerfile
+      args:
+        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    container_name: pops-shell
+    restart: unless-stopped
+    networks:
+      - frontend
+    expose:
+      - '80'
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:80']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  metabase:
+    image: metabase/metabase:v0.52.5
+    container_name: pops-metabase
+    restart: unless-stopped
+    networks:
+      - frontend
+    volumes:
+      - metabase-data:/metabase-data
+      - sqlite-data:/data/sqlite:ro
+    environment:
+      MB_DB_FILE: /metabase-data/metabase.db
+      MB_JETTY_PORT: '3000'
+      JAVA_TOOL_OPTIONS: -Xmx512m
+    expose:
+      - '3000'
+
+  # ── DOCUMENTS ────────────────────────────────────────────────────
+  paperless-ngx:
+    image: ghcr.io/paperless-ngx/paperless-ngx:2.14
+    container_name: pops-paperless
+    restart: unless-stopped
+    networks:
+      - documents
+    volumes:
+      - paperless-data:/usr/src/paperless/data
+      - paperless-media:/usr/src/paperless/media
+      - paperless-consume:/usr/src/paperless/consume
+    secrets:
+      - paperless_secret_key
+      - paperless_admin_password
+    environment:
+      PAPERLESS_SECRET_KEY_FILE: /run/secrets/paperless_secret_key
+      PAPERLESS_REDIS: redis://paperless-redis:6379
+      PAPERLESS_URL: https://pops-paperless.${POPS_DOMAIN:-localhost}
+      PAPERLESS_TIME_ZONE: Australia/Melbourne
+      PAPERLESS_OCR_LANGUAGE: eng
+      PAPERLESS_ADMIN_USER: admin
+      PAPERLESS_ADMIN_PASSWORD_FILE: /run/secrets/paperless_admin_password
+    expose:
+      - '8000'
+    depends_on:
+      - paperless-redis
+
+  paperless-redis:
+    image: redis:7-alpine
+    container_name: pops-paperless-redis
+    restart: unless-stopped
+    networks:
+      - documents
+    volumes:
+      - paperless-redis:/data
+
+  # ── MOLTBOT (on-demand) ───────────────────────────────────────────
+  moltbot:
+    image: moltbot/moltbot:latest
+    container_name: pops-moltbot
+    restart: unless-stopped
+    profiles:
+      - moltbot
+    networks:
+      - backend
+    volumes:
+      - ../apps/moltbot/config/config.yml:/home/node/.moltbot/config.yml:ro
+      - ../apps/moltbot/skills:/home/node/.moltbot/workspace/skills:ro
+    secrets:
+      - telegram_bot_token
+      - claude_api_key
+      - finance_api_key
+    environment:
+      TELEGRAM_BOT_TOKEN_FILE: /run/secrets/telegram_bot_token
+      FINANCE_API_URL: http://pops-api:3000
+      FINANCE_API_KEY_FILE: /run/secrets/finance_api_key
+
+  # ── CLOUDFLARE TUNNEL ────────────────────────────────────────────
+  cloudflared:
+    image: cloudflare/cloudflared:2025.2.0
+    container_name: pops-cloudflared
+    restart: unless-stopped
+    networks:
+      - frontend
+      - documents
+    command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+
+  # ── TOOLS (on-demand) ───────────────────────────────────────────
+  tools:
+    build: ../packages/import-tools
+    container_name: pops-tools
+    profiles:
+      - tools
+    networks:
+      - backend
+    volumes:
+      - sqlite-data:/data/sqlite
+      - ../packages/import-tools/data:/data/imports
+    secrets:
+      - notion_api_token
+      - claude_api_key
+      - up_bank_token
+    environment:
+      SQLITE_PATH: /data/sqlite/pops.db
+
+networks:
+  frontend:
+    name: pops-frontend
+    driver: bridge
+  backend:
+    name: pops-backend
+    driver: bridge
+  documents:
+    name: pops-documents
+    driver: bridge
+
+volumes:
+  sqlite-data:
+    name: pops-sqlite-data
+  pops-redis-data:
+    name: pops-redis-data
+  metabase-data:
+    name: pops-metabase-data
+  paperless-data:
+    name: pops-paperless-data
+  paperless-media:
+    name: pops-paperless-media
+  paperless-consume:
+    name: pops-paperless-consume
+  paperless-redis:
+    name: pops-paperless-redis
+
+secrets:
+  notion_api_token:
+    file: ../secrets/notion_api_token
+  up_bank_token:
+    file: ../secrets/up_bank_token
+  up_webhook_secret:
+    file: ../secrets/up_webhook_secret
+  claude_api_key:
+    file: ../secrets/claude_api_key
+  telegram_bot_token:
+    file: ../secrets/telegram_bot_token
+  finance_api_key:
+    file: ../secrets/finance_api_key
+  tmdb_api_key:
+    file: ../secrets/tmdb_api_key
+  thetvdb_api_key:
+    file: ../secrets/thetvdb_api_key
+  paperless_secret_key:
+    file: ../secrets/paperless_secret_key
+  paperless_admin_password:
+    file: ../secrets/paperless_admin_password
