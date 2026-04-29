@@ -314,7 +314,7 @@ When a movie is added to the POPS library, automatically checks Plex Discover cl
 
 ## Import Pipeline
 
-Two interfaces: the **Import Wizard** (6-step UI in `app-finance`) and **CLI scripts** (`packages/import-tools/`).
+Two interfaces: the **Import Wizard** (7-step UI in `app-finance`) and **CLI scripts** (`packages/import-tools/`).
 
 ### Entity Matching Chain (`apps/pops-api/src/modules/finance/imports/`)
 
