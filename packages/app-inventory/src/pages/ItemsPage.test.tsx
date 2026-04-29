@@ -7,6 +7,8 @@ const mocks = vi.hoisted(() => ({
   typesQuery: vi.fn(),
   treeQuery: vi.fn(),
   searchByAssetId: vi.fn(),
+  deleteItem: vi.fn(),
+  invalidateList: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@pops/api-client', () => ({
@@ -16,6 +18,15 @@ vi.mock('@pops/api-client', () => ({
         list: { useQuery: (input: unknown) => mocks.itemsQuery(input) },
         distinctTypes: { useQuery: () => mocks.typesQuery() },
         searchByAssetId: { fetch: mocks.searchByAssetId },
+        delete: {
+          useMutation: (opts?: { onSuccess?: () => void }) => ({
+            mutate: (input: { id: string }) => {
+              mocks.deleteItem(input);
+              opts?.onSuccess?.();
+            },
+            isPending: false,
+          }),
+        },
       },
       locations: {
         tree: { useQuery: () => mocks.treeQuery() },
@@ -23,7 +34,10 @@ vi.mock('@pops/api-client', () => ({
     },
     useUtils: () => ({
       inventory: {
-        items: { searchByAssetId: { fetch: mocks.searchByAssetId } },
+        items: {
+          list: { invalidate: mocks.invalidateList },
+          searchByAssetId: { fetch: mocks.searchByAssetId },
+        },
       },
     }),
   },
