@@ -46,8 +46,6 @@ export function TopBarActions({ onOpenMobileSearch }: TopBarActionsProps) {
           <Moon className="h-5 w-5 text-indigo-600 group-hover:text-indigo-500 transition-colors" />
         )}
       </Button>
-
-      <div className="hidden md:block text-sm text-muted-foreground">user@example.com</div>
     </div>
   );
 }
