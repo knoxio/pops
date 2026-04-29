@@ -25,9 +25,21 @@ export function useSubmission(formState: FormState, inference: Inference) {
 
   const confirmInferredScopes = useCallback(() => {
     inference.confirm((scopes) => {
-      formState.updateField('scopes', [...new Set([...formState.form.scopes, ...scopes])]);
+      const mergedScopes = [...new Set([...formState.form.scopes, ...scopes])];
+      formState.updateField('scopes', mergedScopes);
+      const { form } = formState;
+      submitMutation.mutate({
+        body: form.body,
+        title: form.title || undefined,
+        type: form.type || undefined,
+        scopes: mergedScopes.length > 0 ? mergedScopes : undefined,
+        tags: form.tags.length > 0 ? form.tags : undefined,
+        template: form.template || undefined,
+        source: 'manual',
+        customFields: Object.keys(form.customFields).length > 0 ? form.customFields : undefined,
+      });
     });
-  }, [inference, formState]);
+  }, [inference, formState, submitMutation]);
 
   const handleSubmit = useCallback(async () => {
     const { form } = formState;
