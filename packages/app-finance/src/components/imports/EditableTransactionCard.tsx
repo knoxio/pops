@@ -48,7 +48,7 @@ function TransactionTypeSelect({
         value={value}
         onChange={(e) => onChange(e.target.value as TransactionType)}
         options={[
-          { label: 'Purchase (requires entity)', value: 'purchase' },
+          { label: 'Expense (requires entity)', value: 'purchase' },
           { label: 'Transfer (between accounts, no entity)', value: 'transfer' },
           { label: 'Income (salary, refund, etc.)', value: 'income' },
         ]}
@@ -57,7 +57,7 @@ function TransactionTypeSelect({
         {value === 'transfer' &&
           "Transfers don't need an entity - they move money between accounts"}
         {value === 'income' && 'Income transactions: salary, interest, refunds, etc.'}
-        {value === 'purchase' && 'Purchases require an entity (merchant/payee)'}
+        {value === 'purchase' && 'Expenses require an entity (merchant/payee)'}
       </p>
     </div>
   );

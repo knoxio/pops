@@ -18,7 +18,7 @@ Build the transaction ledger — the core of the finance app. Every financial tr
 | account                | TEXT | NOT NULL                    | Account identifier (e.g., "ANZ Everyday", "Amex")         |
 | amount                 | REAL | NOT NULL                    | Transaction amount. Negative = expense, positive = income |
 | date                   | TEXT | NOT NULL                    | YYYY-MM-DD format                                         |
-| type                   | TEXT | NOT NULL                    | "purchase", "transfer", or "income"                       |
+| type                   | TEXT | NOT NULL                    | "Expense", "Income", or "Transfer"                        |
 | tags                   | TEXT | DEFAULT '[]'                | JSON array of tag strings                                 |
 | entity_id              | TEXT | FK → entities(id), nullable | Linked entity                                             |
 | entity_name            | TEXT | nullable                    | Denormalized entity name (survives entity deletion)       |
@@ -46,7 +46,7 @@ Build the transaction ledger — the core of the finance app. Every financial tr
 
 ## Business Rules
 
-- `type` must be one of: "purchase", "transfer", "income"
+- `type` must be one of: "Expense", "Income", "Transfer" (capitalized). The import pipeline uses a lowercase internal representation (`purchase`, `transfer`, `income`) that is converted to the canonical capitalized form before DB write.
 - `amount` can be positive (income) or negative (expense) — no sign convention enforcement at the API level. Zero is not a valid transaction amount; the form validates `amount !== 0` and surfaces "Amount must be non-zero" rather than the generic "required" message
 - `tags` stored as JSON array; API parses and validates
 - `entity_name` is denormalized — survives entity deletion. If entity is deleted, `entity_id` becomes null but `entity_name` remains
@@ -109,4 +109,4 @@ US-02 and US-03 can parallelise after US-01. US-04 can parallelise with US-02.
 
 ## Drift Check
 
-last checked: 2026-04-17
+last checked: 2026-04-29

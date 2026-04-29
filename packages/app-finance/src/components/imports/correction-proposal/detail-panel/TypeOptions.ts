@@ -1,6 +1,6 @@
 export const TYPE_OPTIONS = [
   { value: '', label: '— none —' },
-  { value: 'purchase', label: 'Purchase' },
+  { value: 'purchase', label: 'Expense' },
   { value: 'transfer', label: 'Transfer' },
   { value: 'income', label: 'Income' },
 ];
