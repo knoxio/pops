@@ -35,6 +35,7 @@ export const useUIStore = create<UIState>()(
       railOpen: true,
       pageNavOpen: false,
       skipNextPageNavClose: false,
+      cerebrumChatOpen: false,
       toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
       toggleRail: () => set((state) => ({ railOpen: !state.railOpen })),
@@ -42,6 +43,8 @@ export const useUIStore = create<UIState>()(
       togglePageNav: () => set((state) => ({ pageNavOpen: !state.pageNavOpen })),
       setPageNavOpen: (open) => set({ pageNavOpen: open }),
       setSkipNextPageNavClose: (skip) => set({ skipNextPageNavClose: skip }),
+      toggleCerebrumChat: () => set((state) => ({ cerebrumChatOpen: !state.cerebrumChatOpen })),
+      setCerebrumChatOpen: (open) => set({ cerebrumChatOpen: open }),
     }),
     {
       name: 'pops-ui-storage',
