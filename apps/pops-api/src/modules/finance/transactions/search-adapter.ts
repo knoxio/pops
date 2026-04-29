@@ -76,7 +76,7 @@ export const transactionsSearchAdapter: SearchAdapter<TransactionHitData> = {
           amount: row.amount,
           date: row.date,
           entityName: row.entityName,
-          type: row.type as 'income' | 'expense' | 'transfer',
+          type: (row.type as string).toLowerCase() as 'income' | 'expense' | 'transfer',
         },
       });
     }

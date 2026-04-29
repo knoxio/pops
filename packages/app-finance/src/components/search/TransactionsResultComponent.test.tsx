@@ -53,6 +53,21 @@ describe('TransactionsResultComponent', () => {
     expect(screen.queryByText('Woolworths')).not.toBeInTheDocument();
   });
 
+  it('shows type badge for expense', () => {
+    render(<TransactionsResultComponent data={makeData({ type: 'expense' })} />);
+    expect(screen.getByText('expense')).toBeInTheDocument();
+  });
+
+  it('shows type badge for income', () => {
+    render(<TransactionsResultComponent data={makeData({ type: 'income' })} />);
+    expect(screen.getByText('income')).toBeInTheDocument();
+  });
+
+  it('shows type badge for transfer', () => {
+    render(<TransactionsResultComponent data={makeData({ type: 'transfer' })} />);
+    expect(screen.getByText('transfer')).toBeInTheDocument();
+  });
+
   it('highlights matched portion of description', () => {
     const { container } = render(
       <TransactionsResultComponent

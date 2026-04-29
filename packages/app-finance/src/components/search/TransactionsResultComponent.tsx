@@ -1,5 +1,5 @@
 import { registerResultComponent } from '@pops/navigation';
-import { formatCurrency, formatDate, highlightMatch, SearchResultItem } from '@pops/ui';
+import { Badge, formatCurrency, formatDate, highlightMatch, SearchResultItem } from '@pops/ui';
 
 import type { ResultComponentProps } from '@pops/navigation';
 
@@ -29,7 +29,12 @@ export function TransactionsResultComponent({ data, query, matchField }: ResultC
   return (
     <SearchResultItem
       title={shouldHighlight ? highlightMatch(tx.description, query) : tx.description}
-      meta={tx.entityName ? [<span key="entity">{tx.entityName}</span>] : undefined}
+      meta={[
+        tx.entityName ? <span key="entity">{tx.entityName}</span> : null,
+        <Badge key="type" variant="outline" className="text-2xs uppercase tracking-wider shrink-0">
+          {tx.type}
+        </Badge>,
+      ]}
       trailing={
         <div className="flex flex-col items-end shrink-0">
           <span className={`text-sm font-medium ${amountColorClass(tx.type)}`}>
