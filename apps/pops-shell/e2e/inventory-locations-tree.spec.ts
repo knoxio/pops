@@ -58,10 +58,10 @@ function treeItem(page: Page, name: string): Locator {
 
 async function createRootLocation(page: Page, name: string): Promise<void> {
   await page.getByRole('button', { name: /add root location/i }).click();
-  const input = page.getByPlaceholder('Root location name');
+  const input = page.getByPlaceholder('e.g., Garage');
   await expect(input).toBeVisible();
   await input.fill(name);
-  await input.press('Enter');
+  await page.getByRole('button', { name: /^create$/i }).click();
   await expect(treeItem(page, name)).toBeVisible({ timeout: 10_000 });
 }
 
