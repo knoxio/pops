@@ -136,7 +136,8 @@ function buildMovieUpdate(input: UpdateMovieInput): Partial<typeof movies.$infer
   for (const key of MOVIE_REQUIRED_KEYS) {
     const value = input[key];
     if (value === undefined) continue;
-    updates[key] = key === 'title' && typeof value === 'string' ? value.replace(/^"+|"+$/g, '') : value;
+    updates[key] =
+      key === 'title' && typeof value === 'string' ? value.replace(/^"+|"+$/g, '') : value;
     touched = true;
   }
 
