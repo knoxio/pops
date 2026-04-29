@@ -6,7 +6,7 @@ import { trpc } from '@pops/api-client';
 import { useSetPageContext } from '@pops/navigation';
 import { Alert, Button, DataTable, PageHeader, Skeleton } from '@pops/ui';
 
-import { buildColumns, TRANSACTION_TABLE_FILTERS, type Transaction } from './transactions/columns';
+import { buildColumns, buildTransactionFilters, type Transaction } from './transactions/columns';
 import { DeleteTransactionDialog } from './transactions/DeleteTransactionDialog';
 import { TransactionFormDialog } from './transactions/TransactionFormDialog';
 import { useTransactionsPage } from './transactions/useTransactionsPage';
@@ -55,7 +55,7 @@ function TableContent({
       searchPlaceholder={t('transactions.searchPlaceholder')}
       paginated
       defaultPageSize={50}
-      filters={TRANSACTION_TABLE_FILTERS}
+      filters={buildTransactionFilters(t)}
     />
   );
 }
@@ -96,6 +96,7 @@ export function TransactionsPage() {
   }
 
   const columns = buildColumns({
+    t,
     availableTags: state.availableTags,
     onTagSave,
     onTagSuggest,
