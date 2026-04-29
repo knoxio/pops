@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 import { formatRuntime } from '../../lib/format';
 import { MovieHeroActions } from './MovieHeroActions';
@@ -27,6 +27,10 @@ interface MovieHeroProps {
 
 function HeroPoster({ posterUrl, title }: { posterUrl: string | null; title: string }) {
   const [imgError, setImgError] = useState(false);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [posterUrl]);
 
   if (posterUrl && !imgError) {
     return (
