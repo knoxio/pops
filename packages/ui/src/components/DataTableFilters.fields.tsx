@@ -18,7 +18,7 @@ export function TextFilter({ column, placeholder }: TextFilterProps) {
       onChange={(e) => column.setFilterValue(e.target.value)}
       clearable
       onClear={() => column.setFilterValue('')}
-      className="w-full sm:max-w-sm"
+      className="w-full"
     />
   );
 }
@@ -36,7 +36,7 @@ export function SelectFilter({ column, options, placeholder }: SelectFilterProps
       onChange={(e) => column.setFilterValue(e.target.value || undefined)}
       options={options}
       placeholder={placeholder}
-      className="w-full sm:w-45"
+      className="w-full"
     />
   );
 }
@@ -59,7 +59,7 @@ export function MultiSelectFilter({ column, options, placeholder }: MultiSelectF
       }
       multiple
       placeholder={placeholder ?? 'Select...'}
-      className="w-full sm:min-w-50"
+      className="w-full"
     />
   );
 }
@@ -78,7 +78,7 @@ export function DateRangeFilter({ column }: DateRangeFilterProps) {
         value={filterValue[0]}
         onChange={(e) => column.setFilterValue([e.target.value, filterValue[1]])}
         placeholder="From"
-        className="w-full sm:w-38"
+        className="flex-1"
       />
       <span className="hidden text-muted-foreground sm:block">to</span>
       <TextInput
@@ -86,7 +86,7 @@ export function DateRangeFilter({ column }: DateRangeFilterProps) {
         value={filterValue[1]}
         onChange={(e) => column.setFilterValue([filterValue[0], e.target.value])}
         placeholder="To"
-        className="w-full sm:w-38"
+        className="flex-1"
       />
     </div>
   );
