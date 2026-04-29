@@ -65,7 +65,6 @@ export function BudgetsPage() {
           searchPlaceholder={t('budgets.searchPlaceholder')}
           paginated
           defaultPageSize={50}
-          pageSizeOptions={[25, 50, 100]}
           filters={BUDGET_TABLE_FILTERS}
         />
       )}

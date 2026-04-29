@@ -44,7 +44,7 @@ export function DataTable<TData, TValue>({
   searchPlaceholder = 'Search...',
   searchColumn,
   paginated = true,
-  pageSizeOptions = [10, 20, 50, 100],
+  pageSizeOptions = [10, 25, 50, 100],
   defaultPageSize = 10,
   columnVisibility = true,
   emptyState,
