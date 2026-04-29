@@ -1,13 +1,14 @@
 import { registerShelf } from './registry.js';
 /**
- * TMDB-powered discovery shelves — 5 static (template=false) shelves
+ * TMDB-powered discovery shelves — 6 static (template=false) shelves
  * that each query TMDB /discover/movie with different filters:
  *
- *  1. new-releases      — Last 30 days, filtered by top genre affinities
- *  2. hidden-gems       — Vote count 50-500, avg ≥7.0, top genres
- *  3. critics-vs-audiences — High avg (≥8.0) + low popularity (ascending sort)
- *  4. award-winners     — TMDB keyword IDs for academy-award / golden-globe + top genres
- *  5. decade-picks      — Year range of the decade with most watches in watch_history
+ *  1. new-releases        — Last 30 days, filtered by top genre affinities
+ *  2. upcoming-releases   — Next 90 days, sorted by release date ascending
+ *  3. hidden-gems         — Vote count 50-500, avg ≥7.0, top genres
+ *  4. critics-vs-audiences — High avg (≥8.0) + low popularity (ascending sort)
+ *  5. award-winners       — TMDB keyword IDs for academy-award / golden-globe + top genres
+ *  6. decade-picks        — Year range of the decade with most watches in watch_history
  */
 import {
   ACADEMY_AWARD_KEYWORD_ID,
@@ -39,6 +40,32 @@ const newReleasesShelf: ShelfDefinition = {
           releaseDateGte: cutoff,
           genreIds: genreIds.length > 0 ? genreIds : undefined,
           sortBy: 'popularity.desc',
+          page,
+        }),
+      }),
+    ];
+  },
+};
+
+const upcomingReleasesShelf: ShelfDefinition = {
+  id: 'upcoming-releases',
+  template: false,
+  category: 'tmdb',
+  generate(profile: PreferenceProfile): ShelfInstance[] {
+    const today = new Date().toISOString().slice(0, 10);
+    const cutoff = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    return [
+      buildTmdbInstance({
+        shelfId: 'upcoming-releases',
+        title: 'Upcoming Releases',
+        subtitle: 'Coming to cinemas in the next 90 days',
+        emoji: '🎬',
+        score: 0.6,
+        profile,
+        discoverOpts: (page) => ({
+          releaseDateGte: today,
+          releaseDateLte: cutoff,
+          sortBy: 'release_date.asc',
           page,
         }),
       }),
@@ -150,6 +177,7 @@ const decadePicksShelf: ShelfDefinition = {
 };
 
 registerShelf(newReleasesShelf);
+registerShelf(upcomingReleasesShelf);
 registerShelf(hiddenGemsShelf);
 registerShelf(criticsVsAudiencesShelf);
 registerShelf(awardWinnersShelf);

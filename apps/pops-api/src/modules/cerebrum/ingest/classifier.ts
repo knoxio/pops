@@ -33,6 +33,8 @@ const KNOWN_TYPES = [
   'meeting',
   'idea',
   'note',
+  'task',
+  'reference',
   'capture',
 ] as const;
 
@@ -55,7 +57,9 @@ function buildPrompt(body: string, title?: string): string {
 - research: Research notes, findings, literature reviews, technical investigation
 - meeting: Meeting notes, agendas, action items, attendees
 - idea: Creative ideas, brainstorming, concepts to explore
-- note: Reference material, how-tos, general knowledge, links
+- note: General-purpose notes, observations, thoughts
+- task: Actionable to-dos, work items, things to be done with a definition of done
+- reference: Reference material, how-tos, general knowledge, links, specs, docs
 - capture: Quick raw captures, unstructured thoughts, anything that doesn't fit above
 
 ${titleSection}Content:
