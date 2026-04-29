@@ -12,6 +12,14 @@ import { TextInput } from './TextInput';
 
 import type { Table as TanStackTable } from '@tanstack/react-table';
 
+export function getColumnLabel(id: string, header: unknown): string {
+  if (typeof header === 'string') return header;
+  return id
+    .replace(/_/g, ' ')
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 export interface DataTableToolbarProps<TData> {
   table: TanStackTable<TData>;
   searchable: boolean;
@@ -66,7 +74,7 @@ function ColumnVisibilityMenu<TData>({ table }: { table: TanStackTable<TData> })
               checked={column.getIsVisible()}
               onCheckedChange={(value) => column.toggleVisibility(!!value)}
             >
-              {column.id}
+              {getColumnLabel(column.id, column.columnDef.header)}
             </DropdownMenuCheckboxItem>
           ))}
       </DropdownMenuContent>
