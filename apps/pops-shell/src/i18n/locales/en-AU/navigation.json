@@ -27,5 +27,7 @@
   "ai.cache": "Cache",
   "cerebrum": "Cerebrum",
   "cerebrum.ingest": "Ingest",
-  "cerebrum.chat": "Chat"
+  "cerebrum.chat": "Chat",
+  "cerebrum.nudges": "Nudges",
+  "cerebrum.proposals": "Proposals"
 }
