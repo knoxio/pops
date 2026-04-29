@@ -104,8 +104,15 @@ function openDatabase(path: string): BetterSqlite3.Database {
     return db;
   }
 
-  applyManualMigrations(db, path);
+  // Drizzle migrations must run before manual migrations so that the base
+  // tables they depend on (e.g. `entities`, `transactions`) exist when the
+  // manual runner tries to apply migrations that reference them.
+  // Previously this order was reversed, causing a "no such table" crash on
+  // tsx hot-reload when a manual migration (e.g. 007_transaction_corrections)
+  // had not yet been applied and the referenced table was only created by
+  // Drizzle. (#2375)
   applyDrizzleMigrations(db, vecLoaded);
+  applyManualMigrations(db, path);
   return db;
 }
 
