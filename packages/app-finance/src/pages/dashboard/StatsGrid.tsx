@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 
-import { SkeletonGrid, StatCard } from '@pops/ui';
+import { SkeletonGrid, StatCard, type StatCardColor } from '@pops/ui';
 
 import type { Transaction } from '@pops/api/modules/finance/transactions/types';
 
@@ -24,12 +24,19 @@ export function computeStats(
   };
 }
 
+export function signedColor(amount: number): StatCardColor {
+  if (amount > 0) return 'emerald';
+  if (amount < 0) return 'rose';
+  return 'slate';
+}
+
 export function StatsGrid({ stats, isLoading }: { stats: Stats | null; isLoading: boolean }) {
   const { t } = useTranslation('finance');
   if (isLoading) {
     return <SkeletonGrid count={4} itemHeight="h-32" cols="sm:grid-cols-2 lg:grid-cols-4" />;
   }
   if (!stats) return null;
+  const netBalance = stats.totalIncome - stats.totalExpenses;
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
@@ -42,19 +49,19 @@ export function StatsGrid({ stats, isLoading }: { stats: Stats | null; isLoading
         title={t('dashboard.recentIncome')}
         value={`$${stats.totalIncome.toFixed(2)}`}
         description={t('dashboard.last10')}
-        color="emerald"
+        color={signedColor(stats.totalIncome)}
       />
       <StatCard
         title={t('dashboard.recentExpenses')}
         value={`$${stats.totalExpenses.toFixed(2)}`}
         description={t('dashboard.last10')}
-        color="rose"
+        color={signedColor(-stats.totalExpenses)}
       />
       <StatCard
         title={t('dashboard.netBalance')}
-        value={`$${(stats.totalIncome - stats.totalExpenses).toFixed(2)}`}
+        value={`$${netBalance.toFixed(2)}`}
         description={t('dashboard.last10')}
-        color={stats.totalIncome > stats.totalExpenses ? 'emerald' : 'rose'}
+        color={signedColor(netBalance)}
       />
     </div>
   );
