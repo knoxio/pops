@@ -1,0 +1,66 @@
+name: Publish Images
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+
+permissions:
+  packages: write
+  contents: read
+
+jobs:
+  publish:
+    name: Build and push Docker images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate metadata for pops-api
+        id: meta-api
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/knoxio/pops-api
+          tags: |
+            type=raw,value=main,enable={{is_default_branch}}
+            type=sha,prefix=sha-,format=short
+            type=semver,pattern={{version}}
+
+      - name: Build and push pops-api
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/pops-api/Dockerfile
+          push: true
+          tags: ${{ steps.meta-api.outputs.tags }}
+          labels: ${{ steps.meta-api.outputs.labels }}
+          build-args: |
+            BUILD_VERSION=${{ github.sha }}
+
+      - name: Generate metadata for pops-shell
+        id: meta-shell
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/knoxio/pops-shell
+          tags: |
+            type=raw,value=main,enable={{is_default_branch}}
+            type=sha,prefix=sha-,format=short
+            type=semver,pattern={{version}}
+
+      - name: Build and push pops-shell
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/pops-shell/Dockerfile
+          push: true
+          tags: ${{ steps.meta-shell.outputs.tags }}
+          labels: ${{ steps.meta-shell.outputs.labels }}
+          build-args: |
+            BUILD_VERSION=${{ github.sha }}
