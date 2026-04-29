@@ -15,7 +15,7 @@ import { Folder, GripVertical } from 'lucide-react';
 import { Badge, Skeleton } from '@pops/ui';
 
 import { countDescendants, type LocationTreeNode } from '../utils';
-import { InlineInput, LocationNode } from './LocationNode';
+import { LocationNode } from './LocationNode';
 
 function TreeSkeleton() {
   return (
@@ -52,7 +52,6 @@ function DragOverlayNode({ node }: { node: LocationTreeNode }) {
 interface TreeSectionProps {
   treeNodes: LocationTreeNode[];
   isLoading: boolean;
-  addingRoot: boolean;
   selectedId: string | null;
   addingChildOf: string | null;
   overId: string | null;
@@ -66,8 +65,6 @@ interface TreeSectionProps {
   onDelete: (id: string) => void;
   onNewChildSave: (name: string) => void;
   onNewChildCancel: () => void;
-  onNewRootSave: (name: string) => void;
-  onNewRootCancel: () => void;
   onDragStart: (event: DragStartEvent) => void;
   onDragOver: (event: DragOverEvent) => void;
   onDragEnd: (event: DragEndEvent) => void;
@@ -130,25 +127,6 @@ function TreeNodeList({
   );
 }
 
-function NewRootInput({
-  onSave,
-  onCancel,
-}: {
-  onSave: (name: string) => void;
-  onCancel: () => void;
-}) {
-  return (
-    <div
-      className="flex items-center gap-1.5 py-1.5 px-2"
-      style={{ paddingLeft: 'var(--tree-indent-base)' }}
-    >
-      <span className="w-5.5" />
-      <Folder className="h-4 w-4 text-muted-foreground shrink-0" />
-      <InlineInput onSave={onSave} onCancel={onCancel} placeholder="Root location name" />
-    </div>
-  );
-}
-
 export function TreeSection(props: TreeSectionProps) {
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
   if (props.isLoading) return <TreeSkeleton />;
@@ -163,9 +141,6 @@ export function TreeSection(props: TreeSectionProps) {
     >
       <div className="md:w-2/5 border rounded-lg py-2" role="tree" aria-label="Location tree">
         <TreeNodeList {...props} />
-        {props.addingRoot && (
-          <NewRootInput onSave={props.onNewRootSave} onCancel={props.onNewRootCancel} />
-        )}
       </div>
       <DragOverlay>
         {props.activeNode ? <DragOverlayNode node={props.activeNode} /> : null}

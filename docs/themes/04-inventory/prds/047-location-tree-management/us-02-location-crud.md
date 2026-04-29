@@ -9,7 +9,7 @@ As a user, I want to create, rename, and delete locations from the tree view so 
 
 ## Acceptance Criteria
 
-- [x] "Add root location" button at the top of the tree — opens inline text input at the tree root
+- [x] "Add root location" button at the top of the tree — opens a modal dialog with a name input, Cancel and Create buttons
 - [x] "+" button on each node to add a child location — opens inline text input nested under the parent
 - [x] Submitting the inline input calls `inventory.locations.create` with the name and parentId (null for root)
 - [x] New location appears in the tree immediately after creation (optimistic or refetch)

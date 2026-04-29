@@ -2,6 +2,7 @@ import { MapPin } from 'lucide-react';
 
 import { PageHeader } from '@pops/ui';
 
+import { AddRootLocationDialog } from './location-tree-page/sections/AddRootLocationDialog';
 import { DeleteDialog } from './location-tree-page/sections/DeleteDialog';
 import { MoveDialog } from './location-tree-page/sections/MoveDialog';
 import { PageHeaderActions } from './location-tree-page/sections/PageHeaderActions';
@@ -38,7 +39,6 @@ function TreeAndPanel({ model }: { model: Model }) {
       <TreeSection
         treeNodes={model.treeNodes}
         isLoading={model.isLoading}
-        addingRoot={model.addingRoot}
         selectedId={model.selectedId}
         addingChildOf={model.addingChildOf}
         overId={model.overId}
@@ -52,8 +52,6 @@ function TreeAndPanel({ model }: { model: Model }) {
         onDelete={model.handleDelete}
         onNewChildSave={model.handleNewChildSave}
         onNewChildCancel={model.handleNewChildCancel}
-        onNewRootSave={model.handleNewRootSave}
-        onNewRootCancel={model.handleNewRootCancel}
         onDragStart={model.handleDragStart}
         onDragOver={model.handleDragOver}
         onDragEnd={model.handleDragEnd}
@@ -69,7 +67,7 @@ export function LocationTreePage() {
   const model = useLocationTreePageModel();
   if (model.error) return <ErrorState />;
 
-  const showEmpty = !model.isLoading && model.treeNodes.length === 0 && !model.addingRoot;
+  const showEmpty = !model.isLoading && model.treeNodes.length === 0;
   const movingNode = model.movingId ? model.nodeMap.get(model.movingId) : null;
 
   return (
@@ -87,6 +85,12 @@ export function LocationTreePage() {
         }
       />
       {showEmpty ? <EmptyState /> : <TreeAndPanel model={model} />}
+      <AddRootLocationDialog
+        open={model.addingRoot}
+        onOpenChange={model.setAddingRoot}
+        onSave={model.handleNewRootSave}
+        isPending={model.createIsPending}
+      />
       <MoveDialog
         movingId={model.movingId}
         movingNode={movingNode}
