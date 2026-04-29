@@ -213,7 +213,7 @@ describe('translation lookups', () => {
   it('resolves navigation namespace keys', () => {
     expect(i18n.t('navigation:finance')).toBe('Finance');
     expect(i18n.t('navigation:media.library')).toBe('Library');
-    expect(i18n.t('navigation:ai.usage')).toBe('AI Usage');
+    expect(i18n.t('navigation:cerebrum.admin.usage')).toBe('AI Usage');
   });
 
   it('resolves finance namespace keys', () => {
