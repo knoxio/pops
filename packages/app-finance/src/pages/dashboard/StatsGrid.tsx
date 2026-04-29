@@ -15,10 +15,11 @@ export function computeStats(
   total: number | undefined
 ): Stats | null {
   if (!transactions) return null;
+  const nonTransfers = transactions.filter((t) => t.type.toLowerCase() !== 'transfer');
   return {
     totalTransactions: total ?? 0,
-    totalIncome: transactions.filter((t) => t.amount > 0).reduce((sum, t) => sum + t.amount, 0),
-    totalExpenses: transactions
+    totalIncome: nonTransfers.filter((t) => t.amount > 0).reduce((sum, t) => sum + t.amount, 0),
+    totalExpenses: nonTransfers
       .filter((t) => t.amount < 0)
       .reduce((sum, t) => sum + Math.abs(t.amount), 0),
   };

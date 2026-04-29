@@ -66,4 +66,30 @@ describe('computeStats', () => {
     const stats = computeStats([makeTx(10)], 999);
     expect(stats?.totalTransactions).toBe(999);
   });
+
+  it('excludes Transfer type from income and expense totals', () => {
+    const stats = computeStats(
+      [
+        makeTx(100),
+        makeTx(-30),
+        makeTx(500, { type: 'Transfer' }),
+        makeTx(-500, { type: 'Transfer' }),
+      ],
+      4
+    );
+    expect(stats).toEqual({
+      totalTransactions: 4,
+      totalIncome: 100,
+      totalExpenses: 30,
+    });
+  });
+
+  it('excludes lowercase transfer type too', () => {
+    const stats = computeStats([makeTx(200, { type: 'transfer' }), makeTx(50)], 2);
+    expect(stats).toEqual({
+      totalTransactions: 2,
+      totalIncome: 50,
+      totalExpenses: 0,
+    });
+  });
 });
