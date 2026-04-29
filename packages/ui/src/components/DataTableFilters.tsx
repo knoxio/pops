@@ -4,6 +4,7 @@ import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -158,6 +159,9 @@ export function FilterBar({ filters, table, onClearAll }: FilterBarProps) {
         <DialogContent className="md:hidden max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Filters</DialogTitle>
+            <DialogDescription className="sr-only">
+              Apply filters to narrow down table results
+            </DialogDescription>
           </DialogHeader>
           <FilterGrid filters={filters} table={table} />
           <DialogFooter className="flex-row gap-2">

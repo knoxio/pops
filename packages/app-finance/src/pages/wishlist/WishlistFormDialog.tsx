@@ -5,6 +5,7 @@ import {
   Button,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -88,6 +89,9 @@ export function WishlistFormDialog(props: DialogProps) {
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogHeader>
             <DialogTitle>{editingItem ? 'Edit Item' : 'New Wishlist Item'}</DialogTitle>
+            <DialogDescription className="sr-only">
+              Enter the details for your wishlist item
+            </DialogDescription>
           </DialogHeader>
           <FormFields form={form} />
           <DialogFooter>

@@ -1,9 +1,9 @@
 {
   "dataTable.columns": "Colunas",
-  "dataTable.rowsPerPage": "Linhas por pagina",
-  "dataTable.page": "Pagina {{current}} de {{total}}",
+  "dataTable.rowsPerPage": "Linhas por página",
+  "dataTable.page": "Página {{current}} de {{total}}",
   "dataTable.previous": "Anterior",
-  "dataTable.next": "Proximo",
+  "dataTable.next": "Próximo",
   "dataTable.selectedRows": "{{selected}} de {{total}} linha(s) selecionada(s).",
 
   "fileUpload.dragSingle": "Arraste um arquivo aqui, ou clique para navegar",
@@ -11,7 +11,7 @@
   "fileUpload.accepts": "Aceita {{types}}",
   "fileUpload.remove": "Remover {{name}}",
 
-  "errorAlert.showDetails": "Mostrar detalhes tecnicos",
+  "errorAlert.showDetails": "Mostrar detalhes técnicos",
 
   "crudSection.add": "Adicionar",
 
@@ -26,15 +26,15 @@
   "searchPicker.noResults": "Nenhum resultado encontrado",
 
   "workflowDialog.twoColumn": "Fluxo Duas Colunas",
-  "workflowDialog.twoColumnDesc": "Um dialogo amplo com layout de 2 colunas.",
+  "workflowDialog.twoColumnDesc": "Um diálogo amplo com layout de 2 colunas.",
   "workflowDialog.loading": "Estado de Carregamento",
 
-  "emptyStateTab.noData": "Nenhum dado disponivel",
+  "emptyStateTab.noData": "Nenhum dado disponível",
 
   "requestDialog.title": "Solicitar",
   "requestDialog.confirm": "Confirmar",
 
   "imageGallery.delete": "Excluir imagem",
   "imageGallery.previous": "Imagem anterior",
-  "imageGallery.next": "Proxima imagem"
+  "imageGallery.next": "Próxima imagem"
 }

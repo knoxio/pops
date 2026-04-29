@@ -9,7 +9,7 @@ Build a total asset value dashboard, value breakdowns by location and type, and 
 
 ## Route
 
-`/inventory/report`
+`/inventory/reports`
 
 ## Dashboard Widgets
 

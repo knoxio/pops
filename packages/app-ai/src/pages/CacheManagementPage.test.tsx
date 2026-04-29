@@ -81,6 +81,7 @@ function setupDefaults(overrides?: {
   diskSizeBytes?: number;
   cacheHitRate?: number;
   totalCacheHits?: number;
+  totalApiCalls?: number;
   loading?: boolean;
 }) {
   const loading = overrides?.loading ?? false;
@@ -100,7 +101,7 @@ function setupDefaults(overrides?: {
     data: loading
       ? undefined
       : {
-          totalApiCalls: 200,
+          totalApiCalls: overrides?.totalApiCalls ?? 200,
           totalCacheHits: overrides?.totalCacheHits ?? 50,
           cacheHitRate: overrides?.cacheHitRate ?? 0.2,
           totalCost: 1.0,
@@ -190,6 +191,16 @@ describe('CacheManagementPage', () => {
     await waitFor(() => {
       expect(mockInvalidate).toHaveBeenCalled();
     });
+  });
+
+  // AC: Hit Rate shows — when there are no AI usage events
+  it('shows — for hit rate when there are no AI usage events', () => {
+    setupDefaults({ totalApiCalls: 0, totalCacheHits: 0, cacheHitRate: 0 });
+    renderPage();
+
+    expect(screen.getByText('Hit Rate')).toBeInTheDocument();
+    expect(screen.getByText('—')).toBeInTheDocument();
+    expect(screen.queryByText(/\d+\.\d+%/)).not.toBeInTheDocument();
   });
 
   // AC: Toast confirmation showing how many entries were removed

@@ -33,7 +33,7 @@ export function MovieHeroActions({
   pendingDebrief,
 }: MovieHeroActionsProps) {
   return (
-    <div className="flex items-start gap-3 mt-3">
+    <div className="flex items-center gap-3 mt-3">
       <WatchlistToggle mediaType="movie" mediaId={movie.id} />
       <MarkAsWatchedButton mediaId={movie.id} />
       <ArrStatusBadge kind="movie" externalId={movie.tmdbId} />

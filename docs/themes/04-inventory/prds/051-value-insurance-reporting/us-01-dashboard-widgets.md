@@ -9,7 +9,7 @@ As a user, I want a reporting dashboard showing total asset values, item count, 
 
 ## Acceptance Criteria
 
-- [x] Page at `/inventory/report` — accessible from inventory navigation
+- [x] Page at `/inventory/reports` — accessible from inventory navigation
 - [x] Dashboard fetches all widget data via `inventory.reports.dashboard` (single API call)
 - [x] Widget: Total replacement value — formatted as currency (e.g., "$12,450")
 - [x] Widget: Total resale value — formatted as currency

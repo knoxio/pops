@@ -66,6 +66,7 @@ vi.mock('sonner', () => ({
   },
 }));
 
+import { TransactionFormSchema } from './types';
 // Import after mocks are registered.
 import { buildTransactionPayload, useTransactionsPage } from './useTransactionsPage';
 
@@ -119,6 +120,61 @@ beforeEach(() => {
         { id: 'ent-2', name: 'Coles', type: 'company' },
       ],
     },
+  });
+});
+
+// ---------- TransactionFormSchema — amount validation ----------
+
+describe('TransactionFormSchema — amount', () => {
+  const baseValues = {
+    date: '2026-04-26',
+    description: 'Woolworths',
+    account: 'Credit Card',
+    type: 'Expense',
+    entityId: '',
+    tags: [],
+    notes: '',
+  };
+
+  it('accepts a non-zero amount', () => {
+    const result = TransactionFormSchema.safeParse({ ...baseValues, amount: '-12.50' });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects an empty amount with "Amount is required"', () => {
+    const result = TransactionFormSchema.safeParse({ ...baseValues, amount: '' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const msg = result.error.issues.find((i) => i.path[0] === 'amount')?.message;
+      expect(msg).toBe('Amount is required');
+    }
+  });
+
+  it('rejects "0" with "Amount must be non-zero"', () => {
+    const result = TransactionFormSchema.safeParse({ ...baseValues, amount: '0' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const msg = result.error.issues.find((i) => i.path[0] === 'amount')?.message;
+      expect(msg).toBe('Amount must be non-zero');
+    }
+  });
+
+  it('rejects "0.00" with "Amount must be non-zero"', () => {
+    const result = TransactionFormSchema.safeParse({ ...baseValues, amount: '0.00' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const msg = result.error.issues.find((i) => i.path[0] === 'amount')?.message;
+      expect(msg).toBe('Amount must be non-zero');
+    }
+  });
+
+  it('rejects a non-numeric string with "Amount must be a valid number"', () => {
+    const result = TransactionFormSchema.safeParse({ ...baseValues, amount: 'abc' });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const msg = result.error.issues.find((i) => i.path[0] === 'amount')?.message;
+      expect(msg).toBe('Amount must be a valid number');
+    }
   });
 });
 

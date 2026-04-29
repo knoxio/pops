@@ -25,6 +25,7 @@ Step 1: Upload CSV
 
 ### Step 1: Upload
 
+- User selects their bank (ANZ, Amex, ING, Up) via radio picker — selection stored in Zustand; help card updates with bank-specific CSV export instructions
 - User selects CSV file (max 25 MB)
 - Parse CSV rows client-side
 - Validates: file required, CSV not empty, headers present

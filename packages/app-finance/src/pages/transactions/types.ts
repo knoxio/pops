@@ -43,7 +43,8 @@ export const TransactionFormSchema = z.object({
   amount: z
     .string()
     .min(1, 'Amount is required')
-    .refine((v) => Number.isFinite(Number(v)), 'Amount must be a number'),
+    .refine((v) => Number.isFinite(Number(v)), 'Amount must be a valid number')
+    .refine((v) => Number(v) !== 0, 'Amount must be non-zero'),
   description: z.string().min(1, 'Description is required'),
   account: z.string().min(1, 'Account is required'),
   type: z.string().min(1, 'Type is required'),

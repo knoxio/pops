@@ -16,6 +16,7 @@ import {
   ChipInput,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -147,6 +148,9 @@ export function RuleFormDialog(props: RuleFormDialogProps) {
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogHeader>
             <DialogTitle>{editingRule ? 'Edit Rule' : 'New Rule'}</DialogTitle>
+            <DialogDescription className="sr-only">
+              Define the pattern and settings for this categorisation rule
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-6 py-4 md:grid-cols-2">
             <div className="grid gap-4 min-w-0">

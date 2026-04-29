@@ -16,6 +16,9 @@ As a user, I want to upload a bank CSV file so that I can begin importing transa
 - [x] Error messaging for invalid files
 - [x] On success: stores headers/rows and advances to Step 2
 - [x] Loading state while parsing large files
+- [x] Bank picker (radio group) displayed before file upload — options: ANZ, Amex, ING, Up
+- [x] Selected bank stored in Zustand (`bankType`)
+- [x] Help card updates to show bank-specific export instructions based on selection
 
 ## Notes
 

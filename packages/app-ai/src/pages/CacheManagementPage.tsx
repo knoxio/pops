@@ -35,7 +35,7 @@ export function CacheManagementPage() {
         totalEntries={model.totalEntries}
         diskSizeBytes={model.diskSizeBytes}
         totalCacheHits={model.totalCacheHits}
-        hitRatePct={model.hitRatePct}
+        hitRateDisplay={model.hitRateDisplay}
       />
 
       <CacheActionsCard
