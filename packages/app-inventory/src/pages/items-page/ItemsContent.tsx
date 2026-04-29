@@ -79,6 +79,8 @@ interface ItemsContentProps {
   locationPathMap: ReadonlyMap<string, LocationSegment[]>;
   onAdd: () => void;
   onOpen: (id: string) => void;
+  onEdit: (id: string) => void;
+  onDeleteRequest: (id: string) => void;
 }
 
 export function ItemsContent({
@@ -89,12 +91,21 @@ export function ItemsContent({
   locationPathMap,
   onAdd,
   onOpen,
+  onEdit,
+  onDeleteRequest,
 }: ItemsContentProps) {
   if (isLoading) return <ItemsPageSkeleton />;
   if (items.length === 0)
     return <EmptyState hasSearchOrFilters={hasSearchOrFilters} onAdd={onAdd} />;
   if (viewMode === 'table') {
-    return <InventoryTable items={items} locationPathMap={locationPathMap} />;
+    return (
+      <InventoryTable
+        items={items}
+        locationPathMap={locationPathMap}
+        onEdit={onEdit}
+        onDeleteRequest={onDeleteRequest}
+      />
+    );
   }
   return <GridView items={items} onOpen={onOpen} />;
 }

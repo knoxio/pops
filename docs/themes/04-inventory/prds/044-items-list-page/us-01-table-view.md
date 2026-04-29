@@ -14,6 +14,7 @@ As a user, I want a table view of my inventory items with sortable columns so th
 - [x] Default sort is Name ASC
 - [x] Clicking a column header toggles sort direction; active sort column is visually indicated
 - [x] Clicking a row navigates to `/inventory/items/:id`
+- [x] Each row has a `⋯` actions button that opens a dropdown with: Edit (navigates to `/inventory/items/:id/edit`) and Delete (shows confirmation dialog; on confirm calls `inventory.items.delete` and refreshes the list)
 - [x] Condition column renders badges: "new" (blue), "good" (green), "fair" (yellow), "poor" (orange), "broken" (red)
 - [x] Location column shows breadcrumb path (e.g., "Home > Living Room > TV Unit"); full path in tooltip
 - [x] Asset ID column shows the ID or a dash if null

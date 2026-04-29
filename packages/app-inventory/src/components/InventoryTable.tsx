@@ -1,4 +1,4 @@
-import { Check, X } from 'lucide-react';
+import { Check, MoreHorizontal, Pencil, Trash2, X } from 'lucide-react';
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router';
 
@@ -13,9 +13,13 @@ import { useNavigate } from 'react-router';
  */
 import {
   AssetIdBadge,
+  Button,
   type Condition,
   ConditionBadge,
   DataTable,
+  DropdownMenu,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   formatAUD,
   LocationBreadcrumb,
   type LocationSegment,
@@ -79,6 +83,38 @@ function conditionCell(condition: string | null): React.ReactNode {
 function purchaseDateCell(date: string | null): React.ReactNode {
   if (!date) return <span className="text-muted-foreground">—</span>;
   return <span className="text-sm tabular-nums">{new Date(date).toLocaleDateString()}</span>;
+}
+
+function buildActionsColumn(args: {
+  onEdit: (id: string) => void;
+  onDeleteRequest: (id: string) => void;
+}): ColumnDef<InventoryTableItem> {
+  return {
+    id: 'actions',
+    cell: ({ row }) => (
+      <div className="text-right">
+        <DropdownMenu
+          trigger={
+            <Button variant="ghost" size="icon" aria-label="Actions">
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          }
+          align="end"
+        >
+          <DropdownMenuItem onClick={() => args.onEdit(row.original.id)}>
+            <Pencil className="mr-2 h-4 w-4" /> Edit
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-destructive focus:text-destructive"
+            onClick={() => args.onDeleteRequest(row.original.id)}
+          >
+            <Trash2 className="mr-2 h-4 w-4" /> Delete
+          </DropdownMenuItem>
+        </DropdownMenu>
+      </div>
+    ),
+  };
 }
 
 function createColumns(
@@ -151,6 +187,8 @@ export interface InventoryTableProps {
   loading?: boolean;
   /** Show the built-in search bar (default false — parent page handles search). */
   searchable?: boolean;
+  onEdit?: (id: string) => void;
+  onDeleteRequest?: (id: string) => void;
 }
 
 const EMPTY_LOCATION_MAP: ReadonlyMap<string, LocationSegment[]> = new Map();
@@ -160,9 +198,17 @@ export function InventoryTable({
   locationPathMap = EMPTY_LOCATION_MAP,
   loading,
   searchable = false,
+  onEdit,
+  onDeleteRequest,
 }: InventoryTableProps) {
   const navigate = useNavigate();
-  const columns = useMemo(() => createColumns(locationPathMap), [locationPathMap]);
+  const columns = useMemo(() => {
+    const cols = createColumns(locationPathMap);
+    if (onEdit && onDeleteRequest) {
+      cols.push(buildActionsColumn({ onEdit, onDeleteRequest }));
+    }
+    return cols;
+  }, [locationPathMap, onEdit, onDeleteRequest]);
 
   return (
     <DataTable
