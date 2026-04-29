@@ -38,7 +38,7 @@ test.describe('AI — usage stats page smoke test', () => {
     page.on('console', (msg) => {
       if (msg.type() === 'error') consoleErrors.push(msg.text());
     });
-    await page.goto('/ai');
+    await page.goto('/cerebrum/admin');
   });
 
   test.afterEach(async ({ page }) => {

@@ -175,7 +175,7 @@ test.describe('AI — cache management: view stats and clear stale entries', () 
     await useRealApi(page);
     cacheMocks = await installCacheMocks(page);
 
-    await page.goto('/ai/cache');
+    await page.goto('/cerebrum/admin/cache');
   });
 
   test.afterEach(async ({ page }) => {

@@ -106,7 +106,7 @@ test.describe('AI rules — manual create/edit + preview', () => {
     page.on('console', (msg) => {
       if (msg.type() === 'error') consoleErrors.push(msg.text());
     });
-    await page.goto('/ai/rules');
+    await page.goto('/cerebrum/admin/rules');
     await expect(page.getByRole('heading', { name: 'Categorisation Rules' })).toBeVisible({
       timeout: 10_000,
     });
