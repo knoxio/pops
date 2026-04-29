@@ -1,4 +1,5 @@
 import { Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { useSetPageContext } from '@pops/navigation';
 import { Alert, Button, DataTable, PageHeader, Skeleton } from '@pops/ui';
@@ -9,14 +10,15 @@ import { DeleteBudgetDialog } from './budgets/DeleteBudgetDialog';
 import { useBudgetsPage } from './budgets/useBudgetsPage';
 
 function ErrorPanel({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const { t } = useTranslation('finance');
   return (
     <div className="space-y-6">
-      <PageHeader title="Budgets" />
+      <PageHeader title={t('budgets')} />
       <Alert variant="destructive">
-        <p className="font-semibold">Failed to load budgets</p>
+        <p className="font-semibold">{t('budgets.failedToLoad')}</p>
         <p className="text-sm">{message}</p>
         <Button variant="outline" size="sm" onClick={onRetry} className="mt-4">
-          Try again
+          {t('common:tryAgain')}
         </Button>
       </Alert>
     </div>
@@ -24,6 +26,7 @@ function ErrorPanel({ message, onRetry }: { message: string; onRetry: () => void
 }
 
 export function BudgetsPage() {
+  const { t } = useTranslation('finance');
   useSetPageContext({ page: 'budgets' });
   const state = useBudgetsPage();
   const { query } = state;
@@ -36,13 +39,15 @@ export function BudgetsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Budgets"
+        title={t('budgets')}
         description={
-          query.data ? `${query.data.pagination.total} total budgets` : 'Manage spending targets'
+          query.data
+            ? t('budgets.totalCount', { count: query.data.pagination.total })
+            : t('budgets.manageTargets')
         }
         actions={
           <Button onClick={state.handleAdd}>
-            <Plus className="mr-2 h-4 w-4" /> Add Budget
+            <Plus className="mr-2 h-4 w-4" /> {t('budgets.addBudget')}
           </Button>
         }
       />
@@ -57,7 +62,7 @@ export function BudgetsPage() {
           data={query.data?.data ?? []}
           searchable
           searchColumn="category"
-          searchPlaceholder="Search budgets..."
+          searchPlaceholder={t('budgets.searchPlaceholder')}
           paginated
           defaultPageSize={50}
           pageSizeOptions={[25, 50, 100]}

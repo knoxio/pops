@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import { Button } from './Button';
 
 import type { Table as TanStackTable } from '@tanstack/react-table';
@@ -13,13 +15,16 @@ export function DataTablePagination<TData>({
   pageSizeOptions,
   enableRowSelection,
 }: DataTablePaginationProps<TData>) {
+  const { t } = useTranslation('ui');
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div className="text-sm text-muted-foreground">
         {enableRowSelection && (
           <>
-            {table.getFilteredSelectedRowModel().rows.length} of{' '}
-            {table.getFilteredRowModel().rows.length} row(s) selected.
+            {t('dataTable.selectedRows', {
+              selected: table.getFilteredSelectedRowModel().rows.length,
+              total: table.getFilteredRowModel().rows.length,
+            })}
           </>
         )}
       </div>
@@ -38,9 +43,10 @@ function PageSizeSelect<TData>({
   table: TanStackTable<TData>;
   pageSizeOptions: number[];
 }) {
+  const { t } = useTranslation('ui');
   return (
     <div className="flex items-center gap-2">
-      <p className="hidden text-sm font-medium sm:block">Rows per page</p>
+      <p className="hidden text-sm font-medium sm:block">{t('dataTable.rowsPerPage')}</p>
       <select
         value={table.getState().pagination.pageSize}
         onChange={(e) => table.setPageSize(Number(e.target.value))}
@@ -57,10 +63,14 @@ function PageSizeSelect<TData>({
 }
 
 function PageNav<TData>({ table }: { table: TanStackTable<TData> }) {
+  const { t } = useTranslation('ui');
   return (
     <div className="flex items-center gap-2">
       <div className="text-sm font-medium">
-        Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+        {t('dataTable.page', {
+          current: table.getState().pagination.pageIndex + 1,
+          total: table.getPageCount(),
+        })}
       </div>
       <div className="flex gap-2">
         <Button
@@ -69,7 +79,7 @@ function PageNav<TData>({ table }: { table: TanStackTable<TData> }) {
           onClick={() => table.previousPage()}
           disabled={!table.getCanPreviousPage()}
         >
-          Previous
+          {t('dataTable.previous')}
         </Button>
         <Button
           variant="outline"
@@ -77,7 +87,7 @@ function PageNav<TData>({ table }: { table: TanStackTable<TData> }) {
           onClick={() => table.nextPage()}
           disabled={!table.getCanNextPage()}
         >
-          Next
+          {t('dataTable.next')}
         </Button>
       </div>
     </div>

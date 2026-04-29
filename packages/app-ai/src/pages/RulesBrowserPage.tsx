@@ -1,4 +1,5 @@
 import { Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Button, PageHeader } from '@pops/ui';
 
@@ -59,6 +60,7 @@ function PaginationSection({ model }: { model: Model }) {
 }
 
 function RulesBrowserBody({ model }: { model: Model }) {
+  const { t } = useTranslation('ai');
   // Watch the form's pattern + matchType so the preview pane stays in sync
   // with the user's edits without having to re-open the dialog.
   const watchedPattern = model.ruleForm.form.watch('descriptionPattern');
@@ -72,11 +74,11 @@ function RulesBrowserBody({ model }: { model: Model }) {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Categorisation Rules"
-        description="Browse and manage AI categorisation rules"
+        title={t('rules.title')}
+        description={t('rules.description')}
         actions={
           <Button onClick={model.handleAddRule}>
-            <Plus className="mr-2 h-4 w-4" /> Add Rule
+            <Plus className="mr-2 h-4 w-4" /> {t('rules.addRule')}
           </Button>
         }
       />

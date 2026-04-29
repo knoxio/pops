@@ -4,23 +4,31 @@
  * Validates:
  * - i18next initialises with en-AU by default
  * - Language switching works and persists to localStorage
- * - All namespaces (common, shell, navigation) are loaded for both locales
+ * - All namespaces are loaded for both locales
  * - Translation keys exist in both en-AU and pt-BR (no missing translations)
  * - Interpolation works (e.g. shell.appPages with {{app}})
  */
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import i18n, { DEFAULT_LOCALE, LOCALE_STORAGE_KEY, SUPPORTED_LOCALES } from '.';
+import enAUAi from './locales/en-AU/ai.json';
 import enAUCerebrum from './locales/en-AU/cerebrum.json';
 import enAUCommon from './locales/en-AU/common.json';
+import enAUFinance from './locales/en-AU/finance.json';
 import enAUInventory from './locales/en-AU/inventory.json';
+import enAUMedia from './locales/en-AU/media.json';
 import enAUNavigation from './locales/en-AU/navigation.json';
 import enAUShell from './locales/en-AU/shell.json';
+import enAUUi from './locales/en-AU/ui.json';
+import ptBRAi from './locales/pt-BR/ai.json';
 import ptBRCerebrum from './locales/pt-BR/cerebrum.json';
 import ptBRCommon from './locales/pt-BR/common.json';
+import ptBRFinance from './locales/pt-BR/finance.json';
 import ptBRInventory from './locales/pt-BR/inventory.json';
+import ptBRMedia from './locales/pt-BR/media.json';
 import ptBRNavigation from './locales/pt-BR/navigation.json';
 import ptBRShell from './locales/pt-BR/shell.json';
+import ptBRUi from './locales/pt-BR/ui.json';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -33,6 +41,10 @@ const EN_AU_BUNDLES = {
   navigation: enAUNavigation,
   inventory: enAUInventory,
   cerebrum: enAUCerebrum,
+  finance: enAUFinance,
+  ai: enAUAi,
+  media: enAUMedia,
+  ui: enAUUi,
 };
 const PT_BR_BUNDLES = {
   common: ptBRCommon,
@@ -40,6 +52,10 @@ const PT_BR_BUNDLES = {
   navigation: ptBRNavigation,
   inventory: ptBRInventory,
   cerebrum: ptBRCerebrum,
+  finance: ptBRFinance,
+  ai: ptBRAi,
+  media: ptBRMedia,
+  ui: ptBRUi,
 };
 
 function sortedKeys(obj: Record<string, string>): string[] {
@@ -83,6 +99,10 @@ describe('i18n initialization', () => {
     expect(ns).toContain('navigation');
     expect(ns).toContain('inventory');
     expect(ns).toContain('cerebrum');
+    expect(ns).toContain('finance');
+    expect(ns).toContain('ai');
+    expect(ns).toContain('media');
+    expect(ns).toContain('ui');
   });
 
   it('uses common as the default namespace', () => {
@@ -140,7 +160,19 @@ describe('locale persistence', () => {
 // ---------------------------------------------------------------------------
 
 describe('translation completeness', () => {
-  for (const ns of ['common', 'shell', 'navigation', 'inventory', 'cerebrum'] as const) {
+  const ALL_NS = [
+    'common',
+    'shell',
+    'navigation',
+    'inventory',
+    'cerebrum',
+    'finance',
+    'ai',
+    'media',
+    'ui',
+  ] as const;
+
+  for (const ns of ALL_NS) {
     it(`${ns}: en-AU and pt-BR have identical key sets`, () => {
       const enKeys = sortedKeys(EN_AU_BUNDLES[ns]);
       const ptKeys = sortedKeys(PT_BR_BUNDLES[ns]);
@@ -184,6 +216,30 @@ describe('translation lookups', () => {
     expect(i18n.t('navigation:ai.usage')).toBe('AI Usage');
   });
 
+  it('resolves finance namespace keys', () => {
+    expect(i18n.t('finance:dashboard')).toBe('Dashboard');
+    expect(i18n.t('finance:budgets')).toBe('Budgets');
+    expect(i18n.t('finance:transactions')).toBe('Transactions');
+  });
+
+  it('resolves ai namespace keys', () => {
+    expect(i18n.t('ai:observability')).toBe('AI Observability');
+    expect(i18n.t('ai:cache.title')).toBe('Cache Management');
+    expect(i18n.t('ai:rules.title')).toBe('Categorisation Rules');
+  });
+
+  it('resolves media namespace keys', () => {
+    expect(i18n.t('media:library')).toBe('Library');
+    expect(i18n.t('media:watchlist')).toBe('Watchlist');
+    expect(i18n.t('media:compare')).toBe('Compare Arena');
+  });
+
+  it('resolves ui namespace keys', () => {
+    expect(i18n.t('ui:dataTable.columns')).toBe('Columns');
+    expect(i18n.t('ui:dataTable.previous')).toBe('Previous');
+    expect(i18n.t('ui:fileUpload.dragSingle')).toBe('Drag a file here, or click to browse');
+  });
+
   it('resolves pt-BR translations', async () => {
     await i18n.changeLanguage('pt-BR');
     expect(i18n.t('common:save')).toBe('Salvar');
@@ -204,5 +260,13 @@ describe('interpolation', () => {
   it('interpolates {{app}} in pt-BR shell.appPages', async () => {
     await i18n.changeLanguage('pt-BR');
     expect(i18n.t('shell:appPages', { app: 'Financas' })).toBe('Paginas de Financas');
+  });
+
+  it('interpolates finance namespace variables', () => {
+    expect(i18n.t('finance:transactions.totalCount', { count: 42 })).toBe('42 total transactions');
+  });
+
+  it('interpolates ui namespace variables', () => {
+    expect(i18n.t('ui:dataTable.page', { current: 1, total: 5 })).toBe('Page 1 of 5');
   });
 });

@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import { trpc } from '@pops/api-client';
 import { ErrorAlert, PageHeader } from '@pops/ui';
 
@@ -6,6 +8,7 @@ import { RecentTransactions } from './dashboard/RecentTransactions';
 import { computeStats, StatsGrid } from './dashboard/StatsGrid';
 
 export function DashboardPage() {
+  const { t } = useTranslation('finance');
   const {
     data: transactions,
     isLoading: transactionsLoading,
@@ -20,10 +23,10 @@ export function DashboardPage() {
   if (transactionsError) {
     return (
       <div className="container mx-auto py-8">
-        <PageHeader title="Dashboard" className="mb-6" />
+        <PageHeader title={t('dashboard')} className="mb-6" />
         <ErrorAlert
-          title="Unable to load dashboard"
-          message="The backend API is not responding. Make sure the pops-api server is running."
+          title={t('dashboard.unableToLoad')}
+          message={t('dashboard.apiNotResponding')}
           details={transactionsError.message}
         />
       </div>
@@ -32,18 +35,20 @@ export function DashboardPage() {
 
   return (
     <div className="max-w-7xl mx-auto space-y-8 pb-10">
-      <PageHeader title="Dashboard" description="Welcome back! Here's your financial overview." />
+      <PageHeader title={t('dashboard')} description={t('dashboard.welcome')} />
       <section>
         <StatsGrid stats={stats} isLoading={transactionsLoading} />
       </section>
       <section className="space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold tracking-tight">Recent Transactions</h2>
+          <h2 className="text-xl font-semibold tracking-tight">
+            {t('dashboard.recentTransactions')}
+          </h2>
         </div>
         <RecentTransactions transactions={transactions?.data} isLoading={transactionsLoading} />
       </section>
       <section className="space-y-4">
-        <h2 className="text-xl font-semibold tracking-tight">Active Budgets</h2>
+        <h2 className="text-xl font-semibold tracking-tight">{t('dashboard.activeBudgets')}</h2>
         <ActiveBudgets budgets={budgets?.data} isLoading={budgetsLoading} />
       </section>
     </div>

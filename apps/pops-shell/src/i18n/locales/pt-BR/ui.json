@@ -1,0 +1,40 @@
+{
+  "dataTable.columns": "Colunas",
+  "dataTable.rowsPerPage": "Linhas por pagina",
+  "dataTable.page": "Pagina {{current}} de {{total}}",
+  "dataTable.previous": "Anterior",
+  "dataTable.next": "Proximo",
+  "dataTable.selectedRows": "{{selected}} de {{total}} linha(s) selecionada(s).",
+
+  "fileUpload.dragSingle": "Arraste um arquivo aqui, ou clique para navegar",
+  "fileUpload.dragMultiple": "Arraste arquivos aqui, ou clique para navegar",
+  "fileUpload.accepts": "Aceita {{types}}",
+  "fileUpload.remove": "Remover {{name}}",
+
+  "errorAlert.showDetails": "Mostrar detalhes tecnicos",
+
+  "crudSection.add": "Adicionar",
+
+  "completionSummary.imported": "Importado",
+  "completionSummary.rulesApplied": "Regras Aplicadas",
+  "completionSummary.failed": "Falhou",
+  "completionSummary.neutral": "Neutro",
+
+  "editableCell.placeholder": "Digite algo...",
+
+  "searchPicker.searchPlaceholder": "Buscar...",
+  "searchPicker.noResults": "Nenhum resultado encontrado",
+
+  "workflowDialog.twoColumn": "Fluxo Duas Colunas",
+  "workflowDialog.twoColumnDesc": "Um dialogo amplo com layout de 2 colunas.",
+  "workflowDialog.loading": "Estado de Carregamento",
+
+  "emptyStateTab.noData": "Nenhum dado disponivel",
+
+  "requestDialog.title": "Solicitar",
+  "requestDialog.confirm": "Confirmar",
+
+  "imageGallery.delete": "Excluir imagem",
+  "imageGallery.previous": "Imagem anterior",
+  "imageGallery.next": "Proxima imagem"
+}

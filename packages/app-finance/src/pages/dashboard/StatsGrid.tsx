@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import { SkeletonGrid, StatCard } from '@pops/ui';
 
 import type { Transaction } from '@pops/api/modules/finance/transactions/types';
@@ -23,6 +25,7 @@ export function computeStats(
 }
 
 export function StatsGrid({ stats, isLoading }: { stats: Stats | null; isLoading: boolean }) {
+  const { t } = useTranslation('finance');
   if (isLoading) {
     return <SkeletonGrid count={4} itemHeight="h-32" cols="sm:grid-cols-2 lg:grid-cols-4" />;
   }
@@ -30,27 +33,27 @@ export function StatsGrid({ stats, isLoading }: { stats: Stats | null; isLoading
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       <StatCard
-        title="Total Transactions"
+        title={t('dashboard.totalTransactions')}
         value={stats.totalTransactions.toLocaleString()}
-        description="All-time transactions"
+        description={t('dashboard.allTimeTransactions')}
         color="slate"
       />
       <StatCard
-        title="Recent Income"
+        title={t('dashboard.recentIncome')}
         value={`$${stats.totalIncome.toFixed(2)}`}
-        description="Last 10 transactions"
+        description={t('dashboard.last10')}
         color="emerald"
       />
       <StatCard
-        title="Recent Expenses"
+        title={t('dashboard.recentExpenses')}
         value={`$${stats.totalExpenses.toFixed(2)}`}
-        description="Last 10 transactions"
+        description={t('dashboard.last10')}
         color="rose"
       />
       <StatCard
-        title="Net Balance"
+        title={t('dashboard.netBalance')}
         value={`$${(stats.totalIncome - stats.totalExpenses).toFixed(2)}`}
-        description="Last 10 transactions"
+        description={t('dashboard.last10')}
         color={stats.totalIncome > stats.totalExpenses ? 'emerald' : 'rose'}
       />
     </div>

@@ -15,5 +15,9 @@
   "submit": "Enviar",
   "reset": "Redefinir",
   "saving": "Salvando...",
-  "deleting": "Excluindo..."
+  "deleting": "Excluindo...",
+  "tryAgain": "Tentar novamente",
+  "update": "Atualizar",
+  "create": "Criar",
+  "actions": "Acoes"
 }

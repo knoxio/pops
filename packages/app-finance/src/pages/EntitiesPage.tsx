@@ -1,4 +1,5 @@
 import { Plus } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import { Alert, Button, DataTable, PageHeader, Skeleton } from '@pops/ui';
 
@@ -8,27 +9,19 @@ import { EntityFormDialog } from './entities/EntityFormDialog';
 import { useEntitiesPage } from './entities/useEntitiesPage';
 
 function ErrorPanel({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const { t } = useTranslation('finance');
   return (
     <div className="space-y-6">
-      <PageHeader title="Entities" />
+      <PageHeader title={t('entities')} />
       <Alert variant="destructive">
-        <p className="font-semibold">Failed to load entities</p>
+        <p className="font-semibold">{t('entities.failedToLoad')}</p>
         <p className="text-sm">{message}</p>
         <Button variant="outline" size="sm" onClick={onRetry} className="mt-4">
-          Try again
+          {t('common:tryAgain')}
         </Button>
       </Alert>
     </div>
   );
-}
-
-function getDescription(
-  data: { pagination: { total: number } } | undefined,
-  showOrphanedOnly: boolean
-): string {
-  if (!data) return 'Manage merchants and payees';
-  if (showOrphanedOnly) return `${data.pagination.total} orphaned entities`;
-  return `${data.pagination.total} total entities`;
 }
 
 interface TableSectionProps {
@@ -54,6 +47,7 @@ function TableSection({
   setShowOrphanedOnly,
   columns,
 }: TableSectionProps) {
+  const { t } = useTranslation('finance');
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -70,7 +64,7 @@ function TableSection({
           size="sm"
           onClick={() => setShowOrphanedOnly((prev) => !prev)}
         >
-          {showOrphanedOnly ? 'Showing orphaned only' : 'Show orphaned only'}
+          {showOrphanedOnly ? t('entities.showingOrphanedOnly') : t('entities.showOrphanedOnly')}
         </Button>
       </div>
       <DataTable
@@ -78,7 +72,7 @@ function TableSection({
         data={(data?.data as never) ?? []}
         searchable
         searchColumn="name"
-        searchPlaceholder="Search entities..."
+        searchPlaceholder={t('entities.searchPlaceholder')}
         paginated
         defaultPageSize={50}
         pageSizeOptions={[25, 50, 100]}
@@ -88,7 +82,18 @@ function TableSection({
   );
 }
 
+function getDescription(
+  t: (key: string, opts?: Record<string, unknown>) => string,
+  data: { pagination: { total: number } } | undefined,
+  showOrphanedOnly: boolean
+): string {
+  if (!data) return t('entities.manageMerchants');
+  if (showOrphanedOnly) return t('entities.orphanedCount', { count: data.pagination.total });
+  return t('entities.totalCount', { count: data.pagination.total });
+}
+
 export function EntitiesPage() {
+  const { t } = useTranslation('finance');
   const state = useEntitiesPage();
   const { query } = state;
 
@@ -100,11 +105,11 @@ export function EntitiesPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Entities"
-        description={getDescription(query.data, state.showOrphanedOnly)}
+        title={t('entities')}
+        description={getDescription(t, query.data, state.showOrphanedOnly)}
         actions={
           <Button onClick={state.handleAdd}>
-            <Plus className="mr-2 h-4 w-4" /> Add Entity
+            <Plus className="mr-2 h-4 w-4" /> {t('entities.addEntity')}
           </Button>
         }
       />

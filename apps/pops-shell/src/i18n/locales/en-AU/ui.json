@@ -1,0 +1,40 @@
+{
+  "dataTable.columns": "Columns",
+  "dataTable.rowsPerPage": "Rows per page",
+  "dataTable.page": "Page {{current}} of {{total}}",
+  "dataTable.previous": "Previous",
+  "dataTable.next": "Next",
+  "dataTable.selectedRows": "{{selected}} of {{total}} row(s) selected.",
+
+  "fileUpload.dragSingle": "Drag a file here, or click to browse",
+  "fileUpload.dragMultiple": "Drag files here, or click to browse",
+  "fileUpload.accepts": "Accepts {{types}}",
+  "fileUpload.remove": "Remove {{name}}",
+
+  "errorAlert.showDetails": "Show technical details",
+
+  "crudSection.add": "Add",
+
+  "completionSummary.imported": "Imported",
+  "completionSummary.rulesApplied": "Rules Applied",
+  "completionSummary.failed": "Failed",
+  "completionSummary.neutral": "Neutral",
+
+  "editableCell.placeholder": "Type something...",
+
+  "searchPicker.searchPlaceholder": "Search...",
+  "searchPicker.noResults": "No results found",
+
+  "workflowDialog.twoColumn": "Two-Column Workflow",
+  "workflowDialog.twoColumnDesc": "A wide dialog with a 2-column layout.",
+  "workflowDialog.loading": "Loading State",
+
+  "emptyStateTab.noData": "No data available",
+
+  "requestDialog.title": "Request",
+  "requestDialog.confirm": "Confirm",
+
+  "imageGallery.delete": "Delete image",
+  "imageGallery.previous": "Previous image",
+  "imageGallery.next": "Next image"
+}

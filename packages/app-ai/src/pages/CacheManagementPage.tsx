@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import { Alert, PageHeader } from '@pops/ui';
 
 /**
@@ -12,20 +14,18 @@ import { CacheStatsGrid } from './cache-management/sections/CacheStatsGrid';
 import { useCacheManagementModel } from './cache-management/useCacheManagementModel';
 
 export function CacheManagementPage() {
+  const { t } = useTranslation('ai');
   const model = useCacheManagementModel();
 
   return (
     <div className="space-y-6">
       <CacheBreadcrumb />
 
-      <PageHeader
-        title="Cache Management"
-        description="View and manage the AI entity categorisation cache"
-      />
+      <PageHeader title={t('cache.title')} description={t('cache.description')} />
 
       {model.cacheError && (
         <Alert variant="destructive">
-          <h3 className="font-semibold">Failed to load cache stats</h3>
+          <h3 className="font-semibold">{t('cache.failedToLoad')}</h3>
           <p className="text-sm mt-1">{model.cacheError.message}</p>
         </Alert>
       )}

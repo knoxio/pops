@@ -1,5 +1,6 @@
 import { Sparkles } from 'lucide-react';
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Link } from 'react-router';
 
 import { useSetPageContext } from '@pops/navigation';
@@ -37,11 +38,12 @@ function useLibraryFiltersContext({
 }
 
 function QuickPickFab() {
+  const { t } = useTranslation('media');
   return (
     <Link
       to="/media/quick-pick"
       className="fixed bottom-6 right-6 z-50"
-      aria-label="What should I watch tonight?"
+      aria-label={t('quickPick.title')}
     >
       <Button className="h-14 w-14 rounded-full bg-app-accent hover:bg-app-accent/90 shadow-lg shadow-app-accent/25 p-0">
         <Sparkles className="h-6 w-6" />

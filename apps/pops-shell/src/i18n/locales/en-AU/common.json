@@ -15,5 +15,9 @@
   "submit": "Submit",
   "reset": "Reset",
   "saving": "Saving...",
-  "deleting": "Deleting..."
+  "deleting": "Deleting...",
+  "tryAgain": "Try again",
+  "update": "Update",
+  "create": "Create",
+  "actions": "Actions"
 }

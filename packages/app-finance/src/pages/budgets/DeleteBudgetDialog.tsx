@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -22,23 +24,22 @@ export function DeleteBudgetDialog({
   isDeleting,
   onConfirm,
 }: DeleteBudgetDialogProps) {
+  const { t } = useTranslation('finance');
   return (
     <AlertDialog open={!!deletingId} onOpenChange={() => setDeletingId(null)}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-          <AlertDialogDescription>
-            This will permanently delete this budget. This action cannot be undone.
-          </AlertDialogDescription>
+          <AlertDialogTitle>{t('budgets.deleteConfirmTitle')}</AlertDialogTitle>
+          <AlertDialogDescription>{t('budgets.deleteConfirmDesc')}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+          <AlertDialogCancel disabled={isDeleting}>{t('common:cancel')}</AlertDialogCancel>
           <AlertDialogAction
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             onClick={() => deletingId && onConfirm(deletingId)}
             disabled={isDeleting}
           >
-            {isDeleting ? 'Deleting...' : 'Delete'}
+            {isDeleting ? t('common:deleting') : t('common:delete')}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

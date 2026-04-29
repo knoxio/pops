@@ -1,5 +1,6 @@
 import { Loader2 } from 'lucide-react';
 import { Controller, type UseFormReturn } from 'react-hook-form';
+import { useTranslation } from 'react-i18next';
 
 import {
   Button,
@@ -27,24 +28,25 @@ interface BudgetFormDialogProps {
 }
 
 function FormFields({ form }: { form: UseFormReturn<BudgetFormValues> }) {
+  const { t } = useTranslation('finance');
   return (
     <div className="grid gap-4 py-4">
       <TextInput
-        label="Category"
-        placeholder="e.g. Groceries, Entertainment"
+        label={t('field.category')}
+        placeholder={t('placeholder.category')}
         {...form.register('category')}
         error={form.formState.errors.category?.message}
       />
       <Select
-        label="Period"
+        label={t('field.period')}
         options={PERIOD_OPTIONS}
         {...form.register('period')}
         error={form.formState.errors.period?.message}
       />
       <TextInput
         type="number"
-        label="Amount (Optional)"
-        placeholder="0.00"
+        label={t('field.amountOptional')}
+        placeholder={t('placeholder.amount')}
         prefix="$"
         step="0.01"
         min="0"
@@ -56,29 +58,32 @@ function FormFields({ form }: { form: UseFormReturn<BudgetFormValues> }) {
         name="active"
         render={({ field }) => (
           <CheckboxInput
-            label="Active"
-            description="Enable this budget for tracking"
+            label={t('field.active')}
+            description={t('budgets.enableTracking')}
             checked={field.value}
             onCheckedChange={field.onChange}
           />
         )}
       />
       <div className="space-y-2">
-        <Label>Notes (Optional)</Label>
-        <Textarea placeholder="Additional details..." {...form.register('notes')} />
+        <Label>{t('field.notesOptional')}</Label>
+        <Textarea placeholder={t('placeholder.additionalDetails')} {...form.register('notes')} />
       </div>
     </div>
   );
 }
 
 export function BudgetFormDialog(props: BudgetFormDialogProps) {
+  const { t } = useTranslation('finance');
   const { open, onOpenChange, editingBudget, form, isSubmitting, onSubmit } = props;
   return (
     <Dialog open={open} onOpenChange={(v) => !isSubmitting && onOpenChange(v)}>
       <DialogContent className="sm:max-w-(--size-dialog-sm)">
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogHeader>
-            <DialogTitle>{editingBudget ? 'Edit Budget' : 'New Budget'}</DialogTitle>
+            <DialogTitle>
+              {editingBudget ? t('budgets.editBudget') : t('budgets.newBudget')}
+            </DialogTitle>
           </DialogHeader>
           <FormFields form={form} />
           <DialogFooter>
@@ -88,11 +93,11 @@ export function BudgetFormDialog(props: BudgetFormDialogProps) {
               onClick={() => onOpenChange(false)}
               disabled={isSubmitting}
             >
-              Cancel
+              {t('common:cancel')}
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {editingBudget ? 'Update' : 'Create'}
+              {editingBudget ? t('common:update') : t('common:create')}
             </Button>
           </DialogFooter>
         </form>

@@ -1,4 +1,5 @@
 import { ChevronDown, Search } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 import {
   DropdownMenu,
@@ -47,11 +48,12 @@ export function DataTableToolbar<TData>({
 }
 
 function ColumnVisibilityMenu<TData>({ table }: { table: TanStackTable<TData> }) {
+  const { t } = useTranslation('ui');
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm">
-          Columns <ChevronDown className="ml-2 h-4 w-4" />
+          {t('dataTable.columns')} <ChevronDown className="ml-2 h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">

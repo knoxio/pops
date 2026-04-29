@@ -1,5 +1,6 @@
 import { Plus } from 'lucide-react';
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { trpc } from '@pops/api-client';
 import { useSetPageContext } from '@pops/navigation';
@@ -11,14 +12,15 @@ import { TransactionFormDialog } from './transactions/TransactionFormDialog';
 import { useTransactionsPage } from './transactions/useTransactionsPage';
 
 function ErrorView({ message, onRetry }: { message: string; onRetry: () => void }) {
+  const { t } = useTranslation('finance');
   return (
     <div className="space-y-6">
-      <PageHeader title="Transactions" />
+      <PageHeader title={t('transactions')} />
       <Alert variant="destructive">
-        <p className="font-semibold">Failed to load transactions</p>
+        <p className="font-semibold">{t('transactions.failedToLoad')}</p>
         <p className="text-sm">{message}</p>
         <Button variant="link" size="sm" onClick={onRetry} className="mt-2 px-0">
-          Try again
+          {t('common:tryAgain')}
         </Button>
       </Alert>
     </div>
@@ -34,6 +36,7 @@ function TableContent({
   transactions: Transaction[] | undefined;
   columns: ReturnType<typeof buildColumns>;
 }) {
+  const { t } = useTranslation('finance');
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -49,7 +52,7 @@ function TableContent({
       data={transactions}
       searchable
       searchColumn="description"
-      searchPlaceholder="Search transactions..."
+      searchPlaceholder={t('transactions.searchPlaceholder')}
       paginated
       defaultPageSize={50}
       pageSizeOptions={[25, 50, 100]}
@@ -84,6 +87,7 @@ function useTagHandlers() {
 }
 
 export function TransactionsPage() {
+  const { t } = useTranslation('finance');
   useSetPageContext({ page: 'transactions' });
   const state = useTransactionsPage();
   const { onTagSave, onTagSuggest } = useTagHandlers();
@@ -103,13 +107,15 @@ export function TransactionsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Transactions"
+        title={t('transactions')}
         description={
-          state.query.data ? `${state.query.data.pagination.total} total transactions` : undefined
+          state.query.data
+            ? t('transactions.totalCount', { count: state.query.data.pagination.total })
+            : undefined
         }
         actions={
           <Button onClick={state.handleAdd}>
-            <Plus className="mr-2 h-4 w-4" /> Add Transaction
+            <Plus className="mr-2 h-4 w-4" /> {t('transactions.addTransaction')}
           </Button>
         }
       />

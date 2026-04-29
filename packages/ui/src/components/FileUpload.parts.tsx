@@ -1,5 +1,6 @@
 import { Upload, X } from 'lucide-react';
 import { type ChangeEvent, type DragEvent, type ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { formatBytes } from '../lib/format';
 import { cn } from '../lib/utils';
@@ -18,29 +19,20 @@ export interface DropZoneProps {
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
 }
 
-export function DropZone({
-  inputRef,
-  inputId,
-  isDragging,
-  setIsDragging,
-  disabled,
-  multiple,
-  accept,
-  prompt,
-  onDrop,
-  onChange,
-}: DropZoneProps) {
+export function DropZone(props: DropZoneProps) {
+  const { inputRef, inputId, isDragging, setIsDragging, disabled, multiple, accept, prompt } =
+    props;
+  const { t } = useTranslation('ui');
+  const defaultPrompt = multiple ? t('fileUpload.dragMultiple') : t('fileUpload.dragSingle');
   return (
     <div
       role="button"
       tabIndex={disabled ? -1 : 0}
       aria-disabled={disabled ?? undefined}
       onKeyDown={(e) => {
-        if (disabled) return;
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          inputRef.current?.click();
-        }
+        if (disabled || (e.key !== 'Enter' && e.key !== ' ')) return;
+        e.preventDefault();
+        inputRef.current?.click();
       }}
       onClick={() => !disabled && inputRef.current?.click()}
       onDragOver={(e) => {
@@ -48,7 +40,7 @@ export function DropZone({
         if (!disabled) setIsDragging(true);
       }}
       onDragLeave={() => setIsDragging(false)}
-      onDrop={onDrop}
+      onDrop={props.onDrop}
       className={cn(
         'flex flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed border-input bg-background p-8 text-center transition-colors',
         'hover:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
@@ -57,10 +49,12 @@ export function DropZone({
       )}
     >
       <Upload className="h-8 w-8 text-muted-foreground" aria-hidden />
-      <div className="text-sm font-medium">
-        {prompt ?? <>Drag {multiple ? 'files' : 'a file'} here, or click to browse</>}
-      </div>
-      {accept ? <div className="text-xs text-muted-foreground">Accepts {accept}</div> : null}
+      <div className="text-sm font-medium">{prompt ?? defaultPrompt}</div>
+      {accept ? (
+        <div className="text-xs text-muted-foreground">
+          {t('fileUpload.accepts', { types: accept })}
+        </div>
+      ) : null}
       <input
         ref={inputRef}
         id={inputId}
@@ -68,7 +62,7 @@ export function DropZone({
         accept={accept}
         multiple={multiple}
         disabled={disabled}
-        onChange={onChange}
+        onChange={props.onChange}
         className="sr-only"
       />
     </div>

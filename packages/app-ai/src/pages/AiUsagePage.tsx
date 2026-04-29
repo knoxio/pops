@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { trpc } from '@pops/api-client';
 import { ErrorAlert, PageHeader } from '@pops/ui';
@@ -29,6 +30,7 @@ export function AiUsagePage() {
 
   const { data: quality } = trpc.core.aiObservability.getQualityMetrics.useQuery(filters);
 
+  const { t } = useTranslation('ai');
   const isLoading = statsLoading || historyLoading;
   const error = statsError ?? historyError;
 
@@ -39,8 +41,8 @@ export function AiUsagePage() {
   if (error) {
     return (
       <div className="space-y-6">
-        <PageHeader title="AI Observability" />
-        <ErrorAlert title="Failed to load observability data" message={error.message} />
+        <PageHeader title={t('observability')} />
+        <ErrorAlert title={t('observability.failedToLoad')} message={error.message} />
       </div>
     );
   }
