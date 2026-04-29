@@ -503,6 +503,9 @@ importers:
       '@pops/api-client':
         specifier: workspace:*
         version: link:../api-client
+      '@pops/db-types':
+        specifier: workspace:*
+        version: link:../db-types
       '@pops/navigation':
         specifier: workspace:*
         version: link:../navigation

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+export { ENTITY_TYPES } from '@pops/db-types';
+
 export interface Entity {
   id: string;
   name: string;
@@ -12,8 +14,6 @@ export interface Entity {
   lastEditedTime: string;
   transactionCount?: number;
 }
-
-export const ENTITY_TYPES = ['company', 'person', 'place', 'brand', 'organisation'] as const;
 
 export const TRANSACTION_TYPES = [
   { label: 'None', value: '' },

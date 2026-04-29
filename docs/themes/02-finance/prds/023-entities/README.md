@@ -11,17 +11,17 @@ Build the entity registry — the merchant/payee database that transactions and 
 
 ### entities
 
-| Column                   | Type | Constraints                       | Description                                            |
-| ------------------------ | ---- | --------------------------------- | ------------------------------------------------------ |
-| id                       | TEXT | PK, UUID                          | `crypto.randomUUID()`                                  |
-| name                     | TEXT | NOT NULL, unique (case-sensitive) | Entity display name                                    |
-| type                     | TEXT | NOT NULL, DEFAULT 'company'       | "company", "person", "government", "bank"              |
-| abn                      | TEXT | nullable                          | Australian Business Number                             |
-| aliases                  | TEXT | nullable                          | Comma-separated alternate names for matching           |
-| default_transaction_type | TEXT | nullable                          | Suggested type when matched (purchase/transfer/income) |
-| default_tags             | TEXT | DEFAULT '[]'                      | JSON array of tags to apply by default                 |
-| notes                    | TEXT | nullable                          | Free-form notes                                        |
-| last_edited_time         | TEXT | NOT NULL                          | ISO 8601                                               |
+| Column                   | Type | Constraints                       | Description                                                                 |
+| ------------------------ | ---- | --------------------------------- | --------------------------------------------------------------------------- |
+| id                       | TEXT | PK, UUID                          | `crypto.randomUUID()`                                                       |
+| name                     | TEXT | NOT NULL, unique (case-sensitive) | Entity display name                                                         |
+| type                     | TEXT | NOT NULL, DEFAULT 'company'       | "company", "person", "government", "bank", "place", "brand", "organisation" |
+| abn                      | TEXT | nullable                          | Australian Business Number                                                  |
+| aliases                  | TEXT | nullable                          | Comma-separated alternate names for matching                                |
+| default_transaction_type | TEXT | nullable                          | Suggested type when matched (purchase/transfer/income)                      |
+| default_tags             | TEXT | DEFAULT '[]'                      | JSON array of tags to apply by default                                      |
+| notes                    | TEXT | nullable                          | Free-form notes                                                             |
+| last_edited_time         | TEXT | NOT NULL                          | ISO 8601                                                                    |
 
 ## API Surface
 
@@ -39,7 +39,7 @@ Build the entity registry — the merchant/payee database that transactions and 
 - Aliases stored as comma-separated string; API accepts/returns arrays
 - Default tags stored as JSON array; API accepts/returns arrays
 - Deletion doesn't cascade — transactions retain `entity_name` (denormalized) but `entity_id` becomes null
-- Type defaults to "company" if not provided
+- Type defaults to "company" if not provided. Valid types: `company`, `person`, `government`, `bank`, `place`, `brand`, `organisation`
 - Entities are shared across all domains (finance, inventory, etc.)
 
 ## UI: Entities Page

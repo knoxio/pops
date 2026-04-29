@@ -1,5 +1,13 @@
 /** Shared domain constants derived from the database schema. */
-export const ENTITY_TYPES = ['company', 'person', 'place', 'brand', 'organisation'] as const;
+export const ENTITY_TYPES = [
+  'company',
+  'person',
+  'government',
+  'bank',
+  'place',
+  'brand',
+  'organisation',
+] as const;
 export type EntityType = (typeof ENTITY_TYPES)[number];
 
 export const WISH_LIST_PRIORITIES = ['Needing', 'Soon', 'One Day', 'Dreaming'] as const;
