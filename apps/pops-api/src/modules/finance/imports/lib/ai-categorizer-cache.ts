@@ -16,7 +16,7 @@ let diskLoaded = false;
 function getCachePath(): string {
   return (
     process.env['AI_CACHE_PATH'] ??
-    join(dirname(process.env['SQLITE_PATH'] ?? '[REDACTED]'), 'ai_entity_cache.json')
+    join(dirname(process.env['SQLITE_PATH'] ?? './data/pops.db'), 'ai_entity_cache.json')
   );
 }
 

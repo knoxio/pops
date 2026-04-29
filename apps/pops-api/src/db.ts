@@ -1,5 +1,5 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { unlinkSync } from 'node:fs';
+import { existsSync, unlinkSync } from 'node:fs';
 
 import BetterSqlite3 from 'better-sqlite3';
 import { type BetterSQLite3Database, drizzle } from 'drizzle-orm/better-sqlite3';
@@ -124,8 +124,20 @@ export function isNamedEnvContext(): boolean {
 
 function getProdDb(): BetterSqlite3.Database {
   if (!prodDb) {
-    const sqlitePath = process.env['SQLITE_PATH'] ?? '[REDACTED]';
-    prodDb = openDatabase(sqlitePath);
+    const envPath = process.env['SQLITE_PATH'];
+    if (!envPath) {
+      const fallback = './data/pops.db';
+      if (!existsSync(fallback)) {
+        throw new Error(
+          `[db] SQLITE_PATH is not set and fallback path '${fallback}' does not exist. ` +
+            `Copy apps/pops-api/.env.example to .env and set SQLITE_PATH to an absolute path.`
+        );
+      }
+      console.warn(`[db] SQLITE_PATH not set — using fallback: ${fallback}`);
+      prodDb = openDatabase(fallback);
+    } else {
+      prodDb = openDatabase(envPath);
+    }
   }
   return prodDb;
 }

@@ -72,6 +72,7 @@ Running any of these against a production database destroys real data with no wa
 | 03  | [us-03-pre-migration-backup](us-03-pre-migration-backup.md)     | Automatic SQLite file backup before any pending migration runs, with auto-restore on failure    | Done   | Yes              |
 | 04  | [us-04-migration-safety-tests](us-04-migration-safety-tests.md) | CI test that applies migrations to a seeded DB and verifies data integrity                      | Done   | Blocked by us-01 |
 | 05  | [us-05-go-live-runbook](us-05-go-live-runbook.md)               | Document the procedure for transitioning from dev database to production data                   | Done   | Yes              |
+| 06  | [us-06-sqlite-path-fallback](us-06-sqlite-path-fallback.md)     | Replace [REDACTED] placeholder with sane default and startup assertion for missing SQLITE_PATH  | Done   | Yes              |
 
 US-02, US-03, and US-05 can all parallelise. US-04 depends on US-01 (needs the unified migration system to test against).
 

@@ -51,6 +51,9 @@ test-results/
 # Temporary files
 tmp/
 
+# Junk DB files from SQLITE_PATH=[REDACTED] placeholder (legacy)
+apps/pops-api/\[REDACTED\]*
+
 .room-sandbox/
 .room-agent.json
 data/
