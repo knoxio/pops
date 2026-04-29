@@ -129,6 +129,16 @@ describe('entities.list', () => {
     expect(result.pagination.offset).toBe(0);
   });
 
+  it('sorts case-insensitively (BYD after Buffet and Bunnings)', async () => {
+    seedEntity(db, { name: 'BYD' });
+    seedEntity(db, { name: 'Buffet 88' });
+    seedEntity(db, { name: 'Bunnings Warehouse' });
+
+    const result = await caller.core.entities.list({});
+    const names = result.data.map((e: Entity) => e.name);
+    expect(names).toEqual(['Buffet 88', 'Bunnings Warehouse', 'BYD']);
+  });
+
   it('throws UNAUTHORIZED without auth', async () => {
     const unauthCaller = createCaller(false);
     await expect(unauthCaller.core.entities.list({})).rejects.toThrow(TRPCError);
