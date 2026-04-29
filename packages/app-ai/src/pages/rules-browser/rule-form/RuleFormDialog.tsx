@@ -177,7 +177,8 @@ function DialogActions({
 }
 
 export function RuleFormDialog(props: RuleFormDialogProps) {
-  const { open, onOpenChange, editingRule, form, isSubmitting, onSubmit, preview, entities } = props;
+  const { open, onOpenChange, editingRule, form, isSubmitting, onSubmit, preview, entities } =
+    props;
   return (
     <Dialog open={open} onOpenChange={(v) => !isSubmitting && onOpenChange(v)}>
       <DialogContent className="sm:max-w-4xl">
