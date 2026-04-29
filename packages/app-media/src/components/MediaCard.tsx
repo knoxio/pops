@@ -1,5 +1,4 @@
 import { Film } from 'lucide-react';
-import { useState } from 'react';
 import { Link } from 'react-router';
 
 /**
@@ -8,6 +7,8 @@ import { Link } from 'react-router';
  * Implements a 3-tier image fallback: posterUrl → fallbackPosterUrl → placeholder SVG.
  */
 import { Badge, cn, Skeleton } from '@pops/ui';
+
+import { usePosterCascade } from '../hooks/usePosterCascade';
 
 export type MediaType = 'movie' | 'tv';
 
@@ -39,31 +40,6 @@ const TYPE_LABELS: Record<MediaType, string> = {
 
 function buildHref(type: MediaType, id: number): string {
   return type === 'movie' ? `/media/movies/${id}` : `/media/tv/${id}`;
-}
-
-function usePosterCascade(posterUrl?: string | null, fallbackPosterUrl?: string | null) {
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [currentSrc, setCurrentSrc] = useState<string | null>(
-    posterUrl ?? fallbackPosterUrl ?? null
-  );
-  const [showPlaceholder, setShowPlaceholder] = useState(!posterUrl && !fallbackPosterUrl);
-
-  const handleImageError = () => {
-    if (currentSrc === posterUrl && fallbackPosterUrl) {
-      setCurrentSrc(fallbackPosterUrl);
-      setImageLoaded(false);
-      return;
-    }
-    setShowPlaceholder(true);
-  };
-
-  return {
-    activeSrc: showPlaceholder ? null : currentSrc,
-    showPlaceholder,
-    imageLoaded,
-    setImageLoaded,
-    handleImageError,
-  };
 }
 
 function PosterImage({

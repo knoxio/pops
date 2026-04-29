@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-
+import { usePosterCascade } from '../../hooks/usePosterCascade';
 import { formatRuntime } from '../../lib/format';
 import { MovieHeroActions } from './MovieHeroActions';
 import { MovieHeroBreadcrumb } from './MovieHeroBreadcrumb';
@@ -26,19 +25,15 @@ interface MovieHeroProps {
 }
 
 function HeroPoster({ posterUrl, title }: { posterUrl: string | null; title: string }) {
-  const [imgError, setImgError] = useState(false);
+  const { activeSrc, showPlaceholder, handleImageError } = usePosterCascade(posterUrl);
 
-  useEffect(() => {
-    setImgError(false);
-  }, [posterUrl]);
-
-  if (posterUrl && !imgError) {
+  if (activeSrc && !showPlaceholder) {
     return (
       <img
-        src={posterUrl}
+        src={activeSrc}
         alt={`${title} poster`}
         className="w-28 md:w-44 aspect-[2/3] rounded-lg object-cover shadow-lg shrink-0"
-        onError={() => setImgError(true)}
+        onError={handleImageError}
       />
     );
   }
