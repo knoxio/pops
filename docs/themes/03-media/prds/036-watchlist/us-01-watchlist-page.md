@@ -21,6 +21,7 @@ As a user, I want a prioritised watchlist page that shows movies and TV shows I 
 - [x] Empty state: "Your watchlist is empty" with links to the library page and search page
 - [x] Loading state: skeleton matching the active layout (grid for desktop, list for mobile)
 - [x] Filter-specific empty state: "No movies on your watchlist" or "No TV shows on your watchlist"
+- [x] Each card shows a year line below the title; cards with no year data show `—` instead of empty space, so all cards have consistent height
 - [x] Tests cover: grid layout renders on desktop viewport, list layout renders on mobile viewport, filter tabs switch content, priority badges show correct numbers, notes display and truncation, empty state renders
 
 ## Notes

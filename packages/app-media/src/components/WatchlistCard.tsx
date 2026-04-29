@@ -160,7 +160,7 @@ export function WatchlistCard(props: WatchlistCardProps) {
         <Link to={href} className="hover:underline">
           <h3 className="text-sm font-medium leading-tight line-clamp-2">{title}</h3>
         </Link>
-        {year && <p className="text-xs text-muted-foreground">{year}</p>}
+        <p className="text-xs text-muted-foreground">{year ?? '—'}</p>
         {rotationStatus === 'leaving' && rotationExpiresAt && (
           <LeavingBadge rotationExpiresAt={rotationExpiresAt} />
         )}
