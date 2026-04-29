@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
   SortableHeader,
 } from '@pops/ui';
+
 import { TagEditor } from '../../components/TagEditor';
 import { AmountCell, DescriptionCell } from './cells';
 
