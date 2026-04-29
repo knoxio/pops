@@ -41,10 +41,10 @@ export const navConfig = {
   basePath: '/cerebrum',
   items: [
     { path: '', label: 'Ingest', labelKey: 'cerebrum.ingest', icon: 'FileText' },
-    { path: 'chat', label: 'Chat', labelKey: 'cerebrum.chat', icon: 'MessageSquare' },
-    { path: 'nudges', label: 'Nudges', labelKey: 'cerebrum.nudges', icon: 'Bell' },
+    { path: '/chat', label: 'Chat', labelKey: 'cerebrum.chat', icon: 'MessageSquare' },
+    { path: '/nudges', label: 'Nudges', labelKey: 'cerebrum.nudges', icon: 'Bell' },
     {
-      path: 'proposals',
+      path: '/proposals',
       label: 'Proposals',
       labelKey: 'cerebrum.proposals',
       icon: 'GitPullRequest',
