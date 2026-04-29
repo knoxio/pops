@@ -328,12 +328,10 @@ describe('migration safety', () => {
         AND length(title) > 2
         AND TRIM(title, '"') != '';
     `;
+    const byTitle = 'SELECT title FROM movies WHERE title = ?';
 
     function insertMovie(db: BetterSqlite3.Database, title: string): void {
-      db.prepare(
-        `INSERT INTO movies (tmdb_id, title, genres, created_at, updated_at)
-         VALUES (abs(random()) % 1000000, ?, '[]', datetime('now'), datetime('now'))`
-      ).run(title);
+      db.prepare("INSERT INTO movies (tmdb_id, title, genres) VALUES (?, ?, '[]')").run(1, title);
     }
 
     it('strips surrounding quotes from a wrapped title', () => {
@@ -342,8 +340,7 @@ describe('migration safety', () => {
       initializeSchema(db);
       insertMovie(db, '"Wuthering Heights"');
       db.exec(migrationSql);
-      const row = db.prepare("SELECT title FROM movies WHERE title = 'Wuthering Heights'").get();
-      expect(row).toBeDefined();
+      expect(db.prepare(byTitle).get('Wuthering Heights')).toBeDefined();
       db.close();
     });
 
@@ -353,8 +350,7 @@ describe('migration safety', () => {
       initializeSchema(db);
       insertMovie(db, '"Something');
       db.exec(migrationSql);
-      const row = db.prepare("SELECT title FROM movies WHERE title = '\"Something'").get();
-      expect(row).toBeDefined();
+      expect(db.prepare(byTitle).get('"Something')).toBeDefined();
       db.close();
     });
 
@@ -364,8 +360,7 @@ describe('migration safety', () => {
       initializeSchema(db);
       insertMovie(db, 'Something"');
       db.exec(migrationSql);
-      const row = db.prepare("SELECT title FROM movies WHERE title = 'Something\"'").get();
-      expect(row).toBeDefined();
+      expect(db.prepare(byTitle).get('Something"')).toBeDefined();
       db.close();
     });
 
@@ -375,10 +370,7 @@ describe('migration safety', () => {
       initializeSchema(db);
       insertMovie(db, 'Film "Noir" Style');
       db.exec(migrationSql);
-      const row = db
-        .prepare("SELECT title FROM movies WHERE title = 'Film \"Noir\" Style'")
-        .get();
-      expect(row).toBeDefined();
+      expect(db.prepare(byTitle).get('Film "Noir" Style')).toBeDefined();
       db.close();
     });
 
@@ -388,8 +380,7 @@ describe('migration safety', () => {
       initializeSchema(db);
       insertMovie(db, '""');
       db.exec(migrationSql);
-      const row = db.prepare(`SELECT title FROM movies WHERE title = '""'`).get();
-      expect(row).toBeDefined();
+      expect(db.prepare(byTitle).get('""')).toBeDefined();
       db.close();
     });
 
@@ -399,8 +390,7 @@ describe('migration safety', () => {
       initializeSchema(db);
       insertMovie(db, '"""');
       db.exec(migrationSql);
-      const row = db.prepare(`SELECT title FROM movies WHERE title = '"""'`).get();
-      expect(row).toBeDefined();
+      expect(db.prepare(byTitle).get('"""')).toBeDefined();
       db.close();
     });
 
@@ -410,8 +400,7 @@ describe('migration safety', () => {
       initializeSchema(db);
       insertMovie(db, 'The Dark Knight');
       db.exec(migrationSql);
-      const row = db.prepare("SELECT title FROM movies WHERE title = 'The Dark Knight'").get();
-      expect(row).toBeDefined();
+      expect(db.prepare(byTitle).get('The Dark Knight')).toBeDefined();
       db.close();
     });
 
@@ -422,11 +411,8 @@ describe('migration safety', () => {
       insertMovie(db, '"Wuthering Heights"');
       db.exec(migrationSql);
       db.exec(migrationSql);
-      const rows = db
-        .prepare("SELECT title FROM movies WHERE title LIKE '%Wuthering%'")
-        .all() as { title: string }[];
-      expect(rows).toHaveLength(1);
-      expect(rows[0]!.title).toBe('Wuthering Heights');
+      expect(db.prepare(byTitle).get('Wuthering Heights')).toBeDefined();
+      expect(db.prepare(byTitle).get('"Wuthering Heights"')).toBeUndefined();
       db.close();
     });
   });
