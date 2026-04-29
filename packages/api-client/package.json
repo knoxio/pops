@@ -10,8 +10,8 @@
   },
   "dependencies": {
     "@pops/api": "workspace:*",
-    "@trpc/client": "11.16.0",
-    "@trpc/react-query": "11.16.0"
+    "@trpc/client": "11.17.0",
+    "@trpc/react-query": "11.17.0"
   },
   "devDependencies": {
     "typescript": "^6.0.3"
