@@ -18,7 +18,8 @@ As a user, I want to filter inventory items by type, location, and condition, se
 - [x] All filter values are persisted as URL query parameters (`?q=`, `?type=`, `?locationId=`, `?condition=`)
 - [x] Changing any filter re-fetches the items list and resets pagination to page 1
 - [x] "Clear filters" button appears when any filter is active; clicking it resets all filters
-- [x] Empty state (no items in database): "No items yet — Add your first item" with link to `/inventory/items/new`
+- [x] Persistent **+ Add Item** button in the page header, always visible (navigates to `/inventory/items/new`)
+- [x] Empty state (no items in database): "No inventory items yet." message; the header Add Item button is the primary CTA
 - [x] No-results state (filters active but no matches): "No items match your filters" with "Clear filters" button
 - [x] Tests cover: search debounce, asset ID redirect on Enter, type/location/condition filter application, query parameter persistence, clear filters reset, empty state rendering, no-results state rendering
 

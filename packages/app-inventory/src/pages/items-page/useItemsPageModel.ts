@@ -188,6 +188,7 @@ export function useItemsPageModel() {
   const navigate = useNavigate();
   const filters = useItemsPageFilters();
   const [viewMode, setViewMode] = useState<ViewMode>(getInitialView);
+  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
 
   useItemsPageContext(filters);
   const { typeOptions, locationOptions, locationPathMap } = useItemsPageOptions();
@@ -196,6 +197,14 @@ export function useItemsPageModel() {
   const queryInput = useMemo(() => buildQueryInput(filters), [filters]);
   const { data, isLoading } = trpc.inventory.items.list.useQuery(queryInput);
   const summary = summarize(data);
+
+  const utils = trpc.useUtils();
+  const deleteMutation = trpc.inventory.items.delete.useMutation({
+    onSuccess: () => {
+      void utils.inventory.items.list.invalidate();
+      setDeletingItemId(null);
+    },
+  });
 
   return {
     navigate,
@@ -209,5 +218,8 @@ export function useItemsPageModel() {
     ...summary,
     isLoading,
     hasActiveFilters: hasAnyActiveFilter(filters),
+    deletingItemId,
+    setDeletingItemId,
+    deleteMutation,
   };
 }

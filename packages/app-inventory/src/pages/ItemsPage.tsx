@@ -1,7 +1,6 @@
-import { useState } from 'react';
+import { Plus } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { trpc } from '@pops/api-client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -11,6 +10,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  Button,
   PageHeader,
 } from '@pops/ui';
 
@@ -61,18 +61,15 @@ export function ItemsPage() {
   const { filters, navigate } = model;
   const hasSearchOrFilters = !!filters.search || model.hasActiveFilters;
 
-  const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
-  const utils = trpc.useUtils();
-  const deleteMutation = trpc.inventory.items.delete.useMutation({
-    onSuccess: () => {
-      void utils.inventory.items.list.invalidate();
-      setDeletingItemId(null);
-    },
-  });
+  const addButton = (
+    <Button onClick={() => navigate('/inventory/items/new')} prefix={<Plus className="h-4 w-4" />}>
+      Add Item
+    </Button>
+  );
 
   return (
     <div className="space-y-6">
-      <PageHeader title={t('title')} />
+      <PageHeader title={t('title')} actions={addButton} />
       <FiltersBar
         search={filters.search}
         typeFilter={filters.typeFilter}
@@ -102,16 +99,17 @@ export function ItemsPage() {
         viewMode={model.viewMode}
         hasSearchOrFilters={hasSearchOrFilters}
         locationPathMap={model.locationPathMap}
-        onAdd={() => navigate('/inventory/items/new')}
         onOpen={(id) => navigate(`/inventory/items/${id}`)}
         onEdit={(id) => navigate(`/inventory/items/${id}/edit`)}
-        onDeleteRequest={setDeletingItemId}
+        onDeleteRequest={model.setDeletingItemId}
       />
       <DeleteItemDialog
-        isOpen={deletingItemId !== null}
-        isPending={deleteMutation.isPending}
-        onConfirm={() => deletingItemId && deleteMutation.mutate({ id: deletingItemId })}
-        onClose={() => setDeletingItemId(null)}
+        isOpen={model.deletingItemId !== null}
+        isPending={model.deleteMutation.isPending}
+        onConfirm={() =>
+          model.deletingItemId && model.deleteMutation.mutate({ id: model.deletingItemId })
+        }
+        onClose={() => model.setDeletingItemId(null)}
       />
     </div>
   );
