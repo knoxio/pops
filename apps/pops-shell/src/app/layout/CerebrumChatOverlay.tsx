@@ -1,6 +1,6 @@
 import { useUIStore } from '@/store/uiStore';
 import { MessageSquare, X } from 'lucide-react';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 
 /**
  * CerebrumChatOverlay — global floating action button + slide-in chat drawer.
@@ -12,13 +12,15 @@ import { useCallback, useEffect } from 'react';
  *   - Pressing Escape
  *   - Clicking the backdrop
  *
- * State lives in the UI store so any page can programmatically open the overlay
- * (e.g. the Media sparkle FAB).
+ * State lives in the UI store so any page can programmatically open the overlay.
+ * The CerebrumChatCtx from @pops/navigation lets app packages (e.g. app-media)
+ * call openChat() without a direct shell dependency.
  *
- * The ChatPanel and its view-model hook are lazy-imported so they are only
- * bundled/evaluated when the overlay is first opened.
+ * The ChatPanel and its view-model hook are only evaluated when the overlay is
+ * first opened (conditional render).
  */
 import { ChatPanel, useChatPageModel } from '@pops/app-cerebrum';
+import { CerebrumChatCtx } from '@pops/navigation';
 import { Button, cn } from '@pops/ui';
 
 /** Inner content — only rendered when overlay is open to avoid mounting the
@@ -31,7 +33,7 @@ function ChatOverlayContent({ onClose }: { onClose: () => void }) {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-border/50 px-4 py-3 shrink-0">
         <div className="flex items-center gap-2">
-          <MessageSquare className="h-4 w-4 text-app-accent" />
+          <MessageSquare className="h-4 w-4 text-sky-400" />
           <span className="text-sm font-semibold">Ego</span>
         </div>
         <Button
@@ -59,6 +61,7 @@ export function CerebrumChatOverlay() {
   const setOpen = useUIStore((state) => state.setCerebrumChatOpen);
 
   const handleClose = useCallback(() => setOpen(false), [setOpen]);
+  const handleOpen = useCallback(() => setOpen(true), [setOpen]);
 
   /* Dismiss on Escape */
   useEffect(() => {
@@ -70,8 +73,11 @@ export function CerebrumChatOverlay() {
     return () => window.removeEventListener('keydown', onKey);
   }, [isOpen, handleClose]);
 
+  /* Provide openChat() to all app packages via CerebrumChatCtx */
+  const chatCtxValue = useMemo(() => ({ openChat: handleOpen }), [handleOpen]);
+
   return (
-    <>
+    <CerebrumChatCtx.Provider value={chatCtxValue}>
       {/* Floating action button — always visible */}
       <button
         type="button"
@@ -81,10 +87,10 @@ export function CerebrumChatOverlay() {
         className={cn(
           'fixed bottom-6 right-6 z-50',
           'flex h-14 w-14 items-center justify-center rounded-full',
-          'bg-app-accent text-white shadow-lg shadow-app-accent/30',
-          'hover:bg-app-accent/90 active:scale-95',
+          'bg-sky-500 text-white shadow-lg shadow-sky-500/30',
+          'hover:bg-sky-400 active:scale-95',
           'transition-all duration-200',
-          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-app-accent focus-visible:ring-offset-2',
+          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2',
           isOpen && 'scale-95 opacity-90'
         )}
       >
@@ -114,6 +120,6 @@ export function CerebrumChatOverlay() {
       >
         {isOpen && <ChatOverlayContent onClose={handleClose} />}
       </div>
-    </>
+    </CerebrumChatCtx.Provider>
   );
 }

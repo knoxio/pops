@@ -15,7 +15,7 @@ interface UIState {
    * immediately collapsing the overlay it is about to open.
    */
   skipNextPageNavClose: boolean;
-  /** Whether the global Cerebrum chat overlay is open. */
+  /** Whether the global Cerebrum chat slide-in panel is open (fixes #2408). */
   cerebrumChatOpen: boolean;
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;

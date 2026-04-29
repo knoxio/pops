@@ -17,8 +17,8 @@ interface ManifestGroup {
 
 /**
  * Derive a human-readable group label from a manifest ID.
- * IDs use dot-notation: 'media.plex' → 'Media', 'core.operational' → 'Core'.
- * IDs without a dot (e.g. 'finance', 'inventory') use the title directly.
+ * IDs use dot-notation: 'media.plex' -> 'Media', 'core.operational' -> 'Core'.
+ * IDs without a dot (e.g. 'finance', 'inventory') stand alone as their own group.
  */
 function getGroupKey(id: string): string {
   const dot = id.indexOf('.');
