@@ -29,8 +29,8 @@ function PageHeader({ totalText, onAdd }: { totalText: string; onAdd: () => void
         <h1 className="text-2xl md:text-3xl font-bold">Wish List</h1>
         <p className="text-muted-foreground text-sm">{totalText}</p>
       </div>
-      <Button onClick={onAdd}>
-        <Plus className="mr-2 h-4 w-4" /> Add Item
+      <Button onClick={onAdd} prefix={<Plus className="h-4 w-4" />}>
+        Add Item
       </Button>
     </div>
   );

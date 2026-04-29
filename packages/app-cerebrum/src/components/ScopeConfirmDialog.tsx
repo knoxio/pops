@@ -8,6 +8,7 @@ import {
   Button,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -32,9 +33,9 @@ export function ScopeConfirmDialog({
         <DialogHeader>
           <DialogTitle>Inferred Scopes</DialogTitle>
         </DialogHeader>
-        <p className="text-sm text-muted-foreground">
+        <DialogDescription className="text-sm text-muted-foreground">
           No scopes were provided. The following scopes were inferred from the content:
-        </p>
+        </DialogDescription>
         <div className="flex flex-wrap gap-2 py-2">
           {scopes.map((scope) => (
             <Badge key={scope} variant="secondary">

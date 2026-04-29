@@ -6,6 +6,7 @@ import {
   ChipInput,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -162,6 +163,9 @@ export function TransactionFormDialog(props: DialogProps) {
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogHeader>
             <DialogTitle>{editingTransaction ? 'Edit Transaction' : 'New Transaction'}</DialogTitle>
+            <DialogDescription className="sr-only">
+              Enter the details for this transaction
+            </DialogDescription>
           </DialogHeader>
           <FormFields form={form} entities={entities} />
           <DialogFooter>

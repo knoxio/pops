@@ -7,6 +7,7 @@ import {
   CheckboxInput,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -84,6 +85,9 @@ export function BudgetFormDialog(props: BudgetFormDialogProps) {
             <DialogTitle>
               {editingBudget ? t('budgets.editBudget') : t('budgets.newBudget')}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              Enter the details for your budget
+            </DialogDescription>
           </DialogHeader>
           <FormFields form={form} />
           <DialogFooter>

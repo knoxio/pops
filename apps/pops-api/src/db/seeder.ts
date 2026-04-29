@@ -1718,12 +1718,12 @@ export function seedDatabase(db: BetterSqlite3.Database): void {
         'claude-haiku-4-5-20251001',
         'entity-match',
         'finance',
-        150,
-        25,
-        0.0001,
-        0,
+        160,
+        22,
+        0.0002,
+        95,
         'success',
-        1,
+        0,
         'batch-2026-02-01',
         '2026-02-01T10:00:00Z'
       );

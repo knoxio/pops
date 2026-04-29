@@ -6,6 +6,7 @@ import {
   ChipInput,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -102,6 +103,9 @@ export function EntityFormDialog(props: EntityFormDialogProps) {
         <form onSubmit={form.handleSubmit(onSubmit)}>
           <DialogHeader>
             <DialogTitle>{editingEntity ? 'Edit Entity' : 'New Entity'}</DialogTitle>
+            <DialogDescription className="sr-only">
+              Enter the details for this entity
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <NameAndType form={form} />

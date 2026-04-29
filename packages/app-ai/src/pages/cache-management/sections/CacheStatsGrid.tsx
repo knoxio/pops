@@ -5,7 +5,7 @@ type CacheStatsGridProps = {
   totalEntries: number;
   diskSizeBytes: number;
   totalCacheHits: number;
-  hitRatePct: string;
+  hitRateDisplay: string;
 };
 
 export function CacheStatsGrid({
@@ -13,7 +13,7 @@ export function CacheStatsGrid({
   totalEntries,
   diskSizeBytes,
   totalCacheHits,
-  hitRatePct,
+  hitRateDisplay,
 }: CacheStatsGridProps) {
   if (isLoading) {
     return (
@@ -41,7 +41,7 @@ export function CacheStatsGrid({
       />
       <StatCard
         title="Hit Rate"
-        value={`${hitRatePct}%`}
+        value={hitRateDisplay}
         description={`${totalCacheHits.toLocaleString()} cached results`}
         color="emerald"
       />

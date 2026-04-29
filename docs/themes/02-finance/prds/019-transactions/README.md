@@ -47,7 +47,7 @@ Build the transaction ledger — the core of the finance app. Every financial tr
 ## Business Rules
 
 - `type` must be one of: "purchase", "transfer", "income"
-- `amount` can be positive (income) or negative (expense) — no sign convention enforcement at the API level
+- `amount` can be positive (income) or negative (expense) — no sign convention enforcement at the API level. Zero is not a valid transaction amount; the form validates `amount !== 0` and surfaces "Amount must be non-zero" rather than the generic "required" message
 - `tags` stored as JSON array; API parses and validates
 - `entity_name` is denormalized — survives entity deletion. If entity is deleted, `entity_id` becomes null but `entity_name` remains
 - `checksum` uniqueness prevents duplicate imports from the same CSV

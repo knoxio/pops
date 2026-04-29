@@ -8,7 +8,7 @@ import type {
   CommitResult,
 } from '@pops/api/modules/finance/imports';
 
-export type BankType = 'Amex';
+export type BankType = 'ANZ' | 'Amex' | 'ING' | 'Up';
 export type { ChangeSet };
 export type EntityType = 'company' | 'person' | 'government' | 'bank';
 

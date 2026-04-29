@@ -11,7 +11,7 @@ export function PageHeaderActions({ onAddRoot }: PageHeaderActionsProps) {
   return (
     <>
       <Link
-        to="/inventory/report/insurance"
+        to="/inventory/reports/insurance"
         className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
       >
         <FileText className="h-4 w-4" />

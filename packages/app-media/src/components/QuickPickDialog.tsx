@@ -13,6 +13,7 @@ import {
   Button,
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -169,6 +170,9 @@ export function QuickPickDialog() {
             <Sparkles className="h-5 w-5 text-app-accent" />
             What Should I Watch?
           </DialogTitle>
+          <DialogDescription className="sr-only">
+            Get a random movie recommendation from your watchlist
+          </DialogDescription>
         </DialogHeader>
         <div className="px-6 pb-6 pt-4">
           <PickContent

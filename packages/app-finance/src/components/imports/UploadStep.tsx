@@ -1,10 +1,12 @@
 import Papa from 'papaparse';
 import { useCallback, useState } from 'react';
 
-import { Button } from '@pops/ui';
+import { Button, RadioInput } from '@pops/ui';
 
 import { useImportStore } from '../../store/importStore';
 import { FileUpload } from './FileUpload';
+
+import type { BankType } from '../../store/import-store-types';
 
 interface ParseResult {
   ok: boolean;
@@ -60,8 +62,22 @@ function UploadFooter({
   );
 }
 
+const BANK_OPTIONS = [
+  { value: 'ANZ', label: 'ANZ', description: 'Everyday, Savings' },
+  { value: 'Amex', label: 'Amex', description: 'American Express' },
+  { value: 'ING', label: 'ING', description: 'Savings, Everyday' },
+  { value: 'Up', label: 'Up', description: 'Everyday, Round Up' },
+] satisfies Array<{ value: BankType; label: string; description: string }>;
+
+const BANK_HELP: Record<BankType, string> = {
+  ANZ: 'Log in to ANZ Internet Banking, open your account, and export transactions as CSV.',
+  Amex: 'Log in to your Amex online portal and download your transactions as a CSV export.',
+  ING: 'Log in to ING Banking Online, open your account, and export transactions as CSV.',
+  Up: 'In the Up app, go to your account, tap Export, and choose CSV format.',
+};
+
 function useUploadStep() {
-  const { file, setFile, setHeaders, setRows, nextStep } = useImportStore();
+  const { file, bankType, setFile, setBankType, setHeaders, setRows, nextStep } = useImportStore();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,6 +87,13 @@ function useUploadStep() {
       setError(null);
     },
     [setFile]
+  );
+
+  const handleBankChange = useCallback(
+    (value: string) => {
+      setBankType(value as BankType);
+    },
+    [setBankType]
   );
 
   const handleNext = useCallback(async () => {
@@ -91,23 +114,37 @@ function useUploadStep() {
     nextStep();
   }, [file, setHeaders, setRows, nextStep]);
 
-  return { file, isProcessing, error, handleFileSelect, handleNext };
+  return {
+    file,
+    bankType,
+    isProcessing,
+    error,
+    handleFileSelect,
+    handleBankChange,
+    handleNext,
+  };
 }
 
-/**
- * Step 1: Upload CSV file and parse it
- */
 export function UploadStep() {
-  const { file, isProcessing, error, handleFileSelect, handleNext } = useUploadStep();
+  const { file, bankType, isProcessing, error, handleFileSelect, handleBankChange, handleNext } =
+    useUploadStep();
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-semibold mb-2">Upload CSV</h2>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          Select an Amex CSV export file to import transactions.
+          Select your bank and upload a CSV export to import transactions.
         </p>
       </div>
+
+      <RadioInput
+        label="Bank"
+        options={BANK_OPTIONS}
+        value={bankType}
+        onValueChange={handleBankChange}
+        orientation="horizontal"
+      />
 
       <FileUpload
         onFileSelect={handleFileSelect}
@@ -117,10 +154,10 @@ export function UploadStep() {
       />
 
       <div className="bg-info/5 border border-info/20 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-info mb-2">Bank: American Express (Amex)</h3>
-        <p className="text-xs text-info">
-          Download your Amex transactions as CSV from your online banking portal.
-        </p>
+        <h3 className="text-sm font-medium text-info mb-2">
+          How to export from {BANK_OPTIONS.find((b) => b.value === bankType)?.label ?? bankType}
+        </h3>
+        <p className="text-xs text-info">{BANK_HELP[bankType]}</p>
       </div>
 
       {error && (

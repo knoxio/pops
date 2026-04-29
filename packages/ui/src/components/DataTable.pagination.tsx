@@ -64,12 +64,14 @@ function PageSizeSelect<TData>({
 
 function PageNav<TData>({ table }: { table: TanStackTable<TData> }) {
   const { t } = useTranslation('ui');
+  const pageCount = table.getPageCount();
+  const current = pageCount === 0 ? 0 : table.getState().pagination.pageIndex + 1;
   return (
     <div className="flex items-center gap-2">
       <div className="text-sm font-medium">
         {t('dataTable.page', {
-          current: table.getState().pagination.pageIndex + 1,
-          total: table.getPageCount(),
+          current,
+          total: pageCount,
         })}
       </div>
       <div className="flex gap-2">

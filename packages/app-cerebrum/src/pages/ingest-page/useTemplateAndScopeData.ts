@@ -23,11 +23,13 @@ export function useTemplateAndScopeData() {
   const knownScopes = scopesRef.current;
 
   const typeOptions = useMemo(() => {
-    const opts = templates.map((t) => ({
-      value: t.name,
-      label: t.name,
-      description: t.description,
-    }));
+    const opts = templates
+      .filter((t) => t.name !== 'capture')
+      .map((t) => ({
+        value: t.name,
+        label: t.name,
+        description: t.description,
+      }));
     opts.unshift({
       value: 'capture',
       label: 'capture',

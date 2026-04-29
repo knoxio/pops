@@ -10,6 +10,7 @@ As a user, I want a dashboard page showing key financial stats and recent transa
 ## Acceptance Criteria
 
 - [x] Stats cards: total transaction count, recent income (last 10), recent expenses (last 10), net balance
+- [x] Stats card amounts are colour-coded by sign: positive → success (green), negative → destructive (red), zero → neutral foreground. Zero values never render in red or green.
 - [x] Recent transactions list (last 10) with date, description, amount (colour-coded), entity name, account badge
 - [x] Active budgets section (first 3) — links to budgets page
 - [x] Loading skeletons for stats and transaction rows
