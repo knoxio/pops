@@ -85,10 +85,11 @@ function mockDecade(decade: number) {
 }
 
 describe('tmdb-shelves registration', () => {
-  it('registers all 5 shelves at module load', () => {
-    expect(mockRegisterShelf).toHaveBeenCalledTimes(5);
+  it('registers all 6 shelves at module load', () => {
+    expect(mockRegisterShelf).toHaveBeenCalledTimes(6);
     const ids = mockRegisterShelf.mock.calls.map((c) => c[0]?.id);
     expect(ids).toContain('new-releases');
+    expect(ids).toContain('upcoming-releases');
     expect(ids).toContain('hidden-gems');
     expect(ids).toContain('critics-vs-audiences');
     expect(ids).toContain('award-winners');
@@ -150,6 +151,45 @@ describe('new-releases shelf', () => {
 
     const callArg = vi.mocked(client.discoverMovies).mock.calls[0]?.[0];
     expect(callArg?.genreIds).toBeUndefined();
+  });
+});
+
+describe('upcoming-releases shelf', () => {
+  it('generate() returns 1 instance with shelfId=upcoming-releases', () => {
+    const [call] = mockRegisterShelf.mock.calls.filter((c) => c[0]?.id === 'upcoming-releases');
+    const def = call?.[0];
+    expect(def).toBeDefined();
+    const instances = def!.generate(profile);
+    expect(instances).toHaveLength(1);
+    expect(instances[0]!.shelfId).toBe('upcoming-releases');
+  });
+
+  it('query() calls discoverMovies with future releaseDateGte and releaseDateLte', async () => {
+    const client = makeMockClient();
+    mockGetTmdbClient.mockReturnValue(client);
+
+    const [call] = mockRegisterShelf.mock.calls.filter((c) => c[0]?.id === 'upcoming-releases');
+    const instances = call![0].generate(profile);
+    await instances[0]!.query({ limit: 10, offset: 0 });
+
+    const callArg = vi.mocked(client.discoverMovies).mock.calls[0]?.[0];
+    expect(callArg?.releaseDateGte).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    expect(callArg?.releaseDateLte).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+    // releaseDateLte must be after releaseDateGte (90-day window)
+    expect(callArg!.releaseDateLte! > callArg!.releaseDateGte!).toBe(true);
+  });
+
+  it('query() calls discoverMovies sorted by release_date.asc', async () => {
+    const client = makeMockClient();
+    mockGetTmdbClient.mockReturnValue(client);
+
+    const [call] = mockRegisterShelf.mock.calls.filter((c) => c[0]?.id === 'upcoming-releases');
+    const instances = call![0].generate(profile);
+    await instances[0]!.query({ limit: 10, offset: 0 });
+
+    expect(client.discoverMovies).toHaveBeenCalledWith(
+      expect.objectContaining({ sortBy: 'release_date.asc' })
+    );
   });
 });
 

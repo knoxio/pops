@@ -147,6 +147,7 @@ export const routes: RouteObject[] = [
   { path: 'rotation/log', element: <RotationLogPage /> },
   { path: 'rotation/candidates', element: <CandidateQueuePage /> },
   { path: 'arr/calendar', element: <CalendarPage /> },
+  { path: 'calendar', element: <Navigate to="/media/discover" replace /> },
   { path: 'tier-list', element: <TierListPage /> },
   { path: 'debrief/:movieId', element: <DebriefPage /> },
   { path: 'debrief/:movieId/results', element: <DebriefResultsPage /> },

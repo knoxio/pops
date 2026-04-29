@@ -5,7 +5,7 @@
 
 ## Overview
 
-A dynamic shelf pool system for the discover page. Instead of showing the same 9 hardcoded sections in the same order every time, the page is assembled per session from a pool of 27 shelf definitions. Each session selects 10-15 shelves, orders them by relevance and variety, and jitters item positions within each shelf. The result: a Netflix-like experience where the page feels different every time you open it.
+A dynamic shelf pool system for the discover page. Instead of showing the same 9 hardcoded sections in the same order every time, the page is assembled per session from a pool of 28 shelf definitions. Each session selects 10-15 shelves, orders them by relevance and variety, and jitters item positions within each shelf. The result: a Netflix-like experience where the page feels different every time you open it.
 
 ## Shelf System Architecture
 
@@ -30,7 +30,7 @@ interface ShelfInstance {
 }
 ```
 
-### Shelf pool (27 definitions)
+### Shelf pool (28 definitions)
 
 #### Seed-based templates (8 — each generates multiple instances)
 
@@ -45,13 +45,14 @@ interface ShelfInstance {
 | `dimension-inspired`  | "You loved {Movie}'s {Dimension}" | High-scoring movie + dimension                              | `/movie/{id}/recommendations` filtered by dimension affinity |
 | `context`             | "{Context Title}"                 | Time/date/season triggers                                   | `/discover/movie?with_genres={ids}&with_keywords={ids}`      |
 
-#### Static shelves (19)
+#### Static shelves (20)
 
 | ID                      | Title                           | Source           | Query logic                                                 |
 | ----------------------- | ------------------------------- | ---------------- | ----------------------------------------------------------- |
 | `trending-tmdb`         | "Trending"                      | TMDB             | `/trending/movie/{week\|day}`                               |
 | `trending-plex`         | "Trending on Plex"              | Plex Discover    | Cloud trending, hidden if disconnected                      |
 | `new-releases`          | "New Releases"                  | TMDB             | Released in last 30 days, filtered by genre affinity        |
+| `upcoming-releases`     | "Upcoming Releases"             | TMDB             | Release date today → +90 days, sorted by release date asc   |
 | `hidden-gems`           | "Hidden Gems"                   | TMDB             | Vote count 50-500, vote average > 7.0, in top genres        |
 | `critics-vs-audiences`  | "Critics Love, Audiences Split" | TMDB             | High vote average + low popularity (proxy for polarizing)   |
 | `short-watch`           | "Quick Watch"                   | Local            | Runtime < 100min, unwatched, scored                         |
@@ -73,7 +74,7 @@ interface ShelfInstance {
 
 Each page load runs the assembly:
 
-1. **Generate instances**: call `generate()` on all 27 shelf definitions → ~50-100 shelf instances
+1. **Generate instances**: call `generate()` on all 28 shelf definitions → ~50-100 shelf instances
 2. **Filter empty**: discard instances where `query()` would return 0 results (fast pre-check)
 3. **Score each instance**:
    - Relevance: user affinity score (0-1)
