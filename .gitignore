@@ -21,8 +21,9 @@ dist/
 *.sqlite3
 *.sqlite3-wal
 *.sqlite3-shm
-*-shm
+# SQLite WAL-mode auxiliary files for extensionless databases
 *-wal
+*-shm
 *.csv
 !apps/pops-api/src/modules/finance/imports/test-data/amex-sample.csv
 entity_lookup.json
