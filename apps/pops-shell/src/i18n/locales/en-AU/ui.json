@@ -36,5 +36,12 @@
 
   "imageGallery.delete": "Delete image",
   "imageGallery.previous": "Previous image",
-  "imageGallery.next": "Next image"
+  "imageGallery.next": "Next image",
+
+  "filterBar.filters": "Filters",
+  "filterBar.clearAll": "Clear all",
+  "filterBar.apply": "Apply",
+  "filterBar.applyFiltersDesc": "Apply filters to narrow down table results",
+  "filterBar.activeFilters": "{{count}} filter active",
+  "filterBar.activeFilters_other": "{{count}} filters active"
 }
