@@ -56,6 +56,9 @@ As a user, I want settings fields to render as appropriate input widgets with in
 - [x] Success shows a green checkmark indicator next to the button
 - [x] Failure shows a red X with the error message next to the button
 - [x] The button shows a loading spinner while the procedure is in flight
+- [x] Procedures that return `{ data: { connected: false, error?: string } }` without throwing are treated as failures and show the error state
+- [x] On success, a `toast.success('Connected')` notification is shown
+- [x] On failure, a `toast.error(message)` notification is shown with the error message
 
 ### Async Options Loader for Select Fields
 
@@ -71,6 +74,8 @@ As a user, I want settings fields to render as appropriate input widgets with in
 - [x] Unit test: enter an invalid value in a field with a `pattern` validation rule — verify the error message is displayed and `setBulk` is not called
 - [x] Unit test: render a field with `envFallback` and no database value — verify the "Using environment variable" label is shown
 - [x] Unit test: render a field with `testAction`, click the test button — verify the specified procedure is called
+- [x] Unit test: test action resolves — verify `toast.success('Connected')` is called
+- [x] Unit test: test action throws — verify `toast.error` is called with the error message
 
 ## Notes
 

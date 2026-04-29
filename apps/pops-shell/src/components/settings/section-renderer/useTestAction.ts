@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import type { TestState } from './types';
 
@@ -12,10 +13,13 @@ export function useTestAction(onTestAction: (procedure: string) => Promise<void>
     try {
       await onTestAction(procedure);
       setTestState('success');
+      toast.success('Connected');
       setTimeout(() => setTestState('idle'), 3000);
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'Connection failed';
       setTestState('error');
-      setTestError(err instanceof Error ? err.message : 'Test failed');
+      setTestError(message);
+      toast.error(message);
     }
   };
 

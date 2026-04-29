@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
   setBulkMutate: vi.fn(),
   toastError: vi.fn(),
   toastInfo: vi.fn(),
+  toastSuccess: vi.fn(),
 }));
 
 vi.mock('@/lib/trpc', () => ({
@@ -27,7 +28,9 @@ vi.mock('@/lib/trpc', () => ({
   },
 }));
 
-vi.mock('sonner', () => ({ toast: { error: mocks.toastError, info: mocks.toastInfo } }));
+vi.mock('sonner', () => ({
+  toast: { error: mocks.toastError, info: mocks.toastInfo, success: mocks.toastSuccess },
+}));
 
 import { SectionRenderer } from './SectionRenderer';
 
@@ -406,6 +409,87 @@ describe('SectionRenderer', () => {
 
         expect(onTestAction).toHaveBeenCalledOnce();
         expect(onTestAction).toHaveBeenCalledWith('media.plex.testConnection');
+      } finally {
+        await act(async () => {
+          await vi.runAllTimersAsync();
+        });
+        vi.useRealTimers();
+      }
+    });
+
+    it('shows a success toast when the test action resolves', async () => {
+      vi.useFakeTimers();
+
+      try {
+        const onTestAction = vi.fn().mockResolvedValue(undefined);
+
+        const manifest = makeManifest({
+          groups: [
+            {
+              id: 'g1',
+              title: 'Connection',
+              fields: [
+                {
+                  key: 'plex_url',
+                  label: 'Plex URL',
+                  type: 'url',
+                  default: 'http://plex.local',
+                  testAction: { procedure: 'media.plex.testConnection', label: 'Test Connection' },
+                },
+              ],
+            },
+          ],
+        });
+
+        render(<SectionRenderer manifest={manifest} onTestAction={onTestAction} />);
+
+        fireEvent.click(screen.getByRole('button', { name: /test connection/i }));
+
+        await act(async () => {
+          await Promise.resolve();
+        });
+
+        expect(mocks.toastSuccess).toHaveBeenCalledWith('Connected');
+      } finally {
+        await act(async () => {
+          await vi.runAllTimersAsync();
+        });
+        vi.useRealTimers();
+      }
+    });
+
+    it('shows an error toast when the test action throws', async () => {
+      vi.useFakeTimers();
+
+      try {
+        const onTestAction = vi.fn().mockRejectedValue(new Error('Plex not configured'));
+
+        const manifest = makeManifest({
+          groups: [
+            {
+              id: 'g1',
+              title: 'Connection',
+              fields: [
+                {
+                  key: 'plex_token',
+                  label: 'Plex Token',
+                  type: 'password',
+                  testAction: { procedure: 'media.plex.testConnection', label: 'Test Connection' },
+                },
+              ],
+            },
+          ],
+        });
+
+        render(<SectionRenderer manifest={manifest} onTestAction={onTestAction} />);
+
+        fireEvent.click(screen.getByRole('button', { name: /test connection/i }));
+
+        await act(async () => {
+          await Promise.resolve();
+        });
+
+        expect(mocks.toastError).toHaveBeenCalledWith('Plex not configured');
       } finally {
         await act(async () => {
           await vi.runAllTimersAsync();
