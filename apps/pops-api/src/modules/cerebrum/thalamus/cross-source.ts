@@ -165,6 +165,10 @@ export class CrossSourceIndexer {
       const chunk0HashBySourceId = new Map(existing.map((e) => [e.sourceId, e.contentHash]));
 
       const queue = getEmbeddingsQueue();
+      if (!queue) {
+        console.warn(`[thalamus] Embeddings queue unavailable — skipping source ${sourceType}`);
+        continue;
+      }
 
       for (const item of items) {
         if (!item.text.trim()) continue;

@@ -1,4 +1,5 @@
 import { Queue } from 'bullmq';
+import pino from 'pino';
 
 import { createRedisConnection } from './redis.js';
 
@@ -11,6 +12,8 @@ import type {
   EmbeddingsQueueJobData,
   SyncQueueJobData,
 } from './types.js';
+
+const logger = pino({ name: 'pops-jobs' });
 
 // ---------------------------------------------------------------------------
 // Queue name constants
@@ -72,71 +75,86 @@ export const DEFAULT_JOB_OPTIONS: DefaultJobOptions = {
 // Lazy queue singletons
 // ---------------------------------------------------------------------------
 
-let _syncQueue: Queue<SyncQueueJobData> | null = null;
-let _embeddingsQueue: Queue<EmbeddingsQueueJobData> | null = null;
-let _curationQueue: Queue<CurationQueueJobData> | null = null;
-let _defaultQueue: Queue<DefaultQueueJobData> | null = null;
-let _deadLetterQueue: Queue<DeadLetterJobData> | null = null;
+let syncQueue: Queue<SyncQueueJobData> | null = null;
+let embeddingsQueue: Queue<EmbeddingsQueueJobData> | null = null;
+let curationQueue: Queue<CurationQueueJobData> | null = null;
+let defaultQueue: Queue<DefaultQueueJobData> | null = null;
+let deadLetterQueue: Queue<DeadLetterJobData> | null = null;
 
-export function getSyncQueue(): Queue<SyncQueueJobData> {
-  _syncQueue ??= new Queue<SyncQueueJobData>(SYNC_QUEUE, {
-    connection: createRedisConnection(),
+function warnNoRedis(queueName: string): null {
+  logger.warn({ queue: queueName }, 'Redis unavailable — queue disabled (REDIS_HOST not set)');
+  return null;
+}
+
+export function getSyncQueue(): Queue<SyncQueueJobData> | null {
+  const connection = createRedisConnection();
+  if (!connection) return warnNoRedis(SYNC_QUEUE);
+  syncQueue ??= new Queue<SyncQueueJobData>(SYNC_QUEUE, {
+    connection,
     defaultJobOptions: SYNC_JOB_OPTIONS,
   });
-  return _syncQueue;
+  return syncQueue;
 }
 
-export function getEmbeddingsQueue(): Queue<EmbeddingsQueueJobData> {
-  _embeddingsQueue ??= new Queue<EmbeddingsQueueJobData>(EMBEDDINGS_QUEUE, {
-    connection: createRedisConnection(),
+export function getEmbeddingsQueue(): Queue<EmbeddingsQueueJobData> | null {
+  const connection = createRedisConnection();
+  if (!connection) return warnNoRedis(EMBEDDINGS_QUEUE);
+  embeddingsQueue ??= new Queue<EmbeddingsQueueJobData>(EMBEDDINGS_QUEUE, {
+    connection,
     defaultJobOptions: EMBEDDINGS_JOB_OPTIONS,
   });
-  return _embeddingsQueue;
+  return embeddingsQueue;
 }
 
-export function getCurationQueue(): Queue<CurationQueueJobData> {
-  _curationQueue ??= new Queue<CurationQueueJobData>(CURATION_QUEUE, {
-    connection: createRedisConnection(),
+export function getCurationQueue(): Queue<CurationQueueJobData> | null {
+  const connection = createRedisConnection();
+  if (!connection) return warnNoRedis(CURATION_QUEUE);
+  curationQueue ??= new Queue<CurationQueueJobData>(CURATION_QUEUE, {
+    connection,
     defaultJobOptions: CURATION_JOB_OPTIONS,
   });
-  return _curationQueue;
+  return curationQueue;
 }
 
-export function getDefaultQueue(): Queue<DefaultQueueJobData> {
-  _defaultQueue ??= new Queue<DefaultQueueJobData>(DEFAULT_QUEUE, {
-    connection: createRedisConnection(),
+export function getDefaultQueue(): Queue<DefaultQueueJobData> | null {
+  const connection = createRedisConnection();
+  if (!connection) return warnNoRedis(DEFAULT_QUEUE);
+  defaultQueue ??= new Queue<DefaultQueueJobData>(DEFAULT_QUEUE, {
+    connection,
     defaultJobOptions: DEFAULT_JOB_OPTIONS,
   });
-  return _defaultQueue;
+  return defaultQueue;
 }
 
-export function getDeadLetterQueue(): Queue<DeadLetterJobData> {
-  _deadLetterQueue ??= new Queue<DeadLetterJobData>(DEAD_LETTER_QUEUE, {
-    connection: createRedisConnection(),
+export function getDeadLetterQueue(): Queue<DeadLetterJobData> | null {
+  const connection = createRedisConnection();
+  if (!connection) return warnNoRedis(DEAD_LETTER_QUEUE);
+  deadLetterQueue ??= new Queue<DeadLetterJobData>(DEAD_LETTER_QUEUE, {
+    connection,
     defaultJobOptions: {
       removeOnComplete: { count: 500 },
       removeOnFail: false,
     },
   });
-  return _deadLetterQueue;
+  return deadLetterQueue;
 }
 
 export async function closeQueues(): Promise<void> {
   await Promise.all([
-    _syncQueue?.close(),
-    _embeddingsQueue?.close(),
-    _curationQueue?.close(),
-    _defaultQueue?.close(),
-    _deadLetterQueue?.close(),
+    syncQueue?.close(),
+    embeddingsQueue?.close(),
+    curationQueue?.close(),
+    defaultQueue?.close(),
+    deadLetterQueue?.close(),
   ]);
-  _syncQueue = null;
-  _embeddingsQueue = null;
-  _curationQueue = null;
-  _defaultQueue = null;
-  _deadLetterQueue = null;
+  syncQueue = null;
+  embeddingsQueue = null;
+  curationQueue = null;
+  defaultQueue = null;
+  deadLetterQueue = null;
 }
 
-/** Return a queue instance by name — null for unknown names. */
+/** Return a queue instance by name — null for unknown names or when Redis is unavailable. */
 export function getQueueByName(name: string): Queue | null {
   switch (name) {
     case SYNC_QUEUE:

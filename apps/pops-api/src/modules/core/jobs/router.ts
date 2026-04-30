@@ -40,6 +40,11 @@ async function listJobsAcrossQueues(
 
 async function retryDeadLetterJob(jobId: string): Promise<void> {
   const dlq = getDeadLetterQueue();
+  if (!dlq)
+    throw new TRPCError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Dead-letter queue unavailable — Redis not configured',
+    });
   const job = await dlq.getJob(jobId);
   if (!job) throw new TRPCError({ code: 'NOT_FOUND', message: 'Dead-letter job not found' });
 

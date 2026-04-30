@@ -5,6 +5,7 @@ import { episodes, seasons } from '@pops/db-types';
 import { logWatch } from '../watch-history/service.js';
 import { resolveShow } from './sync-discover-show.js';
 import { pushError, type DiscoverItemResult } from './sync-discover-types.js';
+import { hasNearDuplicateWatch } from './sync-helpers.js';
 
 import type { getDrizzle } from '../../../db.js';
 import type { getTvdbClient } from '../thetvdb/index.js';
@@ -95,6 +96,10 @@ export async function processEpisodeEntry(args: ProcessEpisodeEntryArgs): Promis
     }
 
     result.watched++;
+    if (hasNearDuplicateWatch('episode', episode.id, entry.date)) {
+      result.alreadyLogged++;
+      return;
+    }
     const logResult = logWatch({
       mediaType: 'episode',
       mediaId: episode.id,

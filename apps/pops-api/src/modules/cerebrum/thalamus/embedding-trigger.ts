@@ -43,6 +43,14 @@ export class EmbeddingTrigger {
 
       try {
         const queue = getEmbeddingsQueue();
+        if (!queue) {
+          output.push({
+            engramId,
+            action: 'error',
+            reason: 'Embeddings queue unavailable — Redis not configured',
+          });
+          continue;
+        }
         await queue.add(
           EMBEDDINGS_QUEUE,
           { sourceType: 'engram', sourceId: engramId, content: result.bodyText },

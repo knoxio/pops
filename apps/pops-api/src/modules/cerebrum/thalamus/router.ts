@@ -23,9 +23,11 @@ export const indexRouter = router({
     let pendingCount: number | null = null;
     try {
       const queue = getEmbeddingsQueue();
-      pendingCount = await queue
-        .getJobCounts('waiting', 'active', 'delayed')
-        .then((counts) => (counts.waiting ?? 0) + (counts.active ?? 0) + (counts.delayed ?? 0));
+      if (queue) {
+        pendingCount = await queue
+          .getJobCounts('waiting', 'active', 'delayed')
+          .then((counts) => (counts.waiting ?? 0) + (counts.active ?? 0) + (counts.delayed ?? 0));
+      }
     } catch {
       // Queue unavailable — leave null.
     }

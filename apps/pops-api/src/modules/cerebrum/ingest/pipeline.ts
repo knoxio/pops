@@ -187,6 +187,7 @@ export class IngestService {
     // Enqueue async enrichment job (fire-and-forget)
     try {
       const queue = getCurationQueue();
+      if (!queue) throw new Error('Curation queue unavailable — Redis not configured');
       await queue.add('classifyEngram', {
         type: 'classifyEngram',
         engramId: engram.id,

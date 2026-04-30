@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, gte, lte } from 'drizzle-orm';
 
 /**
  * Shared helpers for Plex sync operations.
@@ -6,7 +6,7 @@ import { and, eq } from 'drizzle-orm';
  * Extracted from service.ts, sync-movies.ts, and sync-tv.ts to eliminate
  * duplicated watch-history logging and external ID extraction logic.
  */
-import { episodes, seasons } from '@pops/db-types';
+import { episodes, seasons, watchHistory } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
 import { getTvShowByTvdbId } from '../tv-shows/service.js';
@@ -83,19 +83,66 @@ export function extractExternalIdAsNumber(item: PlexMediaItem, source: string): 
   return Number.isNaN(parsed) ? null : parsed;
 }
 
+/** Near-duplicate dedup window for Plex sync: 5 minutes in milliseconds. */
+const NEAR_DUPLICATE_WINDOW_MS = 5 * 60 * 1000;
+
+/**
+ * Check whether a watch event for the same media already exists within
+ * ±5 minutes of the given timestamp. Used to suppress duplicate entries
+ * that arise when both local Plex sync and Plex Discover cloud sync
+ * process the same playback.
+ *
+ * Returns true if a near-duplicate exists (caller should skip the insert).
+ */
+export function hasNearDuplicateWatch(
+  mediaType: 'movie' | 'episode',
+  mediaId: number,
+  watchedAt: string
+): boolean {
+  try {
+    const db = getDrizzle();
+    const ts = new Date(watchedAt).getTime();
+    const windowStart = new Date(ts - NEAR_DUPLICATE_WINDOW_MS).toISOString();
+    const windowEnd = new Date(ts + NEAR_DUPLICATE_WINDOW_MS).toISOString();
+
+    const existing = db
+      .select({ id: watchHistory.id })
+      .from(watchHistory)
+      .where(
+        and(
+          eq(watchHistory.mediaType, mediaType),
+          eq(watchHistory.mediaId, mediaId),
+          gte(watchHistory.watchedAt, windowStart),
+          lte(watchHistory.watchedAt, windowEnd)
+        )
+      )
+      .get();
+
+    return existing != null;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Log a movie watch event from Plex data.
- * Silently ignores duplicate watch entries.
+ * Silently ignores duplicate watch entries (exact timestamp or within ±5 min).
  * Returns true if a new entry was created, false if duplicate.
  */
 export function logMovieWatch(movieId: number, lastViewedAtUnix: number | null): boolean {
+  const watchedAt = lastViewedAtUnix
+    ? new Date(lastViewedAtUnix * 1000).toISOString()
+    : new Date().toISOString();
+
+  if (hasNearDuplicateWatch('movie', movieId, watchedAt)) {
+    return false;
+  }
+
   try {
     const result = logWatch({
       mediaType: 'movie',
       mediaId: movieId,
-      watchedAt: lastViewedAtUnix
-        ? new Date(lastViewedAtUnix * 1000).toISOString()
-        : new Date().toISOString(),
+      watchedAt,
       completed: 1,
       source: 'plex_sync',
     });
@@ -145,12 +192,19 @@ function processSingleEpisode(plexEp: PlexEpisode, ctx: ProcessEpisodeContext): 
       return;
     }
 
+    const episodeWatchedAt = plexEp.lastViewedAt
+      ? new Date(plexEp.lastViewedAt * 1000).toISOString()
+      : new Date().toISOString();
+
+    if (hasNearDuplicateWatch('episode', episode.id, episodeWatchedAt)) {
+      diagnostics.alreadyLogged++;
+      return;
+    }
+
     const result = logWatch({
       mediaType: 'episode',
       mediaId: episode.id,
-      watchedAt: plexEp.lastViewedAt
-        ? new Date(plexEp.lastViewedAt * 1000).toISOString()
-        : new Date().toISOString(),
+      watchedAt: episodeWatchedAt,
       completed: 1,
       source: 'plex_sync',
     });

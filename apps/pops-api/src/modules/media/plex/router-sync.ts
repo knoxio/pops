@@ -66,6 +66,7 @@ export const syncProcedures = {
 
       try {
         const queue = getSyncQueue();
+        if (!queue) throw new Error('Sync queue unavailable — Redis not configured');
         const [active, waiting] = await Promise.all([
           queue.getJobs(['active']),
           queue.getJobs(['waiting']),
@@ -89,7 +90,7 @@ export const syncProcedures = {
     .input(z.object({ jobId: z.string().min(1) }))
     .query(async ({ input }) => {
       const queue = getSyncQueue();
-      const bullJob = await queue.getJob(input.jobId);
+      const bullJob = queue ? await queue.getJob(input.jobId) : null;
       if (bullJob) return { data: bullmqJobToSyncJob(bullJob) };
 
       const db = getDrizzle();
@@ -110,6 +111,7 @@ export const syncProcedures = {
   getActiveSyncJobs: protectedProcedure.query(async () => {
     if (getRedisStatus() === 'disconnected') return { data: [] };
     const queue = getSyncQueue();
+    if (!queue) return { data: [] };
     const [active, waiting] = await Promise.all([
       queue.getJobs(['active']),
       queue.getJobs(['waiting']),
