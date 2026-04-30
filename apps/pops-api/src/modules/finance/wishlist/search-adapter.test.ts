@@ -156,4 +156,51 @@ describe('wishlist search adapter', () => {
     const hits = search('Gadget', 3);
     expect(hits).toHaveLength(3);
   });
+
+  describe('purchased-item exclusion (#2391)', () => {
+    it('excludes items where saved >= target_amount', () => {
+      seedWishListItem(db, { item: 'Bought Gadget', target_amount: 100, saved: 100 });
+
+      expect(search('Bought Gadget')).toEqual([]);
+    });
+
+    it('excludes items where saved exceeds target_amount', () => {
+      seedWishListItem(db, { item: 'Overshoot Gadget', target_amount: 50, saved: 75 });
+
+      expect(search('Overshoot Gadget')).toEqual([]);
+    });
+
+    it('includes items where saved < target_amount', () => {
+      seedWishListItem(db, { item: 'Saving Gadget', target_amount: 100, saved: 60 });
+
+      const hits = search('Saving Gadget');
+      expect(hits).toHaveLength(1);
+      expect(hits[0]!.data.item).toBe('Saving Gadget');
+    });
+
+    it('includes items with NULL target_amount (no completion threshold)', () => {
+      seedWishListItem(db, { item: 'Open Gadget', target_amount: null, saved: 9999 });
+
+      const hits = search('Open Gadget');
+      expect(hits).toHaveLength(1);
+      expect(hits[0]!.data.targetAmount).toBeNull();
+    });
+
+    it('treats NULL saved as zero — items with a target but no saved progress are included', () => {
+      seedWishListItem(db, { item: 'Untouched Gadget', target_amount: 200, saved: null });
+
+      const hits = search('Untouched Gadget');
+      expect(hits).toHaveLength(1);
+      expect(hits[0]!.data.item).toBe('Untouched Gadget');
+    });
+
+    it('does not affect overall ordering of remaining items', () => {
+      seedWishListItem(db, { item: 'Camera', target_amount: 500, saved: 100 });
+      seedWishListItem(db, { item: 'Camera Mount', target_amount: 500, saved: 500 }); // purchased
+      seedWishListItem(db, { item: 'Camera Bag', target_amount: 100, saved: 0 });
+
+      const hits = search('Camera');
+      expect(hits.map((h) => h.data.item)).toEqual(['Camera', 'Camera Bag']);
+    });
+  });
 });

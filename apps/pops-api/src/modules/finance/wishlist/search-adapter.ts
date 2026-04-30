@@ -1,4 +1,4 @@
-import { like, sql } from 'drizzle-orm';
+import { and, like, sql } from 'drizzle-orm';
 
 import { wishList } from '@pops/db-types';
 
@@ -43,10 +43,20 @@ export const wishlistSearchAdapter: SearchAdapter<WishlistHitData> = {
     const db = getDrizzle();
     const lowerText = text.toLowerCase();
 
+    // Exclude already-purchased items (saved >= target_amount). Items with no
+    // target_amount stay searchable since there is no completion threshold to
+    // compare against. NULL `saved` is treated as 0 via COALESCE so a row with
+    // a target but no recorded savings still counts as not-yet-purchased
+    // (#2391).
     const rows = db
       .select()
       .from(wishList)
-      .where(like(sql`lower(${wishList.item})`, `%${lowerText}%`))
+      .where(
+        and(
+          like(sql`lower(${wishList.item})`, `%${lowerText}%`),
+          sql`(${wishList.targetAmount} IS NULL OR coalesce(${wishList.saved}, 0) < ${wishList.targetAmount})`
+        )
+      )
       .all();
 
     const hits: SearchHit<WishlistHitData>[] = [];
