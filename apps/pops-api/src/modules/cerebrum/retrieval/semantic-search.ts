@@ -5,7 +5,11 @@
 import { createHash } from 'node:crypto';
 
 import { getDb, isVecAvailable } from '../../../db.js';
-import { getEmbedding, getEmbeddingConfig } from '../../../shared/embedding-client.js';
+import {
+  getEmbedding,
+  getEmbeddingConfig,
+  isEmbeddingConfigured,
+} from '../../../shared/embedding-client.js';
 import { getRedis, isRedisAvailable, redisKey } from '../../../shared/redis-client.js';
 import { getSettingValue } from '../../core/settings/service.js';
 import {
@@ -71,6 +75,7 @@ export class SemanticSearchService {
         code: 'EMPTY_QUERY',
       });
     }
+    if (!isEmbeddingConfigured()) return [];
     if (!isVecAvailable()) throw vecUnavailableError();
 
     const queryVector = await embedQuery(query);
