@@ -13,6 +13,8 @@ import { Outlet, useLocation } from 'react-router';
 import { AppContextProvider } from '@pops/navigation';
 import { cn, ErrorBoundary } from '@pops/ui';
 
+import { ChatFab } from './ChatFab';
+import { ChatOverlay } from './ChatOverlay';
 import { AmbientBackground } from './root-layout/AmbientBackground';
 import { NavRegion } from './root-layout/NavRegion';
 import { usePageNavAutoClose } from './root-layout/usePageNavAutoClose';
@@ -49,6 +51,9 @@ export function RootLayout() {
             </main>
           </div>
         </div>
+
+        <ChatFab />
+        <ChatOverlay />
       </div>
     </AppContextProvider>
   );

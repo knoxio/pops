@@ -9,6 +9,7 @@ interface UIState {
   sidebarOpen: boolean;
   railOpen: boolean;
   pageNavOpen: boolean;
+  chatOverlayOpen: boolean;
   /**
    * When true, the next location-change close of the PageNav overlay is
    * suppressed. Used by AppRail to prevent the navigation it triggers from
@@ -22,6 +23,8 @@ interface UIState {
   togglePageNav: () => void;
   setPageNavOpen: (open: boolean) => void;
   setSkipNextPageNavClose: (skip: boolean) => void;
+  toggleChatOverlay: () => void;
+  setChatOverlayOpen: (open: boolean) => void;
 }
 
 export const useUIStore = create<UIState>()(
@@ -30,6 +33,7 @@ export const useUIStore = create<UIState>()(
       sidebarOpen: true,
       railOpen: true,
       pageNavOpen: false,
+      chatOverlayOpen: false,
       skipNextPageNavClose: false,
       toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
@@ -38,6 +42,8 @@ export const useUIStore = create<UIState>()(
       togglePageNav: () => set((state) => ({ pageNavOpen: !state.pageNavOpen })),
       setPageNavOpen: (open) => set({ pageNavOpen: open }),
       setSkipNextPageNavClose: (skip) => set({ skipNextPageNavClose: skip }),
+      toggleChatOverlay: () => set((state) => ({ chatOverlayOpen: !state.chatOverlayOpen })),
+      setChatOverlayOpen: (open) => set({ chatOverlayOpen: open }),
     }),
     {
       name: 'pops-ui-storage',
