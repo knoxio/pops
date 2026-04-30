@@ -49,6 +49,7 @@ function computeProjectedExhaustion(
   const year = monthStartDate.getFullYear();
   const month = monthStartDate.getMonth();
   const exhaustionDate = new Date(year, month, Math.ceil(exhaustionDay));
+  if (exhaustionDate.getFullYear() > 9999) return null;
   return exhaustionDate.toISOString().split('T')[0] ?? null;
 }
 

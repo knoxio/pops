@@ -63,8 +63,8 @@ describe('getBudgetStatus', () => {
 
   it('projectedExhaustionDate is a YYYY-MM-DD string when usage is non-zero', () => {
     service.upsertBudget({ id: 'global', scopeType: 'global', monthlyCostLimit: 1000 });
-    // Small usage relative to limit so projected exhaustion is always in the future
-    seedAiUsage(db, { cost_usd: 0.01, created_at: new Date().toISOString() });
+    // 1% usage on any day of the month keeps exhaustion within a 4-digit year
+    seedAiUsage(db, { cost_usd: 10, created_at: new Date().toISOString() });
 
     const [status] = service.getBudgetStatus();
     expect(status?.projectedExhaustionDate).not.toBeNull();
