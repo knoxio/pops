@@ -20,7 +20,7 @@
   "dashboard.apiNotResponding": "The backend API is not responding. Make sure the pops-api server is running.",
 
   "transactions.failedToLoad": "Failed to load transactions",
-  "transactions.totalCount": "{{count}} transactions",
+  "transactions.totalCount": "{{count}} total transactions",
   "transactions.filteredCount": "{{filtered}} of {{total}} transactions",
   "transactions.searchPlaceholder": "Search transactions...",
   "transactions.addTransaction": "Add Transaction",
