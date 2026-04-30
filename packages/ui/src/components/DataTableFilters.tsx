@@ -75,10 +75,15 @@ function FilterControl({
   column: NonNullable<ReturnType<Table<unknown>['getColumn']>>;
 }) {
   if (filter.type === 'text')
-    return <TextFilter column={column} placeholder={filter.placeholder} />;
+    return <TextFilter column={column} placeholder={filter.placeholder} ariaLabel={filter.label} />;
   if (filter.type === 'select' && filter.options)
     return (
-      <SelectFilter column={column} options={filter.options} placeholder={filter.placeholder} />
+      <SelectFilter
+        column={column}
+        options={filter.options}
+        placeholder={filter.placeholder}
+        ariaLabel={filter.label}
+      />
     );
   if (filter.type === 'multiselect' && filter.options)
     return (
@@ -86,10 +91,13 @@ function FilterControl({
         column={column}
         options={filter.options}
         placeholder={filter.placeholder}
+        ariaLabel={filter.label}
       />
     );
-  if (filter.type === 'daterange') return <DateRangeFilter column={column} />;
-  if (filter.type === 'numberrange') return <NumberRangeFilter column={column} />;
+  if (filter.type === 'daterange')
+    return <DateRangeFilter column={column} ariaLabel={filter.label} />;
+  if (filter.type === 'numberrange')
+    return <NumberRangeFilter column={column} ariaLabel={filter.label} />;
   return null;
 }
 
