@@ -214,6 +214,7 @@ describe('translation lookups', () => {
     expect(i18n.t('navigation:finance')).toBe('Finance');
     expect(i18n.t('navigation:media.library')).toBe('Library');
     expect(i18n.t('navigation:cerebrum.admin.usage')).toBe('AI Usage');
+    expect(i18n.t('navigation:inventory.connections')).toBe('Connections');
   });
 
   it('resolves finance namespace keys', () => {
