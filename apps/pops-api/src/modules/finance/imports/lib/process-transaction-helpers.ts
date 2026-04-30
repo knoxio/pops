@@ -31,6 +31,31 @@ export function buildMatchedFromEntity(args: MatchedFromEntityArgs): ProcessedTr
   };
 }
 
+/**
+ * Build a `matched` ProcessedTransaction for a row auto-classified as a
+ * transfer (#2448). No entity is assigned — transfers are inter-account
+ * movements, not merchant purchases. The Review UI surfaces them in their
+ * own bucket via `transactionType: 'transfer'`.
+ */
+export function buildMatchedTransfer(
+  transaction: ParsedTransaction,
+  knownTags: string[]
+): ProcessedTransaction {
+  return {
+    ...transaction,
+    entity: { matchType: 'none' },
+    status: 'matched',
+    transactionType: 'transfer',
+    suggestedTags: buildSuggestedTags({
+      description: transaction.description,
+      entityId: null,
+      correctionTags: [],
+      aiCategory: null,
+      knownTags,
+    }),
+  };
+}
+
 export function buildUncertainFromAi(
   transaction: ParsedTransaction,
   entityName: string,
