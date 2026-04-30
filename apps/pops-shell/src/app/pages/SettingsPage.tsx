@@ -1,12 +1,13 @@
 import { SectionRenderer } from '@/components/settings/SectionRenderer';
 import { trpc } from '@/lib/trpc';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Select } from '@pops/ui';
 
 import { SectionNav } from './settings-page/SectionNav';
 import { SettingsEmpty, SettingsLoading } from './settings-page/SettingsLoading';
+import { useHashSelectedId } from './settings-page/useHashSelectedId';
 import { useTestActionHandler } from './settings-page/useTestActionHandler';
 
 import type { SettingsManifest } from '@pops/types';
@@ -32,20 +33,15 @@ export function SettingsPage() {
   const manifests = useMemo(() => (data?.manifests ?? []) as SettingsManifest[], [data?.manifests]);
   const handleTestAction = useTestActionHandler();
 
-  const [selectedId, setSelectedId] = useState<string>(() => window.location.hash.slice(1));
+  const [selectedId, setSelectedId] = useHashSelectedId(manifests);
 
-  // Once manifests load, resolve the selection against valid manifest ids.
-  useEffect(() => {
-    if (!manifests.length) return;
-    const hash = window.location.hash.slice(1);
-    const hasValidHash = hash !== '' && manifests.some((m) => m.id === hash);
-    setSelectedId(hasValidHash ? hash : (manifests[0]?.id ?? ''));
-  }, [manifests]);
-
-  const handleSelect = useCallback((id: string) => {
-    setSelectedId(id);
-    window.history.replaceState(null, '', `#${id}`);
-  }, []);
+  const handleSelect = useCallback(
+    (id: string) => {
+      setSelectedId(id);
+      window.history.replaceState(null, '', `#${id}`);
+    },
+    [setSelectedId]
+  );
 
   const selectedManifest = useMemo(
     () => manifests.find((m) => m.id === selectedId) ?? manifests[0],
