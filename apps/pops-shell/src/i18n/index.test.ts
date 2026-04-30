@@ -220,6 +220,11 @@ describe('translation lookups', () => {
     expect(i18n.t('finance:dashboard')).toBe('Dashboard');
     expect(i18n.t('finance:budgets')).toBe('Budgets');
     expect(i18n.t('finance:transactions')).toBe('Transactions');
+    // #2454: transactions filter labels were missing — covered here so they
+    // can never silently regress to raw keys again.
+    expect(i18n.t('finance:filter.account')).toBe('Account');
+    expect(i18n.t('finance:filter.type')).toBe('Type');
+    expect(i18n.t('finance:filter.tag')).toBe('Tag');
   });
 
   it('resolves ai namespace keys', () => {
