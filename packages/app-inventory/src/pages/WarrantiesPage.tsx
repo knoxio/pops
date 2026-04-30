@@ -114,7 +114,7 @@ export function WarrantiesPage() {
   const tiers = useMemo(() => categorizeWarranties(data?.data ?? []), [data]);
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6">
       <PageHeader
         title={t('section.warrantyTracking')}
         icon={

@@ -25,7 +25,7 @@ function EmptyState() {
 
 function ErrorState() {
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6">
       <PageHeader title="Locations" icon={<MapPin className="h-6 w-6 text-muted-foreground" />} />
       <p className="text-destructive">Failed to load locations.</p>
     </div>
@@ -71,7 +71,7 @@ export function LocationTreePage() {
   const movingNode = model.movingId ? model.nodeMap.get(model.movingId) : null;
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6">
       <PageHeader
         title="Locations"
         icon={<MapPin className="h-6 w-6 text-muted-foreground" />}

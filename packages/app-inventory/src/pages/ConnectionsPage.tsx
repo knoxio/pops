@@ -7,7 +7,7 @@ export function ConnectionsPage() {
   const { t } = useTranslation('inventory');
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6">
       <PageHeader
         title={t('connections')}
         icon={
