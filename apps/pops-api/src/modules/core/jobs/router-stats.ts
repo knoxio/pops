@@ -89,7 +89,9 @@ export const statsRouter = router({
     )
     .query(async () => {
       try {
-        const schedulers = await getSyncQueue().getJobSchedulers();
+        const q = getSyncQueue();
+        if (!q) return { schedulers: [] };
+        const schedulers = await q.getJobSchedulers();
         return { schedulers };
       } catch {
         return { schedulers: [] };

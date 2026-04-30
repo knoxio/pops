@@ -25,7 +25,7 @@ const itemColumn: ColumnDef<WishlistItem> = {
   accessorKey: 'item',
   header: ({ column }) => <SortableHeader column={column}>Item</SortableHeader>,
   cell: ({ row }) => (
-    <div className="flex flex-col">
+    <div className="flex flex-col" data-wishlist-id={row.original.id}>
       <span className="font-medium">{row.original.item}</span>
       {row.original.url && (
         <a

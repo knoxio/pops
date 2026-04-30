@@ -88,24 +88,28 @@ export async function startThalamus(): Promise<void> {
   console.warn(`[thalamus] File watcher started (root: ${root})`);
 
   // Register cross-source index repeatable job (every 6 hours).
-  void getDefaultQueue()
-    .upsertJobScheduler(
-      CROSS_SOURCE_SCHEDULER_ID,
-      { every: getCrossSourceIntervalMs() },
-      { name: 'crossSourceIndex', data: { type: 'crossSourceIndex' }, opts: DEFAULT_JOB_OPTIONS }
-    )
-    .catch((err: unknown) => {
-      console.error('[thalamus] Failed to register cross-source index scheduler:', err);
-    });
+  const defaultQ = getDefaultQueue();
+  if (defaultQ) {
+    void defaultQ
+      .upsertJobScheduler(
+        CROSS_SOURCE_SCHEDULER_ID,
+        { every: getCrossSourceIntervalMs() },
+        { name: 'crossSourceIndex', data: { type: 'crossSourceIndex' }, opts: DEFAULT_JOB_OPTIONS }
+      )
+      .catch((err: unknown) => {
+        console.error('[thalamus] Failed to register cross-source index scheduler:', err);
+      });
+  }
 }
 
 /** Stop the Thalamus file watcher and deregister the cross-source scheduler. */
 export async function stopThalamus(): Promise<void> {
-  void getDefaultQueue()
-    .removeJobScheduler(CROSS_SOURCE_SCHEDULER_ID)
-    .catch((err: unknown) => {
+  const defaultQ = getDefaultQueue();
+  if (defaultQ) {
+    void defaultQ.removeJobScheduler(CROSS_SOURCE_SCHEDULER_ID).catch((err: unknown) => {
       console.error('[thalamus] Failed to remove cross-source index scheduler:', err);
     });
+  }
 
   if (watcher) {
     await watcher.stop();

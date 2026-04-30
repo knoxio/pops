@@ -16,7 +16,12 @@ export interface DeadLetterParams {
 
 export function moveToDeadLetter(params: DeadLetterParams): void {
   const { queue, jobId, jobName, data, attemptsMade, err, removeOriginal } = params;
-  void getDeadLetterQueue()
+  const dlq = getDeadLetterQueue();
+  if (!dlq) {
+    logger.warn({ queue, jobId, jobName }, 'Dead-letter queue unavailable — Redis not configured');
+    return;
+  }
+  void dlq
     .add(DEAD_LETTER_QUEUE, {
       originalQueue: queue,
       originalJobId: jobId,

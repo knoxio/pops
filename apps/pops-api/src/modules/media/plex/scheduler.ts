@@ -105,22 +105,25 @@ export function startScheduler(options: SchedulerOptions = {}): SchedulerStatus 
   tvSectionId = options.tvSectionId ?? saved.tvSectionId;
   nextSyncAt = new Date(Date.now() + intervalMs).toISOString();
 
-  void getSyncQueue()
-    .upsertJobScheduler(
-      SCHEDULER_ID,
-      { every: intervalMs },
-      {
-        name: 'plexScheduledSync',
-        data: {
-          type: 'plexScheduledSync',
-          movieSectionId: movieSectionId ?? undefined,
-          tvSectionId: tvSectionId ?? undefined,
-        },
-      }
-    )
-    .catch((err: unknown) => {
-      console.error('[Plex Scheduler] Failed to register BullMQ scheduler:', err);
-    });
+  const syncQ = getSyncQueue();
+  if (syncQ) {
+    void syncQ
+      .upsertJobScheduler(
+        SCHEDULER_ID,
+        { every: intervalMs },
+        {
+          name: 'plexScheduledSync',
+          data: {
+            type: 'plexScheduledSync',
+            movieSectionId: movieSectionId ?? undefined,
+            tvSectionId: tvSectionId ?? undefined,
+          },
+        }
+      )
+      .catch((err: unknown) => {
+        console.error('[Plex Scheduler] Failed to register BullMQ scheduler:', err);
+      });
+  }
 
   isRunning = true;
   persistSchedulerConfig();
@@ -130,11 +133,12 @@ export function startScheduler(options: SchedulerOptions = {}): SchedulerStatus 
 /** Remove the BullMQ repeatable job and stop the scheduler. */
 export function stopScheduler(): SchedulerStatus {
   if (isRunning) {
-    void getSyncQueue()
-      .removeJobScheduler(SCHEDULER_ID)
-      .catch((err: unknown) => {
+    const syncQ = getSyncQueue();
+    if (syncQ) {
+      void syncQ.removeJobScheduler(SCHEDULER_ID).catch((err: unknown) => {
         console.error('[Plex Scheduler] Failed to remove BullMQ scheduler:', err);
       });
+    }
   }
   isRunning = false;
   nextSyncAt = null;
