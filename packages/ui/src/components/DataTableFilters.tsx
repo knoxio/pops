@@ -55,7 +55,7 @@ function FilterGrid({ filters, table }: { filters: ColumnFilter[]; table: Table<
         const column = table.getColumn(filter.id);
         if (!column) return null;
         return (
-          <div key={filter.id} className="space-y-1.5">
+          <div key={filter.id} className="min-w-0 space-y-1.5">
             <label className="text-2xs font-semibold uppercase tracking-wider text-muted-foreground px-0.5">
               {filter.label}
             </label>
