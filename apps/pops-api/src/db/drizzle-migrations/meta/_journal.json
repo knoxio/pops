@@ -351,6 +351,13 @@
       "when": 1746057600000,
       "tag": "0049_sonnet_4_6_model_pricing",
       "breakpoints": true
+    },
+    {
+      "idx": 50,
+      "version": "6",
+      "when": 1746058200000,
+      "tag": "0050_ai_model_setting_alias",
+      "breakpoints": true
     }
   ]
 }
