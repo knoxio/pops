@@ -72,13 +72,13 @@ export function DateRangeFilter({ column }: DateRangeFilterProps) {
   const filterValue = (column.getFilterValue() as [string, string]) ?? ['', ''];
 
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+    <div className="flex min-w-0 flex-col gap-2 overflow-hidden sm:flex-row sm:items-center">
       <TextInput
         type="date"
         value={filterValue[0]}
         onChange={(e) => column.setFilterValue([e.target.value, filterValue[1]])}
         placeholder="From"
-        className="flex-1"
+        className="min-w-0 flex-1"
       />
       <span className="hidden text-muted-foreground sm:block">to</span>
       <TextInput
@@ -86,7 +86,7 @@ export function DateRangeFilter({ column }: DateRangeFilterProps) {
         value={filterValue[1]}
         onChange={(e) => column.setFilterValue([filterValue[0], e.target.value])}
         placeholder="To"
-        className="flex-1"
+        className="min-w-0 flex-1"
       />
     </div>
   );
