@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useParams } from 'react-router';
+import { useParams, useSearchParams } from 'react-router';
 import { toast } from 'sonner';
 
 import { trpc } from '@pops/api-client';
@@ -10,6 +10,8 @@ import { useAssetIdValidation } from './useAssetIdValidation';
 import { useDocumentUploadState } from './useDocumentUpload';
 import { useItemMutations } from './useItemMutations';
 import { usePhotoUploadState } from './usePhotoUpload';
+
+import type { LocationTreeNode } from '../location-tree-page/utils';
 
 export type { ItemFormValues, PendingConnection };
 export { extractPrefix } from './types';
@@ -88,6 +90,29 @@ function useUnsavedChangesGuard(isDirty: boolean): void {
   }, [isDirty]);
 }
 
+function locationExistsInTree(nodes: LocationTreeNode[], id: string): boolean {
+  for (const node of nodes) {
+    if (node.id === id) return true;
+    if (locationExistsInTree(node.children, id)) return true;
+  }
+  return false;
+}
+
+function useLocationIdPrefill(
+  isEditMode: boolean,
+  locationTree: LocationTreeNode[],
+  setValue: (name: 'locationId', value: string, opts?: { shouldDirty?: boolean }) => void
+) {
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    if (isEditMode || locationTree.length === 0) return;
+    const paramId = searchParams.get('locationId') ?? '';
+    if (paramId && locationExistsInTree(locationTree, paramId)) {
+      setValue('locationId', paramId, { shouldDirty: false });
+    }
+  }, [isEditMode, locationTree, searchParams, setValue]);
+}
+
 function useLocationsAndCreate() {
   const utils = trpc.useUtils();
   const { data: locationsData } = trpc.inventory.locations.tree.useQuery();
@@ -129,6 +154,7 @@ export function useItemFormPageModel() {
     { enabled: !isEditMode && connectionSearch.length >= 2 }
   );
   const { locationTree, createLocationMutation } = useLocationsAndCreate();
+  useLocationIdPrefill(isEditMode, locationTree, setValue);
 
   const {
     data: itemData,
