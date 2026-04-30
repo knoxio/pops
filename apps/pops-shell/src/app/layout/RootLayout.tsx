@@ -19,6 +19,7 @@ import { AmbientBackground } from './root-layout/AmbientBackground';
 import { NavRegion } from './root-layout/NavRegion';
 import { usePageNavAutoClose } from './root-layout/usePageNavAutoClose';
 import { Sidebar } from './Sidebar';
+import { SkipLink } from './SkipLink';
 import { TopBar } from './TopBar';
 
 export function RootLayout() {
@@ -34,6 +35,7 @@ export function RootLayout() {
   return (
     <AppContextProvider>
       <div className={cn('min-h-screen bg-background relative', appColorClass)}>
+        <SkipLink />
         <AmbientBackground />
 
         <div className="relative z-10 pt-14 md:pt-16">
@@ -44,7 +46,11 @@ export function RootLayout() {
             {/* Mobile: overlay sidebar */}
             <Sidebar open={sidebarOpen} />
 
-            <main className="flex-1 min-w-0 overflow-x-clip p-4 md:p-6 lg:p-8 max-w-screen-2xl mx-auto transition-all duration-200">
+            <main
+              id="main-content"
+              tabIndex={-1}
+              className="flex-1 min-w-0 overflow-x-clip p-4 md:p-6 lg:p-8 max-w-screen-2xl mx-auto transition-all duration-200 focus:outline-none"
+            >
               <ErrorBoundary>
                 <Outlet />
               </ErrorBoundary>

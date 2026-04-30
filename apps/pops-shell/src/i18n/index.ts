@@ -48,6 +48,18 @@ function getStoredLocale(): SupportedLocale {
 
 const i18n = createInstance();
 
+/**
+ * Mirror the active language onto `<html lang>` so screen readers pick up
+ * pronunciation rules for the rendered content (WCAG 3.1.1 / 3.1.2).
+ */
+function syncHtmlLang(lng: string): void {
+  if (typeof document !== 'undefined') {
+    document.documentElement.setAttribute('lang', lng);
+  }
+}
+
+i18n.on('languageChanged', syncHtmlLang);
+
 void i18n.use(initReactI18next).init({
   lng: getStoredLocale(),
   fallbackLng: DEFAULT_LOCALE,
@@ -79,5 +91,9 @@ void i18n.use(initReactI18next).init({
     },
   },
 });
+
+// `init` does not fire `languageChanged` for the initial language, so set it
+// explicitly here to cover first-paint screen-reader behaviour.
+syncHtmlLang(i18n.language || DEFAULT_LOCALE);
 
 export default i18n;

@@ -15,5 +15,6 @@
   "appPages": "{{app}} pages",
   "locale": "Language",
   "localeEnAU": "English (Australia)",
-  "localePtBR": "Portuguese (Brazil)"
+  "localePtBR": "Portuguese (Brazil)",
+  "skipToContent": "Skip to content"
 }

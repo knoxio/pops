@@ -135,6 +135,15 @@ describe('locale switching', () => {
     await i18n.changeLanguage('pt-BR');
     expect(i18n.t('common:save')).toBe('Salvar');
   });
+
+  it('mirrors the active language onto <html lang> (#2469)', async () => {
+    await i18n.changeLanguage('en-AU');
+    expect(document.documentElement.getAttribute('lang')).toBe('en-AU');
+    await i18n.changeLanguage('pt-BR');
+    expect(document.documentElement.getAttribute('lang')).toBe('pt-BR');
+    await i18n.changeLanguage('en-AU');
+    expect(document.documentElement.getAttribute('lang')).toBe('en-AU');
+  });
 });
 
 // ---------------------------------------------------------------------------
