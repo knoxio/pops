@@ -1,4 +1,5 @@
 import { ArrowUpDown } from 'lucide-react';
+import { useEffect } from 'react';
 
 import { cn } from '../lib/utils';
 import { Button } from './Button';
@@ -35,6 +36,18 @@ export interface DataTableProps<TData, TValue = unknown> {
     string,
     <TData>(row: TData, columnId: string, filterValue: unknown) => boolean
   >;
+  /** Called whenever the filtered row count changes. Receives the current count. */
+  onFilteredCountChange?: (count: number) => void;
+}
+
+function useFilteredCountNotifier<TData>(
+  table: TanStackTable<TData>,
+  onFilteredCountChange?: (count: number) => void
+) {
+  const filteredCount = table.getFilteredRowModel().rows.length;
+  useEffect(() => {
+    onFilteredCountChange?.(filteredCount);
+  }, [filteredCount, onFilteredCountChange]);
 }
 
 export function DataTable<TData, TValue>({
@@ -55,21 +68,19 @@ export function DataTable<TData, TValue>({
   onSelectionChange,
   filters,
   filterFns,
+  onFilteredCountChange,
 }: DataTableProps<TData, TValue>) {
-  const table = useDataTable({
-    data,
-    columns,
-    paginated,
-    defaultPageSize,
-    enableRowSelection,
-    onSelectionChange,
-    filterFns,
-  });
-
+  // prettier-ignore
+  const table = useDataTable({ data, columns, paginated, defaultPageSize, enableRowSelection, onSelectionChange, filterFns });
+  useFilteredCountNotifier(table, onFilteredCountChange);
   return (
     <div className={cn('space-y-4', className)}>
+      {/* prettier-ignore */}
       {filters && filters.length > 0 && (
-        <FilterBar filters={filters} table={table as unknown as TanStackTable<unknown>} />
+        <FilterBar
+          filters={filters}
+          table={table as unknown as TanStackTable<unknown>}
+        />
       )}
       <DataTableToolbar
         table={table}

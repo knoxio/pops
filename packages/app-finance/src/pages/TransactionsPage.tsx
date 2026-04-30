@@ -1,5 +1,5 @@
 import { Plus } from 'lucide-react';
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { trpc } from '@pops/api-client';
@@ -10,6 +10,8 @@ import { buildColumns, buildTransactionFilters, type Transaction } from './trans
 import { DeleteTransactionDialog } from './transactions/DeleteTransactionDialog';
 import { TransactionFormDialog } from './transactions/TransactionFormDialog';
 import { useTransactionsPage } from './transactions/useTransactionsPage';
+
+import type { TFunction } from 'i18next';
 
 function ErrorView({ message, onRetry }: { message: string; onRetry: () => void }) {
   const { t } = useTranslation('finance');
@@ -31,10 +33,12 @@ function TableContent({
   isLoading,
   transactions,
   columns,
+  onFilteredCountChange,
 }: {
   isLoading: boolean;
   transactions: Transaction[] | undefined;
   columns: ReturnType<typeof buildColumns>;
+  onFilteredCountChange: (count: number) => void;
 }) {
   const { t } = useTranslation('finance');
   if (isLoading) {
@@ -56,8 +60,26 @@ function TableContent({
       paginated
       defaultPageSize={50}
       filters={buildTransactionFilters(t)}
+      onFilteredCountChange={onFilteredCountChange}
     />
   );
+}
+
+function buildSubtitle(
+  t: TFunction<'finance'>,
+  total: number,
+  filteredCount: number | null
+): string {
+  if (filteredCount !== null && filteredCount < total) {
+    return t('transactions.filteredCount', { filtered: filteredCount, total });
+  }
+  return t('transactions.totalCount', { count: total });
+}
+
+function useSubtitle(t: TFunction<'finance'>, total: number | undefined) {
+  const [filteredCount, setFilteredCount] = useState<number | null>(null);
+  const description = total !== undefined ? buildSubtitle(t, total, filteredCount) : undefined;
+  return { description, setFilteredCount };
 }
 
 function useTagHandlers() {
@@ -90,6 +112,7 @@ export function TransactionsPage() {
   useSetPageContext({ page: 'transactions' });
   const state = useTransactionsPage();
   const { onTagSave, onTagSuggest } = useTagHandlers();
+  const { description, setFilteredCount } = useSubtitle(t, state.query.data?.pagination.total); // prettier-ignore
 
   if (state.query.error) {
     return <ErrorView message={state.query.error.message} onRetry={() => state.query.refetch()} />;
@@ -108,11 +131,7 @@ export function TransactionsPage() {
     <div className="space-y-6">
       <PageHeader
         title={t('transactions')}
-        description={
-          state.query.data
-            ? t('transactions.totalCount', { count: state.query.data.pagination.total })
-            : undefined
-        }
+        description={description}
         actions={
           <Button onClick={state.handleAdd} prefix={<Plus className="h-4 w-4" />}>
             {t('transactions.addTransaction')}
@@ -123,6 +142,7 @@ export function TransactionsPage() {
         isLoading={state.query.isLoading}
         transactions={state.query.data?.data}
         columns={columns}
+        onFilteredCountChange={setFilteredCount}
       />
       <TransactionFormDialog
         open={state.isDialogOpen}

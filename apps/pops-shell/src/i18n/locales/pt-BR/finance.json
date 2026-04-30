@@ -20,7 +20,8 @@
   "dashboard.apiNotResponding": "A API não está respondendo. Certifique-se de que o servidor pops-api está em execução.",
 
   "transactions.failedToLoad": "Falha ao carregar transações",
-  "transactions.totalCount": "{{count}} transações no total",
+  "transactions.totalCount": "{{count}} transações",
+  "transactions.filteredCount": "{{filtered}} de {{total}} transações",
   "transactions.searchPlaceholder": "Buscar transações...",
   "transactions.addTransaction": "Adicionar Transação",
   "transactions.editTransaction": "Editar Transação",
