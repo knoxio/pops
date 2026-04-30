@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 
-import { getEnv } from '../../../../env.js';
 import { withRateLimitRetry } from '../../../../lib/ai-retry.js';
+import { getAnthropicApiKey } from '../../../../lib/anthropic-api-key.js';
 import { trackInference } from '../../../../lib/inference-middleware.js';
 import { logger } from '../../../../lib/logger.js';
 import { getSettingValue } from '../../settings/service.js';
@@ -132,9 +132,9 @@ function parseAnalysis(text: string): CorrectionAnalysis | null {
 export async function analyzeCorrection(
   input: CorrectionInput
 ): Promise<CorrectionAnalysis | null> {
-  const apiKey = getEnv('CLAUDE_API_KEY');
+  const apiKey = getAnthropicApiKey();
   if (!apiKey) {
-    logger.warn('[RuleGen] CLAUDE_API_KEY not configured — skipping correction analysis');
+    logger.warn('[RuleGen] ANTHROPIC_API_KEY not configured — skipping correction analysis');
     return null;
   }
 

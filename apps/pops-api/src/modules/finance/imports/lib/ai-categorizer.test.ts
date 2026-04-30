@@ -47,7 +47,7 @@ vi.mock('node:fs', () => ({
 }));
 
 // Store original env var
-const originalEnv = process.env['CLAUDE_API_KEY'];
+const originalEnv = process.env['ANTHROPIC_API_KEY'];
 
 beforeEach(() => {
   // Clear cache before each test to prevent pollution
@@ -56,15 +56,15 @@ beforeEach(() => {
   mockCreate.mockClear();
   mockDbRun.mockClear();
   // Set API key by default for tests
-  process.env['CLAUDE_API_KEY'] = 'test-api-key-12345';
+  process.env['ANTHROPIC_API_KEY'] = 'test-api-key-12345';
 });
 
 afterEach(() => {
   // Restore original env var
   if (originalEnv === undefined) {
-    delete process.env['CLAUDE_API_KEY'];
+    delete process.env['ANTHROPIC_API_KEY'];
   } else {
-    process.env['CLAUDE_API_KEY'] = originalEnv;
+    process.env['ANTHROPIC_API_KEY'] = originalEnv;
   }
 });
 
@@ -163,28 +163,28 @@ describe('categorizeWithAi', () => {
   });
 
   describe('API key handling', () => {
-    it('throws AiCategorizationError when CLAUDE_API_KEY is missing', async () => {
-      delete process.env['CLAUDE_API_KEY'];
+    it('throws AiCategorizationError when ANTHROPIC_API_KEY is missing', async () => {
+      delete process.env['ANTHROPIC_API_KEY'];
 
       await expect(categorizeWithAi('WOOLWORTHS 1234')).rejects.toThrow(AiCategorizationError);
       await expect(categorizeWithAi('WOOLWORTHS 1234')).rejects.toThrow(
-        'CLAUDE_API_KEY not configured'
+        'ANTHROPIC_API_KEY not configured'
       );
       expect(mockCreate).not.toHaveBeenCalled();
     });
 
-    it('throws AiCategorizationError when CLAUDE_API_KEY is empty string', async () => {
-      process.env['CLAUDE_API_KEY'] = '';
+    it('throws AiCategorizationError when ANTHROPIC_API_KEY is empty string', async () => {
+      process.env['ANTHROPIC_API_KEY'] = '';
 
       await expect(categorizeWithAi('WOOLWORTHS 1234')).rejects.toThrow(AiCategorizationError);
       await expect(categorizeWithAi('WOOLWORTHS 1234')).rejects.toThrow(
-        'CLAUDE_API_KEY not configured'
+        'ANTHROPIC_API_KEY not configured'
       );
       expect(mockCreate).not.toHaveBeenCalled();
     });
 
     it('uses provided API key to create client', async () => {
-      process.env['CLAUDE_API_KEY'] = 'my-secret-key';
+      process.env['ANTHROPIC_API_KEY'] = 'my-secret-key';
 
       mockCreate.mockResolvedValue({
         content: [{ type: 'text', text: '{"entityName": "Test", "category": "Other"}' }],

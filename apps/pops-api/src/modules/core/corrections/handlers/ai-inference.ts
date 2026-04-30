@@ -4,8 +4,8 @@ import { eq } from 'drizzle-orm';
 import { settings } from '@pops/db-types';
 
 import { getDrizzle, isNamedEnvContext } from '../../../../db.js';
-import { getEnv } from '../../../../env.js';
 import { withRateLimitRetry } from '../../../../lib/ai-retry.js';
+import { getAnthropicApiKey } from '../../../../lib/anthropic-api-key.js';
 import { trackInference } from '../../../../lib/inference-middleware.js';
 import { logger } from '../../../../lib/logger.js';
 import {
@@ -159,7 +159,7 @@ export async function interpretRejectionFeedback(
 ): Promise<CorrectionSignal> {
   if (isNamedEnvContext()) return originalSignal;
 
-  const apiKey = getEnv('CLAUDE_API_KEY');
+  const apiKey = getAnthropicApiKey();
   if (!apiKey) return originalSignal;
 
   const sanitizedFeedback = feedback.trim().slice(0, 500);

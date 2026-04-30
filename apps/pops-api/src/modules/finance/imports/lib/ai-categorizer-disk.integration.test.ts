@@ -31,7 +31,7 @@ vi.mock('../../../../db.js', () => ({
 let tmpDir: string;
 let cachePath: string;
 const originalEnv = {
-  CLAUDE_API_KEY: process.env['CLAUDE_API_KEY'],
+  ANTHROPIC_API_KEY: process.env['ANTHROPIC_API_KEY'],
   AI_CACHE_PATH: process.env['AI_CACHE_PATH'],
 };
 
@@ -43,7 +43,7 @@ beforeEach(async () => {
   mkdirSync(tmpDir, { recursive: true });
   cachePath = join(tmpDir, 'ai_entity_cache.json');
   process.env['AI_CACHE_PATH'] = cachePath;
-  process.env['CLAUDE_API_KEY'] = 'test-key';
+  process.env['ANTHROPIC_API_KEY'] = 'test-key';
   mockCreate.mockClear();
   mockDbRun.mockClear();
 
@@ -53,8 +53,8 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
-  if (originalEnv.CLAUDE_API_KEY === undefined) delete process.env['CLAUDE_API_KEY'];
-  else process.env['CLAUDE_API_KEY'] = originalEnv.CLAUDE_API_KEY;
+  if (originalEnv.ANTHROPIC_API_KEY === undefined) delete process.env['ANTHROPIC_API_KEY'];
+  else process.env['ANTHROPIC_API_KEY'] = originalEnv.ANTHROPIC_API_KEY;
 
   if (originalEnv.AI_CACHE_PATH === undefined) delete process.env['AI_CACHE_PATH'];
   else process.env['AI_CACHE_PATH'] = originalEnv.AI_CACHE_PATH;

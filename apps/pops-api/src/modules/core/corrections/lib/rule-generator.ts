@@ -4,8 +4,8 @@
  */
 import Anthropic from '@anthropic-ai/sdk';
 
-import { getEnv } from '../../../../env.js';
 import { withRateLimitRetry } from '../../../../lib/ai-retry.js';
+import { getAnthropicApiKey } from '../../../../lib/anthropic-api-key.js';
 import { trackInference } from '../../../../lib/inference-middleware.js';
 import { logger } from '../../../../lib/logger.js';
 import { loadAvailableTagsFromDb } from './tag-loader.js';
@@ -95,8 +95,8 @@ function parseProposals(text: string): ProposedRule[] {
 }
 
 export async function generateRules(transactions: TransactionInput[]): Promise<ProposedRule[]> {
-  const apiKey = getEnv('CLAUDE_API_KEY');
-  if (!apiKey) throw new Error('CLAUDE_API_KEY not configured');
+  const apiKey = getAnthropicApiKey();
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY not configured');
 
   const client = new Anthropic({ apiKey, maxRetries: 0 });
   const prompt = buildPrompt(transactions);

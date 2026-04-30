@@ -19,7 +19,7 @@ function formatAiCategorizationError(error: AiCategorizationError): FormattedErr
   if (error.code === 'NO_API_KEY') {
     return {
       message: 'AI categorization unavailable',
-      suggestion: 'Add CLAUDE_API_KEY to .env file',
+      suggestion: 'Add ANTHROPIC_API_KEY to .env file',
       details:
         'AI categorization requires an Anthropic API key. See docs/SETUP.md for instructions.',
     };

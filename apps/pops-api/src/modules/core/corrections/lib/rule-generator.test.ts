@@ -9,7 +9,7 @@ vi.mock('@anthropic-ai/sdk', () => ({
 }));
 
 vi.mock('../../../../env.js', () => ({
-  getEnv: vi.fn((key: string) => (key === 'CLAUDE_API_KEY' ? 'test-key' : undefined)),
+  getEnv: vi.fn((key: string) => (key === 'ANTHROPIC_API_KEY' ? 'test-key' : undefined)),
 }));
 
 vi.mock('../../../../db.js', () => ({

@@ -33,11 +33,11 @@ describe('corrections', () => {
     caller = result.caller;
     db = result.db;
     anthropicMocks.createMessage.mockReset();
-    process.env['CLAUDE_API_KEY'] = 'test-key';
+    process.env['ANTHROPIC_API_KEY'] = 'test-key';
   });
 
   afterEach(() => {
-    delete process.env['CLAUDE_API_KEY'];
+    delete process.env['ANTHROPIC_API_KEY'];
     ctx.teardown();
   });
 
@@ -989,7 +989,7 @@ describe('corrections', () => {
         feedback: 'Only match the full description',
       });
 
-      delete process.env['CLAUDE_API_KEY'];
+      delete process.env['ANTHROPIC_API_KEY'];
 
       const result = await caller.core.corrections.proposeChangeSet({
         signal: { descriptionPattern: 'WOOLWORTHS', matchType: 'contains', tags: [] },
@@ -1368,8 +1368,8 @@ describe('corrections', () => {
       ).rejects.toThrow(/schema validation/i);
     });
 
-    it('throws when CLAUDE_API_KEY is not configured', async () => {
-      delete process.env['CLAUDE_API_KEY'];
+    it('throws when ANTHROPIC_API_KEY is not configured', async () => {
+      delete process.env['ANTHROPIC_API_KEY'];
 
       await expect(
         service.reviseChangeSet({
@@ -1378,7 +1378,7 @@ describe('corrections', () => {
           instruction: 'narrow it',
           triggeringTransactions: [{ description: 'WOOLWORTHS 1234' }],
         })
-      ).rejects.toThrow(/CLAUDE_API_KEY/);
+      ).rejects.toThrow(/ANTHROPIC_API_KEY/);
       expect(anthropicMocks.createMessage).not.toHaveBeenCalled();
     });
 

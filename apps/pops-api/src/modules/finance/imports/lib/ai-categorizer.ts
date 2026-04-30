@@ -8,7 +8,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 
 import { isNamedEnvContext } from '../../../../db.js';
-import { getEnv } from '../../../../env.js';
+import { getAnthropicApiKey } from '../../../../lib/anthropic-api-key.js';
 import { trackInference } from '../../../../lib/inference-middleware.js';
 import { logger } from '../../../../lib/logger.js';
 import { getSettingValue } from '../../../core/settings/service.js';
@@ -90,9 +90,9 @@ export async function categorizeWithAi(
     return { result: cached };
   }
 
-  const apiKey = getEnv('CLAUDE_API_KEY');
+  const apiKey = getAnthropicApiKey();
   if (!apiKey) {
-    throw new AiCategorizationError('CLAUDE_API_KEY not configured', 'NO_API_KEY');
+    throw new AiCategorizationError('ANTHROPIC_API_KEY not configured', 'NO_API_KEY');
   }
 
   const client = new Anthropic({ apiKey, maxRetries: 0 });

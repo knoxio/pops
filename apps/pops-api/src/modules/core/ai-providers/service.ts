@@ -3,7 +3,7 @@ import { eq } from 'drizzle-orm';
 import { aiModelPricing, aiProviders } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
-import { getEnv } from '../../../env.js';
+import { getAnthropicApiKey } from '../../../lib/anthropic-api-key.js';
 import { logger } from '../../../lib/logger.js';
 
 export interface ProviderWithModels {
@@ -177,8 +177,8 @@ export async function runHealthCheck(
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
     } else if (provider.id === 'claude') {
-      const apiKey = getEnv('CLAUDE_API_KEY');
-      if (!apiKey) throw new Error('CLAUDE_API_KEY not configured');
+      const apiKey = getAnthropicApiKey();
+      if (!apiKey) throw new Error('ANTHROPIC_API_KEY not configured');
       const res = await fetch('https://api.anthropic.com/v1/models', {
         headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
         signal: AbortSignal.timeout(5000),

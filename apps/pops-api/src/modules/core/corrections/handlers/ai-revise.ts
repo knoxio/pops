@@ -3,8 +3,8 @@ import Anthropic from '@anthropic-ai/sdk';
 import { transactionCorrections } from '@pops/db-types';
 
 import { getDrizzle, isNamedEnvContext } from '../../../../db.js';
-import { getEnv } from '../../../../env.js';
 import { withRateLimitRetry } from '../../../../lib/ai-retry.js';
+import { getAnthropicApiKey } from '../../../../lib/anthropic-api-key.js';
 import { trackInference } from '../../../../lib/inference-middleware.js';
 import { logger } from '../../../../lib/logger.js';
 import { buildTargetRulesMap } from '../pure-service.js';
@@ -156,8 +156,8 @@ export async function reviseChangeSet(args: ReviseArgs): Promise<ReviseResult> {
     };
   }
 
-  const apiKey = getEnv('CLAUDE_API_KEY');
-  if (!apiKey) throw new Error('CLAUDE_API_KEY not configured');
+  const apiKey = getAnthropicApiKey();
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY not configured');
 
   const sanitizedInstruction = args.instruction.trim().slice(0, 2000);
   if (sanitizedInstruction.length === 0) {
