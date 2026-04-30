@@ -1,14 +1,11 @@
 import { Search } from 'lucide-react';
 
+import { INVENTORY_CONDITIONS } from '@pops/db-types';
 import { Button, Select, type SelectOption, TextInput } from '@pops/ui';
 
 const CONDITION_OPTIONS: SelectOption[] = [
   { value: '', label: 'All Conditions' },
-  { value: 'new', label: 'New' },
-  { value: 'good', label: 'Good' },
-  { value: 'fair', label: 'Fair' },
-  { value: 'poor', label: 'Poor' },
-  { value: 'broken', label: 'Broken' },
+  ...INVENTORY_CONDITIONS.map((c) => ({ value: c, label: c })),
 ];
 
 const IN_USE_OPTIONS: SelectOption[] = [

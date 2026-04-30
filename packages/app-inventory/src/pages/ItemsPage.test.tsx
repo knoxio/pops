@@ -121,10 +121,12 @@ describe('ItemsPage', () => {
       renderPage();
 
       const selects = screen.getAllByRole('combobox');
-      // Condition select: All Conditions + New + Good + Fair + Poor + Broken = 6
+      // All Conditions + Excellent + New + Good + Fair + Poor + Broken = 7
       const conditionSelect = selects[1]!; // second select
       const options = conditionSelect.querySelectorAll('option');
-      expect(options.length).toBe(6);
+      expect(options.length).toBe(7);
+      const values = Array.from(options).map((o) => o.getAttribute('value'));
+      expect(values).toEqual(['', 'Excellent', 'New', 'Good', 'Fair', 'Poor', 'Broken']);
     });
 
     it('shows Clear filters button when a filter is active', () => {
@@ -156,11 +158,19 @@ describe('ItemsPage', () => {
     });
 
     it('reads condition filter from URL params', () => {
-      renderPage('/inventory?condition=good');
+      renderPage('/inventory?condition=Good');
 
       const selects = screen.getAllByRole('combobox');
       const conditionSelect = selects[1];
-      expect(conditionSelect).toHaveValue('good');
+      expect(conditionSelect).toHaveValue('Good');
+    });
+
+    it('reads Excellent condition filter from URL params', () => {
+      renderPage('/inventory?condition=Excellent');
+
+      const selects = screen.getAllByRole('combobox');
+      const conditionSelect = selects[1];
+      expect(conditionSelect).toHaveValue('Excellent');
     });
 
     it('debounces the search query — API receives the term only after 300ms', async () => {
