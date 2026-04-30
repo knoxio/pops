@@ -416,4 +416,147 @@ describe('migration safety', () => {
       db.close();
     });
   });
+
+  describe('0051_strip_quoted_tv_show_titles migration (#2403)', () => {
+    const migrationSql = `
+      UPDATE tv_shows
+      SET name = TRIM(name, '"')
+      WHERE name LIKE '"%"'
+        AND length(name) > 2
+        AND TRIM(name, '"') != '';
+
+      UPDATE tv_shows
+      SET original_name = TRIM(original_name, '"')
+      WHERE original_name LIKE '"%"'
+        AND length(original_name) > 2
+        AND TRIM(original_name, '"') != '';
+    `;
+    const byName = 'SELECT name, original_name FROM tv_shows WHERE name = ?';
+
+    function insertShow(
+      db: BetterSqlite3.Database,
+      name: string,
+      originalName: string | null = null
+    ): void {
+      db.prepare('INSERT INTO tv_shows (tvdb_id, name, original_name) VALUES (?, ?, ?)').run(
+        1,
+        name,
+        originalName
+      );
+    }
+
+    it('strips surrounding quotes from a wrapped name', () => {
+      const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
+      initializeSchema(db);
+      insertShow(db, '"The Wire"');
+      db.exec(migrationSql);
+      expect(db.prepare(byName).get('The Wire')).toBeDefined();
+      db.close();
+    });
+
+    it('strips surrounding quotes from original_name independently of name', () => {
+      const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
+      initializeSchema(db);
+      insertShow(db, 'The Wire', '"The Wire"');
+      db.exec(migrationSql);
+      const row = db.prepare(byName).get('The Wire') as {
+        name: string;
+        original_name: string;
+      };
+      expect(row.original_name).toBe('The Wire');
+      db.close();
+    });
+
+    it('does not touch a name with only a leading quote', () => {
+      const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
+      initializeSchema(db);
+      insertShow(db, '"Something');
+      db.exec(migrationSql);
+      expect(db.prepare(byName).get('"Something')).toBeDefined();
+      db.close();
+    });
+
+    it('does not touch a name with only a trailing quote', () => {
+      const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
+      initializeSchema(db);
+      insertShow(db, 'Something"');
+      db.exec(migrationSql);
+      expect(db.prepare(byName).get('Something"')).toBeDefined();
+      db.close();
+    });
+
+    it('does not touch a name with internal quotes', () => {
+      const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
+      initializeSchema(db);
+      insertShow(db, 'Show "Title" Format');
+      db.exec(migrationSql);
+      expect(db.prepare(byName).get('Show "Title" Format')).toBeDefined();
+      db.close();
+    });
+
+    it('does not produce an empty name from bare ""', () => {
+      const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
+      initializeSchema(db);
+      insertShow(db, '""');
+      db.exec(migrationSql);
+      expect(db.prepare(byName).get('""')).toBeDefined();
+      db.close();
+    });
+
+    it('does not produce an empty name from all-quote string """', () => {
+      const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
+      initializeSchema(db);
+      insertShow(db, '"""');
+      db.exec(migrationSql);
+      expect(db.prepare(byName).get('"""')).toBeDefined();
+      db.close();
+    });
+
+    it('does not affect a clean name', () => {
+      const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
+      initializeSchema(db);
+      insertShow(db, 'Breaking Bad');
+      db.exec(migrationSql);
+      expect(db.prepare(byName).get('Breaking Bad')).toBeDefined();
+      db.close();
+    });
+
+    it('leaves NULL original_name untouched', () => {
+      const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
+      initializeSchema(db);
+      insertShow(db, 'The Sopranos', null);
+      db.exec(migrationSql);
+      const row = db.prepare(byName).get('The Sopranos') as {
+        name: string;
+        original_name: string | null;
+      };
+      expect(row.original_name).toBeNull();
+      db.close();
+    });
+
+    it('is idempotent — running twice gives the same result', () => {
+      const db = new BetterSqlite3(dbPath);
+      db.pragma('foreign_keys = ON');
+      initializeSchema(db);
+      insertShow(db, '"The Wire"', '"The Wire"');
+      db.exec(migrationSql);
+      db.exec(migrationSql);
+      const row = db.prepare(byName).get('The Wire') as {
+        name: string;
+        original_name: string;
+      };
+      expect(row.name).toBe('The Wire');
+      expect(row.original_name).toBe('The Wire');
+      db.close();
+    });
+  });
 });

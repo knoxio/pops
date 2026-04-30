@@ -1,3 +1,5 @@
+import { stripSurroundingQuotes } from '../lib/strip-surrounding-quotes.js';
+
 import type {
   RawTmdbImageResponse,
   RawTmdbMovieDetail,
@@ -13,8 +15,8 @@ type RawMovieResult = RawTmdbSearchResponse['results'][number];
 export function mapMovieResult(r: RawMovieResult): TmdbSearchResponse['results'][number] {
   return {
     tmdbId: r.id,
-    title: r.title,
-    originalTitle: r.original_title,
+    title: stripSurroundingQuotes(r.title),
+    originalTitle: stripSurroundingQuotes(r.original_title),
     overview: r.overview,
     releaseDate: r.release_date,
     posterPath: r.poster_path,
@@ -40,8 +42,8 @@ export function mapMovieDetail(raw: RawTmdbMovieDetail): TmdbMovieDetail {
   return {
     tmdbId: raw.id,
     imdbId: raw.imdb_id,
-    title: raw.title,
-    originalTitle: raw.original_title,
+    title: stripSurroundingQuotes(raw.title),
+    originalTitle: stripSurroundingQuotes(raw.original_title),
     overview: raw.overview,
     tagline: raw.tagline,
     releaseDate: raw.release_date,

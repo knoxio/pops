@@ -1,4 +1,6 @@
 /** Mapping functions: Raw TheTVDB API → Domain. */
+import { stripSurroundingQuotes } from '../lib/strip-surrounding-quotes.js';
+
 import type {
   TvdbArtwork,
   TvdbEpisode,
@@ -28,8 +30,8 @@ function pickFirst<T>(...values: Array<T | null | undefined>): T | null {
 export function mapSearchResult(raw: RawTvdbSearchResult): TvdbSearchResult {
   return {
     tvdbId: Number(pickFirst(raw.tvdb_id, raw.objectID) ?? 0),
-    name: raw.name,
-    originalName: raw.name_translated?.eng ?? null,
+    name: stripSurroundingQuotes(raw.name),
+    originalName: raw.name_translated?.eng ? stripSurroundingQuotes(raw.name_translated.eng) : null,
     overview: pickFirst(raw.overview, raw.overviews?.eng),
     firstAirDate: raw.first_air_time ?? null,
     status: raw.status ?? null,
@@ -77,7 +79,7 @@ interface ShowDetailScalars {
 
 function mapShowDetailScalars(raw: RawTvdbSeriesExtended): ShowDetailScalars {
   return {
-    originalName: raw.originalName ?? null,
+    originalName: raw.originalName ? stripSurroundingQuotes(raw.originalName) : null,
     overview: raw.overview ?? null,
     firstAirDate: raw.firstAired ?? null,
     lastAirDate: raw.lastAired ?? null,
@@ -92,7 +94,7 @@ export function mapShowDetail(raw: RawTvdbSeriesExtended): TvdbShowDetail {
   const rawSeasons = (raw.seasons ?? []).filter(isDefaultOrOfficialSeason);
   return {
     tvdbId: raw.id,
-    name: raw.name,
+    name: stripSurroundingQuotes(raw.name),
     ...mapShowDetailScalars(raw),
     genres: (raw.genres ?? []).map((g) => ({ id: g.id, name: g.name })),
     networks: (raw.networks ?? []).map((n) => ({ id: n.id, name: n.name })),
