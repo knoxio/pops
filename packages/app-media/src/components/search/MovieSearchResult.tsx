@@ -12,7 +12,7 @@ import { formatRuntime } from '../../lib/format';
  */
 import type { ResultComponentProps } from '@pops/navigation';
 
-interface MovieHitData {
+export interface MovieHitData {
   title: string;
   year: string | null;
   posterUrl: string | null;
@@ -36,14 +36,16 @@ function formatRuntimeOrNull(minutes: number | null): string | null {
   return formatRuntime(minutes);
 }
 
-export function MovieSearchResult({ data }: ResultComponentProps) {
-  const hit = data as unknown as MovieHitData & {
-    _query?: string;
-    _matchType?: string;
-  };
-  const { title, year, posterUrl, voteAverage, runtime } = hit;
-  const query = hit._query ?? '';
-  const matchType = hit._matchType ?? 'contains';
+export function MovieSearchResult({ data }: ResultComponentProps<MovieHitData>) {
+  const {
+    title,
+    year,
+    posterUrl,
+    voteAverage,
+    runtime,
+    _query: query = '',
+    _matchType: matchType = 'contains',
+  } = data;
   const runtimeLabel = formatRuntimeOrNull(runtime ?? null);
 
   return (

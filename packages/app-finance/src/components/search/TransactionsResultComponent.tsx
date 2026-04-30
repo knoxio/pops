@@ -5,25 +5,12 @@ import type { ResultComponentProps } from '@pops/navigation';
 
 type TxType = 'income' | 'expense' | 'transfer';
 
-interface TransactionData {
+export interface TransactionHitData {
   description: string;
   amount: number;
   date: string;
   entityName: string | null;
   type: TxType;
-}
-
-const VALID_TYPES = new Set<string>(['income', 'expense', 'transfer']);
-
-function parseTransactionData(data: Record<string, unknown>): TransactionData {
-  const rawType = String(data['type'] ?? '');
-  return {
-    description: String(data['description'] ?? ''),
-    amount: Number(data['amount'] ?? 0),
-    date: String(data['date'] ?? ''),
-    entityName: data['entityName'] != null ? String(data['entityName']) : null,
-    type: VALID_TYPES.has(rawType) ? (rawType as TxType) : 'expense',
-  };
 }
 
 function amountColorClass(type: TxType): string {
@@ -37,33 +24,41 @@ function amountColorClass(type: TxType): string {
   }
 }
 
-export function TransactionsResultComponent({ data, query, matchField }: ResultComponentProps) {
-  const tx = parseTransactionData(data);
+export function TransactionsResultComponent({ data }: ResultComponentProps<TransactionHitData>) {
+  const {
+    description,
+    amount,
+    date,
+    entityName,
+    type,
+    _query: query,
+    _matchField: matchField,
+  } = data;
   const shouldHighlight = matchField === 'description' && query;
 
   return (
     <SearchResultItem
-      title={shouldHighlight ? highlightMatch(tx.description, query) : tx.description}
+      title={shouldHighlight ? highlightMatch(description, query) : description}
       meta={[
-        tx.entityName ? <span key="entity">{tx.entityName}</span> : null,
+        entityName ? <span key="entity">{entityName}</span> : null,
         <Badge key="type" variant="outline" className="text-2xs uppercase tracking-wider shrink-0">
-          {tx.type}
+          {type}
         </Badge>,
       ]}
       trailing={
         <div className="flex flex-col items-end shrink-0">
-          <span className={`text-sm font-medium ${amountColorClass(tx.type)}`}>
+          <span className={`text-sm font-medium ${amountColorClass(type)}`}>
             {(() => {
-              if (tx.type === 'income') return '+';
-              if (tx.type === 'expense') return '-';
+              if (type === 'income') return '+';
+              if (type === 'expense') return '-';
               return '';
             })()}
-            {formatCurrency(Math.abs(tx.amount), {
+            {formatCurrency(Math.abs(amount), {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
             })}
           </span>
-          <span className="text-xs text-muted-foreground">{formatDate(tx.date)}</span>
+          <span className="text-xs text-muted-foreground">{formatDate(date)}</span>
         </div>
       }
     />

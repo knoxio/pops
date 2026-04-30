@@ -4,13 +4,15 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { _clearRegistry, getResultComponent, registerResultComponent } from '@pops/navigation';
 import { highlightMatch } from '@pops/ui';
 
-import { InventoryItemSearchResult } from './InventoryItemSearchResult';
+import { InventoryItemSearchResult, type InventoryItemHitData } from './InventoryItemSearchResult';
+
+import type { SearchHitMeta } from '@pops/navigation';
 
 beforeEach(() => {
   _clearRegistry();
 });
 
-const baseItem = {
+const baseItem: InventoryItemHitData & SearchHitMeta = {
   itemName: 'MacBook Pro 16',
   location: 'Desk',
   room: 'Office',
@@ -22,53 +24,51 @@ const baseItem = {
 
 describe('InventoryItemSearchResult', () => {
   it('renders name, brand, and location', () => {
-    render(<InventoryItemSearchResult data={baseItem as unknown as Record<string, unknown>} />);
+    render(<InventoryItemSearchResult data={baseItem} />);
     expect(screen.getByText(/MacBook/)).toBeInTheDocument();
     expect(screen.getByText('Apple')).toBeInTheDocument();
     expect(screen.getByText('Office · Desk')).toBeInTheDocument();
   });
 
   it('renders formatted replacement value', () => {
-    render(<InventoryItemSearchResult data={baseItem as unknown as Record<string, unknown>} />);
+    render(<InventoryItemSearchResult data={baseItem} />);
     expect(screen.getByTestId('value')).toHaveTextContent('$4,299');
   });
 
   it('hides value when null', () => {
     const data = { ...baseItem, replacementValue: null };
-    render(<InventoryItemSearchResult data={data as unknown as Record<string, unknown>} />);
+    render(<InventoryItemSearchResult data={data} />);
     expect(screen.queryByTestId('value')).not.toBeInTheDocument();
   });
 
   it('hides brand when null', () => {
     const data = { ...baseItem, brand: null };
-    render(<InventoryItemSearchResult data={data as unknown as Record<string, unknown>} />);
+    render(<InventoryItemSearchResult data={data} />);
     expect(screen.queryByText('Apple')).not.toBeInTheDocument();
   });
 
   it('renders location only when room is null', () => {
     const data = { ...baseItem, room: null };
-    render(<InventoryItemSearchResult data={data as unknown as Record<string, unknown>} />);
+    render(<InventoryItemSearchResult data={data} />);
     expect(screen.getByText('Desk')).toBeInTheDocument();
   });
 
   it('renders room only when location is null', () => {
     const data = { ...baseItem, location: null };
-    render(<InventoryItemSearchResult data={data as unknown as Record<string, unknown>} />);
+    render(<InventoryItemSearchResult data={data} />);
     expect(screen.getByText('Office')).toBeInTheDocument();
   });
 
   it('hides location text when both room and location are null', () => {
     const data = { ...baseItem, room: null, location: null };
-    render(<InventoryItemSearchResult data={data as unknown as Record<string, unknown>} />);
+    render(<InventoryItemSearchResult data={data} />);
     expect(screen.queryByText('Office')).not.toBeInTheDocument();
     expect(screen.queryByText('Desk')).not.toBeInTheDocument();
   });
 
   it('hides separator between brand and location when location is empty', () => {
     const data = { ...baseItem, room: null, location: null };
-    const { container } = render(
-      <InventoryItemSearchResult data={data as unknown as Record<string, unknown>} />
-    );
+    const { container } = render(<InventoryItemSearchResult data={data} />);
     const dots = container.querySelectorAll('span');
     const dotTexts = Array.from(dots).map((el) => el.textContent);
     expect(dotTexts).not.toContain('·');

@@ -4,13 +4,15 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { _clearRegistry, getResultComponent, registerResultComponent } from '@pops/navigation';
 import { highlightMatch } from '@pops/ui';
 
-import { TvShowSearchResult } from './TvShowSearchResult';
+import { TvShowSearchResult, type TvShowHitData } from './TvShowSearchResult';
+
+import type { SearchHitMeta } from '@pops/navigation';
 
 beforeEach(() => {
   _clearRegistry();
 });
 
-const baseTvShow = {
+const baseTvShow: TvShowHitData & SearchHitMeta = {
   name: 'Breaking Bad',
   year: '2008',
   posterUrl: '/media/images/tv/81189/poster.jpg',
@@ -23,14 +25,14 @@ const baseTvShow = {
 
 describe('TvShowSearchResult', () => {
   it('renders name, year, and season count', () => {
-    render(<TvShowSearchResult data={baseTvShow as unknown as Record<string, unknown>} />);
+    render(<TvShowSearchResult data={baseTvShow} />);
     expect(screen.getByText(/Breaking/)).toBeInTheDocument();
     expect(screen.getByText('2008')).toBeInTheDocument();
     expect(screen.getByText('5 seasons')).toBeInTheDocument();
   });
 
   it('renders poster image', () => {
-    render(<TvShowSearchResult data={baseTvShow as unknown as Record<string, unknown>} />);
+    render(<TvShowSearchResult data={baseTvShow} />);
     const img = screen.getByAltText('Breaking Bad poster');
     expect(img).toBeInTheDocument();
     expect(img).toHaveAttribute('src', '/media/images/tv/81189/poster.jpg');
@@ -38,52 +40,52 @@ describe('TvShowSearchResult', () => {
 
   it('renders placeholder when no posterUrl', () => {
     const data = { ...baseTvShow, posterUrl: null };
-    render(<TvShowSearchResult data={data as unknown as Record<string, unknown>} />);
+    render(<TvShowSearchResult data={data} />);
     expect(screen.queryByRole('img')).not.toBeInTheDocument();
   });
 
   it("renders singular 'season' for 1 season", () => {
     const data = { ...baseTvShow, numberOfSeasons: 1 };
-    render(<TvShowSearchResult data={data as unknown as Record<string, unknown>} />);
+    render(<TvShowSearchResult data={data} />);
     expect(screen.getByText('1 season')).toBeInTheDocument();
   });
 
   it('hides season count when null', () => {
     const data = { ...baseTvShow, numberOfSeasons: null };
-    render(<TvShowSearchResult data={data as unknown as Record<string, unknown>} />);
+    render(<TvShowSearchResult data={data} />);
     expect(screen.queryByText(/season/)).not.toBeInTheDocument();
   });
 
   it('hides year when null', () => {
     const data = { ...baseTvShow, year: null };
-    render(<TvShowSearchResult data={data as unknown as Record<string, unknown>} />);
+    render(<TvShowSearchResult data={data} />);
     expect(screen.queryByText('2008')).not.toBeInTheDocument();
   });
 
   describe('status badge', () => {
     it('renders status badge for Ended', () => {
-      render(<TvShowSearchResult data={baseTvShow as unknown as Record<string, unknown>} />);
+      render(<TvShowSearchResult data={baseTvShow} />);
       const badge = screen.getByTestId('status-badge');
       expect(badge).toHaveTextContent('Ended');
     });
 
     it('renders status badge for Continuing with blue style', () => {
       const data = { ...baseTvShow, status: 'Continuing' };
-      render(<TvShowSearchResult data={data as unknown as Record<string, unknown>} />);
+      render(<TvShowSearchResult data={data} />);
       const badge = screen.getByTestId('status-badge');
       expect(badge).toHaveTextContent('Continuing');
       expect(badge.className).toContain('bg-info');
     });
 
     it('renders Ended badge without blue style', () => {
-      render(<TvShowSearchResult data={baseTvShow as unknown as Record<string, unknown>} />);
+      render(<TvShowSearchResult data={baseTvShow} />);
       const badge = screen.getByTestId('status-badge');
       expect(badge.className).not.toContain('bg-info');
     });
 
     it('hides status badge when null', () => {
       const data = { ...baseTvShow, status: null };
-      render(<TvShowSearchResult data={data as unknown as Record<string, unknown>} />);
+      render(<TvShowSearchResult data={data} />);
       expect(screen.queryByTestId('status-badge')).not.toBeInTheDocument();
     });
   });

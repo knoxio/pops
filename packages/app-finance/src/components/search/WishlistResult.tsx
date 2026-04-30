@@ -1,5 +1,13 @@
-import { registerResultComponent, type ResultComponentProps } from '@pops/navigation';
+import { registerResultComponent } from '@pops/navigation';
 import { formatCurrency, highlightMatch, SearchResultItem } from '@pops/ui';
+
+import type { ResultComponentProps } from '@pops/navigation';
+
+export interface WishlistHitData {
+  item: string;
+  priority: string | null;
+  targetAmount: number | null;
+}
 
 function formatAmount(amount: number): string {
   return formatCurrency(amount, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -10,13 +18,9 @@ function formatPriority(priority: string | null | undefined): string {
   return priority.charAt(0).toUpperCase() + priority.slice(1);
 }
 
-export function WishlistResult({ data }: ResultComponentProps) {
-  const item = (data.item as string) ?? '';
-  const priority = data.priority as string | null | undefined;
-  const targetAmount = data.targetAmount as number | null | undefined;
-  const query = (data._query as string) ?? '';
-  const matchField = (data._matchField as string) ?? '';
-  const matchType = (data._matchType as string) ?? '';
+export function WishlistResult({ data }: ResultComponentProps<WishlistHitData>) {
+  const { item, priority, targetAmount, _query: query = '', _matchField: matchField = '' } = data;
+  const matchType = data._matchType ?? '';
 
   const shouldHighlight = matchField === 'item' && query;
 

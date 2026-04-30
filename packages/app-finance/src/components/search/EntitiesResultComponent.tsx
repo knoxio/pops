@@ -3,13 +3,10 @@ import { Badge, highlightMatch, SearchResultItem } from '@pops/ui';
 
 import type { ResultComponentProps } from '@pops/navigation';
 
-interface EntityHitData {
+export interface EntityHitData {
   name: string;
   type: string;
   aliases: string[];
-  query?: string;
-  matchField?: string;
-  matchType?: 'exact' | 'prefix' | 'contains';
 }
 
 const entityTypeStyles: Record<string, string> = {
@@ -20,14 +17,14 @@ const entityTypeStyles: Record<string, string> = {
   organisation: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400',
 };
 
-export function EntitiesResultComponent({ data }: ResultComponentProps) {
-  const { name, type, aliases, query } = data as unknown as EntityHitData;
+export function EntitiesResultComponent({ data }: ResultComponentProps<EntityHitData>) {
+  const { name, type, aliases, _query: query = '' } = data;
 
   const style = entityTypeStyles[type] ?? 'bg-muted text-muted-foreground border-transparent';
 
   return (
     <SearchResultItem
-      title={highlightMatch(name, query ?? '')}
+      title={highlightMatch(name, query)}
       meta={
         aliases.length > 0
           ? [

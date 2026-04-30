@@ -1,9 +1,16 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { TransactionsResultComponent } from './TransactionsResultComponent';
+import {
+  TransactionsResultComponent,
+  type TransactionHitData,
+} from './TransactionsResultComponent';
 
-function makeData(overrides: Record<string, unknown> = {}) {
+import type { SearchHitMeta } from '@pops/navigation';
+
+function makeData(
+  overrides: Partial<TransactionHitData & SearchHitMeta> = {}
+): TransactionHitData & SearchHitMeta {
   return {
     description: 'WOOLWORTHS 1234',
     amount: 42.5,
@@ -71,9 +78,11 @@ describe('TransactionsResultComponent', () => {
   it('highlights matched portion of description', () => {
     const { container } = render(
       <TransactionsResultComponent
-        data={makeData({ description: 'WOOLWORTHS 1234' })}
-        query="WOOL"
-        matchField="description"
+        data={makeData({
+          description: 'WOOLWORTHS 1234',
+          _query: 'WOOL',
+          _matchField: 'description',
+        })}
       />
     );
     const mark = container.querySelector('mark');
@@ -84,9 +93,11 @@ describe('TransactionsResultComponent', () => {
   it('does not highlight when matchField is not description', () => {
     const { container } = render(
       <TransactionsResultComponent
-        data={makeData({ description: 'WOOLWORTHS 1234' })}
-        query="WOOL"
-        matchField="entityName"
+        data={makeData({
+          description: 'WOOLWORTHS 1234',
+          _query: 'WOOL',
+          _matchField: 'entityName',
+        })}
       />
     );
     expect(container.querySelector('mark')).not.toBeInTheDocument();
@@ -95,9 +106,7 @@ describe('TransactionsResultComponent', () => {
   it('does not highlight when query is empty', () => {
     const { container } = render(
       <TransactionsResultComponent
-        data={makeData({ description: 'WOOLWORTHS 1234' })}
-        query=""
-        matchField="description"
+        data={makeData({ description: 'WOOLWORTHS 1234', _query: '', _matchField: 'description' })}
       />
     );
     expect(container.querySelector('mark')).not.toBeInTheDocument();

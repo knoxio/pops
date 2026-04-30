@@ -42,7 +42,7 @@ describe('EntitiesResultComponent', () => {
           name: 'Woolworths',
           type: 'company',
           aliases: [],
-          query: 'wool',
+          _query: 'wool',
         }}
       />
     );

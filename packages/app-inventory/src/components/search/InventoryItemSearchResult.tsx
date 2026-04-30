@@ -10,7 +10,7 @@ import { formatAUD, highlightMatch, SearchResultItem } from '@pops/ui';
  */
 import type { ResultComponentProps } from '@pops/navigation';
 
-interface InventoryItemHitData {
+export interface InventoryItemHitData {
   itemName: string;
   location: string | null;
   room: string | null;
@@ -18,14 +18,16 @@ interface InventoryItemHitData {
   brand: string | null;
 }
 
-export function InventoryItemSearchResult({ data }: ResultComponentProps) {
-  const hit = data as unknown as InventoryItemHitData & {
-    _query?: string;
-    _matchType?: string;
-  };
-  const { itemName, location, room, replacementValue, brand } = hit;
-  const query = hit._query ?? '';
-  const matchType = hit._matchType ?? 'contains';
+export function InventoryItemSearchResult({ data }: ResultComponentProps<InventoryItemHitData>) {
+  const {
+    itemName,
+    location,
+    room,
+    replacementValue,
+    brand,
+    _query: query = '',
+    _matchType: matchType = 'contains',
+  } = data;
 
   const locationText = [room, location].filter(Boolean).join(' · ');
 

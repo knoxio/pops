@@ -10,7 +10,7 @@ import { Badge, cn, highlightMatch, SearchResultItem } from '@pops/ui';
  */
 import type { ResultComponentProps } from '@pops/navigation';
 
-interface TvShowHitData {
+export interface TvShowHitData {
   name: string;
   year: string | null;
   posterUrl: string | null;
@@ -34,14 +34,16 @@ export function TvShowStatusBadge({ status }: { status: string | null }) {
   );
 }
 
-export function TvShowSearchResult({ data }: ResultComponentProps) {
-  const hit = data as unknown as TvShowHitData & {
-    _query?: string;
-    _matchType?: string;
-  };
-  const { name, year, posterUrl, status, numberOfSeasons } = hit;
-  const query = hit._query ?? '';
-  const matchType = hit._matchType ?? 'contains';
+export function TvShowSearchResult({ data }: ResultComponentProps<TvShowHitData>) {
+  const {
+    name,
+    year,
+    posterUrl,
+    status,
+    numberOfSeasons,
+    _query: query = '',
+    _matchType: matchType = 'contains',
+  } = data;
 
   return (
     <SearchResultItem

@@ -15,7 +15,11 @@ export {
 } from './hooks';
 export { useRecentSearches } from './recent-searches';
 export { RecentSearches } from './RecentSearches';
-export type { ResultComponent, ResultComponentProps } from './result-component-registry';
+export type {
+  ResultComponent,
+  ResultComponentProps,
+  SearchHitMeta,
+} from './result-component-registry';
 export {
   _clearRegistry,
   GenericResultComponent,
