@@ -12,15 +12,44 @@ import { useStreamingChat } from './useStreamingChat';
 
 import type { RetrievedEngram } from './types';
 
-interface DeleteInput {
-  id: string;
-}
-
 interface UseChatMutationsParams {
   selectedConversationId: string | null;
   setSelectedConversationId: (id: string | null) => void;
   inputValue: string;
   setInputValue: (value: string) => void;
+}
+
+function buildOptimisticMessage(conversationId: string, content: string) {
+  return {
+    id: `optimistic_${Date.now()}`,
+    conversationId,
+    role: 'user',
+    content,
+    citations: null,
+    toolCalls: null,
+    tokensIn: null,
+    tokensOut: null,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+function useDeleteConversation(
+  selectedConversationId: string | null,
+  setSelectedConversationId: (id: string | null) => void,
+  setRetrievedEngrams: (e: RetrievedEngram[]) => void,
+  utils: ReturnType<typeof trpc.useUtils>
+) {
+  const mutation = trpc.ego.conversations.delete.useMutation({
+    onSuccess: (_data: { success: boolean }, variables: { id: string }) => {
+      if (selectedConversationId === variables.id) {
+        setSelectedConversationId(null);
+        setRetrievedEngrams([]);
+      }
+      void utils.ego.conversations.list.invalidate();
+    },
+  });
+  const deleteConversation = useCallback((id: string) => mutation.mutate({ id }), [mutation]);
+  return { deleteConversation, isDeleting: mutation.isPending };
 }
 
 export function useChatMutations({
@@ -31,34 +60,25 @@ export function useChatMutations({
 }: UseChatMutationsParams) {
   const [retrievedEngrams, setRetrievedEngrams] = useState<RetrievedEngram[]>([]);
   const utils = trpc.useUtils();
-
   const streaming = useStreamingChat();
+  const { deleteConversation, isDeleting } = useDeleteConversation(
+    selectedConversationId,
+    setSelectedConversationId,
+    setRetrievedEngrams,
+    utils
+  );
 
   const sendMessage = useCallback(() => {
     const trimmed = inputValue.trim();
     if (!trimmed || streaming.isStreaming) return;
-
     setInputValue('');
-
     if (selectedConversationId) {
-      utils.ego.conversations.get.setData({ id: selectedConversationId }, (prev) => {
-        if (!prev) return prev;
-        const now = new Date().toISOString();
-        const optimisticMessage = {
-          id: `optimistic_${Date.now()}`,
-          conversationId: selectedConversationId,
-          role: 'user',
-          content: trimmed,
-          citations: null,
-          toolCalls: null,
-          tokensIn: null,
-          tokensOut: null,
-          createdAt: now,
-        };
-        return { ...prev, messages: [...prev.messages, optimisticMessage] };
-      });
+      const msg = buildOptimisticMessage(selectedConversationId, trimmed);
+      utils.ego.conversations.get.setData(
+        { id: selectedConversationId },
+        (prev) => (prev ? { ...prev, messages: [...prev.messages, msg] } : prev),
+      );
     }
-
     streaming.stream(
       { conversationId: selectedConversationId, message: trimmed },
       {
@@ -68,31 +88,9 @@ export function useChatMutations({
           void utils.ego.conversations.list.invalidate();
           void utils.ego.conversations.get.invalidate({ id: conversationId });
         },
-      }
+      },
     );
-  }, [
-    inputValue,
-    selectedConversationId,
-    streaming,
-    setInputValue,
-    setSelectedConversationId,
-    utils,
-  ]);
-
-  const deleteMutation = trpc.ego.conversations.delete.useMutation({
-    onSuccess: (_data: { success: boolean }, variables: DeleteInput) => {
-      if (selectedConversationId === variables.id) {
-        setSelectedConversationId(null);
-        setRetrievedEngrams([]);
-      }
-      void utils.ego.conversations.list.invalidate();
-    },
-  });
-
-  const deleteConversation = useCallback(
-    (id: string) => deleteMutation.mutate({ id }),
-    [deleteMutation]
-  );
+  }, [inputValue, selectedConversationId, streaming, setInputValue, setSelectedConversationId, utils]); // prettier-ignore
 
   const clearEngrams = useCallback(() => setRetrievedEngrams([]), []);
 
@@ -101,7 +99,7 @@ export function useChatMutations({
     isSending: streaming.isStreaming,
     sendError: streaming.error,
     deleteConversation,
-    isDeleting: deleteMutation.isPending,
+    isDeleting,
     retrievedEngrams,
     clearEngrams,
     streamingContent: streaming.streamingContent,
