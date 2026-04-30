@@ -24,6 +24,11 @@ export function getEmbeddingConfig(): EmbeddingConfig {
   };
 }
 
+/** Returns true when EMBEDDING_API_KEY is present and non-empty. */
+export function isEmbeddingConfigured(): boolean {
+  return Boolean(process.env['EMBEDDING_API_KEY']);
+}
+
 export async function getEmbedding(text: string, config: EmbeddingConfig): Promise<number[]> {
   if (!text.trim()) {
     throw new Error('Cannot embed empty text');
