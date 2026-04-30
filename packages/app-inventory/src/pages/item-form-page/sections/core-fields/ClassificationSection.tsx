@@ -1,5 +1,6 @@
 import { Controller } from 'react-hook-form';
 
+import { INVENTORY_CONDITIONS } from '@pops/db-types';
 import { CheckboxInput, Select } from '@pops/ui';
 
 import { LocationPicker } from '../../../../components/LocationPicker';
@@ -28,14 +29,7 @@ const ITEM_TYPES = [
   'Office',
   'Other',
 ];
-const CONDITIONS = [
-  { value: 'Excellent', label: 'Excellent' },
-  { value: 'New', label: 'New' },
-  { value: 'Good', label: 'Good' },
-  { value: 'Fair', label: 'Fair' },
-  { value: 'Poor', label: 'Poor' },
-  { value: 'Broken', label: 'Broken' },
-];
+const CONDITIONS = INVENTORY_CONDITIONS.map((c) => ({ value: c, label: c }));
 
 /**
  * Restricts the field path to only those whose value type is a boolean. The
