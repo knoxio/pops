@@ -1,3 +1,4 @@
+import { logger } from '../../../lib/logger.js';
 import { getSettingValue } from '../../core/settings/service.js';
 import { SemanticSearchService } from './semantic-search.js';
 import { StructuredQueryService } from './structured-query.js';
@@ -97,8 +98,22 @@ export class HybridSearchService {
 
     // Pass `limit` (not fetchLimit) to semantic search — it over-fetches 3x internally.
     // Structured query gets fetchLimit since it doesn't over-fetch.
+    //
+    // Semantic search is best-effort: an embedding-API failure (network,
+    // Voyage 400, rate-limit) must not break hybrid retrieval, since the
+    // structured (BM25) leg is independent and still useful. Falling back to
+    // BM25-only mirrors the existing graceful-degrade path for the
+    // `isEmbeddingConfigured()` check inside SemanticSearchService.search and
+    // the `Thalamus retrieval failed` catch upstream in the chat engine
+    // (#2439).
     const [semanticResults, structuredResults] = await Promise.all([
-      this.semanticSvc.search(query, filters, limit, threshold),
+      this.semanticSvc.search(query, filters, limit, threshold).catch((error: unknown) => {
+        logger.warn(
+          { error: error instanceof Error ? error.message : String(error) },
+          '[HybridSearch] Semantic search failed — falling back to BM25-only'
+        );
+        return [] as RetrievalResult[];
+      }),
       this.structuredSvc.query(filters, fetchLimit),
     ]);
 
