@@ -8,9 +8,11 @@ import { matchEntity } from './entity-matcher.js';
 import {
   buildFailure,
   buildMatchedFromEntity,
+  buildMatchedTransfer,
   buildUncertainFromAi,
   buildUncertainNoMatch,
 } from './process-transaction-helpers.js';
+import { isTransferOrIncomeRow } from './transfer-classifier.js';
 
 import type { ParsedTransaction, ProcessedTransaction } from '../types.js';
 import type { AliasMap, EntityLookupMap } from './entity-matcher.js';
@@ -144,6 +146,26 @@ async function classifyTransaction(
       [correctionApplied.bucket]: correctionApplied.processed,
       batchStatus: 'success',
     } as TransactionProcessResult;
+  }
+
+  // Auto-classify inbound transfers / income before the entity-matcher and AI
+  // cascade — these rows are not merchants and surfacing them in the
+  // Review/uncertain bucket asks the user a question that has no good answer
+  // (#2448).
+  if (isTransferOrIncomeRow(transaction)) {
+    logger.debug(
+      {
+        index,
+        total,
+        description: transaction.description.slice(0, 50),
+        amount: transaction.amount,
+      },
+      '[Import] Auto-classified as transfer'
+    );
+    return {
+      matched: buildMatchedTransfer(transaction, context.knownTags),
+      batchStatus: 'success',
+    };
   }
 
   const entityMatched = tryEntityMatch(transaction, context);
