@@ -27,7 +27,6 @@ NODE_ENV=production
 # 3. Deploy
 docker compose -f infra/docker-compose.yml pull
 docker compose -f infra/docker-compose.yml up -d
-# (or run `homelab-infra/scripts/deploy.sh` if host config also needs to change)
 ```
 
 ## Step 2: Import Data via UI

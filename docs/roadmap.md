@@ -30,9 +30,9 @@ Sequenced by daily value, effort, and dependencies:
 
 Live status of every theme and epic. Updated as work completes.
 
-### Phase 0 — Platform (was: Infrastructure)
+### Phase 0 — Platform
 
-> Server-side infrastructure — ansible, vault, networking, backups, monitoring — moved to private [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra) on 2026-05-04. This phase now tracks **application-side platform** only: CI/CD, packaging, database operations, and cortex runtime.
+> Application-side platform: CI/CD, image packaging + GHCR contract, database operations, cortex runtime. Host-side concerns (ansible, vault, networking, backups, monitoring, Watchtower) are the deployer's responsibility; the knoxio home lab implements them in [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra).
 
 | Epic                                   | Status      | Notes                                                                             |
 | -------------------------------------- | ----------- | --------------------------------------------------------------------------------- |

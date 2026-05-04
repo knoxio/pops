@@ -74,7 +74,7 @@ mise docker:up        # Start services
 mise docker:logs      # Show logs
 ```
 
-**Deployment:** ansible playbooks and host provisioning live in the private [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra) repo. Pops itself only ships code, Dockerfiles, and `infra/docker-compose.yml`. Pushing to `main` publishes images to `ghcr.io/knoxio/pops-{api,shell}`; Watchtower on the server polls every 60s and rolls them out. There is no `mise ansible:*` task in this repo anymore.
+**Deployment:** pops ships code, Dockerfiles, and `infra/docker-compose.yml`. Pushing to `main` publishes images to `ghcr.io/knoxio/pops-{api,shell}`; deployers (including the knoxio home lab via [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra)) run Watchtower against those images for auto-rollout. Host provisioning (ansible, vault, networks) belongs in the deployer's own infra repo, not here.
 
 **Git Worktrees:**
 

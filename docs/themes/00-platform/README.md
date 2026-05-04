@@ -4,14 +4,14 @@
 
 ## Strategic Objective
 
-Pops is **deployable by anyone with any hardware**. The contract is the public `infra/docker-compose.yml` plus images on `ghcr.io/knoxio/pops-{api,shell}`. CI publishes images on every push to `main`; deployers (whether the knoxio home lab or a stranger) pull and run. Server-side provisioning is intentionally _not_ in this theme — it lives in the private [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra) repo and is one valid consumer of pops's deployment contract among many.
+Pops is **deployable by anyone with any hardware**. The contract is the public `infra/docker-compose.yml` plus images on `ghcr.io/knoxio/pops-{api,shell}`. CI publishes images on every push to `main`; deployers (whether the knoxio home lab or a stranger) pull and run. Host-level provisioning is the deployer's responsibility — pops does not own ansible, vault, networking, or backups. The knoxio home lab does this via [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra), one valid consumer of pops's deployment contract.
 
 ## Success Criteria
 
 - A fresh Docker host can run pops with `git clone … && docker compose -f infra/docker-compose.yml up -d` after secrets are populated
 - Every push to `main` publishes `ghcr.io/knoxio/pops-api` and `ghcr.io/knoxio/pops-shell` (multi-tag: `main`, `sha-<short>`, `vN` on tag pushes)
 - The compose file ships a Watchtower service so any deployer gets auto-rollout for free, with a documented opt-out (`POPS_IMAGE_TAG=sha-…`)
-- CI quality gates (lint, typecheck, test, format, docker-build, compose config) pass before any image is published
+- CI quality gates (lint, typecheck, test, format, docker-build, compose config) run on every PR and on every push to `main`. Image publishing runs in parallel with these gates on push to `main`; deployers that want stability over freshness pin `POPS_IMAGE_TAG` to a specific sha rather than tracking `main`
 - Database migrations apply automatically on `pops-api` startup; production guards block destructive ops
 - Cortex runtime (Redis + job queue, OpenAPI contract, vector storage) supports the application layer
 
@@ -48,8 +48,6 @@ Pops is **deployable by anyone with any hardware**. The contract is the public `
 | Watchtower polling cadence + GHCR auth | homelab-infra        |
 | Cloudflare Tunnel ingress rules        | homelab-infra        |
 | Backups of pops volumes                | homelab-infra        |
-
-If pops disappeared tomorrow, `homelab-infra` would still describe a coherent home-lab. If `homelab-infra` disappeared, pops would still be deployable by anyone with a Docker host. The split is intentional.
 
 ## Risks
 
