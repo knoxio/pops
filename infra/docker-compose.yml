@@ -212,7 +212,7 @@ services:
       # Watchtower 1.7.1 negotiates an old Docker API by default, which
       # daemons ≥ 24 reject. 1.45 is a safe minimum for modern hosts;
       # override via .env if you're on something older.
-      DOCKER_API_VERSION: ${DOCKER_API_VERSION:-1.45}
+      DOCKER_API_VERSION: '${DOCKER_API_VERSION:-1.45}'
       WATCHTOWER_LABEL_ENABLE: 'true'
       WATCHTOWER_CLEANUP: 'true'
       WATCHTOWER_INCLUDE_RESTARTING: 'true'
