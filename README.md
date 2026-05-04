@@ -124,13 +124,56 @@ cd apps/pops-shell && pnpm test:e2e
 
 ## Deploy
 
+POPS ships as Docker images on GHCR. Anyone can self-host with the compose file in this repo:
+
 ```bash
-./deploy.sh                    # Full deploy via Ansible
-./deploy.sh --dry-run          # Preview changes
-./deploy.sh --skip-checks      # Skip quality gates (faster)
+git clone https://github.com/knoxio/pops.git && cd pops
+cp .env.example .env                  # then edit: CLOUDFLARE_TUNNEL_TOKEN, POPS_DOMAIN, etc.
+
+# Create one file per secret. Replace each placeholder with the real value
+# (or leave the file empty if the corresponding integration is unused).
+mkdir -p secrets && cd secrets
+for name in claude_api_key up_bank_token up_webhook_secret notion_api_token \
+            telegram_bot_token finance_api_key tmdb_api_key thetvdb_api_key \
+            paperless_secret_key paperless_admin_password; do
+  : > "$name"
+  chmod 600 "$name"
+done
+# Now write each value, e.g.:
+#   printf '%s' 'sk-ant-…'      > claude_api_key
+#   printf '%s' 'up:yeah:xxx…'  > up_bank_token
+cd ..
+
+docker compose -f infra/docker-compose.yml pull
+docker compose -f infra/docker-compose.yml up -d
 ```
 
-Requires: Ansible (`brew install ansible`), SSH key (configured via `POPS_SSH_KEY` in `.env`), vault password (`~/.ansible/pops-vault-password`). See [`docs/DEPLOYMENT_SETUP.md`](docs/DEPLOYMENT_SETUP.md) for setup.
+### GHCR access
+
+The pops images may be public or private depending on package settings on the repository. Check at <https://github.com/knoxio?tab=packages>. If a package shows as **private**, every host pulling it (including Watchtower) needs GHCR credentials before `docker compose pull` will succeed:
+
+```bash
+# On the host that runs pops, with a GitHub PAT that has `read:packages` scope
+echo "$GHCR_PAT" | docker login ghcr.io -u <your-github-username> --password-stdin
+```
+
+This writes `~/.docker/config.json` (or `/root/.docker/config.json` for root). The compose file mounts that path read-only into Watchtower (`DOCKER_CONFIG_DIR` in `.env` controls where).
+
+If the packages are public there is no setup needed.
+
+### Secrets and rollout
+
+The compose file mounts each `secrets/<name>` file into containers via Docker file-based secrets (`/run/secrets/<name>`). All ten secret files must exist for `docker compose up` to succeed; leave a file empty if the corresponding integration is unused.
+
+Pushing to `main` builds and publishes `ghcr.io/knoxio/pops-api` and `ghcr.io/knoxio/pops-shell` (see [`.github/workflows/publish-images.yml`](.github/workflows/publish-images.yml)). The compose file ships a Watchtower service that polls GHCR every 60s and rolls out new digests for any container labelled `com.centurylinklabs.watchtower.enable=true`.
+
+Override `POPS_IMAGE_TAG` in `.env` to pin a release (e.g. `POPS_IMAGE_TAG=sha-abc1234`) or use the dev compose for local builds:
+
+```bash
+docker compose -f infra/docker-compose.dev.yml up -d --build
+```
+
+Server provisioning (Docker, secrets, Cloudflare Tunnel, backups, github runner) lives in the private [knoxio/homelab-infra](https://github.com/knoxio/homelab-infra) repo. You don't need it to run pops — only to reproduce the full home-lab host setup.
 
 ## Repo Structure
 
@@ -156,8 +199,8 @@ packages/
 └── import-tools/          # Bank import scripts (standalone)
 
 infra/
-├── ansible/               # Provisioning + deployment playbooks
-└── docker-compose.yml     # Production service definitions
+├── docker-compose.yml     # Production service definitions (uses ghcr.io images + Watchtower)
+└── docker-compose.dev.yml # Local development with build: contexts
 
 docs/
 ├── roadmap.md             # Implementation tracker

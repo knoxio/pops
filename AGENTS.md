@@ -74,15 +74,7 @@ mise docker:up        # Start services
 mise docker:logs      # Show logs
 ```
 
-**Ansible:**
-
-```bash
-mise ansible:provision    # Full server provision
-mise ansible:deploy       # Deploy services only
-mise ansible:check        # Syntax check
-mise ansible:view         # View vault contents (read-only)
-mise ansible:decrypt-env  # Decrypt vault → .env for local dev
-```
+**Deployment:** pops ships code, Dockerfiles, and `infra/docker-compose.yml`. Pushing to `main` publishes images to `ghcr.io/knoxio/pops-{api,shell}`; deployers (including the knoxio home lab via [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra)) run Watchtower against those images for auto-rollout. Host provisioning (ansible, vault, networks) belongs in the deployer's own infra repo, not here.
 
 **Git Worktrees:**
 
@@ -151,31 +143,26 @@ git worktree remove ../<branch-name> && git branch -d <branch-name>
 
 ### Docker
 
+Production compose pulls published images from `ghcr.io/knoxio/pops-*`; dev compose builds locally.
+
 ```bash
-docker compose -f infra/docker-compose.yml build           # Build all custom images
-docker compose -f infra/docker-compose.yml up -d           # Start all services
+# Production (anyone can deploy this — pulls from GHCR)
+docker compose -f infra/docker-compose.yml pull
+docker compose -f infra/docker-compose.yml up -d
+docker compose -f infra/docker-compose.yml config            # Validate compose file
+
+# Local dev (build: contexts)
+docker compose -f infra/docker-compose.dev.yml up -d --build
+
+# On-demand import tools (uses build:; needs the source tree)
 docker compose -f infra/docker-compose.yml --profile tools run --rm tools src/import-anz.ts /data/imports/anz.csv
-docker compose -f infra/docker-compose.yml config          # Validate compose file
 ```
 
-### Ansible
+Pin a release with `POPS_IMAGE_TAG=sha-abc1234` (or `v1`, `main`, etc.) in `.env`. Watchtower will only roll out tags that actually move; pinning to a fixed sha disables auto-updates for that container.
 
-```bash
-# All ansible commands must run from the infra/ansible/ directory due to relative roles_path
-cd infra/ansible
+### Server provisioning
 
-# Provision fresh server (full run)
-ansible-playbook playbooks/site.yml
-
-# Deploy/update services only (skip OS hardening)
-ansible-playbook playbooks/deploy.yml
-
-# Syntax check
-ansible-playbook playbooks/site.yml --syntax-check
-
-# Encrypt vault file (path relative to infra/ansible/)
-ansible-vault encrypt inventory/group_vars/pops_servers/vault.yml
-```
+Lives in private [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra). Run ansible from there when host config changes (Cloudflare Tunnel, secrets, networks, github runner, backups). Day-to-day app rollouts are handled by Watchtower — no ansible run required.
 
 ## Repo Structure
 
@@ -201,8 +188,8 @@ packages/
 └── import-tools/          # Bank import scripts
 
 infra/
-├── ansible/               # Infrastructure as code (Ansible playbooks + roles)
-└── docker-compose.yml     # Compose configs
+├── docker-compose.yml     # Production compose (ghcr.io images + Watchtower)
+└── docker-compose.dev.yml # Local dev compose (build: contexts)
 ```
 
 - `apps/pops-api/` — Express + tRPC API over SQLite via Drizzle ORM
@@ -211,7 +198,8 @@ infra/
 - `packages/app-*` — Domain-specific frontend packages (pages, components, hooks)
 - `packages/db-types/` — Drizzle schema definitions and inferred TypeScript types
 - `packages/import-tools/` — Bank import scripts (standalone, not in pnpm workspace)
-- `infra/ansible/` — Ansible playbooks + roles for provisioning the home server
+- `infra/docker-compose.yml` — production compose, references `ghcr.io/knoxio/pops-*` images and includes Watchtower for auto-updates
+- Server provisioning (ansible, secrets, Cloudflare Tunnel, backups) lives in private [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra)
 
 ### Docker Networks
 
@@ -223,7 +211,7 @@ pops-api bridges frontend ↔ backend. cloudflared bridges frontend ↔ document
 
 ### Secrets
 
-Production: Ansible Vault → `/opt/pops/secrets/` files → Docker Compose file-based secrets → `/run/secrets/` in containers.
+Production: Ansible Vault (in `homelab-infra`) → `/opt/pops/secrets/` files on host → Docker Compose file-based secrets → `/run/secrets/` in containers.
 Local dev: `.env` file (copy from `.env.example`), read via `process.env`.
 
 ## Architecture

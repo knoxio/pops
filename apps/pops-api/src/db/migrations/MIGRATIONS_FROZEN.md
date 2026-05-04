@@ -15,4 +15,4 @@ haven't seen them yet, but no new migrations should be added here.
 
 A CI check enforces this — PRs that add `.sql` files to this directory will fail.
 
-See [PRD-060 US-01](../../../../../docs-v2/themes/00-infrastructure/prds/060-database-operations/us-01-unify-migrations.md) for context.
+See [PRD-060 US-01](../../../../../docs/themes/00-platform/prds/060-database-operations/us-01-unify-migrations.md) for context.

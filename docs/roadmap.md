@@ -30,26 +30,36 @@ Sequenced by daily value, effort, and dependencies:
 
 Live status of every theme and epic. Updated as work completes.
 
-### Phase 0 — Infrastructure
+### Phase 0 — Platform
 
-| Epic                               | Status | Notes                               |
-| ---------------------------------- | ------ | ----------------------------------- |
-| Server provisioning & OS hardening | Done   | Ansible playbook, SSH, firewall     |
-| Docker Compose & networking        | Done   | 3 networks, 7+ services             |
-| Cloudflare Tunnel + Access         | Done   | Zero-trust, no port forwarding      |
-| CI/CD workflows                    | Done   | 8 GitHub Actions workflows          |
-| Secrets management                 | Done   | Ansible Vault → Docker secrets      |
-| Backups (Backblaze B2)             | Done   | rclone encrypted                    |
-| Monitoring & health checks         | Done   | Docker health checks on api + shell |
+> Application-side platform: CI/CD, image packaging + GHCR contract, database operations, cortex runtime. Host-side concerns (ansible, vault, networking, backups, monitoring, Watchtower) are the deployer's responsibility; the knoxio home lab implements them in [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra).
+
+| Epic                                   | Status      | Notes                                                                             |
+| -------------------------------------- | ----------- | --------------------------------------------------------------------------------- |
+| CI/CD workflows (PRD-016)              | Done        | Per-area quality + docker-build + publish-images.yml; no deploy step in this repo |
+| Application packaging & GHCR (PRD-096) | In progress | Public compose contract + Watchtower hook; release versioning (US-05) outstanding |
+| Database Operations (PRD-060)          | Done        | Drizzle on startup, production guards, pre-migration backups                      |
 
 #### Cortex Infrastructure
 
 | Epic                         | Status | Notes                                                                                           |
 | ---------------------------- | ------ | ----------------------------------------------------------------------------------------------- |
-| Redis container & connection | Done   | Redis 7 Alpine, ioredis v5, Ansible role, persistence disabled, healthcheck (#1945)             |
+| Redis container & connection | Done   | Redis 7 Alpine, ioredis v5, persistence disabled, healthcheck (#1945)                           |
 | Job queue (BullMQ)           | Done   | Typed queues, worker process, DLQ, Plex sync migrated, jobs management API (#1946)              |
 | OpenAPI secondary contract   | Done   | trpc-openapi, spec at /api/docs, CI validation, jobs router annotated (#1950)                   |
 | Vector storage (sqlite-vec)  | Done   | sqlite-vec extension, embedding schema, similarity search, chunker, background pipeline (#1948) |
+
+#### Server-side (tracked in `homelab-infra`)
+
+| PRD                                 | Status      | Repo          |
+| ----------------------------------- | ----------- | ------------- |
+| PRD-012 Hardware & OS Provisioning  | Done        | homelab-infra |
+| PRD-013 Docker Runtime              | Done        | homelab-infra |
+| PRD-014 Networking & Access         | Done        | homelab-infra |
+| PRD-015 Secrets Management          | Done        | homelab-infra |
+| PRD-017 Backups                     | Partial     | homelab-infra |
+| PRD-018 Monitoring                  | Done        | homelab-infra |
+| PRD-095 Pops Rollout via Watchtower | In progress | homelab-infra |
 
 ### Phase 1 — Foundation
 
@@ -188,19 +198,19 @@ Live status of every theme and epic. Updated as work completes.
 
 ## Phase Descriptions
 
-### Phase 0 — Infrastructure
+### Phase 0 — Platform
 
-> Provision the hardware and deployment pipeline that runs everything.
+> Application packaging, CI/CD, database operations, and the cortex runtime that supports the rest of pops. Server-side provisioning (ansible, vault, networking, backups, monitoring) lives in [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra) and is tracked there.
 
-- **Server** — Provision, harden, Docker runtime
-- **Networking** — Cloudflare Tunnel, zero-trust access, Docker networks
-- **CI/CD** — GitHub Actions, automated quality gates, deployment workflows
-- **Secrets** — Ansible Vault, Docker secrets, environment management
-- **Backups** — Encrypted offsite to Backblaze B2
+- **CI/CD** — GitHub Actions per-area quality gates + image publishing to GHCR
+- **Application packaging** — Public `infra/docker-compose.yml` + Watchtower hook so any deployer with a Docker host can run pops
+- **Database Operations** — Drizzle migrations on startup, production guards, pre-migration backups
 - **Cortex Infrastructure** — Redis (job queue + cache), BullMQ (durable workers), OpenAPI (secondary API contract), sqlite-vec (vector storage)
 
 **Depends on:** Nothing.
 **Unlocks:** Production deployment for all phases. Cortex Infrastructure unlocks the Cortex service and Phase 3 AI Layer.
+
+**Server-side (homelab-infra):** Hardware/OS, Docker runtime, Cloudflare Tunnel, Ansible Vault, Backups, Monitoring, Pops rollout via Watchtower.
 
 ### Phase 1 — Foundation
 

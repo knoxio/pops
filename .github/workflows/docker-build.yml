@@ -8,6 +8,7 @@ on:
       - "apps/pops-api/**"
       - "apps/pops-shell/**"
       - "packages/**"
+      - "infra/docker-compose*.yml"
       - "pnpm-lock.yaml"
       - "pnpm-workspace.yaml"
       - ".github/workflows/docker-build.yml"
@@ -19,6 +20,7 @@ jobs:
     if: github.event_name == 'pull_request'
     outputs:
       relevant: ${{ steps.filter.outputs.docker }}
+      compose: ${{ steps.filter.outputs.compose }}
     steps:
       - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v4
@@ -31,6 +33,9 @@ jobs:
               - 'packages/**'
               - 'pnpm-lock.yaml'
               - 'pnpm-workspace.yaml'
+              - '.github/workflows/docker-build.yml'
+            compose:
+              - 'infra/docker-compose*.yml'
               - '.github/workflows/docker-build.yml'
 
   docker-build:
@@ -53,3 +58,34 @@ jobs:
       - name: Build pops-api (builder stage)
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: docker build --target builder -f apps/pops-api/Dockerfile .
+
+  compose-validate:
+    name: Validate docker-compose
+    runs-on: ubuntu-latest
+    needs: [changes]
+    if: always()
+    steps:
+      - name: Skip — no compose changes
+        if: github.event_name == 'pull_request' && needs.changes.outputs.compose != 'true'
+        run: echo "No compose changes detected — skipping"
+
+      - uses: actions/checkout@v6
+        if: github.event_name == 'push' || needs.changes.outputs.compose == 'true'
+
+      - name: Stub secret files referenced by compose
+        if: github.event_name == 'push' || needs.changes.outputs.compose == 'true'
+        run: |
+          mkdir -p secrets
+          for f in notion_api_token up_bank_token up_webhook_secret claude_api_key \
+                   telegram_bot_token finance_api_key tmdb_api_key thetvdb_api_key \
+                   paperless_secret_key paperless_admin_password; do
+            : > "secrets/$f"
+          done
+
+      - name: Validate production compose
+        if: github.event_name == 'push' || needs.changes.outputs.compose == 'true'
+        run: docker compose -f infra/docker-compose.yml config --quiet
+
+      - name: Validate dev compose
+        if: github.event_name == 'push' || needs.changes.outputs.compose == 'true'
+        run: docker compose -f infra/docker-compose.dev.yml config --quiet
