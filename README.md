@@ -128,10 +128,26 @@ POPS ships as Docker images on GHCR. Anyone can self-host with the compose file 
 
 ```bash
 git clone https://github.com/knoxio/pops.git && cd pops
-cp .env.example .env                  # set CLOUDFLARE_TUNNEL_TOKEN, secrets, etc.
+cp .env.example .env                  # set CLOUDFLARE_TUNNEL_TOKEN etc.
+mkdir -p secrets && (
+  cd secrets
+  printf '%s' "$CLAUDE_API_KEY"           > claude_api_key
+  printf '%s' "$UP_BANK_TOKEN"            > up_bank_token
+  printf '%s' "$UP_WEBHOOK_SECRET"        > up_webhook_secret
+  printf '%s' "$NOTION_API_TOKEN"         > notion_api_token
+  printf '%s' "$TELEGRAM_BOT_TOKEN"       > telegram_bot_token
+  printf '%s' "$FINANCE_API_KEY"          > finance_api_key
+  printf '%s' "$TMDB_API_KEY"             > tmdb_api_key
+  printf '%s' "$THETVDB_API_KEY"          > thetvdb_api_key
+  printf '%s' "$PAPERLESS_SECRET_KEY"     > paperless_secret_key
+  printf '%s' "$PAPERLESS_ADMIN_PASSWORD" > paperless_admin_password
+  chmod 600 *
+)
 docker compose -f infra/docker-compose.yml pull
 docker compose -f infra/docker-compose.yml up -d
 ```
+
+The compose file mounts each `secrets/<name>` file into containers via Docker file-based secrets (`/run/secrets/<name>`). All ten secret files must exist for `docker compose up` to succeed; leave a file empty if the corresponding integration is unused.
 
 Pushing to `main` builds and publishes `ghcr.io/knoxio/pops-api` and `ghcr.io/knoxio/pops-shell` (see [`.github/workflows/publish-images.yml`](.github/workflows/publish-images.yml)). The compose file ships a Watchtower service that polls GHCR every 60s and rolls out new digests for any container labelled `com.centurylinklabs.watchtower.enable=true`.
 

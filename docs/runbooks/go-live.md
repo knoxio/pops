@@ -12,7 +12,7 @@ Before starting, verify all of the following:
 - [ ] Pre-migration backup is working (VACUUM INTO before migrations — PRD-060 US-03)
 - [ ] All pending migrations apply cleanly to a seeded test database
 - [ ] `.env` on the server has correct values (Up API token, TMDB key, Plex URL/token, Claude API key)
-- [ ] Ansible vault is up to date (`mise ansible:view` to confirm)
+- [ ] `secrets/*` files exist on the server with current values (managed via Ansible Vault in [knoxio/homelab-infra](https://github.com/knoxio/homelab-infra))
 
 ## Step 1: Deploy Fresh
 
@@ -25,9 +25,9 @@ mise db:init
 NODE_ENV=production
 
 # 3. Deploy
-mise ansible:deploy
-# or for local Docker:
-mise docker:up
+docker compose -f infra/docker-compose.yml pull
+docker compose -f infra/docker-compose.yml up -d
+# (or run `homelab-infra/scripts/deploy.sh` if host config also needs to change)
 ```
 
 ## Step 2: Import Data via UI
@@ -157,21 +157,21 @@ mise audit
 
 ## Command Reference
 
-| Command                | Safety          | When to use                                             |
-| ---------------------- | --------------- | ------------------------------------------------------- |
-| `mise dev`             | Safe            | Local development                                       |
-| `mise test`            | Safe            | Run test suite                                          |
-| `mise build`           | Safe            | Build all packages                                      |
-| `mise typecheck`       | Safe            | Type checking                                           |
-| `mise lint`            | Safe            | Linting                                                 |
-| `mise audit`           | Safe            | Check database stats                                    |
-| `mise entities:lookup` | Safe            | Rebuild entity cache                                    |
-| `mise docker:up`       | Safe            | Start/restart services                                  |
-| `mise docker:down`     | Safe            | Stop services                                           |
-| `mise ansible:deploy`  | Careful         | Deploy to server                                        |
-| `drizzle-kit generate` | Careful         | Generate schema migration                               |
-| `drizzle-kit migrate`  | Careful         | Apply pending migrations (prefer auto-apply on startup) |
-| `mise import:*`        | Careful         | Import bank data (idempotent, but verify first)         |
-| `mise db:init`         | **Destructive** | First-time setup only — never after go-live             |
-| `mise db:seed`         | **Destructive** | Dev/test only — never after go-live                     |
-| `mise db:clear`        | **Destructive** | Dev/test only — never after go-live                     |
+| Command                        | Safety          | When to use                                                                 |
+| ------------------------------ | --------------- | --------------------------------------------------------------------------- |
+| `mise dev`                     | Safe            | Local development                                                           |
+| `mise test`                    | Safe            | Run test suite                                                              |
+| `mise build`                   | Safe            | Build all packages                                                          |
+| `mise typecheck`               | Safe            | Type checking                                                               |
+| `mise lint`                    | Safe            | Linting                                                                     |
+| `mise audit`                   | Safe            | Check database stats                                                        |
+| `mise entities:lookup`         | Safe            | Rebuild entity cache                                                        |
+| `mise docker:up`               | Safe            | Start/restart services                                                      |
+| `mise docker:down`             | Safe            | Stop services                                                               |
+| `docker compose pull && up -d` | Careful         | Roll out images on the server (Watchtower normally does this automatically) |
+| `drizzle-kit generate`         | Careful         | Generate schema migration                                                   |
+| `drizzle-kit migrate`          | Careful         | Apply pending migrations (prefer auto-apply on startup)                     |
+| `mise import:*`                | Careful         | Import bank data (idempotent, but verify first)                             |
+| `mise db:init`                 | **Destructive** | First-time setup only — never after go-live                                 |
+| `mise db:seed`                 | **Destructive** | Dev/test only — never after go-live                                         |
+| `mise db:clear`                | **Destructive** | Dev/test only — never after go-live                                         |
