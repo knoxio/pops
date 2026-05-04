@@ -124,13 +124,24 @@ cd apps/pops-shell && pnpm test:e2e
 
 ## Deploy
 
+POPS ships as Docker images on GHCR. Anyone can self-host with the compose file in this repo:
+
 ```bash
-./deploy.sh                    # Full deploy via Ansible
-./deploy.sh --dry-run          # Preview changes
-./deploy.sh --skip-checks      # Skip quality gates (faster)
+git clone https://github.com/knoxio/pops.git && cd pops
+cp .env.example .env                  # set CLOUDFLARE_TUNNEL_TOKEN, secrets, etc.
+docker compose -f infra/docker-compose.yml pull
+docker compose -f infra/docker-compose.yml up -d
 ```
 
-Requires: Ansible (`brew install ansible`), SSH key (configured via `POPS_SSH_KEY` in `.env`), vault password (`~/.ansible/pops-vault-password`). See [`docs/DEPLOYMENT_SETUP.md`](docs/DEPLOYMENT_SETUP.md) for setup.
+Pushing to `main` builds and publishes `ghcr.io/knoxio/pops-api` and `ghcr.io/knoxio/pops-shell` (see [`.github/workflows/publish-images.yml`](.github/workflows/publish-images.yml)). The compose file ships a Watchtower service that polls GHCR every 60s and rolls out new digests for any container labelled `com.centurylinklabs.watchtower.enable=true`.
+
+Override `POPS_IMAGE_TAG` in `.env` to pin a release (e.g. `POPS_IMAGE_TAG=sha-abc1234`) or use the dev compose for local builds:
+
+```bash
+docker compose -f infra/docker-compose.dev.yml up -d --build
+```
+
+Server provisioning (Docker, secrets, Cloudflare Tunnel, backups, github runner) lives in the private [knoxio/homelab-infra](https://github.com/knoxio/homelab-infra) repo. You don't need it to run pops — only to reproduce the full home-lab host setup.
 
 ## Repo Structure
 
@@ -156,8 +167,8 @@ packages/
 └── import-tools/          # Bank import scripts (standalone)
 
 infra/
-├── ansible/               # Provisioning + deployment playbooks
-└── docker-compose.yml     # Production service definitions
+├── docker-compose.yml     # Production service definitions (uses ghcr.io images + Watchtower)
+└── docker-compose.dev.yml # Local development with build: contexts
 
 docs/
 ├── roadmap.md             # Implementation tracker

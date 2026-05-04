@@ -19,13 +19,11 @@ services:
   # ── BACKEND ──────────────────────────────────────────────────────
 
   pops-api:
-    build:
-      context: ..
-      dockerfile: apps/pops-api/Dockerfile
-      args:
-        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    image: ghcr.io/knoxio/pops-api:${POPS_IMAGE_TAG:-main}
     container_name: pops-api
     restart: unless-stopped
+    labels:
+      com.centurylinklabs.watchtower.enable: 'true'
     networks:
       - frontend
       - backend
@@ -66,13 +64,11 @@ services:
       retries: 3
 
   pops-worker:
-    build:
-      context: ..
-      dockerfile: apps/pops-api/Dockerfile
-      args:
-        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    image: ghcr.io/knoxio/pops-api:${POPS_IMAGE_TAG:-main}
     container_name: pops-worker
     restart: unless-stopped
+    labels:
+      com.centurylinklabs.watchtower.enable: 'true'
     command: ['node', 'dist/worker.js']
     networks:
       - backend
@@ -97,13 +93,11 @@ services:
 
   # ── FRONTEND ─────────────────────────────────────────────────────
   pops-shell:
-    build:
-      context: ..
-      dockerfile: apps/pops-shell/Dockerfile
-      args:
-        BUILD_VERSION: ${BUILD_VERSION:-dev}
+    image: ghcr.io/knoxio/pops-shell:${POPS_IMAGE_TAG:-main}
     container_name: pops-shell
     restart: unless-stopped
+    labels:
+      com.centurylinklabs.watchtower.enable: 'true'
     networks:
       - frontend
     expose:
@@ -196,6 +190,29 @@ services:
       - frontend
       - documents
     command: tunnel --no-autoupdate run --token ${CLOUDFLARE_TUNNEL_TOKEN}
+
+  # ── AUTO-UPDATE ──────────────────────────────────────────────────
+  # Polls GHCR for new digests of pops-api / pops-worker / pops-shell
+  # (any container with com.centurylinklabs.watchtower.enable=true) and
+  # rolls them out automatically. Leave WATCHTOWER_POLL_INTERVAL low for
+  # near-CI deploys; raise it if you'd rather batch updates.
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: pops-watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      # Mount host docker config for GHCR auth (private images).
+      # Create with: docker login ghcr.io -u <user> --password-stdin <<<$PAT
+      - ${DOCKER_CONFIG_DIR:-/root/.docker}:/config:ro
+    environment:
+      DOCKER_CONFIG: /config
+      WATCHTOWER_LABEL_ENABLE: 'true'
+      WATCHTOWER_CLEANUP: 'true'
+      WATCHTOWER_INCLUDE_RESTARTING: 'true'
+      WATCHTOWER_POLL_INTERVAL: '60'
+      WATCHTOWER_ROLLING_RESTART: 'true'
+      TZ: ${TZ:-UTC}
 
   # ── TOOLS (on-demand) ───────────────────────────────────────────
   tools:

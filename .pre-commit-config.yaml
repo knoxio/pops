@@ -4,26 +4,6 @@
 # Run manually: pre-commit run --all-files
 
 repos:
-  # YAML linting
-  - repo: https://github.com/adrienverge/yamllint
-    rev: v1.35.1
-    hooks:
-      - id: yamllint
-        name: YAML Lint
-        args: [-c=.yamllint]
-        files: ^infra/ansible/
-
-  # Ansible linting
-  - repo: https://github.com/ansible/ansible-lint
-    rev: v24.2.0
-    hooks:
-      - id: ansible-lint
-        name: Ansible Lint
-        files: ^infra/ansible/
-        args:
-          - --profile=production
-          - --config-file=.ansible-lint
-
   # General checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.5.0
@@ -37,7 +17,6 @@ repos:
       - id: check-yaml
         name: Check YAML Syntax
         args: [--allow-multiple-documents]
-        exclude: ^infra/ansible/inventory/group_vars/pops_servers/vault.yml$
       - id: check-added-large-files
         name: Check for Large Files
         args: [--maxkb=1000]
@@ -58,7 +37,6 @@ repos:
         args:
           - --baseline
           - .secrets.baseline
-        exclude: ^infra/ansible/inventory/group_vars/pops_servers/vault.yml$
 
 # CI-specific configuration
 ci:
