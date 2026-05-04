@@ -91,7 +91,7 @@ docs/
 
 | Type         | Pattern                       | Example                                               |
 | ------------ | ----------------------------- | ----------------------------------------------------- |
-| Theme folder | `NN-<name>/`                  | `00-infrastructure/`, `01-foundation/`, `03-media/`   |
+| Theme folder | `NN-<name>/`                  | `00-platform/`, `01-foundation/`, `03-media/`         |
 | Epic file    | `NN-slug.md`                  | `00-data-model.md`, `03-connections-graph.md`         |
 | PRD folder   | `NNN-slug/`                   | `007-app-theme-colour-propagation/`, `015-plex-sync/` |
 | PRD file     | `README.md` inside PRD folder | `prds/007-app-theme-colour-propagation/README.md`     |

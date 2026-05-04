@@ -124,7 +124,7 @@ Target **Option A** (no infra in POPS), phased:
 
 ## Next steps if we proceed
 
-- Open an epic under theme `00-infrastructure`: "Extract deployment to mu-deploy".
+- Open an epic under theme `00-platform`: "Extract deployment to mu-deploy" (now superseded — extraction landed as `knoxio/homelab-infra`).
 - PRDs: (1) mu-deploy repo scaffolding, (2) DEPLOY.md / deploy.yaml contract, (3) GHCR image publish + tagging, (4) auto-deploy webhook + pause flag, (5) rollback via mu-deploy CLI.
 - Snapshot the current vault before moving anything.
 - Confirm the self-hosted runner can be re-registered against `mu-deploy` without losing history.
