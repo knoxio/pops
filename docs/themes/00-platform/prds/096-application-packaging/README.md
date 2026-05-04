@@ -70,6 +70,15 @@ The compose file ships a Watchtower service. Default behavior:
 - Rolling restart, cleans up old image layers
 - Reads docker auth from `${DOCKER_CONFIG_DIR:-/root/.docker}/config.json`
 
+### Deployer env knobs
+
+| Variable             | Default         | When to override                                                                                                                                                            |
+| -------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POPS_IMAGE_TAG`     | `main`          | Pin to a specific build (e.g. `sha-abc1234` or `vN`) to disable auto-update for that container. See `.env.example`.                                                         |
+| `DOCKER_CONFIG_DIR`  | `/root/.docker` | Path on the host where docker login credentials live; only relevant if you've forked pops and made your GHCR packages private (knoxio's are public — no auth needed).       |
+| `DOCKER_API_VERSION` | `1.45`          | Docker API version Watchtower negotiates. 1.45 works on any Docker ≥ 24. Drop to 1.40 only if your host runs an older daemon — Watchtower 1.7.1's built-in 1.24 is too old. |
+| `TZ`                 | `UTC`           | Timezone passed to Watchtower for log timestamps + scheduled poll display.                                                                                                  |
+
 Disable Watchtower entirely by removing the service from a deployer-local compose override, or by stopping/removing the container. Pin a specific tag to disable auto-updates while keeping Watchtower running:
 
 ```bash
