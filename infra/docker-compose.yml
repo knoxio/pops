@@ -197,7 +197,9 @@ services:
   # rolls them out automatically. Leave WATCHTOWER_POLL_INTERVAL low for
   # near-CI deploys; raise it if you'd rather batch updates.
   watchtower:
-    image: containrrr/watchtower:latest
+    # Pin to a specific release; latest would let the auto-updater silently
+    # change underneath production and break rollouts independently of pops.
+    image: containrrr/watchtower:1.7.1
     container_name: pops-watchtower
     restart: unless-stopped
     volumes:

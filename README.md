@@ -147,6 +147,21 @@ docker compose -f infra/docker-compose.yml pull
 docker compose -f infra/docker-compose.yml up -d
 ```
 
+### GHCR access
+
+The pops images may be public or private depending on package settings on the repository. Check at <https://github.com/knoxio?tab=packages>. If a package shows as **private**, every host pulling it (including Watchtower) needs GHCR credentials before `docker compose pull` will succeed:
+
+```bash
+# On the host that runs pops, with a GitHub PAT that has `read:packages` scope
+echo "$GHCR_PAT" | docker login ghcr.io -u <your-github-username> --password-stdin
+```
+
+This writes `~/.docker/config.json` (or `/root/.docker/config.json` for root). The compose file mounts that path read-only into Watchtower (`DOCKER_CONFIG_DIR` in `.env` controls where).
+
+If the packages are public there is no setup needed.
+
+### Secrets and rollout
+
 The compose file mounts each `secrets/<name>` file into containers via Docker file-based secrets (`/run/secrets/<name>`). All ten secret files must exist for `docker compose up` to succeed; leave a file empty if the corresponding integration is unused.
 
 Pushing to `main` builds and publishes `ghcr.io/knoxio/pops-api` and `ghcr.io/knoxio/pops-shell` (see [`.github/workflows/publish-images.yml`](.github/workflows/publish-images.yml)). The compose file ships a Watchtower service that polls GHCR every 60s and rolls out new digests for any container labelled `com.centurylinklabs.watchtower.enable=true`.
