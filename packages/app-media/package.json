@@ -16,13 +16,13 @@
     "@pops/api-client": "workspace:*",
     "@pops/navigation": "workspace:*",
     "@pops/ui": "workspace:*",
-    "@tanstack/react-query": "5.100.6",
+    "@tanstack/react-query": "5.100.9",
     "i18next": "^26.0.8",
-    "lucide-react": "^1.12.0",
+    "lucide-react": "^1.14.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-i18next": "^17.0.6",
-    "react-router": "^7.14.2",
+    "react-router": "^7.15.0",
     "recharts": "^3.8.1",
     "sonner": "^2.0.7"
   },
@@ -32,7 +32,7 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "jsdom": "^29.1.0",
+    "jsdom": "^29.1.1",
     "typescript": "^6.0.3",
     "vitest": "^4.1.5"
   }
