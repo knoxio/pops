@@ -6,6 +6,7 @@
     "build": "turbo build",
     "typecheck": "turbo typecheck",
     "test": "turbo test",
+    "test:coverage": "turbo test:coverage",
     "lint": "oxlint --type-aware",
     "lint:fix": "oxlint --type-aware --fix",
     "format": "oxfmt --write .",

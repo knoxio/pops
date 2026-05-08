@@ -7,9 +7,14 @@ export default {
   '*.{js,jsx,ts,tsx,mjs,cjs}': (filenames) => {
     const formatFiles = filenames.map(esc).join(' ');
 
-    // 1. oxlint --fix  (auto-fix lint issues)
+    // 1. oxlint --fix  (auto-fix lint issues; --no-error-on-unmatched-pattern
+    //    so commits touching only lint-ignored files (e.g. *.config.ts)
+    //    still pass through the pre-commit hook)
     // 2. oxfmt --write (auto-fix formatting and import sort)
-    return [`oxlint --fix ${formatFiles}`, `oxfmt --write ${formatFiles}`];
+    return [
+      `oxlint --fix --no-error-on-unmatched-pattern ${formatFiles}`,
+      `oxfmt --write ${formatFiles}`,
+    ];
   },
 
   '*.{json,md,css}': (filenames) => {
