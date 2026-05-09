@@ -17,4 +17,4 @@ As a developer, I want a pnpm monorepo configured with workspace packages so tha
 
 ## Notes
 
-All packages under `apps/*` and `packages/*` (including import-tools) are part of the pnpm workspace and share a single dependency tree.
+All packages under `apps/*` and `packages/*` are part of the pnpm workspace and share a single dependency tree.

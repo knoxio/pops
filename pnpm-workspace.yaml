@@ -10,4 +10,3 @@ packages:
   - 'packages/types'
   - 'packages/navigation'
   - 'packages/ui'
-  - 'packages/import-tools'

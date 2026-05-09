@@ -5,7 +5,7 @@
 
 ## Overview
 
-Pops is a multi-app monorepo (`pops-api`, `pops-shell`, `pops-worker` sharing the api image, plus the on-demand `pops-tools` for imports). This PRD defines how those services are packaged as Docker images, published to GHCR, and consumed by any deployer via the public `infra/docker-compose.yml` — without that deployer needing to clone the source tree or run any build step.
+Pops is a multi-app monorepo (`pops-api`, `pops-shell`, `pops-worker` sharing the api image). This PRD defines how those services are packaged as Docker images, published to GHCR, and consumed by any deployer via the public `infra/docker-compose.yml` — without that deployer needing to clone the source tree or run any build step.
 
 ## The contract a deployer relies on
 
@@ -26,7 +26,7 @@ Then `docker compose -f infra/docker-compose.yml pull && up -d` produces a runni
 | `ghcr.io/knoxio/pops-api`   | `apps/pops-api/Dockerfile`   | `main` (latest from main branch), `sha-<short>`, `vN` |
 | `ghcr.io/knoxio/pops-shell` | `apps/pops-shell/Dockerfile` | `main`, `sha-<short>`, `vN`                           |
 
-`pops-worker` shares the `pops-api` image with a different `command:`. `pops-tools` builds locally on the deployer (via `--profile tools`) since it's an interactive import tool not run as a service.
+`pops-worker` shares the `pops-api` image with a different `command:`.
 
 Publishing is automatic on every push to `main` (see [`publish-images.yml`](../../../../.github/workflows/publish-images.yml)). Tag pushes (`vN`) trigger an additional semver-tagged publish.
 
@@ -102,7 +102,6 @@ Watchtower will not roll forward as long as the resolved digest doesn't move.
 
 - **First push to a private GHCR package**: GHCR creates the package as private by default. Deployers either need GHCR auth or someone (the package owner) needs to flip visibility. CI doesn't enforce visibility — check after the first push.
 - **Compose schema drift between Docker versions**: We target Docker Compose v2 (the plugin shipped with Docker 20.10+). Older `docker-compose v1` is unsupported. Compose-validate CI runs on `ubuntu-latest`, which tracks current.
-- **Tools image not published**: `pops-tools` builds locally on the deployer via `--profile tools` because it's an interactive import script, not a service. Future work: publish a `pops-tools` image too so the source tree isn't required.
 - **moltbot config bind-mounts**: the `moltbot` profile mounts `apps/moltbot/config` and `apps/moltbot/skills` from the source tree. Deployers using moltbot need the source tree present (or a future US to publish a moltbot config package).
 
 ## References

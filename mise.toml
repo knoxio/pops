@@ -126,79 +126,6 @@ dir = "apps/pops-api"
 run = "pnpm exec drizzle-kit studio"
 
 # ============================================================================
-# Import Tools (run from packages/import-tools)
-# ============================================================================
-
-[tasks."import:anz"]
-description = "Import ANZ CSV (dry-run by default, add --execute to write)"
-dir = "packages/import-tools"
-run = """
-if [ -z "$CSV_PATH" ]; then
-  echo "Error: CSV_PATH not set. Usage: CSV_PATH=path/to/file.csv mise import:anz [--execute]"
-  exit 1
-fi
-pnpm import:anz --csv "$CSV_PATH" "$@"
-"""
-
-[tasks."import:amex"]
-description = "Import Amex CSV (dry-run by default, add --execute to write)"
-dir = "packages/import-tools"
-run = """
-if [ -z "$CSV_PATH" ]; then
-  echo "Error: CSV_PATH not set. Usage: CSV_PATH=path/to/file.csv mise import:amex [--execute]"
-  exit 1
-fi
-pnpm import:amex --csv "$CSV_PATH" "$@"
-"""
-
-[tasks."import:ing"]
-description = "Import ING CSV (dry-run by default, add --execute to write)"
-dir = "packages/import-tools"
-run = """
-if [ -z "$CSV_PATH" ]; then
-  echo "Error: CSV_PATH not set. Usage: CSV_PATH=path/to/file.csv mise import:ing [--execute]"
-  exit 1
-fi
-pnpm import:ing --csv "$CSV_PATH" "$@"
-"""
-
-[tasks."import:up"]
-description = "Import Up Bank batch since date (dry-run by default, add --execute to write)"
-dir = "packages/import-tools"
-run = """
-if [ -z "$SINCE_DATE" ]; then
-  echo "Error: SINCE_DATE not set. Usage: SINCE_DATE=2026-01-01 mise import:up [--execute]"
-  exit 1
-fi
-pnpm import:up --since "$SINCE_DATE" "$@"
-"""
-
-[tasks."match:transfers"]
-description = "Link transfer pairs (dry-run by default, add --execute to write)"
-dir = "packages/import-tools"
-run = "pnpm match:transfers $@"
-
-[tasks."match:novated"]
-description = "Link novated lease pairs (dry-run by default, add --execute to write)"
-dir = "packages/import-tools"
-run = "pnpm match:novated $@"
-
-[tasks."entities:create"]
-description = "Batch create entities (dry-run by default, add --execute to write)"
-dir = "packages/import-tools"
-run = "pnpm entities:create $@"
-
-[tasks."entities:lookup"]
-description = "Rebuild entity lookup cache"
-dir = "packages/import-tools"
-run = "pnpm entities:lookup"
-
-[tasks.audit]
-description = "Show database statistics"
-dir = "packages/import-tools"
-run = "pnpm audit"
-
-# ============================================================================
 # Docker Operations
 # ============================================================================
 
@@ -221,10 +148,6 @@ run = "docker compose -f infra/docker-compose.dev.yml logs -f $@"
 [tasks."docker:config"]
 description = "Validate Docker Compose configuration"
 run = "docker compose -f infra/docker-compose.dev.yml config"
-
-[tasks."docker:import"]
-description = "Run import tool via Docker (e.g., mise docker:import src/import-anz.ts /data/imports/anz.csv)"
-run = "docker compose -f infra/docker-compose.dev.yml --profile tools run --rm tools $@"
 
 # ============================================================================
 # Redis (local development)

@@ -195,8 +195,7 @@ packages/
 ├── navigation/            # App navigation config
 ├── widgets/               # Dashboard widgets
 ├── types/                 # Cross-package type definitions
-├── test-utils/            # Test helpers
-└── import-tools/          # Bank import scripts (standalone)
+└── test-utils/            # Test helpers
 
 infra/
 ├── docker-compose.yml     # Production service definitions (uses ghcr.io images + Watchtower)

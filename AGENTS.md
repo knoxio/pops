@@ -43,17 +43,6 @@ mise db:clear         # Clear all data (preserves schema)
 mise db:seed          # Seed with comprehensive test data (78 records)
 ```
 
-**Import Tools:**
-
-```bash
-CSV_PATH=file.csv mise import:anz --execute
-CSV_PATH=file.csv mise import:amex --execute
-SINCE_DATE=2026-01-01 mise import:up --execute
-
-mise entities:lookup  # Rebuild entity cache
-mise audit            # Show DB stats
-```
-
 **Redis (local development):**
 
 Redis is optional for development. The API starts without it (degraded mode: queues and cache disabled). Only start Redis when working on job queue or cache features.
@@ -107,24 +96,6 @@ cd apps/<service> && pnpm test:watch                # watch mode
 
 Do NOT run `pnpm test:integration` locally. CI handles these automatically.
 
-### Tools (import scripts)
-
-```bash
-cd packages/import-tools && pnpm install
-
-pnpm import:anz --csv path/to/file.csv --execute           # ANZ import
-pnpm import:amex --csv path/to/file.csv --execute          # Amex import
-pnpm import:ing --csv path/to/file.csv --execute           # ING import
-pnpm import:up --since 2026-01-01 --execute                # Up Bank batch
-pnpm match:transfers --execute                              # Link transfer pairs
-pnpm match:novated --execute                                # Link novated pairs
-pnpm entities:create --execute                              # Batch create entities
-pnpm entities:lookup                                        # Rebuild entity lookup
-pnpm audit                                                  # DB statistics
-```
-
-Omit `--execute` for dry-run mode (no writes).
-
 ### Git Worktrees (manual)
 
 ```bash
@@ -153,9 +124,6 @@ docker compose -f infra/docker-compose.yml config            # Validate compose 
 
 # Local dev (build: contexts)
 docker compose -f infra/docker-compose.dev.yml up -d --build
-
-# On-demand import tools (uses build:; needs the source tree)
-docker compose -f infra/docker-compose.yml --profile tools run --rm tools src/import-anz.ts /data/imports/anz.csv
 ```
 
 Pin a release with `POPS_IMAGE_TAG=sha-abc1234` (or `v1`, `main`, etc.) in `.env`. Watchtower will only roll out tags that actually move; pinning to a fixed sha disables auto-updates for that container.
@@ -184,8 +152,7 @@ packages/
 ├── widgets/               # Shared: Dashboard widgets
 ├── types/                 # Shared: Cross-package type definitions
 ├── test-utils/            # Shared: Test helpers
-├── api-client/            # Shared: tRPC client setup
-└── import-tools/          # Bank import scripts
+└── api-client/            # Shared: tRPC client setup
 
 infra/
 ├── docker-compose.yml     # Production compose (ghcr.io images + Watchtower)
@@ -197,7 +164,6 @@ infra/
 - `apps/moltbot/` — Config + custom finance skill for Moltbot (no Dockerfile, uses upstream image)
 - `packages/app-*` — Domain-specific frontend packages (pages, components, hooks)
 - `packages/db-types/` — Drizzle schema definitions and inferred TypeScript types
-- `packages/import-tools/` — Bank import scripts (standalone, not in pnpm workspace)
 - `infra/docker-compose.yml` — production compose, references `ghcr.io/knoxio/pops-*` images and includes Watchtower for auto-updates
 - Server provisioning (ansible, secrets, Cloudflare Tunnel, backups) lives in private [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra)
 
@@ -302,7 +268,7 @@ When a movie is added to the POPS library, automatically checks Plex Discover cl
 
 ## Import Pipeline
 
-Two interfaces: the **Import Wizard** (7-step UI in `app-finance`) and **CLI scripts** (`packages/import-tools/`).
+The user-facing entry point is the **Import Wizard** (7-step UI in `app-finance`), which drives the import pipeline in `apps/pops-api/src/modules/finance/imports/`.
 
 ### Entity Matching Chain (`apps/pops-api/src/modules/finance/imports/`)
 

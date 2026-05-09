@@ -243,16 +243,6 @@
       }
     },
     {
-      "files": ["packages/import-tools/src/**/*.ts"],
-      "rules": {
-        "no-console": "off",
-        "typescript/explicit-function-return-type": "off",
-        "typescript/explicit-module-boundary-types": "off",
-        "typescript/require-await": "off",
-        "typescript/no-unnecessary-type-assertion": "error"
-      }
-    },
-    {
       "files": [
         "apps/pops-shell/src/**/*.{ts,tsx}",
         "packages/ui/src/**/*.{ts,tsx}",

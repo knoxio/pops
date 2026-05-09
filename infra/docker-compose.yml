@@ -220,24 +220,6 @@ services:
       WATCHTOWER_ROLLING_RESTART: 'true'
       TZ: ${TZ:-UTC}
 
-  # ── TOOLS (on-demand) ───────────────────────────────────────────
-  tools:
-    build: ../packages/import-tools
-    container_name: pops-tools
-    profiles:
-      - tools
-    networks:
-      - backend
-    volumes:
-      - sqlite-data:/data/sqlite
-      - ../packages/import-tools/data:/data/imports
-    secrets:
-      - notion_api_token
-      - claude_api_key
-      - up_bank_token
-    environment:
-      SQLITE_PATH: /data/sqlite/pops.db
-
 networks:
   frontend:
     name: pops-frontend

@@ -24,7 +24,6 @@ GitHub Actions workflows for the pops repo. Quality gates run on every PR and on
 | `db-types-quality.yml`   | PR / push (`packages/db-types`)      | Typecheck, lint                                                     |
 | `api-client-quality.yml` | PR / push (`packages/api-client`)    | Typecheck, lint                                                     |
 | `navigation-quality.yml` | PR / push (`packages/navigation`)    | Typecheck, lint                                                     |
-| `tools-quality.yml`      | PR / push (`packages/import-tools`)  | Lint, test                                                          |
 | `workflows-quality.yml`  | PR / push (`.github/workflows/**`)   | actionlint                                                          |
 | `docker-build.yml`       | PR / push (Dockerfiles, compose)     | `docker build` per Dockerfile + `docker compose config` per compose |
 | `publish-images.yml`     | Push to main + tag pushes            | Build + push to `ghcr.io/knoxio/pops-{api,shell}` (see PRD-096)     |
