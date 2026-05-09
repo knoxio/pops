@@ -1,6 +1,7 @@
 # US-02: Rule definitions
 
 > PRD: [Module Import Boundaries](README.md)
+> Status: In progress
 
 ## Description
 

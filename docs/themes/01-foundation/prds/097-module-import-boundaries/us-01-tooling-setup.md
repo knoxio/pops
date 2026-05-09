@@ -1,6 +1,7 @@
 # US-01: Tooling setup
 
 > PRD: [Module Import Boundaries](README.md)
+> Status: In progress
 
 ## Description
 

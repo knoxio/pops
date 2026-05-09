@@ -1,6 +1,7 @@
 # US-03: Baseline and CI integration
 
 > PRD: [Module Import Boundaries](README.md)
+> Status: In progress
 
 ## Description
 
