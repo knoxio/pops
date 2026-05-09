@@ -1,6 +1,3 @@
-import { Suspense } from 'react';
-import { createBrowserRouter, Link, Navigate, Outlet } from 'react-router';
-
 /**
  * Shell router configuration
  *
@@ -10,6 +7,9 @@ import { createBrowserRouter, Link, Navigate, Outlet } from 'react-router';
  * The former /ai top-level route has been merged into /cerebrum/admin/*
  * (see issue #2333). Legacy /ai/* URLs redirect to /cerebrum/admin/*.
  */
+import { Suspense } from 'react';
+import { createBrowserRouter, Link, Navigate, Outlet } from 'react-router';
+
 import { routes as aiAdminRoutes } from '@pops/app-ai';
 import { routes as cerebrumRoutes } from '@pops/app-cerebrum';
 import { routes as financeRoutes } from '@pops/app-finance';
@@ -23,6 +23,10 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { RequireModule } from './RequireModule';
 
+const SuspenseFallback = (
+  <div className="flex items-center justify-center h-64 text-muted-foreground">Loading…</div>
+);
+
 /**
  * Wrap lazy-loaded routes with Suspense so React can show a fallback
  * while the chunk loads.
@@ -31,15 +35,7 @@ const withSuspense = (routes: typeof financeRoutes) =>
   routes.map((route) => ({
     ...route,
     element: route.element ? (
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center h-64 text-muted-foreground">
-            Loading…
-          </div>
-        }
-      >
-        {route.element}
-      </Suspense>
+      <Suspense fallback={SuspenseFallback}>{route.element}</Suspense>
     ) : undefined,
   }));
 
@@ -87,13 +83,7 @@ export const router = createBrowserRouter([
           {
             path: 'admin',
             element: (
-              <Suspense
-                fallback={
-                  <div className="flex items-center justify-center h-64 text-muted-foreground">
-                    Loading…
-                  </div>
-                }
-              >
+              <Suspense fallback={SuspenseFallback}>
                 <Outlet />
               </Suspense>
             ),
