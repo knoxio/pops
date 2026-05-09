@@ -43,3 +43,16 @@ Key reasons:
 - Cross-app navigation is instant (SPA, no full page reload)
 - Build time scales with total code, but Vite is fast and dev mode only processes the active route
 - Apps import from `@pops/ui` and shared packages, never from other apps. Cross-app communication goes through the API or shared stores in the shell
+
+## Surface Categories
+
+A module exposes one or more surfaces. The shell renders them differently:
+
+| Surface   | Render path                                                                                                 |
+| --------- | ----------------------------------------------------------------------------------------------------------- |
+| `app`     | Page-routed module owning its navigation and pages (e.g. finance, media, inventory, ai, cerebrum)           |
+| `overlay` | Mounted into a shell chrome slot; summoned by shortcut/icon; no dedicated `/path` (e.g. ego floating panel) |
+
+A module may declare multiple surfaces. `ego` is **dual-surface** — it has both a `/cerebrum/chat` route (`app`) and a system-wide overlay panel (`overlay`) sharing tRPC state. Modules express this via `surfaces: ['app', 'overlay']` on their `ModuleManifest`.
+
+The set of installed modules is a runtime decision driven by the `POPS_APPS` and `POPS_OVERLAYS` env vars; the shell composes routers and routes from the manifests of installed modules only. See [Epic 10 — Modular Module Runtime](../themes/01-foundation/epics/10-modular-module-runtime.md), [PRD-098 (ModuleManifest)](../themes/01-foundation/prds/098-module-manifest/README.md), and [PRD-100 (Tier 1 loader)](../themes/01-foundation/prds/100-module-runtime-tier-1/README.md).
