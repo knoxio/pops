@@ -14,6 +14,30 @@ import type { AppRouter } from '@pops/api';
 export const trpc = createTRPCReact<AppRouter>();
 
 /**
+ * Without a timeout a hung backend leaves tRPC requests pending forever and
+ * the UI stuck on skeleton loaders. 15s is long enough for slow queries but
+ * short enough that the user notices something is wrong.
+ */
+export const TRPC_FETCH_TIMEOUT_MS = 15_000;
+
+function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort('timeout'), TRPC_FETCH_TIMEOUT_MS);
+
+  // Chain the caller's signal (e.g. React Query cancellation) with our timeout
+  // so aborting either source aborts the request.
+  const callerSignal = init?.signal;
+  if (callerSignal) {
+    if (callerSignal.aborted) controller.abort(callerSignal.reason);
+    else callerSignal.addEventListener('abort', () => controller.abort(callerSignal.reason));
+  }
+
+  return fetch(input, { ...init, signal: controller.signal }).finally(() =>
+    clearTimeout(timeoutId)
+  );
+}
+
+/**
  * tRPC client instance with httpBatchLink.
  * Batches multiple requests into a single HTTP call for better performance.
  * The shell passes this to <trpc.Provider>.
@@ -23,8 +47,40 @@ export const trpcClient = trpc.createClient({
     httpBatchLink({
       url: '/trpc', // Proxied by Vite to localhost:3000 in dev
       maxURLLength: 2083,
+      fetch: fetchWithTimeout,
     }),
   ],
 });
+
+const NETWORK_ERROR_FRAGMENTS = [
+  'Failed to fetch',
+  'NetworkError',
+  'Network request failed',
+  'aborted',
+  'timeout',
+];
+
+function messageLooksLikeNetworkFailure(err: object): boolean {
+  if (!('message' in err) || typeof err.message !== 'string') return false;
+  return NETWORK_ERROR_FRAGMENTS.some((fragment) => (err.message as string).includes(fragment));
+}
+
+/**
+ * Heuristic: is this error a network/transport-level failure (server
+ * unreachable, request aborted, fetch threw) rather than a tRPC error
+ * returned by the server with a real status code?
+ *
+ * Server-returned errors have a `data` field with `httpStatus`. Network
+ * failures don't make it that far, so they bubble up as a TRPCClientError
+ * wrapping a fetch error or AbortError.
+ */
+export function isNetworkError(err: unknown): boolean {
+  if (!err || typeof err !== 'object') return false;
+  if ('data' in err && err.data != null) return false;
+  if (messageLooksLikeNetworkFailure(err)) return true;
+  const cause = 'cause' in err ? err.cause : undefined;
+  if (cause instanceof Error) return isNetworkError(cause);
+  return false;
+}
 
 export type { AppRouter };
