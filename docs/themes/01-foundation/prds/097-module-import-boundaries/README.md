@@ -1,6 +1,7 @@
 # PRD-097: Module Import Boundaries
 
 > Epic: [Modular Module Runtime](../../epics/10-modular-module-runtime.md)
+> Status: In progress
 
 ## Overview
 
