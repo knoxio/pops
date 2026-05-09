@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { createBrowserRouter, Link, Navigate } from 'react-router';
+import { createBrowserRouter, Link, Navigate, Outlet } from 'react-router';
 
 /**
  * Shell router configuration
@@ -10,6 +10,7 @@ import { createBrowserRouter, Link, Navigate } from 'react-router';
  * The former /ai top-level route has been merged into /cerebrum/admin/*
  * (see issue #2333). Legacy /ai/* URLs redirect to /cerebrum/admin/*.
  */
+import { routes as aiAdminRoutes } from '@pops/app-ai';
 import { routes as cerebrumRoutes } from '@pops/app-cerebrum';
 import { routes as financeRoutes } from '@pops/app-finance';
 import { routes as inventoryRoutes } from '@pops/app-inventory';
@@ -78,7 +79,27 @@ export const router = createBrowserRouter([
       {
         path: 'cerebrum',
         element: <RequireModule moduleId="cerebrum" />,
-        children: withSuspense(cerebrumRoutes),
+        children: [
+          ...withSuspense(cerebrumRoutes),
+          // /cerebrum/admin/* surfaces app-ai pages — composed here in
+          // the shell rather than inside @pops/app-cerebrum (PRD-097
+          // boundaries forbid app-* → app-* imports).
+          {
+            path: 'admin',
+            element: (
+              <Suspense
+                fallback={
+                  <div className="flex items-center justify-center h-64 text-muted-foreground">
+                    Loading…
+                  </div>
+                }
+              >
+                <Outlet />
+              </Suspense>
+            ),
+            children: aiAdminRoutes,
+          },
+        ],
       },
       // Legacy /ai/* redirects — keep bookmarks and deep-links working.
       { path: 'ai', element: <Navigate to="/cerebrum" replace /> },

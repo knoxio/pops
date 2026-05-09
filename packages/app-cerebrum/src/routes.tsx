@@ -5,12 +5,12 @@
  * these via @pops/app-cerebrum and mounts them under /cerebrum/*.
  *
  * AI admin pages (usage, prompts, rules, cache) are mounted under
- * /cerebrum/admin/* — imported from @pops/app-ai.
+ * /cerebrum/admin/* by the shell, which composes them from
+ * @pops/app-ai. Cross-app composition lives in the shell, not here
+ * — this package may not import from another @pops/app-* per
+ * PRD-097 boundaries.
  */
-import { lazy, Suspense } from 'react';
-import { Outlet } from 'react-router';
-
-import { routes as aiAdminRoutes } from '@pops/app-ai';
+import { lazy } from 'react';
 
 import type { RouteObject } from 'react-router';
 
@@ -71,19 +71,6 @@ export const routes: RouteObject[] = [
   { path: 'chat', element: <ChatPage /> },
   { path: 'nudges', element: <NudgesPage /> },
   { path: 'proposals', element: <ProposalQueuePage /> },
-  {
-    path: 'admin',
-    element: (
-      <Suspense
-        fallback={
-          <div className="flex items-center justify-center h-64 text-muted-foreground">
-            Loading…
-          </div>
-        }
-      >
-        <Outlet />
-      </Suspense>
-    ),
-    children: aiAdminRoutes,
-  },
+  // /cerebrum/admin/* is composed by the shell from @pops/app-ai;
+  // see apps/pops-shell/src/app/router.tsx.
 ];

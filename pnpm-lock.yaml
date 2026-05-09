@@ -433,9 +433,6 @@ importers:
       '@pops/api-client':
         specifier: workspace:*
         version: link:../api-client
-      '@pops/app-ai':
-        specifier: workspace:*
-        version: link:../app-ai
       '@pops/navigation':
         specifier: workspace:*
         version: link:../navigation

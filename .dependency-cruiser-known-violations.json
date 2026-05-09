@@ -9,16 +9,5 @@
       "severity": "error",
       "name": "no-cross-api-module-import"
     }
-  },
-  {
-    "type": "dependency",
-    "from": "packages/app-cerebrum/src/routes.tsx",
-    "to": "packages/app-ai/src/index.ts",
-    "unresolvedTo": "@pops/app-ai",
-    "dependencyTypes": ["undetermined", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-app-import"
-    }
   }
 ]
