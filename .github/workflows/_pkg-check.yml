@@ -71,5 +71,12 @@ jobs:
         run: |
           pnpm --filter @pops/db-types build
           pnpm --filter @pops/types build
-      - run: cd ${{ inputs.package-path }} && pnpm test
+      - name: Run tests (with coverage if configured)
         if: inputs.skip != 'true'
+        run: |
+          cd ${{ inputs.package-path }}
+          if node -e 'process.exit(require("./package.json").scripts["test:coverage"] ? 0 : 1)' 2>/dev/null; then
+            pnpm test:coverage
+          else
+            pnpm test
+          fi

@@ -74,9 +74,9 @@ jobs:
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
         run: cd apps/pops-api && pnpm openapi:validate
 
-      - name: Run unit tests
+      - name: Run unit tests with coverage
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
-        run: cd apps/pops-api && pnpm test
+        run: cd apps/pops-api && pnpm test:coverage
 
       - name: Run integration tests
         if: github.event_name == 'push' || needs.changes.outputs.relevant == 'true'
