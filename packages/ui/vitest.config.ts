@@ -14,6 +14,7 @@ export default defineConfig({
         '**/node_modules/**',
         '**/dist/**',
         '**/*.test.{ts,tsx}',
+        '**/*.d.ts',
         'src/test-setup.ts',
         'src/**/*.stories.{ts,tsx}',
       ],
