@@ -33,3 +33,9 @@ Module rules:
 - Clear domain boundaries enforced by import rules
 - Cross-domain joins are trivial (same SQLite file)
 - Adding a new domain means adding a new module directory and registering its router
+
+## Manifest-Driven Composition
+
+Each domain module exports a `ModuleManifest` ([PRD-098](../themes/01-foundation/prds/098-module-manifest/README.md)) declaring its router, schema, settings, and surfaces. The tRPC root composes only the routers of modules listed in `POPS_APPS` / `POPS_OVERLAYS`; modules absent from those env vars do not mount, and their migrations do not run. Default (`POPS_APPS` unset) preserves current behaviour. See [Epic 10 — Modular Module Runtime](../themes/01-foundation/epics/10-modular-module-runtime.md) and [PRD-100](../themes/01-foundation/prds/100-module-runtime-tier-1/README.md).
+
+Cross-module import boundaries (`apps/pops-api/src/modules/<x>/**` may not import from `<y>/**` where x ≠ y, except `core`) are lint-enforced by [PRD-097](../themes/01-foundation/prds/097-module-import-boundaries/README.md), not honour-system.

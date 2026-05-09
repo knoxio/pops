@@ -63,16 +63,17 @@ Live status of every theme and epic. Updated as work completes.
 
 ### Phase 1 — Foundation
 
-| Epic                                  | Status | Notes                                                                                                                  |
-| ------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------- |
-| Project bootstrap (pnpm, Turbo, mise) | Done   | pnpm v10, Turbo orchestration, mise task runner                                                                        |
-| UI component library (`@pops/ui`)     | Done   | 86+ components, Storybook, Tailwind v4                                                                                 |
-| Shell & app switcher (`pops-shell`)   | Done   | Lazy-loaded apps, AppRail, responsive sidebar, app theme colour propagation                                            |
-| API modularisation (`pops-api`)       | Done   | 4 domain modules (core, finance, inventory, media)                                                                     |
-| DB schema patterns & migrations       | Done   | 28 tables, timestamp migrations, entity types                                                                          |
-| Responsive foundation                 | Done   | Tailwind v4 breakpoints, mobile-first, touch targets                                                                   |
-| Drizzle ORM migration                 | Done   | All modules use Drizzle ORM; raw SQL eliminated                                                                        |
-| Platform search (Epic 07)             | Done   | All 3 PRDs complete: search engine (PRD-057), search UI with keyboard nav (PRD-056), contextual intelligence (PRD-058) |
+| Epic                                  | Status      | Notes                                                                                                                  |
+| ------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------- |
+| Project bootstrap (pnpm, Turbo, mise) | Done        | pnpm v10, Turbo orchestration, mise task runner                                                                        |
+| UI component library (`@pops/ui`)     | Done        | 86+ components, Storybook, Tailwind v4                                                                                 |
+| Shell & app switcher (`pops-shell`)   | Done        | Lazy-loaded apps, AppRail, responsive sidebar, app theme colour propagation                                            |
+| API modularisation (`pops-api`)       | Done        | 4 domain modules (core, finance, inventory, media)                                                                     |
+| DB schema patterns & migrations       | Done        | 28 tables, timestamp migrations, entity types                                                                          |
+| Responsive foundation                 | Done        | Tailwind v4 breakpoints, mobile-first, touch targets                                                                   |
+| Drizzle ORM migration                 | Done        | All modules use Drizzle ORM; raw SQL eliminated                                                                        |
+| Platform search (Epic 07)             | Done        | All 3 PRDs complete: search engine (PRD-057), search UI with keyboard nav (PRD-056), contextual intelligence (PRD-058) |
+| Modular module runtime (Epic 10)      | Not started | PRDs 097-100: lint boundaries, ModuleManifest, overlay surfaces + ego dual-surface, Tier 1 `POPS_APPS` env loader      |
 
 ### Phase 2 — Core Apps
 
