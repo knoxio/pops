@@ -33,14 +33,14 @@ Allow-listed shared packages for `packages/app-*`:
 
 ## Baseline Strategy
 
-Existing violations are captured in a baseline file (`.dependency-cruiser-baseline.json`) and referenced from the cruise config. Each baselined entry is a known violation that does not block CI; new violations fail. Every baselined entry has a tracking issue filed alongside this PRD; closing the gap removes the entry from the baseline and unblocks the lint rule for that path.
+Existing violations are captured in `.dependency-cruiser-known-violations.json` (dependency-cruiser's standard baseline format) and consumed by the lint script via the `--ignore-known` flag. Each baselined entry is a known violation that does not block CI; new violations fail. Every baselined entry has a tracking issue filed alongside this PRD; closing the gap removes the entry from the baseline and unblocks the lint rule for that path.
 
-Captured at PRD-097 land time (drift discovered, not introduced by this PRD). 14 entries total; full machine-readable list lives in `.dependency-cruiser-known-violations.json`:
+Captured at PRD-097 land time (drift discovered, not introduced by this PRD). 14 entries total (1 cross-app + 9 ego non-test + 3 ego test + 1 core→domain); full machine-readable list lives in `.dependency-cruiser-known-violations.json`:
 
 | Source path                                                      | Target module | Notes                                                                         |
 | ---------------------------------------------------------------- | ------------- | ----------------------------------------------------------------------------- |
 | `packages/app-cerebrum/src/routes.tsx`                           | `app-ai`      | `app-cerebrum` mounts the AI Ops admin pages — needs proper extraction.       |
-| `apps/pops-api/src/modules/ego/engine*.ts`, `context-helpers.ts` | `cerebrum`    | Ego retrieval + context assembly leaks cerebrum internals (8 entries).        |
+| `apps/pops-api/src/modules/ego/engine*.ts`, `context-helpers.ts` | `cerebrum`    | Ego retrieval + context assembly leaks cerebrum internals (9 entries).        |
 | `apps/pops-api/src/modules/ego/__tests__/*`                      | `cerebrum`    | Test fixtures pull cerebrum types directly (3 entries).                       |
 | `apps/pops-api/src/modules/core/ai-usage/router.ts`              | `finance`     | Core router calls into finance for usage tracking — should invert dependency. |
 

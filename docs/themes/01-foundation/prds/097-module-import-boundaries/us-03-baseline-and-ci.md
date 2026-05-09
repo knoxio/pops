@@ -9,8 +9,8 @@ As a maintainer, I want existing violations baselined and the rule wired into CI
 
 ## Acceptance Criteria
 
-- [ ] A baseline file (e.g. `.dependency-cruiser-baseline.json`) captures every existing violation discovered at PRD-097 land time.
-- [ ] The baseline is referenced from `.dependency-cruiser.cjs` so baselined entries do not fail the lint.
+- [ ] `.dependency-cruiser-known-violations.json` (dependency-cruiser's standard baseline format) captures every existing violation discovered at PRD-097 land time.
+- [ ] The baseline is consumed by passing `--ignore-known` to `depcruise` in the `pnpm lint:boundaries` script, so baselined entries do not fail the lint.
 - [ ] A `boundaries` job is added to `.github/workflows/quality.yml` that runs `pnpm lint:boundaries` and blocks merge on failure.
 - [ ] Each baselined violation has a tracking issue filed (title format: `gap(PRD-097): <module-or-app> imports from <peer> — <file>` or similar).
 - [ ] Tracking issues are referenced from the PR that lands PRD-097 in the `## Gaps (tracked)` section.

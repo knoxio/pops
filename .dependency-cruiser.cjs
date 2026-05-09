@@ -18,7 +18,7 @@ module.exports = {
       name: 'no-cross-app-import',
       severity: 'error',
       comment:
-        'packages/app-<x> may not import from another packages/app-<y>. Cross-app communication goes through tRPC or shared workspace packages (@pops/ui, @pops/api-client, @pops/navigation, @pops/db-types, @pops/types, @pops/import-tools).',
+        'packages/app-<x> may not import from another packages/app-<y>. Cross-app communication goes through tRPC or shared workspace packages (@pops/ui, @pops/api-client, @pops/navigation, @pops/db-types, @pops/types, @pops/import-tools, @pops/auth, @pops/widgets, @pops/test-utils).',
       from: { path: '^packages/app-([^/]+)/src' },
       to: {
         path: '^packages/app-([^/]+)/',
