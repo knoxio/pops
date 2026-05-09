@@ -291,15 +291,9 @@ test.describe('Finance — import wizard happy path (mocked)', () => {
     });
     await page.getByRole('button', { name: /approve & commit all/i }).click();
 
-    // CommitResultPanel appears on success; the footer button switches to "Continue".
-    await expect(page.getByRole('heading', { name: 'Commit Successful' })).toBeVisible({
-      timeout: 10_000,
-    });
-    await page.getByRole('button', { name: /^continue$/i }).click();
-
-    // Step 7: Summary — success state with transaction count card.
+    // Step 7: Summary — wizard auto-advances on commit success, no Continue click.
     await expect(page.getByRole('heading', { name: 'Import Complete' })).toBeVisible({
-      timeout: 10_000,
+      timeout: 15_000,
     });
     await expect(page.getByText('Transactions Imported')).toBeVisible();
     // The SummaryCard for imported transactions shows the value "2".

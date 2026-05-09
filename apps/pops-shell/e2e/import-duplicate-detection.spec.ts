@@ -89,12 +89,10 @@ async function commitAndReachSummary(page: Page): Promise<void> {
   });
 
   await page.getByRole('button', { name: /approve & commit all/i }).click();
-  const continueBtn = page.getByRole('button', { name: /^continue$/i });
-  await expect(continueBtn).toBeVisible({ timeout: 15_000 });
-  await continueBtn.click();
 
+  // Wizard auto-advances to Summary on commit success — no Continue click.
   await expect(page.getByRole('heading', { name: 'Import Complete' })).toBeVisible({
-    timeout: 10_000,
+    timeout: 15_000,
   });
 }
 

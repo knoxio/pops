@@ -15,7 +15,6 @@ function useStoreSlice() {
     prevStep: useImportStore((s) => s.prevStep),
     nextStep: useImportStore((s) => s.nextStep),
     setCommitResult: useImportStore((s) => s.setCommitResult),
-    commitResult: useImportStore((s) => s.commitResult),
   };
 }
 
@@ -86,7 +85,6 @@ export function useFinalReview() {
     pendingTagRuleChangeSets: slice.pendingTagRuleChangeSets,
     ...counts,
     commitError,
-    commitResult: slice.commitResult,
     isCommitting: commitMutation.isPending,
     handleCommit,
     prevStep: slice.prevStep,
