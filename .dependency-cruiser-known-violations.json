@@ -1,0 +1,156 @@
+[
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/core/ai-usage/router.ts",
+    "to": "apps/pops-api/src/modules/finance/imports/lib/ai-categorizer.ts",
+    "unresolvedTo": "../../finance/imports/lib/ai-categorizer.js",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-api-module-import"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/ego/__tests__/context-awareness.test.ts",
+    "to": "apps/pops-api/src/modules/cerebrum/retrieval/types.ts",
+    "unresolvedTo": "../../cerebrum/retrieval/types.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-api-module-import"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/ego/__tests__/ego-chat.integration.test.ts",
+    "to": "apps/pops-api/src/modules/cerebrum/retrieval/types.ts",
+    "unresolvedTo": "../../cerebrum/retrieval/types.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-api-module-import"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/ego/__tests__/engine.test.ts",
+    "to": "apps/pops-api/src/modules/cerebrum/retrieval/types.ts",
+    "unresolvedTo": "../../cerebrum/retrieval/types.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-api-module-import"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/ego/context-helpers.ts",
+    "to": "apps/pops-api/src/modules/cerebrum/instance.ts",
+    "unresolvedTo": "../cerebrum/instance.js",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-api-module-import"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/ego/context-helpers.ts",
+    "to": "apps/pops-api/src/modules/cerebrum/retrieval/types.ts",
+    "unresolvedTo": "../cerebrum/retrieval/types.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-api-module-import"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/ego/engine-helpers.ts",
+    "to": "apps/pops-api/src/modules/cerebrum/retrieval/types.ts",
+    "unresolvedTo": "../cerebrum/retrieval/types.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-api-module-import"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/ego/engine-stream.ts",
+    "to": "apps/pops-api/src/modules/cerebrum/query/citation-parser.ts",
+    "unresolvedTo": "../cerebrum/query/citation-parser.js",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-api-module-import"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/ego/engine-stream.ts",
+    "to": "apps/pops-api/src/modules/cerebrum/retrieval/types.ts",
+    "unresolvedTo": "../cerebrum/retrieval/types.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-api-module-import"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/ego/engine.ts",
+    "to": "apps/pops-api/src/modules/cerebrum/query/citation-parser.ts",
+    "unresolvedTo": "../cerebrum/query/citation-parser.js",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-api-module-import"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/ego/engine.ts",
+    "to": "apps/pops-api/src/modules/cerebrum/retrieval/context-assembly.ts",
+    "unresolvedTo": "../cerebrum/retrieval/context-assembly.js",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-api-module-import"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/ego/engine.ts",
+    "to": "apps/pops-api/src/modules/cerebrum/retrieval/hybrid-search.ts",
+    "unresolvedTo": "../cerebrum/retrieval/hybrid-search.js",
+    "dependencyTypes": ["local", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-api-module-import"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "apps/pops-api/src/modules/ego/engine.ts",
+    "to": "apps/pops-api/src/modules/cerebrum/retrieval/types.ts",
+    "unresolvedTo": "../cerebrum/retrieval/types.js",
+    "dependencyTypes": ["local", "type-only", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-api-module-import"
+    }
+  },
+  {
+    "type": "dependency",
+    "from": "packages/app-cerebrum/src/routes.tsx",
+    "to": "packages/app-ai/src/index.ts",
+    "unresolvedTo": "@pops/app-ai",
+    "dependencyTypes": ["undetermined", "import"],
+    "rule": {
+      "severity": "error",
+      "name": "no-cross-app-import"
+    }
+  }
+]
