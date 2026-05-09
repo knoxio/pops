@@ -5,6 +5,7 @@
 import { createHash } from 'node:crypto';
 
 import { getDb, isVecAvailable } from '../../../db.js';
+import { logger } from '../../../lib/logger.js';
 import {
   getEmbedding,
   getEmbeddingConfig,
@@ -44,21 +45,30 @@ export interface SearchByVectorOptions {
   threshold?: number;
 }
 
-async function embedQuery(query: string): Promise<number[]> {
+async function embedQuery(query: string): Promise<number[] | null> {
   const config = getEmbeddingConfig();
   const queryHash = createHash('sha256').update(query.trim()).digest('hex');
   const cacheKey = redisKey('query_vec', queryHash);
 
   const redis = getRedis();
-  if (isRedisAvailable() && redis) {
-    const cached = await redis.get(cacheKey);
-    if (cached) return JSON.parse(cached) as number[];
-    const vector = await getEmbedding(query, config);
-    await redis.set(cacheKey, JSON.stringify(vector), 'EX', getSemanticQueryCacheTtl());
-    return vector;
+  try {
+    if (isRedisAvailable() && redis) {
+      const cached = await redis.get(cacheKey);
+      if (cached) return JSON.parse(cached) as number[];
+      const vector = await getEmbedding(query, config, { inputType: 'query' });
+      await redis.set(cacheKey, JSON.stringify(vector), 'EX', getSemanticQueryCacheTtl());
+      return vector;
+    }
+    return await getEmbedding(query, config, { inputType: 'query' });
+  } catch (err) {
+    // A provider error must not crash the API. Degrade to "no semantic results"
+    // so the chat / retrieval surfaces stay up while the operator investigates.
+    logger.warn(
+      { error: err instanceof Error ? err.message : String(err), provider: config.provider },
+      '[SemanticSearch] embedQuery failed; returning no semantic results'
+    );
+    return null;
   }
-
-  return getEmbedding(query, config);
 }
 
 export class SemanticSearchService {
@@ -79,6 +89,7 @@ export class SemanticSearchService {
     if (!isVecAvailable()) throw vecUnavailableError();
 
     const queryVector = await embedQuery(query);
+    if (!queryVector) return [];
     const vectorBlob = Float32Array.from(queryVector);
     const rows = knnQuery(vectorBlob, limit * 3).filter((r) => r.distance <= threshold);
     const seen = dedupeBySource(rows);

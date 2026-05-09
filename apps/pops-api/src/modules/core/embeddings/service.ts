@@ -6,6 +6,7 @@ import { embeddings } from '@pops/db-types';
 
 import { getDrizzle, getDb, isVecAvailable } from '../../../db.js';
 import { embedContent } from '../../../jobs/embed-content.js';
+import { logger } from '../../../lib/logger.js';
 import { getEmbeddingConfig, getEmbedding } from '../../../shared/embedding-client.js';
 import { getRedis, isRedisAvailable, redisKey } from '../../../shared/redis-client.js';
 
@@ -19,20 +20,29 @@ function vecUnavailableError(): Error {
   });
 }
 
-async function embedQueryWithCache(query: string): Promise<number[]> {
+async function embedQueryWithCache(query: string): Promise<number[] | null> {
   const config = getEmbeddingConfig();
   const queryHash = createHash('sha256').update(query.trim()).digest('hex');
   const cacheKey = redisKey('query_vec', queryHash);
 
   const redis = getRedis();
-  if (isRedisAvailable() && redis) {
-    const cached = await redis.get(cacheKey);
-    if (cached) return JSON.parse(cached) as number[];
-    const vector = await getEmbedding(query, config);
-    await redis.set(cacheKey, JSON.stringify(vector), 'EX', QUERY_CACHE_TTL_SECONDS);
-    return vector;
+  try {
+    if (isRedisAvailable() && redis) {
+      const cached = await redis.get(cacheKey);
+      if (cached) return JSON.parse(cached) as number[];
+      const vector = await getEmbedding(query, config, { inputType: 'query' });
+      await redis.set(cacheKey, JSON.stringify(vector), 'EX', QUERY_CACHE_TTL_SECONDS);
+      return vector;
+    }
+    return await getEmbedding(query, config, { inputType: 'query' });
+  } catch (err) {
+    // A provider error must not crash the API. Degrade to "no semantic results".
+    logger.warn(
+      { error: err instanceof Error ? err.message : String(err), provider: config.provider },
+      '[Embeddings] embedQueryWithCache failed; returning no semantic results'
+    );
+    return null;
   }
-  return getEmbedding(query, config);
 }
 
 interface VecRow {
@@ -87,6 +97,7 @@ export async function semanticSearch(
 
   const { sourceTypes, limit = 10, threshold = 1.0 } = options;
   const queryVector = await embedQueryWithCache(query);
+  if (!queryVector) return [];
   const rows = runKnnQuery(Float32Array.from(queryVector), limit, sourceTypes);
 
   return rows
