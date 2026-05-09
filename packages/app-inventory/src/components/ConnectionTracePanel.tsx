@@ -72,7 +72,14 @@ function TraceNodeRow({ node, depth, currentItemId }: TraceNodeRowProps) {
         onClick={() => {
           if (!isCurrent) void navigate(`/inventory/items/${node.id}`);
         }}
+        onKeyDown={(e) => {
+          if (!isCurrent && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            void navigate(`/inventory/items/${node.id}`);
+          }
+        }}
         role="treeitem"
+        tabIndex={isCurrent ? -1 : 0}
         aria-expanded={hasChildren ? open : undefined}
       >
         {hasChildren ? <ExpandToggle open={open} /> : <span className="w-4.5" />}

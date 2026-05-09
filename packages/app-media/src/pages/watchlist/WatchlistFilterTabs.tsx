@@ -18,6 +18,7 @@ export function WatchlistFilterTabs({ filter, onFilterChange }: WatchlistFilterT
           variant={filter === opt.value ? 'default' : 'secondary'}
           size="sm"
           role="tab"
+          tabIndex={filter === opt.value ? 0 : -1}
           aria-selected={filter === opt.value}
           onClick={() => onFilterChange(opt.value)}
           shape="pill"

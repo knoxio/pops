@@ -129,7 +129,14 @@ export function NodeRow(props: NodeRowProps) {
         e.stopPropagation();
         props.setRenaming(true);
       }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          props.onSelect(node.id);
+        }
+      }}
       role="treeitem"
+      tabIndex={isSelected ? 0 : -1}
       aria-selected={isSelected}
       aria-expanded={hasChildren ? open : undefined}
     >
