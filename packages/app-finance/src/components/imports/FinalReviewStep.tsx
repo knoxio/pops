@@ -2,7 +2,6 @@ import { AlertCircle, Loader2 } from 'lucide-react';
 
 import { Button } from '@pops/ui';
 
-import { CommitResultPanel } from './final-review/CommitResultPanel';
 import {
   ClassificationRulesSection,
   EntitiesSection,
@@ -25,35 +24,23 @@ function CommitErrorPanel({ error }: { error: string }) {
 }
 
 function ActionFooter({
-  committed,
   isCommitting,
   onBack,
   onCommit,
-  onContinue,
 }: {
-  committed: boolean;
   isCommitting: boolean;
   onBack: () => void;
   onCommit: () => void;
-  onContinue: () => void;
 }) {
   return (
     <div className="flex justify-between pt-4">
-      {!committed && (
-        <Button variant="outline" onClick={onBack} disabled={isCommitting}>
-          Back
-        </Button>
-      )}
-      {committed ? (
-        <Button onClick={onContinue} className="ml-auto">
-          Continue
-        </Button>
-      ) : (
-        <Button onClick={onCommit} disabled={isCommitting}>
-          {isCommitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-          {isCommitting ? 'Committing...' : 'Approve & Commit All'}
-        </Button>
-      )}
+      <Button variant="outline" onClick={onBack} disabled={isCommitting}>
+        Back
+      </Button>
+      <Button onClick={onCommit} disabled={isCommitting}>
+        {isCommitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+        {isCommitting ? 'Committing...' : 'Approve & Commit All'}
+      </Button>
     </div>
   );
 }
@@ -109,15 +96,10 @@ export function FinalReviewStep() {
       </div>
       <ReviewBody {...state} />
       {state.commitError && <CommitErrorPanel error={state.commitError} />}
-      {state.committed && state.commitResult && (
-        <CommitResultPanel commitResult={state.commitResult} />
-      )}
       <ActionFooter
-        committed={state.committed}
         isCommitting={state.isCommitting}
         onBack={state.prevStep}
         onCommit={state.handleCommit}
-        onContinue={state.nextStep}
       />
     </div>
   );

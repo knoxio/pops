@@ -215,38 +215,10 @@ describe('FinalReviewStep', () => {
     expect(mockMutate).toHaveBeenCalledOnce();
   });
 
-  it('stores commitResult and shows Continue on success', async () => {
+  it('auto-advances to Summary on successful commit', async () => {
     render(<FinalReviewStep />);
     fireEvent.click(screen.getByText('Approve & Commit All'));
 
-    // Simulate successful mutation
-    mutationCallbacks.onSuccess?.({
-      data: {
-        entitiesCreated: 2,
-        rulesApplied: { add: 1, edit: 0, disable: 0, remove: 0 },
-        tagRulesApplied: 0,
-        transactionsImported: 5,
-        transactionsFailed: 0,
-        failedDetails: [],
-        retroactiveReclassifications: 3,
-      },
-    });
-
-    await waitFor(() => {
-      expect(mockSetCommitResult).toHaveBeenCalledWith({
-        entitiesCreated: 2,
-        rulesApplied: { add: 1, edit: 0, disable: 0, remove: 0 },
-        tagRulesApplied: 0,
-        transactionsImported: 5,
-        transactionsFailed: 0,
-        failedDetails: [],
-        retroactiveReclassifications: 3,
-      });
-      expect(screen.getByText('Continue')).toBeDefined();
-    });
-  });
-
-  it('shows inline result summary after successful commit (US-05 AC-4)', async () => {
     const resultData = {
       entitiesCreated: 2,
       rulesApplied: { add: 1, edit: 0, disable: 0, remove: 0 },
@@ -256,30 +228,11 @@ describe('FinalReviewStep', () => {
       failedDetails: [],
       retroactiveReclassifications: 3,
     };
-    storeState = makeStoreState({ commitResult: resultData });
-    render(<FinalReviewStep />);
-    fireEvent.click(screen.getByText('Approve & Commit All'));
-
     mutationCallbacks.onSuccess?.({ data: resultData });
 
     await waitFor(() => {
-      expect(screen.getByText('Commit Successful')).toBeDefined();
-      expect(screen.getByText('Entities created:')).toBeDefined();
-      expect(screen.getByText('Transactions imported:')).toBeDefined();
-      expect(screen.getByText('Classification rules applied:')).toBeDefined();
-      expect(screen.getByText('Tag rules applied:')).toBeDefined();
-      expect(screen.getByText('Reclassifications:')).toBeDefined();
-    });
-  });
-
-  it('hides Back button after successful commit', async () => {
-    render(<FinalReviewStep />);
-    expect(screen.getByText('Back')).toBeDefined();
-
-    mutationCallbacks.onSuccess?.({ data: {} });
-
-    await waitFor(() => {
-      expect(screen.queryByText('Back')).toBeNull();
+      expect(mockSetCommitResult).toHaveBeenCalledWith(resultData);
+      expect(mockNextStep).toHaveBeenCalledOnce();
     });
   });
 
@@ -295,21 +248,23 @@ describe('FinalReviewStep', () => {
     });
   });
 
+  it('does not advance to Summary when the commit fails', async () => {
+    render(<FinalReviewStep />);
+    fireEvent.click(screen.getByText('Approve & Commit All'));
+
+    mutationCallbacks.onError?.({ message: 'boom' });
+
+    await waitFor(() => {
+      expect(screen.getByText('Commit failed')).toBeDefined();
+    });
+    expect(mockNextStep).not.toHaveBeenCalled();
+  });
+
   it('disables Back button during commit', () => {
     mockIsPending = true;
     render(<FinalReviewStep />);
     const backButton = screen.getByText('Back');
     expect(backButton.closest('button')?.disabled).toBe(true);
-  });
-
-  it('Continue button calls nextStep', async () => {
-    render(<FinalReviewStep />);
-    mutationCallbacks.onSuccess?.({ data: {} });
-
-    await waitFor(() => {
-      fireEvent.click(screen.getByText('Continue'));
-      expect(mockNextStep).toHaveBeenCalledOnce();
-    });
   });
 
   it('calls prevStep on Back click', () => {

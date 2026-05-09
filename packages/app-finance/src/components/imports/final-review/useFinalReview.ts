@@ -59,12 +59,13 @@ export function useFinalReview() {
   const slice = useStoreSlice();
   const counts = useDerivedCounts(slice);
   const [commitError, setCommitError] = useState<string | null>(null);
-  const [committed, setCommitted] = useState(false);
   const commitMutation = trpc.finance.imports.commitImport.useMutation({
     onSuccess: (response) => {
       slice.setCommitResult(response.data);
-      setCommitted(true);
       setCommitError(null);
+      // SummaryStep owns the post-commit UI; auto-advance there instead of
+      // showing an inline panel + manual Continue click.
+      slice.nextStep();
     },
     onError: (err) => setCommitError(err.message),
   });
@@ -85,11 +86,9 @@ export function useFinalReview() {
     pendingTagRuleChangeSets: slice.pendingTagRuleChangeSets,
     ...counts,
     commitError,
-    committed,
     commitResult: slice.commitResult,
     isCommitting: commitMutation.isPending,
     handleCommit,
     prevStep: slice.prevStep,
-    nextStep: slice.nextStep,
   };
 }
