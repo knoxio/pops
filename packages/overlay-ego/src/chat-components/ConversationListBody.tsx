@@ -6,7 +6,7 @@ import { Skeleton } from '@pops/ui';
 
 import { ConversationListItem } from './ConversationListItem';
 
-import type { ConversationSummary } from '../../pages/chat-page/types';
+import type { ConversationSummary } from '../chat-hooks/types';
 
 interface ConversationListBodyProps {
   conversations: ConversationSummary[];

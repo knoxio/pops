@@ -5,6 +5,7 @@ packages:
   - 'packages/app-inventory'
   - 'packages/app-ai'
   - 'packages/app-cerebrum'
+  - 'packages/overlay-ego'
   - 'packages/api-client'
   - 'packages/db-types'
   - 'packages/types'

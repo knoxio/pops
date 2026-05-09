@@ -13,7 +13,7 @@ import { ContextIndicator } from './ContextIndicator';
 import { ConversationList } from './ConversationList';
 import { MessageThread } from './MessageThread';
 
-import type { ChatPageModel } from '../../pages/chat-page/types';
+import type { ChatPageModel } from '../chat-hooks/types';
 
 export interface ChatPanelProps {
   /** The chat page view model. */

@@ -7,7 +7,7 @@ import { Trash2 } from 'lucide-react';
 
 import { cn, formatRelativeTime } from '@pops/ui';
 
-import type { ConversationSummary } from '../../pages/chat-page/types';
+import type { ConversationSummary } from '../chat-hooks/types';
 
 export interface ConversationListItemProps {
   conversation: ConversationSummary;

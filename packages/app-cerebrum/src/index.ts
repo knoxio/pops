@@ -6,5 +6,8 @@
  */
 export { navConfig, routes } from './routes';
 export { manifest } from './manifest';
-export { ChatPanel } from './components/chat/ChatPanel';
-export { useChatPageModel } from './pages/chat-page/useChatPageModel';
+
+// Backwards-compat re-exports — the chat panel + page model live in
+// @pops/overlay-ego now (PRD-099). External consumers that imported
+// these from @pops/app-cerebrum continue to work.
+export { ChatPanel, useChatPageModel } from '@pops/overlay-ego';

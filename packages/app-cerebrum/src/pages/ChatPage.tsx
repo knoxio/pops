@@ -6,10 +6,8 @@ import { useTranslation } from 'react-i18next';
  * Renders the PageHeader and delegates to ChatPanel with the
  * useChatPageModel hook for all data and interaction logic.
  */
+import { ChatPanel, useChatPageModel } from '@pops/overlay-ego';
 import { PageHeader } from '@pops/ui';
-
-import { ChatPanel } from '../components/chat/ChatPanel';
-import { useChatPageModel } from './chat-page/useChatPageModel';
 
 export function ChatPage() {
   const { t } = useTranslation('cerebrum');

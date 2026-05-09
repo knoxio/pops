@@ -12,7 +12,7 @@ import { cn, Skeleton } from '@pops/ui';
 
 import { CitationLink } from './CitationLink';
 
-import type { ChatMessage } from '../../pages/chat-page/types';
+import type { ChatMessage } from '../chat-hooks/types';
 
 export interface MessageThreadProps {
   /** Messages to display. */

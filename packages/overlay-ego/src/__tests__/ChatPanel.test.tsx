@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockStream = vi.fn();
 
-vi.mock('./chat-page/useStreamingChat', () => ({
+vi.mock('../chat-hooks/useStreamingChat', () => ({
   useStreamingChat: () => ({
     stream: mockStream,
     isStreaming: false,
@@ -106,19 +106,6 @@ vi.mock('react-router', () => ({
 vi.mock('@pops/ui', async () => {
   const React = await import('react');
   return {
-    PageHeader: ({
-      title,
-      description,
-    }: {
-      title: React.ReactNode;
-      description?: React.ReactNode;
-    }) =>
-      React.createElement(
-        'div',
-        { 'data-testid': 'page-header' },
-        React.createElement('h1', null, title),
-        description && React.createElement('p', null, description)
-      ),
     Button: ({ children, onClick, disabled, prefix, ...rest }: Record<string, unknown>) =>
       React.createElement(
         'button',
@@ -263,7 +250,13 @@ vi.mock('@pops/ui', async () => {
   };
 });
 
-import { ChatPage } from './ChatPage';
+import { ChatPanel } from '../chat-components/ChatPanel';
+import { useChatPageModel } from '../chat-hooks/useChatPageModel';
+
+function ChatHarness() {
+  const model = useChatPageModel();
+  return <ChatPanel model={model} />;
+}
 
 // ── Mock data ────────────────────────────────────────────────────────
 
@@ -352,21 +345,15 @@ beforeEach(() => {
   setupDefaultMocks();
 });
 
-describe('ChatPage', () => {
-  it('renders page header with title and description', () => {
-    render(<ChatPage />);
-    expect(screen.getByText('Chat')).toBeInTheDocument();
-    expect(screen.getByText('Converse with Ego about your knowledge base')).toBeInTheDocument();
-  });
-
+describe('ChatPanel (overlay-ego)', () => {
   it('renders conversation list with items', () => {
-    render(<ChatPage />);
+    render(<ChatHarness />);
     expect(screen.getByText('Budget discussion')).toBeInTheDocument();
     expect(screen.getByText('Movie recommendations')).toBeInTheDocument();
   });
 
   it('shows empty state when no conversation is selected', () => {
-    render(<ChatPage />);
+    render(<ChatHarness />);
     expect(screen.getByTestId('empty-state')).toBeInTheDocument();
     expect(screen.getByText('Start a conversation')).toBeInTheDocument();
   });
@@ -374,7 +361,7 @@ describe('ChatPage', () => {
   it('displays messages when a conversation is selected', async () => {
     setupWithSelectedConversation();
     const user = userEvent.setup();
-    render(<ChatPage />);
+    render(<ChatHarness />);
 
     await user.click(screen.getByText('Budget discussion'));
     expect(screen.getByText('What is my budget?')).toBeInTheDocument();
@@ -383,7 +370,7 @@ describe('ChatPage', () => {
   it('renders citation links in assistant messages', async () => {
     setupWithSelectedConversation();
     const user = userEvent.setup();
-    render(<ChatPage />);
+    render(<ChatHarness />);
 
     await user.click(screen.getByText('Budget discussion'));
     const citationLink = screen.getByText('eng_finance_001');
@@ -393,7 +380,7 @@ describe('ChatPage', () => {
 
   it('sends a message via the chat input', async () => {
     const user = userEvent.setup();
-    render(<ChatPage />);
+    render(<ChatHarness />);
 
     const textarea = screen.getByLabelText('Message input');
     await user.type(textarea, 'Hello Ego');
@@ -409,23 +396,21 @@ describe('ChatPage', () => {
 
   it('Enter key sends message, Shift+Enter inserts newline', async () => {
     const user = userEvent.setup();
-    render(<ChatPage />);
+    render(<ChatHarness />);
 
     const textarea = screen.getByLabelText('Message input');
     await user.type(textarea, 'Line one');
     await user.keyboard('{Shift>}{Enter}{/Shift}');
     await user.type(textarea, 'Line two');
 
-    // Shift+Enter should not have sent the message
     expect(mockStream).not.toHaveBeenCalled();
 
-    // Enter sends
     await user.keyboard('{Enter}');
     expect(mockStream).toHaveBeenCalledTimes(1);
   });
 
   it('send button is disabled when input is empty', () => {
-    render(<ChatPage />);
+    render(<ChatHarness />);
     const sendButton = screen.getByLabelText('Send message');
     expect(sendButton).toBeDisabled();
   });
@@ -433,30 +418,25 @@ describe('ChatPage', () => {
   it('new conversation button resets selection', async () => {
     setupWithSelectedConversation();
     const user = userEvent.setup();
-    render(<ChatPage />);
+    render(<ChatHarness />);
 
-    // Select a conversation
     await user.click(screen.getByText('Budget discussion'));
 
-    // Click new conversation
     const newButton = screen.getByLabelText('New conversation');
     await user.click(newButton);
 
-    // Should show empty state again
     expect(screen.getByTestId('empty-state')).toBeInTheDocument();
   });
 
   it('shows delete confirmation dialog and calls delete', async () => {
     const user = userEvent.setup();
-    render(<ChatPage />);
+    render(<ChatHarness />);
 
     const firstDeleteButton = screen.getByLabelText('Delete conversation: Budget discussion');
     await user.click(firstDeleteButton);
 
-    // Confirmation dialog should appear
     expect(screen.getByText('Delete conversation?')).toBeInTheDocument();
 
-    // Confirm deletion
     const confirmButton = screen.getByText('Delete');
     await user.click(confirmButton);
 
@@ -465,12 +445,11 @@ describe('ChatPage', () => {
 
   it('search input filters conversations', async () => {
     const user = userEvent.setup();
-    render(<ChatPage />);
+    render(<ChatHarness />);
 
     const searchInput = screen.getByLabelText('Search conversations');
     await user.type(searchInput, 'budget');
 
-    // The query should have been called with the search term
     expect(mockConversationsListQuery).toHaveBeenCalledWith(
       expect.objectContaining({ search: 'budget' }),
       expect.anything()
@@ -482,15 +461,14 @@ describe('ChatPage', () => {
       data: undefined,
       isLoading: true,
     });
-    render(<ChatPage />);
+    render(<ChatHarness />);
     const skeletons = screen.getAllByTestId('skeleton');
     expect(skeletons.length).toBeGreaterThan(0);
   });
 
   it('renders the chat panel layout', () => {
-    render(<ChatPage />);
+    render(<ChatHarness />);
 
-    // The chat panel should render with its input area
     expect(screen.getByLabelText('Message input')).toBeInTheDocument();
   });
 
@@ -499,7 +477,7 @@ describe('ChatPage', () => {
       data: { conversations: [], total: 0 },
       isLoading: false,
     });
-    render(<ChatPage />);
+    render(<ChatHarness />);
     expect(screen.getByText('No conversations yet')).toBeInTheDocument();
   });
 });

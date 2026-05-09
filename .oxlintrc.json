@@ -236,6 +236,7 @@
         "apps/pops-shell/src/**/*.{ts,tsx}",
         "packages/ui/src/**/*.{ts,tsx}",
         "packages/app-*/src/**/*.{ts,tsx}",
+        "packages/overlay-*/src/**/*.{ts,tsx}",
         "packages/navigation/src/**/*.{ts,tsx}"
       ],
       "rules": {
@@ -247,6 +248,7 @@
         "apps/pops-shell/src/**/*.{ts,tsx}",
         "packages/ui/src/**/*.{ts,tsx}",
         "packages/app-*/src/**/*.{ts,tsx}",
+        "packages/overlay-*/src/**/*.{ts,tsx}",
         "packages/navigation/src/**/*.{ts,tsx}"
       ],
       "rules": {

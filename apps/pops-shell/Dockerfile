@@ -14,6 +14,7 @@ COPY packages/app-media/package.json ./packages/app-media/
 COPY packages/app-inventory/package.json ./packages/app-inventory/
 COPY packages/app-ai/package.json ./packages/app-ai/
 COPY packages/app-cerebrum/package.json ./packages/app-cerebrum/
+COPY packages/overlay-ego/package.json ./packages/overlay-ego/
 COPY packages/api-client/package.json ./packages/api-client/
 COPY packages/navigation/package.json ./packages/navigation/
 COPY packages/types/package.json ./packages/types/
@@ -40,6 +41,7 @@ COPY packages/app-media/ ./packages/app-media/
 COPY packages/app-inventory/ ./packages/app-inventory/
 COPY packages/app-ai/ ./packages/app-ai/
 COPY packages/app-cerebrum/ ./packages/app-cerebrum/
+COPY packages/overlay-ego/ ./packages/overlay-ego/
 COPY packages/api-client/ ./packages/api-client/
 COPY packages/navigation/ ./packages/navigation/
 COPY packages/types/ ./packages/types/

@@ -23,7 +23,7 @@ import {
 
 import { ConversationListBody } from './ConversationListBody';
 
-import type { ConversationSummary } from '../../pages/chat-page/types';
+import type { ConversationSummary } from '../chat-hooks/types';
 
 export interface ConversationListProps {
   conversations: ConversationSummary[];
