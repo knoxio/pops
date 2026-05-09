@@ -5,7 +5,7 @@
 
 ## Overview
 
-Add Redis 7 to the POPS Docker stack as a shared backend for job queuing (BullMQ) and ephemeral caching. Provide a connection module in pops-api with health checks and graceful shutdown. Update Ansible provisioning to deploy and monitor Redis alongside existing services. Ensure the development environment has a zero-friction Redis setup.
+Add Redis 7 to the POPS Docker stack as a shared backend for job queuing (BullMQ) and ephemeral caching. Provide a connection module in pops-api with health checks and graceful shutdown. Ensure the development environment has a zero-friction Redis setup. Server-side provisioning is the deployer's concern (the knoxio home lab handles it in [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra)).
 
 ## Data Model
 

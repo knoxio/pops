@@ -47,18 +47,18 @@ External APIs
 
 ## Tech Stack
 
-| Layer      | Technology                                                                                                                       |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Runtime    | Node.js 24, pnpm 10 workspaces, Turborepo                                                                                        |
-| Database   | SQLite via Drizzle ORM                                                                                                           |
-| API        | tRPC (type-safe end-to-end)                                                                                                      |
-| Frontend   | React, Vite, React Router, Tailwind v4, shadcn/ui (47 components)                                                                |
-| State      | React Query (server), Zustand (client)                                                                                           |
-| Validation | Zod                                                                                                                              |
-| AI         | Claude API (Haiku for categorization, entity matching)                                                                           |
-| Testing    | Vitest (unit), Playwright (E2E), Storybook                                                                                       |
-| Infra      | Docker Compose (deployer-side ansible + Cloudflare Tunnel via [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra)) |
-| CI         | GitHub Actions (lint, typecheck, format, test, E2E, security)                                                                    |
+| Layer      | Technology                                                                                                                                                                                                                                             |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Runtime    | Node.js 24, pnpm 10 workspaces, Turborepo                                                                                                                                                                                                              |
+| Database   | SQLite via Drizzle ORM                                                                                                                                                                                                                                 |
+| API        | tRPC (type-safe end-to-end)                                                                                                                                                                                                                            |
+| Frontend   | React, Vite, React Router, Tailwind v4, shadcn/ui (47 components)                                                                                                                                                                                      |
+| State      | React Query (server), Zustand (client)                                                                                                                                                                                                                 |
+| Validation | Zod                                                                                                                                                                                                                                                    |
+| AI         | Claude API (Haiku for categorization, entity matching)                                                                                                                                                                                                 |
+| Testing    | Vitest (unit), Playwright (E2E), Storybook                                                                                                                                                                                                             |
+| Infra      | Docker Compose + Watchtower auto-rollout. Deployer-side host setup (ansible, Cloudflare Tunnel) lives in [`knoxio/homelab-infra`](https://github.com/knoxio/homelab-infra) for the knoxio lab; other deployers run the same compose however they like. |
+| CI         | GitHub Actions (lint, typecheck, format, test, E2E, security)                                                                                                                                                                                          |
 
 ## Status
 

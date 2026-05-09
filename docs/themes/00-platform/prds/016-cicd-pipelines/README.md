@@ -16,15 +16,15 @@ GitHub Actions workflows for the pops repo. Quality gates run on every PR and on
 | `api-test.yml`           | PR / push (API changes)              | Integration test suite                                              |
 | `fe-quality.yml`         | PR / push (shell changes)            | Typecheck, test, build                                              |
 | `fe-test-e2e.yml`        | PR / push (shell changes)            | Playwright e2e tests                                                |
-| `ai-quality.yml`         | PR / push (`packages/app-ai`)        | Typecheck, lint                                                     |
-| `finance-quality.yml`    | PR / push (`packages/app-finance`)   | Typecheck, lint                                                     |
-| `inventory-quality.yml`  | PR / push (`packages/app-inventory`) | Typecheck, lint                                                     |
-| `media-quality.yml`      | PR / push (`packages/app-media`)     | Typecheck, lint                                                     |
-| `ui-quality.yml`         | PR / push (`packages/ui`)            | Typecheck, lint                                                     |
-| `db-types-quality.yml`   | PR / push (`packages/db-types`)      | Typecheck, lint                                                     |
-| `api-client-quality.yml` | PR / push (`packages/api-client`)    | Typecheck, lint                                                     |
-| `navigation-quality.yml` | PR / push (`packages/navigation`)    | Typecheck, lint                                                     |
-| `workflows-quality.yml`  | PR / push (`.github/workflows/**`)   | actionlint                                                          |
+| `ai-quality.yml`         | PR / push (`packages/app-ai`)        | Typecheck, test                                                     |
+| `finance-quality.yml`    | PR / push (`packages/app-finance`)   | Typecheck, test                                                     |
+| `inventory-quality.yml`  | PR / push (`packages/app-inventory`) | Typecheck, test                                                     |
+| `media-quality.yml`      | PR / push (`packages/app-media`)     | Typecheck, test                                                     |
+| `ui-quality.yml`         | PR / push (`packages/ui`)            | Typecheck, test                                                     |
+| `db-types-quality.yml`   | PR / push (`packages/db-types`)      | Typecheck, test                                                     |
+| `api-client-quality.yml` | PR / push (`packages/api-client`)    | Typecheck, test                                                     |
+| `navigation-quality.yml` | PR / push (`packages/navigation`)    | Typecheck, test                                                     |
+| `workflows-quality.yml`  | PR / push (`.github/workflows/**`)   | `yaml-lint` over `.github/workflows/*.yml`                          |
 | `docker-build.yml`       | PR / push (Dockerfiles, compose)     | `docker build` per Dockerfile + `docker compose config` per compose |
 | `publish-images.yml`     | Push to main + tag pushes            | Build + push to `ghcr.io/knoxio/pops-{api,shell}` (see PRD-096)     |
 
