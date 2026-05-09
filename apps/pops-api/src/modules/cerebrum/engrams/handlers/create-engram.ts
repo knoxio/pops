@@ -1,7 +1,3 @@
-import { eq } from 'drizzle-orm';
-
-import { engramIndex } from '@pops/db-types';
-
 import { ValidationError } from '../../../../shared/errors.js';
 import { applyTemplate } from '../../templates/apply.js';
 import { serializeEngram } from '../file.js';
@@ -164,23 +160,20 @@ export function createEngram(deps: CreateDeps, input: CreateEngramInput): string
 
   const relPath = `${resolved.type}/${id}.md`;
 
-  // Index first, then file: an index-write failure with the file already on
-  // disk leaks an orphaned markdown file. The opposite ordering is recoverable
-  // — the catch below rolls back the index row.
-  upsertIndex(db, {
-    id,
-    filePath: relPath,
-    frontmatter,
-    body: resolved.body,
-    customFields: resolved.customFields,
-  });
-
-  try {
+  // Wrap the index insert and the file write in a single transaction so a
+  // failure on either side is fully rolled back. The transaction only commits
+  // when the callback returns; if writeFileAtomic throws, the upsertIndex
+  // savepoint is rolled back too — no orphaned row, no orphaned file.
+  db.transaction((tx) => {
+    upsertIndex(tx, {
+      id,
+      filePath: relPath,
+      frontmatter,
+      body: resolved.body,
+      customFields: resolved.customFields,
+    });
     writeFileAtomic(absolutePath(root, relPath), serializeEngram(frontmatter, resolved.body));
-  } catch (err) {
-    db.delete(engramIndex).where(eq(engramIndex.id, id)).run();
-    throw err;
-  }
+  });
 
   return id;
 }

@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -99,6 +99,25 @@ describe('EngramService', () => {
     expect(engram.template).toBeNull();
     expect(engram.type).toBe('capture');
     expect(engram.filePath.startsWith('capture/')).toBe(true);
+  });
+
+  it('rolls back the engram_index row when the file write fails', () => {
+    // Force writeFileAtomic to fail by parking a regular file at the type
+    // subdir path — mkdirSync(recursive: true) inside writeFileAtomic then
+    // throws ENOTDIR, which must roll the index insert back too.
+    writeFileSync(join(root, 'note'), 'block');
+
+    expect(() =>
+      service.create({
+        type: 'note',
+        title: 'Should not land',
+        body: '# nope',
+        scopes: ['personal'],
+      })
+    ).toThrow();
+
+    const rows = db.prepare('SELECT id FROM engram_index').all() as Array<{ id: string }>;
+    expect(rows).toEqual([]);
   });
 
   it('rejects unsafe type values that could escape the engram root', () => {
