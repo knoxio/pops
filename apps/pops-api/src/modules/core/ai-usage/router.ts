@@ -11,11 +11,7 @@
 import { z } from 'zod';
 
 import { protectedProcedure, router } from '../../../trpc.js';
-import {
-  clearAllCache,
-  clearStaleCache,
-  getCacheStats,
-} from '../../finance/imports/lib/ai-categorizer.js';
+import { clearAllCache, clearStaleCache, getCacheStats } from './cache.js';
 import { getHistory, getStats } from './service.js';
 import { getHistoryInputSchema } from './types.js';
 

@@ -11,14 +11,14 @@ import { isNamedEnvContext } from '../../../../db.js';
 import { getAnthropicApiKey } from '../../../../lib/anthropic-api-key.js';
 import { trackInference } from '../../../../lib/inference-middleware.js';
 import { logger } from '../../../../lib/logger.js';
-import { getSettingValue } from '../../../core/settings/service.js';
-import { buildEntryFromText, callApiOrThrow } from './ai-categorizer-api.js';
 import {
   getCachedEntry,
   loadCacheFromDisk,
   setCachedEntry,
   type AiCacheEntry,
-} from './ai-categorizer-cache.js';
+} from '../../../core/ai-usage/cache.js';
+import { getSettingValue } from '../../../core/settings/service.js';
+import { buildEntryFromText, callApiOrThrow } from './ai-categorizer-api.js';
 import { AiCategorizationError } from './ai-categorizer-error.js';
 
 export {
@@ -27,7 +27,7 @@ export {
   clearStaleCache,
   getCacheStats,
   type AiCacheEntry,
-} from './ai-categorizer-cache.js';
+} from '../../../core/ai-usage/cache.js';
 export { AiCategorizationError } from './ai-categorizer-error.js';
 
 const DEFAULT_CATEGORIZER_MODEL = 'claude-haiku-4-5-20251001';

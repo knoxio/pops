@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { DEFAULT_SQLITE_PATH } from '../../../../db/sqlite-path.js';
-import { logger } from '../../../../lib/logger.js';
+import { DEFAULT_SQLITE_PATH } from '../../../db/sqlite-path.js';
+import { logger } from '../../../lib/logger.js';
 
 export interface AiCacheEntry {
   description: string;
