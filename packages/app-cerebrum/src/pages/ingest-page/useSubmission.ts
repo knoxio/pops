@@ -1,5 +1,6 @@
 /** Sub-hook: submit mutation and orchestration with scope inference. */
 import { useCallback, useState } from 'react';
+import { toast } from 'sonner';
 
 import { trpc } from '@pops/api-client';
 
@@ -9,6 +10,20 @@ import type { useScopeInference } from './useScopeInference';
 
 type FormState = ReturnType<typeof useFormState>;
 type Inference = ReturnType<typeof useScopeInference>;
+type FormValues = FormState['form'];
+
+function buildSubmitPayload(form: FormValues, scopes: string[]) {
+  return {
+    body: form.body,
+    title: form.title || undefined,
+    type: form.type || undefined,
+    scopes: scopes.length > 0 ? scopes : undefined,
+    tags: form.tags.length > 0 ? form.tags : undefined,
+    template: form.template || undefined,
+    source: 'manual' as const,
+    customFields: Object.keys(form.customFields).length > 0 ? form.customFields : undefined,
+  };
+}
 
 export function useSubmission(formState: FormState, inference: Inference) {
   const [submitResult, setSubmitResult] = useState<SubmitResult | null>(null);
@@ -21,23 +36,16 @@ export function useSubmission(formState: FormState, inference: Inference) {
         type: result.engram.type,
       });
     },
+    onError: (error) => {
+      toast.error('Submit Engram failed', { description: error.message });
+    },
   });
 
   const confirmInferredScopes = useCallback(() => {
     inference.confirm((scopes) => {
       const mergedScopes = [...new Set([...formState.form.scopes, ...scopes])];
       formState.updateField('scopes', mergedScopes);
-      const { form } = formState;
-      submitMutation.mutate({
-        body: form.body,
-        title: form.title || undefined,
-        type: form.type || undefined,
-        scopes: mergedScopes.length > 0 ? mergedScopes : undefined,
-        tags: form.tags.length > 0 ? form.tags : undefined,
-        template: form.template || undefined,
-        source: 'manual',
-        customFields: Object.keys(form.customFields).length > 0 ? form.customFields : undefined,
-      });
+      submitMutation.mutate(buildSubmitPayload(formState.form, mergedScopes));
     });
   }, [inference, formState, submitMutation]);
 
@@ -47,16 +55,7 @@ export function useSubmission(formState: FormState, inference: Inference) {
       await inference.run();
       return;
     }
-    submitMutation.mutate({
-      body: form.body,
-      title: form.title || undefined,
-      type: form.type || undefined,
-      scopes: form.scopes.length > 0 ? form.scopes : undefined,
-      tags: form.tags.length > 0 ? form.tags : undefined,
-      template: form.template || undefined,
-      source: 'manual',
-      customFields: Object.keys(form.customFields).length > 0 ? form.customFields : undefined,
-    });
+    submitMutation.mutate(buildSubmitPayload(form, form.scopes));
   }, [formState, inference, submitMutation]);
 
   const resetForm = useCallback(() => {
