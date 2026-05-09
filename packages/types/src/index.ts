@@ -24,3 +24,11 @@ export type {
   FeatureScope,
   FeatureStatus,
 } from './feature-manifest.js';
+export { assertModuleManifest } from './module-manifest.js';
+export type {
+  ModuleBackendManifest,
+  ModuleFrontendManifest,
+  ModuleManifest,
+  ModuleOverlayConfig,
+  ModuleSurface,
+} from './module-manifest.js';

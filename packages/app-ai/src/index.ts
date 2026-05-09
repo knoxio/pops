@@ -5,3 +5,4 @@
  * to lazily load AI pages under /ai/*.
  */
 export { navConfig, routes } from './routes';
+export { manifest } from './manifest';

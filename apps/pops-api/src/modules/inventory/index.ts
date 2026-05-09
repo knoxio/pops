@@ -22,6 +22,8 @@ import { paperlessRouter } from './paperless/router.js';
 import { photosRouter } from './photos/index.js';
 import { reportsRouter } from './reports/index.js';
 
+import type { ModuleManifest } from '@pops/types';
+
 export const inventoryRouter = router({
   items: itemsRouter,
   locations: locationsRouter,
@@ -32,3 +34,14 @@ export const inventoryRouter = router({
   documentFiles: documentFilesRouter,
   paperless: paperlessRouter,
 });
+
+/** PRD-098 manifest. Metadata-only; consumed by the PRD-100 loader. */
+export const manifest: ModuleManifest<typeof inventoryRouter> = {
+  id: 'inventory',
+  name: 'Inventory',
+  version: '0.1.0',
+  surfaces: ['app'],
+  description: 'Home items, locations, connections, warranties, and documents.',
+  backend: { router: inventoryRouter },
+  settings: inventoryManifest,
+};

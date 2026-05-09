@@ -17,9 +17,22 @@ import { importsRouter } from './imports/router.js';
 import { transactionsRouter } from './transactions/router.js';
 import { wishlistRouter } from './wishlist/router.js';
 
+import type { ModuleManifest } from '@pops/types';
+
 export const financeRouter = router({
   transactions: transactionsRouter,
   budgets: budgetsRouter,
   imports: importsRouter,
   wishlist: wishlistRouter,
 });
+
+/** PRD-098 manifest. Metadata-only; consumed by the PRD-100 loader. */
+export const manifest: ModuleManifest<typeof financeRouter> = {
+  id: 'finance',
+  name: 'Finance',
+  version: '0.1.0',
+  surfaces: ['app'],
+  description: 'Transactions, budgets, entities, and import pipeline.',
+  backend: { router: financeRouter },
+  settings: financeManifest,
+};

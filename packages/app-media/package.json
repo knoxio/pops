@@ -16,6 +16,7 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@pops/api-client": "workspace:*",
     "@pops/navigation": "workspace:*",
+    "@pops/types": "workspace:*",
     "@pops/ui": "workspace:*",
     "@tanstack/react-query": "5.100.9",
     "i18next": "^26.0.10",

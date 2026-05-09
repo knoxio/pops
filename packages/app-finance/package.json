@@ -19,6 +19,7 @@
     "@pops/api-client": "workspace:*",
     "@pops/db-types": "workspace:*",
     "@pops/navigation": "workspace:*",
+    "@pops/types": "workspace:*",
     "@pops/ui": "workspace:*",
     "@tanstack/react-query": "5.100.9",
     "@tanstack/react-table": "^8.21.3",

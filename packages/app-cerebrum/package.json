@@ -14,6 +14,7 @@
     "@pops/api-client": "workspace:*",
     "@pops/app-ai": "workspace:*",
     "@pops/navigation": "workspace:*",
+    "@pops/types": "workspace:*",
     "@pops/ui": "workspace:*",
     "@tanstack/react-query": "5.100.9",
     "lucide-react": "^1.14.0",

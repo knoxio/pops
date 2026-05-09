@@ -33,6 +33,8 @@ import { searchRouter } from './search/router.js';
 import { settingsRouter } from './settings/router.js';
 import { tagRulesRouter } from './tag-rules/router.js';
 
+import type { ModuleManifest } from '@pops/types';
+
 export const coreRouter = router({
   entities: entitiesRouter,
   aiUsage: aiUsageRouter,
@@ -47,3 +49,18 @@ export const coreRouter = router({
   features: featuresRouter,
   search: searchRouter,
 });
+
+/**
+ * PRD-098 manifest. Core is the always-mounted shell module that every
+ * domain module is allowed to depend on. The PRD-100 loader treats `core`
+ * as non-optional regardless of `POPS_APPS`.
+ */
+export const manifest: ModuleManifest<typeof coreRouter> = {
+  id: 'core',
+  name: 'Core',
+  version: '0.1.0',
+  surfaces: ['app'],
+  description:
+    'Cross-cutting platform services: entities, AI usage/providers, settings, features, search.',
+  backend: { router: coreRouter },
+};

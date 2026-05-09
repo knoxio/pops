@@ -33,6 +33,8 @@ import { tvShowsRouter } from './tv-shows/index.js';
 import { watchHistoryRouter } from './watch-history/router.js';
 import { watchlistRouter } from './watchlist/router.js';
 
+import type { ModuleManifest } from '@pops/types';
+
 export const mediaRouter = router({
   movies: moviesRouter,
   tvShows: tvShowsRouter,
@@ -46,3 +48,18 @@ export const mediaRouter = router({
   plex: plexRouter,
   rotation: rotationRouter,
 });
+
+/**
+ * PRD-098 manifest. Metadata-only; consumed by the PRD-100 loader.
+ * Media owns multiple settings manifests (Plex, Arr, Rotation, Operational);
+ * they remain registered via `settingsRegistry.register` above and the
+ * `settings` slot is left empty until the unified registry consolidates.
+ */
+export const manifest: ModuleManifest<typeof mediaRouter> = {
+  id: 'media',
+  name: 'Media',
+  version: '0.1.0',
+  surfaces: ['app'],
+  description: 'Movies, TV shows, watchlist, watch history, Plex/TMDB/TVDB sync.',
+  backend: { router: mediaRouter },
+};

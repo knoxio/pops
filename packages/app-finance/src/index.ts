@@ -5,6 +5,7 @@
  * to lazily load finance pages under /finance/*.
  */
 export { navConfig, routes } from './routes';
+export { manifest } from './manifest';
 
 // Side-effect: register search result components
 import './components/search/EntitiesResultComponent';
