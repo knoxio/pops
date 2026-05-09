@@ -19,12 +19,15 @@ const NETWORK_ERROR_TOAST_ID = 'network-down';
 /**
  * Surface a toast only when the request never reached the server. Server-returned
  * 4xx/5xx errors keep their per-feature handling so this isn't toast spam.
+ *
+ * Note: queries retry on focus/remount by default, but mutations do not — so the
+ * copy avoids claiming "retrying" and points the user at the next concrete step.
  */
 function notifyNetworkError(err: unknown): void {
   if (!isNetworkError(err)) return;
-  toast.error("Couldn't reach the server. Retrying…", {
+  toast.error("Couldn't reach the server", {
     id: NETWORK_ERROR_TOAST_ID,
-    description: 'Check your connection. Pages will recover once the server responds.',
+    description: 'Check your connection. The page will refresh once the server responds.',
   });
 }
 

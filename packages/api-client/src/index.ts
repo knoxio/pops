@@ -25,16 +25,20 @@ function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit): Promise
   const timeoutId = setTimeout(() => controller.abort('timeout'), TRPC_FETCH_TIMEOUT_MS);
 
   // Chain the caller's signal (e.g. React Query cancellation) with our timeout
-  // so aborting either source aborts the request.
+  // so aborting either source aborts the request. The listener is registered
+  // with `once` and cleaned up explicitly in `finally` so a long-lived caller
+  // signal doesn't accumulate listeners across requests.
   const callerSignal = init?.signal;
+  const onCallerAbort = (): void => controller.abort(callerSignal?.reason);
   if (callerSignal) {
     if (callerSignal.aborted) controller.abort(callerSignal.reason);
-    else callerSignal.addEventListener('abort', () => controller.abort(callerSignal.reason));
+    else callerSignal.addEventListener('abort', onCallerAbort, { once: true });
   }
 
-  return fetch(input, { ...init, signal: controller.signal }).finally(() =>
-    clearTimeout(timeoutId)
-  );
+  return fetch(input, { ...init, signal: controller.signal }).finally(() => {
+    clearTimeout(timeoutId);
+    callerSignal?.removeEventListener('abort', onCallerAbort);
+  });
 }
 
 /**
@@ -71,15 +75,18 @@ function messageLooksLikeNetworkFailure(err: object): boolean {
  * returned by the server with a real status code?
  *
  * Server-returned errors have a `data` field with `httpStatus`. Network
- * failures don't make it that far, so they bubble up as a TRPCClientError
- * wrapping a fetch error or AbortError.
+ * failures don't make it that far — they bubble up as a TRPCClientError
+ * wrapping a fetch error, an AbortError, or a `DOMException` (which is
+ * not an `Error` subclass in browsers).
  */
 export function isNetworkError(err: unknown): boolean {
   if (!err || typeof err !== 'object') return false;
   if ('data' in err && err.data != null) return false;
   if (messageLooksLikeNetworkFailure(err)) return true;
+  // `DOMException` (Web abort errors) is not an `Error` subclass, so the
+  // recursion needs to follow any throwable-shaped cause, not just `Error`.
   const cause = 'cause' in err ? err.cause : undefined;
-  if (cause instanceof Error) return isNetworkError(cause);
+  if (cause && typeof cause === 'object') return isNetworkError(cause);
   return false;
 }
 
