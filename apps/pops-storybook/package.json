@@ -14,18 +14,18 @@
     "@pops/app-inventory": "workspace:*",
     "@pops/app-media": "workspace:*",
     "@pops/ui": "workspace:*",
-    "react": "^19.2.5",
-    "react-dom": "^19.2.5"
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^5.1.2",
-    "@storybook/addon-a11y": "^10.3.5",
-    "@storybook/react-vite": "^10.3.5",
-    "@tailwindcss/vite": "4.2.4",
+    "@storybook/addon-a11y": "^10.3.6",
+    "@storybook/react-vite": "^10.3.6",
+    "@tailwindcss/vite": "4.3.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "storybook": "^10.3.5",
+    "storybook": "^10.3.6",
     "typescript": "^6.0.3",
-    "vite": "^8.0.10"
+    "vite": "^8.0.11"
   }
 }
