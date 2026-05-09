@@ -1,6 +1,7 @@
 # US-03: Shell chrome slot
 
 > PRD: [Overlay Surfaces](README.md)
+> Status: In progress
 
 ## Description
 

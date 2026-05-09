@@ -1,6 +1,7 @@
 # US-02: Summonable floating panel
 
 > PRD: [Overlay Surfaces](README.md)
+> Status: In progress
 
 ## Description
 

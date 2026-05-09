@@ -1,6 +1,7 @@
 # US-01: Overlay-ego package scaffold
 
 > PRD: [Overlay Surfaces](README.md)
+> Status: In progress
 
 ## Description
 
