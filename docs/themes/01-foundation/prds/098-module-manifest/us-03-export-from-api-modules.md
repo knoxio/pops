@@ -1,6 +1,7 @@
 # US-03: API modules export a manifest
 
 > PRD: [Module Manifest](README.md)
+> Status: In progress
 
 ## Description
 

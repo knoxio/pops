@@ -121,18 +121,20 @@ function assertBackend(value: unknown, context: string): void {
   if (!value || typeof value !== 'object') {
     fail(context, `'backend' must be an object when set`);
   }
-  if ((value as Record<string, unknown>).router === undefined) {
-    fail(context, `'backend.router' is required when 'backend' is set`);
+  const router = (value as Record<string, unknown>).router;
+  if (router === undefined || router === null) {
+    fail(context, `'backend.router' must be present and non-null when 'backend' is set`);
   }
 }
 
-function assertFrontend(value: unknown, surfaces: readonly ModuleSurface[], context: string): void {
-  if (value === undefined) return;
+function assertFrontend(value: unknown, context: string): void {
   if (!value || typeof value !== 'object') {
-    fail(context, `'frontend' must be an object when set`);
+    fail(context, `'frontend' must be an object`);
   }
-  if (!surfaces.includes('overlay')) return;
-  const f = value as Record<string, unknown>;
+}
+
+function assertOverlayConfig(frontend: unknown, context: string): void {
+  const f = frontend as Record<string, unknown>;
   if (!f.overlay || typeof f.overlay !== 'object') {
     fail(context, `'frontend.overlay' is required when surfaces includes 'overlay'`);
   }
@@ -152,6 +154,15 @@ export function assertModuleManifest(
   assertNonEmptyString(m.id, context, 'id');
   assertNonEmptyString(m.name, context, 'name');
   const surfaces = assertSurfaces(m.surfaces, context);
+  if (m.backend === undefined && m.frontend === undefined) {
+    fail(context, `at least one of 'backend' or 'frontend' must be present`);
+  }
   assertBackend(m.backend, context);
-  assertFrontend(m.frontend, surfaces, context);
+  if (m.frontend !== undefined) assertFrontend(m.frontend, context);
+  if (surfaces.includes('overlay')) {
+    if (m.frontend === undefined) {
+      fail(context, `'frontend.overlay' is required when surfaces includes 'overlay'`);
+    }
+    assertOverlayConfig(m.frontend, context);
+  }
 }

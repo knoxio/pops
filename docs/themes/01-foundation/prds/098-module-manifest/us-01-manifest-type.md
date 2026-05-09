@@ -1,6 +1,7 @@
 # US-01: Manifest type in `@pops/types`
 
 > PRD: [Module Manifest](README.md)
+> Status: In progress
 
 ## Description
 
