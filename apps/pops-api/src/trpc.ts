@@ -5,6 +5,7 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 
 import { verifyCloudflareJWT } from './middleware/cloudflare-jwt.js';
+import { KNOWN_APPS, KNOWN_OVERLAYS, readInstalledModules } from './modules/env-modules.js';
 
 import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
 import type { OpenApiMeta } from 'trpc-to-openapi';
@@ -91,14 +92,40 @@ export const router = t.router;
 /** Merge multiple routers into a single router. */
 export const mergeRouters = t.mergeRouters;
 
+/**
+ * Optional domain modules — gated by `POPS_APPS` / `POPS_OVERLAYS` (PRD-100).
+ * `core` is always installed. The router id sets derive directly from
+ * `KNOWN_APPS` / `KNOWN_OVERLAYS` so this stays in sync with the env contract
+ * — adding a new known app there automatically extends the gate.
+ */
+const OPTIONAL_APP_ROUTERS: ReadonlySet<string> = new Set(KNOWN_APPS);
+const OVERLAY_ROUTERS: ReadonlySet<string> = new Set(KNOWN_OVERLAYS);
+
+const moduleGate = t.middleware(({ path, next }) => {
+  const top = path.split('.')[0] ?? '';
+  const isApp = OPTIONAL_APP_ROUTERS.has(top);
+  const isOverlay = OVERLAY_ROUTERS.has(top);
+  if (!isApp && !isOverlay) return next();
+
+  const installed = readInstalledModules();
+  const set = new Set<string>(isApp ? installed.apps : installed.overlays);
+  if (!set.has(top)) {
+    throw new TRPCError({
+      code: 'NOT_FOUND',
+      message: `Module '${top}' is not installed in this deployment.`,
+    });
+  }
+  return next();
+});
+
 /** Base procedure for all endpoints (no auth required). */
-export const publicProcedure = t.procedure;
+export const publicProcedure = t.procedure.use(moduleGate);
 
 /**
  * Protected procedure that requires valid Cloudflare Access JWT.
  * Use this for all authenticated endpoints.
  */
-export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
+export const protectedProcedure = t.procedure.use(moduleGate).use(({ ctx, next }) => {
   if (!ctx.user) {
     throw new TRPCError({
       code: 'UNAUTHORIZED',

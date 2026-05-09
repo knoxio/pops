@@ -1,7 +1,6 @@
 # US-04: Manifest assertion test
 
 > PRD: [Module Manifest](README.md)
-> Status: In progress
 
 ## Description
 

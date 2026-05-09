@@ -46,6 +46,11 @@ services:
       # Paperless-ngx integration (optional — leave unset to disable)
       PAPERLESS_BASE_URL: ${PAPERLESS_BASE_URL:-}
       PAPERLESS_API_TOKEN: ${PAPERLESS_API_TOKEN:-}
+      # PRD-100 module runtime — leave empty to install everything (default behaviour).
+      # Valid apps: finance,media,inventory,cerebrum. Valid overlays: ego.
+      # (ai surfaces are mounted under /cerebrum/admin/*, not as a separate app.)
+      POPS_APPS: ${POPS_APPS:-}
+      POPS_OVERLAYS: ${POPS_OVERLAYS:-}
     expose:
       - '3000'
     depends_on:
@@ -87,6 +92,9 @@ services:
       SQLITE_PATH: /data/sqlite/pops.db
       REDIS_HOST: pops-redis
       REDIS_PORT: '6379'
+      # PRD-100 — same module set as the api so worker jobs scope correctly.
+      POPS_APPS: ${POPS_APPS:-}
+      POPS_OVERLAYS: ${POPS_OVERLAYS:-}
     depends_on:
       pops-redis:
         condition: service_healthy

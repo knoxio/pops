@@ -1,7 +1,6 @@
 # US-02: Frontend apps export a manifest
 
 > PRD: [Module Manifest](README.md)
-> Status: In progress
 
 ## Description
 

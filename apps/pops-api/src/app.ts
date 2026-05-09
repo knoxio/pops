@@ -8,6 +8,7 @@ import { authMiddleware } from './middleware/auth.js';
 import { envContextMiddleware } from './middleware/env-context.js';
 import { rateLimiter } from './middleware/rate-limit.js';
 import { envRouter } from './modules/core/envs/router.js';
+import { readInstalledModules } from './modules/env-modules.js';
 import { openApiDocument } from './openapi.js';
 import { appRouter } from './router.js';
 import egoChatStreamRouter from './routes/ego/chat-stream.js';
@@ -24,6 +25,11 @@ import { createContext } from './trpc.js';
  * Exported separately from the server for testing.
  */
 export function createApp(): express.Express {
+  // PRD-100: validate POPS_APPS / POPS_OVERLAYS at boot. Throws on
+  // unknown ids or footgun values like only-commas. Result is cached
+  // for the rest of the process.
+  readInstalledModules();
+
   const app = express();
 
   // Security headers

@@ -1,7 +1,6 @@
 # PRD-098: Module Manifest
 
 > Epic: [Modular Module Runtime](../../epics/10-modular-module-runtime.md)
-> Status: In progress
 
 ## Overview
 
