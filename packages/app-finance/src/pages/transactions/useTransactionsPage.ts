@@ -1,7 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useCallback, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { toast } from 'sonner';
 
 import { trpc } from '@pops/api-client';
 
@@ -11,44 +10,7 @@ import {
   type TransactionFormValues,
   TransactionFormSchema,
 } from './types';
-
-interface MutationDeps {
-  setIsDialogOpen: (v: boolean) => void;
-  setEditingTransaction: (t: Transaction | null) => void;
-  setDeletingId: (id: string | null) => void;
-}
-
-function useTransactionMutations(deps: MutationDeps) {
-  const utils = trpc.useUtils();
-  const createMutation = trpc.finance.transactions.create.useMutation({
-    onSuccess: () => {
-      toast.success('Transaction created');
-      void utils.finance.transactions.list.invalidate();
-      void utils.finance.transactions.availableTags.invalidate();
-      deps.setIsDialogOpen(false);
-    },
-    onError: (err) => toast.error(err.message),
-  });
-  const updateMutation = trpc.finance.transactions.update.useMutation({
-    onSuccess: () => {
-      toast.success('Transaction updated');
-      void utils.finance.transactions.list.invalidate();
-      void utils.finance.transactions.availableTags.invalidate();
-      deps.setIsDialogOpen(false);
-      deps.setEditingTransaction(null);
-    },
-    onError: (err) => toast.error(err.message),
-  });
-  const deleteMutation = trpc.finance.transactions.delete.useMutation({
-    onSuccess: () => {
-      toast.success('Transaction deleted');
-      void utils.finance.transactions.list.invalidate();
-      deps.setDeletingId(null);
-    },
-    onError: (err) => toast.error(err.message),
-  });
-  return { createMutation, updateMutation, deleteMutation };
-}
+import { useTransactionMutations } from './useTransactionMutations';
 
 /**
  * Build the API payload from the form values.
@@ -143,17 +105,19 @@ function useDialogHandlers(deps: DialogHandlersDeps) {
 export function useTransactionsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
-  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deletingTx, setDeletingTx] = useState<Transaction | null>(null);
 
   const query = trpc.finance.transactions.list.useQuery({ limit: 100 });
   const { data: availableTagsData } = trpc.finance.transactions.availableTags.useQuery();
   const entitiesQuery = trpc.core.entities.list.useQuery({ limit: 500 });
 
-  const { createMutation, updateMutation, deleteMutation } = useTransactionMutations({
-    setIsDialogOpen,
-    setEditingTransaction,
-    setDeletingId,
-  });
+  const { createMutation, updateMutation, deleteMutation, confirmDelete } = useTransactionMutations(
+    {
+      setIsDialogOpen,
+      setEditingTransaction,
+      setDeletingTx,
+    }
+  );
 
   const form = useForm<TransactionFormValues>({
     resolver: zodResolver(TransactionFormSchema),
@@ -189,9 +153,10 @@ export function useTransactionsPage() {
     isDialogOpen,
     setIsDialogOpen,
     editingTransaction,
-    deletingId,
-    setDeletingId,
+    deletingTx,
+    setDeletingTx,
     deleteMutation,
+    confirmDelete,
     handleAdd,
     handleEdit,
     onSubmit,

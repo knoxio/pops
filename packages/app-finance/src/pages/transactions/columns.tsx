@@ -31,7 +31,7 @@ interface BuildColumnsArgs {
   ) => (tags: string[]) => Promise<void>;
   onTagSuggest: (description: string, entityId: string | null) => () => Promise<string[]>;
   onEdit: (transaction: Transaction) => void;
-  onDelete: (id: string) => void;
+  onDelete: (transaction: Transaction) => void;
 }
 
 function tagsFilterFn(
@@ -139,7 +139,7 @@ function buildInteractiveColumns(args: BuildColumnsArgs): ColumnDef<Transaction>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
-              onClick={() => args.onDelete(row.original.id)}
+              onClick={() => args.onDelete(row.original)}
             >
               <Trash2 /> Delete
             </DropdownMenuItem>

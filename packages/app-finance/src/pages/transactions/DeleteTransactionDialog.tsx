@@ -9,33 +9,35 @@ import {
   AlertDialogTitle,
 } from '@pops/ui';
 
+import type { Transaction } from './types';
+
 interface Props {
-  deletingId: string | null;
-  setDeletingId: (id: string | null) => void;
+  deletingTx: Transaction | null;
+  setDeletingTx: (t: Transaction | null) => void;
   isDeleting: boolean;
-  onConfirm: (id: string) => void;
+  onConfirm: (tx: Transaction) => void;
 }
 
 export function DeleteTransactionDialog({
-  deletingId,
-  setDeletingId,
+  deletingTx,
+  setDeletingTx,
   isDeleting,
   onConfirm,
 }: Props) {
   return (
-    <AlertDialog open={!!deletingId} onOpenChange={() => setDeletingId(null)}>
+    <AlertDialog open={!!deletingTx} onOpenChange={() => setDeletingTx(null)}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This will permanently delete this transaction.
+            This will delete this transaction. You can undo from the toast for a few seconds after.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
           <AlertDialogAction
             className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            onClick={() => deletingId && onConfirm(deletingId)}
+            onClick={() => deletingTx && onConfirm(deletingTx)}
             disabled={isDeleting}
           >
             {isDeleting ? 'Deleting...' : 'Delete'}

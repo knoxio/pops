@@ -124,7 +124,7 @@ export function TransactionsPage() {
     onTagSave,
     onTagSuggest,
     onEdit: state.handleEdit,
-    onDelete: state.setDeletingId,
+    onDelete: state.setDeletingTx,
   });
 
   return (
@@ -154,10 +154,10 @@ export function TransactionsPage() {
         entities={state.entities}
       />
       <DeleteTransactionDialog
-        deletingId={state.deletingId}
-        setDeletingId={state.setDeletingId}
+        deletingTx={state.deletingTx}
+        setDeletingTx={state.setDeletingTx}
         isDeleting={state.deleteMutation.isPending}
-        onConfirm={(id) => state.deleteMutation.mutate({ id })}
+        onConfirm={(tx) => state.confirmDelete(tx)}
       />
     </div>
   );

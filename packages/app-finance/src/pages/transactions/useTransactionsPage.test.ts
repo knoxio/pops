@@ -404,16 +404,31 @@ describe('useTransactionsPage — handleEdit prefill', () => {
 // ---------- delete path ----------
 
 describe('useTransactionsPage — delete', () => {
-  it('exposes a setDeletingId setter that does not auto-fire the delete mutation', () => {
+  it('exposes a setDeletingTx setter that does not auto-fire the delete mutation', () => {
     const { result } = renderHook(() => useTransactionsPage());
+    const tx = makeTransaction({ id: 'txn-42' });
 
     act(() => {
-      result.current.setDeletingId('txn-42');
+      result.current.setDeletingTx(tx);
     });
 
-    expect(result.current.deletingId).toBe('txn-42');
+    expect(result.current.deletingTx).toBe(tx);
     // The delete only fires when the AlertDialog confirm button calls
-    // deleteMutation.mutate explicitly — not when an id is staged.
+    // confirmDelete explicitly — not when a transaction is staged.
     expect(mockDeleteMutate).not.toHaveBeenCalled();
+  });
+
+  it('confirmDelete invokes the delete mutation with the staged transaction id', () => {
+    const { result } = renderHook(() => useTransactionsPage());
+    const tx = makeTransaction({ id: 'txn-42' });
+
+    act(() => {
+      result.current.confirmDelete(tx);
+    });
+
+    expect(mockDeleteMutate).toHaveBeenCalledWith(
+      { id: 'txn-42' },
+      expect.objectContaining({ onSuccess: expect.any(Function) })
+    );
   });
 });
