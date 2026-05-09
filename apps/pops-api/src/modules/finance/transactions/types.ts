@@ -110,6 +110,34 @@ export const UpdateTransactionSchema = z.object({
 });
 export type UpdateTransactionInput = z.infer<typeof UpdateTransactionSchema>;
 
+/**
+ * Zod schema for the snapshot returned by `delete` and accepted by `restore`.
+ *
+ * Mirrors the SQLite row exactly — including the original `id`, `checksum`,
+ * `rawRow`, and `notionId` — so an Undo flow restores dedup metadata and any
+ * link pointing at the original id keeps resolving.
+ */
+export const TransactionSnapshotSchema = z.object({
+  id: z.string(),
+  notionId: z.string().nullable(),
+  description: z.string(),
+  account: z.string(),
+  amount: z.number(),
+  date: z.string(),
+  type: z.string(),
+  tags: z.string(),
+  entityId: z.string().nullable(),
+  entityName: z.string().nullable(),
+  location: z.string().nullable(),
+  country: z.string().nullable(),
+  relatedTransactionId: z.string().nullable(),
+  notes: z.string().nullable(),
+  checksum: z.string().nullable(),
+  rawRow: z.string().nullable(),
+  lastEditedTime: z.string(),
+});
+export type TransactionSnapshot = z.infer<typeof TransactionSnapshotSchema>;
+
 /** Zod schema for transaction list query params. */
 export const TransactionQuerySchema = z.object({
   search: z.string().optional(),

@@ -221,7 +221,7 @@ test.describe('Finance — transactions CRUD', () => {
 
     const confirm = deleteDialog(page);
     await expect(confirm).toBeVisible();
-    await expect(confirm.getByText(/permanently delete/i)).toBeVisible();
+    await expect(confirm.getByText(/undo from the toast/i)).toBeVisible();
 
     await confirm.getByRole('button', { name: /^delete$/i }).click();
 

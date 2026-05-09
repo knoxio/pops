@@ -18,6 +18,7 @@ import {
   type TransactionFilters,
   TransactionQuerySchema,
   TransactionSchema,
+  TransactionSnapshotSchema,
   UpdateTransactionSchema,
 } from './types.js';
 
@@ -119,16 +120,41 @@ export const transactionsRouter = router({
       }
     }),
 
-  /** Delete a transaction. */
+  /**
+   * Delete a transaction. Returns the deleted row as a `snapshot` so the
+   * client can offer Undo via `restore`. The snapshot carries the full row
+   * including original id, checksum, raw_row, and notion_id — fields that
+   * the list shape strips and that an Undo flow needs to preserve.
+   */
   delete: protectedProcedure.input(z.object({ id: z.string() })).mutation(({ input }) => {
     try {
-      service.deleteTransaction(input.id);
-      return { message: 'Transaction deleted' };
+      const snapshot = service.deleteTransaction(input.id);
+      return { message: 'Transaction deleted', snapshot };
     } catch (err) {
       if (err instanceof NotFoundError) {
         throw new TRPCError({ code: 'NOT_FOUND', message: err.message });
       }
       throw err;
+    }
+  }),
+
+  /**
+   * Restore a previously-deleted transaction from a snapshot returned by
+   * `delete`. Re-inserts preserving id and dedup metadata so a re-import of
+   * the same source row is still detected as a duplicate.
+   *
+   * Note: SQLite's `ON DELETE SET NULL` already cleared `inventory.purchase_transaction_id`
+   * pointers when the original delete ran. Restore re-creates the
+   * transaction id but does not auto-reattach those FKs — that requires
+   * a separate manual step.
+   */
+  restore: protectedProcedure.input(TransactionSnapshotSchema).mutation(({ input }) => {
+    try {
+      const row = service.restoreTransaction(input);
+      return { data: toTransaction(row), message: 'Transaction restored' };
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Restore failed';
+      throw new TRPCError({ code: 'CONFLICT', message });
     }
   }),
 

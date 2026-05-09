@@ -182,12 +182,31 @@ export function updateTransaction(id: string, input: UpdateTransactionInput): Tr
 
 /**
  * Delete a transaction by ID. Throws NotFoundError if missing.
- * Deletes directly from SQLite.
+ * Deletes directly from SQLite. Returns the deleted row so a caller can
+ * reconstruct it via `restoreTransaction` for an Undo flow.
  */
-export function deleteTransaction(id: string): void {
-  // Verify it exists first
-  getTransaction(id);
+export function deleteTransaction(id: string): TransactionRow {
+  const snapshot = getTransaction(id);
 
   const result = getDrizzle().delete(transactions).where(eq(transactions.id, id)).run();
   if (result.changes === 0) throw new NotFoundError('Transaction', id);
+  return snapshot;
+}
+
+/**
+ * Restore a previously-deleted transaction from a server-issued snapshot.
+ *
+ * Re-inserts preserving the original id, checksum, raw_row, and notion_id
+ * so dedup metadata is intact and any downstream link that still points
+ * at the original id resolves again. Throws if a row with the same id
+ * already exists (caller should handle that case).
+ */
+export function restoreTransaction(snapshot: TransactionRow): TransactionRow {
+  const db = getDrizzle();
+  const existing = db.select().from(transactions).where(eq(transactions.id, snapshot.id)).get();
+  if (existing) {
+    throw new Error(`Transaction '${snapshot.id}' already exists`);
+  }
+  db.insert(transactions).values(snapshot).run();
+  return getTransaction(snapshot.id);
 }
