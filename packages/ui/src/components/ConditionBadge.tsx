@@ -1,6 +1,8 @@
 import { cn } from '../lib/utils';
 import { Badge } from '../primitives/badge';
 
+import { STATUS_BADGE_BASE, statusBadgeToneClass } from './statusBadgeTones';
+
 import type { ComponentProps } from 'react';
 
 /**
@@ -29,11 +31,11 @@ function normalise(condition: string): string {
 type NormalisedCondition = 'new' | 'good' | 'fair' | 'poor' | 'broken';
 
 const conditionStyles: Record<NormalisedCondition, string> = {
-  new: 'bg-info/10 text-info border-info/20 dark:text-info/80',
-  good: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400',
-  fair: 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
-  poor: 'bg-orange-500/10 text-orange-700 border-orange-500/20 dark:text-orange-400',
-  broken: 'bg-destructive/10 text-destructive border-destructive/20 dark:text-destructive/80',
+  new: statusBadgeToneClass.info,
+  good: statusBadgeToneClass.success,
+  fair: statusBadgeToneClass.warning,
+  poor: statusBadgeToneClass['stat-orange'],
+  broken: statusBadgeToneClass.destructive,
 };
 
 const KNOWN_CONDITIONS = new Set<string>(['new', 'good', 'fair', 'poor', 'broken']);
@@ -59,11 +61,7 @@ export function ConditionBadge({ condition, className, ...props }: ConditionBadg
   return (
     <Badge
       variant="outline"
-      className={cn(
-        'text-2xs uppercase tracking-wider font-semibold py-0 px-1.5 h-5',
-        styles,
-        className
-      )}
+      className={cn(STATUS_BADGE_BASE, styles, className)}
       {...props}
     >
       {condition}

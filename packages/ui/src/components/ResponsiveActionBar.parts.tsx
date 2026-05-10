@@ -33,7 +33,7 @@ export function StaleButton({
         >
           <Clock className="h-3.5 w-3.5 mr-1.5" />
           <span className="hidden sm:inline">Stale:</span>
-          <span className="truncate max-w-[8rem]">{movie.title}</span>
+          <span className="truncate max-w-32">{movie.title}</span>
         </Button>
       </TooltipTrigger>
       <TooltipContent>Mark as stale — reduces score weight for future comparisons</TooltipContent>

@@ -1,6 +1,8 @@
 import { cn } from '../lib/utils';
 import { Badge } from '../primitives/badge';
 
+import { STATUS_BADGE_BASE, statusBadgeToneClass } from './statusBadgeTones';
+
 import type { ComponentProps } from 'react';
 
 export interface TypeBadgeProps extends Omit<ComponentProps<typeof Badge>, 'variant' | 'children'> {
@@ -8,25 +10,21 @@ export interface TypeBadgeProps extends Omit<ComponentProps<typeof Badge>, 'vari
 }
 
 const typeStyles: Record<string, string> = {
-  Electronics: 'bg-info/10 text-info border-info/20 dark:text-info/80',
-  Furniture: 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
-  Appliance: 'bg-sky-500/10 text-sky-700 border-sky-500/20 dark:text-sky-400',
-  Clothing: 'bg-rose-500/10 text-rose-700 border-rose-500/20 dark:text-rose-400',
-  Tools: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400',
-  Sports: 'bg-violet-500/10 text-violet-700 border-violet-500/20 dark:text-violet-400',
+  Electronics: statusBadgeToneClass.info,
+  Furniture: statusBadgeToneClass.warning,
+  Appliance: statusBadgeToneClass['stat-sky'],
+  Clothing: statusBadgeToneClass['stat-rose'],
+  Tools: statusBadgeToneClass.success,
+  Sports: statusBadgeToneClass['stat-violet'],
 };
 
 export function TypeBadge({ type, className, ...props }: TypeBadgeProps) {
-  const style = typeStyles[type] ?? 'bg-muted text-muted-foreground border-transparent';
+  const style = typeStyles[type] ?? statusBadgeToneClass.neutral;
 
   return (
     <Badge
       variant="outline"
-      className={cn(
-        'text-2xs uppercase tracking-wider font-semibold py-0 px-1.5 h-5',
-        style,
-        className
-      )}
+      className={cn(STATUS_BADGE_BASE, style, className)}
       {...props}
     >
       {type}

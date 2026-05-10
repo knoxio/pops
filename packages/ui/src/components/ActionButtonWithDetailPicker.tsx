@@ -138,7 +138,7 @@ export function ActionButtonWithDetailPicker<Detail>({
           {label}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[280px]" align="end">
+      <PopoverContent className="w-70" align="end">
         {pickerContent({ close: () => setOpen(false), confirm })}
       </PopoverContent>
     </Popover>

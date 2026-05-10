@@ -73,6 +73,8 @@
   /* StatCard palette tokens — hues not covered by semantic tokens */
   --color-stat-sky: var(--stat-sky);
   --color-stat-violet: var(--stat-violet);
+  --color-stat-rose: var(--stat-rose);
+  --color-stat-orange: var(--stat-orange);
 
   /* Sidebar */
   --color-sidebar: var(--sidebar);
@@ -198,6 +200,8 @@
   /* StatCard palette */
   --stat-sky: oklch(0.6 0.15 220);
   --stat-violet: oklch(0.6 0.15 290);
+  --stat-rose: oklch(0.6 0.18 12);
+  --stat-orange: oklch(0.65 0.16 50);
 
   /* Status colours */
   --success: oklch(0.55 0.15 150);
@@ -262,6 +266,8 @@
   /* StatCard palette */
   --stat-sky: oklch(0.7 0.15 220);
   --stat-violet: oklch(0.7 0.15 290);
+  --stat-rose: oklch(0.7 0.18 12);
+  --stat-orange: oklch(0.75 0.16 50);
 
   /* App accent — defaults to primary in dark mode too */
   --app-accent: var(--primary);

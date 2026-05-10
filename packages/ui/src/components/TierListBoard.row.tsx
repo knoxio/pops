@@ -64,7 +64,7 @@ export function TierRow<T>({
       onDragLeave={() => setOverZone((z) => (z === row.id ? null : z))}
       onDrop={onDrop(row.id)}
       className={cn(
-        'flex min-h-[72px] items-stretch gap-3 rounded-md border border-border bg-card p-2 transition-colors',
+        'flex min-h-18 items-stretch gap-3 rounded-md border border-border bg-card p-2 transition-colors',
         isOver && 'ring-2 ring-ring',
         row.id === UNRANKED_POOL_KEY && 'bg-muted/40'
       )}

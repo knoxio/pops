@@ -87,7 +87,7 @@ function TreeRow<T>({
           />
         </button>
       ) : (
-        <span className="inline-block w-[18px]" aria-hidden />
+        <span className="inline-block w-5" aria-hidden />
       )}
       <div className="flex-1 min-w-0 cursor-pointer" onClick={() => onSelect?.(node)}>
         {renderNode(node, { level, expanded: isExpanded, selected: isSelected })}
