@@ -15,7 +15,7 @@ As the Cerebrum system, I need a per-action-type state machine that tracks appro
 - [x] Automatic demotion: any action type is reset to `propose` phase when 2 or more reverts occur within any rolling 7-day window — the window is calculated from `glia_actions` rows with `status: reverted` and `reverted_at` within the last 7 days
 - [x] On demotion, `approved_count`, `rejected_count`, and `reverted_count` are reset to 0, `autonomous_since` is cleared, and `graduated_at` is set to the demotion timestamp with a log entry explaining the demotion trigger
 - [x] On graduation, `graduated_at` is set to the transition timestamp, and for `propose → act_report` the `autonomous_since` field is set — a structured log entry records the transition with the action type, old phase, new phase, and triggering stats
-- [ ] Graduation thresholds are read from `engrams/.config/glia.toml` at evaluation time (not cached at startup) so that user edits take effect on the next evaluation without restart
+- [ ] Graduation thresholds are read from `engrams/.config/glia.toml` at evaluation time (not cached at startup) so that user edits take effect on the next evaluation without restart — partially satisfied: thresholds are read fresh on each evaluation via `getSettingValue` (settings DB), but the `glia.toml` watcher in `toml-config.ts` is not yet wired into `getGliaThresholds()`. Tracked in #2579
 - [x] Lowering graduation thresholds does not cause retroactive graduation — the transition only fires when triggered by a new user decision or revert event
 
 ## Notes

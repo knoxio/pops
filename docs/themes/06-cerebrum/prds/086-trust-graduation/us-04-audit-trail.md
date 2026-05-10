@@ -10,12 +10,12 @@ As a user, I need an immutable audit trail of every Glia action with the ability
 ## Acceptance Criteria
 
 - [x] Every Glia action (proposed, executed, or autonomous) is recorded in `glia_actions` with full context: action type, affected engrams, rationale, payload, phase, status, and timestamps — no action is ever deleted from this table
-- [ ] Reverting a `prune` action restores the engram from `.archive/{type}/{id}.md` to its original path `{type}/{id}.md`, sets `status: active` in the engram index, and marks the `glia_actions` row as `status: reverted` with `reverted_at` timestamp
-- [ ] Reverting a `consolidate` action restores all source engrams from `.archive/` to their original paths with `status: active`, deletes the merged engram file and index entry, and re-points any links that were updated during consolidation back to the original engram IDs
-- [ ] Reverting a `link` action calls `unlinkEngrams()` to remove the bidirectional link that was created, updating both engram files and the `engram_links` table
+- [ ] Reverting a `prune` action restores the engram from `.archive/{type}/{id}.md` to its original path `{type}/{id}.md`, sets `status: active` in the engram index, and marks the `glia_actions` row as `status: reverted` with `reverted_at` timestamp (deferred — current revert flips status only; file restore tracked in #2576)
+- [ ] Reverting a `consolidate` action restores all source engrams from `.archive/` to their original paths with `status: active`, deletes the merged engram file and index entry, and re-points any links that were updated during consolidation back to the original engram IDs (deferred — tracked in #2576)
+- [ ] Reverting a `link` action calls `unlinkEngrams()` to remove the bidirectional link that was created, updating both engram files and the `engram_links` table (the unlink call exists today; covered by #2576's verification work)
 - [x] Reverting an `audit` action returns an error — audit actions are informational and non-destructive, there is nothing to revert
-- [ ] A digest report generator produces a summary of all autonomous actions for a given period (daily or weekly, configurable): counts by action type, list of affected engrams with rationale, and any anomalies (e.g., high rejection rate post-graduation)
-- [ ] Digest reports are delivered via the existing notification system (shell notification area + Moltbot if enabled) during the `act_report` phase — suppressed during `silent` phase
+- [ ] A digest report generator produces a summary of all autonomous actions for a given period (daily or weekly, configurable): counts by action type, list of affected engrams with rationale, and any anomalies (e.g., high rejection rate post-graduation) (deferred — tracked in #2577)
+- [ ] Digest reports are delivered via the existing notification system (shell notification area + Moltbot if enabled) during the `act_report` phase — suppressed during `silent` phase (deferred — tracked in #2577)
 - [x] The audit trail is queryable via `cerebrum.glia.actions.history` with filters for action type, status, and date range, returning paginated results
 
 ## Notes
