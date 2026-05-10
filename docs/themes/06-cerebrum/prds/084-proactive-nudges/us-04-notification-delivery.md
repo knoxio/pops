@@ -11,13 +11,13 @@ As a user, I want nudges delivered via shell notifications and Moltbot (Telegram
 
 - [x] New nudges with `status: pending` are delivered to two channels: (1) the pops shell notification system (appears on next shell interaction), and (2) Moltbot on Telegram (immediate delivery)
 - [x] The shell NudgeIndicator bell polls `nudges.list` with exponential backoff: base 60 s doubled per consecutive failure (60 s → 2 min → 4 min → 8 min → 16 min), stopping entirely after 5 consecutive failures; recovers automatically to 60 s on a successful response
-- [ ] Shell notifications display the nudge title, type badge (e.g., `[consolidation]`, `[staleness]`), and a one-line summary — the user can run `pops cerebrum nudges` to see the full list
-- [ ] Moltbot messages include the nudge title, type, a brief body excerpt, and inline action buttons: "Act" (executes the suggested action), "Dismiss" (marks as dismissed), "Details" (shows full nudge context)
-- [ ] Delivery respects nudge priority: `high` nudges are delivered immediately to both channels; `medium` nudges are batched and delivered at most once per hour; `low` nudges are included in a daily digest only
-- [ ] A daily digest message is sent via Moltbot summarising all pending nudges: count by type, top 3 highest-priority nudges with titles
-- [ ] Users can configure delivery preferences via `engrams/.config/nudges.toml`: enable/disable channels, set quiet hours (no Moltbot messages between configured times), adjust batch intervals
-- [ ] Nudges that are expired or dismissed before delivery are not sent — the delivery system checks status before dispatching
-- [ ] Delivery failures (Moltbot API down, shell session inactive) are retried with exponential backoff (max 3 retries) and logged
+- [ ] Shell notifications display the nudge title, type badge (e.g., `[consolidation]`, `[staleness]`), and a one-line summary — the user can run `pops cerebrum nudges` to see the full list (deferred — tracked in #2581)
+- [ ] Moltbot messages include the nudge title, type, a brief body excerpt, and inline action buttons: "Act" (executes the suggested action), "Dismiss" (marks as dismissed), "Details" (shows full nudge context) (deferred — tracked in #2581)
+- [ ] Delivery respects nudge priority: `high` nudges are delivered immediately to both channels; `medium` nudges are batched and delivered at most once per hour; `low` nudges are included in a daily digest only (deferred — tracked in #2581)
+- [ ] A daily digest message is sent via Moltbot summarising all pending nudges: count by type, top 3 highest-priority nudges with titles (deferred — tracked in #2581)
+- [ ] Users can configure delivery preferences via `engrams/.config/nudges.toml`: enable/disable channels, set quiet hours (no Moltbot messages between configured times), adjust batch intervals (deferred — tracked in #2581)
+- [ ] Nudges that are expired or dismissed before delivery are not sent — the delivery system checks status before dispatching (deferred — tracked in #2581)
+- [ ] Delivery failures (Moltbot API down, shell session inactive) are retried with exponential backoff (max 3 retries) and logged (deferred — tracked in #2581)
 
 ## Notes
 

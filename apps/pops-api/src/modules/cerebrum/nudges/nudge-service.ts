@@ -10,12 +10,15 @@ import { and, count, eq, sql } from 'drizzle-orm';
 import { nudgeLog } from '@pops/db-types';
 
 import { logger } from '../../../lib/logger.js';
+import { ConcatenationSynthesizer, executeConsolidationAct } from './consolidation-act.js';
 import { rowToNudge } from './nudge-helpers.js';
 import { enforcePendingCap, loadActiveEngrams, persistCandidates } from './nudge-persistence.js';
 
 import type { BetterSQLite3Database } from 'drizzle-orm/better-sqlite3';
 
+import type { EngramService } from '../engrams/service.js';
 import type { HybridSearchService } from '../retrieval/hybrid-search.js';
+import type { BodySynthesizer } from './consolidation-act.js';
 import type { ConsolidationDetector } from './detectors/consolidation.js';
 import type { PatternDetector } from './detectors/patterns.js';
 import type { StalenessDetector } from './detectors/staleness.js';
@@ -30,6 +33,14 @@ export interface NudgeServiceDeps {
   patternDetector: PatternDetector;
   thresholds: NudgeThresholds;
   now?: () => Date;
+  /**
+   * Optional EngramService used by `act` to execute the suggested action
+   * (consolidate / archive / review). When omitted the service still marks
+   * the nudge as `acted` but performs no domain side effects.
+   */
+  engramService?: EngramService;
+  /** Optional synthesizer override for consolidation acts. */
+  synthesizer?: BodySynthesizer;
 }
 
 export interface ListNudgesOptions {
@@ -47,6 +58,8 @@ export class NudgeService {
   private readonly patternDetector: PatternDetector;
   private readonly thresholds: NudgeThresholds;
   private readonly now: () => Date;
+  private readonly engramService: EngramService | undefined;
+  private readonly synthesizer: BodySynthesizer;
 
   constructor(deps: NudgeServiceDeps) {
     this.db = deps.db;
@@ -55,6 +68,8 @@ export class NudgeService {
     this.patternDetector = deps.patternDetector;
     this.thresholds = deps.thresholds;
     this.now = deps.now ?? (() => new Date());
+    this.engramService = deps.engramService;
+    this.synthesizer = deps.synthesizer ?? new ConcatenationSynthesizer();
   }
 
   /** Run a full nudge scan, optionally filtered by type. */
@@ -135,8 +150,44 @@ export class NudgeService {
     return { success: result.changes > 0 };
   }
 
-  /** Mark a nudge as acted. The caller executes the action externally. */
-  act(id: string): { success: boolean; nudge: Nudge | null } {
+  /**
+   * Act on a pending nudge: execute the suggested action then mark the
+   * nudge as `acted`. Supported actions:
+   *   - `consolidate`: synthesise a merged engram and archive sources
+   *     (PRD-084 US-01 AC #5).
+   *   - `archive`: set the source engram(s) to `status: archived`
+   *     (PRD-084 US-02 AC #6 — staleness archive).
+   *   - `review`: bump the engram's `modified_at` timestamp via a no-op
+   *     update so the staleness clock resets (PRD-084 US-02 AC #6 — review).
+   *   - `link`: link the affected engrams pairwise.
+   *
+   * If the engramService dependency is not configured, the nudge is still
+   * marked acted (so dismissal semantics remain correct) but a warning is
+   * logged.
+   */
+  async act(id: string): Promise<{ success: boolean; nudge: Nudge | null }> {
+    const nudge = this.get(id);
+    if (!nudge || nudge.status !== 'pending') {
+      return { success: false, nudge: null };
+    }
+
+    if (nudge.action && this.engramService) {
+      try {
+        await this.executeNudgeAction(nudge);
+      } catch (err) {
+        logger.error(
+          { nudgeId: id, error: err instanceof Error ? err.message : String(err) },
+          '[NudgeService] act failed — leaving nudge pending'
+        );
+        return { success: false, nudge: null };
+      }
+    } else if (nudge.action && !this.engramService) {
+      logger.warn(
+        { nudgeId: id, actionType: nudge.action.type },
+        '[NudgeService] act called without engramService — nudge will be marked acted with no side effects'
+      );
+    }
+
     const result = this.db
       .update(nudgeLog)
       .set({ status: 'acted', actedAt: this.now().toISOString() })
@@ -145,6 +196,41 @@ export class NudgeService {
     return result.changes > 0
       ? { success: true, nudge: this.get(id) }
       : { success: false, nudge: null };
+  }
+
+  /** Dispatch the suggested action to its handler. */
+  private async executeNudgeAction(nudge: Nudge): Promise<void> {
+    if (!this.engramService) return;
+    if (!nudge.action) return;
+    const svc = this.engramService;
+    switch (nudge.action.type) {
+      case 'consolidate':
+        await executeConsolidationAct(nudge, svc, this.synthesizer);
+        return;
+      case 'archive':
+        for (const engramId of nudge.engramIds) {
+          svc.update(engramId, { status: 'archived' });
+        }
+        return;
+      case 'review':
+        // Resetting the staleness clock = touching `modified_at`. The service
+        // bumps `modified_at` on every update so an empty customFields patch
+        // is sufficient.
+        for (const engramId of nudge.engramIds) {
+          svc.update(engramId, { customFields: {} });
+        }
+        return;
+      case 'link': {
+        // Link the first engram to every other engram in the cluster so
+        // any pair is reachable through the bidirectional link table.
+        const [head, ...rest] = nudge.engramIds;
+        if (!head) return;
+        for (const other of rest) {
+          svc.link(head, other);
+        }
+        return;
+      }
+    }
   }
 
   /** Update detection thresholds. */

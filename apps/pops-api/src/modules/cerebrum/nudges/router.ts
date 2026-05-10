@@ -14,6 +14,7 @@ import { z } from 'zod';
 import { getDrizzle } from '../../../db.js';
 import { trpcError } from '../../../shared/trpc-error.js';
 import { protectedProcedure, router } from '../../../trpc.js';
+import { getEngramService } from '../instance.js';
 import { HybridSearchService } from '../retrieval/hybrid-search.js';
 import { ConsolidationDetector } from './detectors/consolidation.js';
 import { PatternDetector } from './detectors/patterns.js';
@@ -37,6 +38,7 @@ function getService(): NudgeService {
     stalenessDetector: new StalenessDetector(activeThresholds),
     patternDetector: new PatternDetector(activeThresholds),
     thresholds: activeThresholds,
+    engramService: getEngramService(),
   });
 }
 
@@ -81,8 +83,8 @@ export const nudgesRouter = router({
   }),
 
   /** Act on a pending nudge — execute its suggested action. */
-  act: protectedProcedure.input(z.object({ id: z.string().min(1) })).mutation(({ input }) => {
-    const result = getService().act(input.id);
+  act: protectedProcedure.input(z.object({ id: z.string().min(1) })).mutation(async ({ input }) => {
+    const result = await getService().act(input.id);
     if (!result.success) {
       throw trpcError('BAD_REQUEST', 'cerebrum.nudge.notPendingOrMissing', { id: input.id });
     }

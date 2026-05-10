@@ -14,7 +14,7 @@ As a user, I want the system to detect engrams that have not been referenced or 
 - [x] Staleness nudges include the engram title, its age (days since last modification), its last reference date (if any), and suggested actions: `review` (mark as reviewed, resetting the staleness clock) or `archive` (set status to archived)
 - [x] Engrams with `status: archived` or `status: consolidated` are excluded from staleness detection — they are already out of the active corpus
 - [x] Staleness nudges are suppressed until the system has at least 30 days of activity (measured from the oldest engram's creation date) to avoid false positives on a fresh corpus
-- [ ] Acting on a staleness nudge with `archive` moves the engram to `.archive/` and sets `status: archived`; acting with `review` updates the `modified_at` timestamp to the current time
+- [x] Acting on a staleness nudge with `archive` moves the engram to `.archive/` and sets `status: archived`; acting with `review` updates the `modified_at` timestamp to the current time — `NudgeService.act` dispatches `archive` to `EngramService.update({ status: 'archived' })` (which uses the existing archive flow) and `review` to a no-op customFields update that bumps `modified_at`
 - [x] The nudge cooldown prevents the same engram from generating duplicate staleness alerts within `nudgeCooldownHours`
 
 ## Notes

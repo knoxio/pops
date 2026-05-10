@@ -13,7 +13,7 @@ As a user with a growing knowledge base, I want the system to detect clusters of
 - [x] Clusters must contain at least `consolidationMinCluster` engrams (default 3) to trigger a nudge
 - [x] Consolidation nudges are never proposed for engrams in different top-level scopes (e.g., `personal.*` and `work.*` engrams are never clustered together, even if semantically similar)
 - [x] Each consolidation nudge includes: a title summarising the cluster topic, a body listing the engram titles and their similarity scores, and a `consolidate` action that creates a new engram from the cluster
-- [ ] Acting on a consolidation nudge (`cerebrum.nudges.act`) creates a new engram synthesised from the cluster sources (using LLM synthesis), archives the source engrams (`status: archived`), and links the new engram to the archived sources
+- [x] Acting on a consolidation nudge (`cerebrum.nudges.act`) creates a new engram synthesised from the cluster sources (using LLM synthesis), archives the source engrams (`status: archived`), and links the new engram to the archived sources — `NudgeService.act` now invokes `executeConsolidationAct` (synthesizer + source archive). LLM synthesis is pluggable via the `synthesizer` dependency; the default `ConcatenationSynthesizer` provides a deterministic fallback
 - [x] The nudge cooldown prevents the same cluster from generating a duplicate nudge within `nudgeCooldownHours` (default 24 hours)
 - [x] Dismissing a consolidation nudge prevents it from resurfacing unless a new engram joins the cluster (changing its composition)
 - [x] The `nudge_log` table stores all created nudges with their type, status, engram references, and timestamps

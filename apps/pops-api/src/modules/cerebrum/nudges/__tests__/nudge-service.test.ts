@@ -259,24 +259,77 @@ describe('NudgeService', () => {
   });
 
   describe('act', () => {
-    it('marks a pending nudge as acted', () => {
-      const nudgeRow = {
+    function pendingRow(actionType = 'review') {
+      return {
         id: 'nudge_123',
         type: 'staleness',
         title: 'Test',
         body: 'Body',
         engram_ids: '["eng_1"]',
         priority: 'medium',
-        status: 'acted',
+        status: 'pending',
         created_at: '2026-04-27T10:00:00Z',
         expires_at: null,
-        acted_at: '2026-04-27T10:00:00Z',
-        action_type: 'review',
+        acted_at: null,
+        action_type: actionType,
         action_label: 'Mark as reviewed',
         action_params: '{"engramId":"eng_1"}',
       };
-      // get() after act: returns the nudge
-      const mockDb = createMockDb([[nudgeRow]]);
+    }
+
+    function actedRow(actionType = 'review') {
+      return { ...pendingRow(actionType), status: 'acted', acted_at: '2026-04-27T10:00:00Z' };
+    }
+
+    it('marks a pending review nudge as acted and bumps modified_at', async () => {
+      // Sequence: get() (pending) → executeNudgeAction → update → get() (acted)
+      const mockDb = createMockDb([[pendingRow('review')], [actedRow('review')]]);
+      mockDb._setUpdateChanges(1);
+
+      const updateSpy = vi.fn();
+      const engramService = { update: updateSpy, link: vi.fn() } as never;
+
+      const service = new NudgeService({
+        db: mockDb as never,
+        searchService: {} as never,
+        consolidationDetector: {} as never,
+        stalenessDetector: {} as never,
+        patternDetector: {} as never,
+        thresholds: defaultThresholds(),
+        now: fixedNow,
+        engramService,
+      });
+
+      const result = await service.act('nudge_123');
+      expect(result.success).toBe(true);
+      expect(result.nudge?.status).toBe('acted');
+      expect(updateSpy).toHaveBeenCalledWith('eng_1', { customFields: {} });
+    });
+
+    it('archives engrams when action type is archive', async () => {
+      const mockDb = createMockDb([[pendingRow('archive')], [actedRow('archive')]]);
+      mockDb._setUpdateChanges(1);
+
+      const updateSpy = vi.fn();
+      const engramService = { update: updateSpy, link: vi.fn() } as never;
+
+      const service = new NudgeService({
+        db: mockDb as never,
+        searchService: {} as never,
+        consolidationDetector: {} as never,
+        stalenessDetector: {} as never,
+        patternDetector: {} as never,
+        thresholds: defaultThresholds(),
+        now: fixedNow,
+        engramService,
+      });
+
+      await service.act('nudge_123');
+      expect(updateSpy).toHaveBeenCalledWith('eng_1', { status: 'archived' });
+    });
+
+    it('still marks the nudge acted when no engramService is wired', async () => {
+      const mockDb = createMockDb([[pendingRow('review')], [actedRow('review')]]);
       mockDb._setUpdateChanges(1);
 
       const service = new NudgeService({
@@ -289,14 +342,13 @@ describe('NudgeService', () => {
         now: fixedNow,
       });
 
-      const result = service.act('nudge_123');
+      const result = await service.act('nudge_123');
       expect(result.success).toBe(true);
-      expect(result.nudge).not.toBeNull();
-      expect(result.nudge?.status).toBe('acted');
     });
 
-    it('returns false for non-pending nudge', () => {
-      const mockDb = createMockDb();
+    it('returns false for non-pending nudge', async () => {
+      // get() returns no rows → not pending
+      const mockDb = createMockDb([[]]);
       mockDb._setUpdateChanges(0);
 
       const service = new NudgeService({
@@ -309,7 +361,7 @@ describe('NudgeService', () => {
         now: fixedNow,
       });
 
-      const result = service.act('nudge_nonexistent');
+      const result = await service.act('nudge_nonexistent');
       expect(result.success).toBe(false);
       expect(result.nudge).toBeNull();
     });
