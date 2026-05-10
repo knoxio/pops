@@ -44,6 +44,7 @@ const updateSchema = z.object({
   tags: z.array(z.string().min(1)).optional(),
   customFields: customFieldsSchema.optional(),
   status: z.enum(ENGRAM_STATUSES).optional(),
+  template: z.string().min(1).optional(),
 });
 
 const listSchema = z

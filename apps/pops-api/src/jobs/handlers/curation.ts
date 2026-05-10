@@ -18,6 +18,7 @@ import { getEngramService, getScopeRuleEngine } from '../../modules/cerebrum/ins
 
 import type { Job } from 'bullmq';
 
+import type { UpdateEngramInput } from '../../modules/cerebrum/engrams/service.js';
 import type { ClassifyEngramJobData, CurationQueueJobData } from '../types.js';
 
 const logger = pino({ name: 'worker:curation' });
@@ -88,16 +89,25 @@ async function processClassifyEngram(engramId: string): Promise<{ engramId: stri
   }
   customFields['_enrichedHash'] = engram.contentHash;
 
-  engramService.update(engramId, {
+  // Persist the classified template so future renders pick up template
+  // scaffolding even though `type` itself is not mutable in-place (changing
+  // type would require a file move under {type}/{id}.md — tracked
+  // separately).
+  const updateInput: UpdateEngramInput = {
     scopes: scopeResult.scopes,
     tags: mergedTags.length > 0 ? mergedTags : undefined,
     customFields,
-  });
+  };
+  if (classification.template) {
+    updateInput.template = classification.template;
+  }
+  engramService.update(engramId, updateInput);
 
   logger.info(
     {
       engramId,
       type: classification.type,
+      template: classification.template,
       confidence: classification.confidence,
       scopes: scopeResult.scopes,
       referencedDates: referencedDates.length,

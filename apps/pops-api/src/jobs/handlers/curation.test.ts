@@ -175,6 +175,29 @@ describe('curation handler — classifyEngram', () => {
     expect(customFields).toHaveProperty('_enrichedHash', 'abc123');
   });
 
+  it('persists the classified template name on the engram', async () => {
+    await processJob(makeJob({ type: 'classifyEngram', engramId: 'eng_20260427_1500_test' }));
+
+    expect(mockUpdate).toHaveBeenCalledWith(
+      'eng_20260427_1500_test',
+      expect.objectContaining({ template: 'idea' })
+    );
+  });
+
+  it('omits template when classification returns null', async () => {
+    mockClassify.mockResolvedValue({
+      type: 'capture',
+      confidence: 0.4,
+      template: null,
+      suggestedTags: [],
+    });
+
+    await processJob(makeJob({ type: 'classifyEngram', engramId: 'eng_20260427_1500_test' }));
+
+    const call = mockUpdate.mock.calls[0]?.[1] as Record<string, unknown>;
+    expect(call).not.toHaveProperty('template');
+  });
+
   it('throws for unknown job types', async () => {
     await expect(processJob(makeJob({ type: 'unknownType' }))).rejects.toThrow(
       'Curation handler not implemented'

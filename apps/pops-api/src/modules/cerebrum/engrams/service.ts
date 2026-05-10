@@ -42,6 +42,13 @@ export interface UpdateEngramInput {
   tags?: string[];
   customFields?: Record<string, unknown>;
   status?: EngramStatus;
+  /**
+   * Template name to assign in frontmatter. Used by the async classification
+   * worker (PRD-081 US-03) to set a template after classification. Note that
+   * `type` is deliberately not mutable here — changing type requires a file
+   * move and is tracked separately.
+   */
+  template?: string;
 }
 
 export interface EngramServiceOptions {
@@ -114,17 +121,12 @@ export class EngramService {
       ...changes.customFields,
     };
 
-    const nextFrontmatter: EngramFrontmatter = {
-      ...frontmatter,
-      ...customFields,
-      modified: this.now().toISOString(),
-      ...(changes.scopes ? { scopes: changes.scopes } : {}),
-      ...(changes.tags ? { tags: changes.tags } : {}),
-      ...(changes.status ? { status: changes.status } : {}),
-    };
-
-    if (!changes.tags && frontmatter.tags) nextFrontmatter.tags = frontmatter.tags;
-    if (nextFrontmatter.tags && nextFrontmatter.tags.length === 0) delete nextFrontmatter.tags;
+    const nextFrontmatter = mergeUpdateIntoFrontmatter(
+      frontmatter,
+      customFields,
+      changes,
+      this.now()
+    );
 
     writeFileAtomic(
       absolutePath(this.root, row.file_path),
@@ -168,4 +170,29 @@ export class EngramService {
     if (!engram) throw new NotFoundError('Engram', id);
     return engram;
   }
+}
+
+/**
+ * Merge an `UpdateEngramInput` into the existing frontmatter. Extracted from
+ * `EngramService.update` to keep that method's cyclomatic complexity within
+ * the project's lint budget.
+ */
+function mergeUpdateIntoFrontmatter(
+  frontmatter: EngramFrontmatter,
+  customFields: Record<string, unknown>,
+  changes: UpdateEngramInput,
+  now: Date
+): EngramFrontmatter {
+  const next: EngramFrontmatter = {
+    ...frontmatter,
+    ...customFields,
+    modified: now.toISOString(),
+    ...(changes.scopes ? { scopes: changes.scopes } : {}),
+    ...(changes.tags ? { tags: changes.tags } : {}),
+    ...(changes.status ? { status: changes.status } : {}),
+    ...(changes.template ? { template: changes.template } : {}),
+  };
+  if (!changes.tags && frontmatter.tags) next.tags = frontmatter.tags;
+  if (next.tags && next.tags.length === 0) delete next.tags;
+  return next;
 }
