@@ -94,7 +94,7 @@ function DismissZone({
       onDragLeave={() => setOverZone((z) => (z === DISMISS ? null : z))}
       onDrop={onDrop}
       className={cn(
-        'flex min-h-[56px] items-center justify-center gap-2 rounded-md border-2 border-dashed border-destructive/40 p-2 text-sm text-destructive transition-colors',
+        'flex min-h-14 items-center justify-center gap-2 rounded-md border-2 border-dashed border-destructive/40 p-2 text-sm text-destructive transition-colors',
         active && 'bg-destructive/10'
       )}
     >

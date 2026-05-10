@@ -1,5 +1,6 @@
 import { cn } from '../lib/utils';
 import { Badge } from '../primitives/badge';
+import { STATUS_BADGE_BASE, statusBadgeToneClass } from './statusBadgeTones';
 
 import type { ComponentProps } from 'react';
 
@@ -11,10 +12,10 @@ interface WarrantyInfo {
 }
 
 const warrantyStyles: Record<WarrantyState, string> = {
-  expired: 'bg-destructive/10 text-destructive border-destructive/20 dark:text-destructive/80',
-  expiring: 'bg-amber-500/10 text-amber-700 border-amber-500/20 dark:text-amber-400',
-  active: 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20 dark:text-emerald-400',
-  none: 'bg-zinc-500/10 text-zinc-700 border-zinc-500/20 dark:text-zinc-400',
+  expired: statusBadgeToneClass.destructive,
+  expiring: statusBadgeToneClass.warning,
+  active: statusBadgeToneClass.success,
+  none: statusBadgeToneClass.neutral,
 };
 
 /** Compute warranty status from an expiry date string (or null). */
@@ -52,11 +53,7 @@ export function WarrantyBadge({ warrantyExpiry, className, ...props }: WarrantyB
   return (
     <Badge
       variant="outline"
-      className={cn(
-        'text-2xs uppercase tracking-wider font-semibold py-0 px-1.5 h-5',
-        warrantyStyles[state],
-        className
-      )}
+      className={cn(STATUS_BADGE_BASE, warrantyStyles[state], className)}
       {...props}
     >
       {label}

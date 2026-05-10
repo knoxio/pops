@@ -22,3 +22,7 @@ As a developer, I want all hardcoded app colour classes (e.g., `bg-indigo-600`, 
 This is a large find-and-replace across all app packages. The app colour variable system (US-02) and shell propagation (PRD-007) must be in place first. Do one app at a time and verify visually between each.
 
 Colours in `@pops/ui` components that use `--primary` or other theme-level tokens are NOT changed — those are global theme colours, not app-specific accents. Only the app-specific accent colours (the ones that differ per app) are replaced.
+
+### Shared component cleanup (knoxio/pops#2547)
+
+The `@pops/ui` shared component library had the same class of violation in semantic-status badges (`ConditionBadge`, `WarrantyBadge`, `TypeBadge`). These are not "app accents" — they encode multi-state semantics (good / fair / poor; expired / expiring / active; furniture / clothing / sports). They have been migrated to design-token utilities (`bg-success/10`, `bg-warning/10`, `bg-stat-rose/10`, etc.) via a new `statusBadgeTones.ts` helper, and two new tokens were added to `theme/globals.css`: `--stat-rose` and `--stat-orange`. After this work, `grep` for hardcoded colour classes in `packages/ui/src` returns zero non-story / non-test hits.

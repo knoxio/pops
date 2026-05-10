@@ -9,7 +9,10 @@ import { type ButtonHTMLAttributes, forwardRef, type ReactNode } from 'react';
 import { cn } from '../lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center gap-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
+  // `relative` lets smaller sizes use a `before:` pseudo-element to expand the
+  // tappable area to the 44x44px minimum (PRD-010 US-03) without changing the
+  // visual element. See `primitives/button.tsx` for the canonical pattern.
+  'relative inline-flex items-center justify-center gap-2 font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
@@ -18,11 +21,12 @@ const buttonVariants = cva(
         outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
         secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
         ghost: 'hover:bg-accent hover:text-accent-foreground',
-        link: 'text-primary underline-offset-4 hover:underline',
+        link: 'text-primary underline-offset-4 hover:underline min-h-11',
       },
       size: {
         default: 'h-11 px-4 py-2',
-        sm: 'h-9 px-3 text-sm',
+        // `sm` is 36px tall — expand touch target to 44px via invisible pseudo-element.
+        sm: "h-9 px-3 text-sm before:absolute before:-inset-y-1 before:inset-x-0 before:content-['']",
         lg: 'h-11 px-8 text-lg',
         icon: 'h-11 w-11',
       },

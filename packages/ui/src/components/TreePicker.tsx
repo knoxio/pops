@@ -96,7 +96,7 @@ function PickerBody<T>({
   getLabel,
 }: PickerBodyProps<T>) {
   return (
-    <PopoverContent className="w-[320px] p-0" align="start">
+    <PopoverContent className="w-80 p-0" align="start">
       <div className="flex items-center gap-2 border-b border-border px-3 py-2">
         <Search className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
         <Input
@@ -107,7 +107,7 @@ function PickerBody<T>({
           className="h-7 border-0 p-0 focus-visible:ring-0 shadow-none"
         />
       </div>
-      <div className="max-h-[320px] overflow-y-auto p-1.5">
+      <div className="max-h-80 overflow-y-auto p-1.5">
         {filtered.length === 0 ? (
           <NoMatches query={query} onCreate={onCreate} onCreated={() => setQuery('')} />
         ) : (
