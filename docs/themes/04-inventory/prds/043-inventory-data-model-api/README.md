@@ -5,73 +5,97 @@
 
 ## Overview
 
-Define the inventory domain schema and build the tRPC routers that all other inventory features depend on. Four tables cover items with rich metadata, hierarchical locations, bidirectional item connections, and photos. Items use auto-increment integer PKs with optional human-readable asset IDs. Cross-domain references to finance (transaction and entity) use TEXT UUIDs.
+Define the inventory domain schema and build the tRPC routers that all other inventory features depend on. Five tables cover items with rich metadata (`home_inventory`), hierarchical locations, bidirectional item connections, photos, and document links. Items and locations use opaque TEXT UUIDs as PKs (consistent with the cross-domain UUID scheme used in finance entities and transactions); join/photo/document tables use auto-increment integer PKs.
 
 ## Data Model
 
-### items
+### home_inventory
 
-| Column                | Type    | Constraints                           | Description                                    |
-| --------------------- | ------- | ------------------------------------- | ---------------------------------------------- |
-| id                    | INTEGER | PK, auto-increment                    |                                                |
-| name                  | TEXT    | NOT NULL                              | Item name                                      |
-| type                  | TEXT    | NOT NULL                              | "electronics", "furniture", "appliance", etc.  |
-| brand                 | TEXT    | nullable                              | Manufacturer                                   |
-| model                 | TEXT    | nullable                              | Model number                                   |
-| assetId               | TEXT    | UNIQUE, nullable                      | Human-readable ID (e.g., "HDMI01", "ROUTER01") |
-| locationId            | INTEGER | FK → locations(id) ON DELETE SET NULL | Current location                               |
-| condition             | TEXT    | DEFAULT 'good'                        | "new", "good", "fair", "poor", "broken"        |
-| purchaseDate          | TEXT    | nullable                              | ISO date                                       |
-| purchasePrice         | REAL    | nullable                              | Original cost                                  |
-| replacementValue      | REAL    | nullable                              | Current replacement cost                       |
-| resaleValue           | REAL    | nullable                              | Current resale value                           |
-| warrantyExpiry        | TEXT    | nullable                              | ISO date                                       |
-| notes                 | TEXT    | nullable                              | Markdown text                                  |
-| purchaseTransactionId | TEXT    | nullable                              | FK to finance transaction (TEXT UUID)          |
-| purchasedFromId       | TEXT    | nullable                              | FK to finance entity (TEXT UUID)               |
-| createdAt             | TEXT    | NOT NULL                              | ISO timestamp                                  |
-| updatedAt             | TEXT    | NOT NULL                              | ISO timestamp                                  |
+| Column                  | Type    | Constraints                              | Description                                               |
+| ----------------------- | ------- | ---------------------------------------- | --------------------------------------------------------- |
+| id                      | TEXT    | PK, default `lower(hex(randomblob(16)))` | Opaque UUID                                               |
+| notion_id               | TEXT    | UNIQUE, nullable                         | Source of truth id from the legacy Notion DB              |
+| item_name               | TEXT    | NOT NULL                                 | Item name                                                 |
+| brand                   | TEXT    | nullable                                 | Manufacturer                                              |
+| model                   | TEXT    | nullable                                 | Model number                                              |
+| item_id                 | TEXT    | nullable                                 | Free-form supplier or manufacturer item identifier        |
+| room                    | TEXT    | nullable                                 | Free-form room label (legacy)                             |
+| location                | TEXT    | nullable                                 | Free-form location label (legacy)                         |
+| type                    | TEXT    | nullable                                 | "electronics", "furniture", "appliance", etc.             |
+| condition               | TEXT    | DEFAULT 'good'                           | "new", "good", "fair", "poor", "broken"                   |
+| in_use                  | INTEGER | nullable                                 | Boolean flag (0/1) — currently in use                     |
+| deductible              | INTEGER | nullable                                 | Boolean flag (0/1) — counted against insurance deductible |
+| purchase_date           | TEXT    | nullable                                 | ISO date                                                  |
+| warranty_expires        | TEXT    | nullable                                 | ISO date                                                  |
+| replacement_value       | REAL    | nullable                                 | Current replacement cost                                  |
+| resale_value            | REAL    | nullable                                 | Current resale value                                      |
+| purchase_transaction_id | TEXT    | FK → transactions(id) ON DELETE SET NULL | Cross-domain link to the finance transaction              |
+| purchased_from_id       | TEXT    | FK → entities(id) ON DELETE SET NULL     | Cross-domain link to the finance entity                   |
+| purchased_from_name     | TEXT    | nullable                                 | Snapshot of supplier name at purchase time                |
+| asset_id                | TEXT    | UNIQUE, nullable                         | Human-readable asset id (e.g., "HDMI01", "ROUTER01")      |
+| notes                   | TEXT    | nullable                                 | Markdown text                                             |
+| purchase_price          | REAL    | nullable                                 | Original cost                                             |
+| location_id             | TEXT    | FK → locations(id) ON DELETE SET NULL    | Current structured location                               |
+| last_edited_time        | TEXT    | NOT NULL                                 | ISO timestamp — wall-clock last edit                      |
+| created_at              | TEXT    | NOT NULL DEFAULT `datetime('now')`       | ISO timestamp                                             |
+| updated_at              | TEXT    | NOT NULL DEFAULT `datetime('now')`       | ISO timestamp                                             |
 
-**Indexes:** assetId (UNIQUE), locationId, type, name, warrantyExpiry
+**Indexes:** asset_id (UNIQUE), item_name, location_id, type, warranty_expires
 
 ### locations
 
-| Column    | Type    | Constraints                                    | Description                   |
-| --------- | ------- | ---------------------------------------------- | ----------------------------- |
-| id        | INTEGER | PK, auto-increment                             |                               |
-| name      | TEXT    | NOT NULL                                       | Location name                 |
-| parentId  | INTEGER | FK → locations(id) ON DELETE CASCADE, nullable | Parent location (null = root) |
-| sortOrder | INTEGER | DEFAULT 0                                      | Display order among siblings  |
-| createdAt | TEXT    | NOT NULL                                       | ISO timestamp                 |
+| Column           | Type    | Constraints                                    | Description                   |
+| ---------------- | ------- | ---------------------------------------------- | ----------------------------- |
+| id               | TEXT    | PK, default `lower(hex(randomblob(16)))`       | Opaque UUID                   |
+| name             | TEXT    | NOT NULL                                       | Location name                 |
+| parent_id        | TEXT    | FK → locations(id) ON DELETE CASCADE, nullable | Parent location (null = root) |
+| sort_order       | INTEGER | NOT NULL DEFAULT 0                             | Display order among siblings  |
+| last_edited_time | TEXT    | NOT NULL DEFAULT `datetime('now')`             | ISO timestamp                 |
 
-**Indexes:** parentId, (parentId + sortOrder)
+**Indexes:** parent_id, (parent_id + sort_order)
 
 ### item_connections
 
-| Column    | Type    | Constraints                      | Description                  |
-| --------- | ------- | -------------------------------- | ---------------------------- |
-| id        | INTEGER | PK, auto-increment               |                              |
-| itemAId   | INTEGER | FK → items(id) ON DELETE CASCADE | First item (enforced: A < B) |
-| itemBId   | INTEGER | FK → items(id) ON DELETE CASCADE | Second item                  |
-| createdAt | TEXT    | NOT NULL                         | ISO timestamp                |
+| Column     | Type    | Constraints                               | Description               |
+| ---------- | ------- | ----------------------------------------- | ------------------------- |
+| id         | INTEGER | PK, AUTOINCREMENT                         |                           |
+| item_a_id  | TEXT    | FK → home_inventory(id) ON DELETE CASCADE | First item (CHECK: a < b) |
+| item_b_id  | TEXT    | FK → home_inventory(id) ON DELETE CASCADE | Second item               |
+| created_at | TEXT    | NOT NULL DEFAULT `datetime('now')`        | ISO timestamp             |
 
-**Indexes:** (itemAId + itemBId) UNIQUE, itemBId
+**Indexes:** (item_a_id + item_b_id) UNIQUE, item_a_id, item_b_id
 
-Application-level enforcement: `itemAId < itemBId` prevents duplicate bidirectional entries. A connection (3, 7) and (7, 3) are the same relationship — always store as (3, 7).
+A `CHECK (item_a_id < item_b_id)` constraint plus the unique pair index enforce single-row representation: a connection (X, Y) and (Y, X) collapse to the lexicographically smaller ordering.
 
 ### item_photos
 
-| Column    | Type    | Constraints                      | Description   |
-| --------- | ------- | -------------------------------- | ------------- |
-| id        | INTEGER | PK, auto-increment               |               |
-| itemId    | INTEGER | FK → items(id) ON DELETE CASCADE | Parent item   |
-| filename  | TEXT    | NOT NULL                         | File name     |
-| sortOrder | INTEGER | DEFAULT 0                        | Display order |
-| createdAt | TEXT    | NOT NULL                         | ISO timestamp |
+| Column     | Type    | Constraints                               | Description      |
+| ---------- | ------- | ----------------------------------------- | ---------------- |
+| id         | INTEGER | PK, AUTOINCREMENT                         |                  |
+| item_id    | TEXT    | FK → home_inventory(id) ON DELETE CASCADE | Parent item      |
+| file_path  | TEXT    | NOT NULL                                  | File path        |
+| caption    | TEXT    | nullable                                  | Optional caption |
+| sort_order | INTEGER | NOT NULL DEFAULT 0                        | Display order    |
+| created_at | TEXT    | NOT NULL DEFAULT `datetime('now')`        | ISO timestamp    |
 
-**Indexes:** itemId
+**Indexes:** item_id
 
-Photo storage path: `{INVENTORY_IMAGES_DIR}/items/{itemId}/photo_NNN.jpg`
+Photo storage path: `{INVENTORY_IMAGES_DIR}/items/{item_id}/photo_NNN.jpg`
+
+### item_documents
+
+| Column                | Type    | Constraints                               | Description                     |
+| --------------------- | ------- | ----------------------------------------- | ------------------------------- |
+| id                    | INTEGER | PK, AUTOINCREMENT                         |                                 |
+| item_id               | TEXT    | FK → home_inventory(id) ON DELETE CASCADE | Parent item                     |
+| paperless_document_id | INTEGER | NOT NULL                                  | Paperless-ngx document id       |
+| document_type         | TEXT    | NOT NULL                                  | "receipt", "warranty", "manual" |
+| title                 | TEXT    | nullable                                  | Cached document title           |
+| created_at            | TEXT    | NOT NULL DEFAULT `datetime('now')`        | ISO timestamp                   |
+
+**Indexes:** (item_id + paperless_document_id) UNIQUE, item_id, paperless_document_id
+
+`item_documents` belongs to PRD-049 (Paperless-ngx integration) but its schema lives alongside the rest of the inventory tables for FK locality.
 
 ## API Surface
 
@@ -104,7 +128,7 @@ Photo storage path: `{INVENTORY_IMAGES_DIR}/items/{itemId}/photo_NNN.jpg`
 | `connect`     | itemAId, itemBId       | `{ data: Connection }`      | Enforces A<B ordering, unique constraint |
 | `disconnect`  | itemAId, itemBId       | `{ message }`               | Normalises order before delete           |
 | `listForItem` | itemId                 | `{ data: ConnectedItem[] }` | Queries both A and B sides               |
-| `traceChain`  | itemId, maxDepth? (10) | `{ data: ChainItem[] }`     | Recursive CTE, returns connected chain   |
+| `trace`       | itemId, maxDepth? (10) | `{ data: ChainItem[] }`     | Recursive CTE, returns connected chain   |
 
 ### inventory.photos
 
@@ -117,15 +141,15 @@ Photo storage path: `{INVENTORY_IMAGES_DIR}/items/{itemId}/photo_NNN.jpg`
 
 ## Business Rules
 
-- Auto-increment integer PKs for all inventory tables — cross-domain FKs (purchaseTransactionId, purchasedFromId) are TEXT to match the finance domain's UUID scheme
-- Location deletion cascades to child locations but orphans items (locationId set to NULL via ON DELETE SET NULL)
+- Items and locations use opaque TEXT UUID PKs (matching the finance domain's UUID scheme); join/photo/document tables use auto-increment integer PKs (locality-only — they are never referenced cross-domain).
+- Location deletion cascades to child locations but orphans items (location_id set to NULL via ON DELETE SET NULL)
 - Two identical physical items get separate rows with different asset IDs (e.g., HDMI01, HDMI02)
 - Asset IDs are human-readable, unique, and optional — not all items need one
 - Warranty dates are fully optional; NULL means "no warranty"
 - Location tree supports arbitrary depth and multiple roots (Home, Car, Storage Cage)
 - Connection deduplication: enforce `itemAId < itemBId` at application level so (3,7) and (7,3) resolve to the same row
 - Photo compression on upload: resize to 1920px max dimension, convert HEIC to JPEG, strip EXIF metadata
-- `traceChain` uses a recursive CTE with configurable max depth (default 10) to prevent infinite loops
+- `trace` uses a recursive CTE with configurable max depth (default 10) to prevent infinite loops
 
 ## Edge Cases
 
@@ -137,7 +161,7 @@ Photo storage path: `{INVENTORY_IMAGES_DIR}/items/{itemId}/photo_NNN.jpg`
 | Delete item with photos                         | FK CASCADE removes photo records; application deletes files from disk                            |
 | Connect item to itself                          | Validation error (itemAId must differ from itemBId)                                              |
 | Duplicate connection (3,7) when (7,3) requested | Application normalises to (3,7); unique constraint catches duplicates                            |
-| traceChain hits max depth                       | Stops recursion, returns chain up to that depth                                                  |
+| trace hits max depth                            | Stops recursion, returns chain up to that depth                                                  |
 | searchByAssetId with no match                   | Returns null                                                                                     |
 | Location tree with circular parentId            | Self-referential FK prevents direct cycles; multi-level cycles prevented by validation on update |
 

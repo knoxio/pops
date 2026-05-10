@@ -33,16 +33,9 @@ Allow-listed shared packages for `packages/app-*`:
 
 ## Baseline Strategy
 
-Existing violations are captured in `.dependency-cruiser-known-violations.json` (dependency-cruiser's standard baseline format) and consumed by the lint script via the `--ignore-known` flag. Each baselined entry is a known violation that does not block CI; new violations fail. Every baselined entry has a tracking issue filed alongside this PRD; closing the gap removes the entry from the baseline and unblocks the lint rule for that path.
+The baseline file `.dependency-cruiser-known-violations.json` (dependency-cruiser's standard format, consumed via `--ignore-known`) is the single source of truth for tolerated violations. The current baseline is empty: zero cross-module violations are tolerated. New violations introduced by any PR fail CI; the only way to land them is to add an entry to the baseline alongside a tracking issue and a justification.
 
-Captured at PRD-097 land time (drift discovered, not introduced by this PRD). 14 entries total (1 cross-app + 9 ego non-test + 3 ego test + 1 core→domain); full machine-readable list lives in `.dependency-cruiser-known-violations.json`:
-
-| Source path                                                      | Target module | Notes                                                                         |
-| ---------------------------------------------------------------- | ------------- | ----------------------------------------------------------------------------- |
-| `packages/app-cerebrum/src/routes.tsx`                           | `app-ai`      | `app-cerebrum` mounts the AI Ops admin pages — needs proper extraction.       |
-| `apps/pops-api/src/modules/ego/engine*.ts`, `context-helpers.ts` | `cerebrum`    | Ego retrieval + context assembly leaks cerebrum internals (9 entries).        |
-| `apps/pops-api/src/modules/ego/__tests__/*`                      | `cerebrum`    | Test fixtures pull cerebrum types directly (3 entries).                       |
-| `apps/pops-api/src/modules/core/ai-usage/router.ts`              | `finance`     | Core router calls into finance for usage tracking — should invert dependency. |
+When a new violation is unavoidable (e.g. an in-flight extraction), the rule is: add it to the baseline in the same PR that introduces it, link the tracking issue in the PR description, close the issue when the violation is removed and the baseline entry deleted. The baseline must never grow without a tracked path back to zero.
 
 ## CI Integration
 

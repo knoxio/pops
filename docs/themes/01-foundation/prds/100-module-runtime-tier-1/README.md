@@ -1,7 +1,7 @@
 # PRD-100: Module Runtime — Tier 1
 
 > Epic: [Modular Module Runtime](../../epics/10-modular-module-runtime.md)
-> Status: In progress
+> Status: Done
 
 ## Overview
 
@@ -66,19 +66,19 @@ Per-module migration slicing is **out of scope** for Tier 1. All migrations run 
 
 ## User Stories
 
-| #   | Story                                                             | Summary                                                                                       | Parallelisable   |
-| --- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ---------------- |
-| 01  | [us-01-env-contract](us-01-env-contract.md)                       | `POPS_APPS` / `POPS_OVERLAYS` env vars, defaults, validation, error messages                  | Yes              |
-| 02  | [us-02-backend-loader](us-02-backend-loader.md)                   | Manifest-driven router gating; absent modules' procedures return `NOT_FOUND`                  | Blocked by 01    |
-| 03  | [us-03-shell-manifest-endpoint](us-03-shell-manifest-endpoint.md) | `core.shell.manifest` (and OpenAPI `GET /api/v1/shell/manifest`) returns installed module set | Blocked by 01    |
-| 04  | [us-04-frontend-dynamic-load](us-04-frontend-dynamic-load.md)     | Shell uses the manifest to filter route mount via `RequireModule`                             | Blocked by 03    |
-| 05  | [us-05-not-installed-page](us-05-not-installed-page.md)           | Fallback `NotInstalledPage` for absent-module routes                                          | Blocked by 04    |
-| 06  | [us-06-degrade-cross-module](us-06-degrade-cross-module.md)       | URI resolver + universal search tolerate missing modules                                      | Tracked as a gap |
-| 07  | [us-07-test-matrix](us-07-test-matrix.md)                         | Exercise sensible install sets (everything; finance-only; cerebrum-absent)                    | Blocked by 02–05 |
+| #   | Story                                                             | Summary                                                                                       | Parallelisable                                                          |
+| --- | ----------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| 01  | [us-01-env-contract](us-01-env-contract.md)                       | `POPS_APPS` / `POPS_OVERLAYS` env vars, defaults, validation, error messages                  | Yes                                                                     |
+| 02  | [us-02-backend-loader](us-02-backend-loader.md)                   | Manifest-driven router gating; absent modules' procedures return `NOT_FOUND`                  | Blocked by 01                                                           |
+| 03  | [us-03-shell-manifest-endpoint](us-03-shell-manifest-endpoint.md) | `core.shell.manifest` (and OpenAPI `GET /api/v1/shell/manifest`) returns installed module set | Blocked by 01                                                           |
+| 04  | [us-04-frontend-dynamic-load](us-04-frontend-dynamic-load.md)     | Shell uses the manifest to filter route mount via `RequireModule`                             | Blocked by 03                                                           |
+| 05  | [us-05-not-installed-page](us-05-not-installed-page.md)           | Fallback `NotInstalledPage` for absent-module routes                                          | Blocked by 04                                                           |
+| 06  | [us-06-degrade-cross-module](us-06-degrade-cross-module.md)       | URI resolver + universal search tolerate missing modules                                      | Superseded by [PRD-101 US-06 + US-08](../101-plugin-contract/README.md) |
+| 07  | [us-07-test-matrix](us-07-test-matrix.md)                         | Exercise sensible install sets (everything; finance-only; cerebrum-absent)                    | Blocked by 02–05                                                        |
 
 ## Out of Scope
 
-- **Per-module migration slicing.** Tables for absent modules exist on disk; only procedures + routes are gated.
-- **URI resolver and universal search degradation.** Tracked as US-06 / a gap issue; minimal-fallback UX deferred until a real driver lands.
+- **Per-module migration slicing.** Tables for absent modules exist on disk under PRD-100; per-module slicing is owned by [PRD-101 US-09](../101-plugin-contract/us-09-migration-runner.md).
+- **URI resolver and universal search degradation.** Owned by [PRD-101 US-06 (search) + US-08 (URI resolver)](../101-plugin-contract/README.md).
 - **Tier 2 admin Modules page.** Install/remove from UI lands separately.
 - **Hot-register on env change.** Restart is required.
