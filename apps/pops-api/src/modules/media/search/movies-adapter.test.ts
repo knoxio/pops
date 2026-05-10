@@ -1,17 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import type { Database } from 'better-sqlite3';
-
-// Prevent side-effect registration from throwing on import
-vi.mock('../../core/search/registry.js', () => ({
-  registerSearchAdapter: vi.fn(),
-  getAdapters: vi.fn(),
-  resetRegistry: vi.fn(),
-}));
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { seedMovie, setupTestContext } from '../../../shared/test-utils.js';
-import { registerSearchAdapter } from '../../core/search/registry.js';
 import { moviesSearchAdapter } from './movies-adapter.js';
+
+import type { Database } from 'better-sqlite3';
 
 import type { SearchContext } from '../../core/search/types.js';
 
@@ -33,7 +25,6 @@ describe('moviesSearchAdapter', () => {
     expect(moviesSearchAdapter.domain).toBe('movies');
     expect(moviesSearchAdapter.icon).toBe('Film');
     expect(moviesSearchAdapter.color).toBe('purple');
-    expect(registerSearchAdapter).toHaveBeenCalledWith(moviesSearchAdapter);
   });
 
   it('returns empty array for empty query', async () => {

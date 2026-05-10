@@ -1,17 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import type { Database } from 'better-sqlite3';
-
-// Prevent side-effect registration from throwing on import
-vi.mock('../../core/search/registry.js', () => ({
-  registerSearchAdapter: vi.fn(),
-  getAdapters: vi.fn(),
-  resetRegistry: vi.fn(),
-}));
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { seedWishListItem, setupTestContext } from '../../../shared/test-utils.js';
-import { registerSearchAdapter } from '../../core/search/registry.js';
 import { type WishlistHitData, wishlistSearchAdapter } from './search-adapter.js';
+
+import type { Database } from 'better-sqlite3';
 
 import type { SearchHit } from '../../core/search/index.js';
 
@@ -35,11 +27,10 @@ function search(query: string, limit?: number): SearchHit<WishlistHitData>[] {
 }
 
 describe('wishlist search adapter', () => {
-  it('registers with correct metadata', () => {
+  it('declares the correct metadata', () => {
     expect(wishlistSearchAdapter.domain).toBe('wishlist');
     expect(wishlistSearchAdapter.icon).toBe('Star');
     expect(wishlistSearchAdapter.color).toBe('yellow');
-    expect(registerSearchAdapter).toHaveBeenCalledWith(wishlistSearchAdapter);
   });
 
   it('returns empty results for empty query', () => {

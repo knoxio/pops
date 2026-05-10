@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@pops/api-client": "workspace:*",
+    "@pops/module-registry": "workspace:*",
     "@pops/ui": "workspace:*",
     "lucide-react": "^1.14.0",
     "react": "^19.2.6",

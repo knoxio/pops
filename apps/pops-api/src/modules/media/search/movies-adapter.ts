@@ -9,7 +9,6 @@ import { like } from 'drizzle-orm';
 import { movies } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
-import { registerSearchAdapter } from '../../core/search/index.js';
 
 import type { Query, SearchAdapter, SearchContext, SearchHit } from '../../core/search/types.js';
 
@@ -86,5 +85,3 @@ export const moviesSearchAdapter: SearchAdapter<MovieHitData> = {
       .toSorted((a, b) => b.score - a.score);
   },
 };
-
-registerSearchAdapter(moviesSearchAdapter);

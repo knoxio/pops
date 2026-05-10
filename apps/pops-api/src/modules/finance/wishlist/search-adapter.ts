@@ -3,7 +3,6 @@ import { and, like, sql } from 'drizzle-orm';
 import { wishList } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
-import { registerSearchAdapter } from '../../core/search/index.js';
 
 import type { Query, SearchAdapter, SearchContext, SearchHit } from '../../core/search/index.js';
 
@@ -87,5 +86,3 @@ export const wishlistSearchAdapter: SearchAdapter<WishlistHitData> = {
     return hits;
   },
 };
-
-registerSearchAdapter(wishlistSearchAdapter);
