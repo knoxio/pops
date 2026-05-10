@@ -21,14 +21,14 @@ Then `docker compose -f infra/docker-compose.yml pull && up -d` produces a runni
 
 ## Image publishing
 
-| Image                       | Built from                   | Tags published                                        |
-| --------------------------- | ---------------------------- | ----------------------------------------------------- |
-| `ghcr.io/knoxio/pops-api`   | `apps/pops-api/Dockerfile`   | `main` (latest from main branch), `sha-<short>`, `vN` |
-| `ghcr.io/knoxio/pops-shell` | `apps/pops-shell/Dockerfile` | `main`, `sha-<short>`, `vN`                           |
+| Image                       | Built from                   | Tags published                                                                                    |
+| --------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------- |
+| `ghcr.io/knoxio/pops-api`   | `apps/pops-api/Dockerfile`   | `main` (latest from main branch), `sha-<short>`, `vX.Y.Z` / `X.Y.Z` / `vX.Y` / `X.Y` / `vX` / `X` |
+| `ghcr.io/knoxio/pops-shell` | `apps/pops-shell/Dockerfile` | same as above                                                                                     |
 
 `pops-worker` shares the `pops-api` image with a different `command:`.
 
-Publishing is automatic on every push to `main` (see [`publish-images.yml`](../../../../.github/workflows/publish-images.yml)). Tag pushes (`vN`) trigger an additional semver-tagged publish.
+Publishing is automatic on every push to `main` (see [`publish-images.yml`](../../../../.github/workflows/publish-images.yml)). Pushing a semver git tag (`vX.Y.Z`) triggers the same workflow and publishes the matching version-tagged images. Versioning + changelog generation is automated via [release-please](../../../../.github/workflows/release-please.yml); see [`docs/runbooks/cut-release.md`](../../../../docs/runbooks/cut-release.md) for the release flow.
 
 ## The compose file as the contract
 
@@ -72,12 +72,12 @@ The compose file ships a Watchtower service. Default behavior:
 
 ### Deployer env knobs
 
-| Variable             | Default         | When to override                                                                                                                                                            |
-| -------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `POPS_IMAGE_TAG`     | `main`          | Pin to a specific build (e.g. `sha-abc1234` or `vN`) to disable auto-update for that container. See `.env.example`.                                                         |
-| `DOCKER_CONFIG_DIR`  | `/root/.docker` | Path on the host where docker login credentials live; only relevant if you've forked pops and made your GHCR packages private (knoxio's are public — no auth needed).       |
-| `DOCKER_API_VERSION` | `1.45`          | Docker API version Watchtower negotiates. 1.45 works on any Docker ≥ 24. Drop to 1.40 only if your host runs an older daemon — Watchtower 1.7.1's built-in 1.24 is too old. |
-| `TZ`                 | `UTC`           | Timezone passed to Watchtower for log timestamps + scheduled poll display.                                                                                                  |
+| Variable             | Default         | When to override                                                                                                                                                                             |
+| -------------------- | --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `POPS_IMAGE_TAG`     | `main`          | Pin to a specific build (e.g. `sha-abc1234`, `v0.1.0`, `v0.1`, `v0`) to disable auto-update for that container. Track stability over freshness by pinning a version tag. See `.env.example`. |
+| `DOCKER_CONFIG_DIR`  | `/root/.docker` | Path on the host where docker login credentials live; only relevant if you've forked pops and made your GHCR packages private (knoxio's are public — no auth needed).                        |
+| `DOCKER_API_VERSION` | `1.45`          | Docker API version Watchtower negotiates. 1.45 works on any Docker ≥ 24. Drop to 1.40 only if your host runs an older daemon — Watchtower 1.7.1's built-in 1.24 is too old.                  |
+| `TZ`                 | `UTC`           | Timezone passed to Watchtower for log timestamps + scheduled poll display.                                                                                                                   |
 
 Disable Watchtower entirely by removing the service from a deployer-local compose override, or by stopping/removing the container. Pin a specific tag to disable auto-updates while keeping Watchtower running:
 
@@ -90,13 +90,13 @@ Watchtower will not roll forward as long as the resolved digest doesn't move.
 
 ## User Stories
 
-| #   | Story                                                                                               | Status      |
-| --- | --------------------------------------------------------------------------------------------------- | ----------- |
-| 01  | [`publish-images.yml` publishes pops-api and pops-shell on push to main](us-01-publish-pipeline.md) | Done        |
-| 02  | [Production compose uses GHCR images + Watchtower for auto-update](us-02-compose-contract.md)       | Done        |
-| 03  | [Compose-validate CI job catches syntax regressions before merge](us-03-compose-ci.md)              | Done        |
-| 04  | [README documents the secrets layout + minimum env for any deployer](us-04-deployer-onboarding.md)  | Done        |
-| 05  | [Versioned image tags + release process for breaking-change announcements](us-05-versioning.md)     | Not started |
+| #   | Story                                                                                               | Status |
+| --- | --------------------------------------------------------------------------------------------------- | ------ |
+| 01  | [`publish-images.yml` publishes pops-api and pops-shell on push to main](us-01-publish-pipeline.md) | Done   |
+| 02  | [Production compose uses GHCR images + Watchtower for auto-update](us-02-compose-contract.md)       | Done   |
+| 03  | [Compose-validate CI job catches syntax regressions before merge](us-03-compose-ci.md)              | Done   |
+| 04  | [README documents the secrets layout + minimum env for any deployer](us-04-deployer-onboarding.md)  | Done   |
+| 05  | [Versioned image tags + release process for breaking-change announcements](us-05-versioning.md)     | Done   |
 
 ## Edge Cases
 
@@ -109,4 +109,6 @@ Watchtower will not roll forward as long as the resolved digest doesn't move.
 - Publish workflow: [`.github/workflows/publish-images.yml`](../../../../.github/workflows/publish-images.yml)
 - Production compose: [`infra/docker-compose.yml`](../../../../infra/docker-compose.yml)
 - Compose validation in CI: [`.github/workflows/docker-build.yml`](../../../../.github/workflows/docker-build.yml)
+- Release automation: [`.github/workflows/release-please.yml`](../../../../.github/workflows/release-please.yml), [`release-please-config.json`](../../../../release-please-config.json)
+- Release runbook: [`docs/runbooks/cut-release.md`](../../../../docs/runbooks/cut-release.md)
 - Server-side rollout (Watchtower config + GHCR auth): [PRD-095 in homelab-infra](https://github.com/knoxio/homelab-infra/blob/main/docs/themes/06-pops/prds/095-pops-rollout/README.md)

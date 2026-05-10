@@ -167,7 +167,7 @@ The compose file mounts each `secrets/<name>` file into containers via Docker fi
 
 Pushing to `main` builds and publishes `ghcr.io/knoxio/pops-api` and `ghcr.io/knoxio/pops-shell` (see [`.github/workflows/publish-images.yml`](.github/workflows/publish-images.yml)). The compose file ships a Watchtower service that polls GHCR every 60s and rolls out new digests for any container labelled `com.centurylinklabs.watchtower.enable=true`.
 
-Override `POPS_IMAGE_TAG` in `.env` to pin a release (e.g. `POPS_IMAGE_TAG=sha-abc1234`) or use the dev compose for local builds:
+Override `POPS_IMAGE_TAG` in `.env` to pin a release. Track stability over freshness by pinning a semver tag (`POPS_IMAGE_TAG=v0.1.0`, `v0.1`, or `v0`) — see the [release runbook](docs/runbooks/cut-release.md) — or pin to a specific build with `POPS_IMAGE_TAG=sha-abc1234`. Use the dev compose for local builds:
 
 ```bash
 docker compose -f infra/docker-compose.dev.yml up -d --build
