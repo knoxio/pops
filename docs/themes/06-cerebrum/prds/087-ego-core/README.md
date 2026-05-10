@@ -91,8 +91,8 @@ Build the conversational agent core — the "I" of the system. Ego manages multi
 
 | #   | Story                                                               | Summary                                                                                | Status  | Parallelisable   |
 | --- | ------------------------------------------------------------------- | -------------------------------------------------------------------------------------- | ------- | ---------------- |
-| 01  | [us-01-conversation-engine](us-01-conversation-engine.md)           | Multi-turn conversation management: history, context window, system prompt             | Partial | No (first)       |
-| 02  | [us-02-shell-chat-panel](us-02-shell-chat-panel.md)                 | React component in pops-shell: streaming responses, message history, conversation list | Partial | Blocked by us-01 |
+| 01  | [us-01-conversation-engine](us-01-conversation-engine.md)           | Multi-turn conversation management: history, context window, system prompt             | Done    | No (first)       |
+| 02  | [us-02-shell-chat-panel](us-02-shell-chat-panel.md)                 | React component in pops-shell: streaming responses, message history, conversation list | Done    | Blocked by us-01 |
 | 03  | [us-03-context-awareness](us-03-context-awareness.md)               | App-aware context: current pops app, recent actions, active engram context             | Partial | Blocked by us-01 |
 | 04  | [us-04-scope-negotiation](us-04-scope-negotiation.md)               | Infer scopes from conversation: explicit mentions, topic inference, channel defaults   | Done    | Blocked by us-01 |
 | 05  | [us-05-conversation-persistence](us-05-conversation-persistence.md) | SQLite persistence: conversations, messages, context metadata                          | Done    | Yes              |

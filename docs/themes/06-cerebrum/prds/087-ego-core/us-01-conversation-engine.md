@@ -1,7 +1,7 @@
 # US-01: Conversation Engine
 
 > PRD: [PRD-087: Ego Core](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -14,7 +14,7 @@ As the Ego system, I need a multi-turn conversation engine that manages message 
 - [x] Context window assembly follows priority order: (1) system prompt with Cerebrum capabilities and active scopes, (2) conversation history (most recent N messages, configurable, default 20), (3) engrams already loaded in the conversation context, (4) newly retrieved engrams for the current query — truncated by lowest relevance score when total tokens exceed the model limit
 - [x] When conversation history exceeds the message window (N messages), older messages are summarised into a condensed block by the LLM and stored as a system message, freeing token budget for retrieval context
 - [x] The system prompt describes: what Cerebrum is, what engrams are, the user's active scopes, available tools (search, ingest, link), and instructions to cite engram IDs when referencing stored knowledge
-- [ ] Responses are streamed via server-sent events — partial tokens are delivered to the client as they arrive from the LLM
+- [x] Responses are streamed via server-sent events — partial tokens are delivered to the client as they arrive from the LLM (Engine.prepareStream exposes an async generator wired into the `POST /api/ego/chat/stream` SSE endpoint; events: `token`, `done`, `error`)
 - [x] After the response completes, the engine extracts cited engram IDs from the response content, stores them in the message's `citations` array, and logs `tool_calls` if any tools were invoked during the turn
 - [x] Token counts (`tokens_in`, `tokens_out`) are recorded per message from the LLM response metadata
 
