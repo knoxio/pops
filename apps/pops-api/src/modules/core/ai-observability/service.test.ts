@@ -171,6 +171,95 @@ describe('getLatencyStats', () => {
   });
 });
 
+describe('integrated 100-row scenario', () => {
+  it('aggregates correctly across mixed providers, models, operations, latencies, and statuses', () => {
+    const providers = ['claude', 'ollama'];
+    const models = ['claude-haiku-4-5-20251001', 'claude-sonnet-4-5', 'llama3:8b'];
+    const operations = ['entity-match', 'rule-generation', 'embedding'];
+    const statuses: Array<'success' | 'error' | 'timeout' | 'budget-blocked'> = [
+      'success',
+      'success',
+      'success',
+      'success',
+      'success',
+      'success',
+      'success',
+      'success',
+      'error',
+      'timeout',
+    ];
+
+    let expectedTotalInputTokens = 0;
+    let expectedTotalOutputTokens = 0;
+    let expectedTotalCost = 0;
+    let expectedSuccessSamples = 0;
+    let expectedCacheHits = 0;
+    let expectedErrors = 0;
+
+    for (let i = 0; i < 100; i++) {
+      const provider = providers[i % providers.length];
+      const model = models[i % models.length];
+      const operation = operations[i % operations.length];
+      const status = statuses[i % statuses.length];
+      const cached = i % 7 === 0 ? 1 : 0;
+      const inputTokens = 100 + i;
+      const outputTokens = 10 + (i % 5);
+      const costUsd = (i % 5) * 0.0005;
+      const latencyMs = cached === 1 ? 0 : 50 + (i % 50) * 10;
+      const dayOffset = i % 5;
+      const created = new Date(Date.UTC(2026, 2, 1 + dayOffset, 12, 0, 0)).toISOString();
+
+      seedAiUsage(db, {
+        provider,
+        model,
+        operation,
+        status,
+        cached,
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
+        cost_usd: costUsd,
+        latency_ms: latencyMs,
+        created_at: created,
+      });
+
+      expectedTotalInputTokens += inputTokens;
+      expectedTotalOutputTokens += outputTokens;
+      expectedTotalCost += costUsd;
+      if (cached === 1) expectedCacheHits += 1;
+      if (status === 'error' || status === 'timeout' || status === 'budget-blocked')
+        expectedErrors += 1;
+      if (status === 'success' && cached === 0 && latencyMs > 0) expectedSuccessSamples += 1;
+    }
+
+    const stats = service.getStats();
+    expect(stats.totalCalls).toBe(100);
+    expect(stats.totalInputTokens).toBe(expectedTotalInputTokens);
+    expect(stats.totalOutputTokens).toBe(expectedTotalOutputTokens);
+    expect(stats.totalCostUsd).toBeCloseTo(expectedTotalCost, 6);
+    expect(stats.cacheHitRate).toBeCloseTo(expectedCacheHits / 100, 6);
+    expect(stats.errorRate).toBeCloseTo(expectedErrors / 100, 6);
+    expect(stats.byProvider.length).toBeGreaterThanOrEqual(2);
+    expect(stats.byModel.length).toBeGreaterThanOrEqual(3);
+    expect(stats.byOperation.length).toBeGreaterThanOrEqual(3);
+    const sumProviderCalls = stats.byProvider.reduce((s, p) => s + p.calls, 0);
+    expect(sumProviderCalls).toBe(100);
+
+    const latency = service.getLatencyStats();
+    // Sanity: we have enough successful, non-cached, latency>0 rows to populate every percentile.
+    expect(expectedSuccessSamples).toBeGreaterThan(20);
+    expect(latency.p50).toBeLessThanOrEqual(latency.p75);
+    expect(latency.p75).toBeLessThanOrEqual(latency.p95);
+    expect(latency.p95).toBeLessThanOrEqual(latency.p99);
+    expect(latency.avg).toBeGreaterThan(0);
+
+    const history = service.getHistory({ startDate: '2026-03-01', endDate: '2026-03-05' });
+    // Five distinct day buckets.
+    expect(history.records).toHaveLength(5);
+    expect(history.summary.totalCalls).toBe(100);
+    expect(history.summary.totalCostUsd).toBeCloseTo(expectedTotalCost, 6);
+  });
+});
+
 describe('getHistory', () => {
   it('returns empty when no data exists', () => {
     const result = service.getHistory();

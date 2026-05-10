@@ -8,6 +8,10 @@ As a system administrator, I want a comprehensive AI monitoring dashboard that r
 
 ## Acceptance Criteria
 
+> Outstanding polish items (trend deltas, cost stacked chart, latency
+> over-time chart, date-range presets, filter dropdowns, summary-key
+> integration) are tracked in #2572.
+
 - [x] The new dashboard replaces the existing AI Usage page in the AI Ops app (same route, updated component)
 - [x] **Hero section** displays four KPI cards: Total Cost (this month, formatted as currency), Total Calls (this month), Cache Hit Rate (percentage), Error Rate
 - [ ] **Hero section** trend indicators: each KPI card shows a trend vs the previous equivalent period — up/down arrow with percentage change, colored green for improvement and red for regression

@@ -2,6 +2,7 @@ import { aiInferenceLog } from '@pops/db-types';
 
 import { getDrizzle } from '../db.js';
 import { lookupPricing } from './inference-pricing.js';
+import { extractTokens } from './inference-tokens.js';
 import { logger } from './logger.js';
 
 export interface TrackInferenceParams {
@@ -85,21 +86,6 @@ function buildLogValues(
     domain: resolved.domain,
     contextId: resolved.contextId,
     ...partial,
-  };
-}
-
-function extractTokens(result: unknown): { inputTokens: number; outputTokens: number } {
-  if (result === null || result === undefined || typeof result !== 'object') {
-    return { inputTokens: 0, outputTokens: 0 };
-  }
-  const r = result as Record<string, unknown>;
-  if (!r['usage'] || typeof r['usage'] !== 'object') {
-    return { inputTokens: 0, outputTokens: 0 };
-  }
-  const u = r['usage'] as Record<string, unknown>;
-  return {
-    inputTokens: typeof u['input_tokens'] === 'number' ? u['input_tokens'] : 0,
-    outputTokens: typeof u['output_tokens'] === 'number' ? u['output_tokens'] : 0,
   };
 }
 
