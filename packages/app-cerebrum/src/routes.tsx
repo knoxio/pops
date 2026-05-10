@@ -26,6 +26,12 @@ const NudgesPage = lazy(() =>
 const ProposalQueuePage = lazy(() =>
   import('./pages/ProposalQueuePage').then((m) => ({ default: m.ProposalQueuePage }))
 );
+const EngramsListPage = lazy(() =>
+  import('./pages/EngramsListPage').then((m) => ({ default: m.EngramsListPage }))
+);
+const EngramDetailPage = lazy(() =>
+  import('./pages/EngramDetailPage').then((m) => ({ default: m.EngramDetailPage }))
+);
 
 /** Local type mirror for compile-time safety (shell owns the canonical types). */
 interface AppNavConfigShape {
@@ -47,6 +53,7 @@ export const navConfig = {
   basePath: '/cerebrum',
   items: [
     { path: '', label: 'Ingest', labelKey: 'cerebrum.ingest', icon: 'FileText' },
+    { path: '/engrams', label: 'Engrams', labelKey: 'cerebrum.engrams.nav', icon: 'Library' },
     { path: '/nudges', label: 'Nudges', labelKey: 'cerebrum.nudges', icon: 'Bell' },
     {
       path: '/proposals',
@@ -71,6 +78,8 @@ export const routes: RouteObject[] = [
   { path: 'chat', element: <ChatPage /> },
   { path: 'nudges', element: <NudgesPage /> },
   { path: 'proposals', element: <ProposalQueuePage /> },
+  { path: 'engrams', element: <EngramsListPage /> },
+  { path: 'engrams/:id', element: <EngramDetailPage /> },
   // /cerebrum/admin/* is composed by the shell from @pops/app-ai;
   // see apps/pops-shell/src/app/router.tsx.
 ];

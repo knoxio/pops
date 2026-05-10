@@ -51,6 +51,9 @@ const listSchema = z
     type: z.string().optional(),
     scopes: z.array(z.string().min(1)).optional(),
     tags: z.array(z.string().min(1)).optional(),
+    // Restrict to a known set of engram ids — used by the Engrams browser
+    // (#2528) to hydrate retrieval/search results and the connections panel.
+    ids: z.array(engramIdSchema).optional(),
     status: z.enum(ENGRAM_STATUSES).optional(),
     search: z.string().optional(),
     limit: z.number().int().positive().max(500).optional(),
