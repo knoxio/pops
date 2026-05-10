@@ -1,6 +1,5 @@
 import { cn } from '../lib/utils';
 import { Badge } from '../primitives/badge';
-
 import { STATUS_BADGE_BASE, statusBadgeToneClass } from './statusBadgeTones';
 
 import type { ComponentProps } from 'react';
@@ -59,11 +58,7 @@ export function ConditionBadge({ condition, className, ...props }: ConditionBadg
   if (!styles) return null;
 
   return (
-    <Badge
-      variant="outline"
-      className={cn(STATUS_BADGE_BASE, styles, className)}
-      {...props}
-    >
+    <Badge variant="outline" className={cn(STATUS_BADGE_BASE, styles, className)} {...props}>
       {condition}
     </Badge>
   );

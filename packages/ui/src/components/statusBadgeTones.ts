@@ -25,8 +25,7 @@ export const statusBadgeToneClass: Record<StatusBadgeTone, string> = {
   success: 'bg-success/10 text-success border-success/20 dark:text-success/80',
   warning: 'bg-warning/10 text-warning border-warning/20 dark:text-warning/80',
   info: 'bg-info/10 text-info border-info/20 dark:text-info/80',
-  destructive:
-    'bg-destructive/10 text-destructive border-destructive/20 dark:text-destructive/80',
+  destructive: 'bg-destructive/10 text-destructive border-destructive/20 dark:text-destructive/80',
   neutral: 'bg-muted text-muted-foreground border-transparent',
   'stat-sky': 'bg-stat-sky/10 text-stat-sky border-stat-sky/20 dark:text-stat-sky/80',
   'stat-violet':
@@ -37,5 +36,4 @@ export const statusBadgeToneClass: Record<StatusBadgeTone, string> = {
 };
 
 /** Shared base classes for compact status / category badges. */
-export const STATUS_BADGE_BASE =
-  'text-2xs uppercase tracking-wider font-semibold py-0 px-1.5 h-5';
+export const STATUS_BADGE_BASE = 'text-2xs uppercase tracking-wider font-semibold py-0 px-1.5 h-5';

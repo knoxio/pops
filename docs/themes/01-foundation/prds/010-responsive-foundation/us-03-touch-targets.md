@@ -24,7 +24,7 @@ Per Apple HIG and WCAG. The visual element can be smaller than 44px — the tapp
 Canonical implementation pattern (see `primitives/button.tsx`):
 
 ```tsx
-"relative h-9 before:absolute before:-inset-1.5 before:content-['']"
+"relative h-9 before:absolute before:-inset-1.5 before:content-['']";
 // 36px visual + 6px each side via `before` = 48px tappable; >= 44px
 ```
 
