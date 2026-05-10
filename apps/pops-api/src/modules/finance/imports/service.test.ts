@@ -10,7 +10,7 @@ import {
 
 import { closeDb, setDb } from '../../../db.js';
 import { createTestDb, seedEntity, seedTransaction } from '../../../shared/test-utils.js';
-import { clearCache } from './lib/ai-categorizer.js';
+import { clearCache } from '../../core/ai-usage/cache.js';
 import { getProgress, setProgress } from './progress-store.js';
 import {
   applyLearnedCorrection,

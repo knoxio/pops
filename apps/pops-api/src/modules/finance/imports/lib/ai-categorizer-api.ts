@@ -8,7 +8,7 @@ import { AiCategorizationError } from './ai-categorizer-error.js';
  */
 import type Anthropic from '@anthropic-ai/sdk';
 
-import type { AiCacheEntry } from './ai-categorizer-cache.js';
+import type { AiCacheEntry } from '../../../core/ai-usage/cache.js';
 
 export interface ApiCallResponse {
   text: string | null;

@@ -1,13 +1,1 @@
-[
-  {
-    "type": "dependency",
-    "from": "apps/pops-api/src/modules/core/ai-usage/router.ts",
-    "to": "apps/pops-api/src/modules/finance/imports/lib/ai-categorizer.ts",
-    "unresolvedTo": "../../finance/imports/lib/ai-categorizer.js",
-    "dependencyTypes": ["local", "import"],
-    "rule": {
-      "severity": "error",
-      "name": "no-cross-api-module-import"
-    }
-  }
-]
+[]

@@ -4,6 +4,8 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { clearCache } from '../../../core/ai-usage/cache.js';
+
 /**
  * Integration tests for AI categorizer disk cache persistence.
  * Uses a real temp directory to verify read/write to ai_entity_cache.json.
@@ -35,7 +37,7 @@ const originalEnv = {
   AI_CACHE_PATH: process.env['AI_CACHE_PATH'],
 };
 
-beforeEach(async () => {
+beforeEach(() => {
   tmpDir = join(
     tmpdir(),
     `pops-ai-cache-test-${Date.now()}-${Math.random().toString(36).slice(2)}`
@@ -47,9 +49,7 @@ beforeEach(async () => {
   mockCreate.mockClear();
   mockDbRun.mockClear();
 
-  // Dynamic import + clearCache to reset state between tests
-  const mod = await import('./ai-categorizer.js');
-  mod.clearCache();
+  clearCache();
 });
 
 afterEach(() => {
@@ -95,11 +95,11 @@ describe('AI categorizer disk cache', () => {
     ];
     writeFileSync(cachePath, JSON.stringify(entries, null, 2));
 
-    const mod = await import('./ai-categorizer.js');
-    mod.clearCache(); // Reset so it reloads from disk
+    clearCache(); // Reset so it reloads from disk
 
     // This should be a cache hit from disk — no API call
-    const { result } = await mod.categorizeWithAi('NETFLIX.COM');
+    const { categorizeWithAi } = await import('./ai-categorizer.js');
+    const { result } = await categorizeWithAi('NETFLIX.COM');
 
     expect(mockCreate).not.toHaveBeenCalled();
     expect(result?.entityName).toBe('Netflix');
@@ -114,11 +114,11 @@ describe('AI categorizer disk cache', () => {
       usage: { input_tokens: 50, output_tokens: 20 },
     });
 
-    const mod = await import('./ai-categorizer.js');
-    mod.clearCache();
+    clearCache();
 
     // Should not throw — falls back to empty cache and calls API
-    const { result } = await mod.categorizeWithAi('TEST');
+    const { categorizeWithAi } = await import('./ai-categorizer.js');
+    const { result } = await categorizeWithAi('TEST');
     expect(result?.entityName).toBe('Test');
     expect(mockCreate).toHaveBeenCalledTimes(1);
   });
@@ -130,10 +130,10 @@ describe('AI categorizer disk cache', () => {
       usage: { input_tokens: 50, output_tokens: 20 },
     });
 
-    const mod = await import('./ai-categorizer.js');
-    mod.clearCache();
+    clearCache();
 
-    const { result } = await mod.categorizeWithAi('TEST');
+    const { categorizeWithAi } = await import('./ai-categorizer.js');
+    const { result } = await categorizeWithAi('TEST');
     expect(result?.entityName).toBe('Test');
     expect(mockCreate).toHaveBeenCalledTimes(1);
   });

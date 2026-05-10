@@ -5,7 +5,8 @@ import { AiCategorizationError } from './ai-categorizer-error.js';
  * Uses a lookup table for deterministic, predictable results.
  * Allows testing various AI response scenarios (good, bad, edge cases).
  */
-import type { AiCacheEntry, AiUsageStats } from './ai-categorizer.js';
+import type { AiCacheEntry } from '../../../core/ai-usage/cache.js';
+import type { AiUsageStats } from './ai-categorizer.js';
 
 /**
  * Lookup table for known descriptions.

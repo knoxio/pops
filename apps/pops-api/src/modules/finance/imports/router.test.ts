@@ -11,7 +11,7 @@ import {
   seedTransaction,
   setupTestContext,
 } from '../../../shared/test-utils.js';
-import { clearCache } from './lib/ai-categorizer.js';
+import { clearCache } from '../../core/ai-usage/cache.js';
 
 import type { Database } from 'better-sqlite3';
 
