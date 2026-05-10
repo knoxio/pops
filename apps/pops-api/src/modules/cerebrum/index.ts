@@ -11,6 +11,7 @@ import { mergeRouters, router } from '../../trpc.js';
 import { emitRouter } from './emit/router.js';
 import { engramsRouter } from './engrams/router.js';
 import { scopesRouter } from './engrams/scopes-router.js';
+import { tagsRouter } from './engrams/tags-router.js';
 import { gliaRouter as gliaTrustRouter } from './glia/router.js';
 import { ingestRouter } from './ingest/router.js';
 import { nudgesRouter } from './nudges/router.js';
@@ -27,6 +28,7 @@ import type { ModuleManifest } from '@pops/types';
 export const cerebrumRouter = router({
   engrams: engramsRouter,
   scopes: scopesRouter,
+  tags: tagsRouter,
   templates: templatesRouter,
   index: indexRouter,
   retrieval: retrievalRouter,

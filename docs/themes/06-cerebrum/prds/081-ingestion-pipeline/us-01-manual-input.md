@@ -1,7 +1,7 @@
 # US-01: Manual Input via Shell Form
 
 > PRD: [PRD-081: Ingestion Pipeline](README.md)
-> Status: Partial
+> Status: Done
 
 ## Description
 
@@ -17,11 +17,11 @@ As a user in the pops shell, I want to create engrams through an interactive for
 - [x] Tag input supports comma-separated freeform tags
 - [x] If the user provides no explicit scopes, the form runs scope inference (rule-based + LLM) and presents the inferred scopes for confirmation before submission
 - [x] Submitting the form calls `cerebrum.ingest.submit` and displays the created engram's ID, file path, and classified type
-- [ ] Tag autocomplete from existing tags in the index (deferred — requires a tags list endpoint)
+- [x] Tag autocomplete from existing tags in the index — `cerebrum.tags.list` returns counts ranked by usage and the form's TagPicker component filters by prefix as the user types
 
 ## Notes
 
 - The form is built as a React page in the `@pops/app-cerebrum` package, mounted at `/cerebrum` in the shell.
 - Template-specific fields are dynamically rendered based on the selected template's `custom_fields` definition — no hardcoding of template-specific logic.
 - The scope picker shows known scopes with prefix-based autocomplete and allows manual entry. Hierarchy display is deferred.
-- Tag autocomplete from existing tags requires a `tags.list` endpoint — deferred to a follow-up.
+- Tag autocomplete is backed by `cerebrum.tags.list`, which returns distinct tags with usage counts. The TagPicker component re-uses the chip+dropdown pattern from ScopePicker for consistency.

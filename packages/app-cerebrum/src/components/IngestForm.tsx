@@ -6,11 +6,12 @@
 import { Loader2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-import { Button, ChipInput, Select, Textarea, TextInput } from '@pops/ui';
+import { Button, Select, Textarea, TextInput } from '@pops/ui';
 
 import { ScopeConfirmDialog } from './ScopeConfirmDialog';
 import { ScopePicker } from './ScopePicker';
 import { SubmitResult } from './SubmitResult';
+import { TagPicker } from './TagPicker';
 import { TemplateFields } from './TemplateFields';
 
 import type { useIngestPageModel } from '../pages/ingest-page/useIngestPageModel';
@@ -68,23 +69,6 @@ function BodyEditor({ value, onChange }: { value: string; onChange: (v: string) 
         rows={8}
         className="min-h-[160px] font-mono text-sm"
         aria-label={t('ingest.body')}
-      />
-    </div>
-  );
-}
-
-function TagInput({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
-  const { t } = useTranslation('cerebrum');
-  return (
-    <div className="flex flex-col gap-1.5 w-full">
-      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-widest ml-1">
-        {t('ingest.tags')}
-      </label>
-      <ChipInput
-        value={value}
-        onChange={onChange}
-        placeholder={t('ingest.tagsPlaceholder')}
-        aria-label={t('ingest.tags')}
       />
     </div>
   );
@@ -158,7 +142,12 @@ function IngestFormFields({ model }: IngestFormProps) {
         loading={model.scopesLoading}
         onChange={(v) => model.updateField('scopes', v)}
       />
-      <TagInput value={model.form.tags} onChange={(v) => model.updateField('tags', v)} />
+      <TagPicker
+        value={model.form.tags}
+        suggestions={model.tagSuggestions}
+        loading={model.tagsLoading}
+        onChange={(v) => model.updateField('tags', v)}
+      />
       {model.submitError && (
         <div className="text-sm text-destructive bg-destructive/10 rounded-md px-4 py-3">
           {model.submitError}

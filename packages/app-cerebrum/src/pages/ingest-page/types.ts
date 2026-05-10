@@ -44,6 +44,12 @@ export interface ScopeEntry {
   count: number;
 }
 
+/** A tag entry returned by cerebrum.tags.list. */
+export interface TagEntry {
+  tag: string;
+  count: number;
+}
+
 export interface IngestFormValues {
   type: string;
   template: string;

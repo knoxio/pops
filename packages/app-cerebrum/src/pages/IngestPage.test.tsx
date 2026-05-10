@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockTemplatesQuery = vi.fn();
 const mockScopesQuery = vi.fn();
+const mockTagsQuery = vi.fn();
 const mockInferScopesQuery = vi.fn();
 const mockSubmitMutate = vi.fn();
 
@@ -17,6 +18,9 @@ vi.mock('@pops/api-client', () => ({
       },
       scopes: {
         list: { useQuery: (...args: unknown[]) => mockScopesQuery(...args) },
+      },
+      tags: {
+        list: { useQuery: (...args: unknown[]) => mockTagsQuery(...args) },
       },
       ingest: {
         inferScopes: {
@@ -251,6 +255,10 @@ function setupDefaultMocks() {
     data: { scopes: mockScopes },
     isLoading: false,
   });
+  mockTagsQuery.mockReturnValue({
+    data: { tags: [] },
+    isLoading: false,
+  });
   mockInferScopesQuery.mockReturnValue({
     data: undefined,
     isFetching: false,
@@ -288,9 +296,10 @@ describe('IngestPage', () => {
     // Verify options include capture + templates
     const options = within(select).getAllByRole('option');
     const values = options.map((o) => o.textContent);
-    expect(values).toContain('capture');
-    expect(values).toContain('decision');
-    expect(values).toContain('journal');
+    // Type labels are Title-Cased per ENGRAM_TYPE_LABELS — see ingest-page/types.ts
+    expect(values).toContain('Capture');
+    expect(values).toContain('Decision');
+    expect(values).toContain('Journal');
   });
 
   it('renders title and body inputs', () => {
@@ -302,7 +311,7 @@ describe('IngestPage', () => {
   it('renders scope and tag inputs', () => {
     renderPage();
     expect(screen.getByLabelText('Scope input')).toBeInTheDocument();
-    expect(screen.getByTestId('chip-input')).toBeInTheDocument();
+    expect(screen.getByLabelText('Tag input')).toBeInTheDocument();
   });
 
   it('shows template-specific fields when a template type is selected', async () => {

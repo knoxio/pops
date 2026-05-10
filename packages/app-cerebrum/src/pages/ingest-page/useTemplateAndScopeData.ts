@@ -8,11 +8,12 @@ import { trpc } from '@pops/api-client';
 
 import { ENGRAM_TYPE_LABELS, ENGRAM_TYPES } from './types';
 
-import type { ScopeEntry, TemplateSummary } from './types';
+import type { ScopeEntry, TagEntry, TemplateSummary } from './types';
 
 export function useTemplateAndScopeData() {
   const templatesQuery = trpc.cerebrum.templates.list.useQuery();
   const scopesQuery = trpc.cerebrum.scopes.list.useQuery();
+  const tagsQuery = trpc.cerebrum.tags.list.useQuery();
 
   const templatesRef = useRef<TemplateSummary[]>([]);
   const rawTemplates = templatesQuery.data?.templates;
@@ -23,6 +24,11 @@ export function useTemplateAndScopeData() {
   const rawScopes = scopesQuery.data?.scopes;
   if (rawScopes) scopesRef.current = rawScopes;
   const knownScopes = scopesRef.current;
+
+  const tagsRef = useRef<TagEntry[]>([]);
+  const rawTags = tagsQuery.data?.tags;
+  if (rawTags) tagsRef.current = rawTags;
+  const knownTags = tagsRef.current;
 
   const typeOptions = useMemo(() => {
     const templatesByName = new Map<string, TemplateSummary>(
@@ -51,9 +57,12 @@ export function useTemplateAndScopeData() {
   return {
     templates,
     knownScopes,
+    knownTags,
     typeOptions,
     scopeSuggestions,
+    tagSuggestions: knownTags,
     templatesLoading: templatesQuery.isLoading,
     scopesLoading: scopesQuery.isLoading,
+    tagsLoading: tagsQuery.isLoading,
   };
 }
