@@ -18,6 +18,7 @@ COPY packages/overlay-ego/package.json ./packages/overlay-ego/
 COPY packages/api-client/package.json ./packages/api-client/
 COPY packages/navigation/package.json ./packages/navigation/
 COPY packages/types/package.json ./packages/types/
+COPY packages/module-registry/package.json ./packages/module-registry/
 
 # Install pnpm and dependencies (cached across builds)
 RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
@@ -28,9 +29,13 @@ COPY packages/db-types/src ./packages/db-types/src
 COPY packages/db-types/tsconfig.json ./packages/db-types/
 COPY packages/types/src ./packages/types/src
 COPY packages/types/tsconfig.json packages/types/tsconfig.build.json ./packages/types/
+COPY packages/module-registry/src ./packages/module-registry/src
+COPY packages/module-registry/tsconfig.json packages/module-registry/tsconfig.build.json ./packages/module-registry/
 WORKDIR /app/packages/db-types
 RUN pnpm build
 WORKDIR /app/packages/types
+RUN pnpm build
+WORKDIR /app/packages/module-registry
 RUN pnpm build
 
 # Copy remaining source files
@@ -45,6 +50,7 @@ COPY packages/overlay-ego/ ./packages/overlay-ego/
 COPY packages/api-client/ ./packages/api-client/
 COPY packages/navigation/ ./packages/navigation/
 COPY packages/types/ ./packages/types/
+COPY packages/module-registry/ ./packages/module-registry/
 COPY apps/pops-api/ ./apps/pops-api/
 COPY apps/pops-shell/ ./apps/pops-shell/
 

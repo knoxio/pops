@@ -14,6 +14,7 @@
     "format": "oxfmt --write .",
     "format:check": "oxfmt --check .",
     "ci:fix": "pnpm lint:fix && pnpm format && pnpm typecheck",
+    "registry:build": "pnpm --filter @pops/module-registry registry:build",
     "prepare": "husky"
   },
   "devDependencies": {

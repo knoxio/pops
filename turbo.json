@@ -26,6 +26,17 @@
     "typecheck": {
       "dependsOn": ["^build"],
       "outputs": []
+    },
+    "registry:build": {
+      "inputs": [
+        "scripts/**/*.ts",
+        "scripts/**/*.json",
+        "src/index.ts",
+        "package.json",
+        "tsconfig.json",
+        "tsconfig.build.json"
+      ],
+      "outputs": ["src/generated.ts"]
     }
   }
 }

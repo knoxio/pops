@@ -9,5 +9,6 @@ packages:
   - 'packages/api-client'
   - 'packages/db-types'
   - 'packages/types'
+  - 'packages/module-registry'
   - 'packages/navigation'
   - 'packages/ui'
