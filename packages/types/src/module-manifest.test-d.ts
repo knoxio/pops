@@ -39,9 +39,7 @@ const _capNoDot: FinanceCap = 'finance';
 
 // Narrowed to a union of module ids — produces a union of namespaces.
 type CoreOrFinance = Capability<'core' | 'finance'>;
-type _ExpectCoreOrFinance = Expect<
-  Equal<CoreOrFinance, `core.${string}` | `finance.${string}`>
->;
+type _ExpectCoreOrFinance = Expect<Equal<CoreOrFinance, `core.${string}` | `finance.${string}`>>;
 const _capCore: CoreOrFinance = 'core.entity.read';
 const _capFin: CoreOrFinance = 'finance.budget.write';
 // @ts-expect-error — module not in the union

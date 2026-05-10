@@ -58,9 +58,9 @@ describe('assertModuleManifest — capabilities slot', () => {
   });
 
   it('rejects a non-namespaced capability', () => {
-    expect(() =>
-      assertModuleManifest({ ...baseManifest(), capabilities: ['finance'] })
-    ).toThrow(/capabilities\[0\]/);
+    expect(() => assertModuleManifest({ ...baseManifest(), capabilities: ['finance'] })).toThrow(
+      /capabilities\[0\]/
+    );
   });
 
   it('rejects a capability namespaced under a different module id', () => {
@@ -121,9 +121,7 @@ describe('assertModuleManifest — search slot', () => {
     expect(() =>
       assertModuleManifest({
         ...baseManifest(),
-        search: [
-          { domain: 'finance', icon: 'wallet', color: 'green' },
-        ] as unknown as never,
+        search: [{ domain: 'finance', icon: 'wallet', color: 'green' }] as unknown as never,
       })
     ).toThrow(/search\[0\]\.search/);
   });

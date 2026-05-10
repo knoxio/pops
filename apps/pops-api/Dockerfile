@@ -17,7 +17,7 @@ RUN --mount=type=cache,id=pnpm,target=/root/.local/share/pnpm/store \
 COPY packages/db-types/src ./packages/db-types/src
 COPY packages/db-types/tsconfig.json ./packages/db-types/
 COPY packages/types/src ./packages/types/src
-COPY packages/types/tsconfig.json ./packages/types/
+COPY packages/types/tsconfig.json packages/types/tsconfig.build.json ./packages/types/
 COPY apps/pops-api/tsconfig.json ./apps/pops-api/
 COPY apps/pops-api/src ./apps/pops-api/src
 
