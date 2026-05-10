@@ -13,9 +13,9 @@ import type { UriHandlerDescriptor, UriResolution } from '@pops/types';
 
 export const INVENTORY_URI_TYPES = ['item', 'location'] as const;
 
-function tryGet<TData>(get: () => TData): UriResolution<TData> {
+async function tryGet<TData>(get: () => TData | Promise<TData>): Promise<UriResolution<TData>> {
   try {
-    return { kind: 'object', data: get() };
+    return { kind: 'object', data: await get() };
   } catch (error) {
     if (error instanceof NotFoundError) {
       return { kind: 'not-found' };

@@ -1,7 +1,7 @@
 # US-08: URI resolver as a registry consumer
 
 > PRD: [Plugin Contract](README.md)
-> Status: In progress
+> Status: Done
 
 ## Description
 

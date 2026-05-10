@@ -30,11 +30,14 @@ let caller: ReturnType<typeof createCaller>;
 let db: Database;
 
 const APP_KEY = 'POPS_APPS';
+const OVERLAY_KEY = 'POPS_OVERLAYS';
 let originalApps: string | undefined;
+let originalOverlays: string | undefined;
 
 beforeEach(() => {
   ({ caller, db } = ctx.setup());
   originalApps = process.env[APP_KEY];
+  originalOverlays = process.env[OVERLAY_KEY];
   __resetInstalledModulesCache();
 });
 
@@ -42,6 +45,8 @@ afterEach(() => {
   ctx.teardown();
   if (originalApps === undefined) delete process.env[APP_KEY];
   else process.env[APP_KEY] = originalApps;
+  if (originalOverlays === undefined) delete process.env[OVERLAY_KEY];
+  else process.env[OVERLAY_KEY] = originalOverlays;
   __resetInstalledModulesCache();
 });
 
@@ -132,6 +137,9 @@ describe('core.uri.resolve — inventory', () => {
 describe('core.uri.resolve — module-absent', () => {
   it('returns module-absent when the owning module is not installed', async () => {
     process.env[APP_KEY] = 'finance';
+    // Clear overlays explicitly so a pre-existing host env value can't make
+    // this test pass for the wrong reason.
+    process.env[OVERLAY_KEY] = '';
     __resetInstalledModulesCache();
     // Re-create caller so the new env propagates through the gate.
     const restrictedCaller = createCaller(true);

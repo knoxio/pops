@@ -19,13 +19,15 @@ export const MEDIA_URI_TYPES = ['movie', 'tv-show'] as const;
 function parsePositiveIntId(id: string): number | null {
   if (!/^\d+$/.test(id)) return null;
   const parsed = Number(id);
-  if (!Number.isInteger(parsed) || parsed <= 0) return null;
+  // Reject values past MAX_SAFE_INTEGER — Number() rounds those and the
+  // rounded value could resolve to a different record.
+  if (!Number.isSafeInteger(parsed) || parsed <= 0) return null;
   return parsed;
 }
 
-function tryGet<TData>(get: () => TData): UriResolution<TData> {
+async function tryGet<TData>(get: () => TData | Promise<TData>): Promise<UriResolution<TData>> {
   try {
-    return { kind: 'object', data: get() };
+    return { kind: 'object', data: await get() };
   } catch (error) {
     if (error instanceof NotFoundError) {
       return { kind: 'not-found' };

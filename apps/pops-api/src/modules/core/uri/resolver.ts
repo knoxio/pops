@@ -67,7 +67,17 @@ export async function resolveUri(
     return { kind: 'not-found', moduleId, type, id };
   }
 
-  const result = await manifest.uriHandler.resolve(type, id);
+  // Guard the handler call: the resolver contract is non-throwing, so a
+  // misbehaving module shouldn't bubble exceptions through `core.uri.resolve`.
+  // Unknown errors map to `not-found` — the caller treats the URI as
+  // unresolved and renders a placeholder, which is the safer client UX than
+  // surfacing the underlying error.
+  let result;
+  try {
+    result = await manifest.uriHandler.resolve(type, id);
+  } catch {
+    return { kind: 'not-found', moduleId, type, id };
+  }
   switch (result.kind) {
     case 'object':
       return { kind: 'object', moduleId, type, id, data: result.data };
