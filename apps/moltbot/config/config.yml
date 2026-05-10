@@ -1,5 +1,18 @@
-# Moltbot configuration for POPS
+# Moltbot configuration for POPS (production / single-bot deployments).
 # See https://github.com/moltbot/moltbot for full config reference.
+#
+# Before this file is useful you must:
+#   1. Create a Telegram bot via @BotFather and put the token in
+#      `infra/secrets/telegram_bot_token`.
+#   2. Find your Telegram user ID (e.g. message @userinfobot) and add it to
+#      `allowed_user_ids` below — the bot rejects messages from any sender
+#      that isn't in this allow-list.
+#   3. Mint a pops-api service-account key (see
+#      `infra/secrets.example/moltbot/README.md`) and put the plaintext in
+#      `infra/secrets/pops_api_key`.
+#
+# A one-shot validator container (`moltbot-validator` in compose) refuses
+# to start the bot if any of the above is missing or still a placeholder.
 
 # Active messaging channel
 channel: telegram
@@ -7,8 +20,9 @@ channel: telegram
 telegram:
   # Token loaded from Docker secret at runtime
   token_file: /run/secrets/telegram_bot_token
-  # Restrict to owner's Telegram user ID only (security: reject all other messages)
-  allowed_user_ids: [] # TODO: add your Telegram user ID
+  # Restrict to owner's Telegram user ID only (security: reject all other messages).
+  # The validator will fail-fast if this stays empty.
+  allowed_user_ids: [] # TODO: add your Telegram user ID, e.g. [123456789]
 
 # AI backend
 ai:

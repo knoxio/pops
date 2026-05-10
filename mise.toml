@@ -150,6 +150,26 @@ description = "Validate Docker Compose configuration"
 run = "docker compose -f infra/docker-compose.dev.yml config"
 
 # ============================================================================
+# Moltbot (Telegram channel — PRD-088, issue #2496)
+# ============================================================================
+
+[tasks."moltbot:validate"]
+description = "Run the moltbot config + secrets validator (alpine one-shot)"
+run = "docker compose -f infra/docker-compose.dev.yml --profile moltbot run --rm moltbot-validator"
+
+[tasks."moltbot:dev"]
+description = "Start moltbot in dev mode against the staging Telegram bot"
+run = "docker compose -f infra/docker-compose.dev.yml --profile moltbot up -d moltbot"
+
+[tasks."moltbot:logs"]
+description = "Tail moltbot container logs (dev compose)"
+run = "docker compose -f infra/docker-compose.dev.yml logs -f moltbot"
+
+[tasks."moltbot:down"]
+description = "Stop and remove the moltbot dev container"
+run = "docker compose -f infra/docker-compose.dev.yml --profile moltbot down moltbot moltbot-validator"
+
+# ============================================================================
 # Redis (local development)
 # ============================================================================
 

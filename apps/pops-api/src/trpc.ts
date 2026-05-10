@@ -5,6 +5,12 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 
 import { verifyCloudflareJWT } from './middleware/cloudflare-jwt.js';
+import { parseApiKey } from './modules/core/service-accounts/key.js';
+import {
+  authenticateServiceAccount,
+  hasScopeFor,
+  type AuthenticatedServiceAccount,
+} from './modules/core/service-accounts/service.js';
 import { KNOWN_APPS, KNOWN_OVERLAYS, readInstalledModules } from './modules/env-modules.js';
 
 import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
@@ -18,24 +24,58 @@ export interface User {
 }
 
 /**
- * tRPC context available in all procedures
+ * tRPC context available in all procedures.
+ *
+ * Either `user` (browser session via Cloudflare Access) or `serviceAccount`
+ * (machine client via `X-API-Key`) may be set; never both. `protectedProcedure`
+ * accepts either; `serviceAccountProcedure` requires the service-account form;
+ * routes that need a human session can branch on `ctx.user`.
  */
 export interface Context {
   user: User | null;
+  serviceAccount: AuthenticatedServiceAccount | null;
+}
+
+function readApiKeyHeader(req: CreateExpressContextOptions['req']): string | null {
+  const raw = req.headers['x-api-key'];
+  if (Array.isArray(raw)) return raw[0] ?? null;
+  if (typeof raw === 'string' && raw.length > 0) return raw;
+  return null;
+}
+
+async function tryServiceAccountAuth(
+  req: CreateExpressContextOptions['req']
+): Promise<AuthenticatedServiceAccount | null> {
+  const header = readApiKeyHeader(req);
+  if (!header) return null;
+  const parsed = parseApiKey(header);
+  if (!parsed) return null;
+  return authenticateServiceAccount(parsed.prefix, parsed.secret);
 }
 
 /**
  * Create tRPC context from Express request.
- * Validates Cloudflare Access JWT and extracts user info.
- * In development, bypasses JWT check for local testing.
+ *
+ * Order of operations:
+ *   1. If `X-API-Key` is presented and verifies, treat the call as a
+ *      service-account call. The user field stays null — service accounts
+ *      do not impersonate humans.
+ *   2. Otherwise validate the Cloudflare Access JWT (or use the dev /
+ *      tunnel-trust shortcuts).
  */
 export async function createContext({ req }: CreateExpressContextOptions): Promise<Context> {
+  const serviceAccount = await tryServiceAccountAuth(req);
+  if (serviceAccount) {
+    return { user: null, serviceAccount };
+  }
+
   // In development, skip JWT validation and use mock user
   if (process.env['NODE_ENV'] !== 'production') {
     return {
       user: {
         email: 'dev@example.com',
       },
+      serviceAccount: null,
     };
   }
 
@@ -43,6 +83,7 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
   if (!process.env['CLOUDFLARE_ACCESS_TEAM_NAME']) {
     return {
       user: { email: 'tunnel-authenticated@pops.local' },
+      serviceAccount: null,
     };
   }
 
@@ -55,14 +96,15 @@ export async function createContext({ req }: CreateExpressContextOptions): Promi
         user: {
           email: payload.email,
         },
+        serviceAccount: null,
       };
     } catch (error) {
       console.error('[trpc] JWT verification failed:', error);
-      return { user: null };
+      return { user: null, serviceAccount: null };
     }
   }
 
-  return { user: null };
+  return { user: null, serviceAccount: null };
 }
 
 export type ContextType = Awaited<ReturnType<typeof createContext>>;
@@ -122,20 +164,59 @@ const moduleGate = t.middleware(({ path, next }) => {
 export const publicProcedure = t.procedure.use(moduleGate);
 
 /**
- * Protected procedure that requires valid Cloudflare Access JWT.
- * Use this for all authenticated endpoints.
+ * Protected procedure that requires either a Cloudflare Access user OR an
+ * authenticated service account whose granted scopes cover the procedure
+ * path. Browser sessions retain full access (their granted scope is
+ * implicit); service-account calls must enumerate explicit scope prefixes
+ * at key creation time.
  */
-export const protectedProcedure = t.procedure.use(moduleGate).use(({ ctx, next }) => {
-  if (!ctx.user) {
-    throw new TRPCError({
-      code: 'UNAUTHORIZED',
-      message: 'Missing or invalid Cloudflare Access JWT',
+export const protectedProcedure = t.procedure.use(moduleGate).use(({ ctx, path, next }) => {
+  if (ctx.user) {
+    return next({
+      ctx: {
+        user: ctx.user,
+        serviceAccount: ctx.serviceAccount,
+      },
     });
   }
 
+  if (ctx.serviceAccount) {
+    if (!hasScopeFor(ctx.serviceAccount.scopes, path)) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: `Service account '${ctx.serviceAccount.name}' is not authorised for '${path}'`,
+      });
+    }
+    return next({
+      ctx: {
+        user: ctx.user,
+        serviceAccount: ctx.serviceAccount,
+      },
+    });
+  }
+
+  throw new TRPCError({
+    code: 'UNAUTHORIZED',
+    message: 'Missing or invalid credentials (expected Cloudflare Access JWT or X-API-Key)',
+  });
+});
+
+/**
+ * Procedure that requires a human (browser session) caller. Use this for
+ * routes that mint API keys, edit settings on behalf of an operator, or
+ * otherwise should never be reachable from a service-account principal.
+ */
+export const userOnlyProcedure = t.procedure.use(moduleGate).use(({ ctx, next }) => {
+  if (!ctx.user) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'This endpoint requires a Cloudflare Access user session.',
+    });
+  }
   return next({
     ctx: {
       user: ctx.user,
+      serviceAccount: ctx.serviceAccount,
     },
   });
 });

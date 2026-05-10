@@ -1,0 +1,19 @@
+# Moltbot DEV configuration. Mounted by infra/docker-compose.dev.yml.
+# Points at a separate Telegram bot (telegram_bot_token_dev secret) and a
+# separate allowed_user_ids list so you can develop skills without poisoning
+# the prod bot's history. See apps/moltbot/README.md for the runbook.
+
+channel: telegram
+
+telegram:
+  token_file: /run/secrets/telegram_bot_token_dev
+  # Same operator, different bot. Replace with your Telegram user ID.
+  allowed_user_ids: [] # TODO: add your Telegram user ID before starting moltbot:dev
+
+ai:
+  provider: anthropic
+  model: claude-haiku-4-5-20251001
+  api_key_file: /run/secrets/claude_api_key
+
+workspace:
+  skills_dir: /home/node/.moltbot/workspace/skills

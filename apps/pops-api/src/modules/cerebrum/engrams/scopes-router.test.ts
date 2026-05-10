@@ -142,7 +142,7 @@ describe('EngramService.create scope inference', () => {
 // ---------------------------------------------------------------------------
 
 function createCaller() {
-  return appRouter.createCaller({ user: { email: 'test@example.com' } });
+  return appRouter.createCaller({ user: { email: 'test@example.com' }, serviceAccount: null });
 }
 
 describe('cerebrum.scopes tRPC procedures', () => {

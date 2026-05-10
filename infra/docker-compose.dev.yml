@@ -166,7 +166,28 @@ services:
     volumes:
       - paperless-redis:/data
 
-  # ── MOLTBOT (on-demand) ───────────────────────────────────────────
+  # ── MOLTBOT (on-demand, staging-bot dev profile) ──────────────────
+  # Mounts a separate dev config (apps/moltbot/config/config.dev.yml) that
+  # points at a different Telegram bot token and a separate allowed_user_ids
+  # entry, so working on skills never poisons the prod conversation history.
+  # Enable with:  mise moltbot:dev   (or: docker compose -f infra/docker-compose.dev.yml --profile moltbot up moltbot)
+  moltbot-validator:
+    image: alpine:3.20
+    container_name: pops-moltbot-validator
+    profiles:
+      - moltbot
+    volumes:
+      - ../apps/moltbot/config/config.dev.yml:/config/config.yml:ro
+      - ../apps/moltbot/scripts/validate-config.sh:/validate.sh:ro
+    secrets:
+      - telegram_bot_token_dev
+      - claude_api_key
+      - pops_api_key
+    environment:
+      TELEGRAM_BOT_TOKEN_FILE: /run/secrets/telegram_bot_token_dev
+    command: ['/bin/sh', '/validate.sh']
+    restart: 'no'
+
   moltbot:
     image: moltbot/moltbot:latest
     container_name: pops-moltbot
@@ -176,16 +197,21 @@ services:
     networks:
       - backend
     volumes:
-      - ../apps/moltbot/config/config.yml:/home/node/.moltbot/config.yml:ro
+      - ../apps/moltbot/config/config.dev.yml:/home/node/.moltbot/config.yml:ro
       - ../apps/moltbot/skills:/home/node/.moltbot/workspace/skills:ro
     secrets:
-      - telegram_bot_token
+      - telegram_bot_token_dev
       - claude_api_key
-      - finance_api_key
+      - pops_api_key
     environment:
-      TELEGRAM_BOT_TOKEN_FILE: /run/secrets/telegram_bot_token
+      TELEGRAM_BOT_TOKEN_FILE: /run/secrets/telegram_bot_token_dev
+      POPS_API_URL: http://pops-api:3000
+      POPS_API_KEY_FILE: /run/secrets/pops_api_key
       FINANCE_API_URL: http://pops-api:3000
-      FINANCE_API_KEY_FILE: /run/secrets/finance_api_key
+      FINANCE_API_KEY_FILE: /run/secrets/pops_api_key
+    depends_on:
+      moltbot-validator:
+        condition: service_completed_successfully
 
   # ── CLOUDFLARE TUNNEL ────────────────────────────────────────────
   cloudflared:
@@ -235,8 +261,12 @@ secrets:
     file: ../secrets/claude_api_key
   telegram_bot_token:
     file: ../secrets/telegram_bot_token
+  telegram_bot_token_dev:
+    file: ../secrets/telegram_bot_token_dev
   finance_api_key:
     file: ../secrets/finance_api_key
+  pops_api_key:
+    file: ../secrets/pops_api_key
   tmdb_api_key:
     file: ../secrets/tmdb_api_key
   thetvdb_api_key:

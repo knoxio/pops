@@ -169,6 +169,25 @@ services:
       - paperless-redis:/data
 
   # ── MOLTBOT (on-demand) ───────────────────────────────────────────
+  # Enable with:  docker compose --profile moltbot up -d
+  # Required secrets under /opt/pops/secrets/ (or wherever the secrets
+  # volume points): telegram_bot_token, claude_api_key, pops_api_key.
+  # See apps/moltbot/README.md for the first-run runbook.
+  moltbot-validator:
+    image: alpine:3.20
+    container_name: pops-moltbot-validator
+    profiles:
+      - moltbot
+    volumes:
+      - ../apps/moltbot/config/config.yml:/config/config.yml:ro
+      - ../apps/moltbot/scripts/validate-config.sh:/validate.sh:ro
+    secrets:
+      - telegram_bot_token
+      - claude_api_key
+      - pops_api_key
+    command: ['/bin/sh', '/validate.sh']
+    restart: 'no'
+
   moltbot:
     image: moltbot/moltbot:latest
     container_name: pops-moltbot
@@ -183,11 +202,17 @@ services:
     secrets:
       - telegram_bot_token
       - claude_api_key
-      - finance_api_key
+      - pops_api_key
     environment:
       TELEGRAM_BOT_TOKEN_FILE: /run/secrets/telegram_bot_token
+      POPS_API_URL: http://pops-api:3000
+      POPS_API_KEY_FILE: /run/secrets/pops_api_key
+      # Legacy aliases — the finance skill template still references these.
       FINANCE_API_URL: http://pops-api:3000
-      FINANCE_API_KEY_FILE: /run/secrets/finance_api_key
+      FINANCE_API_KEY_FILE: /run/secrets/pops_api_key
+    depends_on:
+      moltbot-validator:
+        condition: service_completed_successfully
 
   # ── CLOUDFLARE TUNNEL ────────────────────────────────────────────
   cloudflared:
@@ -268,6 +293,8 @@ secrets:
     file: ../secrets/telegram_bot_token
   finance_api_key:
     file: ../secrets/finance_api_key
+  pops_api_key:
+    file: ../secrets/pops_api_key
   tmdb_api_key:
     file: ../secrets/tmdb_api_key
   thetvdb_api_key:

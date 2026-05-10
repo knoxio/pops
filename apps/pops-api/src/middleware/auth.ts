@@ -11,6 +11,13 @@ import type { NextFunction, Request, Response } from 'express';
  *
  * Skips auth for webhook routes (use signature verification)
  * and health checks (public endpoint).
+ *
+ * Service-account auth (`X-API-Key`) is handled by the tRPC context layer,
+ * not here. This middleware passes any request carrying that header through
+ * unauthenticated at the express layer; the tRPC procedure then verifies
+ * the key against the DB and enforces per-route scopes. Endpoints that
+ * bypass tRPC entirely (e.g. SSE streaming, raw express routes mounted
+ * after this middleware) remain JWT-only.
  */
 export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
   // Webhook routes handle their own auth via signature verification
@@ -21,6 +28,17 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
 
   // Health check is public
   if (req.path === '/health') {
+    next();
+    return;
+  }
+
+  // Service-account API key — defer auth to the tRPC layer (which enforces
+  // per-route scopes). Only honour for /trpc and /api/v1; other routes still
+  // require a JWT to avoid accidentally widening the unauthenticated surface.
+  if (
+    typeof req.headers['x-api-key'] === 'string' &&
+    (req.path.startsWith('/trpc') || req.path.startsWith('/api/v1'))
+  ) {
     next();
     return;
   }

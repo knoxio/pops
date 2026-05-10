@@ -19,6 +19,26 @@ import type { Context } from '../trpc.js';
 export function createCaller(authenticated = true): ReturnType<typeof appRouter.createCaller> {
   const ctx: Context = {
     user: authenticated ? { email: 'test@example.com' } : null,
+    serviceAccount: null,
+  };
+  return appRouter.createCaller(ctx);
+}
+
+/**
+ * Create a tRPC caller authenticated as a service account with the given
+ * granted scopes. Useful for asserting per-route scope enforcement.
+ */
+export function createServiceAccountCaller(options: {
+  name?: string;
+  scopes: string[];
+}): ReturnType<typeof appRouter.createCaller> {
+  const ctx: Context = {
+    user: null,
+    serviceAccount: {
+      id: 'sa_test',
+      name: options.name ?? 'test-sa',
+      scopes: options.scopes,
+    },
   };
   return appRouter.createCaller(ctx);
 }
@@ -741,6 +761,20 @@ export function createTestDb(): Database {
     );
     CREATE INDEX IF NOT EXISTS idx_conversation_context_conversation ON conversation_context(conversation_id);
     CREATE INDEX IF NOT EXISTS idx_conversation_context_engram ON conversation_context(engram_id);
+
+    CREATE TABLE IF NOT EXISTS service_accounts (
+      id            TEXT PRIMARY KEY NOT NULL,
+      name          TEXT NOT NULL UNIQUE,
+      key_prefix    TEXT NOT NULL UNIQUE,
+      key_hash      TEXT NOT NULL,
+      scopes        TEXT NOT NULL DEFAULT '[]',
+      created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+      last_used_at  TEXT,
+      revoked_at    TEXT,
+      created_by    TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_service_accounts_key_prefix ON service_accounts(key_prefix);
+    CREATE INDEX IF NOT EXISTS idx_service_accounts_revoked_at ON service_accounts(revoked_at);
   `);
 
   // Seed tag vocabulary (v1) for tests to match dev/prod init behavior.

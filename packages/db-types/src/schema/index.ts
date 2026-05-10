@@ -36,6 +36,7 @@ export { rotationExclusions } from './rotation-exclusions.js';
 export { rotationLog } from './rotation-log.js';
 export { rotationSources } from './rotation-sources.js';
 export { seasons } from './seasons.js';
+export { serviceAccounts } from './service-accounts.js';
 export { settings } from './settings.js';
 export { userSettings } from './user-settings.js';
 export { shelfImpressions } from './shelf-impressions.js';

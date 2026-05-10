@@ -63,6 +63,43 @@ describe('authMiddleware', () => {
       expect(next).toHaveBeenCalledOnce();
       expect(res.status).not.toHaveBeenCalled();
     });
+
+    it('passes /trpc through unauthenticated when X-API-Key is set (tRPC verifies)', () => {
+      process.env['NODE_ENV'] = 'production';
+      process.env['CLOUDFLARE_ACCESS_TEAM_NAME'] = 'test-team';
+      const req = createMockReq({
+        path: '/trpc/cerebrum.ingest.quickCapture',
+        headers: { 'x-api-key': 'pops_sa_abc12345.secret' },
+      });
+      const res = createMockRes();
+      const next = vi.fn();
+
+      authMiddleware(req, res, next);
+
+      expect(next).toHaveBeenCalledOnce();
+      expect(res.status).not.toHaveBeenCalled();
+      // The middleware does NOT pre-populate res.locals.user — that would
+      // be a privilege bug. The tRPC layer is the only authority on whether
+      // the key is valid.
+      expect(res.locals['user']).toBeUndefined();
+    });
+
+    it('does NOT honour X-API-Key for non-tRPC paths', () => {
+      process.env['NODE_ENV'] = 'production';
+      process.env['CLOUDFLARE_ACCESS_TEAM_NAME'] = 'test-team';
+      const req = createMockReq({
+        path: '/some/other/route',
+        headers: { 'x-api-key': 'pops_sa_abc12345.secret' },
+      });
+      const res = createMockRes();
+      const next = vi.fn();
+
+      authMiddleware(req, res, next);
+
+      // Falls through to JWT path → 401 because no JWT header is present.
+      expect(next).not.toHaveBeenCalled();
+      expect(res.status).toHaveBeenCalledWith(401);
+    });
   });
 
   describe('development mode', () => {

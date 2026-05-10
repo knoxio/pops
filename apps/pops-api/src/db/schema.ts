@@ -874,6 +874,22 @@ export function initializeSchema(db: BetterSqlite3.Database): void {
     CREATE INDEX IF NOT EXISTS idx_nudge_log_status ON nudge_log(status);
     CREATE INDEX IF NOT EXISTS idx_nudge_log_priority ON nudge_log(priority);
     CREATE INDEX IF NOT EXISTS idx_nudge_log_created_at ON nudge_log(created_at);
+
+    -- Service accounts (PRD-088, issue #2496). Machine identities that hold
+    -- hashed API keys for non-browser callers (moltbot skills, scripts).
+    CREATE TABLE IF NOT EXISTS service_accounts (
+      id            TEXT PRIMARY KEY NOT NULL,
+      name          TEXT NOT NULL UNIQUE,
+      key_prefix    TEXT NOT NULL UNIQUE,
+      key_hash      TEXT NOT NULL,
+      scopes        TEXT NOT NULL DEFAULT '[]',
+      created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+      last_used_at  TEXT,
+      revoked_at    TEXT,
+      created_by    TEXT
+    );
+    CREATE INDEX IF NOT EXISTS idx_service_accounts_key_prefix ON service_accounts(key_prefix);
+    CREATE INDEX IF NOT EXISTS idx_service_accounts_revoked_at ON service_accounts(revoked_at);
   `);
 
   // embeddings_vec virtual table (PRD-076). Requires sqlite-vec extension.
