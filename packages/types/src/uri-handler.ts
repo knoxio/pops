@@ -11,7 +11,9 @@
  */
 
 /**
- * Outcome of a URI resolution.
+ * Outcome of a per-module URI handler resolution. This is the narrow shape a
+ * `uriHandler.resolve(type, id)` returns — the central dispatcher (US-08)
+ * decorates these into `UriResolverResult` with module/type/id metadata.
  *
  * Discriminated union — the caller dispatches on `kind`:
  * - `object`        — a real entity was found; `data` holds the typed payload
@@ -24,6 +26,32 @@ export type UriResolution<TData = unknown> =
   | { kind: 'object'; data: TData }
   | { kind: 'not-found' }
   | { kind: 'module-absent' };
+
+/**
+ * Outcome of the platform-wide URI resolver (PRD-101 US-08, ADR-012).
+ *
+ * The dispatcher parses a `pops:{moduleId}/{type}/{id}` URI, looks up the
+ * owning module, and calls its `uriHandler.resolve`. The result is enriched
+ * with the parsed metadata so callers can render type-aware placeholders
+ * without re-parsing the URI.
+ *
+ * - `object`         — handler returned a payload; `moduleId`, `type`, `id`
+ *                      are echoed back from the URI for caller convenience.
+ * - `not-found`      — owning module is installed but the record/type was
+ *                      not found (no handler for type or handler returned
+ *                      `not-found`).
+ * - `module-absent`  — owning module is not installed in this deployment;
+ *                      caller should render a "module not installed"
+ *                      placeholder rather than throw.
+ * - `malformed`      — URI did not parse per ADR-012 (wrong prefix, missing
+ *                      parts, uppercase characters, etc.); `reason` names
+ *                      the specific violation for debugging.
+ */
+export type UriResolverResult<TData = unknown> =
+  | { kind: 'object'; moduleId: string; type: string; id: string; data: TData }
+  | { kind: 'not-found'; moduleId: string; type: string; id: string }
+  | { kind: 'module-absent'; moduleId: string }
+  | { kind: 'malformed'; uri: string; reason: string };
 
 export interface UriHandlerDescriptor<TData = unknown> {
   /**

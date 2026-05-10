@@ -114,6 +114,7 @@ export * from './components/WarrantyBadge';
 
 // Additional standalone primitives (feedback, uploads, media, data viz, layout)
 export * from './components/EmptyState';
+export * from './components/UriCard';
 export * from './components/FileUpload';
 export * from './components/ImageWithFallback';
 export * from './components/MediaCard';

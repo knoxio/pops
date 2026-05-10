@@ -33,5 +33,5 @@ jobs:
     uses: ./.github/workflows/_pkg-check.yml
     with:
       package-path: packages/ui
-      needs-db-build: false
+      needs-db-build: true
       skip: ${{ github.event_name == 'pull_request' && needs.changes.outputs.relevant != 'true' }}
