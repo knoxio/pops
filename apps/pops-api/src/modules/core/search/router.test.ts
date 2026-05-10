@@ -2,9 +2,19 @@ import { TRPCError } from '@trpc/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { createCaller } from '../../../shared/test-utils.js';
-import { registerSearchAdapter, resetRegistry } from './registry.js';
 
 import type { SearchAdapter, SearchHit } from './types.js';
+
+vi.mock('../../search-adapters.js', () => ({
+  getOwnedAdapters: vi.fn<() => readonly { moduleId: string; adapter: SearchAdapter }[]>(() => []),
+}));
+
+const adaptersModule = await import('../../search-adapters.js');
+const getOwnedAdaptersMock = vi.mocked(adaptersModule.getOwnedAdapters);
+
+function setAdapters(...owned: { moduleId: string; adapter: SearchAdapter }[]): void {
+  getOwnedAdaptersMock.mockReturnValue(owned);
+}
 
 function makeHit(overrides: Partial<SearchHit> = {}): SearchHit {
   return {
@@ -32,18 +42,20 @@ function makeAdapter(
 let caller: ReturnType<typeof createCaller>;
 
 beforeEach(() => {
-  resetRegistry();
+  getOwnedAdaptersMock.mockReset();
+  getOwnedAdaptersMock.mockReturnValue([]);
   caller = createCaller();
 });
 
 describe('core.search.query', () => {
   it('returns sections from registered adapters', async () => {
-    registerSearchAdapter(
-      makeAdapter('movies', [makeHit({ uri: 'pops:media/movie/1', score: 0.8 })], {
+    setAdapters({
+      moduleId: 'media',
+      adapter: makeAdapter('movies', [makeHit({ uri: 'pops:media/movie/1', score: 0.8 })], {
         icon: 'Film',
         color: 'purple',
-      })
-    );
+      }),
+    });
 
     const result = await caller.core.search.query({
       text: 'test',
@@ -52,23 +64,22 @@ describe('core.search.query', () => {
 
     expect(result.sections).toHaveLength(1);
     expect(result.sections[0]!.domain).toBe('movies');
+    expect(result.sections[0]!.moduleId).toBe('media');
     expect(result.sections[0]!.icon).toBe('Film');
     expect(result.sections[0]!.color).toBe('purple');
     expect(result.sections[0]!.hits).toHaveLength(1);
   });
 
   it('returns empty sections when no adapters match', async () => {
-    registerSearchAdapter(makeAdapter('movies', []));
+    setAdapters({ moduleId: 'media', adapter: makeAdapter('movies', []) });
 
-    const result = await caller.core.search.query({
-      text: 'nonexistent',
-    });
+    const result = await caller.core.search.query({ text: 'nonexistent' });
 
     expect(result.sections).toEqual([]);
   });
 
   it('works without explicit context', async () => {
-    registerSearchAdapter(makeAdapter('movies', [makeHit()]));
+    setAdapters({ moduleId: 'media', adapter: makeAdapter('movies', [makeHit()]) });
 
     const result = await caller.core.search.query({ text: 'test' });
 
@@ -90,7 +101,7 @@ describe('core.search.showMore', () => {
     const hits = Array.from({ length: 10 }, (_, i) =>
       makeHit({ uri: `pops:test/${i}`, score: 1.0 - i * 0.05 })
     );
-    registerSearchAdapter(makeAdapter('movies', hits));
+    setAdapters({ moduleId: 'media', adapter: makeAdapter('movies', hits) });
 
     const result = await caller.core.search.showMore({
       domain: 'movies',
@@ -106,7 +117,7 @@ describe('core.search.showMore', () => {
     const hits = Array.from({ length: 10 }, (_, i) =>
       makeHit({ uri: `pops:test/${i}`, score: 1.0 - i * 0.05 })
     );
-    registerSearchAdapter(makeAdapter('movies', hits));
+    setAdapters({ moduleId: 'media', adapter: makeAdapter('movies', hits) });
 
     const result = await caller.core.search.showMore({
       domain: 'movies',

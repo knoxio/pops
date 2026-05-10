@@ -1,17 +1,15 @@
 /**
  * Finance domain — transactions, budgets, imports, wishlist.
  */
-// Side-effect: register search adapters
-import './transactions/search-adapter.js';
-import './budgets/search-adapter.js';
-import './wishlist/search-adapter.js';
-
 import { router } from '../../trpc.js';
 import { budgetsRouter } from './budgets/router.js';
+import { budgetsSearchAdapter } from './budgets/search-adapter.js';
 import { importsRouter } from './imports/router.js';
 import { financeManifest } from './settings-manifest.js';
 import { transactionsRouter } from './transactions/router.js';
+import { transactionsSearchAdapter } from './transactions/search-adapter.js';
 import { wishlistRouter } from './wishlist/router.js';
+import { wishlistSearchAdapter } from './wishlist/search-adapter.js';
 
 import type { ModuleManifest } from '@pops/types';
 
@@ -31,4 +29,5 @@ export const manifest: ModuleManifest<typeof financeRouter> = {
   description: 'Transactions, budgets, entities, and import pipeline.',
   backend: { router: financeRouter },
   settings: [financeManifest],
+  search: [transactionsSearchAdapter, budgetsSearchAdapter, wishlistSearchAdapter],
 };

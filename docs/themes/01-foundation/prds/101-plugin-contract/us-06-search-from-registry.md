@@ -1,7 +1,7 @@
 # US-06: Search engine consumes the registry
 
 > PRD: [Plugin Contract](README.md)
-> Status: Not started
+> Status: Done
 
 ## Description
 
@@ -11,12 +11,12 @@ Closes the search half of #2522.
 
 ## Acceptance Criteria
 
-- [ ] Search engine (`apps/pops-api/src/modules/core/search/engine.ts`) reads its adapter list from `MODULES.flatMap(m => m.search ?? [])`.
-- [ ] `registerSearchAdapter()` and the runtime `searchAdapterRegistry` are removed. Per-module `import './search-adapter.js'` side-effect imports are removed from each module's `index.ts`.
-- [ ] Each module that owns search adapters (finance, media, inventory, core/entities) declares its adapters in `manifest.ts` `search` slot. Adapter implementations themselves move into the manifest declaration (or remain in their files as named exports referenced from the manifest).
-- [ ] Frontend search results panel uses `MODULES` to resolve the result-component renderer per result type; absent-module result types are filtered out before render (defence in depth — engine should never emit them now).
-- [ ] PRD-057 acceptance criteria (cross-domain fan-out, ranking, structured queries) remain satisfied; only source of truth moves.
-- [ ] Test: with `POPS_APPS=finance`, querying `"avocado"` (a movie) returns no results from the search engine and the response payload contains no media-typed entries.
+- [x] Search engine (`apps/pops-api/src/modules/core/search/engine.ts`) reads its adapter list from `MODULES.flatMap(m => m.search ?? [])`.
+- [x] `registerSearchAdapter()` and the runtime `searchAdapterRegistry` are removed. Per-module `import './search-adapter.js'` side-effect imports are removed from each module's `index.ts`.
+- [x] Each module that owns search adapters (finance, media, inventory, core/entities) declares its adapters in `manifest.ts` `search` slot. Adapter implementations themselves move into the manifest declaration (or remain in their files as named exports referenced from the manifest).
+- [x] Frontend search results panel uses `MODULES` to resolve the result-component renderer per result type; absent-module result types are filtered out before render (defence in depth — engine should never emit them now).
+- [x] PRD-057 acceptance criteria (cross-domain fan-out, ranking, structured queries) remain satisfied; only source of truth moves.
+- [x] Test: with `POPS_APPS=finance`, querying `"avocado"` (a movie) returns no results from the search engine and the response payload contains no media-typed entries.
 
 ## Notes
 

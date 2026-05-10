@@ -3,7 +3,6 @@ import { like } from 'drizzle-orm';
 import { budgets } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
-import { registerSearchAdapter } from '../../core/search/index.js';
 
 import type { Query, SearchAdapter, SearchContext, SearchHit } from '../../core/search/index.js';
 
@@ -71,5 +70,3 @@ export const budgetsSearchAdapter: SearchAdapter<BudgetHitData> = {
     return hits.toSorted((a, b) => b.score - a.score);
   },
 };
-
-registerSearchAdapter(budgetsSearchAdapter);

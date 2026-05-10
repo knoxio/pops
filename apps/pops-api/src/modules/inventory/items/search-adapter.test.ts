@@ -1,7 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { seedInventoryItem, setupTestContext } from '../../../shared/test-utils.js';
-import { resetRegistry } from '../../core/search/index.js';
 import { inventoryItemsSearchAdapter } from './search-adapter.js';
 
 import type { Database } from 'better-sqlite3';
@@ -23,7 +22,6 @@ function search(text: string, options?: { limit?: number }): SearchHit<Inventory
 
 beforeEach(() => {
   ({ db } = ctx.setup());
-  resetRegistry();
 });
 
 afterEach(() => {

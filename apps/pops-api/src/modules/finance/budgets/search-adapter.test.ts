@@ -1,17 +1,9 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-import type { Database } from 'better-sqlite3';
-
-// Prevent side-effect registration from throwing on import
-vi.mock('../../core/search/registry.js', () => ({
-  registerSearchAdapter: vi.fn(),
-  getAdapters: vi.fn(),
-  resetRegistry: vi.fn(),
-}));
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { seedBudget, setupTestContext } from '../../../shared/test-utils.js';
-import { registerSearchAdapter } from '../../core/search/registry.js';
 import { type BudgetHitData, budgetsSearchAdapter } from './search-adapter.js';
+
+import type { Database } from 'better-sqlite3';
 
 import type { SearchHit } from '../../core/search/index.js';
 
@@ -35,11 +27,10 @@ function search(query: string, limit?: number): SearchHit<BudgetHitData>[] {
 }
 
 describe('budgets search adapter', () => {
-  it('registers with correct metadata', () => {
+  it('declares the correct metadata', () => {
     expect(budgetsSearchAdapter.domain).toBe('budgets');
     expect(budgetsSearchAdapter.icon).toBe('PiggyBank');
     expect(budgetsSearchAdapter.color).toBe('green');
-    expect(registerSearchAdapter).toHaveBeenCalledWith(budgetsSearchAdapter);
   });
 
   it('returns empty results for empty query', () => {

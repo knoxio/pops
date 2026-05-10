@@ -4,9 +4,6 @@
  * Note: envs is an Express router (not tRPC) and is mounted directly in app.ts,
  * not included here.
  */
-// Side-effect: register search adapters
-import './entities/search-adapter.js';
-
 import { router } from '../../trpc.js';
 import { aiBudgetsRouter } from './ai-budgets/router.js';
 import { aiObservabilityRouter } from './ai-observability/router.js';
@@ -15,6 +12,7 @@ import { aiUsageRouter } from './ai-usage/router.js';
 import { correctionsRouter } from './corrections/router.js';
 import { embeddingsRouter } from './embeddings/router.js';
 import { entitiesRouter } from './entities/router.js';
+import { entitiesSearchAdapter } from './entities/search-adapter.js';
 import { coreFeaturesManifest } from './features/manifest.js';
 import { featuresRouter } from './features/router.js';
 import { jobsRouter } from './jobs/router.js';
@@ -60,4 +58,5 @@ export const manifest: ModuleManifest<typeof coreRouter> = {
   backend: { router: coreRouter },
   settings: [aiConfigManifest, coreOperationalManifest],
   features: [coreFeaturesManifest],
+  search: [entitiesSearchAdapter],
 };

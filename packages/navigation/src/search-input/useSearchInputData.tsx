@@ -5,6 +5,7 @@ import { trpc } from '@pops/api-client';
 
 import { useCurrentApp } from '../hooks';
 import { sortSections } from '../search-results/usePanelDismiss';
+import { isInstalledModule } from './installed-module';
 
 import type { ReactNode } from 'react';
 
@@ -37,6 +38,8 @@ interface RawHit {
 
 interface RawSection {
   domain: string;
+  /** PRD-101 US-06: owning module id; absent-module sections are filtered. */
+  moduleId: string;
   hits: RawHit[];
   icon: string;
   color: string;
@@ -59,19 +62,21 @@ function buildSections(
   extraHits: Record<string, SearchResultHit[]>
 ): SearchResultSection[] {
   if (!rawSections) return [];
-  return rawSections.map((section) => {
-    const baseHits = toHits(section.hits);
-    const extra = extraHits[section.domain] ?? [];
-    return {
-      domain: section.domain,
-      label: domainToLabel(section.domain),
-      icon: ICON_MAP[section.icon] ?? <Search className="h-3.5 w-3.5" />,
-      color: section.color,
-      isContext: section.isContextSection,
-      hits: [...baseHits, ...extra],
-      totalCount: section.totalCount,
-    };
-  });
+  return rawSections
+    .filter((section) => isInstalledModule(section.moduleId))
+    .map((section) => {
+      const baseHits = toHits(section.hits);
+      const extra = extraHits[section.domain] ?? [];
+      return {
+        domain: section.domain,
+        label: domainToLabel(section.domain),
+        icon: ICON_MAP[section.icon] ?? <Search className="h-3.5 w-3.5" />,
+        color: section.color,
+        isContext: section.isContextSection,
+        hits: [...baseHits, ...extra],
+        totalCount: section.totalCount,
+      };
+    });
 }
 
 interface UseSearchInputDataArgs {

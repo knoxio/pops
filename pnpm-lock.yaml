@@ -850,6 +850,9 @@ importers:
       '@pops/api-client':
         specifier: workspace:*
         version: link:../api-client
+      '@pops/module-registry':
+        specifier: workspace:*
+        version: link:../module-registry
       '@pops/ui':
         specifier: workspace:*
         version: link:../ui

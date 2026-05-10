@@ -15,14 +15,6 @@ vi.mock('../../../db.js', () => ({
   }),
 }));
 
-// Prevent side-effect registration from throwing in subsequent imports
-vi.mock('../search/registry.js', () => ({
-  registerSearchAdapter: vi.fn(),
-  getAdapters: vi.fn(),
-  resetRegistry: vi.fn(),
-}));
-
-import { registerSearchAdapter } from '../search/registry.js';
 import { entitiesSearchAdapter, type EntityHitData } from './search-adapter.js';
 
 import type { SearchHit } from '../search/types.js';
@@ -39,11 +31,10 @@ beforeEach(() => {
 });
 
 describe('entities search adapter', () => {
-  it('registers with correct domain, icon, and color', () => {
+  it('declares the correct domain, icon, and color', () => {
     expect(entitiesSearchAdapter.domain).toBe('entities');
     expect(entitiesSearchAdapter.icon).toBe('Building2');
     expect(entitiesSearchAdapter.color).toBe('green');
-    expect(registerSearchAdapter).toHaveBeenCalledWith(entitiesSearchAdapter);
   });
 
   it('returns empty array for empty query', () => {

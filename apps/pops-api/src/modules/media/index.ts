@@ -1,9 +1,6 @@
 /**
  * Media domain — movies, tv shows, comparisons, watchlist, watch history, library.
  */
-// Side-effect: register search adapters
-import './search/movies-adapter.js';
-import './search/tv-shows-adapter.js';
 // Side-effect: register rotation source adapters
 import './rotation/register-sources.js';
 
@@ -17,6 +14,8 @@ import { moviesRouter } from './movies/router.js';
 import { plexRouter } from './plex/index.js';
 import { rotationRouter } from './rotation/router.js';
 import { searchRouter } from './search/index.js';
+import { moviesSearchAdapter } from './search/movies-adapter.js';
+import { tvShowsSearchAdapter } from './search/tv-shows-adapter.js';
 import { arrManifest, plexManifest, rotationManifest } from './settings/manifests.js';
 import { mediaOperationalManifest } from './settings/operational-manifest.js';
 import { tvShowsRouter } from './tv-shows/index.js';
@@ -53,4 +52,5 @@ export const manifest: ModuleManifest<typeof mediaRouter> = {
   backend: { router: mediaRouter },
   settings: [plexManifest, arrManifest, rotationManifest, mediaOperationalManifest],
   features: [mediaFeaturesManifest],
+  search: [moviesSearchAdapter, tvShowsSearchAdapter],
 };

@@ -3,7 +3,6 @@ import { like } from 'drizzle-orm';
 import { entities } from '@pops/db-types';
 
 import { getDrizzle } from '../../../db.js';
-import { registerSearchAdapter } from '../search/registry.js';
 
 import type { Query, SearchAdapter, SearchContext, SearchHit } from '../search/types.js';
 
@@ -78,5 +77,3 @@ export const entitiesSearchAdapter: SearchAdapter<EntityHitData> = {
     return hits.slice(0, limit);
   },
 };
-
-registerSearchAdapter(entitiesSearchAdapter);

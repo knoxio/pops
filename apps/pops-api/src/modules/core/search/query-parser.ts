@@ -9,8 +9,13 @@
  *   warranty:expiring — warranty status
  *
  * Unrecognised key:value tokens are treated as plain text.
+ *
+ * Note: returns a `ParsedQuery` (api-local shape with `(key, value)` filters)
+ * — distinct from the cross-package `Query` type whose `StructuredFilter`
+ * uses `(field, operator, value)`. The engine narrows the parsed value to a
+ * `Query` (text-only today) before fan-out.
  */
-import type { Query, StructuredFilter } from './types.js';
+import type { ParsedFilter } from './types.js';
 
 const KNOWN_KEYS = new Set(['type', 'domain', 'year', 'value', 'warranty']);
 
@@ -20,8 +25,13 @@ const KNOWN_KEYS = new Set(['type', 'domain', 'year', 'value', 'warranty']);
  */
 const FILTER_PATTERN = /(\w+):([><]?)(\S+)/g;
 
-export function parseQuery(input: string): Query {
-  const filters: StructuredFilter[] = [];
+export interface ParsedQuery {
+  text: string;
+  filters?: ParsedFilter[];
+}
+
+export function parseQuery(input: string): ParsedQuery {
+  const filters: ParsedFilter[] = [];
   const textParts: string[] = [];
 
   // Split by whitespace, process each token
